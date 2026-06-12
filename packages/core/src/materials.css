@@ -11,9 +11,8 @@
  * │  Ambient — an honest degradation, never a fake.                            │
  * │                                                                            │
  * │  Three languages of separation (craft-arch):                               │
- * │    1. PRIMITIVES  --lab-ambient-* / --lab-progressive-* — raw ladder        │
- * │       values lifted 1:1 from the owner's Figma reference                   │
- * │       (labui-figma-styles.md: BG-blur 128/48/24/12, Progressive 24/12/4,   │
+ * │    1. PRIMITIVES  --lab-ambient-* — raw ladder values lifted 1:1 from the   │
+ * │       owner's Figma reference (labui-figma-styles.md: BG-blur 128/48/24/12, │
  * │       Materials two-layer fills). These mirror the prior --lab-glass-*      │
  * │       tokens, kept as a back-compat alias block at the bottom.             │
  * │    2. SEMANTIC   --lab-mat-* — the material ROLE a surface reads. The mode  │
@@ -32,7 +31,6 @@
  *
  * Source of truth: epics/lab-colors-v1/reference/labui-figma-styles.md
  *   · BG-blur ladder (Ambient):     Strong 128 / Base 48 / Muted 24 / Soft 12  + NOISE 4%
- *   · Progressive-blur ladder:      Strong 24  / Soft 12 / Ghost 4             + 6%/6%/4%
  *   · Materials fills (two-layer):  slot1 = base+alpha (NORMAL),
  *                                   slot2 = tint colour at COLOR_DODGE (light) / OVERLAY (dark)
  *
@@ -61,19 +59,6 @@
    * engine — not a backdrop effect). */
   --lab-ambient-noise-alpha: 0.04;
   --lab-ambient-noise-color: rgb(1, 2, 5);
-
-  /* ── Progressive-blur ladder ──────────────────────────────────────────────
-   * A graduated blur that fades along a mask gradient — the frequent pattern
-   * under nav bars / sticky headers, where the backdrop is fully blurred at the
-   * bar edge and clears toward the content. Realized as backdrop-filter + a
-   * mask-image gradient (the blur is painted, the mask reveals it gradually).
-   * Figma: Strong 24 (6%) / Soft 12 (6%) / Ghost 4 (4%). */
-  --lab-progressive-strong: 24px;
-  --lab-progressive-soft: 12px;
-  --lab-progressive-ghost: 4px;
-  --lab-progressive-strong-noise: 0.06;
-  --lab-progressive-soft-noise: 0.06;
-  --lab-progressive-ghost-noise: 0.04;
 
   /* ── Materials two-layer fill (Figma Fill styles → web). ───────────────────
    * slot1: a base grey at an alpha that lets the blurred backdrop read through.
@@ -107,7 +92,7 @@
   --lab-ambient-inner-light-blur: 20px;
   --lab-ambient-inner-light-spread: -6px;
 
-  /* Tileable SVG grain (data-uri). Shared by Ambient + Progressive. */
+  /* Tileable SVG grain (data-uri). */
   --lab-ambient-noise-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
 
   --lab-mat-radius: var(--lab-radius-card, 16px);
@@ -373,67 +358,6 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
- * PROGRESSIVE BLUR — `.lab-progressive`.
- *
- * A graduated backdrop blur that fades along a mask gradient: fully blurred at
- * one edge, clearing toward the content. The classic sticky-header / nav-bar
- * scrim. Realized as a backdrop-filter blur revealed by a mask-image gradient
- * (the blur is painted everywhere, the mask makes it fade). Default direction
- * is top→down (blur strongest at the top, for a header); flip with the
- * `--lab-progressive-angle` token. This is a SCRIM, not a card material — it
- * carries no body fill, only the graded blur + its own grain. */
-.lab-progressive {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  --lab-progressive-blur: var(--lab-progressive-strong);
-  --lab-progressive-angle: to bottom;
-  --lab-progressive-noise-alpha: var(--lab-progressive-strong-noise);
-  backdrop-filter: blur(var(--lab-progressive-blur));
-  -webkit-backdrop-filter: blur(24px);
-  -webkit-mask-image: linear-gradient(var(--lab-progressive-angle), black 0%, transparent 100%);
-  mask-image: linear-gradient(var(--lab-progressive-angle), black 0%, transparent 100%);
-}
-.lab-progressive::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-image: var(--lab-ambient-noise-image);
-  background-size: 120px 120px;
-  opacity: var(--lab-progressive-noise-alpha);
-}
-/* webkit-var-bug: like the Ambient tiers, restate the prefixed blur literally
- * so the Soft/Ghost progressive steps differ on Safari instead of all rendering
- * at the base 24px. */
-.lab-progressive--soft {
-  --lab-progressive-blur: var(--lab-progressive-soft);
-  --lab-progressive-noise-alpha: var(--lab-progressive-soft-noise);
-  -webkit-backdrop-filter: blur(12px);
-}
-.lab-progressive--ghost {
-  --lab-progressive-blur: var(--lab-progressive-ghost);
-  --lab-progressive-noise-alpha: var(--lab-progressive-ghost-noise);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-/* The scrim is a blur, nothing else — so in Solid mode (no transparency) and
- * under reduced-transparency it has no honest form and is removed entirely.
- * Same treatment as the @supports-not path below: a graded blur with no live
- * blur is meaningless noise. Accessibility/mode consistency wins over the
- * decorative scrim (matches the .lab-ambient Solid + reduced-transparency
- * branches above). */
-[data-material="solid"] .lab-progressive,
-[data-material="solid"].lab-progressive {
-  display: none;
-}
-/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
-@media (prefers-reduced-transparency: reduce) {
-  .lab-progressive {
-    display: none;
-  }
-}
-
-/* ════════════════════════════════════════════════════════════════════════════
  * FALLBACK — no backdrop-filter (older engines, blocked compositing).
  * Equivalent to Solid: push the body toward opaque so text stays legible
  * without the live blur. Same material family, calmer execution.
@@ -451,9 +375,6 @@
   .lab-glass::after {
     border-color: transparent;
     opacity: 0;
-  }
-  .lab-progressive {
-    display: none; /* a graded blur with no backdrop-filter is meaningless noise */
   }
 }
 

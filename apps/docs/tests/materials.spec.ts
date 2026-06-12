@@ -155,45 +155,6 @@ test('.lab-ambient tint FOLLOWS the --lab-* colour core (not hardcoded)', async 
   expect(channels.b).toBeGreaterThan(channels.r);
 });
 
-test('the progressive-blur scrim applies a graded backdrop blur', async ({ page }) => {
-  await page.goto('/materials.html');
-
-  const progressive = page.getByTestId('progressive');
-  await expect(progressive).toBeAttached();
-
-  const { filter, mask } = await progressive.evaluate((el) => {
-    const cs = getComputedStyle(el);
-    const std = cs.backdropFilter;
-    const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
-    const f = std && std !== 'none' ? std : webkit;
-    const m =
-      cs.maskImage && cs.maskImage !== 'none'
-        ? cs.maskImage
-        : (cs as unknown as Record<string, string>).webkitMaskImage;
-    return { filter: f || 'none', mask: m || 'none' };
-  });
-
-  // A graded blur = a real blur revealed by a gradient mask.
-  expect(filter).toContain('blur');
-  expect(mask).toContain('gradient');
-});
-
-test('the progressive-blur scrim is removed in Solid mode', async ({ page }) => {
-  await page.goto('/materials.html');
-
-  // Ambient: the scrim is present and laid out.
-  await expect(page.getByTestId('progressive')).toBeVisible();
-
-  // Solid has no transparency, so a graded blur has no honest form — it must be
-  // removed (display:none), consistent with the .lab-ambient Solid branch.
-  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'solid'));
-
-  const display = await page
-    .getByTestId('progressive')
-    .evaluate((el) => getComputedStyle(el).display);
-  expect(display).toBe('none');
-});
-
 test('the Ambient ladder renders four DISTINCT blur radii (Figma 128/48/24/12)', async ({
   page,
 }) => {

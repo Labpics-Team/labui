@@ -69,18 +69,12 @@ body {
   background: linear-gradient(0deg, #00000044, #ffffff22);
 }
 
-/* ── Control bar with a progressive-blur scrim ─────────────────────────────── */
+/* ── Control bar ───────────────────────────────────────────────────────────── */
 .bar {
   position: sticky;
   top: 0;
   z-index: 10;
   height: 4rem;
-}
-
-/* The progressive-blur scrim sits inside the bar; .lab-progressive provides the
- * graded blur. It is absolutely positioned to fill the bar. */
-.bar .lab-progressive {
-  height: 6rem; /* a little taller than the bar so the fade clears past it */
 }
 
 .bar-inner {
