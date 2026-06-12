@@ -1,0 +1,103 @@
+{
+  "source": "labui-tokens-snapshot.dtcg.json (fileKey LuaiBd4anRi4DMZayKAnY2), 100% mode",
+  "zIndex": {
+    "Dropdown": {
+      "type": "dimension",
+      "value": 800
+    },
+    "Grouped-Primary": {
+      "type": "dimension",
+      "value": 400
+    },
+    "Grouped-Secondary": {
+      "type": "dimension",
+      "value": 500
+    },
+    "Grouped-Tertiary": {
+      "type": "dimension",
+      "value": 600
+    },
+    "Inverted": {
+      "type": "dimension",
+      "value": 700
+    },
+    "Modal": {
+      "type": "dimension",
+      "value": 1100
+    },
+    "ModalUnderlay": {
+      "type": "dimension",
+      "value": 1000
+    },
+    "Primary": {
+      "type": "dimension",
+      "value": 0
+    },
+    "Quaternary": {
+      "type": "dimension",
+      "value": 400
+    },
+    "Secondary": {
+      "type": "dimension",
+      "value": 100
+    },
+    "SkipLink": {
+      "type": "dimension",
+      "value": 50
+    },
+    "Sticky": {
+      "type": "dimension",
+      "value": 900
+    },
+    "Tertiary": {
+      "type": "dimension",
+      "value": 200
+    },
+    "Toast": {
+      "type": "dimension",
+      "value": 1200
+    },
+    "Tooltip": {
+      "type": "dimension",
+      "value": 1300
+    }
+  },
+  "pxScale100": {
+    "px/0": 0,
+    "px/1": 1,
+    "px/2": 2,
+    "px/3": 4,
+    "px/4": 6,
+    "px/5": 8,
+    "px/6": 12,
+    "px/7": 16,
+    "px/8": 20,
+    "px/9": 24,
+    "px/10": 28,
+    "px/11": 32,
+    "px/12": 36,
+    "px/13": 40,
+    "px/14": 44,
+    "px/15": 48,
+    "px/16": 52,
+    "px/17": 56,
+    "px/18": 60,
+    "px/19": 64,
+    "px/20": 72,
+    "px/21": 80,
+    "px/22": 88,
+    "px/23": 96,
+    "px/24": 104,
+    "px/25": 112,
+    "px/26": 120,
+    "px/27": 128,
+    "px/-1": -1,
+    "px/-2": -2,
+    "px/-3": -4,
+    "px/-4": -6,
+    "px/-5": -8,
+    "px/-6": -12,
+    "px/-7": -16,
+    "px/6,5": 14
+  }
+}
