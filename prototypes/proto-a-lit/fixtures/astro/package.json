@@ -1,0 +1,22 @@
+{
+  "name": "@labpics/proto-a-lit-astro",
+  "version": "0.0.0",
+  "private": true,
+  "description": "SSR fixture — Astro rendering the Lit Button (criterion 1).",
+  "type": "module",
+  "scripts": {
+    "build": "astro build",
+    "preview": "astro preview --host 127.0.0.1 --port 4324",
+    "ssr:probe": "node ./ssr-probe.mjs"
+  },
+  "dependencies": {
+    "@astrojs/lit": "4.3.0",
+    "@labpics/proto-a-lit": "workspace:*",
+    "@webcomponents/template-shadowroot": "0.2.1",
+    "astro": "5.18.2",
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5"
+  }
+}

@@ -1,3 +1,7 @@
 packages:
   - "packages/*"
   - "apps/*"
+  # Throwaway cross-stack-core prototypes (A: Lit, B: Mitosis) + their SSR
+  # fixtures. Removed by core-scaffold once the base is chosen.
+  - "prototypes/*"
+  - "prototypes/*/fixtures/*"

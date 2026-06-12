@@ -1,0 +1,31 @@
+{
+  "name": "@labpics/proto-a-lit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "THROWAWAY prototype A — Button on Lit/Web Components. Measures the 4 bench criteria (SSR, type-safety, theming via --lab-*, bundle size) for cross-stack-core. Deleted by core-scaffold once the base is chosen.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "size": "node ./scripts/measure-size.mjs",
+    "demo:build": "vite build",
+    "demo:preview": "vite preview --host 127.0.0.1 --port 4322 --strictPort",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "@labpics/colors": "workspace:*",
+    "@labpics/ui-tokens": "workspace:*",
+    "@lit/react": "1.0.8",
+    "@playwright/test": "1.49.1",
+    "@types/node": "22.10.5",
+    "@types/react": "19.0.7",
+    "esbuild": "0.24.2",
+    "tsup": "8.3.6",
+    "typescript": "5.7.3",
+    "vite": "6.0.7"
+  }
+}

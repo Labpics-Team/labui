@@ -1,0 +1,58 @@
+/* Demo-page chrome only. The Button's own styling comes from --lab-* inside
+ * its shadow root; this file just lays out the matrix and loads the theme sets
+ * + the dimension-token contract. */
+@import '@labpics/colors/contract.css';
+@import '@labpics/ui-tokens/tokens.css';
+@import '../fixtures/themes.css';
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--lab-surface-base);
+  color: var(--lab-label-primary);
+  font-family: system-ui, sans-serif;
+  padding: var(--lab-space-lg, 1.5rem);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lab-space-md, 1rem);
+  margin-bottom: var(--lab-space-lg, 1.5rem);
+}
+
+h1 {
+  font-size: var(--lab-font-size-2xl, 1.728rem);
+  margin: 0;
+}
+
+#theme-toggle {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--lab-border-neutral);
+  background: var(--lab-surface-raised);
+  color: var(--lab-label-primary);
+  cursor: pointer;
+}
+
+#matrix {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: var(--lab-space-md, 1rem);
+  align-items: start;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--lab-space-sm, 0.5rem);
+  background: var(--lab-surface-raised);
+  border-radius: var(--lab-radius-card, 1rem);
+}
+
+.cell .caption {
+  font-size: var(--lab-font-size-xs, 0.8333rem);
+  color: var(--lab-label-secondary);
+}
