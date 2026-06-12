@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "build": "next build",
-    "start": "next start -p 4323",
-    "dev": "next dev -p 4323",
+    "start": "next start -p 4401",
+    "dev": "next dev -p 4401",
     "ssr:probe": "node ./ssr-probe.mjs"
   },
   "dependencies": {

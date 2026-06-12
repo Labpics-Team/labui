@@ -14,7 +14,7 @@ import { customElement, property } from 'lit/decorators.js';
  *              are reflected attributes the host drives)
  *
  * Contract: the component consumes ONLY --lab-* semantic custom properties
- * (label-*/fill-*/border-*/surface-*). It NEVER hardcodes a hex and NEVER
+ * (label, fill, border, surface roles). It NEVER hardcodes a hex and NEVER
  * knows about Light/Dark — themes are imitated by swapping the --lab-* set on
  * an ancestor (owner decision: "компонент о темах не знает"). Custom
  * properties pierce the shadow boundary, so the contract reaches inside.
@@ -50,6 +50,12 @@ export class LabButton extends LitElement {
 
   /** Native button type. */
   @property() htmlType: 'button' | 'submit' | 'reset' = 'button';
+
+  /** Focusing the host delegates to the inner native button (a11y). */
+  static override shadowRootOptions: ShadowRootInit = {
+    ...LitElement.shadowRootOptions,
+    delegatesFocus: true,
+  };
 
   static override styles = css`
     :host {
@@ -100,10 +106,14 @@ export class LabButton extends LitElement {
         background-color 120ms ease,
         border-color 120ms ease,
         color 120ms ease;
-      /* Resolved from --lab-* by the [type][kind] selectors below. */
-      background-color: var(--_bg, transparent);
-      color: var(--_fg, var(--lab-label-primary));
-      border-color: var(--_bd, transparent);
+      /* Base: transparent surface, primary label. The [type][kind] selectors
+         below override these directly with the --lab-* role. We set the
+         longhands directly (not via an intermediate --_bg custom property): a
+         var()->var() chain across the shadow boundary fails to re-invalidate in
+         Chromium when the theme set is swapped, so the paint would go stale. */
+      background-color: transparent;
+      color: var(--lab-label-primary);
+      border-color: transparent;
     }
 
     /* Icon-only: square, no text padding asymmetry. */
@@ -115,55 +125,56 @@ export class LabButton extends LitElement {
 
     /* ---- type=accent ---------------------------------------------------- */
     /* Roles read straight from the --lab-* contract — no hex fallbacks in the
-       component. Every role is supplied by the active theme variable set. */
+       component. Every role is supplied by the active theme variable set.
+       Longhands set directly so a theme swap repaints (see base note). */
     :host([type='accent'][kind='fill']) button {
-      --_bg: var(--lab-fill-accent);
-      --_fg: var(--lab-label-on-accent);
+      background-color: var(--lab-fill-accent);
+      color: var(--lab-label-on-accent);
     }
     :host([type='accent'][kind='tinted']) button {
-      --_bg: var(--lab-fill-accent-tinted);
-      --_fg: var(--lab-label-accent);
+      background-color: var(--lab-fill-accent-tinted);
+      color: var(--lab-label-accent);
     }
     :host([type='accent'][kind='border']) button {
-      --_fg: var(--lab-label-accent);
-      --_bd: var(--lab-border-accent);
+      color: var(--lab-label-accent);
+      border-color: var(--lab-border-accent);
     }
     :host([type='accent'][kind='ghost']) button {
-      --_fg: var(--lab-label-accent);
+      color: var(--lab-label-accent);
     }
 
     /* ---- type=neutral --------------------------------------------------- */
     :host([type='neutral'][kind='fill']) button {
-      --_bg: var(--lab-fill-neutral);
-      --_fg: var(--lab-label-on-neutral);
+      background-color: var(--lab-fill-neutral);
+      color: var(--lab-label-on-neutral);
     }
     :host([type='neutral'][kind='tinted']) button {
-      --_bg: var(--lab-fill-neutral-tinted);
-      --_fg: var(--lab-label-primary);
+      background-color: var(--lab-fill-neutral-tinted);
+      color: var(--lab-label-primary);
     }
     :host([type='neutral'][kind='border']) button {
-      --_fg: var(--lab-label-primary);
-      --_bd: var(--lab-border-neutral);
+      color: var(--lab-label-primary);
+      border-color: var(--lab-border-neutral);
     }
     :host([type='neutral'][kind='ghost']) button {
-      --_fg: var(--lab-label-primary);
+      color: var(--lab-label-primary);
     }
 
     /* ---- type=danger ---------------------------------------------------- */
     :host([type='danger'][kind='fill']) button {
-      --_bg: var(--lab-fill-danger);
-      --_fg: var(--lab-label-on-danger);
+      background-color: var(--lab-fill-danger);
+      color: var(--lab-label-on-danger);
     }
     :host([type='danger'][kind='tinted']) button {
-      --_bg: var(--lab-fill-danger-tinted);
-      --_fg: var(--lab-label-danger);
+      background-color: var(--lab-fill-danger-tinted);
+      color: var(--lab-label-danger);
     }
     :host([type='danger'][kind='border']) button {
-      --_fg: var(--lab-label-danger);
-      --_bd: var(--lab-border-danger);
+      color: var(--lab-label-danger);
+      border-color: var(--lab-border-danger);
     }
     :host([type='danger'][kind='ghost']) button {
-      --_fg: var(--lab-label-danger);
+      color: var(--lab-label-danger);
     }
 
     /* ---- interactive states (hover / active / focus) -------------------- */

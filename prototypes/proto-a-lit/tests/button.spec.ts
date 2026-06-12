@@ -49,12 +49,13 @@ test('--lab-* pierces shadow DOM and themes swap with no component edit', async 
   expect(rgb(darkBg)).not.toBe('rgba(0,0,0,0)');
 
   // Swap the variable set only (what the toggle does) — the component is never
-  // touched. The accent fill must change between Light and Dark.
+  // touched. The accent fill must change between Light and Dark. Poll until the
+  // repaint flushes (a single read can race the style recalc after the swap).
   await page.getByTestId('theme-toggle').click();
   await expect(page.getByTestId('theme-name')).toHaveText('light');
-  const lightBg = await innerBg(btn);
-
-  expect(rgb(lightBg)).not.toBe(rgb(darkBg));
+  await expect
+    .poll(async () => rgb(await innerBg(btn)))
+    .not.toBe(rgb(darkBg));
 });
 
 test('loading state is announced and blocks interaction', async ({ page }) => {

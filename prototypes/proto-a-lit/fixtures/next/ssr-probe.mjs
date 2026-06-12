@@ -5,7 +5,7 @@
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
 
-const PORT = 4323;
+const PORT = 4401;
 const server = spawn('pnpm', ['run', 'start'], {
   stdio: ['ignore', 'pipe', 'inherit'],
   shell: true,
