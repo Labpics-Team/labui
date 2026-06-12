@@ -1,4 +1,5 @@
 import { FxEngine } from '../engine/pipeline.js';
+import { getWasm } from '../engine/wasm-bridge.js';
 
 /**
  * Contract for a background texture source behind a glass surface.
@@ -28,11 +29,15 @@ function getDevice(): GPUDevice {
 }
 
 /**
- * Clamp the native dimension to the low-res proxy size:
- * 1/4 native, max 256 px, min 1 px.
+ * Clamp the native dimension to the low-res proxy size.
+ * Delegates to WASM when available; falls back to JS `n/4` capped at 256.
  */
 function proxyDim(native: number): number {
-  return Math.min(Math.max(1, Math.round(native / 4)), 256);
+  try {
+    return getWasm().proxyDim(native);
+  } catch {
+    return Math.min(Math.max(1, Math.round(native / 4)), 256);
+  }
 }
 
 /** Combined texture usage flags for a proxy texture. */

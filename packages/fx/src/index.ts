@@ -7,6 +7,7 @@
  *
  * Part A: engine shaders + pipeline (engine/).
  * Part B: public API surfaces + texture bridge (api/, texture-bridge/, contract/).
+ * Part C: WASM bridge — all CPU computation routes through Rust→WASM.
  */
 
 // ── engine (Part A) ────────────────────────────────────────────────────
@@ -18,6 +19,10 @@ export {
 } from './engine/pipeline.js';
 
 export { WebGL2Fallback } from './engine/fallback.js';
+
+// ── WASM bridge (Part C) ───────────────────────────────────────────────
+export { initFxWasm, getWasm } from './engine/wasm-bridge.js';
+export type { WasmFx } from './engine/wasm-bridge.js';
 
 // ── API surfaces (Part B) ──────────────────────────────────────────────
 export { GlassSurface } from './api/glass.js';

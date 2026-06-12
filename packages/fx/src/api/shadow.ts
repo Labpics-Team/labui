@@ -13,6 +13,9 @@ import type { GlassTextureProvider } from '../texture-bridge/provider.js';
  * black = background) and shadow parameters. The engine runs a compute
  * shader that traces from each pixel toward the light source, measuring
  * occlusion distance to determine local penumbra width.
+ *
+ * Future: `computePenumbra` from WASM provides a CPU fallback for
+ * platforms without WebGPU compute shaders. The GPU path is primary.
  */
 export class ProgressiveShadow {
   private engine: FxEngine;

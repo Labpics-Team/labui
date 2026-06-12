@@ -14,6 +14,7 @@
       "**/test-results/**",
       "**/src/generated/**",
       "**/*.tsbuildinfo",
+      "**/target/**",
       "prototypes/spike-wc-ssr/vendor/**"
     ]
   },

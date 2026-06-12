@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/fx-core", "crates/fx-wasm"]
+resolver = "2"

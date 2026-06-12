@@ -23,6 +23,9 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  "dependencies": {
+    "@labpics/fx-wasm": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "22.10.5",
     "@webgpu/types": "0.1.54",

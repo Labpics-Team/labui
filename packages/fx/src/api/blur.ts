@@ -1,6 +1,7 @@
 import type { FxEngine } from '../engine/pipeline.js';
 import type { BlurConfig } from '../engine/pipeline.js';
 import type { GlassTextureProvider } from '../texture-bridge/provider.js';
+import { getWasm } from '../engine/wasm-bridge.js';
 
 /**
  * Progressive (variable-radius) blur surface.
@@ -97,32 +98,24 @@ export class ProgressiveBlur {
   /**
    * Write per-pixel radii into `radiusMap`.
    *
-   * The radius gradient is baked on the CPU for simplicity. For
-   * production, this should move to a compute shader to avoid
-   * the CPU→GPU upload bottleneck on large surfaces (>2048 px).
+   * Radius map computation is delegated to WASM (Rust) to avoid the
+   * CPU→GPU upload bottleneck on large surfaces (>2048 px).
    */
   private writeRadiusMap(params: ProgressiveBlurParams): void {
-    const { from, to, curve, axis } = params;
-    const w = this.width;
-    const h = this.height;
-    const pixels = new Float32Array(w * h);
-
-    const isHorizontal = axis === 'x';
-
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const t = isHorizontal ? x / (w - 1 || 1) : y / (h - 1 || 1);
-        const eased = applyCurve(t, curve);
-        const radius = from + (to - from) * eased;
-        pixels[y * w + x] = radius;
-      }
-    }
-
+    const wasm = getWasm();
+    const pixels = wasm.generateRadiusMap(
+      this.width,
+      this.height,
+      params.from,
+      params.to,
+      params.curve,
+      params.axis,
+    );
     this.engine.gpuDevice.queue.writeTexture(
       { texture: this.rm },
       pixels,
-      { bytesPerRow: w * 4, rowsPerImage: h },
-      [w, h, 1],
+      { bytesPerRow: this.width * 4, rowsPerImage: this.height },
+      [this.width, this.height, 1],
     );
   }
 }
@@ -138,15 +131,4 @@ export interface ProgressiveBlurParams {
   axis: 'x' | 'y';
   /** Low-res proxy texture of the content to blur. */
   content: GlassTextureProvider;
-}
-
-function applyCurve(t: number, curve: 'linear' | 'ease-out' | 'ease-in-out'): number {
-  switch (curve) {
-    case 'ease-out':
-      return 1 - (1 - t) * (1 - t);
-    case 'ease-in-out':
-      return t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
-    default:
-      return t;
-  }
 }
