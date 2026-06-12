@@ -7,12 +7,16 @@
  * The surfaces read only `--lab-mat-*`; they never observe the mode.
  */
 
-type Material = 'ambient' | 'glassy' | 'solid';
-type Theme = 'dark' | 'light';
-
 const root = document.documentElement;
 
-function bindSelect<T extends string>(testId: string, attr: string): void {
+/** The closed set of valid values per control — the single source of truth for
+ * both the union of allowed strings and the runtime guard. */
+const CONTROLS = {
+  'data-material': ['ambient', 'glassy', 'solid'],
+  'data-theme': ['dark', 'light'],
+} as const;
+
+function bindSelect(testId: string, attr: keyof typeof CONTROLS): void {
   const select = document.querySelector<HTMLSelectElement>(`[data-testid="${testId}"]`);
   if (!select) {
     return;
@@ -22,10 +26,16 @@ function bindSelect<T extends string>(testId: string, attr: string): void {
   if (current) {
     select.value = current;
   }
+  // The values are a closed set. Validate against it before writing to the root
+  // — never trust a value onto the DOM unchecked, even from our own markup
+  // (craft-frontend P11).
+  const allowed = new Set<string>(CONTROLS[attr]);
   select.addEventListener('change', () => {
-    root.setAttribute(attr, select.value as T);
+    if (allowed.has(select.value)) {
+      root.setAttribute(attr, select.value);
+    }
   });
 }
 
-bindSelect<Material>('mode-select', 'data-material');
-bindSelect<Theme>('theme-select', 'data-theme');
+bindSelect('mode-select', 'data-material');
+bindSelect('theme-select', 'data-theme');

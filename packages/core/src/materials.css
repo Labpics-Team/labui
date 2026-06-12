@@ -391,6 +391,23 @@
   --lab-progressive-noise-alpha: var(--lab-progressive-ghost-noise);
 }
 
+/* The scrim is a blur, nothing else — so in Solid mode (no transparency) and
+ * under reduced-transparency it has no honest form and is removed entirely.
+ * Same treatment as the @supports-not path below: a graded blur with no live
+ * blur is meaningless noise. Accessibility/mode consistency wins over the
+ * decorative scrim (matches the .lab-ambient Solid + reduced-transparency
+ * branches above). */
+[data-material="solid"] .lab-progressive,
+[data-material="solid"].lab-progressive {
+  display: none;
+}
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
+@media (prefers-reduced-transparency: reduce) {
+  .lab-progressive {
+    display: none;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════════════════════
  * FALLBACK — no backdrop-filter (older engines, blocked compositing).
  * Equivalent to Solid: push the body toward opaque so text stays legible

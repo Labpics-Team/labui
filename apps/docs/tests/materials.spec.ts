@@ -1,4 +1,23 @@
-import { expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
+
+/**
+ * Read the effective backdrop-filter from a surface, handling both Chromium
+ * (unprefixed `backdrop-filter`) and WebKit (legacy `-webkit-backdrop-filter`).
+ * Returns whichever the engine actually populated, or 'none'.
+ */
+function readBackdropFilter(page: Page, testId: string): Promise<string> {
+  return page.getByTestId(testId).evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const std = cs.backdropFilter;
+    const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
+    for (const value of [std, webkit]) {
+      if (value && value !== 'none') {
+        return value;
+      }
+    }
+    return 'none';
+  });
+}
 
 /**
  * Materials smoke — Ambient / Solid modes, switched by `data-material`.
@@ -55,21 +74,7 @@ test('the semantic --lab-mat-* roles resolve from @labpics/ui-core', async ({ pa
 test('.lab-ambient applies a live backdrop-filter in Ambient mode', async ({ page }) => {
   await page.goto('/materials.html');
 
-  const card = page.getByTestId('surface-card');
-
-  // Chromium computes unprefixed `backdrop-filter`; Safari only the legacy
-  // `-webkit-backdrop-filter`. Take whichever the engine populated.
-  const filter = await card.evaluate((el) => {
-    const cs = getComputedStyle(el);
-    const std = cs.backdropFilter;
-    const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
-    for (const value of [std, webkit]) {
-      if (value && value !== 'none') {
-        return value;
-      }
-    }
-    return std || webkit || 'none';
-  });
+  const filter = await readBackdropFilter(page, 'surface-card');
 
   expect(filter).not.toBe('none');
   expect(filter).toContain('blur');
@@ -80,29 +85,16 @@ test('flipping data-material=solid removes the live blur on EVERY surface', asyn
   await page.goto('/materials.html');
 
   // Read the blur on two structurally different surfaces (card + form) before.
-  const readBlur = (testId: string) =>
-    page.getByTestId(testId).evaluate((el) => {
-      const cs = getComputedStyle(el);
-      const std = cs.backdropFilter;
-      const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
-      for (const value of [std, webkit]) {
-        if (value && value !== 'none') {
-          return value;
-        }
-      }
-      return 'none';
-    });
-
-  const cardAmbient = await readBlur('surface-card');
-  const formAmbient = await readBlur('surface-form');
+  const cardAmbient = await readBackdropFilter(page, 'surface-card');
+  const formAmbient = await readBackdropFilter(page, 'surface-form');
   expect(cardAmbient).toContain('blur');
   expect(formAmbient).toContain('blur');
 
   // The whole point of the task: ONE attribute on the root, ZERO markup change.
   await page.evaluate(() => document.documentElement.setAttribute('data-material', 'solid'));
 
-  const cardSolid = await readBlur('surface-card');
-  const formSolid = await readBlur('surface-form');
+  const cardSolid = await readBackdropFilter(page, 'surface-card');
+  const formSolid = await readBackdropFilter(page, 'surface-form');
 
   // Solid sets --lab-mat-blur to 0px → the unprefixed filter is blur(0px) (or
   // serialised to none). Either way it must no longer be the Ambient blur.
@@ -122,24 +114,11 @@ test('flipping data-material=solid removes the live blur on EVERY surface', asyn
 test('glassy is a web alias of ambient (same backdrop-filter)', async ({ page }) => {
   await page.goto('/materials.html');
 
-  const readBlur = () =>
-    page.getByTestId('surface-card').evaluate((el) => {
-      const cs = getComputedStyle(el);
-      const std = cs.backdropFilter;
-      const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
-      for (const value of [std, webkit]) {
-        if (value && value !== 'none') {
-          return value;
-        }
-      }
-      return 'none';
-    });
-
   await page.evaluate(() => document.documentElement.setAttribute('data-material', 'ambient'));
-  const ambient = await readBlur();
+  const ambient = await readBackdropFilter(page, 'surface-card');
 
   await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glassy'));
-  const glassy = await readBlur();
+  const glassy = await readBackdropFilter(page, 'surface-card');
 
   // Owner verdict: on the web, Glassy degrades honestly to Ambient — identical.
   expect(glassy).toBe(ambient);
@@ -197,4 +176,20 @@ test('the progressive-blur scrim applies a graded backdrop blur', async ({ page 
   // A graded blur = a real blur revealed by a gradient mask.
   expect(filter).toContain('blur');
   expect(mask).toContain('gradient');
+});
+
+test('the progressive-blur scrim is removed in Solid mode', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  // Ambient: the scrim is present and laid out.
+  await expect(page.getByTestId('progressive')).toBeVisible();
+
+  // Solid has no transparency, so a graded blur has no honest form — it must be
+  // removed (display:none), consistent with the .lab-ambient Solid branch.
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'solid'));
+
+  const display = await page
+    .getByTestId('progressive')
+    .evaluate((el) => getComputedStyle(el).display);
+  expect(display).toBe('none');
 });
