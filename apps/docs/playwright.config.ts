@@ -13,9 +13,9 @@ import { defineConfig, devices } from '@playwright/test';
  *   - Update with `pnpm --filter @labpics/ui-docs test:e2e:update`.
  *   - `maxDiffPixelRatio` keeps anti-aliasing noise from flaking the suite;
  *     tighten per-test when pixel-exact checks are needed.
- *   - WebKit is enabled (materials-system / glass-tier-base): backdrop-filter
- *     and the glass material must read the same across engines, so the glass
- *     smoke runs on Chromium AND WebKit.
+ *   - WebKit is enabled (materials-system): backdrop-filter and the Ambient
+ *     material must read the same across engines, so the materials smoke runs
+ *     on Chromium AND WebKit.
  */
 export default defineConfig({
   testDir: './tests',
