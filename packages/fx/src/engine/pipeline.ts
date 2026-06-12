@@ -23,6 +23,8 @@ export interface LensConfig {
   tint: [number, number, number];
   /** Chromatic aberration strength 0–1. 0 = off, 1 = full dispersion. */
   chromaticAberration: number;
+  /** Enable environment cubemap reflection. Requires cubemap texture in renderLens(). */
+  hasEnvmap: boolean;
 }
 
 export interface BlurConfig {
@@ -47,7 +49,7 @@ export interface ShadowConfig {
 
 // ---- Internal constants --------------------------------------------------
 
-const LENS_UNIFORM_SIZE = 48; // 12 × f32 — 3×IOR + depth + fresnel + _pad + vec3 tint + ca
+const LENS_UNIFORM_SIZE = 64; // 16 × f32 — struct rounded to alignment=16 (vec3 tint)
 
 // ---- Main engine class ---------------------------------------------------
 
@@ -69,11 +71,13 @@ export class FxEngine {
   // Reusable bind-group layouts — created once, reused per dispatch.
   private lensUniformLayout: GPUBindGroupLayout;
   private textureSamplerLayout: GPUBindGroupLayout;
+  private cubemapLayout: GPUBindGroupLayout;
   private downsampleLayout: GPUBindGroupLayout;
 
   // Reusable resources — allocated once, written per config change.
   private lensUniformBuffer: GPUBuffer;
   private linearSampler: GPUSampler;
+  private placeholderCubemap: GPUTexture;
 
   constructor(device: GPUDevice) {
     this.device = device;
@@ -97,6 +101,22 @@ export class FxEngine {
           binding: 0,
           visibility: GPUShaderStage.FRAGMENT,
           texture: { sampleType: 'float' as const, viewDimension: '2d' as const },
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.FRAGMENT,
+          sampler: { type: 'filtering' as const },
+        },
+      ],
+    });
+
+    this.cubemapLayout = device.createBindGroupLayout({
+      label: 'cubemap',
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.FRAGMENT,
+          texture: { sampleType: 'float' as const, viewDimension: 'cube' as const },
         },
         {
           binding: 1,
@@ -196,6 +216,23 @@ export class FxEngine {
       addressModeV: 'clamp-to-edge',
     });
 
+    // ---- Placeholder cubemap (1×1×6 black) — bound when no real cubemap supplied ----
+    this.placeholderCubemap = device.createTexture({
+      label: 'placeholder-cubemap',
+      size: [1, 1, 6],
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+    });
+    const blackPixel = new Uint8Array([0, 0, 0, 255]);
+    for (let face = 0; face < 6; face++) {
+      device.queue.writeTexture(
+        { texture: this.placeholderCubemap, origin: { x: 0, y: 0, z: face } },
+        blackPixel,
+        { bytesPerRow: 4, rowsPerImage: 1 },
+        [1, 1, 1],
+      );
+    }
+
     // ---- Shader modules -----------------------------------------------
     const lensModule = device.createShaderModule({
       label: 'lens-shader',
@@ -218,7 +255,7 @@ export class FxEngine {
       label: 'lens-pipeline',
       layout: device.createPipelineLayout({
         label: 'lens-layout',
-        bindGroupLayouts: [this.lensUniformLayout, this.textureSamplerLayout],
+        bindGroupLayouts: [this.lensUniformLayout, this.textureSamplerLayout, this.cubemapLayout],
       }),
       vertex: {
         module: lensModule,
@@ -281,7 +318,12 @@ export class FxEngine {
   // ---- Public API --------------------------------------------------------
 
   /** Render one glass surface: background → refracted + Fresnel-tinted output. */
-  renderLens(backgroundTexture: GPUTexture, outputView: GPUTextureView, config: LensConfig): void {
+  renderLens(
+    backgroundTexture: GPUTexture,
+    outputView: GPUTextureView,
+    config: LensConfig,
+    envCubemap?: GPUTexture,
+  ): void {
     const device = this.device;
 
     // Write uniform — once per config change.
@@ -298,6 +340,8 @@ export class FxEngine {
     uniformData[9] = config.tint[1];
     uniformData[10] = config.tint[2];
     uniformData[11] = config.chromaticAberration;
+    uniformData[12] = config.hasEnvmap ? 1.0 : 0.0;
+    // uniformData[13..15] — trailing padding (struct alignment = 16)
     device.queue.writeBuffer(this.lensUniformBuffer, 0, uniformData);
 
     const bindGroup = device.createBindGroup({
@@ -311,6 +355,18 @@ export class FxEngine {
       layout: this.textureSamplerLayout,
       entries: [
         { binding: 0, resource: backgroundTexture.createView() },
+        { binding: 1, resource: this.linearSampler },
+      ],
+    });
+
+    // Cubemap bind group — use provided cubemap or fall back to placeholder.
+    // The shader samples textureSampleLevel with LOD 0; placeholder is 1×1 black.
+    const activeCubemap = envCubemap ?? this.placeholderCubemap;
+    const cubemapBindGroup = device.createBindGroup({
+      label: 'lens-cubemap-bg',
+      layout: this.cubemapLayout,
+      entries: [
+        { binding: 0, resource: activeCubemap.createView({ dimension: 'cube' as const }) },
         { binding: 1, resource: this.linearSampler },
       ],
     });
@@ -331,6 +387,7 @@ export class FxEngine {
     pass.setPipeline(this.lensPipeline);
     pass.setBindGroup(0, bindGroup);
     pass.setBindGroup(1, textureBindGroup);
+    pass.setBindGroup(2, cubemapBindGroup);
     pass.draw(3, 1, 0, 0);
     pass.end();
 
@@ -523,6 +580,7 @@ export class FxEngine {
 
   destroy(): void {
     this.lensUniformBuffer.destroy();
+    this.placeholderCubemap.destroy();
     this.device.destroy();
     FxEngine.device = null;
   }

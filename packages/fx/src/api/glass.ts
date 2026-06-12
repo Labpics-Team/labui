@@ -44,6 +44,7 @@ export class GlassSurface {
       fresnelPower: params.fresnelPower,
       tint: params.tint,
       chromaticAberration: params.chromaticAberration,
+      hasEnvmap: params.hasEnvmap ?? false,
     };
 
     this.engine.renderLens(background.texture, this.output.createView(), config);
@@ -97,6 +98,8 @@ export interface GlassParams {
   tint: [number, number, number];
   /** Colour-fringe splitting strength, 0–1. Default 0.3. */
   chromaticAberration: number;
+  /** Enable environment cubemap reflection (WebGPU only; WebGL2 degrades to tint). */
+  hasEnvmap?: boolean;
   /** Low-res proxy texture of the background behind the glass. */
   background: GlassTextureProvider;
   /** Glass element CSS width (defaults to background rect width). */

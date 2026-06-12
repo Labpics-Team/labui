@@ -12,6 +12,7 @@ struct LensUniforms {
     _pad: f32,     // alignment — vec3<f32> needs 16-byte stride
     tint: vec3<f32>,
     chromatic_aberration: f32,
+    has_envmap: f32, // 0.0 = no cubemap, 1.0 = use cubemap
 }
 
 struct VertexOutput {
@@ -22,6 +23,8 @@ struct VertexOutput {
 @group(0) @binding(0) var<uniform> lens: LensUniforms;
 @group(1) @binding(0) var background: texture_2d<f32>;
 @group(1) @binding(1) var bg_sampler: sampler;
+@group(2) @binding(0) var cubemap: texture_cube<f32>;
+@group(2) @binding(1) var cubemap_sampler: sampler;
 
 // Fullscreen triangle — 3 vertices covering clip space without a vertex buffer.
 // Standard WebGPU pattern: avoids the seam of a two-triangle quad.
@@ -81,9 +84,17 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let b = textureSample(background, bg_sampler, b_uv).b;
     let refracted = vec4<f32>(r, g, b, 1.0);
 
-    // Edge reflection: tint dominates at grazing angles.
-    let reflected = vec4<f32>(lens.tint, 1.0);
+    // Environment map reflection — sample cubemap in reflect direction.
+    // View direction from UV: (0.5,0.5) = straight-on, corners = grazing angle.
+    let view_dir = vec3<f32>(in.uv - vec2<f32>(0.5, 0.5), 1.0);
+    let normal = vec3<f32>(0.0, 0.0, 1.0);
+    let reflect_vec = view_dir - 2.0 * dot(view_dir, normal) * normal;
+    let env_reflected = textureSampleLevel(cubemap, cubemap_sampler, reflect_vec, 0.0);
 
-    // Mix: centre transmits (refracted), edge reflects (tint).
+    // Tint reflection (fallback when no cubemap).
+    let tint_reflected = vec4<f32>(lens.tint, 1.0);
+    let reflected = mix(tint_reflected, env_reflected, lens.has_envmap);
+
+    // Mix: centre transmits (refracted), edge reflects (envmap or tint).
     return mix(refracted, reflected, fresnel);
 }

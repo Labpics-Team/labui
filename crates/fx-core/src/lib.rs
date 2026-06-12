@@ -1,5 +1,6 @@
 pub mod blur;
 pub mod cauchy;
+pub mod cubemap;
 pub mod lens;
 pub mod microfacet;
 pub mod refraction;

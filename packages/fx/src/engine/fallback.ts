@@ -34,6 +34,7 @@ uniform float u_depth;
 uniform float u_fresnel_power;
 uniform vec3 u_tint;
 uniform float u_chromatic_aberration;
+uniform float u_has_envmap;
 uniform sampler2D u_background;
 
 void main() {
@@ -213,6 +214,10 @@ export class WebGL2Fallback {
     gl.uniform1f(
       gl.getUniformLocation(this.lensProgram, 'u_chromatic_aberration'),
       config.chromaticAberration,
+    );
+    gl.uniform1f(
+      gl.getUniformLocation(this.lensProgram, 'u_has_envmap'),
+      config.hasEnvmap ? 1.0 : 0.0,
     );
 
     gl.activeTexture(gl.TEXTURE0);
