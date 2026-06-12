@@ -15,11 +15,8 @@
   },
   "dependencies": {
     "@labpics/colors": "workspace:*",
-<<<<<<< HEAD
-    "@labpics/ui-shadow": "workspace:*",
-=======
     "@labpics/ui-core": "workspace:*",
->>>>>>> origin/main
+    "@labpics/ui-shadow": "workspace:*",
     "@labpics/ui-tokens": "workspace:*"
   },
   "devDependencies": {
