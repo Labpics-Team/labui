@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — shadow stack</title>
+    <link rel="stylesheet" href="./shadow-demo.css" />
+  </head>
+  <body>
+    <main>
+      <header class="demo-head">
+        <h1 data-testid="shadow-title">Shadow stack</h1>
+        <p class="lede">
+          Four layers — Minor / Ambient / Penumbra / Major — composed into four
+          elevation roles. Surface-tinted (never pure black), one global light
+          angle. Light and dark are a variable swap, not a re-author.
+        </p>
+
+        <!-- Controls are the only JS on the page; the cards render without it. -->
+        <div class="controls">
+          <label class="control">
+            <span>Light angle</span>
+            <input
+              type="range"
+              id="angle"
+              data-testid="angle-input"
+              min="0"
+              max="90"
+              step="1"
+              value="35"
+            />
+            <output data-testid="angle-output" id="angle-out">35°</output>
+          </label>
+
+          <button type="button" id="theme-toggle" data-testid="theme-toggle">
+            Switch to dark
+          </button>
+        </div>
+      </header>
+
+      <section class="grid" data-testid="elevation-grid">
+        <article class="card lab-elevation-resting" data-testid="card-resting">
+          <h2>resting</h2>
+          <p><code>.lab-elevation-resting</code></p>
+        </article>
+        <article class="card lab-elevation-raised" data-testid="card-raised">
+          <h2>raised</h2>
+          <p><code>.lab-elevation-raised</code></p>
+        </article>
+        <article class="card lab-elevation-overlay" data-testid="card-overlay">
+          <h2>overlay</h2>
+          <p><code>.lab-elevation-overlay</code></p>
+        </article>
+        <article class="card lab-elevation-modal" data-testid="card-modal">
+          <h2>modal</h2>
+          <p><code>.lab-elevation-modal</code></p>
+        </article>
+      </section>
+
+      <!-- A second surface with its own tint, proving the shadow takes the
+           surface hue (not black) — owner verification: ">= 2 surfaces".
+           The class form resolves --lab-surface-shadow-tint at the element. -->
+      <section class="grid tinted-surface" data-testid="tinted-grid">
+        <article class="card card-tinted lab-elevation-raised" data-testid="card-tinted-raised">
+          <h2>raised · tinted</h2>
+          <p>shadow takes the surface hue</p>
+        </article>
+        <article class="card card-tinted lab-elevation-modal" data-testid="card-tinted-modal">
+          <h2>modal · tinted</h2>
+          <p>same role, tinted shadow</p>
+        </article>
+      </section>
+    </main>
+
+    <script type="module" src="./shadow-demo.ts"></script>
+  </body>
+</html>

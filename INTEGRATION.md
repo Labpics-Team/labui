@@ -32,6 +32,8 @@ resolved `--lab-label-primary` token — proving the integration point works.
 | Need | Status |
 | ---- | ------ |
 | Published `@labpics/colors` npm package exposing a CSS entry (`contract.css` or equivalent) and/or a JS runtime that injects `--lab-*`. | **Open** — filed against `lab-colors-v1` (`native-and-release` / `runtime-engine`). LabUI must not implement it. |
+| **JND-calibrated shadow alphas** for the four shadow layers, written to the existing `--lab-shadow-alpha-{minor,ambient,penumbra,major}` contract. `@labpics/ui-shadow` ships with PROVISIONAL Figma values (light @1/@2/@4/@12, dark @2/@4/@12/@20) behind these names; the final alphas come from the JND surface contracts. | **Open** — filed against `lab-colors-v1` (`surface-jnd-contracts`). LabUI must not compute JND/derive the solver. Swap-in is a no-op: same variable names, no geometry change. |
+| **Per-surface shadow tint** `--lab-surface-shadow-tint` — the surface hue a shadow should be tinted with (the shadow is the surface's own colour, never pure black). `@labpics/ui-shadow` reads it and falls back to the theme dark anchor (`#101012`) when absent. | **Open** — filed against `lab-colors-v1` (`runtime-engine` resolves surface roles). LabUI only consumes the variable. |
 
 Any further missing core API (e.g. a token for a specific surface role) is filed
 as a request to `lab-colors-v1`, never implemented inside LabUI.
