@@ -20,8 +20,9 @@ export const defaultConfig: TokensConfig = {
     // 4px on a 16px root. Multiplier N => N * 4px. Scales with root font-size.
     baseRem: 0.25,
     steps: {
+      // Pure rem multiplier model. Hairline border-widths (1px) are a separate
+      // border concern, not spacing — kept out so this scale stays unambiguous.
       '0': 0, //   0px — explicit zero token
-      px: 0.25, //   1px is a hairline; expressed as 0.0625rem below via `hair`
       '1': 1, //   4px
       '2': 2, //   8px
       '3': 3, //  12px

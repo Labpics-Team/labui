@@ -275,18 +275,6 @@
           "css": "8rem"
         }
       }
-    },
-    "px": {
-      "$type": "dimension",
-      "$value": {
-        "value": 1,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "0.0625rem"
-        }
-      }
     }
   },
   "radius": {

@@ -28,7 +28,6 @@
   --lab-space-28: 7rem;
   --lab-space-30: 7.5rem;
   --lab-space-32: 8rem;
-  --lab-space-px: 0.0625rem;
   --lab-space-none: var(--lab-space-0); /* -> 0 */
   --lab-space-xs: var(--lab-space-1); /* -> 1 */
   --lab-space-sm: var(--lab-space-2); /* -> 2 */

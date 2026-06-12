@@ -30,7 +30,6 @@ export const space = {
   '28': 'var(--lab-space-28)',
   '30': 'var(--lab-space-30)',
   '32': 'var(--lab-space-32)',
-  px: 'var(--lab-space-px)',
   none: 'var(--lab-space-0)',
   xs: 'var(--lab-space-1)',
   sm: 'var(--lab-space-2)',
