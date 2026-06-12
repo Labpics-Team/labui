@@ -120,6 +120,18 @@ function labelFor(config: TypographyConfig, step: number): string {
 }
 
 function assertConfig(config: TypographyConfig): void {
+  if (!Number.isFinite(config.basePx) || config.basePx <= 0) {
+    throw new Error('typography basePx must be positive');
+  }
+  if (!Number.isInteger(config.stepsDown) || config.stepsDown < 0) {
+    throw new Error('typography stepsDown must be a non-negative integer');
+  }
+  if (!Number.isInteger(config.stepsUp) || config.stepsUp < 0) {
+    throw new Error('typography stepsUp must be a non-negative integer');
+  }
+  if (config.lineHeightBands.length === 0) {
+    throw new Error('typography lineHeightBands must not be empty');
+  }
   if (config.ratioMin <= 0 || config.ratioMax <= 0) {
     throw new Error('typography ratios must be positive');
   }

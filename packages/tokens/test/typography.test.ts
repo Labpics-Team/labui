@@ -81,9 +81,20 @@ describe('fluid typography — gradient model', () => {
     const { fontSizes } = buildTypography(ty);
     for (const t of fontSizes) {
       expect(t.cssValue.startsWith('clamp(')).toBe(true);
-      // rem must appear in the floor and the ceiling at minimum.
-      const remCount = (t.cssValue.match(/rem/g) ?? []).length;
-      expect(remCount, `${t.name} must keep rem in min/intercept/max`).toBeGreaterThanOrEqual(2);
+      // Assert the actual contract per clamp position, not a surrogate count:
+      // floor and ceiling are pure rem; the preferred part mixes vw + rem so
+      // the gradient moves with the viewport AND scales with user zoom.
+      const parts = t.cssValue
+        .slice('clamp('.length, -1)
+        .split(',')
+        .map((p) => p.trim());
+      expect(parts, `${t.name} clamp must have 3 parts`).toHaveLength(3);
+      const [floor, preferred, ceiling] = parts as [string, string, string];
+      expect(floor, `${t.name} floor must be pure rem`).toMatch(/^-?[\d.]+rem$/);
+      expect(ceiling, `${t.name} ceiling must be pure rem`).toMatch(/^-?[\d.]+rem$/);
+      expect(preferred, `${t.name} preferred must carry vw`).toMatch(/-?[\d.]+vw/);
+      expect(preferred, `${t.name} preferred must carry a rem intercept`).toMatch(/[\d.]+rem/);
+      expect(preferred, `${t.name} preferred must not use px`).not.toMatch(/px/);
     }
   });
 

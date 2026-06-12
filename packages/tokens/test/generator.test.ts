@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultConfig } from '../src/config/default-config.js';
 import { resolveConfig } from '../src/config/merge.js';
+import { pxToRem } from '../src/domain/format.js';
 import { generate, generateFromOverride } from '../src/generate/index.js';
 
 describe('generator — single source, three outputs, no divergence', () => {
@@ -70,6 +71,35 @@ describe('generator — single source, three outputs, no divergence', () => {
     for (const v of new Set(tsVars)) {
       expect(css).toContain(`${v}:`);
     }
+  });
+});
+
+describe('guards — invalid input fails loudly before corrupting artifacts', () => {
+  it('a token name that would break a CSS custom property throws, naming the offender', () => {
+    expect(() => generateFromOverride({ spacing: { steps: { 'foo bar': 5 } } })).toThrow(
+      /foo bar/,
+    );
+    expect(() => generateFromOverride({ zIndex: { levels: ['body/s'] } })).toThrow(/body\/s/);
+  });
+
+  it('pxToRem rejects a zero/non-finite base instead of emitting Infinity/NaN', () => {
+    expect(() => pxToRem(16, 0)).toThrow(RangeError);
+    expect(() => pxToRem(16, Number.NaN)).toThrow(RangeError);
+    expect(pxToRem(32)).toBe(2);
+  });
+
+  it('non-integer z-index config is rejected (the scale is an integer ladder)', () => {
+    expect(() => generateFromOverride({ zIndex: { gap: 0.5 } })).toThrow(/integer/);
+    expect(() => generateFromOverride({ zIndex: { startAt: 1.5 } })).toThrow(/integer/);
+  });
+
+  it('TS aliases reference their OWN custom property — the semantic layer survives', () => {
+    const { ts } = generate(defaultConfig);
+    // Overriding --lab-space-sm on :root must reach TS consumers of space.sm,
+    // so the alias must NOT collapse to its primitive target var.
+    expect(ts).toContain("sm: 'var(--lab-space-sm)'");
+    expect(ts).toContain("card: 'var(--lab-radius-card)'");
+    expect(ts).not.toContain("sm: 'var(--lab-space-2)'");
   });
 });
 

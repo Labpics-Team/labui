@@ -45,7 +45,10 @@ function scaleConst(
     entries.push([t.name, `var(${cssVarName(t.kind, t.name)})`]);
   }
   for (const a of aliases) {
-    entries.push([a.name, a.cssValue]);
+    // Reference the alias's OWN custom property, not its target's: collapsing
+    // to the primitive would skip the semantic layer, so a `:root` override of
+    // the semantic token would never reach TS consumers.
+    entries.push([a.name, `var(${cssVarName(a.kind, a.name)})`]);
   }
 
   const body = entries.map(([k, v]) => `  ${quoteKey(k)}: '${v}',`).join('\n');

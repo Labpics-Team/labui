@@ -34,5 +34,8 @@ export function px(value: number, precision = 4): string {
 
 /** Convert px to rem against a base (default 16px root). */
 export function pxToRem(pxValue: number, basePx = 16): number {
+  if (!Number.isFinite(basePx) || basePx <= 0) {
+    throw new RangeError(`basePx must be a positive finite number, got ${basePx}`);
+  }
   return pxValue / basePx;
 }

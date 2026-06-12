@@ -43,7 +43,7 @@ function dimensionGroup(list: readonly ResolvedToken[]): DtcgGroup {
   for (const t of list) {
     group[t.name] = {
       $type: 'dimension',
-      $value: { value: round(t.numeric ?? 0), unit: 'px' },
+      $value: { value: round(requireNumeric(t)), unit: 'px' },
       ...(t.description ? { $description: t.description } : {}),
       $extensions: { [EXT_KEY]: { css: t.cssValue } },
     };
@@ -56,7 +56,7 @@ function numberGroup(list: readonly ResolvedToken[]): DtcgGroup {
   for (const t of list) {
     group[t.name] = {
       $type: 'number',
-      $value: round(t.numeric ?? 0),
+      $value: round(requireNumeric(t)),
       ...(t.description ? { $description: t.description } : {}),
     };
   }
@@ -70,7 +70,7 @@ function fontSizeGroup(list: readonly ResolvedToken[]): DtcgGroup {
     group[t.name] = {
       $type: 'dimension',
       // The canonical scalar is the wide-anchor (max) size — the "design" size.
-      $value: { value: round(f ? f.maxPx : (t.numeric ?? 0)), unit: 'px' },
+      $value: { value: round(f ? f.maxPx : requireNumeric(t)), unit: 'px' },
       $extensions: {
         [EXT_KEY]: {
           css: t.cssValue,
@@ -94,4 +94,15 @@ function fontSizeGroup(list: readonly ResolvedToken[]): DtcgGroup {
 
 function round(value: number): number {
   return Number(num(value));
+}
+
+/**
+ * A scalar token without `numeric` is a contract violation — exporting `0` in
+ * its place would silently corrupt the DTCG artifact, so fail loudly instead.
+ */
+function requireNumeric(t: ResolvedToken): number {
+  if (t.numeric == null) {
+    throw new Error(`Token "${t.name}" (${t.kind}) is missing its numeric value`);
+  }
+  return t.numeric;
 }

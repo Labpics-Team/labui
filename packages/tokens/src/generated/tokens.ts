@@ -30,14 +30,14 @@ export const space = {
   '28': 'var(--lab-space-28)',
   '30': 'var(--lab-space-30)',
   '32': 'var(--lab-space-32)',
-  none: 'var(--lab-space-0)',
-  xs: 'var(--lab-space-1)',
-  sm: 'var(--lab-space-2)',
-  md: 'var(--lab-space-4)',
-  lg: 'var(--lab-space-6)',
-  xl: 'var(--lab-space-8)',
-  '2xl': 'var(--lab-space-12)',
-  '3xl': 'var(--lab-space-16)',
+  none: 'var(--lab-space-none)',
+  xs: 'var(--lab-space-xs)',
+  sm: 'var(--lab-space-sm)',
+  md: 'var(--lab-space-md)',
+  lg: 'var(--lab-space-lg)',
+  xl: 'var(--lab-space-xl)',
+  '2xl': 'var(--lab-space-2xl)',
+  '3xl': 'var(--lab-space-3xl)',
 } as const;
 
 export type SpaceToken = keyof typeof space;
@@ -54,11 +54,11 @@ export const radius = {
   '4xl': 'var(--lab-radius-4xl)',
   '5xl': 'var(--lab-radius-5xl)',
   full: 'var(--lab-radius-full)',
-  none: 'var(--lab-radius-0)',
-  control: 'var(--lab-radius-lg)',
-  card: 'var(--lab-radius-2xl)',
-  pill: 'var(--lab-radius-full)',
-  circle: 'var(--lab-radius-full)',
+  none: 'var(--lab-radius-none)',
+  control: 'var(--lab-radius-control)',
+  card: 'var(--lab-radius-card)',
+  pill: 'var(--lab-radius-pill)',
+  circle: 'var(--lab-radius-circle)',
 } as const;
 
 export type RadiusToken = keyof typeof radius;

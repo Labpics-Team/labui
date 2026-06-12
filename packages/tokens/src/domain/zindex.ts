@@ -46,6 +46,12 @@ export function buildZIndex(config: ZIndexConfig): ResolvedToken[] {
 }
 
 function assertConfig(config: ZIndexConfig): void {
+  if (!Number.isInteger(config.startAt)) {
+    throw new Error(`zIndex.startAt must be a finite integer, got ${config.startAt}`);
+  }
+  if (!Number.isInteger(config.gap)) {
+    throw new Error(`zIndex.gap must be a finite integer, got ${config.gap}`);
+  }
   if (config.levels.length === 0) {
     throw new Error('zIndex.levels must not be empty');
   }

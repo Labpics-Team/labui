@@ -59,7 +59,25 @@ describe('reconciliation with Figma snapshot — PRESERVED values', () => {
 
   it('the full set of 15 z-index layer NAMES is preserved (re-expressed semantically)', () => {
     expect(Object.keys(snapshot.zIndex)).toHaveLength(15);
-    expect(Object.keys(doc['z-index'])).toHaveLength(15);
+    // The exact semantic ladder, in stacking order — not just a count, so a
+    // renamed/reordered layer cannot slip through as a false positive.
+    expect(Object.keys(doc['z-index'])).toEqual([
+      'primary',
+      'secondary',
+      'tertiary',
+      'quaternary',
+      'grouped-primary',
+      'grouped-secondary',
+      'grouped-tertiary',
+      'inverted',
+      'skip-link',
+      'dropdown',
+      'sticky',
+      'modal-underlay',
+      'modal',
+      'toast',
+      'tooltip',
+    ]);
   });
 });
 
