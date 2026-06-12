@@ -1,0 +1,17 @@
+{
+  "name": "@labpics/colors",
+  "version": "0.0.0-stub.0",
+  "private": true,
+  "description": "TEMPORARY local stub of the @labpics/colors CSS contract. Replace with the published package from lab-colors-v1 (native-and-release).",
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    "./contract.css": "./contract.css",
+    "./package.json": "./package.json"
+  },
+  "files": ["contract.css"],
+  "scripts": {
+    "build": "node -e \"process.stdout.write('stub: no build step\\n')\"",
+    "typecheck": "node -e \"process.stdout.write('stub: no typecheck\\n')\""
+  }
+}
