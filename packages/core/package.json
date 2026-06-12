@@ -13,16 +13,19 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./glass.css": "./dist/glass.css",
+    "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": false,
+  "sideEffects": ["./dist/glass.css"],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "tsup": "8.3.6",
+    "tsx": "4.19.2",
     "typescript": "5.7.3"
   }
 }

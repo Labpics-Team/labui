@@ -1,0 +1,29 @@
+{
+  "name": "@labpics/spike-wc-ssr",
+  "version": "0.0.0",
+  "private": true,
+  "description": "THROWAWAY falsifier spike for decision-and-adr (labui-v1). Renders the proto-A Lit Button server-side on Vue 3, Svelte 5 and Solid to settle the open matrix measurement: does WC-SSR hold beyond Astro/Next? Deleted by core-scaffold.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "scripts": {
+    "probe:vue": "vite build --config vue/vite.config.ts && node vue/ssr-probe.mjs",
+    "probe:svelte": "vite build --config svelte/vite.config.ts && node svelte/ssr-probe.mjs",
+    "probe:solid": "vite build --config solid/vite.config.ts && node solid/ssr-probe.mjs",
+    "probe:all": "pnpm probe:vue; pnpm probe:svelte; pnpm probe:solid"
+  },
+  "dependencies": {
+    "@lit-labs/ssr": "3.2.2",
+    "lit": "3.3.3"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "5.0.3",
+    "@types/node": "22.10.5",
+    "@vitejs/plugin-vue": "5.2.1",
+    "solid-js": "1.9.3",
+    "svelte": "5.16.0",
+    "typescript": "5.7.3",
+    "vite": "6.0.7",
+    "vite-plugin-solid": "2.11.0",
+    "vue": "3.5.13"
+  }
+}

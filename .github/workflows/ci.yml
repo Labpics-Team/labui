@@ -79,8 +79,10 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Install Playwright browsers (Chromium)
-        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium
+      - name: Install Playwright browsers (Chromium + WebKit)
+        # WebKit added with materials-system: the glass material must read the
+        # same across engines, so the glass smoke runs on Chromium AND WebKit.
+        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium webkit
 
       - name: Run smoke tests
         run: pnpm test:e2e
