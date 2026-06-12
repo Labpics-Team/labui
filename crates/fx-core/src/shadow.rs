@@ -51,8 +51,9 @@ pub fn compute_penumbra(
 
     let w = width as f64;
     let h = height as f64;
-    // Maximum diagonal steps — bound the trace to avoid infinite loops
-    let max_steps = ((w * w + h * h).sqrt().ceil() as u32).max(1);
+    // Maximum diagonal steps — bound the trace to avoid infinite loops.
+    // Capped at 1024 to prevent runaway on pathological inputs.
+    let max_steps = ((w * w + h * h).sqrt().ceil() as u32).clamp(1, 1024);
     // Normalization factor: larger depth/scale → more gradual occlusion accumulation
     let norm_factor = (depth * 8.0 * penumbra_scale + 1.0).max(1.0);
 

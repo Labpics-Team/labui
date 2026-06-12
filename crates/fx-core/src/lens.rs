@@ -13,22 +13,6 @@ pub struct LensConfig {
     pub chromatic_aberration: f64,
 }
 
-/// Fresnel reflectance at normal incidence (θ = 0°).
-///
-/// Formula: F₀ = ((n₁ - n₂) / (n₁ + n₂))²
-/// Assuming air (IOR ≈ 1.0) as the surrounding medium:
-/// F₀ = ((ior - 1) / (ior + 1))²
-///
-/// | Medium       | IOR  | F₀    |
-/// |-------------|------|-------|
-/// | Water       | 1.33 | 0.020 |
-/// | Crown glass | 1.52 | 0.043 |
-/// | Diamond     | 2.42 | 0.172 |
-pub fn fresnel_f0(ior: f64) -> f64 {
-    let t = (ior - 1.0) / (ior + 1.0);
-    t * t
-}
-
 /// Schlick Fresnel approximation — reflectance at arbitrary incidence angle.
 ///
 /// F(θ) = F₀ + (1 − F₀) · (1 − cos θ)^power
@@ -38,7 +22,13 @@ pub fn fresnel_f0(ior: f64) -> f64 {
 ///
 /// The `power` parameter controls the transition curve.
 /// Standard Schlick uses 5.0; glass-like materials may use 3.0–7.0.
+///
+/// When `power` ≈ 5.0, delegates to `crate::microfacet::schlick_fresnel`
+/// for consistency with the physics authority.
 pub fn fresnel(f0: f64, cos_theta: f64, power: f64) -> f64 {
+    if (power - 5.0).abs() < 1e-10 {
+        return crate::microfacet::schlick_fresnel(cos_theta, f0);
+    }
     let cos = cos_theta.clamp(0.0, 1.0);
     f0 + (1.0 - f0) * (1.0 - cos).powf(power)
 }
@@ -80,13 +70,13 @@ mod tests {
 
     #[test]
     fn fresnel_f0_water() {
-        let f0 = fresnel_f0(1.33);
+        let f0 = crate::microfacet::fresnel_f0(1.33);
         assert!((f0 - 0.02).abs() < 0.005);
     }
 
     #[test]
     fn fresnel_f0_glass() {
-        let f0 = fresnel_f0(1.5);
+        let f0 = crate::microfacet::fresnel_f0(1.5);
         assert!((f0 - 0.04).abs() < 0.01);
     }
 

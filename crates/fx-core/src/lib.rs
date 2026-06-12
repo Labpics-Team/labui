@@ -1,4 +1,8 @@
 pub mod blur;
+pub mod cauchy;
 pub mod lens;
+pub mod microfacet;
+pub mod refraction;
 pub mod shadow;
 pub mod texture;
+pub mod vec3;
