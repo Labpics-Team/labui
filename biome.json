@@ -13,7 +13,8 @@
       "**/playwright-report/**",
       "**/test-results/**",
       "**/src/generated/**",
-      "**/*.tsbuildinfo"
+      "**/*.tsbuildinfo",
+      "prototypes/spike-wc-ssr/vendor/**"
     ]
   },
   "formatter": {
