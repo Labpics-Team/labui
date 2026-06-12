@@ -14,11 +14,12 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": ["./dist/glass.css"],
+  "sideEffects": ["./dist/materials.css", "./dist/glass.css"],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit"

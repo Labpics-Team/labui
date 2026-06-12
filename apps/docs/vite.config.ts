@@ -6,9 +6,11 @@ import { defineConfig } from 'vite';
 // smoke fixture today without coupling the harness to that choice.
 //
 // Multi-page: each demo fixture is its own .html entry so every material
-// surface (glass, shadow) is verified in isolation without touching the token
-// fixtures. `shadow.html` is the shadow-stack demo (elevation cards ×
-// light/dark × live light-angle) for the owner's eye.
+// surface is verified in isolation without touching the token fixtures.
+// `materials.html` is the Ambient/Solid material demo (mode + theme switchers,
+// product card + sign-in form + the Ambient blur ladder) — it replaces the old
+// `glass.html` per the owner's verdict (web glass is native-only). `shadow.html`
+// is the shadow-stack demo (elevation cards × light/dark × live light-angle).
 export default defineConfig({
   root: 'src',
   build: {
@@ -17,7 +19,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'src/index.html'),
-        glass: resolve(__dirname, 'src/glass.html'),
+        materials: resolve(__dirname, 'src/materials.html'),
         shadow: resolve(__dirname, 'src/shadow.html'),
       },
     },

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" data-material="ambient" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Materials (Ambient · Solid)</title>
+    <link rel="stylesheet" href="./materials-demo.css" />
+  </head>
+  <body>
+    <!-- CONTENT BACKDROP. Subject-matter content (a photo-like colour field +
+         a product image), NOT text-on-text. The owner's verdict bans the old
+         word-wall fixture. The material reads against a real scene. -->
+    <div class="scene" data-testid="scene" aria-hidden="true">
+      <div class="scene-photo"></div>
+      <div class="scene-grid">
+        <div class="scene-tile scene-tile--a"></div>
+        <div class="scene-tile scene-tile--b"></div>
+        <div class="scene-tile scene-tile--c"></div>
+        <div class="scene-tile scene-tile--d"></div>
+      </div>
+    </div>
+
+    <!-- Progressive-blur scrim under the top control bar — the nav-bar pattern. -->
+    <header class="bar" data-testid="bar">
+      <div class="lab-progressive" data-testid="progressive" aria-hidden="true"></div>
+      <div class="bar-inner">
+        <strong class="bar-brand">LabUI · Materials</strong>
+        <div class="bar-controls">
+          <label class="control">
+            <span>Material</span>
+            <select data-testid="mode-select" aria-label="Material mode">
+              <option value="ambient">Ambient</option>
+              <option value="glassy">Glassy (web → Ambient)</option>
+              <option value="solid">Solid</option>
+            </select>
+          </label>
+          <label class="control">
+            <span>Theme</span>
+            <select data-testid="theme-select" aria-label="Colour theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <h1 data-testid="title">Materials</h1>
+      <p data-testid="tagline">
+        One <code>data-material</code> attribute switches every surface below.
+        The components never change — they read only <code>--lab-mat-*</code>.
+      </p>
+
+      <!-- SURFACE 1 — a product card (image + body + action). Real subject
+           content; the material is the card's skin. -->
+      <section
+        class="lab-ambient card"
+        data-testid="surface-card"
+        aria-label="Product card on the material surface"
+      >
+        <div class="card-media" role="img" aria-label="Product preview"></div>
+        <div class="card-body">
+          <h2>Aurora Lamp</h2>
+          <p class="card-price">$148</p>
+          <p class="card-desc">
+            Warm dimmable light with a brushed-aluminium base. Reads the active
+            material — Ambient blurs the scene behind it, Solid goes opaque.
+          </p>
+          <button type="button" class="btn">Add to cart</button>
+        </div>
+      </section>
+
+      <!-- SURFACE 2 — a sign-in form. Proves the SAME material flips on a second,
+           structurally different surface with no markup change. -->
+      <section
+        class="lab-ambient form-card"
+        data-testid="surface-form"
+        aria-label="Sign-in form on the material surface"
+      >
+        <h2>Sign in</h2>
+        <form class="form" novalidate>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" autocomplete="email" placeholder="you@labpics.dev" />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" name="password" autocomplete="current-password" />
+          </label>
+          <button type="submit" class="btn btn--accent">Continue</button>
+        </form>
+      </section>
+
+      <!-- AMBIENT LADDER — Strong / Base / Muted / Soft side by side, so the
+           owner can compare the BG-blur steps (128 / 48 / 24 / 12) at a glance. -->
+      <section class="ladder" data-testid="ladder" aria-label="Ambient blur ladder">
+        <h2 class="ladder-title">Ambient ladder</h2>
+        <div class="ladder-row">
+          <div class="lab-ambient lab-ambient--strong ladder-cell" data-testid="ladder-strong">
+            <span>Strong</span><small>128</small>
+          </div>
+          <div class="lab-ambient ladder-cell" data-testid="ladder-base">
+            <span>Base</span><small>48</small>
+          </div>
+          <div class="lab-ambient lab-ambient--muted ladder-cell" data-testid="ladder-muted">
+            <span>Muted</span><small>24</small>
+          </div>
+          <div class="lab-ambient lab-ambient--soft ladder-cell" data-testid="ladder-soft">
+            <span>Soft</span><small>12</small>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./materials-demo.ts"></script>
+  </body>
+</html>

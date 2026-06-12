@@ -1,0 +1,200 @@
+import { expect, test } from '@playwright/test';
+
+/**
+ * Materials smoke — Ambient / Solid modes, switched by `data-material`.
+ *
+ * Reframed from the old `glass.spec.ts` per the owner's verdict (2026-06-13):
+ * real Glass is native-only; the web material is Ambient (honest backdrop blur)
+ * with Solid as the second mode and the universal fallback. The assertions
+ * below moved off the `--lab-glass-*` names onto the public contract:
+ *   1. The SEMANTIC `--lab-mat-*` roles resolve (the material DNA is loaded).
+ *   2. The material is ALIVE on a surface: `.lab-ambient` has a real
+ *      backdrop-filter in Ambient, and its body tint FOLLOWS the `--lab-*`
+ *      colour core (not a hardcoded hex).
+ *   3. The CORE PROMISE: flipping `data-material` on the root re-skins EVERY
+ *      surface with no markup change — ambient↔solid changes the backdrop
+ *      filter on ≥2 structurally different surfaces.
+ *   4. `glassy` is a documented ALIAS of ambient on the web (honest degrade).
+ *
+ * Cross-engine (Chromium + WebKit) is enforced by the Playwright projects.
+ */
+
+test('materials demo renders with both surfaces visible', async ({ page }) => {
+  await page.goto('/materials.html');
+  await expect(page.getByTestId('title')).toHaveText('Materials');
+  await expect(page.getByTestId('surface-card')).toBeVisible();
+  await expect(page.getByTestId('surface-form')).toBeVisible();
+  await expect(page.getByTestId('scene')).toBeAttached();
+});
+
+test('the semantic --lab-mat-* roles resolve from @labpics/ui-core', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  const roles = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    return {
+      blur: root.getPropertyValue('--lab-mat-blur').trim(),
+      saturate: root.getPropertyValue('--lab-mat-saturate').trim(),
+      fillAlpha: root.getPropertyValue('--lab-mat-fill-alpha').trim(),
+      noiseAlpha: root.getPropertyValue('--lab-mat-noise-alpha').trim(),
+      blend: root.getPropertyValue('--lab-mat-blend').trim(),
+    };
+  });
+
+  // Every semantic role must be present — the contract is loaded.
+  expect(roles.blur.length).toBeGreaterThan(0);
+  expect(roles.saturate.length).toBeGreaterThan(0);
+  expect(roles.fillAlpha.length).toBeGreaterThan(0);
+  expect(roles.noiseAlpha.length).toBeGreaterThan(0);
+  expect(roles.blend.length).toBeGreaterThan(0);
+
+  // Default mode is Ambient → blur must be a positive length.
+  expect(Number.parseFloat(roles.blur)).toBeGreaterThan(0);
+});
+
+test('.lab-ambient applies a live backdrop-filter in Ambient mode', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  const card = page.getByTestId('surface-card');
+
+  // Chromium computes unprefixed `backdrop-filter`; Safari only the legacy
+  // `-webkit-backdrop-filter`. Take whichever the engine populated.
+  const filter = await card.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const std = cs.backdropFilter;
+    const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
+    for (const value of [std, webkit]) {
+      if (value && value !== 'none') {
+        return value;
+      }
+    }
+    return std || webkit || 'none';
+  });
+
+  expect(filter).not.toBe('none');
+  expect(filter).toContain('blur');
+  expect(filter).toContain('saturate');
+});
+
+test('flipping data-material=solid removes the live blur on EVERY surface', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  // Read the blur on two structurally different surfaces (card + form) before.
+  const readBlur = (testId: string) =>
+    page.getByTestId(testId).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const std = cs.backdropFilter;
+      const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
+      for (const value of [std, webkit]) {
+        if (value && value !== 'none') {
+          return value;
+        }
+      }
+      return 'none';
+    });
+
+  const cardAmbient = await readBlur('surface-card');
+  const formAmbient = await readBlur('surface-form');
+  expect(cardAmbient).toContain('blur');
+  expect(formAmbient).toContain('blur');
+
+  // The whole point of the task: ONE attribute on the root, ZERO markup change.
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'solid'));
+
+  const cardSolid = await readBlur('surface-card');
+  const formSolid = await readBlur('surface-form');
+
+  // Solid sets --lab-mat-blur to 0px → the unprefixed filter is blur(0px) (or
+  // serialised to none). Either way it must no longer be the Ambient blur.
+  // (Chromium serialises blur(0px); the assertion accepts both 'none' and a
+  // 0px blur — what matters is it CHANGED away from the live Ambient blur.)
+  const pairs: ReadonlyArray<readonly [string, string]> = [
+    [cardAmbient, cardSolid],
+    [formAmbient, formSolid],
+  ];
+  for (const [before, after] of pairs) {
+    expect(after).not.toBe(before);
+    const stillLiveBlur = /blur\((?!0px\))/.test(after);
+    expect(stillLiveBlur).toBe(false);
+  }
+});
+
+test('glassy is a web alias of ambient (same backdrop-filter)', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  const readBlur = () =>
+    page.getByTestId('surface-card').evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const std = cs.backdropFilter;
+      const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
+      for (const value of [std, webkit]) {
+        if (value && value !== 'none') {
+          return value;
+        }
+      }
+      return 'none';
+    });
+
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'ambient'));
+  const ambient = await readBlur();
+
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glassy'));
+  const glassy = await readBlur();
+
+  // Owner verdict: on the web, Glassy degrades honestly to Ambient — identical.
+  expect(glassy).toBe(ambient);
+  expect(glassy).toContain('blur');
+});
+
+test('.lab-ambient tint FOLLOWS the --lab-* colour core (not hardcoded)', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  const card = page.getByTestId('surface-card');
+
+  // Re-point the surface token the material tint is built from, and assert the
+  // body background changes. Only true var() consumption can do that.
+  const before = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--lab-surface-raised', 'rgb(7, 130, 200)');
+  });
+
+  const after = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
+
+  expect(after).not.toBe(before);
+  expect(after).toMatch(/^(rgba?\(|color\()/);
+
+  const channels = await card.evaluate((el) => {
+    const probe = document.createElement('span');
+    probe.style.color = getComputedStyle(el).backgroundColor;
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    const nums = resolved.match(/[\d.]+/g)?.map(Number) ?? [];
+    return { r: nums[0] ?? 0, g: nums[1] ?? 0, b: nums[2] ?? 0 };
+  });
+  expect(channels.b).toBeGreaterThan(channels.r);
+});
+
+test('the progressive-blur scrim applies a graded backdrop blur', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  const progressive = page.getByTestId('progressive');
+  await expect(progressive).toBeAttached();
+
+  const { filter, mask } = await progressive.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const std = cs.backdropFilter;
+    const webkit = (cs as unknown as Record<string, string>).webkitBackdropFilter;
+    const f = std && std !== 'none' ? std : webkit;
+    const m =
+      cs.maskImage && cs.maskImage !== 'none'
+        ? cs.maskImage
+        : (cs as unknown as Record<string, string>).webkitMaskImage;
+    return { filter: f || 'none', mask: m || 'none' };
+  });
+
+  // A graded blur = a real blur revealed by a gradient mask.
+  expect(filter).toContain('blur');
+  expect(mask).toContain('gradient');
+});

@@ -14,6 +14,9 @@ blob-report/
 .playwright/
 playwright/.cache/
 
+# Ad-hoc demo screenshots (owner-review artifacts, regenerated on demand)
+screenshots/
+
 # Env / secrets — never commit
 .env
 .env.*
