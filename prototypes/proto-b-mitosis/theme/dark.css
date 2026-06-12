@@ -10,7 +10,7 @@
  * side (the Playwright smoke asserts the Button follows whichever set is active).
  */
 
-[data-theme='dark'] {
+[data-theme="dark"] {
   --lab-surface-base: #0b0b0c;
   --lab-surface-raised: #161618;
   --lab-label-primary: #f5f5f7;

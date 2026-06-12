@@ -6,7 +6,7 @@
  * point: the Button source never references "light" or "dark".
  */
 
-[data-theme='light'] {
+[data-theme="light"] {
   --lab-surface-base: #ffffff;
   --lab-surface-raised: #f4f4f6;
   --lab-label-primary: #0b0b0c;

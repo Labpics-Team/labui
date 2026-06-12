@@ -8,10 +8,7 @@
  * the two panels is `data-theme`, which swaps the `--lab-*` set. This is the
  * proof for the "themes by swapping the variable set" criterion.
  */
-import LabButton, {
-  type LabButtonKind,
-  type LabButtonType,
-} from '../../output/react/src/button';
+import LabButton, { type LabButtonKind, type LabButtonType } from '../../output/react/src/button';
 
 const TYPES: LabButtonType[] = ['accent', 'neutral', 'danger'];
 const KINDS: LabButtonKind[] = ['fill', 'tinted', 'border', 'ghost'];
