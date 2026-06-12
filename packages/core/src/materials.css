@@ -151,6 +151,8 @@
   --lab-mat-specular: var(--lab-ambient-specular);
   --lab-mat-specular-size: var(--lab-ambient-specular-size);
   --lab-mat-inner-light: var(--lab-ambient-inner-light);
+  --lab-mat-inner-light-blur: var(--lab-ambient-inner-light-blur);
+  --lab-mat-inner-light-spread: var(--lab-ambient-inner-light-spread);
 }
 
 /* SOLID mode — same surfaces, no transparency, no blur, no grain. The owner's
@@ -171,6 +173,10 @@
   --lab-mat-specular: transparent;
   --lab-mat-specular-size: 0px;
   --lab-mat-inner-light: transparent;
+  /* Collapse the inner-light GEOMETRY too, not just its colour — so the inset
+   * glow is semantically off in Solid, not merely invisible-by-transparency. */
+  --lab-mat-inner-light-blur: 0px;
+  --lab-mat-inner-light-spread: 0px;
 }
 
 /* Theme anchors the blend mode of the tint slot. Figma uses COLOR_DODGE on the
@@ -210,6 +216,8 @@
     --lab-mat-specular: transparent;
     --lab-mat-specular-size: 0px;
     --lab-mat-inner-light: transparent;
+    --lab-mat-inner-light-blur: 0px;
+    --lab-mat-inner-light-spread: 0px;
   }
 }
 
@@ -260,10 +268,12 @@
   -webkit-backdrop-filter: blur(48px) saturate(180%);
 
   /* Specular rim (top catch-light) + inner light (volume), as stacked insets.
-   * Cheap, engine-independent. Collapse to nothing in Solid. */
+   * Cheap, engine-independent. Reads ONLY semantic --lab-mat-* roles — including
+   * the inner-light geometry — so it collapses fully in Solid / reduced-
+   * transparency (geometry → 0, colour → transparent), no layer-1 primitive
+   * leak into the surface. */
   box-shadow: inset 0 var(--lab-mat-specular-size) 0 var(--lab-mat-specular), inset 0 0
-    var(--lab-ambient-inner-light-blur) var(--lab-ambient-inner-light-spread)
-    var(--lab-mat-inner-light);
+    var(--lab-mat-inner-light-blur) var(--lab-mat-inner-light-spread) var(--lab-mat-inner-light);
 }
 
 /* ::before — the tint BLEND slot (Figma Materials slot2). This is the web
@@ -334,22 +344,32 @@
 /* ── Ambient tier modifiers ────────────────────────────────────────────────
  * A surface opts into a denser/softer tier of the BG-blur + fill ladder. These
  * only re-point the semantic roles for THIS surface — still no component edit,
- * still mode-agnostic (a tier under Solid is just opaque). */
+ * still mode-agnostic (a tier under Solid is just opaque).
+ *
+ * webkit-var-bug: each tier also restates -webkit-backdrop-filter LITERALLY,
+ * because Safari (≤18.2) cannot follow var() in the prefixed property — without
+ * these literals every tier would render at the base 48px on Safari and the
+ * Strong/Base/Muted/Soft ladder (the demo's headline) would be flat there. The
+ * literals mirror the tier's blur token; saturate stays at the 180% literal. */
 .lab-ambient--strong {
   --lab-mat-blur: var(--lab-ambient-strong);
   --lab-mat-fill-alpha: var(--lab-ambient-fill-elevated);
+  -webkit-backdrop-filter: blur(128px) saturate(180%);
 }
 .lab-ambient--muted {
   --lab-mat-blur: var(--lab-ambient-muted);
   --lab-mat-fill-alpha: var(--lab-ambient-fill-muted);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
 }
 .lab-ambient--soft {
   --lab-mat-blur: var(--lab-ambient-soft);
   --lab-mat-fill-alpha: var(--lab-ambient-fill-soft);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 .lab-ambient--subtle {
   --lab-mat-blur: var(--lab-ambient-soft);
   --lab-mat-fill-alpha: var(--lab-ambient-fill-subtle);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -382,13 +402,18 @@
   background-size: 120px 120px;
   opacity: var(--lab-progressive-noise-alpha);
 }
+/* webkit-var-bug: like the Ambient tiers, restate the prefixed blur literally
+ * so the Soft/Ghost progressive steps differ on Safari instead of all rendering
+ * at the base 24px. */
 .lab-progressive--soft {
   --lab-progressive-blur: var(--lab-progressive-soft);
   --lab-progressive-noise-alpha: var(--lab-progressive-soft-noise);
+  -webkit-backdrop-filter: blur(12px);
 }
 .lab-progressive--ghost {
   --lab-progressive-blur: var(--lab-progressive-ghost);
   --lab-progressive-noise-alpha: var(--lab-progressive-ghost-noise);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* The scrim is a blur, nothing else — so in Solid mode (no transparency) and
@@ -417,6 +442,15 @@
   .lab-ambient,
   .lab-glass {
     background-color: color-mix(in srgb, var(--lab-mat-fill-color) 92%, transparent);
+    /* With an opaque body and no live backdrop, the rim + catch-light + inner
+     * glow have nothing to sit against — collapse them too so the fallback is
+     * genuinely "equivalent to Solid", not an opaque card still wearing a rim. */
+    box-shadow: none;
+  }
+  .lab-ambient::after,
+  .lab-glass::after {
+    border-color: transparent;
+    opacity: 0;
   }
   .lab-progressive {
     display: none; /* a graded blur with no backdrop-filter is meaningless noise */

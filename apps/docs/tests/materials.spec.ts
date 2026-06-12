@@ -193,3 +193,67 @@ test('the progressive-blur scrim is removed in Solid mode', async ({ page }) => 
     .evaluate((el) => getComputedStyle(el).display);
   expect(display).toBe('none');
 });
+
+test('the Ambient ladder renders four DISTINCT blur radii (Figma 128/48/24/12)', async ({
+  page,
+}) => {
+  await page.goto('/materials.html');
+
+  // Pull the blur radius out of whichever backdrop-filter the engine populated.
+  // This guards the tier modifiers on BOTH engines — including the WebKit
+  // literal -webkit-backdrop-filter overrides (without them Safari would render
+  // every tier at the base 48px and the ladder would be flat).
+  const radiusFor = async (testId: string) => {
+    const filter = await readBackdropFilter(page, testId);
+    const match = filter.match(/blur\(([\d.]+)px\)/);
+    return match?.[1] ? Number.parseFloat(match[1]) : Number.NaN;
+  };
+
+  const strong = await radiusFor('ladder-strong');
+  const base = await radiusFor('ladder-base');
+  const muted = await radiusFor('ladder-muted');
+  const soft = await radiusFor('ladder-soft');
+
+  // Exact Figma ladder (labui-figma-styles.md BG-blur): 128 / 48 / 24 / 12.
+  expect(strong).toBe(128);
+  expect(base).toBe(48);
+  expect(muted).toBe(24);
+  expect(soft).toBe(12);
+  // And strictly descending — the ladder is a ladder, not a flat run.
+  expect(strong).toBeGreaterThan(base);
+  expect(base).toBeGreaterThan(muted);
+  expect(muted).toBeGreaterThan(soft);
+});
+
+test('a prefers-reduced-transparency rule downgrades the material to Solid', async ({ page }) => {
+  await page.goto('/materials.html');
+
+  // Playwright 1.49 cannot emulate prefers-reduced-transparency, so assert the
+  // contract is PRESENT in the cascade: a @media (prefers-reduced-transparency:
+  // reduce) block must set --lab-mat-fill-alpha:1 and --lab-mat-blur:0px (the
+  // Solid downgrade). Walk the loaded stylesheets and read the rule text.
+  const found = await page.evaluate(() => {
+    for (const sheet of Array.from(document.styleSheets)) {
+      let rules: CSSRule[];
+      try {
+        rules = Array.from(sheet.cssRules);
+      } catch {
+        continue; // cross-origin sheet — skip
+      }
+      for (const rule of rules) {
+        if (
+          rule instanceof CSSMediaRule &&
+          rule.conditionText.includes('prefers-reduced-transparency')
+        ) {
+          const text = rule.cssText;
+          if (text.includes('--lab-mat-fill-alpha: 1') && text.includes('--lab-mat-blur: 0px')) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  });
+
+  expect(found).toBe(true);
+});
