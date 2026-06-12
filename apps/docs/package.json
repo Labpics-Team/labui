@@ -14,7 +14,8 @@
     "test:e2e:update": "playwright test --update-snapshots"
   },
   "dependencies": {
-    "@labpics/colors": "workspace:*"
+    "@labpics/colors": "workspace:*",
+    "@labpics/ui-tokens": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1",

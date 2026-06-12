@@ -26,6 +26,9 @@ importers:
       '@labpics/colors':
         specifier: workspace:*
         version: link:../../packages/colors-stub
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
     devDependencies:
       '@playwright/test':
         specifier: 1.49.1
