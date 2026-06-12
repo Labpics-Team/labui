@@ -1,33 +1,66 @@
 import {
   DEFAULT_LIGHT_ANGLE_DEG,
+  DEFAULT_TINT_STRENGTH,
   SHADOW_COLOR_FALLBACK_DARK,
   SHADOW_COLOR_FALLBACK_LIGHT,
+  SHADOW_TRANSITION_DURATION,
+  SHADOW_TRANSITION_EASING,
 } from './config.js';
-import { type ShadowTheme, provisionalAlpha } from './domain/alpha-contract.js';
-import { LIGHT_ANGLE_VAR, SHADOW_COLOR_VAR, composeElevation } from './domain/box-shadow.js';
+import { ELEVATION_ROLES, ROLE_TO_SIZE } from './domain/alias.js';
+import {
+  DARK_ALPHA_MULTIPLIER_DEFAULT,
+  type ShadowTheme,
+  defaultAlpha,
+} from './domain/alpha-contract.js';
+import {
+  LIGHT_ANGLE_VAR,
+  SHADOW_COLOR_VAR,
+  TINT_STRENGTH_VAR,
+  composeElevation,
+} from './domain/box-shadow.js';
 import { ELEVATION_SHAPES } from './domain/elevation.js';
-import { alphaVar } from './domain/elevation.js';
-import { LAYER_SHAPES, SHADOW_LAYERS } from './domain/layer.js';
+import { SHADOW_SLOTS, type ShadowSlotName } from './domain/layer.js';
+
+const SIZE_VAR_PREFIX = '--lab-shadow';
+const SIZE_CLASS_PREFIX = 'lab-shadow';
+const ROLE_VAR_PREFIX = '--lab-elevation';
+const ROLE_CLASS_PREFIX = 'lab-elevation';
+const TRANSITION_DURATION_VAR = '--lab-shadow-transition-duration';
+const TRANSITION_EASING_VAR = '--lab-shadow-transition-easing';
+const TRANSITION_VAR = '--lab-shadow-transition';
+
+function sizeVar(name: string): string {
+  return `${SIZE_VAR_PREFIX}-${name}`;
+}
+
+function alphaVarName(slot: ShadowSlotName): string {
+  return `--lab-shadow-alpha-${slot}`;
+}
 
 /**
- * Generate the shadow-stack CSS contract: the global angle token, the
- * surface-tint shadow colour, the `--lab-shadow-alpha-*` runtime contract (stub:
- * Figma provisional values), and the four `--lab-elevation-*` roles composed
- * from the four layers. Light and dark themes differ ONLY in variable values
- * (alphas + colour anchor) — the elevation `box-shadow` formulas are identical,
- * so switching theme is a variable swap, never a re-author.
+ * Generate the shadow-stack CSS contract from the verbatim owner ladder:
+ * the global angle token, the neutral colour anchor + opt-in tint strength,
+ * the motion tokens, the four fixed `--lab-shadow-alpha-*` contracts, the five
+ * size roles (`--lab-shadow-{xs..xl}` + `.lab-shadow-*`), and the semantic
+ * role aliases (`--lab-elevation-*` + `.lab-elevation-*`) onto sizes. Light and
+ * dark differ ONLY in variable values (anchor + dark alpha multiplier) — the
+ * box-shadow formulas are identical, so a theme switch is a variable swap.
  *
- * Deterministic and idempotent: same config in, byte-identical CSS out.
+ * Deterministic and idempotent: same config in, byte-identical CSS out. At the
+ * default angle (0) the size box-shadows are the opora table, ply for ply.
  */
 export function generateShadowCss(): string {
   return [
     header(),
     ':root {',
     rootContract(),
-    elevationRoles(),
+    sizeRoles(),
+    roleAliases(),
     '}',
     '',
-    elevationClasses(),
+    sizeClasses(),
+    '',
+    roleAliasClasses(),
     '',
     themeBlock('light'),
     '',
@@ -43,81 +76,108 @@ function header(): string {
     ' * Source: packages/shadow/src (config + generator). Run',
     ' * `pnpm --filter @labpics/ui-shadow build` to regenerate.',
     ' *',
-    ' * Layered box-shadow stack (Minor/Ambient/Penumbra/Major), surface-tinted',
-    ' * (never pure black), one global light angle, alphas through the',
-    ' * --lab-shadow-alpha-* contract (stub = Figma provisional; final = lab-colors',
-    ' * JND calibration, swapped in at the same names).',
+    ' * Five elevation sizes (XS/S/M/L/XL), each exactly four drop-shadow plies,',
+    " * transcribed verbatim from the owner's Figma effect styles. Per-slot alphas",
+    ' * are fixed (.12/.04/.02/.01); depth is geometry only. Default light is',
+    ' * vertical (angle 0, offset-x 0). Neutral anchor #101012 (never pure black);',
+    ' * surface tint is opt-in and weak. Semantic roles (resting/raised/overlay/',
+    ' * modal) are aliases onto sizes.',
     ' */',
   ].join('\n');
 }
 
 function rootContract(): string {
   const lines = [
-    '  /* Single global light source — every elevation derives x/y offset from this. */',
+    '  /* Single global light source — angle 0 = vertical (offset-x 0), the owner default. */',
     `  ${LIGHT_ANGLE_VAR}: ${DEFAULT_LIGHT_ANGLE_DEG}deg;`,
     '',
-    '  /* Theme shadow-colour anchor. A per-surface --lab-surface-shadow-tint (from',
-    '     the --lab-* core contract) overrides this at the element; absent that, the',
-    '     shadow falls back to this theme dark anchor — never a hardcoded #000. */',
+    '  /* Neutral shadow anchor (Figma N12, never pure black). The theme blocks',
+    '     re-set only its value; a surface may opt into a weak tint below. */',
     `  ${SHADOW_COLOR_VAR}: ${SHADOW_COLOR_FALLBACK_LIGHT};`,
+    `  ${TINT_STRENGTH_VAR}: ${DEFAULT_TINT_STRENGTH};`,
     '',
-    '  /* Per-layer alpha contract — integration seam with lab-colors JND alphas.',
-    '     Defaults to the light-theme Figma provisional values; the theme blocks',
-    '     below override per theme. Swapping in JND alphas = re-set these names. */',
+    '  /* Motion tokens — elevation changes ease their box-shadow, never snap. */',
+    `  ${TRANSITION_DURATION_VAR}: ${SHADOW_TRANSITION_DURATION};`,
+    `  ${TRANSITION_EASING_VAR}: ${SHADOW_TRANSITION_EASING};`,
+    `  ${TRANSITION_VAR}: box-shadow var(${TRANSITION_DURATION_VAR}) var(${TRANSITION_EASING_VAR});`,
+    '',
+    '  /* Per-slot alpha contract — fixed across every level, the lab-colors JND',
+    '     seam. Defaults to the owner Figma alphas; the dark theme block applies a',
+    '     provisional multiplier. Swapping in JND alphas = re-set these names. */',
   ];
-  for (const layer of SHADOW_LAYERS) {
-    lines.push(`  ${alphaVar(layer)}: ${provisionalAlpha('light', layer)};`);
+  for (const slot of SHADOW_SLOTS) {
+    lines.push(`  ${alphaVarName(slot)}: ${defaultAlpha(slot)};`);
   }
   return lines.join('\n');
 }
 
-function elevationRoles(): string {
+function sizeRoles(): string {
   const lines = [
     '',
-    '  /* Semantic elevation roles — a surface consumes a role, never raw layers.',
-    '     Each is the same four-ply stack scaled by one depth + alpha damping. */',
+    '  /* Elevation SIZES — the primitive. Each is the owner ladder, four plies. */',
   ];
   for (const level of ELEVATION_SHAPES) {
-    const value = composeElevation(level, LAYER_SHAPES);
-    lines.push(`  --lab-elevation-${level.name}:\n    ${value};`);
+    const value = composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG);
+    lines.push(`  ${sizeVar(level.name)}:\n    ${value};`);
+  }
+  return lines.join('\n');
+}
+
+function roleAliases(): string {
+  const lines = [
+    '',
+    '  /* Semantic ROLE aliases — a role points to a size (size is the primitive). */',
+  ];
+  for (const role of ELEVATION_ROLES) {
+    const size = ROLE_TO_SIZE[role];
+    lines.push(`  ${ROLE_VAR_PREFIX}-${role}: var(${sizeVar(size)});`);
   }
   lines.push('');
   return lines.join('\n');
 }
 
 /**
- * Elevation utility classes. A class sets `box-shadow` DIRECTLY, so the
- * surface-tint `var()` inside each ply resolves on the consuming ELEMENT — a
- * `.card` that sets `--lab-surface-shadow-tint` tints its own shadow.
- *
- * This is the difference that matters: a `var()` nested inside a custom property
- * (`--lab-elevation-*`) is substituted in the scope where the property is
- * DECLARED (`:root`), so the token form always carries the theme anchor tint.
- * The class form is the per-surface-tint path. A surface picks whichever role
- * delivery it wants — both are the same four-ply geometry.
+ * Size utility classes set `box-shadow` DIRECTLY (and wire the transition), so
+ * the opt-in surface-tint var inside each ply resolves on the consuming ELEMENT.
+ * A surface that sets `--lab-surface-shadow-tint` + raises the tint strength
+ * tints its own shadow; the token form carries the neutral anchor.
  */
-function elevationClasses(): string {
+function sizeClasses(): string {
   const lines = [
-    '/* Elevation role classes — set box-shadow directly so a per-surface',
-    '   --lab-surface-shadow-tint resolves at the element (the tinted-shadow path). */',
+    '/* Size classes — set box-shadow directly so an opt-in --lab-surface-shadow-tint',
+    '   resolves at the element, and ease elevation changes via the motion token. */',
   ];
   for (const level of ELEVATION_SHAPES) {
-    const value = composeElevation(level, LAYER_SHAPES);
-    lines.push(`.lab-elevation-${level.name} {\n  box-shadow:\n    ${value};\n}`);
+    const value = composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG);
+    lines.push(
+      `.${SIZE_CLASS_PREFIX}-${level.name} {\n  box-shadow:\n    ${value};\n  transition: var(${TRANSITION_VAR});\n}`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/** Role classes alias size classes — same geometry, semantic name. */
+function roleAliasClasses(): string {
+  const lines = ['/* Role classes — semantic alias onto the size class box-shadow. */'];
+  for (const role of ELEVATION_ROLES) {
+    const size = ROLE_TO_SIZE[role];
+    lines.push(
+      `.${ROLE_CLASS_PREFIX}-${role} {\n  box-shadow: var(${sizeVar(size)});\n  transition: var(${TRANSITION_VAR});\n}`,
+    );
   }
   return lines.join('\n');
 }
 
 /**
- * A theme block overrides only the values that differ between light and dark:
- * the per-layer alphas and the shadow-colour fallback anchor. Selector targets
- * both an explicit `[data-theme]` and the OS preference, so the stack themes
- * with the rest of LabUI without owning the theme switch itself.
+ * A theme block overrides only what differs: the colour anchor and (dark only)
+ * the provisional alpha multiplier applied to every slot. The geometry never
+ * changes. Targets both an explicit `[data-theme]` and the OS preference.
  */
 function themeBlock(theme: ShadowTheme): string {
   const anchor = theme === 'light' ? SHADOW_COLOR_FALLBACK_LIGHT : SHADOW_COLOR_FALLBACK_DARK;
-  const alphaLines = SHADOW_LAYERS.map(
-    (layer) => `  ${alphaVar(layer)}: ${provisionalAlpha(theme, layer)};`,
+  const multiplier = theme === 'dark' ? DARK_ALPHA_MULTIPLIER_DEFAULT : 1;
+  const alphaLines = SHADOW_SLOTS.map(
+    (slot) => `  ${alphaVarName(slot)}: ${round(defaultAlpha(slot) * multiplier)};`,
   );
   const colorLine = `  ${SHADOW_COLOR_VAR}: ${anchor};`;
   const body = [colorLine, ...alphaLines].join('\n');
@@ -132,6 +192,13 @@ function themeBlock(theme: ShadowTheme): string {
     `  :root:not([data-theme="light"]) {\n${indent(body)}\n  }`,
     '}',
   ].join('\n');
+}
+
+function round(value: number): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(`shadow alpha produced a non-finite value: ${value}`);
+  }
+  return Math.round(value * 10000) / 10000;
 }
 
 function indent(block: string): string {
