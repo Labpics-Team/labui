@@ -7,7 +7,8 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const file = resolve(here, '../dist/index.js');
+// dist/size.js is the Lit-bundled, minified, self-contained artifact.
+const file = resolve(here, '../dist/size.js');
 
 const raw = readFileSync(file);
 const rawSize = statSync(file).size;

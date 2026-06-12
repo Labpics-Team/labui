@@ -1,5 +1,6 @@
-import { css, html, LitElement, nothing } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { css, html, LitElement } from 'lit';
+import { property } from 'lit/decorators.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 
 /**
  * LabUI Button — prototype A (Lit / Web Components).
@@ -28,7 +29,6 @@ export type LabButtonType = 'accent' | 'neutral' | 'danger';
 export type LabButtonKind = 'fill' | 'tinted' | 'border' | 'ghost';
 export type LabButtonSize = 's' | 'm' | 'l';
 
-@customElement('lab-button')
 export class LabButton extends LitElement {
   /** Semantic intent of the action. */
   @property({ reflect: true }) type: LabButtonType = 'accent';
@@ -210,6 +210,7 @@ export class LabButton extends LitElement {
       visibility: hidden;
     }
     .spinner {
+      display: none;
       position: absolute;
       width: 1em;
       height: 1em;
@@ -217,6 +218,9 @@ export class LabButton extends LitElement {
       border-right-color: transparent;
       border-radius: var(--lab-radius-full, 9999px);
       animation: spin 0.7s linear infinite;
+    }
+    :host([loading]) .spinner {
+      display: block;
     }
     @media (prefers-reduced-motion: reduce) {
       .spinner {
@@ -238,21 +242,33 @@ export class LabButton extends LitElement {
 
   override render() {
     const inactive = this.disabled || this.loading;
+    // Bindings kept SSR-safe for @lit-labs/ssr: ifDefined for optional
+    // attributes (no bare `nothing` in attribute position), and the spinner is
+    // always present but hidden via CSS when not loading — avoids a conditional
+    // child template that the SSR renderer mishandles.
     return html`
       <button
         type=${this.htmlType}
         ?disabled=${inactive}
-        aria-busy=${this.loading ? 'true' : nothing}
-        aria-disabled=${this.disabled ? 'true' : nothing}
+        aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
+        aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
       >
-        ${this.loading ? html`<span class="spinner" aria-hidden="true"></span>` : nothing}
+        <span class="spinner" aria-hidden="true"></span>
         <span class="label">
           <slot name="icon"></slot>
-          ${this.icon ? nothing : html`<slot></slot>`}
+          <slot></slot>
         </span>
       </button>
     `;
   }
+}
+
+// Idempotent registration. Lit SSR and client bundles can import this module
+// more than once across module-instance boundaries; an unguarded
+// customElements.define then throws "name has already been used". The guard
+// makes the side-effect import safe to repeat.
+if (typeof customElements !== 'undefined' && !customElements.get('lab-button')) {
+  customElements.define('lab-button', LabButton);
 }
 
 declare global {

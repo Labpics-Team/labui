@@ -1,27 +1,45 @@
-import { defineConfig } from 'tsup';
+import { defineConfig, type Options } from 'tsup';
 
-// Two outputs:
-//  - index: the component + its Lit runtime, for the size measurement (gzip).
-//  - react: the typed React wrapper (criterion 2 surface).
-export default defineConfig({
-  // Single self-contained entry so the measured artifact is ONE file with Lit
-  // bundled in — the real runtime+component weight shipped to a browser
-  // (criterion 4). No code splitting, so nothing leaks into a shared chunk.
-  // The typed React wrapper is NOT part of the runtime-weight artifact; its
-  // type-safety (criterion 2) is verified separately by `tsc --noEmit`.
-  entry: { index: 'src/index.ts' },
+/**
+ * Two distinct builds:
+ *
+ *  1. CONSUMABLE (index, react) — `lit` stays EXTERNAL. Fixtures (Next, Astro)
+ *     and the @lit/react wrapper resolve the SAME lit-html instance the host's
+ *     SSR renderer uses. Bundling Lit here would give the element templates a
+ *     private lit-html copy, which @lit-labs/ssr cannot walk (cross-instance
+ *     template objects → "getLast(undefined)"). So consumers get lit external.
+ *
+ *  2. SIZE (size) — `lit` is BUNDLED IN, minified, no splitting: one
+ *     self-contained file whose gzip is the real runtime+component weight
+ *     shipped to a browser (criterion 4). Never imported by anything; measured
+ *     by scripts/measure-size.mjs.
+ */
+const shared: Options = {
   format: ['esm'],
-  // No DTS bundling: this is a throwaway sandbox, never published. Type-safety
-  // (criterion 2) is verified by `tsc --noEmit`, not by emitted declarations.
-  dts: false,
   sourcemap: false,
-  clean: true,
   treeshake: true,
-  minify: true,
-  splitting: false,
   target: 'es2022',
-  // Bundle Lit IN so the measured artifact reflects real runtime+component
-  // weight shipped to a browser (criterion 4).
-  noExternal: ['lit', 'lit-html', 'lit-element', '@lit/reactive-element'],
-  external: ['react', '@lit/react'],
-});
+  splitting: false,
+};
+
+export default defineConfig([
+  {
+    ...shared,
+    entry: { index: 'src/index.ts', react: 'src/react.ts' },
+    // Emit .d.ts so CONSUMERS type-check against declarations, not the decorator
+    // source (a consumer tsconfig lacks experimentalDecorators).
+    dts: true,
+    clean: true,
+    minify: false,
+    external: ['lit', 'lit-html', 'lit-element', '@lit/reactive-element', 'react', '@lit/react'],
+  },
+  {
+    ...shared,
+    entry: { size: 'src/index.ts' },
+    dts: false,
+    clean: false,
+    minify: true,
+    noExternal: ['lit', 'lit-html', 'lit-element', '@lit/reactive-element'],
+    external: ['react', '@lit/react'],
+  },
+]);

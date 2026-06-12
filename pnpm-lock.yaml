@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  '@astrojs/lit>@lit-labs/ssr': 3.2.2
+
 importers:
 
   .:
@@ -205,6 +208,12 @@ importers:
       '@lit-labs/ssr-react':
         specifier: 0.3.4
         version: 0.3.4(@types/node@22.10.5)(@types/react@19.0.7)(react@19.2.7)
+      '@lit/react':
+        specifier: 1.0.8
+        version: 1.0.8(@types/react@19.0.7)
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
       next:
         specifier: 15.5.19
         version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1323,8 +1332,8 @@ packages:
       '@types/react': 17 || 18 || 19
       react: 17 || 18 || 19
 
-  '@lit-labs/ssr@3.3.1':
-    resolution: {integrity: sha512-JlF1PempxvzrGEpRFrF+Ki0MHzR3HA51SK8Zv0cFpW9p0bPW4k0FeCwrElCu371UEpXF7RcaE2wgYaE1az0XKg==}
+  '@lit-labs/ssr@3.2.2':
+    resolution: {integrity: sha512-He5TzeNPM9ECmVpgXRYmVlz0UA5YnzHlT43kyLi2Lu6mUidskqJVonk9W5K699+2DKhoXp8Ra4EJmHR6KrcW1Q==}
     engines: {node: '>=13.9.0'}
 
   '@lit-labs/ssr@4.1.0':
@@ -3615,7 +3624,7 @@ snapshots:
 
   '@astrojs/lit@4.3.0(@webcomponents/template-shadowroot@0.2.1)(lit@3.3.3)':
     dependencies:
-      '@lit-labs/ssr': 3.3.1
+      '@lit-labs/ssr': 3.2.2
       '@lit-labs/ssr-client': 1.1.8
       '@lit-labs/ssr-dom-shim': 1.6.0
       '@webcomponents/template-shadowroot': 0.2.1
@@ -4383,7 +4392,7 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
-  '@lit-labs/ssr@3.3.1':
+  '@lit-labs/ssr@3.2.2':
     dependencies:
       '@lit-labs/ssr-client': 1.1.8
       '@lit-labs/ssr-dom-shim': 1.6.0
