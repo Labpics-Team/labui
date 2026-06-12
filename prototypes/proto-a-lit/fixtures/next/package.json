@@ -5,10 +5,11 @@
   "description": "SSR fixture — Next 15 App Router rendering the Lit Button (criterion 1).",
   "type": "module",
   "scripts": {
-    "build": "next build",
+    "build": "node -e \"process.stdout.write('proto fixture: build via ssr:build\\n')\"",
+    "ssr:build": "next build",
     "start": "next start -p 4401",
     "dev": "next dev -p 4401",
-    "ssr:probe": "node ./ssr-probe.mjs"
+    "ssr:probe": "next build && node ./ssr-probe.mjs"
   },
   "dependencies": {
     "@labpics/proto-a-lit": "workspace:*",

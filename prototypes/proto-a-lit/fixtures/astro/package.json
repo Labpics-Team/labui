@@ -5,9 +5,10 @@
   "description": "SSR fixture — Astro rendering the Lit Button (criterion 1).",
   "type": "module",
   "scripts": {
-    "build": "astro build",
+    "build": "node -e \"process.stdout.write('proto fixture: build via ssr:build\\n')\"",
+    "ssr:build": "astro build",
     "preview": "astro preview --host 127.0.0.1 --port 4402",
-    "ssr:probe": "node ./ssr-probe.mjs"
+    "ssr:probe": "astro build && node ./ssr-probe.mjs"
   },
   "dependencies": {
     "@astrojs/lit": "4.3.0",

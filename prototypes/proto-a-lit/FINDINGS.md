@@ -140,11 +140,13 @@ for the 38-component library.
     pnpm --filter @labpics/proto-a-lit size         # criterion 4 number
     pnpm --filter @labpics/proto-a-lit typecheck    # criterion 2
     pnpm --filter @labpics/proto-a-lit test:e2e     # criterion 3 + a11y (5 tests, :4400)
-    pnpm --filter @labpics/proto-a-lit-astro build
-    pnpm --filter @labpics/proto-a-lit-astro ssr:probe   # criterion 1 Astro (PASS)
-    pnpm --filter @labpics/proto-a-lit-next build
-    pnpm --filter @labpics/proto-a-lit-next start &      # criterion 1 Next
+    pnpm --filter @labpics/proto-a-lit-astro ssr:probe   # criterion 1 Astro (builds, PASS)
+    pnpm --filter @labpics/proto-a-lit-next ssr:build    # criterion 1 Next (builds)
+    pnpm --filter @labpics/proto-a-lit-next start &      # then serve
     curl -s http://127.0.0.1:4401/raw | grep -c shadowrootmode   # -> 0 (shallow)
+
+(The fixtures' repo-wide `build` is a no-op so `pnpm -r build` stays fast; the real
+SSR build is `ssr:build`, invoked by `ssr:probe`.)
 
 ## Repo-shared files touched (collision note with proto-B)
 
