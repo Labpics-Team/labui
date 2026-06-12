@@ -1,0 +1,738 @@
+{
+  "space": {
+    "0": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0rem"
+        }
+      }
+    },
+    "1": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "2": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "3": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "4": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "5": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "6": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "7": {
+      "$type": "dimension",
+      "$value": {
+        "value": 28,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.75rem"
+        }
+      }
+    },
+    "8": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "9": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
+        }
+      }
+    },
+    "10": {
+      "$type": "dimension",
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.5rem"
+        }
+      }
+    },
+    "11": {
+      "$type": "dimension",
+      "$value": {
+        "value": 44,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.75rem"
+        }
+      }
+    },
+    "12": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
+    },
+    "14": {
+      "$type": "dimension",
+      "$value": {
+        "value": 56,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3.5rem"
+        }
+      }
+    },
+    "16": {
+      "$type": "dimension",
+      "$value": {
+        "value": 64,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "4rem"
+        }
+      }
+    },
+    "18": {
+      "$type": "dimension",
+      "$value": {
+        "value": 72,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "4.5rem"
+        }
+      }
+    },
+    "20": {
+      "$type": "dimension",
+      "$value": {
+        "value": 80,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "5rem"
+        }
+      }
+    },
+    "22": {
+      "$type": "dimension",
+      "$value": {
+        "value": 88,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "5.5rem"
+        }
+      }
+    },
+    "24": {
+      "$type": "dimension",
+      "$value": {
+        "value": 96,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "6rem"
+        }
+      }
+    },
+    "26": {
+      "$type": "dimension",
+      "$value": {
+        "value": 104,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "6.5rem"
+        }
+      }
+    },
+    "28": {
+      "$type": "dimension",
+      "$value": {
+        "value": 112,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "7rem"
+        }
+      }
+    },
+    "30": {
+      "$type": "dimension",
+      "$value": {
+        "value": 120,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "7.5rem"
+        }
+      }
+    },
+    "32": {
+      "$type": "dimension",
+      "$value": {
+        "value": 128,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "8rem"
+        }
+      }
+    },
+    "px": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
+        }
+      }
+    }
+  },
+  "radius": {
+    "0": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0rem"
+        }
+      }
+    },
+    "xs": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    },
+    "sm": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": {
+        "value": 6,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.375rem"
+        }
+      }
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "2xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "3xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "4xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "5xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
+    },
+    "full": {
+      "$type": "dimension",
+      "$value": {
+        "value": 9999,
+        "unit": "px"
+      },
+      "$description": "Pill / fully-rounded — a semantic constant, not computed 50%.",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "9999px"
+        }
+      }
+    }
+  },
+  "z-index": {
+    "primary": {
+      "$type": "number",
+      "$value": 0,
+      "$description": "Base content plane."
+    },
+    "secondary": {
+      "$type": "number",
+      "$value": 100,
+      "$description": "Raised content within a context."
+    },
+    "tertiary": {
+      "$type": "number",
+      "$value": 200,
+      "$description": "Further-raised content."
+    },
+    "quaternary": {
+      "$type": "number",
+      "$value": 300,
+      "$description": "Top of the in-flow content stack."
+    },
+    "grouped-primary": {
+      "$type": "number",
+      "$value": 400,
+      "$description": "Base plane of a grouped surface (card stack, list)."
+    },
+    "grouped-secondary": {
+      "$type": "number",
+      "$value": 500,
+      "$description": "Raised plane within a grouped surface."
+    },
+    "grouped-tertiary": {
+      "$type": "number",
+      "$value": 600,
+      "$description": "Top plane within a grouped surface."
+    },
+    "inverted": {
+      "$type": "number",
+      "$value": 700,
+      "$description": "Inverted surface plane (contrast island)."
+    },
+    "skip-link": {
+      "$type": "number",
+      "$value": 800,
+      "$description": "Accessibility skip-to-content link."
+    },
+    "dropdown": {
+      "$type": "number",
+      "$value": 900,
+      "$description": "Menus, selects, comboboxes, popovers anchored to a trigger."
+    },
+    "sticky": {
+      "$type": "number",
+      "$value": 1000,
+      "$description": "Sticky headers and bars."
+    },
+    "modal-underlay": {
+      "$type": "number",
+      "$value": 1100,
+      "$description": "Modal scrim / backdrop."
+    },
+    "modal": {
+      "$type": "number",
+      "$value": 1200,
+      "$description": "Dialogs and modal panels."
+    },
+    "toast": {
+      "$type": "number",
+      "$value": 1300,
+      "$description": "Transient notifications."
+    },
+    "tooltip": {
+      "$type": "number",
+      "$value": 1400,
+      "$description": "Top-most hint layer."
+    }
+  },
+  "font-size": {
+    "xxs": {
+      "$type": "dimension",
+      "$value": {
+        "value": 9.1827,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(0.5739rem, -0.2096vw + 0.7364rem, 0.6944rem)",
+          "fluid": {
+            "step": -2,
+            "minPx": 11.1111,
+            "maxPx": 9.1827,
+            "slopeVw": -0.2096,
+            "interceptRem": 0.7364
+          }
+        }
+      }
+    },
+    "xs": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12.1212,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(0.7576rem, -0.1318vw + 0.8597rem, 0.8333rem)",
+          "fluid": {
+            "step": -1,
+            "minPx": 13.3333,
+            "maxPx": 12.1212,
+            "slopeVw": -0.1318,
+            "interceptRem": 0.8597
+          }
+        }
+      }
+    },
+    "md": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(1rem, 0vw + 1rem, 1rem)",
+          "fluid": {
+            "step": 0,
+            "minPx": 16,
+            "maxPx": 16,
+            "slopeVw": 0,
+            "interceptRem": 1
+          }
+        }
+      }
+    },
+    "lg": {
+      "$type": "dimension",
+      "$value": {
+        "value": 21.12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(1.2rem, 0.2087vw + 1.1583rem, 1.32rem)",
+          "fluid": {
+            "step": 1,
+            "minPx": 19.2,
+            "maxPx": 21.12,
+            "slopeVw": 0.2087,
+            "interceptRem": 1.1583
+          }
+        }
+      }
+    },
+    "xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 27.8784,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(1.44rem, 0.5259vw + 1.3348rem, 1.7424rem)",
+          "fluid": {
+            "step": 2,
+            "minPx": 23.04,
+            "maxPx": 27.8784,
+            "slopeVw": 0.5259,
+            "interceptRem": 1.3348
+          }
+        }
+      }
+    },
+    "2xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36.7995,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(1.728rem, 0.9947vw + 1.5291rem, 2.3rem)",
+          "fluid": {
+            "step": 3,
+            "minPx": 27.648,
+            "maxPx": 36.7995,
+            "slopeVw": 0.9947,
+            "interceptRem": 1.5291
+          }
+        }
+      }
+    },
+    "3xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48.5753,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(2.0736rem, 1.6737vw + 1.7389rem, 3.036rem)",
+          "fluid": {
+            "step": 4,
+            "minPx": 33.1776,
+            "maxPx": 48.5753,
+            "slopeVw": 1.6737,
+            "interceptRem": 1.7389
+          }
+        }
+      }
+    },
+    "4xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 64.1194,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(2.4883rem, 2.642vw + 1.9599rem, 4.0075rem)",
+          "fluid": {
+            "step": 5,
+            "minPx": 39.8131,
+            "maxPx": 64.1194,
+            "slopeVw": 2.642,
+            "interceptRem": 1.9599
+          }
+        }
+      }
+    },
+    "5xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 84.6376,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(2.986rem, 4.0067vw + 2.1846rem, 5.2899rem)",
+          "fluid": {
+            "step": 6,
+            "minPx": 47.7757,
+            "maxPx": 84.6376,
+            "slopeVw": 4.0067,
+            "interceptRem": 2.1846
+          }
+        }
+      }
+    },
+    "6xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 111.7217,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem)",
+          "fluid": {
+            "step": 7,
+            "minPx": 57.3309,
+            "maxPx": 111.7217,
+            "slopeVw": 5.912,
+            "interceptRem": 2.4008
+          }
+        }
+      }
+    }
+  },
+  "line-height": {
+    "xxs": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "xs": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "md": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "lg": {
+      "$type": "number",
+      "$value": 1.3
+    },
+    "xl": {
+      "$type": "number",
+      "$value": 1.3
+    },
+    "2xl": {
+      "$type": "number",
+      "$value": 1.3
+    },
+    "3xl": {
+      "$type": "number",
+      "$value": 1.2
+    },
+    "4xl": {
+      "$type": "number",
+      "$value": 1.2
+    },
+    "5xl": {
+      "$type": "number",
+      "$value": 1.2
+    },
+    "6xl": {
+      "$type": "number",
+      "$value": 1.2
+    }
+  }
+}

@@ -1,0 +1,99 @@
+/*
+ * LabUI dimension tokens — GENERATED. Do not edit by hand.
+ * Source: packages/tokens/src/config + generator. Run `pnpm --filter
+ * @labpics/ui-tokens build` to regenerate from the single config source.
+ */
+:root {
+  /* Spacing — linear rem multiplier (root font-size scales all) */
+  --lab-space-0: 0rem;
+  --lab-space-1: 0.25rem;
+  --lab-space-2: 0.5rem;
+  --lab-space-3: 0.75rem;
+  --lab-space-4: 1rem;
+  --lab-space-5: 1.25rem;
+  --lab-space-6: 1.5rem;
+  --lab-space-7: 1.75rem;
+  --lab-space-8: 2rem;
+  --lab-space-9: 2.25rem;
+  --lab-space-10: 2.5rem;
+  --lab-space-11: 2.75rem;
+  --lab-space-12: 3rem;
+  --lab-space-14: 3.5rem;
+  --lab-space-16: 4rem;
+  --lab-space-18: 4.5rem;
+  --lab-space-20: 5rem;
+  --lab-space-22: 5.5rem;
+  --lab-space-24: 6rem;
+  --lab-space-26: 6.5rem;
+  --lab-space-28: 7rem;
+  --lab-space-30: 7.5rem;
+  --lab-space-32: 8rem;
+  --lab-space-px: 0.0625rem;
+  --lab-space-none: var(--lab-space-0); /* -> 0 */
+  --lab-space-xs: var(--lab-space-1); /* -> 1 */
+  --lab-space-sm: var(--lab-space-2); /* -> 2 */
+  --lab-space-md: var(--lab-space-4); /* -> 4 */
+  --lab-space-lg: var(--lab-space-6); /* -> 6 */
+  --lab-space-xl: var(--lab-space-8); /* -> 8 */
+  --lab-space-2xl: var(--lab-space-12); /* -> 12 */
+  --lab-space-3xl: var(--lab-space-16); /* -> 16 */
+
+  /* Radii — geometric rem + full pill */
+  --lab-radius-0: 0rem;
+  --lab-radius-xs: 0.125rem;
+  --lab-radius-sm: 0.25rem;
+  --lab-radius-md: 0.375rem;
+  --lab-radius-lg: 0.5rem;
+  --lab-radius-xl: 0.75rem;
+  --lab-radius-2xl: 1rem;
+  --lab-radius-3xl: 1.5rem;
+  --lab-radius-4xl: 2rem;
+  --lab-radius-5xl: 3rem;
+  --lab-radius-full: 9999px; /* Pill / fully-rounded — a semantic constant, not computed 50%. */
+  --lab-radius-none: var(--lab-radius-0); /* -> 0 */
+  --lab-radius-control: var(--lab-radius-lg); /* -> lg */
+  --lab-radius-card: var(--lab-radius-2xl); /* -> 2xl */
+  --lab-radius-pill: var(--lab-radius-full); /* -> full */
+  --lab-radius-circle: var(--lab-radius-full); /* -> full */
+
+  /* Z-index — semantic layers, gap-spaced */
+  --lab-z-primary: 0; /* Base content plane. */
+  --lab-z-secondary: 100; /* Raised content within a context. */
+  --lab-z-tertiary: 200; /* Further-raised content. */
+  --lab-z-quaternary: 300; /* Top of the in-flow content stack. */
+  --lab-z-grouped-primary: 400; /* Base plane of a grouped surface (card stack, list). */
+  --lab-z-grouped-secondary: 500; /* Raised plane within a grouped surface. */
+  --lab-z-grouped-tertiary: 600; /* Top plane within a grouped surface. */
+  --lab-z-inverted: 700; /* Inverted surface plane (contrast island). */
+  --lab-z-skip-link: 800; /* Accessibility skip-to-content link. */
+  --lab-z-dropdown: 900; /* Menus, selects, comboboxes, popovers anchored to a trigger. */
+  --lab-z-sticky: 1000; /* Sticky headers and bars. */
+  --lab-z-modal-underlay: 1100; /* Modal scrim / backdrop. */
+  --lab-z-modal: 1200; /* Dialogs and modal panels. */
+  --lab-z-toast: 1300; /* Transient notifications. */
+  --lab-z-tooltip: 1400; /* Top-most hint layer. */
+
+  /* Typography — fluid font-size gradient (clamp, no media queries) */
+  --lab-font-size-xxs: clamp(0.5739rem, -0.2096vw + 0.7364rem, 0.6944rem);
+  --lab-font-size-xs: clamp(0.7576rem, -0.1318vw + 0.8597rem, 0.8333rem);
+  --lab-font-size-md: clamp(1rem, 0vw + 1rem, 1rem);
+  --lab-font-size-lg: clamp(1.2rem, 0.2087vw + 1.1583rem, 1.32rem);
+  --lab-font-size-xl: clamp(1.44rem, 0.5259vw + 1.3348rem, 1.7424rem);
+  --lab-font-size-2xl: clamp(1.728rem, 0.9947vw + 1.5291rem, 2.3rem);
+  --lab-font-size-3xl: clamp(2.0736rem, 1.6737vw + 1.7389rem, 3.036rem);
+  --lab-font-size-4xl: clamp(2.4883rem, 2.642vw + 1.9599rem, 4.0075rem);
+  --lab-font-size-5xl: clamp(2.986rem, 4.0067vw + 2.1846rem, 5.2899rem);
+  --lab-font-size-6xl: clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem);
+
+  /* Typography — line-height multipliers */
+  --lab-line-height-xxs: 1.5;
+  --lab-line-height-xs: 1.5;
+  --lab-line-height-md: 1.5;
+  --lab-line-height-lg: 1.3;
+  --lab-line-height-xl: 1.3;
+  --lab-line-height-2xl: 1.3;
+  --lab-line-height-3xl: 1.2;
+  --lab-line-height-4xl: 1.2;
+  --lab-line-height-5xl: 1.2;
+  --lab-line-height-6xl: 1.2;
+}

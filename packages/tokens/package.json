@@ -13,16 +13,24 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./tokens.css": "./dist/tokens.css",
+    "./tokens.dtcg.json": "./dist/tokens.dtcg.json",
+    "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": false,
+  "sideEffects": ["./dist/tokens.css"],
   "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "generate": "tsx scripts/build-tokens.ts",
+    "build": "pnpm run generate && tsup && tsx scripts/copy-artifacts.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "tsx": "4.19.2",
+    "typescript": "5.7.3",
+    "vitest": "2.1.8"
   }
 }
