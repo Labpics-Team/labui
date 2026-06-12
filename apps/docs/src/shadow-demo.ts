@@ -12,8 +12,6 @@
  *
  * Feature-detected and null-guarded so a missing element never throws.
  */
-import { ELEVATION_SHAPES, SHADOW_SLOTS, type ShadowSlotName } from '@labpics/ui-shadow';
-
 const root = document.documentElement;
 
 const themeToggle = document.querySelector<HTMLButtonElement>('[data-testid="theme-toggle"]');
@@ -40,16 +38,41 @@ if (angle && angleOut) {
   const ink = (slot: string): string =>
     `color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-${slot}) * 100%))`;
 
-  // The ladder geometry is the package's SINGLE source of truth — imported, not
-  // re-declared, so the demo can never drift from the опора the package encodes.
-  // Used only to re-project at a non-default angle for the advanced control.
-  const ladderFor = (
-    size: string,
-  ): readonly { slot: ShadowSlotName; blur: number; offsetY: number }[] => {
-    const level = ELEVATION_SHAPES.find((l) => l.name === size);
-    if (!level) return [];
-    return SHADOW_SLOTS.map((slot) => ({ slot, ...level.slots[slot] }));
+  // The owner ladder (blur r, vertical throw y) — the same opora table the
+  // package encodes. Used only to re-project at a non-default angle for the demo.
+  const LADDER: Record<string, ReadonlyArray<{ r: number; y: number }>> = {
+    xs: [
+      { r: 1, y: 0 },
+      { r: 1, y: 1 },
+      { r: 2, y: 2 },
+      { r: 2, y: 4 },
+    ],
+    s: [
+      { r: 2, y: 1 },
+      { r: 2, y: 2 },
+      { r: 4, y: 4 },
+      { r: 8, y: 12 },
+    ],
+    m: [
+      { r: 2, y: 1 },
+      { r: 4, y: 4 },
+      { r: 8, y: 12 },
+      { r: 12, y: 24 },
+    ],
+    l: [
+      { r: 8, y: 4 },
+      { r: 12, y: 12 },
+      { r: 16, y: 24 },
+      { r: 24, y: 48 },
+    ],
+    xl: [
+      { r: 36, y: 16 },
+      { r: 48, y: 24 },
+      { r: 64, y: 36 },
+      { r: 96, y: 48 },
+    ],
   };
+  const SLOTS = ['s1', 's2', 's3', 's4'] as const;
 
   const sizeCards = Array.from(
     document.querySelectorAll<HTMLElement>('[data-testid^="card-"]'),
@@ -64,17 +87,21 @@ if (angle && angleOut) {
     const cos = Math.cos(rad);
     for (const { el, size } of sizeCards) {
       if (!size) continue;
+      const rows = LADDER[size];
+      if (!rows) continue;
       if (deg === 0) {
         // Restore the literal contract — clear the inline override.
         el.style.removeProperty('box-shadow');
         continue;
       }
-      const plies = ladderFor(size).map(({ slot, blur, offsetY }) => {
-        const x = (offsetY * sin).toFixed(2);
-        const y = (offsetY * cos).toFixed(2);
-        return `${x}px ${y}px ${blur}px ${ink(slot)}`;
-      });
-      if (plies.length > 0) el.style.boxShadow = plies.join(', ');
+      const plies = SLOTS.map((slot, i) => {
+        const row = rows[i];
+        if (!row) return '';
+        const x = (row.y * sin).toFixed(2);
+        const y = (row.y * cos).toFixed(2);
+        return `${x}px ${y}px ${row.r}px ${ink(slot)}`;
+      }).filter(Boolean);
+      el.style.boxShadow = plies.join(', ');
     }
   };
 
