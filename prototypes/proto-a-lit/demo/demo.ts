@@ -67,7 +67,9 @@ for (const type of types) {
 {
   const c = cell('size s · m · l');
   for (const size of sizes) {
-    c.appendChild(button({ type: 'accent', kind: 'fill', size, testid: `btn-size-${size}`, label: size }));
+    c.appendChild(
+      button({ type: 'accent', kind: 'fill', size, testid: `btn-size-${size}`, label: size }),
+    );
   }
   matrix.appendChild(c);
 }
@@ -82,8 +84,18 @@ for (const type of types) {
 // loading + disabled
 {
   const c = cell('loading · disabled');
-  c.appendChild(button({ type: 'accent', kind: 'fill', loading: true, testid: 'btn-loading', label: 'Saving' }));
-  c.appendChild(button({ type: 'neutral', kind: 'border', disabled: true, testid: 'btn-disabled', label: 'Off' }));
+  c.appendChild(
+    button({ type: 'accent', kind: 'fill', loading: true, testid: 'btn-loading', label: 'Saving' }),
+  );
+  c.appendChild(
+    button({
+      type: 'neutral',
+      kind: 'border',
+      disabled: true,
+      testid: 'btn-disabled',
+      label: 'Off',
+    }),
+  );
   matrix.appendChild(c);
 }
 

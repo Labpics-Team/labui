@@ -53,9 +53,7 @@ test('--lab-* pierces shadow DOM and themes swap with no component edit', async 
   // repaint flushes (a single read can race the style recalc after the swap).
   await page.getByTestId('theme-toggle').click();
   await expect(page.getByTestId('theme-name')).toHaveText('light');
-  await expect
-    .poll(async () => rgb(await innerBg(btn)))
-    .not.toBe(rgb(darkBg));
+  await expect.poll(async () => rgb(await innerBg(btn))).not.toBe(rgb(darkBg));
 });
 
 test('loading state is announced and blocks interaction', async ({ page }) => {

@@ -1,9 +1,9 @@
 /* Demo-page chrome only. The Button's own styling comes from --lab-* inside
  * its shadow root; this file just lays out the matrix and loads the theme sets
  * + the dimension-token contract. */
-@import '@labpics/colors/contract.css';
-@import '@labpics/ui-tokens/tokens.css';
-@import '../fixtures/themes.css';
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "../fixtures/themes.css";
 
 body {
   margin: 0;

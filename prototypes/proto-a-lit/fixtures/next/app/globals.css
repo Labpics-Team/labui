@@ -1,6 +1,6 @@
-@import '@labpics/colors/contract.css';
-@import '@labpics/ui-tokens/tokens.css';
-@import '../../themes.css';
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "../../themes.css";
 
 body {
   margin: 0;

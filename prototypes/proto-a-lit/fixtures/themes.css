@@ -14,7 +14,7 @@
  */
 
 /* ---- DARK (default) — aligns with the @labpics/colors stub values -------- */
-[data-theme='dark'] {
+[data-theme="dark"] {
   --lab-surface-base: #0b0b0c;
   --lab-surface-raised: #161618;
 
@@ -47,7 +47,7 @@
 }
 
 /* ---- LIGHT — the SAME role names, inverted values ------------------------ */
-[data-theme='light'] {
+[data-theme="light"] {
   --lab-surface-base: #ffffff;
   --lab-surface-raised: #f4f4f6;
 

@@ -11,7 +11,9 @@ export const dynamic = 'force-dynamic';
 export default function RawPage() {
   return (
     <main>
-      <h1 style={{ color: 'var(--lab-label-primary)', fontSize: '1.5rem' }}>Next 15 SSR (raw tag)</h1>
+      <h1 style={{ color: 'var(--lab-label-primary)', fontSize: '1.5rem' }}>
+        Next 15 SSR (raw tag)
+      </h1>
       <RawButtons />
     </main>
   );
