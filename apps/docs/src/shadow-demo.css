@@ -1,7 +1,7 @@
 /*
  * Shadow-stack demo. Consumes the generated contract from @labpics/ui-shadow and
- * the --lab-* color contract from @labpics/colors. The cards apply only the
- * semantic --lab-elevation-* roles (inline in the HTML) — never raw plies.
+ * the --lab-* color contract from @labpics/colors. The cards apply a size
+ * (.lab-shadow-*) or a role alias (.lab-elevation-*) inline — never raw plies.
  */
 @import "@labpics/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
@@ -85,6 +85,25 @@ main {
   color: var(--demo-ink-soft);
 }
 
+.advanced {
+  width: 100%;
+}
+
+.advanced > summary {
+  cursor: pointer;
+  font-weight: var(--lab-font-weight-semibold, 600);
+  color: var(--demo-ink-soft);
+}
+
+.advanced[open] > summary {
+  margin-bottom: 0.75rem;
+}
+
+.section-head {
+  margin: 1rem 0 0;
+  font-size: 1.25rem;
+}
+
 #theme-toggle {
   appearance: none;
   border: 1px solid color-mix(in srgb, transparent, var(--demo-ink) 20%);
@@ -96,6 +115,8 @@ main {
   font-weight: var(--lab-font-weight-semibold, 600);
   cursor: pointer;
   box-shadow: var(--lab-elevation-resting);
+  /* Elevation changes ease via the system motion token, never snap. */
+  transition: var(--lab-shadow-transition), background 200ms ease, color 200ms ease;
 }
 
 #theme-toggle:hover {
@@ -109,8 +130,10 @@ main {
 
 .grid {
   display: grid;
+  /* Wide gap so the XL card's far ply has room to fall without clipping. */
   grid-template-columns: 1fr;
-  gap: clamp(1.5rem, 4vw, 2.5rem);
+  gap: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: 1rem;
 }
 
 @media (min-width: 40rem) {
@@ -119,8 +142,12 @@ main {
   }
 }
 
-@media (min-width: 60rem) {
+@media (min-width: 64rem) {
   .grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .role-grid,
+  .tinted-surface {
     grid-template-columns: repeat(4, 1fr);
   }
   .tinted-surface {
@@ -135,30 +162,25 @@ main {
   min-height: 9rem;
   padding: 1.25rem;
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 0.25rem;
-  transition: box-shadow 200ms ease;
+  align-items: flex-end;
+  /* Elevation changes ease via the system motion token (owner verdict c). */
+  transition: var(--lab-shadow-transition);
 }
 
-.card h2 {
-  margin: 0;
-  font-size: 1.1rem;
-}
-
-.card p {
-  margin: 0;
+.card-label {
   color: var(--demo-ink-soft);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .card code {
   font-size: 0.8rem;
 }
 
-/* The tinted surface sets its own shadow tint from the --lab-* contract, so its
-   shadow carries the surface hue instead of the neutral anchor. */
+/* Opt-in tint: a surface raises the tint strength and provides a hue. The
+   anchor stays the dark base, so the composite never lightens past the surface
+   (owner constraint: a shadow, never a glow). */
 .card-tinted {
   --lab-surface-shadow-tint: var(--lab-label-brand-primary);
+  --lab-shadow-tint-strength: 0.35;
   background: color-mix(in srgb, var(--demo-card), var(--lab-label-brand-primary) 8%);
 }
