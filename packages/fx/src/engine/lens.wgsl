@@ -1,13 +1,15 @@
-// Glass refraction shader — fullscreen quad with Fresnel + chromatic aberration.
-// Uniform ior controls refractive index; higher = more bending at edges.
+// Glass refraction shader — fullscreen quad with Fresnel + chromatic dispersion.
+// Per-wavelength IOR (R/G/B) produces true physical dispersion: blue bends more
+// than green, green more than red — no artificial multiplier needed.
 // Fresnel power governs edge-reflect vs center-transmit balance.
-// Chromatic aberration mimics real lens dispersion: R/G/B sample at different offsets.
 
 struct LensUniforms {
-    ior: f32,
+    ior_r: f32,    // 650nm (red)
+    ior_g: f32,    // 550nm (green)
+    ior_b: f32,    // 450nm (blue)
     depth: f32,
     fresnel_power: f32,
-    _pad0: f32, // WGSL struct alignment — vec3<f32> needs 16-byte stride
+    _pad: f32,     // alignment — vec3<f32> needs 16-byte stride
     tint: vec3<f32>,
     chromatic_aberration: f32,
 }
@@ -49,23 +51,30 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     // Centre = straight-on (cos_theta ≈ 1), corners = grazing angle.
     let radial = length(uv - vec2<f32>(0.5, 0.5)) * 2.0;
     let cos_theta = 1.0 - radial * 0.65;
-
-    // Fresnel reflectance at normal incidence (Schlick approximation).
-    let f0 = pow((lens.ior - 1.0) / (lens.ior + 1.0), 2.0);
-    let fresnel = f0 + (1.0 - f0) * pow(1.0 - cos_theta, lens.fresnel_power);
-
-    // Refraction offset: stronger toward edges, scaled by depth and ior.
-    let refraction_strength = radial * lens.depth * (lens.ior - 1.0) * 0.12;
     let offset_dir = uv - vec2<f32>(0.5, 0.5);
-    let base_offset = offset_dir * refraction_strength;
 
-    // Chromatic aberration: per-channel offset differences.
-    // Shorter wavelengths (blue) refract more → larger offset.
-    // R = 0.97x, G = 1.0x, B = 1.03x of base offset (relative dispersion).
-    let ca = lens.chromatic_aberration;
-    let r_uv = uv + base_offset * (1.0 - ca * 0.03);
-    let g_uv = uv + base_offset;
-    let b_uv = uv + base_offset * (1.0 + ca * 0.03);
+    // Per-channel Fresnel (Schlick approximation).
+    let f0_r = pow((lens.ior_r - 1.0) / (lens.ior_r + 1.0), 2.0);
+    let fresnel_r = f0_r + (1.0 - f0_r) * pow(1.0 - cos_theta, lens.fresnel_power);
+
+    let f0_g = pow((lens.ior_g - 1.0) / (lens.ior_g + 1.0), 2.0);
+    let fresnel_g = f0_g + (1.0 - f0_g) * pow(1.0 - cos_theta, lens.fresnel_power);
+
+    let f0_b = pow((lens.ior_b - 1.0) / (lens.ior_b + 1.0), 2.0);
+    let fresnel_b = f0_b + (1.0 - f0_b) * pow(1.0 - cos_theta, lens.fresnel_power);
+
+    // Average Fresnel for reflection amount (single value for mix).
+    let fresnel = (fresnel_r + fresnel_g + fresnel_b) / 3.0;
+
+    // Per-wavelength refraction offset: blue (high IOR) bends more.
+    let base_offset_r = offset_dir * radial * lens.depth * (lens.ior_r - 1.0) * 0.12;
+    let base_offset_g = offset_dir * radial * lens.depth * (lens.ior_g - 1.0) * 0.12;
+    let base_offset_b = offset_dir * radial * lens.depth * (lens.ior_b - 1.0) * 0.12;
+
+    // Sample background at per-channel UV offsets.
+    let r_uv = uv + base_offset_r;
+    let g_uv = uv + base_offset_g;
+    let b_uv = uv + base_offset_b;
 
     let r = textureSample(background, bg_sampler, r_uv).r;
     let g = textureSample(background, bg_sampler, g_uv).g;

@@ -27,7 +27,9 @@ precision highp float;
 in vec2 v_uv;
 out vec4 out_color;
 
-uniform float u_ior;
+uniform float u_ior_r;
+uniform float u_ior_g;
+uniform float u_ior_b;
 uniform float u_depth;
 uniform float u_fresnel_power;
 uniform vec3 u_tint;
@@ -37,18 +39,28 @@ uniform sampler2D u_background;
 void main() {
     float radial = length(v_uv - 0.5) * 2.0;
     float cos_theta = 1.0 - radial * 0.65;
-
-    float f0 = pow((u_ior - 1.0) / (u_ior + 1.0), 2.0);
-    float fresnel = f0 + (1.0 - f0) * pow(1.0 - cos_theta, u_fresnel_power);
-
-    float refraction_strength = radial * u_depth * (u_ior - 1.0) * 0.12;
     vec2 offset_dir = v_uv - 0.5;
-    vec2 base_offset = offset_dir * refraction_strength;
 
-    float ca = u_chromatic_aberration;
-    vec2 r_uv = v_uv + base_offset * (1.0 - ca * 0.03);
-    vec2 g_uv = v_uv + base_offset;
-    vec2 b_uv = v_uv + base_offset * (1.0 + ca * 0.03);
+    // Per-channel Fresnel (Schlick approximation).
+    float f0_r = pow((u_ior_r - 1.0) / (u_ior_r + 1.0), 2.0);
+    float fresnel_r = f0_r + (1.0 - f0_r) * pow(1.0 - cos_theta, u_fresnel_power);
+
+    float f0_g = pow((u_ior_g - 1.0) / (u_ior_g + 1.0), 2.0);
+    float fresnel_g = f0_g + (1.0 - f0_g) * pow(1.0 - cos_theta, u_fresnel_power);
+
+    float f0_b = pow((u_ior_b - 1.0) / (u_ior_b + 1.0), 2.0);
+    float fresnel_b = f0_b + (1.0 - f0_b) * pow(1.0 - cos_theta, u_fresnel_power);
+
+    float fresnel = (fresnel_r + fresnel_g + fresnel_b) / 3.0;
+
+    // Per-wavelength refraction offset: blue (high IOR) bends more.
+    vec2 base_offset_r = offset_dir * radial * u_depth * (u_ior_r - 1.0) * 0.12;
+    vec2 base_offset_g = offset_dir * radial * u_depth * (u_ior_g - 1.0) * 0.12;
+    vec2 base_offset_b = offset_dir * radial * u_depth * (u_ior_b - 1.0) * 0.12;
+
+    vec2 r_uv = v_uv + base_offset_r;
+    vec2 g_uv = v_uv + base_offset_g;
+    vec2 b_uv = v_uv + base_offset_b;
 
     float r = texture(u_background, r_uv).r;
     float g = texture(u_background, g_uv).g;
@@ -192,7 +204,9 @@ export class WebGL2Fallback {
     gl.useProgram(this.lensProgram);
     gl.bindVertexArray(this.lensVAO);
 
-    gl.uniform1f(gl.getUniformLocation(this.lensProgram, 'u_ior'), config.ior);
+    gl.uniform1f(gl.getUniformLocation(this.lensProgram, 'u_ior_r'), config.ior[0]);
+    gl.uniform1f(gl.getUniformLocation(this.lensProgram, 'u_ior_g'), config.ior[1]);
+    gl.uniform1f(gl.getUniformLocation(this.lensProgram, 'u_ior_b'), config.ior[2]);
     gl.uniform1f(gl.getUniformLocation(this.lensProgram, 'u_depth'), config.depth);
     gl.uniform1f(gl.getUniformLocation(this.lensProgram, 'u_fresnel_power'), config.fresnelPower);
     gl.uniform3fv(gl.getUniformLocation(this.lensProgram, 'u_tint'), config.tint);

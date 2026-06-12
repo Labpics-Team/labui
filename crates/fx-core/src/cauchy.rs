@@ -78,6 +78,13 @@ pub fn rgb_ior(coeffs: (f64, f64, f64)) -> [f64; 3] {
     ]
 }
 
+/// Precomputed RGB IOR for BK7 glass at sRGB primaries (650, 550, 450 nm).
+///
+/// These are the exact values from `rgb_ior(bk7_coefficients())`.
+/// Blue refracts more than green, green more than red — the physics of
+/// normal dispersion in optical glass.
+pub const BK7_RGB_IOR: [f64; 3] = [1.51432, 1.51872, 1.52628];
+
 /// Converts Sellmeier coefficients (6 parameters) to an equivalent set of
 /// Cauchy coefficients (3 parameters).
 ///
@@ -338,6 +345,14 @@ mod tests {
             "RGB chromatic spread: expected ≥ 0.008, got {:.5}",
             b - r
         );
+    }
+
+    #[test]
+    fn bk7_rgb_ior_blue_exceeds_red_by_at_least_0_008() {
+        let [r, g, b] = BK7_RGB_IOR;
+        assert!(b > g);
+        assert!(g > r);
+        assert!(b - r >= 0.008);
     }
 
     // --- sellmeier_to_cauchy -------------------------------------------------

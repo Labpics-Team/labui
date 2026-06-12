@@ -10,7 +10,9 @@
  */
 
 export const FX_TOKEN_NAMES = {
-  glassIor: '--lab-glass-ior',
+  glassIorR: '--lab-glass-ior-r',
+  glassIorG: '--lab-glass-ior-g',
+  glassIorB: '--lab-glass-ior-b',
   glassDepth: '--lab-glass-depth',
   glassFresnel: '--lab-glass-fresnel-power',
   glassTint: '--lab-glass-tint',
@@ -28,7 +30,9 @@ export const FX_TOKEN_NAMES = {
 export type FxTokenName = (typeof FX_TOKEN_NAMES)[keyof typeof FX_TOKEN_NAMES];
 
 export interface FxTokenValues {
-  glassIor: number;
+  glassIorR: number;
+  glassIorG: number;
+  glassIorB: number;
   glassDepth: number;
   glassFresnel: number;
   glassTint: [number, number, number];
@@ -44,7 +48,9 @@ export interface FxTokenValues {
 }
 
 const TOKEN_DEFAULTS: FxTokenValues = {
-  glassIor: 1.33,
+  glassIorR: 1.51432,
+  glassIorG: 1.51872,
+  glassIorB: 1.52628,
   glassDepth: 1,
   glassFresnel: 5,
   glassTint: [1, 1, 1],
@@ -127,7 +133,9 @@ export function readFxCssTokens(): FxTokenValues {
   const styles = getComputedStyle(document.documentElement);
 
   return {
-    glassIor: readNumeric(styles, FX_TOKEN_NAMES.glassIor, TOKEN_DEFAULTS.glassIor),
+    glassIorR: readNumeric(styles, FX_TOKEN_NAMES.glassIorR, TOKEN_DEFAULTS.glassIorR),
+    glassIorG: readNumeric(styles, FX_TOKEN_NAMES.glassIorG, TOKEN_DEFAULTS.glassIorG),
+    glassIorB: readNumeric(styles, FX_TOKEN_NAMES.glassIorB, TOKEN_DEFAULTS.glassIorB),
     glassDepth: readNumeric(styles, FX_TOKEN_NAMES.glassDepth, TOKEN_DEFAULTS.glassDepth),
     glassFresnel: readNumeric(styles, FX_TOKEN_NAMES.glassFresnel, TOKEN_DEFAULTS.glassFresnel),
     glassTint: readColourTriplet(styles, FX_TOKEN_NAMES.glassTint, TOKEN_DEFAULTS.glassTint),

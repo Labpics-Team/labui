@@ -13,8 +13,8 @@ import penumbraWgsl from './penumbra.wgsl';
 // ---- Config types --------------------------------------------------------
 
 export interface LensConfig {
-  /** Refractive index, 1.0–1.5. Glass ≈ 1.45, water ≈ 1.33. */
-  ior: number;
+  /** Refractive index per channel [r, g, b]. BK7 glass ≈ [1.514, 1.519, 1.526]. */
+  ior: [number, number, number];
   /** Apparent thickness in rem units. Higher = stronger refraction offset. */
   depth: number;
   /** Fresnel power exponent. Default 5. Higher = sharper edge reflection. */
@@ -47,7 +47,7 @@ export interface ShadowConfig {
 
 // ---- Internal constants --------------------------------------------------
 
-const LENS_UNIFORM_SIZE = 32; // 8 × f32
+const LENS_UNIFORM_SIZE = 48; // 12 × f32 — 3×IOR + depth + fresnel + _pad + vec3 tint + ca
 
 // ---- Main engine class ---------------------------------------------------
 
@@ -286,14 +286,18 @@ export class FxEngine {
 
     // Write uniform — once per config change.
     const uniformData = new Float32Array(LENS_UNIFORM_SIZE / 4);
-    uniformData[0] = config.ior;
-    uniformData[1] = config.depth;
-    uniformData[2] = config.fresnelPower;
-    uniformData[3] = 0; // pad
-    uniformData[4] = config.tint[0];
-    uniformData[5] = config.tint[1];
-    uniformData[6] = config.tint[2];
-    uniformData[7] = config.chromaticAberration;
+    uniformData[0] = config.ior[0]; // ior_r
+    uniformData[1] = config.ior[1]; // ior_g
+    uniformData[2] = config.ior[2]; // ior_b
+    uniformData[3] = config.depth;
+    uniformData[4] = config.fresnelPower;
+    uniformData[5] = 0; // _pad (WGSL alignment before vec3<f32>)
+    uniformData[6] = 0; // implicit pad
+    uniformData[7] = 0; // implicit pad
+    uniformData[8] = config.tint[0];
+    uniformData[9] = config.tint[1];
+    uniformData[10] = config.tint[2];
+    uniformData[11] = config.chromaticAberration;
     device.queue.writeBuffer(this.lensUniformBuffer, 0, uniformData);
 
     const bindGroup = device.createBindGroup({

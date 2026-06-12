@@ -87,8 +87,8 @@ export class GlassSurface {
 }
 
 export interface GlassParams {
-  /** Refractive index — 1.0 (air) to 1.5 (dense glass). Default 1.33. */
-  ior: number;
+  /** Refractive index per channel [r, g, b]. Default BK7_RGB_IOR ≈ [1.514, 1.519, 1.526]. */
+  ior: [number, number, number];
   /** Apparent thickness in rem units. Drives refraction offset magnitude. */
   depth: number;
   /** Schlick fresnel power curve exponent. Higher = sharper edge reflection. */
