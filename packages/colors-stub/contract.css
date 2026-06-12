@@ -1,0 +1,37 @@
+/*
+ * ┌─────────────────────────────────────────────────────────────────────────┐
+ * │  TEMPORARY STUB of the @labpics/colors CSS contract.                      │
+ * │                                                                          │
+ * │  @labpics/colors is NOT published yet — it is produced by the            │
+ * │  lab-colors-v1 epic (chapter `native-and-release`). Its real runtime     │
+ * │  engine (chapter `runtime-engine`) resolves these --lab-* custom         │
+ * │  properties from the background at runtime (LUT / WASM / CSS injection).  │
+ * │                                                                          │
+ * │  This file declares the --lab-* contract BY HAND so the LabUI repo can   │
+ * │  pin and test the INTEGRATION POINT today, without implementing the      │
+ * │  color resolver here (that would duplicate semantic.rs — forbidden).     │
+ * │                                                                          │
+ * │  TODO(lab-colors-v1/runtime-engine): delete this stub and depend on the  │
+ * │  published @labpics/colors. The contract (--lab-* names) must stay        │
+ * │  identical so swapping the implementation is a no-op for consumers.      │
+ * │  Tracking: Graphiti group `research`/`daniel-agent-local` + EPIC note.   │
+ * └─────────────────────────────────────────────────────────────────────────┘
+ *
+ * Values below are placeholder constants, NOT the real resolved palette.
+ * The real engine resolves them per-surface; consumers must only ever read the
+ * --lab-* variable, never hardcode a hex.
+ */
+
+:root {
+  /* Surface roles */
+  --lab-surface-base: #0b0b0c;
+  --lab-surface-raised: #161618;
+
+  /* Label (text) roles — `label-primary` is "near the achievable maximum",
+     per Daniil's sanity principle (not a fixed delta). Stub uses near-white. */
+  --lab-label-primary: #f5f5f7;
+  --lab-label-secondary: #a1a1aa;
+
+  /* Accent role */
+  --lab-accent: #6e8bff;
+}

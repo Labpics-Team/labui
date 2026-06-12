@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "ru-RU"
+early_access: false
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+  path_instructions:
+    - path: "packages/tokens/**"
+      instructions: |
+        Генератор и выходные токены дизайн-системы. Проверяй:
+        - У каждой шкалы (spacing, radii, размер) есть явный корректный нулевой токен.
+        - Размерности на em/rem, без магических px без обоснования.
+        - Три языка разделения: примитивы -> семантика -> компоненты. Компоненты не
+          обращаются к примитивам напрямую.
+    - path: "packages/{react,vue,solid,svelte,astro}/**"
+      instructions: |
+        Адаптеры под стеки. Одна и та же модель компонентов на всех стеках —
+        проверяй, что адаптер не дублирует логику ядра, а тонко оборачивает его.
+    - path: "packages/motion/**"
+      instructions: |
+        Motion-движок без внешних зависимостей. Проверяй отсутствие рантайм-зависимостей
+        от Framer Motion/Anime.js и поддержку prefers-reduced-motion (мгновенно).
+    - path: "apps/docs/**"
+      instructions: |
+        Докс-сайт и Playwright-фикстуры. Проверяй, что цвета приходят из контракта
+        --lab-* (@labpics/colors), а не хардкодом hex. Заглушка контракта помечена TODO
+        со ссылкой на lab-colors runtime-engine.
+  tools:
+    biome:
+      enabled: true
+    markdownlint:
+      enabled: true
+    actionlint:
+      enabled: true
+    github-checks:
+      enabled: true
+      annotations: true
+  abort_on_close: true
+chat:
+  auto_reply: true
