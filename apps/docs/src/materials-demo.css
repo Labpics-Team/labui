@@ -96,7 +96,6 @@ body {
 
 .bar-brand {
   font-size: 1rem;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 .bar-controls {
@@ -141,14 +140,12 @@ main {
 h1[data-testid="title"] {
   font-size: clamp(2rem, 6vw, 3.5rem);
   margin: 0;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
 }
 
 p[data-testid="tagline"] {
   margin: 0;
   max-width: 48ch;
   line-height: 1.5;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
 }
 p[data-testid="tagline"] code {
   background: rgba(0, 0, 0, 0.3);
@@ -269,7 +266,6 @@ p[data-testid="tagline"] code {
 .ladder-title {
   margin: 0;
   font-size: 1.1rem;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
 }
 .ladder-row {
   display: grid;
