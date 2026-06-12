@@ -52,4 +52,14 @@ test('heading applies the --lab-label-primary token from @labpics/colors', async
   }, tokenValue);
 
   expect(normalizeColor(headingColor)).toBe(normalizeColor(tokenAsRgb));
+
+  // The decisive check (CodeRabbit #1): equality above would also pass if the
+  // heading hardcoded the same hex. Re-point the token at :root and assert the
+  // heading FOLLOWS it — only true var() consumption can do that.
+  const sentinel = 'rgb(1, 2, 3)';
+  await page.evaluate((value) => {
+    document.documentElement.style.setProperty('--lab-label-primary', value);
+  }, sentinel);
+  const followedColor = await title.evaluate((el) => getComputedStyle(el).color);
+  expect(normalizeColor(followedColor)).toBe(normalizeColor(sentinel));
 });
