@@ -72,7 +72,14 @@ export function composeElevation(
   return layers.map((layer) => composeLayer(level, layer)).join(',\n    ');
 }
 
-/** Deterministic rounding to keep generated CSS stable across runs. */
+/**
+ * Deterministic rounding to keep generated CSS stable across runs. Inputs are
+ * always finite products of the static layer/elevation config; a non-finite
+ * value means the config was corrupted, so fail loud rather than emit `NaNrem`.
+ */
 function round(value: number): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(`shadow geometry produced a non-finite value: ${value}`);
+  }
   return Math.round(value * 10000) / 10000;
 }

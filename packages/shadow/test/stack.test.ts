@@ -130,12 +130,15 @@ describe('shadow stack — generated CSS contract', () => {
     }
   });
 
-  it('the class form reads the per-surface tint var so it resolves at the element', () => {
+  it('every class form reads the per-surface tint var so it resolves at the element', () => {
     const css = generateShadowCss();
-    // The class body must contain the surface-tint lookup; that is what makes a
+    // Each class body must contain the surface-tint lookup; that is what makes a
     // tinted surface tint its own shadow (the token form cannot, by CSS rules).
-    const modalClass = css.slice(css.indexOf('.lab-elevation-modal {'));
-    expect(modalClass).toContain('var(--lab-surface-shadow-tint, var(--lab-shadow-color))');
+    for (const level of ELEVATION_LEVELS) {
+      const body = css.match(new RegExp(`\\.lab-elevation-${level}\\s*\\{[^}]+\\}`));
+      expect(body, `.lab-elevation-${level} class block missing`).not.toBeNull();
+      expect(body?.[0]).toContain('var(--lab-surface-shadow-tint, var(--lab-shadow-color))');
+    }
   });
 
   it('light and dark themes differ ONLY in variable values, not in elevation formulas', () => {

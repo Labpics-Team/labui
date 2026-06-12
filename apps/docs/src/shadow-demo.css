@@ -7,21 +7,25 @@
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-shadow/shadow.css";
 
-/* Demo-local surfaces. The stub colors contract carries dark surface values, so
-   the demo pins readable light/dark page surfaces explicitly for the owner's
-   eye — these are demo chrome, not part of the shadow contract. */
+/* Demo surfaces map onto the @labpics/colors --lab-* contract (surface + label
+   roles). The stub carries a single dark-leaning palette today; the real engine
+   resolves these per theme at runtime. The light-theme block below supplies
+   readable page chrome for the owner's eye until the engine themes the contract
+   — these light literals are demo-only chrome, not part of the shadow contract. */
 :root {
+  --demo-bg: var(--lab-surface-base);
+  --demo-card: var(--lab-surface-raised);
+  --demo-ink: var(--lab-label-primary);
+  --demo-ink-soft: var(--lab-label-secondary);
+}
+
+/* Demo-only light chrome — the stub contract is single-theme, so the demo pins
+   a readable light page until @labpics/colors resolves --lab-* per theme. */
+[data-theme="light"] {
   --demo-bg: #f4f4f6;
   --demo-card: #ffffff;
   --demo-ink: #16161a;
   --demo-ink-soft: #6b6b76;
-}
-
-[data-theme="dark"] {
-  --demo-bg: #0b0b0c;
-  --demo-card: #161618;
-  --demo-ink: #f5f5f7;
-  --demo-ink-soft: #9b9ba6;
 }
 
 * {
@@ -99,7 +103,7 @@ main {
 }
 
 #theme-toggle:focus-visible {
-  outline: 2px solid var(--lab-accent, #6e8bff);
+  outline: 2px solid var(--lab-accent);
   outline-offset: 2px;
 }
 
@@ -155,6 +159,6 @@ main {
 /* The tinted surface sets its own shadow tint from the --lab-* contract, so its
    shadow carries the surface hue instead of the neutral anchor. */
 .card-tinted {
-  --lab-surface-shadow-tint: var(--lab-accent, #6e8bff);
-  background: color-mix(in srgb, var(--demo-card), var(--lab-accent, #6e8bff) 8%);
+  --lab-surface-shadow-tint: var(--lab-accent);
+  background: color-mix(in srgb, var(--demo-card), var(--lab-accent) 8%);
 }
