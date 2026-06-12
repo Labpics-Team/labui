@@ -1,0 +1,21 @@
+---
+// Astro page: server-renders the shell, hydrates the Button matrix as a React
+// island. CSS imported here ships with the SSR document (no FOUC).
+import { ButtonMatrix } from '../../../shared/button-matrix';
+import '../../../../theme/contract-base.css';
+import '../../../../theme/light.css';
+import '../../../../theme/dark.css';
+import '../../../../src/button.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>proto-B Mitosis — Astro SSR fixture</title>
+  </head>
+  <body style="margin:0;font-family:system-ui,sans-serif">
+    <ButtonMatrix client:load />
+  </body>
+</html>

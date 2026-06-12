@@ -1,0 +1,211 @@
+/*
+ * LabUI Button styles — consumes ONLY the `--lab-*` contract.
+ *
+ * Authored as a standalone stylesheet rather than Mitosis `useStyle`, on
+ * purpose: Mitosis `useStyle`/`css` prop emits per-target style solutions
+ * (CSS-in-JS for React, <style> for Svelte/Vue) that diverge across targets
+ * and would make the cross-target weight/parity comparison dishonest. A plain
+ * stylesheet is identical on every target — see FINDINGS.md "Styling".
+ *
+ * Separation principle (owner): a button is separated from its context by its
+ * SURFACE (background token), not by a border layered on top. Only `kind=border`
+ * carries a border, and there the border is the control's OUTLINE role, not a
+ * separator. fill/tinted/ghost use surface/transparency, never a cosmetic border.
+ *
+ * The role tokens below (`--lab-accent-*`, `--lab-neutral-*`, `--lab-danger-*`,
+ * `--lab-focus-ring`) are part of the `--lab-*` contract the theme supplies.
+ * The component is theme-agnostic; theme/*.css swaps these values.
+ */
+
+.lab-btn {
+  /* Resolve intent → a single set of role variables the rules below read.
+     Defaults to accent; the type modifiers re-point them. */
+  --_fg: var(--lab-accent-on);
+  --_bg: var(--lab-accent);
+  --_bg-hover: var(--lab-accent-hover);
+  --_bg-pressed: var(--lab-accent-pressed);
+  --_tint: var(--lab-accent-tint);
+  --_tint-hover: var(--lab-accent-tint-hover);
+  --_tint-fg: var(--lab-accent);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lab-space-2);
+  box-sizing: border-box;
+  border: none;
+  border-radius: var(--lab-radius-control);
+  font-family: inherit;
+  font-weight: 600;
+  line-height: var(--lab-line-height-md);
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+/* ---- Type: re-point the role variables (no hardcoded color anywhere) ---- */
+.lab-btn--type-accent {
+  --_fg: var(--lab-accent-on);
+  --_bg: var(--lab-accent);
+  --_bg-hover: var(--lab-accent-hover);
+  --_bg-pressed: var(--lab-accent-pressed);
+  --_tint: var(--lab-accent-tint);
+  --_tint-hover: var(--lab-accent-tint-hover);
+  --_tint-fg: var(--lab-accent);
+}
+
+.lab-btn--type-neutral {
+  --_fg: var(--lab-neutral-on);
+  --_bg: var(--lab-neutral);
+  --_bg-hover: var(--lab-neutral-hover);
+  --_bg-pressed: var(--lab-neutral-pressed);
+  --_tint: var(--lab-neutral-tint);
+  --_tint-hover: var(--lab-neutral-tint-hover);
+  --_tint-fg: var(--lab-neutral-fg);
+}
+
+.lab-btn--type-danger {
+  --_fg: var(--lab-danger-on);
+  --_bg: var(--lab-danger);
+  --_bg-hover: var(--lab-danger-hover);
+  --_bg-pressed: var(--lab-danger-pressed);
+  --_tint: var(--lab-danger-tint);
+  --_tint-hover: var(--lab-danger-tint-hover);
+  --_tint-fg: var(--lab-danger);
+}
+
+/* ---- Size: spacing + font tokens, never raw px ---- */
+.lab-btn--size-s {
+  padding: var(--lab-space-1) var(--lab-space-3);
+  font-size: var(--lab-font-size-sm);
+  min-height: var(--lab-space-8); /* 2rem */
+}
+.lab-btn--size-m {
+  padding: var(--lab-space-2) var(--lab-space-4);
+  font-size: var(--lab-font-size-md);
+  min-height: var(--lab-space-10); /* 2.5rem */
+}
+.lab-btn--size-l {
+  padding: var(--lab-space-3) var(--lab-space-5);
+  font-size: var(--lab-font-size-lg);
+  min-height: var(--lab-space-12); /* 3rem */
+}
+
+/* ---- Kind: surface treatment. Separation by surface, not stray borders ---- */
+.lab-btn--kind-fill {
+  background-color: var(--_bg);
+  color: var(--_fg);
+}
+.lab-btn--kind-fill:hover:not(:disabled) {
+  background-color: var(--_bg-hover);
+}
+.lab-btn--kind-fill:active:not(:disabled) {
+  background-color: var(--_bg-pressed);
+}
+
+.lab-btn--kind-tinted {
+  background-color: var(--_tint);
+  color: var(--_tint-fg);
+}
+.lab-btn--kind-tinted:hover:not(:disabled) {
+  background-color: var(--_tint-hover);
+}
+.lab-btn--kind-tinted:active:not(:disabled) {
+  background-color: var(--_tint);
+}
+
+/* border kind: the border IS the control outline role here, not a separator. */
+.lab-btn--kind-border {
+  background-color: transparent;
+  color: var(--_tint-fg);
+  box-shadow: inset 0 0 0 var(--lab-space-px, 1px) var(--_tint-fg);
+}
+.lab-btn--kind-border:hover:not(:disabled) {
+  background-color: var(--_tint);
+}
+.lab-btn--kind-border:active:not(:disabled) {
+  background-color: var(--_tint-hover);
+}
+
+.lab-btn--kind-ghost {
+  background-color: transparent;
+  color: var(--_tint-fg);
+}
+.lab-btn--kind-ghost:hover:not(:disabled) {
+  background-color: var(--_tint);
+}
+.lab-btn--kind-ghost:active:not(:disabled) {
+  background-color: var(--_tint-hover);
+}
+
+/* ---- State: focus, disabled, loading ---- */
+.lab-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--lab-surface-base), 0 0 0 4px var(--lab-focus-ring);
+}
+.lab-btn--kind-border:focus-visible {
+  box-shadow:
+    inset 0 0 0 var(--lab-space-px, 1px) var(--_tint-fg),
+    0 0 0 2px var(--lab-surface-base),
+    0 0 0 4px var(--lab-focus-ring);
+}
+
+.lab-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.lab-btn--loading {
+  cursor: progress;
+}
+.lab-btn--loading .lab-btn__label,
+.lab-btn--loading .lab-btn__icon {
+  opacity: 0.65;
+}
+
+/* icon-slot: collapses to zero unless the consumer puts an icon in it. */
+.lab-btn__icon {
+  display: inline-flex;
+  align-items: center;
+}
+.lab-btn__icon:empty {
+  display: none;
+}
+
+.lab-btn__label {
+  display: inline-flex;
+  align-items: center;
+}
+.lab-btn__label:empty {
+  display: none;
+}
+
+.lab-btn__spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border-radius: var(--lab-radius-full);
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: lab-btn-spin 0.6s linear infinite;
+}
+
+@keyframes lab-btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-btn,
+  .lab-btn__spinner {
+    transition: none;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+}

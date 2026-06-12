@@ -13,6 +13,9 @@
       "**/playwright-report/**",
       "**/test-results/**",
       "**/src/generated/**",
+      "**/.next/**",
+      "**/.astro/**",
+      "prototypes/*/output/**",
       "**/*.tsbuildinfo"
     ]
   },

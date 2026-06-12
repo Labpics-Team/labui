@@ -1,0 +1,12 @@
+# Sandbox build artifacts — the prototype is throwaway; do not commit installs
+# or fixture build output. The Mitosis-generated `output/` IS committed (it is
+# the evidence of what the compiler emits), but fixture builds are not.
+node_modules/
+fixtures/*/.next/
+fixtures/*/dist/
+fixtures/*/.astro/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+fixtures/next/next-env.d.ts

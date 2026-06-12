@@ -1,0 +1,42 @@
+/*
+ * Prototype theme — LIGHT set of the `--lab-*` role contract.
+ *
+ * PLACEHOLDER values (see dark.css header). The component is identical for both
+ * themes; only this variable set changes. Proving theme-agnosticism is the whole
+ * point: the Button source never references "light" or "dark".
+ */
+
+[data-theme='light'] {
+  --lab-surface-base: #ffffff;
+  --lab-surface-raised: #f4f4f6;
+  --lab-label-primary: #0b0b0c;
+  --lab-label-secondary: #56565c;
+
+  /* Accent role family */
+  --lab-accent: #3a5bff;
+  --lab-accent-hover: #2f4ce6;
+  --lab-accent-pressed: #2742cc;
+  --lab-accent-on: #ffffff;
+  --lab-accent-tint: rgba(58, 91, 255, 0.12);
+  --lab-accent-tint-hover: rgba(58, 91, 255, 0.2);
+
+  /* Neutral role family */
+  --lab-neutral: #e6e6ea;
+  --lab-neutral-hover: #dcdce2;
+  --lab-neutral-pressed: #cfcfd6;
+  --lab-neutral-on: #0b0b0c;
+  --lab-neutral-fg: #0b0b0c;
+  --lab-neutral-tint: rgba(11, 11, 12, 0.06);
+  --lab-neutral-tint-hover: rgba(11, 11, 12, 0.1);
+
+  /* Danger role family */
+  --lab-danger: #e0322f;
+  --lab-danger-hover: #cb2b28;
+  --lab-danger-pressed: #b52522;
+  --lab-danger-on: #ffffff;
+  --lab-danger-tint: rgba(224, 50, 47, 0.1);
+  --lab-danger-tint-hover: rgba(224, 50, 47, 0.18);
+
+  /* Focus ring role */
+  --lab-focus-ring: #3a5bff;
+}

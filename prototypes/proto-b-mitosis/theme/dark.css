@@ -1,0 +1,46 @@
+/*
+ * Prototype theme — DARK set of the `--lab-*` role contract.
+ *
+ * These are PLACEHOLDER values (same status as packages/colors-stub: not the
+ * real resolved palette). They exist so the Button — which reads ONLY `--lab-*`
+ * — has roles to consume, and so theme switching can be proven by swapping this
+ * whole set for the light set without touching the component source.
+ *
+ * Scoped to [data-theme="dark"] so a single page can show both themes side by
+ * side (the Playwright smoke asserts the Button follows whichever set is active).
+ */
+
+[data-theme='dark'] {
+  --lab-surface-base: #0b0b0c;
+  --lab-surface-raised: #161618;
+  --lab-label-primary: #f5f5f7;
+  --lab-label-secondary: #a1a1aa;
+
+  /* Accent role family */
+  --lab-accent: #6e8bff;
+  --lab-accent-hover: #8197ff;
+  --lab-accent-pressed: #5a78f0;
+  --lab-accent-on: #0b0b0c;
+  --lab-accent-tint: rgba(110, 139, 255, 0.16);
+  --lab-accent-tint-hover: rgba(110, 139, 255, 0.26);
+
+  /* Neutral role family */
+  --lab-neutral: #2a2a2e;
+  --lab-neutral-hover: #34343a;
+  --lab-neutral-pressed: #232327;
+  --lab-neutral-on: #f5f5f7;
+  --lab-neutral-fg: #f5f5f7;
+  --lab-neutral-tint: rgba(245, 245, 247, 0.1);
+  --lab-neutral-tint-hover: rgba(245, 245, 247, 0.16);
+
+  /* Danger role family */
+  --lab-danger: #ff5c5c;
+  --lab-danger-hover: #ff7373;
+  --lab-danger-pressed: #f04848;
+  --lab-danger-on: #0b0b0c;
+  --lab-danger-tint: rgba(255, 92, 92, 0.16);
+  --lab-danger-tint-hover: rgba(255, 92, 92, 0.26);
+
+  /* Focus ring role */
+  --lab-focus-ring: #6e8bff;
+}
