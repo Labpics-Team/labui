@@ -13,8 +13,9 @@ import { defineConfig, devices } from '@playwright/test';
  *   - Update with `pnpm --filter @labpics/ui-docs test:e2e:update`.
  *   - `maxDiffPixelRatio` keeps anti-aliasing noise from flaking the suite;
  *     tighten per-test when pixel-exact checks are needed.
- *   - CI runs Chromium only for speed; WebKit is defined (commented in) for
- *     backdrop-filter / glass-material checks once materials-system lands.
+ *   - WebKit is enabled (materials-system / glass-tier-base): backdrop-filter
+ *     and the glass material must read the same across engines, so the glass
+ *     smoke runs on Chromium AND WebKit.
  */
 export default defineConfig({
   testDir: './tests',
@@ -35,11 +36,10 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    // Enabled in materials-system to verify backdrop-filter / glass:
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    // },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
   webServer: {
     command: 'pnpm run build && pnpm run preview',

@@ -1,0 +1,208 @@
+/*
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  @labpics/ui-core — Glass material, Tier-1 (cross-browser base).            │
+ * │                                                                            │
+ * │  Owner decision (labui-v1 / materials-system): Glass is REAL — refraction  │
+ * │  is its identity. The identity is defined by TOKENS (the glass DNA), and   │
+ * │  executed on a PROGRESSIVE LADDER of tiers that all read the same DNA:     │
+ * │                                                                            │
+ * │    Tier-1 (THIS FILE) — everywhere incl. Safari/Firefox:                   │
+ * │        backdrop blur+saturate · edge-rim masks (lens imitation) ·          │
+ * │        specular rim · noise grain · inner light.                           │
+ * │    Tier-2 (glass-tier-refraction, separate task) — Chromium only:          │
+ * │        + real refraction via SVG feDisplacementMap. Pure progressive       │
+ * │        enhancement layered ON TOP of this file. NOT done here.             │
+ * │                                                                            │
+ * │  The owner's rule for degradation: a Tier-1 surface in Safari/Firefox must │
+ * │  read as the SAME glass, executed more softly — never as a different       │
+ * │  material. Every token below is shared identity, not a per-engine fork.    │
+ * │                                                                            │
+ * │  This is a CSS surface, NOT a component. It attaches via the `.lab-glass`  │
+ * │  class (or `[data-material~="glass"]`), so it is independent of the        │
+ * │  component-base decision (React / Lit / Mitosis) made elsewhere.           │
+ * │                                                                            │
+ * │  Color contract: tint/surface come from the @labpics/colors `--lab-*`      │
+ * │  contract (never hardcoded). This file only defines the GLASS DNA          │
+ * │  (--lab-glass-*) and how to assemble it — it never re-defines color.       │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ */
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Glass identity tokens — the DNA. One source of truth for every tier.
+ *
+ * Provisional values (PROVISIONAL): calibrated by eye against Apple HIG / the
+ * Figma Materials "Base" tier (backdrop blur 4XL, ~0.9 surface alpha). Final
+ * alphas will be reconciled against lab-colors JND contracts in a later task;
+ * the token NAMES are the stable contract, the numbers may move.
+ * ──────────────────────────────────────────────────────────────────────────── */
+:root {
+  /* Blur radius of the backdrop. NEVER animate this (compositor cost). */
+  --lab-glass-blur: 18px;
+
+  /* Saturation boost of the backdrop. Mandatory: pure blur looks "soapy",
+   * saturation is what makes a blurred backdrop read as glass, not frost. */
+  --lab-glass-saturate: 180%;
+
+  /* The composed backdrop filter list. Single source for the modern
+   * (unprefixed) property. Safari today cannot read var() inside
+   * -webkit-backdrop-filter (WebKit bug, see below), so the prefixed property
+   * gets a literal mirror of these defaults — keep them in sync. */
+  --lab-glass-filter: blur(var(--lab-glass-blur)) saturate(var(--lab-glass-saturate));
+
+  /* Surface tint. References the color core — the glass is tinted by the
+   * surface role it sits on, resolved at runtime by @labpics/colors. The
+   * alpha is what lets the blurred backdrop show through. */
+  --lab-glass-tint: var(--lab-surface-raised, #161618);
+  --lab-glass-tint-alpha: 0.62;
+
+  /* Edge lens (the Tier-1 stand-in for real refraction). A bright→transparent
+   * gradient painted only in the border band, so light appears to bend at the
+   * rim. Without it the glass is "flat". Tier-2 replaces this with a real
+   * feDisplacementMap; the rim stays underneath as the cross-browser floor. */
+  --lab-glass-rim-width: 1px;
+  --lab-glass-rim-color: rgba(255, 255, 255, 0.55);
+  --lab-glass-rim-color-soft: rgba(255, 255, 255, 0.08);
+
+  /* Specular rim — the thin bright catch-light along the top edge, like the
+   * highlight on a real pane of glass. */
+  --lab-glass-specular: rgba(255, 255, 255, 0.65);
+  --lab-glass-specular-size: 1px;
+
+  /* Inner light — inset glow that gives the pane volume (not a flat sheet). */
+  --lab-glass-inner-light: rgba(255, 255, 255, 0.22);
+  --lab-glass-inner-light-blur: 20px;
+  --lab-glass-inner-light-spread: -6px;
+
+  /* Noise grain — a tiny tileable SVG feTurbulence as a data-uri background.
+   * This is a background-image, NOT a backdrop filter, so it is safe on every
+   * engine. It breaks up the flat blur and reads as real glass micro-texture. */
+  --lab-glass-noise-opacity: 0.035;
+  --lab-glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* Radius of the glass pane — falls back to a sane value if the dimension
+   * token contract is not loaded. */
+  --lab-glass-radius: var(--lab-radius-lg, 16px);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * .lab-glass — the Tier-1 surface. Assembles the DNA into layers.
+ *
+ * Layer order (bottom → top, as the browser paints them):
+ *   1. backdrop-filter        — blur + saturate the content BEHIND the pane
+ *   2. background tint + noise — the pane's own translucent body + grain
+ *   3. inset specular + rim    — catch-light + inner volume (box-shadow inset)
+ *   4. ::before edge-lens mask — the bright border band that fakes refraction
+ * ──────────────────────────────────────────────────────────────────────────── */
+.lab-glass {
+  position: relative;
+  border-radius: var(--lab-glass-radius);
+
+  /* The pane body: surface tint at glass alpha, with the noise grain composited
+   * on top. color-mix keeps the tint coming from the --lab-* core (no hardcode)
+   * while applying the glass alpha. */
+  background-color: color-mix(
+    in srgb,
+    var(--lab-glass-tint) calc(var(--lab-glass-tint-alpha) * 100%),
+    transparent
+  );
+
+  /* Blur + saturate the backdrop. The single most expensive line — applied
+   * pointwise to this surface only, never to a whole layout.
+   *
+   * Modern engines (Chromium, and Safari ≥ when it ships the unprefixed
+   * property) read the tokenised value — the live glass DNA.
+   *
+   * Safari today only supports the legacy -webkit- property AND has a bug:
+   * it will not resolve var() inside it (`blur(var(--x))` computes to `none`,
+   * verified on WebKit 18.2). So the prefixed line carries a PROVISIONAL
+   * literal mirror of the token DEFAULTS — same identity, executed via a fixed
+   * value on Safari. When Safari ships unprefixed backdrop-filter, the line
+   * above takes over with full tokenisation and this literal can be dropped. */
+  backdrop-filter: var(--lab-glass-filter);
+  /* PROVISIONAL(webkit-var-bug): literal mirror of --lab-glass-filter defaults
+   * (blur 18px, saturate 180%). Safari cannot read var() here yet. */
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+
+  /* Specular rim (top catch-light) + inner light (volume), as stacked insets.
+   * These are cheap and engine-independent. */
+  box-shadow: inset 0 var(--lab-glass-specular-size) 0 var(--lab-glass-specular), inset 0 0
+    var(--lab-glass-inner-light-blur) var(--lab-glass-inner-light-spread)
+    var(--lab-glass-inner-light);
+
+  /* Clip the blur to the rounded box so the backdrop-filter does not bleed past
+   * the edge (a known cross-engine artifact). */
+  overflow: hidden;
+
+  /* Promote to its own compositor layer — keeps the blur off the main paint
+   * path and avoids repainting the backdrop on every scroll frame. */
+  will-change: transform;
+}
+
+/* Noise grain + edge lens live on a ::before so they sit ABOVE the tint but
+ * BELOW the pane's content, and never intercept pointer events. */
+.lab-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+
+  /* Edge lens: a transparent center with a bright ring painted only in the
+   * border band. border-image draws the gradient as a frame, so the "lens"
+   * lives exactly at the rim — the Tier-1 imitation of light bending at the
+   * glass edge. */
+  border: var(--lab-glass-rim-width) solid transparent;
+  border-image: linear-gradient(
+      135deg,
+      var(--lab-glass-rim-color) 0%,
+      var(--lab-glass-rim-color-soft) 25%,
+      transparent 50%,
+      var(--lab-glass-rim-color-soft) 75%,
+      var(--lab-glass-rim-color) 100%
+    )
+    1;
+
+  /* Noise grain over the whole pane. */
+  background-image: var(--lab-glass-noise);
+  background-size: 120px 120px;
+  opacity: var(--lab-glass-noise-opacity);
+}
+
+/* Keep the pane's real content above the ::before decoration layer. */
+.lab-glass > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Fallback — no backdrop-filter (older engines, blocked compositing).
+ *
+ * Owner rule: the fallback must keep text contrast intact and read as the same
+ * family, just without the live blur. We raise the tint alpha toward opaque so
+ * the pane stays legible over busy backgrounds (this is effectively the Solid
+ * mode), and drop the now-meaningless will-change.
+ * ──────────────────────────────────────────────────────────────────────────── */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lab-glass {
+    /* Push toward opaque: blurred backdrop is gone, so legibility comes from
+     * the pane body itself. */
+    background-color: color-mix(in srgb, var(--lab-glass-tint) 92%, transparent);
+    will-change: auto;
+  }
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Reduced-motion / reduced-transparency respect.
+ * A user who asks for less transparency gets the opaque body — same material,
+ * calmer execution.
+ * ──────────────────────────────────────────────────────────────────────────── */
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is a valid Media Queries Level 5 feature (Baseline 2024); biome 1.9.4's lexicon predates it. */
+@media (prefers-reduced-transparency: reduce) {
+  .lab-glass {
+    background-color: color-mix(in srgb, var(--lab-glass-tint) 96%, transparent);
+    backdrop-filter: saturate(var(--lab-glass-saturate));
+    /* PROVISIONAL(webkit-var-bug): literal mirror of --lab-glass-saturate. */
+    -webkit-backdrop-filter: saturate(180%);
+  }
+}

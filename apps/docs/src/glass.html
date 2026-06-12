@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Glass Tier-1</title>
+    <link rel="stylesheet" href="./glass-demo.css" />
+  </head>
+  <body>
+    <!-- The CONTENT BACKDROP. The whole point of glass: the blur + saturation +
+         edge rim must read against real content underneath — text and a colour
+         field — not a flat colour. This is what the owner inspects by eye. -->
+    <div class="backdrop" data-testid="backdrop" aria-hidden="true">
+      <div class="backdrop-photo"></div>
+      <p class="backdrop-text">
+        LabUI · 设计系统 · Labpics · Glass · 유리 · стекло · refraction · saturate ·
+        blur · specular · rim · noise · LabUI · 設計 · Labpics · Glass · стекло ·
+        LabUI · Labpics · refraction · LabUI · 유리 · стекло · blur · saturate ·
+        specular · rim · noise · LabUI · Labpics · Glass · refraction · стекло ·
+        LabUI · 設計 · Labpics · Glass · saturate · blur · rim · LabUI · Labpics
+      </p>
+    </div>
+
+    <main>
+      <h1 data-testid="title">Glass · Tier-1</h1>
+      <p data-testid="tagline">
+        Cross-browser base. Same glass identity everywhere — softer where the
+        engine allows less.
+      </p>
+
+      <!-- The glass surface under test. `.lab-glass` from @labpics/ui-core. -->
+      <section
+        class="lab-glass glass-panel"
+        data-testid="glass-panel"
+        aria-label="Glass surface demo"
+      >
+        <h2 data-testid="glass-panel-heading">Frosted panel</h2>
+        <p>
+          backdrop-filter: blur + saturate · edge-rim lens (masks) · specular
+          rim · noise grain · inner light. The content behind this pane is
+          blurred and its colours are pushed — that is the saturation reading as
+          glass, not frost.
+        </p>
+        <button type="button" class="glass-action" data-testid="glass-action">
+          Action
+        </button>
+      </section>
+    </main>
+  </body>
+</html>
