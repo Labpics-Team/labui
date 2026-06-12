@@ -76,9 +76,7 @@ describe('generator — single source, three outputs, no divergence', () => {
 
 describe('guards — invalid input fails loudly before corrupting artifacts', () => {
   it('a token name that would break a CSS custom property throws, naming the offender', () => {
-    expect(() => generateFromOverride({ spacing: { steps: { 'foo bar': 5 } } })).toThrow(
-      /foo bar/,
-    );
+    expect(() => generateFromOverride({ spacing: { steps: { 'foo bar': 5 } } })).toThrow(/foo bar/);
     expect(() => generateFromOverride({ zIndex: { levels: ['body/s'] } })).toThrow(/body\/s/);
   });
 
