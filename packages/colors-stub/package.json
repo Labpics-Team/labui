@@ -7,11 +7,18 @@
   "type": "module",
   "exports": {
     "./contract.css": "./contract.css",
+    "./roles.json": "./roles.json",
     "./package.json": "./package.json"
   },
-  "files": ["contract.css"],
+  "files": ["contract.css", "roles.json"],
   "scripts": {
     "build": "node -e \"process.stdout.write('stub: no build step\\n')\"",
-    "typecheck": "node -e \"process.stdout.write('stub: no typecheck\\n')\""
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.5",
+    "typescript": "5.7.3",
+    "vitest": "2.1.8"
   }
 }
