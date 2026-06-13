@@ -74,13 +74,6 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     this.machine?.updateProps(() => this.machineProps());
   }
 
-  hostUpdated(): void {
-    // Nodes exist now; any spreads were registered during render via `spread()`.
-    // Nothing to do here by default — `spread()` is called imperatively from the
-    // element's `updated()` when it wires concrete nodes. Kept for symmetry and
-    // so the controller, not the element, owns spread-cleanup timing.
-  }
-
   hostDisconnected(): void {
     this.clearSpreads();
     this.unsubscribe?.();
