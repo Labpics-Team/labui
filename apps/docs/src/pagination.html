@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Pagination parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="pagination-title">
+        Pagination parity — <code>&lt;lab-pagination&gt;</code> (Lit) ↔
+        <code>&lt;Pagination&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/pagination</code> machine through the same
+        seam. The machine owns the page value, derives the range (with ellipses)
+        from <code>count</code> + <code>page-size</code>, and wires
+        <code>aria-current</code> and the prev/next bounds; both renderers paint
+        with the same semantic <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: fully configured by attributes (count + page-size + page). -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <lab-pagination
+          data-testid="lit-pagination"
+          count="200"
+          page-size="10"
+          default-page="8"
+        ></lab-pagination>
+      </section>
+
+      <!-- React renderer: native, mounted from pagination-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./pagination-demo.tsx"></script>
+  </body>
+</html>

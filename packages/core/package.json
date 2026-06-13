@@ -50,7 +50,9 @@
   "dependencies": {
     "@zag-js/checkbox": "1.41.2",
     "@zag-js/core": "1.41.2",
+    "@zag-js/pagination": "1.41.2",
     "@zag-js/switch": "1.41.2",
+    "@zag-js/tabs": "1.41.2",
     "@zag-js/toggle": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.41.2",

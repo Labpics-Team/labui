@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Tabs parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="tabs-title">
+        Tabs parity — <code>&lt;lab-tabs&gt;</code> (Lit) ↔ <code>&lt;Tabs&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/tabs</code> GROUP machine through the same
+        seam. The machine owns selection, roving focus, arrow-key navigation, and
+        <code>aria-selected</code>; both renderers paint with the same semantic
+        <code>--lab-*</code> roles. This page mounts both so the Playwright suite
+        can assert machine behaviour and visual parity on each.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: the custom element. Its `.items` are set in tabs-demo.tsx
+           (a JS property); the panel content projects through per-value slots. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <lab-tabs data-testid="lit-tabs" default-value="account">
+          <div slot="account">Manage your account name and email.</div>
+          <div slot="password">Update your password and two-factor security.</div>
+          <div slot="team">Invite and manage team members.</div>
+        </lab-tabs>
+      </section>
+
+      <!-- React renderer: native, mounted from tabs-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./tabs-demo.tsx"></script>
+  </body>
+</html>
