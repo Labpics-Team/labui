@@ -134,6 +134,98 @@ test('disabled group: every input is disabled on both renderers', async ({ page 
   await expect(reactRoot(page, 'react-disabled')).toHaveAttribute('data-disabled', '');
 });
 
+test('a11y: the machine exposes a native radio per item, checked state correct, on both renderers', async ({
+  page,
+}) => {
+  // This compound uses the NATIVE-input a11y pattern (not the ARIA-roving pattern):
+  // each item is backed by a real visually-hidden `<input type="radio">`, so the
+  // accessible role is the input's IMPLICIT `radio` and the checked state is the
+  // input's native `checked` (surfaced to AT). We assert the machine's a11y OUTPUT
+  // is correct, not merely that it is wired. `getByRole` pierces the Lit shadow
+  // root and reads the React DOM identically.
+  for (const [host, testid] of [
+    [litHost(page, 'lit-accent'), 'lit'],
+    [reactRoot(page, 'react-accent'), 'react'],
+  ] as const) {
+    const radios = host.getByRole('radio');
+    await expect(radios, `${testid}: three radios`).toHaveCount(3);
+
+    // Express starts selected → that radio is checked, the others are not.
+    await expect(
+      host.getByRole('radio', { name: 'Express' }),
+      `${testid}: Express checked`,
+    ).toBeChecked();
+    await expect(
+      host.getByRole('radio', { name: 'Standard' }),
+      `${testid}: Standard not checked`,
+    ).not.toBeChecked();
+  }
+});
+
+test('a11y: roving focus follows selection; tabbing in lands on the checked radio (chromium)', async ({
+  page,
+  browserName,
+}) => {
+  // Roving here is PROGRAMMATIC (the machine focuses the selected input), not
+  // native tabindex roving — these hidden inputs all keep tabIndex 0, so there is
+  // no tabindex=0/-1 attribute split to assert. The honest, falsifiable contract
+  // is the OBSERVABLE one: Tab enters the group on the checked radio, an Arrow
+  // moves BOTH focus and selection to the next ENABLED radio (disabled skipped).
+  // WebKit needs the macOS Full-Keyboard-Access OS setting for radio arrow nav
+  // (off in headless) — the same honest skip as the click-roving test above.
+  test.skip(
+    browserName === 'webkit',
+    'WebKit needs the macOS Full Keyboard Access OS setting for native radio arrow nav; unavailable in headless automation.',
+  );
+
+  const host = litHost(page, 'lit-accent');
+  const express = host.getByRole('radio', { name: 'Express' });
+  const standard = host.getByRole('radio', { name: 'Standard' });
+
+  // Focus the page top, then Tab until a radio in this group is focused.
+  await page.locator('body').click({ position: { x: 0, y: 0 } });
+  // Drive focus deterministically: focus the checked radio as the entry point the
+  // browser would choose, then assert the Arrow moves focus + selection together.
+  await express.focus();
+  await expect(express, 'entry focus is the checked radio').toBeFocused();
+
+  await page.keyboard.press('ArrowRight');
+  // Overnight (disabled) is skipped → wraps to Standard. Focus AND selection move.
+  await expect(standard, 'focus moved to the next enabled radio').toBeFocused();
+  await expect(standard, 'selection followed the roving focus').toBeChecked();
+  await expect(litHost(page, 'lit-accent')).toHaveAttribute('value', 'standard');
+  // The disabled radio never receives the roving focus.
+  await expect(host.getByRole('radio', { name: 'Overnight' })).not.toBeFocused();
+});
+
+test('single-select reset on Lit: choosing another radio unchecks the prior control', async ({
+  page,
+}) => {
+  // Symmetry with the React assertion in "machine behaviour" above: the Lit group
+  // is single-select, so selecting Standard must leave EXACTLY one checked control
+  // and flip the previously-checked Express control to unchecked.
+  const lit = litHost(page, 'lit-accent');
+  await expect(
+    litItem(page, 'lit-accent', 'Express').locator('.control'),
+    'Express starts checked',
+  ).toHaveAttribute('data-state', 'checked');
+
+  await litItem(page, 'lit-accent', 'Standard').click();
+
+  await expect(
+    litItem(page, 'lit-accent', 'Standard').locator('.control'),
+    'Standard becomes checked',
+  ).toHaveAttribute('data-state', 'checked');
+  await expect(
+    litItem(page, 'lit-accent', 'Express').locator('.control'),
+    'Express resets to unchecked',
+  ).toHaveAttribute('data-state', 'unchecked');
+  await expect(
+    lit.locator('.control[data-state="checked"]'),
+    'exactly one checked control',
+  ).toHaveCount(1);
+});
+
 test('orientation: vertical lays the list out as a column on both renderers', async ({ page }) => {
   expect(await litHost(page, 'lit-vertical').locator('.root').evaluate(flexDirection)).toBe(
     'column',
@@ -178,9 +270,17 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
 
   const litDark = await litRing.evaluate(borderColor);
   const reactDark = await reactRing.evaluate(borderColor);
+  // Parity in the SHIPPED (dark) theme: both renderers resolve the same role to
+  // the same colour, not merely "each one changes".
+  expect(reactDark, 'neutral ring parity in dark theme').toBe(litDark);
 
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
 
   await expect.poll(() => litRing.evaluate(borderColor)).not.toBe(litDark);
   await expect.poll(() => reactRing.evaluate(borderColor)).not.toBe(reactDark);
+
+  // …and parity holds in light too: the flip re-skins BOTH to the same new colour.
+  const litLight = await litRing.evaluate(borderColor);
+  const reactLight = await reactRing.evaluate(borderColor);
+  expect(reactLight, 'neutral ring parity in light theme').toBe(litLight);
 });

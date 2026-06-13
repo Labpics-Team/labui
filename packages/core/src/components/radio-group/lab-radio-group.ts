@@ -309,11 +309,17 @@ export class LabRadioGroup extends LabElement {
     const labelEl = this.renderRoot.querySelector<HTMLElement>('.group-label');
     if (labelEl) this.group.spread(labelEl, api.getLabelProps());
 
-    // Items render in declared order, so the Nth `.item` node maps to items[N].
-    const itemEls = this.renderRoot.querySelectorAll<HTMLElement>('.item');
-    this.items.forEach((item, index) => {
-      const itemEl = itemEls[index];
-      if (!itemEl) return;
+    // Map each item's getters onto its node by the STABLE key `value`, not the
+    // positional index. The machine already keys its per-item getters by value;
+    // honouring that here means a node never receives another item's props if the
+    // render order and the `items` array ever diverge (reorder/virtualise/nest) —
+    // the canon Select/Tabs/Menu/Accordion need this guarantee. `value` rides a
+    // `data-value` attribute on each `.item` node; `CSS.escape` neutralises any
+    // quote/bracket so the attribute selector can't be broken by item content.
+    for (const item of this.items) {
+      const selector = `.item[data-value="${CSS.escape(item.value)}"]`;
+      const itemEl = this.renderRoot.querySelector<HTMLElement>(selector);
+      if (!itemEl) continue;
       const itemProps = { value: item.value, disabled: item.disabled };
       this.group.spread(itemEl, api.getItemProps(itemProps));
 
@@ -325,7 +331,7 @@ export class LabRadioGroup extends LabElement {
 
       const input = itemEl.querySelector<HTMLElement>('input');
       if (input) this.group.spread(input, api.getItemHiddenInputProps(itemProps));
-    });
+    }
   }
 
   override render(): TemplateResult {
@@ -337,7 +343,7 @@ export class LabRadioGroup extends LabElement {
         ${this.label ? html`<span class="group-label">${this.label}</span>` : nothing}
         ${this.items.map(
           (item) => html`
-            <label class="item">
+            <label class="item" data-value="${item.value}">
               <span class="control"><span class="dot"></span></span>
               <span class="text">${item.label}</span>
               <input type="radio" />
