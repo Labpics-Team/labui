@@ -79,6 +79,10 @@ export default defineConfig({
         tabs: resolve(__dirname, 'src/tabs.html'),
         breadcrumb: resolve(__dirname, 'src/breadcrumb.html'),
         pagination: resolve(__dirname, 'src/pagination.html'),
+        // Compound control: Lit `<lab-radio-group>` (all parts in one shadow
+        // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, running the
+        // SAME Zag group machine, for the parity + behaviour suite.
+        'radio-group': resolve(__dirname, 'src/radio-group.html'),
       },
     },
   },

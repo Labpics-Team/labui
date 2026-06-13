@@ -31,6 +31,7 @@
     "@labpics/ui-core": "workspace:*",
     "@zag-js/checkbox": "1.41.2",
     "@zag-js/pagination": "1.41.2",
+    "@zag-js/radio-group": "1.41.2",
     "@zag-js/react": "1.41.2",
     "@zag-js/switch": "1.41.2",
     "@zag-js/tabs": "1.41.2",
