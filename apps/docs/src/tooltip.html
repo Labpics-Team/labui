@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Tooltip parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      /* Give the triggers room so the (fixed-positioned) floating layer has space. */
+      .specimens {
+        gap: 4rem;
+        padding-block: 3rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="tooltip-title">
+        Tooltip parity — <code>&lt;lab-tooltip&gt;</code> (Lit) ↔ <code>&lt;Tooltip&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/tooltip</code> machine through the same
+        seam. The machine owns the open lifecycle (hover/focus), Escape-to-dismiss,
+        <code>role="tooltip"</code>/<code>aria-describedby</code>, and dynamic
+        positioning. The Lit element keeps the floating layer inside its shadow root
+        with <code>strategy:'fixed'</code>; the React twin portals it to
+        <code>&lt;body&gt;</code>. Both paint with the same <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: custom element, registered + styled in its shadow root. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-tooltip data-testid="lit-tt-bottom" placement="bottom" content="Saved to your library"
+            >Bottom</lab-tooltip
+          >
+          <lab-tooltip data-testid="lit-tt-top" placement="top" content="Saved to your library"
+            >Top</lab-tooltip
+          >
+          <lab-tooltip data-testid="lit-tt-disabled" disabled content="Never shows"
+            >Disabled</lab-tooltip
+          >
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from tooltip-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./tooltip-demo.tsx"></script>
+  </body>
+</html>

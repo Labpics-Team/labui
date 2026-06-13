@@ -1,0 +1,88 @@
+/*
+ * <Tooltip> (React) styles — the visual PARITY twin of the Lit `<lab-tooltip>`.
+ *
+ * The Lit element scopes CSS in a shadow root. React is native (ADR-0001) and the
+ * floating layer is PORTALLED to <body>, so this sheet mirrors the shadow rules
+ * against `.lab-tooltip-*` classes in the light DOM. Same roles, same structure,
+ * same states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
+ * hex, ZERO primitive. The surface is the inverted role — the conventional
+ * high-contrast tooltip — layered with --lab-z-tooltip.
+ */
+
+.lab-tooltip-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lab-space-xs, 0.25rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+}
+.lab-tooltip-trigger:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+  border-radius: var(--lab-radius-sm, 0.25rem);
+}
+
+/* The Zag positioner — Floating UI writes --x/--y onto it; it is only the frame. */
+.lab-tooltip-positioner {
+  /* positioning styles come from getPositionerProps (inline) */
+}
+
+/* The floating surface — inverted, high-contrast. The arrow reuses the surface
+   role so the shape reads as one. Size knobs default to M. */
+.lab-tooltip-content {
+  --arrow-size: 0.5rem;
+  --arrow-background: var(--lab-bg-inverted);
+  --_lab-tt-pad-block: var(--lab-space-xs, 0.25rem);
+  --_lab-tt-pad-inline: var(--lab-space-sm, 0.5rem);
+  --_lab-tt-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-tt-max-width: 18rem;
+
+  box-sizing: border-box;
+  max-width: var(--_lab-tt-max-width);
+  padding: var(--_lab-tt-pad-block) var(--_lab-tt-pad-inline);
+  border-radius: var(--lab-radius-md, 0.375rem);
+  background-color: var(--lab-bg-inverted);
+  color: var(--lab-label-inverted-primary);
+  font: inherit;
+  font-size: var(--_lab-tt-font);
+  line-height: var(--lab-line-height-xs, 1.4);
+  box-shadow: 0 0.25rem 0.75rem var(--lab-fx-shadow-minor, rgb(0 0 0 / 0.18));
+  z-index: var(--lab-z-tooltip, 1400);
+}
+.lab-tooltip-content[hidden] {
+  display: none;
+}
+
+.lab-tooltip-content[data-size="s"] {
+  --_lab-tt-pad-block: var(--lab-space-xs, 0.25rem);
+  --_lab-tt-pad-inline: var(--lab-space-xs, 0.25rem);
+  --_lab-tt-font: var(--lab-font-size-xxs, 0.6944rem);
+  --_lab-tt-max-width: 14rem;
+}
+.lab-tooltip-content[data-size="l"] {
+  --_lab-tt-pad-block: var(--lab-space-sm, 0.5rem);
+  --_lab-tt-pad-inline: var(--lab-space-md, 0.75rem);
+  --_lab-tt-font: var(--lab-font-size-md, 1rem);
+  --_lab-tt-max-width: 22rem;
+}
+
+.lab-tooltip-arrow {
+  --arrow-size: 0.5rem;
+}
+.lab-tooltip-arrow-tip {
+  border-top-left-radius: 0.0625rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-tooltip-content {
+    transition: none;
+  }
+}

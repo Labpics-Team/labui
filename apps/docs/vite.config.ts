@@ -73,6 +73,11 @@ export default defineConfig({
         // side, running the SAME Zag machine, for the parity + behaviour suite.
         switch: resolve(__dirname, 'src/switch.html'),
         checkbox: resolve(__dirname, 'src/checkbox.html'),
+        // Positioned-overlay parity fixtures: Lit element (shadow + strategy:fixed)
+        // and native-React twin (body portal), running the SAME Zag machine, for the
+        // open/close/positioning/dismiss/keyboard + parity suite.
+        tooltip: resolve(__dirname, 'src/tooltip.html'),
+        popover: resolve(__dirname, 'src/popover.html'),
         // Navigation batch: Tabs (compound, @zag-js/tabs), Breadcrumb
         // (presentational), Pagination (@zag-js/pagination) — each mounts the Lit
         // element and its native-React twin side by side for the parity suite.
