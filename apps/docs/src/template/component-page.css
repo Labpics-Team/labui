@@ -1,0 +1,393 @@
+/*
+ * Component-doc template styles — theme-agnostic, token-only.
+ *
+ * Every colour here is a semantic --lab-* role; every dimension is a --lab-*
+ * token. There is ZERO hex in the template. The page proves theme- and
+ * material-agnosticism: flipping [data-theme] / [data-material] on the root
+ * re-skins everything below with no rule edits.
+ *
+ * Colour roles come entirely from the imported @labpics/colors contract (the
+ * full Light/Dark --lab-* set is already pinned there). The page binds no
+ * stand-in values of its own — it reads the real contract, so what the docs
+ * show IS the design system.
+ */
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "@labpics/ui-core/theme.css";
+@import "@labpics/ui-core/materials.css";
+
+/* ── Reset + page frame ───────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--lab-surface-base);
+  color: var(--lab-label-primary);
+  font-family: system-ui, sans-serif;
+  line-height: var(--lab-line-height-md, 1.5);
+}
+
+code {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.9em;
+}
+
+/* ── Layout: sidebar + main (mobile-first single column) ──────────────────── */
+.doc-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--lab-space-6, 1.5rem);
+  max-width: 80rem;
+  margin-inline: auto;
+  padding: var(--lab-space-6, 1.5rem);
+}
+
+@media (min-width: 60rem) {
+  .doc-layout {
+    grid-template-columns: 14rem minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+.doc-sidebar {
+  position: sticky;
+  top: var(--lab-space-6, 1.5rem);
+}
+
+.sidebar-title {
+  margin: 0 0 var(--lab-space-3, 0.75rem);
+  font-weight: 700;
+  color: var(--lab-label-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--lab-font-size-sm, 0.875rem);
+}
+
+.doc-sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--lab-space-1, 0.25rem);
+}
+
+.nav-link {
+  display: block;
+  padding: var(--lab-space-2, 0.5rem) var(--lab-space-3, 0.75rem);
+  border-radius: var(--lab-radius-md, 0.5rem);
+  color: var(--lab-label-primary);
+  text-decoration: none;
+  border: 0.0625rem solid transparent;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+  background: var(--lab-fill-neutral-tinted);
+}
+
+.nav-link[aria-current="page"] {
+  border-color: var(--lab-border-accent);
+  color: var(--lab-label-primary);
+  background: var(--lab-fill-neutral-tinted);
+}
+
+.nav-planned {
+  color: var(--lab-label-secondary);
+  cursor: default;
+  font-style: italic;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.doc-header {
+  margin-bottom: var(--lab-space-8, 2rem);
+}
+
+.doc-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lab-space-3, 0.75rem);
+}
+
+.doc-header h1 {
+  margin: 0;
+  font-size: var(--lab-font-size-3xl, 2.25rem);
+}
+
+.doc-summary {
+  margin: var(--lab-space-3, 0.75rem) 0 var(--lab-space-5, 1.25rem);
+  color: var(--lab-label-secondary);
+  max-width: 60ch;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lab-space-2, 0.5rem);
+  padding: var(--lab-space-1, 0.25rem) var(--lab-space-3, 0.75rem);
+  border-radius: var(--lab-radius-full, 9999px);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  font-size: var(--lab-font-size-sm, 0.875rem);
+  font-weight: 600;
+}
+
+.status-badge[data-status="proof"],
+.status-badge[data-status="todo"] {
+  border-color: var(--lab-border-accent);
+  color: var(--lab-label-primary);
+}
+
+.status-note {
+  font-weight: 400;
+  color: var(--lab-label-secondary);
+}
+
+/* ── Root controls (theme + material) ─────────────────────────────────────── */
+.root-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lab-space-4, 1rem);
+  padding: var(--lab-space-4, 1rem);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  border-radius: var(--lab-radius-lg, 0.75rem);
+  background: var(--lab-surface-raised);
+}
+
+.root-control,
+.live-control {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lab-space-2, 0.5rem);
+  font-size: var(--lab-font-size-sm, 0.875rem);
+}
+
+select {
+  font: inherit;
+  padding: var(--lab-space-1, 0.25rem) var(--lab-space-2, 0.5rem);
+  border-radius: var(--lab-radius-md, 0.5rem);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  background: var(--lab-surface-base);
+  color: var(--lab-label-primary);
+}
+
+select:focus-visible,
+input:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.doc-section {
+  margin-bottom: var(--lab-space-10, 2.5rem);
+  padding-top: var(--lab-space-6, 1.5rem);
+  border-top: 0.0625rem solid var(--lab-border-neutral);
+}
+
+.doc-section > h2 {
+  margin: 0 0 var(--lab-space-4, 1rem);
+  font-size: var(--lab-font-size-xl, 1.5rem);
+}
+
+/* ── States matrix ────────────────────────────────────────────────────────── */
+.matrix-scroll {
+  overflow-x: auto;
+}
+
+.matrix-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.matrix-table th,
+.matrix-table td {
+  border: 0.0625rem solid var(--lab-border-neutral);
+  padding: var(--lab-space-4, 1rem);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.matrix-table thead th,
+.matrix-table tbody th {
+  color: var(--lab-label-secondary);
+  font-size: var(--lab-font-size-sm, 0.875rem);
+  font-weight: 600;
+  background: var(--lab-surface-raised);
+}
+
+.matrix-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.matrix-single {
+  display: flex;
+  padding: var(--lab-space-6, 1.5rem);
+}
+
+/* ── Anatomy ──────────────────────────────────────────────────────────────── */
+.anatomy {
+  display: grid;
+  gap: var(--lab-space-6, 1.5rem);
+}
+
+@media (min-width: 48rem) {
+  .anatomy {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    align-items: start;
+  }
+}
+
+.anatomy-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 8rem;
+  padding: var(--lab-space-8, 2rem);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  border-radius: var(--lab-radius-lg, 0.75rem);
+  background: var(--lab-surface-raised);
+}
+
+.anatomy-parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--lab-space-4, 1rem);
+}
+
+.anatomy-part {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--lab-space-3, 0.75rem);
+}
+
+.anatomy-part p {
+  margin: var(--lab-space-1, 0.25rem) 0 0;
+  color: var(--lab-label-secondary);
+}
+
+.anatomy-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--lab-radius-full, 9999px);
+  background: var(--lab-fill-accent);
+  color: var(--lab-label-on-accent);
+  font-weight: 700;
+  font-size: var(--lab-font-size-sm, 0.875rem);
+}
+
+/* ── Meaning / usage ──────────────────────────────────────────────────────── */
+.meaning-purpose {
+  max-width: 70ch;
+  color: var(--lab-label-secondary);
+}
+
+.guidance {
+  display: grid;
+  gap: var(--lab-space-4, 1rem);
+}
+
+@media (min-width: 40rem) {
+  .guidance {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.guidance-col {
+  padding: var(--lab-space-4, 1rem);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  border-radius: var(--lab-radius-lg, 0.75rem);
+  background: var(--lab-surface-raised);
+}
+
+.guidance-col h3 {
+  margin: 0 0 var(--lab-space-3, 0.75rem);
+}
+
+.guidance-col[data-tone="do"] {
+  border-left: 0.1875rem solid var(--lab-border-success-strong);
+}
+
+.guidance-col[data-tone="dont"] {
+  border-left: 0.1875rem solid var(--lab-border-danger-strong);
+}
+
+.guidance-col ul {
+  margin: 0;
+  padding-left: var(--lab-space-5, 1.25rem);
+  display: grid;
+  gap: var(--lab-space-2, 0.5rem);
+  color: var(--lab-label-secondary);
+}
+
+/* ── Live example ─────────────────────────────────────────────────────────── */
+.live {
+  display: grid;
+  gap: var(--lab-space-5, 1.25rem);
+}
+
+.live-stage {
+  display: flex;
+  justify-content: center;
+  padding: var(--lab-space-10, 2.5rem);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  border-radius: var(--lab-radius-lg, 0.75rem);
+  background: var(--lab-surface-raised);
+}
+
+.live-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lab-space-4, 1rem);
+}
+
+/* ── API tables ───────────────────────────────────────────────────────────── */
+.api {
+  display: grid;
+  gap: var(--lab-space-6, 1.5rem);
+}
+
+.api-group h3 {
+  margin: 0 0 var(--lab-space-3, 0.75rem);
+}
+
+.api-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.api-table th,
+.api-table td {
+  border: 0.0625rem solid var(--lab-border-neutral);
+  padding: var(--lab-space-3, 0.75rem);
+  text-align: left;
+  vertical-align: top;
+}
+
+.api-table thead th {
+  background: var(--lab-surface-raised);
+  color: var(--lab-label-secondary);
+  font-size: var(--lab-font-size-sm, 0.875rem);
+}
+
+.api-table td:last-child {
+  color: var(--lab-label-secondary);
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+.empty-state {
+  margin: 0;
+  padding: var(--lab-space-4, 1rem);
+  color: var(--lab-label-secondary);
+  font-style: italic;
+}
