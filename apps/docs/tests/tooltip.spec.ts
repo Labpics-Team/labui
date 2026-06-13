@@ -108,6 +108,83 @@ test('visual parity: Lit and React resolve the same surface colour when open', a
   expect(reactBg, 'tooltip surface background parity').toBe(litBg);
 });
 
+/**
+ * ARIA wiring — the binding the @zag-js/tooltip machine REALLY emits (verified
+ * against tooltip.connect.js): once OPEN, the trigger gains aria-describedby pointing
+ * at the content id, and the content carries role="tooltip" + that same id. Closed,
+ * the machine emits no aria-describedby (it is `open ? contentId : undefined`). This
+ * is the contract on the machine's output — falsifiable: idref must equal the content
+ * element's id, not just be present.
+ */
+test('aria: open trigger is described by the tooltip content (describedby→content id)', async ({
+  page,
+}) => {
+  // Lit — closed: no aria-describedby yet (machine gates it on open).
+  const litTriggerClosed = await litHost(page, 'lit-tt-bottom').evaluate(
+    (h) =>
+      (h as HTMLElement).shadowRoot?.querySelector('.trigger')?.getAttribute('aria-describedby') ??
+      null,
+  );
+  expect(litTriggerClosed, 'closed Lit tooltip emits no aria-describedby').toBeNull();
+
+  await litHost(page, 'lit-tt-bottom').hover();
+  await expect(litContent(page, 'lit-tt-bottom')).toBeVisible();
+  const litWiring = await litHost(page, 'lit-tt-bottom').evaluate((h) => {
+    const sr = (h as HTMLElement).shadowRoot;
+    const trigger = sr?.querySelector('.trigger');
+    const content = sr?.querySelector('.content');
+    return {
+      describedby: trigger?.getAttribute('aria-describedby') ?? null,
+      contentId: content?.id ?? null,
+      role: content?.getAttribute('role') ?? null,
+    };
+  });
+  expect(litWiring.contentId, 'open Lit tooltip content has an id').toBeTruthy();
+  expect(litWiring.role).toBe('tooltip');
+  expect(litWiring.describedby, 'trigger aria-describedby → content id').toBe(litWiring.contentId);
+
+  // React — the portalled surface; the trigger is in the wrapper.
+  await reactTrigger(page, 'react-tt-bottom').hover();
+  await expect(reactOpenContent(page)).toBeVisible();
+  const reactContentId = await reactOpenContent(page).getAttribute('id');
+  const reactDescribedby = await reactTrigger(page, 'react-tt-bottom').getAttribute(
+    'aria-describedby',
+  );
+  expect(reactContentId, 'open React tooltip content has an id').toBeTruthy();
+  expect(await reactOpenContent(page).getAttribute('role')).toBe('tooltip');
+  expect(reactDescribedby, 'React trigger aria-describedby → content id').toBe(reactContentId);
+});
+
+/**
+ * Positioning — the surface is anchored AT the trigger, not merely on-screen. For
+ * placement="bottom" the surface top sits at/below the trigger bottom (within a small
+ * gap+arrow tolerance) and the boxes overlap horizontally. The old `box.y >= 0` check
+ * only caught an off-screen surface; this catches a visible-but-detached one.
+ */
+test('positioning: the open surface is anchored at the trigger (bottom placement)', async ({
+  page,
+}) => {
+  const trigger = litHost(page, 'lit-tt-bottom');
+  await trigger.hover();
+  const content = litContent(page, 'lit-tt-bottom');
+  await expect(content).toBeVisible();
+
+  const triggerBox = await trigger.boundingBox();
+  const contentBox = await content.boundingBox();
+  expect(triggerBox).not.toBeNull();
+  expect(contentBox).not.toBeNull();
+  if (!triggerBox || !contentBox) return;
+
+  const gap = contentBox.y - (triggerBox.y + triggerBox.height);
+  expect(gap, 'surface sits below the trigger').toBeGreaterThanOrEqual(-2);
+  expect(gap, 'surface is adjacent to the trigger (not detached)').toBeLessThanOrEqual(24);
+
+  const overlap =
+    Math.min(triggerBox.x + triggerBox.width, contentBox.x + contentBox.width) -
+    Math.max(triggerBox.x, contentBox.x);
+  expect(overlap, 'surface horizontally overlaps the trigger').toBeGreaterThan(0);
+});
+
 test('tokens: re-pointing --lab-bg-inverted re-skins both surfaces', async ({ page }) => {
   await page.evaluate(() => {
     document.documentElement.style.setProperty('--lab-bg-inverted', 'rgb(1, 2, 3)');

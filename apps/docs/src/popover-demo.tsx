@@ -42,6 +42,7 @@ createRoot(mount).render(
       <Popover
         placement="bottom"
         heading="Settings"
+        description="Choose how this panel behaves."
         closable
         content={
           <>

@@ -36,4 +36,9 @@ export { Kbd, type KbdProps } from './kbd.js';
 export { Loader, type LoaderProps } from './loader.js';
 export { Avatar, type AvatarProps } from './avatar.js';
 
+// POSITIONED OVERLAYS — native-React twins of the Lit `<lab-tooltip>` /
+// `<lab-popover>`, running the SAME `@zag-js/{tooltip,popover}` machines via `useZag`.
+export { Tooltip, type TooltipProps } from './tooltip.js';
+export { Popover, type PopoverProps } from './popover.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';
