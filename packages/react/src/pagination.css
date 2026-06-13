@@ -1,0 +1,97 @@
+/*
+ * <Pagination> (React) styles — the visual PARITY twin of the Lit
+ * `<lab-pagination>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([size])` /
+ * `.item[data-selected]`. React is native (ADR-0001) — no shadow DOM — so this
+ * sheet mirrors those exact rules against `[data-lab-pagination]` + scoped class
+ * names, plus the `data-selected` / `:disabled` the machine sets. Same roles,
+ * same structure, same states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
+ * hex, ZERO primitive.
+ */
+
+[data-lab-pagination] {
+  --_lab-pg-gap: var(--lab-space-xs, 0.25rem);
+  --_lab-pg-size: 2.25rem;
+  --_lab-pg-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-pg-font: var(--lab-font-size-md, 1rem);
+
+  display: flex;
+  align-items: center;
+  gap: var(--_lab-pg-gap);
+  font: inherit;
+  font-size: var(--_lab-pg-font);
+}
+
+[data-lab-pagination][data-size="s"] {
+  --_lab-pg-size: 1.75rem;
+  --_lab-pg-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-pagination][data-size="l"] {
+  --_lab-pg-size: 2.75rem;
+  --_lab-pg-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+.lab-pagination-item,
+.lab-pagination-trigger {
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--_lab-pg-size);
+  height: var(--_lab-pg-size);
+  padding-inline: var(--_lab-pg-pad-x);
+  border: 0.0625rem solid transparent;
+  border-radius: var(--lab-radius-control, 0.5rem);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--lab-label-secondary);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.lab-pagination-item:hover:not([data-selected]):not(:disabled),
+.lab-pagination-trigger:hover:not(:disabled) {
+  background-color: var(--lab-fill-neutral-tinted);
+  color: var(--lab-label-primary);
+}
+
+.lab-pagination-item[data-selected] {
+  background-color: var(--lab-fill-accent);
+  color: var(--lab-label-on-accent);
+  cursor: default;
+}
+
+.lab-pagination-item:disabled,
+.lab-pagination-trigger:disabled {
+  color: var(--lab-label-tertiary);
+  cursor: not-allowed;
+}
+
+.lab-pagination-item:focus-visible,
+.lab-pagination-trigger:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+.lab-pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--_lab-pg-size);
+  height: var(--_lab-pg-size);
+  color: var(--lab-label-tertiary);
+  user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-pagination-item,
+  .lab-pagination-trigger {
+    transition: none;
+  }
+}

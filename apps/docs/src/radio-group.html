@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Radio Group parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="radio-group-title">
+        Radio Group parity — <code>&lt;lab-radio-group&gt;</code> (Lit) ↔
+        <code>&lt;RadioGroup&gt;</code> / <code>&lt;Radio&gt;</code> (React)
+      </h1>
+      <p>
+        The FIRST compound component. Two renderers, one
+        <code>@zag-js/radio-group</code> machine. One group machine owns the single
+        selected value, roving focus, Arrow-key selection, and
+        <code>aria-checked</code> across every item. Both renderers paint with the
+        same <code>--lab-*</code> roles. The Lit element renders all parts in one
+        shadow scope from an <code>items</code> config; the React twin is a
+        context-provider <code>&lt;RadioGroup&gt;</code> plus <code>&lt;Radio&gt;</code>
+        leaf children. The Playwright suite asserts machine behaviour, roving
+        keyboard, and visual parity.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. Items ride the JSON `items` attribute (an array can't be a
+           plain attribute); `value` is the controlled, self-reflecting selection. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-radio-group
+            data-testid="lit-accent"
+            type="accent"
+            label="Delivery (accent)"
+            value="express"
+            items='[{"value":"standard","label":"Standard"},{"value":"express","label":"Express"},{"value":"overnight","label":"Overnight","disabled":true}]'
+          ></lab-radio-group>
+          <lab-radio-group
+            data-testid="lit-neutral"
+            type="neutral"
+            label="Delivery (neutral)"
+            value="express"
+            items='[{"value":"standard","label":"Standard"},{"value":"express","label":"Express"},{"value":"overnight","label":"Overnight","disabled":true}]'
+          ></lab-radio-group>
+          <lab-radio-group
+            data-testid="lit-danger"
+            type="danger"
+            label="Delivery (danger)"
+            value="express"
+            items='[{"value":"standard","label":"Standard"},{"value":"express","label":"Express"},{"value":"overnight","label":"Overnight","disabled":true}]'
+          ></lab-radio-group>
+          <lab-radio-group
+            data-testid="lit-vertical"
+            type="accent"
+            orientation="vertical"
+            label="Delivery (vertical)"
+            value="express"
+            items='[{"value":"standard","label":"Standard"},{"value":"express","label":"Express"},{"value":"overnight","label":"Overnight","disabled":true}]'
+          ></lab-radio-group>
+          <lab-radio-group
+            data-testid="lit-disabled"
+            type="accent"
+            disabled
+            label="Delivery (disabled)"
+            value="express"
+            items='[{"value":"standard","label":"Standard"},{"value":"express","label":"Express"},{"value":"overnight","label":"Overnight","disabled":true}]'
+          ></lab-radio-group>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from radio-group-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./radio-group-demo.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Breadcrumb parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="breadcrumb-title">
+        Breadcrumb parity — <code>&lt;lab-breadcrumb&gt;</code> (Lit) ↔
+        <code>&lt;Breadcrumb&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one presentational primitive (no machine — it owns no
+        interaction state). Both emit a native
+        <code>&lt;nav aria-label="Breadcrumb"&gt;&lt;ol&gt;</code> of links with the
+        final crumb marked <code>aria-current="page"</code>, painting with the same
+        semantic <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: the custom element. `.items` are set in breadcrumb-demo.tsx. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <lab-breadcrumb data-testid="lit-breadcrumb"></lab-breadcrumb>
+      </section>
+
+      <!-- React renderer: native, mounted from breadcrumb-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./breadcrumb-demo.tsx"></script>
+  </body>
+</html>

@@ -30,6 +30,10 @@ export { Button, type ButtonProps } from './button.js';
 export { Switch, type SwitchProps } from './switch.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
 
+// PRODUCTION compound form control — `<RadioGroup>` + `<Radio>` over the SAME
+// `@zag-js/radio-group` machine as the Lit `<lab-radio-group>`.
+export { RadioGroup, type RadioGroupProps, Radio, type RadioProps } from './radio-group.js';
+
 // PRESENTATIONAL primitives — native-React twins of the Lit elements.
 export { Badge, type BadgeProps } from './badge.js';
 export { Kbd, type KbdProps } from './kbd.js';
@@ -40,5 +44,11 @@ export { Avatar, type AvatarProps } from './avatar.js';
 // `<lab-popover>`, running the SAME `@zag-js/{tooltip,popover}` machines via `useZag`.
 export { Tooltip, type TooltipProps } from './tooltip.js';
 export { Popover, type PopoverProps } from './popover.js';
+// PRODUCTION navigation — native-React twins of the Lit `<lab-tabs>` /
+// `<lab-breadcrumb>` / `<lab-pagination>`. Tabs + Pagination run the SAME Zag
+// machines via `useZag`; Breadcrumb is presentational. Same one import surface.
+export { Tabs, Tab, TabPanel, type TabsProps, type TabProps, type TabPanelProps } from './tabs.js';
+export { Breadcrumb, type BreadcrumbProps } from './breadcrumb.js';
+export { Pagination, type PaginationProps } from './pagination.js';
 
 export const PACKAGE_NAME = '@labpics/ui-react';

@@ -1,0 +1,143 @@
+/*
+ * <RadioGroup>/<Radio> (React) styles — the visual PARITY twin of the Lit
+ * `<lab-radio-group>`.
+ *
+ * Mirrors the Lit shadow rules against `[data-lab-radio-group]` + the machine's
+ * data-* (the SAME `getItemControlProps` spreads `data-state="checked"` on both
+ * renderers) + the `lab-radio-` classes. Same roles, same structure, same state
+ * ⇒ same paint. ZERO hex, ZERO primitive — every colour is a semantic --lab-*
+ * role (core-CONTRACT §2). The `lab-radio-` prefix scopes these without a shadow
+ * boundary (craft-frontend P8).
+ */
+
+[data-lab-radio-group] {
+  --_lab-rg-ring: 1.25rem;
+  --_lab-rg-dot: 0.625rem;
+  --_lab-rg-row-gap: var(--lab-space-sm, 0.5rem);
+  --_lab-rg-list-gap: var(--lab-space-md, 0.75rem);
+  --_lab-rg-font: var(--lab-font-size-md, 1rem);
+
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--_lab-rg-list-gap);
+  font: inherit;
+  font-size: var(--_lab-rg-font);
+  line-height: var(--lab-line-height-md, 1.5);
+  color: var(--lab-label-primary);
+}
+
+[data-lab-radio-group][data-orientation="vertical"] {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
+[data-lab-radio-group][data-size="s"] {
+  --_lab-rg-ring: 1rem;
+  --_lab-rg-dot: 0.5rem;
+  --_lab-rg-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-radio-group][data-size="l"] {
+  --_lab-rg-ring: 1.5rem;
+  --_lab-rg-dot: 0.75rem;
+  --_lab-rg-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+[data-lab-radio-group] .lab-radio-group-label {
+  flex: 1 0 100%;
+  font-size: var(--_lab-rg-font);
+  font-weight: 600;
+  color: var(--lab-label-primary);
+}
+
+[data-lab-radio-group] .lab-radio-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_lab-rg-row-gap);
+  cursor: pointer;
+}
+[data-lab-radio-group] .lab-radio-item[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+[data-lab-radio-group] .lab-radio-control {
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: var(--_lab-rg-ring);
+  height: var(--_lab-rg-ring);
+  border-radius: var(--lab-radius-full, 9999px);
+  border: 0.0938rem solid var(--lab-border-neutral);
+  background-color: transparent;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+/* Checked ring colour per type, driven by the machine's data-state (mirrors the
+   Lit host). */
+[data-lab-radio-group][data-type="accent"] .lab-radio-control[data-state="checked"] {
+  border-color: var(--lab-border-accent);
+}
+[data-lab-radio-group][data-type="neutral"] .lab-radio-control[data-state="checked"] {
+  border-color: var(--lab-border-neutral);
+}
+[data-lab-radio-group][data-type="danger"] .lab-radio-control[data-state="checked"] {
+  border-color: var(--lab-border-danger);
+}
+
+[data-lab-radio-group] .lab-radio-dot {
+  width: var(--_lab-rg-dot);
+  height: var(--_lab-rg-dot);
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: currentColor;
+  transform: scale(0);
+  transition: transform 120ms ease;
+}
+[data-lab-radio-group][data-type="accent"] .lab-radio-control[data-state="checked"] .lab-radio-dot {
+  color: var(--lab-fill-accent);
+  transform: scale(1);
+}
+[data-lab-radio-group][data-type="neutral"]
+  .lab-radio-control[data-state="checked"]
+  .lab-radio-dot {
+  color: var(--lab-fill-neutral);
+  transform: scale(1);
+}
+[data-lab-radio-group][data-type="danger"] .lab-radio-control[data-state="checked"] .lab-radio-dot {
+  color: var(--lab-fill-danger);
+  transform: scale(1);
+}
+
+[data-lab-radio-group] .lab-radio-text {
+  color: var(--lab-label-primary);
+}
+
+[data-lab-radio-group] .lab-radio-control:has(input:focus-visible) {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+/* The machine sets the hidden input's visually-hidden inline style after mount;
+   this keeps it hidden at first paint (SSR) too, before that style lands. */
+[data-lab-radio-group] input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-radio-group] .lab-radio-control,
+  [data-lab-radio-group] .lab-radio-dot {
+    transition: none;
+  }
+}
