@@ -62,9 +62,7 @@ test('separators: aria-hidden and exactly items-1 of them (both renderers)', asy
   // (you don't separate past the current page). Separators are decorative, so a
   // screen reader announces the trail, not the punctuation.
   const litSeparators = litHost(page, 'lit-breadcrumb').locator('.separator');
-  const reactSeparators = page
-    .getByTestId('react-breadcrumb')
-    .locator('.lab-breadcrumb-separator');
+  const reactSeparators = page.getByTestId('react-breadcrumb').locator('.lab-breadcrumb-separator');
 
   for (const separators of [litSeparators, reactSeparators]) {
     await expect(separators).toHaveCount(3); // 4 crumbs − 1

@@ -143,9 +143,7 @@ test('aria wiring: selected trigger aria-controls == visible panel id; panel lab
 }) => {
   for (const testid of ['lit-tabs', 'react-tabs']) {
     const selectedTrigger =
-      testid === 'lit-tabs'
-        ? litTriggers(page, testid).nth(0)
-        : reactTriggers(page, testid).nth(0);
+      testid === 'lit-tabs' ? litTriggers(page, testid).nth(0) : reactTriggers(page, testid).nth(0);
     const visiblePanel =
       testid === 'lit-tabs' ? litPanels(page, testid).nth(0) : reactPanels(page, testid).nth(0);
 

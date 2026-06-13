@@ -128,9 +128,7 @@ test('bounds: prev disables on the first page, next disables on the last (both r
 test('ellipsis: present, aria-hidden, and not a button (both renderers)', async ({ page }) => {
   // 20 pages with siblingCount 1 around page 8 forces ellipses on both sides.
   const litEllipsis = litHost(page, 'lit-pagination').locator('.ellipsis');
-  const reactEllipsis = page
-    .getByTestId('react-pagination')
-    .locator('.lab-pagination-ellipsis');
+  const reactEllipsis = page.getByTestId('react-pagination').locator('.lab-pagination-ellipsis');
 
   for (const ellipsis of [litEllipsis, reactEllipsis]) {
     expect(await ellipsis.count()).toBeGreaterThan(0);
