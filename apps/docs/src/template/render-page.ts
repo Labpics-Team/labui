@@ -49,7 +49,7 @@ export function renderComponentPage(
   const main = el('main', { class: 'doc-main', id: 'doc-main' }, [
     header,
     section('sec-states', 'States matrix', [renderStatesMatrix(doc.statesMatrix)]),
-    section('sec-anatomy', 'Anatomy', [renderAnatomy(doc.statesMatrix.make({}), doc.anatomy)]),
+    section('sec-anatomy', 'Anatomy', [renderAnatomy(doc.liveExample.make(), doc.anatomy)]),
     section('sec-meaning', 'Meaning & usage', [renderMeaning(doc.meaning)]),
     section('sec-live', 'Live example', [renderLiveExample(doc.liveExample)]),
     section('sec-api', 'Props / API', [renderApi(doc.api)]),

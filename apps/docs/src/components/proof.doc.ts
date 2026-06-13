@@ -111,18 +111,12 @@ export const proofDoc: ComponentDoc = {
 
   liveExample: {
     make: () => makeProof({}),
-    controls: [
-      { kind: 'toggle', label: 'Disabled', attribute: 'disabled' },
-      {
-        kind: 'select',
-        label: 'Start pressed',
-        attribute: 'default-pressed',
-        options: [
-          { label: 'No', value: '' },
-          { label: 'Yes', value: 'true' },
-        ],
-      },
-    ],
+    // One honest control. `disabled` is a live-reflected attribute the element
+    // re-renders on, so toggling it really changes the element. `default-pressed`
+    // is construct-time only (the Zag machine reads it once at init), so it has
+    // no honest live control — flip the pressed state by clicking the proof
+    // itself, which runs the toggle machine.
+    controls: [{ kind: 'toggle', label: 'Disabled', attribute: 'disabled' }],
   },
 
   api: {
