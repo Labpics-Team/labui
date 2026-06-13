@@ -146,6 +146,52 @@ Secondary `@8`, Tertiary `@4`, Quaternary `@2`.
 | `--lab-badge-label-contrast` | Misc/Badge/Label-contrast | Labels/Static/Dark/Primary |
 | `--lab-badge-label-default` | Misc/Badge/Label-default | Labels/Static/Light/Primary |
 
+### Component (15) — derived component roles
+
+A **flat, component-facing** layer consumed by Button and `proof` (the proto-A
+consumption surface). These roles are **not 1:1 in the faithful Figma Semantic
+taxonomy** above — they are *derived* from it: the SOLID full-opacity fills, the
+on-fill contrast labels, and the focus ring that components read directly. The real
+`@labpics/colors` engine **must** resolve these names too (filed as a core
+requirement); this stub pins them so components render today.
+
+**Composition rule.** Where an exact Figma equivalent exists, the role **aliases it
+via `var()`** — one source of truth, zero value duplication. Where no equivalent
+exists (the solid neutral surface and its contrast label), the value is a design
+**literal marked `PROVISIONAL`** in `contract.css`; final visual acceptance is the
+owner's.
+
+| Role | Kind | Source | Light → Dark |
+| --- | --- | --- | --- |
+| `--lab-fill-accent` | solid fill | `var(--lab-border-brand-strong)` | Brand opaque `#007AFF` → `#4A8FFF` |
+| `--lab-fill-danger` | solid fill | `var(--lab-border-danger-strong)` | Red opaque `#FF3B30` → `#FF3A3A` |
+| `--lab-fill-neutral` | solid fill | **PROVISIONAL** literal | `#e8e8ec` → `#232327` (proto-A) |
+| `--lab-fill-accent-tinted` | tinted fill | `var(--lab-fill-brand-primary)` | Brand @12 (both modes) |
+| `--lab-fill-danger-tinted` | tinted fill | `var(--lab-fill-danger-primary)` | Red @12 (both modes) |
+| `--lab-fill-neutral-tinted` | tinted fill | `var(--lab-fill-primary)` | Neutral N6 @20 → @36 |
+| `--lab-label-accent` | sentiment text | `var(--lab-label-brand-primary)` | Brand text |
+| `--lab-label-danger` | sentiment text | `var(--lab-label-danger-primary)` | Red text |
+| `--lab-label-on-accent` | on-fill contrast | `var(--lab-label-static-light-primary)` | White (both modes) |
+| `--lab-label-on-danger` | on-fill contrast | `var(--lab-label-static-light-primary)` | White (both modes) |
+| `--lab-label-on-neutral` | on-fill contrast | **PROVISIONAL** literal | `#101012` → `#f6f8fa` (pairs solid neutral) |
+| `--lab-border-accent` | outline | `var(--lab-border-brand-strong)` | Brand opaque |
+| `--lab-border-neutral` | outline | `var(--lab-border-base)` | N6 @16 → @20 |
+| `--lab-border-danger` | outline | `var(--lab-border-danger-strong)` | Red opaque |
+| `--lab-border-focus` | focus ring | `var(--lab-fx-focus-ring-brand)` | Brand opaque |
+
+> **PROVISIONAL roles** — `--lab-fill-neutral` and its contrast partner
+> `--lab-label-on-neutral`. Figma has no opaque-neutral *surface* (only low-alpha
+> Fills), so a solid neutral fill is a design decision. The literal values are taken
+> from proto-A `fixtures/themes.css` (bench-passed) and must be visually accepted by
+> the owner before they are considered final. The accent/danger solids are **not**
+> provisional — they reuse the same opaque accent primitive the `-strong` border
+> roles already pin (identical value, full opacity).
+>
+> Why solid `--lab-fill-accent` reuses `--lab-border-brand-strong`: both resolve to
+> the opaque Brand primitive (`#007AFF` light / `#4A8FFF` dark). Aliasing avoids a
+> second literal for the same primitive — a single source of truth that moves
+> together if the snapshot is re-derived.
+
 ### Backward-compatible aliases
 
 The original 5-variable stub names are kept as aliases so existing consumers do not
