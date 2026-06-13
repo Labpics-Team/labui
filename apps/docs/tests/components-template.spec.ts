@@ -2,19 +2,21 @@ import { expect, test } from '@playwright/test';
 
 /**
  * Component-doc TEMPLATE smoke — proves the reusable docs scaffold renders all
- * six sections from a single `ComponentDoc` config, demoed on `lab-proof`.
+ * six sections from a single `ComponentDoc` config. Demoed on `lab-proof` (a
+ * component-agnostic check), pinned via `?component=proof` so it does not depend
+ * on which component is the registry default.
  *
  * The template is closed for modification; these checks guard the seam:
  *   1. Page renders from config — header (honest "Proof" status), all sections.
  *   2. States matrix is LIVE — it builds real <lab-proof> elements in every cell.
  *   3. Live example is interactive — a control flips a real attribute.
  *   4. Theme switch re-skins the documented element with zero element edits.
- *   5. Navigation is honest — the planned (Button) entry is not a clickable link.
- *   6. Unknown ?component= falls back to the first documented component.
+ *   5. Navigation is honest — the planned (Input) entry is not a clickable link.
+ *   6. Unknown ?component= falls back to the first documented component (Button).
  */
 
 test('renders all six sections from the proof config with an honest status', async ({ page }) => {
-  await page.goto('/components.html');
+  await page.goto('/components.html?component=proof');
 
   // Header: title carries the real tag and an HONEST "Proof" badge (not Stable).
   await expect(page.locator('#doc-title')).toContainText('lab-proof');
@@ -35,7 +37,7 @@ test('renders all six sections from the proof config with an honest status', asy
 });
 
 test('states matrix renders REAL lab-proof elements in every cell', async ({ page }) => {
-  await page.goto('/components.html');
+  await page.goto('/components.html?component=proof');
 
   // Two axes (State × Disabled) → a 2-column × 2-row grid = 4 live cells.
   const cells = page.locator('.matrix-cell lab-proof');
@@ -51,7 +53,7 @@ test('states matrix renders REAL lab-proof elements in every cell', async ({ pag
 });
 
 test('live example control flips a real attribute on the element', async ({ page }) => {
-  await page.goto('/components.html');
+  await page.goto('/components.html?component=proof');
 
   const specimen = page.locator('.live-stage lab-proof');
   await expect(specimen).toBeVisible();
@@ -62,7 +64,7 @@ test('live example control flips a real attribute on the element', async ({ page
 });
 
 test('theme switch re-skins the documented element with zero element edits', async ({ page }) => {
-  await page.goto('/components.html');
+  await page.goto('/components.html?component=proof');
 
   const button = page.locator('.live-stage lab-proof button');
   const darkBorder = await button.evaluate((el) => getComputedStyle(el).borderTopColor);
@@ -76,16 +78,17 @@ test('theme switch re-skins the documented element with zero element edits', asy
 });
 
 test('navigation is honest: the planned component is not a clickable link', async ({ page }) => {
-  await page.goto('/components.html');
+  await page.goto('/components.html?component=proof');
 
-  // The real component is a link; the planned one is a disabled marker.
+  // Real components are links; the planned (Input) one is a disabled marker.
   await expect(page.getByRole('link', { name: 'Proof' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Button' })).toBeVisible();
   await expect(page.locator('.nav-planned')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByRole('link', { name: /planned/i })).toHaveCount(0);
 });
 
 test('unknown ?component= falls back to the first documented component', async ({ page }) => {
   await page.goto('/components.html?component=does-not-exist');
-  // No crash, no blank shell — the proof page renders.
-  await expect(page.locator('#doc-title')).toContainText('lab-proof');
+  // No crash, no blank shell — the first documented component (Button) renders.
+  await expect(page.locator('#doc-title')).toContainText('lab-button');
 });

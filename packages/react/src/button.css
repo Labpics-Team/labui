@@ -1,0 +1,178 @@
+/*
+ * <Button> (React) styles — the visual PARITY twin of the Lit `<lab-button>`.
+ *
+ * The Lit element scopes its CSS inside a shadow root via `:host([type][kind])`
+ * selectors. React is native (ADR-0001) — no shadow DOM — so this sheet mirrors
+ * those exact selectors against `[data-lab-button]` + `data-*` attributes the
+ * component sets. Same roles, same structure, same pseudo-states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token. ZERO hex, ZERO primitive. A `lab-button-`
+ * class/attribute prefix keeps these scoped to the component (craft-frontend P8:
+ * no global namespace pollution) without a shadow boundary.
+ *
+ * Ships as a side-effect import from the component module, so consuming
+ * `<Button>` brings its styles with it — no separate setup step.
+ */
+
+[data-lab-button] {
+  /* Size knobs the size axis maps onto. Dimension fallbacks keep it usable
+     before tokens load; colour roles below never carry a fallback. */
+  --_lab-btn-radius: var(--lab-radius-control, 0.5rem);
+  --_lab-btn-font: var(--lab-font-size-md, 1rem);
+  --_lab-btn-pad-x: var(--lab-space-md, 1rem);
+  --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
+  --_lab-btn-min: 2.5rem;
+
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  gap: var(--_lab-btn-gap);
+  min-height: var(--_lab-btn-min);
+  padding: var(--_lab-btn-pad-y) var(--_lab-btn-pad-x);
+  border-radius: var(--_lab-btn-radius);
+  border: 0.0625rem solid transparent;
+  font: inherit;
+  font-size: var(--_lab-btn-font);
+  line-height: var(--lab-line-height-md, 1.5);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  /* Base surface; [data-type][data-kind] rules set longhands directly. */
+  background-color: transparent;
+  color: var(--lab-label-primary);
+}
+
+[data-lab-button][data-size="s"] {
+  --_lab-btn-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
+  --_lab-btn-min: 2rem;
+}
+[data-lab-button][data-size="l"] {
+  --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
+  --_lab-btn-pad-y: var(--lab-space-md, 1rem);
+  --_lab-btn-min: 3rem;
+}
+
+/* Icon-only: square, no text padding asymmetry. */
+[data-lab-button][data-icon="true"] {
+  width: var(--_lab-btn-min);
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+/* ── type=accent ─────────────────────────────────────────────────────────── */
+[data-lab-button][data-type="accent"][data-kind="fill"] {
+  background-color: var(--lab-fill-accent);
+  color: var(--lab-label-on-accent);
+}
+[data-lab-button][data-type="accent"][data-kind="tinted"] {
+  background-color: var(--lab-fill-accent-tinted);
+  color: var(--lab-label-accent);
+}
+[data-lab-button][data-type="accent"][data-kind="border"] {
+  color: var(--lab-label-accent);
+  border-color: var(--lab-border-accent);
+}
+[data-lab-button][data-type="accent"][data-kind="ghost"] {
+  color: var(--lab-label-accent);
+}
+
+/* ── type=neutral ────────────────────────────────────────────────────────── */
+[data-lab-button][data-type="neutral"][data-kind="fill"] {
+  background-color: var(--lab-fill-neutral);
+  color: var(--lab-label-on-neutral);
+}
+[data-lab-button][data-type="neutral"][data-kind="tinted"] {
+  background-color: var(--lab-fill-neutral-tinted);
+  color: var(--lab-label-primary);
+}
+[data-lab-button][data-type="neutral"][data-kind="border"] {
+  color: var(--lab-label-primary);
+  border-color: var(--lab-border-neutral);
+}
+[data-lab-button][data-type="neutral"][data-kind="ghost"] {
+  color: var(--lab-label-primary);
+}
+
+/* ── type=danger ─────────────────────────────────────────────────────────── */
+[data-lab-button][data-type="danger"][data-kind="fill"] {
+  background-color: var(--lab-fill-danger);
+  color: var(--lab-label-on-danger);
+}
+[data-lab-button][data-type="danger"][data-kind="tinted"] {
+  background-color: var(--lab-fill-danger-tinted);
+  color: var(--lab-label-danger);
+}
+[data-lab-button][data-type="danger"][data-kind="border"] {
+  color: var(--lab-label-danger);
+  border-color: var(--lab-border-danger);
+}
+[data-lab-button][data-type="danger"][data-kind="ghost"] {
+  color: var(--lab-label-danger);
+}
+
+/* ── interactive states (hover / active / focus) ─────────────────────────── */
+[data-lab-button]:hover {
+  filter: brightness(1.08);
+}
+[data-lab-button]:active {
+  filter: brightness(0.92);
+}
+[data-lab-button]:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+/* ── disabled ────────────────────────────────────────────────────────────── */
+[data-lab-button]:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  filter: none;
+}
+
+/* ── loading: spinner replaces the label without collapsing layout ───────── */
+[data-lab-button][data-loading="true"] {
+  cursor: progress;
+}
+[data-lab-button] .lab-button-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_lab-btn-gap);
+}
+[data-lab-button][data-loading="true"] .lab-button-label {
+  visibility: hidden;
+}
+[data-lab-button] .lab-button-spinner {
+  display: none;
+  position: absolute;
+  width: 1em;
+  height: 1em;
+  border: 0.125rem solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--lab-radius-full, 9999px);
+  animation: lab-button-spin 0.7s linear infinite;
+}
+[data-lab-button][data-loading="true"] .lab-button-spinner {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-button] .lab-button-spinner {
+    animation-duration: 0s;
+  }
+  [data-lab-button] {
+    transition: none;
+  }
+}
+@keyframes lab-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

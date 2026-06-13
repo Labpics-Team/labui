@@ -24,6 +24,11 @@
       "import": "./dist/proof.js",
       "require": "./dist/proof.cjs"
     },
+    "./button": {
+      "types": "./dist/button.d.ts",
+      "import": "./dist/button.js",
+      "require": "./dist/button.cjs"
+    },
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
     "./theme.css": "./dist/theme.css",
@@ -35,7 +40,9 @@
     "./dist/glass.css",
     "./dist/theme.css",
     "./dist/proof.js",
-    "./dist/proof.cjs"
+    "./dist/proof.cjs",
+    "./dist/button.js",
+    "./dist/button.cjs"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

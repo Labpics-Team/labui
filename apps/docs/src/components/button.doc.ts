@@ -1,0 +1,244 @@
+/*
+ * `lab-button` documentation config — the FIRST production component documented
+ * through the closed docs template, and the EXEMPLAR every other component's
+ * page is cloned from.
+ *
+ * Unlike `proof.doc.ts` (a proof of the scaffold seam), this documents a real
+ * primitive: the Button has the full Figma axis model (type × kind × size, plus
+ * icon / loading / disabled). The page is built from this data object alone —
+ * the template renderer is untouched (craft-arch / OCP).
+ *
+ * Honesty rules (owner's iron rule on stop-gaps): the status badge says exactly
+ * what the Button is; the live controls are ONLY the ones that truly mutate the
+ * element (every attribute below is reflected and re-styles live), never a no-op
+ * dressed as a control.
+ */
+import '@labpics/ui-core/button';
+import type { ComponentDoc } from '../template/component-doc.js';
+
+/** Build a real `<lab-button>` with the given attribute map applied. */
+function makeButton(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
+  const button = document.createElement('lab-button');
+  button.textContent = 'Button';
+  for (const [key, value] of Object.entries(attrs)) {
+    if (value === false) continue;
+    if (value === true) button.setAttribute(key, '');
+    else button.setAttribute(key, String(value));
+  }
+  return button;
+}
+
+export const buttonDoc: ComponentDoc = {
+  slug: 'button',
+  tag: 'lab-button',
+  title: 'Button',
+  summary:
+    'The primary action control. Three intents (accent / neutral / danger) across four surface kinds (fill / tinted / border / ghost) and three sizes, with icon-only, loading, and disabled states — built only on semantic --lab-* roles, identical on the Lit and native-React renderers.',
+  // Beta, honestly: the API and behaviour are production and frozen, but two
+  // colour roles it pairs (the SOLID neutral fill + its on-fill label) are
+  // PROVISIONAL in the colour stub, awaiting the owner's visual sign-off. That
+  // is a calibration, not an API risk — hence beta, not stable.
+  status: {
+    kind: 'beta',
+    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The solid-neutral fill role it pairs is a PROVISIONAL colour value pending owner sign-off — a visual calibration, not an API change.',
+  },
+
+  statesMatrix: {
+    // Columns = Kind (the surface treatment). Rows = the cartesian product of
+    // Type (intent) × Size — so the grid shows every intent at every size for
+    // each surface. Interactive states (hover / focus / disabled / loading) are
+    // exercised live in the Live example below, where they are genuinely
+    // interactive rather than a frozen screenshot.
+    axes: [
+      {
+        name: 'Kind',
+        attribute: 'kind',
+        options: [
+          { label: 'Fill', value: 'fill' },
+          { label: 'Tinted', value: 'tinted' },
+          { label: 'Border', value: 'border' },
+          { label: 'Ghost', value: 'ghost' },
+        ],
+      },
+      {
+        name: 'Type',
+        attribute: 'type',
+        options: [
+          { label: 'Accent', value: 'accent' },
+          { label: 'Neutral', value: 'neutral' },
+          { label: 'Danger', value: 'danger' },
+        ],
+      },
+      {
+        name: 'Size',
+        attribute: 'size',
+        options: [
+          { label: 'S', value: 's' },
+          { label: 'M', value: 'm' },
+          { label: 'L', value: 'l' },
+        ],
+      },
+    ],
+    make: makeButton,
+  },
+
+  anatomy: [
+    {
+      index: 1,
+      name: 'Container (button)',
+      description:
+        'The native <button>. Its surface and label come from the type×kind pair: fill reads --lab-fill-{type} with --lab-label-on-{type}; tinted reads --lab-fill-{type}-tinted with --lab-label-{type}; border reads --lab-border-{type}; ghost is text-only. Separation is always by surface, never a border drawn on top.',
+    },
+    {
+      index: 2,
+      name: 'Label slot',
+      description:
+        'The default slot (Lit) / children (React) carrying the action text. Server-rendered into the declarative shadow DOM on the Lit path so first paint is meaningful before any JS.',
+    },
+    {
+      index: 3,
+      name: 'Icon slot',
+      description:
+        'A leading icon (Lit: slot="icon"; React: iconSlot). With the icon attribute set, the button becomes a square icon-only control sized to its size axis.',
+    },
+    {
+      index: 4,
+      name: 'Spinner',
+      description:
+        'Always present in the DOM, shown only while loading. It overlays the centre and the label is hidden via visibility — so the button never changes size when it starts loading (zero layout shift).',
+    },
+    {
+      index: 5,
+      name: 'Focus ring',
+      description:
+        'A :focus-visible outline drawn from --lab-border-focus. delegatesFocus on the Lit host moves focus to the inner button; the React button is the focus target directly. Keyboard activation (Enter / Space) is the platform default — never re-implemented.',
+    },
+  ],
+
+  meaning: {
+    purpose:
+      'Button triggers an action. Its type carries intent (accent = the primary action, neutral = a secondary one, danger = a destructive one); its kind carries emphasis (fill is loudest, then tinted, then border, then ghost — quietest). Pick exactly one accent-fill action per view and let everything else step down in kind, so the eye lands on the one thing you want pressed.',
+    dos: [
+      'Use one accent fill as the primary action in a view; step secondary actions down to tinted, border, or ghost.',
+      'Use type="danger" for destructive actions (delete, remove) so the intent reads before the label does.',
+      'Set loading while an action is in flight — it blocks double-submits and keeps the button size fixed.',
+      'Give icon-only buttons an accessible name (aria-label) — the square icon carries no text for a screen reader.',
+    ],
+    donts: [
+      "Don't put two accent fill buttons next to each other — competing primary actions leave the user unsure where to click.",
+      "Don't use danger for a non-destructive action just because it should stand out — intent must be truthful.",
+      "Don't hardcode a colour against the button; it only ever reads --lab-* roles bound by the active theme on an ancestor.",
+      "Don't disable a button as the only feedback for a blocked action — pair it with a reason the user can read.",
+    ],
+  },
+
+  liveExample: {
+    // Every control below mutates a REFLECTED attribute the element re-styles on,
+    // so each one genuinely changes the live button (owner's iron rule: no no-op
+    // controls). Click states (hover / active / focus) are exercised by actually
+    // interacting with the rendered button — they need no synthetic control.
+    make: () => makeButton({ type: 'accent', kind: 'fill', size: 'm' }),
+    controls: [
+      {
+        kind: 'select',
+        label: 'Type',
+        attribute: 'type',
+        options: [
+          { label: 'Accent', value: 'accent' },
+          { label: 'Neutral', value: 'neutral' },
+          { label: 'Danger', value: 'danger' },
+        ],
+      },
+      {
+        kind: 'select',
+        label: 'Kind',
+        attribute: 'kind',
+        options: [
+          { label: 'Fill', value: 'fill' },
+          { label: 'Tinted', value: 'tinted' },
+          { label: 'Border', value: 'border' },
+          { label: 'Ghost', value: 'ghost' },
+        ],
+      },
+      {
+        kind: 'select',
+        label: 'Size',
+        attribute: 'size',
+        options: [
+          { label: 'S', value: 's' },
+          { label: 'M', value: 'm' },
+          { label: 'L', value: 'l' },
+        ],
+      },
+      { kind: 'toggle', label: 'Loading', attribute: 'loading' },
+      { kind: 'toggle', label: 'Disabled', attribute: 'disabled' },
+    ],
+  },
+
+  api: {
+    props: [
+      {
+        name: 'type',
+        type: "'accent' | 'neutral' | 'danger'",
+        default: "'accent'",
+        description: 'Semantic intent of the action. Reflected attribute; styles key off it.',
+      },
+      {
+        name: 'kind',
+        type: "'fill' | 'tinted' | 'border' | 'ghost'",
+        default: "'fill'",
+        description: 'Surface treatment / emphasis. Separation is by surface, not a border on top.',
+      },
+      {
+        name: 'size',
+        type: "'s' | 'm' | 'l'",
+        default: "'m'",
+        description:
+          'Control size. Drives padding, font size, and minimum height from --lab-* tokens.',
+      },
+      {
+        name: 'icon',
+        type: 'boolean',
+        default: 'false',
+        description: 'Square, icon-only mode. The icon slot fills a square sized to the size axis.',
+      },
+      {
+        name: 'loading',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Shows the spinner and blocks interaction (aria-busy) without collapsing layout.',
+      },
+      {
+        name: 'disabled',
+        type: 'boolean',
+        default: 'false',
+        description: 'Non-interactive (aria-disabled). Reflected for styling and a11y.',
+      },
+      {
+        name: 'html-type (Lit) / htmlType (React)',
+        type: "'button' | 'submit' | 'reset'",
+        default: "'button'",
+        description:
+          'The native button behaviour inside a form. Named to avoid clashing with the type axis.',
+      },
+    ],
+    events: [
+      {
+        name: 'click',
+        description:
+          'Native click on the inner button. Suppressed while loading or disabled (the underlying button is disabled). React exposes the standard onClick; both renderers use the platform event.',
+      },
+    ],
+    slots: [
+      {
+        name: '(default) / children',
+        description: 'The label content. Lit uses the default <slot>; React uses children.',
+      },
+      {
+        name: 'icon / iconSlot',
+        description: 'Leading icon content. Lit uses slot="icon"; React uses the iconSlot prop.',
+      },
+    ],
+  },
+};

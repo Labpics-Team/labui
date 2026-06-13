@@ -7,4 +7,10 @@ import { libraryPreset } from '../../tsup.config.base';
  */
 export default libraryPreset({
   external: ['react', 'react-dom', 'react/jsx-runtime', /^@zag-js\//, /^@labpics\//],
+  // Inline the component CSS (`button.css`) into the JS as a runtime-injected
+  // <style>, so importing the component brings its styles with it in ANY bundler
+  // — no separate stylesheet-import step. Without this, tsup emits a sibling
+  // .css file but does NOT re-link it from the ESM output, so consumers silently
+  // lose the styles (caught by the Lit↔React parity test).
+  injectStyle: true,
 });

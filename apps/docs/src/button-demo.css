@@ -1,0 +1,51 @@
+/*
+ * Button parity demo styles.
+ *
+ * Loads the REAL colour contract + dimension tokens (no demo stand-in values),
+ * so both renderers paint from the same --lab-* roles the production design
+ * system ships — what the page shows IS the system. A theme is a binding of
+ * those roles on the root; flipping [data-theme] re-skins both renderers with
+ * zero element edits.
+ *
+ * The React <Button> ships its own scoped stylesheet (imported by the
+ * component); this file only provides the page frame + the token context.
+ */
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "@labpics/ui-core/theme.css";
+
+body {
+  margin: 0;
+  padding: var(--lab-space-8, 2rem);
+  background: var(--lab-surface-base, #0b0b0c);
+  color: var(--lab-label-primary, #f5f5f7);
+  font-family: system-ui, sans-serif;
+}
+:root[data-theme="light"] body {
+  background: var(--lab-surface-base, #f7f8fa);
+}
+
+h1 {
+  font-size: var(--lab-font-size-2xl, 2rem);
+}
+
+.row {
+  display: flex;
+  gap: var(--lab-space-4, 1rem);
+  align-items: center;
+  margin-block: var(--lab-space-6, 1.5rem);
+}
+
+.renderer {
+  margin-block: var(--lab-space-6, 1.5rem);
+  padding: var(--lab-space-4, 1rem);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  border-radius: var(--lab-radius-lg, 0.75rem);
+}
+
+.specimens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lab-space-4, 1rem);
+  align-items: center;
+}

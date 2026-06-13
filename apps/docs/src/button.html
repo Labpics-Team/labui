@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Button parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="button-title">
+        Button parity — <code>&lt;lab-button&gt;</code> (Lit) ↔ <code>&lt;Button&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. The same axes, the same semantic
+        <code>--lab-*</code> roles, the same structure and states. This page mounts
+        both side by side so the Playwright suite can assert visual parity and
+        behaviour on each.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: the custom element, registered + styled in its shadow root. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-button data-testid="lit-accent-fill" type="accent" kind="fill">Save</lab-button>
+          <lab-button data-testid="lit-neutral-tinted" type="neutral" kind="tinted">Cancel</lab-button>
+          <lab-button data-testid="lit-danger-border" type="danger" kind="border">Delete</lab-button>
+          <lab-button data-testid="lit-loading" type="accent" kind="fill" loading>Saving</lab-button>
+          <lab-button data-testid="lit-disabled" type="accent" kind="fill" disabled>Off</lab-button>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from button-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./button-demo.tsx"></script>
+  </body>
+</html>

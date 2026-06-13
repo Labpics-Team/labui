@@ -57,4 +57,14 @@ export {
   SEMANTIC_ROLE_PREFIXES,
 } from './css.js';
 
+// Component axis types — the SINGLE source of truth for the public API shape, so
+// the Lit element and the native React renderer never drift (core-CONTRACT §3).
+// Type-only: importing these pulls NO Lit runtime into the React bundle.
+export type {
+  LabButtonHtmlType,
+  LabButtonKind,
+  LabButtonSize,
+  LabButtonType,
+} from './components/button/lab-button.js';
+
 export const PACKAGE_NAME = '@labpics/ui-core';

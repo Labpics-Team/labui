@@ -41,6 +41,13 @@ function ssrProofPlugin(): Plugin {
 export default defineConfig({
   root: 'src',
   plugins: [ssrProofPlugin()],
+  // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
+  // built-in esbuild handles the automatic JSX transform — no plugin-react /
+  // Fast-Refresh needed for these static build+preview fixtures.
+  esbuild: {
+    jsx: 'automatic',
+    jsxImportSource: 'react',
+  },
   build: {
     outDir: '../dist',
     emptyOutDir: true,
@@ -51,8 +58,11 @@ export default defineConfig({
         shadow: resolve(__dirname, 'src/shadow.html'),
         proof: resolve(__dirname, 'src/proof.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
-        // config; ?component=<slug> selects which one). Demoed on lab-proof.
+        // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),
+        // Button parity fixture: Lit `<lab-button>` and native-React `<Button>`
+        // side by side under one [data-theme], for the parity + behaviour suite.
+        button: resolve(__dirname, 'src/button.html'),
       },
     },
   },
