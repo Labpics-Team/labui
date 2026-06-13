@@ -1,0 +1,147 @@
+/*
+ * <Switch> (React) styles — the visual PARITY twin of the Lit `<lab-switch>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([checked][type])`. React
+ * is native (ADR-0001) — no shadow DOM — so this sheet mirrors those exact rules
+ * against `[data-lab-switch]` + the `data-*` the component sets. Same roles, same
+ * structure, same states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
+ * hex, ZERO primitive. The `lab-switch-` prefix scopes these without a shadow
+ * boundary (craft-frontend P8).
+ */
+
+[data-lab-switch] {
+  --_lab-sw-track-w: 2.75rem;
+  --_lab-sw-track-h: 1.5rem;
+  --_lab-sw-thumb: 1.125rem;
+  --_lab-sw-gap: var(--lab-space-sm, 0.5rem);
+  --_lab-sw-font: var(--lab-font-size-md, 1rem);
+
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  gap: var(--_lab-sw-gap);
+  font: inherit;
+  font-size: var(--_lab-sw-font);
+  line-height: var(--lab-line-height-md, 1.5);
+  color: var(--lab-label-primary);
+  cursor: pointer;
+}
+
+[data-lab-switch][data-size="s"] {
+  --_lab-sw-track-w: 2.25rem;
+  --_lab-sw-track-h: 1.25rem;
+  --_lab-sw-thumb: 0.875rem;
+  --_lab-sw-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-switch][data-size="l"] {
+  --_lab-sw-track-w: 3.25rem;
+  --_lab-sw-track-h: 1.75rem;
+  --_lab-sw-thumb: 1.375rem;
+  --_lab-sw-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+[data-lab-switch] .lab-switch-control {
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  width: var(--_lab-sw-track-w);
+  height: var(--_lab-sw-track-h);
+  padding: 0.125rem;
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-fill-neutral-tinted);
+  transition: background-color 140ms ease;
+}
+
+/* ON track per type — driven by data-checked + data-type, mirroring the Lit host. */
+[data-lab-switch][data-checked][data-type="accent"] .lab-switch-control {
+  background-color: var(--lab-fill-accent);
+}
+[data-lab-switch][data-checked][data-type="neutral"] .lab-switch-control {
+  background-color: var(--lab-fill-neutral);
+}
+[data-lab-switch][data-checked][data-type="danger"] .lab-switch-control {
+  background-color: var(--lab-fill-danger);
+}
+
+[data-lab-switch] .lab-switch-thumb {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_lab-sw-thumb);
+  height: var(--_lab-sw-thumb);
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-control-bg);
+  box-shadow: 0 0.0625rem 0.125rem var(--lab-fx-shadow-major, rgb(0 0 0 / 0.15));
+  transition: transform 140ms ease;
+  transform: translateX(0);
+}
+[data-lab-switch][data-checked] .lab-switch-thumb {
+  transform: translateX(calc(var(--_lab-sw-track-w) - var(--_lab-sw-thumb) - 0.25rem));
+}
+
+[data-lab-switch] .lab-switch-icon {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(var(--_lab-sw-track-h) - 0.25rem);
+  height: calc(var(--_lab-sw-track-h) - 0.25rem);
+  font-size: calc(var(--_lab-sw-track-h) * 0.5);
+  color: var(--lab-label-on-accent);
+  transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 140ms ease;
+  pointer-events: none;
+}
+[data-lab-switch] .lab-switch-icon-on {
+  left: 0.125rem;
+}
+[data-lab-switch] .lab-switch-icon-off {
+  right: 0.125rem;
+  color: var(--lab-label-tertiary);
+}
+[data-lab-switch][data-checked] .lab-switch-icon-on {
+  opacity: 1;
+}
+[data-lab-switch]:not([data-checked]) .lab-switch-icon-off {
+  opacity: 1;
+}
+
+[data-lab-switch] .lab-switch-control:has(input:focus-visible) {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+[data-lab-switch][data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* The Zag hidden input — visually removed, kept in the a11y + form tree. */
+[data-lab-switch] input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-switch] .lab-switch-thumb,
+  [data-lab-switch] .lab-switch-control,
+  [data-lab-switch] .lab-switch-icon {
+    transition: none;
+  }
+}

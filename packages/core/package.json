@@ -49,6 +49,16 @@
       "import": "./dist/avatar.js",
       "require": "./dist/avatar.cjs"
     },
+    "./switch": {
+      "types": "./dist/switch.d.ts",
+      "import": "./dist/switch.js",
+      "require": "./dist/switch.cjs"
+    },
+    "./checkbox": {
+      "types": "./dist/checkbox.d.ts",
+      "import": "./dist/checkbox.js",
+      "require": "./dist/checkbox.cjs"
+    },
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
     "./theme.css": "./dist/theme.css",
@@ -70,14 +80,20 @@
     "./dist/loader.js",
     "./dist/loader.cjs",
     "./dist/avatar.js",
-    "./dist/avatar.cjs"
+    "./dist/avatar.cjs",
+    "./dist/switch.js",
+    "./dist/switch.cjs",
+    "./dist/checkbox.js",
+    "./dist/checkbox.cjs"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@zag-js/checkbox": "1.41.2",
     "@zag-js/core": "1.41.2",
+    "@zag-js/switch": "1.41.2",
     "@zag-js/toggle": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.41.2",

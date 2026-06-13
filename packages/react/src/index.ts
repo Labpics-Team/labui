@@ -12,6 +12,7 @@ export { useZag } from './use-zag.js';
 // Re-export the seam types from core so React consumers don't reach past the
 // renderer for them.
 export type {
+  LabCheckboxChecked,
   MachineModule,
   MachineProps,
   MachineSchema,
@@ -23,6 +24,11 @@ export { LabProofReact, type LabProofReactProps } from './proof.js';
 
 // PRODUCTION Button — the native-React twin of the Lit `<lab-button>`.
 export { Button, type ButtonProps } from './button.js';
+
+// PRODUCTION machine-driven form controls — native-React twins of the Lit
+// `<lab-switch>` / `<lab-checkbox>`, running the SAME Zag machines via `useZag`.
+export { Switch, type SwitchProps } from './switch.js';
+export { Checkbox, type CheckboxProps } from './checkbox.js';
 
 // PRESENTATIONAL primitives — native-React twins of the Lit elements.
 export { Badge, type BadgeProps } from './badge.js';

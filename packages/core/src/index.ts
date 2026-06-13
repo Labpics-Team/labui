@@ -75,4 +75,14 @@ export type {
   LabAvatarStatus,
 } from './components/avatar/lab-avatar.js';
 
+// Machine-driven form controls — the first PRODUCTION consumers of the Behaviors
+// seam (they own checked/indeterminate state, so they MUST run a Zag machine,
+// unlike Button which honestly opted out). Type-only: no Lit runtime pulled in.
+export type { LabSwitchSize, LabSwitchType } from './components/switch/lab-switch.js';
+export type {
+  LabCheckboxChecked,
+  LabCheckboxSize,
+  LabCheckboxType,
+} from './components/checkbox/lab-checkbox.js';
+
 export const PACKAGE_NAME = '@labpics/ui-core';

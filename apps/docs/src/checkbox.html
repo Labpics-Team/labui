@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Checkbox parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="checkbox-title">
+        Checkbox parity — <code>&lt;lab-checkbox&gt;</code> (Lit) ↔
+        <code>&lt;Checkbox&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/checkbox</code> machine. The machine owns
+        the HONEST tri-state (<code>true</code> / <code>false</code> /
+        <code>"indeterminate"</code>), keyboard, focus, and
+        <code>aria-checked</code> (including <code>"mixed"</code>). Both renderers
+        paint with the same <code>--lab-*</code> roles. The Playwright suite asserts
+        machine behaviour, the real mixed state, and visual parity.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-checkbox data-testid="lit-unchecked" type="accent">Terms</lab-checkbox>
+          <lab-checkbox data-testid="lit-checked" type="accent" checked>Terms</lab-checkbox>
+          <lab-checkbox data-testid="lit-mixed" type="accent" indeterminate>Some</lab-checkbox>
+          <lab-checkbox data-testid="lit-neutral" type="neutral" checked>Neutral</lab-checkbox>
+          <lab-checkbox data-testid="lit-danger" type="danger" checked>Danger</lab-checkbox>
+          <lab-checkbox data-testid="lit-disabled" type="accent" disabled>Off</lab-checkbox>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from checkbox-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./checkbox-demo.tsx"></script>
+  </body>
+</html>

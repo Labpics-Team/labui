@@ -25,6 +25,8 @@ export default libraryPreset({
     kbd: 'src/components/kbd/lab-kbd.ts',
     loader: 'src/components/loader/lab-loader.ts',
     avatar: 'src/components/avatar/lab-avatar.ts',
+    switch: 'src/components/switch/lab-switch.ts',
+    checkbox: 'src/components/checkbox/lab-checkbox.ts',
   },
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
 });

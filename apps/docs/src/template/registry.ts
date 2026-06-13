@@ -1,9 +1,11 @@
 import { avatarDoc } from '../components/avatar.doc.js';
 import { badgeDoc } from '../components/badge.doc.js';
 import { buttonDoc } from '../components/button.doc.js';
+import { checkboxDoc } from '../components/checkbox.doc.js';
 import { kbdDoc } from '../components/kbd.doc.js';
 import { loaderDoc } from '../components/loader.doc.js';
 import { proofDoc } from '../components/proof.doc.js';
+import { switchDoc } from '../components/switch.doc.js';
 /*
  * Component registry — the ONE place that grows when LabUI gains a component.
  *
@@ -37,6 +39,10 @@ export const REGISTRY: Registry = [
   { kind: 'doc', doc: kbdDoc },
   { kind: 'doc', doc: loaderDoc },
   { kind: 'doc', doc: avatarDoc },
+  // Machine-driven form controls — the first PRODUCTION consumers of the Zag
+  // seam (they own checked/indeterminate state, so they MUST run a machine).
+  { kind: 'doc', doc: switchDoc },
+  { kind: 'doc', doc: checkboxDoc },
   { kind: 'doc', doc: proofDoc },
   // The seam is open: future components append here as `{ kind: 'doc', doc }`.
   // Until a component is real it stays an honest `planned` placeholder — a
