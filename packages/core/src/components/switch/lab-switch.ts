@@ -1,0 +1,296 @@
+/**
+ * `<lab-switch>` — the first PRODUCTION component that CONSUMES a Zag machine
+ * through the Behaviors seam (core-CONTRACT §1, the inverse of Button).
+ *
+ * Axes (the Figma model — Type × Toggle × Size × State × Icon):
+ *   - type:  accent | neutral | danger   (semantic intent of the ON state)
+ *   - size:  s | m | l
+ *   - checked: machine-owned toggle state (reflected for CSS + SSR)
+ *   - defaultChecked: uncontrolled initial state (read once at machine init)
+ *   - disabled: non-interactive
+ *
+ * Why a machine here, when Button opted out: a Switch HAS interaction state a
+ * state machine owns — a `checked` lifecycle, `role="switch"` + `aria-checked`,
+ * Space/Enter activation, focus management, and a hidden form input. Hand-rolling
+ * those is exactly the "machinery the platform/Zag ships" Button declined to
+ * rebuild. So this element runs `@zag-js/switch` through `ZagController`: the
+ * machine owns checked-state, keyboard, focus and ARIA; the element only paints
+ * (DIP — it depends on the injected `MachineModule`, never on a hand-written
+ * toggle).
+ *
+ * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimension
+ * tokens via `litVar`. The ON track is `--lab-fill-{accent|neutral|danger}`; the
+ * OFF track is `--lab-fill-neutral-tinted`; the thumb is `--lab-control-bg`. No
+ * hex, no primitive, no invented role. A theme is a different binding of those
+ * roles on an ancestor — the element never knows which theme is active.
+ *
+ * SSR (core-CONTRACT §7): structure is always present (the machine spreads ARIA
+ * in `updated()`), so `@lit-labs/ssr` emits a meaningful, styled control in the
+ * declarative shadow DOM before any JS upgrades it.
+ */
+import { type TemplateResult, css, html } from 'lit';
+import * as switchMachine from '@zag-js/switch';
+import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
+import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
+
+/** Semantic intent of the switch's ON state. */
+export type LabSwitchType = 'accent' | 'neutral' | 'danger';
+/** Control size. */
+export type LabSwitchSize = 's' | 'm' | 'l';
+
+type SwitchSchema = SchemaOf<switchMachine.Service>;
+type SwitchApi = switchMachine.Api;
+
+/**
+ * The `@zag-js/switch` package seen through the renderer-agnostic seam. The
+ * namespace already matches `MachineModule` structurally (a `machine` + a
+ * `connect`); this binding names that fact so the controller is fully typed
+ * with no casts — the SAME pattern the proof used for `@zag-js/toggle`.
+ */
+const switchModule: MachineModule<SwitchSchema, SwitchApi> = switchMachine;
+
+export class LabSwitch extends LabElement {
+  static override properties = {
+    type: { reflect: true },
+    size: { reflect: true },
+    /** Controlled checked state. When set, the consumer owns the value. */
+    checked: { type: Boolean, reflect: true },
+    /** Uncontrolled initial state — read once by the machine at init. */
+    defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
+    disabled: { type: Boolean, reflect: true },
+  };
+
+  declare type: LabSwitchType;
+  declare size: LabSwitchSize;
+  declare checked: boolean;
+  declare defaultChecked: boolean;
+  declare disabled: boolean;
+
+  private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
+
+  constructor() {
+    super();
+    this.type = 'accent';
+    this.size = 'm';
+    this.checked = false;
+    this.defaultChecked = false;
+    this.disabled = false;
+    // Wire the Zag switch behavior. Props read from reflected attributes so the
+    // machine and the element never disagree. `checked` is passed only when the
+    // consumer set it (controlled); otherwise the machine owns it from
+    // `defaultChecked` (uncontrolled) — an honest two-mode contract, not a fake.
+    this.machineCtl = this.runMachine(switchModule, () => ({
+      defaultChecked: this.defaultChecked,
+      checked: this.hasAttribute('checked') ? this.checked : undefined,
+      disabled: this.disabled,
+      onCheckedChange: (details: switchMachine.CheckedChangeDetails) => {
+        this.checked = details.checked;
+        this.dispatchEvent(
+          new CustomEvent<switchMachine.CheckedChangeDetails>('checked-change', {
+            detail: details,
+            bubbles: true,
+            composed: true,
+          }),
+        );
+      },
+    }));
+  }
+
+  static override styles = css`
+    :host {
+      /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
+         fallback so the control is usable before tokens load; colour roles never
+         do (css.ts rule). */
+      --_track-w: 2.75rem;
+      --_track-h: 1.5rem;
+      --_thumb: 1.125rem;
+      --_gap: ${litVar('--lab-space-sm', '0.5rem')};
+      --_font: ${litVar('--lab-font-size-md', '1rem')};
+
+      display: inline-flex;
+      vertical-align: middle;
+    }
+
+    :host([size='s']) {
+      --_track-w: 2.25rem;
+      --_track-h: 1.25rem;
+      --_thumb: 0.875rem;
+      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
+    }
+    :host([size='l']) {
+      --_track-w: 3.25rem;
+      --_track-h: 1.75rem;
+      --_thumb: 1.375rem;
+      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
+    }
+
+    /* Root is the Zag label element: the whole control is one click/label target. */
+    .root {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--_gap);
+      font: inherit;
+      font-size: var(--_font);
+      line-height: ${litVar('--lab-line-height-md', '1.5')};
+      color: ${litVar('--lab-label-primary')};
+      cursor: pointer;
+    }
+
+    /* The track — the Zag control element. OFF surface is a neutral tint. */
+    .control {
+      box-sizing: border-box;
+      position: relative;
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      width: var(--_track-w);
+      height: var(--_track-h);
+      padding: 0.125rem;
+      border-radius: ${litVar('--lab-radius-full', '9999px')};
+      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      transition: background-color 140ms ease;
+    }
+
+    /* ON track surface, per type. Driven by the reflected checked attribute,
+       which is driven by the machine — one source of truth. The longhand is set
+       DIRECTLY (no var()->var() chain across the shadow boundary, which can go
+       stale in Chromium on theme swap — proto-A note). */
+    :host([checked][type='accent']) .control {
+      background-color: ${litVar('--lab-fill-accent')};
+    }
+    :host([checked][type='neutral']) .control {
+      background-color: ${litVar('--lab-fill-neutral')};
+    }
+    :host([checked][type='danger']) .control {
+      background-color: ${litVar('--lab-fill-danger')};
+    }
+
+    /* The thumb — the Zag thumb element. Slides on the checked attribute. */
+    .thumb {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--_thumb);
+      height: var(--_thumb);
+      border-radius: ${litVar('--lab-radius-full', '9999px')};
+      background-color: ${litVar('--lab-control-bg')};
+      box-shadow: 0 0.0625rem 0.125rem ${litVar('--lab-fx-shadow-major', 'rgb(0 0 0 / 0.15)')};
+      transition: transform 140ms ease;
+      transform: translateX(0);
+    }
+    :host([checked]) .thumb {
+      transform: translateX(calc(var(--_track-w) - var(--_thumb) - 0.25rem));
+    }
+
+    /* Icon slots ride inside the track, revealed by checked state. */
+    .icon {
+      position: absolute;
+      top: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: calc(var(--_track-h) - 0.25rem);
+      height: calc(var(--_track-h) - 0.25rem);
+      font-size: calc(var(--_track-h) * 0.5);
+      color: ${litVar('--lab-label-on-accent')};
+      transform: translateY(-50%);
+      opacity: 0;
+      transition: opacity 140ms ease;
+      pointer-events: none;
+    }
+    .icon-on {
+      left: 0.125rem;
+    }
+    .icon-off {
+      right: 0.125rem;
+      color: ${litVar('--lab-label-tertiary')};
+    }
+    :host([checked]) .icon-on {
+      opacity: 1;
+    }
+    :host(:not([checked])) .icon-off {
+      opacity: 1;
+    }
+
+    /* Focus is delegated to the hidden input via the machine; draw the ring on
+       the visible track when that input is focus-visible. */
+    .control:has(input:focus-visible) {
+      outline: 0.125rem solid ${litVar('--lab-border-focus')};
+      outline-offset: 0.125rem;
+    }
+
+    :host([disabled]) .root {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    /* The Zag hidden input — visually removed but kept in the a11y + form tree. */
+    input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .thumb,
+      .control,
+      .icon {
+        transition: none;
+      }
+    }
+  `;
+
+  override updated(): void {
+    // Apply the machine's connect props onto the real shadow nodes (role,
+    // aria-checked, click/keyboard handlers, hidden input). Clear prior spreads
+    // first to avoid stacking listeners across renders.
+    this.machineCtl.clearSpreads();
+    const api = this.machineCtl.api;
+    const root = this.renderRoot.querySelector<HTMLElement>('.root');
+    const control = this.renderRoot.querySelector<HTMLElement>('.control');
+    const thumb = this.renderRoot.querySelector<HTMLElement>('.thumb');
+    const input = this.renderRoot.querySelector<HTMLElement>('input');
+    if (root) this.machineCtl.spread(root, api.getRootProps());
+    if (control) this.machineCtl.spread(control, api.getControlProps());
+    if (thumb) this.machineCtl.spread(thumb, api.getThumbProps());
+    if (input) this.machineCtl.spread(input, api.getHiddenInputProps());
+  }
+
+  override render(): TemplateResult {
+    // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is
+    // spread in `updated()` from the machine. SSR emits this real markup so first
+    // paint is meaningful before any JS upgrades the element.
+    return html`
+      <label class="root">
+        <span class="control">
+          <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
+          <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
+          <span class="thumb"></span>
+          <input type="checkbox" />
+        </span>
+        <span class="label"><slot></slot></span>
+      </label>
+    `;
+  }
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'lab-switch': LabSwitch;
+  }
+}
+
+// Idempotent registration — safe across Lit SSR and client module instances.
+if (typeof customElements !== 'undefined' && !customElements.get('lab-switch')) {
+  customElements.define('lab-switch', LabSwitch);
+}

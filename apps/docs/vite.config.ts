@@ -69,6 +69,10 @@ export default defineConfig({
         kbd: resolve(__dirname, 'src/kbd.html'),
         loader: resolve(__dirname, 'src/loader.html'),
         avatar: resolve(__dirname, 'src/avatar.html'),
+        // Machine-driven form controls: Lit element + native-React twin side by
+        // side, running the SAME Zag machine, for the parity + behaviour suite.
+        switch: resolve(__dirname, 'src/switch.html'),
+        checkbox: resolve(__dirname, 'src/checkbox.html'),
       },
     },
   },

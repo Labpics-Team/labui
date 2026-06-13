@@ -1,0 +1,120 @@
+/*
+ * <Checkbox> (React) styles — the visual PARITY twin of the Lit `<lab-checkbox>`.
+ *
+ * Mirrors the Lit shadow rules (`:host([checked][type])`, `:host([indeterminate])`)
+ * against `[data-lab-checkbox]` + the `data-*` the component sets. Same roles, same
+ * structure, same tri-state ⇒ same paint. ZERO hex, ZERO primitive — every colour
+ * is a semantic --lab-* role (core-CONTRACT §2). The `lab-checkbox-` prefix scopes
+ * these without a shadow boundary (craft-frontend P8).
+ */
+
+[data-lab-checkbox] {
+  --_lab-cb-box: 1.25rem;
+  --_lab-cb-radius: var(--lab-radius-sm, 0.25rem);
+  --_lab-cb-gap: var(--lab-space-sm, 0.5rem);
+  --_lab-cb-font: var(--lab-font-size-md, 1rem);
+
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  gap: var(--_lab-cb-gap);
+  font: inherit;
+  font-size: var(--_lab-cb-font);
+  line-height: var(--lab-line-height-md, 1.5);
+  color: var(--lab-label-primary);
+  cursor: pointer;
+}
+
+[data-lab-checkbox][data-size="tiny"] {
+  --_lab-cb-box: 0.875rem;
+  --_lab-cb-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-checkbox][data-size="s"] {
+  --_lab-cb-box: 1rem;
+  --_lab-cb-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-checkbox][data-size="l"] {
+  --_lab-cb-box: 1.5rem;
+  --_lab-cb-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+[data-lab-checkbox] .lab-checkbox-control {
+  box-sizing: border-box;
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_lab-cb-box);
+  height: var(--_lab-cb-box);
+  border-radius: var(--_lab-cb-radius);
+  border: 0.0938rem solid var(--lab-border-neutral);
+  background-color: transparent;
+  color: transparent;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+/* Checked OR mixed fills per type and reveals the glyph (mirrors the Lit host). */
+[data-lab-checkbox][data-checked][data-type="accent"] .lab-checkbox-control,
+[data-lab-checkbox][data-indeterminate][data-type="accent"] .lab-checkbox-control {
+  background-color: var(--lab-fill-accent);
+  border-color: var(--lab-border-accent);
+  color: var(--lab-label-on-accent);
+}
+[data-lab-checkbox][data-checked][data-type="neutral"] .lab-checkbox-control,
+[data-lab-checkbox][data-indeterminate][data-type="neutral"] .lab-checkbox-control {
+  background-color: var(--lab-fill-neutral);
+  border-color: var(--lab-border-neutral);
+  color: var(--lab-label-on-neutral);
+}
+[data-lab-checkbox][data-checked][data-type="danger"] .lab-checkbox-control,
+[data-lab-checkbox][data-indeterminate][data-type="danger"] .lab-checkbox-control {
+  background-color: var(--lab-fill-danger);
+  border-color: var(--lab-border-danger);
+  color: var(--lab-label-on-danger);
+}
+
+[data-lab-checkbox] .lab-checkbox-glyph {
+  width: 80%;
+  height: 80%;
+  display: none;
+  color: currentColor;
+}
+[data-lab-checkbox][data-checked]:not([data-indeterminate]) .lab-checkbox-glyph-check {
+  display: block;
+}
+[data-lab-checkbox][data-indeterminate] .lab-checkbox-glyph-mixed {
+  display: block;
+}
+[data-lab-checkbox][data-indeterminate] .lab-checkbox-glyph-check {
+  display: none;
+}
+
+[data-lab-checkbox] .lab-checkbox-control:has(input:focus-visible) {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+[data-lab-checkbox][data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+[data-lab-checkbox] input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-checkbox] .lab-checkbox-control {
+    transition: none;
+  }
+}
