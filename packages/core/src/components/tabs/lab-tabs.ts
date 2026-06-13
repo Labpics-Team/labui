@@ -42,6 +42,7 @@
  * set before any JS upgrades it.
  */
 import { type TemplateResult, css, html } from 'lit';
+import { repeat } from 'lit/directives/repeat.js';
 import * as tabsMachine from '@zag-js/tabs';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
@@ -268,11 +269,15 @@ export class LabTabs extends LabElement {
     if (root) this.machineCtl.spread(root, api.getRootProps());
     if (list) this.machineCtl.spread(list, api.getListProps());
 
-    const triggers = this.renderRoot.querySelectorAll<HTMLElement>('.trigger');
-    const panels = this.renderRoot.querySelectorAll<HTMLElement>('.panel');
-    this.items.forEach((item, index) => {
-      const trigger = triggers[index];
-      const panel = panels[index];
+    // Map machine props onto nodes by STABLE value, not by position. `render()`
+    // keys both lists with `repeat(..., i => i.value, ...)`, so a node keeps its
+    // identity across reorders; here we resolve each node by its own
+    // `data-value` marker (the SAME identity key) rather than a fragile index —
+    // a reorder can never spread one tab's props onto another tab's node.
+    for (const item of this.items) {
+      const selector = `[data-item-value="${CSS.escape(item.value)}"]`;
+      const trigger = this.renderRoot.querySelector<HTMLElement>(`.trigger${selector}`);
+      const panel = this.renderRoot.querySelector<HTMLElement>(`.panel${selector}`);
       if (trigger) {
         this.machineCtl.spread(
           trigger,
@@ -280,7 +285,7 @@ export class LabTabs extends LabElement {
         );
       }
       if (panel) this.machineCtl.spread(panel, api.getContentProps({ value: item.value }));
-    });
+    }
   }
 
   override render(): TemplateResult {
@@ -288,14 +293,31 @@ export class LabTabs extends LabElement {
     // spread in `updated()` from the machine. Panel content projects from light
     // DOM through a per-value named slot, so rich content stays in the consumer's
     // tree while the machine-wired wrapper lives here in the shadow root.
+    // Keyed by `value` (Lit `repeat`) so a node's identity is its tab, never its
+    // position — reordering `items` moves the right DOM node instead of leaving a
+    // node to receive a sibling's machine props. `data-item-value` is the stable
+    // marker `updated()` resolves each node by (present at first paint, before any
+    // machine spread runs).
     return html`
       <div class="root">
         <div class="list">
-          ${this.items.map(
-            (item) => html`<button class="trigger" type="button">${item.label}</button>`,
+          ${repeat(
+            this.items,
+            (item) => item.value,
+            (item) =>
+              html`<button class="trigger" type="button" data-item-value=${item.value}>
+                ${item.label}
+              </button>`,
           )}
         </div>
-        ${this.items.map((item) => html`<div class="panel"><slot name=${item.value}></slot></div>`)}
+        ${repeat(
+          this.items,
+          (item) => item.value,
+          (item) =>
+            html`<div class="panel" data-item-value=${item.value}>
+              <slot name=${item.value}></slot>
+            </div>`,
+        )}
       </div>
     `;
   }

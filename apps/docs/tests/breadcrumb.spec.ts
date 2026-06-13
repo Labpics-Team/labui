@@ -57,6 +57,21 @@ test('the final crumb is the current page (aria-current), not a link', async ({ 
   await expect(reactCurrent(page)).toHaveText('Breadcrumb');
 });
 
+test('separators: aria-hidden and exactly items-1 of them (both renderers)', async ({ page }) => {
+  // The fixture renders 4 crumbs → 3 separators, and the last crumb has none
+  // (you don't separate past the current page). Separators are decorative, so a
+  // screen reader announces the trail, not the punctuation.
+  const litSeparators = litHost(page, 'lit-breadcrumb').locator('.separator');
+  const reactSeparators = page
+    .getByTestId('react-breadcrumb')
+    .locator('.lab-breadcrumb-separator');
+
+  for (const separators of [litSeparators, reactSeparators]) {
+    await expect(separators).toHaveCount(3); // 4 crumbs − 1
+    await expect(separators.first()).toHaveAttribute('aria-hidden', 'true');
+  }
+});
+
 test('visual parity: Lit and React resolve the same current-crumb colour', async ({ page }) => {
   await expect(reactCurrent(page)).toBeVisible();
   expect(await reactCurrent(page).evaluate(color)).toBe(await litCurrent(page).evaluate(color));

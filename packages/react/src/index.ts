@@ -36,4 +36,11 @@ export { Kbd, type KbdProps } from './kbd.js';
 export { Loader, type LoaderProps } from './loader.js';
 export { Avatar, type AvatarProps } from './avatar.js';
 
+// PRODUCTION navigation — native-React twins of the Lit `<lab-tabs>` /
+// `<lab-breadcrumb>` / `<lab-pagination>`. Tabs + Pagination run the SAME Zag
+// machines via `useZag`; Breadcrumb is presentational. Same one import surface.
+export { Tabs, Tab, TabPanel, type TabsProps, type TabProps, type TabPanelProps } from './tabs.js';
+export { Breadcrumb, type BreadcrumbProps } from './breadcrumb.js';
+export { Pagination, type PaginationProps } from './pagination.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';

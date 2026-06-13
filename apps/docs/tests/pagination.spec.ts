@@ -23,6 +23,28 @@ function litSelected(page: Page): Locator {
 function reactSelected(page: Page): Locator {
   return page.getByTestId('react-pagination').locator('.lab-pagination-item[data-selected]');
 }
+function litPrev(page: Page): Locator {
+  return litHost(page, 'lit-pagination').locator('.trigger-prev');
+}
+function litNext(page: Page): Locator {
+  return litHost(page, 'lit-pagination').locator('.trigger-next');
+}
+/** Target prev/next by their accessible label, not `.first()`/`.last()` (robust). */
+function reactPrev(page: Page): Locator {
+  return page.getByTestId('react-pagination').getByLabel('Previous page');
+}
+function reactNext(page: Page): Locator {
+  return page.getByTestId('react-pagination').getByLabel('Next page');
+}
+/** The boundary page item carrying `text`, on a renderer. */
+function litPage(page: Page, text: string): Locator {
+  return litHost(page, 'lit-pagination').locator('.item', { hasText: new RegExp(`^${text}$`) });
+}
+function reactPage(page: Page, text: string): Locator {
+  return page
+    .getByTestId('react-pagination')
+    .locator('.lab-pagination-item', { hasText: new RegExp(`^${text}$`) });
+}
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 
@@ -57,11 +79,65 @@ test('current page: the seeded page is selected + aria-current on both renderers
 });
 
 test('machine behaviour: clicking Next advances the page on both renderers', async ({ page }) => {
-  await litHost(page, 'lit-pagination').locator('.trigger-next').click();
+  await litNext(page).click();
   await expect(litSelected(page)).toHaveText('9');
 
-  await page.getByTestId('react-pagination').locator('.lab-pagination-trigger').last().click();
+  // Target Next by its accessible label, not `.last()` — robust to control reorders.
+  await reactNext(page).click();
   await expect(reactSelected(page)).toHaveText('9');
+});
+
+test('bounds: prev disables on the first page, next disables on the last (both renderers)', async ({
+  page,
+}) => {
+  // Fixture seeds page 8 of 20 (count 200 / pageSize 10), so both bounds start
+  // enabled. The first/last boundary items (1 and 20) are always rendered
+  // (boundaryCount fixed at 1), so a single click reaches each edge.
+  // Zag pagination (pagination.connect.js): prev `disabled` when isFirstPage,
+  // next `disabled` when isLastPage — native button disabled, asserted directly.
+
+  // --- Lit ---
+  await expect(litPrev(page)).toBeEnabled();
+  await expect(litNext(page)).toBeEnabled();
+
+  await litPage(page, '1').click();
+  await expect(litSelected(page)).toHaveText('1');
+  await expect(litPrev(page)).toBeDisabled();
+  await expect(litNext(page)).toBeEnabled();
+
+  await litPage(page, '20').click();
+  await expect(litSelected(page)).toHaveText('20');
+  await expect(litNext(page)).toBeDisabled();
+  await expect(litPrev(page)).toBeEnabled();
+
+  // --- React ---
+  await expect(reactPrev(page)).toBeEnabled();
+  await expect(reactNext(page)).toBeEnabled();
+
+  await reactPage(page, '1').click();
+  await expect(reactSelected(page)).toHaveText('1');
+  await expect(reactPrev(page)).toBeDisabled();
+  await expect(reactNext(page)).toBeEnabled();
+
+  await reactPage(page, '20').click();
+  await expect(reactSelected(page)).toHaveText('20');
+  await expect(reactNext(page)).toBeDisabled();
+  await expect(reactPrev(page)).toBeEnabled();
+});
+
+test('ellipsis: present, aria-hidden, and not a button (both renderers)', async ({ page }) => {
+  // 20 pages with siblingCount 1 around page 8 forces ellipses on both sides.
+  const litEllipsis = litHost(page, 'lit-pagination').locator('.ellipsis');
+  const reactEllipsis = page
+    .getByTestId('react-pagination')
+    .locator('.lab-pagination-ellipsis');
+
+  for (const ellipsis of [litEllipsis, reactEllipsis]) {
+    expect(await ellipsis.count()).toBeGreaterThan(0);
+    await expect(ellipsis.first()).toHaveAttribute('aria-hidden', 'true');
+    // Decorative — a <span>, never a <button>; cannot be a click target.
+    expect((await ellipsis.first().evaluate((el) => el.tagName)).toLowerCase()).toBe('span');
+  }
 });
 
 test('visual parity: Lit and React resolve the same current-page background', async ({ page }) => {

@@ -26,6 +26,14 @@ function litTriggers(page: Page, testid: string): Locator {
 function reactTriggers(page: Page, testid: string): Locator {
   return page.getByTestId(testid).locator('.lab-tabs-trigger');
 }
+/** All Lit panels (shadow-pierced) in document order. */
+function litPanels(page: Page, testid: string): Locator {
+  return litHost(page, testid).locator('.panel');
+}
+/** All React panels in document order. */
+function reactPanels(page: Page, testid: string): Locator {
+  return page.getByTestId(testid).locator('.lab-tabs-panel');
+}
 
 const underline = (el: HTMLElement) => getComputedStyle(el).borderBottomColor;
 
@@ -74,6 +82,109 @@ test('a11y roving: ArrowRight selects the next tab via the machine (automatic)',
   await page.keyboard.press('ArrowRight');
   // Automatic activation: focusing the next tab selects it.
   await expect(litTabsList.nth(1)).toHaveAttribute('data-selected', /.*/);
+});
+
+/**
+ * The blocks below assert ONLY what `@zag-js/tabs@1.41.2`'s connect actually
+ * emits (verified against tabs.connect.js): `role=tab`/`tablist`/`tabpanel`,
+ * `aria-selected` on every trigger, `hidden` on unselected panels, roving
+ * `tabindex` (composite defaults true), `aria-controls` on the SELECTED trigger
+ * only, and `aria-labelledby` on every panel. Nothing the machine does not give
+ * is asserted (honesty — same discipline as the radio-group fix).
+ */
+
+test('roles: real ARIA-tabs pattern on both renderers (3 tabs + ≥1 tabpanel)', async ({ page }) => {
+  for (const root of [litHost(page, 'lit-tabs'), page.getByTestId('react-tabs')]) {
+    await expect(root.locator('[role="tablist"]')).toHaveCount(1);
+    await expect(root.locator('[role="tab"]')).toHaveCount(3);
+    // The machine renders all panels but hides the inactive ones; at least the
+    // selected panel is present as a real tabpanel.
+    expect(await root.locator('[role="tabpanel"]').count()).toBeGreaterThanOrEqual(1);
+  }
+});
+
+test('panel visibility: selecting a tab shows ITS panel and hides the others', async ({ page }) => {
+  // Lit — panel order matches trigger order (account, password, team).
+  const litP = litPanels(page, 'lit-tabs');
+  await expect(litP.nth(0)).toBeVisible(); // account is the default selection
+  await expect(litP.nth(1)).toHaveAttribute('hidden', /.*/);
+  await expect(litP.nth(1)).toBeHidden();
+
+  await litTriggers(page, 'lit-tabs').nth(1).click(); // select password
+  await expect(litP.nth(1)).toBeVisible();
+  await expect(litP.nth(0)).toHaveAttribute('hidden', /.*/);
+  await expect(litP.nth(0)).toBeHidden();
+
+  // React — same contract.
+  const reactP = reactPanels(page, 'react-tabs');
+  await expect(reactP.nth(0)).toBeVisible();
+  await expect(reactP.nth(1)).toBeHidden();
+
+  await reactTriggers(page, 'react-tabs').nth(1).click();
+  await expect(reactP.nth(1)).toBeVisible();
+  await expect(reactP.nth(0)).toBeHidden();
+});
+
+test('roving tabindex: selected trigger is 0, the rest are -1 (composite machine)', async ({
+  page,
+}) => {
+  // Zag tabs default `composite: true`, so the selected trigger takes tabindex=0
+  // and the unselected take -1 — one tab stop, arrows move within. Verified in
+  // tabs.connect.js: `tabIndex: triggerState.selected && composite ? 0 : -1`.
+  for (const triggers of [litTriggers(page, 'lit-tabs'), reactTriggers(page, 'react-tabs')]) {
+    await expect(triggers.nth(0)).toHaveAttribute('tabindex', '0'); // account selected
+    await expect(triggers.nth(1)).toHaveAttribute('tabindex', '-1');
+    await expect(triggers.nth(2)).toHaveAttribute('tabindex', '-1');
+  }
+});
+
+test('aria wiring: selected trigger aria-controls == visible panel id; panel labelled by it', async ({
+  page,
+}) => {
+  for (const testid of ['lit-tabs', 'react-tabs']) {
+    const selectedTrigger =
+      testid === 'lit-tabs'
+        ? litTriggers(page, testid).nth(0)
+        : reactTriggers(page, testid).nth(0);
+    const visiblePanel =
+      testid === 'lit-tabs' ? litPanels(page, testid).nth(0) : reactPanels(page, testid).nth(0);
+
+    // Machine sets aria-controls on the SELECTED trigger only → the visible panel id.
+    const controls = await selectedTrigger.getAttribute('aria-controls');
+    expect(controls).toBeTruthy();
+    expect(await visiblePanel.getAttribute('id')).toBe(controls);
+
+    // Every panel is labelled by its trigger (aria-labelledby == trigger id).
+    const triggerId = await selectedTrigger.getAttribute('id');
+    expect(triggerId).toBeTruthy();
+    expect(await visiblePanel.getAttribute('aria-labelledby')).toBe(triggerId);
+  }
+});
+
+test('aria-selected: exactly one trigger is selected, it flips on click (both renderers)', async ({
+  page,
+}) => {
+  for (const triggers of [litTriggers(page, 'lit-tabs'), reactTriggers(page, 'react-tabs')]) {
+    await expect(triggers.nth(0)).toHaveAttribute('aria-selected', 'true');
+    await expect(triggers.nth(1)).toHaveAttribute('aria-selected', 'false');
+    await triggers.nth(1).click();
+    await expect(triggers.nth(1)).toHaveAttribute('aria-selected', 'true');
+    await expect(triggers.nth(0)).toHaveAttribute('aria-selected', 'false');
+  }
+});
+
+test('keyboard (React): Arrow moves selection, Home/End jump to ends', async ({ page }) => {
+  // Zag tabs keyMap (tabs.connect.js getListProps): ArrowRight/Left + Home/End.
+  // The third tab (team) is disabled, so End lands on it but cannot select — assert
+  // only the moves the machine actually performs on enabled tabs.
+  const triggers = reactTriggers(page, 'react-tabs');
+  await triggers.nth(0).focus();
+
+  await page.keyboard.press('ArrowRight'); // account → password (automatic activation)
+  await expect(triggers.nth(1)).toHaveAttribute('data-selected', /.*/);
+
+  await page.keyboard.press('Home'); // jump back to the first tab
+  await expect(triggers.nth(0)).toHaveAttribute('data-selected', /.*/);
 });
 
 test('disabled: a disabled tab does not select on either renderer', async ({ page }) => {
