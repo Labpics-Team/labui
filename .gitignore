@@ -7,6 +7,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# tsup transient bundled-config artifacts
+tsup.config.bundled_*.mjs
+
 # Playwright
 test-results/
 playwright-report/
@@ -28,6 +31,9 @@ screenshots/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Agent harness scratch (git worktrees, transient notes) — never committed
+.claude/
 *.log
 npm-debug.log*
 pnpm-debug.log*

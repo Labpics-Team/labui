@@ -1,9 +1,24 @@
 /**
- * @labpics/ui-react — placeholder.
+ * @labpics/ui-react — the native React renderer (ADR-0001, A-prime).
  *
- * React / Next adapter for LabUI.
- * Real implementation lands in a later chapter; this entry only exists so the
- * package builds and typechecks cleanly in the bootstrap skeleton.
+ * Thin React components over the shared Zag behaviors. No Lit in this path; the
+ * heavy, shared weight (machines, the seam types) lives in @labpics/ui-core and
+ * is re-exported here so React consumers have one import surface.
  */
+
+// The React side of the Behaviors seam.
+export { useZag } from './use-zag.js';
+
+// Re-export the seam types from core so React consumers don't reach past the
+// renderer for them.
+export type {
+  MachineModule,
+  MachineProps,
+  MachineSchema,
+  SchemaOf,
+} from '@labpics/ui-core';
+
+// PROOF element (see proof.tsx — a proof of the seam, not the production Button).
+export { LabProofReact, type LabProofReactProps } from './proof.js';
 
 export const PACKAGE_NAME = '@labpics/ui-react';

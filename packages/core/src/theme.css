@@ -1,0 +1,46 @@
+/*
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  @labpics/ui-core — Theme selector CONTRACT (structure only, no colours).  │
+ * │                                                                            │
+ * │  This file does NOT define a single colour value. Colour values are owned  │
+ * │  by @labpics/colors (semantic.rs / the runtime engine) — duplicating them  │
+ * │  here is forbidden. What this file fixes is the SELECTOR CONVENTION the     │
+ * │  colours layer must bind its role variables under, so a theme switch is a  │
+ * │  single attribute flip with zero component edits (owner requirement).      │
+ * │                                                                            │
+ * │  Resolution order a component relies on (implemented by the colours layer  │
+ * │  binding `--lab-*` roles under these selectors, in this cascade order):    │
+ * │    1. [data-theme="light"] / [data-theme="dark"] on the nearest ancestor;  │
+ * │    2. @media (prefers-color-scheme) fallback when no attribute is set;      │
+ * │    3. the dark default (bare :root).                                        │
+ * │                                                                            │
+ * │  `materials.css` already binds the material roles under [data-theme] and    │
+ * │  [data-material] using exactly this convention, so the two compose.        │
+ * │                                                                            │
+ * │  The blocks below are the agreed INSERTION POINTS. @labpics/colors fills    │
+ * │  their bodies with role bindings; this scaffold only guarantees the         │
+ * │  selectors and their cascade order are the contract.                        │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ */
+
+/* 3. Dark default — bare root. The colours layer binds dark role values here. */
+:root {
+  color-scheme: dark;
+}
+
+/* 2. prefers-color-scheme fallback (only applies when no [data-theme] is set,
+ *    because an explicit attribute selector below has higher specificity). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+  }
+}
+
+/* 1. Explicit theme attributes — highest precedence, win over the media query.
+ *    The colours layer binds the full light/dark role sets in these blocks. */
+[data-theme="light"] {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}

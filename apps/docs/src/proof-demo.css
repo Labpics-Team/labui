@@ -1,0 +1,60 @@
+/*
+ * PROOF demo page styles — and DEMO-ONLY role values.
+ *
+ * The `<lab-proof>` element reads semantic `--lab-*` roles it does not own
+ * (Fills/Labels/Border/FX). Those roles are produced by @labpics/colors; the
+ * stub in this repo defines only a handful. To make the proof VISIBLE and to let
+ * the smoke prove theme-switching re-skins it with zero element edits, this page
+ * binds the roles the proof reads to demo stand-in values under [data-theme].
+ *
+ * These are page-level demo values, NEVER part of the component. They live here,
+ * not in the element, which is the whole point: a theme is a binding of roles on
+ * an ancestor. When @labpics/colors lands, delete this block — the proof follows
+ * the real roles unchanged.
+ */
+
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "@labpics/ui-core/theme.css";
+
+:root[data-theme="dark"] {
+  --lab-fill-accent: #6e8bff;
+  --lab-label-on-accent: #0b0b0c;
+  --lab-fill-neutral-tinted: rgba(255, 255, 255, 0.08);
+  --lab-label-primary: #f5f5f7;
+  --lab-border-neutral: rgba(255, 255, 255, 0.16);
+  --lab-border-accent: #6e8bff;
+  --lab-border-focus: #6e8bff;
+}
+
+:root[data-theme="light"] {
+  --lab-fill-accent: #3056d3;
+  --lab-label-on-accent: #ffffff;
+  --lab-fill-neutral-tinted: rgba(0, 0, 0, 0.06);
+  --lab-label-primary: #16161a;
+  --lab-border-neutral: rgba(0, 0, 0, 0.16);
+  --lab-border-accent: #3056d3;
+  --lab-border-focus: #3056d3;
+}
+
+body {
+  margin: 0;
+  padding: var(--lab-space-8, 2rem);
+  background: var(--lab-surface-base, #0b0b0c);
+  color: var(--lab-label-primary, #f5f5f7);
+  font-family: system-ui, sans-serif;
+}
+:root[data-theme="light"] body {
+  background: #f7f8fa;
+}
+
+.row {
+  display: flex;
+  gap: var(--lab-space-4, 1rem);
+  align-items: center;
+  margin-block: var(--lab-space-6, 1.5rem);
+}
+
+h1 {
+  font-size: var(--lab-font-size-2xl, 2rem);
+}

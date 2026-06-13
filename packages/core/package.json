@@ -2,7 +2,7 @@
   "name": "@labpics/ui-core",
   "version": "0.0.0",
   "private": true,
-  "description": "Cross-stack component core. Form depends on the base decision in cross-stack-core.",
+  "description": "Cross-stack component core (A-prime): Lit base element + Zag behaviors seam, theme/material contract, token-consumption conventions, and the Lit SSR shim. Shared by the Lit renderer (4 stacks) and the native React renderer.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -14,17 +14,50 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./ssr": {
+      "types": "./dist/ssr.d.ts",
+      "import": "./dist/ssr.js",
+      "require": "./dist/ssr.cjs"
+    },
+    "./proof": {
+      "types": "./dist/proof.d.ts",
+      "import": "./dist/proof.js",
+      "require": "./dist/proof.cjs"
+    },
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
+    "./theme.css": "./dist/theme.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": ["./dist/materials.css", "./dist/glass.css"],
+  "sideEffects": [
+    "./dist/materials.css",
+    "./dist/glass.css",
+    "./dist/theme.css",
+    "./dist/proof.js",
+    "./dist/proof.cjs"
+  ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@zag-js/core": "1.41.2",
+    "@zag-js/toggle": "1.41.2",
+    "@zag-js/types": "1.41.2",
+    "@zag-js/vanilla": "1.41.2",
+    "lit": "3.3.3"
+  },
+  "peerDependencies": {
+    "@lit-labs/ssr": "^4.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@lit-labs/ssr": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@lit-labs/ssr": "4.1.0",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
     "typescript": "5.7.3"

@@ -2,7 +2,7 @@
   "name": "@labpics/ui-react",
   "version": "0.0.0",
   "private": true,
-  "description": "React / Next adapter for LabUI.",
+  "description": "Native React / Next renderer for LabUI (ADR-0001, A-prime). Thin React components over the SAME Zag behaviors as the Lit base — no Lit in the React path. Shared types come from @labpics/ui-core.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -13,15 +13,30 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": ["dist"],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+  },
+  "dependencies": {
+    "@labpics/ui-core": "workspace:*",
+    "@zag-js/react": "1.41.2",
+    "@zag-js/toggle": "1.41.2",
+    "@zag-js/types": "1.41.2"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
   },
   "devDependencies": {
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
     "tsup": "8.3.6",
     "typescript": "5.7.3"
   }
