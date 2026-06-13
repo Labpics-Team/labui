@@ -49,12 +49,20 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     host.addController(this);
   }
 
+  /**
+   * Scope Zag's DOM queries to this element's render root. `renderRoot` is the
+   * shadow root for a LitElement; Zag's `getRootNode` accepts any `Node`, so no
+   * cast is needed (a `ShadowRoot`/`DocumentFragment` IS a `Node`).
+   */
+  private readonly getRootNode = (): Node => this.host.renderRoot;
+
+  /** The machine props for this render: scope + the host's current props. */
+  private machineProps(): MachineProps<T> & { getRootNode: () => Node } {
+    return { getRootNode: this.getRootNode, ...this.getProps() };
+  }
+
   hostConnected(): void {
-    this.machine = new VanillaMachine(this.module.machine, () => ({
-      // Scope Zag's DOM queries to this element's shadow root.
-      getRootNode: () => this.host.renderRoot as unknown as ShadowRoot,
-      ...this.getProps(),
-    }));
+    this.machine = new VanillaMachine(this.module.machine, () => this.machineProps());
     this.unsubscribe = this.machine.subscribe(() => this.host.requestUpdate());
     this.machine.start();
     this.host.requestUpdate();
@@ -63,10 +71,7 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
   hostUpdate(): void {
     // Feed the latest host props into the running machine before it renders, so
     // a reflected attribute change (e.g. `disabled`) reaches the machine.
-    this.machine?.updateProps(() => ({
-      getRootNode: () => this.host.renderRoot as unknown as ShadowRoot,
-      ...this.getProps(),
-    }));
+    this.machine?.updateProps(() => this.machineProps());
   }
 
   hostUpdated(): void {
