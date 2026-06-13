@@ -30,6 +30,7 @@ function makeButton(attrs: Readonly<Record<string, string | boolean>>): HTMLElem
 
 export const buttonDoc: ComponentDoc = {
   slug: 'button',
+  order: 1,
   tag: 'lab-button',
   title: 'Button',
   summary:

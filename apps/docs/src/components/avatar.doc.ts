@@ -25,6 +25,7 @@ function makeAvatar(attrs: Readonly<Record<string, string | boolean>>): HTMLElem
 
 export const avatarDoc: ComponentDoc = {
   slug: 'avatar',
+  order: 5,
   tag: 'lab-avatar',
   title: 'Avatar',
   summary:

@@ -36,6 +36,7 @@ function makeProof(attrs: Readonly<Record<string, string | boolean>>): HTMLEleme
 
 export const proofDoc: ComponentDoc = {
   slug: 'proof',
+  order: 8,
   tag: 'lab-proof',
   title: 'Proof',
   summary:

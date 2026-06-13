@@ -28,6 +28,7 @@ function makeCheckbox(attrs: Readonly<Record<string, string | boolean>>): HTMLEl
 
 export const checkboxDoc: ComponentDoc = {
   slug: 'checkbox',
+  order: 7,
   tag: 'lab-checkbox',
   title: 'Checkbox',
   summary:
