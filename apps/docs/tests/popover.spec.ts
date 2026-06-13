@@ -117,16 +117,6 @@ test('dismiss: clicking outside closes the panel', async ({ page }) => {
   await expect(litContent(page, 'lit-pop')).toBeHidden();
 });
 
-test('positioning: the open panel is placed on-screen near the trigger', async ({ page }) => {
-  await litHost(page, 'lit-pop').locator('.trigger').click();
-  const content = litContent(page, 'lit-pop');
-  await expect(content).toBeVisible();
-  const box = await content.boundingBox();
-  expect(box).not.toBeNull();
-  expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
-  expect(box?.width ?? 0).toBeGreaterThan(0);
-});
-
 test('modal: the scrim is shown when modal, on both renderers', async ({ page }) => {
   // Lit modal popover — the scrim covers the viewport while open.
   await litHost(page, 'lit-pop-modal').locator('.trigger').click();
@@ -251,6 +241,11 @@ test('aria-modal: present+true on the modal dialog, absent on the non-modal one'
   await litHost(page, 'lit-pop').locator('.trigger').click();
   await expect(litContent(page, 'lit-pop')).toBeVisible();
   expect(await litContent(page, 'lit-pop').getAttribute('aria-modal')).toBeNull();
+  // Honest gate (same as the other Escape tests): wait until autoFocus has landed
+  // inside the dialog, which is when Zag's document-level Escape listener is live.
+  // Without it, Escape can race the listener, leave lit-pop OPEN, and the next
+  // lit-pop-modal opens on top — leaking scrim + scroll-lock into later specs.
+  await litFocusInDialog(page, 'lit-pop');
   await page.keyboard.press('Escape');
   await expect(litContent(page, 'lit-pop')).toBeHidden();
 

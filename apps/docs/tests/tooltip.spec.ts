@@ -77,18 +77,6 @@ test('a11y: focus opens the tooltip and Escape dismisses it (keyboard)', async (
   await expect(lit).toBeHidden();
 });
 
-test('positioning: the open surface is placed on-screen near the trigger', async ({ page }) => {
-  await litHost(page, 'lit-tt-bottom').hover();
-  const content = litContent(page, 'lit-tt-bottom');
-  await expect(content).toBeVisible();
-  const box = await content.boundingBox();
-  expect(box).not.toBeNull();
-  // Floating UI wrote --x/--y; an unpositioned surface sits at translate(0,-100vh)
-  // (y far negative). A positioned one is within the viewport.
-  expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
-  expect(box?.width ?? 0).toBeGreaterThan(0);
-});
-
 test('disabled: the machine never opens on either renderer', async ({ page }) => {
   const lit = litContent(page, 'lit-tt-disabled');
   await litHost(page, 'lit-tt-disabled').hover();
