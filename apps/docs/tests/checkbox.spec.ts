@@ -79,10 +79,12 @@ test('HONEST mixed state: the machine carries a real "indeterminate" value', asy
   await expect(react).toHaveAttribute('data-indeterminate', 'true');
 
   // Clicking a mixed box runs the machine, which RESOLVES it to a concrete
-  // checked value (indeterminate → checked) — exactly what a real tri-state does.
+  // checked value. Zag is deterministic here: from indeterminate it always goes
+  // to checked (machine `toggleChecked`: indeterminate ? true : !checked), and a
+  // native checkbox click sets .checked=true first — so the outcome is `checked`.
   await litControl(page, 'lit-mixed').click();
   await expect(lit).not.toHaveAttribute('indeterminate', /.*/);
-  expect(['checked', 'unchecked']).toContain(await litControlState(page, 'lit-mixed'));
+  expect(await litControlState(page, 'lit-mixed')).toBe('checked');
 });
 
 test('a11y: Space on the focused box toggles via the native input (keyboard)', async ({ page }) => {
