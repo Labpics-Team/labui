@@ -16,7 +16,7 @@ const dist = join(here, '..', 'dist');
 
 function main(): void {
   mkdirSync(dist, { recursive: true });
-  const files = ['materials.css', 'glass.css'];
+  const files = ['materials.css', 'glass.css', 'theme.css'];
   for (const file of files) {
     copyFileSync(join(src, file), join(dist, file));
   }

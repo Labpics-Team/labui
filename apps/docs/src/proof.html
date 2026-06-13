@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — core scaffold proof</title>
+    <link rel="stylesheet" href="./proof-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="proof-title">Core scaffold — <code>&lt;lab-proof&gt;</code></h1>
+      <p>
+        A PROOF element (not the production Button). It drives the whole scaffold
+        seam: Lit base + Zag toggle machine + <code>--lab-*</code> tokens +
+        theme switching + SSR.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Client-rendered: registered + driven by the Zag machine in the browser. -->
+      <section class="row" aria-label="Client-rendered proof">
+        <lab-proof data-testid="proof-client">Toggle me</lab-proof>
+      </section>
+
+      <!-- Server-rendered island: filled at BUILD TIME with the declarative
+           shadow DOM string from @labpics/ui-core/ssr. Proves styled first paint
+           with no FOUC, before any JS runs. See vite.config.ts ssrProofPlugin. -->
+      <section class="row" aria-label="Server-rendered proof" data-testid="proof-ssr-island">
+        <!-- @@SSR_PROOF@@ -->
+      </section>
+    </main>
+    <script type="module" src="./proof-demo.ts"></script>
+  </body>
+</html>
