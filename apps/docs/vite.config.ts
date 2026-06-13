@@ -73,6 +73,12 @@ export default defineConfig({
         // side, running the SAME Zag machine, for the parity + behaviour suite.
         switch: resolve(__dirname, 'src/switch.html'),
         checkbox: resolve(__dirname, 'src/checkbox.html'),
+        // Navigation batch: Tabs (compound, @zag-js/tabs), Breadcrumb
+        // (presentational), Pagination (@zag-js/pagination) — each mounts the Lit
+        // element and its native-React twin side by side for the parity suite.
+        tabs: resolve(__dirname, 'src/tabs.html'),
+        breadcrumb: resolve(__dirname, 'src/breadcrumb.html'),
+        pagination: resolve(__dirname, 'src/pagination.html'),
         // Compound control: Lit `<lab-radio-group>` (all parts in one shadow
         // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, running the
         // SAME Zag group machine, for the parity + behaviour suite.

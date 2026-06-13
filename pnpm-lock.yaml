@@ -93,10 +93,16 @@ importers:
       '@zag-js/core':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/pagination':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/radio-group':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/switch':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/tabs':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/toggle':
@@ -151,6 +157,9 @@ importers:
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/pagination':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/radio-group':
         specifier: 1.41.2
         version: 1.41.2
@@ -158,6 +167,9 @@ importers:
         specifier: 1.41.2
         version: 1.41.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@zag-js/switch':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/tabs':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/toggle':
@@ -1064,6 +1076,9 @@ packages:
   '@zag-js/focus-visible@1.41.2':
     resolution: {integrity: sha512-oRjwtgafUdGVwLJUN6mKsnBQbez/CHYAPkPg1FxOnr5GFpEpr8oMTOZJ3wdPM2U1ynS9QnUUu/sXc3KQv/jX0Q==}
 
+  '@zag-js/pagination@1.41.2':
+    resolution: {integrity: sha512-vZTxz4DrIDfedMcTjDeEkOc1iXD9wkP8eKuEcDieHOodnjSnNNwtmoFw5DCWv+yEa/TByIamXBZ8ZxHY144JgA==}
+
   '@zag-js/radio-group@1.41.2':
     resolution: {integrity: sha512-EZjos61jKHZlNw8ez80vG2T9gUwpooxcVpYOKS2hyhuEXn3wEoefS5v1WFbmpoA/8TUpUQnYxisAeNuQfEQCuQ==}
 
@@ -1078,6 +1093,9 @@ packages:
 
   '@zag-js/switch@1.41.2':
     resolution: {integrity: sha512-qHbQK95UUHN0tj+bf9LLphLcMo/uTg2Pvs0c1Gs03Zh4g3NtHf0uYIhMZKYlCH0hNVlKrmdzLKWgeoDxv9gySw==}
+
+  '@zag-js/tabs@1.41.2':
+    resolution: {integrity: sha512-7YVj2mCcxRbn1wMXP9anaTOVf+J0fa5uaPScr8e4+e2xc+/1WKzqN6V8IDeKS5wV/xzi1r3Ny307sX7Xz4ZJVQ==}
 
   '@zag-js/toggle@1.41.2':
     resolution: {integrity: sha512-EFB9pb3pEtwXt7RSivVLWXV64dKUF8gsn75tt8TbYBgfy+zW85MsRLu8U48TXZN5teQWAKKNujr9bxQsW/CWvQ==}
@@ -2506,6 +2524,14 @@ snapshots:
     dependencies:
       '@zag-js/dom-query': 1.41.2
 
+  '@zag-js/pagination@1.41.2':
+    dependencies:
+      '@zag-js/anatomy': 1.41.2
+      '@zag-js/core': 1.41.2
+      '@zag-js/dom-query': 1.41.2
+      '@zag-js/types': 1.41.2
+      '@zag-js/utils': 1.41.2
+
   '@zag-js/radio-group@1.41.2':
     dependencies:
       '@zag-js/anatomy': 1.41.2
@@ -2534,6 +2560,14 @@ snapshots:
       '@zag-js/core': 1.41.2
       '@zag-js/dom-query': 1.41.2
       '@zag-js/focus-visible': 1.41.2
+      '@zag-js/types': 1.41.2
+      '@zag-js/utils': 1.41.2
+
+  '@zag-js/tabs@1.41.2':
+    dependencies:
+      '@zag-js/anatomy': 1.41.2
+      '@zag-js/core': 1.41.2
+      '@zag-js/dom-query': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
