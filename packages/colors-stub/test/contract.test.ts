@@ -86,7 +86,26 @@ describe('--lab-* semantic color contract', () => {
       Border: 26,
       FX: 15,
       Misc: 3,
+      Component: 15,
     });
+  });
+
+  it('declares the derived component roles consumed by Button/proof in every scope', () => {
+    // These are NOT in the faithful Figma taxonomy — they are derived component
+    // roles (solid fills, on-fill contrast, focus ring). Assert them by name so a
+    // regression that drops the reconciliation set fails CI loudly.
+    const derived = roles.groups.Component ?? [];
+    expect(derived.length, 'Component group must be present in roles.json').toBe(15);
+    for (const [scopeName, body] of [
+      ['light', lightBody],
+      ['dark', darkBody],
+      ['media', mediaBody],
+    ] as const) {
+      const missing = derived.filter((r) => !declares(body, r));
+      expect(missing, `derived roles missing in ${scopeName} scope: ${missing.join(', ')}`).toEqual(
+        [],
+      );
+    }
   });
 
   it('has no unresolved reference or placeholder markers left in the contract', () => {

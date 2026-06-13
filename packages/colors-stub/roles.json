@@ -144,7 +144,24 @@
       "--lab-fx-skeleton-base",
       "--lab-fx-skeleton-highlight"
     ],
-    "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"]
+    "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],
+    "Component": [
+      "--lab-fill-accent",
+      "--lab-fill-neutral",
+      "--lab-fill-danger",
+      "--lab-fill-accent-tinted",
+      "--lab-fill-neutral-tinted",
+      "--lab-fill-danger-tinted",
+      "--lab-label-accent",
+      "--lab-label-danger",
+      "--lab-label-on-accent",
+      "--lab-label-on-neutral",
+      "--lab-label-on-danger",
+      "--lab-border-accent",
+      "--lab-border-neutral",
+      "--lab-border-danger",
+      "--lab-border-focus"
+    ]
   },
   "aliases": ["--lab-surface-base", "--lab-surface-raised", "--lab-accent"]
 }

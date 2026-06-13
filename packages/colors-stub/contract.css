@@ -193,6 +193,51 @@
   --lab-badge-label-default: rgb(255 255 255);
   --lab-control-bg: rgb(255 255 255);
 
+  /* ── DERIVED COMPONENT ROLES ────────────────────────────────────────────── */
+  /*
+   * Flat, component-facing roles consumed by Button/proof (proto-A surface).
+   * These are NOT 1:1 in the faithful Figma Semantic taxonomy above — they are
+   * DERIVED from it. The real @labpics/colors engine MUST resolve these names too
+   * (filed as a core requirement); this stub pins them so components render today.
+   *
+   * Composition rule: where an exact Figma equivalent exists, alias it via var()
+   * (one source of truth, zero value duplication). Where no equivalent exists
+   * (the SOLID full-opacity neutral fill + its on-fill contrast), the value is a
+   * design literal marked PROVISIONAL — final visual acceptance is the owner's.
+   */
+
+  /* Solid fills (kind=fill) — FULL-opacity surface, NOT the low-alpha Fills@12.
+   * Accent/Danger solids reuse the opaque accent primitive already pinned by the
+   * `-strong` border roles (identical primitive, full opacity) — honest var() reuse.
+   * The neutral solid has no opaque-neutral surface in Figma → PROVISIONAL literal
+   * (proto-A: ~#e8e8ec light). */
+  --lab-fill-accent: var(--lab-border-brand-strong);
+  --lab-fill-danger: var(--lab-border-danger-strong);
+  --lab-fill-neutral: rgb(232 232 236); /* PROVISIONAL — solid neutral surface, owner sign-off */
+
+  /* Tinted fills (kind=tinted) - Figma Fills sentiment @12 - exact var() reuse. */
+  --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
+  --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
+  --lab-fill-neutral-tinted: var(--lab-fill-primary);
+
+  /* Sentiment text (tinted/border/ghost kinds) — exact var() reuse. */
+  --lab-label-accent: var(--lab-label-brand-primary);
+  --lab-label-danger: var(--lab-label-danger-primary);
+
+  /* Contrast label ON a solid fill. On-accent/on-danger = white (static-light),
+   * matches the opaque accent/danger primitives. On-neutral pairs the PROVISIONAL
+   * neutral solid → its contrast is also PROVISIONAL. */
+  --lab-label-on-accent: var(--lab-label-static-light-primary);
+  --lab-label-on-danger: var(--lab-label-static-light-primary);
+  --lab-label-on-neutral: rgb(16 16 18); /* PROVISIONAL — pairs solid neutral fill */
+
+  /* Borders (outline for kind=border) — opaque sentiment strokes + neutral base.
+   * Focus ring ≈ Figma FX/Focus-ring/Brand — exact var() reuse. */
+  --lab-border-accent: var(--lab-border-brand-strong);
+  --lab-border-neutral: var(--lab-border-base);
+  --lab-border-danger: var(--lab-border-danger-strong);
+  --lab-border-focus: var(--lab-fx-focus-ring-brand);
+
   /* ── Backward-compatible aliases (original 5-var stub) ──────────────────── */
   /* Kept so existing consumers don't break; prefer the systematic roles above. */
   --lab-surface-base: var(--lab-bg-primary);
@@ -348,6 +393,23 @@
   --lab-badge-label-contrast: rgb(16 16 18);
   --lab-badge-label-default: rgb(255 255 255);
   --lab-control-bg: rgb(120 120 128 / 0.361);
+
+  /* ── DERIVED COMPONENT ROLES (see :root scope for the rationale) ─────────── */
+  --lab-fill-accent: var(--lab-border-brand-strong);
+  --lab-fill-danger: var(--lab-border-danger-strong);
+  --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
+  --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
+  --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
+  --lab-fill-neutral-tinted: var(--lab-fill-primary);
+  --lab-label-accent: var(--lab-label-brand-primary);
+  --lab-label-danger: var(--lab-label-danger-primary);
+  --lab-label-on-accent: var(--lab-label-static-light-primary);
+  --lab-label-on-danger: var(--lab-label-static-light-primary);
+  --lab-label-on-neutral: rgb(246 248 250); /* PROVISIONAL — pairs solid neutral fill */
+  --lab-border-accent: var(--lab-border-brand-strong);
+  --lab-border-neutral: var(--lab-border-base);
+  --lab-border-danger: var(--lab-border-danger-strong);
+  --lab-border-focus: var(--lab-fx-focus-ring-brand);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -499,5 +561,22 @@
     --lab-badge-label-contrast: rgb(16 16 18);
     --lab-badge-label-default: rgb(255 255 255);
     --lab-control-bg: rgb(120 120 128 / 0.361);
+
+    /* ── DERIVED COMPONENT ROLES (see :root scope for the rationale) ───────── */
+    --lab-fill-accent: var(--lab-border-brand-strong);
+    --lab-fill-danger: var(--lab-border-danger-strong);
+    --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
+    --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
+    --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
+    --lab-fill-neutral-tinted: var(--lab-fill-primary);
+    --lab-label-accent: var(--lab-label-brand-primary);
+    --lab-label-danger: var(--lab-label-danger-primary);
+    --lab-label-on-accent: var(--lab-label-static-light-primary);
+    --lab-label-on-danger: var(--lab-label-static-light-primary);
+    --lab-label-on-neutral: rgb(246 248 250); /* PROVISIONAL — pairs solid neutral fill */
+    --lab-border-accent: var(--lab-border-brand-strong);
+    --lab-border-neutral: var(--lab-border-base);
+    --lab-border-danger: var(--lab-border-danger-strong);
+    --lab-border-focus: var(--lab-fx-focus-ring-brand);
   }
 }
