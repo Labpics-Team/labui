@@ -1,0 +1,122 @@
+/*
+ * <Badge> (React) styles — the visual PARITY twin of the Lit <lab-badge>.
+ *
+ * The Lit element scopes its CSS in a shadow root via :host([type][color]); React
+ * is native (no shadow DOM), so this sheet mirrors those exact selectors against
+ * [data-lab-badge] + data-* attributes the component sets. Same roles, same
+ * structure, same states => same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token. ZERO hex, ZERO primitive. The lab-badge-
+ * prefix keeps these scoped without a shadow boundary (craft-frontend P8).
+ *
+ * Ships as a side-effect import from the component module (injectStyle), so
+ * consuming <Badge> brings its styles with it.
+ */
+
+[data-lab-badge] {
+  --_lab-badge-radius: var(--lab-radius-full, 9999px);
+  --_lab-badge-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-badge-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-badge-pad-y: var(--lab-space-xs, 0.25rem);
+  --_lab-badge-gap: var(--lab-space-xs, 0.25rem);
+
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  gap: var(--_lab-badge-gap);
+  min-height: 1.25rem;
+  padding: var(--_lab-badge-pad-y) var(--_lab-badge-pad-x);
+  border-radius: var(--_lab-badge-radius);
+  font: inherit;
+  font-size: var(--_lab-badge-font);
+  line-height: var(--lab-line-height-md, 1.5);
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: transparent;
+  color: var(--lab-label-primary);
+}
+
+[data-lab-badge] .lab-badge-dot {
+  display: inline-flex;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: currentColor;
+  flex: none;
+}
+
+/* ── type=fill: opaque sentiment surface + contrast label ──────────────────── */
+[data-lab-badge][data-type="fill"][data-color="neutral"] {
+  background-color: var(--lab-fill-neutral);
+  color: var(--lab-label-on-neutral);
+}
+[data-lab-badge][data-type="fill"][data-color="brand"] {
+  background-color: var(--lab-border-brand-strong);
+  color: var(--lab-badge-label-default);
+}
+[data-lab-badge][data-type="fill"][data-color="danger"] {
+  background-color: var(--lab-border-danger-strong);
+  color: var(--lab-badge-label-default);
+}
+[data-lab-badge][data-type="fill"][data-color="warning"] {
+  background-color: var(--lab-border-warning-strong);
+  color: var(--lab-badge-label-contrast);
+}
+[data-lab-badge][data-type="fill"][data-color="success"] {
+  background-color: var(--lab-border-success-strong);
+  color: var(--lab-badge-label-default);
+}
+[data-lab-badge][data-type="fill"][data-color="info"] {
+  background-color: var(--lab-border-info-strong);
+  color: var(--lab-badge-label-default);
+}
+[data-lab-badge][data-type="fill"][data-color="static-dark"] {
+  background-color: var(--lab-border-static-dark-strong);
+  color: var(--lab-label-static-light-primary);
+}
+[data-lab-badge][data-type="fill"][data-color="static-light"] {
+  background-color: var(--lab-border-static-light-strong);
+  color: var(--lab-label-static-dark-primary);
+}
+
+/* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────────── */
+[data-lab-badge][data-type="tinted"][data-color="neutral"] {
+  background-color: var(--lab-fill-neutral-tinted);
+  color: var(--lab-label-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="brand"] {
+  background-color: var(--lab-fill-brand-primary);
+  color: var(--lab-label-brand-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="danger"] {
+  background-color: var(--lab-fill-danger-primary);
+  color: var(--lab-label-danger-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="warning"] {
+  background-color: var(--lab-fill-warning-primary);
+  color: var(--lab-label-warning-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="success"] {
+  background-color: var(--lab-fill-success-primary);
+  color: var(--lab-label-success-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="info"] {
+  background-color: var(--lab-fill-info-primary);
+  color: var(--lab-label-info-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="static-dark"] {
+  background-color: var(--lab-fill-static-dark-primary);
+  color: var(--lab-label-static-dark-primary);
+}
+[data-lab-badge][data-type="tinted"][data-color="static-light"] {
+  background-color: var(--lab-fill-static-light-primary);
+  color: var(--lab-label-static-light-primary);
+}
+
+/* ── disabled ──────────────────────────────────────────────────────────────── */
+[data-lab-badge][data-disabled="true"] {
+  opacity: 0.45;
+}

@@ -103,6 +103,46 @@ function LabFooReact(props) {
   truth.
 - A renderer never re-implements ARIA/keyboard/focus that the machine provides.
 
+### Legitimate opt-out: a component MAY have no machine
+
+A Zag machine is **mandatory only when there is machine state to own**. A
+component **legitimately opts out** of the seam when the platform already owns all
+of its behaviour — i.e. when it has **none** of:
+
+- `open` (disclosure / popover / dialog lifecycle),
+- `value` / `checked` / `selected` (a value the component holds),
+- `pressed` / `expanded` (a toggled interaction state),
+- **roving focus** (a focus index across a set of children),
+- **typeahead** (incremental match over a list).
+
+If none of these apply, the component carries **no interaction state**, so there
+is nothing for a machine to be the source of truth *of*. Wiring one would add a
+dependency and a render cycle to reflect state the platform already owns —
+machinery for a checkbox the platform ships. Such a component extends
+`LabElement` (for `delegatesFocus` + the shared base conventions) but **does not
+call `runMachine`**, and its React twin uses **no `useZag`**. This is a
+documented exception, not a violation; reviewers must not flag a machine-less
+presentational component as non-conformant, and future agents must not bolt a
+machine onto one to "complete" it.
+
+**Examples (all of this batch):**
+
+| Component | Owns machine state? | Verdict |
+|---|---|---|
+| `lab-button` | No — native `<button>` carries role + Enter/Space + focus | Opts out |
+| `lab-badge` | No — a static label/count | Opts out |
+| `lab-kbd` | No — a styled, semantic `<kbd>` | Opts out |
+| `lab-loader` | No — a CSS animation + `role="status"`/`aria-busy` | Opts out |
+| `lab-avatar` | No — image→initials fallback is local view state, not shared interaction state | Opts out |
+
+A component that **does** have any of the listed states (Switch, Tabs, Dropdown,
+Slider, …) is **not** eligible for the opt-out and must drive the seam.
+
+The other six rules (semantic-only token consumption, 1:1 Figma axes, the a11y
+contract, theme/material agnosticism, materials consumed-not-reinvented, and the
+SSR contract) **apply to every component, machine-less ones included** — opting
+out of the machine opts out of *that section only*, nothing else.
+
 ---
 
 ## 2. Consuming `--lab-*` — the three languages

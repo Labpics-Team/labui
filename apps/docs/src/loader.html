@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Loader parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="loader-title">
+        Loader parity — <code>&lt;lab-loader&gt;</code> (Lit) ↔ <code>&lt;Loader&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. Same sizes, same indeterminate spinner from
+        <code>currentColor</code>, same <code>role="status"</code> / <code>aria-busy</code> contract.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-loader data-testid="lit-s" size="s"></lab-loader>
+          <lab-loader data-testid="lit-m" size="m"></lab-loader>
+          <lab-loader data-testid="lit-l" size="l" label="Saving changes"></lab-loader>
+        </div>
+      </section>
+
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./loader-demo.tsx"></script>
+  </body>
+</html>

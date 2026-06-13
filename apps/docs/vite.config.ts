@@ -63,6 +63,12 @@ export default defineConfig({
         // Button parity fixture: Lit `<lab-button>` and native-React `<Button>`
         // side by side under one [data-theme], for the parity + behaviour suite.
         button: resolve(__dirname, 'src/button.html'),
+        // Presentational-primitive parity fixtures — each mounts the Lit element
+        // and its native-React twin side by side under one [data-theme].
+        badge: resolve(__dirname, 'src/badge.html'),
+        kbd: resolve(__dirname, 'src/kbd.html'),
+        loader: resolve(__dirname, 'src/loader.html'),
+        avatar: resolve(__dirname, 'src/avatar.html'),
       },
     },
   },

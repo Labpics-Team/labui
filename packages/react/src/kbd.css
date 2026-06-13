@@ -1,0 +1,47 @@
+/*
+ * <Kbd> (React) styles — the visual PARITY twin of the Lit <lab-kbd>.
+ *
+ * Mirrors the Lit element's :host([size]) / kbd selectors against [data-lab-kbd]
+ * + data-size. Same roles, same raised-cap structure => same paint. Every colour
+ * is a semantic --lab-* role; every dimension a --lab-* token. ZERO hex.
+ *
+ * Ships as a side-effect import (injectStyle) so consuming <Kbd> brings its
+ * styles with it.
+ */
+
+[data-lab-kbd] {
+  --_lab-kbd-radius: var(--lab-radius-control, 0.5rem);
+  --_lab-kbd-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-kbd-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-kbd-min: 1.5rem;
+
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  min-width: var(--_lab-kbd-min);
+  min-height: var(--_lab-kbd-min);
+  padding-inline: var(--_lab-kbd-pad-x);
+  border-radius: var(--_lab-kbd-radius);
+  background-color: var(--lab-fill-neutral-tinted);
+  border: 0.0625rem solid var(--lab-border-neutral);
+  box-shadow: 0 0.0625rem 0 var(--lab-fx-shadow-penumbra);
+  color: var(--lab-label-primary);
+  font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
+  font-size: var(--_lab-kbd-font);
+  line-height: 1;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+[data-lab-kbd][data-size="s"] {
+  --_lab-kbd-font: var(--lab-font-size-xxs, 0.6944rem);
+  --_lab-kbd-pad-x: var(--lab-space-xs, 0.25rem);
+  --_lab-kbd-min: 1.25rem;
+}
+[data-lab-kbd][data-size="l"] {
+  --_lab-kbd-font: var(--lab-font-size-md, 1rem);
+  --_lab-kbd-pad-x: var(--lab-space-md, 1rem);
+  --_lab-kbd-min: 2rem;
+}

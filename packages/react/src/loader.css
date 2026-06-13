@@ -1,0 +1,60 @@
+/*
+ * <Loader> (React) styles — the visual PARITY twin of the Lit <lab-loader>.
+ *
+ * Mirrors the Lit element's :host([size]) / .spinner selectors against
+ * [data-lab-loader] + data-size. The ring is drawn from currentColor (the
+ * consumer paints it with a --lab-* role on or above the loader). ZERO hex.
+ *
+ * Ships as a side-effect import (injectStyle).
+ */
+
+[data-lab-loader] {
+  --_lab-loader-diameter: 1.5rem;
+  --_lab-loader-stroke: 0.1875rem;
+
+  display: inline-flex;
+  vertical-align: middle;
+  color: inherit;
+}
+
+[data-lab-loader][data-size="s"] {
+  --_lab-loader-diameter: 1rem;
+  --_lab-loader-stroke: 0.125rem;
+}
+[data-lab-loader][data-size="l"] {
+  --_lab-loader-diameter: 2.5rem;
+  --_lab-loader-stroke: 0.25rem;
+}
+
+[data-lab-loader] .lab-loader-spinner {
+  box-sizing: border-box;
+  width: var(--_lab-loader-diameter);
+  height: var(--_lab-loader-diameter);
+  border: var(--_lab-loader-stroke) solid currentColor;
+  border-right-color: transparent;
+  border-radius: 9999px;
+  animation: lab-loader-spin 0.7s linear infinite;
+}
+
+[data-lab-loader] .lab-loader-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-loader] .lab-loader-spinner {
+    animation-duration: 0s;
+  }
+}
+@keyframes lab-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

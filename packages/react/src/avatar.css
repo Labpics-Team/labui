@@ -1,0 +1,111 @@
+/*
+ * <Avatar> (React) styles — the visual PARITY twin of the Lit <lab-avatar>.
+ *
+ * The Lit element wraps a .avatar disc in the host; React mirrors that with a
+ * [data-lab-avatar] wrapper around a .lab-avatar-disc (parity with Lit .avatar).
+ * Same roles, same fallback structure, same status-dot geometry => same paint.
+ * Every colour is a semantic --lab-* role; ZERO hex.
+ *
+ * Ships as a side-effect import (injectStyle).
+ */
+
+[data-lab-avatar] {
+  --_lab-avatar-diameter: 2.5rem;
+  --_lab-avatar-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-avatar-dot: 0.75rem;
+
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+[data-lab-avatar][data-size="s"] {
+  --_lab-avatar-diameter: 1.75rem;
+  --_lab-avatar-font: var(--lab-font-size-xxs, 0.6944rem);
+  --_lab-avatar-dot: 0.625rem;
+}
+[data-lab-avatar][data-size="l"] {
+  --_lab-avatar-diameter: 3.5rem;
+  --_lab-avatar-font: var(--lab-font-size-md, 1rem);
+  --_lab-avatar-dot: 1rem;
+}
+
+[data-lab-avatar] .lab-avatar-disc {
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_lab-avatar-diameter);
+  height: var(--_lab-avatar-diameter);
+  border-radius: var(--lab-radius-full, 9999px);
+  overflow: hidden;
+  background-color: var(--lab-fill-neutral-tinted);
+  color: var(--lab-label-primary);
+  font: inherit;
+  font-size: var(--_lab-avatar-font);
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+[data-lab-avatar][data-color="brand"] .lab-avatar-disc {
+  background-color: var(--lab-fill-brand-primary);
+  color: var(--lab-label-brand-primary);
+}
+[data-lab-avatar][data-color="danger"] .lab-avatar-disc {
+  background-color: var(--lab-fill-danger-primary);
+  color: var(--lab-label-danger-primary);
+}
+[data-lab-avatar][data-color="warning"] .lab-avatar-disc {
+  background-color: var(--lab-fill-warning-primary);
+  color: var(--lab-label-warning-primary);
+}
+[data-lab-avatar][data-color="success"] .lab-avatar-disc {
+  background-color: var(--lab-fill-success-primary);
+  color: var(--lab-label-success-primary);
+}
+[data-lab-avatar][data-color="info"] .lab-avatar-disc {
+  background-color: var(--lab-fill-info-primary);
+  color: var(--lab-label-info-primary);
+}
+
+[data-lab-avatar] .lab-avatar-disc img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Status dot ────────────────────────────────────────────────────────────── */
+[data-lab-avatar] .lab-avatar-status {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--_lab-avatar-dot);
+  height: var(--_lab-avatar-dot);
+  border-radius: var(--lab-radius-full, 9999px);
+  box-shadow: 0 0 0 0.125rem var(--lab-bg-primary);
+}
+[data-lab-avatar][data-status="online"] .lab-avatar-status {
+  background-color: var(--lab-border-success-strong);
+}
+[data-lab-avatar][data-status="away"] .lab-avatar-status {
+  background-color: var(--lab-border-warning-strong);
+}
+[data-lab-avatar][data-status="dnd"] .lab-avatar-status {
+  background-color: var(--lab-border-danger-strong);
+}
+[data-lab-avatar][data-status="offline"] .lab-avatar-status {
+  background-color: var(--lab-fill-neutral);
+}
+
+[data-lab-avatar] .lab-avatar-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -66,5 +66,13 @@ export type {
   LabButtonSize,
   LabButtonType,
 } from './components/button/lab-button.js';
+export type { LabBadgeColor, LabBadgeType } from './components/badge/lab-badge.js';
+export type { LabKbdSize } from './components/kbd/lab-kbd.js';
+export type { LabLoaderSize } from './components/loader/lab-loader.js';
+export type {
+  LabAvatarColor,
+  LabAvatarSize,
+  LabAvatarStatus,
+} from './components/avatar/lab-avatar.js';
 
 export const PACKAGE_NAME = '@labpics/ui-core';
