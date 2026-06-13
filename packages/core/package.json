@@ -29,6 +29,26 @@
       "import": "./dist/button.js",
       "require": "./dist/button.cjs"
     },
+    "./badge": {
+      "types": "./dist/badge.d.ts",
+      "import": "./dist/badge.js",
+      "require": "./dist/badge.cjs"
+    },
+    "./kbd": {
+      "types": "./dist/kbd.d.ts",
+      "import": "./dist/kbd.js",
+      "require": "./dist/kbd.cjs"
+    },
+    "./loader": {
+      "types": "./dist/loader.d.ts",
+      "import": "./dist/loader.js",
+      "require": "./dist/loader.cjs"
+    },
+    "./avatar": {
+      "types": "./dist/avatar.d.ts",
+      "import": "./dist/avatar.js",
+      "require": "./dist/avatar.cjs"
+    },
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
     "./theme.css": "./dist/theme.css",
@@ -42,7 +62,15 @@
     "./dist/proof.js",
     "./dist/proof.cjs",
     "./dist/button.js",
-    "./dist/button.cjs"
+    "./dist/button.cjs",
+    "./dist/badge.js",
+    "./dist/badge.cjs",
+    "./dist/kbd.js",
+    "./dist/kbd.cjs",
+    "./dist/loader.js",
+    "./dist/loader.cjs",
+    "./dist/avatar.js",
+    "./dist/avatar.cjs"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

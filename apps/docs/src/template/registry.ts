@@ -1,4 +1,8 @@
+import { avatarDoc } from '../components/avatar.doc.js';
+import { badgeDoc } from '../components/badge.doc.js';
 import { buttonDoc } from '../components/button.doc.js';
+import { kbdDoc } from '../components/kbd.doc.js';
+import { loaderDoc } from '../components/loader.doc.js';
 import { proofDoc } from '../components/proof.doc.js';
 /*
  * Component registry — the ONE place that grows when LabUI gains a component.
@@ -29,6 +33,10 @@ export type RegistryEntry =
 
 export const REGISTRY: Registry = [
   { kind: 'doc', doc: buttonDoc },
+  { kind: 'doc', doc: badgeDoc },
+  { kind: 'doc', doc: kbdDoc },
+  { kind: 'doc', doc: loaderDoc },
+  { kind: 'doc', doc: avatarDoc },
   { kind: 'doc', doc: proofDoc },
   // The seam is open: future components append here as `{ kind: 'doc', doc }`.
   // Until a component is real it stays an honest `planned` placeholder — a

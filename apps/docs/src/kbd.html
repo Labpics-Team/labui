@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Kbd parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="kbd-title">
+        Kbd parity — <code>&lt;lab-kbd&gt;</code> (Lit) ↔ <code>&lt;Kbd&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. Same sizes, same <code>--lab-*</code> roles, same
+        raised-cap structure on a real <code>&lt;kbd&gt;</code>.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-kbd data-testid="lit-s" size="s">Esc</lab-kbd>
+          <lab-kbd data-testid="lit-m" size="m">⌘</lab-kbd>
+          <lab-kbd data-testid="lit-l" size="l">Enter</lab-kbd>
+        </div>
+      </section>
+
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./kbd-demo.tsx"></script>
+  </body>
+</html>

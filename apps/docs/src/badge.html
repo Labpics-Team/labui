@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Badge parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="badge-title">
+        Badge parity — <code>&lt;lab-badge&gt;</code> (Lit) ↔ <code>&lt;Badge&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. Same colour families, same
+        <code>--lab-*</code> roles, same fill/tinted surfaces. This page mounts both so the
+        Playwright suite can assert visual parity and semantics on each.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-badge data-testid="lit-brand-fill" color="brand" type="fill">Brand</lab-badge>
+          <lab-badge data-testid="lit-success-tinted" color="success" type="tinted">Active</lab-badge>
+          <lab-badge data-testid="lit-danger-fill" color="danger" type="fill">3</lab-badge>
+          <lab-badge data-testid="lit-neutral-tinted" color="neutral" type="tinted">Draft</lab-badge>
+          <lab-badge data-testid="lit-disabled" color="brand" type="fill" disabled>Off</lab-badge>
+        </div>
+      </section>
+
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./badge-demo.tsx"></script>
+  </body>
+</html>

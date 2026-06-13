@@ -24,4 +24,10 @@ export { LabProofReact, type LabProofReactProps } from './proof.js';
 // PRODUCTION Button — the native-React twin of the Lit `<lab-button>`.
 export { Button, type ButtonProps } from './button.js';
 
+// PRESENTATIONAL primitives — native-React twins of the Lit elements.
+export { Badge, type BadgeProps } from './badge.js';
+export { Kbd, type KbdProps } from './kbd.js';
+export { Loader, type LoaderProps } from './loader.js';
+export { Avatar, type AvatarProps } from './avatar.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';

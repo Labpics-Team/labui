@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Avatar parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="avatar-title">
+        Avatar parity — <code>&lt;lab-avatar&gt;</code> (Lit) ↔ <code>&lt;Avatar&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. Same colour families, same status states, same honest
+        image→initials fallback. Specimens use the initials fallback (no photo) — exactly what a
+        user with no image sees.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-avatar data-testid="lit-brand-online" color="brand" status="online" name="Ada Lovelace"></lab-avatar>
+          <lab-avatar data-testid="lit-success-away" color="success" status="away" name="Grace Hopper"></lab-avatar>
+          <lab-avatar data-testid="lit-danger-dnd" color="danger" status="dnd" name="Alan Turing"></lab-avatar>
+          <lab-avatar data-testid="lit-neutral-offline" color="neutral" status="offline" name="Katherine Johnson"></lab-avatar>
+          <lab-avatar data-testid="lit-anon" color="neutral" status="none"></lab-avatar>
+        </div>
+      </section>
+
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./avatar-demo.tsx"></script>
+  </body>
+</html>
