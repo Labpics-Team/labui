@@ -30,9 +30,11 @@
   "dependencies": {
     "@labpics/ui-core": "workspace:*",
     "@zag-js/checkbox": "1.41.2",
+    "@zag-js/popover": "1.41.2",
     "@zag-js/react": "1.41.2",
     "@zag-js/switch": "1.41.2",
     "@zag-js/toggle": "1.41.2",
+    "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2"
   },
   "peerDependencies": {

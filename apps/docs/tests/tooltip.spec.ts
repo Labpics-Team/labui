@@ -1,0 +1,120 @@
+import { type Locator, type Page, expect, test } from '@playwright/test';
+
+/**
+ * Tooltip suite — the FIRST positioned overlay, verified on BOTH renderers.
+ *
+ * The fixture (`tooltip.html`) mounts the Lit `<lab-tooltip>` and the native-React
+ * `<Tooltip>` with identical specimens under one [data-theme]. These checks are the
+ * Tooltip's browser-side definition of done:
+ *   1. Render — the delivered HTML carries the Lit element; React is a client island.
+ *   2. Open on hover — the Zag machine opens the floating layer after openDelay.
+ *   3. Open on focus + Escape — keyboard users get it, Escape dismisses (machine).
+ *   4. Positioning — the open surface is positioned on-screen near the trigger
+ *      (Floating UI wrote --x/--y; it is NOT stuck off-screen).
+ *   5. Disabled — a disabled tooltip never opens (machine blocks it).
+ *   6. Visual parity — Lit and React resolve the SAME surface colour when open.
+ */
+
+/** The Lit host (shadow-pierced for inner nodes). */
+function litHost(page: Page, testid: string): Locator {
+  return page.getByTestId(testid);
+}
+/** The Lit floating surface inside a host's shadow root. */
+function litContent(page: Page, testid: string): Locator {
+  return litHost(page, testid).locator('.content');
+}
+/** The React trigger button inside its testid wrapper. */
+function reactTrigger(page: Page, testid: string): Locator {
+  return page.getByTestId(testid).locator('.lab-tooltip-trigger');
+}
+/** The single open, portalled React surface (only one tooltip opens at a time). */
+function reactOpenContent(page: Page): Locator {
+  return page.locator('.lab-tooltip-content[data-state="open"]');
+}
+
+const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
+
+test.beforeEach(async ({ page }) => {
+  await page.goto('/tooltip.html');
+});
+
+test('delivered HTML carries the Lit element (React island mounts client-side)', async ({
+  request,
+}) => {
+  const body = await (await request.get('/tooltip.html')).text();
+  expect(body).toMatch(/<lab-tooltip/i);
+  expect(body).toContain('id="react-root"');
+});
+
+test('open on hover: the Zag machine opens the surface on both renderers', async ({ page }) => {
+  // Lit — closed at rest, opens on hover.
+  const lit = litContent(page, 'lit-tt-bottom');
+  await expect(lit).toBeHidden();
+  await litHost(page, 'lit-tt-bottom').hover();
+  await expect(lit).toBeVisible();
+  await expect(lit).toHaveAttribute('data-state', 'open');
+  await expect(lit).toHaveAttribute('role', 'tooltip');
+
+  // Move the pointer away → the machine closes it.
+  await page.mouse.move(0, 0);
+  await expect(lit).toBeHidden();
+
+  // React — the portalled surface opens on hover too.
+  await reactTrigger(page, 'react-tt-bottom').hover();
+  await expect(reactOpenContent(page)).toBeVisible();
+});
+
+test('a11y: focus opens the tooltip and Escape dismisses it (keyboard)', async ({ page }) => {
+  // Prime keyboard modality so the machine's focus-visible guard fires.
+  await page.keyboard.press('Tab');
+  const lit = litContent(page, 'lit-tt-top');
+  await litHost(page, 'lit-tt-top').evaluate((host) => {
+    (host as HTMLElement).shadowRoot?.querySelector<HTMLElement>('.trigger')?.focus();
+  });
+  await expect(lit).toBeVisible();
+
+  await page.keyboard.press('Escape');
+  await expect(lit).toBeHidden();
+});
+
+test('positioning: the open surface is placed on-screen near the trigger', async ({ page }) => {
+  await litHost(page, 'lit-tt-bottom').hover();
+  const content = litContent(page, 'lit-tt-bottom');
+  await expect(content).toBeVisible();
+  const box = await content.boundingBox();
+  expect(box).not.toBeNull();
+  // Floating UI wrote --x/--y; an unpositioned surface sits at translate(0,-100vh)
+  // (y far negative). A positioned one is within the viewport.
+  expect(box?.y ?? -1).toBeGreaterThanOrEqual(0);
+  expect(box?.width ?? 0).toBeGreaterThan(0);
+});
+
+test('disabled: the machine never opens on either renderer', async ({ page }) => {
+  const lit = litContent(page, 'lit-tt-disabled');
+  await litHost(page, 'lit-tt-disabled').hover();
+  await expect(lit).toBeHidden();
+
+  await reactTrigger(page, 'react-tt-disabled').hover();
+  await expect(page.locator('.lab-tooltip-content[data-state="open"]')).toHaveCount(0);
+});
+
+test('visual parity: Lit and React resolve the same surface colour when open', async ({ page }) => {
+  await litHost(page, 'lit-tt-bottom').hover();
+  const litBg = await litContent(page, 'lit-tt-bottom').evaluate(bg);
+
+  await reactTrigger(page, 'react-tt-bottom').hover();
+  const reactBg = await reactOpenContent(page).evaluate(bg);
+
+  expect(reactBg, 'tooltip surface background parity').toBe(litBg);
+});
+
+test('tokens: re-pointing --lab-bg-inverted re-skins both surfaces', async ({ page }) => {
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--lab-bg-inverted', 'rgb(1, 2, 3)');
+  });
+  await litHost(page, 'lit-tt-bottom').hover();
+  await expect.poll(() => litContent(page, 'lit-tt-bottom').evaluate(bg)).toBe('rgb(1, 2, 3)');
+
+  await reactTrigger(page, 'react-tt-bottom').hover();
+  await expect.poll(() => reactOpenContent(page).evaluate(bg)).toBe('rgb(1, 2, 3)');
+});
