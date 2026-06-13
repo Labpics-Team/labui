@@ -30,6 +30,10 @@ export { Button, type ButtonProps } from './button.js';
 export { Switch, type SwitchProps } from './switch.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
 
+// PRODUCTION compound form control — `<RadioGroup>` + `<Radio>` over the SAME
+// `@zag-js/radio-group` machine as the Lit `<lab-radio-group>`.
+export { RadioGroup, type RadioGroupProps, Radio, type RadioProps } from './radio-group.js';
+
 // PRESENTATIONAL primitives — native-React twins of the Lit elements.
 export { Badge, type BadgeProps } from './badge.js';
 export { Kbd, type KbdProps } from './kbd.js';
