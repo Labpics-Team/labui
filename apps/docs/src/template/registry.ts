@@ -1,3 +1,4 @@
+import { buttonDoc } from '../components/button.doc.js';
 import { proofDoc } from '../components/proof.doc.js';
 /*
  * Component registry — the ONE place that grows when LabUI gains a component.
@@ -8,11 +9,10 @@ import { proofDoc } from '../components/proof.doc.js';
  * Nothing in the template renderer changes. The sidebar, routing, and page
  * assembly all read from this list, so a new entry lights up the whole site.
  *
- * Today the registry holds exactly one real entry — the `lab-proof` PROOF
- * element — and an honest placeholder showing where the future Button (and ~50
- * others) will slot in. The placeholder is a `planned` entry, never a fake
- * component: it carries no live element, only a dimmed, non-clickable nav marker
- * so the seam is visibly ready without pretending the component exists.
+ * The registry now holds two real entries — the `lab-proof` PROOF element and
+ * the first PRODUCTION component, `lab-button`. Future components append here as
+ * `{ kind: 'doc', doc }`; until a component is real it stays an honest `planned`
+ * placeholder — a dimmed, non-clickable nav marker, never a fake component.
  */
 import type { ComponentDoc } from './component-doc.js';
 
@@ -28,10 +28,12 @@ export type RegistryEntry =
   | { readonly kind: 'planned'; readonly slug: string; readonly title: string };
 
 export const REGISTRY: Registry = [
+  { kind: 'doc', doc: buttonDoc },
   { kind: 'doc', doc: proofDoc },
   // The seam is open: future components append here as `{ kind: 'doc', doc }`.
-  // Honest placeholders until then — NOT clickable, NOT pretending to exist.
-  { kind: 'planned', slug: 'button', title: 'Button (planned)' },
+  // Until a component is real it stays an honest `planned` placeholder — a
+  // dimmed, non-clickable nav marker, never a fake component. Input is next.
+  { kind: 'planned', slug: 'input', title: 'Input (planned)' },
 ];
 
 /** Look up a documented component by slug. Planned entries are not resolvable. */

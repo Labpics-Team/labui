@@ -21,4 +21,7 @@ export type {
 // PROOF element (see proof.tsx — a proof of the seam, not the production Button).
 export { LabProofReact, type LabProofReactProps } from './proof.js';
 
+// PRODUCTION Button — the native-React twin of the Lit `<lab-button>`.
+export { Button, type ButtonProps } from './button.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';

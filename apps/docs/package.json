@@ -16,12 +16,17 @@
   "dependencies": {
     "@labpics/colors": "workspace:*",
     "@labpics/ui-core": "workspace:*",
+    "@labpics/ui-react": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
-    "@labpics/ui-tokens": "workspace:*"
+    "@labpics/ui-tokens": "workspace:*",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1",
     "@types/node": "22.10.5",
+    "@types/react": "18.3.18",
+    "@types/react-dom": "18.3.5",
     "typescript": "5.7.3",
     "vite": "6.0.7"
   }
