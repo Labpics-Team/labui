@@ -73,6 +73,10 @@ export default defineConfig({
         // side, running the SAME Zag machine, for the parity + behaviour suite.
         switch: resolve(__dirname, 'src/switch.html'),
         checkbox: resolve(__dirname, 'src/checkbox.html'),
+        // Compound control: Lit `<lab-radio-group>` (all parts in one shadow
+        // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, running the
+        // SAME Zag group machine, for the parity + behaviour suite.
+        'radio-group': resolve(__dirname, 'src/radio-group.html'),
       },
     },
   },
