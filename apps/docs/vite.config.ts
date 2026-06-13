@@ -50,6 +50,9 @@ export default defineConfig({
         materials: resolve(__dirname, 'src/materials.html'),
         shadow: resolve(__dirname, 'src/shadow.html'),
         proof: resolve(__dirname, 'src/proof.html'),
+        // The reusable component-doc template (rendered from a ComponentDoc
+        // config; ?component=<slug> selects which one). Demoed on lab-proof.
+        components: resolve(__dirname, 'src/components.html'),
       },
     },
   },
