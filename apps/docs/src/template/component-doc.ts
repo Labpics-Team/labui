@@ -19,6 +19,15 @@
 export interface ComponentDoc {
   /** URL slug + registry key. One per component. e.g. "proof". */
   readonly slug: string;
+  /**
+   * Optional nav sort weight. The registry is auto-discovered (every
+   * `*.doc.ts` is found by glob), so ordering can no longer come from an
+   * import sequence. Lower sorts first; ties and omissions fall back to
+   * alphabetical-by-slug. A component sets this in its OWN doc file to claim a
+   * place in the curated narrative — no shared file is edited, so parallel
+   * component batches never collide on ordering.
+   */
+  readonly order?: number;
   /** The custom-element tag this page documents. e.g. "lab-proof". */
   readonly tag: string;
   /** Human title shown in nav and as the page <h1>. e.g. "Proof". */

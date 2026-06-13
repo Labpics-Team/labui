@@ -28,6 +28,7 @@ function makeSwitch(attrs: Readonly<Record<string, string | boolean>>): HTMLElem
 
 export const switchDoc: ComponentDoc = {
   slug: 'switch',
+  order: 6,
   tag: 'lab-switch',
   title: 'Switch',
   summary:

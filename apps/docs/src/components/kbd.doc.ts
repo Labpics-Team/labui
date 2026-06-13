@@ -20,6 +20,7 @@ function makeKbd(attrs: Readonly<Record<string, string | boolean>>): HTMLElement
 
 export const kbdDoc: ComponentDoc = {
   slug: 'kbd',
+  order: 3,
   tag: 'lab-kbd',
   title: 'Kbd',
   summary:

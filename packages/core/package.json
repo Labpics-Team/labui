@@ -15,49 +15,19 @@
       "require": "./dist/index.cjs"
     },
     "./ssr": {
-      "types": "./dist/ssr.d.ts",
-      "import": "./dist/ssr.js",
-      "require": "./dist/ssr.cjs"
+      "types": "./dist/ssr/index.d.ts",
+      "import": "./dist/ssr/index.js",
+      "require": "./dist/ssr/index.cjs"
     },
     "./proof": {
-      "types": "./dist/proof.d.ts",
-      "import": "./dist/proof.js",
-      "require": "./dist/proof.cjs"
+      "types": "./dist/proof/lab-proof.d.ts",
+      "import": "./dist/proof/lab-proof.js",
+      "require": "./dist/proof/lab-proof.cjs"
     },
-    "./button": {
-      "types": "./dist/button.d.ts",
-      "import": "./dist/button.js",
-      "require": "./dist/button.cjs"
-    },
-    "./badge": {
-      "types": "./dist/badge.d.ts",
-      "import": "./dist/badge.js",
-      "require": "./dist/badge.cjs"
-    },
-    "./kbd": {
-      "types": "./dist/kbd.d.ts",
-      "import": "./dist/kbd.js",
-      "require": "./dist/kbd.cjs"
-    },
-    "./loader": {
-      "types": "./dist/loader.d.ts",
-      "import": "./dist/loader.js",
-      "require": "./dist/loader.cjs"
-    },
-    "./avatar": {
-      "types": "./dist/avatar.d.ts",
-      "import": "./dist/avatar.js",
-      "require": "./dist/avatar.cjs"
-    },
-    "./switch": {
-      "types": "./dist/switch.d.ts",
-      "import": "./dist/switch.js",
-      "require": "./dist/switch.cjs"
-    },
-    "./checkbox": {
-      "types": "./dist/checkbox.d.ts",
-      "import": "./dist/checkbox.js",
-      "require": "./dist/checkbox.cjs"
+    "./*": {
+      "types": "./dist/components/*/index.d.ts",
+      "import": "./dist/components/*/index.js",
+      "require": "./dist/components/*/index.cjs"
     },
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
@@ -69,22 +39,9 @@
     "./dist/materials.css",
     "./dist/glass.css",
     "./dist/theme.css",
-    "./dist/proof.js",
-    "./dist/proof.cjs",
-    "./dist/button.js",
-    "./dist/button.cjs",
-    "./dist/badge.js",
-    "./dist/badge.cjs",
-    "./dist/kbd.js",
-    "./dist/kbd.cjs",
-    "./dist/loader.js",
-    "./dist/loader.cjs",
-    "./dist/avatar.js",
-    "./dist/avatar.cjs",
-    "./dist/switch.js",
-    "./dist/switch.cjs",
-    "./dist/checkbox.js",
-    "./dist/checkbox.cjs"
+    "./dist/proof/lab-proof.js",
+    "./dist/proof/lab-proof.cjs",
+    "./dist/components/**"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",

@@ -28,14 +28,9 @@
       "@labpics/ui-core": ["./packages/core/src/index.ts"],
       "@labpics/ui-core/ssr": ["./packages/core/src/ssr/index.ts"],
       "@labpics/ui-core/proof": ["./packages/core/src/proof/lab-proof.ts"],
-      "@labpics/ui-core/button": ["./packages/core/src/components/button/lab-button.ts"],
-      "@labpics/ui-core/badge": ["./packages/core/src/components/badge/lab-badge.ts"],
-      "@labpics/ui-core/kbd": ["./packages/core/src/components/kbd/lab-kbd.ts"],
-      "@labpics/ui-core/loader": ["./packages/core/src/components/loader/lab-loader.ts"],
-      "@labpics/ui-core/avatar": ["./packages/core/src/components/avatar/lab-avatar.ts"],
-      "@labpics/ui-core/switch": ["./packages/core/src/components/switch/lab-switch.ts"],
-      "@labpics/ui-core/checkbox": ["./packages/core/src/components/checkbox/lab-checkbox.ts"],
-      "@labpics/ui-react": ["./packages/react/src/index.ts"]
+      "@labpics/ui-core/*": ["./packages/core/src/components/*/index.ts"],
+      "@labpics/ui-react": ["./packages/react/src/index.ts"],
+      "@labpics/ui-react/*": ["./packages/react/src/*.tsx"]
     }
   }
 }

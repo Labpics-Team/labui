@@ -1,24 +1,23 @@
-import { avatarDoc } from '../components/avatar.doc.js';
-import { badgeDoc } from '../components/badge.doc.js';
-import { buttonDoc } from '../components/button.doc.js';
-import { checkboxDoc } from '../components/checkbox.doc.js';
-import { kbdDoc } from '../components/kbd.doc.js';
-import { loaderDoc } from '../components/loader.doc.js';
-import { proofDoc } from '../components/proof.doc.js';
-import { switchDoc } from '../components/switch.doc.js';
 /*
- * Component registry — the ONE place that grows when LabUI gains a component.
+ * Component registry — AUTO-DISCOVERED from the component-doc files.
  *
- * This is the OCP extension point (craft-arch). To document a new component:
- *   1. author its `ComponentDoc` (e.g. `button.doc.ts`);
- *   2. import it here and add it to `REGISTRY`.
- * Nothing in the template renderer changes. The sidebar, routing, and page
- * assembly all read from this list, so a new entry lights up the whole site.
+ * Every `src/components/*.doc.ts` is found at build time via Vite's
+ * `import.meta.glob` and folded into `REGISTRY`. Documenting a NEW component is
+ * therefore purely additive: author its `<name>.doc.ts` (exporting one
+ * `ComponentDoc`) and it lights up the whole site — sidebar, routing, page
+ * assembly — with NO edit to this file or any other shared file. That is what
+ * unblocks parallel component batches: they only ever ADD files.
  *
- * The registry now holds two real entries — the `lab-proof` PROOF element and
- * the first PRODUCTION component, `lab-button`. Future components append here as
- * `{ kind: 'doc', doc }`; until a component is real it stays an honest `planned`
- * placeholder — a dimmed, non-clickable nav marker, never a fake component.
+ * Two things stay explicit, on purpose:
+ *   - ORDER. Discovery has no inherent sequence, so entries sort by each doc's
+ *     optional `order` (lower first), then alphabetically by slug. A component
+ *     claims its narrative position in its OWN doc file, never here.
+ *   - PLANNED placeholders. A "coming soon" nav marker is an honest editorial
+ *     statement, not a discovered artifact — there is no file to discover yet.
+ *     So the planned list below is hand-kept; it never pretends to be real.
+ *
+ * The template renderer stays CLOSED for modification (craft-arch / OCP): it
+ * consumes whatever `REGISTRY` holds and emits the page.
  */
 import type { ComponentDoc } from './component-doc.js';
 
@@ -33,21 +32,48 @@ export type RegistryEntry =
   | { readonly kind: 'doc'; readonly doc: ComponentDoc }
   | { readonly kind: 'planned'; readonly slug: string; readonly title: string };
 
-export const REGISTRY: Registry = [
-  { kind: 'doc', doc: buttonDoc },
-  { kind: 'doc', doc: badgeDoc },
-  { kind: 'doc', doc: kbdDoc },
-  { kind: 'doc', doc: loaderDoc },
-  { kind: 'doc', doc: avatarDoc },
-  // Machine-driven form controls — the first PRODUCTION consumers of the Zag
-  // seam (they own checked/indeterminate state, so they MUST run a machine).
-  { kind: 'doc', doc: switchDoc },
-  { kind: 'doc', doc: checkboxDoc },
-  { kind: 'doc', doc: proofDoc },
-  // The seam is open: future components append here as `{ kind: 'doc', doc }`.
-  // Until a component is real it stays an honest `planned` placeholder — a
-  // dimmed, non-clickable nav marker, never a fake component. Input is next.
+/**
+ * Auto-discovered documentation modules. Each `*.doc.ts` exports exactly one
+ * `ComponentDoc` (the `<name>Doc` const); eager loading runs the module so the
+ * documented custom element self-registers, exactly as the old manual imports
+ * did. Typed against the module shape so a malformed doc file fails the build.
+ */
+const docModules = import.meta.glob<Record<string, ComponentDoc>>('../components/*.doc.ts', {
+  eager: true,
+});
+
+/** Pull the single `ComponentDoc` export out of a discovered doc module. */
+function docOf(module: Record<string, ComponentDoc>): ComponentDoc | undefined {
+  for (const value of Object.values(module)) {
+    // A ComponentDoc is the one export that carries a `slug`. This tolerates
+    // future incidental exports without guessing at the const's name.
+    if (value && typeof value === 'object' && typeof value.slug === 'string') return value;
+  }
+  return undefined;
+}
+
+/** Discovered docs, ordered by `order` (lower first) then alphabetically by slug. */
+const discoveredDocs: ComponentDoc[] = Object.values(docModules)
+  .map(docOf)
+  .filter((doc): doc is ComponentDoc => doc !== undefined)
+  .sort((a, b) => {
+    const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+    const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+    return orderA - orderB || a.slug.localeCompare(b.slug);
+  });
+
+/**
+ * Honest "coming soon" markers — hand-kept, because a planned component has no
+ * file to discover. A planned entry becomes a real `doc` the moment its
+ * `<name>.doc.ts` lands and is discovered; remove it from this list then.
+ */
+const PLANNED: ReadonlyArray<Extract<RegistryEntry, { kind: 'planned' }>> = [
   { kind: 'planned', slug: 'input', title: 'Input (planned)' },
+];
+
+export const REGISTRY: Registry = [
+  ...discoveredDocs.map((doc): RegistryEntry => ({ kind: 'doc', doc })),
+  ...PLANNED,
 ];
 
 /** Look up a documented component by slug. Planned entries are not resolvable. */

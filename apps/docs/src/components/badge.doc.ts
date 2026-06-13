@@ -23,6 +23,7 @@ function makeBadge(attrs: Readonly<Record<string, string | boolean>>): HTMLEleme
 
 export const badgeDoc: ComponentDoc = {
   slug: 'badge',
+  order: 2,
   tag: 'lab-badge',
   title: 'Badge',
   summary:

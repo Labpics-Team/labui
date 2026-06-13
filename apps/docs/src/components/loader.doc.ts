@@ -21,6 +21,7 @@ function makeLoader(attrs: Readonly<Record<string, string | boolean>>): HTMLElem
 
 export const loaderDoc: ComponentDoc = {
   slug: 'loader',
+  order: 4,
   tag: 'lab-loader',
   title: 'Loader',
   summary:
