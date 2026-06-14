@@ -78,6 +78,12 @@ export default defineConfig({
         // open/close/positioning/dismiss/keyboard + parity suite.
         tooltip: resolve(__dirname, 'src/tooltip.html'),
         popover: resolve(__dirname, 'src/popover.html'),
+        // Modal-overlay parity fixtures: Lit element (body portal + relocated slotted
+        // body for a real trap) and native-React twin (createPortal body), running the
+        // SAME @zag-js/dialog machine, for the open/dismiss/trap/scroll-lock + parity
+        // suite. Alert-dialog adds the role="alertdialog" no-outside-dismiss contract.
+        dialog: resolve(__dirname, 'src/dialog.html'),
+        'alert-dialog': resolve(__dirname, 'src/alert-dialog.html'),
         // Navigation batch: Tabs (compound, @zag-js/tabs), Breadcrumb
         // (presentational), Pagination (@zag-js/pagination) — each mounts the Lit
         // element and its native-React twin side by side for the parity suite.

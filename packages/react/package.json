@@ -31,6 +31,7 @@
     "@labpics/ui-core": "workspace:*",
     "@zag-js/accordion": "1.41.2",
     "@zag-js/checkbox": "1.41.2",
+    "@zag-js/dialog": "1.41.2",
     "@zag-js/menu": "1.41.2",
     "@zag-js/popover": "1.41.2",
     "@zag-js/pagination": "1.41.2",

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Dialog parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 4rem;
+        padding-block: 3rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="dialog-title">
+        Dialog parity — <code>&lt;lab-dialog&gt;</code> (Lit) ↔ <code>&lt;Dialog&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/dialog</code> machine through the same seam.
+        The machine owns open-on-click, focus move-in + restore-on-close, dismiss
+        (Escape / outside-click), the modal focus-trap + scroll-lock + outside-content
+        hiding. The Lit element PORTALS its floating layer to <code>&lt;body&gt;</code>
+        and relocates the slotted body there; the React twin uses
+        <code>createPortal(body)</code>. Both make the modal trap REAL for the dialog
+        body, and both paint with the same <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: custom element, trigger in shadow, floating layer portalled. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-dialog
+            data-testid="lit-dialog"
+            heading="Settings"
+            description="Choose how this dialog behaves."
+            closable
+          >
+            Open
+            <div slot="content">
+              <p>A blocking task. Tab cycles within the dialog; Escape or an outside click closes it.</p>
+              <a href="https://labpics.example/learn" data-testid="lit-dialog-link">Learn more</a>
+              <button type="button" data-testid="lit-dialog-action">Action</button>
+            </div>
+          </lab-dialog>
+
+          <lab-dialog
+            data-testid="lit-dialog-nonmodal"
+            heading="Non-modal"
+            description="A light panel that does not lock the page."
+            modal="false"
+            closable
+          >
+            Open non-modal
+            <div slot="content">
+              <p>Non-modal: no scroll-lock, no scrim, but still dismisses on Escape / outside-click.</p>
+              <button type="button" data-testid="lit-dialog-nonmodal-action">Action</button>
+            </div>
+          </lab-dialog>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from dialog-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./dialog-demo.tsx"></script>
+  </body>
+</html>

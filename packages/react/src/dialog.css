@@ -1,0 +1,155 @@
+/*
+ * <Dialog> / <AlertDialog> (React) styles — the visual PARITY twin of the Lit
+ * `<lab-dialog>` floating layer.
+ *
+ * React is native (ADR-0001) and the floating layer is PORTALLED to <body>, so this
+ * sheet mirrors the Lit floating styles against `.lab-dialog-*` classes in the light
+ * DOM. Same roles, same structure, same states ⇒ same paint. Both renderers center the
+ * panel in the viewport (a dialog is not anchored to its trigger).
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role, every
+ * dimension a --lab-* token (literal fallback only). ZERO hex, ZERO primitive. The
+ * panel is the raised surface; the scrim is the overlay role; layering is the z roles.
+ */
+
+.lab-dialog-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lab-space-xs, 0.25rem);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.lab-dialog-trigger:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+  border-radius: var(--lab-radius-sm, 0.25rem);
+}
+
+/* Modal scrim — rendered only when modal && open (parity with the Lit backdrop).
+   pointer-events:auto re-arms scrim hit-testing: a modal locks the page with
+   @zag-js/remove-scroll (body { pointer-events: none }), which cascades to this
+   portalled layer (createPortal → document.body); without re-enabling it the scrim
+   click would fall through to the document element and never reach Zag's
+   interact-outside listener. The backdrop element only exists in the modal case, so
+   this is modal-scoped by construction (parity with the Lit
+   :host([data-modal='true']) .backdrop rule). */
+.lab-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--lab-bg-overlay-base);
+  z-index: var(--lab-z-modal-underlay, 1100);
+  pointer-events: auto;
+}
+
+/* The positioner centers the panel in the viewport. It sits ABOVE the backdrop
+   (higher z-index) and fills the viewport, so for the modal case it is kept
+   transparent (pointer-events:none): a click in the frame around the panel passes
+   THROUGH to the backdrop beneath (which carries the interact-outside hit-test),
+   while the centered content keeps Zag's inline pointer-events:auto and stays
+   interactive. Parity with the Lit :host([data-modal='true']) .positioner rule.
+   Non-modal is untouched: Zag sets the positioner's pointer-events:none inline and
+   renders no backdrop, so clicks pass through the frame to the page behind. */
+.lab-dialog-positioner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--lab-space-lg, 1rem);
+  z-index: var(--lab-z-modal, 1200);
+}
+.lab-dialog-positioner[data-modal] {
+  pointer-events: none;
+}
+.lab-dialog-positioner[hidden] {
+  display: none;
+}
+
+.lab-dialog-content {
+  --_lab-dlg-pad: var(--lab-space-lg, 1rem);
+  --_lab-dlg-min-width: 18rem;
+  --_lab-dlg-max-width: 32rem;
+
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  min-width: var(--_lab-dlg-min-width);
+  max-width: var(--_lab-dlg-max-width);
+  max-height: calc(100vh - 2 * var(--lab-space-lg, 1rem));
+  overflow: auto;
+  padding: var(--_lab-dlg-pad);
+  border-radius: var(--lab-radius-lg, 0.5rem);
+  background-color: var(--lab-surface-raised);
+  color: var(--lab-label-primary);
+  border: 0.0625rem solid var(--lab-border-soft);
+  box-shadow: 0 0.75rem 2.5rem var(--lab-fx-shadow-major);
+  font: inherit;
+  font-size: var(--lab-font-size-md, 1rem);
+  line-height: var(--lab-line-height-md, 1.5);
+}
+.lab-dialog-content[hidden] {
+  display: none;
+}
+.lab-dialog-content:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+.lab-dialog-content[data-size="s"] {
+  --_lab-dlg-pad: var(--lab-space-md, 0.75rem);
+  --_lab-dlg-min-width: 16rem;
+  --_lab-dlg-max-width: 24rem;
+}
+.lab-dialog-content[data-size="l"] {
+  --_lab-dlg-pad: var(--lab-space-xl, 1.5rem);
+  --_lab-dlg-min-width: 22rem;
+  --_lab-dlg-max-width: 40rem;
+}
+
+.lab-dialog-heading {
+  margin: 0 0 var(--lab-space-sm, 0.5rem) 0;
+  padding-right: 2rem;
+  font-size: var(--lab-font-size-lg, 1.2rem);
+  line-height: var(--lab-line-height-md, 1.5);
+  color: var(--lab-label-primary);
+}
+.lab-dialog-description {
+  margin: 0 0 var(--lab-space-md, 0.75rem) 0;
+  color: var(--lab-label-secondary);
+}
+
+.lab-dialog-body {
+  display: block;
+}
+
+.lab-dialog-close {
+  position: absolute;
+  top: var(--lab-space-md, 0.75rem);
+  right: var(--lab-space-md, 0.75rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--lab-radius-sm, 0.25rem);
+  background: none;
+  color: var(--lab-label-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.lab-dialog-close:hover {
+  background-color: var(--lab-fill-neutral-tinted);
+  color: var(--lab-label-primary);
+}
+.lab-dialog-close:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
