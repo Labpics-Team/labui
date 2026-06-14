@@ -87,6 +87,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@zag-js/accordion':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
@@ -97,6 +100,9 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/popover':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/progress':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/radio-group':
@@ -160,6 +166,9 @@ importers:
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../core
+      '@zag-js/accordion':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
@@ -167,6 +176,9 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/popover':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/progress':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/radio-group':
@@ -1082,6 +1094,9 @@ packages:
   '@vitest/utils@2.1.8':
     resolution: {integrity: sha512-dwSoui6djdwbfFmIgbIjX2ZhIoG7Ex/+xpxyiEgIGzjliY8xGkcpITKTlp6B4MgtGkF2ilvm97cPM96XZaAgcA==}
 
+  '@zag-js/accordion@1.41.2':
+    resolution: {integrity: sha512-7G//V7svGGT8k5avw7bbQvbRC0Q/9QtX51b4iyAB1alR9E5mFd6Ch8q4njwcXClMQ7xePS3jUfVnzVGiRInEiQ==}
+
   '@zag-js/anatomy@1.41.2':
     resolution: {integrity: sha512-Fm9hqdrvaCzCsdcf19G8WZxYtHElKltkGHdhqMEt4XU+ULTr1DK7KbOtDDv9J27CuzqSLALUz5QfRjPftoKHwg==}
 
@@ -1117,6 +1132,9 @@ packages:
 
   '@zag-js/popper@1.41.2':
     resolution: {integrity: sha512-Iz4D5YAIiIPn4IHGjhX3QatR/RyGaDt43lBSZv0RYcPQYtFg9sUuek3wizjW9qXgdvItevvNMqRdpl7f3es09g==}
+
+  '@zag-js/progress@1.41.2':
+    resolution: {integrity: sha512-SnzrqN+Z568NoO4rrgjrIc/S4EXMEne5CDgWwt2kQ8yq9VysdH8TtHAjyciFRIio7cdgEZNHKw9jSccpMWgRwA==}
 
   '@zag-js/radio-group@1.41.2':
     resolution: {integrity: sha512-EZjos61jKHZlNw8ez80vG2T9gUwpooxcVpYOKS2hyhuEXn3wEoefS5v1WFbmpoA/8TUpUQnYxisAeNuQfEQCuQ==}
@@ -2556,6 +2574,14 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 1.2.0
 
+  '@zag-js/accordion@1.41.2':
+    dependencies:
+      '@zag-js/anatomy': 1.41.2
+      '@zag-js/core': 1.41.2
+      '@zag-js/dom-query': 1.41.2
+      '@zag-js/types': 1.41.2
+      '@zag-js/utils': 1.41.2
+
   '@zag-js/anatomy@1.41.2': {}
 
   '@zag-js/aria-hidden@1.41.2':
@@ -2624,6 +2650,14 @@ snapshots:
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@zag-js/dom-query': 1.41.2
+      '@zag-js/utils': 1.41.2
+
+  '@zag-js/progress@1.41.2':
+    dependencies:
+      '@zag-js/anatomy': 1.41.2
+      '@zag-js/core': 1.41.2
+      '@zag-js/dom-query': 1.41.2
+      '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
   '@zag-js/radio-group@1.41.2':

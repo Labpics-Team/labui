@@ -1,0 +1,96 @@
+/*
+ * <Card> (React) styles — the visual PARITY twin of the Lit `<lab-card>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([variant])` and paints a
+ * `.card` <article> surface. React is native (ADR-0001) — no shadow DOM — so this
+ * sheet mirrors those exact rules against `[data-lab-card]` (the <article> IS the
+ * surface here) plus the `data-*` the component sets (`data-variant`,
+ * `data-padding`, `data-interactive`). Same roles, same structure, same states ⇒
+ * same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
+ * hex, ZERO primitive. Elevation reads the `--lab-fx-shadow-*` role, never a
+ * baked-in shadow.
+ */
+
+[data-lab-card] {
+  --_lab-card-pad: var(--lab-space-md, 1rem);
+  --_lab-card-radius: var(--lab-radius-card, 0.75rem);
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--_lab-card-radius);
+  background-color: var(--lab-surface-base);
+  color: var(--lab-label-primary);
+  border: 0.0625rem solid transparent;
+}
+
+[data-lab-card][data-padding="none"] {
+  --_lab-card-pad: 0;
+}
+[data-lab-card][data-padding="s"] {
+  --_lab-card-pad: var(--lab-space-sm, 0.5rem);
+}
+[data-lab-card][data-padding="m"] {
+  --_lab-card-pad: var(--lab-space-md, 1rem);
+}
+[data-lab-card][data-padding="l"] {
+  --_lab-card-pad: var(--lab-space-lg, 1.5rem);
+}
+
+[data-lab-card][data-variant="elevated"] {
+  background-color: var(--lab-surface-raised);
+  box-shadow: var(--lab-fx-shadow-minor);
+}
+[data-lab-card][data-variant="outlined"] {
+  background-color: var(--lab-surface-base);
+  border-color: var(--lab-border-base);
+}
+[data-lab-card][data-variant="filled"] {
+  background-color: var(--lab-fill-neutral-tinted);
+}
+
+[data-lab-card][data-interactive] {
+  cursor: pointer;
+  transition: box-shadow 160ms ease, border-color 160ms ease;
+}
+[data-lab-card][data-interactive]:hover {
+  border-color: var(--lab-border-soft);
+}
+[data-lab-card][data-interactive][data-variant="elevated"]:hover {
+  box-shadow: var(--lab-fx-shadow-major);
+}
+[data-lab-card][data-interactive]:focus-within {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: 0.125rem;
+}
+
+.lab-card-media {
+  display: block;
+}
+.lab-card-media > * {
+  display: block;
+  width: 100%;
+}
+
+.lab-card-header {
+  padding: var(--_lab-card-pad) var(--_lab-card-pad) 0;
+}
+
+.lab-card-body {
+  flex: 1 1 auto;
+  padding: var(--_lab-card-pad);
+}
+
+.lab-card-footer {
+  padding: 0 var(--_lab-card-pad) var(--_lab-card-pad);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-card][data-interactive] {
+    transition: none;
+  }
+}

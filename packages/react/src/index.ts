@@ -39,6 +39,18 @@ export { Badge, type BadgeProps } from './badge.js';
 export { Kbd, type KbdProps } from './kbd.js';
 export { Loader, type LoaderProps } from './loader.js';
 export { Avatar, type AvatarProps } from './avatar.js';
+export { Card, type CardProps } from './card.js';
+
+// DISCLOSURE — native-React twins of the Lit `<lab-accordion>` (compound,
+// @zag-js/accordion) and `<lab-progress>` (@zag-js/progress). Same machines via
+// `useZag`, same one import surface.
+export {
+  Accordion,
+  AccordionItem,
+  type AccordionProps,
+  type AccordionItemProps,
+} from './accordion.js';
+export { Progress, type ProgressProps } from './progress.js';
 
 // POSITIONED OVERLAYS — native-React twins of the Lit `<lab-tooltip>` /
 // `<lab-popover>`, running the SAME `@zag-js/{tooltip,popover}` machines via `useZag`.

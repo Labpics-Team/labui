@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Card parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="card-title">
+        Card parity — <code>&lt;lab-card&gt;</code> (Lit) ↔ <code>&lt;Card&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. Same variants (elevated / outlined / filled),
+        same header / body / footer regions, same semantic <code>--lab-*</code> roles.
+        Card is presentational — it carries no machine; both renderers render native
+        <code>&lt;article&gt;</code> semantics. This page mounts both so the Playwright
+        suite can assert structure and visual parity on each.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-card data-testid="lit-elevated" variant="elevated">
+            <div slot="header">Elevated</div>
+            <div>A raised surface that floats above the page.</div>
+            <div slot="footer">Footer</div>
+          </lab-card>
+          <lab-card data-testid="lit-outlined" variant="outlined">
+            <div slot="header">Outlined</div>
+            <div>A flat surface delineated by a real border.</div>
+            <div slot="footer">Footer</div>
+          </lab-card>
+          <lab-card data-testid="lit-filled" variant="filled" interactive>
+            <div slot="header">Filled · interactive</div>
+            <div>A tinted surface that recedes; hoverable as a whole-card target.</div>
+            <div slot="footer">Footer</div>
+          </lab-card>
+        </div>
+      </section>
+
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./card-demo.tsx"></script>
+  </body>
+</html>
