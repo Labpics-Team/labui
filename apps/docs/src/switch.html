@@ -36,6 +36,11 @@
           <lab-switch data-testid="lit-neutral-on" type="neutral" checked>Quiet</lab-switch>
           <lab-switch data-testid="lit-danger-on" type="danger" checked>Airplane</lab-switch>
           <lab-switch data-testid="lit-disabled" type="accent" disabled>Off</lab-switch>
+          <!-- Icon-only specimen: no visible label, named only via aria-label. -->
+          <lab-switch data-testid="lit-icon-only" type="accent" aria-label="Mute">
+            <span slot="icon-on" aria-hidden="true">🔔</span>
+            <span slot="icon-off" aria-hidden="true">🔕</span>
+          </lab-switch>
         </div>
       </section>
 

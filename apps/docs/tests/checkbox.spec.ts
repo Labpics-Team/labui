@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
  * Checkbox suite — a PRODUCTION component CONSUMING the @zag-js/checkbox machine
@@ -27,6 +28,14 @@ function litControl(page: Page, testid: string): Locator {
 }
 function reactControl(page: Page, testid: string): Locator {
   return reactBox(page, testid).locator('.lab-checkbox-control');
+}
+
+/** The hidden native input — the a11y primitive — for a Lit host or React label. */
+function litInput(page: Page, testid: string): Locator {
+  return litHost(page, testid).locator('input');
+}
+function reactInput(page: Page, testid: string): Locator {
+  return reactBox(page, testid).locator('input');
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
@@ -94,6 +103,70 @@ test('a11y: Space on the focused box toggles via the native input (keyboard)', a
   });
   await page.keyboard.press('Space');
   await expect(lit).toHaveAttribute('checked', '');
+});
+
+test('a11y name: the hidden input is exposed and named by the visible label (both renderers)', async ({
+  page,
+}) => {
+  // The control IS the hidden <input>. It must live in the a11y tree (NOT inside
+  // an aria-hidden subtree) and be named by the machine's resolved aria-labelledby.
+  await expect(reactBox(page, 'react-unchecked')).toBeVisible();
+
+  const lit = await probeInput(litInput(page, 'lit-unchecked'));
+  expect(lit.ariaHidden, 'Lit checkbox input must NOT be in an aria-hidden subtree').toBe(false);
+  expect(lit.labelledbyResolves, 'Lit checkbox aria-labelledby must resolve').toBe(true);
+  expect(lit.name).toBe('Terms');
+
+  const react = await probeInput(reactInput(page, 'react-unchecked'));
+  expect(react.ariaHidden, 'React checkbox input must NOT be in an aria-hidden subtree').toBe(
+    false,
+  );
+  expect(react.labelledbyResolves, 'React checkbox aria-labelledby must resolve').toBe(true);
+  expect(react.name).toBe('Terms');
+});
+
+test('a11y name: a checkbox with no visible label is named via aria-label', async ({ page }) => {
+  await expect(reactBox(page, 'react-aria-label')).toBeVisible();
+
+  const lit = await probeInput(litInput(page, 'lit-aria-label'));
+  expect(lit.ariaHidden).toBe(false);
+  expect(lit.name).toBe('Select all');
+
+  const react = await probeInput(reactInput(page, 'react-aria-label'));
+  expect(react.ariaHidden).toBe(false);
+  expect(react.name).toBe('Select all');
+});
+
+test('a11y ids: every Lit checkbox instance has a UNIQUE input id (no :undefined collisions)', async ({
+  page,
+}) => {
+  await expect(litHost(page, 'lit-unchecked')).toBeVisible();
+  const ids = await litInputIds(litHost(page, 'lit-unchecked'), 'lab-checkbox');
+  expect(ids.length).toBeGreaterThan(1);
+  for (const id of ids) expect(id, 'id must not be :undefined').not.toContain('undefined');
+  expect(new Set(ids).size, `ids must be unique: ${ids.join(', ')}`).toBe(ids.length);
+});
+
+test('a11y checked: the native input reflects checked AND the mixed (indeterminate) state', async ({
+  page,
+}) => {
+  await expect(reactBox(page, 'react-unchecked')).toBeVisible();
+
+  // Unchecked specimen: native checked=false, indeterminate=false.
+  const off = await probeInput(litInput(page, 'lit-unchecked'));
+  expect(off.checked).toBe(false);
+  expect(off.indeterminate).toBe(false);
+
+  // Checked specimen: native checked=true (the a11y "checked" state).
+  const on = await probeInput(litInput(page, 'lit-checked'));
+  expect(on.checked).toBe(true);
+  expect(on.indeterminate).toBe(false);
+
+  // Mixed specimen: native indeterminate=true (the a11y "mixed" state) on BOTH.
+  const litMixed = await probeInput(litInput(page, 'lit-mixed'));
+  expect(litMixed.indeterminate, 'Lit mixed input must be indeterminate').toBe(true);
+  const reactMixed = await probeInput(reactInput(page, 'react-mixed'));
+  expect(reactMixed.indeterminate, 'React mixed input must be indeterminate').toBe(true);
 });
 
 test('disabled: the machine blocks the toggle on both renderers', async ({ page }) => {

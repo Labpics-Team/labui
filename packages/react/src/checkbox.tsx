@@ -15,7 +15,7 @@
 
 import type { LabCheckboxChecked, LabCheckboxSize, LabCheckboxType } from '@labpics/ui-core';
 import * as checkboxMachine from '@zag-js/checkbox';
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useCallback, useId } from 'react';
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import { useZag } from './use-zag.js';
 import './checkbox.css';
@@ -40,6 +40,12 @@ export interface CheckboxProps {
   onCheckedChange?: (checked: LabCheckboxChecked) => void;
   /** Native form field name for the hidden input. */
   name?: string;
+  /**
+   * Accessible name for the no-visible-label case. Parity with the Lit
+   * `aria-label`. A visible label (`children`) is preferred over it via the
+   * machine's `aria-labelledby`.
+   */
+  'aria-label'?: string;
   /** Label content (parity with the Lit default slot). */
   children?: ReactNode;
 }
@@ -52,6 +58,7 @@ export function Checkbox({
   disabled = false,
   onCheckedChange,
   name,
+  'aria-label': ariaLabel,
   children,
 }: CheckboxProps): ReactNode {
   const api = useZag(checkboxModule, {
@@ -62,6 +69,27 @@ export function Checkbox({
     name,
     onCheckedChange: onCheckedChange ? (details) => onCheckedChange(details.checked) : undefined,
   });
+
+  // The machine sets `aria-labelledby` on the hidden input pointing at the label
+  // part. With a visible label that resolves and names the control; with NO
+  // visible label it would dangle (and per ARIA outrank `aria-label`), so we drop
+  // it and name the input via `aria-label` instead — exactly one real name source.
+  const hasVisibleLabel = children != null;
+  const hiddenInputProps = api.getHiddenInputProps();
+  const inputProps = hasVisibleLabel
+    ? hiddenInputProps
+    : { ...hiddenInputProps, 'aria-labelledby': undefined, 'aria-label': ariaLabel };
+
+  // `indeterminate` is a DOM PROPERTY with no attribute — it is what AT reads as
+  // aria-checked="mixed". Sync it imperatively via a callback ref so the native
+  // control's mixed state matches the machine, mirroring the Lit twin exactly.
+  const indeterminate = api.indeterminate;
+  const inputRef = useCallback(
+    (el: HTMLInputElement | null) => {
+      if (el) el.indeterminate = indeterminate;
+    },
+    [indeterminate],
+  );
 
   return (
     <label
@@ -97,9 +125,15 @@ export function Checkbox({
         >
           <path d="M3.5 8h9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
-        <input {...api.getHiddenInputProps()} />
       </span>
-      {children != null && <span className="lab-checkbox-label">{children}</span>}
+      {/* The hidden input is a SIBLING of the (aria-hidden) control, NOT a
+          descendant, so it stays in the accessibility tree. */}
+      <input {...inputProps} ref={inputRef} />
+      {hasVisibleLabel && (
+        <span {...api.getLabelProps()} className="lab-checkbox-label">
+          {children}
+        </span>
+      )}
     </label>
   );
 }

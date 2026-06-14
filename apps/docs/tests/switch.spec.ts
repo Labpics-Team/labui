@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
  * Switch suite — a PRODUCTION component that CONSUMES the @zag-js/switch machine
@@ -31,6 +32,14 @@ function litTrack(page: Page, testid: string): Locator {
 }
 function reactTrack(page: Page, testid: string): Locator {
   return reactSwitch(page, testid).locator('.lab-switch-control');
+}
+
+/** The hidden native input — the a11y primitive — for a Lit host or React label. */
+function litInput(page: Page, testid: string): Locator {
+  return litHost(page, testid).locator('input');
+}
+function reactInput(page: Page, testid: string): Locator {
+  return reactSwitch(page, testid).locator('input');
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
@@ -82,6 +91,51 @@ test('a11y: Space on the focused control toggles via the native input (keyboard)
   });
   await page.keyboard.press('Space');
   await expect(lit).toHaveAttribute('checked', '');
+});
+
+test('a11y name: the hidden input is exposed and named by the visible label (both renderers)', async ({
+  page,
+}) => {
+  // The control IS the hidden <input>. It must live in the a11y tree (NOT inside
+  // an aria-hidden subtree) and carry a real name. The machine puts
+  // aria-labelledby="switch:{id}:label" on it; that idref must resolve to the
+  // rendered label element.
+  await expect(reactSwitch(page, 'react-accent-off')).toBeVisible();
+
+  const lit = await probeInput(litInput(page, 'lit-accent-off'));
+  expect(lit.ariaHidden, 'Lit switch input must NOT be in an aria-hidden subtree').toBe(false);
+  expect(lit.labelledbyResolves, 'Lit switch aria-labelledby must resolve').toBe(true);
+  expect(lit.name).toBe('Wi-Fi');
+
+  const react = await probeInput(reactInput(page, 'react-accent-off'));
+  expect(react.ariaHidden, 'React switch input must NOT be in an aria-hidden subtree').toBe(false);
+  expect(react.labelledbyResolves, 'React switch aria-labelledby must resolve').toBe(true);
+  expect(react.name).toBe('Wi-Fi');
+});
+
+test('a11y name: an icon-only switch is named via aria-label (no visible label)', async ({
+  page,
+}) => {
+  await expect(reactSwitch(page, 'react-icon-only')).toBeVisible();
+
+  const lit = await probeInput(litInput(page, 'lit-icon-only'));
+  expect(lit.ariaHidden).toBe(false);
+  expect(lit.name).toBe('Mute');
+
+  const react = await probeInput(reactInput(page, 'react-icon-only'));
+  expect(react.ariaHidden).toBe(false);
+  expect(react.name).toBe('Mute');
+});
+
+test('a11y ids: every Lit switch instance has a UNIQUE input id (no :undefined collisions)', async ({
+  page,
+}) => {
+  await expect(litHost(page, 'lit-accent-off')).toBeVisible();
+  const ids = await litInputIds(litHost(page, 'lit-accent-off'), 'lab-switch');
+  expect(ids.length).toBeGreaterThan(1);
+  for (const id of ids)
+    expect(id, 'id must be non-empty and not :undefined').not.toContain('undefined');
+  expect(new Set(ids).size, `ids must be unique: ${ids.join(', ')}`).toBe(ids.length);
 });
 
 test('disabled: the machine blocks the toggle on both renderers', async ({ page }) => {
