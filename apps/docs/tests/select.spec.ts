@@ -133,6 +133,192 @@ test('selection (single): clicking an option selects it and closes on both rende
   );
 });
 
+/**
+ * Value text — the trigger SHOWS the selected label, not just the placeholder. Both
+ * specimens are seeded with `default-value=["banana"]`, so at rest the trigger must read
+ * "Banana" on BOTH renderers (the machine's `valueAsString`, not the "Pick a fruit…"
+ * placeholder). This is the symmetric Lit assertion that catches the #31 defect, where
+ * the Lit `render()` hardcoded the placeholder and never read the machine value — React
+ * was correct (`api.valueAsString || placeholder`), Lit was blank of the default. After
+ * picking a different option the text follows the new selection live.
+ */
+test('value text: the trigger shows the default-value label (Banana) on both renderers', async ({
+  page,
+}) => {
+  // Readiness gate (lesson 7, cold-start): wait until BOTH triggers are upgraded and
+  // painted before the first at-rest text assertion, so a cold preview server can't
+  // race the initial toHaveText (the Lit element must register + render and the React
+  // island must mount). Only then is the machine value text meaningful.
+  await expect(litTrigger(page, 'lit-select')).toBeVisible();
+  await expect(reactTrigger(page, 'react-select')).toBeVisible();
+
+  // At rest, no interaction: the default-value selection is visible on the trigger.
+  await expect(litTrigger(page, 'lit-select').locator('.value-text')).toHaveText('Banana');
+  await expect(reactTrigger(page, 'react-select').locator('.lab-select-value-text')).toHaveText(
+    'Banana',
+  );
+
+  // The placeholder tint keys off data-placeholder-shown on the TRIGGER (the part the
+  // machine marks); with a value selected the attribute is absent on both renderers.
+  await expect(litTrigger(page, 'lit-select')).not.toHaveAttribute('data-placeholder-shown', '');
+  await expect(reactTrigger(page, 'react-select')).not.toHaveAttribute(
+    'data-placeholder-shown',
+    '',
+  );
+
+  // Selecting a different option updates the trigger text live (machine → render).
+  await litTrigger(page, 'lit-select').click();
+  await litContent(page, 'lit-select').locator('.item[data-value="apple"]').click();
+  await expect(litTrigger(page, 'lit-select').locator('.value-text')).toHaveText('Apple');
+
+  await reactTrigger(page, 'react-select').click();
+  await reactOpenContent(page).locator('.lab-select-item[data-value="apple"]').click();
+  await expect(reactTrigger(page, 'react-select').locator('.lab-select-value-text')).toHaveText(
+    'Apple',
+  );
+});
+
+/**
+ * Placeholder tint — when NOTHING is selected the trigger shows the placeholder in the
+ * tertiary label colour. The @zag-js/select machine marks the TRIGGER with
+ * `data-placeholder-shown` (not the value-text), so the tint rule descends from the
+ * trigger: `.trigger[data-placeholder-shown] .value-text { color: --lab-label-tertiary }`.
+ *
+ * This is the REGRESSION GUARD for MEDIUM-2: the old rule keyed off
+ * `.value-text[data-placeholder-shown]`, which never matches (the attribute lives on the
+ * trigger), so the value-text silently fell back to the primary label colour. The multi
+ * specimens carry no default-value, so their trigger is in the placeholder state — the
+ * one place this rule is exercised. The assertion is falsifiable two ways: (1) tertiary
+ * must differ from primary (so the rule is doing real work, not a no-op), and (2) the
+ * value-text's computed colour must equal the tertiary role — revert the selector to the
+ * broken form and the value-text resolves to primary instead → this test fails.
+ */
+test('placeholder tint: an unselected trigger paints the value-text in the tertiary role on both renderers', async ({
+  page,
+}) => {
+  // Resolve the two label roles through the SAME getComputedStyle serialization the
+  // value-text colour will use, so the comparison is value-equality, not string-format
+  // luck (a token reads `rgb(a b c / .5)` but computed `color` serializes to `rgba(...)`).
+  const roleColours = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    document.body.appendChild(probe);
+    const resolve = (role: string): string => {
+      probe.style.color = `var(${role})`;
+      return getComputedStyle(probe).color;
+    };
+    const tertiary = resolve('--lab-label-tertiary');
+    const primary = resolve('--lab-label-primary');
+    probe.remove();
+    return { tertiary, primary };
+  });
+  // Non-vacuous: the tint only proves anything if tertiary ≠ primary.
+  expect(roleColours.tertiary, 'tertiary role differs from primary').not.toBe(roleColours.primary);
+
+  // Lit: the (no-default-value) multi trigger is in the placeholder state, and its
+  // value-text resolves to the tertiary role via the trigger-descendant rule.
+  const litMultiTrigger = litTrigger(page, 'lit-select-multi');
+  await expect(litMultiTrigger).toBeVisible();
+  await expect(litMultiTrigger).toHaveAttribute('data-placeholder-shown', '');
+  const litValueColour = await litMultiTrigger
+    .locator('.value-text')
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(litValueColour, 'lit placeholder value-text → tertiary role').toBe(roleColours.tertiary);
+
+  // React parity: same placeholder state, same tertiary tint via the trigger-descendant
+  // rule on the light-DOM classes.
+  const reactMultiTrigger = reactTrigger(page, 'react-select-multi');
+  await expect(reactMultiTrigger).toBeVisible();
+  await expect(reactMultiTrigger).toHaveAttribute('data-placeholder-shown', '');
+  const reactValueColour = await reactMultiTrigger
+    .locator('.lab-select-value-text')
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(reactValueColour, 'react placeholder value-text → tertiary role').toBe(
+    roleColours.tertiary,
+  );
+});
+
+/**
+ * Type-ahead — a printable key highlights the matching option (machine's
+ * highlightMatchingItem). Open, gate on focus landing in the listbox, press "c" → the
+ * machine highlights "Cherry" and points aria-activedescendant at it. Falsifiable on both
+ * renderers: the highlighted option's value is "cherry" and its label begins with "C".
+ */
+test('type-ahead: a printable key highlights the matching option on both renderers', async ({
+  page,
+}) => {
+  await litTrigger(page, 'lit-select').click();
+  await expect(litContent(page, 'lit-select')).toBeVisible();
+  await litFocusInContent(page, 'lit-select');
+  await page.keyboard.press('c');
+  await expect
+    .poll(() =>
+      litHost(page, 'lit-select').evaluate(
+        (h) =>
+          (h as HTMLElement).shadowRoot
+            ?.querySelector('.item[data-highlighted]')
+            ?.getAttribute('data-value') ?? null,
+      ),
+    )
+    .toBe('cherry');
+
+  await reactTrigger(page, 'react-select').click();
+  await expect(reactOpenContent(page)).toBeVisible();
+  await reactFocusInContent(page);
+  await page.keyboard.press('c');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document
+            .querySelector('.lab-select-content[data-state="open"]')
+            ?.querySelector('.lab-select-item[data-highlighted]')
+            ?.getAttribute('data-value') ?? null,
+      ),
+    )
+    .toBe('cherry');
+});
+
+/**
+ * Home / End — the machine highlights the first / last option (highlightFirstItem /
+ * highlightLastItem). Open, focus in the listbox, then End → "elderberry" (last), Home →
+ * "apple" (first). Asserted by the highlighted option's value on BOTH renderers.
+ */
+test('Home/End: highlight jumps to the last then first option on both renderers', async ({
+  page,
+}) => {
+  const litHighlightedValue = () =>
+    litHost(page, 'lit-select').evaluate(
+      (h) =>
+        (h as HTMLElement).shadowRoot
+          ?.querySelector('.item[data-highlighted]')
+          ?.getAttribute('data-value') ?? null,
+    );
+  const reactHighlightedValue = () =>
+    page.evaluate(
+      () =>
+        document
+          .querySelector('.lab-select-content[data-state="open"]')
+          ?.querySelector('.lab-select-item[data-highlighted]')
+          ?.getAttribute('data-value') ?? null,
+    );
+
+  await litTrigger(page, 'lit-select').click();
+  await expect(litContent(page, 'lit-select')).toBeVisible();
+  await litFocusInContent(page, 'lit-select');
+  await page.keyboard.press('End');
+  await expect.poll(litHighlightedValue).toBe('elderberry');
+  await page.keyboard.press('Home');
+  await expect.poll(litHighlightedValue).toBe('apple');
+
+  await reactTrigger(page, 'react-select').click();
+  await expect(reactOpenContent(page)).toBeVisible();
+  await reactFocusInContent(page);
+  await page.keyboard.press('End');
+  await expect.poll(reactHighlightedValue).toBe('elderberry');
+  await page.keyboard.press('Home');
+  await expect.poll(reactHighlightedValue).toBe('apple');
+});
+
 test('selection (multiple): the machine accumulates values and stays open', async ({ page }) => {
   // The multiple specimen keeps the listbox open across picks (closeOnSelect is false
   // in multi-mode) and marks each chosen option aria-selected=true.

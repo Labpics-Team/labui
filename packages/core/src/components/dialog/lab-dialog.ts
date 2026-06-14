@@ -110,7 +110,7 @@ export const dialogFloatingStyles = css`
   .backdrop {
     position: fixed;
     inset: 0;
-    background-color: ${litVar('--lab-bg-overlay-base', 'rgb(0 0 0 / 0.45)')};
+    background-color: ${litVar('--lab-bg-overlay-base')};
     z-index: ${litVar('--lab-z-modal-underlay', '1100')};
   }
   .backdrop[hidden] {
@@ -170,7 +170,7 @@ export const dialogFloatingStyles = css`
     background-color: ${litVar('--lab-surface-raised')};
     color: ${litVar('--lab-label-primary')};
     border: 0.0625rem solid ${litVar('--lab-border-soft')};
-    box-shadow: 0 0.75rem 2.5rem ${litVar('--lab-fx-shadow-major', 'rgb(0 0 0 / 0.3)')};
+    box-shadow: 0 0.75rem 2.5rem ${litVar('--lab-fx-shadow-major')};
     font: inherit;
     font-size: ${litVar('--lab-font-size-md', '1rem')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};
