@@ -56,6 +56,32 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
     expect(scanSource('p.css', 'color: var(--lab-label-primary, black);')).toHaveLength(1);
   });
 
+  // ── Case-insensitivity: RGB(), BLACK, Black are the SAME bug as their lowercase
+  // forms and must be flagged in both authored forms (CodeRabbit false-negative gap).
+  it('DETECTS case-insensitively (RGB / BLACK / Black) in CSS and TS', () => {
+    expect(
+      scanSource('p.css', 'box-shadow: var(--lab-fx-shadow-major, RGB(0 0 0 / 0.25));'),
+    ).toHaveLength(1);
+    expect(scanSource('p.css', 'color: var(--lab-label-primary, BLACK);')).toHaveLength(1);
+    expect(scanSource('p.css', 'color: var(--lab-label-primary, Black);')).toHaveLength(1);
+    expect(
+      scanSource('p.ts', "box-shadow: ${litVar('--lab-fx-shadow-major', 'RGB(0 0 0 / 0.25)')};"),
+    ).toHaveLength(1);
+  });
+
+  // ── Arbitrary CSS named colours (navy/tomato/rebeccapurple/…) — the long tail the
+  // old 9-name whitelist missed — are flagged on a colour role in both forms.
+  it('DETECTS arbitrary CSS named colours (navy / tomato / rebeccapurple)', () => {
+    expect(scanSource('p.css', 'color: var(--lab-label-primary, navy);')).toHaveLength(1);
+    expect(scanSource('p.css', 'background: var(--lab-fill-neutral-tinted, tomato);')).toHaveLength(
+      1,
+    );
+    expect(scanSource('p.css', 'color: var(--lab-label-accent, rebeccapurple);')).toHaveLength(1);
+    expect(
+      scanSource('p.ts', "color: ${litVar('--lab-label-primary', 'rebeccapurple')};"),
+    ).toHaveLength(1);
+  });
+
   it('ALLOWS a dimension token with a literal dimension fallback', () => {
     expect(scanSource('p.css', 'padding: var(--lab-space-xs, 0.25rem);')).toEqual([]);
     expect(scanSource('p.ts', "padding: ${litVar('--lab-radius-md', '0.375rem')};")).toEqual([]);

@@ -145,6 +145,13 @@ test('selection (single): clicking an option selects it and closes on both rende
 test('value text: the trigger shows the default-value label (Banana) on both renderers', async ({
   page,
 }) => {
+  // Readiness gate (lesson 7, cold-start): wait until BOTH triggers are upgraded and
+  // painted before the first at-rest text assertion, so a cold preview server can't
+  // race the initial toHaveText (the Lit element must register + render and the React
+  // island must mount). Only then is the machine value text meaningful.
+  await expect(litTrigger(page, 'lit-select')).toBeVisible();
+  await expect(reactTrigger(page, 'react-select')).toBeVisible();
+
   // At rest, no interaction: the default-value selection is visible on the trigger.
   await expect(litTrigger(page, 'lit-select').locator('.value-text')).toHaveText('Banana');
   await expect(reactTrigger(page, 'react-select').locator('.lab-select-value-text')).toHaveText(
@@ -168,6 +175,65 @@ test('value text: the trigger shows the default-value label (Banana) on both ren
   await reactOpenContent(page).locator('.lab-select-item[data-value="apple"]').click();
   await expect(reactTrigger(page, 'react-select').locator('.lab-select-value-text')).toHaveText(
     'Apple',
+  );
+});
+
+/**
+ * Placeholder tint — when NOTHING is selected the trigger shows the placeholder in the
+ * tertiary label colour. The @zag-js/select machine marks the TRIGGER with
+ * `data-placeholder-shown` (not the value-text), so the tint rule descends from the
+ * trigger: `.trigger[data-placeholder-shown] .value-text { color: --lab-label-tertiary }`.
+ *
+ * This is the REGRESSION GUARD for MEDIUM-2: the old rule keyed off
+ * `.value-text[data-placeholder-shown]`, which never matches (the attribute lives on the
+ * trigger), so the value-text silently fell back to the primary label colour. The multi
+ * specimens carry no default-value, so their trigger is in the placeholder state — the
+ * one place this rule is exercised. The assertion is falsifiable two ways: (1) tertiary
+ * must differ from primary (so the rule is doing real work, not a no-op), and (2) the
+ * value-text's computed colour must equal the tertiary role — revert the selector to the
+ * broken form and the value-text resolves to primary instead → this test fails.
+ */
+test('placeholder tint: an unselected trigger paints the value-text in the tertiary role on both renderers', async ({
+  page,
+}) => {
+  // Resolve the two label roles through the SAME getComputedStyle serialization the
+  // value-text colour will use, so the comparison is value-equality, not string-format
+  // luck (a token reads `rgb(a b c / .5)` but computed `color` serializes to `rgba(...)`).
+  const roleColours = await page.evaluate(() => {
+    const probe = document.createElement('span');
+    document.body.appendChild(probe);
+    const resolve = (role: string): string => {
+      probe.style.color = `var(${role})`;
+      return getComputedStyle(probe).color;
+    };
+    const tertiary = resolve('--lab-label-tertiary');
+    const primary = resolve('--lab-label-primary');
+    probe.remove();
+    return { tertiary, primary };
+  });
+  // Non-vacuous: the tint only proves anything if tertiary ≠ primary.
+  expect(roleColours.tertiary, 'tertiary role differs from primary').not.toBe(roleColours.primary);
+
+  // Lit: the (no-default-value) multi trigger is in the placeholder state, and its
+  // value-text resolves to the tertiary role via the trigger-descendant rule.
+  const litMultiTrigger = litTrigger(page, 'lit-select-multi');
+  await expect(litMultiTrigger).toBeVisible();
+  await expect(litMultiTrigger).toHaveAttribute('data-placeholder-shown', '');
+  const litValueColour = await litMultiTrigger
+    .locator('.value-text')
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(litValueColour, 'lit placeholder value-text → tertiary role').toBe(roleColours.tertiary);
+
+  // React parity: same placeholder state, same tertiary tint via the trigger-descendant
+  // rule on the light-DOM classes.
+  const reactMultiTrigger = reactTrigger(page, 'react-select-multi');
+  await expect(reactMultiTrigger).toBeVisible();
+  await expect(reactMultiTrigger).toHaveAttribute('data-placeholder-shown', '');
+  const reactValueColour = await reactMultiTrigger
+    .locator('.lab-select-value-text')
+    .evaluate((el) => getComputedStyle(el).color);
+  expect(reactValueColour, 'react placeholder value-text → tertiary role').toBe(
+    roleColours.tertiary,
   );
 });
 

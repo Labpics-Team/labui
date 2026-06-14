@@ -52,17 +52,180 @@ export const COLOUR_ROLE_PREFIXES = [
 const COLOUR_TOKEN = `--lab-(?:${COLOUR_ROLE_PREFIXES.join('|')})-[a-z0-9-]+`;
 
 /**
+ * The full set of CSS named colours (CSS Color Module Level 4) plus the system
+ * keywords that resolve to a COLOUR (`currentColor`, `transparent`). This is a CLOSED,
+ * bounded set — it deliberately excludes CSS keywords that are NOT colours but can sit
+ * in a fallback of a non-colour `--lab-mat-*` token (e.g. the blend-mode `screen` /
+ * `multiply` / `overlay`, or `inherit` / `none`), so the scanner never false-positives
+ * on a legitimate blend-mode fallback. Maintaining the named-colour set is cheap and
+ * exact; matching "any bare identifier" is what mis-flagged `screen`.
+ */
+const NAMED_COLOURS = [
+  'transparent',
+  'currentcolor',
+  'aliceblue',
+  'antiquewhite',
+  'aqua',
+  'aquamarine',
+  'azure',
+  'beige',
+  'bisque',
+  'black',
+  'blanchedalmond',
+  'blue',
+  'blueviolet',
+  'brown',
+  'burlywood',
+  'cadetblue',
+  'chartreuse',
+  'chocolate',
+  'coral',
+  'cornflowerblue',
+  'cornsilk',
+  'crimson',
+  'cyan',
+  'darkblue',
+  'darkcyan',
+  'darkgoldenrod',
+  'darkgray',
+  'darkgreen',
+  'darkgrey',
+  'darkkhaki',
+  'darkmagenta',
+  'darkolivegreen',
+  'darkorange',
+  'darkorchid',
+  'darkred',
+  'darksalmon',
+  'darkseagreen',
+  'darkslateblue',
+  'darkslategray',
+  'darkslategrey',
+  'darkturquoise',
+  'darkviolet',
+  'deeppink',
+  'deepskyblue',
+  'dimgray',
+  'dimgrey',
+  'dodgerblue',
+  'firebrick',
+  'floralwhite',
+  'forestgreen',
+  'fuchsia',
+  'gainsboro',
+  'ghostwhite',
+  'gold',
+  'goldenrod',
+  'gray',
+  'green',
+  'greenyellow',
+  'grey',
+  'honeydew',
+  'hotpink',
+  'indianred',
+  'indigo',
+  'ivory',
+  'khaki',
+  'lavender',
+  'lavenderblush',
+  'lawngreen',
+  'lemonchiffon',
+  'lightblue',
+  'lightcoral',
+  'lightcyan',
+  'lightgoldenrodyellow',
+  'lightgray',
+  'lightgreen',
+  'lightgrey',
+  'lightpink',
+  'lightsalmon',
+  'lightseagreen',
+  'lightskyblue',
+  'lightslategray',
+  'lightslategrey',
+  'lightsteelblue',
+  'lightyellow',
+  'lime',
+  'limegreen',
+  'linen',
+  'magenta',
+  'maroon',
+  'mediumaquamarine',
+  'mediumblue',
+  'mediumorchid',
+  'mediumpurple',
+  'mediumseagreen',
+  'mediumslateblue',
+  'mediumspringgreen',
+  'mediumturquoise',
+  'mediumvioletred',
+  'midnightblue',
+  'mintcream',
+  'mistyrose',
+  'moccasin',
+  'navajowhite',
+  'navy',
+  'oldlace',
+  'olive',
+  'olivedrab',
+  'orange',
+  'orangered',
+  'orchid',
+  'palegoldenrod',
+  'palegreen',
+  'paleturquoise',
+  'palevioletred',
+  'papayawhip',
+  'peachpuff',
+  'peru',
+  'pink',
+  'plum',
+  'powderblue',
+  'purple',
+  'rebeccapurple',
+  'red',
+  'rosybrown',
+  'royalblue',
+  'saddlebrown',
+  'salmon',
+  'sandybrown',
+  'seagreen',
+  'seashell',
+  'sienna',
+  'silver',
+  'skyblue',
+  'slateblue',
+  'slategray',
+  'slategrey',
+  'snow',
+  'springgreen',
+  'steelblue',
+  'tan',
+  'teal',
+  'thistle',
+  'tomato',
+  'turquoise',
+  'violet',
+  'wheat',
+  'white',
+  'whitesmoke',
+  'yellow',
+  'yellowgreen',
+];
+
+/**
  * A literal COLOUR value used as a fallback. Token → token fallbacks (`var(--lab-…)`)
  * are explicitly NOT colour literals and are allowed, so they are absent here.
  *   - functional: rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/oklab()/oklch()/color()
  *   - hex: #rgb … #rrggbbaa
- *   - the handful of named colours actually reachable as a baked default
+ *   - any CSS named colour (the full Level-4 set + currentColor/transparent)
+ * Case is irrelevant (`RGB(`, `BLACK`, `Black` are the same bug), so both REs carry the
+ * `i` flag and the named-colour alternation is matched case-insensitively.
  */
-const COLOUR_LITERAL =
-  '(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color\\(|#[0-9a-fA-F]{3,8}\\b|\\b(?:black|white|transparent|currentColor|red|green|blue|gray|grey)\\b)';
+const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b)`;
 
 /** CSS form: `var(--lab-<colour-role>, <colour-literal>)`. */
-const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}`, 'g');
+const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}`, 'gi');
 
 /**
  * TS form: `litVar('--lab-<colour-role>', '<colour-literal>')` (and `cssVar(...)`). The
@@ -72,7 +235,7 @@ const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}
  */
 const TS_RE = new RegExp(
   `(?:lit|css)Var\\(\\s*['"\`](${COLOUR_TOKEN})['"\`]\\s*,\\s*['"\`]\\s*${COLOUR_LITERAL}`,
-  'g',
+  'gi',
 );
 
 export interface Violation {
