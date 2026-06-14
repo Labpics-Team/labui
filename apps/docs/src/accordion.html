@@ -45,6 +45,24 @@
             Yes — the declarative shadow DOM emits styled content before any JS upgrades it.
           </div>
         </lab-accordion>
+
+        <!-- MULTIPLE: many panels open at once; opening a 2nd keeps the 1st open.
+             Three ENABLED headers so Home/End land on real first/last triggers.
+             `.items` set in accordion-demo.tsx; panels project through per-value
+             slots. -->
+        <lab-accordion data-testid="lit-accordion-multiple" multiple default-value="one">
+          <div slot="one">First panel — opening a second leaves this one open in multi mode.</div>
+          <div slot="two">Second panel — both can be open at the same time.</div>
+          <div slot="three">Third panel — End focuses this last header.</div>
+        </lab-accordion>
+
+        <!-- COLLAPSIBLE: single mode, but the one open panel can close back to none.
+             Three ENABLED headers (no disabled item) for clean Home/End. -->
+        <lab-accordion data-testid="lit-accordion-collapsible" collapsible default-value="one">
+          <div slot="one">First panel — clicking its open header closes it to none.</div>
+          <div slot="two">Second panel.</div>
+          <div slot="three">Third panel — End focuses this last header.</div>
+        </lab-accordion>
       </section>
 
       <!-- React renderer: native, mounted from accordion-demo.tsx into this node. -->

@@ -13,8 +13,12 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *     content id, `data-state` open/closed, `disabled` on disabled items.
  *   - itemContent: `role="region"`, `aria-labelledby` → the trigger id, `hidden`
  *     when closed, `data-state`.
- *   - keyboard: ArrowDown/Up (vertical) move focus across enabled headers; the
- *     machine moves FOCUS (it does not auto-open — accordion is click/Enter to open).
+ *   - keyboard: ArrowDown/Up (vertical) move focus across enabled headers, and
+ *     Home/End jump focus to the first/last enabled header; the machine moves FOCUS
+ *     (it does not auto-open — accordion is click/Enter to open).
+ *   - disclosure axes: `multiple` (many panels open at once) and `collapsible` (a
+ *     single open panel can close back to none) are asserted on dedicated specimens,
+ *     each with three ENABLED headers so Home/End land on genuine first/last triggers.
  * Nothing the machine does not give is asserted (honesty — same discipline as Tabs).
  */
 
@@ -134,6 +138,66 @@ test('keyboard: ArrowDown moves header focus via the machine (vertical, both ren
     await triggers.nth(0).focus();
     await page.keyboard.press('ArrowDown');
     await expect(triggers.nth(1)).toBeFocused();
+  }
+});
+
+test('multiple: opening a 2nd panel keeps the 1st open (both renderers)', async ({ page }) => {
+  // The `multiple` specimen lets many panels stay open at once. The machine owns
+  // this axis — opening the second header must NOT close the first (the single-mode
+  // suite above asserts the opposite for the default specimen, so this is the real
+  // proof the axis is wired, not assumed).
+  for (const testid of ['lit-accordion-multiple', 'react-accordion-multiple']) {
+    const triggers =
+      testid === 'lit-accordion-multiple' ? litTriggers(page, testid) : reactTriggers(page, testid);
+
+    // First panel opens by default (default-value="one").
+    await expect(triggers.nth(0)).toHaveAttribute('aria-expanded', 'true');
+
+    // Open the second — in multi mode the first stays open.
+    await triggers.nth(1).click();
+    await expect(triggers.nth(1)).toHaveAttribute('aria-expanded', 'true');
+    await expect(triggers.nth(0)).toHaveAttribute('aria-expanded', 'true');
+  }
+});
+
+test('collapsible: a single open panel can close back to none (both renderers)', async ({
+  page,
+}) => {
+  // The `collapsible` specimen is single-mode but allows the one open panel to
+  // close to nothing. Clicking the already-open header must collapse it — the
+  // machine's collapsible axis. (The default single specimen is NOT collapsible:
+  // re-clicking its open header is a no-op there, so this proves the axis.)
+  for (const testid of ['lit-accordion-collapsible', 'react-accordion-collapsible']) {
+    const triggers =
+      testid === 'lit-accordion-collapsible'
+        ? litTriggers(page, testid)
+        : reactTriggers(page, testid);
+
+    // First panel opens by default; click its header to collapse to none.
+    await expect(triggers.nth(0)).toHaveAttribute('aria-expanded', 'true');
+    await triggers.nth(0).click();
+    await expect(triggers.nth(0)).toHaveAttribute('aria-expanded', 'false');
+  }
+});
+
+test('keyboard: Home/End focus the first/last header via the machine (both renderers)', async ({
+  page,
+}) => {
+  // Zag accordion keyMap: Home → GOTO.FIRST, End → GOTO.LAST. The machine moves
+  // FOCUS across the enabled headers (it does not auto-open). The multiple specimen
+  // has three ENABLED headers, so End lands on the genuine last trigger and Home on
+  // the first — no disabled item skews the endpoints.
+  for (const testid of ['lit-accordion-multiple', 'react-accordion-multiple']) {
+    const triggers =
+      testid === 'lit-accordion-multiple' ? litTriggers(page, testid) : reactTriggers(page, testid);
+
+    // From the middle header, End focuses the last; Home focuses the first.
+    await triggers.nth(1).focus();
+    await page.keyboard.press('End');
+    await expect(triggers.nth(2)).toBeFocused();
+
+    await page.keyboard.press('Home');
+    await expect(triggers.nth(0)).toBeFocused();
   }
 });
 

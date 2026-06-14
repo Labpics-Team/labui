@@ -45,6 +45,19 @@
             <div>A tinted surface that recedes; hoverable as a whole-card target.</div>
             <div slot="footer">Footer</div>
           </lab-card>
+          <!-- INTERACTIVE with a real focusable control. The component flags
+               interactive-without-keyboard as a P5 a11y trap; the actionable
+               semantics live on a real <button> the consumer slots in (the element
+               never fabricates a role). The host delegates focus, so focusing the
+               inner control lights the :focus-within ring (--lab-border-focus). -->
+          <lab-card data-testid="lit-interactive" variant="elevated" interactive>
+            <div slot="header">Interactive</div>
+            <div>
+              A whole-card target whose action is a real control.
+              <button type="button" data-testid="lit-interactive-control">Open</button>
+            </div>
+            <div slot="footer">Footer</div>
+          </lab-card>
         </div>
       </section>
 
