@@ -88,6 +88,12 @@ export default defineConfig({
         // scope) + native-React `<RadioGroup>`/`<Radio>` side by side, running the
         // SAME Zag group machine, for the parity + behaviour suite.
         'radio-group': resolve(__dirname, 'src/radio-group.html'),
+        // Disclosure batch: Accordion (compound, @zag-js/accordion), Card
+        // (presentational opt-out), Progress (@zag-js/progress) — each mounts the
+        // Lit element and its native-React twin side by side for the parity suite.
+        accordion: resolve(__dirname, 'src/accordion.html'),
+        card: resolve(__dirname, 'src/card.html'),
+        progress: resolve(__dirname, 'src/progress.html'),
       },
     },
   },

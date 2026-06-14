@@ -93,18 +93,25 @@ test('a11y: loading sets aria-busy and disables; both renderers agree', async ({
 
 test('a11y: keyboard activates the button (Enter) on the React renderer', async ({ page }) => {
   const react = reactButton(page, 'react-accent-fill');
+  // Wait for the React island to mount before any raw `querySelector` touches it —
+  // a bare `page.evaluate` does not auto-wait the way a locator action does, so
+  // attaching the listener too early raced against React's client mount (null
+  // button). Resolving the locator first guarantees the node exists.
+  await react.waitFor();
   // Record clicks on a window flag so the count survives across evaluate calls.
-  await page.evaluate(() => {
-    const btn = document.querySelector('[data-testid="react-accent-fill"]') as HTMLButtonElement;
+  await react.evaluate((btn: HTMLButtonElement) => {
     (window as unknown as { __clicks: number }).__clicks = 0;
     btn.addEventListener('click', () => {
       (window as unknown as { __clicks: number }).__clicks += 1;
     });
-    btn.focus();
   });
-  expect(await page.evaluate(() => document.activeElement?.getAttribute('data-testid'))).toBe(
-    'react-accent-fill',
-  );
+  // Focus via the locator action and assert with the auto-retrying matcher so the
+  // focus-and-check is atomic. Focusing in one `page.evaluate` and reading
+  // `document.activeElement` in a SEPARATE round-trip raced on WebKit, which can
+  // drop button focus between protocol calls (the same engine quirk the accordion
+  // fix addresses). `toBeFocused()` proves the same thing without the race.
+  await react.focus();
+  await expect(react).toBeFocused();
   // Enter on a focused native button activates it — the platform default, not a
   // re-implemented key handler.
   await react.press('Enter');

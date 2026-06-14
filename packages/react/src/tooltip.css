@@ -6,10 +6,12 @@
  * against `.lab-tooltip-*` classes in the light DOM. Same roles, same structure,
  * same states ⇒ same paint.
  *
- * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
- * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
- * hex, ZERO primitive. The surface is the inverted role — the conventional
- * high-contrast tooltip — layered with --lab-z-tooltip.
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role with
+ * NO literal fallback (a missing colour role is a contract bug, not something to
+ * paper over with a baked-in colour); every dimension a --lab-* token, where a
+ * literal dimension fallback is allowed. ZERO hex, ZERO primitive. The surface is
+ * the inverted role — the conventional high-contrast tooltip — layered with
+ * --lab-z-tooltip.
  */
 
 .lab-tooltip-trigger {
@@ -54,7 +56,7 @@
   font: inherit;
   font-size: var(--_lab-tt-font);
   line-height: var(--lab-line-height-xs, 1.4);
-  box-shadow: 0 0.25rem 0.75rem var(--lab-fx-shadow-minor, rgb(0 0 0 / 0.18));
+  box-shadow: 0 0.25rem 0.75rem var(--lab-fx-shadow-minor);
   z-index: var(--lab-z-tooltip, 1400);
 }
 .lab-tooltip-content[hidden] {
