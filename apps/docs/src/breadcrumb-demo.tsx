@@ -37,7 +37,13 @@ if (select) {
 const DEMO_CRUMBS: ReadonlyArray<LabBreadcrumbItem> = [
   { label: 'Home', href: '#home' },
   { label: 'Library', href: '#library' },
-  { label: 'Components', href: '#components' },
+  // Hrefless NON-current crumb (Figma "disabled crumb"): a non-navigable
+  // grouping waypoint. It must render as a bare <span part="link"> (Lit) /
+  // <span class="lab-breadcrumb-link"> (React) — no href, no role, no
+  // aria-current — so the Playwright suite can assert that branch on both
+  // renderers.
+  { label: 'Components' },
+  { label: 'Disclosure', href: '#disclosure' },
   { label: 'Breadcrumb' },
 ];
 
