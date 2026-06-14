@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Progress parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="progress-title">
+        Progress parity — <code>&lt;lab-progress&gt;</code> (Lit) ↔
+        <code>&lt;Progress&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/progress</code> machine through the same seam.
+        The machine owns the value→percent maths, <code>role="progressbar"</code> with
+        <code>aria-valuemin</code> / <code>aria-valuemax</code> / <code>aria-valuenow</code>,
+        and the determinate-vs-indeterminate state. Both modes are real: an
+        indeterminate bar honestly drops <code>aria-valuenow</code> rather than faking a
+        percent. This page mounts both so the Playwright suite can assert machine
+        output and visual parity on each.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-progress
+            data-testid="lit-determinate"
+            value="60"
+            label="Uploading"
+            show-value-text
+          ></lab-progress>
+          <lab-progress data-testid="lit-complete" value="100" label="Done"></lab-progress>
+          <lab-progress data-testid="lit-indeterminate" label="Working"></lab-progress>
+        </div>
+      </section>
+
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./progress-demo.tsx"></script>
+  </body>
+</html>

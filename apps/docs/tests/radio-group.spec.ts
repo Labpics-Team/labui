@@ -276,11 +276,26 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
 
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
 
-  await expect.poll(() => litRing.evaluate(borderColor)).not.toBe(litDark);
-  await expect.poll(() => reactRing.evaluate(borderColor)).not.toBe(reactDark);
-
-  // …and parity holds in light too: the flip re-skins BOTH to the same new colour.
-  const litLight = await litRing.evaluate(borderColor);
-  const reactLight = await reactRing.evaluate(borderColor);
-  expect(reactLight, 'neutral ring parity in light theme').toBe(litLight);
+  // Wait for the flip to SETTLE on BOTH renderers before comparing, then assert
+  // parity — in one poll, so the comparison can never read a half-settled frame.
+  // The light colour resolves through the same chain on each engine but not always
+  // in the same tick after the attribute flip; a direct snapshot once raced and
+  // caught lit=…0.173 vs react=…0.165 (same role, mid-transition alpha). Polling a
+  // single object keeps every guarantee the two snapshots had — BOTH changed from
+  // dark AND both converged to the SAME light colour — without weakening any of
+  // them, and without a fixed sleep.
+  await expect
+    .poll(
+      async () => {
+        const litLight = await litRing.evaluate(borderColor);
+        const reactLight = await reactRing.evaluate(borderColor);
+        return {
+          litChanged: litLight !== litDark,
+          reactChanged: reactLight !== reactDark,
+          parity: reactLight === litLight,
+        };
+      },
+      { message: 'neutral ring re-skins BOTH renderers to the same light colour' },
+    )
+    .toEqual({ litChanged: true, reactChanged: true, parity: true });
 });
