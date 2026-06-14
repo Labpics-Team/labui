@@ -95,6 +95,12 @@ export const breadcrumbDoc: ComponentDoc = {
     },
     {
       index: 5,
+      name: 'Disabled crumb (hrefless)',
+      description:
+        'An intermediate crumb with no href — the Figma "disabled crumb". Inert text (a bare <span part="link">, no role, no aria-current) for a non-navigable grouping waypoint, reading --lab-label-secondary like a link but never an <a>.',
+    },
+    {
+      index: 6,
       name: 'Separator',
       description:
         'The aria-hidden glyph between crumbs (default "/"), reading --lab-label-tertiary so screen readers announce the trail, not the punctuation.',
@@ -151,7 +157,7 @@ export const breadcrumbDoc: ComponentDoc = {
         type: 'LabBreadcrumbItem[]',
         default: '[]',
         description:
-          'The crumbs, root → current: { label, href? }. A JS property (not an attribute). Omit href on the final crumb — it is the current page, not a link.',
+          'The crumbs, root → current: { label, href? }. A JS property (not an attribute). Omit href on the final crumb — it is the current page, not a link. Omitting href on an INTERMEDIATE crumb renders the Figma "disabled crumb": inert text (a bare <span part="link">, no role, no aria-current) for a non-navigable grouping waypoint — never a destination-less link.',
       },
       {
         name: 'size',
@@ -164,7 +170,7 @@ export const breadcrumbDoc: ComponentDoc = {
         type: 'string',
         default: "'/'",
         description:
-          'The glyph drawn between crumbs (aria-hidden). The React twin also accepts a ReactNode for an icon separator.',
+          'The glyph drawn between crumbs (aria-hidden), as a STRING — a reflected HTML attribute can only carry text. DELIBERATE asymmetry (ADR-0001): the React <Breadcrumb> separator additionally accepts a ReactNode, so React callers may pass an icon element; the Lit element does not (an icon separator would need a per-gap <slot> — a larger feature, out of scope). Lit callers pass an icon as its character/codepoint.',
       },
     ],
     events: [],
