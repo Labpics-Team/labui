@@ -95,6 +95,16 @@ export type {
 // renderers as the single source of truth for the ARIA contract.
 export type { LabInputSize, LabInputType } from './components/input/lab-input.js';
 export type { LabTextareaSize, LabTextareaType } from './components/textarea/lab-textarea.js';
+
+// Numeric form controls — machine-driven (they own a parsed numeric value with
+// min/max/step, so they MUST run a Zag machine, unlike the plain text fields). They
+// REUSE the SAME shared `field-a11y` helper for the label / helper / error
+// association (not a second implementation). Type-only here: no Lit runtime pulled in.
+export type {
+  LabNumberInputSize,
+  LabNumberInputType,
+} from './components/number-input/lab-number-input.js';
+export type { LabSliderOrientation, LabSliderSize } from './components/slider/lab-slider.js';
 export {
   type FieldA11yInput,
   type FieldControlAria,
