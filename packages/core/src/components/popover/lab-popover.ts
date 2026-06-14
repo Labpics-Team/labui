@@ -52,7 +52,8 @@
  * border-soft` hairline, `--lab-fx-shadow-major` lift, and layering by
  * `--lab-z-dropdown` (non-modal) / `--lab-z-modal` (modal). The scrim is
  * `--lab-bg-overlay-base` at `--lab-z-modal-underlay`. No hex, no primitive, no
- * invented role.
+ * invented role, and no literal fallback on a colour role (css.ts: a missing
+ * role is a contract bug, not something to paper over with a baked-in colour).
  *
  * SSR (core-CONTRACT §7): a popover is client-only. The server emits the trigger and
  * a `hidden` panel; the machine upgrades it on the client. No flash, no pre-work.
@@ -182,7 +183,7 @@ export class LabPopover extends LabElement {
     .backdrop {
       position: fixed;
       inset: 0;
-      background-color: ${litVar('--lab-bg-overlay-base', 'rgb(0 0 0 / 0.45)')};
+      background-color: ${litVar('--lab-bg-overlay-base')};
       z-index: ${litVar('--lab-z-modal-underlay', '1100')};
     }
     .backdrop[hidden] {
@@ -210,7 +211,7 @@ export class LabPopover extends LabElement {
       background-color: ${litVar('--lab-surface-raised')};
       color: ${litVar('--lab-label-primary')};
       border: 0.0625rem solid ${litVar('--lab-border-soft')};
-      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major', 'rgb(0 0 0 / 0.25)')};
+      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
