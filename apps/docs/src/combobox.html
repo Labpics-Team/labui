@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Combobox parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 4rem;
+        padding-block: 3rem;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="combobox-title">
+        Combobox parity — <code>&lt;lab-combobox&gt;</code> (Lit) ↔
+        <code>&lt;Combobox&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/combobox</code> machine through the same seam.
+        The machine owns open-on-focus/type, the filterable listbox, single/multiple
+        selection, Arrow/Home/End navigation, Escape / outside-click dismiss, focus
+        restoration, <code>role="combobox"/listbox/option</code> +
+        <code>aria-expanded/controls/activedescendant/autocomplete</code>, and dynamic
+        positioning. The typed query NARROWS the options (the consumer's shared filter).
+        The label / helper / error association comes from the shared
+        <code>field-a11y</code> helper, identical on both renderers. The Lit element keeps
+        the listbox inside its shadow root (<code>strategy:'fixed'</code>,
+        <code>portalled:false</code>); the React twin portals it to
+        <code>&lt;body&gt;</code>. Both paint with the same <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: custom element, registered + styled in its shadow root. The
+           items ride the JSON attribute; the machine builds the collection from them. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-combobox
+            data-testid="lit-combobox"
+            label="Fruit"
+            placeholder="Search a fruit…"
+            helper="Type to filter the list."
+            items='[{"value":"apple","label":"Apple"},{"value":"apricot","label":"Apricot"},{"value":"banana","label":"Banana"},{"value":"cherry","label":"Cherry"},{"value":"durian","label":"Durian","disabled":true},{"value":"elderberry","label":"Elderberry"}]'
+          ></lab-combobox>
+          <lab-combobox
+            data-testid="lit-combobox-multi"
+            label="Fruits"
+            placeholder="Search fruits…"
+            multiple
+            items='[{"value":"apple","label":"Apple"},{"value":"apricot","label":"Apricot"},{"value":"banana","label":"Banana"},{"value":"cherry","label":"Cherry"}]'
+          ></lab-combobox>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from combobox-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./combobox-demo.tsx"></script>
+  </body>
+</html>

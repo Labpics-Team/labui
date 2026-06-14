@@ -106,4 +106,12 @@ export { Pagination, type PaginationProps } from './pagination.js';
 export { Select, type SelectProps } from './select.js';
 export { Menu, type MenuProps } from './menu.js';
 
+// COMPOUND + POSITIONED + FILTERED — the native-React twin of the Lit `<lab-combobox>`,
+// running the SAME `@zag-js/combobox` machine via `useZag`. It FUSES the Select listbox
+// (body-portalled, machine-positioned) with the form-field a11y seam: it REUSES the SAME
+// shared `field-a11y` helper for the label / helper / error association AND the SAME
+// shared `filterComboboxItems` default filter as the Lit element, so both the ARIA
+// contract and the narrowing rule are one source of truth across both renderers.
+export { Combobox, type ComboboxProps } from './combobox.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';
