@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Menu parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 4rem;
+        padding-block: 3rem;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="menu-title">
+        Menu parity — <code>&lt;lab-menu&gt;</code> (Lit) ↔ <code>&lt;Menu&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/menu</code> machine through the same seam.
+        The machine owns open-on-click, Arrow/Home/End navigation + typeahead, Escape /
+        outside-click dismiss, focus restoration, <code>role="menu"/menuitem</code> +
+        aria, and dynamic positioning. The Lit element keeps the menu inside its shadow
+        root (<code>strategy:'fixed'</code>, <code>portalled:false</code>); the React
+        twin portals it to <code>&lt;body&gt;</code>. Both paint with the same
+        <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: custom element, registered + styled in its shadow root. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-menu
+            data-testid="lit-menu"
+            label="Actions"
+            items='[{"value":"edit","label":"Edit"},{"value":"duplicate","label":"Duplicate"},{"value":"archive","label":"Archive","disabled":true},{"value":"sep-1","label":"","separator":true},{"value":"delete","label":"Delete","danger":true}]'
+          ></lab-menu>
+          <!-- Disabled trigger: the menu must NOT open on click (parity with React). -->
+          <lab-menu
+            data-testid="lit-menu-disabled"
+            label="Actions"
+            disabled
+            items='[{"value":"edit","label":"Edit"},{"value":"duplicate","label":"Duplicate"}]'
+          ></lab-menu>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from menu-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./menu-demo.tsx"></script>
+  </body>
+</html>

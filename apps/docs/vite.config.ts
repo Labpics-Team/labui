@@ -94,6 +94,13 @@ export default defineConfig({
         accordion: resolve(__dirname, 'src/accordion.html'),
         card: resolve(__dirname, 'src/card.html'),
         progress: resolve(__dirname, 'src/progress.html'),
+        // Compound + positioned controls: Lit `<lab-select>` / `<lab-menu>` (all
+        // parts in one shadow scope, listbox/menu positioned with strategy:fixed) +
+        // native-React `<Select>` / `<Menu>` (body portal) side by side, running the
+        // SAME Zag machine, for the open/navigate/select/dismiss/position + parity
+        // suite. The canon fusing the keyed-compound group machine with the overlay.
+        select: resolve(__dirname, 'src/select.html'),
+        menu: resolve(__dirname, 'src/menu.html'),
       },
     },
   },
