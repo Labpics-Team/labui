@@ -1,0 +1,264 @@
+/*
+ * <Combobox> (React) styles — the visual PARITY twin of the Lit `<lab-combobox>`.
+ *
+ * The Lit element scopes CSS in a shadow root: it reuses the shared `field-styles`
+ * surface for the input (border / focus ring / sentiment) and a Select-like listbox.
+ * React is native (ADR-0001) and the listbox is PORTALLED to <body>, so this sheet
+ * mirrors those exact rules against `[data-lab-combobox]` + `data-*` and the
+ * `.lab-combobox-*` parts. Same roles, same structure, same machine-driven states
+ * (data-state / data-highlighted) ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role, every
+ * dimension a --lab-* token (with a literal dimension fallback only). ZERO hex, ZERO
+ * primitive, ZERO colour-role fallback. The field surface tracks --lab-bg-primary /
+ * --lab-border-base / the sentiment borders / --lab-border-focus; the listbox is the
+ * raised surface; the highlight is the neutral tint.
+ */
+
+[data-lab-combobox] {
+  --_lab-field-pad-x: var(--lab-space-md, 0.75rem);
+  --_lab-field-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-field-radius: var(--lab-radius-md, 0.5rem);
+  --_lab-field-gap: var(--lab-space-xs, 0.375rem);
+  --_lab-field-font: var(--lab-font-size-md, 1rem);
+  --_lab-field-label-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-field-help-font: var(--lab-font-size-xxs, 0.7222rem);
+  --_lab-field-line: var(--lab-line-height-md, 1.5);
+
+  display: block;
+}
+
+[data-lab-combobox][data-size="s"] {
+  --_lab-field-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-field-pad-y: var(--lab-space-xs, 0.375rem);
+  --_lab-field-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-combobox][data-size="l"] {
+  --_lab-field-pad-x: var(--lab-space-lg, 1rem);
+  --_lab-field-pad-y: var(--lab-space-md, 0.75rem);
+  --_lab-field-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+[data-lab-combobox].lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--_lab-field-gap);
+  font: inherit;
+}
+
+[data-lab-combobox] .lab-combobox-label {
+  font-size: var(--_lab-field-label-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-secondary);
+}
+[data-lab-combobox][data-required] .lab-combobox-required-mark {
+  color: var(--lab-label-danger);
+}
+[data-lab-combobox][data-label-hidden] .lab-combobox-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* The input control wrapper — frames the input + the trigger button in a row. */
+[data-lab-combobox] .lab-combobox-control {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+/* The Zag input — a real <input role="combobox">. It reuses the shared field surface
+   so it paints exactly like <Input>; the trigger button overlaps its right padding. */
+[data-lab-combobox] .lab-combobox-input {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  width: 100%;
+  margin: 0;
+  padding: var(--_lab-field-pad-y) 2.25rem var(--_lab-field-pad-y) var(--_lab-field-pad-x);
+  font: inherit;
+  font-size: var(--_lab-field-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-primary);
+  background-color: var(--lab-bg-primary);
+  border: 0.0625rem solid var(--lab-border-base);
+  border-radius: var(--_lab-field-radius);
+  outline: none;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  appearance: none;
+}
+
+[data-lab-combobox] .lab-combobox-input::placeholder {
+  color: var(--lab-label-tertiary);
+  opacity: 1;
+}
+
+[data-lab-combobox] .lab-combobox-input:hover:not(:disabled):not([readonly]) {
+  border-color: var(--lab-border-strong);
+}
+
+[data-lab-combobox] .lab-combobox-input:focus-visible {
+  border-color: var(--lab-border-focus);
+  box-shadow: 0 0 0 0.125rem var(--lab-border-focus);
+}
+
+[data-lab-combobox][data-type="danger"] .lab-combobox-input {
+  border-color: var(--lab-border-danger);
+}
+[data-lab-combobox][data-type="danger"] .lab-combobox-input:focus-visible {
+  box-shadow: 0 0 0 0.125rem var(--lab-border-danger);
+}
+[data-lab-combobox][data-type="warning"] .lab-combobox-input {
+  border-color: var(--lab-border-warning-strong);
+}
+[data-lab-combobox][data-type="warning"] .lab-combobox-input:focus-visible {
+  box-shadow: 0 0 0 0.125rem var(--lab-border-warning-strong);
+}
+[data-lab-combobox][data-type="success"] .lab-combobox-input {
+  border-color: var(--lab-border-success-strong);
+}
+[data-lab-combobox][data-type="success"] .lab-combobox-input:focus-visible {
+  box-shadow: 0 0 0 0.125rem var(--lab-border-success-strong);
+}
+
+[data-lab-combobox] .lab-combobox-input:read-only {
+  background-color: var(--lab-fill-neutral-tinted);
+  border-color: var(--lab-border-soft);
+}
+
+[data-lab-combobox] .lab-combobox-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* The disclosure trigger — a real <button> the machine wires to toggle the listbox.
+   Sits inside the input's right padding; decorative chrome over the field surface. */
+[data-lab-combobox] .lab-combobox-trigger {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--lab-label-secondary);
+  cursor: pointer;
+  transition: transform 120ms ease;
+}
+[data-lab-combobox] .lab-combobox-trigger[data-state="open"] {
+  transform: rotate(180deg);
+}
+[data-lab-combobox] .lab-combobox-trigger[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+[data-lab-combobox] .lab-combobox-trigger:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: -0.125rem;
+  border-radius: var(--lab-radius-sm, 0.25rem);
+}
+
+[data-lab-combobox] .lab-combobox-helper {
+  font-size: var(--_lab-field-help-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-tertiary);
+}
+
+[data-lab-combobox] .lab-combobox-error {
+  font-size: var(--_lab-field-help-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-danger);
+}
+
+/* Portalled to <body>: positioner + listbox carry their own font band via data-size. */
+.lab-combobox-positioner {
+  /* positioning frame only — getPositionerProps writes inline position */
+}
+
+.lab-combobox-content {
+  box-sizing: border-box;
+  min-width: var(--reference-width, 12rem);
+  max-height: 16rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--lab-space-xs, 0.25rem);
+  list-style: none;
+  border-radius: var(--lab-radius-md, 0.375rem);
+  background-color: var(--lab-surface-raised);
+  color: var(--lab-label-primary);
+  border: 0.0625rem solid var(--lab-border-soft);
+  box-shadow: 0 0.5rem 1.5rem var(--lab-fx-shadow-major);
+  font: inherit;
+  font-size: var(--lab-font-size-md, 1rem);
+  line-height: var(--lab-line-height-md, 1.5);
+  z-index: var(--lab-z-dropdown, 900);
+}
+.lab-combobox-content[data-size="s"] {
+  font-size: var(--lab-font-size-xs, 0.8333rem);
+}
+.lab-combobox-content[data-size="l"] {
+  font-size: var(--lab-font-size-lg, 1.2rem);
+}
+.lab-combobox-content[hidden] {
+  display: none;
+}
+.lab-combobox-content:focus-visible {
+  outline: none;
+}
+
+.lab-combobox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lab-space-sm, 0.5rem);
+  padding: var(--lab-space-xs, 0.25rem) var(--lab-space-sm, 0.5rem);
+  border-radius: var(--lab-radius-sm, 0.25rem);
+  cursor: pointer;
+  user-select: none;
+}
+.lab-combobox-item[data-highlighted] {
+  background-color: var(--lab-fill-neutral-tinted);
+}
+.lab-combobox-item[data-state="checked"] .lab-combobox-item-text {
+  color: var(--lab-label-accent);
+  font-weight: 600;
+}
+.lab-combobox-item[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.lab-combobox-item-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.lab-combobox-item-indicator {
+  flex: 0 0 auto;
+  display: inline-flex;
+  color: var(--lab-label-accent);
+}
+
+.lab-combobox-empty {
+  padding: var(--lab-space-xs, 0.25rem) var(--lab-space-sm, 0.5rem);
+  color: var(--lab-label-tertiary);
+  font-size: var(--lab-font-size-md, 1rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-combobox] .lab-combobox-trigger {
+    transition: none;
+  }
+}
