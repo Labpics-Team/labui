@@ -136,9 +136,13 @@ test('field-a11y: the error is announced + referenced only when invalid (both re
  * `getValueTextProps()` carries only id + data-attrs — the renderer must WRITE the text.
  * React joins the thumb values with ' – '; the Lit twin must render the SAME content so
  * the visible readout is not an empty box. Falsifiable: the trimmed text must equal the
- * joined value — `40` single, `20 – 80` range — on BOTH renderers.
+ * joined value — `40` single, `20 – 80` range — on BOTH renderers, AND it must stay in
+ * sync with the machine when the value changes (the Lit twin's valueText() is reactive,
+ * not a one-shot first-paint write).
  */
-test('value-text: the live value renders under show-value (both renderers)', async ({ page }) => {
+test('value-text: the live value renders + tracks changes under show-value (both renderers)', async ({
+  page,
+}) => {
   const litValueText = (testid: string) => litHost(page, testid).locator('.value-text');
   const reactValueText = (testid: string) =>
     reactField(page, testid).locator('.lab-slider-value-text');
@@ -148,6 +152,18 @@ test('value-text: the live value renders under show-value (both renderers)', asy
 
   await expect(litValueText('lit-range')).toHaveText('20 – 80');
   await expect(reactValueText('react-range')).toHaveText('20 – 80');
+
+  // Reactive: the readout follows the machine value, not just the first paint. Step the
+  // thumb and the displayed text must move with it on BOTH renderers.
+  const litT = litThumb(page, 'lit-single');
+  await litT.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(litValueText('lit-single')).toHaveText('41');
+
+  const reactT = reactThumb(page, 'react-single');
+  await reactT.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(reactValueText('react-single')).toHaveText('41');
 });
 
 test('keyboard: ArrowRight / ArrowLeft step the value (the machine owns the keymap)', async ({
