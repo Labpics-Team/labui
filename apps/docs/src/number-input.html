@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Number Input parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="number-input-title">
+        Number Input parity — <code>&lt;lab-number-input&gt;</code> (Lit) ↔
+        <code>&lt;NumberInput&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/number-input</code> machine through the same seam.
+        The machine owns the parsed value, min/max/step clamping, the
+        <code>role="spinbutton"</code> + <code>aria-valuenow/valuemin/valuemax/valuetext</code>,
+        Arrow/PageUp-Down keyboard stepping, and the +/- triggers that disable at the
+        bounds. The label/helper/error wiring is computed by the SAME shared
+        <code>field-a11y</code> helper on both renderers, and both paint the same
+        <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-number-input
+            data-testid="lit-neutral"
+            label="Quantity"
+            default-value="3"
+            min="0"
+            max="10"
+            helper="Between 0 and 10."
+          ></lab-number-input>
+          <lab-number-input
+            data-testid="lit-invalid"
+            type="danger"
+            invalid
+            label="Quantity"
+            default-value="12"
+            min="0"
+            max="10"
+            error="Must be 10 or fewer."
+          ></lab-number-input>
+          <lab-number-input
+            data-testid="lit-at-min"
+            label="At minimum"
+            default-value="0"
+            min="0"
+            max="10"
+          ></lab-number-input>
+          <lab-number-input data-testid="lit-required" label="Count" required></lab-number-input>
+          <lab-number-input
+            data-testid="lit-disabled"
+            label="Locked"
+            default-value="5"
+            disabled
+          ></lab-number-input>
+          <lab-number-input data-testid="lit-size-s" size="s" label="Small"></lab-number-input>
+          <lab-number-input data-testid="lit-size-l" size="l" label="Large"></lab-number-input>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from number-input-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./number-input-demo.tsx"></script>
+  </body>
+</html>

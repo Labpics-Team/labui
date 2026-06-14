@@ -80,12 +80,16 @@ test('theme switch re-skins the documented element with zero element edits', asy
 test('navigation is honest: the planned component is not a clickable link', async ({ page }) => {
   await page.goto('/components.html?component=proof');
 
-  // Real components are links; the planned (Slider) one is a disabled marker.
+  // Real components are links; the planned (Combobox) one is a disabled marker.
   await expect(page.getByRole('link', { name: 'Proof' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Button' })).toBeVisible();
   // Input is now a real, documented component — it must be a clickable link, not a
   // planned marker (its doc shipped in the forms batch).
   await expect(page.getByRole('link', { name: 'Input', exact: true })).toBeVisible();
+  // Slider and NumberInput shipped in the numeric batch — both must be clickable links
+  // now (Slider replaced the old planned marker), not planned markers.
+  await expect(page.getByRole('link', { name: 'Slider', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Number Input', exact: true })).toBeVisible();
   await expect(page.locator('.nav-planned')).toHaveAttribute('aria-disabled', 'true');
   await expect(page.getByRole('link', { name: /planned/i })).toHaveCount(0);
 });

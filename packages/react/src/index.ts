@@ -43,6 +43,24 @@ export {
   type LabTextareaType,
 } from './textarea.js';
 
+// PRODUCTION numeric form controls — native-React twins of the Lit
+// `<lab-number-input>` / `<lab-slider>`, running the SAME `@zag-js/{number-input,
+// slider}` machines via `useZag`. They REUSE the SAME shared `field-a11y` helper for
+// the label / helper / error association as Input / Textarea, so the ARIA contract is
+// one source of truth across both renderers and both controls.
+export {
+  NumberInput,
+  type NumberInputProps,
+  type LabNumberInputSize,
+  type LabNumberInputType,
+} from './number-input.js';
+export {
+  Slider,
+  type SliderProps,
+  type LabSliderOrientation,
+  type LabSliderSize,
+} from './slider.js';
+
 // PRODUCTION compound form control — `<RadioGroup>` + `<Radio>` over the SAME
 // `@zag-js/radio-group` machine as the Lit `<lab-radio-group>`.
 export { RadioGroup, type RadioGroupProps, Radio, type RadioProps } from './radio-group.js';

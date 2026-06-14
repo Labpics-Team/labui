@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Slider parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 3rem;
+        align-items: flex-start;
+      }
+      .specimens > * {
+        min-width: 14rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="slider-title">
+        Slider parity — <code>&lt;lab-slider&gt;</code> (Lit) ↔ <code>&lt;Slider&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/slider</code> machine through the same seam.
+        The machine owns the value, min/max/step, each thumb's <code>role="slider"</code> +
+        <code>aria-valuenow/valuemin/valuemax/valuetext</code>, Arrow/Home/End/PageUp-Down
+        keyboard stepping, pointer drag + track-click, multi-thumb collision, and a hidden
+        input per thumb. The group label/helper/error wiring is computed by the SAME shared
+        <code>field-a11y</code> helper on both renderers, and both paint the same
+        <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-slider
+            data-testid="lit-single"
+            label="Volume"
+            default-value="40"
+            show-value
+            helper="Drag or use the arrow keys."
+          ></lab-slider>
+          <lab-slider
+            data-testid="lit-range"
+            label="Price range"
+            default-value="20,80"
+            show-value
+          ></lab-slider>
+          <lab-slider data-testid="lit-step" label="Step 10" default-value="50" step="10"></lab-slider>
+          <lab-slider
+            data-testid="lit-invalid"
+            label="Volume"
+            default-value="40"
+            invalid
+            error="Out of allowed range."
+          ></lab-slider>
+          <lab-slider data-testid="lit-disabled" label="Locked" default-value="30" disabled></lab-slider>
+          <lab-slider data-testid="lit-size-s" size="s" label="Small" default-value="40"></lab-slider>
+          <lab-slider data-testid="lit-size-l" size="l" label="Large" default-value="40"></lab-slider>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from slider-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./slider-demo.tsx"></script>
+  </body>
+</html>
