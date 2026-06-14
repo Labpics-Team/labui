@@ -65,5 +65,8 @@ createRoot(mount).render(
         Off
       </Checkbox>
     </span>
+    <span data-testid="react-aria-label">
+      <Checkbox type="accent" aria-label="Select all" />
+    </span>
   </StrictMode>,
 );

@@ -67,6 +67,14 @@ export class LabCheckbox extends LabElement {
       reflect: true,
     },
     disabled: { type: Boolean, reflect: true },
+    /**
+     * Accessible name for the no-visible-label case. When set, it names the
+     * hidden input directly; a visible slotted label is preferred over it via the
+     * machine's `aria-labelledby` when present.
+     */
+    ariaLabel: { attribute: 'aria-label', reflect: true },
+    /** Native form field name for the hidden input (form participation). */
+    name: { reflect: true },
   };
 
   declare type: LabCheckboxType;
@@ -76,6 +84,8 @@ export class LabCheckbox extends LabElement {
   declare defaultChecked: boolean;
   declare defaultIndeterminate: boolean;
   declare disabled: boolean;
+  declare ariaLabel: string | null;
+  declare name: string | null;
 
   private readonly checkbox: ZagController<CheckboxSchema, CheckboxApi>;
 
@@ -88,11 +98,18 @@ export class LabCheckbox extends LabElement {
     this.defaultChecked = false;
     this.defaultIndeterminate = false;
     this.disabled = false;
+    this.ariaLabel = null;
+    this.name = null;
     // Wire the Zag checkbox behavior. The tri-state value is folded into one
     // `CheckedState`: indeterminate wins, else the boolean. Controlled only when
     // a `checked`/`indeterminate` attribute is present; otherwise the machine
     // owns it from the defaults (uncontrolled). Honest two-mode contract.
+    // `id` is a stable per-instance value (mirrors React's `useId`) so the
+    // machine's scoped ids — including the label id the input references — are
+    // unique and real, never the colliding `checkbox:undefined:*`.
     this.checkbox = this.runMachine(checkboxModule, () => ({
+      id: this.uid,
+      name: this.name ?? undefined,
       defaultChecked: this.resolveDefault(),
       checked: this.resolveControlled(),
       disabled: this.disabled,
@@ -219,7 +236,9 @@ export class LabCheckbox extends LabElement {
       display: none;
     }
 
-    .control:has(input:focus-visible) {
+    /* The input is now a SIBLING of the (aria-hidden) control so it stays in the
+       a11y tree; match focus-visible from the shared root, not as a descendant. */
+    .root:has(input:focus-visible) .control {
       outline: 0.125rem solid ${litVar('--lab-border-focus')};
       outline-offset: 0.125rem;
     }
@@ -257,15 +276,46 @@ export class LabCheckbox extends LabElement {
     const api = this.checkbox.api;
     const root = this.renderRoot.querySelector<HTMLElement>('.root');
     const control = this.renderRoot.querySelector<HTMLElement>('.control');
-    const input = this.renderRoot.querySelector<HTMLElement>('input');
+    const label = this.renderRoot.querySelector<HTMLElement>('.label');
+    const input = this.renderRoot.querySelector<HTMLInputElement>('input');
     if (root) this.checkbox.spread(root, api.getRootProps());
     if (control) this.checkbox.spread(control, api.getControlProps());
-    if (input) this.checkbox.spread(input, api.getHiddenInputProps());
+    // Spread the label part so the id the machine's `aria-labelledby` targets
+    // actually exists — without this the reference dangles and the name is lost.
+    if (label) this.checkbox.spread(label, api.getLabelProps());
+    if (input) {
+      this.checkbox.spread(input, api.getHiddenInputProps());
+      this.nameHiddenInput(input);
+      // `indeterminate` is a DOM PROPERTY (no attribute) — it is what AT reads as
+      // aria-checked="mixed". The machine's own sync effect can run before Lit has
+      // painted the input, so set it here from the connected api too, keeping the
+      // native control's mixed state in lockstep with the machine on every render.
+      input.indeterminate = api.indeterminate;
+    }
+  }
+
+  /**
+   * Reconcile the input's accessible name. With a visible label the machine's
+   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
+   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
+   * the control unnamed — so drop the dangling reference and apply `aria-label`.
+   */
+  private nameHiddenInput(input: HTMLInputElement): void {
+    if (this.hasDefaultSlotContent()) {
+      input.removeAttribute('aria-label');
+      return;
+    }
+    input.removeAttribute('aria-labelledby');
+    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
+    else input.removeAttribute('aria-label');
   }
 
   override render(): TemplateResult {
     // Structure only; behaviour (role, aria-checked incl. "mixed", keyboard,
-    // focus) is spread in `updated()` from the machine. SSR emits real markup.
+    // focus) is spread in `updated()` from the machine. SSR emits real markup. The
+    // hidden input is a SIBLING of the (aria-hidden) control — NOT a descendant —
+    // so it stays in the accessibility tree (an aria-hidden ancestor would erase
+    // it, removing the checkbox role entirely).
     return html`
       <label class="root">
         <span class="control">
@@ -276,8 +326,8 @@ export class LabCheckbox extends LabElement {
           ${svg`<svg class="glyph glyph-mixed" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3.5 8h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>`}
-          <input type="checkbox" />
         </span>
+        <input type="checkbox" />
         <span class="label"><slot></slot></span>
       </label>
     `;

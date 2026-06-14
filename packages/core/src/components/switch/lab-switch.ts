@@ -60,6 +60,14 @@ export class LabSwitch extends LabElement {
     /** Uncontrolled initial state — read once by the machine at init. */
     defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
     disabled: { type: Boolean, reflect: true },
+    /**
+     * Accessible name for the no-visible-label case (e.g. an icon-only switch).
+     * When set, it names the hidden input directly; a visible slotted label is
+     * preferred over it via the machine's `aria-labelledby` when present.
+     */
+    ariaLabel: { attribute: 'aria-label', reflect: true },
+    /** Native form field name for the hidden input (form participation). */
+    name: { reflect: true },
   };
 
   declare type: LabSwitchType;
@@ -67,6 +75,8 @@ export class LabSwitch extends LabElement {
   declare checked: boolean;
   declare defaultChecked: boolean;
   declare disabled: boolean;
+  declare ariaLabel: string | null;
+  declare name: string | null;
 
   private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
 
@@ -77,11 +87,18 @@ export class LabSwitch extends LabElement {
     this.checked = false;
     this.defaultChecked = false;
     this.disabled = false;
+    this.ariaLabel = null;
+    this.name = null;
     // Wire the Zag switch behavior. Props read from reflected attributes so the
     // machine and the element never disagree. `checked` is passed only when the
     // consumer set it (controlled); otherwise the machine owns it from
     // `defaultChecked` (uncontrolled) — an honest two-mode contract, not a fake.
+    // `id` is a stable per-instance value (mirrors React's `useId`) so the
+    // machine's scoped ids — including the label id the input references — are
+    // unique and real, never the colliding `switch:undefined:*`.
     this.machineCtl = this.runMachine(switchModule, () => ({
+      id: this.uid,
+      name: this.name ?? undefined,
       defaultChecked: this.defaultChecked,
       checked: this.hasAttribute('checked') ? this.checked : undefined,
       disabled: this.disabled,
@@ -216,8 +233,10 @@ export class LabSwitch extends LabElement {
     }
 
     /* Focus is delegated to the hidden input via the machine; draw the ring on
-       the visible track when that input is focus-visible. */
-    .control:has(input:focus-visible) {
+       the visible track when that input is focus-visible. The input is now a
+       SIBLING of the control (so it stays in the a11y tree), so match it from
+       the shared root rather than as a descendant of the control. */
+    .root:has(input:focus-visible) .control {
       outline: 0.125rem solid ${litVar('--lab-border-focus')};
       outline-offset: 0.125rem;
     }
@@ -259,25 +278,50 @@ export class LabSwitch extends LabElement {
     const root = this.renderRoot.querySelector<HTMLElement>('.root');
     const control = this.renderRoot.querySelector<HTMLElement>('.control');
     const thumb = this.renderRoot.querySelector<HTMLElement>('.thumb');
-    const input = this.renderRoot.querySelector<HTMLElement>('input');
+    const label = this.renderRoot.querySelector<HTMLElement>('.label');
+    const input = this.renderRoot.querySelector<HTMLInputElement>('input');
     if (root) this.machineCtl.spread(root, api.getRootProps());
     if (control) this.machineCtl.spread(control, api.getControlProps());
     if (thumb) this.machineCtl.spread(thumb, api.getThumbProps());
-    if (input) this.machineCtl.spread(input, api.getHiddenInputProps());
+    // Spread the label part so the id the machine's `aria-labelledby` targets
+    // actually exists — without this the reference dangles and the name is lost.
+    if (label) this.machineCtl.spread(label, api.getLabelProps());
+    if (input) {
+      this.machineCtl.spread(input, api.getHiddenInputProps());
+      this.nameHiddenInput(input);
+    }
+  }
+
+  /**
+   * Reconcile the input's accessible name. With a visible label the machine's
+   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
+   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
+   * the control unnamed — so drop the dangling reference and apply `aria-label`.
+   */
+  private nameHiddenInput(input: HTMLInputElement): void {
+    if (this.hasDefaultSlotContent()) {
+      input.removeAttribute('aria-label');
+      return;
+    }
+    input.removeAttribute('aria-labelledby');
+    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
+    else input.removeAttribute('aria-label');
   }
 
   override render(): TemplateResult {
     // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is
     // spread in `updated()` from the machine. SSR emits this real markup so first
-    // paint is meaningful before any JS upgrades the element.
+    // paint is meaningful before any JS upgrades the element. The hidden input is
+    // a SIBLING of the (aria-hidden) control — NOT a descendant — so it stays in
+    // the accessibility tree (an aria-hidden ancestor would erase it).
     return html`
       <label class="root">
         <span class="control">
           <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
           <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
           <span class="thumb"></span>
-          <input type="checkbox" />
         </span>
+        <input type="checkbox" />
         <span class="label"><slot></slot></span>
       </label>
     `;

@@ -63,5 +63,8 @@ createRoot(mount).render(
         Off
       </Switch>
     </span>
+    <span data-testid="react-icon-only">
+      <Switch type="accent" iconOn="🔔" iconOff="🔕" aria-label="Mute" />
+    </span>
   </StrictMode>,
 );

@@ -19,11 +19,43 @@ import type { MachineSchema } from '@zag-js/core';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
 import { ZagController } from './zag-controller.js';
 
+/** Process-wide counter backing {@link LabElement.uid} — stable per instance. */
+let labUidCounter = 0;
+
 export class LabElement extends LitElement {
   static override shadowRootOptions: ShadowRootInit = {
     ...LitElement.shadowRootOptions,
     delegatesFocus: true,
   };
+
+  /**
+   * A stable, unique id for THIS instance — the Lit mirror of React's `useId`.
+   * Generated once at construction and never reused, so a machine seeded with it
+   * (`id: this.uid`) produces unique scoped ids per instance, never the colliding
+   * `<component>:undefined:*` ids that result from passing no id at all. Scoped to
+   * this element's shadow root anyway, so a plain counter is sufficient and
+   * SSR-deterministic within a render pass.
+   */
+  protected readonly uid: string = `lab-${(labUidCounter++).toString(36)}`;
+
+  /**
+   * Whether this element has visible DEFAULT-slot content (i.e. a real label),
+   * ignoring nodes assigned to a NAMED slot (decorative icons) and whitespace.
+   * Used to decide the accessible-name source: a default-slot label feeds the
+   * machine's `aria-labelledby`; without one, the control is named via
+   * `aria-label`. Element children with a `slot=` attribute and whitespace-only
+   * text nodes do not count.
+   */
+  protected hasDefaultSlotContent(): boolean {
+    for (const node of this.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (node.textContent?.trim()) return true;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        if (!(node as Element).hasAttribute('slot')) return true;
+      }
+    }
+    return false;
+  }
 
   /**
    * Attach a Zag behavior to this element. Returns the controller so the
