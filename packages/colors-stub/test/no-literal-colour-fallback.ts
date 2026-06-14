@@ -214,15 +214,51 @@ const NAMED_COLOURS = [
 ];
 
 /**
+ * CSS system-colour keywords (CSS Color Module Level 4 §"System Colors") — they resolve
+ * to a platform COLOUR (e.g. `Canvas` is the OS canvas background). They are bare
+ * identifiers, so they are matched as WHOLE WORDS (a `\b…\b`-bounded, case-insensitive
+ * alternation) — never as substrings. This bounding is what keeps a legitimate
+ * NON-colour keyword fallback on a `--lab-mat-*` role unflagged, in particular the
+ * blend-mode `var(--lab-mat-theme-blend, screen)` (`screen`/`multiply`/`overlay`/… are
+ * absent from this set, so they are never matched).
+ */
+const SYSTEM_COLOURS = [
+  'Canvas',
+  'CanvasText',
+  'LinkText',
+  'VisitedText',
+  'ActiveText',
+  'ButtonFace',
+  'ButtonText',
+  'ButtonBorder',
+  'Field',
+  'FieldText',
+  'Highlight',
+  'HighlightText',
+  'SelectedItem',
+  'SelectedItemText',
+  'Mark',
+  'MarkText',
+  'GrayText',
+  'AccentColor',
+  'AccentColorText',
+];
+
+/**
  * A literal COLOUR value used as a fallback. Token → token fallbacks (`var(--lab-…)`)
  * are explicitly NOT colour literals and are allowed, so they are absent here.
  *   - functional: rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/oklab()/oklch()/color()
+ *               + color-mix()/light-dark() (modern colour-producing functions)
  *   - hex: #rgb … #rrggbbaa
  *   - any CSS named colour (the full Level-4 set + currentColor/transparent)
- * Case is irrelevant (`RGB(`, `BLACK`, `Black` are the same bug), so both REs carry the
- * `i` flag and the named-colour alternation is matched case-insensitively.
+ *   - any CSS system-colour keyword (Canvas / ButtonFace / Field / …), whole-word only
+ * Case is irrelevant (`RGB(`, `BLACK`, `Black`, `canvas` are the same bug), so both REs
+ * carry the `i` flag and the named/system-colour alternations are matched
+ * case-insensitively. `color-mix(`/`light-dark(` are listed BEFORE the bare `color(`
+ * alternative purely for readability — alternation is order-independent for these
+ * since each carries its own trailing `(` and `-` is not a word char.
  */
-const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b)`;
+const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
 
 /** CSS form: `var(--lab-<colour-role>, <colour-literal>)`. */
 const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}`, 'gi');
@@ -263,11 +299,18 @@ export function scanSource(relPath: string, source: string): Violation[] {
   return out;
 }
 
-/** The files the rule governs: every component-authored .ts/.css across the design
- * system, plus the docs .css fixtures. Build output and deps are excluded. The scanner
- * and its own test are excluded so their pattern literals do not self-match. */
+/** The files the rule governs: every component-authored .ts/.tsx/.css across the
+ * design system (the React twins live in .tsx, which `**​/*.ts` does NOT match), plus
+ * the docs .ts/.tsx/.css fixtures. Build output and deps are excluded. The scanner and
+ * its own test are excluded so their pattern literals do not self-match. */
 export function targetFiles(): string[] {
-  const patterns = ['packages/**/*.ts', 'packages/**/*.css', 'apps/docs/**/*.css'];
+  const patterns = [
+    'packages/**/*.ts',
+    'packages/**/*.tsx',
+    'packages/**/*.css',
+    'apps/docs/**/*.{ts,tsx}',
+    'apps/docs/**/*.css',
+  ];
   const seen = new Set<string>();
   for (const pattern of patterns) {
     for (const abs of globSync(resolve(repoRoot, pattern))) {

@@ -22,6 +22,16 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
     expect(files.length).toBeGreaterThan(4);
   });
 
+  // ── Glob scope: the React twins live in .tsx, which `packages/**​/*.ts` does NOT
+  // match. The widened glob MUST pull at least one real .tsx into scope; this pins the
+  // fix so a future revert to a `.ts`-only glob (silently un-scanning every cssVar(...)
+  // inline-style in the React layer) fails CI here.
+  it('scans React .tsx twins (glob covers .tsx, not just .ts)', () => {
+    const files = targetFiles();
+    expect(files).toContain('packages/react/src/select.tsx');
+    expect(files.some((f) => f.endsWith('.tsx'))).toBe(true);
+  });
+
   it('the live design system has ZERO colour-role literal-colour fallbacks', () => {
     const violations = scanAll();
     const report = violations
@@ -82,6 +92,60 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
     ).toHaveLength(1);
   });
 
+  // ── Modern colour-producing functions — `color-mix()` and `light-dark()` resolve to
+  // a COLOUR and so are forbidden as a role fallback. These bypassed the old regex.
+  it('DETECTS color-mix() / light-dark() literals on a colour role', () => {
+    const mix = scanSource(
+      'p.css',
+      'color: var(--lab-label-primary, color-mix(in srgb, #fff, #000));',
+    );
+    expect(mix).toHaveLength(1);
+    expect(mix[0]?.token).toBe('--lab-label-primary');
+
+    const ld = scanSource('p.css', 'color: var(--lab-label-primary, light-dark(#fff, #000));');
+    expect(ld).toHaveLength(1);
+    expect(ld[0]?.token).toBe('--lab-label-primary');
+
+    // ...and in the TS form too.
+    expect(
+      scanSource(
+        'p.ts',
+        "color: ${cssVar('--lab-label-primary', 'color-mix(in srgb, #fff, #000)')};",
+      ),
+    ).toHaveLength(1);
+  });
+
+  // ── CSS system-colour keywords (Canvas / CanvasText / ButtonFace / …) resolve to a
+  // platform COLOUR. They are bare identifiers and bypassed the old regex entirely.
+  // Matched whole-word + case-insensitively, in both authored forms.
+  it('DETECTS CSS system-colour keywords (Canvas / CanvasText / ButtonFace)', () => {
+    const canvas = scanSource('p.css', 'background: var(--lab-bg-base, Canvas);');
+    expect(canvas).toHaveLength(1);
+    expect(canvas[0]?.token).toBe('--lab-bg-base');
+
+    expect(scanSource('p.css', 'color: var(--lab-label-primary, CanvasText);')).toHaveLength(1);
+    expect(scanSource('p.css', 'background: var(--lab-fill-neutral, ButtonFace);')).toHaveLength(1);
+    // case-insensitive: a lowercased system colour is the same bug.
+    expect(scanSource('p.css', 'background: var(--lab-bg-base, canvas);')).toHaveLength(1);
+    // TS form.
+    expect(scanSource('p.ts', "background: ${litVar('--lab-bg-base', 'Canvas')};")).toHaveLength(1);
+  });
+
+  // ── hsl/hsla and a modern colour fn (oklch) were ALREADY in the regex but had no
+  // planted positive — pin them so a future regex edit can never silently drop them.
+  it('DETECTS hsl() / hsla() / oklch() literals on a colour role', () => {
+    expect(scanSource('p.css', 'color: var(--lab-label-primary, hsl(0 0% 0%));')).toHaveLength(1);
+    expect(
+      scanSource('p.css', 'color: var(--lab-label-primary, hsla(0, 0%, 0%, 0.5));'),
+    ).toHaveLength(1);
+    const oklch = scanSource('p.css', 'color: var(--lab-label-primary, oklch(0.5 0.1 200));');
+    expect(oklch).toHaveLength(1);
+    expect(oklch[0]?.token).toBe('--lab-label-primary');
+    expect(
+      scanSource('p.ts', "color: ${litVar('--lab-label-primary', 'oklch(0.5 0.1 200)')};"),
+    ).toHaveLength(1);
+  });
+
   it('ALLOWS a dimension token with a literal dimension fallback', () => {
     expect(scanSource('p.css', 'padding: var(--lab-space-xs, 0.25rem);')).toEqual([]);
     expect(scanSource('p.ts', "padding: ${litVar('--lab-radius-md', '0.375rem')};")).toEqual([]);
@@ -100,5 +164,27 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
   it('ALLOWS a colour role with NO fallback', () => {
     expect(scanSource('p.css', 'color: var(--lab-label-primary);')).toEqual([]);
     expect(scanSource('p.ts', "color: ${litVar('--lab-fx-shadow-major')};")).toEqual([]);
+  });
+
+  // ── Blend modes are NOT colours. `var(--lab-mat-theme-blend, screen)` is a legitimate
+  // non-colour keyword fallback on a material role and must stay unflagged — widening the
+  // literal set to system colours must not regress this (word-boundary correctness).
+  it('ALLOWS a blend-mode keyword fallback (screen / multiply / overlay)', () => {
+    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-mat-theme-blend, screen);')).toEqual([]);
+    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-mat-theme-blend, multiply);')).toEqual(
+      [],
+    );
+    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-mat-theme-blend, overlay);')).toEqual([]);
+    expect(
+      scanSource('p.ts', "mix-blend-mode: ${litVar('--lab-mat-theme-blend', 'screen')};"),
+    ).toEqual([]);
+  });
+
+  // ── Word-boundary guard: an identifier that merely CONTAINS a system-colour keyword as
+  // a substring (Canvassed ⊃ Canvas, Fieldset ⊃ Field, Marker ⊃ Mark) must NOT be flagged.
+  it('ALLOWS identifiers that only contain a system-colour substring', () => {
+    expect(scanSource('p.css', 'content: var(--lab-label-primary, Canvassed);')).toEqual([]);
+    expect(scanSource('p.css', 'content: var(--lab-label-primary, Fieldset);')).toEqual([]);
+    expect(scanSource('p.css', 'content: var(--lab-label-primary, Marker);')).toEqual([]);
   });
 });
