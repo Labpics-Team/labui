@@ -5,6 +5,17 @@
  *   - size: s | m | l        (text + spacing density; reflected)
  *   - separator: string      (the glyph drawn between items; reflected, default '/')
  *
+ * Separator type — a DELIBERATE, documented asymmetry with the React twin
+ * (ADR-0001): the Lit `separator` is a reflected string attribute (a glyph like
+ * '/', '›', '·'), because an HTML attribute can only carry a string. The React
+ * `<Breadcrumb separator>` additionally accepts a `ReactNode`, so React callers
+ * may pass an icon element. An icon separator on the Lit side would need a real
+ * `<slot>` rendered once PER gap (not a single default slot) — a larger feature,
+ * not a small clean addition — so it is intentionally out of scope here. Lit
+ * callers who need an icon glyph pass its character (e.g. a Material codepoint) as
+ * the string. If/when icon-node separators are required on Lit, that is a separate,
+ * tracked change.
+ *
  * Breadcrumb is PRESENTATIONAL — it has NONE of the machine-eligible states from
  * core-CONTRACT §1: no `open`, no `value`/`selected` it OWNS (which crumb is
  * "current" is purely positional — the last item — not interaction state), no
@@ -18,6 +29,14 @@
  * is the current page, rendered as text with `aria-current="page"` and NO link
  * (you don't link to where you already are). Separators are `aria-hidden` so a
  * screen reader announces the trail, not the punctuation.
+ *
+ * Hrefless non-current crumb (the Figma "disabled crumb"): an intermediate crumb
+ * whose `href` is omitted is a non-navigable waypoint — a section that exists in
+ * the hierarchy but has no page of its own (e.g. a grouping label). It renders as
+ * a bare `<span part="link">` with NO `role` and NO `aria-current` (it is neither
+ * a link nor the current page): honest, inert text that still reads the link role
+ * token. This is deliberately NOT a disabled `<a>` — a link with no destination is
+ * a lie to assistive tech; plain text is the truthful primitive.
  *
  * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
  * dimension tokens through `litVar`. Links read `--lab-label-secondary`
@@ -132,7 +151,10 @@ export class LabBreadcrumb extends LabElement {
               ? html`<span class="current" part="current" aria-current="page">${item.label}</span>`
               : item.href != null
                 ? html`<a part="link" href=${item.href}>${item.label}</a>`
-                : html`<span part="link">${item.label}</span>`;
+                : // Hrefless non-current crumb (Figma "disabled crumb"): a bare
+                  // <span part="link"> — no role, no aria-current. Truthful inert
+                  // text, not a destination-less <a>.
+                  html`<span part="link">${item.label}</span>`;
             return html`<li part="item">
               ${crumb}${
                 isCurrent
