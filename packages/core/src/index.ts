@@ -141,4 +141,20 @@ export type {
   LabMenuSize,
 } from './components/menu/lab-menu.js';
 
+// Combobox — the COMPOUND + POSITIONED listbox (the Select canon) FUSED with the
+// form-field a11y seam (the Input canon): a text input that NARROWS a positioned
+// listbox as the user types. It runs `@zag-js/combobox` (machine-owned roles /
+// aria-expanded/controls/activedescendant/autocomplete / keyboard / dismiss / value)
+// AND reuses the SHARED `field-a11y` helper for the label / helper / error association,
+// so the ARIA contract is one source of truth across both renderers. Type-only here:
+// no Lit runtime is pulled into the React bundle. `filterComboboxItems` is the shared
+// default filter (runtime), so narrowing is ONE rule across both renderers.
+export type {
+  LabComboboxItem,
+  LabComboboxPlacement,
+  LabComboboxSize,
+  LabComboboxType,
+} from './components/combobox/lab-combobox.js';
+export { filterComboboxItems } from './components/combobox/lab-combobox.js';
+
 export const PACKAGE_NAME = '@labpics/ui-core';

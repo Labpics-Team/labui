@@ -48,6 +48,12 @@ export interface SwitchProps {
   iconOn?: ReactNode;
   /** Icon shown inside the track when OFF (parity with the Lit `icon-off` slot). */
   iconOff?: ReactNode;
+  /**
+   * Accessible name for the no-visible-label case (e.g. an icon-only switch).
+   * Parity with the Lit `aria-label`. A visible label (`children`) is preferred
+   * over it via the machine's `aria-labelledby`.
+   */
+  'aria-label'?: string;
   /** Label content (parity with the Lit default slot). */
   children?: ReactNode;
 }
@@ -62,6 +68,7 @@ export function Switch({
   name,
   iconOn,
   iconOff,
+  'aria-label': ariaLabel,
   children,
 }: SwitchProps): ReactNode {
   const api = useZag(switchModule, {
@@ -72,6 +79,16 @@ export function Switch({
     name,
     onCheckedChange: onCheckedChange ? (details) => onCheckedChange(details.checked) : undefined,
   });
+
+  // The machine sets `aria-labelledby` on the hidden input pointing at the label
+  // part. With a visible label that resolves and names the control; with NO
+  // visible label it would dangle (and per ARIA outrank `aria-label`), so we drop
+  // it and name the input via `aria-label` instead — exactly one real name source.
+  const hasVisibleLabel = children != null;
+  const hiddenInputProps = api.getHiddenInputProps();
+  const inputProps = hasVisibleLabel
+    ? hiddenInputProps
+    : { ...hiddenInputProps, 'aria-labelledby': undefined, 'aria-label': ariaLabel };
 
   return (
     <label
@@ -90,9 +107,15 @@ export function Switch({
           {iconOff}
         </span>
         <span {...api.getThumbProps()} className="lab-switch-thumb" />
-        <input {...api.getHiddenInputProps()} />
       </span>
-      {children != null && <span className="lab-switch-label">{children}</span>}
+      {/* The hidden input is a SIBLING of the (aria-hidden) control, NOT a
+          descendant, so it stays in the accessibility tree. */}
+      <input {...inputProps} />
+      {hasVisibleLabel && (
+        <span {...api.getLabelProps()} className="lab-switch-label">
+          {children}
+        </span>
+      )}
     </label>
   );
 }
