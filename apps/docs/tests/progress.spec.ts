@@ -63,6 +63,63 @@ test('render: both renderers expose a progressbar with a token-filled track', as
   }
 });
 
+test('accessible NAME (Chromium AX tree): the progressbar is named by its visible label, both renderers', async ({
+  page,
+  browserName,
+}) => {
+  // WCAG 4.1.2 (Name, Role, Value). @zag-js/progress@1.41.2 names the track via
+  // `aria-label` set to the formatted VALUE ("60%" determinate / "loading..."
+  // indeterminate) and emits NO `aria-labelledby`, so the visible task label
+  // ("Uploading") is NOT the progressbar's accessible name. The component overrides
+  // this: it points `aria-labelledby` at the label part's id and drops the value
+  // `aria-label`. We assert the COMPUTED accessible name from the real AX tree — the
+  // name a screen reader announces — equals the visible label on BOTH renderers.
+  test.skip(browserName !== 'chromium', 'page.accessibility.snapshot is Chromium-only');
+
+  const snapshot = await page.accessibility.snapshot({ interestingOnly: false });
+  const names: string[] = [];
+  const walk = (node: { role?: string; name?: string; children?: unknown[] } | null): void => {
+    if (!node) return;
+    if (node.role === 'progressbar') names.push(node.name ?? '');
+    for (const child of node.children ?? []) walk(child as typeof node);
+  };
+  walk(snapshot as never);
+
+  // 8 progressbars (4 Lit + 4 React), each named by its visible label — NOT by a value
+  // string. The label set appears once per renderer ⇒ Lit/React resolve the SAME names.
+  const expectedPerRenderer = ['Uploading', 'Done', 'Working', 'Ranged'];
+  expect(names).toEqual([...expectedPerRenderer, ...expectedPerRenderer]);
+  // Guard against regression to the machine default: no progressbar is named "60%" etc.
+  expect(names.some((n) => /%$/.test(n) || n === 'loading...')).toBe(false);
+});
+
+test('accessible NAME wiring (cross-engine): track is labelledby its visible label, value aria-label dropped, both renderers', async ({
+  page,
+}) => {
+  // The engine-portable half of the WCAG 4.1.2 fix (runs on Chromium AND WebKit, where
+  // the AX-tree API is unavailable): the track must carry `aria-labelledby` pointing at
+  // the label part — whose text is the visible label — and must NOT carry the machine's
+  // value `aria-label` (which would otherwise be the name). Asserted on BOTH renderers.
+  const cases = [
+    { track: litTrack(page, 'lit-determinate'), label: '.label' },
+    { track: reactTrack(page, 'react-determinate'), label: '.lab-progress-label' },
+  ];
+  for (const { track } of cases) {
+    await expect(track).toHaveAttribute('role', 'progressbar');
+    // The value aria-label that the machine sets must be gone (else it names the bar).
+    await expect(track).not.toHaveAttribute('aria-label', /.*/);
+    // labelledby is present and resolves to an element whose text is the visible label.
+    const labelledby = await track.getAttribute('aria-labelledby');
+    expect(labelledby).toBeTruthy();
+    const referencedText = await track.evaluate((el, id) => {
+      const root = el.getRootNode() as ShadowRoot | Document;
+      const ref = (root as Document | ShadowRoot).getElementById?.(id ?? '');
+      return ref?.textContent ?? null;
+    }, labelledby);
+    expect(referencedText).toBe('Uploading');
+  }
+});
+
 test('determinate: aria-valuenow carries the real value + min/max (both renderers)', async ({
   page,
 }) => {

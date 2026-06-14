@@ -39,7 +39,7 @@ export const progressDoc: ComponentDoc = {
   tag: 'lab-progress',
   title: 'Progress',
   summary:
-    'A linear bar showing how far a task has advanced. Runs the @zag-js/progress machine through the LabUI seam: the machine owns the value→percent maths, role="progressbar" + aria-valuemin/max/now + aria-valuetext, and the determinate-vs-indeterminate state. Both modes are real — an indeterminate bar honestly drops aria-valuenow instead of faking a percent.',
+    'A linear bar showing how far a task has advanced. Runs the @zag-js/progress machine through the LabUI seam: the machine owns the value→percent maths, role="progressbar" + aria-valuemin/max/now, and the determinate-vs-indeterminate state. The progressbar is named by its visible label via aria-labelledby (WCAG 4.1.2). Both modes are real — an indeterminate bar honestly drops aria-valuenow instead of faking a percent.',
   status: { kind: 'stable' },
 
   statesMatrix: {
