@@ -74,6 +74,7 @@ export type {
   LabAvatarSize,
   LabAvatarStatus,
 } from './components/avatar/lab-avatar.js';
+export type { LabCardPadding, LabCardVariant } from './components/card/lab-card.js';
 
 // Machine-driven form controls — the first PRODUCTION consumers of the Behaviors
 // seam (they own checked/indeterminate state, so they MUST run a Zag machine,
@@ -84,5 +85,15 @@ export type {
   LabCheckboxSize,
   LabCheckboxType,
 } from './components/checkbox/lab-checkbox.js';
+
+// Disclosure — the compound `<lab-accordion>` (a GROUP machine, the Radio/Tabs
+// canon) and the single-machine `<lab-progress>`. Type-only: no Lit runtime
+// pulled into the React bundle.
+export type {
+  LabAccordionItem,
+  LabAccordionOrientation,
+  LabAccordionSize,
+} from './components/accordion/lab-accordion.js';
+export type { LabProgressSize } from './components/progress/lab-progress.js';
 
 export const PACKAGE_NAME = '@labpics/ui-core';
