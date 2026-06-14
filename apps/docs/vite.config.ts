@@ -79,6 +79,13 @@ export default defineConfig({
         // SAME shared field-a11y helper — asserted on BOTH renderers in the suite.
         input: resolve(__dirname, 'src/input.html'),
         textarea: resolve(__dirname, 'src/textarea.html'),
+        // Numeric form controls: Lit element + native-React twin side by side, running
+        // the SAME Zag machine (number-input / slider). The machine owns the value +
+        // clamping + the spinbutton / slider role + value ARIA + keyboard stepping; both
+        // REUSE the SAME shared field-a11y helper for the label/helper/error association
+        // — asserted on BOTH renderers in the suite.
+        'number-input': resolve(__dirname, 'src/number-input.html'),
+        slider: resolve(__dirname, 'src/slider.html'),
         // Positioned-overlay parity fixtures: Lit element (shadow + strategy:fixed)
         // and native-React twin (body portal), running the SAME Zag machine, for the
         // open/close/positioning/dismiss/keyboard + parity suite.
