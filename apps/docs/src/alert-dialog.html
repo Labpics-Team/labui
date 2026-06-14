@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Alert-Dialog parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 4rem;
+        padding-block: 3rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="alert-dialog-title">
+        Alert-Dialog parity — <code>&lt;lab-alert-dialog&gt;</code> (Lit) ↔
+        <code>&lt;AlertDialog&gt;</code> (React)
+      </h1>
+      <p>
+        The stricter dialog: <code>role="alertdialog"</code>, which the
+        <code>@zag-js/dialog</code> machine reads to REFUSE outside-click dismissal —
+        the decision must be an explicit confirm or cancel (Escape still cancels). Same
+        body portal, focus-trap, scroll-lock and aria as the dialog. Both renderers
+        paint with the same <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-alert-dialog
+            data-testid="lit-alert"
+            heading="Delete this item?"
+            description="This action cannot be undone."
+            closable
+          >
+            Delete item
+            <div slot="content">
+              <button type="button" data-testid="lit-alert-confirm">Delete</button>
+              <button type="button" data-testid="lit-alert-cancel">Cancel</button>
+            </div>
+          </lab-alert-dialog>
+        </div>
+      </section>
+
+      <!-- React renderer. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./alert-dialog-demo.tsx"></script>
+  </body>
+</html>
