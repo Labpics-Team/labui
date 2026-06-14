@@ -2,10 +2,16 @@
  * <Progress> — the native-React twin of the Lit `<lab-progress>` (ADR-0001). Same
  * axes, same `@zag-js/progress` machine through the SAME Behaviors seam — here via
  * `useZag` instead of the Lit `ZagController`. No Lit in this path. The machine
- * owns the value→percent maths, `role="progressbar"` + `aria-valuemin/max/now` +
- * `aria-valuetext`, and the determinate-vs-indeterminate state; the component only
- * spreads the machine's prop-getters onto native elements and paints with the SAME
- * --lab-* roles, so parity is CSS, not a second behaviour.
+ * owns the value→percent maths, `role="progressbar"` + `aria-valuemin/max/now`, and
+ * the determinate-vs-indeterminate state; the component only spreads the machine's
+ * prop-getters onto native elements and paints with the SAME --lab-* roles, so
+ * parity is CSS, not a second behaviour.
+ *
+ * ACCESSIBLE NAME: @zag-js/progress@1.41.2 names the track via `aria-label` set to
+ * the formatted VALUE string (e.g. "60%"), NOT `aria-valuetext`, and emits no
+ * `aria-labelledby`. When a visible label is present we override that: the track is
+ * named by the label via `aria-labelledby` and the value `aria-label` is dropped
+ * (see the render body). The numeric percent stays on `aria-valuenow`.
  *
  * HONEST two-mode contract (no fake progress, round-1 lesson 6): `value` is a real
  * number (determinate — the machine fills the range to the real percent and sets
@@ -65,12 +71,28 @@ export function Progress({
   });
 
   const showText = showValueText && value !== null;
+  const hasLabel = label != null;
+
+  // ACCESSIBLE NAME (WCAG 4.1.2). The machine's getTrackProps() carries
+  // `aria-label` = the formatted VALUE string ("60%", or "loading..." when
+  // indeterminate), NOT the task this bar tracks — and it emits no
+  // `aria-labelledby`, so the visible "Uploading" label is never the progressbar's
+  // name. When a visible label is rendered, NAME the track by it: point
+  // `aria-labelledby` at the label part's own id (the same id getLabelProps emits
+  // onto the <span>) and drop the value `aria-label` so it cannot shadow the
+  // labelledby name. With no visible label we leave the machine's value `aria-label`
+  // as a degraded-but-present name. Identical semantics on the Lit twin ⇒ parity.
+  const labelId = api.getLabelProps().id;
+  const trackProps = api.getTrackProps();
+  const namedTrackProps = hasLabel
+    ? { ...trackProps, 'aria-label': undefined, 'aria-labelledby': labelId }
+    : trackProps;
 
   return (
     <div {...api.getRootProps()} data-lab-progress="" data-size={size}>
-      {label != null || showText ? (
+      {hasLabel || showText ? (
         <div className="lab-progress-meta">
-          {label != null ? (
+          {hasLabel ? (
             <span {...api.getLabelProps()} className="lab-progress-label">
               {label}
             </span>
@@ -82,7 +104,7 @@ export function Progress({
           ) : null}
         </div>
       ) : null}
-      <div {...api.getTrackProps()} className="lab-progress-track">
+      <div {...namedTrackProps} className="lab-progress-track">
         <div {...api.getRangeProps()} className="lab-progress-range" />
       </div>
     </div>

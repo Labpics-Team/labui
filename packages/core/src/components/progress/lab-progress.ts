@@ -2,9 +2,15 @@
  * `<lab-progress>` — a linear progress bar that CONSUMES the `@zag-js/progress`
  * machine through the Behaviors seam (core-CONTRACT §1). Like `<lab-switch>` it
  * runs a SINGLE (non-group) machine: the machine owns the value→percent maths,
- * the `role="progressbar"` + `aria-valuemin/max/now` + `aria-valuetext` wiring,
- * and the determinate-vs-indeterminate state; the element only paints with
- * semantic --lab-* roles (DIP — injected `MachineModule`, no hand-rolled ARIA).
+ * the `role="progressbar"` + `aria-valuemin/max/now` wiring, and the
+ * determinate-vs-indeterminate state; the element only paints with semantic
+ * --lab-* roles (DIP — injected `MachineModule`, no hand-rolled ARIA).
+ *
+ * ACCESSIBLE NAME (WCAG 4.1.2): the machine names the track via `aria-label` set to
+ * the formatted VALUE string ("60%"), NOT `aria-valuetext`, and emits no
+ * `aria-labelledby`. When a visible label is present this element overrides that —
+ * naming the track by the label via `aria-labelledby` and dropping the value
+ * `aria-label` (see `nameTrackProps`). The numeric percent stays on `aria-valuenow`.
  *
  * HONEST two-mode contract (no fake progress, round-1 lesson 6): BOTH modes are
  * real and machine-derived.
@@ -38,7 +44,7 @@ import * as progressMachine from '@zag-js/progress';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
+import type { Attrs, ZagController } from '../../lit/zag-controller.js';
 
 /** Track thickness. */
 export type LabProgressSize = 's' | 'm' | 'l';
@@ -204,10 +210,28 @@ export class LabProgress extends LabElement {
     const labelEl = this.renderRoot.querySelector<HTMLElement>('.label');
     const valueText = this.renderRoot.querySelector<HTMLElement>('.value-text');
     if (root) this.machineCtl.spread(root, api.getRootProps());
-    if (track) this.machineCtl.spread(track, api.getTrackProps());
+    if (track) this.machineCtl.spread(track, this.nameTrackProps(api.getTrackProps()));
     if (range) this.machineCtl.spread(range, api.getRangeProps());
     if (labelEl) this.machineCtl.spread(labelEl, api.getLabelProps());
     if (valueText) this.machineCtl.spread(valueText, api.getValueTextProps());
+  }
+
+  /**
+   * ACCESSIBLE NAME (WCAG 4.1.2). The machine's `getTrackProps()` names the
+   * progressbar with `aria-label` = the formatted VALUE string ("60%", or
+   * "loading..." when indeterminate), NOT the task this bar tracks — and it emits no
+   * `aria-labelledby`, so the visible label is never the progressbar's name. When a
+   * visible label is rendered, NAME the track by it: point `aria-labelledby` at the
+   * label part's own id (the same id `getLabelProps()` puts on the `.label` span) and
+   * drop the value `aria-label` so it cannot shadow the labelledby name. With no
+   * visible label we leave the machine's value `aria-label` as a degraded-but-present
+   * name. The `spreadProps` per-node diff removes `aria-label` when set to undefined.
+   * Mirrors the React twin verbatim ⇒ both renderers resolve the SAME name.
+   */
+  private nameTrackProps(trackProps: ReturnType<ProgressApi['getTrackProps']>): Attrs {
+    if (!this.label) return trackProps;
+    const labelId = this.machineCtl.api.getLabelProps().id;
+    return { ...trackProps, 'aria-label': undefined, 'aria-labelledby': labelId };
   }
 
   override render(): TemplateResult {
