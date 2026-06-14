@@ -234,3 +234,147 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
   await expect.poll(() => litSelected.evaluate(underline)).not.toBe(litDark);
   await expect.poll(() => reactSelected.evaluate(underline)).not.toBe(reactDark);
 });
+
+/**
+ * The axis blocks below assert the Orientation × Size × Activation model the Lit
+ * element documents (`orientation`, `size`, `activation-mode`). They read the
+ * OBSERVABLE computed outcome of each axis — not the wiring — on BOTH renderers, so
+ * the same paint contract is proven however each renderer sources the state
+ * (`:host([orientation])` reflect on Lit; the machine's `data-orientation` /
+ * `data-size` on React).
+ */
+
+const borderBottomWidth = (el: HTMLElement) => getComputedStyle(el).borderBottomWidth;
+const borderInlineEndWidth = (el: HTMLElement) => getComputedStyle(el).borderInlineEndWidth;
+const borderInlineEndColor = (el: HTMLElement) => getComputedStyle(el).borderInlineEndColor;
+const paddingInline = (el: HTMLElement) =>
+  `${getComputedStyle(el).paddingLeft} ${getComputedStyle(el).paddingRight}`;
+const fontSize = (el: HTMLElement) => getComputedStyle(el).fontSize;
+
+test('orientation=vertical: the selected underline moves to border-inline-end on both renderers', async ({
+  page,
+}) => {
+  // Horizontal (default) paints the selected accent on border-BOTTOM and nothing on
+  // the inline-end edge. Vertical flips the branch: the list track + the selected
+  // trigger's accent move to border-INLINE-END, and border-bottom drops to 0.
+  const litSelected = litHost(page, 'lit-tabs-vertical').locator('.trigger[data-selected]');
+  const reactSelected = page
+    .getByTestId('react-tabs-vertical')
+    .locator('.lab-tabs-trigger[data-selected]');
+  await expect(litSelected).toBeVisible();
+  await expect(reactSelected).toBeVisible();
+
+  for (const selected of [litSelected, reactSelected]) {
+    // The vertical branch is live: bottom border is gone, inline-end carries weight.
+    expect(await selected.evaluate(borderBottomWidth)).toBe('0px');
+    expect(await selected.evaluate(borderInlineEndWidth)).not.toBe('0px');
+    // …and the accent fill paints on that inline-end edge (the underline branch).
+    expect(await selected.evaluate(borderInlineEndColor)).not.toBe('rgba(0, 0, 0, 0)');
+  }
+
+  // Parity: both renderers resolve the SAME accent on the inline-end edge.
+  expect(await reactSelected.evaluate(borderInlineEndColor)).toBe(
+    await litSelected.evaluate(borderInlineEndColor),
+  );
+});
+
+test('size: s and l shift trigger padding and font-size away from the default m on both renderers', async ({
+  page,
+}) => {
+  // size maps onto the --_pad-* / --_font knobs the trigger reads. Assert the
+  // density actually differs from the default m, and that l > s, on each renderer.
+  for (const [defaultId, smallId, largeId] of [
+    ['lit-tabs', 'lit-tabs-s', 'lit-tabs-l'],
+    ['react-tabs', 'react-tabs-s', 'react-tabs-l'],
+  ] as const) {
+    const trigger = (id: string) =>
+      id.startsWith('lit') ? litTriggers(page, id).first() : reactTriggers(page, id).first();
+
+    const [mPad, sPad, lPad] = await Promise.all([
+      trigger(defaultId).evaluate(paddingInline),
+      trigger(smallId).evaluate(paddingInline),
+      trigger(largeId).evaluate(paddingInline),
+    ]);
+    expect(sPad, `${smallId}: padding differs from m`).not.toBe(mPad);
+    expect(lPad, `${largeId}: padding differs from m`).not.toBe(mPad);
+    expect(sPad, `${smallId}: padding differs from l`).not.toBe(lPad);
+
+    const px = (v: string) => Number.parseFloat(v);
+    const [mFont, sFont, lFont] = await Promise.all([
+      trigger(defaultId).evaluate(fontSize),
+      trigger(smallId).evaluate(fontSize),
+      trigger(largeId).evaluate(fontSize),
+    ]);
+    expect(px(sFont), `${smallId}: font smaller than m`).toBeLessThan(px(mFont));
+    expect(px(lFont), `${largeId}: font larger than m`).toBeGreaterThan(px(mFont));
+  }
+});
+
+test('activation-mode=manual: focusing a tab does NOT select it; Enter/Space does (both renderers)', async ({
+  page,
+}) => {
+  // Default automatic activation selects on focus (asserted in the roving tests
+  // above). Manual activation only MOVES focus on arrow keys — selection waits for
+  // Enter or Space. The team tab (3rd) is disabled, so we stay on account↔password.
+  for (const id of ['lit-tabs-manual', 'react-tabs-manual'] as const) {
+    const triggers = id.startsWith('lit') ? litTriggers(page, id) : reactTriggers(page, id);
+
+    await triggers.nth(0).focus();
+    await expect(triggers.nth(0)).toHaveAttribute('data-selected', /.*/);
+
+    // ArrowRight moves focus to password but, under manual activation, selection
+    // stays on account — the opposite of automatic mode.
+    await page.keyboard.press('ArrowRight');
+    await expect(triggers.nth(1), `${id}: focus moved to password`).toBeFocused();
+    await expect(
+      triggers.nth(1),
+      `${id}: manual activation does NOT select on focus`,
+    ).not.toHaveAttribute('data-selected', /.*/);
+    await expect(triggers.nth(0), `${id}: selection stayed on account`).toHaveAttribute(
+      'data-selected',
+      /.*/,
+    );
+
+    // Enter (then Space on a fresh move) commits the focused tab — manual activation.
+    await page.keyboard.press('Enter');
+    await expect(triggers.nth(1), `${id}: Enter selects the focused tab`).toHaveAttribute(
+      'data-selected',
+      /.*/,
+    );
+
+    await triggers.nth(0).focus();
+    await page.keyboard.press('Space');
+    await expect(triggers.nth(0), `${id}: Space selects the focused tab`).toHaveAttribute(
+      'data-selected',
+      /.*/,
+    );
+  }
+});
+
+test('event contract: selecting a tab fires the public value-change with the new value (both renderers)', async ({
+  page,
+}) => {
+  // Lit dispatches a composed CustomEvent('value-change') whose detail.value is the
+  // newly selected tab; React surfaces its `onValueChange(value)` payload into a
+  // readout node. Both must fire with "password" when the second tab is chosen.
+  const litDetail = page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        const host = document.querySelector('[data-testid="lit-tabs"]');
+        host?.addEventListener(
+          'value-change',
+          (e) => resolve((e as CustomEvent<{ value: string }>).detail.value),
+          { once: true },
+        );
+      }),
+  );
+  await litTriggers(page, 'lit-tabs').nth(1).click();
+  expect(await litDetail).toBe('password');
+
+  // React: the readout starts empty (no spurious fire on mount) and fills with the
+  // selected value once the public onValueChange emits.
+  const readout = page.getByTestId('react-tabs-event-value');
+  await expect(readout).toBeEmpty();
+  await reactTriggers(page, 'react-tabs-event').nth(1).click();
+  await expect(readout).toHaveText('password');
+});
