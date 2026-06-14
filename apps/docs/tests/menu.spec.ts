@@ -226,6 +226,91 @@ test('keyboard: ArrowDown highlights an item and aria-activedescendant follows i
   expect(reactWiring.resolves, 'react: activedescendant resolves to a real node').toBe(true);
 });
 
+/**
+ * Type-ahead — a printable key highlights the matching item (machine's TYPEAHEAD →
+ * highlightMatchingItem). Open, gate on focus landing in the menu, press "d" → the
+ * machine highlights "Duplicate" (first label beginning with "d") and points
+ * aria-activedescendant at it. Falsifiable on both renderers: the highlighted item's
+ * value is "duplicate".
+ */
+test('type-ahead: a printable key highlights the matching item on both renderers', async ({
+  page,
+}) => {
+  await litTrigger(page, 'lit-menu').click();
+  await expect(litContent(page, 'lit-menu')).toBeVisible();
+  await litFocusInContent(page, 'lit-menu');
+  await page.keyboard.press('d');
+  await expect
+    .poll(() =>
+      litHost(page, 'lit-menu').evaluate(
+        (h) =>
+          (h as HTMLElement).shadowRoot
+            ?.querySelector('.item[data-highlighted]')
+            ?.getAttribute('data-value') ?? null,
+      ),
+    )
+    .toBe('duplicate');
+
+  await reactTrigger(page, 'react-menu').click();
+  await expect(reactOpenContent(page)).toBeVisible();
+  await reactFocusInContent(page);
+  await page.keyboard.press('d');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document
+            .querySelector('.lab-menu-content[data-state="open"]')
+            ?.querySelector('.lab-menu-item[data-highlighted]')
+            ?.getAttribute('data-value') ?? null,
+      ),
+    )
+    .toBe('duplicate');
+});
+
+/**
+ * Home / End — the machine highlights the first / last interactive item
+ * (highlightFirstItem / highlightLastItem). Open, focus in the menu, then End → "delete"
+ * (last), Home → "edit" (first). Asserted by the highlighted item's value on BOTH
+ * renderers. (Archive is disabled and the separator is non-interactive; the machine skips
+ * them, so first/last land on the real actions.)
+ */
+test('Home/End: highlight jumps to the last then first item on both renderers', async ({
+  page,
+}) => {
+  const litHighlightedValue = () =>
+    litHost(page, 'lit-menu').evaluate(
+      (h) =>
+        (h as HTMLElement).shadowRoot
+          ?.querySelector('.item[data-highlighted]')
+          ?.getAttribute('data-value') ?? null,
+    );
+  const reactHighlightedValue = () =>
+    page.evaluate(
+      () =>
+        document
+          .querySelector('.lab-menu-content[data-state="open"]')
+          ?.querySelector('.lab-menu-item[data-highlighted]')
+          ?.getAttribute('data-value') ?? null,
+    );
+
+  await litTrigger(page, 'lit-menu').click();
+  await expect(litContent(page, 'lit-menu')).toBeVisible();
+  await litFocusInContent(page, 'lit-menu');
+  await page.keyboard.press('End');
+  await expect.poll(litHighlightedValue).toBe('delete');
+  await page.keyboard.press('Home');
+  await expect.poll(litHighlightedValue).toBe('edit');
+
+  await reactTrigger(page, 'react-menu').click();
+  await expect(reactOpenContent(page)).toBeVisible();
+  await reactFocusInContent(page);
+  await page.keyboard.press('End');
+  await expect.poll(reactHighlightedValue).toBe('delete');
+  await page.keyboard.press('Home');
+  await expect.poll(reactHighlightedValue).toBe('edit');
+});
+
 test('dismiss: Escape closes the menu and restores focus to the trigger', async ({ page }) => {
   // Gate on focus landing INSIDE the open menu before Escape — that is when the
   // machine's document-level key listener is live, so there is no open→dismiss race
