@@ -157,4 +157,26 @@ export type {
 } from './components/combobox/lab-combobox.js';
 export { filterComboboxItems } from './components/combobox/lab-combobox.js';
 
+// Advanced form inputs — both machine-driven, both REUSE the SHARED `field-a11y` helper
+// for the label / helper / error association (not a second implementation):
+//   - Pin Input (`@zag-js/pin-input`): N single-character segments; the machine owns each
+//     box's value + focus-auto-advance + paste-fill + masking, the field a11y lands on the
+//     control GROUP (role=group + describedby/required/invalid). Segments keyed by index
+//     (they never reorder — index IS the machine's stable key).
+//   - Tags Input (`@zag-js/tags-input`): a text input + removable chips; the machine owns
+//     the tag array + input + add/remove/edit/keyboard, the field a11y lands on the input.
+//     Chips keyed by stable VALUE (they reorder/remove). The chip-control translations are
+//     shared (runtime) so the delete-trigger / edit-input names are one rule across both
+//     renderers. Type-only axis exports here: no Lit runtime pulled into the React bundle.
+export type {
+  LabPinInputSize,
+  LabPinInputType,
+  LabPinInputValueType,
+} from './components/pin-input/lab-pin-input.js';
+export type {
+  LabTagsInputSize,
+  LabTagsInputType,
+} from './components/tags-input/lab-tags-input.js';
+export { tagsInputTranslations } from './components/tags-input/lab-tags-input.js';
+
 export const PACKAGE_NAME = '@labpics/ui-core';

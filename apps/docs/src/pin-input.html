@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Pin Input parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="pin-input-title">
+        Pin Input parity — <code>&lt;lab-pin-input&gt;</code> (Lit) ↔
+        <code>&lt;PinInput&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/pin-input</code> machine through the same seam.
+        The machine owns each box's value, the roving focus that auto-advances on type and
+        steps back on Backspace, the paste-fill that distributes a code across the boxes,
+        masking (<code>type=password</code>), the roving <code>tabindex</code> + per-box
+        <code>aria-invalid</code>, and the complete event. The label / helper / error
+        wiring is computed by the SAME shared <code>field-a11y</code> helper on both
+        renderers (on the control group), and both paint the same <code>--lab-*</code>
+        roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-pin-input
+            data-testid="lit-neutral"
+            label="Verification code"
+            count="4"
+            helper="Enter the 4-digit code."
+          ></lab-pin-input>
+          <lab-pin-input
+            data-testid="lit-invalid"
+            type="danger"
+            invalid
+            label="Verification code"
+            count="4"
+            error="That code is incorrect."
+          ></lab-pin-input>
+          <lab-pin-input
+            data-testid="lit-masked"
+            label="PIN"
+            count="4"
+            mask
+          ></lab-pin-input>
+          <lab-pin-input
+            data-testid="lit-required"
+            label="Code"
+            count="4"
+            required
+          ></lab-pin-input>
+          <lab-pin-input
+            data-testid="lit-disabled"
+            label="Locked"
+            count="4"
+            disabled
+          ></lab-pin-input>
+          <lab-pin-input data-testid="lit-size-s" size="s" label="Small" count="4"></lab-pin-input>
+          <lab-pin-input data-testid="lit-size-l" size="l" label="Large" count="4"></lab-pin-input>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from pin-input-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./pin-input-demo.tsx"></script>
+  </body>
+</html>
