@@ -13,6 +13,19 @@
  *
  * Axis types come from @labpics/ui-core (type-only — no Lit runtime), so the Lit
  * and React APIs share ONE source of truth and cannot drift.
+ *
+ * Hrefless non-current crumb (the Figma "disabled crumb"): an intermediate crumb
+ * with no `href` is a non-navigable waypoint — it renders as a bare
+ * `<span className="lab-breadcrumb-link">` with NO role and NO aria-current, exactly
+ * like the Lit `<span part="link">`. Truthful inert text, never a destination-less
+ * `<a>`.
+ *
+ * Separator type — a DELIBERATE, documented asymmetry with the Lit element
+ * (ADR-0001): this React twin accepts a `ReactNode`, so callers may pass an icon
+ * element as the separator. The Lit `separator` attribute is string-only (an HTML
+ * attribute cannot carry a node); an icon separator there would need a per-gap
+ * `<slot>` — a larger feature, deliberately out of scope. This is the one place the
+ * two twins' separator APIs differ on purpose.
  */
 'use client';
 
@@ -25,7 +38,11 @@ export interface BreadcrumbProps extends Omit<HTMLAttributes<HTMLElement>, 'chil
   items: ReadonlyArray<LabBreadcrumbItem>;
   /** Text + spacing density. */
   size?: LabBreadcrumbSize;
-  /** The glyph/node drawn between crumbs. Defaults to a `/`. */
+  /**
+   * The glyph/node drawn between crumbs. Defaults to a `/`. Accepts any
+   * `ReactNode` (e.g. an icon element) — a deliberate superset of the Lit
+   * element, whose `separator` attribute is string-only. See the file header.
+   */
   separator?: ReactNode;
 }
 
@@ -51,6 +68,9 @@ export const Breadcrumb = forwardRef<HTMLElement, BreadcrumbProps>(function Brea
                   {item.label}
                 </a>
               ) : (
+                // Hrefless non-current crumb (Figma "disabled crumb"): a bare
+                // <span> — no role, no aria-current. Truthful inert text, not a
+                // destination-less <a>. Parity with the Lit <span part="link">.
                 <span className="lab-breadcrumb-link">{item.label}</span>
               )}
               {isCurrent ? null : (
