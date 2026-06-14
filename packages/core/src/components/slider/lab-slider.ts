@@ -17,9 +17,12 @@
  * that `<lab-input>` / `<lab-textarea>` / `<lab-number-input>` use. The MACHINE owns
  * each thumb's `role="slider"` + value ARIA and points the thumb's `aria-labelledby`
  * at the label part it spreads — so the label is rendered as the machine's label
- * part (giving the thumbs their accessible name) AND carries the field's required
- * mark; the helper/error are linked from the field's `aria-describedby` on the same
- * label region. Neither layer re-implements the other.
+ * part (giving the thumbs their accessible name). The helper/error are linked from the
+ * field's `aria-describedby`/`aria-errormessage` on each focusable `role="slider"`
+ * THUMB — the element a reader lands on, mirroring number-input's field ARIA on its
+ * `<input>` — so the description is actually announced (the inert group label never
+ * receives focus, so a describedby there is never read). Neither layer re-implements
+ * the other.
  *
  * Compound, keyed by INDEX (the slider's stable thumb key): the machine's per-thumb
  * getters take `{ index }` and the id it puts on each thumb is `slider:<id>:thumb:<i>`.
@@ -428,6 +431,14 @@ export class LabSlider extends LabElement {
     return count > 0 ? count : 1;
   }
 
+  /** The live value readout text — the machine's current value(s) joined for display.
+   * The Zag `getValueTextProps()` carries only the id + data-attrs, so the renderer
+   * must write the text; this mirrors the React twin's `api.value.join(' – ')` exactly
+   * so the visible readout is identical across renderers (ADR-0001 parity). */
+  private valueText(): string {
+    return this.machineCtl.api.value.join(' – ');
+  }
+
   override updated(_changed: PropertyValues): void {
     // Spread the machine's connect props onto the real shadow nodes: group-level
     // (root, label, valueText, control, track, range, marker group) and the per-thumb
@@ -445,6 +456,9 @@ export class LabSlider extends LabElement {
     const labelEl = root.querySelector<HTMLElement>('.label');
     if (labelEl) this.machineCtl.spread(labelEl, api.getLabelProps());
 
+    // getValueTextProps() carries only the id + data-attrs (no text). The visible
+    // value text is written reactively in render() via valueText(), mirroring the React
+    // twin — here we only spread the machine's id/data-attrs onto the same span.
     const valueTextEl = root.querySelector<HTMLElement>('.value-text');
     if (valueTextEl) this.machineCtl.spread(valueTextEl, api.getValueTextProps());
 
@@ -457,6 +471,15 @@ export class LabSlider extends LabElement {
     const rangeEl = root.querySelector<HTMLElement>('.range');
     if (rangeEl) this.machineCtl.spread(rangeEl, api.getRangeProps());
 
+    // The FIELD a11y contract — the description (helper) / errormessage wiring. The
+    // machine's getThumbProps() emits the thumb's slider role + value ARIA +
+    // aria-labelledby (its NAME), but NOT aria-describedby/aria-errormessage. So the
+    // field's description must be applied to the THUMB itself — the focusable
+    // role="slider" element a reader actually lands on — exactly as the sibling
+    // number-input spreads field ARIA onto its focusable <input>. On the inert group
+    // <label> it would never be announced (the label never receives focus).
+    const fieldAria = fieldControlAria(this.a11yInput());
+
     // Per-thumb getters, keyed by the STABLE thumb index — never a positional DOM
     // query. Each thumb carries data-index; the machine keys its getters by index and
     // the id it puts on the thumb is what aria-labelledby/roving target. A hidden
@@ -466,6 +489,10 @@ export class LabSlider extends LabElement {
       const index = Number(thumbEl.dataset.index);
       if (Number.isNaN(index)) continue;
       this.machineCtl.spread(thumbEl, api.getThumbProps({ index }));
+      // Apply the field description AFTER the machine spread (so it cannot be clobbered):
+      // every focusable thumb announces the helper/error wherever roving focus lands.
+      setOrRemove(thumbEl, 'aria-describedby', fieldAria['aria-describedby']);
+      setOrRemove(thumbEl, 'aria-errormessage', fieldAria['aria-errormessage']);
       const hiddenInput = thumbEl.querySelector<HTMLInputElement>('input');
       if (hiddenInput) this.machineCtl.spread(hiddenInput, api.getHiddenInputProps({ index }));
     }
@@ -478,16 +505,6 @@ export class LabSlider extends LabElement {
       const value = Number(markerEl.dataset.value);
       if (Number.isNaN(value)) continue;
       this.machineCtl.spread(markerEl, api.getMarkerProps({ value }));
-    }
-
-    // Add the FIELD a11y contract over the machine's spread: the machine owns each
-    // thumb's slider role + value ARIA and points aria-labelledby at the label; the
-    // field owns the description wiring (describedby → helper/error, errormessage) on
-    // the label region so a reader announces the helper/error with the group.
-    if (labelEl) {
-      const aria = fieldControlAria(this.a11yInput());
-      setOrRemove(labelEl, 'aria-describedby', aria['aria-describedby']);
-      setOrRemove(labelEl, 'aria-errormessage', aria['aria-errormessage']);
     }
   }
 
@@ -503,7 +520,11 @@ export class LabSlider extends LabElement {
       <div class="field" part="field">
         <div class="label-row">
           <label class="label" part="label">${this.label}</label>
-          ${this.showValue ? html`<span class="value-text" part="value-text"></span>` : nothing}
+          ${
+            this.showValue
+              ? html`<span class="value-text" part="value-text">${this.valueText()}</span>`
+              : nothing
+          }
         </div>
         <div class="control" part="control">
           <div class="track" part="track">
