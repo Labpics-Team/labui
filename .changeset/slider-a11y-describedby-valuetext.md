@@ -3,6 +3,8 @@
 "@labpics/ui-react": patch
 ---
 
+## Slider accessibility
+
 Slider — announce the helper/error from the thumb and render the live value text.
 
 Two HIGH defects from the #36 audit roadmap are fixed across both renderers:

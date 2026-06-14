@@ -157,11 +157,13 @@ test('value-text: the live value renders + tracks changes under show-value (both
   // thumb and the displayed text must move with it on BOTH renderers.
   const litT = litThumb(page, 'lit-single');
   await litT.focus();
+  await expect(litT).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(litValueText('lit-single')).toHaveText('41');
 
   const reactT = reactThumb(page, 'react-single');
   await reactT.focus();
+  await expect(reactT).toBeFocused();
   await page.keyboard.press('ArrowRight');
   await expect(reactValueText('react-single')).toHaveText('41');
 });
