@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Textarea parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="textarea-title">
+        Textarea parity — <code>&lt;lab-textarea&gt;</code> (Lit) ↔
+        <code>&lt;Textarea&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. A multi-line text field: a real
+        <code>&lt;textarea&gt;</code> wired to a label, an optional helper, and an
+        optional error via the SAME genuine ARIA as Input, plus the multi-line extras
+        (<code>rows</code>, optional <code>auto-resize</code>). Presentational —
+        <code>@zag-js</code> has no text-input machine; auto-resize is local view state
+        computed from <code>scrollHeight</code>, not a machine. The label/helper/error
+        wiring is the SAME shared <code>field-a11y</code> helper on both renderers.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-textarea
+            data-testid="lit-neutral"
+            label="Bio"
+            placeholder="Tell us about yourself"
+            helper="Markdown is supported."
+          ></lab-textarea>
+          <lab-textarea
+            data-testid="lit-invalid"
+            type="danger"
+            invalid
+            label="Bio"
+            value="x"
+            error="Add at least 20 characters."
+            helper="Markdown is supported."
+          ></lab-textarea>
+          <lab-textarea data-testid="lit-warning" type="warning" label="Notes"></lab-textarea>
+          <lab-textarea data-testid="lit-success" type="success" label="Notes"></lab-textarea>
+          <lab-textarea data-testid="lit-required" label="Feedback" required></lab-textarea>
+          <lab-textarea data-testid="lit-disabled" label="Locked" value="read-only" disabled></lab-textarea>
+          <lab-textarea data-testid="lit-readonly" label="Log" value="line one" readonly></lab-textarea>
+          <lab-textarea data-testid="lit-size-s" size="s" label="Small"></lab-textarea>
+          <lab-textarea data-testid="lit-size-l" size="l" label="Large"></lab-textarea>
+          <lab-textarea
+            data-testid="lit-autoresize"
+            label="Auto-resize"
+            auto-resize
+            rows="2"
+            value="grows to fit content"
+          ></lab-textarea>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from textarea-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./textarea-demo.tsx"></script>
+  </body>
+</html>

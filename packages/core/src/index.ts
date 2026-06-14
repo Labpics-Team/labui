@@ -86,6 +86,26 @@ export type {
   LabCheckboxType,
 } from './components/checkbox/lab-checkbox.js';
 
+// Text fields — PRESENTATIONAL form controls (Input / Textarea). @zag-js has no
+// plain text-input machine (the native control owns value/caret/editing), so they
+// honestly opt out of the seam — but they OWN the form-field a11y wiring (label /
+// helper / error association), computed by the SHARED `field-a11y` helper so the
+// Lit elements and the React twins cannot drift. The axis types are type-only (no
+// Lit runtime); the a11y helper is framework-free runtime, consumed by both
+// renderers as the single source of truth for the ARIA contract.
+export type { LabInputSize, LabInputType } from './components/input/lab-input.js';
+export type { LabTextareaSize, LabTextareaType } from './components/textarea/lab-textarea.js';
+export {
+  type FieldA11yInput,
+  type FieldControlAria,
+  type FieldPartIds,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+  type LabFieldSize,
+  type LabFieldType,
+} from './components/field/field-a11y.js';
+
 // Disclosure — the compound `<lab-accordion>` (a GROUP machine, the Radio/Tabs
 // canon) and the single-machine `<lab-progress>`. Type-only: no Lit runtime
 // pulled into the React bundle.
