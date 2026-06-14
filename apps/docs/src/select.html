@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Select parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 4rem;
+        padding-block: 3rem;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="select-title">
+        Select parity — <code>&lt;lab-select&gt;</code> (Lit) ↔ <code>&lt;Select&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/select</code> machine through the same seam.
+        The machine owns open-on-click, single/multiple selection, Arrow/Home/End
+        navigation + typeahead, Escape / outside-click dismiss, focus restoration,
+        <code>role="combobox"/listbox/option</code> + aria, and dynamic positioning.
+        The Lit element keeps the listbox inside its shadow root
+        (<code>strategy:'fixed'</code>, <code>portalled:false</code>); the React twin
+        portals it to <code>&lt;body&gt;</code>. Both paint with the same
+        <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer: custom element, registered + styled in its shadow root. The
+           items ride the JSON attribute; the machine builds the collection from them. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-select
+            data-testid="lit-select"
+            label="Fruit"
+            placeholder="Pick a fruit…"
+            default-value='["banana"]'
+            items='[{"value":"apple","label":"Apple"},{"value":"banana","label":"Banana"},{"value":"cherry","label":"Cherry"},{"value":"durian","label":"Durian","disabled":true},{"value":"elderberry","label":"Elderberry"}]'
+          ></lab-select>
+          <lab-select
+            data-testid="lit-select-multi"
+            label="Fruits"
+            placeholder="Pick fruits…"
+            multiple
+            items='[{"value":"apple","label":"Apple"},{"value":"banana","label":"Banana"},{"value":"cherry","label":"Cherry"}]'
+          ></lab-select>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from select-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./select-demo.tsx"></script>
+  </body>
+</html>

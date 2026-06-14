@@ -96,4 +96,19 @@ export type {
 } from './components/accordion/lab-accordion.js';
 export type { LabProgressSize } from './components/progress/lab-progress.js';
 
+// Compound + positioned controls — the canon fusing the keyed-compound group
+// machine (radio-group) with the positioned, dismissable overlay (popover). Each
+// runs its own Zag machine and is consumed by the React twin. Type-only here: no
+// Lit runtime is pulled into the React bundle.
+export type {
+  LabSelectItem,
+  LabSelectPlacement,
+  LabSelectSize,
+} from './components/select/lab-select.js';
+export type {
+  LabMenuItem,
+  LabMenuPlacement,
+  LabMenuSize,
+} from './components/menu/lab-menu.js';
+
 export const PACKAGE_NAME = '@labpics/ui-core';
