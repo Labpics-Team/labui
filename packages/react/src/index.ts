@@ -30,6 +30,19 @@ export { Button, type ButtonProps } from './button.js';
 export { Switch, type SwitchProps } from './switch.js';
 export { Checkbox, type CheckboxProps } from './checkbox.js';
 
+// PRODUCTION text fields — native-React twins of the Lit `<lab-input>` /
+// `<lab-textarea>`. PRESENTATIONAL (no machine: the native control owns
+// value/caret/editing), but they OWN the form-field a11y wiring (label / helper /
+// error association) computed by the SAME shared `field-a11y` helper from core, so
+// the ARIA contract is one source of truth across both renderers.
+export { Input, type InputProps, type LabInputSize, type LabInputType } from './input.js';
+export {
+  Textarea,
+  type TextareaProps,
+  type LabTextareaSize,
+  type LabTextareaType,
+} from './textarea.js';
+
 // PRODUCTION compound form control — `<RadioGroup>` + `<Radio>` over the SAME
 // `@zag-js/radio-group` machine as the Lit `<lab-radio-group>`.
 export { RadioGroup, type RadioGroupProps, Radio, type RadioProps } from './radio-group.js';

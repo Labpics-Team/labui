@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Input parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="input-title">
+        Input parity — <code>&lt;lab-input&gt;</code> (Lit) ↔ <code>&lt;Input&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one design system. A single-line text field: a real
+        <code>&lt;input&gt;</code> wired to a label, an optional helper, and an optional
+        error via genuine ARIA (<code>aria-describedby</code> → helper/error,
+        <code>aria-invalid</code>, <code>aria-errormessage</code>,
+        <code>aria-required</code>). Input is presentational — <code>@zag-js</code> has
+        no text-input machine; the native control owns value/caret/editing. The
+        label/helper/error wiring is computed by the SAME shared <code>field-a11y</code>
+        helper on both renderers, and both paint the same <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-input
+            data-testid="lit-neutral"
+            label="Email"
+            input-type="email"
+            placeholder="you@example.com"
+            helper="We never share your address."
+          ></lab-input>
+          <lab-input
+            data-testid="lit-invalid"
+            type="danger"
+            invalid
+            label="Email"
+            input-type="email"
+            value="not-an-email"
+            error="Enter a valid email address."
+            helper="We never share your address."
+          ></lab-input>
+          <lab-input data-testid="lit-warning" type="warning" label="Username"></lab-input>
+          <lab-input data-testid="lit-success" type="success" label="Username"></lab-input>
+          <lab-input data-testid="lit-required" label="Full name" required></lab-input>
+          <lab-input data-testid="lit-disabled" label="Locked" value="read-only" disabled></lab-input>
+          <lab-input data-testid="lit-readonly" label="Account id" value="acct_123" readonly></lab-input>
+          <lab-input data-testid="lit-size-s" size="s" label="Small"></lab-input>
+          <lab-input data-testid="lit-size-l" size="l" label="Large"></lab-input>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from input-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./input-demo.tsx"></script>
+  </body>
+</html>

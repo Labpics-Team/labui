@@ -73,6 +73,12 @@ export default defineConfig({
         // side, running the SAME Zag machine, for the parity + behaviour suite.
         switch: resolve(__dirname, 'src/switch.html'),
         checkbox: resolve(__dirname, 'src/checkbox.html'),
+        // Text fields: Lit element + native-React twin side by side. PRESENTATIONAL
+        // (no machine — the native control owns value/caret/editing), but they OWN
+        // the form-field a11y wiring (label / helper / error association) via the
+        // SAME shared field-a11y helper — asserted on BOTH renderers in the suite.
+        input: resolve(__dirname, 'src/input.html'),
+        textarea: resolve(__dirname, 'src/textarea.html'),
         // Positioned-overlay parity fixtures: Lit element (shadow + strategy:fixed)
         // and native-React twin (body portal), running the SAME Zag machine, for the
         // open/close/positioning/dismiss/keyboard + parity suite.
