@@ -148,9 +148,7 @@ test('multiple: opening a 2nd panel keeps the 1st open (both renderers)', async 
   // proof the axis is wired, not assumed).
   for (const testid of ['lit-accordion-multiple', 'react-accordion-multiple']) {
     const triggers =
-      testid === 'lit-accordion-multiple'
-        ? litTriggers(page, testid)
-        : reactTriggers(page, testid);
+      testid === 'lit-accordion-multiple' ? litTriggers(page, testid) : reactTriggers(page, testid);
 
     // First panel opens by default (default-value="one").
     await expect(triggers.nth(0)).toHaveAttribute('aria-expanded', 'true');
@@ -191,9 +189,7 @@ test('keyboard: Home/End focus the first/last header via the machine (both rende
   // the first — no disabled item skews the endpoints.
   for (const testid of ['lit-accordion-multiple', 'react-accordion-multiple']) {
     const triggers =
-      testid === 'lit-accordion-multiple'
-        ? litTriggers(page, testid)
-        : reactTriggers(page, testid);
+      testid === 'lit-accordion-multiple' ? litTriggers(page, testid) : reactTriggers(page, testid);
 
     // From the middle header, End focuses the last; Home focuses the first.
     await triggers.nth(1).focus();

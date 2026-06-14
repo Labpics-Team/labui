@@ -152,7 +152,9 @@ test('interactive a11y: :focus-within draws the --lab-border-focus ring (both re
   }
 });
 
-test('interactive a11y: the slotted control is Tab-reachable (both renderers)', async ({ page }) => {
+test('interactive a11y: the slotted control is Tab-reachable (both renderers)', async ({
+  page,
+}) => {
   // Keyboard operability is the load-bearing half of the P5 fix: the action must be
   // reachable by Tab, not just by mouse. From a stable anchor at the top of the page
   // (the theme <select>), Tab must eventually land focus on each renderer's real

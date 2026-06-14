@@ -59,7 +59,13 @@ createRoot(mount).render(
        * actionable semantics stay on a real <button> in the body (the <article>
        * never fabricates a role). :focus-within draws --lab-border-focus.
        */}
-      <Card data-testid="react-interactive" variant="elevated" interactive header="Interactive" footer="Footer">
+      <Card
+        data-testid="react-interactive"
+        variant="elevated"
+        interactive
+        header="Interactive"
+        footer="Footer"
+      >
         A whole-card target whose action is a real control.{' '}
         <button type="button" data-testid="react-interactive-control">
           Open

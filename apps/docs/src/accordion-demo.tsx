@@ -56,9 +56,7 @@ const AXIS_ITEMS: ReadonlyArray<LabAccordionItem> = [
 // since the machine reads default-value once on connect) — not set late here. The
 // `multiple` / `collapsible` axes are likewise declared as ATTRIBUTES in the
 // markup (read once on connect); here we only feed each host its `.items`.
-const litAccordion = document.querySelector<LabAccordion>(
-  '[data-testid="lit-accordion"]',
-);
+const litAccordion = document.querySelector<LabAccordion>('[data-testid="lit-accordion"]');
 if (litAccordion) {
   litAccordion.items = DEMO_ITEMS;
 }
