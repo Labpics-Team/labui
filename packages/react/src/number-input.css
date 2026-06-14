@@ -1,0 +1,214 @@
+/*
+ * <NumberInput> (React) styles — the visual PARITY twin of the Lit
+ * `<lab-number-input>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([type])` / `.control`,
+ * splicing the shared `field-styles`. React is native (ADR-0001) — no shadow DOM —
+ * so this sheet mirrors the same field surface against `[data-lab-number-input]` +
+ * the `data-*` the component sets and the `.lab-field-*` / `.lab-number-input-*`
+ * parts. Same roles, same structure, same states ⇒ same paint. The shared field
+ * surface is repeated here (not imported) because each React component inlines its
+ * own stylesheet (tsup injectStyle) so it ships standalone.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role, every
+ * dimension a --lab-* token (with a literal dimension fallback only). ZERO hex, ZERO
+ * primitive, ZERO colour-role fallback.
+ */
+
+[data-lab-number-input] {
+  --_lab-field-pad-x: var(--lab-space-md, 0.75rem);
+  --_lab-field-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-field-radius: var(--lab-radius-md, 0.5rem);
+  --_lab-field-gap: var(--lab-space-xs, 0.375rem);
+  --_lab-field-font: var(--lab-font-size-md, 1rem);
+  --_lab-field-label-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-field-help-font: var(--lab-font-size-xxs, 0.7222rem);
+  --_lab-field-line: var(--lab-line-height-md, 1.5);
+
+  display: block;
+}
+
+[data-lab-number-input][data-size="s"] {
+  --_lab-field-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-field-pad-y: var(--lab-space-xs, 0.375rem);
+  --_lab-field-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-number-input][data-size="l"] {
+  --_lab-field-pad-x: var(--lab-space-lg, 1rem);
+  --_lab-field-pad-y: var(--lab-space-md, 0.75rem);
+  --_lab-field-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+[data-lab-number-input].lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--_lab-field-gap);
+  font: inherit;
+}
+
+[data-lab-number-input] .lab-field-label {
+  font-size: var(--_lab-field-label-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-secondary);
+}
+[data-lab-number-input][data-required] .lab-field-required-mark {
+  color: var(--lab-label-danger);
+}
+[data-lab-number-input][data-label-hidden] .lab-field-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* The control surface — a bordered box that wraps the input + the +/- trigger stack. */
+[data-lab-number-input] .lab-field-control {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  overflow: hidden;
+  background-color: var(--lab-bg-primary);
+  border: 0.0625rem solid var(--lab-border-base);
+  border-radius: var(--_lab-field-radius);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+[data-lab-number-input] .lab-field-control:hover:not([data-disabled]) {
+  border-color: var(--lab-border-strong);
+}
+
+[data-lab-number-input] .lab-number-input-input {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: var(--_lab-field-pad-y) var(--_lab-field-pad-x);
+  font: inherit;
+  font-size: var(--_lab-field-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-primary);
+  background: transparent;
+  border: 0;
+  outline: none;
+  appearance: none;
+}
+[data-lab-number-input] .lab-number-input-input::placeholder {
+  color: var(--lab-label-tertiary);
+  opacity: 1;
+}
+[data-lab-number-input] .lab-number-input-input::-webkit-outer-spin-button,
+[data-lab-number-input] .lab-number-input-input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* The +/- trigger stack — a hairline-separated column of two real buttons the
+   machine enables/disables at the bounds (data-disabled). */
+[data-lab-number-input] .lab-number-input-triggers {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  border-inline-start: 0.0625rem solid var(--lab-border-soft);
+}
+
+[data-lab-number-input] .lab-number-input-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--lab-font-size-xs, 0.8333rem);
+  line-height: 1;
+  color: var(--lab-label-secondary);
+  background-color: var(--lab-fill-neutral-tinted);
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+[data-lab-number-input] .lab-number-input-trigger-inc {
+  border-block-end: 0.0625rem solid var(--lab-border-soft);
+}
+[data-lab-number-input] .lab-number-input-trigger:hover:not([data-disabled]) {
+  background-color: var(--lab-fill-neutral);
+  color: var(--lab-label-primary);
+}
+[data-lab-number-input] .lab-number-input-trigger[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lab-number-input][data-size="s"] .lab-number-input-trigger {
+  width: 1.5rem;
+}
+[data-lab-number-input][data-size="l"] .lab-number-input-trigger {
+  width: 2rem;
+}
+
+/* Focus ring: the control surface lights when the inner input is focus-visible. */
+[data-lab-number-input] .lab-field-control:has(.lab-number-input-input:focus-visible) {
+  border-color: var(--lab-border-focus);
+  box-shadow: 0 0 0 0.125rem var(--lab-border-focus);
+}
+
+/* Sentiment: the type re-points the border + focus ring, independent of size. */
+[data-lab-number-input][data-type="danger"] .lab-field-control {
+  border-color: var(--lab-border-danger);
+}
+[data-lab-number-input][data-type="danger"]
+  .lab-field-control:has(.lab-number-input-input:focus-visible) {
+  box-shadow: 0 0 0 0.125rem var(--lab-border-danger);
+}
+[data-lab-number-input][data-type="warning"] .lab-field-control {
+  border-color: var(--lab-border-warning-strong);
+}
+[data-lab-number-input][data-type="warning"]
+  .lab-field-control:has(.lab-number-input-input:focus-visible) {
+  box-shadow: 0 0 0 0.125rem var(--lab-border-warning-strong);
+}
+[data-lab-number-input][data-type="success"] .lab-field-control {
+  border-color: var(--lab-border-success-strong);
+}
+[data-lab-number-input][data-type="success"]
+  .lab-field-control:has(.lab-number-input-input:focus-visible) {
+  box-shadow: 0 0 0 0.125rem var(--lab-border-success-strong);
+}
+
+/* Readonly / disabled surfaces. */
+[data-lab-number-input][data-readonly] .lab-field-control {
+  background-color: var(--lab-fill-neutral-tinted);
+  border-color: var(--lab-border-soft);
+}
+[data-lab-number-input][data-disabled] .lab-field-control {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+[data-lab-number-input] .lab-field-helper {
+  font-size: var(--_lab-field-help-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-tertiary);
+}
+
+[data-lab-number-input] .lab-field-error {
+  font-size: var(--_lab-field-help-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-number-input] .lab-field-control,
+  [data-lab-number-input] .lab-number-input-trigger {
+    transition: none;
+  }
+}

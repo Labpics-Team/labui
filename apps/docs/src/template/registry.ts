@@ -68,10 +68,11 @@ const discoveredDocs: ComponentDoc[] = Object.values(docModules)
  * `<name>.doc.ts` lands and is discovered; remove it from this list then.
  */
 const PLANNED: ReadonlyArray<Extract<RegistryEntry, { kind: 'planned' }>> = [
-  // Input shipped (its doc is discovered now), so Slider is the next honest "coming
-  // soon" marker — a real, not-yet-built form control (the @zag-js/slider machine),
-  // not a fake. It keeps the disabled-nav mechanism honest and under test.
-  { kind: 'planned', slug: 'slider', title: 'Slider (planned)' },
+  // Slider and NumberInput shipped (their docs are discovered now), so Combobox is the
+  // next honest "coming soon" marker — a real, not-yet-built control (a Select with a
+  // text filter, built on the same compound + positioned canon Select established), not
+  // a fake. It keeps the disabled-nav mechanism honest and under test.
+  { kind: 'planned', slug: 'combobox', title: 'Combobox (planned)' },
 ];
 
 export const REGISTRY: Registry = [

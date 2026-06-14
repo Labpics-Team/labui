@@ -1,0 +1,186 @@
+/*
+ * <Slider> (React) styles — the visual PARITY twin of the Lit `<lab-slider>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([size])` / `.thumb`. React
+ * is native (ADR-0001) — no shadow DOM — so this sheet mirrors those exact rules
+ * against `[data-lab-slider]` + the `data-*` the component sets and the
+ * `.lab-slider-*` parts. Same roles, same structure, same states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role, every
+ * dimension a --lab-* token (with a literal dimension fallback only). ZERO hex, ZERO
+ * primitive, ZERO colour-role fallback.
+ */
+
+[data-lab-slider] {
+  --_lab-track-thickness: 0.375rem;
+  --_lab-thumb: 1.125rem;
+  --_lab-gap: var(--lab-space-xs, 0.375rem);
+  --_lab-label-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-help-font: var(--lab-font-size-xxs, 0.7222rem);
+  --_lab-line: var(--lab-line-height-md, 1.5);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--_lab-gap);
+  font: inherit;
+}
+
+[data-lab-slider][data-size="s"] {
+  --_lab-track-thickness: 0.25rem;
+  --_lab-thumb: 0.875rem;
+}
+[data-lab-slider][data-size="l"] {
+  --_lab-track-thickness: 0.5rem;
+  --_lab-thumb: 1.375rem;
+}
+
+[data-lab-slider] .lab-slider-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--lab-space-sm, 0.5rem);
+}
+
+[data-lab-slider] .lab-slider-label {
+  font-size: var(--_lab-label-font);
+  line-height: var(--_lab-line);
+  color: var(--lab-label-secondary);
+}
+[data-lab-slider][data-label-hidden] .lab-slider-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+[data-lab-slider] .lab-slider-value-text {
+  font-size: var(--_lab-label-font);
+  line-height: var(--_lab-line);
+  color: var(--lab-label-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+[data-lab-slider] .lab-slider-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding-block: calc(var(--_lab-thumb) / 2);
+}
+[data-lab-slider][data-orientation="vertical"] .lab-slider-control {
+  height: 12rem;
+  padding-block: 0;
+  padding-inline: calc(var(--_lab-thumb) / 2);
+}
+
+[data-lab-slider] .lab-slider-track {
+  position: relative;
+  flex: 1 1 auto;
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-fill-neutral-tinted);
+}
+[data-lab-slider][data-orientation="horizontal"] .lab-slider-track {
+  width: 100%;
+  height: var(--_lab-track-thickness);
+}
+[data-lab-slider][data-orientation="vertical"] .lab-slider-track {
+  width: var(--_lab-track-thickness);
+  height: 100%;
+}
+
+[data-lab-slider] .lab-slider-range {
+  position: absolute;
+  border-radius: inherit;
+  background-color: var(--lab-fill-accent);
+}
+[data-lab-slider][data-orientation="horizontal"] .lab-slider-range {
+  top: 0;
+  bottom: 0;
+}
+[data-lab-slider][data-orientation="vertical"] .lab-slider-range {
+  left: 0;
+  right: 0;
+}
+[data-lab-slider][data-invalid] .lab-slider-range {
+  background-color: var(--lab-fill-danger);
+}
+
+[data-lab-slider] .lab-slider-thumb {
+  position: absolute;
+  width: var(--_lab-thumb);
+  height: var(--_lab-thumb);
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-control-bg);
+  border: 0.0625rem solid var(--lab-border-base);
+  box-shadow: 0 0.0625rem 0.1875rem var(--lab-fx-shadow-major);
+  outline: none;
+  cursor: grab;
+  transform: translate(-50%, -50%);
+  transition: box-shadow 120ms ease;
+}
+[data-lab-slider][data-orientation="horizontal"] .lab-slider-thumb {
+  top: 50%;
+}
+[data-lab-slider][data-orientation="vertical"] .lab-slider-thumb {
+  left: 50%;
+}
+[data-lab-slider] .lab-slider-thumb:focus-visible {
+  border-color: var(--lab-border-focus);
+  box-shadow: 0 0 0 0.1875rem var(--lab-border-focus);
+}
+[data-lab-slider][data-invalid] .lab-slider-thumb:focus-visible {
+  border-color: var(--lab-border-danger);
+  box-shadow: 0 0 0 0.1875rem var(--lab-border-danger);
+}
+[data-lab-slider] .lab-slider-thumb[data-dragging] {
+  cursor: grabbing;
+}
+
+[data-lab-slider] .lab-slider-marker-group {
+  position: absolute;
+  inset: 0;
+}
+[data-lab-slider] .lab-slider-marker {
+  position: absolute;
+  width: 0.125rem;
+  height: 0.125rem;
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-border-strong);
+  transform: translate(-50%, -50%);
+}
+[data-lab-slider][data-orientation="horizontal"] .lab-slider-marker {
+  top: 50%;
+}
+[data-lab-slider][data-orientation="vertical"] .lab-slider-marker {
+  left: 50%;
+}
+
+[data-lab-slider][data-disabled] .lab-slider-control {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+[data-lab-slider][data-disabled] .lab-slider-thumb {
+  cursor: not-allowed;
+}
+
+[data-lab-slider] .lab-slider-helper {
+  font-size: var(--_lab-help-font);
+  line-height: var(--_lab-line);
+  color: var(--lab-label-tertiary);
+}
+[data-lab-slider] .lab-slider-error {
+  font-size: var(--_lab-help-font);
+  line-height: var(--_lab-line);
+  color: var(--lab-label-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-slider] .lab-slider-thumb {
+    transition: none;
+  }
+}
