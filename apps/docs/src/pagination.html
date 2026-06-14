@@ -37,6 +37,25 @@
           page-size="10"
           default-page="8"
         ></lab-pagination>
+
+        <!-- siblingCount=0: only the current page (+ first/last boundary) shows. -->
+        <h3>siblingCount=0</h3>
+        <lab-pagination
+          data-testid="lit-pagination-siblings0"
+          count="200"
+          page-size="10"
+          sibling-count="0"
+          default-page="8"
+        ></lab-pagination>
+
+        <!-- Controlled: the `page` attribute is SET, so the consumer owns the page. -->
+        <h3>controlled</h3>
+        <lab-pagination
+          data-testid="lit-pagination-controlled"
+          count="200"
+          page-size="10"
+          page="3"
+        ></lab-pagination>
       </section>
 
       <!-- React renderer: native, mounted from pagination-demo.tsx into this node. -->

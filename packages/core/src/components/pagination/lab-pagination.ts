@@ -23,10 +23,17 @@
  * the bounds; ellipses are `aria-hidden`. Clicking a page or prev/next runs the
  * machine, which is the single source of truth for the page value.
  *
- * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimension
- * tokens via `litVar`. The current page reads `--lab-fill-accent` +
+ * Token contract (core-CONTRACT §2): every COLOUR is a semantic --lab-* role via
+ * `litVar`, and dimensions bind a token wherever a semantic role exists — gap
+ * (`--lab-space-xs`), padding (`--lab-space-sm`), font size (`--lab-font-size-*`),
+ * radius (`--lab-radius-control`). The current page reads `--lab-fill-accent` +
  * `--lab-label-on-accent`; idle items read `--lab-label-secondary`; the focus
  * ring reads `--lab-border-focus`. No hex, no primitive, no invented role.
+ * Exceptions, by design: the per-size control box (`--_size`: 1.75 / 2.25 /
+ * 2.75rem) and the 120ms hover transition are raw literals — the token layer
+ * exposes no semantic control-size or motion-duration role to bind, and faking
+ * one (or borrowing a `--lab-space-*` primitive) would be a misleading stop-gap.
+ * This mirrors the sibling controls (avatar, switch), which size the same way.
  */
 import { type TemplateResult, css, html } from 'lit';
 import * as paginationMachine from '@zag-js/pagination';
@@ -37,6 +44,16 @@ import type { ZagController } from '../../lit/zag-controller.js';
 
 /** Control density. */
 export type LabPaginationSize = 's' | 'm' | 'l';
+
+/**
+ * Accessible names for the prev/next triggers — capitalized UI polish, kept
+ * IDENTICAL to the native React twin (`pagination.tsx`) so the two renderers
+ * never drift. Zag's machine emits a lowercase `aria-label` ('previous page' /
+ * 'next page') from its trigger prop-getters; both renderers override it with
+ * these so the accessible name is one source of truth, not the machine default.
+ */
+const PREV_LABEL = 'Previous page';
+const NEXT_LABEL = 'Next page';
 
 type PaginationSchema = SchemaOf<paginationMachine.Service>;
 type PaginationApi = paginationMachine.Api;
@@ -205,8 +222,18 @@ export class LabPagination extends LabElement {
 
     const prev = this.renderRoot.querySelector<HTMLElement>('.trigger-prev');
     const next = this.renderRoot.querySelector<HTMLElement>('.trigger-next');
-    if (prev) this.machineCtl.spread(prev, api.getPrevTriggerProps());
-    if (next) this.machineCtl.spread(next, api.getNextTriggerProps());
+    if (prev) {
+      this.machineCtl.spread(prev, api.getPrevTriggerProps());
+      // Re-assert the capitalized accessible name AFTER the spread: Zag emits a
+      // lowercase `aria-label` ('previous page') from getPrevTriggerProps, which
+      // would otherwise overwrite the template's value and drift from the React
+      // twin (which keeps 'Previous page'). Unify on the capitalized form on both.
+      prev.setAttribute('aria-label', PREV_LABEL);
+    }
+    if (next) {
+      this.machineCtl.spread(next, api.getNextTriggerProps());
+      next.setAttribute('aria-label', NEXT_LABEL);
+    }
 
     // Spread item/ellipsis props in the SAME order the render emitted them, so the
     // node ↔ page mapping is exact (the machine owns which is current).
@@ -236,13 +263,13 @@ export class LabPagination extends LabElement {
     }
     return html`
       <nav>
-        <button class="trigger trigger-prev" type="button" aria-label="Previous page">‹</button>
+        <button class="trigger trigger-prev" type="button" aria-label="${PREV_LABEL}">‹</button>
         ${pages.map((entry) =>
           entry.type === 'page'
             ? html`<button class="item cell" type="button">${entry.value}</button>`
             : html`<span class="ellipsis cell" aria-hidden="true">…</span>`,
         )}
-        <button class="trigger trigger-next" type="button" aria-label="Next page">›</button>
+        <button class="trigger trigger-next" type="button" aria-label="${NEXT_LABEL}">›</button>
       </nav>
     `;
   }
