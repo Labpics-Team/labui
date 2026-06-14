@@ -5,9 +5,11 @@
  * sheet mirrors the shadow rules against `.lab-popover-*` classes in the light DOM.
  * Same roles, same structure, same states ⇒ same paint.
  *
- * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role, every
- * dimension a --lab-* token (with a literal dimension fallback only). ZERO hex, ZERO
- * primitive. The panel is the raised surface; the scrim is the overlay role.
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role with NO
+ * literal fallback (a missing colour role is a contract bug, not something to paper
+ * over with a baked-in colour); every dimension a --lab-* token, where a literal
+ * dimension fallback is allowed. ZERO hex, ZERO primitive. The panel is the raised
+ * surface; the scrim is the overlay role.
  */
 
 .lab-popover-trigger {
@@ -32,7 +34,7 @@
 .lab-popover-backdrop {
   position: fixed;
   inset: 0;
-  background-color: var(--lab-bg-overlay-base, rgb(0 0 0 / 0.45));
+  background-color: var(--lab-bg-overlay-base);
   z-index: var(--lab-z-modal-underlay, 1100);
 }
 
@@ -56,7 +58,7 @@
   background-color: var(--lab-surface-raised);
   color: var(--lab-label-primary);
   border: 0.0625rem solid var(--lab-border-soft);
-  box-shadow: 0 0.5rem 1.5rem var(--lab-fx-shadow-major, rgb(0 0 0 / 0.25));
+  box-shadow: 0 0.5rem 1.5rem var(--lab-fx-shadow-major);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
   line-height: var(--lab-line-height-md, 1.5);

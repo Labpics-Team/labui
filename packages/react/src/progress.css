@@ -1,0 +1,89 @@
+/*
+ * <Progress> (React) styles — the visual PARITY twin of the Lit `<lab-progress>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([size])` /
+ * `.root[data-state]`. React is native (ADR-0001) — no shadow DOM — so this sheet
+ * mirrors those exact rules against `[data-lab-progress]` plus the `data-*` the
+ * machine and component set (`data-size`, `data-state`, `data-orientation`). Same
+ * roles, same structure, same states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
+ * hex, ZERO primitive.
+ */
+
+[data-lab-progress] {
+  --_lab-progress-thickness: 0.5rem;
+  --_lab-progress-font: var(--lab-font-size-xs, 0.8333rem);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--lab-space-xs, 0.25rem);
+}
+
+[data-lab-progress][data-size="s"] {
+  --_lab-progress-thickness: 0.25rem;
+}
+[data-lab-progress][data-size="l"] {
+  --_lab-progress-thickness: 0.75rem;
+}
+
+.lab-progress-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--lab-space-sm, 0.5rem);
+}
+
+.lab-progress-label {
+  font: inherit;
+  font-size: var(--_lab-progress-font);
+  font-weight: 600;
+  color: var(--lab-label-primary);
+}
+
+.lab-progress-value-text {
+  font: inherit;
+  font-size: var(--_lab-progress-font);
+  color: var(--lab-label-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lab-progress-track {
+  position: relative;
+  width: 100%;
+  height: var(--_lab-progress-thickness);
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-fill-neutral-tinted);
+  overflow: hidden;
+}
+
+.lab-progress-range {
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--lab-fill-accent);
+}
+
+/* Indeterminate: the machine sets data-state=indeterminate on the ROOT and drops
+   the range width — an honest unknown-progress segment, never a fake percent. */
+[data-lab-progress][data-state="indeterminate"] .lab-progress-range {
+  width: 40%;
+  animation: lab-progress-indeterminate 1.2s ease-in-out infinite;
+}
+
+@keyframes lab-progress-indeterminate {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(275%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-progress][data-state="indeterminate"] .lab-progress-range {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+}

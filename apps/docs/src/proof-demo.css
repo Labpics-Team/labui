@@ -40,8 +40,8 @@
 body {
   margin: 0;
   padding: var(--lab-space-8, 2rem);
-  background: var(--lab-surface-base, #0b0b0c);
-  color: var(--lab-label-primary, #f5f5f7);
+  background: var(--lab-surface-base);
+  color: var(--lab-label-primary);
   font-family: system-ui, sans-serif;
 }
 :root[data-theme="light"] body {

@@ -36,7 +36,9 @@
  * the inverted role (`--lab-bg-inverted` + `--lab-label-inverted-primary`) — the
  * conventional high-contrast tooltip — lifted with `--lab-fx-shadow-minor` and
  * layered with `--lab-z-tooltip`. The arrow reuses the same surface role so it
- * reads as one shape. No hex, no primitive, no invented role.
+ * reads as one shape. No hex, no primitive, no invented role, and no literal
+ * fallback on a colour role (css.ts: a missing role is a contract bug, not
+ * something to paper over with a baked-in colour).
  *
  * SSR (core-CONTRACT §7): a tooltip is client-only. The server emits the trigger
  * and a `hidden` content node (the machine spreads `hidden`/ARIA on the client);
@@ -197,7 +199,7 @@ export class LabTooltip extends LabElement {
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-xs', '1.4')};
-      box-shadow: 0 0.25rem 0.75rem ${litVar('--lab-fx-shadow-minor', 'rgb(0 0 0 / 0.18)')};
+      box-shadow: 0 0.25rem 0.75rem ${litVar('--lab-fx-shadow-minor')};
       z-index: ${litVar('--lab-z-tooltip', '1400')};
     }
     .content[hidden] {

@@ -1,0 +1,123 @@
+/*
+ * <Accordion> (React) styles — the visual PARITY twin of the Lit `<lab-accordion>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([orientation])` /
+ * `.trigger[data-state]`. React is native (ADR-0001) — no shadow DOM — so this
+ * sheet mirrors those exact rules against `[data-lab-accordion]` plus the `data-*`
+ * the machine and component set (`data-orientation`, `data-size`, `data-state`,
+ * `data-disabled`). Same roles, same structure, same states ⇒ same paint.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
+ * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
+ * hex, ZERO primitive.
+ */
+
+[data-lab-accordion] {
+  --_lab-accordion-pad-x: var(--lab-space-md, 1rem);
+  --_lab-accordion-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-accordion-font: var(--lab-font-size-md, 1rem);
+
+  display: flex;
+  flex-direction: column;
+  border: 0.0625rem solid var(--lab-border-base);
+  border-radius: var(--lab-radius-card, 0.75rem);
+  overflow: hidden;
+}
+[data-lab-accordion][data-orientation="horizontal"] {
+  flex-direction: row;
+}
+
+[data-lab-accordion][data-size="s"] {
+  --_lab-accordion-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-accordion-pad-y: var(--lab-space-xs, 0.25rem);
+  --_lab-accordion-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-accordion][data-size="l"] {
+  --_lab-accordion-pad-x: var(--lab-space-lg, 1.5rem);
+  --_lab-accordion-pad-y: var(--lab-space-md, 1rem);
+  --_lab-accordion-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+.lab-accordion-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lab-accordion-item:not(:last-child) {
+  border-bottom: 0.0625rem solid var(--lab-border-base);
+}
+[data-lab-accordion][data-orientation="horizontal"] .lab-accordion-item:not(:last-child) {
+  border-bottom: none;
+  border-inline-end: 0.0625rem solid var(--lab-border-base);
+}
+
+.lab-accordion-trigger {
+  appearance: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--lab-space-sm, 0.5rem);
+  width: 100%;
+  margin: 0;
+  padding: var(--_lab-accordion-pad-y) var(--_lab-accordion-pad-x);
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--_lab-accordion-font);
+  line-height: var(--lab-line-height-md, 1.5);
+  font-weight: 600;
+  text-align: start;
+  color: var(--lab-label-primary);
+  cursor: pointer;
+  transition: color 120ms ease;
+}
+
+.lab-accordion-trigger:hover:not([data-disabled]) {
+  color: var(--lab-label-accent);
+}
+.lab-accordion-trigger[data-state="open"] {
+  color: var(--lab-label-accent);
+}
+.lab-accordion-trigger[data-disabled] {
+  color: var(--lab-label-tertiary);
+  cursor: not-allowed;
+}
+.lab-accordion-trigger:focus-visible {
+  outline: 0.125rem solid var(--lab-border-focus);
+  outline-offset: -0.125rem;
+}
+
+.lab-accordion-indicator {
+  flex: none;
+  display: inline-flex;
+  width: 0.75em;
+  height: 0.75em;
+  color: currentColor;
+  transition: transform 160ms ease;
+}
+.lab-accordion-indicator svg {
+  width: 100%;
+  height: 100%;
+}
+.lab-accordion-indicator[data-state="open"] {
+  transform: rotate(180deg);
+}
+
+.lab-accordion-content {
+  padding: 0 var(--_lab-accordion-pad-x) var(--_lab-accordion-pad-y);
+  color: var(--lab-label-secondary);
+  font: inherit;
+  font-size: var(--lab-font-size-md, 1rem);
+  line-height: var(--lab-line-height-md, 1.5);
+}
+.lab-accordion-content[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-accordion-trigger,
+  .lab-accordion-indicator {
+    transition: none;
+  }
+}

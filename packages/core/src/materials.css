@@ -70,7 +70,7 @@
    * effectively opaque and kills the blur, so the *ambient* body alpha is the
    * lighter value tuned for a live backdrop; the full Figma alpha ladder is
    * exposed per-step below for surfaces that want a denser tier). */
-  --lab-mat-fill-blend-color: var(--lab-surface-raised, #161618);
+  --lab-mat-fill-blend-color: var(--lab-surface-raised);
 
   /* Per-tier body alphas, straight from the Figma Materials table (slot1 alpha).
    * A surface picks a tier by setting --lab-mat-tier-alpha to one of these. */
@@ -126,7 +126,7 @@
   --lab-mat-blur: var(--lab-ambient-base);
   --lab-mat-saturate: var(--lab-ambient-saturate);
   --lab-mat-fill-alpha: var(--lab-ambient-fill-base);
-  --lab-mat-fill-color: var(--lab-surface-raised, #161618);
+  --lab-mat-fill-color: var(--lab-surface-raised);
   --lab-mat-blend-color: var(--lab-mat-fill-blend-color);
   --lab-mat-blend: var(--lab-mat-theme-blend, screen);
   --lab-mat-blend-alpha: 0.5;
@@ -148,7 +148,7 @@
   --lab-mat-blur: 0px;
   --lab-mat-saturate: 100%;
   --lab-mat-fill-alpha: 1;
-  --lab-mat-fill-color: var(--lab-surface-raised, #161618);
+  --lab-mat-fill-color: var(--lab-surface-raised);
   --lab-mat-blend-color: transparent;
   --lab-mat-blend: normal;
   --lab-mat-blend-alpha: 0;
@@ -390,7 +390,7 @@
 :root {
   --lab-glass-blur: var(--lab-ambient-base);
   --lab-glass-saturate: var(--lab-ambient-saturate);
-  --lab-glass-tint: var(--lab-mat-fill-color, var(--lab-surface-raised, #161618));
+  --lab-glass-tint: var(--lab-mat-fill-color, var(--lab-surface-raised));
   --lab-glass-tint-alpha: var(--lab-ambient-fill-base);
   --lab-glass-rim-color: var(--lab-ambient-rim-color);
   --lab-glass-specular: var(--lab-ambient-specular);
