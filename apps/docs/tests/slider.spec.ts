@@ -102,31 +102,52 @@ test('group label: the thumb is named by the field-a11y label (both renderers)',
     expect(labelId, 'label has an id').toBeTruthy();
     expect(await thumb.getAttribute('aria-labelledby')).toBe(labelId);
 
-    // The field-a11y helper links the helper region to the label via describedby.
+    // The field-a11y helper links the helper region from the focusable THUMB's
+    // describedby — the element a reader lands on, not the inert label (#36 audit
+    // HIGH-1). Asserting it on the label would pass green while a reader hears nothing.
     const helper = host.locator('.helper, .lab-slider-helper');
     const helperId = await helper.getAttribute('id');
     expect(helperId, 'helper has an id').toBeTruthy();
-    expect(await label.getAttribute('aria-describedby')).toContain(helperId ?? '');
+    expect(await thumb.getAttribute('aria-describedby')).toContain(helperId ?? '');
   }
 });
 
 test('field-a11y: the error is announced + referenced only when invalid (both renderers)', async ({
   page,
 }) => {
-  for (const [host, label] of [
-    [litHost(page, 'lit-invalid'), litHost(page, 'lit-invalid').locator('.label')] as const,
-    [
-      reactField(page, 'react-invalid'),
-      reactField(page, 'react-invalid').locator('.lab-slider-label'),
-    ] as const,
+  for (const [host, thumb] of [
+    [litHost(page, 'lit-invalid'), litThumb(page, 'lit-invalid')] as const,
+    [reactField(page, 'react-invalid'), reactThumb(page, 'react-invalid')] as const,
   ]) {
     const error = host.locator('.error, .lab-slider-error');
     const errorId = await error.getAttribute('id');
     expect(errorId, 'error has an id').toBeTruthy();
     await expect(error).toHaveAttribute('role', 'alert');
-    expect(await label.getAttribute('aria-errormessage')).toBe(errorId);
-    expect(await label.getAttribute('aria-describedby')).toContain(errorId ?? '');
+    // The error is referenced from the focusable THUMB (errormessage + describedby),
+    // not the inert label (#36 audit HIGH-1) — the label never receives focus, so an
+    // errormessage there is never announced.
+    expect(await thumb.getAttribute('aria-errormessage')).toBe(errorId);
+    expect(await thumb.getAttribute('aria-describedby')).toContain(errorId ?? '');
   }
+});
+
+/**
+ * The value-text renders the live value under show-value (#36 audit HIGH-2). The Zag
+ * `getValueTextProps()` carries only id + data-attrs — the renderer must WRITE the text.
+ * React joins the thumb values with ' – '; the Lit twin must render the SAME content so
+ * the visible readout is not an empty box. Falsifiable: the trimmed text must equal the
+ * joined value — `40` single, `20 – 80` range — on BOTH renderers.
+ */
+test('value-text: the live value renders under show-value (both renderers)', async ({ page }) => {
+  const litValueText = (testid: string) => litHost(page, testid).locator('.value-text');
+  const reactValueText = (testid: string) =>
+    reactField(page, testid).locator('.lab-slider-value-text');
+
+  await expect(litValueText('lit-single')).toHaveText('40');
+  await expect(reactValueText('react-single')).toHaveText('40');
+
+  await expect(litValueText('lit-range')).toHaveText('20 – 80');
+  await expect(reactValueText('react-range')).toHaveText('20 – 80');
 });
 
 test('keyboard: ArrowRight / ArrowLeft step the value (the machine owns the keymap)', async ({
