@@ -233,6 +233,34 @@ test('orientation: vertical lays the list out as a column on both renderers', as
   expect(await reactRoot(page, 'react-vertical').evaluate(flexDirection)).toBe('column');
 });
 
+test('event contract: selecting an item fires the public value-change with the new value (both renderers)', async ({
+  page,
+}) => {
+  // Lit dispatches a composed CustomEvent('value-change') whose detail.value is the
+  // newly selected value; React surfaces its `onValueChange(value)` payload into a
+  // readout node. Both start on "express"; choosing "standard" must fire with it.
+  const litDetail = page.evaluate(
+    () =>
+      new Promise<string | null>((resolve) => {
+        const host = document.querySelector('[data-testid="lit-accent"]');
+        host?.addEventListener(
+          'value-change',
+          (e) => resolve((e as CustomEvent<{ value: string | null }>).detail.value),
+          { once: true },
+        );
+      }),
+  );
+  await litItem(page, 'lit-accent', 'Standard').click();
+  expect(await litDetail).toBe('standard');
+
+  // React: the readout starts empty (no spurious fire on mount) and fills with the
+  // selected value once the public onValueChange emits.
+  const readout = page.getByTestId('react-event-value');
+  await expect(readout).toBeEmpty();
+  await reactItem(page, 'react-event', 'Standard').click();
+  await expect(readout).toHaveText('standard');
+});
+
 test('visual parity: Lit and React resolve the same checked ring + dot per type', async ({
   page,
 }) => {

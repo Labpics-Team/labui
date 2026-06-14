@@ -10,7 +10,7 @@
  */
 import '@labpics/ui-core/radio-group';
 import { Radio, RadioGroup } from '@labpics/ui-react/radio-group';
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 const root = document.documentElement;
@@ -33,6 +33,34 @@ if (select) {
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in radio-group.html');
+
+/**
+ * Event-contract specimen — wires `onValueChange` and surfaces the payload into a
+ * sibling readout node, so the Playwright suite can assert the PUBLIC React event
+ * fires with the right value on selection (the DOM CustomEvent is read directly on
+ * the Lit side). Starts on "express"; the readout fills only after a NEW selection
+ * emits, so an empty readout proves no spurious fire on mount.
+ */
+function ReactEventSpecimen() {
+  const [last, setLast] = useState('');
+  return (
+    <span data-testid="react-event">
+      <RadioGroup
+        type="accent"
+        label="Delivery (event)"
+        defaultValue="express"
+        onValueChange={(v) => setLast(v ?? '')}
+      >
+        <Radio value="standard">Standard</Radio>
+        <Radio value="express">Express</Radio>
+        <Radio value="overnight" disabled>
+          Overnight
+        </Radio>
+      </RadioGroup>
+      <output data-testid="react-event-value">{last}</output>
+    </span>
+  );
+}
 
 // Test ids ride on wrappers (the RadioGroup owns its prop API — no passthrough).
 // The spec targets the `[data-lab-radio-group]` root inside each wrapper.
@@ -88,5 +116,6 @@ createRoot(mount).render(
         </Radio>
       </RadioGroup>
     </span>
+    <ReactEventSpecimen />
   </StrictMode>,
 );

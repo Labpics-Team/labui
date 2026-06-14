@@ -36,6 +36,31 @@
           <div slot="password">Update your password and two-factor security.</div>
           <div slot="team">Invite and manage team members.</div>
         </lab-tabs>
+
+        <!-- Axis specimens (orientation × size × activation). Each carries its own
+             `.items` (set in tabs-demo.tsx by testid) and per-value panel slots so
+             the suite can assert the vertical underline branch, the size density
+             knobs, and manual-vs-automatic activation in isolation. -->
+        <lab-tabs data-testid="lit-tabs-vertical" orientation="vertical" default-value="account">
+          <div slot="account">Manage your account name and email.</div>
+          <div slot="password">Update your password and two-factor security.</div>
+          <div slot="team">Invite and manage team members.</div>
+        </lab-tabs>
+        <lab-tabs data-testid="lit-tabs-s" size="s" default-value="account">
+          <div slot="account">Manage your account name and email.</div>
+          <div slot="password">Update your password and two-factor security.</div>
+          <div slot="team">Invite and manage team members.</div>
+        </lab-tabs>
+        <lab-tabs data-testid="lit-tabs-l" size="l" default-value="account">
+          <div slot="account">Manage your account name and email.</div>
+          <div slot="password">Update your password and two-factor security.</div>
+          <div slot="team">Invite and manage team members.</div>
+        </lab-tabs>
+        <lab-tabs data-testid="lit-tabs-manual" activation-mode="manual" default-value="account">
+          <div slot="account">Manage your account name and email.</div>
+          <div slot="password">Update your password and two-factor security.</div>
+          <div slot="team">Invite and manage team members.</div>
+        </lab-tabs>
       </section>
 
       <!-- React renderer: native, mounted from tabs-demo.tsx into this node. -->
