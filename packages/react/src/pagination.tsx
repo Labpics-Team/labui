@@ -72,6 +72,10 @@ export function Pagination({
       <button
         {...api.getPrevTriggerProps()}
         className="lab-pagination-trigger"
+        // Capitalized accessible name, kept IDENTICAL to the Lit twin
+        // (PREV_LABEL in lab-pagination.ts). It MUST stay after the spread: Zag's
+        // getPrevTriggerProps emits a lowercase 'previous page' aria-label, and
+        // last-wins JSX lets this override it. Reordering would resurrect the drift.
         aria-label="Previous page"
       >
         ‹
@@ -104,6 +108,8 @@ export function Pagination({
       <button
         {...api.getNextTriggerProps()}
         className="lab-pagination-trigger"
+        // Capitalized accessible name, kept IDENTICAL to the Lit twin (NEXT_LABEL).
+        // Must stay after the spread — see the prev trigger note above.
         aria-label="Next page"
       >
         ›
