@@ -93,6 +93,9 @@ importers:
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/combobox':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/core':
         specifier: 1.41.2
         version: 1.41.2
@@ -185,6 +188,9 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/checkbox':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/combobox':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/dialog':
@@ -1145,6 +1151,9 @@ packages:
   '@zag-js/collection@1.41.2':
     resolution: {integrity: sha512-ZZWuvfPZI8ccWd4aLpuU47k1jSc9eO+F3FM3iBJuvgegCH6g3+HDEwGN6wdePHnYfv7zyIKCGKr816zXcIWQbw==}
 
+  '@zag-js/combobox@1.41.2':
+    resolution: {integrity: sha512-V9jQteyQHs8ZNQx/FcA98P1NVZas/yjiW1V7s4L+h8MnRS3AK97+FAHAT83KCiZ34/vkpLF6ZEHI2zkcQpNXcg==}
+
   '@zag-js/core@1.41.2':
     resolution: {integrity: sha512-xXTN3zKwOtMI4+5dG2cG+T1B4WR3X9alXiYaPJKaGd4N2eYRj9JEPte3Hv9gtFm+RM0b9VIwksHEg25rqE4apw==}
 
@@ -1165,6 +1174,9 @@ packages:
 
   '@zag-js/interact-outside@1.41.2':
     resolution: {integrity: sha512-dM4Fn9iyqQeqkCMRYZP+bAgWEPKRVQRqMmcPsN0OXBhhFKC31Em15LTIZXaOtVKAjH+iwx+UvSYFRiWwEjkOEA==}
+
+  '@zag-js/live-region@1.41.2':
+    resolution: {integrity: sha512-7ubIW5AQt1wx9S/gFN+rU4TyvuFWJrL/DhnDWPNlH5g3luDVHSNeYGeeqf4d4tkcibtpYZa0pg9CbXxRxrfwVA==}
 
   '@zag-js/menu@1.41.2':
     resolution: {integrity: sha512-wwix8hcAUSi0scpWXCiDppfdZV01Za8nN0gqLt9GdhCiVSlr0rs9pK1ROgPKJTyc43UZfyFPqtTWVHvEHMM70w==}
@@ -2669,6 +2681,19 @@ snapshots:
     dependencies:
       '@zag-js/utils': 1.41.2
 
+  '@zag-js/combobox@1.41.2':
+    dependencies:
+      '@zag-js/anatomy': 1.41.2
+      '@zag-js/collection': 1.41.2
+      '@zag-js/core': 1.41.2
+      '@zag-js/dismissable': 1.41.2
+      '@zag-js/dom-query': 1.41.2
+      '@zag-js/focus-visible': 1.41.2
+      '@zag-js/live-region': 1.41.2
+      '@zag-js/popper': 1.41.2
+      '@zag-js/types': 1.41.2
+      '@zag-js/utils': 1.41.2
+
   '@zag-js/core@1.41.2':
     dependencies:
       '@zag-js/dom-query': 1.41.2
@@ -2708,6 +2733,8 @@ snapshots:
     dependencies:
       '@zag-js/dom-query': 1.41.2
       '@zag-js/utils': 1.41.2
+
+  '@zag-js/live-region@1.41.2': {}
 
   '@zag-js/menu@1.41.2':
     dependencies:

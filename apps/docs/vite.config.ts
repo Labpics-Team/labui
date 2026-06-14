@@ -120,6 +120,12 @@ export default defineConfig({
         // suite. The canon fusing the keyed-compound group machine with the overlay.
         select: resolve(__dirname, 'src/select.html'),
         menu: resolve(__dirname, 'src/menu.html'),
+        // Combobox: Lit `<lab-combobox>` (all parts in one shadow scope, listbox
+        // positioned with strategy:fixed) + native-React `<Combobox>` (body portal),
+        // side by side, running the SAME @zag-js/combobox machine — a Select listbox
+        // FUSED with a filterable text input + the shared field-a11y wiring. For the
+        // open/filter/navigate/select/dismiss/position + parity + value-change suite.
+        combobox: resolve(__dirname, 'src/combobox.html'),
       },
     },
   },
