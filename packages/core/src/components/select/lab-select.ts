@@ -297,13 +297,16 @@ export class LabSelect extends LabElement {
       outline-offset: 0.125rem;
     }
 
-    /* Trigger value text — placeholder colour when nothing is selected. */
+    /* Trigger value text — placeholder colour when nothing is selected. The
+       @zag-js/select machine sets data-placeholder-shown on the TRIGGER (not the
+       value-text), so the placeholder tint keys off the trigger's attribute and
+       descends to the value text. */
     .value-text {
       overflow: hidden;
       white-space: nowrap;
       text-overflow: ellipsis;
     }
-    .value-text[data-placeholder-shown] {
+    .trigger[data-placeholder-shown] .value-text {
       color: ${litVar('--lab-label-tertiary')};
     }
 
@@ -337,7 +340,7 @@ export class LabSelect extends LabElement {
       background-color: ${litVar('--lab-surface-raised')};
       color: ${litVar('--lab-label-primary')};
       border: 0.0625rem solid ${litVar('--lab-border-soft')};
-      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major', 'rgb(0 0 0 / 0.25)')};
+      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
@@ -469,6 +472,25 @@ export class LabSelect extends LabElement {
     }
   }
 
+  /**
+   * The trigger's display text: the machine's `valueAsString` (the selected
+   * label(s), joined through the collection) when something is selected, else the
+   * placeholder. The machine is the single source of truth — this mirrors the React
+   * twin's `{api.valueAsString || placeholder}` so a `default-value` (or any
+   * selection) is visible on the Lit trigger too. `render()` runs on every machine
+   * transition (ZagController subscribes → requestUpdate), so the text tracks the
+   * selection live. Pre-connection (Lit SSR runs render() before the machine starts)
+   * the api is unavailable — fall back to the placeholder for the SSR shell; the
+   * client upgrade fills the real value in.
+   */
+  private get valueText(): string {
+    try {
+      return this.machineCtl.api.valueAsString || this.placeholder;
+    } catch {
+      return this.placeholder;
+    }
+  }
+
   override render(): TemplateResult {
     // Structure only; behaviour (combobox/listbox roles, aria, open/close,
     // navigation, typeahead, dismiss, positioning, form value) is spread in
@@ -478,7 +500,7 @@ export class LabSelect extends LabElement {
       ${this.label ? html`<span class="label" part="label">${this.label}</span>` : nothing}
       <div class="control" part="control">
         <button class="trigger" type="button" part="trigger">
-          <span class="value-text" part="value-text">${this.placeholder}</span>
+          <span class="value-text" part="value-text">${this.valueText}</span>
           <span class="indicator" part="indicator" aria-hidden="true">▾</span>
         </button>
       </div>

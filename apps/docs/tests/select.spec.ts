@@ -133,6 +133,126 @@ test('selection (single): clicking an option selects it and closes on both rende
   );
 });
 
+/**
+ * Value text — the trigger SHOWS the selected label, not just the placeholder. Both
+ * specimens are seeded with `default-value=["banana"]`, so at rest the trigger must read
+ * "Banana" on BOTH renderers (the machine's `valueAsString`, not the "Pick a fruit…"
+ * placeholder). This is the symmetric Lit assertion that catches the #31 defect, where
+ * the Lit `render()` hardcoded the placeholder and never read the machine value — React
+ * was correct (`api.valueAsString || placeholder`), Lit was blank of the default. After
+ * picking a different option the text follows the new selection live.
+ */
+test('value text: the trigger shows the default-value label (Banana) on both renderers', async ({
+  page,
+}) => {
+  // At rest, no interaction: the default-value selection is visible on the trigger.
+  await expect(litTrigger(page, 'lit-select').locator('.value-text')).toHaveText('Banana');
+  await expect(reactTrigger(page, 'react-select').locator('.lab-select-value-text')).toHaveText(
+    'Banana',
+  );
+
+  // The placeholder tint keys off data-placeholder-shown on the TRIGGER (the part the
+  // machine marks); with a value selected the attribute is absent on both renderers.
+  await expect(litTrigger(page, 'lit-select')).not.toHaveAttribute('data-placeholder-shown', '');
+  await expect(reactTrigger(page, 'react-select')).not.toHaveAttribute(
+    'data-placeholder-shown',
+    '',
+  );
+
+  // Selecting a different option updates the trigger text live (machine → render).
+  await litTrigger(page, 'lit-select').click();
+  await litContent(page, 'lit-select').locator('.item[data-value="apple"]').click();
+  await expect(litTrigger(page, 'lit-select').locator('.value-text')).toHaveText('Apple');
+
+  await reactTrigger(page, 'react-select').click();
+  await reactOpenContent(page).locator('.lab-select-item[data-value="apple"]').click();
+  await expect(reactTrigger(page, 'react-select').locator('.lab-select-value-text')).toHaveText(
+    'Apple',
+  );
+});
+
+/**
+ * Type-ahead — a printable key highlights the matching option (machine's
+ * highlightMatchingItem). Open, gate on focus landing in the listbox, press "c" → the
+ * machine highlights "Cherry" and points aria-activedescendant at it. Falsifiable on both
+ * renderers: the highlighted option's value is "cherry" and its label begins with "C".
+ */
+test('type-ahead: a printable key highlights the matching option on both renderers', async ({
+  page,
+}) => {
+  await litTrigger(page, 'lit-select').click();
+  await expect(litContent(page, 'lit-select')).toBeVisible();
+  await litFocusInContent(page, 'lit-select');
+  await page.keyboard.press('c');
+  await expect
+    .poll(() =>
+      litHost(page, 'lit-select').evaluate(
+        (h) =>
+          (h as HTMLElement).shadowRoot
+            ?.querySelector('.item[data-highlighted]')
+            ?.getAttribute('data-value') ?? null,
+      ),
+    )
+    .toBe('cherry');
+
+  await reactTrigger(page, 'react-select').click();
+  await expect(reactOpenContent(page)).toBeVisible();
+  await reactFocusInContent(page);
+  await page.keyboard.press('c');
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document
+            .querySelector('.lab-select-content[data-state="open"]')
+            ?.querySelector('.lab-select-item[data-highlighted]')
+            ?.getAttribute('data-value') ?? null,
+      ),
+    )
+    .toBe('cherry');
+});
+
+/**
+ * Home / End — the machine highlights the first / last option (highlightFirstItem /
+ * highlightLastItem). Open, focus in the listbox, then End → "elderberry" (last), Home →
+ * "apple" (first). Asserted by the highlighted option's value on BOTH renderers.
+ */
+test('Home/End: highlight jumps to the last then first option on both renderers', async ({
+  page,
+}) => {
+  const litHighlightedValue = () =>
+    litHost(page, 'lit-select').evaluate(
+      (h) =>
+        (h as HTMLElement).shadowRoot
+          ?.querySelector('.item[data-highlighted]')
+          ?.getAttribute('data-value') ?? null,
+    );
+  const reactHighlightedValue = () =>
+    page.evaluate(
+      () =>
+        document
+          .querySelector('.lab-select-content[data-state="open"]')
+          ?.querySelector('.lab-select-item[data-highlighted]')
+          ?.getAttribute('data-value') ?? null,
+    );
+
+  await litTrigger(page, 'lit-select').click();
+  await expect(litContent(page, 'lit-select')).toBeVisible();
+  await litFocusInContent(page, 'lit-select');
+  await page.keyboard.press('End');
+  await expect.poll(litHighlightedValue).toBe('elderberry');
+  await page.keyboard.press('Home');
+  await expect.poll(litHighlightedValue).toBe('apple');
+
+  await reactTrigger(page, 'react-select').click();
+  await expect(reactOpenContent(page)).toBeVisible();
+  await reactFocusInContent(page);
+  await page.keyboard.press('End');
+  await expect.poll(reactHighlightedValue).toBe('elderberry');
+  await page.keyboard.press('Home');
+  await expect.poll(reactHighlightedValue).toBe('apple');
+});
+
 test('selection (multiple): the machine accumulates values and stays open', async ({ page }) => {
   // The multiple specimen keeps the listbox open across picks (closeOnSelect is false
   // in multi-mode) and marks each chosen option aria-selected=true.
