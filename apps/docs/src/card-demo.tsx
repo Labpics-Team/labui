@@ -53,6 +53,18 @@ createRoot(mount).render(
       >
         A tinted surface that recedes; hoverable as a whole-card target.
       </Card>
+      {/*
+       * INTERACTIVE with a real focusable control — the twin of the Lit specimen.
+       * The card flags interactive-without-keyboard as a P5 a11y trap; the
+       * actionable semantics stay on a real <button> in the body (the <article>
+       * never fabricates a role). :focus-within draws --lab-border-focus.
+       */}
+      <Card data-testid="react-interactive" variant="elevated" interactive header="Interactive" footer="Footer">
+        A whole-card target whose action is a real control.{' '}
+        <button type="button" data-testid="react-interactive-control">
+          Open
+        </button>
+      </Card>
     </div>
   </StrictMode>,
 );

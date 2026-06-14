@@ -16,6 +16,11 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *     for determinate.
  * The indeterminate honesty is the load-bearing check: the machine drops
  * aria-valuenow when value is null — we assert its ABSENCE, never a faked number.
+ *
+ * A non-default RANGE specimen (min=10, max=50, value=30) pins the percent maths:
+ * the machine computes (value-min)/(max-min) = 50%, NOT value/100. We assert the
+ * real min/now/max land on aria-* and the rendered percent text is 50% — proving the
+ * range is honoured, not assumed to be 0..100.
  */
 
 function litRoot(page: Page, testid: string): Locator {
@@ -29,6 +34,12 @@ function reactRoot(page: Page, testid: string): Locator {
 }
 function reactTrack(page: Page, testid: string): Locator {
   return page.getByTestId(testid).locator('.lab-progress-track');
+}
+function litValueText(page: Page, testid: string): Locator {
+  return page.getByTestId(testid).locator('.value-text');
+}
+function reactValueText(page: Page, testid: string): Locator {
+  return page.getByTestId(testid).locator('.lab-progress-value-text');
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
@@ -68,6 +79,32 @@ test('complete: value at max reports data-state=complete (both renderers)', asyn
   for (const track of [litTrack(page, 'lit-complete'), reactTrack(page, 'react-complete')]) {
     await expect(track).toHaveAttribute('aria-valuenow', '100');
     await expect(track).toHaveAttribute('data-state', 'complete');
+  }
+});
+
+test('non-default range: percent maths spans min..max, not 0..100 (both renderers)', async ({
+  page,
+}) => {
+  // min=10, max=50, value=30 ⇒ the machine's percent is (30-10)/(50-10) = 50%. The
+  // real range lands on aria-valuemin/now/max; the value-text shows 50%. If the bar
+  // assumed a 0..100 range it would mis-report 30% — this is the proof it does not.
+  const cases = [
+    { track: litTrack(page, 'lit-ranged'), valueText: litValueText(page, 'lit-ranged') },
+    { track: reactTrack(page, 'react-ranged'), valueText: reactValueText(page, 'react-ranged') },
+  ];
+
+  for (const { track, valueText } of cases) {
+    await expect(track).toHaveAttribute('role', 'progressbar');
+    // The real range — min/max are NOT the default 0/100.
+    await expect(track).toHaveAttribute('aria-valuemin', '10');
+    await expect(track).toHaveAttribute('aria-valuemax', '50');
+    await expect(track).toHaveAttribute('aria-valuenow', '30');
+    // Value below max ⇒ still loading (not complete).
+    await expect(track).toHaveAttribute('data-state', 'loading');
+    // The rendered percent is 50 (of the RANGE), not 30 (of an assumed 0..100). The
+    // machine formats via Intl.NumberFormat(style:'percent'); some locales place a
+    // (possibly non-breaking) space before '%', so match the number, not the spacing.
+    await expect(valueText).toHaveText(/^50\s*%$/);
   }
 });
 

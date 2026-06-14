@@ -13,6 +13,12 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *   3. Variant — each variant resolves a distinct surface background.
  *   4. Visual parity — matching specimens resolve the SAME background colour.
  *   5. Tokens + theme — re-pointing a role / flipping [data-theme] re-skins both.
+ *   6. Interactive a11y — the `interactive` variant pins the P5 trap the component
+ *      itself flags: an interactive card with no keyboard operability. The specimen
+ *      slots a REAL <button>; we assert (a) :focus-within draws the
+ *      --lab-border-focus ring (focus delegates from the host), and (b) the control
+ *      is Tab-reachable. The card never fabricates a role — the action is the
+ *      slotted control's, so keyboard operability is genuine, not faked.
  */
 
 /** The Lit card's painted <article> surface (shadow-pierced). */
@@ -25,6 +31,8 @@ function reactCard(page: Page, testid: string): Locator {
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
+const outlineStyle = (el: HTMLElement) => getComputedStyle(el).outlineStyle;
+const outlineColor = (el: HTMLElement) => getComputedStyle(el).outlineColor;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/card.html');
@@ -100,6 +108,70 @@ test('tokens: re-pointing --lab-surface-raised re-skins BOTH elevated cards', as
   });
   await expect.poll(() => litCard(page, 'lit-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
   await expect.poll(() => reactCard(page, 'react-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
+});
+
+test('interactive a11y: :focus-within draws the --lab-border-focus ring (both renderers)', async ({
+  page,
+}) => {
+  // The P5 trap the component flags is an interactive card with no keyboard
+  // operability. The specimen slots a REAL <button>; focusing it must light the
+  // host's :focus-within ring. We prove the ring (a) is ABSENT when nothing inside
+  // is focused, (b) APPEARS as a solid outline on focus, and (c) reads the
+  // --lab-border-focus role — asserted by re-pointing that token and watching the
+  // outline colour follow (the suite's honest token idiom, not a hardcoded hex).
+  const cases = [
+    {
+      surface: litCard(page, 'lit-interactive'),
+      control: page.getByTestId('lit-interactive-control'),
+    },
+    {
+      surface: reactCard(page, 'react-interactive'),
+      control: page.getByTestId('react-interactive-control'),
+    },
+  ];
+
+  for (const { surface, control } of cases) {
+    // (a) No ring before focus — outline is not drawn on a resting interactive card.
+    expect(await surface.evaluate(outlineStyle)).toBe('none');
+
+    // (b) Focusing the inner control lights the host's :focus-within ring.
+    await control.focus();
+    await expect(control).toBeFocused();
+    await expect.poll(() => surface.evaluate(outlineStyle)).toBe('solid');
+
+    // (c) The ring reads the --lab-border-focus role: re-point it, the outline follows.
+    await page.evaluate(() => {
+      document.documentElement.style.setProperty('--lab-border-focus', 'rgb(1, 2, 3)');
+    });
+    await expect.poll(() => surface.evaluate(outlineColor)).toBe('rgb(1, 2, 3)');
+
+    // Clean up the override so each renderer starts from the same token state.
+    await page.evaluate(() => {
+      document.documentElement.style.removeProperty('--lab-border-focus');
+    });
+  }
+});
+
+test('interactive a11y: the slotted control is Tab-reachable (both renderers)', async ({ page }) => {
+  // Keyboard operability is the load-bearing half of the P5 fix: the action must be
+  // reachable by Tab, not just by mouse. From a stable anchor at the top of the page
+  // (the theme <select>), Tab must eventually land focus on each renderer's real
+  // control — proof the control sits in the natural tab order, not removed from it.
+  for (const controlId of ['lit-interactive-control', 'react-interactive-control']) {
+    const control = page.getByTestId(controlId);
+    // tabindex must not exclude it from the tab order.
+    expect(await control.getAttribute('tabindex')).not.toBe('-1');
+
+    // Walk the tab order from the page's first focusable element. Bounded so a
+    // regression that drops the control from the order fails fast instead of hanging.
+    await page.getByTestId('theme-select').focus();
+    let reached = false;
+    for (let i = 0; i < 25 && !reached; i++) {
+      await page.keyboard.press('Tab');
+      reached = await control.evaluate((el) => el === document.activeElement);
+    }
+    expect(reached).toBe(true);
+  }
 });
 
 test('theme: flipping [data-theme] re-skins both renderers with zero edits', async ({ page }) => {

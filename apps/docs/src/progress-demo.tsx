@@ -48,6 +48,11 @@ createRoot(mount).render(
       <span data-testid="react-indeterminate">
         <Progress value={null} label="Working" />
       </span>
+      {/* NON-DEFAULT RANGE: min=10, max=50, value=30 ⇒ 50%. The twin of the Lit
+          `lit-ranged` specimen — proves the percent maths spans the real range. */}
+      <span data-testid="react-ranged">
+        <Progress value={30} min={10} max={50} label="Ranged" showValueText />
+      </span>
     </div>
   </StrictMode>,
 );
