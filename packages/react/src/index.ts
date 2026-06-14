@@ -63,4 +63,11 @@ export { Tabs, Tab, TabPanel, type TabsProps, type TabProps, type TabPanelProps 
 export { Breadcrumb, type BreadcrumbProps } from './breadcrumb.js';
 export { Pagination, type PaginationProps } from './pagination.js';
 
+// COMPOUND + POSITIONED controls — native-React twins of the Lit `<lab-select>` /
+// `<lab-menu>`, running the SAME `@zag-js/{select,menu}` machines via `useZag`. They
+// fuse the keyed-compound group machine (radio-group) with the positioned overlay
+// (popover): a trigger + a body-portalled, machine-positioned listbox / menu.
+export { Select, type SelectProps } from './select.js';
+export { Menu, type MenuProps } from './menu.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';
