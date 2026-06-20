@@ -78,7 +78,7 @@ export class LabKbd extends LabElement {
       font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
       font-size: var(--_font);
       line-height: 1;
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       white-space: nowrap;
     }
   `;

@@ -19,6 +19,7 @@ export function generateTs(tokens: ResolvedTokens): string {
   parts.push(scaleConst('zIndex', tokens.zIndex));
   parts.push(scaleConst('fontSize', tokens.fontSizes));
   parts.push(scaleConst('lineHeight', tokens.lineHeights));
+  parts.push(scaleConst('fontWeight', tokens.fontWeights));
 
   return `${parts.join('\n\n')}\n`;
 }

@@ -95,7 +95,7 @@ export class LabProof extends LabElement {
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       cursor: pointer;
       /* Unpressed: neutral tinted surface + primary label — semantic roles only. */
       background-color: ${litVar('--lab-fill-neutral-tinted')};

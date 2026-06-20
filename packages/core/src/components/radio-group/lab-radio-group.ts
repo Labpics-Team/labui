@@ -194,7 +194,7 @@ export class LabRadioGroup extends LabElement {
     .group-label {
       flex: 1 0 100%;
       font-size: var(--_font);
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-primary')};
     }
 

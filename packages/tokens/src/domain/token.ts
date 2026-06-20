@@ -8,7 +8,14 @@
  */
 
 /** The scale a token belongs to — drives its CSS prefix and DTCG group. */
-export type ScaleKind = 'space' | 'radius' | 'z' | 'font-size' | 'line-height' | 'tracking';
+export type ScaleKind =
+  | 'space'
+  | 'radius'
+  | 'z'
+  | 'font-size'
+  | 'font-weight'
+  | 'line-height'
+  | 'tracking';
 
 /**
  * A fully resolved token.

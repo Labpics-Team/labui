@@ -33,7 +33,7 @@
   font: inherit;
   font-size: var(--_lab-badge-font);
   line-height: var(--lab-line-height-md, 1.5);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   white-space: nowrap;
   background-color: transparent;
   color: var(--lab-label-primary);

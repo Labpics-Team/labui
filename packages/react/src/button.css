@@ -39,7 +39,7 @@
   font: inherit;
   font-size: var(--_lab-btn-font);
   line-height: var(--lab-line-height-md, 1.5);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   /* Base surface; [data-type][data-kind] rules set longhands directly. */

@@ -31,7 +31,7 @@
   font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
   font-size: var(--_lab-kbd-font);
   line-height: 1;
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   white-space: nowrap;
 }
 

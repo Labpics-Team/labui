@@ -34,6 +34,7 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     'z-index': numberGroup(tokens.zIndex),
     'font-size': fontSizeGroup(tokens.fontSizes),
     'line-height': numberGroup(tokens.lineHeights),
+    'font-weight': numberGroup(tokens.fontWeights),
   };
   return `${JSON.stringify(doc, null, 2)}\n`;
 }

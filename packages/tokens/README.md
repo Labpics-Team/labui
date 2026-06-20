@@ -1,7 +1,8 @@
 # @labpics/ui-tokens
 
-LabUI dimension tokens: **spacing, radii, z-index, and fluid typography**, all
-generated from one typed config into three artifacts with no divergence.
+LabUI dimension tokens: **spacing, radii, z-index, fluid typography, and
+font-weight**, all generated from one typed config into three artifacts with no
+divergence.
 
 ## The model
 
@@ -81,6 +82,14 @@ Default config: `base 16px`, anchors `320px / 1240px`, `ratioMin 1.2`,
 
 The +7 display step is ~2× larger at the wide anchor than the narrow one — exactly
 the requested damping.
+
+### Font-weight — unitless themeable scale
+
+Named roles → numeric weights, emitted as unitless `--lab-font-weight-*` tokens so
+weight is a per-client axis instead of a literal baked into components. Default:
+`regular 400`, `medium 500`, `semibold 600`, `bold 700`. Components read
+`--lab-font-weight-semibold` (the emphasis weight) rather than a hard `600`; a client
+re-weights its whole UI through the same override path as every other scale.
 
 ## Configuring
 

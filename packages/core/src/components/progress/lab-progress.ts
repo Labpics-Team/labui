@@ -139,7 +139,7 @@ export class LabProgress extends LabElement {
     .label {
       font: inherit;
       font-size: var(--_font);
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-primary')};
     }
 

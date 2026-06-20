@@ -129,7 +129,7 @@ export class LabAvatar extends LabElement {
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: var(--_font);
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       line-height: 1;
       user-select: none;
     }

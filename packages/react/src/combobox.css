@@ -232,7 +232,7 @@
 }
 .lab-combobox-item[data-state="checked"] .lab-combobox-item-text {
   color: var(--lab-label-accent);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
 }
 .lab-combobox-item[data-disabled] {
   cursor: not-allowed;

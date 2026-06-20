@@ -24,6 +24,7 @@ export function generateCss(tokens: ResolvedTokens): string {
       ...tokenLines(tokens.fontSizes),
     ]),
     section('Typography — line-height multipliers', tokenLines(tokens.lineHeights)),
+    section('Typography — font-weight scale (unitless)', tokenLines(tokens.fontWeights)),
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n`;

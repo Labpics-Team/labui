@@ -112,3 +112,12 @@ export const lineHeight = {
 } as const;
 
 export type LineHeightToken = keyof typeof lineHeight;
+
+export const fontWeight = {
+  regular: 'var(--lab-font-weight-regular)',
+  medium: 'var(--lab-font-weight-medium)',
+  semibold: 'var(--lab-font-weight-semibold)',
+  bold: 'var(--lab-font-weight-bold)',
+} as const;
+
+export type FontWeightToken = keyof typeof fontWeight;

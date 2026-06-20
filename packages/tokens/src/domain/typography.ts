@@ -25,11 +25,23 @@ import type { FluidBounds, ResolvedToken } from './token.js';
 export function buildTypography(config: TypographyConfig): {
   fontSizes: ResolvedToken[];
   lineHeights: ResolvedToken[];
+  fontWeights: ResolvedToken[];
 } {
   assertConfig(config);
 
   const fontSizes: ResolvedToken[] = [];
   const lineHeights: ResolvedToken[] = [];
+
+  // Font-weight scale: unitless number tokens, config order preserved. Value is
+  // the raw weight (e.g. 600), so a literal `font-weight: 600` becomes a 1:1
+  // token reference with no visual change.
+  const fontWeights: ResolvedToken[] = Object.entries(config.weights).map(([name, weight]) => ({
+    kind: 'font-weight',
+    name,
+    cssValue: num(weight),
+    numeric: weight,
+    dtcgType: 'number',
+  }));
 
   for (let step = -config.stepsDown; step <= config.stepsUp; step++) {
     const name = labelFor(config, step);
@@ -57,7 +69,7 @@ export function buildTypography(config: TypographyConfig): {
     });
   }
 
-  return { fontSizes, lineHeights };
+  return { fontSizes, lineHeights, fontWeights };
 }
 
 /** Compute the clamp anchors and linear-preferred coefficients for a step. */
@@ -145,5 +157,14 @@ function assertConfig(config: TypographyConfig): void {
   }
   if (config.remBasePx <= 0) {
     throw new Error('typography remBasePx must be positive');
+  }
+  const weightEntries = Object.entries(config.weights ?? {});
+  if (weightEntries.length === 0) {
+    throw new Error('typography weights must define at least one named weight');
+  }
+  for (const [name, weight] of weightEntries) {
+    if (!Number.isInteger(weight) || weight < 1 || weight > 1000) {
+      throw new Error(`typography weight "${name}" must be an integer in [1, 1000], got ${weight}`);
+    }
   }
 }

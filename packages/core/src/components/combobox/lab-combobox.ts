@@ -454,7 +454,7 @@ export class LabCombobox extends LabElement {
       /* Selected — the machine sets data-state=checked + aria-selected. */
       .item[data-state='checked'] .item-text {
         color: ${litVar('--lab-label-accent')};
-        font-weight: 600;
+        font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       }
       .item[data-disabled] {
         cursor: not-allowed;

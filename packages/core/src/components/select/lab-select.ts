@@ -250,7 +250,7 @@ export class LabSelect extends LabElement {
 
     .label {
       font-size: var(--_font);
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-primary')};
     }
 
@@ -371,7 +371,7 @@ export class LabSelect extends LabElement {
     /* Selected — the machine sets data-state=checked + aria-selected. */
     .item[data-state='checked'] .item-text {
       color: ${litVar('--lab-label-accent')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
     }
     .item[data-disabled] {
       cursor: not-allowed;

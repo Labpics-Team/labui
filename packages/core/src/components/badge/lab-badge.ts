@@ -84,7 +84,7 @@ export class LabBadge extends LabElement {
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       white-space: nowrap;
       /* Base surface; the [color][type] rules set the longhands directly (the
          proto-A var()->var() shadow-boundary note — no intermediate --_bg). */
