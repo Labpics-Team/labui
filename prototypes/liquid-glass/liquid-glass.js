@@ -26,8 +26,8 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 12, // px  — frosted-glass backdrop blur (iOS dock IS frosted). Combines
-  //                   with the edge refraction; pending subagent tuning vs iOS.
+  radius: 6, // px   — LIGHT base frost (iOS dock keeps the backdrop legible; 6px
+  //                   softens without erasing). Rim gets extra frost in CSS.
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.

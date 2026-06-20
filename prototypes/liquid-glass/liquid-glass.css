@@ -25,7 +25,9 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 12px; /* frosted-glass backdrop blur — iOS glass IS frosted */
+  --lg-radius: 6px; /* LIGHT base frost — iOS keeps the backdrop legible */
+  --lg-edge-blur: 18px; /* PROGRESSIVE: extra frost ramped up at the rim (iOS
+   *                      "scroll edge effect" — strongest at the edge) */
   --lg-saturate: 1.25; /* slight colour lift (iOS ≈ 1.25) */
   --lg-brightness: 1.08;
   --lg-contrast: 0.92; /* <1 lifts blacks → luminous on dark backdrops */
@@ -85,6 +87,24 @@
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
+}
+
+/* ::after — PROGRESSIVE rim frost. A second backdrop blur at --lg-edge-blur,
+ * masked transparent in the centre → opaque at the rim, so the frost ramps from
+ * light (the body's base blur) to strong at the edges — the non-uniform blur
+ * real Liquid Glass shows ("scroll edge effect"). Its own backdrop sample reads
+ * the page behind the pane, so it does NOT double-blur the body. */
+.lab-liquid-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  -webkit-backdrop-filter: blur(var(--lg-edge-blur)) saturate(var(--lg-saturate));
+  backdrop-filter: blur(var(--lg-edge-blur)) saturate(var(--lg-saturate));
+  -webkit-mask: radial-gradient(125% 125% at 50% 50%, transparent 42%, #000 88%);
+  mask: radial-gradient(125% 125% at 50% 50%, transparent 42%, #000 88%);
 }
 
 /* Real content rides above the decoration layers. */
