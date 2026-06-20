@@ -47,7 +47,9 @@ function assertConfig(config: BordersConfig): void {
   }
   for (const [name, value] of widthEntries) {
     if (!Number.isFinite(value) || value <= 0) {
-      throw new Error(`borders stroke width "${name}" must be a positive rem value, got ${num(value)}`);
+      throw new Error(
+        `borders stroke width "${name}" must be a positive rem value, got ${num(value)}`,
+      );
     }
   }
   const { width, offset } = config.focusRing ?? {};
