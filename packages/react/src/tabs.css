@@ -64,7 +64,7 @@
   font: inherit;
   font-size: var(--_lab-tabs-font);
   line-height: var(--lab-line-height-md, 1.5);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-secondary);
   white-space: nowrap;
   cursor: pointer;

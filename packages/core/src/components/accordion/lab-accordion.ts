@@ -214,7 +214,7 @@ export class LabAccordion extends LabElement {
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       text-align: start;
       color: ${litVar('--lab-label-primary')};
       cursor: pointer;

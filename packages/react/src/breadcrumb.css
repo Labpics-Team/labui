@@ -63,7 +63,7 @@ a.lab-breadcrumb-link:focus-visible {
 
 .lab-breadcrumb-current {
   color: var(--lab-label-primary);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
 }
 
 .lab-breadcrumb-separator {

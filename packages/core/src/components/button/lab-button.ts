@@ -137,7 +137,7 @@ export class LabButton extends LabElement {
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       cursor: pointer;
       transition:
         background-color 120ms ease,

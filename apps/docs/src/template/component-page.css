@@ -134,7 +134,7 @@ code {
   border-radius: var(--lab-radius-full, 9999px);
   border: 0.0625rem solid var(--lab-border-neutral);
   font-size: var(--lab-font-size-sm, 0.875rem);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
 }
 
 .status-badge[data-status="proof"],
@@ -216,7 +216,7 @@ input:focus-visible {
 .matrix-table tbody th {
   color: var(--lab-label-secondary);
   font-size: var(--lab-font-size-sm, 0.875rem);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   background: var(--lab-bg-secondary);
 }
 

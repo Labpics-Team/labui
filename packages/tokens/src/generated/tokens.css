@@ -95,4 +95,10 @@
   --lab-line-height-4xl: 1.2;
   --lab-line-height-5xl: 1.2;
   --lab-line-height-6xl: 1.2;
+
+  /* Typography — font-weight scale (unitless) */
+  --lab-font-weight-regular: 400;
+  --lab-font-weight-medium: 500;
+  --lab-font-weight-semibold: 600;
+  --lab-font-weight-bold: 700;
 }

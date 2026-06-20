@@ -43,7 +43,7 @@
   color: var(--lab-label-primary);
   font: inherit;
   font-size: var(--_lab-avatar-font);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   line-height: 1;
   user-select: none;
 }

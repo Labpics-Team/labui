@@ -281,7 +281,7 @@ p[data-testid="tagline"] code {
   text-align: center;
 }
 .ladder-cell span {
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
 }
 .ladder-cell small {
   color: var(--lab-label-secondary);

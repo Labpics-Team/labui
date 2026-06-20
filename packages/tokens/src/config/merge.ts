@@ -6,10 +6,10 @@ import type { TokensConfig, TokensConfigOverride } from './types.js';
  *
  * Shallow-per-section by design: a user who overrides `typography` replaces only
  * the fields they set, keeping the rest of the section's defaults. Records
- * (`steps`, `aliases`, `stepLabels`) are merged key-by-key so a user can add a
- * step without redeclaring the whole scale; arrays (`zIndex.levels`,
- * `lineHeightBands`) are replaced wholesale because their order is meaningful
- * and a partial merge would silently corrupt it.
+ * (`steps`, `aliases`, `stepLabels`, `weights`) are merged key-by-key so a user
+ * can add/retune one entry without redeclaring the whole scale; arrays
+ * (`zIndex.levels`, `lineHeightBands`) are replaced wholesale because their order
+ * is meaningful and a partial merge would silently corrupt it.
  */
 export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig {
   return {
@@ -35,6 +35,10 @@ export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig
       ...defaultConfig.typography,
       ...override.typography,
       stepLabels: { ...defaultConfig.typography.stepLabels, ...override.typography?.stepLabels },
+      // weights is an unordered named record — merge key-by-key so retuning one
+      // role (e.g. semibold) does not delete the others (which the wholesale
+      // spread of override.typography above would otherwise do).
+      weights: { ...defaultConfig.typography.weights, ...override.typography?.weights },
       // bands are order-sensitive — replace wholesale if provided.
       lineHeightBands:
         override.typography?.lineHeightBands ?? defaultConfig.typography.lineHeightBands,

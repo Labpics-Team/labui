@@ -136,5 +136,14 @@ export const defaultConfig: TokensConfig = {
       { fromStep: 1, multiplier: 1.3 },
       { fromStep: -99, multiplier: 1.5 },
     ],
+    // Font-weight roles. `semibold` (600) is the emphasis weight every component
+    // used as a literal before this scale existed; values match 1:1 so the scale
+    // is value-preserving. A client re-weights its whole UI via one override.
+    weights: {
+      regular: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700,
+    },
   },
 };

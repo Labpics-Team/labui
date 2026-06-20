@@ -66,7 +66,7 @@
   font: inherit;
   font-size: var(--_lab-accordion-font);
   line-height: var(--lab-line-height-md, 1.5);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   text-align: start;
   color: var(--lab-label-primary);
   cursor: pointer;

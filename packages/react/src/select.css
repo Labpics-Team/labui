@@ -32,7 +32,7 @@
 
 .lab-select-label {
   font-size: var(--_lab-sel-font);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-primary);
 }
 
@@ -162,7 +162,7 @@
 }
 .lab-select-item[data-state="checked"] .lab-select-item-text {
   color: var(--lab-label-accent);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
 }
 .lab-select-item[data-disabled] {
   cursor: not-allowed;

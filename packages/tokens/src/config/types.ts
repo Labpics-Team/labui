@@ -106,6 +106,13 @@ export interface TypographyConfig {
   readonly lineHeightBands: readonly LineHeightBand[];
   /** rem value to use as the conversion base when emitting rem (px / remBasePx). */
   readonly remBasePx: number;
+  /**
+   * Font-weight scale: named role -> numeric weight (100..900). Emitted as
+   * unitless `--lab-font-weight-*` tokens so weight is a per-client themeable
+   * axis like every other scale, instead of a literal baked into components.
+   * MUST be non-empty; each value an integer in [1, 1000].
+   */
+  readonly weights: Readonly<Record<string, number>>;
 }
 
 /** A line-height band: steps at or above `fromStep` use `multiplier`. */

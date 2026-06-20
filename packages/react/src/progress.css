@@ -38,7 +38,7 @@
 .lab-progress-label {
   font: inherit;
   font-size: var(--_lab-progress-font);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-primary);
 }
 

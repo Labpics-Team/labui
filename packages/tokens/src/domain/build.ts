@@ -18,6 +18,7 @@ export interface ResolvedTokens {
   readonly zIndex: readonly ResolvedToken[];
   readonly fontSizes: readonly ResolvedToken[];
   readonly lineHeights: readonly ResolvedToken[];
+  readonly fontWeights: readonly ResolvedToken[];
 }
 
 /** Resolve a config into the full token set (pure; no I/O). */
@@ -35,5 +36,6 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     zIndex,
     fontSizes: typography.fontSizes,
     lineHeights: typography.lineHeights,
+    fontWeights: typography.fontWeights,
   };
 }

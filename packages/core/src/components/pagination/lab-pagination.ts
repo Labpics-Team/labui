@@ -161,7 +161,7 @@ export class LabPagination extends LabElement {
       border-radius: ${litVar('--lab-radius-control', '0.5rem')};
       background: transparent;
       font: inherit;
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-secondary')};
       cursor: pointer;
       transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
