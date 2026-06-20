@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2d95"/>
+      <stop offset="0.28" stop-color="#7a2cf5"/>
+      <stop offset="0.55" stop-color="#1f6dff"/>
+      <stop offset="0.78" stop-color="#00c2a8"/>
+      <stop offset="1" stop-color="#ffd23f"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="0.78" cy="0.22" r="0.6">
+      <stop offset="0" stop-color="#fff6c8" stop-opacity="0.9"/>
+      <stop offset="0.4" stop-color="#ffb347" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffb347" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.22" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- base wash -->
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <rect width="1600" height="1000" fill="url(#sun)"/>
+
+  <!-- bold diagonal colour bands: refraction bends their straight edges -->
+  <g transform="rotate(-24 800 500)">
+    <rect x="-400" y="120" width="2400" height="70" fill="#ff3b30" opacity="0.85"/>
+    <rect x="-400" y="300" width="2400" height="70" fill="#34c759" opacity="0.85"/>
+    <rect x="-400" y="480" width="2400" height="70" fill="#0a84ff" opacity="0.85"/>
+    <rect x="-400" y="660" width="2400" height="70" fill="#ffcc00" opacity="0.9"/>
+    <rect x="-400" y="840" width="2400" height="70" fill="#ff2d95" opacity="0.85"/>
+  </g>
+
+  <!-- thin straight grid: the line-bending test -->
+  <rect width="1600" height="1000" fill="url(#grid)"/>
+
+  <!-- crisp circles: dispersion shows as colour fringing on their arcs -->
+  <g fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5">
+    <circle cx="320" cy="760" r="120"/>
+    <circle cx="1240" cy="300" r="160"/>
+    <circle cx="760" cy="520" r="60"/>
+  </g>
+  <g fill="#ffffff" opacity="0.85">
+    <circle cx="180" cy="200" r="10"/>
+    <circle cx="1440" cy="820" r="14"/>
+    <circle cx="980" cy="160" r="8"/>
+    <circle cx="560" cy="880" r="12"/>
+  </g>
+
+  <!-- large type: edges magnify + disperse under the lens -->
+  <text x="80" y="300" font-family="Arial, Helvetica, sans-serif" font-size="180" font-weight="800"
+        fill="#ffffff" opacity="0.92" letter-spacing="-6">LIQUID</text>
+  <text x="80" y="470" font-family="Arial, Helvetica, sans-serif" font-size="180" font-weight="800"
+        fill="#0b1020" opacity="0.78" letter-spacing="-6">GLASS</text>
+  <text x="84" y="940" font-family="'Courier New', monospace" font-size="34" font-weight="700"
+        fill="#ffffff" opacity="0.85">drag the pane · watch the background refract</text>
+</svg>

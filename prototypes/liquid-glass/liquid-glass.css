@@ -1,0 +1,166 @@
+/*
+ * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │  lab-liquid-glass — real Liquid Glass material for the web.                 │
+ * │                                                                            │
+ * │  A surface class at the level of `solid` / `bg-blur`. The signature iOS    │
+ * │  look — the backdrop REFRACTS (bends) at the rim like a real lens — is      │
+ * │  produced by an SVG feDisplacementMap driven through `backdrop-filter`.     │
+ * │  That displacement filter is per-element and size-aware, so it is built     │
+ * │  and kept in sync by the companion runtime (liquid-glass.js). This file     │
+ * │  owns everything that is pure CSS: the tint body, the specular edge light,  │
+ * │  the glass volume, the corner, and the honest fallbacks.                    │
+ * │                                                                            │
+ * │  Configuration is 100% custom properties — set them inline, in a theme, or  │
+ * │  per-instance. Every knob maps 1:1 to Figma's native Glass effect:          │
+ * │    --lg-radius        backdrop blur (px)          Figma: radius             │
+ * │    --lg-refraction    edge bend strength (0..1)   Figma: refraction  [JS]   │
+ * │    --lg-depth         refractive band width (px)  Figma: depth      [JS]    │
+ * │    --lg-dispersion    chromatic fringe (0..1)     Figma: dispersion [JS]    │
+ * │    --lg-light-angle   specular direction (deg)    Figma: lightAngle         │
+ * │    --lg-light         specular strength (0..1)    Figma: lightIntensity     │
+ * │    --lg-splay         specular spread (0..1)      Figma: splay              │
+ * │  ([JS] = consumed by the runtime to build the displacement filter.)         │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ */
+
+.lab-liquid-glass {
+  /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
+  --lg-radius: 8px; /* backdrop blur — low, so the refraction reads as a lens */
+  --lg-saturate: 1.7; /* live colour boost — what makes blur read as glass */
+  --lg-brightness: 1.05;
+  --lg-refraction: 1; /* consumed by JS */
+  --lg-depth: 16; /* consumed by JS — width of the refractive rim band */
+  --lg-dispersion: 0.45; /* consumed by JS */
+
+  --lg-corner: 28px;
+  --lg-tint: 255 255 255; /* rgb triplet of the body fill */
+  --lg-tint-opacity: 0.1;
+
+  --lg-light-angle: -45deg;
+  --lg-light: 0.5; /* 0..1 specular intensity */
+  --lg-splay: 0.5; /* 0..1 widens the specular band */
+
+  /* Derived (do not set directly) ──────────────────────────────────────────
+   * Specular highlight colour at the configured intensity, and a band width
+   * that grows with splay. Trig (cos/sin) resolves the light direction into a
+   * shadow offset, all in pure CSS so the rim re-lights live as the angle
+   * slider moves. */
+  --_lg-hi: rgba(255, 255, 255, calc(0.9 * var(--lg-light)));
+  --_lg-lo: rgba(255, 255, 255, calc(0.4 * var(--lg-light)));
+  --_lg-band: calc(1px + 1.5px * var(--lg-splay));
+  --_lg-dx: calc(cos(var(--lg-light-angle)) * 1px);
+  --_lg-dy: calc(sin(var(--lg-light-angle)) * 1px);
+
+  position: relative;
+  border-radius: var(--lg-corner);
+  /* Own stacking context: the tint + specular composite stays within the pane
+   * and never leaks onto the live backdrop it is refracting. */
+  isolation: isolate;
+
+  /* Body tint. Kept low-alpha so the refracted backdrop reads through — this is
+   * glass, not paint. */
+  background-color: rgb(var(--lg-tint) / var(--lg-tint-opacity));
+
+  /* The backdrop blur+saturate fallback. The runtime overwrites
+   * `backdrop-filter` with `url(#displacement) blur() saturate() brightness()`
+   * to add the refraction; if JS never runs, this still gives a clean frosted
+   * pane (honest degradation, never a broken surface). */
+  -webkit-backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
+    brightness(var(--lg-brightness));
+  backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
+    brightness(var(--lg-brightness));
+
+  /* Glass volume: a thin outer drop for lift, plus an inset directional
+   * catch-light (bright toward the light angle) and a soft inner floor. */
+  box-shadow:
+    0 8px 30px rgba(8, 12, 28, 0.28),
+    0 1px 1px rgba(8, 12, 28, 0.16),
+    inset var(--_lg-dx) var(--_lg-dy) var(--_lg-band) 0 var(--_lg-hi),
+    inset calc(var(--_lg-dx) * -1) calc(var(--_lg-dy) * -1) var(--_lg-band) 0
+    rgba(10, 14, 30, calc(0.18 * var(--lg-light)));
+
+  will-change: transform;
+}
+
+/* ::before — the edge sheen ring. A directional sweep of the light along the
+ * border, masked to a 1.5px ring so it lights the rim only (the part of the
+ * glass that catches light). Rotates with --lg-light-angle. */
+.lab-liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    var(--lg-light-angle),
+    var(--_lg-hi),
+    transparent 30%,
+    transparent 70%,
+    var(--_lg-lo)
+  );
+  /* mask the fill to a ring (border-box minus padding-box) */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* ::after — a faint top-to-bottom inner glow giving the pane body some volume
+ * (thicker-looking glass), independent of the directional rim. */
+.lab-liquid-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, calc(0.14 * var(--lg-light))),
+    transparent 38%
+  );
+}
+
+/* Real content rides above the decoration layers. */
+.lab-liquid-glass > * {
+  position: relative;
+  z-index: 3;
+}
+
+/* ── Dark theme: the body leans dark and the catch-light stays bright so the
+ * rim reads against a dark backdrop. Driven by [data-theme="dark"] on any
+ * ancestor (matching the rest of the system). ─────────────────────────────── */
+[data-theme="dark"] .lab-liquid-glass,
+.lab-liquid-glass[data-theme="dark"] {
+  --lg-tint: 18 22 40;
+  --lg-tint-opacity: 0.22;
+  --lg-saturate: 1.9;
+}
+
+/* ── Accessibility / honest degradation ─────────────────────────────────────
+ * Users who ask for less transparency get an opaque, blur-free, refraction-free
+ * card — legibility over spectacle. The runtime also honours this (skips the
+ * displacement filter) so the promise "no transparency" is true on every path. */
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
+@media (prefers-reduced-transparency: reduce) {
+  .lab-liquid-glass {
+    --lg-tint-opacity: 1;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 8px 30px rgba(8, 12, 28, 0.24);
+  }
+  .lab-liquid-glass::before,
+  .lab-liquid-glass::after {
+    display: none;
+  }
+}
+
+/* No backdrop-filter at all (old engines / blocked compositing): push the body
+ * toward opaque so text stays legible without a live backdrop. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lab-liquid-glass {
+    background-color: rgb(var(--lg-tint) / 0.92);
+  }
+}
