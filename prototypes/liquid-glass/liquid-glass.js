@@ -252,10 +252,13 @@ function setBackdrop(el, value) {
 function render(state) {
   const { el, id, filter } = state;
   const p = readParams(el, state);
-  // contrast(<1) lifts blacks toward grey so the glass stays a luminous layer on
-  // dark backdrops (pseudo backdrop-adaptive luminosity), without filming bright
-  // ones — the judge-panel's #1 iOS gap.
-  const tail = `blur(${p.blur}px) saturate(${p.saturate}) brightness(${p.brightness}) contrast(${p.contrast})`;
+  // ORDER MATTERS: frost FIRST, then refraction. Blurring the backdrop before
+  // the displacement means the lens bends already-soft content → a clean smooth
+  // refraction, instead of smearing sharp high-contrast edges into dirty streaks.
+  // contrast(<1) lifts blacks so the glass stays luminous over dark backdrops.
+  const frost = `blur(${p.blur}px)`;
+  const lift = `saturate(${p.saturate}) brightness(${p.brightness}) contrast(${p.contrast})`;
+  const tail = `${frost} ${lift}`; // fallback (no refraction): order is irrelevant
 
   // Non-refracting / reduced / disabled → the CSS class already declares the
   // same blur tail, so clear inline and let the stylesheet own the fallback.
@@ -280,7 +283,7 @@ function render(state) {
     filter.setAttribute('width', '200%');
     filter.setAttribute('height', '200%');
     filter.innerHTML = filterMarkup(maps.disp, maps.spec, p.w, p.h, scale, p.dispersion, p.light);
-    setBackdrop(el, `url(#${id}) ${tail}`);
+    setBackdrop(el, `${frost} url(#${id}) ${lift}`);
   };
 
   if (geoKey === state.geoKey && state.maps) {
