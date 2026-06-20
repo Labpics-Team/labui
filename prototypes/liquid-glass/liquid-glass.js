@@ -26,8 +26,9 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 6, // px   — LIGHT base frost (iOS dock keeps the backdrop legible; 6px
-  //                   softens without erasing). Rim gets extra frost in CSS.
+  radius: 8, // px   — uniform frost. Moderate: softens the backdrop without
+  //                   erasing it (iOS dock stays legible). The non-uniform look
+  //                   is the edge REFRACTION, not a blur gradient.
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
