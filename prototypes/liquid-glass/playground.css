@@ -280,3 +280,31 @@ body {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ── Perf HUD — DEV ONLY (remove with the perf block in playground.js) ──────── */
+.lg-perf {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 50;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(6, 10, 24, 0.72);
+  color: #d6e2ff;
+  font: 11px/1.45 'SF Mono', 'Courier New', monospace;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+.lg-perf b {
+  color: #8fb4ff;
+  letter-spacing: 0.08em;
+}
+.lg-perf-note {
+  color: rgba(214, 226, 255, 0.45);
+  font-size: 9px;
+}
+.lg-perf pre {
+  margin: 6px 0 0;
+  white-space: pre;
+}

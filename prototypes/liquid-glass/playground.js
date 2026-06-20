@@ -5,11 +5,66 @@ const panel = document.getElementById('panel');
 const bg = document.getElementById('bg');
 const stage = document.getElementById('stage');
 
+/* ── Perf instrumentation — DEV ONLY (strip the whole block for production) ────
+ * Collects the engine's own timing (map build vs cheap re-stamp) + a live FPS
+ * counter, renders a small HUD, and exposes window.__lgPerf for the render
+ * harness to dump to disk. The runtime cost is zero when no onPerf is passed. */
+const perf = {
+  fps: 0,
+  lastMapMs: 0,
+  maxMapMs: 0,
+  lastReason: '-',
+  mapW: 0,
+  mapH: 0,
+  rebuilds: 0,
+  restamps: 0,
+  dragging: false,
+};
+window.__lgPerf = perf;
+const onPerf = (m) => {
+  if (m.reason === 'rebuild') {
+    perf.rebuilds++;
+    perf.lastMapMs = m.mapMs;
+    perf.maxMapMs = Math.max(perf.maxMapMs, m.mapMs);
+    perf.mapW = m.mapW;
+    perf.mapH = m.mapH;
+  } else {
+    perf.restamps++;
+  }
+  perf.lastReason = m.reason;
+};
+
 // Attach the refraction engine to the draggable pane and to the panel itself.
-const glass = attach(pane);
+const glass = attach(pane, { onPerf });
 attach(panel, { depth: 14 });
 // Expose the pane instance for tooling / the render harness (demo-only).
 window.__paneGlass = glass;
+
+const hud = document.createElement('div');
+hud.className = 'lg-perf';
+hud.innerHTML =
+  '<b>PERF</b> <span class="lg-perf-note">dev-only — strip for prod</span><pre id="lg-perf-body"></pre>';
+document.body.appendChild(hud);
+const hudBody = document.getElementById('lg-perf-body');
+let frames = 0;
+let fpsT0 = performance.now();
+function perfTick(now) {
+  frames++;
+  const dt = now - fpsT0;
+  if (dt >= 500) {
+    perf.fps = Math.round((frames * 1000) / dt);
+    frames = 0;
+    fpsT0 = now;
+    hudBody.textContent =
+      `fps        ${perf.fps}${perf.dragging ? '  (dragging)' : ''}\n` +
+      `map build  ${perf.lastMapMs.toFixed(2)}ms (max ${perf.maxMapMs.toFixed(2)})\n` +
+      `map size   ${perf.mapW}x${perf.mapH} device-px\n` +
+      `rebuilds   ${perf.rebuilds}\n` +
+      `re-stamps  ${perf.restamps}  (drag must NOT rebuild)`;
+  }
+  requestAnimationFrame(perfTick);
+}
+requestAnimationFrame(perfTick);
 
 document.getElementById('engine').textContent = glass.refracts
   ? 'engine: Chromium · refraction ON'
@@ -20,26 +75,15 @@ document.getElementById('engine').textContent = glass.refracts
  * engine to re-read it. refraction/depth/dispersion rebuild the SVG; the rest
  * are pure CSS. One uniform path → trivially configurable. */
 const GLASS = [
-  { v: '--lg-radius', name: 'Blur (frost)', min: 0, max: 40, step: 0.5, def: 8, unit: 'px' },
-  { v: '--lg-refraction', name: 'Refraction (opt-in)', min: 0, max: 1.5, step: 0.01, def: 0 },
-  { v: '--lg-depth', name: 'Depth', min: 6, max: 48, step: 1, def: 20, unit: 'px' },
-  { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.06 },
-  {
-    v: '--lg-light-angle',
-    name: 'Light angle',
-    min: -180,
-    max: 180,
-    step: 1,
-    def: -45,
-    unit: 'deg',
-  },
-  { v: '--lg-light', name: 'Rim light', min: 0, max: 1, step: 0.01, def: 0.8 },
-  { v: '--lg-splay', name: 'Splay', min: 0, max: 1, step: 0.01, def: 0.5 },
+  { v: '--lg-radius', name: 'Blur (frost)', min: 0, max: 40, step: 0.5, def: 4, unit: 'px' },
+  { v: '--lg-refraction', name: 'Refraction', min: 0, max: 2, step: 0.01, def: 1 },
+  { v: '--lg-depth', name: 'Depth', min: 6, max: 120, step: 1, def: 40, unit: 'px' },
+  { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.4 },
 ];
 const SURFACE = [
   { v: '--lg-corner', name: 'Corner radius', min: 0, max: 90, step: 1, def: 28, unit: 'px' },
-  { v: '--lg-tint-opacity', name: 'Tint opacity', min: 0, max: 1, step: 0.01, def: 0.06 },
-  { v: '--lg-saturate', name: 'Saturation', min: 1, max: 2.6, step: 0.05, def: 1.1 },
+  { v: '--lg-tint-opacity', name: 'Tint opacity', min: 0, max: 1, step: 0.01, def: 0.03 },
+  { v: '--lg-saturate', name: 'Saturation', min: 1, max: 2.6, step: 0.05, def: 1.3 },
 ];
 
 const inputs = new Map();
@@ -91,58 +135,43 @@ buildControls(SURFACE, 'surface-controls');
 /* ── Presets (Figma tiers, web-tuned) ─────────────────────────────────────── */
 const PRESETS = {
   Clear: {
-    '--lg-radius': 0,
+    '--lg-radius': 2,
     '--lg-refraction': 1,
-    '--lg-depth': 14,
-    '--lg-dispersion': 0.1,
-    '--lg-light-angle': -45,
-    '--lg-light': 0.4,
-    '--lg-splay': 0.4,
-    '--lg-tint-opacity': 0.07,
-    '--lg-saturate': 1.2,
-  },
-  Base: {
-    '--lg-radius': 0,
-    '--lg-refraction': 1,
-    '--lg-depth': 16,
-    '--lg-dispersion': 0.12,
-    '--lg-light-angle': -45,
-    '--lg-light': 0.45,
-    '--lg-splay': 0.5,
-    '--lg-tint-opacity': 0.1,
+    '--lg-depth': 36,
+    '--lg-dispersion': 0.35,
+    '--lg-tint-opacity': 0.02,
     '--lg-saturate': 1.25,
   },
-  Muted: {
-    '--lg-radius': 3,
-    '--lg-refraction': 0.9,
-    '--lg-depth': 20,
-    '--lg-dispersion': 0.1,
-    '--lg-light-angle': 0,
-    '--lg-light': 0.4,
-    '--lg-splay': 0.6,
-    '--lg-tint-opacity': 0.16,
+  Base: {
+    '--lg-radius': 4,
+    '--lg-refraction': 1,
+    '--lg-depth': 40,
+    '--lg-dispersion': 0.4,
+    '--lg-tint-opacity': 0.03,
     '--lg-saturate': 1.3,
+  },
+  Muted: {
+    '--lg-radius': 8,
+    '--lg-refraction': 0.85,
+    '--lg-depth': 44,
+    '--lg-dispersion': 0.3,
+    '--lg-tint-opacity': 0.08,
+    '--lg-saturate': 1.35,
   },
   Elevated: {
-    '--lg-radius': 0,
-    '--lg-refraction': 1.2,
-    '--lg-depth': 24,
-    '--lg-dispersion': 0.16,
-    '--lg-light-angle': 0,
-    '--lg-light': 0.6,
-    '--lg-splay': 0.7,
-    '--lg-tint-opacity': 0.08,
-    '--lg-saturate': 1.3,
+    '--lg-radius': 3,
+    '--lg-refraction': 1.4,
+    '--lg-depth': 52,
+    '--lg-dispersion': 0.6,
+    '--lg-tint-opacity': 0.03,
+    '--lg-saturate': 1.4,
   },
   Frosted: {
-    '--lg-radius': 10,
-    '--lg-refraction': 0.7,
-    '--lg-depth': 16,
-    '--lg-dispersion': 0.08,
-    '--lg-light-angle': -45,
-    '--lg-light': 0.35,
-    '--lg-splay': 0.5,
-    '--lg-tint-opacity': 0.22,
+    '--lg-radius': 16,
+    '--lg-refraction': 0.6,
+    '--lg-depth': 36,
+    '--lg-dispersion': 0.2,
+    '--lg-tint-opacity': 0.16,
     '--lg-saturate': 1.45,
   },
 };
@@ -281,6 +310,7 @@ initPosition();
 
 pane.addEventListener('pointerdown', (e) => {
   dragging = true;
+  perf.dragging = true;
   px = e.clientX;
   py = e.clientY;
   pane.classList.add('is-drag');
@@ -298,6 +328,7 @@ pane.addEventListener('pointermove', (e) => {
 function endDrag(e) {
   if (!dragging) return;
   dragging = false;
+  perf.dragging = false;
   pane.classList.remove('is-drag');
   if (e.pointerId !== undefined && pane.hasPointerCapture(e.pointerId)) {
     pane.releasePointerCapture(e.pointerId);

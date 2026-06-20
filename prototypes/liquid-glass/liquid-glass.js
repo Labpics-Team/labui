@@ -1,21 +1,25 @@
 /*
  * lab-liquid-glass runtime — the refraction engine.
  *
- * `backdrop-filter` can blur a backdrop but cannot bend it. The bend — the thing
- * that separates Liquid Glass from frosted glass — comes from an SVG
- * <feDisplacementMap> whose map is a DISPLACEMENT FIELD: a picture whose Red
- * channel encodes horizontal pixel shift, Green vertical (128 = no shift). We
- * derive that field from the rounded-rect's signed-distance function: across a
- * WIDE bevel the surface curves, its normal tilts, and the backdrop is bent
- * along that normal — a real thick-glass lens, strongest at the rim, fading to a
- * clear interior. A second map carries the SPECULAR rim-light (normal · light),
- * blended over the refracted backdrop in the same filter, so the highlight sits
- * ON the lens instead of being a CSS sticker. The filter is referenced from CSS
- * as `backdrop-filter: url(#id)`, so it must live in the DOM and track size.
+ * `backdrop-filter` blurs a backdrop but cannot bend it. The bend — what makes
+ * Liquid Glass a LENS rather than frosted glass — comes from an SVG
+ * <feDisplacementMap> whose map encodes, per pixel, WHERE to resample the
+ * backdrop: Red = horizontal sample shift, Green = vertical (0.5 = no shift).
+ *
+ * The map is a continuous magnification: every pixel samples its own position
+ * pulled toward the centre by a smooth factor that is strongest at the rounded
+ * rim and eases to zero in the flat interior. So the whole surface bends the
+ * backdrop like a thick convex lens (strong at the edge, clear in the middle) —
+ * NOT a thin band at the border. This is the algorithm proven by
+ * github.com/shuding/liquid-glass (the position-warp lens) with the
+ * edge-confined chromatic aberration of github.com/rdev/liquid-glass-react.
+ *
+ * The rim highlight is pure CSS (see liquid-glass.css) — like both references,
+ * we do NOT use feSpecularLighting (a single SVG point-light only lights one
+ * corner). The filter is referenced from CSS as `backdrop-filter: url(#id)`, so
+ * it must live in the DOM and track the element's size.
  *
  * Zero dependencies, browser-native ES module. Pairs with liquid-glass.css.
- * Design driven by the physics in kube.io/blog/liquid-glass-css-svg and the
- * CSS/SVG mechanics in ekino-france's "Liquid Glass in CSS (and SVG)".
  */
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -23,19 +27,21 @@ const registry = new WeakMap(); // host element → state (no DOM expando)
 let uid = 0;
 let defs = null;
 
+/** How far a rim pixel samples toward the centre at full refraction (the lens
+ *  magnification). Tuned against the Apple references; the per-instance
+ *  `--lg-refraction` knob scales the result linearly. */
+const MAX_PULL = 0.15;
+
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 0.5, // px  — near-zero blur (shuding uses 0.25). The REFRACTION is the
-  //                   effect; blur only hides 8-bit map steps. Heavy blur = "just blur".
-  saturate: 1.1, // shuding values: the backdrop pops without a wash
+  radius: 4, // px    — CSS backdrop blur; small so the lens stays crisp (rdev ≈4-6px)
+  saturate: 1.3, // saturation lift gives the glassy body (rdev 140%)
   brightness: 1.05,
-  contrast: 1.2,
-  refraction: 1, // 0..1 — Figma: refraction. The backdrop lens (on by default).
-  depth: 20, // px    — Figma: depth. Refractive rim band width.
-  dispersion: 0.2, // 0..1 — Figma: dispersion. Subtle chromatic fringe at the rim.
-  light: 0.45, // 0..1 — Figma: lightIntensity (CSS rim only).
-  lightAngle: -45, // deg — Figma: lightAngle.
+  contrast: 1.2, // contrast (not blur) carries the "glassy" read
+  refraction: 1, // 0..1+ — Figma: refraction. Linear lens strength.
+  depth: 40, // px    — Figma: depth. Thickness of the magnified rim band.
+  dispersion: 0.4, // 0..1 — Figma: dispersion. Rim chromatic fringe.
   corner: 28, // px   — fallback when border-radius can't be read.
 };
 
@@ -71,6 +77,9 @@ function ensureDefs() {
   return defs;
 }
 
+const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
+const smoothstep = (x) => x * x * (3 - 2 * x);
+
 /** Signed distance to a rounded rectangle [0,w]×[0,h], corner r. <0 inside. */
 function sdRoundRect(px, py, w, h, r) {
   const qx = Math.abs(px - w / 2) - (w / 2 - r);
@@ -80,134 +89,101 @@ function sdRoundRect(px, py, w, h, r) {
   return Math.hypot(ax, ay) + Math.min(Math.max(qx, qy), 0) - r;
 }
 
-const smoothstep = (x) => x * x * (3 - 2 * x);
-
-/** Draw an ImageData onto a fresh canvas; if it was rendered at `ss`× scale,
- *  downscale-average back to w×h (anti-aliases the field — kills the 8-bit
- *  banding and the finite-difference normal jaggies). Returns a PNG data-URI. */
-function encodeMap(imageData, W, H, w, h, ss) {
-  const hi = document.createElement('canvas');
-  hi.width = W;
-  hi.height = H;
-  hi.getContext('2d').putImageData(imageData, 0, 0);
-  if (ss === 1) return hi.toDataURL();
-  const lo = document.createElement('canvas');
-  lo.width = w;
-  lo.height = h;
-  const c = lo.getContext('2d');
-  c.imageSmoothingEnabled = true;
-  c.imageSmoothingQuality = 'high';
-  c.drawImage(hi, 0, 0, w, h);
-  return lo.toDataURL();
-}
-
 /**
- * Build the displacement + specular maps as PNG data-URIs.
+ * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution.
+ *   R = x sample-shift, G = y sample-shift (0.5 = none) → for feDisplacementMap
  *
- * The bevel is a NARROW band that hugs the rounded rim and never reaches the
- * pane's medial axis, so the centre stays a flat pass-through (no pinch). Across
- * the band the backdrop is bent along the outward surface normal, strongest at
- * the rim, fading to zero at the inner edge — a real thick-glass lip. This is
- * also what produces glass's NON-UNIFORM softening: the rim compresses the
- * backdrop (so fine detail smears there) while the centre stays sharp — the
- * opposite of a uniform blur. The field is supersampled `ss`× for smoothness.
- * Specular is the rim-light: bright where the normal faces the light.
+ * For each interior pixel the sample position is pulled toward the centre by a
+ * factor that is ~1 at the rim and eases (double-smoothstep) to 0 over a
+ * `depth`-px band — a continuous magnifying lens with a clear middle. The pull
+ * is always inward, so the lens never samples outside the element.
+ *
+ * The map is geometry-only (no strength baked in): the displacement is encoded
+ * normalised, and `unit` is returned as the feDisplacementMap `scale` that
+ * reconstructs the true pixel shift at refraction = 1. So changing refraction
+ * is a cheap scale change, not a map rebuild.
  */
-function buildMaps(w, h, corner, depth, lightAngleDeg) {
+function buildMap(w, h, corner, depth, dpr) {
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
-  // Hairline rim — iOS refracts only a sliver at the rounded edge; the interior
-  // stays flat so straight lines behind the glass stay straight (all 3 agents).
-  const bevel = Math.max(4, Math.min(depth, 0.1 * Math.min(w, h)));
-  const a = (lightAngleDeg * Math.PI) / 180;
-  const lx = Math.cos(a);
-  const ly = Math.sin(a);
-  // Supersample 2× for AA, but cap the per-pixel cost on very large panes.
-  const ss = w * h > 500000 ? 1 : 2;
-  const W = w * ss;
-  const H = h * ss;
+  const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2)); // rim lens thickness
+  const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
+  const W = Math.max(1, Math.round(w * sc));
+  const H = Math.max(1, Math.round(h * sc));
+  const cx = w / 2;
+  const cy = h / 2;
 
-  const dimg = new ImageData(W, H);
-  const dd = dimg.data;
-  const simg = new ImageData(W, H);
-  const sdat = simg.data;
+  const dxs = new Float32Array(W * H);
+  const dys = new Float32Array(W * H);
+  let maxAbs = 1e-6;
 
   for (let Y = 0; Y < H; Y++) {
     for (let X = 0; X < W; X++) {
-      const i = (Y * W + X) * 4;
-      const px = (X + 0.5) / ss;
-      const py = (Y + 0.5) / ss;
-      const d = sdRoundRect(px, py, w, h, r);
-      const inside = -d; // px from the edge, inward
-      let vx = 0;
-      let vy = 0;
-      let rim = 0;
-      if (d < 0 && inside < bevel) {
-        // Outward surface normal = gradient of the SDF (finite differences).
-        const gx = sdRoundRect(px + 1, py, w, h, r) - sdRoundRect(px - 1, py, w, h, r);
-        const gy = sdRoundRect(px, py + 1, w, h, r) - sdRoundRect(px, py - 1, w, h, r);
-        const gl = Math.hypot(gx, gy) || 1;
-        const nx = gx / gl;
-        const ny = gy / gl;
-        const e = 1 - inside / bevel; // 0 at the inner edge → 1 at the very rim
-        // Displacement is the slope of a smooth glass lip: a BUMP that tapers to
-        // 0 at BOTH the very edge and the interior (sin), peaking mid-band. Zero
-        // at the boundary makes the field continuous with the un-bent outside —
-        // no edge ticks/discontinuity — and leaves the centre a flat pass-through.
-        const mag = Math.sin(Math.PI * e);
-        vx = nx * mag;
-        vy = ny * mag;
-        // Specular lives at the very rim (smoothstep, brightest at e→1). Softer
-        // exponent + lighter counter-light so corners read as a gentle sheen, not
-        // hard white specks.
-        const lit = smoothstep(e);
-        const ndotl = nx * lx + ny * ly;
-        rim = lit * (Math.max(0, ndotl) ** 2 + 0.25 * Math.max(0, -ndotl) ** 2);
+      const k = Y * W + X;
+      const px = (X + 0.5) / sc;
+      const py = (Y + 0.5) / sc;
+      const inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
+      let dx = 0;
+      let dy = 0;
+      if (inside > 0) {
+        // 1 at the rim → 0 `band` px inward; double-smoothstep for a gentle,
+        // seamless falloff (the shape that reads as thick glass, not an outline).
+        const m = smoothstep(smoothstep(clamp01(1 - inside / band)));
+        const pull = MAX_PULL * m;
+        dx = (cx - px) * pull; // inward pull = magnification
+        dy = (cy - py) * pull;
       }
-      dd[i] = 128 + 127 * vx;
-      dd[i + 1] = 128 + 127 * vy;
-      dd[i + 2] = 128;
-      dd[i + 3] = 255;
-      sdat[i] = 255;
-      sdat[i + 1] = 255;
-      sdat[i + 2] = 255;
-      sdat[i + 3] = Math.min(255, rim * 255);
+      dxs[k] = dx;
+      dys[k] = dy;
+      if (Math.abs(dx) > maxAbs) maxAbs = Math.abs(dx);
+      if (Math.abs(dy) > maxAbs) maxAbs = Math.abs(dy);
     }
   }
-  return {
-    disp: encodeMap(dimg, W, H, w, h, ss),
-    spec: encodeMap(simg, W, H, w, h, ss),
-    bevel,
-  };
+
+  // Encode [-maxAbs, maxAbs] → [0,1] with no clipping. feDisplacementMap shifts
+  // by scale·(channel − 0.5); with scale = 2·maxAbs the shift reconstructs the
+  // true pixel displacement exactly.
+  const img = new ImageData(W, H);
+  const data = img.data;
+  const norm = 1 / (2 * maxAbs);
+  for (let k = 0; k < W * H; k++) {
+    const i = k * 4;
+    data[i] = (dxs[k] * norm + 0.5) * 255;
+    data[i + 1] = (dys[k] * norm + 0.5) * 255;
+    data[i + 2] = 128;
+    data[i + 3] = 255;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  canvas.getContext('2d').putImageData(img, 0, 0);
+  return { href: canvas.toDataURL(), unit: 2 * maxAbs, mapW: W, mapH: H };
 }
 
 const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
-/** Compose the <filter> body — the proven shuding/liquid-glass shape: one feImage
- *  (the displacement map, element-local) → one feDisplacementMap that bends the
- *  backdrop. Optional 3-pass channel split when dispersion is on. The rim light
- *  is NOT in the filter (it's a clean CSS inset box-shadow), so there is no
- *  separately-blurred border. */
-function filterMarkup(dispHref, w, h, scale, dispersion) {
-  const dimg = `<feImage href="${escAttr(dispHref)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="dmap"/>`;
-  const dm = (s, input) =>
-    `<feDisplacementMap in="${input}" in2="dmap" scale="${s.toFixed(2)}" ` +
-    'xChannelSelector="R" yChannelSelector="G"';
+/**
+ * Compose the <filter> body:
+ *   1. feImage(map)                          → R/G displacement field
+ *   2. feDisplacementMap                     → resample (bend) the backdrop
+ *      · dispersion > 0 → split R/G/B at fanned scales, screen-recombine for a
+ *        chromatic fringe. The map is neutral in the interior, so the fringe
+ *        only appears where it displaces — the rim — with no extra mask needed.
+ */
+function filterMarkup(href, w, h, scale, dispersion) {
+  const atlas = `<feImage href="${escAttr(href)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
+  const dm = (s) =>
+    `<feDisplacementMap in="SourceGraphic" in2="map" scale="${s.toFixed(2)}" xChannelSelector="R" yChannelSelector="G"`;
 
   if (dispersion < 0.02) {
-    return `${dimg}${dm(scale, 'SourceGraphic')}/>`;
+    return `${atlas}${dm(scale)}/>`;
   }
-  // Chromatic split: R/G/B displaced at fanned scales, recombined by screen.
-  const spread = scale * dispersion * 0.5;
+  const k = dispersion * 0.08; // gentle per-channel spread
   return (
-    dimg +
-    `${dm(scale + spread, 'SourceGraphic')} result="dR"/>` +
-    '<feColorMatrix in="dR" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="cR"/>' +
-    `${dm(scale, 'SourceGraphic')} result="dG"/>` +
-    '<feColorMatrix in="dG" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="cG"/>' +
-    `${dm(scale - spread, 'SourceGraphic')} result="dB"/>` +
-    '<feColorMatrix in="dB" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0" result="cB"/>' +
-    '<feBlend in="cR" in2="cG" mode="screen" result="cRG"/>' +
-    '<feBlend in="cRG" in2="cB" mode="screen"/>'
+    `${atlas}` +
+    `${dm(scale * (1 + k))} result="dR"/><feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR"/>` +
+    `${dm(scale)} result="dG"/><feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>` +
+    `${dm(scale * (1 - k))} result="dB"/><feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/>` +
+    `<feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen"/>`
   );
 }
 
@@ -225,8 +201,6 @@ function readParams(el, state) {
     refraction: p.refraction ?? num('--lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--lg-depth', DEFAULTS.depth)),
     dispersion: p.dispersion ?? num('--lg-dispersion', DEFAULTS.dispersion),
-    light: p.light ?? num('--lg-light', DEFAULTS.light),
-    lightAngle: num('--lg-light-angle', DEFAULTS.lightAngle),
     blur: num('--lg-radius', DEFAULTS.radius),
     saturate: num('--lg-saturate', DEFAULTS.saturate),
     brightness: num('--lg-brightness', DEFAULTS.brightness),
@@ -245,71 +219,74 @@ function setBackdrop(el, value) {
 function render(state) {
   const { el, id, filter } = state;
   const p = readParams(el, state);
-  // ORDER MATTERS: frost FIRST, then refraction. Blurring the backdrop before
-  // the displacement means the lens bends already-soft content → a clean smooth
-  // refraction, instead of smearing sharp high-contrast edges into dirty streaks.
-  // contrast(<1) lifts blacks so the glass stays luminous over dark backdrops.
-  const frost = `blur(${p.blur}px)`;
-  const lift = `saturate(${p.saturate}) brightness(${p.brightness}) contrast(${p.contrast})`;
-  const tail = `${frost} ${lift}`; // fallback (no refraction): order is irrelevant
+  // Frost FIRST, then the lens: blurring the backdrop before the displacement
+  // means the lens bends already-soft content (clean refraction) instead of
+  // smearing sharp high-contrast edges into streaks.
+  const tail = `blur(${p.blur}px) saturate(${p.saturate}) brightness(${p.brightness}) contrast(${p.contrast})`;
 
-  // Non-refracting / reduced / disabled → the CSS class already declares the
-  // same blur tail, so clear inline and let the stylesheet own the fallback.
+  // Non-refracting / reduced / disabled → the CSS class declares the same blur
+  // tail, so clear inline and let the stylesheet own the fallback.
   if (p.reduced || !state.enabled || !state.refracts) {
     setBackdrop(el, p.reduced || !state.enabled ? '' : tail);
     state.geoKey = null;
-    state.fKey = null;
     return;
   }
-
-  // refraction ≈ 0 → skip the SVG displacement entirely (plain frost). The
-  // displacement is an OPT-IN extra: it visibly seams when the element is
-  // repositioned and reads as barely-there even when correct (deep-test verdict),
-  // so the robust default is frost + the CSS specular rim, no displacement.
+  // refraction ≈ 0 → plain frost, no displacement (opt-out of the lens).
   if (p.refraction <= 0.01) {
     setBackdrop(el, tail);
     state.geoKey = null;
-    state.fKey = null;
     return;
   }
 
-  const geoKey = `${p.w}x${p.h}x${p.corner}x${p.depth}x${Math.round(p.lightAngle)}`;
+  const dpr = typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1;
+  // The map depends ONLY on geometry (size/corner/depth/dpr) — not on position,
+  // strength, or dispersion. So a DRAG or a refraction/dispersion change never
+  // rebuilds it (cheap re-stamp); only resize/corner/depth does.
+  const geoKey = `${p.w}x${p.h}x${p.corner}x${p.depth}x${dpr.toFixed(2)}`;
   const gen = ++state.gen;
+  const t0 = state.onPerf ? performance.now() : 0;
 
-  const stamp = (maps) => {
+  const stamp = (map, mapMs) => {
     if (state.gen !== gen) return; // a newer render superseded this one
-    state.maps = maps;
-    const scale = maps.bevel * 0.85 * p.refraction;
-    // Region == the element box in element-LOCAL px (filterUnits=userSpaceOnUse).
-    // These coords travel with the element on left/top, so the lens stays aligned
-    // when dragged — the shuding/liquid-glass anti-seam rule. (Don't CSS-transform
-    // a glass element; transform a wrapper instead.)
+    state.map = map;
+    const scale = map.unit * p.refraction;
+    // Region == element box in element-LOCAL px (filterUnits=userSpaceOnUse) →
+    // travels with the element on left/top; the lens stays aligned when dragged
+    // (shuding's anti-seam rule). Do NOT CSS-transform a glass element.
     filter.setAttribute('x', '0');
     filter.setAttribute('y', '0');
     filter.setAttribute('width', String(p.w));
     filter.setAttribute('height', String(p.h));
-    filter.innerHTML = filterMarkup(maps.disp, p.w, p.h, scale, p.dispersion);
-    setBackdrop(el, `${frost} url(#${id}) ${lift}`);
+    filter.innerHTML = filterMarkup(map.href, p.w, p.h, scale, p.dispersion);
+    setBackdrop(
+      el,
+      `blur(${p.blur}px) url(#${id}) saturate(${p.saturate}) brightness(${p.brightness}) contrast(${p.contrast})`,
+    );
+    if (state.onPerf) {
+      state.onPerf({
+        reason: mapMs > 0 ? 'rebuild' : 'restamp',
+        mapMs,
+        totalMs: performance.now() - t0,
+        mapW: map.mapW,
+        mapH: map.mapH,
+        w: p.w,
+        h: p.h,
+      });
+    }
   };
 
-  if (geoKey === state.geoKey && state.maps) {
-    stamp(state.maps); // geometry unchanged → reuse maps, re-stamp (cheap params)
+  if (geoKey === state.geoKey && state.map) {
+    stamp(state.map, 0); // geometry unchanged → reuse map, cheap re-stamp
     return;
   }
   state.geoKey = geoKey;
-  const maps = buildMaps(p.w, p.h, p.corner, p.depth, p.lightAngle);
-  // Decode both maps before referencing them so the very first composite already
-  // has the displacement (feImage decode is async even for data-URIs).
-  Promise.all(
-    [maps.disp, maps.spec].map(
-      (src) =>
-        new Promise((res) => {
-          const im = new Image();
-          im.onload = im.onerror = () => res();
-          im.src = src;
-        }),
-    ),
-  ).then(() => stamp(maps));
+  const tMap = state.onPerf ? performance.now() : 0;
+  const map = buildMap(p.w, p.h, p.corner, p.depth, dpr);
+  const mapMs = state.onPerf ? performance.now() - tMap : 1;
+  // Decode the map before referencing it (feImage decode is async even for data-URIs).
+  const im = new Image();
+  im.onload = im.onerror = () => stamp(map, mapMs);
+  im.src = map.href;
 }
 
 /**
@@ -338,6 +315,10 @@ export function attach(el, opts = {}) {
     refracts: supportsRefraction(),
     params: { ...opts },
     gen: 0,
+    // Optional perf hook — DEV only. When provided, render() reports timing
+    // ({reason:'rebuild'|'restamp', mapMs, totalMs, mapW, mapH}). Pass nothing in
+    // production → zero overhead (no performance.now() calls, no allocation).
+    onPerf: typeof opts.onPerf === 'function' ? opts.onPerf : null,
   };
 
   const update = () => render(state);
