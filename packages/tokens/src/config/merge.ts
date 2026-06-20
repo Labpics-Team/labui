@@ -43,5 +43,13 @@ export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig
       lineHeightBands:
         override.typography?.lineHeightBands ?? defaultConfig.typography.lineHeightBands,
     },
+    borders: {
+      ...defaultConfig.borders,
+      ...override.borders,
+      // widths is an unordered named record — merge key-by-key (retune one stroke
+      // without dropping the others); focusRing merges field-by-field likewise.
+      widths: { ...defaultConfig.borders.widths, ...override.borders?.widths },
+      focusRing: { ...defaultConfig.borders.focusRing, ...override.borders?.focusRing },
+    },
   };
 }

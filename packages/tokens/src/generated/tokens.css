@@ -101,4 +101,12 @@
   --lab-font-weight-medium: 500;
   --lab-font-weight-semibold: 600;
   --lab-font-weight-bold: 700;
+
+  /* Borders — stroke widths (rem) */
+  --lab-stroke-hairline: 0.0625rem;
+  --lab-stroke-thick: 0.125rem;
+
+  /* Borders — focus ring (width + offset, rem) */
+  --lab-focus-ring-width: 0.125rem;
+  --lab-focus-ring-offset: 0.125rem;
 }

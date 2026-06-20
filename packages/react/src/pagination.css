@@ -45,7 +45,7 @@
   min-width: var(--_lab-pg-size);
   height: var(--_lab-pg-size);
   padding-inline: var(--_lab-pg-pad-x);
-  border: 0.0625rem solid transparent;
+  border: var(--lab-stroke-hairline) solid transparent;
   border-radius: var(--lab-radius-control, 0.5rem);
   background: transparent;
   font: inherit;
@@ -75,8 +75,8 @@
 
 .lab-pagination-item:focus-visible,
 .lab-pagination-trigger:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 .lab-pagination-ellipsis {

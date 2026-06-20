@@ -96,7 +96,7 @@ export class LabCard extends LabElement {
       color: ${litVar('--lab-label-primary')};
       /* A transparent border is always present so the variant rules only swap its
          colour — the box never resizes between variants (CLS, craft-frontend P4). */
-      border: 0.0625rem solid transparent;
+      border: ${litVar('--lab-stroke-hairline')} solid transparent;
     }
 
     /* ── variant=elevated: raised surface + an honest role-layer shadow ─────── */
@@ -130,8 +130,8 @@ export class LabCard extends LabElement {
     /* The host delegates focus; draw the ring when any inner control is
        focus-visible OR the host itself is focused (consumer-set tabindex). */
     :host([interactive]:focus-within) .card {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* ── slot regions ───────────────────────────────────────────────────────── */

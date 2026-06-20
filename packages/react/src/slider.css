@@ -116,7 +116,7 @@
   height: var(--_lab-thumb);
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-control-bg);
-  border: 0.0625rem solid var(--lab-border-base);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   box-shadow: 0 0.0625rem 0.1875rem var(--lab-fx-shadow-major);
   outline: none;
   cursor: grab;
@@ -131,11 +131,11 @@
 }
 [data-lab-slider] .lab-slider-thumb:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 0.1875rem var(--lab-border-focus);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
 }
 [data-lab-slider][data-invalid] .lab-slider-thumb:focus-visible {
   border-color: var(--lab-border-danger);
-  box-shadow: 0 0 0 0.1875rem var(--lab-border-danger);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
 }
 [data-lab-slider] .lab-slider-thumb[data-dragging] {
   cursor: grabbing;

@@ -133,7 +133,7 @@ export class LabButton extends LabElement {
       min-height: var(--_min);
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
-      border: 0.0625rem solid transparent;
+      border: ${litVar('--lab-stroke-hairline')} solid transparent;
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
@@ -218,8 +218,8 @@ export class LabButton extends LabElement {
       filter: brightness(0.92);
     }
     button:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* ── disabled ──────────────────────────────────────────────────────── */
@@ -247,7 +247,7 @@ export class LabButton extends LabElement {
       position: absolute;
       width: 1em;
       height: 1em;
-      border: 0.125rem solid currentColor;
+      border: ${litVar('--lab-stroke-thick')} solid currentColor;
       border-right-color: transparent;
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       animation: spin 0.7s linear infinite;

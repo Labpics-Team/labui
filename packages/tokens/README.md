@@ -91,6 +91,17 @@ weight is a per-client axis instead of a literal baked into components. Default:
 `--lab-font-weight-semibold` (the emphasis weight) rather than a hard `600`; a client
 re-weights its whole UI through the same override path as every other scale.
 
+### Borders — stroke widths + focus ring
+
+Line thickness is a themeable axis too. Stroke widths emit as `--lab-stroke-*`
+(`hairline` 1px, `thick` 2px) — deliberately **not** `--lab-border-*`, which is the
+*colour* role namespace; a stroke is a dimension. Values are grounded against Figma
+(🧪Lab UI v.1): every component border — button, card, checkbox, radio, input, menu —
+is a 1px `strokeWeight`, so `hairline` is the universal border. The focus indicator is
+its own sub-system, `--lab-focus-ring-width` / `--lab-focus-ring-offset` (both 2px,
+matching the Figma 2px focus-ring stroke offset 2px outside the edge), so a brand can
+make its focus ring bolder or further out than its component borders.
+
 ## Configuring
 
 ```ts

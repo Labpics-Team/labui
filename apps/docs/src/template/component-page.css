@@ -83,7 +83,7 @@ code {
   border-radius: var(--lab-radius-md, 0.5rem);
   color: var(--lab-label-primary);
   text-decoration: none;
-  border: 0.0625rem solid transparent;
+  border: var(--lab-stroke-hairline) solid transparent;
 }
 
 .nav-link:hover,
@@ -132,7 +132,7 @@ code {
   gap: var(--lab-space-2, 0.5rem);
   padding: var(--lab-space-1, 0.25rem) var(--lab-space-3, 0.75rem);
   border-radius: var(--lab-radius-full, 9999px);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   font-size: var(--lab-font-size-sm, 0.875rem);
   font-weight: var(--lab-font-weight-semibold, 600);
 }
@@ -154,7 +154,7 @@ code {
   flex-wrap: wrap;
   gap: var(--lab-space-4, 1rem);
   padding: var(--lab-space-4, 1rem);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -171,22 +171,22 @@ select {
   font: inherit;
   padding: var(--lab-space-1, 0.25rem) var(--lab-space-2, 0.5rem);
   border-radius: var(--lab-radius-md, 0.5rem);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
 }
 
 select:focus-visible,
 input:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* ── Sections ─────────────────────────────────────────────────────────────── */
 .doc-section {
   margin-bottom: var(--lab-space-10, 2.5rem);
   padding-top: var(--lab-space-6, 1.5rem);
-  border-top: 0.0625rem solid var(--lab-border-neutral);
+  border-top: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
 }
 
 .doc-section > h2 {
@@ -206,7 +206,7 @@ input:focus-visible {
 
 .matrix-table th,
 .matrix-table td {
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   padding: var(--lab-space-4, 1rem);
   text-align: left;
   vertical-align: middle;
@@ -249,7 +249,7 @@ input:focus-visible {
   align-items: center;
   min-height: 8rem;
   padding: var(--lab-space-8, 2rem);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -305,7 +305,7 @@ input:focus-visible {
 
 .guidance-col {
   padding: var(--lab-space-4, 1rem);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -340,7 +340,7 @@ input:focus-visible {
   display: flex;
   justify-content: center;
   padding: var(--lab-space-10, 2.5rem);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -368,7 +368,7 @@ input:focus-visible {
 
 .api-table th,
 .api-table td {
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   padding: var(--lab-space-3, 0.75rem);
   text-align: left;
   vertical-align: top;

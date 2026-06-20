@@ -173,7 +173,7 @@ export class LabAvatar extends LabElement {
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       /* A ring in the surrounding background so the dot reads as separate even on
          a same-colour avatar — separation by surface, not a hairline. */
-      box-shadow: 0 0 0 0.125rem ${litVar('--lab-bg-primary')};
+      box-shadow: 0 0 0 ${litVar('--lab-stroke-thick')} ${litVar('--lab-bg-primary')};
     }
     :host([status='online']) .status {
       background-color: ${litVar('--lab-border-success-strong')};

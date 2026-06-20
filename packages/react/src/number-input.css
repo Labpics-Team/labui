@@ -76,7 +76,7 @@
   margin: 0;
   overflow: hidden;
   background-color: var(--lab-bg-primary);
-  border: 0.0625rem solid var(--lab-border-base);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
   transition: border-color 120ms ease, box-shadow 120ms ease;
 }
@@ -116,7 +116,7 @@
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
-  border-inline-start: 0.0625rem solid var(--lab-border-soft);
+  border-inline-start: var(--lab-stroke-hairline) solid var(--lab-border-soft);
 }
 
 [data-lab-number-input] .lab-number-input-trigger {
@@ -137,7 +137,7 @@
   transition: background-color 120ms ease, color 120ms ease;
 }
 [data-lab-number-input] .lab-number-input-trigger-inc {
-  border-block-end: 0.0625rem solid var(--lab-border-soft);
+  border-block-end: var(--lab-stroke-hairline) solid var(--lab-border-soft);
 }
 [data-lab-number-input] .lab-number-input-trigger:hover:not([data-disabled]) {
   background-color: var(--lab-fill-neutral);
@@ -158,7 +158,7 @@
 /* Focus ring: the control surface lights when the inner input is focus-visible. */
 [data-lab-number-input] .lab-field-control:has(.lab-number-input-input:focus-visible) {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 0.125rem var(--lab-border-focus);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
 }
 
 /* Sentiment: the type re-points the border + focus ring, independent of size. */
@@ -167,21 +167,21 @@
 }
 [data-lab-number-input][data-type="danger"]
   .lab-field-control:has(.lab-number-input-input:focus-visible) {
-  box-shadow: 0 0 0 0.125rem var(--lab-border-danger);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
 }
 [data-lab-number-input][data-type="warning"] .lab-field-control {
   border-color: var(--lab-border-warning-strong);
 }
 [data-lab-number-input][data-type="warning"]
   .lab-field-control:has(.lab-number-input-input:focus-visible) {
-  box-shadow: 0 0 0 0.125rem var(--lab-border-warning-strong);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
 }
 [data-lab-number-input][data-type="success"] .lab-field-control {
   border-color: var(--lab-border-success-strong);
 }
 [data-lab-number-input][data-type="success"]
   .lab-field-control:has(.lab-number-input-input:focus-visible) {
-  box-shadow: 0 0 0 0.125rem var(--lab-border-success-strong);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
 }
 
 /* Readonly / disabled surfaces. */

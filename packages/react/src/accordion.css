@@ -19,7 +19,7 @@
 
   display: flex;
   flex-direction: column;
-  border: 0.0625rem solid var(--lab-border-base);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-card, 0.75rem);
   overflow: hidden;
 }
@@ -44,11 +44,11 @@
   min-width: 0;
 }
 .lab-accordion-item:not(:last-child) {
-  border-bottom: 0.0625rem solid var(--lab-border-base);
+  border-bottom: var(--lab-stroke-hairline) solid var(--lab-border-base);
 }
 [data-lab-accordion][data-orientation="horizontal"] .lab-accordion-item:not(:last-child) {
   border-bottom: none;
-  border-inline-end: 0.0625rem solid var(--lab-border-base);
+  border-inline-end: var(--lab-stroke-hairline) solid var(--lab-border-base);
 }
 
 .lab-accordion-trigger {
@@ -84,8 +84,8 @@
   cursor: not-allowed;
 }
 .lab-accordion-trigger:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: -0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: calc(-1 * var(--lab-focus-ring-offset));
 }
 
 .lab-accordion-indicator {

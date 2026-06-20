@@ -169,7 +169,7 @@ export const dialogFloatingStyles = css`
     border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
     background-color: ${litVar('--lab-bg-secondary')};
     color: ${litVar('--lab-label-primary')};
-    border: 0.0625rem solid ${litVar('--lab-border-soft')};
+    border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
     box-shadow: 0 0.75rem 2.5rem ${litVar('--lab-fx-shadow-major')};
     font: inherit;
     font-size: ${litVar('--lab-font-size-md', '1rem')};
@@ -179,8 +179,8 @@ export const dialogFloatingStyles = css`
     display: none;
   }
   .content:focus-visible {
-    outline: 0.125rem solid ${litVar('--lab-border-focus')};
-    outline-offset: 0.125rem;
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
 
   .heading {
@@ -223,8 +223,8 @@ export const dialogFloatingStyles = css`
     color: ${litVar('--lab-label-primary')};
   }
   .close:focus-visible {
-    outline: 0.125rem solid ${litVar('--lab-border-focus')};
-    outline-offset: 0.125rem;
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
 `;
 
@@ -344,8 +344,8 @@ export class LabDialog extends LabElement {
       cursor: pointer;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
     }
   `;

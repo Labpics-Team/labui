@@ -187,7 +187,7 @@ export class LabCheckbox extends LabElement {
       width: var(--_box);
       height: var(--_box);
       border-radius: var(--_radius);
-      border: 0.0938rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       background-color: transparent;
       color: transparent;
       transition:
@@ -239,8 +239,8 @@ export class LabCheckbox extends LabElement {
     /* The input is now a SIBLING of the (aria-hidden) control so it stays in the
        a11y tree; match focus-visible from the shared root, not as a descendant. */
     .root:has(input:focus-visible) .control {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     :host([disabled]) .root {

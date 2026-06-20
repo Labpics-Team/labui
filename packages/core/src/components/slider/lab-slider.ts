@@ -338,7 +338,7 @@ export class LabSlider extends LabElement {
       height: var(--_thumb);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-control-bg')};
-      border: 0.0625rem solid ${litVar('--lab-border-base')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       box-shadow: 0 0.0625rem 0.1875rem ${litVar('--lab-fx-shadow-major')};
       outline: none;
       cursor: grab;
@@ -353,11 +353,11 @@ export class LabSlider extends LabElement {
     }
     .thumb:focus-visible {
       border-color: ${litVar('--lab-border-focus')};
-      box-shadow: 0 0 0 0.1875rem ${litVar('--lab-border-focus')};
+      box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
     }
     :host([invalid]) .thumb:focus-visible {
       border-color: ${litVar('--lab-border-danger')};
-      box-shadow: 0 0 0 0.1875rem ${litVar('--lab-border-danger')};
+      box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
     }
     .thumb[data-dragging] {
       cursor: grabbing;

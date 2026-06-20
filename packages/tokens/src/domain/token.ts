@@ -15,7 +15,9 @@ export type ScaleKind =
   | 'font-size'
   | 'font-weight'
   | 'line-height'
-  | 'tracking';
+  | 'tracking'
+  | 'stroke'
+  | 'focus-ring';
 
 /**
  * A fully resolved token.

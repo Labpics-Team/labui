@@ -175,7 +175,7 @@ export class LabAccordion extends LabElement {
     .root {
       display: flex;
       flex-direction: column;
-      border: 0.0625rem solid ${litVar('--lab-border-base')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       border-radius: ${litVar('--lab-radius-card', '0.75rem')};
       overflow: hidden;
     }
@@ -191,11 +191,11 @@ export class LabAccordion extends LabElement {
     }
     /* A divider between stacked items (vertical) — not after the last. */
     .item:not(:last-child) {
-      border-bottom: 0.0625rem solid ${litVar('--lab-border-base')};
+      border-bottom: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     }
     :host([orientation='horizontal']) .item:not(:last-child) {
       border-bottom: none;
-      border-inline-end: 0.0625rem solid ${litVar('--lab-border-base')};
+      border-inline-end: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     }
 
     /* The header button — the Zag item-trigger element. */
@@ -233,8 +233,8 @@ export class LabAccordion extends LabElement {
       cursor: not-allowed;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: -0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: calc(-1 * ${litVar('--lab-focus-ring-offset')});
     }
 
     /* The chevron — the Zag item-indicator element. Rotates on open. */
