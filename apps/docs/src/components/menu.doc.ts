@@ -89,7 +89,7 @@ export const menuDoc: ComponentDoc = {
       index: 3,
       name: 'Content (menu)',
       description:
-        'The floating menu — role="menu", hidden until open, aria-activedescendant → the highlighted item id. The raised surface (--lab-surface-raised) with a --lab-border-soft hairline, --lab-fx-shadow-major lift, layered at --lab-z-dropdown.',
+        'The floating menu — role="menu", hidden until open, aria-activedescendant → the highlighted item id. The raised surface (--lab-bg-secondary) with a --lab-border-soft hairline, --lab-fx-shadow-major lift, layered at --lab-z-dropdown.',
     },
     {
       index: 4,

@@ -84,7 +84,7 @@ export const cardDoc: ComponentDoc = {
       index: 1,
       name: 'Surface (article)',
       description:
-        'The container — a native <article> (the HTML self-contained-composition element). Reads --lab-surface-base / --lab-surface-raised; elevated adds an honest --lab-fx-shadow role.',
+        'The container — a native <article> (the HTML self-contained-composition element). Reads --lab-bg-primary / --lab-bg-secondary; elevated adds an honest --lab-fx-shadow role.',
     },
     {
       index: 2,
