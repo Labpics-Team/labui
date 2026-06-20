@@ -31,8 +31,8 @@
  *   - interactive: a hoverable/focusable affordance for whole-card targets (bool)
  *
  * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
- * dimension tokens through `litVar`. The surface reads `--lab-surface-base` /
- * `--lab-surface-raised`; borders read `--lab-border-base` / `--lab-border-soft`;
+ * dimension tokens through `litVar`. The surface reads `--lab-bg-primary` /
+ * `--lab-bg-secondary`; borders read `--lab-border-base` / `--lab-border-soft`;
  * elevation reads the `--lab-fx-shadow-*` role (NOT a baked-in hex shadow — an
  * honest elevation comes from the role layer or it does not exist); the focus
  * ring reads `--lab-border-focus`. No hex, no primitive, no invented role.
@@ -92,7 +92,7 @@ export class LabCard extends LabElement {
       flex-direction: column;
       overflow: hidden;
       border-radius: var(--_radius);
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
       /* A transparent border is always present so the variant rules only swap its
          colour — the box never resizes between variants (CLS, craft-frontend P4). */
@@ -101,13 +101,13 @@ export class LabCard extends LabElement {
 
     /* ── variant=elevated: raised surface + an honest role-layer shadow ─────── */
     :host([variant='elevated']) .card {
-      background-color: ${litVar('--lab-surface-raised')};
+      background-color: ${litVar('--lab-bg-secondary')};
       box-shadow: ${litVar('--lab-fx-shadow-minor')};
     }
 
     /* ── variant=outlined: flat surface, a real border ──────────────────────── */
     :host([variant='outlined']) .card {
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       border-color: ${litVar('--lab-border-base')};
     }
 

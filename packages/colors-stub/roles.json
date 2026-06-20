@@ -163,5 +163,5 @@
       "--lab-border-focus"
     ]
   },
-  "aliases": ["--lab-surface-base", "--lab-surface-raised", "--lab-accent"]
+  "aliases": []
 }

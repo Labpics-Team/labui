@@ -237,12 +237,6 @@
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
-
-  /* ── Backward-compatible aliases (original 5-var stub) ──────────────────── */
-  /* Kept so existing consumers don't break; prefer the systematic roles above. */
-  --lab-surface-base: var(--lab-bg-primary);
-  --lab-surface-raised: var(--lab-bg-secondary);
-  --lab-accent: var(--lab-label-brand-primary);
 }
 
 [data-theme="dark"] {

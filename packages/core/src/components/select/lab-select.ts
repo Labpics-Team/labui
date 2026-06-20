@@ -50,7 +50,7 @@
  * `<select>` is wired for form submission.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The listbox is
- * the raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a
+ * the raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and `--lab-fx-shadow-major` lift, layered at
  * `--lab-z-dropdown`; the highlighted option fills with `--lab-fill-neutral-tinted`,
  * the selected option's label is `--lab-label-accent`. No hex, no primitive.
@@ -274,7 +274,7 @@ export class LabSelect extends LabElement {
       padding: 0 var(--_pad-x);
       border: 0.0625rem solid ${litVar('--lab-border-neutral')};
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: var(--_font);
@@ -337,7 +337,7 @@ export class LabSelect extends LabElement {
       padding: ${litVar('--lab-space-xs', '0.25rem')};
       list-style: none;
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-      background-color: ${litVar('--lab-surface-raised')};
+      background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
       border: 0.0625rem solid ${litVar('--lab-border-soft')};
       box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};

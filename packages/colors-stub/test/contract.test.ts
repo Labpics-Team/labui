@@ -70,9 +70,18 @@ describe('--lab-* semantic color contract', () => {
     expect(missing, `missing in media fallback: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('keeps the backward-compatible aliases from the original 5-var stub', () => {
-    const missing = roles.aliases.filter((r) => !declares(lightBody, r));
-    expect(missing, `missing aliases: ${missing.join(', ')}`).toEqual([]);
+  it('carries no legacy back-compat aliases — consumers read only canonical roles', () => {
+    // The original 5-var stub aliases (--lab-surface-base/-raised, --lab-accent)
+    // were retired once every consumer moved to the systematic --lab-bg-*/--lab-label-*
+    // roles the published @labpics/colors engine emits. Guard against reintroduction so
+    // the swap to the live engine stays a no-op (a stub-only alias would silently vanish).
+    expect(roles.aliases, 'roles.json must declare no aliases').toEqual([]);
+    const LEGACY = ['--lab-surface-base', '--lab-surface-raised', '--lab-accent'];
+    const resurrected = LEGACY.filter((r) => declares(lightBody, r));
+    expect(
+      resurrected,
+      `legacy alias re-declared in contract.css: ${resurrected.join(', ')}`,
+    ).toEqual([]);
   });
 
   it('exposes the expected per-group role counts', () => {

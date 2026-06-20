@@ -51,7 +51,7 @@
  * `finalFocusEl` wiring in the constructor.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The panel is the
- * raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a
+ * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and a `--lab-fx-shadow-major` lift, layered at
  * `--lab-z-modal`; the scrim is `--lab-bg-overlay-base` at `--lab-z-modal-underlay`.
  * No hex, no primitive, no invented role. The portal carries the page's
@@ -167,7 +167,7 @@ export const dialogFloatingStyles = css`
     overflow: auto;
     padding: var(--_pad);
     border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
-    background-color: ${litVar('--lab-surface-raised')};
+    background-color: ${litVar('--lab-bg-secondary')};
     color: ${litVar('--lab-label-primary')};
     border: 0.0625rem solid ${litVar('--lab-border-soft')};
     box-shadow: 0 0.75rem 2.5rem ${litVar('--lab-fx-shadow-major')};

@@ -48,7 +48,7 @@
  * (style encapsulation), not a bug in the machine.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The panel is the
- * raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a `--lab-
+ * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a `--lab-
  * border-soft` hairline, `--lab-fx-shadow-major` lift, and layering by
  * `--lab-z-dropdown` (non-modal) / `--lab-z-modal` (modal). The scrim is
  * `--lab-bg-overlay-base` at `--lab-z-modal-underlay`. No hex, no primitive, no
@@ -200,7 +200,7 @@ export class LabPopover extends LabElement {
        arrow reuses the same surface role so it fuses to the panel edge. */
     .content {
       --arrow-size: 0.625rem;
-      --arrow-background: ${litVar('--lab-surface-raised')};
+      --arrow-background: ${litVar('--lab-bg-secondary')};
 
       box-sizing: border-box;
       position: relative;
@@ -208,7 +208,7 @@ export class LabPopover extends LabElement {
       max-width: var(--_max-width);
       padding: var(--_pad);
       border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
-      background-color: ${litVar('--lab-surface-raised')};
+      background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
       border: 0.0625rem solid ${litVar('--lab-border-soft')};
       box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
