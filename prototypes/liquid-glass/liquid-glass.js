@@ -276,13 +276,15 @@ function render(state) {
     // Delicate edge lens: peak shift ≈ scale/2 = bevel*0.2*refraction (~2-3px).
     // iOS bends only a hairline; frost + specular rim carry the look.
     const scale = maps.bevel * 0.4 * p.refraction;
-    // Region == the displacement map exactly (userSpaceOnUse px). Anything larger
-    // makes feDisplacementMap sample OUTSIDE the map (transparent → channel 0 →
-    // a huge constant shift) — that was the wide smear + the hard seam.
-    filter.setAttribute('x', '0');
-    filter.setAttribute('y', '0');
-    filter.setAttribute('width', String(p.w));
-    filter.setAttribute('height', String(p.h));
+    // Region == the element box exactly (objectBoundingBox 100%), which matches
+    // the feImage's w×h coverage → feDisplacementMap never samples outside the
+    // map (that out-of-bounds read was the smear + seam). 100% (not 200%) and
+    // objectBoundingBox (not absolute px) so it stays correct when the pane is
+    // dragged/transformed.
+    filter.setAttribute('x', '0%');
+    filter.setAttribute('y', '0%');
+    filter.setAttribute('width', '100%');
+    filter.setAttribute('height', '100%');
     filter.innerHTML = filterMarkup(maps.disp, maps.spec, p.w, p.h, scale, p.dispersion, p.light);
     setBackdrop(el, `${frost} url(#${id}) ${lift}`);
   };
@@ -318,9 +320,11 @@ export function attach(el, opts = {}) {
   const filter = document.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
-  // Everything in user-space px so the region, feImage and feDisplacementMap all
-  // agree — no unit mismatch, no out-of-bounds sampling (the seam/smear bug).
-  filter.setAttribute('filterUnits', 'userSpaceOnUse');
+  // objectBoundingBox region TRACKS the element (so a dragged/transformed pane
+  // keeps its filter); primitiveUnits=userSpaceOnUse makes feImage px the
+  // element-local box. Region is set to exactly 100% (the box) in stamp(), so it
+  // matches the feImage's w×h coverage — no out-of-bounds sampling (seam/smear).
+  filter.setAttribute('filterUnits', 'objectBoundingBox');
   filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
   ensureDefs().appendChild(filter);
 
