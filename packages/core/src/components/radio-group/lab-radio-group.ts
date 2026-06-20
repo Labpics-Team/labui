@@ -220,7 +220,7 @@ export class LabRadioGroup extends LabElement {
       width: var(--_ring);
       height: var(--_ring);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
-      border: ${litVar('--lab-stroke-control')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       background-color: transparent;
       transition:
         border-color 120ms ease,

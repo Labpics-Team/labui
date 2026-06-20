@@ -124,7 +124,6 @@ export type FontWeightToken = keyof typeof fontWeight;
 
 export const stroke = {
   hairline: 'var(--lab-stroke-hairline)',
-  control: 'var(--lab-stroke-control)',
   thick: 'var(--lab-stroke-thick)',
 } as const;
 

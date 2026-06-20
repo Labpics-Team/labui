@@ -146,19 +146,19 @@ export const defaultConfig: TokensConfig = {
       bold: 700,
     },
   },
-  // Stroke widths + focus ring (rem). Values match the literals components used
-  // before this scale existed (1:1, value-preserving): hairline = 1px borders,
-  // control = 1.5px checkbox/radio box, thick = 2px (spinner ring, tab indicator).
-  // The focus ring is its own axis (width + offset), both 2px today.
+  // Stroke widths + focus ring (rem). Grounded against Figma (🧪Lab UI v.1):
+  // hairline = 1px — the universal component border (button/card/checkbox/radio/
+  // input/menu strokeWeight=1 in Figma); thick = 2px (focus ring, tab indicator).
+  // The focus ring is its own axis: Figma draws it as a 2px stroke offset 2px
+  // outside the element edge (focus-ring frame at -2,-2, strokeWeight 2).
   borders: {
     widths: {
-      hairline: 0.0625, //   1px
-      control: 0.0938, //   1.5px
-      thick: 0.125, //   2px
+      hairline: 0.0625, //   1px — universal component border (Figma strokeWeight 1)
+      thick: 0.125, //   2px — focus ring / tab indicator
     },
     focusRing: {
-      width: 0.125, //   2px ring
-      offset: 0.125, //   2px gap from the element edge
+      width: 0.125, //   2px ring (Figma focus-ring strokeWeight)
+      offset: 0.125, //   2px gap from the element edge (Figma -2px inset)
     },
   },
 };

@@ -104,7 +104,6 @@
 
   /* Borders — stroke widths (rem) */
   --lab-stroke-hairline: 0.0625rem;
-  --lab-stroke-control: 0.0938rem;
   --lab-stroke-thick: 0.125rem;
 
   /* Borders — focus ring (width + offset, rem) */

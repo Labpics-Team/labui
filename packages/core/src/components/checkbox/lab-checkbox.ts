@@ -187,7 +187,7 @@ export class LabCheckbox extends LabElement {
       width: var(--_box);
       height: var(--_box);
       border-radius: var(--_radius);
-      border: ${litVar('--lab-stroke-control')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       background-color: transparent;
       color: transparent;
       transition:

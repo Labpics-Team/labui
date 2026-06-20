@@ -48,7 +48,7 @@
   width: var(--_lab-cb-box);
   height: var(--_lab-cb-box);
   border-radius: var(--_lab-cb-radius);
-  border: var(--lab-stroke-control) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   background-color: transparent;
   color: transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;

@@ -131,11 +131,11 @@
 }
 [data-lab-slider] .lab-slider-thumb:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 0.1875rem var(--lab-border-focus);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
 }
 [data-lab-slider][data-invalid] .lab-slider-thumb:focus-visible {
   border-color: var(--lab-border-danger);
-  box-shadow: 0 0 0 0.1875rem var(--lab-border-danger);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
 }
 [data-lab-slider] .lab-slider-thumb[data-dragging] {
   cursor: grabbing;

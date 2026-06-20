@@ -353,11 +353,11 @@ export class LabSlider extends LabElement {
     }
     .thumb:focus-visible {
       border-color: ${litVar('--lab-border-focus')};
-      box-shadow: 0 0 0 0.1875rem ${litVar('--lab-border-focus')};
+      box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
     }
     :host([invalid]) .thumb:focus-visible {
       border-color: ${litVar('--lab-border-danger')};
-      box-shadow: 0 0 0 0.1875rem ${litVar('--lab-border-danger')};
+      box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
     }
     .thumb[data-dragging] {
       cursor: grabbing;

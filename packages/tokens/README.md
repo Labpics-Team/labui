@@ -94,11 +94,13 @@ re-weights its whole UI through the same override path as every other scale.
 ### Borders — stroke widths + focus ring
 
 Line thickness is a themeable axis too. Stroke widths emit as `--lab-stroke-*`
-(`hairline` 1px, `control` 1.5px, `thick` 2px) — deliberately **not** `--lab-border-*`,
-which is the *colour* role namespace; a stroke is a dimension. The focus indicator is
-its own sub-system, `--lab-focus-ring-width` / `--lab-focus-ring-offset` (both 2px by
-default), so a brand can make its focus ring bolder or further out than its component
-borders. Components read these tokens instead of literal `0.0625rem`/`0.0938rem`/`0.125rem`.
+(`hairline` 1px, `thick` 2px) — deliberately **not** `--lab-border-*`, which is the
+*colour* role namespace; a stroke is a dimension. Values are grounded against Figma
+(🧪Lab UI v.1): every component border — button, card, checkbox, radio, input, menu —
+is a 1px `strokeWeight`, so `hairline` is the universal border. The focus indicator is
+its own sub-system, `--lab-focus-ring-width` / `--lab-focus-ring-offset` (both 2px,
+matching the Figma 2px focus-ring stroke offset 2px outside the edge), so a brand can
+make its focus ring bolder or further out than its component borders.
 
 ## Configuring
 

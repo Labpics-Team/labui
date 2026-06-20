@@ -754,18 +754,6 @@
         }
       }
     },
-    "control": {
-      "$type": "dimension",
-      "$value": {
-        "value": 1.5008,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "0.0938rem"
-        }
-      }
-    },
     "thick": {
       "$type": "dimension",
       "$value": {
