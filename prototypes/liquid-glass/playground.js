@@ -20,9 +20,9 @@ document.getElementById('engine').textContent = glass.refracts
  * engine to re-read it. refraction/depth/dispersion rebuild the SVG; the rest
  * are pure CSS. One uniform path → trivially configurable. */
 const GLASS = [
-  { v: '--lg-radius', name: 'Blur (frost)', min: 0, max: 40, step: 0.5, def: 13, unit: 'px' },
+  { v: '--lg-radius', name: 'Blur (frost)', min: 0, max: 40, step: 0.5, def: 9, unit: 'px' },
   { v: '--lg-refraction', name: 'Refraction', min: 0, max: 1.5, step: 0.01, def: 1 },
-  { v: '--lg-depth', name: 'Depth', min: 6, max: 48, step: 1, def: 12, unit: 'px' },
+  { v: '--lg-depth', name: 'Depth', min: 6, max: 48, step: 1, def: 20, unit: 'px' },
   { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.06 },
   {
     v: '--lg-light-angle',
@@ -259,9 +259,13 @@ function clampInto() {
 }
 
 function place() {
-  pane.style.left = '0px';
-  pane.style.top = '0px';
-  pane.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+  // Position via left/top, NOT transform: a CSS transform on the glass element
+  // moves its painted result but NOT the SVG displacement map's user space, so a
+  // transformed pane shows the lens offset from the frost (a hard seam). left/top
+  // keeps the element's box (and its filter) coincident with where it paints.
+  pane.style.transform = 'none';
+  pane.style.left = `${x}px`;
+  pane.style.top = `${y}px`;
 }
 
 // Initial position: left third, vertically centred.

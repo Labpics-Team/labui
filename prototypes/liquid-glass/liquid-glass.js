@@ -26,14 +26,14 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 13, // px  — frost DOMINATES (the readable layer of iOS glass). Refraction
-  //                   is only a delicate edge finish; frost + tint carry the look.
+  radius: 9, // px   — moderate frost. Enough to read as glass, light enough that
+  //                   the edge lens (refraction) is the visible "liquid" tell.
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
   refraction: 1, // 0..1 — Figma: refraction. Scales the bend.
-  depth: 12, // px    — Figma: depth. Hairline rim band; interior stays flat so the
-  //                    backdrop's straight lines stay straight (no content warp).
+  depth: 20, // px    — Figma: depth. Rim band wide enough to read as a visible
+  //                    liquid lens; interior stays flat so straight lines stay straight.
   dispersion: 0.06, // 0..1 — Figma: dispersion. Barely-there sub-px rim fringe.
   light: 0.45, // 0..1 — Figma: lightIntensity. Soft specular rim, not a hard line.
   lightAngle: -45, // deg — Figma: lightAngle.
@@ -273,9 +273,9 @@ function render(state) {
   const stamp = (maps) => {
     if (state.gen !== gen) return; // a newer render superseded this one
     state.maps = maps;
-    // Delicate edge lens: peak shift ≈ scale/2 = bevel*0.2*refraction (~2-3px).
-    // iOS bends only a hairline; frost + specular rim carry the look.
-    const scale = maps.bevel * 0.4 * p.refraction;
+    // Visible-but-clean edge lens: peak shift ≈ scale/2 = bevel*0.3*refraction.
+    // The interior stays flat (sin-bump → 0 at the very edge AND the inner band).
+    const scale = maps.bevel * 0.6 * p.refraction;
     // Region == the element box exactly (objectBoundingBox 100%), which matches
     // the feImage's w×h coverage → feDisplacementMap never samples outside the
     // map (that out-of-bounds read was the smear + seam). 100% (not 200%) and
