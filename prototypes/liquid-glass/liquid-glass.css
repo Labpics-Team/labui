@@ -25,17 +25,17 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 6px; /* light frost — low enough that the edge lens reads */
-  --lg-saturate: 1.1; /* gentle lift — avoid the oversaturated colour wash */
-  --lg-brightness: 1.06;
+  --lg-radius: 8px; /* clean frost */
+  --lg-saturate: 1.05; /* minimal — avoid the GPU colour wash */
+  --lg-brightness: 1.02;
   --lg-contrast: 1; /* no black-lift (was washing colours); keep it honest */
-  --lg-refraction: 1; /* backdrop lens — robust now (element positioned via left/top) */
+  --lg-refraction: 0; /* OPT-IN lens; off by default (seams on moving elements) */
   --lg-depth: 20; /* consumed by JS when refraction > 0 */
   --lg-dispersion: 0.06; /* consumed by JS when refraction > 0 */
 
   --lg-corner: 28px;
   --lg-tint: 255 255 255; /* luminous near-white */
-  --lg-tint-opacity: 0.06; /* low — let the backdrop read, the RIM sells the glass */
+  --lg-tint-opacity: 0.05; /* low neutral tint */
 
   --lg-light-angle: -45deg; /* light from upper-left */
   --lg-light: 0.8; /* 0..1 strength of the directional glass rim */
@@ -132,7 +132,7 @@
    * tint for legibility over dark content, never a dark scrim. */
   --lg-tint: 240 244 255;
   --lg-tint-opacity: 0.08;
-  --lg-saturate: 1.25;
+  --lg-saturate: 1.1;
 }
 
 /* ── Accessibility / honest degradation ─────────────────────────────────────

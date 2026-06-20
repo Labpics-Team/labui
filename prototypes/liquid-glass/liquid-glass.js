@@ -28,10 +28,10 @@ let defs = null;
 const DEFAULTS = {
   radius: 9, // px   — moderate frost. Enough to read as glass, light enough that
   //                   the edge lens (refraction) is the visible "liquid" tell.
-  saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
-  brightness: 1.08,
-  contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
-  refraction: 1, // 0..1 — Figma: refraction. Backdrop lens (robust via left/top
+  saturate: 1.05, // minimal — GPU compositing over-saturates the wash
+  brightness: 1.02,
+  contrast: 1, // no black-lift; it muddied colours on GPU
+  refraction: 0, // 0..1 — OPT-IN lens; default OFF (displacement seams on moving elems)
   //                   default: frost + CSS rim, no fragile displacement filter).
   depth: 20, // px    — Figma: depth. Rim band wide enough to read as a visible
   //                    liquid lens; interior stays flat so straight lines stay straight.
