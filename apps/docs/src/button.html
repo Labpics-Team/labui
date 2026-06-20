@@ -35,6 +35,19 @@
           <lab-button data-testid="lit-danger-border" type="danger" kind="border">Delete</lab-button>
           <lab-button data-testid="lit-loading" type="accent" kind="fill" loading>Saving</lab-button>
           <lab-button data-testid="lit-disabled" type="accent" kind="fill" disabled>Off</lab-button>
+          <!-- Icon-only: the default slot is empty, so the ONLY name source is the
+               host aria-label, which must forward to the inner shadow <button>
+               (WCAG 4.1.2). The icon slot holds a decorative glyph. -->
+          <lab-button data-testid="lit-icon-only" type="accent" kind="fill" icon aria-label="Add item">
+            <svg slot="icon" viewBox="0 0 16 16" fill="none" aria-hidden="true" width="16" height="16">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </lab-button>
+          <!-- Default-type button inside a form: clicking it must NOT submit the
+               form (htmlType defaults to "button", not "submit"). -->
+          <form data-testid="lit-form" onsubmit="return false">
+            <lab-button data-testid="lit-in-form" type="neutral" kind="tinted">Plain</lab-button>
+          </form>
         </div>
       </section>
 

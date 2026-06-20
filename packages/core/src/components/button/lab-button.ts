@@ -58,6 +58,18 @@ export class LabButton extends LabElement {
     loading: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
     htmlType: { attribute: 'html-type' },
+    /**
+     * Accessible name for the icon-only case (WCAG 4.1.2). A consumer's
+     * `aria-label` on the host does NOT cross the shadow boundary onto the inner
+     * `<button>`, so without this property an icon-only button (empty default
+     * slot, decorative icon) would render with NO accessible name. Declaring it
+     * here lets Lit capture the host attribute and `render()` forward it. Not
+     * reflected — the source of truth is the inner button's attribute, set in
+     * `render()`; reflecting it back would duplicate the name onto the host.
+     * Parity with the React twin, whose `aria-label` reaches the native button
+     * via `{...rest}` (ADR-0001 — one prop, both renderers).
+     */
+    ariaLabel: { attribute: 'aria-label' },
   };
 
   declare type: LabButtonType;
@@ -67,6 +79,7 @@ export class LabButton extends LabElement {
   declare loading: boolean;
   declare disabled: boolean;
   declare htmlType: LabButtonHtmlType;
+  declare ariaLabel: string | null;
 
   constructor() {
     super();
@@ -77,6 +90,7 @@ export class LabButton extends LabElement {
     this.loading = false;
     this.disabled = false;
     this.htmlType = 'button';
+    this.ariaLabel = null;
   }
 
   static override styles = css`
@@ -263,16 +277,27 @@ export class LabButton extends LabElement {
     // spinner is always present (CSS hides it) so @lit-labs/ssr never sees a
     // conditional child template.
     const inactive = this.disabled || this.loading;
+    // ACCESSIBLE NAME (WCAG 4.1.2). A button with a visible default-slot label is
+    // named by that text — the platform computes the name from the slotted content,
+    // so no aria-label is wanted (one would silently override the visible label).
+    // An ICON-ONLY button has an empty default slot, so the projected text gives no
+    // name; the consumer's host `aria-label` is the only name source and MUST be
+    // forwarded onto the inner <button>. We forward it only in that icon-only case,
+    // and mark the (decorative) icon slot aria-hidden then so it cannot contribute a
+    // competing name. Mirrors the React twin ⇒ both renderers resolve the SAME name.
+    const iconOnly = !this.hasDefaultSlotContent();
+    const innerAriaLabel = iconOnly && this.ariaLabel ? this.ariaLabel : undefined;
     return html`
       <button
         type=${this.htmlType}
         ?disabled=${inactive}
+        aria-label=${ifDefined(innerAriaLabel)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
       >
         <span class="spinner" aria-hidden="true"></span>
         <span class="label">
-          <slot name="icon"></slot>
+          <slot name="icon" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
           <slot></slot>
         </span>
       </button>
