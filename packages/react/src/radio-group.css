@@ -71,7 +71,7 @@
   width: var(--_lab-rg-ring);
   height: var(--_lab-rg-ring);
   border-radius: var(--lab-radius-full, 9999px);
-  border: 0.0938rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-control) solid var(--lab-border-neutral);
   background-color: transparent;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
@@ -116,8 +116,8 @@
 }
 
 [data-lab-radio-group] .lab-radio-control:has(input:focus-visible) {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* The machine sets the hidden input's visually-hidden inline style after mount;

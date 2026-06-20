@@ -27,8 +27,8 @@
   cursor: default;
 }
 .lab-tooltip-trigger:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
   border-radius: var(--lab-radius-sm, 0.25rem);
 }
 

@@ -220,7 +220,7 @@ export class LabRadioGroup extends LabElement {
       width: var(--_ring);
       height: var(--_ring);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
-      border: 0.0938rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-control')} solid ${litVar('--lab-border-neutral')};
       background-color: transparent;
       transition:
         border-color 120ms ease,
@@ -269,8 +269,8 @@ export class LabRadioGroup extends LabElement {
     /* Focus is delegated to the per-item hidden input; draw the ring on the
        visible control when that input is focus-visible. */
     .control:has(input:focus-visible) {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* The machine sets the hidden input's visually-hidden inline style after

@@ -83,7 +83,7 @@
   width: var(--_lab-avatar-dot);
   height: var(--_lab-avatar-dot);
   border-radius: var(--lab-radius-full, 9999px);
-  box-shadow: 0 0 0 0.125rem var(--lab-bg-primary);
+  box-shadow: 0 0 0 var(--lab-stroke-thick) var(--lab-bg-primary);
 }
 [data-lab-avatar][data-status="online"] .lab-avatar-status {
   background-color: var(--lab-border-success-strong);

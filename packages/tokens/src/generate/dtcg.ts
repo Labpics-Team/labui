@@ -35,6 +35,8 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     'font-size': fontSizeGroup(tokens.fontSizes),
     'line-height': numberGroup(tokens.lineHeights),
     'font-weight': numberGroup(tokens.fontWeights),
+    stroke: dimensionGroup(tokens.strokes),
+    'focus-ring': dimensionGroup(tokens.focusRing),
   };
   return `${JSON.stringify(doc, null, 2)}\n`;
 }

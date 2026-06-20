@@ -35,7 +35,7 @@
   min-height: var(--_lab-btn-min);
   padding: var(--_lab-btn-pad-y) var(--_lab-btn-pad-x);
   border-radius: var(--_lab-btn-radius);
-  border: 0.0625rem solid transparent;
+  border: var(--lab-stroke-hairline) solid transparent;
   font: inherit;
   font-size: var(--_lab-btn-font);
   line-height: var(--lab-line-height-md, 1.5);
@@ -126,8 +126,8 @@
   filter: brightness(0.92);
 }
 [data-lab-button]:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* ── disabled ────────────────────────────────────────────────────────────── */
@@ -154,7 +154,7 @@
   position: absolute;
   width: 1em;
   height: 1em;
-  border: 0.125rem solid currentColor;
+  border: var(--lab-stroke-thick) solid currentColor;
   border-right-color: transparent;
   border-radius: var(--lab-radius-full, 9999px);
   animation: lab-button-spin 0.7s linear infinite;

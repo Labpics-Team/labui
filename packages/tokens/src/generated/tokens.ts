@@ -121,3 +121,18 @@ export const fontWeight = {
 } as const;
 
 export type FontWeightToken = keyof typeof fontWeight;
+
+export const stroke = {
+  hairline: 'var(--lab-stroke-hairline)',
+  control: 'var(--lab-stroke-control)',
+  thick: 'var(--lab-stroke-thick)',
+} as const;
+
+export type StrokeToken = keyof typeof stroke;
+
+export const focusRing = {
+  width: 'var(--lab-focus-ring-width)',
+  offset: 'var(--lab-focus-ring-offset)',
+} as const;
+
+export type FocusRingToken = keyof typeof focusRing;

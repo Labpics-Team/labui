@@ -399,8 +399,8 @@ export class LabCombobox extends LabElement {
         opacity: 0.45;
       }
       .trigger:focus-visible {
-        outline: 0.125rem solid ${litVar('--lab-border-focus')};
-        outline-offset: -0.125rem;
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: calc(-1 * ${litVar('--lab-focus-ring-offset')});
         border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
       }
 
@@ -422,7 +422,7 @@ export class LabCombobox extends LabElement {
         border-radius: ${litVar('--lab-radius-md', '0.375rem')};
         background-color: ${litVar('--lab-bg-secondary')};
         color: ${litVar('--lab-label-primary')};
-        border: 0.0625rem solid ${litVar('--lab-border-soft')};
+        border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
         box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
         font: inherit;
         font-size: var(--_field-font);

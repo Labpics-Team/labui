@@ -146,4 +146,19 @@ export const defaultConfig: TokensConfig = {
       bold: 700,
     },
   },
+  // Stroke widths + focus ring (rem). Values match the literals components used
+  // before this scale existed (1:1, value-preserving): hairline = 1px borders,
+  // control = 1.5px checkbox/radio box, thick = 2px (spinner ring, tab indicator).
+  // The focus ring is its own axis (width + offset), both 2px today.
+  borders: {
+    widths: {
+      hairline: 0.0625, //   1px
+      control: 0.0938, //   1.5px
+      thick: 0.125, //   2px
+    },
+    focusRing: {
+      width: 0.125, //   2px ring
+      offset: 0.125, //   2px gap from the element edge
+    },
+  },
 };

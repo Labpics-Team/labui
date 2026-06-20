@@ -25,6 +25,8 @@ export function generateCss(tokens: ResolvedTokens): string {
     ]),
     section('Typography — line-height multipliers', tokenLines(tokens.lineHeights)),
     section('Typography — font-weight scale (unitless)', tokenLines(tokens.fontWeights)),
+    section('Borders — stroke widths (rem)', tokenLines(tokens.strokes)),
+    section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n`;

@@ -237,8 +237,8 @@ export class LabSwitch extends LabElement {
        SIBLING of the control (so it stays in the a11y tree), so match it from
        the shared root rather than as a descendant of the control. */
     .root:has(input:focus-visible) .control {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     :host([disabled]) .root {

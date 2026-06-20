@@ -740,5 +740,69 @@
       "$type": "number",
       "$value": 700
     }
+  },
+  "stroke": {
+    "hairline": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
+        }
+      }
+    },
+    "control": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1.5008,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0938rem"
+        }
+      }
+    },
+    "thick": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    }
+  },
+  "focus-ring": {
+    "width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    },
+    "offset": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    }
   }
 }

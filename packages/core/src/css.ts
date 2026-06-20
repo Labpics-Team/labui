@@ -68,6 +68,8 @@ export const DIMENSION_PREFIXES = [
   '--lab-z-',
   '--lab-font-',
   '--lab-line-height-',
+  '--lab-stroke-', // border / divider line widths (not the --lab-border-* colour role)
+  '--lab-focus-ring-', // focus indicator width + offset
 ] as const;
 
 /**

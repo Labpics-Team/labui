@@ -91,7 +91,7 @@ export class LabProof extends LabElement {
       min-height: 2.5rem;
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
-      border: 0.0625rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
@@ -115,8 +115,8 @@ export class LabProof extends LabElement {
     }
 
     button:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     :host([disabled]) button,

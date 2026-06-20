@@ -48,7 +48,7 @@
   width: var(--_lab-cb-box);
   height: var(--_lab-cb-box);
   border-radius: var(--_lab-cb-radius);
-  border: 0.0938rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-control) solid var(--lab-border-neutral);
   background-color: transparent;
   color: transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -93,8 +93,8 @@
 /* The input is now a SIBLING of the control (so it stays in the a11y tree), so
    match focus-visible from the root, not as a descendant of the control. */
 [data-lab-checkbox]:has(input:focus-visible) .lab-checkbox-control {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-checkbox][data-disabled] {

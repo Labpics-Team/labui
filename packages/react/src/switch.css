@@ -117,8 +117,8 @@
 /* The input is now a SIBLING of the control (so it stays in the a11y tree), so
    match focus-visible from the root, not as a descendant of the control. */
 [data-lab-switch]:has(input:focus-visible) .lab-switch-control {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-switch][data-disabled] {

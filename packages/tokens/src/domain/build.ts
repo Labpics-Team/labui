@@ -1,4 +1,5 @@
 import type { TokensConfig } from '../config/types.js';
+import { buildBorders } from './borders.js';
 import { buildRadii } from './radii.js';
 import { buildSpacing } from './spacing.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
@@ -19,6 +20,8 @@ export interface ResolvedTokens {
   readonly fontSizes: readonly ResolvedToken[];
   readonly lineHeights: readonly ResolvedToken[];
   readonly fontWeights: readonly ResolvedToken[];
+  readonly strokes: readonly ResolvedToken[];
+  readonly focusRing: readonly ResolvedToken[];
 }
 
 /** Resolve a config into the full token set (pure; no I/O). */
@@ -27,6 +30,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
   const radii = buildRadii(config.radii);
   const zIndex = buildZIndex(config.zIndex);
   const typography = buildTypography(config.typography);
+  const borders = buildBorders(config.borders);
 
   return {
     spacing: spacing.tokens,
@@ -37,5 +41,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     fontSizes: typography.fontSizes,
     lineHeights: typography.lineHeights,
     fontWeights: typography.fontWeights,
+    strokes: borders.strokes,
+    focusRing: borders.focusRing,
   };
 }

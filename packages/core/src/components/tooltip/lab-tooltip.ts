@@ -173,8 +173,8 @@ export class LabTooltip extends LabElement {
       cursor: default;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
     }
 

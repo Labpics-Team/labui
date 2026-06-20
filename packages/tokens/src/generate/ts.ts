@@ -20,6 +20,8 @@ export function generateTs(tokens: ResolvedTokens): string {
   parts.push(scaleConst('fontSize', tokens.fontSizes));
   parts.push(scaleConst('lineHeight', tokens.lineHeights));
   parts.push(scaleConst('fontWeight', tokens.fontWeights));
+  parts.push(scaleConst('stroke', tokens.strokes));
+  parts.push(scaleConst('focusRing', tokens.focusRing));
 
   return `${parts.join('\n\n')}\n`;
 }

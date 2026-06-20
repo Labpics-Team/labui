@@ -93,7 +93,7 @@ export const fieldStyles: CSSResult = css`
     line-height: var(--_field-line);
     color: ${litVar('--lab-label-primary')};
     background-color: ${litVar('--lab-bg-primary')};
-    border: 0.0625rem solid ${litVar('--lab-border-base')};
+    border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     border-radius: var(--_field-radius);
     outline: none;
     transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -112,7 +112,7 @@ export const fieldStyles: CSSResult = css`
   /* Focus-visible ring from the focus role — never a removed outline. */
   .control:focus-visible {
     border-color: ${litVar('--lab-border-focus')};
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-focus')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
   }
 
   /* Sentiment: the type axis re-points border + label. Driven by the reflected
@@ -121,19 +121,19 @@ export const fieldStyles: CSSResult = css`
     border-color: ${litVar('--lab-border-danger')};
   }
   :host([type='danger']) .control:focus-visible {
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-danger')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
   }
   :host([type='warning']) .control {
     border-color: ${litVar('--lab-border-warning-strong')};
   }
   :host([type='warning']) .control:focus-visible {
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-warning-strong')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
   }
   :host([type='success']) .control {
     border-color: ${litVar('--lab-border-success-strong')};
   }
   :host([type='success']) .control:focus-visible {
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-success-strong')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
   }
 
   /* Readonly: a flatter, non-editable surface that still reads its value. */

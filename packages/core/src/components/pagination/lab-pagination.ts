@@ -157,7 +157,7 @@ export class LabPagination extends LabElement {
       min-width: var(--_size);
       height: var(--_size);
       padding-inline: var(--_pad-x);
-      border: 0.0625rem solid transparent;
+      border: ${litVar('--lab-stroke-hairline')} solid transparent;
       border-radius: ${litVar('--lab-radius-control', '0.5rem')};
       background: transparent;
       font: inherit;
@@ -188,8 +188,8 @@ export class LabPagination extends LabElement {
 
     .item:focus-visible,
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     .ellipsis {

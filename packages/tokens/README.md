@@ -91,6 +91,15 @@ weight is a per-client axis instead of a literal baked into components. Default:
 `--lab-font-weight-semibold` (the emphasis weight) rather than a hard `600`; a client
 re-weights its whole UI through the same override path as every other scale.
 
+### Borders — stroke widths + focus ring
+
+Line thickness is a themeable axis too. Stroke widths emit as `--lab-stroke-*`
+(`hairline` 1px, `control` 1.5px, `thick` 2px) — deliberately **not** `--lab-border-*`,
+which is the *colour* role namespace; a stroke is a dimension. The focus indicator is
+its own sub-system, `--lab-focus-ring-width` / `--lab-focus-ring-offset` (both 2px by
+default), so a brand can make its focus ring bolder or further out than its component
+borders. Components read these tokens instead of literal `0.0625rem`/`0.0938rem`/`0.125rem`.
+
 ## Configuring
 
 ```ts

@@ -67,6 +67,29 @@ describe('generator — single source, three outputs, no divergence', () => {
     expect(changed.css).toContain('--lab-font-weight-bold: 700;');
   });
 
+  it('emits the stroke + focus-ring scales, overridable and key-merged', () => {
+    const { css, ts, dtcg } = generate(defaultConfig);
+    // Stroke widths (value-preserving: hairline 1px, control 1.5px, thick 2px).
+    expect(css).toContain('--lab-stroke-hairline: 0.0625rem;');
+    expect(css).toContain('--lab-stroke-control: 0.0938rem;');
+    expect(css).toContain('--lab-stroke-thick: 0.125rem;');
+    // Focus ring is its own axis (width + offset).
+    expect(css).toContain('--lab-focus-ring-width: 0.125rem;');
+    expect(css).toContain('--lab-focus-ring-offset: 0.125rem;');
+    // TS consts reference the live vars.
+    expect(ts).toContain("hairline: 'var(--lab-stroke-hairline)'");
+    expect(ts).toContain("width: 'var(--lab-focus-ring-width)'");
+    // DTCG dimension groups carry the canonical px.
+    const doc = JSON.parse(dtcg);
+    expect(doc.stroke.hairline.$value).toEqual({ value: 1, unit: 'px' });
+    expect(doc['focus-ring'].width.$value).toEqual({ value: 2, unit: 'px' });
+    // Partial override must key-merge (retune one stroke, keep the rest).
+    const changed = generateFromOverride({ borders: { widths: { thick: 0.1875 } } });
+    expect(changed.css).toContain('--lab-stroke-thick: 0.1875rem;');
+    expect(changed.css).toContain('--lab-stroke-hairline: 0.0625rem;');
+    expect(changed.css).toContain('--lab-stroke-control: 0.0938rem;');
+  });
+
   it('DTCG is well-formed: every leaf has $type and $value', () => {
     const doc = JSON.parse(generate(defaultConfig).dtcg);
     const leaves: Array<Record<string, unknown>> = [];

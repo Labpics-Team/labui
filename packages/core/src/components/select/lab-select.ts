@@ -272,7 +272,7 @@ export class LabSelect extends LabElement {
       height: var(--_h);
       margin: 0;
       padding: 0 var(--_pad-x);
-      border: 0.0625rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
       background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
@@ -293,8 +293,8 @@ export class LabSelect extends LabElement {
       opacity: 0.45;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* Trigger value text — placeholder colour when nothing is selected. The
@@ -339,7 +339,7 @@ export class LabSelect extends LabElement {
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
       background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
-      border: 0.0625rem solid ${litVar('--lab-border-soft')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
       box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
       font: inherit;
       font-size: var(--_font);

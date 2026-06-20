@@ -121,12 +121,31 @@ export interface LineHeightBand {
   readonly multiplier: number;
 }
 
+/**
+ * Border / line geometry — stroke widths and the focus-ring sub-system, in rem.
+ *
+ * "stroke" (not "border-width") deliberately avoids the `--lab-border-*` COLOUR
+ * role namespace: a stroke is a line THICKNESS, a dimension, themeable per client
+ * like spacing/radii. The focus ring is its own axis (a brand may want a thicker
+ * or further-offset focus indicator than its component borders).
+ */
+export interface BordersConfig {
+  /** Named stroke widths in rem (component borders, dividers). MUST be non-empty. */
+  readonly widths: Readonly<Record<string, number>>;
+  /** The focus indicator: ring width and its offset from the element edge, in rem. */
+  readonly focusRing: {
+    readonly width: number;
+    readonly offset: number;
+  };
+}
+
 /** The complete LabUI token config — the single source of truth. */
 export interface TokensConfig {
   readonly spacing: SpacingConfig;
   readonly radii: RadiiConfig;
   readonly zIndex: ZIndexConfig;
   readonly typography: TypographyConfig;
+  readonly borders: BordersConfig;
 }
 
 /** A deep-partial of {@link TokensConfig} for user overrides. */
