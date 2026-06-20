@@ -26,15 +26,16 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 8, // px   — uniform frost. Moderate: softens the backdrop without
+  radius: 7, // px   — uniform frost. Moderate: softens the backdrop without
   //                   erasing it (iOS dock stays legible). The non-uniform look
   //                   is the edge REFRACTION, not a blur gradient.
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
   refraction: 1, // 0..1 — Figma: refraction. Scales the bend.
-  depth: 16, // px    — Figma: depth. RAZOR-THIN rim band (iOS bends only the
-  //                    edge); the centre stays a flat, sharp pass-through.
+  depth: 20, // px    — Figma: depth. Thin rim band (iOS bends only the edge); the
+  //                    centre stays a flat pass-through. Wide enough to read as a
+  //                    visible liquid lens, narrow enough to keep the centre clean.
   dispersion: 0.12, // 0..1 — Figma: dispersion. Barely-perceptible rim fringe.
   light: 0.45, // 0..1 — Figma: lightIntensity. Soft specular rim, not a hard line.
   lightAngle: -45, // deg — Figma: lightAngle.
@@ -191,7 +192,7 @@ function filterMarkup(dispHref, specHref, w, h, scale, dispersion, light) {
   // rounded corners can't snap a backdrop line into a hard tick — smooth lens.
   const dimg =
     `<feImage href="${escAttr(dispHref)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="dmap0"/>` +
-    '<feGaussianBlur in="dmap0" stdDeviation="0.8" result="dmap"/>';
+    '<feGaussianBlur in="dmap0" stdDeviation="1" result="dmap"/>';
   const dm = (s, input, result) =>
     `<feDisplacementMap in="${input}" in2="dmap" scale="${s.toFixed(2)}" ` +
     `xChannelSelector="R" yChannelSelector="G" result="${result}"/>`;
@@ -271,9 +272,9 @@ function render(state) {
   const stamp = (maps) => {
     if (state.gen !== gen) return; // a newer render superseded this one
     state.maps = maps;
-    // Gentle bend: peak shift ≈ scale/2 = bevel*0.25*refraction. iOS barely warps
-    // the backdrop; refraction is the rim knob via --lg-refraction (0..~1.4).
-    const scale = maps.bevel * 0.5 * p.refraction;
+    // Visible-but-clean bend: peak shift ≈ scale/2 = bevel*0.32*refraction — a
+    // readable liquid lens at the rim. Tunable via --lg-refraction (0..~1.5).
+    const scale = maps.bevel * 0.65 * p.refraction;
     filter.setAttribute('x', '-50%');
     filter.setAttribute('y', '-50%');
     filter.setAttribute('width', '200%');
