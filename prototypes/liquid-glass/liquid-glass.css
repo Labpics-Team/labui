@@ -25,66 +25,96 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 9px; /* moderate frost — lens stays the visible tell */
-  --lg-saturate: 1.25; /* slight colour lift (iOS ≈ 1.25) */
-  --lg-brightness: 1.08;
-  --lg-contrast: 0.92; /* <1 lifts blacks → luminous on dark backdrops */
-  --lg-refraction: 1; /* consumed by JS */
-  --lg-depth: 20; /* consumed by JS — visible rim lens, flat interior */
-  --lg-dispersion: 0.06; /* consumed by JS — sub-px rim fringe */
+  --lg-radius: 10px; /* clean uniform frost — backdrop stays legible (iOS dock) */
+  --lg-saturate: 1.1; /* gentle lift — avoid the oversaturated colour wash */
+  --lg-brightness: 1.06;
+  --lg-contrast: 1; /* no black-lift (was washing colours); keep it honest */
+  --lg-refraction: 0; /* OPT-IN backdrop lens (JS). 0 = robust frost + CSS rim. */
+  --lg-depth: 20; /* consumed by JS when refraction > 0 */
+  --lg-dispersion: 0.06; /* consumed by JS when refraction > 0 */
 
   --lg-corner: 28px;
-  --lg-tint: 255 255 255; /* luminous near-white — iOS glass reads LIGHT, not dark */
-  --lg-tint-opacity: 0.1; /* low, but enough to read as a bright glass layer */
+  --lg-tint: 255 255 255; /* luminous near-white */
+  --lg-tint-opacity: 0.06; /* low — let the backdrop read, the RIM sells the glass */
 
-  --lg-light-angle: -45deg;
-  --lg-light: 0.45; /* 0..1 soft specular rim (lives in the JS filter) */
-  --lg-splay: 0.5; /* 0..1 widens the CSS hairline edge */
+  --lg-light-angle: -45deg; /* light from upper-left */
+  --lg-light: 0.8; /* 0..1 strength of the directional glass rim */
+  --lg-splay: 0.5;
 
-  --_lg-band: calc(1px + 0.5px * var(--lg-splay));
+  /* The directional light vector → a px offset, in pure CSS, so the bright edge
+   * sits on the light-facing side and the shadow on the opposite. */
+  --_lg-dx: calc(cos(var(--lg-light-angle)) * 1.5px);
+  --_lg-dy: calc(sin(var(--lg-light-angle)) * 1.5px);
 
   position: relative;
   border-radius: var(--lg-corner);
   isolation: isolate;
 
-  /* Body: a barely-there tint. The refraction (JS filter) and the lit rim do the
-   * work; this only keeps text legible over busy backdrops — glass, not paint. */
+  /* Low-alpha luminous body — legibility only; the glass tell is the rim. */
   background-color: rgb(var(--lg-tint) / var(--lg-tint-opacity));
 
-  /* Backdrop blur+saturate. The runtime overwrites `backdrop-filter` with
-   * `url(#id) blur() saturate() brightness()` to add the refraction + specular;
-   * if JS never runs this stays a clean near-clear pane (honest degradation). */
+  /* Clean uniform frost. The runtime adds the OPT-IN url(#displacement) lens only
+   * when --lg-refraction > 0; by default this is the whole backdrop treatment. */
   -webkit-backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness)) contrast(var(--lg-contrast));
   backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness)) contrast(var(--lg-contrast));
 
-  /* Volume: float + a crisp hairline edge + a faint thickness shade. The bright
-   * catch-light is NOT here — it is the specular rim-light computed on the lens
-   * geometry inside the JS filter, so it sits on the glass, not as a sticker. */
-  box-shadow: 0 16px 44px rgba(8, 12, 28, 0.38), 0 2px 8px rgba(8, 12, 28, 0.2), inset 0 0 0 1px
-    rgba(255, 255, 255, 0.12);
+  /* GLASS VOLUME — this is what separates glass from a plain blur:
+   *   1. outer drop → it floats;
+   *   2. crisp hairline → a defined glass edge all around;
+   *   3. bright directional catch-light on the light-facing rim (the "wet edge");
+   *   4. dark inner shadow on the opposite rim → thickness;
+   *   5. soft inner top glow → a luminous body. */
+  box-shadow:
+    0 14px 38px rgba(8, 12, 28, 0.3),
+    0 2px 6px rgba(8, 12, 28, 0.18),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset var(--_lg-dx) var(--_lg-dy) 1px 0 rgba(255, 255, 255, calc(0.95 * var(--lg-light))),
+    inset calc(var(--_lg-dx) * -1) calc(var(--_lg-dy) * -1) 2px 0
+      rgba(6, 10, 24, calc(0.4 * var(--lg-light))),
+    inset 0 6px 18px -12px rgba(255, 255, 255, calc(0.6 * var(--lg-light)));
 }
 
-/* ::before — a thin crisp top-edge highlight only (the polished lip). Subtle;
- * the main specular is the lit rim in the JS filter. */
+/* ::before — the bright RIM ring: a crisp specular sweep along the border,
+ * hottest on the light-facing edges and dim across the middle, masked to a thin
+ * ring. This is the headline "glass" cue (real iOS glass leads with the lit
+ * edge, not backdrop warp). Rotates with --lg-light-angle. */
 .lab-liquid-glass::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: var(--_lg-band);
+  padding: 1.5px;
   pointer-events: none;
   z-index: 2;
   background: linear-gradient(
     var(--lg-light-angle),
-    rgba(255, 255, 255, calc(0.35 * var(--lg-light))),
-    rgba(255, 255, 255, 0) 30%
+    rgba(255, 255, 255, calc(0.95 * var(--lg-light))),
+    rgba(255, 255, 255, 0.1) 28%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, calc(0.25 * var(--lg-light))) 75%,
+    rgba(255, 255, 255, calc(0.7 * var(--lg-light)))
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
+}
+
+/* ::after — a soft top gloss bloom, the reflection on the curved top of glass. */
+.lab-liquid-glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    140% 100% at 28% -8%,
+    rgba(255, 255, 255, calc(0.22 * var(--lg-light))),
+    rgba(255, 255, 255, 0) 55%
+  );
 }
 
 /* Real content rides above the decoration layers. */
@@ -101,7 +131,7 @@
   /* Still luminous in dark mode (iOS glass stays a bright layer); a hair more
    * tint for legibility over dark content, never a dark scrim. */
   --lg-tint: 240 244 255;
-  --lg-tint-opacity: 0.12;
+  --lg-tint-opacity: 0.08;
   --lg-saturate: 1.25;
 }
 

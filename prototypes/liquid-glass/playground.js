@@ -20,8 +20,8 @@ document.getElementById('engine').textContent = glass.refracts
  * engine to re-read it. refraction/depth/dispersion rebuild the SVG; the rest
  * are pure CSS. One uniform path → trivially configurable. */
 const GLASS = [
-  { v: '--lg-radius', name: 'Blur (frost)', min: 0, max: 40, step: 0.5, def: 9, unit: 'px' },
-  { v: '--lg-refraction', name: 'Refraction', min: 0, max: 1.5, step: 0.01, def: 1 },
+  { v: '--lg-radius', name: 'Blur (frost)', min: 0, max: 40, step: 0.5, def: 10, unit: 'px' },
+  { v: '--lg-refraction', name: 'Refraction (opt-in lens)', min: 0, max: 1.5, step: 0.01, def: 0 },
   { v: '--lg-depth', name: 'Depth', min: 6, max: 48, step: 1, def: 20, unit: 'px' },
   { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.06 },
   {
@@ -33,13 +33,13 @@ const GLASS = [
     def: -45,
     unit: 'deg',
   },
-  { v: '--lg-light', name: 'Light intensity', min: 0, max: 1, step: 0.01, def: 0.45 },
+  { v: '--lg-light', name: 'Rim light', min: 0, max: 1, step: 0.01, def: 0.8 },
   { v: '--lg-splay', name: 'Splay', min: 0, max: 1, step: 0.01, def: 0.5 },
 ];
 const SURFACE = [
   { v: '--lg-corner', name: 'Corner radius', min: 0, max: 90, step: 1, def: 28, unit: 'px' },
-  { v: '--lg-tint-opacity', name: 'Tint opacity', min: 0, max: 1, step: 0.01, def: 0.1 },
-  { v: '--lg-saturate', name: 'Saturation', min: 1, max: 2.6, step: 0.05, def: 1.25 },
+  { v: '--lg-tint-opacity', name: 'Tint opacity', min: 0, max: 1, step: 0.01, def: 0.06 },
+  { v: '--lg-saturate', name: 'Saturation', min: 1, max: 2.6, step: 0.05, def: 1.1 },
 ];
 
 const inputs = new Map();

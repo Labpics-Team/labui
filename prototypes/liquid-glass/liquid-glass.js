@@ -31,7 +31,8 @@ const DEFAULTS = {
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
-  refraction: 1, // 0..1 — Figma: refraction. Scales the bend.
+  refraction: 0, // 0..1 — Figma: refraction. OPT-IN backdrop lens (0 = robust
+  //                   default: frost + CSS rim, no fragile displacement filter).
   depth: 20, // px    — Figma: depth. Rim band wide enough to read as a visible
   //                    liquid lens; interior stays flat so straight lines stay straight.
   dispersion: 0.06, // 0..1 — Figma: dispersion. Barely-there sub-px rim fringe.
@@ -262,6 +263,17 @@ function render(state) {
   // same blur tail, so clear inline and let the stylesheet own the fallback.
   if (p.reduced || !state.enabled || !state.refracts) {
     setBackdrop(el, p.reduced || !state.enabled ? '' : tail);
+    state.geoKey = null;
+    state.fKey = null;
+    return;
+  }
+
+  // refraction ≈ 0 → skip the SVG displacement entirely (plain frost). The
+  // displacement is an OPT-IN extra: it visibly seams when the element is
+  // repositioned and reads as barely-there even when correct (deep-test verdict),
+  // so the robust default is frost + the CSS specular rim, no displacement.
+  if (p.refraction <= 0.01) {
+    setBackdrop(el, tail);
     state.geoKey = null;
     state.fKey = null;
     return;
