@@ -26,13 +26,14 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 0.5, // px   — backdrop blur. Near zero: the lens, not frost, is the look.
-  saturate: 1.2, // ×  — gentle colour lift, not the heavy frost wash.
-  brightness: 1.04,
+  radius: 0, // px   — UNIFORM backdrop blur OFF. Glass keeps the backdrop sharp;
+  //                   its "blur" is the non-uniform rim compression, not frost.
+  saturate: 1.3, // × — slight colour lift (iOS ≈ 1.3).
+  brightness: 1.05,
   refraction: 1, // 0..1 — Figma: refraction. Scales the bend.
-  depth: 60, // px    — Figma: depth. Width of the refractive bevel (a big fraction
-  //                    of the pane → the warp spans the surface, not a hairline).
-  dispersion: 0.55, // 0..1 — Figma: dispersion. Chromatic fringe at the rim.
+  depth: 28, // px    — Figma: depth. Width of the refractive rim band; narrow so
+  //                    the centre stays a flat, sharp pass-through (no pinch).
+  dispersion: 0.25, // 0..1 — Figma: dispersion. Subtle rim-only chromatic fringe.
   light: 0.7, // 0..1 — Figma: lightIntensity. Strength of the specular rim-light.
   lightAngle: -45, // deg — Figma: lightAngle.
   corner: 28, // px   — fallback when border-radius can't be read.
@@ -81,39 +82,59 @@ function sdRoundRect(px, py, w, h, r) {
 
 const smoothstep = (x) => x * x * (3 - 2 * x);
 
+/** Draw an ImageData onto a fresh canvas; if it was rendered at `ss`× scale,
+ *  downscale-average back to w×h (anti-aliases the field — kills the 8-bit
+ *  banding and the finite-difference normal jaggies). Returns a PNG data-URI. */
+function encodeMap(imageData, W, H, w, h, ss) {
+  const hi = document.createElement('canvas');
+  hi.width = W;
+  hi.height = H;
+  hi.getContext('2d').putImageData(imageData, 0, 0);
+  if (ss === 1) return hi.toDataURL();
+  const lo = document.createElement('canvas');
+  lo.width = w;
+  lo.height = h;
+  const c = lo.getContext('2d');
+  c.imageSmoothingEnabled = true;
+  c.imageSmoothingQuality = 'high';
+  c.drawImage(hi, 0, 0, w, h);
+  return lo.toDataURL();
+}
+
 /**
- * Build the two maps (displacement + specular) as PNG data-URIs.
- * The bevel spans `depth` px inward; across it the surface curves from rim
- * (full slope) to interior (flat), so the bend is non-zero across the WHOLE
- * band — not a dead hairline. Displacement runs along the outward normal.
- * Specular is the rim-light: bright where the normal faces the light angle.
+ * Build the displacement + specular maps as PNG data-URIs.
+ *
+ * The bevel is a NARROW band that hugs the rounded rim and never reaches the
+ * pane's medial axis, so the centre stays a flat pass-through (no pinch). Across
+ * the band the backdrop is bent along the outward surface normal, strongest at
+ * the rim, fading to zero at the inner edge — a real thick-glass lip. This is
+ * also what produces glass's NON-UNIFORM softening: the rim compresses the
+ * backdrop (so fine detail smears there) while the centre stays sharp — the
+ * opposite of a uniform blur. The field is supersampled `ss`× for smoothness.
+ * Specular is the rim-light: bright where the normal faces the light.
  */
 function buildMaps(w, h, corner, depth, lightAngleDeg) {
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
-  const bevel = Math.max(4, Math.min(depth, Math.floor(Math.min(w, h) / 2) - 1));
+  // Hug the rim, stay well clear of the centre line (≤0.35 of the short side).
+  const bevel = Math.max(4, Math.min(depth, 0.35 * Math.min(w, h)));
   const a = (lightAngleDeg * Math.PI) / 180;
   const lx = Math.cos(a);
   const ly = Math.sin(a);
+  // Supersample 2× for AA, but cap the per-pixel cost on very large panes.
+  const ss = w * h > 500000 ? 1 : 2;
+  const W = w * ss;
+  const H = h * ss;
 
-  const disp = document.createElement('canvas');
-  disp.width = w;
-  disp.height = h;
-  const dctx = disp.getContext('2d');
-  const dimg = dctx.createImageData(w, h);
+  const dimg = new ImageData(W, H);
   const dd = dimg.data;
+  const simg = new ImageData(W, H);
+  const sdat = simg.data;
 
-  const spec = document.createElement('canvas');
-  spec.width = w;
-  spec.height = h;
-  const sctx = spec.getContext('2d');
-  const simg = sctx.createImageData(w, h);
-  const sd = simg.data;
-
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = (y * w + x) * 4;
-      const px = x + 0.5;
-      const py = y + 0.5;
+  for (let Y = 0; Y < H; Y++) {
+    for (let X = 0; X < W; X++) {
+      const i = (Y * W + X) * 4;
+      const px = (X + 0.5) / ss;
+      const py = (Y + 0.5) / ss;
       const d = sdRoundRect(px, py, w, h, r);
       const inside = -d; // px from the edge, inward
       let vx = 0;
@@ -126,12 +147,12 @@ function buildMaps(w, h, corner, depth, lightAngleDeg) {
         const gl = Math.hypot(gx, gy) || 1;
         const nx = gx / gl;
         const ny = gy / gl;
-        // Slope energy across the whole bevel: 1 at the rim → 0 at the interior.
+        // Bend strongest at the rim (e→1), smoothly to 0 at the inner edge.
         const e = 1 - inside / bevel;
         const mag = smoothstep(e);
         vx = nx * mag;
         vy = ny * mag;
-        // Specular: outward normal facing the light → hot rim. The opposite rim
+        // Specular: outward normal facing the light → hot rim; the opposite rim
         // catches a fainter counter-light (real glass lights on two edges).
         const ndotl = nx * lx + ny * ly;
         rim = mag * (Math.max(0, ndotl) ** 3 + 0.35 * Math.max(0, -ndotl) ** 3);
@@ -140,16 +161,17 @@ function buildMaps(w, h, corner, depth, lightAngleDeg) {
       dd[i + 1] = 128 + 127 * vy;
       dd[i + 2] = 128;
       dd[i + 3] = 255;
-      const s = Math.min(255, rim * 255);
-      sd[i] = 255;
-      sd[i + 1] = 255;
-      sd[i + 2] = 255;
-      sd[i + 3] = s;
+      sdat[i] = 255;
+      sdat[i + 1] = 255;
+      sdat[i + 2] = 255;
+      sdat[i + 3] = Math.min(255, rim * 255);
     }
   }
-  dctx.putImageData(dimg, 0, 0);
-  sctx.putImageData(simg, 0, 0);
-  return { disp: disp.toDataURL(), spec: spec.toDataURL(), bevel };
+  return {
+    disp: encodeMap(dimg, W, H, w, h, ss),
+    spec: encodeMap(simg, W, H, w, h, ss),
+    bevel,
+  };
 }
 
 const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -166,7 +188,7 @@ function filterMarkup(dispHref, specHref, w, h, scale, dispersion, light) {
   if (dispersion < 0.02) {
     refr = `${dimg}${dm(scale, 'SourceGraphic', 'refr')}`;
   } else {
-    const spread = scale * dispersion * 0.4;
+    const spread = scale * dispersion * 0.12;
     const keep = (rgba) => rgba;
     refr = `${
       dimg + dm(scale + spread, 'SourceGraphic', 'dR')
@@ -230,12 +252,13 @@ function render(state) {
   const stamp = (maps) => {
     if (state.gen !== gen) return; // a newer render superseded this one
     state.maps = maps;
-    // Bend ≈ 0.7 of the bevel width — derived from geometry, not a magic scale.
-    const scale = maps.bevel * 1.4 * p.refraction;
-    filter.setAttribute('x', '-25%');
-    filter.setAttribute('y', '-25%');
-    filter.setAttribute('width', '150%');
-    filter.setAttribute('height', '150%');
+    // Peak rim shift ≈ scale/2 = bevel*0.4*refraction — a believable thick-glass
+    // edge (~10px), derived from geometry, not a magic constant.
+    const scale = maps.bevel * 0.8 * p.refraction;
+    filter.setAttribute('x', '-50%');
+    filter.setAttribute('y', '-50%');
+    filter.setAttribute('width', '200%');
+    filter.setAttribute('height', '200%');
     filter.innerHTML = filterMarkup(maps.disp, maps.spec, p.w, p.h, scale, p.dispersion, p.light);
     setBackdrop(el, `url(#${id}) ${tail}`);
   };
