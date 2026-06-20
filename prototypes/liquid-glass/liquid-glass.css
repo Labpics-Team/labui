@@ -25,73 +25,51 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 3px; /* backdrop blur — near zero: the lens, not blur, is the look */
-  --lg-saturate: 1.7; /* live colour boost — keeps the refracted backdrop vivid */
-  --lg-brightness: 1.05;
+  --lg-radius: 0.5px; /* backdrop blur — near zero: the LENS is the look, not frost */
+  --lg-saturate: 1.2; /* gentle colour lift — not a heavy frost wash */
+  --lg-brightness: 1.04;
   --lg-refraction: 1; /* consumed by JS */
-  --lg-depth: 30; /* consumed by JS — width of the refractive bevel */
-  --lg-dispersion: 0.5; /* consumed by JS */
+  --lg-depth: 60; /* consumed by JS — width of the refractive bevel (wide) */
+  --lg-dispersion: 0.55; /* consumed by JS */
 
   --lg-corner: 28px;
   --lg-tint: 255 255 255; /* rgb triplet of the body fill */
-  --lg-tint-opacity: 0.08;
+  --lg-tint-opacity: 0.04; /* barely-there — glass shows the BACKDROP, not a film */
 
   --lg-light-angle: -45deg;
-  --lg-light: 0.7; /* 0..1 specular intensity — how lit the glass reads */
-  --lg-splay: 0.5; /* 0..1 widens the specular rim band */
+  --lg-light: 0.7; /* 0..1 specular intensity (the lit rim lives in the JS filter) */
+  --lg-splay: 0.5; /* 0..1 widens the CSS hairline edge */
 
-  /* Derived (do not set directly). The defining trait of glass is LIT EDGES, so
-   * the rim is bright. `--_lg-rim` is the hot catch-light, `--_lg-rim-soft` the
-   * dimmer carry; the light angle drives where the rim is hottest. */
-  --_lg-rim: rgba(255, 255, 255, calc(0.95 * var(--lg-light)));
-  --_lg-rim-soft: rgba(255, 255, 255, calc(0.32 * var(--lg-light)));
-  --_lg-band: calc(1.2px + 1px * var(--lg-splay));
+  --_lg-band: calc(1px + 0.5px * var(--lg-splay));
 
   position: relative;
   border-radius: var(--lg-corner);
-  /* Own stacking context: the tint + specular composite stays within the pane
-   * and never leaks onto the live backdrop it is refracting. */
   isolation: isolate;
 
-  /* Body: a low-alpha tint with a faint directional sheen gradient so the
-   * surface itself catches a little light (not a flat fill). Kept light so the
-   * refracted backdrop still reads through — this is glass, not paint. */
+  /* Body: a barely-there tint. The refraction (JS filter) and the lit rim do the
+   * work; this only keeps text legible over busy backdrops — glass, not paint. */
   background-color: rgb(var(--lg-tint) / var(--lg-tint-opacity));
-  background-image: linear-gradient(
-    var(--lg-light-angle),
-    rgba(255, 255, 255, calc(0.18 * var(--lg-light))),
-    rgba(255, 255, 255, 0) 42%
-  );
 
-  /* The backdrop blur+saturate fallback. The runtime overwrites
-   * `backdrop-filter` with `url(#displacement) blur() saturate() brightness()`
-   * to add the refraction; if JS never runs, this still gives a clean frosted
-   * pane (honest degradation, never a broken surface). */
+  /* Backdrop blur+saturate. The runtime overwrites `backdrop-filter` with
+   * `url(#id) blur() saturate() brightness()` to add the refraction + specular;
+   * if JS never runs this stays a clean near-clear pane (honest degradation). */
   -webkit-backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness));
   backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness));
 
-  /* Glass VOLUME — the layered lighting that makes it read as a solid translucent
-   * object rather than a blurred rectangle:
-   *   1. outer drop + close shadow  → it floats above the page
-   *   2. crisp white hairline edge  → a defined glass border all around
-   *   3. bright top inner edge      → the polished top lip catching light
-   *   4. dark bottom inner edge     → thickness / depth opposite the light
-   *   5. broad inner glow           → luminous body, like light inside the glass */
+  /* Volume: float + a crisp hairline edge + a faint thickness shade. The bright
+   * catch-light is NOT here — it is the specular rim-light computed on the lens
+   * geometry inside the JS filter, so it sits on the glass, not as a sticker. */
   box-shadow:
-    0 16px 48px rgba(8, 12, 28, 0.45),
-    0 3px 10px rgba(8, 12, 28, 0.26),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 2px 0 0 rgba(255, 255, 255, calc(0.7 * var(--lg-light))),
-    inset 0 -2px 1px 0 rgba(6, 10, 24, calc(0.45 * var(--lg-light))),
-    inset 0 0 32px -6px rgba(255, 255, 255, calc(0.22 * var(--lg-light)));
+    0 16px 44px rgba(8, 12, 28, 0.42),
+    0 2px 8px rgba(8, 12, 28, 0.22),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    inset 0 -1px 1px 0 rgba(6, 10, 24, calc(0.3 * var(--lg-light)));
 }
 
-/* ::before — the BRIGHT rim ring, the hero of the glass look. A light sweep
- * along the border that is hottest on the two edges facing/away from the light
- * (real glass catches light on opposite rims) and dim across the middle, masked
- * to a thin ring so only the edge lights up. Rotates with --lg-light-angle. */
+/* ::before — a thin crisp top-edge highlight only (the polished lip). Subtle;
+ * the main specular is the lit rim in the JS filter. */
 .lab-liquid-glass::before {
   content: "";
   position: absolute;
@@ -102,32 +80,13 @@
   z-index: 2;
   background: linear-gradient(
     var(--lg-light-angle),
-    var(--_lg-rim) 0%,
-    var(--_lg-rim-soft) 22%,
-    rgba(255, 255, 255, 0) 50%,
-    var(--_lg-rim-soft) 78%,
-    var(--_lg-rim) 100%
+    rgba(255, 255, 255, calc(0.5 * var(--lg-light))),
+    rgba(255, 255, 255, 0) 35%
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
-}
-
-/* ::after — a soft specular GLOSS: a bright bloom in the upper area like light
- * reflecting off the curved top of the glass. Positioned toward the light. */
-.lab-liquid-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 1;
-  background: radial-gradient(
-    130% 90% at 26% -10%,
-    rgba(255, 255, 255, calc(0.28 * var(--lg-light))),
-    rgba(255, 255, 255, 0) 58%
-  );
 }
 
 /* Real content rides above the decoration layers. */
@@ -141,8 +100,8 @@
  * ancestor (matching the rest of the system). ─────────────────────────────── */
 [data-theme="dark"] .lab-liquid-glass,
 .lab-liquid-glass[data-theme="dark"] {
-  --lg-tint: 22 26 44;
-  --lg-tint-opacity: 0.16; /* smoked glass — let the lit edges + backdrop carry it */
+  --lg-tint: 20 24 40;
+  --lg-tint-opacity: 0.06; /* faint smoke — the backdrop + lit rim carry it */
   --lg-saturate: 1.9;
 }
 
