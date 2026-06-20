@@ -20,7 +20,7 @@ document.getElementById('engine').textContent = glass.refracts
  * engine to re-read it. refraction/depth/dispersion rebuild the SVG; the rest
  * are pure CSS. One uniform path → trivially configurable. */
 const GLASS = [
-  { v: '--lg-radius', name: 'Blur (radius)', min: 0, max: 30, step: 0.5, def: 0, unit: 'px' },
+  { v: '--lg-radius', name: 'Blur (radius)', min: 0, max: 40, step: 0.5, def: 12, unit: 'px' },
   { v: '--lg-refraction', name: 'Refraction', min: 0, max: 1.5, step: 0.01, def: 1 },
   { v: '--lg-depth', name: 'Depth', min: 6, max: 48, step: 1, def: 16, unit: 'px' },
   { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.12 },

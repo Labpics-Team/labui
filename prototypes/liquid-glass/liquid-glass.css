@@ -25,8 +25,7 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 0px; /* UNIFORM blur OFF — glass keeps the backdrop sharp; the
-   *                    "blur" is the non-uniform rim compression (JS lens) */
+  --lg-radius: 12px; /* frosted-glass backdrop blur — iOS glass IS frosted */
   --lg-saturate: 1.25; /* slight colour lift (iOS ≈ 1.25) */
   --lg-brightness: 1.08;
   --lg-contrast: 0.92; /* <1 lifts blacks → luminous on dark backdrops */
