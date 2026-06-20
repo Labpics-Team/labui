@@ -26,17 +26,15 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 7, // px   — uniform frost. Moderate: softens the backdrop without
-  //                   erasing it (iOS dock stays legible). The non-uniform look
-  //                   is the edge REFRACTION, not a blur gradient.
+  radius: 13, // px  — frost DOMINATES (the readable layer of iOS glass). Refraction
+  //                   is only a delicate edge finish; frost + tint carry the look.
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
   refraction: 1, // 0..1 — Figma: refraction. Scales the bend.
-  depth: 20, // px    — Figma: depth. Thin rim band (iOS bends only the edge); the
-  //                    centre stays a flat pass-through. Wide enough to read as a
-  //                    visible liquid lens, narrow enough to keep the centre clean.
-  dispersion: 0.12, // 0..1 — Figma: dispersion. Barely-perceptible rim fringe.
+  depth: 12, // px    — Figma: depth. Hairline rim band; interior stays flat so the
+  //                    backdrop's straight lines stay straight (no content warp).
+  dispersion: 0.06, // 0..1 — Figma: dispersion. Barely-there sub-px rim fringe.
   light: 0.45, // 0..1 — Figma: lightIntensity. Soft specular rim, not a hard line.
   lightAngle: -45, // deg — Figma: lightAngle.
   corner: 28, // px   — fallback when border-radius can't be read.
@@ -118,9 +116,9 @@ function encodeMap(imageData, W, H, w, h, ss) {
  */
 function buildMaps(w, h, corner, depth, lightAngleDeg) {
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
-  // Razor-thin rim, hard-clamped so it never leaks toward the centre regardless
-  // of pane size — iOS refracts only a sliver at the edge (judge-panel verdict).
-  const bevel = Math.max(4, Math.min(depth, 0.16 * Math.min(w, h)));
+  // Hairline rim — iOS refracts only a sliver at the rounded edge; the interior
+  // stays flat so straight lines behind the glass stay straight (all 3 agents).
+  const bevel = Math.max(4, Math.min(depth, 0.1 * Math.min(w, h)));
   const a = (lightAngleDeg * Math.PI) / 180;
   const lx = Math.cos(a);
   const ly = Math.sin(a);
@@ -275,13 +273,16 @@ function render(state) {
   const stamp = (maps) => {
     if (state.gen !== gen) return; // a newer render superseded this one
     state.maps = maps;
-    // Visible-but-clean bend: peak shift ≈ scale/2 = bevel*0.32*refraction — a
-    // readable liquid lens at the rim. Tunable via --lg-refraction (0..~1.5).
-    const scale = maps.bevel * 0.65 * p.refraction;
-    filter.setAttribute('x', '-50%');
-    filter.setAttribute('y', '-50%');
-    filter.setAttribute('width', '200%');
-    filter.setAttribute('height', '200%');
+    // Delicate edge lens: peak shift ≈ scale/2 = bevel*0.2*refraction (~2-3px).
+    // iOS bends only a hairline; frost + specular rim carry the look.
+    const scale = maps.bevel * 0.4 * p.refraction;
+    // Region == the displacement map exactly (userSpaceOnUse px). Anything larger
+    // makes feDisplacementMap sample OUTSIDE the map (transparent → channel 0 →
+    // a huge constant shift) — that was the wide smear + the hard seam.
+    filter.setAttribute('x', '0');
+    filter.setAttribute('y', '0');
+    filter.setAttribute('width', String(p.w));
+    filter.setAttribute('height', String(p.h));
     filter.innerHTML = filterMarkup(maps.disp, maps.spec, p.w, p.h, scale, p.dispersion, p.light);
     setBackdrop(el, `${frost} url(#${id}) ${lift}`);
   };
@@ -317,7 +318,10 @@ export function attach(el, opts = {}) {
   const filter = document.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
-  filter.setAttribute('filterUnits', 'objectBoundingBox');
+  // Everything in user-space px so the region, feImage and feDisplacementMap all
+  // agree — no unit mismatch, no out-of-bounds sampling (the seam/smear bug).
+  filter.setAttribute('filterUnits', 'userSpaceOnUse');
+  filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
   ensureDefs().appendChild(filter);
 
   const state = {
