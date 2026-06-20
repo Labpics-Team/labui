@@ -37,19 +37,15 @@
   --lg-tint-opacity: 0.08;
 
   --lg-light-angle: -45deg;
-  --lg-light: 0.6; /* 0..1 specular intensity */
-  --lg-splay: 0.5; /* 0..1 widens the specular band */
+  --lg-light: 0.7; /* 0..1 specular intensity — how lit the glass reads */
+  --lg-splay: 0.5; /* 0..1 widens the specular rim band */
 
-  /* Derived (do not set directly) ──────────────────────────────────────────
-   * Specular highlight colour at the configured intensity, and a band width
-   * that grows with splay. Trig (cos/sin) resolves the light direction into a
-   * shadow offset, all in pure CSS so the rim re-lights live as the angle
-   * slider moves. */
-  --_lg-hi: rgba(255, 255, 255, calc(0.9 * var(--lg-light)));
-  --_lg-lo: rgba(255, 255, 255, calc(0.4 * var(--lg-light)));
-  --_lg-band: calc(1px + 1.5px * var(--lg-splay));
-  --_lg-dx: calc(cos(var(--lg-light-angle)) * 1px);
-  --_lg-dy: calc(sin(var(--lg-light-angle)) * 1px);
+  /* Derived (do not set directly). The defining trait of glass is LIT EDGES, so
+   * the rim is bright. `--_lg-rim` is the hot catch-light, `--_lg-rim-soft` the
+   * dimmer carry; the light angle drives where the rim is hottest. */
+  --_lg-rim: rgba(255, 255, 255, calc(0.95 * var(--lg-light)));
+  --_lg-rim-soft: rgba(255, 255, 255, calc(0.32 * var(--lg-light)));
+  --_lg-band: calc(1.2px + 1px * var(--lg-splay));
 
   position: relative;
   border-radius: var(--lg-corner);
@@ -57,9 +53,15 @@
    * and never leaks onto the live backdrop it is refracting. */
   isolation: isolate;
 
-  /* Body tint. Kept low-alpha so the refracted backdrop reads through — this is
-   * glass, not paint. */
+  /* Body: a low-alpha tint with a faint directional sheen gradient so the
+   * surface itself catches a little light (not a flat fill). Kept light so the
+   * refracted backdrop still reads through — this is glass, not paint. */
   background-color: rgb(var(--lg-tint) / var(--lg-tint-opacity));
+  background-image: linear-gradient(
+    var(--lg-light-angle),
+    rgba(255, 255, 255, calc(0.18 * var(--lg-light))),
+    rgba(255, 255, 255, 0) 42%
+  );
 
   /* The backdrop blur+saturate fallback. The runtime overwrites
    * `backdrop-filter` with `url(#displacement) blur() saturate() brightness()`
@@ -70,43 +72,50 @@
   backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness));
 
-  /* Glass volume: a thin outer drop for lift, plus an inset directional
-   * catch-light (bright toward the light angle) and a soft inner floor. */
+  /* Glass VOLUME — the layered lighting that makes it read as a solid translucent
+   * object rather than a blurred rectangle:
+   *   1. outer drop + close shadow  → it floats above the page
+   *   2. crisp white hairline edge  → a defined glass border all around
+   *   3. bright top inner edge      → the polished top lip catching light
+   *   4. dark bottom inner edge     → thickness / depth opposite the light
+   *   5. broad inner glow           → luminous body, like light inside the glass */
   box-shadow:
-    0 8px 30px rgba(8, 12, 28, 0.28),
-    0 1px 1px rgba(8, 12, 28, 0.16),
-    inset var(--_lg-dx) var(--_lg-dy) var(--_lg-band) 0 var(--_lg-hi),
-    inset calc(var(--_lg-dx) * -1) calc(var(--_lg-dy) * -1) var(--_lg-band) 0
-    rgba(10, 14, 30, calc(0.18 * var(--lg-light)));
+    0 16px 48px rgba(8, 12, 28, 0.45),
+    0 3px 10px rgba(8, 12, 28, 0.26),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    inset 0 2px 0 0 rgba(255, 255, 255, calc(0.7 * var(--lg-light))),
+    inset 0 -2px 1px 0 rgba(6, 10, 24, calc(0.45 * var(--lg-light))),
+    inset 0 0 32px -6px rgba(255, 255, 255, calc(0.22 * var(--lg-light)));
 }
 
-/* ::before — the edge sheen ring. A directional sweep of the light along the
- * border, masked to a 1.5px ring so it lights the rim only (the part of the
- * glass that catches light). Rotates with --lg-light-angle. */
+/* ::before — the BRIGHT rim ring, the hero of the glass look. A light sweep
+ * along the border that is hottest on the two edges facing/away from the light
+ * (real glass catches light on opposite rims) and dim across the middle, masked
+ * to a thin ring so only the edge lights up. Rotates with --lg-light-angle. */
 .lab-liquid-glass::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: var(--_lg-band);
   pointer-events: none;
   z-index: 2;
   background: linear-gradient(
     var(--lg-light-angle),
-    var(--_lg-hi),
-    transparent 30%,
-    transparent 70%,
-    var(--_lg-lo)
+    var(--_lg-rim) 0%,
+    var(--_lg-rim-soft) 22%,
+    rgba(255, 255, 255, 0) 50%,
+    var(--_lg-rim-soft) 78%,
+    var(--_lg-rim) 100%
   );
-  /* mask the fill to a ring (border-box minus padding-box) */
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
 }
 
-/* ::after — a faint top-to-bottom inner glow giving the pane body some volume
- * (thicker-looking glass), independent of the directional rim. */
+/* ::after — a soft specular GLOSS: a bright bloom in the upper area like light
+ * reflecting off the curved top of the glass. Positioned toward the light. */
 .lab-liquid-glass::after {
   content: "";
   position: absolute;
@@ -114,10 +123,10 @@
   border-radius: inherit;
   pointer-events: none;
   z-index: 1;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, calc(0.14 * var(--lg-light))),
-    transparent 38%
+  background: radial-gradient(
+    130% 90% at 26% -10%,
+    rgba(255, 255, 255, calc(0.28 * var(--lg-light))),
+    rgba(255, 255, 255, 0) 58%
   );
 }
 
@@ -132,8 +141,8 @@
  * ancestor (matching the rest of the system). ─────────────────────────────── */
 [data-theme="dark"] .lab-liquid-glass,
 .lab-liquid-glass[data-theme="dark"] {
-  --lg-tint: 18 22 40;
-  --lg-tint-opacity: 0.22;
+  --lg-tint: 22 26 44;
+  --lg-tint-opacity: 0.16; /* smoked glass — let the lit edges + backdrop carry it */
   --lg-saturate: 1.9;
 }
 

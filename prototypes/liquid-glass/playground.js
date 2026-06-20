@@ -31,7 +31,7 @@ const GLASS = [
     def: -45,
     unit: 'deg',
   },
-  { v: '--lg-light', name: 'Light intensity', min: 0, max: 1, step: 0.01, def: 0.6 },
+  { v: '--lg-light', name: 'Light intensity', min: 0, max: 1, step: 0.01, def: 0.7 },
   { v: '--lg-splay', name: 'Splay', min: 0, max: 1, step: 0.01, def: 0.5 },
 ];
 const SURFACE = [
