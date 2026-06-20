@@ -26,17 +26,15 @@ let defs = null;
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
 const DEFAULTS = {
-  radius: 9, // px   — moderate frost. Enough to read as glass, light enough that
-  //                   the edge lens (refraction) is the visible "liquid" tell.
-  saturate: 1.05, // minimal — GPU compositing over-saturates the wash
-  brightness: 1.02,
-  contrast: 1, // no black-lift; it muddied colours on GPU
-  refraction: 0, // 0..1 — OPT-IN lens; default OFF (displacement seams on moving elems)
-  //                   default: frost + CSS rim, no fragile displacement filter).
-  depth: 20, // px    — Figma: depth. Rim band wide enough to read as a visible
-  //                    liquid lens; interior stays flat so straight lines stay straight.
-  dispersion: 0.06, // 0..1 — Figma: dispersion. Barely-there sub-px rim fringe.
-  light: 0.45, // 0..1 — Figma: lightIntensity. Soft specular rim, not a hard line.
+  radius: 0.5, // px  — near-zero blur (shuding uses 0.25). The REFRACTION is the
+  //                   effect; blur only hides 8-bit map steps. Heavy blur = "just blur".
+  saturate: 1.1, // shuding values: the backdrop pops without a wash
+  brightness: 1.05,
+  contrast: 1.2,
+  refraction: 1, // 0..1 — Figma: refraction. The backdrop lens (on by default).
+  depth: 20, // px    — Figma: depth. Refractive rim band width.
+  dispersion: 0.2, // 0..1 — Figma: dispersion. Subtle chromatic fringe at the rim.
+  light: 0.45, // 0..1 — Figma: lightIntensity (CSS rim only).
   lightAngle: -45, // deg — Figma: lightAngle.
   corner: 28, // px   — fallback when border-radius can't be read.
 };
@@ -184,37 +182,33 @@ function buildMaps(w, h, corner, depth, lightAngleDeg) {
 
 const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
-/** Compose the <filter> body: refract the backdrop (1 pass, or 3 channel-split
- *  passes for chromatic dispersion), then screen the specular rim-light over it. */
-function filterMarkup(dispHref, specHref, w, h, scale, dispersion, light) {
-  // Slightly blur the displacement field so the fast normal rotation at the
-  // rounded corners can't snap a backdrop line into a hard tick — smooth lens.
-  const dimg =
-    `<feImage href="${escAttr(dispHref)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="dmap0"/>` +
-    '<feGaussianBlur in="dmap0" stdDeviation="1" result="dmap"/>';
-  const dm = (s, input, result) =>
+/** Compose the <filter> body — the proven shuding/liquid-glass shape: one feImage
+ *  (the displacement map, element-local) → one feDisplacementMap that bends the
+ *  backdrop. Optional 3-pass channel split when dispersion is on. The rim light
+ *  is NOT in the filter (it's a clean CSS inset box-shadow), so there is no
+ *  separately-blurred border. */
+function filterMarkup(dispHref, w, h, scale, dispersion) {
+  const dimg = `<feImage href="${escAttr(dispHref)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="dmap"/>`;
+  const dm = (s, input) =>
     `<feDisplacementMap in="${input}" in2="dmap" scale="${s.toFixed(2)}" ` +
-    `xChannelSelector="R" yChannelSelector="G" result="${result}"/>`;
+    'xChannelSelector="R" yChannelSelector="G"';
 
-  let refr;
   if (dispersion < 0.02) {
-    refr = `${dimg}${dm(scale, 'SourceGraphic', 'refr')}`;
-  } else {
-    const spread = scale * dispersion * 0.12;
-    const keep = (rgba) => rgba;
-    refr = `${
-      dimg + dm(scale + spread, 'SourceGraphic', 'dR')
-    }<feColorMatrix in="dR" type="matrix" values="${keep('1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0')}" result="cR"/>${dm(scale, 'SourceGraphic', 'dG')}<feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>${dm(scale - spread, 'SourceGraphic', 'dB')}<feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/><feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen" result="refr"/>`;
+    return `${dimg}${dm(scale, 'SourceGraphic')}/>`;
   }
-
-  if (light <= 0.01) return refr;
-  // Specular rim-light screened over the refracted backdrop — highlight on the
-  // lens. A small blur feathers the rim into a soft sheen so it never spikes into
-  // hard white specks at the corners (judge-panel: "corner ticks").
-  const simg = `<feImage href="${escAttr(specHref)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="smap"/>`;
-  const dim = `<feComponentTransfer in="smap" result="slit"><feFuncA type="linear" slope="${light.toFixed(2)}"/></feComponentTransfer>`;
-  const soft = '<feGaussianBlur in="slit" stdDeviation="1.4" result="slitb"/>';
-  return `${refr}${simg}${dim}${soft}<feBlend in="refr" in2="slitb" mode="screen"/>`;
+  // Chromatic split: R/G/B displaced at fanned scales, recombined by screen.
+  const spread = scale * dispersion * 0.5;
+  return (
+    dimg +
+    `${dm(scale + spread, 'SourceGraphic')} result="dR"/>` +
+    '<feColorMatrix in="dR" type="matrix" values="1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0" result="cR"/>' +
+    `${dm(scale, 'SourceGraphic')} result="dG"/>` +
+    '<feColorMatrix in="dG" type="matrix" values="0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 1 0" result="cG"/>' +
+    `${dm(scale - spread, 'SourceGraphic')} result="dB"/>` +
+    '<feColorMatrix in="dB" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 1 0" result="cB"/>' +
+    '<feBlend in="cR" in2="cG" mode="screen" result="cRG"/>' +
+    '<feBlend in="cRG" in2="cB" mode="screen"/>'
+  );
 }
 
 function readParams(el, state) {
@@ -285,19 +279,16 @@ function render(state) {
   const stamp = (maps) => {
     if (state.gen !== gen) return; // a newer render superseded this one
     state.maps = maps;
-    // Visible-but-clean edge lens: peak shift ≈ scale/2 = bevel*0.3*refraction.
-    // The interior stays flat (sin-bump → 0 at the very edge AND the inner band).
-    const scale = maps.bevel * 0.6 * p.refraction;
-    // Region == the element box exactly (objectBoundingBox 100%), which matches
-    // the feImage's w×h coverage → feDisplacementMap never samples outside the
-    // map (that out-of-bounds read was the smear + seam). 100% (not 200%) and
-    // objectBoundingBox (not absolute px) so it stays correct when the pane is
-    // dragged/transformed.
-    filter.setAttribute('x', '0%');
-    filter.setAttribute('y', '0%');
-    filter.setAttribute('width', '100%');
-    filter.setAttribute('height', '100%');
-    filter.innerHTML = filterMarkup(maps.disp, maps.spec, p.w, p.h, scale, p.dispersion, p.light);
+    const scale = maps.bevel * 0.85 * p.refraction;
+    // Region == the element box in element-LOCAL px (filterUnits=userSpaceOnUse).
+    // These coords travel with the element on left/top, so the lens stays aligned
+    // when dragged — the shuding/liquid-glass anti-seam rule. (Don't CSS-transform
+    // a glass element; transform a wrapper instead.)
+    filter.setAttribute('x', '0');
+    filter.setAttribute('y', '0');
+    filter.setAttribute('width', String(p.w));
+    filter.setAttribute('height', String(p.h));
+    filter.innerHTML = filterMarkup(maps.disp, p.w, p.h, scale, p.dispersion);
     setBackdrop(el, `${frost} url(#${id}) ${lift}`);
   };
 
@@ -332,11 +323,10 @@ export function attach(el, opts = {}) {
   const filter = document.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
-  // objectBoundingBox region TRACKS the element (so a dragged/transformed pane
-  // keeps its filter); primitiveUnits=userSpaceOnUse makes feImage px the
-  // element-local box. Region is set to exactly 100% (the box) in stamp(), so it
-  // matches the feImage's w×h coverage — no out-of-bounds sampling (seam/smear).
-  filter.setAttribute('filterUnits', 'objectBoundingBox');
+  // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
+  // element-LOCAL coordinates that travel with the element on left/top → the lens
+  // stays aligned when dragged and never samples out of bounds (shuding's rule).
+  filter.setAttribute('filterUnits', 'userSpaceOnUse');
   filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
   ensureDefs().appendChild(filter);
 

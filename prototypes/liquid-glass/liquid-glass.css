@@ -25,99 +25,49 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 8px; /* clean frost */
-  --lg-saturate: 1.05; /* minimal — avoid the GPU colour wash */
-  --lg-brightness: 1.02;
-  --lg-contrast: 1; /* no black-lift (was washing colours); keep it honest */
-  --lg-refraction: 0; /* OPT-IN lens; off by default (seams on moving elements) */
-  --lg-depth: 20; /* consumed by JS when refraction > 0 */
-  --lg-dispersion: 0.06; /* consumed by JS when refraction > 0 */
+  --lg-radius: 0.5px; /* near-zero blur — the REFRACTION is the look, not frost */
+  --lg-saturate: 1.1;
+  --lg-brightness: 1.05;
+  --lg-contrast: 1.2;
+  --lg-refraction: 1; /* consumed by JS — the backdrop lens, on by default */
+  --lg-depth: 20; /* consumed by JS — refractive rim band width */
+  --lg-dispersion: 0.2; /* consumed by JS — subtle chromatic rim fringe */
 
   --lg-corner: 28px;
-  --lg-tint: 255 255 255; /* luminous near-white */
-  --lg-tint-opacity: 0.05; /* low neutral tint */
+  --lg-tint: 255 255 255;
+  --lg-tint-opacity: 0.03; /* whisper of tint; the lens + rim carry it */
 
-  --lg-light-angle: -45deg; /* light from upper-left */
-  --lg-light: 0.8; /* 0..1 strength of the directional glass rim */
+  --lg-light-angle: -45deg;
+  --lg-light: 0.5;
   --lg-splay: 0.5;
-
-  /* The directional light vector → a px offset, in pure CSS, so the bright edge
-   * sits on the light-facing side and the shadow on the opposite. */
-  --_lg-dx: calc(cos(var(--lg-light-angle)) * 1.5px);
-  --_lg-dy: calc(sin(var(--lg-light-angle)) * 1.5px);
 
   position: relative;
   border-radius: var(--lg-corner);
   isolation: isolate;
+  overflow: hidden; /* clip the refracted backdrop to the rounded box */
 
-  /* Low-alpha luminous body — legibility only; the glass tell is the rim. */
   background-color: rgb(var(--lg-tint) / var(--lg-tint-opacity));
 
-  /* Clean uniform frost. The runtime adds the OPT-IN url(#displacement) lens only
-   * when --lg-refraction > 0; by default this is the whole backdrop treatment. */
+  /* Near-clear backdrop: the runtime overwrites this with
+   * `blur() url(#lens) saturate() brightness() contrast()` to add the refraction.
+   * Low blur so the bent backdrop stays crisp (shuding uses blur 0.25px). */
   -webkit-backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness)) contrast(var(--lg-contrast));
   backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
     brightness(var(--lg-brightness)) contrast(var(--lg-contrast));
 
-  /* GLASS VOLUME — this is what separates glass from a plain blur:
-   *   1. outer drop → it floats;
-   *   2. crisp hairline → a defined glass edge all around;
-   *   3. bright directional catch-light on the light-facing rim (the "wet edge");
-   *   4. dark inner shadow on the opposite rim → thickness;
-   *   5. soft inner top glow → a luminous body. */
+  /* The glass rim — pure inset box-shadow (shuding's approach), NOT a separately
+   * blurred border: an outer drop to float, a bright top-inner lip (the wet
+   * edge), and a soft dark inner shade up from the bottom for thickness. */
   box-shadow:
-    0 14px 38px rgba(8, 12, 28, 0.3),
-    0 2px 6px rgba(8, 12, 28, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset var(--_lg-dx) var(--_lg-dy) 1px 0 rgba(255, 255, 255, calc(0.95 * var(--lg-light))),
-    inset calc(var(--_lg-dx) * -1) calc(var(--_lg-dy) * -1) 2px 0
-      rgba(6, 10, 24, calc(0.4 * var(--lg-light))),
-    inset 0 6px 18px -12px rgba(255, 255, 255, calc(0.6 * var(--lg-light)));
+    0 6px 16px rgba(8, 12, 28, 0.28),
+    0 1px 2px rgba(8, 12, 28, 0.2),
+    inset 0 1px 1px rgba(255, 255, 255, calc(0.9 * var(--lg-light))),
+    inset 0 -1px 1px rgba(8, 12, 28, 0.18),
+    inset 0 -12px 26px -12px rgba(8, 12, 28, 0.2);
 }
 
-/* ::before — the bright RIM ring: a crisp specular sweep along the border,
- * hottest on the light-facing edges and dim across the middle, masked to a thin
- * ring. This is the headline "glass" cue (real iOS glass leads with the lit
- * edge, not backdrop warp). Rotates with --lg-light-angle. */
-.lab-liquid-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  pointer-events: none;
-  z-index: 2;
-  background: linear-gradient(
-    var(--lg-light-angle),
-    rgba(255, 255, 255, calc(0.95 * var(--lg-light))),
-    rgba(255, 255, 255, 0.1) 28%,
-    rgba(255, 255, 255, 0) 50%,
-    rgba(255, 255, 255, calc(0.25 * var(--lg-light))) 75%,
-    rgba(255, 255, 255, calc(0.7 * var(--lg-light)))
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  mask-composite: exclude;
-}
-
-/* ::after — a soft top gloss bloom, the reflection on the curved top of glass. */
-.lab-liquid-glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 1;
-  background: radial-gradient(
-    140% 100% at 28% -8%,
-    rgba(255, 255, 255, calc(0.22 * var(--lg-light))),
-    rgba(255, 255, 255, 0) 55%
-  );
-}
-
-/* Real content rides above the decoration layers. */
+/* Real content rides above the refracted backdrop. */
 .lab-liquid-glass > * {
   position: relative;
   z-index: 3;
