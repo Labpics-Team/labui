@@ -45,6 +45,10 @@ export const COLOUR_ROLE_PREFIXES = [
   'fx', // glow / focus-ring / shadow / skeleton — all colour-bearing
   'accent',
   'mat', // material roles
+  'badge', // --lab-badge-label-* (Misc group) — colour-bearing, consumed in lab-badge
+  'control', // --lab-control-bg — colour-bearing, consumed in switch/slider
+  'ambient', // --lab-ambient-*-color material primitives (materials.css)
+  'glass', // --lab-glass-* material aliases (materials.css) — colour-bearing
   'neutral', // primitive (must never be read, let alone fallback-baked)
 ] as const;
 

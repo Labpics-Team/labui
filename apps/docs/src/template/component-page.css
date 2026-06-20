@@ -26,7 +26,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
   font-family: system-ui, sans-serif;
   line-height: var(--lab-line-height-md, 1.5);
@@ -156,7 +156,7 @@ code {
   padding: var(--lab-space-4, 1rem);
   border: 0.0625rem solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
-  background: var(--lab-surface-raised);
+  background: var(--lab-bg-secondary);
 }
 
 .root-control,
@@ -172,7 +172,7 @@ select {
   padding: var(--lab-space-1, 0.25rem) var(--lab-space-2, 0.5rem);
   border-radius: var(--lab-radius-md, 0.5rem);
   border: 0.0625rem solid var(--lab-border-neutral);
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
 }
 
@@ -217,7 +217,7 @@ input:focus-visible {
   color: var(--lab-label-secondary);
   font-size: var(--lab-font-size-sm, 0.875rem);
   font-weight: 600;
-  background: var(--lab-surface-raised);
+  background: var(--lab-bg-secondary);
 }
 
 .matrix-cell {
@@ -251,7 +251,7 @@ input:focus-visible {
   padding: var(--lab-space-8, 2rem);
   border: 0.0625rem solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
-  background: var(--lab-surface-raised);
+  background: var(--lab-bg-secondary);
 }
 
 .anatomy-parts {
@@ -307,7 +307,7 @@ input:focus-visible {
   padding: var(--lab-space-4, 1rem);
   border: 0.0625rem solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
-  background: var(--lab-surface-raised);
+  background: var(--lab-bg-secondary);
 }
 
 .guidance-col h3 {
@@ -342,7 +342,7 @@ input:focus-visible {
   padding: var(--lab-space-10, 2.5rem);
   border: 0.0625rem solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
-  background: var(--lab-surface-raised);
+  background: var(--lab-bg-secondary);
 }
 
 .live-controls {
@@ -375,7 +375,7 @@ input:focus-visible {
 }
 
 .api-table thead th {
-  background: var(--lab-surface-raised);
+  background: var(--lab-bg-secondary);
   color: var(--lab-label-secondary);
   font-size: var(--lab-font-size-sm, 0.875rem);
 }

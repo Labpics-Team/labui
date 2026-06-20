@@ -13,8 +13,8 @@
    readable page chrome for the owner's eye until the engine themes the contract
    — these light literals are demo-only chrome, not part of the shadow contract. */
 :root {
-  --demo-bg: var(--lab-surface-base);
-  --demo-card: var(--lab-surface-raised);
+  --demo-bg: var(--lab-bg-primary);
+  --demo-card: var(--lab-bg-secondary);
   --demo-ink: var(--lab-label-primary);
   --demo-ink-soft: var(--lab-label-secondary);
 }
@@ -103,7 +103,7 @@ main {
 }
 
 #theme-toggle:focus-visible {
-  outline: 2px solid var(--lab-accent);
+  outline: 2px solid var(--lab-label-brand-primary);
   outline-offset: 2px;
 }
 
@@ -159,6 +159,6 @@ main {
 /* The tinted surface sets its own shadow tint from the --lab-* contract, so its
    shadow carries the surface hue instead of the neutral anchor. */
 .card-tinted {
-  --lab-surface-shadow-tint: var(--lab-accent);
-  background: color-mix(in srgb, var(--demo-card), var(--lab-accent) 8%);
+  --lab-surface-shadow-tint: var(--lab-label-brand-primary);
+  background: color-mix(in srgb, var(--demo-card), var(--lab-label-brand-primary) 8%);
 }

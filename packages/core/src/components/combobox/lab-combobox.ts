@@ -58,7 +58,7 @@
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The input reuses
  * the shared `field-styles` surface (`--lab-bg-primary`, `--lab-border-base`,
  * sentiment borders, `--lab-border-focus` ring); the listbox is the raised surface
- * (`--lab-surface-raised` + `--lab-label-primary`) with a `--lab-border-soft` hairline
+ * (`--lab-bg-secondary` + `--lab-label-primary`) with a `--lab-border-soft` hairline
  * and `--lab-fx-shadow-major` lift at `--lab-z-dropdown`; the highlighted option fills
  * with `--lab-fill-neutral-tinted`, the selected option's label is `--lab-label-accent`.
  * No hex, no primitive, no colour-role fallback.
@@ -420,7 +420,7 @@ export class LabCombobox extends LabElement {
         padding: ${litVar('--lab-space-xs', '0.25rem')};
         list-style: none;
         border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-        background-color: ${litVar('--lab-surface-raised')};
+        background-color: ${litVar('--lab-bg-secondary')};
         color: ${litVar('--lab-label-primary')};
         border: 0.0625rem solid ${litVar('--lab-border-soft')};
         box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};

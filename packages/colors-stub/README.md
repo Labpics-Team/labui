@@ -192,12 +192,14 @@ owner's.
 > second literal for the same primitive — a single source of truth that moves
 > together if the snapshot is re-derived.
 
-### Backward-compatible aliases
+### Retired aliases (migration note)
 
-The original 5-variable stub names are kept as aliases so existing consumers do not
-break. Prefer the systematic roles above.
+The original 5-variable stub once shipped three back-compat aliases. They have been
+**removed** — every consumer now reads the systematic role directly, so the swap to
+the published `@labpics/colors` (which never emitted the aliases) stays a no-op. The
+contract test forbids their reintroduction. If you still reference an old name, map it:
 
-| Alias | Aliases to |
+| Retired alias | Use instead |
 | --- | --- |
 | `--lab-surface-base` | `--lab-bg-primary` |
 | `--lab-surface-raised` | `--lab-bg-secondary` |

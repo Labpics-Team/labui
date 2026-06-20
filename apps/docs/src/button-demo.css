@@ -17,12 +17,12 @@
 body {
   margin: 0;
   padding: var(--lab-space-8, 2rem);
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
   font-family: system-ui, sans-serif;
 }
 :root[data-theme="light"] body {
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
 }
 
 h1 {

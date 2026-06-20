@@ -23,7 +23,7 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--_lab-card-radius);
-  background-color: var(--lab-surface-base);
+  background-color: var(--lab-bg-primary);
   color: var(--lab-label-primary);
   border: 0.0625rem solid transparent;
 }
@@ -42,11 +42,11 @@
 }
 
 [data-lab-card][data-variant="elevated"] {
-  background-color: var(--lab-surface-raised);
+  background-color: var(--lab-bg-secondary);
   box-shadow: var(--lab-fx-shadow-minor);
 }
 [data-lab-card][data-variant="outlined"] {
-  background-color: var(--lab-surface-base);
+  background-color: var(--lab-bg-primary);
   border-color: var(--lab-border-base);
 }
 [data-lab-card][data-variant="filled"] {
