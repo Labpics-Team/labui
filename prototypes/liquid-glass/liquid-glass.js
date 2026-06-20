@@ -20,10 +20,10 @@ let defs = null;
 
 const DEFAULTS = {
   refraction: 1, // 0..1  — Figma: refraction. Edge bend strength.
-  depth: 11, // px    — Figma: depth. Width of the refractive rim band.
-  dispersion: 0.45, // 0..1  — Figma: dispersion. Chromatic fringe at the rim.
-  scale: 110, // master displacement scale (px) at refraction=1 — tuned on the grid
-  //            backdrop so the rim reads as a real lens without tearing.
+  depth: 30, // px    — Figma: depth. Width of the refractive bevel.
+  dispersion: 0.5, // 0..1  — Figma: dispersion. Chromatic fringe at the rim.
+  scale: 170, // master displacement (px) at refraction=1 — sized so the SDF bevel
+  //            magnifies like real thick glass, not a faint lip.
 };
 
 /** Detect whether this engine actually REFRACTS the backdrop via url() filters.
@@ -61,20 +61,60 @@ function ensureDefs() {
   return defs;
 }
 
-/** Build the displacement-map image (data-URI).
- *  R ramps 0→255 left→right (x-shift), G ramps 0→255 top→bottom (y-shift).
- *  A blurred neutral (#808080) rounded rect covers the interior so only a band
- *  of width ≈ depth around the rim carries any shift. */
+/** Signed distance from (px,py) to a rounded rectangle [0,w]×[0,h] of corner r.
+ *  Negative inside, zero on the edge, positive outside. This is the real shape
+ *  of the glass — the whole lens is derived from it. */
+function sdRoundRect(px, py, w, h, r) {
+  const qx = Math.abs(px - w / 2) - (w / 2 - r);
+  const qy = Math.abs(py - h / 2) - (h / 2 - r);
+  const ax = Math.max(qx, 0);
+  const ay = Math.max(qy, 0);
+  return Math.hypot(ax, ay) + Math.min(Math.max(qx, qy), 0) - r;
+}
+
+/** Build the displacement map as a per-pixel SDF LENS (returns a PNG data-URI).
+ *  For every pixel we take the rounded-rect signed distance, and inside a bevel
+ *  band of width `depth` we bend the backdrop ALONG the surface normal (gradient
+ *  of the SDF) by a convex profile that peaks at the rim — a real glass edge,
+ *  not a gradient approximation. R encodes the x-shift, G the y-shift, 128 =
+ *  no shift; the clear interior stays 128 so the centre reads crisp. */
 function displacementMap(w, h, corner, depth) {
-  // Clamp the rim band so a neutral interior always survives — otherwise a thin
-  // element (depth ≥ min(w,h)/2) would refract edge-to-edge with no clear centre
-  // and read as broken rather than as a lens.
-  const d = Math.max(1, Math.min(Math.round(depth), Math.floor(Math.min(w, h) / 2) - 1 || 1));
-  const iw = Math.max(0, w - 2 * d);
-  const ih = Math.max(0, h - 2 * d);
-  const ir = Math.max(0, corner - d);
-  const svg = `<svg xmlns="${SVGNS}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="x" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#f00"/></linearGradient><linearGradient id="y" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000"/><stop offset="1" stop-color="#0f0"/></linearGradient></defs><rect width="${w}" height="${h}" fill="#000"/><rect width="${w}" height="${h}" fill="url(#x)" style="mix-blend-mode:screen"/><rect width="${w}" height="${h}" fill="url(#y)" style="mix-blend-mode:screen"/><rect x="${d}" y="${d}" width="${iw}" height="${ih}" rx="${ir}" ry="${ir}" fill="#808080" style="filter:blur(${d}px)"/></svg>`;
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
+  // Bevel may span up to (almost) half the short side — a thick, glassy edge.
+  const bevel = Math.max(2, Math.min(depth, Math.floor(Math.min(w, h) / 2) - 1 || 2));
+  const cv = document.createElement('canvas');
+  cv.width = w;
+  cv.height = h;
+  const ctx = cv.getContext('2d');
+  const img = ctx.createImageData(w, h);
+  const data = img.data;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const sd = sdRoundRect(x + 0.5, y + 0.5, w, h, r);
+      const inside = -sd; // distance from the edge, inward (px)
+      let vx = 0;
+      let vy = 0;
+      if (sd < 0 && inside < bevel) {
+        // Surface normal = gradient of the SDF (points outward), via finite diff.
+        const gx = sdRoundRect(x + 1.5, y + 0.5, w, h, r) - sdRoundRect(x - 0.5, y + 0.5, w, h, r);
+        const gy = sdRoundRect(x + 0.5, y + 1.5, w, h, r) - sdRoundRect(x + 0.5, y - 0.5, w, h, r);
+        const gl = Math.hypot(gx, gy) || 1;
+        // Convex lens profile: 0 at the inner edge of the bevel, → 1 at the rim,
+        // steepening near the edge (sphere-like) so it magnifies like thick glass.
+        const t = 1 - inside / bevel; // 0..1, 1 at the very rim
+        const profile = 1 - Math.sqrt(Math.max(0, 1 - t * t));
+        vx = (gx / gl) * profile;
+        vy = (gy / gl) * profile;
+      }
+      data[i] = 128 + 127 * vx; // R = x displacement
+      data[i + 1] = 128 + 127 * vy; // G = y displacement
+      data[i + 2] = 128;
+      data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  return cv.toDataURL();
 }
 
 /** Compose the <filter> body. One displacement pass when dispersion≈0; three

@@ -25,19 +25,19 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 8px; /* backdrop blur — low, so the refraction reads as a lens */
-  --lg-saturate: 1.7; /* live colour boost — what makes blur read as glass */
+  --lg-radius: 3px; /* backdrop blur — near zero: the lens, not blur, is the look */
+  --lg-saturate: 1.7; /* live colour boost — keeps the refracted backdrop vivid */
   --lg-brightness: 1.05;
   --lg-refraction: 1; /* consumed by JS */
-  --lg-depth: 16; /* consumed by JS — width of the refractive rim band */
-  --lg-dispersion: 0.45; /* consumed by JS */
+  --lg-depth: 30; /* consumed by JS — width of the refractive bevel */
+  --lg-dispersion: 0.5; /* consumed by JS */
 
   --lg-corner: 28px;
   --lg-tint: 255 255 255; /* rgb triplet of the body fill */
-  --lg-tint-opacity: 0.1;
+  --lg-tint-opacity: 0.08;
 
   --lg-light-angle: -45deg;
-  --lg-light: 0.5; /* 0..1 specular intensity */
+  --lg-light: 0.6; /* 0..1 specular intensity */
   --lg-splay: 0.5; /* 0..1 widens the specular band */
 
   /* Derived (do not set directly) ──────────────────────────────────────────
