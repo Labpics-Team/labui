@@ -66,7 +66,10 @@ function ensureDefs() {
  *  A blurred neutral (#808080) rounded rect covers the interior so only a band
  *  of width ≈ depth around the rim carries any shift. */
 function displacementMap(w, h, corner, depth) {
-  const d = Math.max(1, Math.round(depth));
+  // Clamp the rim band so a neutral interior always survives — otherwise a thin
+  // element (depth ≥ min(w,h)/2) would refract edge-to-edge with no clear centre
+  // and read as broken rather than as a lens.
+  const d = Math.max(1, Math.min(Math.round(depth), Math.floor(Math.min(w, h) / 2) - 1 || 1));
   const iw = Math.max(0, w - 2 * d);
   const ih = Math.max(0, h - 2 * d);
   const ir = Math.max(0, corner - d);
@@ -78,8 +81,12 @@ function displacementMap(w, h, corner, depth) {
  *  channel-split passes (R/G/B at fanned-out scales) when it is on, which is
  *  what paints the rainbow rim. */
 function filterMarkup(href, w, h, scale, dispersion) {
+  // Escape the data-URI at the attribute boundary rather than trusting the
+  // producer's encoding — keeps the markup well-formed even if displacementMap's
+  // encoder ever changes (defence in depth; the URI is otherwise machine-built).
+  const safe = href.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   const img =
-    `<feImage href="${href}" xlink:href="${href}" x="0" y="0" ` +
+    `<feImage href="${safe}" xlink:href="${safe}" x="0" y="0" ` +
     `width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
   const disp = (s, input, result) =>
     `<feDisplacementMap in="${input}" in2="map" scale="${s.toFixed(2)}" ` +
@@ -99,8 +106,8 @@ function filterMarkup(href, w, h, scale, dispersion) {
   }<feColorMatrix in="dR" type="matrix" values="${keepR}" result="cR"/>${disp(scale, 'SourceGraphic', 'dG')}<feColorMatrix in="dG" type="matrix" values="${keepG}" result="cG"/>${disp(scale - spread, 'SourceGraphic', 'dB')}<feColorMatrix in="dB" type="matrix" values="${keepB}" result="cB"/><feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen" result="out"/>`;
 }
 
-function cssNumber(el, prop, fallback) {
-  const raw = getComputedStyle(el).getPropertyValue(prop).trim();
+function cssNumber(cs, prop, fallback) {
+  const raw = cs.getPropertyValue(prop).trim();
   if (!raw) return fallback;
   const n = Number.parseFloat(raw);
   return Number.isFinite(n) ? n : fallback;
@@ -115,13 +122,13 @@ function render(state) {
   // Pull live values from CSS vars unless overridden by an explicit update().
   const cs = getComputedStyle(el);
   const corner = Math.round(Number.parseFloat(cs.borderTopLeftRadius) || 28);
-  const refraction = state.params.refraction ?? cssNumber(el, '--lg-refraction', 1);
-  const depth = Math.round(state.params.depth ?? cssNumber(el, '--lg-depth', DEFAULTS.depth));
+  const refraction = state.params.refraction ?? cssNumber(cs, '--lg-refraction', 1);
+  const depth = Math.round(state.params.depth ?? cssNumber(cs, '--lg-depth', DEFAULTS.depth));
   const dispersion =
-    state.params.dispersion ?? cssNumber(el, '--lg-dispersion', DEFAULTS.dispersion);
-  const blur = cssNumber(el, '--lg-radius', 14);
-  const saturate = cssNumber(el, '--lg-saturate', 1.7);
-  const brightness = cssNumber(el, '--lg-brightness', 1.05);
+    state.params.dispersion ?? cssNumber(cs, '--lg-dispersion', DEFAULTS.dispersion);
+  const blur = cssNumber(cs, '--lg-radius', 14);
+  const saturate = cssNumber(cs, '--lg-saturate', 1.7);
+  const brightness = cssNumber(cs, '--lg-brightness', 1.05);
 
   const reduced =
     typeof matchMedia !== 'undefined' &&
@@ -136,6 +143,11 @@ function render(state) {
   if (reduced || !state.enabled || !state.refracts) {
     el.style.backdropFilter = state.refracts && !reduced && state.enabled ? tail : '';
     el.style.webkitBackdropFilter = el.style.backdropFilter;
+    // Invalidate the caches so a later re-enable (e.g. the user turns
+    // prefers-reduced-transparency back OFF) rebuilds the filter from scratch
+    // instead of trusting a stale key.
+    state.geoKey = null;
+    state.fKey = null;
     return;
   }
 
@@ -154,7 +166,9 @@ function render(state) {
   }
 
   const scale = DEFAULTS.scale * refraction;
-  const fKey = `${state.geoKey}|${scale.toFixed(2)}|${dispersion.toFixed(2)}|${w}|${h}`;
+  // geoKey already encodes w/h/corner/depth; the filter additionally varies with
+  // refraction (scale) and dispersion (pass count) only.
+  const fKey = `${state.geoKey}|${scale.toFixed(2)}|${dispersion.toFixed(2)}`;
   if (fKey !== state.fKey) {
     filter.innerHTML = filterMarkup(state.href, w, h, scale, dispersion);
     state.fKey = fKey;
@@ -172,6 +186,9 @@ function render(state) {
  * @returns {{ update(p:object):void, destroy():void, params:object, refracts:boolean }}
  */
 export function attach(el, opts = {}) {
+  // Re-attaching the same element tears down the previous instance first, so its
+  // observers and <filter> never leak (the class is reusable / may re-mount).
+  el.__labLiquidGlass?.destroy();
   ensureDefs();
   const id = `lab-lg-${++uid}`;
   const filter = document.createElementNS(SVGNS, 'filter');
@@ -194,6 +211,11 @@ export function attach(el, opts = {}) {
   ro.observe(el);
   const onResize = () => update();
   window.addEventListener('resize', onResize);
+  // React to the user toggling prefers-reduced-transparency at runtime, in BOTH
+  // directions — so the contract holds live, not just at first paint.
+  const mq =
+    typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;
+  mq?.addEventListener('change', update);
 
   state.update = (p) => {
     Object.assign(state.params, p);
@@ -202,9 +224,11 @@ export function attach(el, opts = {}) {
   state.destroy = () => {
     ro.disconnect();
     window.removeEventListener('resize', onResize);
+    mq?.removeEventListener('change', update);
     filter.remove();
     el.style.backdropFilter = '';
     el.style.webkitBackdropFilter = '';
+    if (el.__labLiquidGlass === state) el.__labLiquidGlass = undefined;
   };
 
   el.classList.add('lab-liquid-glass');

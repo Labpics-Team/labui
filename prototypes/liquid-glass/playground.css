@@ -55,6 +55,8 @@ body {
 .pane.is-drag {
   cursor: grabbing;
   transition: none;
+  /* Promote to a compositor layer only while actually dragging. */
+  will-change: transform;
 }
 .pane__content {
   text-align: center;

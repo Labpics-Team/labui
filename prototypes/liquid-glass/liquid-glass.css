@@ -78,8 +78,6 @@
     inset var(--_lg-dx) var(--_lg-dy) var(--_lg-band) 0 var(--_lg-hi),
     inset calc(var(--_lg-dx) * -1) calc(var(--_lg-dy) * -1) var(--_lg-band) 0
     rgba(10, 14, 30, calc(0.18 * var(--lg-light)));
-
-  will-change: transform;
 }
 
 /* ::before — the edge sheen ring. A directional sweep of the light along the

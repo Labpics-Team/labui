@@ -1,13 +1,11 @@
-/*
- * Zero-dependency static server for the Liquid Glass playground.
- * Run:  node serve.mjs        → http://127.0.0.1:4477
- *       node serve.mjs 5000   → custom port
- * (A server is needed because the playground is an ES module that fetches the
- * displacement assets — file:// blocks both.)
- */
-import { createServer } from 'node:http';
+// Zero-dependency static server for the Liquid Glass playground.
+//   node serve.mjs        → http://127.0.0.1:4477
+//   node serve.mjs 5000   → custom port
+// (A server is needed because the playground is an ES module that fetches the
+//  displacement assets — file:// blocks both.)
 import { readFile } from 'node:fs/promises';
-import { dirname, extname, join, normalize } from 'node:path';
+import { createServer } from 'node:http';
+import { dirname, extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
@@ -25,10 +23,19 @@ createServer(async (req, res) => {
   try {
     let p = decodeURIComponent(req.url.split('?')[0]);
     if (p === '/') p = '/index.html';
-    const data = await readFile(join(ROOT, normalize(p)));
+    // Containment: resolve against ROOT and reject anything that escapes it
+    // (../, encoded backslash, absolute/UNC, null byte). Path-only, no traversal.
+    const full = resolve(ROOT, `.${p.startsWith('/') ? p : `/${p}`}`);
+    if (full !== ROOT && !full.startsWith(ROOT + sep)) {
+      res.writeHead(403);
+      res.end('Forbidden');
+      return;
+    }
+    const data = await readFile(full);
     res.writeHead(200, {
-      'Content-Type': TYPES[extname(p)] || 'application/octet-stream',
+      'Content-Type': TYPES[extname(full)] || 'application/octet-stream',
       'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
     });
     res.end(data);
   } catch {
