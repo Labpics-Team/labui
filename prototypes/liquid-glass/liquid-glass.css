@@ -27,18 +27,18 @@
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
   --lg-radius: 0px; /* UNIFORM blur OFF — glass keeps the backdrop sharp; the
    *                    "blur" is the non-uniform rim compression (JS lens) */
-  --lg-saturate: 1.3; /* slight colour lift (iOS ≈ 1.3) */
-  --lg-brightness: 1.05;
+  --lg-saturate: 1.25; /* slight colour lift (iOS ≈ 1.25) */
+  --lg-brightness: 1.06;
   --lg-refraction: 1; /* consumed by JS */
-  --lg-depth: 28; /* consumed by JS — narrow rim band → flat sharp centre */
-  --lg-dispersion: 0.25; /* consumed by JS — subtle rim-only fringe */
+  --lg-depth: 16; /* consumed by JS — razor-thin rim band → flat sharp centre */
+  --lg-dispersion: 0.12; /* consumed by JS — barely-perceptible rim fringe */
 
   --lg-corner: 28px;
-  --lg-tint: 255 255 255; /* rgb triplet of the body fill — luminous, not dark */
-  --lg-tint-opacity: 0.05; /* barely-there — glass shows the BACKDROP, not a film */
+  --lg-tint: 255 255 255; /* luminous near-white — iOS glass reads LIGHT, not dark */
+  --lg-tint-opacity: 0.1; /* low, but enough to read as a bright glass layer */
 
   --lg-light-angle: -45deg;
-  --lg-light: 0.7; /* 0..1 specular intensity (the lit rim lives in the JS filter) */
+  --lg-light: 0.45; /* 0..1 soft specular rim (lives in the JS filter) */
   --lg-splay: 0.5; /* 0..1 widens the CSS hairline edge */
 
   --_lg-band: calc(1px + 0.5px * var(--lg-splay));
@@ -62,11 +62,8 @@
   /* Volume: float + a crisp hairline edge + a faint thickness shade. The bright
    * catch-light is NOT here — it is the specular rim-light computed on the lens
    * geometry inside the JS filter, so it sits on the glass, not as a sticker. */
-  box-shadow:
-    0 16px 44px rgba(8, 12, 28, 0.42),
-    0 2px 8px rgba(8, 12, 28, 0.22),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
-    inset 0 -1px 1px 0 rgba(6, 10, 24, calc(0.3 * var(--lg-light)));
+  box-shadow: 0 16px 44px rgba(8, 12, 28, 0.38), 0 2px 8px rgba(8, 12, 28, 0.2), inset 0 0 0 1px
+    rgba(255, 255, 255, 0.12);
 }
 
 /* ::before — a thin crisp top-edge highlight only (the polished lip). Subtle;
@@ -81,8 +78,8 @@
   z-index: 2;
   background: linear-gradient(
     var(--lg-light-angle),
-    rgba(255, 255, 255, calc(0.5 * var(--lg-light))),
-    rgba(255, 255, 255, 0) 35%
+    rgba(255, 255, 255, calc(0.35 * var(--lg-light))),
+    rgba(255, 255, 255, 0) 30%
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
@@ -101,9 +98,11 @@
  * ancestor (matching the rest of the system). ─────────────────────────────── */
 [data-theme="dark"] .lab-liquid-glass,
 .lab-liquid-glass[data-theme="dark"] {
-  --lg-tint: 235 240 255; /* luminous glass, not a dark scrim (iOS reads light) */
-  --lg-tint-opacity: 0.07;
-  --lg-saturate: 1.3;
+  /* Still luminous in dark mode (iOS glass stays a bright layer); a hair more
+   * tint for legibility over dark content, never a dark scrim. */
+  --lg-tint: 240 244 255;
+  --lg-tint-opacity: 0.12;
+  --lg-saturate: 1.25;
 }
 
 /* ── Accessibility / honest degradation ─────────────────────────────────────

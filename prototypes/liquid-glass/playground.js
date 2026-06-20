@@ -8,6 +8,8 @@ const stage = document.getElementById('stage');
 // Attach the refraction engine to the draggable pane and to the panel itself.
 const glass = attach(pane);
 attach(panel, { depth: 14 });
+// Expose the pane instance for tooling / the render harness (demo-only).
+window.__paneGlass = glass;
 
 document.getElementById('engine').textContent = glass.refracts
   ? 'engine: Chromium · refraction ON'
@@ -19,9 +21,9 @@ document.getElementById('engine').textContent = glass.refracts
  * are pure CSS. One uniform path → trivially configurable. */
 const GLASS = [
   { v: '--lg-radius', name: 'Blur (radius)', min: 0, max: 30, step: 0.5, def: 0, unit: 'px' },
-  { v: '--lg-refraction', name: 'Refraction', min: 0, max: 1, step: 0.01, def: 1 },
-  { v: '--lg-depth', name: 'Depth', min: 6, max: 60, step: 1, def: 28, unit: 'px' },
-  { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.25 },
+  { v: '--lg-refraction', name: 'Refraction', min: 0, max: 1.5, step: 0.01, def: 1 },
+  { v: '--lg-depth', name: 'Depth', min: 6, max: 48, step: 1, def: 16, unit: 'px' },
+  { v: '--lg-dispersion', name: 'Dispersion', min: 0, max: 1, step: 0.01, def: 0.12 },
   {
     v: '--lg-light-angle',
     name: 'Light angle',
@@ -31,13 +33,13 @@ const GLASS = [
     def: -45,
     unit: 'deg',
   },
-  { v: '--lg-light', name: 'Light intensity', min: 0, max: 1, step: 0.01, def: 0.7 },
+  { v: '--lg-light', name: 'Light intensity', min: 0, max: 1, step: 0.01, def: 0.45 },
   { v: '--lg-splay', name: 'Splay', min: 0, max: 1, step: 0.01, def: 0.5 },
 ];
 const SURFACE = [
   { v: '--lg-corner', name: 'Corner radius', min: 0, max: 90, step: 1, def: 28, unit: 'px' },
-  { v: '--lg-tint-opacity', name: 'Tint opacity', min: 0, max: 1, step: 0.01, def: 0.05 },
-  { v: '--lg-saturate', name: 'Saturation', min: 1, max: 2.6, step: 0.05, def: 1.3 },
+  { v: '--lg-tint-opacity', name: 'Tint opacity', min: 0, max: 1, step: 0.01, def: 0.1 },
+  { v: '--lg-saturate', name: 'Saturation', min: 1, max: 2.6, step: 0.05, def: 1.25 },
 ];
 
 const inputs = new Map();
@@ -91,57 +93,57 @@ const PRESETS = {
   Clear: {
     '--lg-radius': 0,
     '--lg-refraction': 1,
-    '--lg-depth': 24,
-    '--lg-dispersion': 0.22,
+    '--lg-depth': 14,
+    '--lg-dispersion': 0.1,
     '--lg-light-angle': -45,
-    '--lg-light': 0.7,
+    '--lg-light': 0.4,
     '--lg-splay': 0.4,
-    '--lg-tint-opacity': 0.03,
-    '--lg-saturate': 1.25,
+    '--lg-tint-opacity': 0.07,
+    '--lg-saturate': 1.2,
   },
   Base: {
     '--lg-radius': 0,
     '--lg-refraction': 1,
-    '--lg-depth': 28,
-    '--lg-dispersion': 0.25,
+    '--lg-depth': 16,
+    '--lg-dispersion': 0.12,
     '--lg-light-angle': -45,
-    '--lg-light': 0.7,
+    '--lg-light': 0.45,
     '--lg-splay': 0.5,
-    '--lg-tint-opacity': 0.05,
-    '--lg-saturate': 1.3,
+    '--lg-tint-opacity': 0.1,
+    '--lg-saturate': 1.25,
   },
   Muted: {
     '--lg-radius': 3,
     '--lg-refraction': 0.9,
-    '--lg-depth': 34,
-    '--lg-dispersion': 0.2,
+    '--lg-depth': 20,
+    '--lg-dispersion': 0.1,
     '--lg-light-angle': 0,
-    '--lg-light': 0.6,
+    '--lg-light': 0.4,
     '--lg-splay': 0.6,
-    '--lg-tint-opacity': 0.1,
-    '--lg-saturate': 1.4,
+    '--lg-tint-opacity': 0.16,
+    '--lg-saturate': 1.3,
   },
   Elevated: {
     '--lg-radius': 0,
-    '--lg-refraction': 1,
-    '--lg-depth': 44,
-    '--lg-dispersion': 0.32,
+    '--lg-refraction': 1.2,
+    '--lg-depth': 24,
+    '--lg-dispersion': 0.16,
     '--lg-light-angle': 0,
-    '--lg-light': 0.85,
+    '--lg-light': 0.6,
     '--lg-splay': 0.7,
-    '--lg-tint-opacity': 0.05,
-    '--lg-saturate': 1.35,
+    '--lg-tint-opacity': 0.08,
+    '--lg-saturate': 1.3,
   },
   Frosted: {
-    '--lg-radius': 12,
+    '--lg-radius': 10,
     '--lg-refraction': 0.7,
-    '--lg-depth': 26,
-    '--lg-dispersion': 0.15,
+    '--lg-depth': 16,
+    '--lg-dispersion': 0.08,
     '--lg-light-angle': -45,
-    '--lg-light': 0.5,
+    '--lg-light': 0.35,
     '--lg-splay': 0.5,
-    '--lg-tint-opacity': 0.16,
-    '--lg-saturate': 1.5,
+    '--lg-tint-opacity': 0.22,
+    '--lg-saturate': 1.45,
   },
 };
 const ALL = [...GLASS, ...SURFACE];
