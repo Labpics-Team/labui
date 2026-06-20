@@ -28,7 +28,8 @@
   --lg-radius: 0px; /* UNIFORM blur OFF — glass keeps the backdrop sharp; the
    *                    "blur" is the non-uniform rim compression (JS lens) */
   --lg-saturate: 1.25; /* slight colour lift (iOS ≈ 1.25) */
-  --lg-brightness: 1.06;
+  --lg-brightness: 1.08;
+  --lg-contrast: 0.92; /* <1 lifts blacks → luminous on dark backdrops */
   --lg-refraction: 1; /* consumed by JS */
   --lg-depth: 16; /* consumed by JS — razor-thin rim band → flat sharp centre */
   --lg-dispersion: 0.12; /* consumed by JS — barely-perceptible rim fringe */
@@ -55,9 +56,9 @@
    * `url(#id) blur() saturate() brightness()` to add the refraction + specular;
    * if JS never runs this stays a clean near-clear pane (honest degradation). */
   -webkit-backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
-    brightness(var(--lg-brightness));
+    brightness(var(--lg-brightness)) contrast(var(--lg-contrast));
   backdrop-filter: blur(var(--lg-radius)) saturate(var(--lg-saturate))
-    brightness(var(--lg-brightness));
+    brightness(var(--lg-brightness)) contrast(var(--lg-contrast));
 
   /* Volume: float + a crisp hairline edge + a faint thickness shade. The bright
    * catch-light is NOT here — it is the specular rim-light computed on the lens
