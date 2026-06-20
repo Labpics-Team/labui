@@ -31,7 +31,7 @@ const DEFAULTS = {
   saturate: 1.25, // × — slight colour lift (iOS ≈ 1.25).
   brightness: 1.08,
   contrast: 0.92, // <1 lifts blacks → luminous over dark backdrops.
-  refraction: 0, // 0..1 — Figma: refraction. OPT-IN backdrop lens (0 = robust
+  refraction: 1, // 0..1 — Figma: refraction. Backdrop lens (robust via left/top
   //                   default: frost + CSS rim, no fragile displacement filter).
   depth: 20, // px    — Figma: depth. Rim band wide enough to read as a visible
   //                    liquid lens; interior stays flat so straight lines stay straight.

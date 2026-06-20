@@ -25,11 +25,11 @@
 
 .lab-liquid-glass {
   /* ── Configurable knobs (defaults ≈ Figma "Base" glass) ─────────────────── */
-  --lg-radius: 10px; /* clean uniform frost — backdrop stays legible (iOS dock) */
+  --lg-radius: 6px; /* light frost — low enough that the edge lens reads */
   --lg-saturate: 1.1; /* gentle lift — avoid the oversaturated colour wash */
   --lg-brightness: 1.06;
   --lg-contrast: 1; /* no black-lift (was washing colours); keep it honest */
-  --lg-refraction: 0; /* OPT-IN backdrop lens (JS). 0 = robust frost + CSS rim. */
+  --lg-refraction: 1; /* backdrop lens — robust now (element positioned via left/top) */
   --lg-depth: 20; /* consumed by JS when refraction > 0 */
   --lg-dispersion: 0.06; /* consumed by JS when refraction > 0 */
 
