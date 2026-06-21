@@ -36,9 +36,11 @@ Keep SHA-pinned actions, `permissions: contents: read`, `persist-credentials: fa
 - Do NOT push to main; this lands via PR with CI green (RULE-3).
 
 ## Verification
-- [ ] Read ci.yml and confirm the guard is reached (either the existing `pnpm test` step covers it — quote the step — or the explicit step is added and lints clean).
-- [ ] If a script is added: `node scripts/check-no-hardcoded-colour.mjs` exits 0 on the clean tree and exits 1 (naming file:line) when a literal is planted locally; revert the plant.
-- [ ] `pnpm lint` / `pnpm run format:check` pass on any new script (Biome).
+Decision: DEFAULT test-only path (lowest blast radius) — no dedicated script/step added,
+so CI permissions/actions are untouched. The guard runs as an ordinary vitest spec.
+- [x] Read ci.yml and confirm the guard is reached. `quality` job step `Unit tests: pnpm test` (ci.yml:53-54) → root `test: pnpm -r --if-present test` (package.json) → `@labpics/colors` `test: vitest run`, which collects `test/no-hardcoded-colour.test.ts` (42 cases). Confirmed locally: `pnpm test` runs colors-stub `vitest run` = 76 pass.
+- [x] No script added (default path chosen), so the script-exit check is N/A.
+- [x] `pnpm lint` / `pnpm run format:check` pass — 333 files, 0 (no new script; existing spec/scanner stay biome-clean).
 
 ## References
 - `.github/workflows/ci.yml` — `quality` job, `Unit tests: pnpm test` step.
