@@ -44,6 +44,17 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', 'color: light-dark(#fff, #000);').length).toBeGreaterThan(0);
   });
 
+  it('DETECTS the CSS color() function but IGNORES a Color identifier SUFFIX', () => {
+    // `color(` is a real CSS function (flagged), but the function NAME must carry a
+    // non-identifier boundary so an ordinary JS call whose identifier merely ENDS in
+    // "Color" is not a false positive — otherwise every `makeColor()` / `getTextColor()`
+    // in a component file would fail the guard.
+    expect(scanSource('p.css', 'color: color(display-p3 1 0 0);')).toHaveLength(1);
+    expect(scanSource('p.tsx', "const tone = makeColor('x');")).toEqual([]);
+    expect(scanSource('p.tsx', 'const c = getTextColor();')).toEqual([]);
+    expect(scanSource('p.tsx', 'useColor();')).toEqual([]);
+  });
+
   it('DETECTS a named colour and a system colour (whole-word)', () => {
     expect(scanSource('p.css', 'color: rebeccapurple;')).toHaveLength(1);
     expect(scanSource('p.css', 'background: Canvas;')).toHaveLength(1);

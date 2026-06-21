@@ -95,9 +95,16 @@ function stripComments(source: string): string {
  * shadow engine, not a hardcoded colour). They are caught instead by
  * `COMBINATOR_RE` below ONLY when their body holds an actual hex/rgb/hsl literal
  * — so `color-mix(in srgb, #fff, #000)` is flagged but a token-only mix is not.
+ *
+ * The function NAMES carry a non-identifier-char lookbehind so a name that is merely
+ * the SUFFIX of an identifier is not matched: `color(` is the CSS function, but
+ * `makeColor(` / `getTextColor(` / `useColor(` are ordinary JS calls and must NOT be
+ * flagged (the `color()` form is the only function name that is also a common identifier
+ * suffix, but the boundary is applied uniformly so `calcLch(` etc. are safe too). The hex
+ * branch keeps its own `#` anchor and is left outside the lookbehind.
  */
-const FUNCTIONAL_HEX =
-  '(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color\\(|#[0-9a-f]{3,8}\\b)';
+const FUNCTIONAL_NAME = '(?:rgba?|hsla?|hwb|(?:ok)?lab|(?:ok)?lch|color)\\(';
+const FUNCTIONAL_HEX = `(?:(?<![A-Za-z0-9_$-])${FUNCTIONAL_NAME}|#[0-9a-f]{3,8}\\b)`;
 const FUNCTIONAL_HEX_RE = new RegExp(FUNCTIONAL_HEX, 'gi');
 
 /**
