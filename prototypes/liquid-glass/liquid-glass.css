@@ -96,7 +96,14 @@
  * transparency" is true on every path. */
 /* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
 @media (prefers-reduced-transparency: reduce) {
-  .lab-liquid-glass {
+  /* The themed rules ([data-theme] .lab-liquid-glass) set --lg-tint-opacity at
+   * specificity (0,2,0); a bare .lab-liquid-glass here is (0,1,0) and would LOSE,
+   * leaving the "opaque" fallback actually 3–5% transparent in light/dark theme —
+   * defeating the a11y guarantee. We match the themed selectors so the opaque
+   * fallback wins regardless of theme. (Media queries add no specificity.) */
+  .lab-liquid-glass,
+  [data-theme] .lab-liquid-glass,
+  .lab-liquid-glass[data-theme] {
     --lg-tint-opacity: 1;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

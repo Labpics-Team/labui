@@ -19,18 +19,30 @@
  * corner). The filter is referenced from CSS as `backdrop-filter: url(#id)`, so
  * it must live in the DOM and track the element's size.
  *
+ * PERFORMANCE MODEL (what is, and is NOT, optimisable without touching the look):
+ *   · Per DRAG frame there is ZERO JS — the element moves on left/top and the
+ *     filter region travels with it; the cost is pure GPU compositing of the
+ *     (quality-locked) filter, which we deliberately never cheapen.
+ *   · The map is geometry-only (size/corner/depth/dpr). It is therefore built
+ *     ONCE per geometry, shared across every instance of that geometry through a
+ *     refcounted module-level cache (the panel and a same-sized pane build it
+ *     once), and never rebuilt on drag / theme / strength / dispersion changes.
+ *     Resize storms collapse to a single trailing-edge build. Scratch buffers
+ *     are reused across builds to keep GC pressure flat.
+ *
  * Zero dependencies, browser-native ES module. Pairs with liquid-glass.css.
  */
+
+// The DOM-free math heart (SDF, falloff, lens constant) lives in a sibling pure
+// module so a bare Node test runner can import and assert it directly. The
+// browser engine simply re-imports those exact symbols — the runtime is
+// byte-identical; only the definition site moved.
+import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const registry = new WeakMap(); // host element → state (no DOM expando)
 let uid = 0;
 let defs = null;
-
-/** How far a rim pixel samples toward the centre at full refraction (the lens
- *  magnification). Tuned against the Apple references; the per-instance
- *  `--lg-refraction` knob scales the result linearly. */
-const MAX_PULL = 0.15;
 
 /** Single source of truth for every default. CSS custom properties override
  *  these per-instance; nothing else hard-codes a fallback. */
@@ -77,16 +89,40 @@ function ensureDefs() {
   return defs;
 }
 
-const clamp01 = (x) => (x < 0 ? 0 : x > 1 ? 1 : x);
-const smoothstep = (x) => x * x * (3 - 2 * x);
+// Reused scratch across builds (grown on demand): the displacement vectors and
+// the rasterising canvas. The map build is the only allocation-heavy step;
+// reusing these keeps GC flat under a resize STORM (many builds back-to-back).
+// The bytes written are identical regardless of reuse.
+//
+// MEMORY BOUND: without release these grow to a permanent high-water mark — one
+// giant resize parks a multi-MB Float32Array + canvas forever. We keep them ONLY
+// across a burst, then free them after a short idle so steady state retains no
+// scratch. The next build re-allocates lazily (cost paid once, off the hot path).
+let sDx = null;
+let sRGBA = null; // reused RGBA byte scratch (grown on demand) → no per-build zero-fill
+let sCanvas = null;
+let sCtx = null;
+let scratchIdleTimer = 0;
+const SCRATCH_IDLE_MS = 2000;
 
-/** Signed distance to a rounded rectangle [0,w]×[0,h], corner r. <0 inside. */
-function sdRoundRect(px, py, w, h, r) {
-  const qx = Math.abs(px - w / 2) - (w / 2 - r);
-  const qy = Math.abs(py - h / 2) - (h / 2 - r);
-  const ax = Math.max(qx, 0);
-  const ay = Math.max(qy, 0);
-  return Math.hypot(ax, ay) + Math.min(Math.max(qx, qy), 0) - r;
+function releaseScratch() {
+  sDx = null;
+  sRGBA = null;
+  if (sCanvas) {
+    sCanvas.width = 0; // drop the backing store immediately, not just the ref
+    sCanvas.height = 0;
+  }
+  sCanvas = null;
+  sCtx = null;
+}
+
+function armScratchRelease() {
+  if (typeof setTimeout === 'undefined') return;
+  if (scratchIdleTimer) clearTimeout(scratchIdleTimer);
+  scratchIdleTimer = setTimeout(() => {
+    scratchIdleTimer = 0;
+    releaseScratch();
+  }, SCRATCH_IDLE_MS);
 }
 
 /**
@@ -98,10 +134,9 @@ function sdRoundRect(px, py, w, h, r) {
  * `depth`-px band — a continuous magnifying lens with a clear middle. The pull
  * is always inward, so the lens never samples outside the element.
  *
- * The map is geometry-only (no strength baked in): the displacement is encoded
- * normalised, and `unit` is returned as the feDisplacementMap `scale` that
- * reconstructs the true pixel shift at refraction = 1. So changing refraction
- * is a cheap scale change, not a map rebuild.
+ * Geometry-only (no strength baked in): the displacement is encoded normalised,
+ * and `unit` is the feDisplacementMap `scale` that reconstructs the true pixel
+ * shift at refraction = 1. So changing refraction is a cheap scale change.
  */
 function buildMap(w, h, corner, depth, dpr) {
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
@@ -111,52 +146,187 @@ function buildMap(w, h, corner, depth, dpr) {
   const H = Math.max(1, Math.round(h * sc));
   const cx = w / 2;
   const cy = h / 2;
+  const N = W * H;
 
-  const dxs = new Float32Array(W * H);
-  const dys = new Float32Array(W * H);
+  if (!sDx || sDx.length < 2 * N) {
+    sDx = new Float32Array(2 * N); // interleaved [dx,dy] pairs → one cache stream
+  }
+  const di = sDx;
   let maxAbs = 1e-6;
 
+  // 4-way symmetry: the map is mirror-symmetric about both centre axes. The SDF
+  // sdRoundRect is symmetric in px↔(w−px) and py↔(h−py); the pull magnitude m
+  // depends only on `inside` (symmetric); dx=(cx−px)·pull flips sign across the
+  // vertical axis and dy across the horizontal. So we compute ONLY the rows in
+  // the top half and mirror each into its bottom twin (dx same, dy negated about
+  // its row's value). Within a row we also mirror left↔right (dx negated). This
+  // collapses the expensive SDF/sqrt/double-smoothstep work to ~1/4 of pixels.
+  // Output bytes are bit-identical to the full double loop.
+  const halfW = (W + 1) >> 1; // ceil — covers the centre column on odd W
+  const invSc = 1 / sc;
+  const invBand = 1 / band;
   for (let Y = 0; Y < H; Y++) {
-    for (let X = 0; X < W; X++) {
-      const k = Y * W + X;
-      const px = (X + 0.5) / sc;
-      const py = (Y + 0.5) / sc;
+    const Ym = H - 1 - Y;
+    if (Ym < Y) break; // bottom half already filled by its top twin
+    const rowT = Y * W;
+    const rowB = Ym * W;
+    const py = (Y + 0.5) * invSc;
+    const cyPy = cy - py; // dy magnitude factor for this row
+    for (let X = 0; X < halfW; X++) {
+      const Xm = W - 1 - X;
+      const px = (X + 0.5) * invSc;
       const inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
       let dx = 0;
       let dy = 0;
       if (inside > 0) {
         // 1 at the rim → 0 `band` px inward; double-smoothstep for a gentle,
         // seamless falloff (the shape that reads as thick glass, not an outline).
-        const m = smoothstep(smoothstep(clamp01(1 - inside / band)));
+        const m = smoothstep(smoothstep(clamp01(1 - inside * invBand)));
         const pull = MAX_PULL * m;
         dx = (cx - px) * pull; // inward pull = magnification
-        dy = (cy - py) * pull;
+        dy = cyPy * pull;
       }
-      dxs[k] = dx;
-      dys[k] = dy;
-      if (Math.abs(dx) > maxAbs) maxAbs = Math.abs(dx);
-      if (Math.abs(dy) > maxAbs) maxAbs = Math.abs(dy);
+      const adx = dx < 0 ? -dx : dx;
+      const ady = dy < 0 ? -dy : dy;
+      if (adx > maxAbs) maxAbs = adx;
+      if (ady > maxAbs) maxAbs = ady;
+      // Top-left (X,Y) and its three mirror twins. dx flips across the vertical
+      // axis, dy flips across the horizontal axis. Writing Xm/Ym twice when they
+      // equal X/Y (centre col/row on odd dims) is a harmless idempotent re-store.
+      let p = (rowT + X) << 1;
+      di[p] = dx;
+      di[p + 1] = dy;
+      p = (rowT + Xm) << 1;
+      di[p] = -dx;
+      di[p + 1] = dy;
+      p = (rowB + X) << 1;
+      di[p] = dx;
+      di[p + 1] = -dy;
+      p = (rowB + Xm) << 1;
+      di[p] = -dx;
+      di[p + 1] = -dy;
     }
   }
 
   // Encode [-maxAbs, maxAbs] → [0,1] with no clipping. feDisplacementMap shifts
   // by scale·(channel − 0.5); with scale = 2·maxAbs the shift reconstructs the
   // true pixel displacement exactly.
-  const img = new ImageData(W, H);
-  const data = img.data;
-  const norm = 1 / (2 * maxAbs);
-  for (let k = 0; k < W * H; k++) {
-    const i = k * 4;
-    data[i] = (dxs[k] * norm + 0.5) * 255;
-    data[i + 1] = (dys[k] * norm + 0.5) * 255;
-    data[i + 2] = 128;
-    data[i + 3] = 255;
+  if (!sCanvas) {
+    sCanvas = document.createElement('canvas');
+    sCtx = sCanvas.getContext('2d');
   }
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  canvas.getContext('2d').putImageData(img, 0, 0);
-  return { href: canvas.toDataURL(), unit: 2 * maxAbs, mapW: W, mapH: H };
+  sCanvas.width = W;
+  sCanvas.height = H;
+  // Reused RGBA scratch instead of ctx.createImageData(W,H): createImageData
+  // ALLOCATES and ZERO-FILLS 4·N bytes every build — wasted, since the loop below
+  // overwrites every byte. We keep a grown-on-demand Uint8ClampedArray and wrap an
+  // exact-length subarray view in a fresh ImageData (the constructor requires
+  // view.length === 4·W·H). Bytes written are bit-identical; only the redundant
+  // allocation+zero-fill is removed on warm builds.
+  const need = N * 4;
+  if (!sRGBA || sRGBA.length < need) sRGBA = new Uint8ClampedArray(need);
+  const data = sRGBA.length === need ? sRGBA : sRGBA.subarray(0, need);
+  const img = new ImageData(data, W, H);
+  const norm = 1 / (2 * maxAbs);
+  const norm255 = norm * 255;
+  // Encode with the SAME 4-way symmetry used to compute the field, so the
+  // per-pixel Float32 read + multiply-add runs for ~N/4 pixels instead of N.
+  // For a mirror twin dx→−dx (dy→−dy), so its R byte = −dx·norm255+127.5: we
+  // recompute that float directly (no derived 255−v trick, which could round
+  // differently) → bytes stay bit-identical to the flat pass. B/A are constant.
+  const u32 = new Uint32Array(data.buffer, data.byteOffset, N);
+  u32.fill(0xff800000); // little-endian RGBA: R=0 G=0 B=128 A=255 (R/G overwritten)
+  for (let Y = 0; Y < H; Y++) {
+    const Ym = H - 1 - Y;
+    if (Ym < Y) break;
+    const rowT = Y * W;
+    const rowB = Ym * W;
+    for (let X = 0; X < halfW; X++) {
+      const Xm = W - 1 - X;
+      const kT = rowT + X;
+      const pT = kT << 1;
+      const dx = di[pT];
+      const dy = di[pT + 1];
+      const rPos = dx * norm255 + 127.5; // R for +dx
+      const gPos = dy * norm255 + 127.5; // G for +dy
+      const rNeg = -dx * norm255 + 127.5; // R for −dx (mirror about vertical axis)
+      const gNeg = -dy * norm255 + 127.5; // G for −dy (mirror about horizontal axis)
+      let i = kT << 2; // top-left (+dx,+dy)
+      data[i] = rPos;
+      data[i + 1] = gPos;
+      i = (rowT + Xm) << 2; // top-right (−dx,+dy)
+      data[i] = rNeg;
+      data[i + 1] = gPos;
+      i = (rowB + X) << 2; // bottom-left (+dx,−dy)
+      data[i] = rPos;
+      data[i + 1] = gNeg;
+      i = (rowB + Xm) << 2; // bottom-right (−dx,−dy)
+      data[i] = rNeg;
+      data[i + 1] = gNeg;
+    }
+  }
+  sCtx.putImageData(img, 0, 0);
+  const out = { href: sCanvas.toDataURL(), unit: 2 * maxAbs, mapW: W, mapH: H };
+  // Burst is (probably) over: schedule scratch release after idle. A storm keeps
+  // re-arming the timer so reuse stays flat while builds keep coming.
+  armScratchRelease();
+  return out;
+}
+
+/* ── Cross-instance map cache (refcounted + bounded zero-ref LRU) ────────────
+ * The map is a pure function of geometry, so every instance of the same
+ * geometry (e.g. the panel and a same-sized pane) wants identical bytes. A
+ * refcounted module-level cache builds each geometry ONCE; later users — other
+ * instances, or a size you resize back to — reuse it with zero work.
+ *
+ * MEMORY BOUND: a released (zero-ref) entry is NOT deleted immediately. It is
+ * parked in a small LRU (cap ZOMBIE_CAP). So "resize back to a recent size"
+ * still hits with zero work, yet total retained maps are bounded: live entries
+ * (one per distinct on-screen geometry, inherently few) + at most ZOMBIE_CAP
+ * parked ones. Beyond the cap the oldest zombie is evicted. The Map preserves
+ * insertion order, so re-inserting on touch keeps true LRU order. */
+const ZOMBIE_CAP = 12;
+const mapCache = new Map(); // geoKey → { href, unit, mapW, mapH, refs }
+
+// Move geoKey to the most-recently-used end (delete+re-set on the ordered Map).
+function touchLru(geoKey, entry) {
+  mapCache.delete(geoKey);
+  mapCache.set(geoKey, entry);
+}
+
+// Evict oldest zero-ref (zombie) entries until at most ZOMBIE_CAP remain.
+function evictZombies() {
+  let zombies = 0;
+  for (const e of mapCache.values()) if (e.refs <= 0) zombies++;
+  if (zombies <= ZOMBIE_CAP) return;
+  for (const [key, e] of mapCache) {
+    if (e.refs <= 0) {
+      mapCache.delete(key);
+      if (--zombies <= ZOMBIE_CAP) break;
+    }
+  }
+}
+
+function acquireMap(geoKey, w, h, corner, depth, dpr) {
+  const hit = mapCache.get(geoKey);
+  if (hit) {
+    hit.refs++;
+    if (hit.refs === 1) touchLru(geoKey, hit); // revived a zombie → mark MRU
+    return hit;
+  }
+  const entry = { ...buildMap(w, h, corner, depth, dpr), refs: 1 };
+  mapCache.set(geoKey, entry);
+  return entry;
+}
+
+function releaseMap(geoKey) {
+  const entry = mapCache.get(geoKey);
+  if (!entry) return;
+  if (--entry.refs <= 0) {
+    entry.refs = 0;
+    touchLru(geoKey, entry); // becomes the newest zombie (keep recent sizes warm)
+    evictZombies(); // …but never let zombies exceed the cap
+  }
 }
 
 const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -178,13 +348,7 @@ function filterMarkup(href, w, h, scale, dispersion) {
     return `${atlas}${dm(scale)}/>`;
   }
   const k = dispersion * 0.08; // gentle per-channel spread
-  return (
-    `${atlas}` +
-    `${dm(scale * (1 + k))} result="dR"/><feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR"/>` +
-    `${dm(scale)} result="dG"/><feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>` +
-    `${dm(scale * (1 - k))} result="dB"/><feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/>` +
-    `<feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen"/>`
-  );
+  return `${atlas}${dm(scale * (1 + k))} result="dR"/><feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR"/>${dm(scale)} result="dG"/><feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>${dm(scale * (1 - k))} result="dB"/><feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/><feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen"/>`;
 }
 
 function readParams(el, state) {
@@ -194,9 +358,10 @@ function readParams(el, state) {
     return Number.isFinite(v) ? v : fb;
   };
   const p = state.params;
+  const rect = el.getBoundingClientRect(); // one reflow read, used for both dims
   return {
-    w: Math.max(1, Math.round(el.getBoundingClientRect().width)),
-    h: Math.max(1, Math.round(el.getBoundingClientRect().height)),
+    w: Math.max(1, Math.round(rect.width)),
+    h: Math.max(1, Math.round(rect.height)),
     corner: Math.round(Number.parseFloat(cs.borderTopLeftRadius) || DEFAULTS.corner),
     refraction: p.refraction ?? num('--lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--lg-depth', DEFAULTS.depth)),
@@ -216,6 +381,19 @@ function setBackdrop(el, value) {
   el.style.webkitBackdropFilter = value;
 }
 
+/** Drop this instance's hold on its cached map (if any).
+ *  We release the key we actually HOLD a ref for (heldKey), which is set the
+ *  instant acquireMap succeeds — independent of whether the map has finished
+ *  decoding. geoKey only tracks the geometry we last *targeted*; conflating the
+ *  two double-counted refs on a same-geometry re-render before decode. */
+function dropMap(state) {
+  if (state.heldKey) releaseMap(state.heldKey);
+  state.heldKey = null;
+  state.geoKey = null;
+  state.map = null;
+  state.pendingMap = null;
+}
+
 function render(state) {
   const { el, id, filter } = state;
   const p = readParams(el, state);
@@ -228,17 +406,21 @@ function render(state) {
   // tail, so clear inline and let the stylesheet own the fallback.
   if (p.reduced || !state.enabled || !state.refracts) {
     setBackdrop(el, p.reduced || !state.enabled ? '' : tail);
-    state.geoKey = null;
+    dropMap(state);
     return;
   }
   // refraction ≈ 0 → plain frost, no displacement (opt-out of the lens).
   if (p.refraction <= 0.01) {
     setBackdrop(el, tail);
-    state.geoKey = null;
+    dropMap(state);
     return;
   }
 
-  const dpr = typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1;
+  const rawDpr = typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1;
+  // buildMap rasterises at min(dpr,2): two screens with dpr 2 and 3 yield
+  // byte-IDENTICAL maps. The cache key must therefore use the CLAMPED dpr, or
+  // those identical maps would split into two entries (wasted build + memory).
+  const dpr = Math.max(1, Math.min(rawDpr || 1, 2));
   // The map depends ONLY on geometry (size/corner/depth/dpr) — not on position,
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
@@ -275,15 +457,39 @@ function render(state) {
     }
   };
 
-  if (geoKey === state.geoKey && state.map) {
-    stamp(state.map, 0); // geometry unchanged → reuse map, cheap re-stamp
+  state.geoKey = geoKey;
+  // Cheap re-stamp path: we already HOLD a ref for this exact geometry (gated on
+  // heldKey, NOT state.map, so a repeat render mid-decode never re-acquires — the
+  // refcount-leak class). If decoded, restamp. If the decode is still in flight,
+  // our `gen` bump above just invalidated the prior render's pending stamp — so we
+  // MUST re-arm a stamp for the CURRENT gen against the in-flight map, or the lens
+  // would never land (it would stay frost-only until the next geometry change).
+  if (geoKey === state.heldKey) {
+    if (state.map) {
+      stamp(state.map, 0); // decoded → reuse map, cheap re-stamp
+    } else if (state.pendingMap) {
+      const pm = state.pendingMap; // decode in flight → re-arm a stamp for THIS gen
+      const im = new Image();
+      im.onload = im.onerror = () => stamp(pm, 0);
+      im.src = pm.href;
+    }
     return;
   }
-  state.geoKey = geoKey;
+  // Geometry changed (or first acquire) → acquire the new map (a cache hit across
+  // instances or a size you've used before returns instantly), then release the
+  // PREVIOUS held key. Acquire/release are keyed on heldKey so each instance holds
+  // exactly one ref per held geometry, decode state notwithstanding.
+  const prevHeld = state.heldKey;
   const tMap = state.onPerf ? performance.now() : 0;
-  const map = buildMap(p.w, p.h, p.corner, p.depth, dpr);
-  const mapMs = state.onPerf ? performance.now() - tMap : 1;
-  // Decode the map before referencing it (feImage decode is async even for data-URIs).
+
+  const map = acquireMap(geoKey, p.w, p.h, p.corner, p.depth, dpr);
+  state.heldKey = geoKey; // we now hold a ref for this geometry (decode aside)
+  state.pendingMap = map; // so a same-geometry re-render mid-decode can re-arm a stamp
+  if (prevHeld && prevHeld !== geoKey) releaseMap(prevHeld);
+  const mapMs = state.onPerf ? Math.max(performance.now() - tMap, 0.001) : 1;
+  // Decode the map before referencing it (feImage decode is async even for a
+  // data-URI); stamping after decode avoids a one-frame flash of the un-lensed
+  // backdrop. The gen-guard in stamp() drops this if a newer render superseded.
   const im = new Image();
   im.onload = im.onerror = () => stamp(map, mapMs);
   im.src = map.href;
@@ -303,8 +509,9 @@ export function attach(el, opts = {}) {
   // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
   // element-LOCAL coordinates that travel with the element on left/top → the lens
   // stays aligned when dragged and never samples out of bounds (shuding's rule).
+  // (primitiveUnits is intentionally NOT set: no primitive here carries a
+  // primitiveUnits-sensitive length, so it would be a no-op.)
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  filter.setAttribute('primitiveUnits', 'userSpaceOnUse');
   ensureDefs().appendChild(filter);
 
   const state = {
@@ -315,6 +522,9 @@ export function attach(el, opts = {}) {
     refracts: supportsRefraction(),
     params: { ...opts },
     gen: 0,
+    geoKey: null, // geometry last targeted by render() (drives the cheap-restamp)
+    heldKey: null, // geometry we currently hold a cache ref for (drives refcount)
+    map: null,
     // Optional perf hook — DEV only. When provided, render() reports timing
     // ({reason:'rebuild'|'restamp', mapMs, totalMs, mapW, mapH}). Pass nothing in
     // production → zero overhead (no performance.now() calls, no allocation).
@@ -322,9 +532,22 @@ export function attach(el, opts = {}) {
   };
 
   const update = () => render(state);
-  const ro = new ResizeObserver(update);
+  // The ResizeObserver / window-resize storm fires many sub-pixel callbacks while
+  // a layout settles; a trailing-edge rAF collapses a burst into ONE build at the
+  // final size. The final geometry — and thus the rendered map — is identical to
+  // an un-debounced run; only redundant intermediate builds are skipped. Explicit
+  // update()/refresh() stay immediate.
+  let rafId = 0;
+  const debouncedUpdate = () => {
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = 0;
+      update();
+    });
+  };
+  const ro = new ResizeObserver(debouncedUpdate);
   ro.observe(el);
-  window.addEventListener('resize', update);
+  window.addEventListener('resize', debouncedUpdate);
   const mq =
     typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;
   mq?.addEventListener('change', update);
@@ -339,9 +562,12 @@ export function attach(el, opts = {}) {
     update();
   };
   state.destroy = () => {
+    state.gen++; // supersede any in-flight async stamp so it can't fire post-destroy
     ro.disconnect();
-    window.removeEventListener('resize', update);
+    if (rafId) cancelAnimationFrame(rafId);
+    window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
+    dropMap(state); // release our hold on the shared cached map
     filter.remove();
     setBackdrop(el, '');
     if (registry.get(el) === state) registry.delete(el);
@@ -351,6 +577,15 @@ export function attach(el, opts = {}) {
   registry.set(el, state);
   update();
   return state;
+}
+
+/** Inert introspection for tests/DEV — never read on any render path, so it
+ *  cannot affect the picture. Reports the bounded-cache invariants. */
+export function __cacheStats() {
+  let live = 0;
+  let zombies = 0;
+  for (const e of mapCache.values()) e.refs > 0 ? live++ : zombies++;
+  return { size: mapCache.size, live, zombies, zombieCap: ZOMBIE_CAP, scratchAllocated: !!sDx };
 }
 
 export default { attach, supportsRefraction };

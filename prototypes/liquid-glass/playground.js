@@ -36,9 +36,10 @@ const onPerf = (m) => {
 
 // Attach the refraction engine to the draggable pane and to the panel itself.
 const glass = attach(pane, { onPerf });
-attach(panel, { depth: 14 });
-// Expose the pane instance for tooling / the render harness (demo-only).
+const panelGlass = attach(panel, { depth: 14 });
+// Expose the instances for tooling / the render harness (demo-only).
 window.__paneGlass = glass;
+window.__panelGlass = panelGlass;
 
 const hud = document.createElement('div');
 hud.className = 'lg-perf';
@@ -228,6 +229,26 @@ const GRID = `data:image/svg+xml,${encodeURIComponent(
    <g fill="none" stroke="#0a84ff" stroke-width="6"><circle cx="800" cy="500" r="100"/></g>
   </svg>`,
 )}`;
+// A VIVID dense backdrop: a saturated R→G→B→Y diagonal wash overlaid with a
+// dense 10px black grid. The vivid wash makes the glassy-BODY tail
+// (saturate/brightness/contrast) move pixels measurably; the dense
+// high-frequency lines make the magnified rim BAND (depth) move pixels hard at
+// the rim. Together they let the gate discriminate the body + depth dimensions
+// that a low-frequency / dark backdrop washed out. Used by the *-body and
+// depth-default gate states (and harmless as a normal swatch in the demo).
+const VIVID = `data:image/svg+xml,${encodeURIComponent(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000">
+   <defs><linearGradient id="v" x1="0" y1="0" x2="1" y2="1">
+     <stop offset="0" stop-color="#ff0040"/><stop offset="0.34" stop-color="#00d000"/>
+     <stop offset="0.67" stop-color="#0060ff"/><stop offset="1" stop-color="#ffd000"/>
+   </linearGradient></defs>
+   <rect width="1600" height="1000" fill="url(#v)"/>
+   <g stroke="#000" stroke-width="4">
+     ${Array.from({ length: 160 }, (_, i) => `<line x1="${i * 10}" y1="0" x2="${i * 10}" y2="1000"/>`).join('')}
+     ${Array.from({ length: 100 }, (_, i) => `<line x1="0" y1="${i * 10}" x2="1600" y2="${i * 10}"/>`).join('')}
+   </g>
+  </svg>`,
+)}`;
 const BGS = [
   {
     name: 'Spectrum',
@@ -235,6 +256,7 @@ const BGS = [
     sw: 'linear-gradient(135deg,#ff2d95,#1f6dff,#ffd23f)',
   },
   { name: 'Grid', src: GRID, sw: 'repeating-linear-gradient(0deg,#0b0e16 0 4px,#e8ecff 4px 5px)' },
+  { name: 'Vivid', src: VIVID, sw: 'linear-gradient(135deg,#ff0040,#00d000,#0060ff,#ffd000)' },
 ];
 const bgsMount = document.getElementById('bgs');
 for (const [i, b] of BGS.entries()) {

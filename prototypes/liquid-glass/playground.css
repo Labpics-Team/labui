@@ -291,7 +291,7 @@ body {
   border-radius: 10px;
   background: rgba(6, 10, 24, 0.72);
   color: #d6e2ff;
-  font: 11px/1.45 'SF Mono', 'Courier New', monospace;
+  font: 11px / 1.45 "SF Mono", "Courier New", monospace;
   border: 1px solid rgba(255, 255, 255, 0.12);
   pointer-events: none;
   backdrop-filter: blur(8px);
