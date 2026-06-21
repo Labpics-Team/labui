@@ -64,7 +64,7 @@ const COLOUR_TOKEN = `--lab-(?:${COLOUR_ROLE_PREFIXES.join('|')})-[a-z0-9-]+`;
  * on a legitimate blend-mode fallback. Maintaining the named-colour set is cheap and
  * exact; matching "any bare identifier" is what mis-flagged `screen`.
  */
-const NAMED_COLOURS = [
+export const NAMED_COLOURS = [
   'transparent',
   'currentcolor',
   'aliceblue',
@@ -226,7 +226,7 @@ const NAMED_COLOURS = [
  * blend-mode `var(--lab-mat-theme-blend, screen)` (`screen`/`multiply`/`overlay`/… are
  * absent from this set, so they are never matched).
  */
-const SYSTEM_COLOURS = [
+export const SYSTEM_COLOURS = [
   'Canvas',
   'CanvasText',
   'LinkText',
@@ -262,7 +262,7 @@ const SYSTEM_COLOURS = [
  * alternative purely for readability — alternation is order-independent for these
  * since each carries its own trailing `(` and `-` is not a word char.
  */
-const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
+export const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
 
 /** CSS form: `var(--lab-<colour-role>, <colour-literal>)`. */
 const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}`, 'gi');

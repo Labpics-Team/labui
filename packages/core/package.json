@@ -45,7 +45,8 @@
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@zag-js/accordion": "1.41.2",
@@ -81,6 +82,7 @@
     "@lit-labs/ssr": "4.1.0",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "2.1.8"
   }
 }
