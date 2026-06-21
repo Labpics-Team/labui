@@ -90,7 +90,10 @@ let rolesCache: ReadonlySet<string> | null = null;
 function colourContractRoles(): ReadonlySet<string> {
   if (rolesCache) return rolesCache;
   const raw = readFileSync(resolve(repoRoot, 'packages/colors-stub/roles.json'), 'utf8');
-  const parsed = JSON.parse(raw) as { groups: Record<string, string[]>; aliases: string[] };
+  const parsed = JSON.parse(raw) as { groups?: Record<string, string[]>; aliases?: string[] };
+  if (parsed?.groups == null || typeof parsed.groups !== 'object') {
+    throw new Error('roles.json: missing or malformed "groups" object');
+  }
   rolesCache = new Set(Object.values(parsed.groups).flat());
   return rolesCache;
 }

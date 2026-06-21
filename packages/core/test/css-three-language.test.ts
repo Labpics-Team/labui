@@ -3,10 +3,10 @@ import {
   DIMENSION_PREFIXES,
   FORBIDDEN_PRIMITIVE_PREFIXES,
   SEMANTIC_ROLE_PREFIXES,
-  // NOTE (RED-first): `classifyLabVar` is the NEW predicate this test specifies.
-  // It does not exist in css.ts yet — importing it makes this suite fail to
-  // resolve, which is the intended RED. CH-01 adds the export (built from the
-  // three prefix constants below as the SINGLE source) to turn it green.
+  // `classifyLabVar` is the predicate that makes the three-language rule
+  // executable, built from the three prefix constants below as the SINGLE
+  // source (DIP). (It was added RED-first: this import resolving is what turned
+  // the originally-failing suite green.)
   classifyLabVar,
   cssVar,
   litVar,
