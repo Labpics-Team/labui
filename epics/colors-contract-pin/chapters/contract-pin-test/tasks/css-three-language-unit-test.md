@@ -3,7 +3,7 @@ id: css-three-language-unit-test
 chapter: contract-pin-test
 epic: colors-contract-pin
 title: "Unit test proving css.ts rejects a forbidden primitive and accepts a semantic role"
-status: ready
+status: done
 priority: 2
 depends_on: []
 blocks: []

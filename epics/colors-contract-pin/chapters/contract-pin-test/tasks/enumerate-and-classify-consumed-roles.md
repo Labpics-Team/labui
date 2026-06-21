@@ -3,7 +3,7 @@ id: enumerate-and-classify-consumed-roles
 chapter: contract-pin-test
 epic: colors-contract-pin
 title: "Build the consumer enumerator + three-bucket classifier (shared module for the pin test)"
-status: ready
+status: done
 priority: 1
 depends_on: []
 blocks:

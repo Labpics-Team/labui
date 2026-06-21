@@ -3,7 +3,7 @@ id: contract-pin-snapshot-test
 chapter: contract-pin-test
 epic: colors-contract-pin
 title: "Vitest contract-pin test: every consumed colour role present in roles.json + contract.css; zero unclassified"
-status: ready
+status: done
 priority: 1
 depends_on:
   - enumerate-and-classify-consumed-roles

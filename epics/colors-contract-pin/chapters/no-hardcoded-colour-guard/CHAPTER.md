@@ -4,7 +4,7 @@ epic: colors-contract-pin
 title: "CI guard fails the build on any literal colour anywhere in packages/* outside the allowlisted contract file"
 user_story: "As the design-system maintainer, I want CI to reject any literal colour committed anywhere in the package sources, so that the only place a colour value can live is the contract file and a component can never silently bypass the --lab-* boundary with a baked-in hex."
 enabler_for: ""
-status: ready
+status: completed
 priority: 2
 depends_on: []
 refine_after: []
@@ -30,13 +30,13 @@ Failure output MUST name the offending `file:line` and the literal. Closes the C
 ## Tasks
 | Task | Status | Agent | Depends On |
 |------|--------|-------|------------|
-| `tasks/extend-scanner-freestanding-literals.md` | ready | deep | — |
-| `tasks/guard-test-and-detection-proof.md` | ready | deep | extend-scanner-freestanding-literals |
-| `tasks/wire-guard-into-ci-quality-job.md` | ready | deep | guard-test-and-detection-proof |
+| `tasks/extend-scanner-freestanding-literals.md` | done | deep | — |
+| `tasks/guard-test-and-detection-proof.md` | done | deep | extend-scanner-freestanding-literals |
+| `tasks/wire-guard-into-ci-quality-job.md` | done | deep | guard-test-and-detection-proof |
 
 ## Exit Criteria
-- [ ] Given any package source, When the guard runs in CI, Then it scans all `.css/.tsx/.ts` under `packages/*` and FAILS on any literal hex/rgb/hsl/named/system colour outside the allowlisted contract/engine-gap files, naming the offending `file:line`.
-- [ ] Given the allowlisted contract file (`contract.css`) and the documented engine-gap files, When the guard runs, Then their colour literals do NOT trigger a failure.
-- [ ] Given a planted free-standing literal (`color: #fff;`) in a non-allowlisted file, When the guard's detection-proof test runs, Then it is detected (proving the guard is not blind).
-- [ ] Given the existing fallback-only guard, When the suite runs, Then ALL its current assertions still pass (no regression of the #23/#24/#31 class).
-- [ ] Given the gate, When `pnpm -r test` runs (and the CI quality job), Then it passes clean on the live tree.
+- [x] Given any package source, When the guard runs in CI, Then it scans all `.css/.tsx/.ts` under `packages/*` and FAILS on any literal hex/rgb/hsl/named/system colour outside the allowlisted contract/engine-gap files, naming the offending `file:line`. — `no-hardcoded-colour.ts` `scanHardcoded()` over `targetFiles()`; `Violation` carries `file:line`; live-tree assertion = `[]`.
+- [x] Given the allowlisted contract file (`contract.css`) and the documented engine-gap files, When the guard runs, Then their colour literals do NOT trigger a failure. — `ALLOWLIST` = contract.css / materials.css / generated/shadow.css / shadow/src/config.ts; "IGNORES colour literals in allowlisted files" passes.
+- [x] Given a planted free-standing literal (`color: #fff;`) in a non-allowlisted file, When the guard's detection-proof test runs, Then it is detected (proving the guard is not blind). — DETECTS hex/rgb/hsl/oklch/color-mix/light-dark/named/system, case-insensitive.
+- [x] Given the existing fallback-only guard, When the suite runs, Then ALL its current assertions still pass (no regression of the #23/#24/#31 class). — "fallback guard scanAll() still returns []" cross-check passes.
+- [x] Given the gate, When `pnpm -r test` runs (and the CI quality job), Then it passes clean on the live tree. — colors-stub suite 45/45; CI `quality` job runs `pnpm test` → `-r --if-present test` which reaches colors-stub vitest.

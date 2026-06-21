@@ -3,7 +3,7 @@ id: guard-test-and-detection-proof
 chapter: no-hardcoded-colour-guard
 epic: colors-contract-pin
 title: "Vitest guard test: zero hardcoded colours live + plant-detect-revert detection proofs"
-status: ready
+status: done
 priority: 1
 depends_on:
   - extend-scanner-freestanding-literals

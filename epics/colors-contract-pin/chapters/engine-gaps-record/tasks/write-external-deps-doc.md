@@ -3,7 +3,7 @@ id: write-external-deps-doc
 chapter: engine-gaps-record
 epic: colors-contract-pin
 title: "Write docs/external-deps/lab-colors.md from the call-site inventory"
-status: ready
+status: done
 priority: 1
 depends_on:
   - inventory-gap-call-sites

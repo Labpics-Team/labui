@@ -3,7 +3,7 @@ id: wire-guard-into-ci-quality-job
 chapter: no-hardcoded-colour-guard
 epic: colors-contract-pin
 title: "Ensure the guard runs in CI (vitest via pnpm test, or an explicit quality-job step)"
-status: ready
+status: done
 priority: 2
 depends_on:
   - guard-test-and-detection-proof

@@ -1,9 +1,11 @@
 ---
 id: colors-contract-pin
 title: "Pin & assert the consumed --lab-* contract; CI no-hardcoded-colour guard; record engine gaps"
-status: active
+status: completed
 priority: 1
 created: 2026-06-21
+completed: 2026-06-21
+verification: "Merged git commit f77ba01 (PR #45). Gate verified green this session: pnpm --filter @labpics/colors test = 45/45 pass (4 suites: contract / no-hardcoded-colour / no-literal-colour-fallback / consumed-contract); packages/core css-three-language.test.ts = 10/10 pass; pnpm -r typecheck = Done all packages; pnpm -r --if-present test = all package suites pass."
 goal: "Make the --lab-* colour-consumption boundary a CI-enforced contract: a snapshot pins every consumed role, a guard fails on any literal colour, and every unmet engine capability is recorded as an external blocker — with zero changes to the external lab-colors repo."
 success_criteria:
   - "A contract-pin test enumerates every --lab-* COLOUR role labui consumes and asserts each exists in colors-stub roles.json + contract.css; a dropped/renamed role fails CI loudly."
@@ -31,16 +33,16 @@ A consumed `--lab-*` name falls into exactly one bucket; the contract-pin test m
 3. **Locally-provided / engine-gap tokens** — declared inside labui today (`packages/shadow/src/generated/shadow.css`, `packages/core/src/materials.css`): `--lab-shadow-*`, `--lab-surface-shadow-tint`, `--lab-shadow-color`, `--lab-light-angle`, `--lab-mat-*`, `--lab-ambient-*`, `--lab-glass-*`, `--lab-elevation-*`. These are PROVISIONAL — they SHOULD eventually be resolved by the external engine. THESE are the external blockers recorded in CH-03.
 
 ## Success Criteria
-- [ ] CH-01 — contract-pin snapshot + css.ts three-language unit test
-- [ ] CH-02 — strengthened no-hardcoded-colour CI guard
-- [ ] CH-03 — docs/external-deps/lab-colors.md engine-gap record
+- [x] CH-01 — contract-pin snapshot + css.ts three-language unit test (consumed-contract.test.ts 6/6 + css-three-language.test.ts 10/10)
+- [x] CH-02 — strengthened no-hardcoded-colour CI guard (no-hardcoded-colour.test.ts 15/15; wired via `pnpm test` → `-r --if-present test` in CI quality job)
+- [x] CH-03 — docs/external-deps/lab-colors.md engine-gap record (5 capability classes; locked by engine-gaps consistency + completeness tests)
 
 ## Chapters
 | Chapter | Status | Priority |
 |---------|--------|----------|
-| `chapters/contract-pin-test/` | ready | 1 |
-| `chapters/no-hardcoded-colour-guard/` | ready | 2 |
-| `chapters/engine-gaps-record/` | ready | 3 |
+| `chapters/contract-pin-test/` | completed | 1 |
+| `chapters/no-hardcoded-colour-guard/` | completed | 2 |
+| `chapters/engine-gaps-record/` | completed | 3 |
 
 Chapters are independently valuable and may run in `parallel_group: foundation` (no file overlap: CH-01 edits `packages/colors-stub/test/` + `packages/core/test/`; CH-02 edits `packages/colors-stub/test/no-literal-colour-fallback*` + optionally `ci.yml`; CH-03 creates `docs/external-deps/lab-colors.md`). The shared exit gate (`pnpm -r test` + e2e) is run once after all three land.
 

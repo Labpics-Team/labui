@@ -4,7 +4,7 @@ epic: colors-contract-pin
 title: "Pin the consumed --lab-* contract surface and prove the three-language rule in code"
 user_story: "As a labui component author, I want CI to fail the moment a --lab-* role I depend on disappears or is renamed in the colour contract, so that a silent upstream contract drift can never reach a visual scope and break components at runtime."
 enabler_for: ""
-status: ready
+status: completed
 priority: 1
 depends_on: []
 refine_after: []
@@ -29,13 +29,13 @@ This closes the CLASS "consumer depends on a contract name that silently changed
 ## Tasks
 | Task | Status | Agent | Depends On |
 |------|--------|-------|------------|
-| `tasks/enumerate-and-classify-consumed-roles.md` | ready | deep | — |
-| `tasks/contract-pin-snapshot-test.md` | ready | deep | enumerate-and-classify-consumed-roles |
-| `tasks/css-three-language-unit-test.md` | ready | deep | — |
+| `tasks/enumerate-and-classify-consumed-roles.md` | done | deep | — |
+| `tasks/contract-pin-snapshot-test.md` | done | deep | enumerate-and-classify-consumed-roles |
+| `tasks/css-three-language-unit-test.md` | done | deep | — |
 
 ## Exit Criteria
 These ARE the user story's acceptance criteria — phrased Given/When/Then.
-- [ ] Given the consumed colour contract, When CI runs the contract test, Then a snapshot test asserts every `--lab-*` COLOUR role labui depends on is present in `colors-stub/roles.json` AND `contract.css`, and fails loudly (naming the role) if a role disappears.
-- [ ] Given a consumed `--lab-*` name that is neither a known colour role nor a known dimension prefix nor a documented locally-provided/gap token, When the contract test runs, Then it FAILS naming the unclassified token (no silent drift).
-- [ ] Given the css.ts three-language rule (`SEMANTIC_ROLE_PREFIXES`, `DIMENSION_PREFIXES`, `FORBIDDEN_PRIMITIVE_PREFIXES`), When a unit test runs, Then it proves a component reference to a forbidden primitive colour token is rejected and a semantic-role reference is accepted.
-- [ ] Given the gate, When `pnpm -r typecheck && pnpm -r test` run, Then both pass clean (new tests included).
+- [x] Given the consumed colour contract, When CI runs the contract test, Then a snapshot test asserts every `--lab-*` COLOUR role labui depends on is present in `colors-stub/roles.json` AND `contract.css`, and fails loudly (naming the role) if a role disappears. — `consumed-contract.test.ts` "every consumed colour role is present in roles.json" + "...declared in contract.css (all scopes)"; RED-proof via fabricated absent role.
+- [x] Given a consumed `--lab-*` name that is neither a known colour role nor a known dimension prefix nor a documented locally-provided/gap token, When the contract test runs, Then it FAILS naming the unclassified token (no silent drift). — "classifies every consumed name into exactly one bucket (zero unclassified)" reports first-seen file:line.
+- [x] Given the css.ts three-language rule (`SEMANTIC_ROLE_PREFIXES`, `DIMENSION_PREFIXES`, `FORBIDDEN_PRIMITIVE_PREFIXES`), When a unit test runs, Then it proves a component reference to a forbidden primitive colour token is rejected and a semantic-role reference is accepted. — `packages/core/test/css-three-language.test.ts` 10/10.
+- [x] Given the gate, When `pnpm -r typecheck && pnpm -r test` run, Then both pass clean (new tests included). — verified this session.

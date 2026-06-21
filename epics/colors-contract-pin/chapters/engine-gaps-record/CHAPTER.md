@@ -4,7 +4,7 @@ epic: colors-contract-pin
 title: "Record every unmet lab-colors engine capability as an external blocker with its labui call site"
 user_story: "As the labui maintainer planning the later published-engine swap-out, I want a single authoritative document of every colour-engine capability the contract does NOT yet expose — each tied to the exact labui call site and the role it would consume — so that when lab-colors delivers, the swap is a checklist, not an archaeology dig, and no provisional value is mistaken for a final one."
 enabler_for: ""
-status: ready
+status: completed
 priority: 3
 depends_on: []
 refine_after: []
@@ -27,10 +27,10 @@ The gap inventory (grounded this session) covers at minimum: published `@labpics
 ## Tasks
 | Task | Status | Agent | Depends On |
 |------|--------|-------|------------|
-| `tasks/inventory-gap-call-sites.md` | ready | writing | — |
-| `tasks/write-external-deps-doc.md` | ready | writing | inventory-gap-call-sites |
+| `tasks/inventory-gap-call-sites.md` | done | writing | — |
+| `tasks/write-external-deps-doc.md` | done | writing | inventory-gap-call-sites |
 
 ## Exit Criteria
-- [ ] Given engine capabilities the contract does NOT yet expose, When the scope completes, Then `docs/external-deps/lab-colors.md` lists each unmet need (published `@labpics/colors` CSS+JS entry; frozen decorative floor/separator/shadow-ramp magnitudes; `--lab-surface-shadow-tint`; `--lab-shadow-alpha-*` JND alphas; IC theme calibration) as an EXTERNAL blocker with the consuming labui call site (file:line) and the role name — and NO change is made to the lab-colors repo.
-- [ ] Given the existing INTEGRATION.md, When the doc is written, Then it cross-links INTEGRATION.md and the lab-colors-v1 chapter names (native-and-release / runtime-engine / surface-jnd-contracts) without contradicting them.
-- [ ] Given CH-01's `local-or-gap` allowlist, When the doc is reviewed, Then every gap token in the allowlist appears in the doc (and vice-versa) — the two are consistent.
+- [x] Given engine capabilities the contract does NOT yet expose, When the scope completes, Then `docs/external-deps/lab-colors.md` lists each unmet need (published `@labpics/colors` CSS+JS entry; frozen decorative floor/separator/shadow-ramp magnitudes; `--lab-surface-shadow-tint`; `--lab-shadow-alpha-*` JND alphas; IC theme calibration) as an EXTERNAL blocker with the consuming labui call site (file:line) and the role name — and NO change is made to the lab-colors repo. — five-class table with file:line call sites; locked by "documents all five mandated capability classes" + RED-proof.
+- [x] Given the existing INTEGRATION.md, When the doc is written, Then it cross-links INTEGRATION.md and the lab-colors-v1 chapter names (native-and-release / runtime-engine / surface-jnd-contracts) without contradicting them. — doc header cross-links INTEGRATION.md and names owner chapters per class.
+- [x] Given CH-01's `local-or-gap` allowlist, When the doc is reviewed, Then every gap token in the allowlist appears in the doc (and vice-versa) — the two are consistent. — "engine-gaps doc consistency" test asserts every `LOCAL_OR_GAP_PREFIXES` token appears in the doc.

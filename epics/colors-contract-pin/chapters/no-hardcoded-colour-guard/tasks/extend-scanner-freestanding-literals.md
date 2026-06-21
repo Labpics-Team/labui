@@ -3,7 +3,7 @@ id: extend-scanner-freestanding-literals
 chapter: no-hardcoded-colour-guard
 epic: colors-contract-pin
 title: "Add free-standing-literal detection + path allowlist to the colour scanner"
-status: ready
+status: done
 priority: 1
 depends_on: []
 blocks:

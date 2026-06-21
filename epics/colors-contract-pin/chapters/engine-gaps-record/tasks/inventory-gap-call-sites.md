@@ -3,7 +3,7 @@ id: inventory-gap-call-sites
 chapter: engine-gaps-record
 epic: colors-contract-pin
 title: "Locate the exact file:line call site for each unmet engine capability"
-status: ready
+status: done
 priority: 1
 depends_on: []
 blocks:

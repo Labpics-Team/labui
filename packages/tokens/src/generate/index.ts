@@ -33,5 +33,3 @@ export function generate(config: TokensConfig): GeneratedArtifacts {
 export function generateFromOverride(override: TokensConfigOverride = {}): GeneratedArtifacts {
   return generate(resolveConfig(override));
 }
-
-export { generateCss, generateDtcg, generateTs };

@@ -2,8 +2,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { LOCAL_OR_GAP_PREFIXES } from './consumed-contract.js';
-import { type Violation, scanAll } from './no-literal-colour-fallback.js';
 import { ALLOWLIST, scanHardcoded, scanSource } from './no-hardcoded-colour.js';
+import { type Violation, scanAll } from './no-literal-colour-fallback.js';
 
 /**
  * No-hardcoded-colour CI guard — the SUPERSET of the fallback guard. Asserts
@@ -53,6 +53,103 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', 'color: #FFF;')).toHaveLength(1);
     expect(scanSource('p.css', 'background: RGB(0 0 0);')).toHaveLength(1);
     expect(scanSource('p.css', 'color: BLACK;')).toHaveLength(1);
+  });
+
+  // ── (2b) Positional class lock — a named / system colour must be caught in EVERY
+  // authoring position, not only the colon-adjacent `property: colour` form. These
+  // are the exact positions that bypassed the guard before (colon-adjacency in
+  // VALUE_NAMED_RE; named args invisible to COMBINATOR_RE): CSS shorthand /
+  // multi-value, gradient args, CSS-in-JS / inline-style objects, JSX/SVG colour
+  // attributes, and named color-mix() / light-dark() combinators. Each case asserts
+  // ≥1 hit, so a future regex tweak that re-narrows the match fails RED here. The
+  // table is data-driven so the position name appears in the failure message.
+  const NAMED_LEAK_POSITIONS: ReadonlyArray<{ readonly position: string; readonly src: string }> = [
+    { position: 'CSS shorthand (border)', src: '.x{border:1px solid red;}' },
+    { position: 'CSS shorthand (box-shadow)', src: '.x{box-shadow:0 0 4px black;}' },
+    {
+      position: 'CSS multi-value gradient',
+      src: '.x{background:linear-gradient(to bottom, white, black)}',
+    },
+    { position: 'CSS-in-JS object (single-quote)', src: "const s = { color: 'red' }" },
+    { position: 'CSS-in-JS object (double-quote)', src: 'const s = { borderColor: "blue" }' },
+    { position: 'JSX/SVG fill attribute', src: '<path fill="red" />' },
+    { position: 'JSX/SVG stroke system-colour attribute', src: '<rect stroke="Canvas" />' },
+    {
+      position: 'named color-mix() combinator',
+      src: '.x{background:color-mix(in srgb, red 50%, blue)}',
+    },
+    { position: 'named light-dark() combinator', src: '.x{color:light-dark(red, blue)}' },
+  ];
+
+  it.each(NAMED_LEAK_POSITIONS)(
+    'DETECTS a named/system colour in $position (positional class lock)',
+    ({ position, src }) => {
+      expect(
+        scanSource('p.css', src).length,
+        `a named colour in "${position}" must be flagged but was MISSED — the guard ` +
+          `must catch a colour value in every authoring position, not only after a colon:\n  ${src}`,
+      ).toBeGreaterThan(0);
+    },
+  );
+
+  it('IGNORES a colour word that is only a SUBSTRING of a property name / identifier', () => {
+    // The positional widening must NOT regress into substring false-positives: a
+    // colour keyword glued to an identifier char on either side is not a value.
+    expect(scanSource('p.css', '.x{white-space: nowrap;}')).toEqual([]); // "white" in white-space
+    expect(scanSource('p.tsx', 'function Fieldset() {}')).toEqual([]); // "Field" in Fieldset
+    expect(scanSource('p.css', '.x{animation: salmonate 1s;}')).toEqual([]); // "salmon" in salmonate
+    expect(scanSource('p.css', '.lavender-bg {}')).toEqual([]); // "lavender" in a class name
+    expect(scanSource('p.css', '.x{--my-tan-token: 1;}')).toEqual([]); // "tan" in a token name
+  });
+
+  // ── (2c) Code-position class lock — a whole-word colour keyword that is NOT a CSS
+  // value (a JS/TS identifier, object KEY, string-union member, import-path segment,
+  // enum member, JSX component name, or CSS selector word) must NEVER be flagged. These
+  // are exactly the false positives a bare word-boundary match produced once the colon
+  // anchor was dropped (a colour word flanked by separators looks identical to a value).
+  // The positional gate (`isColourValuePosition`) is what distinguishes them; each case
+  // below asserts ZERO hits so a future regex that re-drops the gate fails RED here.
+  const CODE_POSITION_NON_VALUES: ReadonlyArray<{
+    readonly position: string;
+    readonly src: string;
+  }> = [
+    { position: 'named-colour const identifier', src: 'const gold = 5;' },
+    { position: 'named-colour object KEYS (not values)', src: 'const p = { gold: 1, silver: 2 };' },
+    { position: 'named-colour string-union members', src: "type Tone = 'red' | 'blue' | 'green';" },
+    {
+      position: 'named-colour value assigned to a non-colour identifier',
+      src: "const tone = 'red';",
+    },
+    { position: 'named-colour import-path segment', src: "import x from './red/thing.js';" },
+    { position: 'named-colour CSS attribute SELECTOR', src: '[data-color="blue"] {}' },
+    { position: 'named-colour CSS class selector', src: '.red { padding: 0; }' },
+    { position: 'system-colour JSX component (self-closing)', src: '<Mark />' },
+    { position: 'system-colour component const', src: 'const Field = () => null;' },
+    { position: 'system-colour component with non-colour attr', src: '<Field label="Name" />' },
+    { position: 'system-colour component const (Canvas)', src: 'const Canvas = () => null;' },
+    { position: 'system-colour named import', src: "import { Field } from './field.js';" },
+    { position: 'system-colour enum member', src: 'enum Status { Active, Mark }' },
+    { position: 'system-colour exported binding', src: 'export { SelectedItem };' },
+    { position: 'system-colour const (ButtonFace)', src: 'const ButtonFace = 1;' },
+    { position: 'system-colour function declaration', src: 'function Highlight() {}' },
+  ];
+
+  it.each(CODE_POSITION_NON_VALUES)(
+    'IGNORES a colour-named token in a NON-value $position (code-position class lock)',
+    ({ position, src }) => {
+      expect(
+        scanSource('p.tsx', src),
+        `a colour-named token in "${position}" is NOT a CSS value and must NOT be flagged — the guard must distinguish a CSS value from an ordinary colour-named code token (identifier / key / union member / import segment / selector / component / enum), or it fires a misleading 'hardcoded colour' error on the React twins:\n  ${src}`,
+      ).toEqual([]);
+    },
+  );
+
+  it('IGNORES the valueless keywords transparent / currentColor in any position', () => {
+    expect(scanSource('p.css', '.x{border:1px solid transparent;}')).toEqual([]);
+    expect(scanSource('p.tsx', '<path fill="currentColor" />')).toEqual([]);
+    expect(
+      scanSource('p.css', '.x{background:color-mix(in srgb, transparent, var(--lab-x))}'),
+    ).toEqual([]);
   });
 
   // ── (3) Allowlist proofs — a colour literal from an allowlisted file is fine.
