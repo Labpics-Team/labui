@@ -1,0 +1,145 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import {
+  SEMANTIC_ROLE_PREFIXES,
+  byBucket,
+  classify,
+  consumedRoles,
+  consumedRolesWithSites,
+  knownColourRoles,
+  missingColourRoles,
+  repoRoot,
+} from './consumed-contract.js';
+
+/**
+ * Contract-pin test — the CONSUMER → contract direction.
+ *
+ * `contract.test.ts` pins the contract's INTERNAL shape (every role in
+ * roles.json is declared in every scope; per-group counts). This suite pins the
+ * complementary invariant: every `--lab-*` name labui actually CONSUMES that
+ * looks like a colour role resolves to a present role in roles.json AND is
+ * declared in contract.css, and EVERY consumed name classifies into exactly one
+ * of the three buckets — an unclassified name fails CI naming the token + site.
+ *
+ * It does NOT assert colour VALUES (placeholder constants owned by the resolver;
+ * `contract.test.ts` guards their shape) and does NOT duplicate the per-group
+ * counts. A dropped/renamed colour role surfaces here as a "missing role" failure
+ * naming the role.
+ */
+
+// ── Shared scope helpers (mirror of contract.test.ts, kept local so the two
+// suites stay independent — a change to one cannot silently weaken the other).
+const css = readFileSync(resolve(repoRoot, 'packages/colors-stub/contract.css'), 'utf8');
+
+function scopeBody(source: string, selectorPrefix: string): string {
+  const start = source.indexOf(selectorPrefix);
+  if (start === -1) throw new Error(`scope not found: ${selectorPrefix}`);
+  const open = source.indexOf('{', start);
+  let depth = 0;
+  for (let i = open; i < source.length; i++) {
+    if (source[i] === '{') depth++;
+    else if (source[i] === '}') {
+      depth--;
+      if (depth === 0) return source.slice(open + 1, i);
+    }
+  }
+  throw new Error(`unbalanced braces for: ${selectorPrefix}`);
+}
+
+function declares(body: string, role: string): boolean {
+  const re = new RegExp(`(^|[;{\\s])${role.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:`, 'm');
+  return re.test(body);
+}
+
+const lightBody = scopeBody(css, ':root,\n[data-theme="light"]');
+const darkBody = scopeBody(css, '[data-theme="dark"]');
+const mediaBody = scopeBody(css, '@media (prefers-color-scheme: dark)');
+
+describe('consumed --lab-* contract (consumer → contract pin)', () => {
+  it('enumerates a substantial consumed surface including known colour roles', () => {
+    // Grounded baseline this session: 138 distinct consumed --lab-* names across
+    // packages+apps (55 colour-contract, 42 dimension, 41 local-or-gap, 0
+    // unclassified). The floor (>=120) bites a mass-drop in enumeration without
+    // pinning an exact churn-prone count; the explicit role membership below is
+    // the load-bearing assertion.
+    const names = consumedRoles();
+    expect(names.length).toBeGreaterThanOrEqual(120);
+    expect(names).toContain('--lab-label-primary');
+    expect(names).toContain('--lab-fill-brand-primary');
+    expect(names).toContain('--lab-border-base');
+  });
+
+  it('classifies the bucket boundaries correctly', () => {
+    expect(classify('--lab-label-primary')).toBe('colour-contract');
+    expect(classify('--lab-space-sm')).toBe('dimension');
+    expect(classify('--lab-surface-shadow-tint')).toBe('local-or-gap');
+    expect(classify('--lab-bogus-xyz')).toBe('unclassified');
+  });
+
+  // ── (1) Every consumed colour role is present in roles.json. A consumed name
+  // that LOOKS like a semantic colour role (matches a SEMANTIC_ROLE_PREFIXES
+  // prefix) but is ABSENT from the contract = a dropped/renamed role → fail,
+  // naming the role. Uses the SAME pure detector the anti-blindness proof drives.
+  it('every consumed colour role is present in roles.json', () => {
+    const known = knownColourRoles();
+    const missing = missingColourRoles(consumedRoles(), known);
+    expect(
+      missing,
+      `consumed names matching a semantic colour-role prefix but ABSENT from roles.json (a dropped/renamed role — add it to the colour contract upstream, do NOT edit the stub to hide it):\n${missing.map((m) => `  ${m}`).join('\n')}`,
+    ).toEqual([]);
+  });
+
+  // ── (2) Every consumed colour-contract role is also DECLARED in contract.css
+  // in every theme scope. Binds the consumer set to the actual CSS, not just the
+  // manifest.
+  it('every consumed colour-contract role is declared in contract.css (all scopes)', () => {
+    const consumed = byBucket()['colour-contract'];
+    expect(consumed.length).toBeGreaterThan(0);
+    for (const [scopeName, body] of [
+      ['light', lightBody],
+      ['dark', darkBody],
+      ['media', mediaBody],
+    ] as const) {
+      const missing = consumed.filter((r) => !declares(body, r));
+      expect(
+        missing,
+        `consumed colour roles missing from the ${scopeName} scope of contract.css:\n${missing
+          .map((m) => `  ${m}`)
+          .join('\n')}`,
+      ).toEqual([]);
+    }
+  });
+
+  // ── (3) Zero unclassified consumed names — an undocumented token cannot enter
+  // silently. Failure names each token + the file:line it was first seen.
+  it('classifies every consumed name into exactly one bucket (zero unclassified)', () => {
+    const unclassified = byBucket().unclassified;
+    const sites = consumedRolesWithSites();
+    const report = unclassified
+      .map((name) => {
+        const at = sites.get(name);
+        return `  ${name}  (first seen ${at?.file}:${at?.line})`;
+      })
+      .join('\n');
+    expect(
+      unclassified,
+      `unclassified consumed --lab-* names — for each: (a) add to the colour contract upstream, (b) confirm it is a dimension token, or (c) document it in docs/external-deps/lab-colors.md and add it to the local-or-gap allowlist:\n${report}`,
+    ).toEqual([]);
+  });
+
+  // ── (4) Anti-blindness: feed a FABRICATED consumed name into the pure
+  // missing-role detector and assert the "missing role" path actually fires.
+  // A green run of test (1) therefore means "pinned", never "blind". No live
+  // tree is mutated — the fabricated name is passed directly into the pure fn.
+  it('missing-role detection fires for a fabricated absent colour role (RED-proof)', () => {
+    const known = knownColourRoles();
+    const fabricated = '--lab-label-totally-fabricated-role';
+    // sanity: the fabricated name DOES look like a semantic role and is NOT real.
+    expect(SEMANTIC_ROLE_PREFIXES.some((p) => fabricated.startsWith(p))).toBe(true);
+    expect(known.has(fabricated)).toBe(false);
+
+    const hits = missingColourRoles([fabricated, '--lab-label-primary'], known);
+    expect(hits).toEqual([fabricated]); // the fabricated one is flagged; the real one is not
+  });
+});
