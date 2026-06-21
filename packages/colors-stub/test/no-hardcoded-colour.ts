@@ -95,9 +95,16 @@ function stripComments(source: string): string {
  * shadow engine, not a hardcoded colour). They are caught instead by
  * `COMBINATOR_RE` below ONLY when their body holds an actual hex/rgb/hsl literal
  * — so `color-mix(in srgb, #fff, #000)` is flagged but a token-only mix is not.
+ *
+ * The function NAMES carry a non-identifier-char lookbehind so a name that is merely
+ * the SUFFIX of an identifier is not matched: `color(` is the CSS function, but
+ * `makeColor(` / `getTextColor(` / `useColor(` are ordinary JS calls and must NOT be
+ * flagged (the `color()` form is the only function name that is also a common identifier
+ * suffix, but the boundary is applied uniformly so `calcLch(` etc. are safe too). The hex
+ * branch keeps its own `#` anchor and is left outside the lookbehind.
  */
-const FUNCTIONAL_HEX =
-  '(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color\\(|#[0-9a-f]{3,8}\\b)';
+const FUNCTIONAL_NAME = '(?:rgba?|hsla?|hwb|(?:ok)?lab|(?:ok)?lch|color)\\(';
+const FUNCTIONAL_HEX = `(?:(?<![A-Za-z0-9_$-])${FUNCTIONAL_NAME}|#[0-9a-f]{3,8}\\b)`;
 const FUNCTIONAL_HEX_RE = new RegExp(FUNCTIONAL_HEX, 'gi');
 
 /**
@@ -105,21 +112,160 @@ const FUNCTIONAL_HEX_RE = new RegExp(FUNCTIONAL_HEX, 'gi');
  * a hex or rgb/hsl/oklch literal. A combinator over pure role tokens / keywords
  * introduces no literal and is NOT matched. Non-greedy body keeps it on one
  * call; the embedded literal alternation is the actual finding.
+ *
+ * NAMED-colour combinator arguments (`color-mix(in srgb, red, blue)`) are NOT this
+ * regex's job — they are caught by `VALUE_NAMED_RE` below, which matches a colour
+ * keyword in ANY value position (a combinator argument is flanked by `,`/whitespace/
+ * `(`, all separators). So this regex covers ONLY the hex/functional case a bare
+ * word-boundary match cannot see, and the two together leave no combinator gap.
  */
 const COMBINATOR_RE =
   /(?:color-mix|light-dark)\([^)]*(?:#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|(?:ok)?lch\(|(?:ok)?lab\()/gi;
 
 /**
- * Named / system colour in CSS VALUE POSITION only: preceded by `:` (optionally
- * with whitespace) and bounded as a whole word, so `white-space` (property name)
- * and `Fieldset` (identifier) never match, but `color: rebeccapurple;` and
- * `background: Canvas;` do. The `:` lookbehind also excludes a bare word in a TS
- * string that is not a declaration value.
+ * Named / system colour as a CSS VALUE — found in TWO stages so the match is both
+ * a whole word AND in a genuine value position:
+ *
+ *   Stage 1 (lexical): a colour keyword bounded by a non-identifier character on BOTH
+ *   sides, so a colour word that is merely a SUBSTRING of a property name or identifier
+ *   is rejected — `white-space` → `white` is followed by `-`; `Fieldset` → `Field`
+ *   followed by `s`; `salmonate` → `salmon` followed by `a`; `--my-tan-token` → `tan`
+ *   flanked by `-`. The boundary delimiter set is `[A-Za-z0-9_$-]` (CSS identifier
+ *   chars ∪ JS identifier chars).
+ *
+ *   Stage 2 (positional): the whole-word match is reported ONLY if it sits in a CSS
+ *   VALUE POSITION (see `isColourValuePosition`). The lexical boundary alone cannot
+ *   tell a CSS value from any ordinary colour-named JS/TS token — `const gold = 5`,
+ *   `{ gold: 1 }` (colour is a KEY), `type Tone = 'red' | 'blue'` (string-union member),
+ *   `import x from './red/thing'` (path segment), `[data-color="blue"]{}` (attribute
+ *   SELECTOR), `.red {}` (class selector), `<Mark/>` / `const Field` / `enum { Mark }`
+ *   (component / identifier / enum names) are all whole-word colour tokens that are NOT
+ *   colour values. The positional gate is the disambiguator the bare boundary lacks.
+ *
+ * Why a value-POSITION gate, not the older `:\s*` colon-ADJACENCY anchor: colon
+ * adjacency was too NARROW — a colour authored in a non-colon-adjacent value position
+ * bypassed the guard entirely (`border: 1px solid red`, `linear-gradient(…, white,
+ * black)`, `color-mix(in srgb, red, blue)`, `{ color: 'red' }`, `fill="red"`). The
+ * positional predicate accepts ALL of those (value after a `:`, function/combinator
+ * argument after `(`/`,`, colour-attribute/colour-key quoted value after `=`/`:`) while
+ * rejecting the code-position collisions above — closing the WIDE value class without
+ * re-opening the identifier false-positive class.
+ *
+ * Comments are stripped upstream (see `stripComments`), so a colour word in prose is
+ * never seen. The valueless keywords `transparent` / `currentColor` are subtracted from
+ * the alternation (see `FLAGGED_NAMED`), so they remain legal everywhere.
+ *
+ * CASE policy differs by colour kind:
+ *   - NAMED colours (`red`, `rebeccapurple`, `black`, …) are colour-only words, matched
+ *     case-INSENSITIVELY (`BLACK` is the same bug as `black`).
+ *   - SYSTEM colours (`Field`, `Mark`, `Canvas`, `Highlight`, `SelectedItem`, …) are
+ *     ordinary words that appear as lowercase identifiers in real source, so they are
+ *     matched case-SENSITIVELY at their canonical (mostly Pascal) CSS casing.
+ * (The positional gate already rejects the identifier collisions; the case policy is a
+ * cheap second line of defence kept from the prior design.)
  */
+const NAMED_BOUNDARY_BEFORE = '(?<![A-Za-z0-9_$-])';
+const NAMED_BOUNDARY_AFTER = '(?![A-Za-z0-9_$-])';
 const VALUE_NAMED_RE = new RegExp(
-  `:\\s*(?:${[...FLAGGED_NAMED, ...SYSTEM_COLOURS].join('|')})\\b`,
+  `${NAMED_BOUNDARY_BEFORE}(?:${FLAGGED_NAMED.join('|')})${NAMED_BOUNDARY_AFTER}`,
   'gi',
 );
+const VALUE_SYSTEM_RE = new RegExp(
+  `${NAMED_BOUNDARY_BEFORE}(?:${SYSTEM_COLOURS.join('|')})${NAMED_BOUNDARY_AFTER}`,
+  'g',
+);
+
+/**
+ * The property / attribute / object-key names whose VALUE is a colour. Used to license
+ * a colour keyword that follows an `=` (JSX/SVG attribute) — `fill="red"`,
+ * `stroke="Canvas"` are colour values; `label="Name"` / `data-color="blue"` (the latter
+ * a CSS attribute selector) are not. Matched at the END of the text left of the `=`.
+ */
+const COLOUR_ATTR_RE =
+  /(?:^|[^A-Za-z0-9_$-])(?:[A-Za-z-]*[Cc]olor|fill|stroke|background|stop-color|flood-color|lighting-color)$/;
+
+/**
+ * Decide whether a whole-word colour keyword at `index` in `text` is in a CSS VALUE
+ * position. The discriminator is the nearest STRUCTURAL delimiter to the left:
+ *   - `:`  CSS declaration value or CSS-in-JS object value — licensed iff an identifier
+ *          (a property / key) sits immediately before the colon (rejects selector `::`,
+ *          ` :` combinators). `color: red`, `border: 1px solid red`, `{ color: 'red' }`.
+ *   - `(`  function / combinator argument. `linear-gradient(red)`, `light-dark(red, …)`.
+ *   - `,`  multi-value or function argument — licensed ONLY inside an unclosed `(`
+ *          (a function arg); a top-level `,` separates object KEYS / array members, not
+ *          values (`{ gold: 1, silver: 2 }` → `silver` is a key, rejected).
+ *   - `=`  JSX/SVG attribute value — licensed ONLY if the name before `=` is a colour
+ *          attribute (`fill="red"`) AND we are not inside a CSS attribute selector
+ *          `[ … ]` (`[data-color="blue"]` rejected). Rejects `const tone = 'red'`,
+ *          `type Tone = 'red'` (LHS is not a colour attribute).
+ *   - `;` `{` `}` `[`  declaration / block / selector boundaries — NOT value positions.
+ * No structural delimiter to the left at all (bare leading token) → not a value.
+ *
+ * A COMPLETED function group `(…)` to the left is part of the surrounding value, not a
+ * boundary: in `background: url("x.png") red` or `border-image: url(x.png) 30 round red`
+ * the nearest literal char before `red` is the `)` that closes `url(…)`, yet `red` is
+ * still the colour value of the `background` declaration. So when the backward scan meets
+ * a `)`, it SKIPS the whole balanced group back to its matching `(` and keeps scanning —
+ * the governing delimiter is whatever precedes the group (here the `:`), not the `)`.
+ * This closes the "colour after any completed function call in a value" false-negative
+ * class (`url(…) red`, `calc(…) red`, `linear-gradient(…) red`) uniformly.
+ */
+function isColourValuePosition(text: string, index: number): boolean {
+  let delimiterAt = -1;
+  let delimiter = '';
+  for (let k = index - 1; k >= 0; k -= 1) {
+    const ch = text[k];
+    if (ch === ')') {
+      // Skip the balanced (…) group: a completed function call is part of the value,
+      // not a boundary. Walk back to the matching `(` and continue from before it.
+      let depth = 1;
+      k -= 1;
+      for (; k >= 0 && depth > 0; k -= 1) {
+        const inner = text[k];
+        if (inner === ')') depth += 1;
+        else if (inner === '(') depth -= 1;
+      }
+      // k now points one char before the matching `(` (or -1 if unbalanced); the
+      // outer loop's `k -= 1` would over-step, so compensate to re-examine that char.
+      k += 1;
+      continue;
+    }
+    if (ch !== undefined && ':;{}([,='.includes(ch)) {
+      delimiterAt = k;
+      delimiter = ch;
+      break;
+    }
+  }
+  if (delimiterAt === -1) return false;
+  if (delimiter === ';' || delimiter === '{' || delimiter === '}' || delimiter === '[') {
+    return false;
+  }
+  if (delimiter === '(') return true;
+  if (delimiter === ':') {
+    const beforeColon = text.slice(0, delimiterAt);
+    // An identifier char immediately before the colon = a property / object key, so the
+    // colour after the colon is its value. `::before` / ` : ` (selector) have no such char.
+    return /[A-Za-z0-9_$-]$/.test(beforeColon);
+  }
+  if (delimiter === ',') {
+    let depth = 0;
+    for (let k = 0; k < index; k += 1) {
+      const ch = text[k];
+      if (ch === '(') depth += 1;
+      else if (ch === ')') depth -= 1;
+    }
+    return depth > 0;
+  }
+  // delimiter === '='
+  let brackets = 0;
+  for (let k = 0; k < index; k += 1) {
+    const ch = text[k];
+    if (ch === '[') brackets += 1;
+    else if (ch === ']') brackets -= 1;
+  }
+  if (brackets > 0) return false;
+  return COLOUR_ATTR_RE.test(text.slice(0, delimiterAt).trimEnd());
+}
 
 /**
  * Scan one file's (comment-stripped) text for any free-standing colour literal.
@@ -131,9 +277,17 @@ export function scanSource(relPath: string, source: string): Violation[] {
   const text = stripComments(source);
   const out: Violation[] = [];
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
-  for (const re of [FUNCTIONAL_HEX_RE, COMBINATOR_RE, VALUE_NAMED_RE]) {
+  // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal
+  // colour and cannot occur innocently, so they are reported wherever they match. A
+  // bare named/system colour keyword is ambiguous with ordinary code tokens, so it is
+  // reported ONLY when `isColourValuePosition` confirms it sits in a CSS value position.
+  const anywhere = [FUNCTIONAL_HEX_RE, COMBINATOR_RE];
+  const valueGated = [VALUE_NAMED_RE, VALUE_SYSTEM_RE];
+  for (const re of [...anywhere, ...valueGated]) {
+    const gated = valueGated.includes(re);
     re.lastIndex = 0;
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      if (gated && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,
         line: lineAt(m.index),
