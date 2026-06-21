@@ -77,7 +77,12 @@ const FLAGGED_NAMED = NAMED_COLOURS.filter((c) => !ALLOWED_KEYWORDS.has(c.toLowe
  * with `//` are not present in these stylesheet/TS-template sources.)
  */
 function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/[^\n]*/g, ' ');
+  // Blank out comment content but PRESERVE newlines, so a colour word in a
+  // multi-line block comment is removed without shifting the line numbers of
+  // every later finding (the guard reports file:line — that must stay exact).
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
 }
 
 /**

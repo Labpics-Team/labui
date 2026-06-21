@@ -45,6 +45,13 @@ describe('classifyLabVar — three-language boundary', () => {
     expect(classifyLabVar('--lab-bogus-xyz')).toBe('unknown');
   });
 
+  it('returns "unknown" for a name outside the --lab- namespace', () => {
+    // A prefix collision with a non-lab var (e.g. `--label-…` sharing letters)
+    // must NOT classify as a lab token — the `--lab-` namespace guard owns this.
+    expect(classifyLabVar('--label-primary')).toBe('unknown');
+    expect(classifyLabVar('--color-accent-500')).toBe('unknown');
+  });
+
   // ── Predicate reads the EXPORTED constants (DIP chokepoint). Every prefix in
   // each constant must classify into its bucket — so extending a constant
   // extends classification without a second edit. Sample-named cases above pin

@@ -184,6 +184,7 @@ describe('engine-gaps capability-class completeness (exit criterion ⇄ docs/ext
     // Drive the SAME completeness check over a doc with one class stripped and
     // prove it flags exactly that class — a green completeness run therefore
     // means "all five documented", never "blind".
+    expect(existsSync(docAbs), `${docPath} must exist for the RED-proof (CH-03)`).toBe(true);
     const doc = readFileSync(docAbs, 'utf8');
     const stripped = doc.split('IC (inclusive / contrast) theme calibration').join('IC-REMOVED');
     const missing = CAPABILITY_CLASSES.filter(

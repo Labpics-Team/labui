@@ -79,7 +79,7 @@ export const DIMENSION_PREFIXES = [
  */
 export const FORBIDDEN_PRIMITIVE_PREFIXES = ['--lab-neutral-', '--lab-accent-'] as const;
 
-/** The three-language verdict for a `--lab-*` reference a component authors. */
+/** The three-language verdict for a `--lab-*` reference that component authors write. */
 export type LabVarClass = 'semantic' | 'dimension' | 'forbidden-primitive' | 'unknown';
 
 /**
@@ -89,9 +89,12 @@ export type LabVarClass = 'semantic' | 'dimension' | 'forbidden-primitive' | 'un
  * token; a `forbidden-primitive` reference is a layer violation; an `unknown`
  * name matches no declared family. The prefix sets are disjoint, so match order
  * among them is irrelevant — extending any constant extends classification with
- * no further edit.
+ * no further edit. A name outside the `--lab-` namespace is not a token this
+ * library owns, so it is `unknown` up front (the prefix sets all start `--lab-`,
+ * so this only documents intent — it never changes a verdict).
  */
 export function classifyLabVar(name: string): LabVarClass {
+  if (!name.startsWith('--lab-')) return 'unknown';
   if (SEMANTIC_ROLE_PREFIXES.some((p) => name.startsWith(p))) return 'semantic';
   if (DIMENSION_PREFIXES.some((p) => name.startsWith(p))) return 'dimension';
   if (FORBIDDEN_PRIMITIVE_PREFIXES.some((p) => name.startsWith(p))) return 'forbidden-primitive';
