@@ -94,6 +94,11 @@ function colourContractRoles(): ReadonlySet<string> {
   if (parsed?.groups == null || typeof parsed.groups !== 'object') {
     throw new Error('roles.json: missing or malformed "groups" object');
   }
+  for (const [group, roles] of Object.entries(parsed.groups)) {
+    if (!Array.isArray(roles) || roles.some((r) => typeof r !== 'string')) {
+      throw new Error(`roles.json: group "${group}" must be an array of role-name strings`);
+    }
+  }
   rolesCache = new Set(Object.values(parsed.groups).flat());
   return rolesCache;
 }
