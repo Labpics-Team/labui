@@ -79,6 +79,17 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
       src: '.x{background:color-mix(in srgb, red 50%, blue)}',
     },
     { position: 'named light-dark() combinator', src: '.x{color:light-dark(red, blue)}' },
+    // Colour AFTER a completed function group `(…)` in the same value: the nearest
+    // literal char before the colour is the group's closing `)`, but the colour is still
+    // the declaration's value. The backward scan must skip the balanced group and find
+    // the governing `:`. A bare nearest-delimiter check MISSED all of these.
+    { position: 'colour after url() in background', src: '.x{background:url("a.png") red}' },
+    {
+      position: 'colour after url() in border-image shorthand',
+      src: '.x{border-image:url(x.png) 30 round red}',
+    },
+    { position: 'colour after calc() in shorthand', src: '.x{background:calc(100%) red}' },
+    { position: 'named colour as a CSS var() fallback', src: '.x{color:var(--primary, red)}' },
   ];
 
   it.each(NAMED_LEAK_POSITIONS)(
@@ -100,6 +111,8 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
     expect(scanSource('p.css', '.x{animation: salmonate 1s;}')).toEqual([]); // "salmon" in salmonate
     expect(scanSource('p.css', '.lavender-bg {}')).toEqual([]); // "lavender" in a class name
     expect(scanSource('p.css', '.x{--my-tan-token: 1;}')).toEqual([]); // "tan" in a token name
+    expect(scanSource('p.tsx', 'const redButton = 1;')).toEqual([]); // "red" at identifier start
+    expect(scanSource('p.tsx', 'function makeBlue() {}')).toEqual([]); // "blue" at identifier end
   });
 
   // ── (2c) Code-position class lock — a whole-word colour keyword that is NOT a CSS

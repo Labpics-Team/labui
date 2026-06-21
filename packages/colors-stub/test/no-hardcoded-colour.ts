@@ -193,13 +193,37 @@ const COLOUR_ATTR_RE =
  *          `type Tone = 'red'` (LHS is not a colour attribute).
  *   - `;` `{` `}` `[`  declaration / block / selector boundaries — NOT value positions.
  * No structural delimiter to the left at all (bare leading token) → not a value.
+ *
+ * A COMPLETED function group `(…)` to the left is part of the surrounding value, not a
+ * boundary: in `background: url("x.png") red` or `border-image: url(x.png) 30 round red`
+ * the nearest literal char before `red` is the `)` that closes `url(…)`, yet `red` is
+ * still the colour value of the `background` declaration. So when the backward scan meets
+ * a `)`, it SKIPS the whole balanced group back to its matching `(` and keeps scanning —
+ * the governing delimiter is whatever precedes the group (here the `:`), not the `)`.
+ * This closes the "colour after any completed function call in a value" false-negative
+ * class (`url(…) red`, `calc(…) red`, `linear-gradient(…) red`) uniformly.
  */
 function isColourValuePosition(text: string, index: number): boolean {
   let delimiterAt = -1;
   let delimiter = '';
   for (let k = index - 1; k >= 0; k -= 1) {
     const ch = text[k];
-    if (ch !== undefined && ':;{}()[,='.includes(ch)) {
+    if (ch === ')') {
+      // Skip the balanced (…) group: a completed function call is part of the value,
+      // not a boundary. Walk back to the matching `(` and continue from before it.
+      let depth = 1;
+      k -= 1;
+      for (; k >= 0 && depth > 0; k -= 1) {
+        const inner = text[k];
+        if (inner === ')') depth += 1;
+        else if (inner === '(') depth -= 1;
+      }
+      // k now points one char before the matching `(` (or -1 if unbalanced); the
+      // outer loop's `k -= 1` would over-step, so compensate to re-examine that char.
+      k += 1;
+      continue;
+    }
+    if (ch !== undefined && ':;{}([,='.includes(ch)) {
       delimiterAt = k;
       delimiter = ch;
       break;
