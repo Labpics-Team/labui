@@ -444,7 +444,7 @@ describe('stash-inventory-landed-vs-unique', () => {
    * Activate by setting LABUI_STASH_INVENTORY=2 (the expected stash count).
    * Without the env var all assertions below are skipped — this is intentional.
    */
-  const stashInventoryKey = process.env['LABUI_STASH_INVENTORY'];
+  const stashInventoryKey = process.env.LABUI_STASH_INVENTORY;
   const expectedCount = stashInventoryKey !== undefined ? Number(stashInventoryKey) : undefined;
 
   it(
@@ -461,9 +461,7 @@ describe('stash-inventory-landed-vs-unique', () => {
 
       expect(
         stashes,
-        `Stash count changed from the planning snapshot of ${expectedCount}.\n` +
-          `Either a stash was popped/dropped (check CH-02 disposition) or a new stash was pushed.\n` +
-          `Current stash list:\n${stdout}`,
+        `Stash count changed from the planning snapshot of ${expectedCount}.\nEither a stash was popped/dropped (check CH-02 disposition) or a new stash was pushed.\nCurrent stash list:\n${stdout}`,
       ).toHaveLength(expectedCount ?? 0);
     },
   );
@@ -573,7 +571,7 @@ describe('stash-inventory-landed-vs-unique', () => {
   it('MUTATION-PROOF: skip-gate is real — undefined key skips inventory checks', () => {
     // The gate: if env var is absent, expectedCount === undefined → skip.
     // This assertion proves the gate formula is correct.
-    const gate = process.env['LABUI_STASH_INVENTORY'];
+    const gate = process.env.LABUI_STASH_INVENTORY;
     if (gate === undefined) {
       // Confirm the skip logic: expectedCount would be undefined here.
       expect(expectedCount).toBeUndefined();
