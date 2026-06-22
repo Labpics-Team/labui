@@ -210,14 +210,17 @@ const COLOUR_ATTR_RE =
  * This closes the "colour after any completed function call in a value" false-negative
  * class (`url(…) red`, `calc(…) red`, `linear-gradient(…) red`) uniformly.
  */
-function isColourValuePosition(text: string, index: number): boolean {
-  let delimiterAt = -1;
-  let delimiter = '';
-  for (let k = index - 1; k >= 0; k -= 1) {
+/**
+ * Walk backwards from `fromIndex` skipping balanced `(…)` groups, stopping at
+ * the first structural delimiter (`:`/`;`/`{`/`}`/`(`/`[`/`,`/`=`) or -1.
+ * Returns `{ at, ch }` where `at` is the index of the delimiter and `ch` its value.
+ * Returns `{ at: -1, ch: '' }` when none is found.
+ */
+function scanBackForDelimiter(text: string, fromIndex: number): { at: number; ch: string } {
+  for (let k = fromIndex - 1; k >= 0; k -= 1) {
     const ch = text[k];
     if (ch === ')') {
-      // Skip the balanced (…) group: a completed function call is part of the value,
-      // not a boundary. Walk back to the matching `(` and continue from before it.
+      // A completed function group is part of the value — skip it backward.
       let depth = 1;
       k -= 1;
       for (; k >= 0 && depth > 0; k -= 1) {
@@ -225,45 +228,53 @@ function isColourValuePosition(text: string, index: number): boolean {
         if (inner === ')') depth += 1;
         else if (inner === '(') depth -= 1;
       }
-      // k now points one char before the matching `(` (or -1 if unbalanced); the
-      // outer loop's `k -= 1` would over-step, so compensate to re-examine that char.
+      // Compensate for the outer loop's upcoming `k -= 1` decrement.
       k += 1;
       continue;
     }
     if (ch !== undefined && ':;{}([,='.includes(ch)) {
-      delimiterAt = k;
-      delimiter = ch;
-      break;
+      return { at: k, ch };
     }
   }
-  if (delimiterAt === -1) return false;
-  if (delimiter === ';' || delimiter === '{' || delimiter === '}' || delimiter === '[') {
-    return false;
+  return { at: -1, ch: '' };
+}
+
+/** Count unclosed `(` parentheses in `text[0..before)`. Returns depth ≥ 0. */
+function parenDepthAt(text: string, before: number): number {
+  let depth = 0;
+  for (let k = 0; k < before; k += 1) {
+    if (text[k] === '(') depth += 1;
+    else if (text[k] === ')') depth -= 1;
   }
+  return depth;
+}
+
+/** Count unclosed `[` square brackets in `text[0..before)`. Returns depth ≥ 0. */
+function squareBracketDepthAt(text: string, before: number): number {
+  let depth = 0;
+  for (let k = 0; k < before; k += 1) {
+    if (text[k] === '[') depth += 1;
+    else if (text[k] === ']') depth -= 1;
+  }
+  return depth;
+}
+
+function isColourValuePosition(text: string, index: number): boolean {
+  const { at: delimiterAt, ch: delimiter } = scanBackForDelimiter(text, index);
+  if (delimiterAt === -1) return false;
+  if (';{}['.includes(delimiter)) return false;
   if (delimiter === '(') return true;
   if (delimiter === ':') {
-    const beforeColon = text.slice(0, delimiterAt);
-    // An identifier char immediately before the colon = a property / object key, so the
-    // colour after the colon is its value. `::before` / ` : ` (selector) have no such char.
-    return /[A-Za-z0-9_$-]$/.test(beforeColon);
+    // An identifier char immediately before the colon = a property / object key → value.
+    // `::before` / ` : ` (selector) have no such char.
+    return /[A-Za-z0-9_$-]$/.test(text.slice(0, delimiterAt));
   }
   if (delimiter === ',') {
-    let depth = 0;
-    for (let k = 0; k < index; k += 1) {
-      const ch = text[k];
-      if (ch === '(') depth += 1;
-      else if (ch === ')') depth -= 1;
-    }
-    return depth > 0;
+    // A comma is a value separator only inside an unclosed function call.
+    return parenDepthAt(text, index) > 0;
   }
-  // delimiter === '='
-  let brackets = 0;
-  for (let k = 0; k < index; k += 1) {
-    const ch = text[k];
-    if (ch === '[') brackets += 1;
-    else if (ch === ']') brackets -= 1;
-  }
-  if (brackets > 0) return false;
+  // delimiter === '='  (JSX/SVG colour attribute value)
+  if (squareBracketDepthAt(text, index) > 0) return false;
   return COLOUR_ATTR_RE.test(text.slice(0, delimiterAt).trimEnd());
 }
 
@@ -299,6 +310,19 @@ export function scanSource(relPath: string, source: string): Violation[] {
   return out;
 }
 
+/** Returns true when a repo-relative path should be excluded from scanning. */
+function isExcludedHardcoded(rel: string): boolean {
+  return (
+    rel.includes('/dist/') ||
+    rel.includes('/node_modules/') ||
+    rel.includes('/src/generated/') ||
+    rel.endsWith('.test.ts') || // test files hold literal colour table fixtures
+    rel.endsWith('test/no-literal-colour-fallback.ts') ||
+    rel.endsWith('test/no-hardcoded-colour.ts') ||
+    rel.endsWith('test/consumed-contract.ts')
+  );
+}
+
 /**
  * The governed surface: every `packages/**` `.ts/.tsx/.css` (scope is
  * `packages/*` per the brief). Excludes build output, deps, generated CSS, the
@@ -311,17 +335,10 @@ export function targetFiles(): string[] {
   for (const pattern of patterns) {
     for (const abs of globSync(resolve(repoRoot, pattern))) {
       const rel = relative(repoRoot, abs).split('\\').join('/');
-      if (rel.includes('/dist/')) continue;
-      if (rel.includes('/node_modules/')) continue;
-      if (rel.includes('/src/generated/')) continue;
-      if (rel.endsWith('.test.ts')) continue; // test files hold literal colour table fixtures
-      if (rel.endsWith('test/no-literal-colour-fallback.ts')) continue;
-      if (rel.endsWith('test/no-hardcoded-colour.ts')) continue;
-      if (rel.endsWith('test/consumed-contract.ts')) continue;
-      seen.add(rel);
+      if (!isExcludedHardcoded(rel)) seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /** Scan the whole governed surface; return every free-standing colour literal. */

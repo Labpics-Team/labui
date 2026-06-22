@@ -111,6 +111,71 @@ function ariaProps(aria: FieldControlAria): Record<string, string> {
   return out;
 }
 
+/** Renders the label element with an optional required mark. */
+function ComboboxLabel({
+  api,
+  ids,
+  label,
+  required,
+}: {
+  api: ComboboxApi;
+  ids: ReturnType<typeof fieldPartIds>;
+  label: string;
+  required: boolean;
+}): ReactNode {
+  return (
+    <label {...api.getLabelProps()} htmlFor={ids.control} className="lab-combobox-label">
+      <span className="lab-combobox-label-text">{label}</span>
+      {required ? (
+        <span className="lab-combobox-required-mark" aria-hidden="true">
+          {' *'}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+/** Renders the portalled listbox positioner with all its items. */
+function ComboboxListbox({
+  api,
+  visibleItems,
+  size,
+}: {
+  api: ComboboxApi;
+  visibleItems: ReadonlyArray<LabComboboxItem>;
+  size: LabComboboxSize;
+}): ReactNode {
+  return (
+    <div {...api.getPositionerProps()} className="lab-combobox-positioner">
+      <ul {...api.getContentProps()} className="lab-combobox-content" data-size={size}>
+        {visibleItems.length === 0 ? (
+          <li className="lab-combobox-empty" aria-hidden="true">
+            No results
+          </li>
+        ) : (
+          visibleItems.map((item) => (
+            // Keyed by the STABLE value, never the index: the filtered list reorders /
+            // shrinks every keystroke, and the machine keys its per-item getters by the
+            // collection-resolved value, so a row never gets another option's props.
+            <li key={item.value} {...api.getItemProps({ item })} className="lab-combobox-item">
+              <span {...api.getItemTextProps({ item })} className="lab-combobox-item-text">
+                {item.label}
+              </span>
+              <span
+                {...api.getItemIndicatorProps({ item })}
+                className="lab-combobox-item-indicator"
+                aria-hidden="true"
+              >
+                ✓
+              </span>
+            </li>
+          ))
+        )}
+      </ul>
+    </div>
+  );
+}
+
 export function Combobox({
   items,
   type = 'neutral',
@@ -195,36 +260,6 @@ export function Combobox({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const listbox = (
-    <div {...api.getPositionerProps()} className="lab-combobox-positioner">
-      <ul {...api.getContentProps()} className="lab-combobox-content" data-size={size}>
-        {visibleItems.length === 0 ? (
-          <li className="lab-combobox-empty" aria-hidden="true">
-            No results
-          </li>
-        ) : (
-          visibleItems.map((item) => (
-            // Keyed by the STABLE value, never the index: the filtered list reorders /
-            // shrinks every keystroke, and the machine keys its per-item getters by the
-            // collection-resolved value, so a row never gets another option's props.
-            <li key={item.value} {...api.getItemProps({ item })} className="lab-combobox-item">
-              <span {...api.getItemTextProps({ item })} className="lab-combobox-item-text">
-                {item.label}
-              </span>
-              <span
-                {...api.getItemIndicatorProps({ item })}
-                className="lab-combobox-item-indicator"
-                aria-hidden="true"
-              >
-                ✓
-              </span>
-            </li>
-          ))
-        )}
-      </ul>
-    </div>
-  );
-
   return (
     <div
       {...api.getRootProps()}
@@ -241,14 +276,7 @@ export function Combobox({
       {/* htmlFor is also what the machine's getLabelProps sets (→ the input id we pinned
           via `ids.input`); stating it explicitly satisfies the static a11y lint and is
           identical to the machine's value, so it is redundant, never a second source. */}
-      <label {...api.getLabelProps()} htmlFor={ids.control} className="lab-combobox-label">
-        <span className="lab-combobox-label-text">{label}</span>
-        {required ? (
-          <span className="lab-combobox-required-mark" aria-hidden="true">
-            {' *'}
-          </span>
-        ) : null}
-      </label>
+      <ComboboxLabel api={api} ids={ids} label={label} required={required} />
       <div {...api.getControlProps()} className="lab-combobox-control">
         <input {...api.getInputProps()} {...ariaProps(a11y)} className="lab-combobox-input" />
         {/* The machine's getTriggerProps sets aria-label ("Toggle suggestions"),
@@ -268,7 +296,11 @@ export function Combobox({
           {error}
         </span>
       ) : null}
-      {mounted && createPortal(listbox, document.body)}
+      {mounted &&
+        createPortal(
+          <ComboboxListbox api={api} visibleItems={visibleItems} size={size} />,
+          document.body,
+        )}
     </div>
   );
 }

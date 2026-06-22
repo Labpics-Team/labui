@@ -427,6 +427,32 @@ export class LabDialog extends LabElement {
     this.bodyRelocated = true;
   }
 
+  /**
+   * Spread machine props onto the portalled floating nodes (backdrop, positioner,
+   * content, heading, description, optional close). Extracted from `updated()` to
+   * reduce its Cognitive Complexity.
+   */
+  private spreadPortalProps(root: ShadowRoot): void {
+    const api = this.machineCtl.api;
+    const backdrop = root.querySelector<HTMLElement>('.backdrop');
+    const positioner = root.querySelector<HTMLElement>('.positioner');
+    const content = root.querySelector<HTMLElement>('.content');
+    const heading = root.querySelector<HTMLElement>('.heading');
+    const description = root.querySelector<HTMLElement>('.description');
+    const close = root.querySelector<HTMLElement>('.close');
+
+    if (backdrop) this.machineCtl.spread(backdrop, api.getBackdropProps());
+    if (positioner) this.machineCtl.spread(positioner, api.getPositionerProps());
+    if (content) this.machineCtl.spread(content, api.getContentProps());
+    if (heading) this.machineCtl.spread(heading, api.getTitleProps());
+    if (description) this.machineCtl.spread(description, api.getDescriptionProps());
+    if (this.closable && close) this.machineCtl.spread(close, api.getCloseTriggerProps());
+
+    // The positioner is a viewport-filling flex frame; gate its visibility on the
+    // machine's open state so it never intercepts pointer events while closed.
+    if (positioner) positioner.toggleAttribute('hidden', !api.open);
+  }
+
   override updated(): void {
     this.ensurePortal();
     const root = this.portalRoot;
@@ -442,30 +468,9 @@ export class LabDialog extends LabElement {
     // root, the floating nodes in the portal root. Clear prior spreads first so
     // listeners/props never stack across renders.
     this.machineCtl.clearSpreads();
-    const api = this.machineCtl.api;
-
     const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
-    if (trigger) this.machineCtl.spread(trigger, api.getTriggerProps());
-
-    if (root) {
-      const backdrop = root.querySelector<HTMLElement>('.backdrop');
-      const positioner = root.querySelector<HTMLElement>('.positioner');
-      const content = root.querySelector<HTMLElement>('.content');
-      const heading = root.querySelector<HTMLElement>('.heading');
-      const description = root.querySelector<HTMLElement>('.description');
-      const close = root.querySelector<HTMLElement>('.close');
-
-      if (backdrop) this.machineCtl.spread(backdrop, api.getBackdropProps());
-      if (positioner) this.machineCtl.spread(positioner, api.getPositionerProps());
-      if (content) this.machineCtl.spread(content, api.getContentProps());
-      if (heading) this.machineCtl.spread(heading, api.getTitleProps());
-      if (description) this.machineCtl.spread(description, api.getDescriptionProps());
-      if (this.closable && close) this.machineCtl.spread(close, api.getCloseTriggerProps());
-
-      // The positioner is a viewport-filling flex frame; gate its visibility on the
-      // machine's open state so it never intercepts pointer events while closed.
-      if (positioner) positioner.toggleAttribute('hidden', !api.open);
-    }
+    if (trigger) this.machineCtl.spread(trigger, this.machineCtl.api.getTriggerProps());
+    if (root) this.spreadPortalProps(root);
   }
 
   override render(): TemplateResult {

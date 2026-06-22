@@ -106,6 +106,61 @@ function describeProps(
   return out;
 }
 
+/** Renders all mark pips along the track when marks are provided. */
+function SliderMarks({
+  api,
+  marks,
+}: {
+  api: SliderApi;
+  marks: number[];
+}): ReactNode {
+  if (marks.length === 0) return null;
+  return (
+    <div {...api.getMarkerGroupProps()} className="lab-slider-marker-group">
+      {marks.map((markValue) => (
+        <span
+          key={markValue}
+          {...api.getMarkerProps({ value: markValue })}
+          className="lab-slider-marker"
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Renders all thumbs and their hidden inputs. */
+function SliderThumbs({
+  api,
+  fieldAria,
+}: {
+  api: SliderApi;
+  fieldAria: Pick<FieldControlAria, 'aria-describedby' | 'aria-errormessage'>;
+}): ReactNode {
+  return (
+    <>
+      {api.value.map((_thumbValue, index) => (
+        // Keyed by the STABLE thumb index: the machine keys its per-thumb getters
+        // by index and the id it puts on the thumb is what aria-labelledby/roving
+        // target. React's key and the machine's index agree, so a thumb never gets
+        // another thumb's props — the index IS the thumb's identity here, not an
+        // incidental list position. The field description (helper/error) is spread
+        // onto the focusable role="slider" thumb — the element a reader lands on,
+        // not the inert group label — mirroring number-input's field ARIA on its
+        // <input>; spread AFTER getThumbProps so the machine's ARIA cannot clobber it.
+        <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: the thumb index is the machine's stable thumb key (getThumbProps keys by index), not an incidental list order.
+          key={index}
+          {...api.getThumbProps({ index })}
+          {...describeProps(fieldAria)}
+          className="lab-slider-thumb"
+        >
+          <input {...api.getHiddenInputProps({ index })} />
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function Slider({
   size = 'm',
   orientation = 'horizontal',
@@ -188,36 +243,8 @@ export function Slider({
       <div {...api.getControlProps()} className="lab-slider-control">
         <div {...api.getTrackProps()} className="lab-slider-track">
           <div {...api.getRangeProps()} className="lab-slider-range" />
-          {marks.length > 0 ? (
-            <div {...api.getMarkerGroupProps()} className="lab-slider-marker-group">
-              {marks.map((markValue) => (
-                <span
-                  key={markValue}
-                  {...api.getMarkerProps({ value: markValue })}
-                  className="lab-slider-marker"
-                />
-              ))}
-            </div>
-          ) : null}
-          {api.value.map((_thumbValue, index) => (
-            // Keyed by the STABLE thumb index: the machine keys its per-thumb getters
-            // by index and the id it puts on the thumb is what aria-labelledby/roving
-            // target. React's key and the machine's index agree, so a thumb never gets
-            // another thumb's props — the index IS the thumb's identity here, not an
-            // incidental list position. The field description (helper/error) is spread
-            // onto the focusable role="slider" thumb — the element a reader lands on,
-            // not the inert group label — mirroring number-input's field ARIA on its
-            // <input>; spread AFTER getThumbProps so the machine's ARIA cannot clobber it.
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: the thumb index is the machine's stable thumb key (getThumbProps keys by index), not an incidental list order.
-              key={index}
-              {...api.getThumbProps({ index })}
-              {...describeProps(fieldAria)}
-              className="lab-slider-thumb"
-            >
-              <input {...api.getHiddenInputProps({ index })} />
-            </div>
-          ))}
+          <SliderMarks api={api} marks={marks} />
+          <SliderThumbs api={api} fieldAria={fieldAria} />
         </div>
       </div>
       {hasHelper ? (

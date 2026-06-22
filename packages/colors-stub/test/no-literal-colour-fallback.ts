@@ -303,6 +303,17 @@ export function scanSource(relPath: string, source: string): Violation[] {
   return out;
 }
 
+/** Returns true when a repo-relative path should be excluded from fallback scanning. */
+function isExcludedFallback(rel: string): boolean {
+  return (
+    rel.includes('/dist/') ||
+    rel.includes('/node_modules/') ||
+    rel.includes('/src/generated/') ||
+    rel.endsWith('test/no-literal-colour-fallback.ts') ||
+    rel.endsWith('test/no-literal-colour-fallback.test.ts')
+  );
+}
+
 /** The files the rule governs: every component-authored .ts/.tsx/.css across the
  * design system (the React twins live in .tsx, which `**​/*.ts` does NOT match), plus
  * the docs .ts/.tsx/.css fixtures. Build output and deps are excluded. The scanner and
@@ -319,15 +330,10 @@ export function targetFiles(): string[] {
   for (const pattern of patterns) {
     for (const abs of globSync(resolve(repoRoot, pattern))) {
       const rel = relative(repoRoot, abs).split('\\').join('/');
-      if (rel.includes('/dist/')) continue;
-      if (rel.includes('/node_modules/')) continue;
-      if (rel.includes('/src/generated/')) continue;
-      if (rel.endsWith('test/no-literal-colour-fallback.ts')) continue;
-      if (rel.endsWith('test/no-literal-colour-fallback.test.ts')) continue;
-      seen.add(rel);
+      if (!isExcludedFallback(rel)) seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /** Scan the whole governed surface; return every violation across all files. */

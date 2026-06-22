@@ -252,6 +252,15 @@ describe('icons-tracked-set-exact', () => {
 //     (a) force-add a fake artifact → guard exits non-zero (RED)
 //     (b) remove the artifact → guard exits 0 (GREEN)
 //   This proves the guard is not green-from-birth.
+//
+// CLASS-LEVEL ISOLATION (Finding #2 fix): All git-mutation operations (git add -f,
+// git restore --staged) MUST run in an isolated temp directory, never in REPO_ROOT.
+// Mutating the live working tree creates two failure classes:
+//   A) Any emitted non-gitignored file from a concurrent build/test step trips Test 1.
+//   B) A process kill between `git add -f` and the finally-block cleanup leaves a
+//      STAGED forbidden artifact in the real index, which trips Test 1 on the next run.
+// The fix: run the guard against a minimal temp git repo that mirrors only what the
+// guard needs — a copy of the guard script and a fabricated tracked artifact.
 // ---------------------------------------------------------------------------
 describe('guard-bites-on-forbidden-artifact', () => {
   const GUARD_SCRIPT = join(REPO_ROOT, 'scripts', 'guard-no-loose-artifacts.sh');
@@ -271,19 +280,32 @@ describe('guard-bites-on-forbidden-artifact', () => {
       return;
     }
 
-    // Force-add a forbidden artifact to the index (staging area only, not committed).
-    const fakePath = join(REPO_ROOT, '.audit-icons-x.png');
-    writeFileSync(fakePath, 'fake artifact for RED-proof');
+    // ISOLATION: operate in a temp git repo, never in REPO_ROOT.
+    // This prevents a process-kill between `git add -f` and cleanup from leaving a
+    // staged artifact in the real index (the crash-leaves-dirty-index class).
+    const tmpDir = mkdtempSync(join(tmpdir(), 'guard-bite-test-'));
     try {
-      const addResult = spawnSync('git', ['add', '-f', fakePath], {
-        cwd: REPO_ROOT,
+      execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+      // `git ls-files` does not require a commit — the index is queryable immediately
+      // after init. No commit needed, so no user-identity configuration is required.
+
+
+      // Plant the forbidden artifact and stage it.
+      const fakePath = join(tmpDir, '.audit-icons-x.png');
+      writeFileSync(fakePath, 'fake artifact for RED-proof');
+      const addResult = spawnSync('git', ['add', '-f', '.audit-icons-x.png'], {
+        cwd: tmpDir,
         encoding: 'utf8',
         shell: false,
       });
-      expect(addResult.status, 'git add -f failed').toBe(0);
+      expect(addResult.status, 'git add -f failed in temp repo').toBe(0);
 
       // Guard must fail and name the file.
-      const guardResult = shell(`bash "${GUARD_SCRIPT}"`);
+      const guardResult = spawnSync('bash', [GUARD_SCRIPT], {
+        cwd: tmpDir,
+        encoding: 'utf8',
+        shell: false,
+      });
       expect(
         guardResult.status,
         `Guard MUST exit non-zero when a forbidden artifact is staged.\nstdout: ${guardResult.stdout}\nstderr: ${guardResult.stderr}`,
@@ -292,31 +314,38 @@ describe('guard-bites-on-forbidden-artifact', () => {
       const output = guardResult.stdout + guardResult.stderr;
       expect(output, 'Guard output must name the offending file').toContain('.audit-icons-x.png');
     } finally {
-      // Unstage and remove the fake artifact — always clean up.
-      spawnSync('git', ['restore', '--staged', '.audit-icons-x.png'], {
-        cwd: REPO_ROOT,
-        stdio: 'pipe',
-      });
-      try {
-        rmSync(fakePath, { force: true });
-      } catch {
-        // best-effort cleanup
-      }
+      rmSync(tmpDir, { recursive: true, force: true });
     }
   });
 
-  it('guard exits 0 after forbidden artifact is removed (GREEN restored)', () => {
+  it('guard exits 0 on a clean temp repo (GREEN on no forbidden artifacts)', () => {
     if (!existsSync(GUARD_SCRIPT)) {
       expect(existsSync(GUARD_SCRIPT), 'guard script must exist to test GREEN restore').toBe(true);
       return;
     }
 
-    // On clean HEAD (no forbidden artifact), guard must exit 0.
-    const guardResult = shell(`bash "${GUARD_SCRIPT}"`);
-    expect(
-      guardResult.status,
-      `Guard must exit 0 on a clean HEAD (no forbidden artifacts tracked).\nstdout: ${guardResult.stdout}\nstderr: ${guardResult.stderr}`,
-    ).toBe(0);
+    // ISOLATION: use a temp repo with no forbidden artifacts tracked.
+    const tmpDir = mkdtempSync(join(tmpdir(), 'guard-clean-test-'));
+    try {
+      execSync('git init', { cwd: tmpDir, stdio: 'pipe' });
+
+      // Add a legitimate (non-forbidden) staged file. No commit required — git ls-files
+      // queries the index, which is valid immediately after init + add.
+      writeFileSync(join(tmpDir, 'package.json'), '{}');
+      execSync('git add package.json', { cwd: tmpDir, stdio: 'pipe' });
+
+      const guardResult = spawnSync('bash', [GUARD_SCRIPT], {
+        cwd: tmpDir,
+        encoding: 'utf8',
+        shell: false,
+      });
+      expect(
+        guardResult.status,
+        `Guard must exit 0 on a clean repo (no forbidden artifacts tracked).\nstdout: ${guardResult.stdout}\nstderr: ${guardResult.stderr}`,
+      ).toBe(0);
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });
 

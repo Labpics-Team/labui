@@ -104,6 +104,27 @@ function colourContractRoles(): ReadonlySet<string> {
 }
 
 /**
+ * Returns true when a repo-relative path should be excluded from consumer scanning.
+ * Source-of-truth definitions are excluded so prefix fragments / role lists do not
+ * register as "consumed".
+ */
+function isExcludedConsumer(rel: string): boolean {
+  return (
+    rel.includes('/dist/') ||
+    rel.includes('/node_modules/') ||
+    rel.includes('/src/generated/') ||
+    rel.endsWith('packages/core/src/css.ts') ||
+    rel.endsWith('packages/colors-stub/roles.json') ||
+    rel.endsWith('test/no-literal-colour-fallback.ts') ||
+    rel.endsWith('test/no-literal-colour-fallback.test.ts') ||
+    rel.endsWith('test/consumed-contract.ts') ||
+    rel.endsWith('test/consumed-contract.test.ts') ||
+    rel.endsWith('test/no-hardcoded-colour.ts') ||
+    rel.endsWith('test/no-hardcoded-colour.test.ts')
+  );
+}
+
+/**
  * The files scanned as CONSUMERS. `packages/**` and `apps/**` `.ts/.tsx/.css`,
  * excluding build output, deps, generated CSS (it DECLARES, does not consume),
  * and the source-of-truth/scanner files themselves (css.ts and roles.json hold
@@ -123,23 +144,10 @@ export function consumerFiles(): string[] {
   for (const pattern of patterns) {
     for (const abs of globSync(resolve(repoRoot, pattern))) {
       const rel = relative(repoRoot, abs).split('\\').join('/');
-      if (rel.includes('/dist/')) continue;
-      if (rel.includes('/node_modules/')) continue;
-      if (rel.includes('/src/generated/')) continue;
-      // Source-of-truth definitions — exclude so prefix fragments / role lists
-      // do not register as "consumed".
-      if (rel.endsWith('packages/core/src/css.ts')) continue;
-      if (rel.endsWith('packages/colors-stub/roles.json')) continue;
-      if (rel.endsWith('test/no-literal-colour-fallback.ts')) continue;
-      if (rel.endsWith('test/no-literal-colour-fallback.test.ts')) continue;
-      if (rel.endsWith('test/consumed-contract.ts')) continue;
-      if (rel.endsWith('test/consumed-contract.test.ts')) continue;
-      if (rel.endsWith('test/no-hardcoded-colour.ts')) continue;
-      if (rel.endsWith('test/no-hardcoded-colour.test.ts')) continue;
-      seen.add(rel);
+      if (!isExcludedConsumer(rel)) seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -180,7 +188,7 @@ export function consumedRolesWithSites(): Map<string, SeenAt> {
 
 /** Every distinct consumed `--lab-*` name across the consumer surface, sorted. */
 export function consumedRoles(): string[] {
-  return [...consumedRolesWithSites().keys()].sort();
+  return [...consumedRolesWithSites().keys()].sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -234,7 +242,7 @@ export function missingColourRoles(
     .filter((n) => SEMANTIC_ROLE_PREFIXES.some((p) => n.startsWith(p)))
     .filter((n) => !knownRoles.has(n))
     .filter((n) => classify(n) === 'unclassified')
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /** The live contract role set — exposed so the pin test shares one source. */
