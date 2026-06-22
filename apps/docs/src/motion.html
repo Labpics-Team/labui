@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Motion e2e fixture</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #111;
+        color: #eee;
+        margin: 0;
+        padding: 2rem;
+      }
+
+      /* The animated element: starts at left:0, will animate to left:200px. */
+      #animated-box {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background: #4488ff;
+        border-radius: 4px;
+        top: 6rem;
+        left: 0;
+        /* Transitions must be disabled so we measure JS-driven animation only. */
+        transition: none;
+      }
+
+      #status {
+        margin-top: 6rem;
+        font-size: 0.875rem;
+        color: #aaa;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 data-testid="motion-title">Motion — e2e reduced-motion differential</h1>
+    <p>
+      The box below is animated from <code>left: 0</code> to <code>left: 200px</code> via the
+      <code>@labpics/ui-motion</code> driver. When
+      <code>prefers-reduced-motion: reduce</code> is emulated, the box jumps to its final
+      position in a single step. Without it, the box moves over multiple frames.
+    </p>
+
+    <div id="animated-box" data-testid="animated-box" aria-hidden="true"></div>
+    <div id="status" data-testid="status">idle</div>
+
+    <script type="module">
+      /**
+       * Motion e2e fixture script.
+       *
+       * Imports from @labpics/ui-motion (the package under test). When the engine
+       * is a placeholder, this script will fail at runtime → Playwright will see
+       * left=0 and status="error" → the differential test will FAIL on the
+       * "motion present without reduce" assertion → RED for the right reason.
+       *
+       * When the engine ships, drive() will:
+       *   - With reduce: jump box to left=200px in <=1 frame.
+       *   - Without reduce: animate smoothly over multiple frames.
+       *
+       * The Playwright test emulates reducedMotion media query (chromium/webkit
+       * override) and asserts the differential.
+       */
+      const box = document.getElementById('animated-box');
+      const status = document.getElementById('status');
+
+      async function runAnimation() {
+        status.textContent = 'starting';
+        try {
+          const { drive } = await import('@labpics/ui-motion');
+
+          let frameCount = 0;
+
+          await drive({
+            from: 0,
+            to: 200,
+            spring: { mass: 1, stiffness: 200, damping: 20 },
+            onStep(value) {
+              frameCount++;
+              box.style.left = `${value}px`;
+            },
+            // Let the driver read window.matchMedia directly — this is the real
+            // browser context where the Playwright emulation takes effect.
+            matchMedia: window.matchMedia.bind(window),
+          });
+
+          box.dataset.frameCount = String(frameCount);
+          box.dataset.finalLeft = String(Math.round(parseFloat(box.style.left ?? '0')));
+          status.textContent = 'done';
+        } catch (err) {
+          status.textContent = `error: ${err instanceof Error ? err.message : String(err)}`;
+          box.dataset.error = 'true';
+        }
+      }
+
+      // Run immediately on load.
+      runAnimation();
+    </script>
+  </body>
+</html>

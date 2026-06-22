@@ -126,6 +126,10 @@ export default defineConfig({
         // FUSED with a filterable text input + the shared field-a11y wiring. For the
         // open/filter/navigate/select/dismiss/position + parity + value-change suite.
         combobox: resolve(__dirname, 'src/combobox.html'),
+        // Motion e2e fixture: drives an element from left:0 to left:200px via
+        // @labpics/ui-motion. Playwright emulates reducedMotion media query to
+        // assert the differential (jump vs animated motion).
+        motion: resolve(__dirname, 'src/motion.html'),
       },
     },
   },

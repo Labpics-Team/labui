@@ -109,6 +109,7 @@ export {
   type FieldA11yInput,
   type FieldControlAria,
   type FieldPartIds,
+  fieldAriaProps,
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,

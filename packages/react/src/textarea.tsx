@@ -18,9 +18,9 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type LabFieldSize,
   type LabFieldType,
+  fieldAriaProps,
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
@@ -92,15 +92,6 @@ export interface TextareaProps extends ForwardedTextareaAttrs {
   invalid?: boolean;
   /** Fires on every edit with the current value. */
   onValueChange?: (value: string) => void;
-}
-
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function ariaProps(aria: FieldControlAria): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
 }
 
 /** Grow a textarea to fit its content: reset, then track scrollHeight. */
@@ -178,7 +169,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
       </label>
       <textarea
         {...rest}
-        {...ariaProps(a11y)}
+        {...fieldAriaProps(a11y)}
         ref={setControlRef}
         id={ids.control}
         className="lab-field-control"

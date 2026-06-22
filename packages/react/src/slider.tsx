@@ -34,9 +34,9 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type LabSliderOrientation,
   type LabSliderSize,
+  fieldAriaProps,
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
@@ -93,17 +93,6 @@ export interface SliderProps {
   onValueChange?: (value: number[]) => void;
   /** Fires when a value change gesture ends (drag release / key commit). */
   onValueChangeEnd?: (value: number[]) => void;
-}
-
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function describeProps(
-  aria: Pick<FieldControlAria, 'aria-describedby' | 'aria-errormessage'>,
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
 }
 
 export function Slider({
@@ -212,7 +201,7 @@ export function Slider({
               // biome-ignore lint/suspicious/noArrayIndexKey: the thumb index is the machine's stable thumb key (getThumbProps keys by index), not an incidental list order.
               key={index}
               {...api.getThumbProps({ index })}
-              {...describeProps(fieldAria)}
+              {...fieldAriaProps(fieldAria)}
               className="lab-slider-thumb"
             >
               <input {...api.getHiddenInputProps({ index })} />

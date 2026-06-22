@@ -14,7 +14,9 @@
       "**/test-results/**",
       "**/src/generated/**",
       "**/*.tsbuildinfo",
-      "prototypes/spike-wc-ssr/vendor/**"
+      "prototypes/spike-wc-ssr/vendor/**",
+      "trivy-results.json",
+      ".scannerwork/**"
     ]
   },
   "formatter": {

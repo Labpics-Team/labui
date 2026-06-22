@@ -16,6 +16,7 @@
   "dependencies": {
     "@labpics/colors": "workspace:*",
     "@labpics/ui-core": "workspace:*",
+    "@labpics/ui-motion": "workspace:*",
     "@labpics/ui-react": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
     "@labpics/ui-tokens": "workspace:*",

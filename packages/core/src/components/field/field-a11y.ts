@@ -96,6 +96,26 @@ export function fieldErrorIsActive(input: Pick<FieldA11yInput, 'invalid' | 'hasE
 }
 
 /**
+ * Strip `undefined` entries from a `FieldControlAria` (or any compatible subset)
+ * so React omits the attribute instead of rendering `undefined` as the string
+ * "undefined". Shared by every field-based React component — the single
+ * implementation of this filtering rule across the whole renderer.
+ *
+ * Accepts `FieldControlAria` or any `Pick<FieldControlAria, …>` — the generic
+ * bound covers all narrower call sites (number-input, slider) as well as full-type
+ * call sites (input, textarea, combobox).
+ */
+export function fieldAriaProps<T extends Partial<FieldControlAria>>(
+  aria: T,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(aria)) {
+    if (value !== undefined) out[key] = value;
+  }
+  return out;
+}
+
+/**
  * Compute the native control's ARIA attribute set from the field state. Undefined
  * values mean "do not set the attribute" — the caller omits them rather than
  * emitting an empty string (an empty `aria-describedby` is not the same as none).
