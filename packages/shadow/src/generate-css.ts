@@ -1,9 +1,17 @@
 import {
+  DEFAULT_LIGHT_ANGLE_DEG,
+  DEFAULT_TINT_STRENGTH,
+  SHADOW_COLOR_FALLBACK_DARK,
+  SHADOW_COLOR_FALLBACK_LIGHT,
+  SHADOW_TRANSITION_DURATION,
+  SHADOW_TRANSITION_EASING,
+} from './config.js';
+import { ELEVATION_ROLES, ROLE_TO_SIZE } from './domain/alias.js';
+import {
   DARK_ALPHA_MULTIPLIER_DEFAULT,
   type ShadowTheme,
   defaultAlpha,
 } from './domain/alpha-contract.js';
-import { ELEVATION_ROLES, ROLE_TO_SIZE } from './domain/alias.js';
 import {
   LIGHT_ANGLE_VAR,
   SHADOW_COLOR_VAR,
@@ -12,14 +20,6 @@ import {
 } from './domain/box-shadow.js';
 import { ELEVATION_SHAPES } from './domain/elevation.js';
 import { SHADOW_SLOTS, type ShadowSlotName } from './domain/layer.js';
-import {
-  DEFAULT_LIGHT_ANGLE_DEG,
-  DEFAULT_TINT_STRENGTH,
-  SHADOW_COLOR_FALLBACK_DARK,
-  SHADOW_COLOR_FALLBACK_LIGHT,
-  SHADOW_TRANSITION_DURATION,
-  SHADOW_TRANSITION_EASING,
-} from './config.js';
 
 const SIZE_VAR_PREFIX = '--lab-shadow';
 const SIZE_CLASS_PREFIX = 'lab-shadow';
