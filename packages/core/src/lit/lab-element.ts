@@ -58,6 +58,27 @@ export class LabElement extends LitElement {
   }
 
   /**
+   * Reconcile the accessible name on a hidden `<input>` inside a Zag-machine
+   * control (checkbox, switch). Both elements share identical logic:
+   *
+   * - With a visible default-slot label the machine's `aria-labelledby` (set by
+   *   `spread()` onto the `.label` part) names the input correctly — remove any
+   *   stale `aria-label` so it cannot compete.
+   * - Without a visible label, `aria-labelledby` would resolve to an empty string
+   *   and (per ARIA 1.2) still outrank `aria-label`, leaving the control unnamed.
+   *   Drop the dangling reference and apply `aria-label` from the host attribute.
+   */
+  protected nameHiddenInput(input: HTMLInputElement, ariaLabel: string | null): void {
+    if (this.hasDefaultSlotContent()) {
+      input.removeAttribute('aria-label');
+      return;
+    }
+    input.removeAttribute('aria-labelledby');
+    if (ariaLabel) input.setAttribute('aria-label', ariaLabel);
+    else input.removeAttribute('aria-label');
+  }
+
+  /**
    * Attach a Zag behavior to this element. Returns the controller so the
    * component can read `.api` in `render()`, `.spread()` nodes in `updated()`,
    * and `.send()` events from handlers.

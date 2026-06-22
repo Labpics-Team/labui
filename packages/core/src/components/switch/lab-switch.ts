@@ -288,24 +288,8 @@ export class LabSwitch extends LabElement {
     if (label) this.machineCtl.spread(label, api.getLabelProps());
     if (input) {
       this.machineCtl.spread(input, api.getHiddenInputProps());
-      this.nameHiddenInput(input);
+      this.nameHiddenInput(input, this.ariaLabel);
     }
-  }
-
-  /**
-   * Reconcile the input's accessible name. With a visible label the machine's
-   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
-   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
-   * the control unnamed — so drop the dangling reference and apply `aria-label`.
-   */
-  private nameHiddenInput(input: HTMLInputElement): void {
-    if (this.hasDefaultSlotContent()) {
-      input.removeAttribute('aria-label');
-      return;
-    }
-    input.removeAttribute('aria-labelledby');
-    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
-    else input.removeAttribute('aria-label');
   }
 
   override render(): TemplateResult {

@@ -6,4 +6,3 @@
  * package builds and typechecks cleanly in the bootstrap skeleton.
  */
 
-export const PACKAGE_NAME = '@labpics/ui-motion';

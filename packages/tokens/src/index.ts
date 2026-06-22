@@ -35,5 +35,3 @@ export {
 
 // Generated typed tokens: `var(--lab-*)` references with literal-union types.
 export * from './generated/tokens.js';
-
-export const PACKAGE_NAME = '@labpics/ui-tokens';

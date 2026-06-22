@@ -44,5 +44,3 @@ export {
   SHADOW_COLOR_VAR,
   SURFACE_TINT_VAR,
 } from './domain/box-shadow.js';
-
-export const PACKAGE_NAME = '@labpics/ui-shadow';

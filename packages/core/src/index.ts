@@ -156,5 +156,3 @@ export type {
   LabComboboxType,
 } from './components/combobox/lab-combobox.js';
 export { filterComboboxItems } from './components/combobox/lab-combobox.js';
-
-export const PACKAGE_NAME = '@labpics/ui-core';

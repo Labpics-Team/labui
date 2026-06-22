@@ -285,29 +285,13 @@ export class LabCheckbox extends LabElement {
     if (label) this.checkbox.spread(label, api.getLabelProps());
     if (input) {
       this.checkbox.spread(input, api.getHiddenInputProps());
-      this.nameHiddenInput(input);
+      this.nameHiddenInput(input, this.ariaLabel);
       // `indeterminate` is a DOM PROPERTY (no attribute) — it is what AT reads as
       // aria-checked="mixed". The machine's own sync effect can run before Lit has
       // painted the input, so set it here from the connected api too, keeping the
       // native control's mixed state in lockstep with the machine on every render.
       input.indeterminate = api.indeterminate;
     }
-  }
-
-  /**
-   * Reconcile the input's accessible name. With a visible label the machine's
-   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
-   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
-   * the control unnamed — so drop the dangling reference and apply `aria-label`.
-   */
-  private nameHiddenInput(input: HTMLInputElement): void {
-    if (this.hasDefaultSlotContent()) {
-      input.removeAttribute('aria-label');
-      return;
-    }
-    input.removeAttribute('aria-labelledby');
-    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
-    else input.removeAttribute('aria-label');
   }
 
   override render(): TemplateResult {

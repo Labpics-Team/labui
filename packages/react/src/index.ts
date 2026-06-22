@@ -113,5 +113,3 @@ export { Menu, type MenuProps } from './menu.js';
 // shared `filterComboboxItems` default filter as the Lit element, so both the ARIA
 // contract and the narrowing rule are one source of truth across both renderers.
 export { Combobox, type ComboboxProps } from './combobox.js';
-
-export const PACKAGE_NAME = '@labpics/ui-react';
