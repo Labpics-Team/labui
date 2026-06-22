@@ -1,0 +1,14 @@
+[
+  {
+    "stashRef": "stash@{0}",
+    "description": "pre-restart-20260622-0136 — tokens + docs package.json + pnpm-lock (3 files diff vs main)",
+    "disposition": "keep",
+    "rationale": "Contains work-in-progress tokens changes (packages/tokens/src/index.ts + apps/docs/package.json). Deferred, not lost. Owner must decide whether to promote to a feature branch or discard after review."
+  },
+  {
+    "stashRef": "stash@{1}",
+    "description": "colors-contract-pin-GREEN-wip-recovery-20260621-1737 — colors-stub + core + INTEGRATION.md + pnpm-lock (7 files diff vs main)",
+    "disposition": "keep",
+    "rationale": "Contains WIP for the colors-contract-pin epic (colors-stub test, core css.ts, INTEGRATION.md). Deferred GREEN recovery stash. Owner must promote to a feature branch PR (per epic CH-02) or discard after explicit confirmation — a drop is irreversible and requires ownerConfirmation field populated first."
+  }
+]
