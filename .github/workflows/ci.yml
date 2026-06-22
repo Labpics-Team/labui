@@ -165,6 +165,14 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Assert generated artifact is not stale (shadow)
+        # Re-runs the generator from source, then asserts `git diff --exit-code`
+        # on the committed artifact. If the committed shadow.css diverges from the
+        # source, this step fails BEFORE the Build step can silently overwrite it.
+        # Without this guard the build would regenerate the file, masking a stale
+        # committed artifact as a false green.
+        run: pnpm --filter @labpics/ui-shadow check-generated
+
       - name: Build
         run: pnpm build
 

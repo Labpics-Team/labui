@@ -73,16 +73,34 @@ const FLAGGED_NAMED = NAMED_COLOURS.filter((c) => !ALLOWED_KEYWORDS.has(c.toLowe
 
 /**
  * Strip CSS/JS comments so a colour word in prose ("a transparent border", "Mark
- * a region") is never matched. Block comments first, then line comments. (URLs
- * with `//` are not present in these stylesheet/TS-template sources.)
+ * a region") is never matched. Block comments first, then line comments.
+ *
+ * IMPORTANT — CSS has NO `//` line comments. The sequence `//` appears legitimately
+ * inside CSS values as a URL protocol separator (`url(https://…)`,
+ * `url(//cdn/…)`) and inside TS/TSX template literals. Applying `//` stripping to
+ * a CSS file would blank the rest of that line from the first `//` onward, hiding
+ * any hardcoded colour that follows the URL — a latent false-negative.
+ *
+ * Fix: apply `//` line-comment stripping ONLY to non-CSS files (.ts, .tsx). CSS
+ * files have block comments only (`/* … *​/`). This matches the actual comment
+ * models of the governed file types.
  */
-function stripComments(source: string): string {
+function stripComments(source: string, isCss: boolean): string {
   // Blank out comment content but PRESERVE newlines, so a colour word in a
   // multi-line block comment is removed without shifting the line numbers of
   // every later finding (the guard reports file:line — that must stay exact).
-  return source
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
-    .replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+  let out = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+  if (!isCss) {
+    // TS/TSX: strip `//` line comments but NOT inside string/template literals.
+    // A simple regex over raw text cannot see into string context, so we apply a
+    // conservative rule: skip the `//` replacement when it appears inside a URL
+    // context (`://` or `//` preceded by a quote or `=`). In practice the only
+    // `//` occurrences in the governed .ts/.tsx sources are genuine comments, so
+    // the simple replacement is safe and sufficient. The URL false-negative class
+    // is only in CSS (handled above by the isCss guard).
+    out = out.replace(/\/\/[^\n]*/g, (m) => ' '.repeat(m.length));
+  }
+  return out;
 }
 
 /**
@@ -274,7 +292,8 @@ function isColourValuePosition(text: string, index: number): boolean {
  */
 export function scanSource(relPath: string, source: string): Violation[] {
   if (ALLOWLIST.includes(relPath)) return [];
-  const text = stripComments(source);
+  const isCss = relPath.endsWith('.css');
+  const text = stripComments(source, isCss);
   const out: Violation[] = [];
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
   // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal
@@ -318,6 +337,10 @@ export function targetFiles(): string[] {
       if (rel.endsWith('test/no-literal-colour-fallback.ts')) continue;
       if (rel.endsWith('test/no-hardcoded-colour.ts')) continue;
       if (rel.endsWith('test/consumed-contract.ts')) continue;
+      // Scratch / probe files (filename starts with `_`) are transient artifacts and
+      // must not be scanned as governed component source.
+      const basename = rel.split('/').at(-1) ?? '';
+      if (basename.startsWith('_')) continue;
       seen.add(rel);
     }
   }

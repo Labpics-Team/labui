@@ -16,6 +16,7 @@ playwright-report/
 blob-report/
 .playwright/
 playwright/.cache/
+.playwright-mcp/
 
 # Ad-hoc demo screenshots (owner-review artifacts, regenerated on demand)
 screenshots/

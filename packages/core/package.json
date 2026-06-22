@@ -32,6 +32,7 @@
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
     "./theme.css": "./dist/theme.css",
+    "./shadow.css": "./dist/shadow.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
@@ -39,6 +40,7 @@
     "./dist/materials.css",
     "./dist/glass.css",
     "./dist/theme.css",
+    "./dist/shadow.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**"
@@ -49,6 +51,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@labpics/ui-shadow": "workspace:*",
     "@zag-js/accordion": "1.41.2",
     "@zag-js/checkbox": "1.41.2",
     "@zag-js/combobox": "1.41.2",

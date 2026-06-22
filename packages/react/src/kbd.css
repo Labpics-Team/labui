@@ -26,7 +26,7 @@
   border-radius: var(--_lab-kbd-radius);
   background-color: var(--lab-fill-neutral-tinted);
   border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
-  box-shadow: 0 0.0625rem 0 var(--lab-fx-shadow-penumbra);
+  box-shadow: var(--lab-elevation-resting);
   color: var(--lab-label-primary);
   font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
   font-size: var(--_lab-kbd-font);

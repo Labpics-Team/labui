@@ -77,7 +77,7 @@
   height: var(--_lab-sw-thumb);
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-control-bg);
-  box-shadow: 0 0.0625rem 0.125rem var(--lab-fx-shadow-major);
+  box-shadow: var(--lab-elevation-raised);
   transition: transform 140ms ease;
   transform: translateX(0);
 }

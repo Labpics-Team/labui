@@ -254,7 +254,7 @@ export class LabMenu extends LabElement {
       background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
-      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
+      box-shadow: var(--lab-elevation-overlay);
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};

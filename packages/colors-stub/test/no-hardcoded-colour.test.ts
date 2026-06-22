@@ -204,6 +204,21 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
   it('the existing fallback guard scanAll() still returns [] (non-regression cross-check)', () => {
     expect(scanAll()).toEqual([]);
   });
+
+  // ── (6) CSS `//` URL false-negative regression lock. CSS has no `//` line comments.
+  // A `//` in a CSS value is a URL protocol separator and must NOT blank the rest of
+  // the line. Before this fix, `stripComments` applied `//` erasure to CSS files,
+  // hiding any hardcoded colour that followed a URL on the same line.
+  it('DETECTS a hardcoded colour on the same CSS line as a url(http://…) — CSS has no // comments', () => {
+    // A `//` inside a url() must not blank the rest of the line; the trailing #ff0000 must be caught.
+    expect(
+      scanSource('p.css', '.x{ background:url(http://a/b.png) no-repeat; color:#ff0000 }'),
+    ).toHaveLength(1);
+  });
+
+  it('DETECTS a hardcoded colour on the same CSS line as a protocol-relative url(//…)', () => {
+    expect(scanSource('p.css', '.x{ background:url(//cdn/x.png); color:#ff0000 }')).toHaveLength(1);
+  });
 });
 
 /**

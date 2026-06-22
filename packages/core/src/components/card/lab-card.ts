@@ -33,9 +33,10 @@
  * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
  * dimension tokens through `litVar`. The surface reads `--lab-bg-primary` /
  * `--lab-bg-secondary`; borders read `--lab-border-base` / `--lab-border-soft`;
- * elevation reads the `--lab-fx-shadow-*` role (NOT a baked-in hex shadow — an
- * honest elevation comes from the role layer or it does not exist); the focus
- * ring reads `--lab-border-focus`. No hex, no primitive, no invented role.
+ * elevation reads the `--lab-elevation-*` contract from @labpics/ui-shadow (NOT
+ * the flat `--lab-fx-shadow-*` single-colour tokens — those carry no geometry,
+ * tint, or motion); the focus ring reads `--lab-border-focus`. No hex, no
+ * primitive, no invented role.
  */
 import { type TemplateResult, css, html } from 'lit';
 import { litVar } from '../../css.js';
@@ -99,10 +100,10 @@ export class LabCard extends LabElement {
       border: ${litVar('--lab-stroke-hairline')} solid transparent;
     }
 
-    /* ── variant=elevated: raised surface + an honest role-layer shadow ─────── */
+    /* ── variant=elevated: raised surface + contract elevation token ────────── */
     :host([variant='elevated']) .card {
       background-color: ${litVar('--lab-bg-secondary')};
-      box-shadow: ${litVar('--lab-fx-shadow-minor')};
+      box-shadow: var(--lab-elevation-resting);
     }
 
     /* ── variant=outlined: flat surface, a real border ──────────────────────── */
@@ -125,7 +126,7 @@ export class LabCard extends LabElement {
       border-color: ${litVar('--lab-border-soft')};
     }
     :host([interactive][variant='elevated']:hover) .card {
-      box-shadow: ${litVar('--lab-fx-shadow-major')};
+      box-shadow: var(--lab-elevation-raised);
     }
     /* The host delegates focus; draw the ring when any inner control is
        focus-visible OR the host itself is focused (consumer-set tabindex). */

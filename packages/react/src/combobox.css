@@ -198,7 +198,7 @@
   background-color: var(--lab-bg-secondary);
   color: var(--lab-label-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-soft);
-  box-shadow: 0 0.5rem 1.5rem var(--lab-fx-shadow-major);
+  box-shadow: var(--lab-elevation-overlay);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
   line-height: var(--lab-line-height-md, 1.5);
