@@ -21,6 +21,7 @@
   "sideEffects": ["./dist/shadow.css"],
   "scripts": {
     "generate": "tsx scripts/build-shadow.ts",
+    "check-generated": "tsx scripts/build-shadow.ts && git diff --exit-code src/generated/shadow.css",
     "build": "pnpm run generate && tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",

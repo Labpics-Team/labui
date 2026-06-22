@@ -22,6 +22,7 @@
   "sideEffects": ["./dist/tokens.css"],
   "scripts": {
     "generate": "tsx scripts/build-tokens.ts",
+    "check-generated": "tsx scripts/build-tokens.ts && git diff --exit-code src/generated/tokens.css src/generated/tokens.dtcg.json",
     "build": "pnpm run generate && tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",
