@@ -38,6 +38,9 @@ screenshots/
 npm-debug.log*
 pnpm-debug.log*
 
+# SonarQube / static-analysis scanner cache — machine-local, never committed
+.scannerwork/
+
 # Coverage
 coverage/
 .nyc_output/
