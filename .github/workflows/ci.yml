@@ -92,9 +92,15 @@ jobs:
         if: ${{ steps.dbwarm.outputs.ready == 'true' }}
         run: |
           set +e
+          # Write the report to a FRESH out-dir mounted read-write, NOT into the
+          # restored .trivycache — otherwise a current-run scan error could leave
+          # a STALE report from a prior run's cache and we'd upload it as if it
+          # were this run's. Start clean so the artifact always matches this scan.
+          rm -rf trivy-out && mkdir -p trivy-out
           docker run --rm \
             -v "${PWD}:/src:ro" \
             -v "${PWD}/.trivycache:/root/.cache/trivy" \
+            -v "${PWD}/trivy-out:/out" \
             "${TRIVY_IMAGE}" \
             fs /src \
             --scanners vuln,secret,misconfig \
@@ -104,9 +110,9 @@ jobs:
             --no-progress \
             --exit-code 1 \
             --format table \
-            --output /root/.cache/trivy/trivy-report.txt
+            --output /out/trivy-report.txt
           rc=$?
-          cp .trivycache/trivy-report.txt trivy-report.txt 2>/dev/null || true
+          cp trivy-out/trivy-report.txt trivy-report.txt 2>/dev/null || true
           echo "::group::Trivy report"; cat trivy-report.txt 2>/dev/null || echo "(no report file)"; echo "::endgroup::"
           if [ $rc -eq 0 ]; then
             echo "Trivy: no HIGH/CRITICAL findings. PASS."
