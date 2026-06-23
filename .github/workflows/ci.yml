@@ -73,12 +73,12 @@ jobs:
             echo "::warning title=Trivy SCA skipped::Trivy DB could not be fetched after 5 attempts (registry/rate-limit). Failing SOFT on infra — this is NOT a security finding. The scan gate still hard-fails on a real HIGH/CRITICAL whenever the DB is reachable."
           fi
 
-      # Step 2: scan against the already-warmed DB with --skip-db-update, so a
+      # Step 2: scan against the already-warmed DB with DB-update skipped, so a
       # registry blip cannot re-fail it here. Runs ONLY when the DB is present;
       # a real HIGH/CRITICAL finding then HARD-fails the job (exit-code 1).
       - name: Run Trivy (SCA + secrets + misconfig)
         if: ${{ steps.dbwarm.outputs.ready == 'true' }}
-        uses: aquasecurity/trivy-action@77137e9dc3a03f72fd33c9b66b5485cdb9df6af3 # v0.31.0
+        uses: aquasecurity/trivy-action@76071ef0d7ec797419534a183b498b4d6366cf37 # v0.31.0
         with:
           scan-type: fs
           scan-ref: .
@@ -88,13 +88,15 @@ jobs:
           severity: HIGH,CRITICAL
           # Real findings HARD-fail the gate.
           exit-code: '1'
-          # DB is already warmed above; do not re-download (no infra re-fail).
-          skip-db-update: true
-          skip-java-db-update: true
+          # DB is already warmed above; reuse that cache.
           cache-dir: .trivycache
           output: trivy-report.txt
           format: table
         env:
+          # trivy-action v0.31.0 has no skip-db-update input; Trivy reads these
+          # env vars directly, so a registry blip cannot re-fail the scan here.
+          TRIVY_SKIP_DB_UPDATE: "true"
+          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
           TRIVY_DISABLE_VEX_NOTICE: "true"
 
       - name: Upload Trivy report
