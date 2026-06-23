@@ -153,7 +153,7 @@ export function consumerFiles(): string[] {
       seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -194,7 +194,7 @@ export function consumedRolesWithSites(): Map<string, SeenAt> {
 
 /** Every distinct consumed `--lab-*` name across the consumer surface, sorted. */
 export function consumedRoles(): string[] {
-  return [...consumedRolesWithSites().keys()].sort();
+  return [...consumedRolesWithSites().keys()].sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -248,7 +248,7 @@ export function missingColourRoles(
     .filter((n) => SEMANTIC_ROLE_PREFIXES.some((p) => n.startsWith(p)))
     .filter((n) => !knownRoles.has(n))
     .filter((n) => classify(n) === 'unclassified')
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /** The live contract role set — exposed so the pin test shares one source. */
