@@ -96,6 +96,28 @@ export function fieldErrorIsActive(input: Pick<FieldA11yInput, 'invalid' | 'hasE
 }
 
 /**
+ * Strip `undefined` values from a `FieldControlAria` (or any partial subset of
+ * it) so the caller can spread the result onto a native element without React
+ * emitting the literal string `"undefined"` as an attribute value.
+ *
+ * Accepts the full `FieldControlAria` or any `Pick<FieldControlAria, …>` — the
+ * implementation only iterates present keys, so narrower subsets work identically.
+ * Returns a plain `Record<string, string>` that is safe to spread onto any DOM
+ * element (JSX or otherwise).
+ *
+ * This eliminates the local `ariaProps` / `describeProps` helpers that were
+ * duplicated across `input.tsx`, `textarea.tsx`, `number-input.tsx`, `combobox.tsx`,
+ * and `slider.tsx` — one source of truth, no drift.
+ */
+export function fieldControlAriaProps(aria: Partial<FieldControlAria>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(aria)) {
+    if (value !== undefined) out[key] = value;
+  }
+  return out;
+}
+
+/**
  * Compute the native control's ARIA attribute set from the field state. Undefined
  * values mean "do not set the attribute" — the caller omits them rather than
  * emitting an empty string (an empty `aria-describedby` is not the same as none).

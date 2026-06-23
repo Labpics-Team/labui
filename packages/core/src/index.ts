@@ -110,6 +110,7 @@ export {
   type FieldControlAria,
   type FieldPartIds,
   fieldControlAria,
+  fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
   type LabFieldSize,
