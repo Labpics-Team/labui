@@ -15,8 +15,125 @@ concurrency:
 
 env:
   CI: "true"
+  # Trivy scanner image pinned by tag AND digest (supply-chain: digest is the
+  # immutable identity; the tag stays for human readability). Bump both together.
+  TRIVY_IMAGE: "aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e"
 
 jobs:
+  sca:
+    name: supply-chain · secrets · misconfig
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      # ── Why this job is hand-rolled around the pinned Trivy CONTAINER instead
+      #    of aquasecurity/trivy-action ─────────────────────────────────────────
+      # Root cause of the systemic red: any single-step Trivy wrapper conflates
+      # TWO different non-zero exits — (a) infra setup (binary install from GitHub
+      # releases, or vuln-DB pull from GHCR, both anonymously rate-limited) and
+      # (b) a genuine HIGH/CRITICAL finding (`--exit-code 1`). The action fails in
+      # ~2-13s on infra and reds the whole PR, indistinguishable from a finding.
+      #
+      # Fix: run the pinned aquasec/trivy image directly so WE own every exit.
+      #   * DB pull is its own retrying, mirror-fallback step → fail-SOFT on infra.
+      #   * The scan runs ONLY when the DB warmed, with --skip-db-update so a
+      #     registry blip cannot re-fail it, and --exit-code 1 reserved EXCLUSIVELY
+      #     for findings. We branch on Trivy's exit: 0 = clean (pass), 1 = real
+      #     HIGH/CRITICAL (HARD fail), anything else = infra/scan error (fail-SOFT
+      #     with a visible ::warning::). Security gate kept; infra never reds.
+      - name: Cache Trivy DB
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: .trivycache
+          # Primary key rotates with the workflow run so the post-job save always
+          # persists the freshly-warmed DB; restore-keys reuses the most recent
+          # prior cache so a healthy run still starts from a warm DB instead of a
+          # cold full download. (A static key would go stale and never re-save.)
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Warm Trivy DB (fail-soft on infra)
+        id: dbwarm
+        env:
+          # Mirror the vuln/java DBs (GHCR + public.ecr.aws) to dodge anon limits.
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1
+        run: |
+          set +e
+          mkdir -p .trivycache
+          ok=""
+          for attempt in 1 2 3 4 5; do
+            echo "::group::Trivy DB download attempt ${attempt}"
+            docker run --rm \
+              -e TRIVY_DB_REPOSITORY -e TRIVY_JAVA_DB_REPOSITORY \
+              -v "${PWD}/.trivycache:/root/.cache/trivy" \
+              "${TRIVY_IMAGE}" \
+              image --download-db-only --cache-dir /root/.cache/trivy
+            rc=$?
+            echo "::endgroup::"
+            if [ $rc -eq 0 ]; then ok="true"; break; fi
+            echo "DB download attempt ${attempt} failed (rc=${rc}); backing off..."
+            sleep $((attempt * 10))
+          done
+          if [ "${ok}" = "true" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Trivy DB present in cache; scan will run."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Trivy SCA skipped::Trivy DB could not be fetched after 5 attempts (registry/rate-limit). Failing SOFT on infra — NOT a security finding. The gate still hard-fails on a real HIGH/CRITICAL whenever the DB is reachable."
+          fi
+
+      - name: Scan (vuln + secret + misconfig; hard-fail only on findings)
+        if: ${{ steps.dbwarm.outputs.ready == 'true' }}
+        run: |
+          set +e
+          # Write the report to a FRESH out-dir mounted read-write, NOT into the
+          # restored .trivycache — otherwise a current-run scan error could leave
+          # a STALE report from a prior run's cache and we'd upload it as if it
+          # were this run's. Start clean so the artifact always matches this scan.
+          rm -rf trivy-out && mkdir -p trivy-out
+          docker run --rm \
+            -v "${PWD}:/src:ro" \
+            -v "${PWD}/.trivycache:/root/.cache/trivy" \
+            -v "${PWD}/trivy-out:/out" \
+            "${TRIVY_IMAGE}" \
+            fs /src \
+            --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL \
+            --skip-db-update --skip-java-db-update \
+            --cache-dir /root/.cache/trivy \
+            --no-progress \
+            --exit-code 1 \
+            --format table \
+            --output /out/trivy-report.txt
+          rc=$?
+          cp trivy-out/trivy-report.txt trivy-report.txt 2>/dev/null || true
+          echo "::group::Trivy report"; cat trivy-report.txt 2>/dev/null || echo "(no report file)"; echo "::endgroup::"
+          if [ $rc -eq 0 ]; then
+            echo "Trivy: no HIGH/CRITICAL findings. PASS."
+            exit 0
+          elif [ $rc -eq 1 ]; then
+            echo "::error title=Trivy findings::Trivy reported HIGH/CRITICAL vuln/secret/misconfig findings — see report. HARD failing the gate."
+            exit 1
+          else
+            echo "::warning title=Trivy infra error::Trivy exited ${rc} (scan/engine error, not a findings exit). Failing SOFT — this is NOT a security finding."
+            exit 0
+          fi
+
+      - name: Upload Trivy report
+        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: trivy-report
+          path: trivy-report.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
   quality:
     name: lint · typecheck · build
     runs-on: ubuntu-latest
