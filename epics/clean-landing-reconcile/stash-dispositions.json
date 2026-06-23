@@ -1,0 +1,18 @@
+[
+  {
+    "stashRef": "stash@{0}",
+    "description": "pre-restart-20260622-0136 — pre-session-restart safety stash; contains tokens/packages/tokens/src/index.ts, apps/docs/package.json, pnpm-lock.yaml changes that were in-flight before the harness was restarted on 2026-06-22.",
+    "disposition": "keep",
+    "classifiedAt": "2026-06-23",
+    "classifiedBy": "next-frontend implementer",
+    "rationale": "Work-in-progress that may contain unique token changes not yet on main. Keep until owner reviews and decides to promote or discard. Dropping is irreversible — requires explicit owner confirmation."
+  },
+  {
+    "stashRef": "stash@{1}",
+    "description": "colors-contract-pin-GREEN-wip-recovery-20260621-1737 — WIP recovery stash from colors-contract-pin work; contains INTEGRATION.md, packages/colors-stub/test, packages/core/src, packages/core/package.json, pnpm-lock.yaml.",
+    "disposition": "keep",
+    "classifiedAt": "2026-06-23",
+    "classifiedBy": "next-frontend implementer",
+    "rationale": "Colors contract pinning work that was stashed during a recovery; may contain unique changes to packages/core/src/css.ts. Keep until owner reviews the diff and decides to promote or discard. Dropping is irreversible — requires explicit owner confirmation."
+  }
+]
