@@ -17,6 +17,95 @@ env:
   CI: "true"
 
 jobs:
+  sca:
+    name: supply-chain · secrets · misconfig
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      # Resilience split (root cause: the trivy-action does DB-fetch AND scan in
+      # one atomic step with exit-code 1, so a transient GHCR rate-limit on the
+      # vuln-DB download fails the job in ~3s — indistinguishable from a real
+      # finding, gating every PR red on infra, not on security.)
+      #
+      # Step 1: warm the Trivy DBs into a cache dir with retries. This step is
+      # fail-SOFT: an infra/registry failure here NEVER reds the job; it only
+      # records that the DB could not be fetched so the scan is skipped.
+      - name: Cache Trivy DB
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: .trivycache
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Warm Trivy DB (fail-soft on infra)
+        id: dbwarm
+        env:
+          # Mirror the vuln DB off GHCR to dodge anonymous rate-limits.
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1
+        run: |
+          set +e
+          mkdir -p .trivycache
+          ok=""
+          for attempt in 1 2 3 4 5; do
+            echo "::group::Trivy DB download attempt ${attempt}"
+            docker run --rm \
+              -e TRIVY_DB_REPOSITORY -e TRIVY_JAVA_DB_REPOSITORY \
+              -v "${PWD}/.trivycache:/root/.cache/trivy" \
+              aquasec/trivy:0.66.0 \
+              image --download-db-only --cache-dir /root/.cache/trivy
+            if [ $? -eq 0 ]; then ok="true"; break; fi
+            echo "::endgroup::"
+            echo "DB download attempt ${attempt} failed; backing off..."
+            sleep $((attempt * 10))
+          done
+          if [ "${ok}" = "true" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Trivy DB is present in cache; scan will run."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Trivy SCA skipped::Trivy DB could not be fetched after 5 attempts (registry/rate-limit). Failing SOFT on infra — this is NOT a security finding. The scan gate still hard-fails on a real HIGH/CRITICAL whenever the DB is reachable."
+          fi
+
+      # Step 2: scan against the already-warmed DB with --skip-db-update, so a
+      # registry blip cannot re-fail it here. Runs ONLY when the DB is present;
+      # a real HIGH/CRITICAL finding then HARD-fails the job (exit-code 1).
+      - name: Run Trivy (SCA + secrets + misconfig)
+        if: ${{ steps.dbwarm.outputs.ready == 'true' }}
+        uses: aquasecurity/trivy-action@77137e9dc3a03f72fd33c9b66b5485cdb9df6af3 # v0.31.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          # Vulnerability + secret + misconfiguration classes in one pass.
+          scanners: vuln,secret,misconfig
+          # Only block on HIGH/CRITICAL; LOW/MEDIUM are informational.
+          severity: HIGH,CRITICAL
+          # Real findings HARD-fail the gate.
+          exit-code: '1'
+          # DB is already warmed above; do not re-download (no infra re-fail).
+          skip-db-update: true
+          skip-java-db-update: true
+          cache-dir: .trivycache
+          output: trivy-report.txt
+          format: table
+        env:
+          TRIVY_DISABLE_VEX_NOTICE: "true"
+
+      - name: Upload Trivy report
+        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: trivy-report
+          path: trivy-report.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
   quality:
     name: lint · typecheck · build
     runs-on: ubuntu-latest
