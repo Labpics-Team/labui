@@ -43,6 +43,22 @@ function chromium() {
   return pw.chromium ?? pw.default?.chromium;
 }
 
+let sharedBrowser = null;
+async function getBrowser() {
+  if (!sharedBrowser) {
+    sharedBrowser = await chromium().launch({ headless: true });
+  }
+  return sharedBrowser;
+}
+
+process.on('exit', () => {
+  if (sharedBrowser) {
+    try {
+      sharedBrowser.close();
+    } catch {}
+  }
+});
+
 const TYPES = {
   '.html': 'text/html',
   '.js': 'text/javascript',
@@ -117,9 +133,10 @@ export async function runCacheSuite() {
     server.listen(0, '127.0.0.1', () => r(server.address().port)),
   );
 
-  const browser = await chromium().launch({ headless: true });
+  const browser = await getBrowser();
+  const context = await browser.newContext({ deviceScaleFactor: 2 });
   try {
-    const page = await browser.newContext({ deviceScaleFactor: 2 }).then((c) => c.newPage());
+    const page = await context.newPage();
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => window.__ready && window.__LG?.attach);
 
@@ -259,7 +276,7 @@ export async function runCacheSuite() {
     const pass = cases.every((c) => c.pass);
     return { pass, cases };
   } finally {
-    await browser.close();
+    await context.close();
     server.close();
   }
 }
@@ -306,9 +323,10 @@ export async function runPendingDecodeRegression() {
     server.listen(0, '127.0.0.1', () => r(server.address().port)),
   );
 
-  const browser = await chromium().launch({ headless: true });
+  const browser = await getBrowser();
+  const context = await browser.newContext({ deviceScaleFactor: 2 });
   try {
-    const page = await browser.newContext({ deviceScaleFactor: 2 }).then((c) => c.newPage());
+    const page = await context.newPage();
     await page.goto(`http://127.0.0.1:${port}/`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => window.__ready && window.__LG?.attach);
 
@@ -383,7 +401,7 @@ export async function runPendingDecodeRegression() {
       return { applicable: true, lensStamped, detail };
     });
   } finally {
-    await browser.close();
+    await context.close();
     server.close();
   }
 }
@@ -395,11 +413,13 @@ export async function runPendingDecodeRegression() {
  * ════════════════════════════════════════════════════════════════════════════ */
 export async function runScratchSuite() {
   const { server, port } = await serveDir(PROTO_DIR);
-  const browser = await chromium().launch({ headless: true });
+  const browser = await getBrowser();
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 820 },
+    deviceScaleFactor: 2,
+  });
   try {
-    const page = await browser
-      .newContext({ viewport: { width: 1280, height: 820 }, deviceScaleFactor: 2 })
-      .then((c) => c.newPage());
+    const page = await context.newPage();
     await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(300);
 
@@ -498,7 +518,7 @@ export async function runScratchSuite() {
     const memoryBounded = Object.values(checks).every(Boolean);
     return { memoryBounded, checks, detail: result };
   } finally {
-    await browser.close();
+    await context.close();
     server.close();
   }
 }
@@ -617,11 +637,12 @@ const elTag = (el) => el.replace('#', '');
 const THRESHOLD = { meanDelta: 1.0, maxDelta: 8, pctChanged: 1.0 };
 
 async function withGatePage(server, port, reduced, fn) {
-  const browser = await chromium().launch({ headless: true });
+  const browser = await getBrowser();
+  const ctx = { viewport: { width: 1280, height: 820 }, deviceScaleFactor: 2 };
+  if (reduced) ctx.reducedMotion = 'reduce';
+  const context = await browser.newContext(ctx);
   try {
-    const ctx = { viewport: { width: 1280, height: 820 }, deviceScaleFactor: 2 };
-    if (reduced) ctx.reducedMotion = 'reduce';
-    const page = await browser.newContext(ctx).then((c) => c.newPage());
+    const page = await context.newPage();
     if (reduced) {
       try {
         const session = await page.context().newCDPSession(page);
@@ -633,10 +654,10 @@ async function withGatePage(server, port, reduced, fn) {
       }
     }
     await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(50);
     return await fn(page);
   } finally {
-    await browser.close();
+    await context.close();
   }
 }
 
@@ -682,7 +703,7 @@ async function settle(page, expectLens) {
     });
     return broken.length ? `lens-expected but unsettled: #${broken.join(', #')}` : null;
   }, expectLens);
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(50);
   if (diag) {
     // H1: throw, do NOT screenshot a no-lens render and let the gate pass on it.
     throw new Error(`settle(): ${diag} — a lens-expected render timed out without a feImage href`);
