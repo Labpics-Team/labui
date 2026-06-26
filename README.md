@@ -4,9 +4,11 @@
 > `@labpics/colors` color core.
 
 LabUI is a cross-stack design system: dimension tokens (em/rem), fluid typography,
-switchable materials (blur / glass / solid), a dependency-free motion engine, an
-icon system, and a docs site. Components consume **semantic tokens only** and the
-color core is consumed as a package — never duplicated.
+switchable materials (blur / glass / solid), an icon system, and a docs site.
+Components consume **semantic tokens only** and the color core is consumed as a
+package — never duplicated. Motion lives in the standalone `@labpics/motion`
+package (consumed like the color core when a component needs JS-driven motion),
+not bundled here.
 
 This repository is the monorepo skeleton. Packages are intentionally empty
 placeholders that build cleanly; real implementation lands chapter by chapter.
@@ -17,7 +19,6 @@ placeholders that build cleanly; real implementation lands chapter by chapter.
 | ------------------- | -------------------- | ---------------------------------------------------- |
 | `packages/tokens`   | `@labpics/ui-tokens` | Token generator + generated dimension/type tokens    |
 | `packages/core`     | `@labpics/ui-core`   | Cross-stack component core (base TBD in cross-stack)  |
-| `packages/motion`   | `@labpics/ui-motion` | Dependency-free motion engine (spring, declarative)  |
 | `packages/icons`    | `@labpics/ui-icons`  | Icon system (variable font + SVG + Lottie)           |
 | `packages/react`    | `@labpics/ui-react`  | React / Next adapter                                 |
 | `packages/vue`      | `@labpics/ui-vue`    | Vue adapter                                          |
