@@ -22,7 +22,7 @@ env:
 jobs:
   sca:
     name: supply-chain · secrets · misconfig
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -136,7 +136,7 @@ jobs:
 
   quality:
     name: lint · typecheck · build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -181,7 +181,7 @@ jobs:
 
   e2e:
     name: playwright smoke
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 20
     steps:
       - name: Checkout
