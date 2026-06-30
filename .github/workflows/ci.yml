@@ -207,7 +207,11 @@ jobs:
       - name: Install Playwright browsers (Chromium + WebKit)
         # WebKit added with materials-system: the glass material must read the
         # same across engines, so the glass smoke runs on Chromium AND WebKit.
-        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium webkit
+        # NB: на self-hosted раннерах системные зависимости браузеров ставятся
+        # ОДИН раз на хосте (без --with-deps, который требует sudo apt без TTY и
+        # падает под пользователем раннера). Здесь — только сами браузеры в
+        # ~/.cache/ms-playwright (кэшируются между прогонами).
+        run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
       - name: Run smoke tests
         run: pnpm test:e2e
