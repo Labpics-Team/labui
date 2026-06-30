@@ -1,14 +1,20 @@
 [
   {
     "stashRef": "stash@{0}",
-    "description": "pre-restart-20260622-0136 — tokens + docs package.json + pnpm-lock (3 files diff vs main)",
+    "description": "WIP on main at edb01bb — автоматически созданный stash без метки, индекс сдвинулся из-за нового stash поверх стека",
     "disposition": "keep",
-    "rationale": "Contains work-in-progress tokens changes (packages/tokens/src/index.ts + apps/docs/package.json). Deferred, not lost. Owner must decide whether to promote to a feature branch or discard after review."
+    "rationale": "Недокументированный WIP-stash, созданный до начала tracking-dispositions (или при переключении веток). Владелец должен явно решить: продвинуть в ветку, включить в существующую работу или удалить с подтверждением (ownerConfirmation)."
   },
   {
     "stashRef": "stash@{1}",
-    "description": "colors-contract-pin-GREEN-wip-recovery-20260621-1737 — colors-stub + core + INTEGRATION.md + pnpm-lock (7 files diff vs main)",
+    "description": "pre-restart-20260622-0136 — tokens + docs package.json + pnpm-lock (3 файла diff vs main)",
     "disposition": "keep",
-    "rationale": "Contains WIP for the colors-contract-pin epic (colors-stub test, core css.ts, INTEGRATION.md). Deferred GREEN recovery stash. Owner must promote to a feature branch PR (per epic CH-02) or discard after explicit confirmation — a drop is irreversible and requires ownerConfirmation field populated first."
+    "rationale": "Содержит WIP-изменения токенов (packages/tokens/src/index.ts + apps/docs/package.json). Отложено, не потеряно. Владелец должен решить: продвинуть в feature-branch или удалить после ревью."
+  },
+  {
+    "stashRef": "stash@{2}",
+    "description": "colors-contract-pin-GREEN-wip-recovery-20260621-1737 — colors-stub + core + INTEGRATION.md + pnpm-lock (7 файлов diff vs main)",
+    "disposition": "keep",
+    "rationale": "Содержит WIP эпика colors-contract-pin (colors-stub тест, core css.ts, INTEGRATION.md). Отложенный GREEN-recovery stash. Владелец должен продвинуть в feature-branch PR (согласно эпику CH-02) или явно подтвердить удаление — дроп stash необратим, требует поля ownerConfirmation."
   }
 ]
