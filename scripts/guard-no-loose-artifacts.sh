@@ -30,10 +30,12 @@
 
 set -euo pipefail
 
-# Collect staged files from the index.
+# Collect staged files from the index. --diff-filter=ACMR excludes staged
+# deletes (D): removing a forbidden artifact is a legitimate cleanup and must
+# not itself be blocked by this guard.
 # Fall back to listing all tracked files if there is nothing staged
 # (supports running the guard against an already-committed tree in CI).
-STAGED=$(git diff --cached --name-only 2>/dev/null)
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR 2>/dev/null)
 if [ -z "$STAGED" ]; then
   STAGED=$(git ls-files 2>/dev/null)
 fi

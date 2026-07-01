@@ -25,7 +25,7 @@ refine_after: []
    - **drop-safe** — all content already on main (superseded WIP);
    - **promote** — contains wanted edits not yet on main → belongs to an owning scope's PR (likely `colors-contract-pin` for stash@{1}; tokens/docs for stash@{0});
    - **keep** — ambiguous, defer with a reason.
-4. Record the classification + per-stash evidence in `epics/tree-reconcile-clean-landing/stash-dispositions.json` (mirror the schema already used on the existing reconcile branch if present).
+4. Record the classification + per-stash evidence in `epics/clean-landing-reconcile/stash-dispositions.json` (mirror the schema already used on the existing reconcile branch if present).
 
 ## Must NOT Do
 - Do NOT `git stash drop` or `git stash pop` anything in this task — classification only (pop/apply mutate; drop is irreversible).

@@ -612,7 +612,7 @@ describe('guard-no-false-positive-on-clean-head', () => {
 //
 //   BITE: if a HIGH/CRITICAL finding is real, this test fails with an explicit
 //   message, forcing triage before merge. A masked finding (silent pass) is
-//   impossible — the assertion demands conclusion='SUCCESS' or classified-flake.
+//   impossible — the assertion demands bucket='pass' or classified-flake.
 // ---------------------------------------------------------------------------
 describe('sca-trivy-flake-vs-real', () => {
   const prNumber = process.env.LABUI_CLEAN_LANDING_PR;
@@ -628,7 +628,7 @@ describe('sca-trivy-flake-vs-real', () => {
 
       const result = spawnSync(
         'gh',
-        ['pr', 'checks', prNumber, '--json', 'name,state,conclusion,startedAt,completedAt'],
+        ['pr', 'checks', prNumber, '--json', 'name,state,bucket,startedAt,completedAt'],
         {
           cwd: REPO_ROOT,
           encoding: 'utf8',
@@ -640,10 +640,12 @@ describe('sca-trivy-flake-vs-real', () => {
         `gh pr checks failed:\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
       ).toBe(0);
 
+      // NOTE: 'gh pr checks --json' has no 'conclusion' field — only 'bucket'
+      // (pass|fail|pending|skipping|cancel), which is what SUCCESS/FAILURE map to.
       type CheckEntry = {
         name: string;
         state: string;
-        conclusion: string;
+        bucket: string;
         startedAt: string;
         completedAt: string;
       };
@@ -660,7 +662,7 @@ describe('sca-trivy-flake-vs-real', () => {
         return;
       }
 
-      if (scaCheck.conclusion === 'SUCCESS') {
+      if (scaCheck.bucket === 'pass') {
         // Cleanly green — done.
         return;
       }
@@ -677,7 +679,7 @@ describe('sca-trivy-flake-vs-real', () => {
 
       expect(
         isLikelyFlake,
-        `sca check failed with conclusion="${scaCheck.conclusion}" and ran for ${durationSec.toFixed(1)}s.\nDuration >= 1.5s means the DB loaded — this is likely a REAL HIGH/CRITICAL finding, not a rate-limit flake.\nDo NOT mask this finding. Triage per EXTERNAL-FAILURE policy: provide log excerpt + main-repro citation.\nCheck name: "${scaCheck.name}"`,
+        `sca check failed with bucket="${scaCheck.bucket}" and ran for ${durationSec.toFixed(1)}s.\nDuration >= 1.5s means the DB loaded — this is likely a REAL HIGH/CRITICAL finding, not a rate-limit flake.\nDo NOT mask this finding. Triage per EXTERNAL-FAILURE policy: provide log excerpt + main-repro citation.\nCheck name: "${scaCheck.name}"`,
       ).toBe(true);
     },
   );
@@ -717,21 +719,18 @@ describe('pr-quality-e2e-real-green', () => {
         throw new Error('LABUI_CLEAN_LANDING_PR env var is not set — test must be skipped');
       }
 
-      const result = spawnSync(
-        'gh',
-        ['pr', 'checks', prNumber, '--json', 'name,state,conclusion'],
-        {
-          cwd: REPO_ROOT,
-          encoding: 'utf8',
-          shell: false,
-        },
-      );
+      const result = spawnSync('gh', ['pr', 'checks', prNumber, '--json', 'name,state,bucket'], {
+        cwd: REPO_ROOT,
+        encoding: 'utf8',
+        shell: false,
+      });
       expect(
         result.status,
         `gh pr checks failed:\nstdout: ${result.stdout}\nstderr: ${result.stderr}`,
       ).toBe(0);
 
-      type CheckEntry = { name: string; state: string; conclusion: string };
+      // NOTE: 'gh pr checks --json' has no 'conclusion' field — only 'bucket'.
+      type CheckEntry = { name: string; state: string; bucket: string };
       const checks: CheckEntry[] = JSON.parse(result.stdout);
 
       const qualityCheck = checks.find((c) => c.name === 'lint · typecheck · build');
@@ -744,14 +743,14 @@ describe('pr-quality-e2e-real-green', () => {
       expect(e2eCheck, 'e2e check (playwright smoke) not found in pr checks output').toBeDefined();
 
       expect(
-        qualityCheck?.conclusion,
-        `quality check is NOT green: ${qualityCheck?.conclusion}\nIf this is an external failure, provide evidence in EXTERNAL-FAILURE TRIAGE policy format (log excerpt + main-repro citation) before claiming pass.`,
-      ).toBe('SUCCESS');
+        qualityCheck?.bucket,
+        `quality check is NOT green: ${qualityCheck?.bucket}\nIf this is an external failure, provide evidence in EXTERNAL-FAILURE TRIAGE policy format (log excerpt + main-repro citation) before claiming pass.`,
+      ).toBe('pass');
 
       expect(
-        e2eCheck?.conclusion,
-        `e2e check is NOT green: ${e2eCheck?.conclusion}\nIf this is an external failure, provide evidence in EXTERNAL-FAILURE TRIAGE policy format (log excerpt + main-repro citation) before claiming pass.`,
-      ).toBe('SUCCESS');
+        e2eCheck?.bucket,
+        `e2e check is NOT green: ${e2eCheck?.bucket}\nIf this is an external failure, provide evidence in EXTERNAL-FAILURE TRIAGE policy format (log excerpt + main-repro citation) before claiming pass.`,
+      ).toBe('pass');
     },
   );
 
@@ -974,7 +973,7 @@ describe('stash-inventory-landed-vs-unique', () => {
       ]);
 
       const unexpected = changedFiles.filter((f) => !EXPECTED_STASH_1_FILES.has(f));
-      const missing = [...EXPECTED_STASH_1_FILES].filter((f) => !EXPECTED_STASH_1_FILES.has(f));
+      const missing = [...EXPECTED_STASH_1_FILES].filter((f) => !changedFiles.includes(f));
 
       expect(
         unexpected,
@@ -1245,10 +1244,17 @@ describe('isolated-review-pass', () => {
         );
       }
 
-      // A real CodeRabbit review appears as user "coderabbitai" with state APPROVED or CHANGES_REQUESTED.
-      const coderabbitReview = reviews.find(
-        (r) => r.user === 'coderabbitai' || r.user.includes('coderabbit'),
-      );
+      // A real CodeRabbit review appears as the exact account "coderabbitai".
+      // The earlier `.includes('coderabbit')` fallback let any impersonating
+      // login match; match the exact known bot accounts only.
+      const CODERABBIT_USERS = new Set(['coderabbitai', 'coderabbitai[bot]']);
+      const coderabbitReviews = reviews
+        .filter((r) => CODERABBIT_USERS.has(r.user))
+        .sort((a, b) => new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime());
+      // Only the LATEST CodeRabbit review is the "final state" verdict — an
+      // earlier CHANGES_REQUESTED superseded by a later APPROVED must not count
+      // against the gate, and vice versa.
+      const coderabbitReview = coderabbitReviews.at(-1);
 
       expect(
         coderabbitReview,
@@ -1257,10 +1263,8 @@ describe('isolated-review-pass', () => {
 
       // CodeRabbit must have APPROVED (not just commented) or left CHANGES_REQUESTED
       // that were subsequently resolved. A bare COMMENTED state is not a verdict.
-      const coderabbitApproved = reviews.some(
-        (r) =>
-          (r.user === 'coderabbitai' || r.user.includes('coderabbit')) && r.state === 'APPROVED',
-      );
+      // Use only the LATEST review's state — not "some historical APPROVED".
+      const coderabbitApproved = coderabbitReview?.state === 'APPROVED';
 
       expect(
         coderabbitApproved,
@@ -1280,7 +1284,7 @@ describe('isolated-review-pass', () => {
         'api',
         `repos/Labpics-Team/labui/pulls/${prNumber}/reviews`,
         '--jq',
-        '[.[] | {user: .user.login, state: .state}]',
+        '[.[] | {user: .user.login, state: .state, submitted_at: .submitted_at}]',
       ],
       {
         cwd: REPO_ROOT,
@@ -1290,13 +1294,25 @@ describe('isolated-review-pass', () => {
     );
     expect(result.status, 'gh api reviews failed').toBe(0);
 
-    type ReviewEntry = { user: string; state: string };
+    type ReviewEntry = { user: string; state: string; submitted_at: string };
     const reviews: ReviewEntry[] = JSON.parse(result.stdout) as ReviewEntry[];
 
+    // Only the LATEST review per user is the "final state" verdict — an older
+    // APPROVED superseded by a later CHANGES_REQUESTED (or vice versa) must
+    // not be counted.
+    const latestByUser = new Map<string, ReviewEntry>();
+    for (const r of reviews) {
+      const prev = latestByUser.get(r.user);
+      if (!prev || new Date(r.submitted_at).getTime() > new Date(prev.submitted_at).getTime()) {
+        latestByUser.set(r.user, r);
+      }
+    }
+
     // Count distinct approvers (exclude bots that auto-approve without reading).
-    const approvers = [
-      ...new Set(reviews.filter((r) => r.state === 'APPROVED').map((r) => r.user)),
-    ];
+    const approvers = [...latestByUser.values()]
+      .filter((r) => r.state === 'APPROVED')
+      .map((r) => r.user)
+      .filter((user) => !user.endsWith('[bot]') && user !== 'github-actions[bot]');
 
     expect(
       approvers.length,
