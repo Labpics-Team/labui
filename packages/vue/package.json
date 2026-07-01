@@ -2,7 +2,7 @@
   "name": "@labpics/ui-vue",
   "version": "0.0.0",
   "private": true,
-  "description": "Native Vue renderer for LabUI (ADR-0001, A-prime). Thin Vue components over the shared axis type contract — no Lit in the Vue path. Shared types come from @labpics/ui-core.",
+  "description": "Vue adapter for LabUI (ADR-0001, A-prime): thin Vue wrappers that mount the shared Lit Web Components (<lab-button>, …) from @labpics/ui-core and forward props/events/slots. Vue consumes the custom elements — it does not re-implement them. Axis types come from @labpics/ui-core.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",

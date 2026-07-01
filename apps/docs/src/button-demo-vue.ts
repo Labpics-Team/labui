@@ -1,11 +1,12 @@
 /*
  * Button parity demo — the Vue half.
  *
- * Mounts the native-Vue <Button> with the SAME specimens as the Lit
- * `<lab-button>` markup in button.html and the React demo, so the Playwright
- * suite can read all three renderers' computed styles and assert they match
- * (visual parity, ADR-0001) — and drive each one's click/keyboard/a11y
- * behaviour.
+ * Mounts the Vue <Button> — a THIN wrapper that renders the Lit `<lab-button>`
+ * custom element (ADR-0001, A-prime: Vue consumes the Web Component, it is not
+ * a native re-implementation) — with the SAME specimens as the directly-authored
+ * `<lab-button>` markup in button.html and the React twin. The Playwright suite
+ * then asserts the wrapper-mounted element resolves the SAME computed styles and
+ * behaviour as a hand-written `<lab-button>`.
  *
  * No `.vue` SFC / compiler here: `h()` render functions keep the Vue package
  * (and this demo) buildable with the SAME esbuild pass Vite already runs for
@@ -45,8 +46,9 @@ const App = {
         () => 'Off',
       ),
       // Icon-only: no default-slot content, so the ONLY name source is
-      // aria-label, forwarded to the native <button> via attribute fallthrough.
-      // The icon slot holds a decorative glyph.
+      // aria-label. It falls through onto the <lab-button> host, and the Lit
+      // element forwards it onto the inner shadow <button> (WCAG 4.1.2). The
+      // icon slot holds a decorative glyph.
       h(
         Button,
         {

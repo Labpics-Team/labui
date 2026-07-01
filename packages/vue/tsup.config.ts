@@ -1,11 +1,9 @@
 import { libraryPreset } from '../../tsup.config.base';
 
 export default libraryPreset({
-  // Vue stays external — the consumer's app owns it; we never bundle it (same
-  // rule as React in packages/react/tsup.config.ts).
+  // Vue AND the Lit core stay external — the consumer's app owns Vue, and the
+  // Lit runtime (the `<lab-*>` custom elements this adapter mounts) is resolved
+  // once from @labpics/ui-core, never bundled per-adapter. The registration
+  // side-effect import survives tree-shaking via `sideEffects` in package.json.
   external: ['vue', /^@labpics\//],
-  // Inline the component CSS (button.css) into the JS as a runtime-injected
-  // <style>, so importing the component brings its styles with it — no
-  // separate stylesheet-import step, and no drift from the React entry's build.
-  injectStyle: true,
 });
