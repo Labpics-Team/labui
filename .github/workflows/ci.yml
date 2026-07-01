@@ -20,6 +20,13 @@ env:
   TRIVY_IMAGE: "aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e"
 
 jobs:
+  # ── ИНВАРИАНТ root-docker ───────────────────────────────────────────────────
+  # Каждый job, чей container: или docker run работает как root, ОБЯЗАН
+  # завершаться шагом «Вернуть владение воркспейса раннеру» (if: always()).
+  # Без него root-owned артефакты в shared _work раннера ломают clean-шаг
+  # следующего job'а («rm: ... Permission denied»).
+  # Текущие root-docker job'ы: sca (docker run Trivy), e2e (container: Playwright).
+  # При добавлении нового root-контейнерного job'а — добавь шаг chown-back.
   sca:
     name: supply-chain · secrets · misconfig
     runs-on: [self-hosted, Linux, X64]
@@ -146,6 +153,14 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
+        # sca-job запускает docker-контейнеры Trivy как root; root-owned файлы
+        # в GITHUB_WORKSPACE ломают clean-шаг следующего job'а.
+        # Возвращаем владение раннер-пользователю (uid 1000 = daniel).
+        if: ${{ always() }}
+        shell: bash
+        run: chown -R 1000:1000 "${GITHUB_WORKSPACE}" 2>/dev/null || true
+
   quality:
     name: lint · typecheck · build
     runs-on: [self-hosted, Linux, X64]
@@ -173,7 +188,9 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: pnpm
+          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
+          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
+          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -204,23 +221,11 @@ jobs:
   e2e:
     name: playwright smoke
     runs-on: [self-hosted, Linux, X64]
-    # Робастность: e2e исполняется в ОФИЦИАЛЬНОМ образе Playwright, пришпиленном к
-    # версии репо (1.49.1). Браузеры (Chromium+WebKit) и ВСЕ системные библиотеки
-    # вшиты в образ, поэтому хосту self-hosted раннера не нужно ничего
-    # браузер-специфичного: окружение детерминировано, версия совпадает с
-    # @playwright/test, и всё переживает пересборку раннера. Это заменяет хрупкую
-    # ручную доустановку системных библиотек на хосте.
-    container:
-      # Пиннинг по тегу И digest (как TRIVY_IMAGE выше): тег — для читаемости,
-      # digest — неизменяемая идентичность (тег мутабелен, MS может пересобрать).
-      # Бампить пару вместе.
-      image: mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2
-      # Контейнер бежит под UID:GID раннер-пользователя (daniel=1000, совпадает с
-      # pwuser в образе) — иначе билд-артефакты в ОБЩЕМ воркспейсе self-hosted
-      # раннера остаются root-owned, и следующий не-контейнерный job (quality)
-      # не может очистить их при checkout → падение. --ipc=host рекомендован
-      # Playwright для стабильности Chromium.
-      options: --user 1000:1000 --ipc=host
+    # e2e исполняется на ХОСТЕ раннера (как daniel), НЕ в контейнере: системные
+    # библиотеки браузеров установлены на раннере один раз (provision-as-code),
+    # версия совпадает с @playwright/test. Так избегаем хрупкого пула 3.4GB-образа
+    # Playwright на «Initialize containers» и root-владения артефактов в общем
+    # воркспейсе (host-job билдит под daniel → следующий job чистит без проблем).
     timeout-minutes: 20
     steps:
       # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
@@ -245,7 +250,9 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: pnpm
+          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
+          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
+          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -256,11 +263,10 @@ jobs:
       - name: Install Playwright browsers (Chromium + WebKit)
         # WebKit added with materials-system: the glass material must read the
         # same across engines, so the glass smoke runs on Chromium AND WebKit.
-        # NB: job идёт в контейнере mcr.microsoft.com/playwright той же версии,
-        # где браузеры и системные библиотеки уже вшиты в образ — поэтому
-        # --with-deps не нужен (он требовал sudo apt без TTY и падал под
-        # пользователем раннера). Этот шаг — верификация наличия браузеров нужной
-        # версии, фактически no-op в данном образе.
+        # Ставим только браузеры в ~/.cache/ms-playwright (кэш между прогонами).
+        # Системные библиотеки браузеров установлены на раннере один раз
+        # (provision-as-code), поэтому --with-deps НЕ нужен (он требовал sudo apt
+        # без TTY и падал под пользователем раннера).
         run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
       - name: Run smoke tests
