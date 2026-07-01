@@ -61,9 +61,14 @@ describe('shadow stack — fixed per-slot alphas (owner law)', () => {
   });
 });
 
+/** Convert a Figma px value to the rem string the generator emits (base 16px). */
+function px(value: number): string {
+  return `${Math.round((value / 16) * 10000) / 10000}rem`;
+}
+
 describe('shadow stack — verbatim opora ladder at angle 0', () => {
   // The owner's table, transcribed independently of the source module, so this
-  // test is a true cross-check (r = blur px, y = offsetY px).
+  // test is a true cross-check (r = blur, y = offsetY, both Figma px).
   const TABLE: Record<string, ReadonlyArray<{ r: number; y: number }>> = {
     xs: [
       { r: 1, y: 0 },
@@ -101,7 +106,7 @@ describe('shadow stack — verbatim opora ladder at angle 0', () => {
     expect(DEFAULT_LIGHT_ANGLE_DEG).toBe(0);
   });
 
-  it('each ply at angle 0 is `0 {y}px {r}px <color>` — bit-for-bit the table', () => {
+  it('each ply at angle 0 is `0 {y}rem {r}rem <color>` — bit-for-bit the table (rem-converted)', () => {
     for (const level of ELEVATION_SHAPES) {
       const expected = TABLE[level.name];
       if (!expected) throw new Error(`no table row for ${level.name}`);
@@ -109,7 +114,7 @@ describe('shadow stack — verbatim opora ladder at angle 0', () => {
         const row = expected[i];
         if (!row) throw new Error(`no table cell ${level.name}.${slot}`);
         const ply = composePly(slot, level.slots[slot], 0);
-        expect(ply.startsWith(`0 ${row.y}px ${row.r}px `)).toBe(true);
+        expect(ply.startsWith(`0 ${px(row.y)} ${px(row.r)} `)).toBe(true);
       });
     }
   });
