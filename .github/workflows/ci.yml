@@ -79,7 +79,7 @@ jobs:
           ok=""
           for attempt in 1 2 3 4 5; do
             echo "::group::Trivy DB download attempt ${attempt}"
-            docker run --rm \
+            docker run --rm --user "$(id -u):$(id -g)" \
               -e TRIVY_DB_REPOSITORY -e TRIVY_JAVA_DB_REPOSITORY \
               -v "${PWD}/.trivycache:/root/.cache/trivy" \
               "${TRIVY_IMAGE}" \
@@ -107,7 +107,7 @@ jobs:
           # a STALE report from a prior run's cache and we'd upload it as if it
           # were this run's. Start clean so the artifact always matches this scan.
           rm -rf trivy-out && mkdir -p trivy-out
-          docker run --rm \
+          docker run --rm --user "$(id -u):$(id -g)" \
             -v "${PWD}:/src:ro" \
             -v "${PWD}/.trivycache:/root/.cache/trivy" \
             -v "${PWD}/trivy-out:/out" \
