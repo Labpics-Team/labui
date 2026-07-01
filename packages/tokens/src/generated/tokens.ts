@@ -42,6 +42,14 @@ export const space = {
 
 export type SpaceToken = keyof typeof space;
 
+export const size = {
+  'control-s': 'var(--lab-size-control-s)',
+  'control-m': 'var(--lab-size-control-m)',
+  'control-l': 'var(--lab-size-control-l)',
+} as const;
+
+export type SizeToken = keyof typeof size;
+
 export const radius = {
   '0': 'var(--lab-radius-0)',
   xs: 'var(--lab-radius-xs)',
@@ -59,6 +67,7 @@ export const radius = {
   card: 'var(--lab-radius-card)',
   pill: 'var(--lab-radius-pill)',
   circle: 'var(--lab-radius-circle)',
+  'concentric-min': 'var(--lab-radius-concentric-min)',
 } as const;
 
 export type RadiusToken = keyof typeof radius;

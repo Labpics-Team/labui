@@ -15,6 +15,10 @@ export function generateCss(tokens: ResolvedTokens): string {
       ...tokenLines(tokens.spacing),
       ...aliasLines(tokens.spacingAliases),
     ]),
+    section('Sizes — габариты контрол-бокса оси размера компонента (rem)', [
+      ...tokenLines(tokens.sizes),
+      ...aliasLines(tokens.sizeAliases),
+    ]),
     section('Radii — geometric rem + full pill', [
       ...tokenLines(tokens.radii),
       ...aliasLines(tokens.radiiAliases),

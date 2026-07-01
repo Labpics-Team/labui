@@ -37,6 +37,11 @@
   --lab-space-2xl: var(--lab-space-12); /* -> 12 */
   --lab-space-3xl: var(--lab-space-16); /* -> 16 */
 
+  /* Sizes — габариты контрол-бокса оси размера компонента (rem) */
+  --lab-size-control-s: 0.75rem;
+  --lab-size-control-m: 1rem;
+  --lab-size-control-l: 1.25rem;
+
   /* Radii — geometric rem + full pill */
   --lab-radius-0: 0rem;
   --lab-radius-xs: 0.125rem;
@@ -54,6 +59,7 @@
   --lab-radius-card: var(--lab-radius-2xl); /* -> 2xl */
   --lab-radius-pill: var(--lab-radius-full); /* -> full */
   --lab-radius-circle: var(--lab-radius-full); /* -> full */
+  --lab-radius-concentric-min: var(--lab-radius-xs); /* -> xs */
 
   /* Z-index — semantic layers, gap-spaced */
   --lab-z-primary: 0; /* Base content plane. */

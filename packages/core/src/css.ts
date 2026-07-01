@@ -47,6 +47,27 @@ export function litVar(name: LabVar, fallback?: LabVar | (string & {})): CSSResu
 }
 
 /**
+ * Концентрический радиус (docs/dimension-contract.md §3): внутренний радиус
+ * поверхности, вложенной на `inset` внутрь угла радиуса `outer`, равен
+ * `outer - inset` с полом `--lab-radius-concentric-min` (2px) — глубокое
+ * вложение скругляется, а не становится прямым углом (паттерн концентричности
+ * Apple). Это ЕДИНСТВЕННЫЙ способ компонента вывести вложенный радиус;
+ * копирование числа «на глаз» — класс дрейфа, который этот хелпер закрывает
+ * (под гардом colors-stub/test/no-magic-dimension).
+ *
+ * `outer` / `inset` — CSS-выражения <length>: обычно ссылки `cssVar(...)` или
+ * локальные ручки `var(--_x)`, никогда голые литералы.
+ */
+export function concentricRadius(outer: string, inset: string): string {
+  return `max(calc(${outer} - ${inset}), ${cssVar('--lab-radius-concentric-min', '0.125rem')})`;
+}
+
+/** `concentricRadius` в типе Lit `CSSResult` (то же обоснование, что у `litVar`). */
+export function litConcentricRadius(outer: string, inset: string): CSSResult {
+  return unsafeCSS(concentricRadius(outer, inset));
+}
+
+/**
  * The semantic role families a component is permitted to read. This is a
  * documentation+lint anchor, not an exhaustive enum (the full set is owned by
  * @labpics/colors) — it states the LANGUAGE boundary: these prefixes are legal,
@@ -64,6 +85,7 @@ export const SEMANTIC_ROLE_PREFIXES = [
 /** The dimension role families (from @labpics/ui-tokens). Always legal to read. */
 export const DIMENSION_PREFIXES = [
   '--lab-space-',
+  '--lab-size-', // габариты контрол-бокса оси размера компонента
   '--lab-radius-',
   '--lab-z-',
   '--lab-font-',

@@ -15,6 +15,7 @@ export function generateTs(tokens: ResolvedTokens): string {
   const parts: string[] = [banner()];
 
   parts.push(scaleConst('space', tokens.spacing, tokens.spacingAliases));
+  parts.push(scaleConst('size', tokens.sizes, tokens.sizeAliases));
   parts.push(scaleConst('radius', tokens.radii, tokens.radiiAliases));
   parts.push(scaleConst('zIndex', tokens.zIndex));
   parts.push(scaleConst('fontSize', tokens.fontSizes));
