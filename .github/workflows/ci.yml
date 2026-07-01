@@ -189,7 +189,10 @@ jobs:
     # @playwright/test, и всё переживает пересборку раннера. Это заменяет хрупкую
     # ручную доустановку системных библиотек на хосте.
     container:
-      image: mcr.microsoft.com/playwright:v1.49.1-noble
+      # Пиннинг по тегу И digest (как TRIVY_IMAGE выше): тег — для читаемости,
+      # digest — неизменяемая идентичность (тег мутабелен, MS может пересобрать).
+      # Бампить пару вместе.
+      image: mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -215,10 +218,11 @@ jobs:
       - name: Install Playwright browsers (Chromium + WebKit)
         # WebKit added with materials-system: the glass material must read the
         # same across engines, so the glass smoke runs on Chromium AND WebKit.
-        # NB: на self-hosted раннерах системные зависимости браузеров ставятся
-        # ОДИН раз на хосте (без --with-deps, который требует sudo apt без TTY и
-        # падает под пользователем раннера). Здесь — только сами браузеры в
-        # ~/.cache/ms-playwright (кэшируются между прогонами).
+        # NB: job идёт в контейнере mcr.microsoft.com/playwright той же версии,
+        # где браузеры и системные библиотеки уже вшиты в образ — поэтому
+        # --with-deps не нужен (он требовал sudo apt без TTY и падал под
+        # пользователем раннера). Этот шаг — верификация наличия браузеров нужной
+        # версии, фактически no-op в данном образе.
         run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
       - name: Run smoke tests
