@@ -25,6 +25,16 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 10
     steps:
+      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
+      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
+      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
+      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      - name: Чистый воркспейс (self-hosted)
+        shell: bash
+        run: |
+          cd /tmp
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -139,6 +149,16 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 15
     steps:
+      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
+      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
+      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
+      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      - name: Чистый воркспейс (self-hosted)
+        shell: bash
+        run: |
+          cd /tmp
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -201,6 +221,16 @@ jobs:
       options: --user 1000:1000 --ipc=host
     timeout-minutes: 20
     steps:
+      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
+      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
+      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
+      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      - name: Чистый воркспейс (self-hosted)
+        shell: bash
+        run: |
+          cd /tmp
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
