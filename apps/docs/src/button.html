@@ -3,19 +3,20 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LabUI — Button parity (Lit ↔ React)</title>
+    <title>LabUI — Button parity (Lit · React · Vue)</title>
     <link rel="stylesheet" href="./button-demo.css" />
   </head>
   <body>
     <main>
       <h1 data-testid="button-title">
-        Button parity — <code>&lt;lab-button&gt;</code> (Lit) ↔ <code>&lt;Button&gt;</code> (React)
+        Button parity — <code>&lt;lab-button&gt;</code> (Lit) · <code>&lt;Button&gt;</code> (React,
+        native) · <code>&lt;Button&gt;</code> (Vue, over <code>&lt;lab-button&gt;</code>)
       </h1>
       <p>
-        Two renderers, one design system. The same axes, the same semantic
-        <code>--lab-*</code> roles, the same structure and states. This page mounts
-        both side by side so the Playwright suite can assert visual parity and
-        behaviour on each.
+        One design system. React is the native renderer; Vue is a thin wrapper that
+        mounts the Lit <code>&lt;lab-button&gt;</code> Web Component (ADR-0001, A-prime).
+        This page mounts all three side by side under one <code>[data-theme]</code> so
+        the Playwright suite can assert visual parity and behaviour on each.
       </p>
 
       <div class="row">
@@ -56,7 +57,15 @@
         <h2>React</h2>
         <div id="react-root" class="specimens"></div>
       </section>
+
+      <!-- Vue renderer: a thin wrapper mounting the Lit <lab-button> Web Component,
+           mounted from button-demo-vue.ts into this node. -->
+      <section class="renderer" aria-label="Vue renderer" data-testid="vue-renderer">
+        <h2>Vue</h2>
+        <div id="vue-root" class="specimens"></div>
+      </section>
     </main>
     <script type="module" src="./button-demo.tsx"></script>
+    <script type="module" src="./button-demo-vue.ts"></script>
   </body>
 </html>
