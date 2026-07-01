@@ -188,7 +188,9 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: pnpm
+          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
+          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
+          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -248,7 +250,9 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          cache: pnpm
+          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
+          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
+          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
       - name: Install
         run: pnpm install --frozen-lockfile
