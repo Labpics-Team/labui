@@ -215,12 +215,12 @@ jobs:
       # digest — неизменяемая идентичность (тег мутабелен, MS может пересобрать).
       # Бампить пару вместе.
       image: mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2
-      # Контейнер бежит под UID:GID раннер-пользователя (daniel=1000, совпадает с
-      # pwuser в образе) — иначе билд-артефакты в ОБЩЕМ воркспейсе self-hosted
-      # раннера остаются root-owned, и следующий не-контейнерный job (quality)
-      # не может очистить их при checkout → падение. --ipc=host рекомендован
-      # Playwright для стабильности Chromium.
-      options: --user 1000:1000 --ipc=host
+      # Контейнер бежит как root (дефолт образа): так setup-node/pnpm пишут в HOME
+      # контейнера без EACCES, а браузеры/депы уже вшиты. Чтобы root-артефакты e2e
+      # не ломали очистку последующих job'ов в ОБЩЕМ воркспейсе self-hosted раннера,
+      # в конце job'а воркспейс возвращается во владение раннеру (шаг chown-back).
+      # --ipc=host рекомендован Playwright для стабильности Chromium.
+      options: --ipc=host
     timeout-minutes: 20
     steps:
       # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
@@ -274,3 +274,11 @@ jobs:
           path: apps/docs/playwright-report/
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
+        # e2e-контейнер работает как root и оставляет root-owned артефакты в общем
+        # _work раннера. Возвращаем владение раннер-пользователю (uid 1000 = daniel),
+        # чтобы clean-шаг следующего (не-контейнерного) job'а мог очистить чекаут.
+        if: ${{ always() }}
+        shell: bash
+        run: chown -R 1000:1000 "${GITHUB_WORKSPACE}" 2>/dev/null || true
