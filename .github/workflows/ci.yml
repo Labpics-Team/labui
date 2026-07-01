@@ -25,6 +25,16 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 10
     steps:
+      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
+      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
+      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
+      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      - name: Чистый воркспейс (self-hosted)
+        shell: bash
+        run: |
+          cd /tmp
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -48,7 +58,9 @@ jobs:
       - name: Cache Trivy DB
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
-          path: .trivycache
+          # Кэш вне чекаута (RUNNER_TEMP): trivy пишется как root из docker, и в
+          # общем воркспейсе self-hosted это ломало очистку следующих job'ов.
+          path: ${{ runner.temp }}/trivycache
           # Primary key rotates with the workflow run so the post-job save always
           # persists the freshly-warmed DB; restore-keys reuses the most recent
           # prior cache so a healthy run still starts from a warm DB instead of a
@@ -65,13 +77,13 @@ jobs:
           TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1
         run: |
           set +e
-          mkdir -p .trivycache
+          mkdir -p "${RUNNER_TEMP}/trivycache"
           ok=""
           for attempt in 1 2 3 4 5; do
             echo "::group::Trivy DB download attempt ${attempt}"
             docker run --rm \
               -e TRIVY_DB_REPOSITORY -e TRIVY_JAVA_DB_REPOSITORY \
-              -v "${PWD}/.trivycache:/root/.cache/trivy" \
+              -v "${RUNNER_TEMP}/trivycache:/root/.cache/trivy" \
               "${TRIVY_IMAGE}" \
               image --download-db-only --cache-dir /root/.cache/trivy
             rc=$?
@@ -96,11 +108,11 @@ jobs:
           # restored .trivycache — otherwise a current-run scan error could leave
           # a STALE report from a prior run's cache and we'd upload it as if it
           # were this run's. Start clean so the artifact always matches this scan.
-          rm -rf trivy-out && mkdir -p trivy-out
+          rm -rf "${RUNNER_TEMP}/trivy-out" && mkdir -p "${RUNNER_TEMP}/trivy-out"
           docker run --rm \
             -v "${PWD}:/src:ro" \
-            -v "${PWD}/.trivycache:/root/.cache/trivy" \
-            -v "${PWD}/trivy-out:/out" \
+            -v "${RUNNER_TEMP}/trivycache:/root/.cache/trivy" \
+            -v "${RUNNER_TEMP}/trivy-out:/out" \
             "${TRIVY_IMAGE}" \
             fs /src \
             --scanners vuln,secret,misconfig \
@@ -112,7 +124,7 @@ jobs:
             --format table \
             --output /out/trivy-report.txt
           rc=$?
-          cp trivy-out/trivy-report.txt trivy-report.txt 2>/dev/null || true
+          cp "${RUNNER_TEMP}/trivy-out/trivy-report.txt" trivy-report.txt 2>/dev/null || true
           echo "::group::Trivy report"; cat trivy-report.txt 2>/dev/null || echo "(no report file)"; echo "::endgroup::"
           if [ $rc -eq 0 ]; then
             echo "Trivy: no HIGH/CRITICAL findings. PASS."
@@ -139,6 +151,16 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 15
     steps:
+      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
+      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
+      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
+      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      - name: Чистый воркспейс (self-hosted)
+        shell: bash
+        run: |
+          cd /tmp
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -201,6 +223,16 @@ jobs:
       options: --user 1000:1000 --ipc=host
     timeout-minutes: 20
     steps:
+      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
+      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
+      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
+      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      - name: Чистый воркспейс (self-hosted)
+        shell: bash
+        run: |
+          cd /tmp
+          rm -rf "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:

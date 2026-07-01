@@ -42,3 +42,6 @@ pnpm-debug.log*
 # Coverage
 coverage/
 .nyc_output/
+
+# design-phase audit artifacts (specs/screenshots) — не в продуктовом репо
+.design/
