@@ -136,7 +136,7 @@ test.describe('label-over-own-surface · Button', () => {
     await assertLabelContrast(litButton, litButton);
   });
 
-  test('React accent-fill: белый текст над синей ��оверхностью ≥ 4.5:1', async ({ page }) => {
+  test('React accent-fill: белый текст над синей поверхностью ≥ 4.5:1', async ({ page }) => {
     // React: нативный <button> в light DOM (testid прямо на кнопке).
     const reactButton = page.getByTestId('react-accent-fill');
     await reactButton.waitFor();
@@ -158,8 +158,10 @@ test.describe('label-over-own-surface · Button', () => {
 });
 
 /**
- * label-over-own-surface для Input/Textarea — критичны для форм.
+ * label-over-own-surface для Input — критичен для форм.
  * Проверяем, что текст в поле ввода читаем на фоне control-bg поверхности.
+ * (Textarea делит ту же control-bg роль и покрыта общим сканом `assertAxeAA`
+ * выше — отдельного явного label-contrast теста для неё не заведено.)
  */
 test.describe('label-over-own-surface · Input', () => {
   test.beforeEach(async ({ page }) => {

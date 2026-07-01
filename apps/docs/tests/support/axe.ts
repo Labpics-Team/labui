@@ -40,7 +40,6 @@ export interface ContrastResult {
   fg: string;
   bg: string;
   ratio: number;
-  passes: boolean;
   threshold: number;
 }
 
@@ -123,29 +122,54 @@ export async function assertLabelContrast(
     );
   }
 
+  if (bgRgb.a < 1) {
+    // Прозрачный/полупрозрачный background-color (напр. "transparent" /
+    // rgba(0,0,0,0)) НЕЛЬЗЯ молча трактовать как чёрный — реальный отрендеренный
+    // фон приходит от предка. Явная ошибка вместо тихого false-negative/positive:
+    // вызывающий обязан передать surfaceLocator на непрозрачного предка.
+    throw new Error(
+      [
+        `assertLabelContrast: background-color поверхности прозрачен (alpha=${bgRgb.a}), контраст не определён.`,
+        `  bg="${bgRaw}"`,
+        '  Передайте surfaceLocator, указывающий на ближайшего НЕПРОЗРАЧНОГО предка с реальной заливкой.',
+      ].join('\n'),
+    );
+  }
+
   const ratio = contrastRatio(fgRgb, bgRgb);
   const threshold = isLargeText ? 3.0 : 4.5;
-  const passes = ratio >= threshold;
 
   expect(
     ratio,
     `Контраст лейбл/поверхность: ${ratio.toFixed(2)}:1 (порог ${threshold}:1)\n  fg=${fgRaw} | bg=${bgRaw}`,
   ).toBeGreaterThanOrEqual(threshold);
 
-  return { fg: fgRaw, bg: bgRaw, ratio, passes, threshold };
+  return { fg: fgRaw, bg: bgRaw, ratio, threshold };
 }
 
 // ---------------------------------------------------------------------------
 // Вспомогательные функции (WCAG contrast ratio)
 // ---------------------------------------------------------------------------
 
-type Rgb = { r: number; g: number; b: number };
+type Rgb = { r: number; g: number; b: number; a: number };
 
-/** Разбирает строку `rgb(r, g, b)` или `rgba(r, g, b, a)` в компоненты 0-255. */
+/**
+ * Разбирает строку `rgb(r, g, b)` или `rgba(r, g, b, a)` в компоненты 0-255
+ * + альфа (0-1, по умолчанию 1 — непрозрачно). Альфа ОБЯЗАНА разбираться:
+ * `background-color: transparent` computed-стиль браузера возвращает
+ * `rgba(0, 0, 0, 0)`, и без учёта альфы это молча читалось бы как непрозрачный
+ * чёрный — ложно занижая/завышая контраст поверхности, чей реальный фон
+ * приходит от предка.
+ */
 function parseRgb(raw: string): Rgb | null {
-  const m = raw.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  const m = raw.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
   if (!m) return null;
-  return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
+  return {
+    r: Number(m[1]),
+    g: Number(m[2]),
+    b: Number(m[3]),
+    a: m[4] === undefined ? 1 : Number(m[4]),
+  };
 }
 
 /** Relative luminance по WCAG 2.x (sRGB → linearised). */

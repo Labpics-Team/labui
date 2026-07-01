@@ -100,21 +100,29 @@ test('axe-red-proof: assertLabelContrast обнаруживает контрас
   const seedEl = page.locator('[data-axe-seed="contrast-red-proof"]');
   await seedEl.waitFor();
 
-  // assertLabelContrast ДОЛЖЕН упасть (expect throws) — отлавливаем через
-  // try/catch и проверяем, что ошибка действительно была брошена.
-  let threw = false;
+  // assertLabelContrast ДОЛЖЕН упасть ИМЕННО с ошибкой контраста (expect
+  // toBeGreaterThanOrEqual), а не с любой другой ошибкой (например, если
+  // локатор/парсинг цвета сломаны — это ложный PASS canary, не доказательство
+  // кусачести). Проверяем сообщение конкретной assertion-ошибки.
+  let caught: unknown;
   try {
     await assertLabelContrast(seedEl, seedEl);
-  } catch {
-    threw = true;
+  } catch (err) {
+    caught = err;
   }
 
   expect(
-    threw,
+    caught,
+    'axe-red-proof FAIL: assertLabelContrast НЕ обнаружила нарушение контраста 1:1 (не бросила исключение).',
+  ).toBeInstanceOf(Error);
+  expect(
+    (caught as Error).message,
     [
-      'axe-red-proof FAIL: assertLabelContrast НЕ обнаружила нарушение контраста 1:1.',
-      'Белый текст на белом фоне (1:1) должен приводить к ошибке assertion.',
-      'Если этот тест зелёный — assertLabelContrast сломана или не кусается.',
+      'axe-red-proof FAIL: assertLabelContrast бросила ошибку, но НЕ ту — ожидалось',
+      'сообщение о нарушении контраста «Контраст лейбл/поверхность». Получено:',
+      String((caught as Error)?.message),
+      'Если это не assertion-ошибка контраста — детектор сломан (locator/parse-ошибка',
+      'маскируется под красный тест, что и есть ложный PASS canary).',
     ].join('\n'),
-  ).toBe(true);
+  ).toContain('Контраст лейбл/поверхность');
 });
