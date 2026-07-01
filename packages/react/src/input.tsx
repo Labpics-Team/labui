@@ -20,10 +20,10 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type LabFieldSize,
   type LabFieldType,
   fieldControlAria,
+  fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
 } from '@labpics/ui-core';
@@ -94,15 +94,6 @@ export interface InputProps extends ForwardedInputAttrs {
   onValueChange?: (value: string) => void;
 }
 
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function ariaProps(aria: FieldControlAria): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
-}
-
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
     type = 'neutral',
@@ -158,7 +149,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       </label>
       <input
         {...rest}
-        {...ariaProps(a11y)}
+        {...fieldControlAriaProps(a11y)}
         ref={ref}
         id={ids.control}
         className="lab-field-control"
