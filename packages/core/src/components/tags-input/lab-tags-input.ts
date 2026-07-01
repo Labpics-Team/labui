@@ -1,3 +1,4 @@
+import * as tagsInputMachine from '@zag-js/tags-input';
 /**
  * `<lab-tags-input>` — a tokenized text field: a text input plus a row of removable tag
  * chips. Enter adds a tag, Backspace removes the last, each chip has a delete button and
@@ -49,9 +50,10 @@
  * any JS upgrades it.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
-import * as tagsInputMachine from '@zag-js/tags-input';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -61,8 +63,6 @@ import {
   fieldPartIds,
 } from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 export type { LabFieldSize as LabTagsInputSize, LabFieldType as LabTagsInputType };
 
@@ -283,7 +283,7 @@ export class LabTagsInput extends LabElement {
         margin: 0;
         padding: var(--_field-pad-y) var(--_field-pad-x);
         background-color: ${litVar('--lab-bg-primary')};
-        border: 0.0625rem solid ${litVar('--lab-border-base')};
+        border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
         transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -314,16 +314,16 @@ export class LabTagsInput extends LabElement {
          input has no border of its own — the .control frame carries it). */
       :host .control:has(.input:focus-visible) {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-focus')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
       }
       :host([type='danger']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-danger')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
       }
       :host([type='warning']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-warning-strong')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
       }
       :host([type='success']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-success-strong')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
       }
 
       /* One tag chip — a pill with the tag text and a delete button. The machine sets
@@ -392,8 +392,8 @@ export class LabTagsInput extends LabElement {
         background-color: ${litVar('--lab-fill-neutral')};
       }
       .item-delete:focus-visible {
-        outline: 0.125rem solid ${litVar('--lab-border-focus')};
-        outline-offset: -0.125rem;
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: calc(-1 * ${litVar('--lab-focus-ring-offset')});
       }
       .item-delete[data-disabled] {
         cursor: not-allowed;

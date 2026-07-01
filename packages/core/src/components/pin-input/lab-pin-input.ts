@@ -1,3 +1,4 @@
+import * as pinInputMachine from '@zag-js/pin-input';
 /**
  * `<lab-pin-input>` — a segmented code field: N single-character `<input>`s that
  * focus-advance as the user types, fill across on paste, and optionally mask, driven
@@ -43,9 +44,10 @@
  * before any JS upgrades it.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
-import * as pinInputMachine from '@zag-js/pin-input';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -55,8 +57,6 @@ import {
   fieldPartIds,
 } from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 export type { LabFieldSize as LabPinInputSize, LabFieldType as LabPinInputType };
 
@@ -263,7 +263,7 @@ export class LabPinInput extends LabElement {
         text-align: center;
         color: ${litVar('--lab-label-primary')};
         background-color: ${litVar('--lab-bg-primary')};
-        border: 0.0625rem solid ${litVar('--lab-border-base')};
+        border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         outline: none;
         transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -312,16 +312,16 @@ export class LabPinInput extends LabElement {
          own border, so the ring lights on the focused box. */
       .segment:focus-visible {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-focus')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
       }
       :host([type='danger']) .segment:focus-visible {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-danger')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
       }
       :host([type='warning']) .segment:focus-visible {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-warning-strong')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
       }
       :host([type='success']) .segment:focus-visible {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-success-strong')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
       }
 
       @media (prefers-reduced-motion: reduce) {

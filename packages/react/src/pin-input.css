@@ -94,7 +94,7 @@
   text-align: center;
   color: var(--lab-label-primary);
   background-color: var(--lab-bg-primary);
-  border: 0.0625rem solid var(--lab-border-base);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
   outline: none;
   transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -141,16 +141,16 @@
 /* Focus ring from the focus role — never a removed outline. */
 [data-lab-pin-input] .lab-pin-input-segment:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 0.125rem var(--lab-border-focus);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
 }
 [data-lab-pin-input][data-type="danger"] .lab-pin-input-segment:focus-visible {
-  box-shadow: 0 0 0 0.125rem var(--lab-border-danger);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
 }
 [data-lab-pin-input][data-type="warning"] .lab-pin-input-segment:focus-visible {
-  box-shadow: 0 0 0 0.125rem var(--lab-border-warning-strong);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
 }
 [data-lab-pin-input][data-type="success"] .lab-pin-input-segment:focus-visible {
-  box-shadow: 0 0 0 0.125rem var(--lab-border-success-strong);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
 }
 
 /* The machine's hidden form input is visually hidden via its own inline style; nothing to
