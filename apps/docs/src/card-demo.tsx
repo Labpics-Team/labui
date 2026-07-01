@@ -59,11 +59,7 @@ createRoot(mount).render(
             fails WCAG contrast on WebKit. A real consumer styling their own
             slotted control would set BOTH colours from --lab-* roles; here we
             only need to stop fighting the UA default with an inherited one. */}
-        <button
-          type="button"
-          data-testid="react-interactive-control"
-          style={{ color: 'initial' }}
-        >
+        <button type="button" data-testid="react-interactive-control" style={{ color: 'initial' }}>
           Open
         </button>
       </Card>
