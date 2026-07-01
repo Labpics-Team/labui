@@ -1,0 +1,241 @@
+/*
+ * <TagsInput> (React) styles — the visual PARITY twin of the Lit `<lab-tags-input>`.
+ *
+ * The Lit element scopes CSS in a shadow root via `:host([type])` / `.control` / `.item`,
+ * splicing the shared `field-styles`. React is native (ADR-0001) — no shadow DOM — so
+ * this sheet mirrors the same field surface against `[data-lab-tags-input]` + the `data-*`
+ * the component sets and the `.lab-field-*` / `.lab-tags-input-*` parts. Same roles, same
+ * structure, same states ⇒ same paint. The shared field surface is repeated here (not
+ * imported) because each React component inlines its own stylesheet (tsup injectStyle) so
+ * it ships standalone.
+ *
+ * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role, every
+ * dimension a --lab-* token (with a literal dimension fallback only). ZERO hex, ZERO
+ * primitive, ZERO colour-role fallback.
+ */
+
+[data-lab-tags-input] {
+  --_lab-field-pad-x: var(--lab-space-md, 0.75rem);
+  --_lab-field-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-field-radius: var(--lab-radius-md, 0.5rem);
+  --_lab-field-gap: var(--lab-space-xs, 0.375rem);
+  --_lab-field-font: var(--lab-font-size-md, 1rem);
+  --_lab-field-label-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-field-help-font: var(--lab-font-size-xxs, 0.7222rem);
+  --_lab-field-line: var(--lab-line-height-md, 1.5);
+
+  display: block;
+}
+
+[data-lab-tags-input][data-size="s"] {
+  --_lab-field-pad-x: var(--lab-space-sm, 0.5rem);
+  --_lab-field-pad-y: var(--lab-space-xs, 0.375rem);
+  --_lab-field-font: var(--lab-font-size-xs, 0.8333rem);
+}
+[data-lab-tags-input][data-size="l"] {
+  --_lab-field-pad-x: var(--lab-space-lg, 1rem);
+  --_lab-field-pad-y: var(--lab-space-md, 0.75rem);
+  --_lab-field-font: var(--lab-font-size-lg, 1.2rem);
+}
+
+[data-lab-tags-input].lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--_lab-field-gap);
+  font: inherit;
+}
+
+[data-lab-tags-input] .lab-field-label {
+  font-size: var(--_lab-field-label-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-secondary);
+}
+[data-lab-tags-input][data-required] .lab-field-required-mark {
+  color: var(--lab-label-danger);
+}
+[data-lab-tags-input][data-label-hidden] .lab-field-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* The control surface — a bordered box wrapping the chip row + the text input. */
+[data-lab-tags-input] .lab-tags-input-control {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--_lab-field-gap);
+  width: 100%;
+  min-height: 2.5rem;
+  margin: 0;
+  padding: var(--_lab-field-pad-y) var(--_lab-field-pad-x);
+  background-color: var(--lab-bg-primary);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
+  border-radius: var(--_lab-field-radius);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+  cursor: text;
+}
+[data-lab-tags-input]:not([data-disabled]):not([data-readonly]) .lab-tags-input-control:hover {
+  border-color: var(--lab-border-strong);
+}
+[data-lab-tags-input][data-type="danger"] .lab-tags-input-control {
+  border-color: var(--lab-border-danger);
+}
+[data-lab-tags-input][data-type="warning"] .lab-tags-input-control {
+  border-color: var(--lab-border-warning-strong);
+}
+[data-lab-tags-input][data-type="success"] .lab-tags-input-control {
+  border-color: var(--lab-border-success-strong);
+}
+[data-lab-tags-input][data-readonly] .lab-tags-input-control {
+  background-color: var(--lab-fill-neutral-tinted);
+  border-color: var(--lab-border-soft);
+  cursor: default;
+}
+[data-lab-tags-input][data-disabled] .lab-tags-input-control {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Focus ring: the control surface lights when the inner input is focus-visible. */
+[data-lab-tags-input] .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
+  border-color: var(--lab-border-focus);
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+}
+[data-lab-tags-input][data-type="danger"]
+  .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+}
+[data-lab-tags-input][data-type="warning"]
+  .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
+}
+[data-lab-tags-input][data-type="success"]
+  .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
+  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
+}
+
+/* One tag chip — a pill with the tag text and a delete button. */
+[data-lab-tags-input] .lab-tags-input-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lab-space-xs, 0.25rem);
+  max-width: 100%;
+  padding: 0.125rem 0.125rem 0.125rem 0.5rem;
+  font-size: var(--_lab-field-label-font);
+  line-height: 1.4;
+  color: var(--lab-label-primary);
+  background-color: var(--lab-fill-neutral-tinted);
+  border-radius: var(--lab-radius-sm, 0.25rem);
+}
+[data-lab-tags-input] .lab-tags-input-item[data-highlighted] {
+  background-color: var(--lab-fill-neutral);
+  color: var(--lab-label-on-neutral);
+}
+[data-lab-tags-input] .lab-tags-input-item[data-disabled] {
+  opacity: 0.5;
+}
+
+[data-lab-tags-input] .lab-tags-input-item-preview {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lab-space-xs, 0.25rem);
+  max-width: 100%;
+}
+
+[data-lab-tags-input] .lab-tags-input-item-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The edit-in-place input — the machine sets `hidden` unless this chip is editing. */
+[data-lab-tags-input] .lab-tags-input-item-input {
+  min-width: 4ch;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--_lab-field-label-font);
+  color: var(--lab-label-primary);
+  background: transparent;
+  border: 0;
+  outline: none;
+  appearance: none;
+}
+
+/* The chip's delete button. */
+[data-lab-tags-input] .lab-tags-input-item-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  font: inherit;
+  line-height: 1;
+  color: var(--lab-label-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: var(--lab-radius-sm, 0.25rem);
+  cursor: pointer;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+[data-lab-tags-input] .lab-tags-input-item-delete:hover:not([data-disabled]) {
+  color: var(--lab-label-primary);
+  background-color: var(--lab-fill-neutral);
+}
+[data-lab-tags-input] .lab-tags-input-item-delete:focus-visible {
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: calc(-1 * var(--lab-focus-ring-offset));
+}
+[data-lab-tags-input] .lab-tags-input-item-delete[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* The text-entry input — the field's control, transparent inside the .control frame. */
+[data-lab-tags-input] .lab-tags-input-input {
+  flex: 1 1 6rem;
+  min-width: 6rem;
+  margin: 0;
+  padding: 0.125rem 0;
+  font: inherit;
+  font-size: var(--_lab-field-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-primary);
+  background: transparent;
+  border: 0;
+  outline: none;
+  appearance: none;
+}
+[data-lab-tags-input] .lab-tags-input-input::placeholder {
+  color: var(--lab-label-tertiary);
+  opacity: 1;
+}
+
+[data-lab-tags-input] .lab-field-helper {
+  font-size: var(--_lab-field-help-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-tertiary);
+}
+
+[data-lab-tags-input] .lab-field-error {
+  font-size: var(--_lab-field-help-font);
+  line-height: var(--_lab-field-line);
+  color: var(--lab-label-danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-lab-tags-input] .lab-tags-input-control,
+  [data-lab-tags-input] .lab-tags-input-item-delete {
+    transition: none;
+  }
+}

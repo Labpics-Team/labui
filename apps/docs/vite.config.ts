@@ -126,6 +126,13 @@ export default defineConfig({
         // FUSED with a filterable text input + the shared field-a11y wiring. For the
         // open/filter/navigate/select/dismiss/position + parity + value-change suite.
         combobox: resolve(__dirname, 'src/combobox.html'),
+        // Advanced form inputs: Lit element + native-React twin side by side, running the
+        // SAME Zag machine (pin-input / tags-input). Pin Input's machine owns each box's
+        // value + focus auto-advance + paste-fill + masking; Tags Input's owns the tag
+        // array + add/remove/edit/keyboard. Both REUSE the SAME shared field-a11y helper
+        // for the label/helper/error association — asserted on BOTH renderers in the suite.
+        'pin-input': resolve(__dirname, 'src/pin-input.html'),
+        'tags-input': resolve(__dirname, 'src/tags-input.html'),
       },
     },
   },
