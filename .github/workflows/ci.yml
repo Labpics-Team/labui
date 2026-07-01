@@ -325,9 +325,17 @@ jobs:
       - name: Run smoke tests (critical-path subset)
         # E2E_SMOKE=1 сужает набор до curated SMOKE_SPECS в playwright.config.ts.
         # Полный набор — по расписанию в e2e-full.yml (там переменная не выставлена).
+        # PW_PORT детерминированно per-runner: 8 раннеров делят один хост (одно
+        # сетевое пространство WSL-дистро), фиксированный 4321 коллидировал между
+        # конкурентными e2e-job'ами. Свой порт = свой раннер, поэтому убить
+        # осиротевший preview-сервер на нём безопасно по построению.
         env:
           E2E_SMOKE: "1"
-        run: pnpm test:e2e
+        run: |
+          n="${RUNNER_NAME##*-}"; case "$n" in (*[!0-9]*|'') n=0;; esac
+          export PW_PORT=$((43200 + n))
+          pkill -f -- "--port ${PW_PORT}" 2>/dev/null || true
+          pnpm test:e2e
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}

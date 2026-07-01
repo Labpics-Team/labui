@@ -83,7 +83,13 @@ jobs:
       - name: Run FULL e2e suite (all specs × chromium + webkit)
         # E2E_SMOKE НЕ выставлен → playwright.config.ts оставляет дефолтный
         # testMatch и гоняет ВЕСЬ набор. Это и есть полное покрытие.
-        run: pnpm test:e2e
+        run: |
+          # PW_PORT per-runner — плановый полный прогон не коллидирует по порту
+          # с PR-джобами на общем хосте (см. ci.yml).
+          n="${RUNNER_NAME##*-}"; case "$n" in (*[!0-9]*|'') n=0;; esac
+          export PW_PORT=$((43200 + n))
+          pkill -f -- "--port ${PW_PORT}" 2>/dev/null || true
+          pnpm test:e2e
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
