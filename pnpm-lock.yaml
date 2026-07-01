@@ -175,12 +175,15 @@ importers:
 
   packages/icons:
     devDependencies:
-      tsup:
-        specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.15)(tsx@4.19.2)(typescript@5.7.3)
+      '@types/node':
+        specifier: 22.10.5
+        version: 22.10.5
       typescript:
         specifier: 5.7.3
         version: 5.7.3
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.5)
 
   packages/react:
     dependencies:

@@ -18,30 +18,53 @@ env:
   # Trivy scanner image pinned by tag AND digest (supply-chain: digest is the
   # immutable identity; the tag stays for human readability). Bump both together.
   TRIVY_IMAGE: "aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e"
+  # busybox используется как ROOT-контейнер для очистки воркспейса и возврата
+  # владения на self-hosted раннерах (см. блок «ИНВАРИАНТ root-docker» ниже).
+  # Пинится по тегу И дайджесту (immutable identity), как TRIVY_IMAGE. Бампить
+  # оба поля вместе. Дайджест — OCI-индекс busybox:1.36 (multi-arch).
+  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
+  # Job-локальный docker-конфиг БЕЗ credsStore: у Docker Desktop в WSL
+  # ~/.docker/config.json указывает credsStore=desktop → docker pull зовёт
+  # docker-credential-desktop.exe, которого нет в PATH systemd-сервиса раннера
+  # после рестарта дистро → пулл пиненых образов падает (exit 127). Пустой
+  # DOCKER_CONFIG = анонимные пуллы публичных образов без хелпера — CI не
+  # зависит от состояния хоста/Desktop-интеграции ни при каком рестарте.
+  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
 
 jobs:
   # ── ИНВАРИАНТ root-docker ───────────────────────────────────────────────────
-  # Каждый job, чей container: или docker run работает как root, ОБЯЗАН
-  # завершаться шагом «Вернуть владение воркспейса раннеру» (if: always()).
-  # Без него root-owned артефакты в shared _work раннера ломают clean-шаг
-  # следующего job'а («rm: ... Permission denied»).
-  # Текущие root-docker job'ы: sca (docker run Trivy), e2e (container: Playwright).
-  # При добавлении нового root-контейнерного job'а — добавь шаг chown-back.
+  # Self-hosted раннеры делят _work между job'ами. docker-as-root job'ы (Trivy
+  # fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы, а daniel (uid 1000)
+  # без passwordless sudo не может их ни удалить (`rm` → Permission denied), ни
+  # chown'ить (нет CAP_CHOWN). Раньше это краснило невиновные PR.
+  # ЗАЩИТА В ДВА СЛОЯ, оба через ROOT-контейнер busybox (${BUSYBOX_IMAGE}):
+  #   1) clean-шаг КАЖДОГО job'а чистит содержимое воркспейса root-контейнером —
+  #      root снесёт что угодно; clean больше не зависит от того, кто наоставлял
+  #      файлов и отработал ли chown-back. Это первичная защита.
+  #   2) КАЖДЫЙ root-docker job (sca, e2e) завершается шагом «Вернуть владение
+  #      воркспейса раннеру» (if: always()) — тоже root-контейнером busybox.
+  #      Это defence-in-depth: возвращает uid 1000 сразу после job'а.
+  # При добавлении нового root-контейнерного job'а — добавь такой chown-back.
   sca:
     name: supply-chain · secrets · misconfig
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 10
     steps:
-      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
-      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
-      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
-      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
+      # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
+      # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
+      # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
+      # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
+      # что угодно, независимо от того, кто наоставлял файлов и отработал ли
+      # chown-back. Заодно возвращаем владение самим каталогом раннеру (uid 1000),
+      # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
+      # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
-          cd /tmp
-          rm -rf "${GITHUB_WORKSPACE}"
-          mkdir -p "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -154,28 +177,36 @@ jobs:
           if-no-files-found: ignore
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
-        # sca-job запускает docker-контейнеры Trivy как root; root-owned файлы
-        # в GITHUB_WORKSPACE ломают clean-шаг следующего job'а.
-        # Возвращаем владение раннер-пользователю (uid 1000 = daniel).
+        # sca запускает docker-контейнеры Trivy как root → root-owned файлы в
+        # GITHUB_WORKSPACE. daniel (uid 1000) НЕ может chown чужие файлы (нет
+        # CAP_CHOWN, нет passwordless sudo) — `chown` от daniel молча падал.
+        # Возвращаем владение раннеру (uid 1000) через ROOT-контейнер busybox.
         if: ${{ always() }}
         shell: bash
-        run: chown -R 1000:1000 "${GITHUB_WORKSPACE}" 2>/dev/null || true
+        run: |
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            chown -R 1000:1000 /workspace || true
 
   quality:
     name: lint · typecheck · build
     runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 15
     steps:
-      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
-      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
-      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
-      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
+      # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
+      # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
+      # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
+      # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
+      # что угодно, независимо от того, кто наоставлял файлов и отработал ли
+      # chown-back. Заодно возвращаем владение самим каталогом раннеру (uid 1000),
+      # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
+      # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
-          cd /tmp
-          rm -rf "${GITHUB_WORKSPACE}"
-          mkdir -p "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -183,6 +214,11 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          # per-job dest: дефолт ~/setup-pnpm ОБЩИЙ для 8 раннеров (один /home/daniel)
+          # -> параллельные job'ы гоняются на temp-файлах (ENOENT unlink). runner.temp
+          # изолирован per-job — класс shared-home гонок закрыт для установки pnpm.
+          dest: ${{ runner.temp }}/setup-pnpm
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -228,16 +264,21 @@ jobs:
     # воркспейсе (host-job билдит под daniel → следующий job чистит без проблем).
     timeout-minutes: 20
     steps:
-      # Self-hosted: гарантируем чистый воркспейс ДО checkout. Контейнерные и
-      # хостовые job'ы делят _work раннера; частичный/битый чекаут от прошлого
-      # job'а ломал actions/checkout ('not a git repository'). Сносим каталог —
-      # checkout клонирует заново (fetch-depth:1, быстро). Детерминированно.
+      # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
+      # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
+      # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
+      # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
+      # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
+      # что угодно, независимо от того, кто наоставлял файлов и отработал ли
+      # chown-back. Заодно возвращаем владение самим каталогом раннеру (uid 1000),
+      # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
+      # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
-          cd /tmp
-          rm -rf "${GITHUB_WORKSPACE}"
-          mkdir -p "${GITHUB_WORKSPACE}"
+          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -245,6 +286,11 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          # per-job dest: дефолт ~/setup-pnpm ОБЩИЙ для 8 раннеров (один /home/daniel)
+          # -> параллельные job'ы гоняются на temp-файлах (ENOENT unlink). runner.temp
+          # изолирован per-job — класс shared-home гонок закрыт для установки pnpm.
+          dest: ${{ runner.temp }}/setup-pnpm
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -270,7 +316,15 @@ jobs:
         run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
       - name: Run smoke tests
-        run: pnpm test:e2e
+        # PW_PORT детерминированно per-runner: 8 раннеров делят один хост (одно
+        # сетевое пространство WSL-дистро), фиксированный 4321 коллидировал между
+        # конкурентными e2e-job'ами. Свой порт = свой раннер, поэтому убить
+        # осиротевший preview-сервер на нём безопасно по построению.
+        run: |
+          n="${RUNNER_NAME##*-}"; case "$n" in (*[!0-9]*|'') n=0;; esac
+          export PW_PORT=$((43200 + n))
+          pkill -f -- "--port ${PW_PORT}" 2>/dev/null || true
+          pnpm test:e2e
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
@@ -280,3 +334,15 @@ jobs:
           path: apps/docs/playwright-report/
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
+        # e2e собирает пакеты и артефакты в чекауте; если шаг (сейчас или в
+        # будущем, напр. Playwright-контейнер) отработает как root, останутся
+        # root-owned файлы. daniel (uid 1000) не может их chown'ить — возвращаем
+        # владение раннеру через ROOT-контейнер busybox, чтобы clean-шаг
+        # следующего job'а на этом раннере не спотыкался о root-owned файлы.
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            chown -R 1000:1000 /workspace || true
