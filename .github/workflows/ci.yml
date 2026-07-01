@@ -182,6 +182,14 @@ jobs:
   e2e:
     name: playwright smoke
     runs-on: [self-hosted, Linux, X64]
+    # Робастность: e2e исполняется в ОФИЦИАЛЬНОМ образе Playwright, пришпиленном к
+    # версии репо (1.49.1). Браузеры (Chromium+WebKit) и ВСЕ системные библиотеки
+    # вшиты в образ, поэтому хосту self-hosted раннера не нужно ничего
+    # браузер-специфичного: окружение детерминировано, версия совпадает с
+    # @playwright/test, и всё переживает пересборку раннера. Это заменяет хрупкую
+    # ручную доустановку системных библиотек на хосте.
+    container:
+      image: mcr.microsoft.com/playwright:v1.49.1-noble
     timeout-minutes: 20
     steps:
       - name: Checkout
