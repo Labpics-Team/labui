@@ -2,7 +2,7 @@
   "name": "@labpics/ui-vue",
   "version": "0.0.0",
   "private": true,
-  "description": "Vue adapter for LabUI.",
+  "description": "Native Vue renderer for LabUI (ADR-0001, A-prime). Thin Vue components over the shared axis type contract — no Lit in the Vue path. Shared types come from @labpics/ui-core.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -13,16 +13,24 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": false,
+  "sideEffects": ["**/*.css", "./dist/*.js", "./dist/*.cjs"],
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+  },
+  "dependencies": {
+    "@labpics/ui-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": ">=3.4"
   },
   "devDependencies": {
     "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vue": "3.5.13"
   }
 }

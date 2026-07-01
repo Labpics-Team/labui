@@ -30,7 +30,9 @@
       "@labpics/ui-core/proof": ["./packages/core/src/proof/lab-proof.ts"],
       "@labpics/ui-core/*": ["./packages/core/src/components/*/index.ts"],
       "@labpics/ui-react": ["./packages/react/src/index.ts"],
-      "@labpics/ui-react/*": ["./packages/react/src/*.tsx"]
+      "@labpics/ui-react/*": ["./packages/react/src/*.tsx"],
+      "@labpics/ui-vue": ["./packages/vue/src/index.ts"],
+      "@labpics/ui-vue/*": ["./packages/vue/src/*.ts"]
     }
   }
 }
