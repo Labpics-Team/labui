@@ -235,7 +235,7 @@ A component must:
   the interaction point — never a `div` with a click handler;
 - expose a focus-visible ring via the **`--lab-border-focus`** role, never a
   removed outline;
-- meet WCAG 2.1 AA. **WCAG floors are never traded for aesthetics** (EPIC.md). An
+- meet WCAG 2.1 AA. **WCAG floors are never traded for aesthetics** (требование владельца). An
   element is separated by a **surface/Fills token**, not a border drawn on top.
 
 A component must **not** re-implement ARIA/keyboard the machine already provides,

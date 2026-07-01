@@ -1,35 +1,34 @@
 /*
  * ┌───────────────────────────────────────────────────────────────────────────┐
- * │  @labpics/ui-core — Materials. Web modes: Ambient · Solid.                  │
+ * │  @labpics/ui-core — Materials. Реализация ниже — ВРЕМЕННЫЙ Ambient-подход  │
+ * │  (Ambient + Solid, `glassy` = алиас Ambient).                              │
  * │                                                                            │
- * │  Owner verdict (labui-v1 / materials-system, 2026-06-13, demo review):     │
- * │  real Glass (refraction) on the web "doesn't work, it's a crutch, the      │
- * │  nativeness isn't there". DECISION: web materials are AMBIENT (controlled  │
- * │  backdrop blur — honest "frosted blur", no claim of being glass) and       │
- * │  SOLID (opaque, no blur). True Glass lives ONLY on the native platform     │
- * │  (Swift, a future chapter). On the web, `glassy` is a documented ALIAS of  │
- * │  Ambient — an honest degradation, never a fake.                            │
+ * │  Канон (владелец, 2026-07-01): материал — флаг Glass/Blur/Solid;           │
+ * │  Solid ≡ Background; отдельного mat-семейства токенов не будет. Настоящий  │
+ * │  Glass (liquid-glass, SVG-математика) приземляется с ветки                 │
+ * │  feat/liquid-glass. Прежний вердикт 2026-06-13 («настоящий Glass на вебе   │
+ * │  не работает → только Ambient») снят 2026-07-01; этот файл подлежит        │
+ * │  замене на флаг-модель, здесь он описывает только то, что реализовано.    │
  * │                                                                            │
- * │  Three languages of separation (craft-arch):                               │
- * │    1. PRIMITIVES  --lab-ambient-* — raw ladder values lifted 1:1 from the   │
- * │       owner's Figma reference (labui-figma-styles.md: BG-blur 128/48/24/12, │
- * │       Materials two-layer fills). These mirror the prior --lab-glass-*      │
- * │       tokens, kept as a back-compat alias block at the bottom.             │
- * │    2. SEMANTIC   --lab-mat-* — the material ROLE a surface reads. The mode  │
- * │       (`data-material`) is the ONLY thing that rebinds these.              │
- * │    3. COMPONENT  reads ONLY --lab-mat-* / --lab-elevation-*. It never knows │
- * │       which mode is active, never reads a primitive.                       │
+ * │  Три языка разделения (craft-arch):                                        │
+ * │    1. PRIMITIVES  --lab-ambient-* — сырые значения лестниц 1:1 из          │
+ * │       Figma-референса (BG-blur 128/48/24/12, двухслойные Materials-fills). │
+ * │       Зеркалят прежние --lab-glass-* токены — алиас-блок внизу.            │
+ * │    2. SEMANTIC   --lab-mat-* — РОЛЬ материала, которую читает поверхность. │
+ * │       Перепривязывает их только режим (`data-material`).                   │
+ * │    3. COMPONENT  читает ТОЛЬКО --lab-mat-* / --lab-elevation-*; не знает   │
+ * │       активный режим и не читает примитивы.                                │
  * │                                                                            │
- * │  Color contract: tint/surface come from the @labpics/colors `--lab-*`      │
- * │  contract (never hardcoded). This file defines the MATERIAL DNA and how to │
- * │  assemble it; it never re-defines a surface colour.                        │
+ * │  Контракт цвета: tint/surface приходят из `--lab-*` контракта              │
+ * │  @labpics/colors (никогда не хардкодятся). Файл определяет ДНК материала   │
+ * │  и его сборку; цвет поверхности он не переопределяет.                      │
  * └───────────────────────────────────────────────────────────────────────────┘
  */
 
 /* ════════════════════════════════════════════════════════════════════════════
  * LAYER 1 — PRIMITIVES.  The raw ladders, lifted from the Figma reference.
  *
- * Source of truth: epics/lab-colors-v1/reference/labui-figma-styles.md
+ * Source of truth: Figma-референс LabUI (страницы BG-blur / Materials).
  *   · BG-blur ladder (Ambient):     Strong 128 / Base 48 / Muted 24 / Soft 12  + NOISE 4%
  *   · Materials fills (two-layer):  slot1 = base+alpha (NORMAL),
  *                                   slot2 = tint colour at COLOR_DODGE (light) / OVERLAY (dark)
@@ -81,9 +80,9 @@
   --lab-ambient-fill-subtle: 0.44;
 
   /* Edge highlight — the thin bright catch-light along the top edge and the
-   * border band. On Ambient this is a soft rim, NOT a refraction lens (the
-   * lens claim was the glass story the owner rejected). It gives the pane an
-   * edge so it doesn't read as a flat translucent rectangle. */
+   * border band. On Ambient this is a soft rim, NOT a refraction lens —
+   * линзовая рефракция принадлежит будущему Glass (feat/liquid-glass). It
+   * gives the pane an edge so it doesn't read as a flat translucent rectangle. */
   --lab-ambient-rim-color: rgba(255, 255, 255, 0.18);
   --lab-ambient-rim-width: 1px;
   --lab-ambient-specular: rgba(255, 255, 255, 0.4);
@@ -120,9 +119,9 @@
 :root,
 [data-material="ambient"],
 [data-material="glassy"] {
-  /* `glassy` is a DOCUMENTED web alias of ambient (owner verdict): true glass is
-   * native-only, so on the web Glassy degrades honestly to the Ambient material
-   * — same DNA, no fake refraction. The alias is intentional, not an oversight. */
+  /* `glassy` — временный алиас Ambient: настоящий Glass (liquid-glass) ещё не
+   * приземлён, до его прихода `glassy` честно рендерится как Ambient — same
+   * DNA, no fake refraction. The alias is intentional, not an oversight. */
   --lab-mat-blur: var(--lab-ambient-base);
   --lab-mat-saturate: var(--lab-ambient-saturate);
   --lab-mat-fill-alpha: var(--lab-ambient-fill-base);
@@ -381,11 +380,12 @@
 /* ════════════════════════════════════════════════════════════════════════════
  * BACK-COMPAT alias block.
  *
- * PR #6 shipped the `--lab-glass-*` tokens. The owner verdict reframes the
- * public material to Ambient, but the implementation tokens are kept ALIVE as
- * thin aliases so nothing that referenced them breaks during the transition.
- * These point INTO the new Ambient primitives — they are implementation
- * details now, NOT a public "glass" material. New code must read --lab-mat-*.
+ * PR #6 shipped the `--lab-glass-*` tokens; текущая реализация публикует
+ * материал как Ambient, поэтому these implementation tokens are kept ALIVE as
+ * thin aliases so nothing that referenced them breaks during the transition
+ * (в т.ч. до приземления флаг-модели Glass/Blur/Solid). These point INTO the
+ * Ambient primitives — implementation details, NOT a public "glass" material.
+ * New code must read --lab-mat-*.
  * ════════════════════════════════════════════════════════════════════════════ */
 :root {
   --lab-glass-blur: var(--lab-ambient-base);

@@ -27,16 +27,18 @@ system — everything (~38 components × 5 adapters) sits on it.
 Two paths were prototyped on the most-loaded component (Button) and measured
 against four blocking criteria (SSR on Next+Astro, prop/event type-safety,
 `--lab-*` styling through the boundary, theme switching without component
-edits), plus weighted criteria and a 38×5 cost model. Inputs:
+edits), plus weighted criteria and a 38×5 cost model. Inputs — исторические
+артефакты: из репозитория удалены после принятия решения, доступны в
+git-истории и указанных PR:
 
 - `prototypes/proto-a-lit/FINDINGS.md` (PR #5) — Path A, Lit / Web Components.
 - `prototypes/proto-b-mitosis/FINDINGS.md` (PR #4) — Path B, Mitosis.
 - `epics/labui-v1/chapters/cross-stack-core/matrix.md` — the criteria matrix
   that consolidates both FINDINGS and recommends **Option A-prime**.
-- `prototypes/spike-wc-ssr/spike-FINDINGS.md` (this task) — the falsifier spike
+- `prototypes/spike-wc-ssr/spike-FINDINGS.md` — the falsifier spike
   that closed the matrix's one open measurement.
 
-Design inputs already settled by the owner (2026-06-13, EPIC.md):
+Design inputs already settled by the owner (2026-06-13):
 
 - A reusable **Behaviors layer (headless interaction logic)** is **mandatory**,
   orthogonal to the base, written once and consumed by every renderer.
@@ -115,7 +117,8 @@ The matrix flagged that **WC-SSR was never measured on Vue/Svelte/Solid** (proto
 measured only Astro PASS + Next PARTIAL). That was the A-prime falsifier: if ≥2
 of those three stacks FAIL WC-SSR with no workaround, A-prime is wounded.
 
-Spike (`prototypes/spike-wc-ssr/`, the byte-identical proto-A Lit Button rendered
+Spike (`prototypes/spike-wc-ssr/`, удалён из репо после принятия решения — см.
+git-историю; the byte-identical proto-A Lit Button rendered
 through each stack's SSR core, evidence = `node <stack>/ssr-probe.mjs`, exit 0):
 
 | Stack | Native custom-element SSR | Lit-SSR (`@lit-labs/ssr`) embed path | Verdict |
@@ -279,7 +282,7 @@ now; deferring discards measured work and stalls the epic.
 
 ## Verification (this ADR)
 
-- Falsifier spike PASS 3/3 on Vue/Svelte/Solid — `prototypes/spike-wc-ssr/spike-FINDINGS.md`, probes exit 0.
+- Falsifier spike PASS 3/3 on Vue/Svelte/Solid — `prototypes/spike-wc-ssr/spike-FINDINGS.md` (в git-истории), probes exit 0.
 - ≥3 options incl. do-nothing/defer — above.
 - Decision traced to matrix cells (Parts 3–5) and proto-A FINDINGS.
 - Behaviors layer chosen with reasoning (Zag.js vs own), reversible.

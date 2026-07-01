@@ -6,9 +6,9 @@
 > values, copy a resolver / `semantic.rs` / WASM engine, or modify the
 > `lab-colors` repo. Each gap is owned by the `lab-colors-v1` epic.
 >
-> This is the richer, file:line-anchored companion to the summary table in
-> [`../../INTEGRATION.md`](../../INTEGRATION.md) ("Open requests to
-> `lab-colors-v1`"). It must not contradict that file — it expands it. The
+> This is the CANONICAL, file:line-anchored record of the engine gaps; the
+> root [`../../INTEGRATION.md`](../../INTEGRATION.md) is the short fact-sheet
+> that points here. The
 > governing law is [`../core-CONTRACT.md`](../core-CONTRACT.md) §0 law 2
 > (components speak only the semantic `--lab-*` language) and §5 (the colour
 > engine binds roles under `[data-theme]`). The published-engine swap itself is
@@ -77,8 +77,8 @@ in LabUI.
 
 | Gap token (prefix) | Declared at | Role | What the engine should provide |
 | --- | --- | --- | --- |
-| `--lab-mat-` (`--lab-mat-blur`, `--lab-mat-fill-alpha`, `--lab-mat-rim`, …) | `packages/core/src/materials.css:126-129` (+ role block) | Semantic **material role** a surface reads (Solid / BG-Blur / Glass). | The material role layer resolved from the engine's surface model, not LabUI-tuned primitives. |
-| `--lab-ambient-` (`--lab-ambient-base`, `--lab-ambient-rim-color`, …) | `packages/core/src/materials.css:46-93` | Ambient material **primitives** (blur ladder, fill alphas, rim/specular). | Engine-owned primitives; LabUI mirrors Figma values 1:1 as a provisional snapshot. |
+| `--lab-mat-` (`--lab-mat-blur`, `--lab-mat-fill-alpha`, `--lab-mat-rim`, …) | `packages/core/src/materials.css:125-128` (+ role block) | Semantic **material role** a surface reads (Solid / BG-Blur / Glass). | The material role layer resolved from the engine's surface model, not LabUI-tuned primitives. |
+| `--lab-ambient-` (`--lab-ambient-base`, `--lab-ambient-rim-color`, …) | `packages/core/src/materials.css:45-92` | Ambient material **primitives** (blur ladder, fill alphas, rim/specular). | Engine-owned primitives; LabUI mirrors Figma values 1:1 as a provisional snapshot. |
 | `--lab-glass-` | `packages/core/src/materials.css` (legacy alias surface referenced in the materials header) | Prior glass-material aliases the `--lab-mat-*` roles superseded. | Folded into the engine's material roles; recorded so the alias family is not silently dropped. |
 
 ### Published `@labpics/colors` CSS+JS entry
@@ -91,9 +91,8 @@ yet. LabUI consumes it today through a local workspace stub.
 | **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `materials-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]`. PROVISIONAL — placeholder role values owned by the resolver. | The published `@labpics/colors` CSS entry exporting the same `--lab-*` role bindings. Swap-in = repoint the dependency from `workspace:*` to the registry version; the import specifier is unchanged. |
 | **JS runtime entry** (injects `--lab-*` from the background) | _no current consumer — anticipated._ LabUI consumes only the static CSS contract today; no JS resolver is imported (and none may be — law 2). | _(none — LabUI must not implement a resolver / WASM / `semantic.rs`.)_ | The runtime engine that resolves `--lab-*` per surface/background at runtime. Owned by `runtime-engine`; LabUI will consume it as a published entry, never re-implement it. |
 
-This expands INTEGRATION.md's first open request ("Published `@labpics/colors` npm
-package exposing a CSS entry … and/or a JS runtime") with the exact consumer
-sites — it does not contradict it.
+This records the "published `@labpics/colors` npm package exposing a CSS entry
+and/or a JS runtime" request with the exact consumer sites.
 
 ### Decorative floor / separator / shadow-ramp magnitudes
 

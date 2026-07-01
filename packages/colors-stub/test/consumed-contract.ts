@@ -3,7 +3,7 @@
  *
  * labui consumes `@labpics/colors` EXCLUSIVELY through the `--lab-*` CSS custom
  * property contract. Every consumed name falls into exactly ONE of three buckets
- * (EPIC.md "three consumption buckets"):
+ * (конвенция «три корзины потребления»):
  *
  *   1. `colour-contract` — a semantic colour role owned by @labpics/colors and
  *      mirrored in `roles.json` (any group). THIS is the surface the pin test
