@@ -19,7 +19,7 @@ placeholders that build cleanly; real implementation lands chapter by chapter.
 | ------------------- | -------------------- | ---------------------------------------------------- |
 | `packages/tokens`   | `@labpics/ui-tokens` | Token generator + generated dimension/type tokens    |
 | `packages/core`     | `@labpics/ui-core`   | Cross-stack component core (base TBD in cross-stack)  |
-| `packages/icons`    | `@labpics/ui-icons`  | Icon system (variable font + SVG + Lottie)           |
+| `packages/icons`    | `@labpics/icons`     | TEMPORARY stub bridge for the external icon core (see below) |
 | `packages/react`    | `@labpics/ui-react`  | React / Next adapter                                 |
 | `packages/vue`      | `@labpics/ui-vue`    | Vue adapter                                          |
 | `packages/solid`    | `@labpics/ui-solid`  | Solid adapter                                        |
@@ -40,6 +40,16 @@ The package is **not published to npm yet** (produced by the `lab-colors-v1`
 `native-and-release` chapter). Until then, the docs smoke fixture declares the
 `--lab-*` contract by hand — see `apps/docs/` and `INTEGRATION.md` for the exact
 seam and the TODO that swaps the stub for the real runtime engine.
+
+## Icon core: `@labpics/icons`
+
+LabUI **consumes** the icon core; it does not re-implement an SVG build/resolver
+engine. The real package (`Labpics-Team/lab-icons`, 444 SVG Filled + Outline,
+tree-shakeable ESM, `currentColor`) is **not published to a registry yet**
+(`private: true`, no tags/releases) — an external blocker on that repo, not on
+LabUI. `packages/icons` is a thin, build-free stub bridge (mirrors
+`packages/colors-stub`) that only makes the import specifier resolve; see
+`packages/icons/README.md` and `docs/external-deps/lab-icons.md`.
 
 ## Tooling
 
