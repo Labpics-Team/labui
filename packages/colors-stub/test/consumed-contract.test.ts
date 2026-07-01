@@ -5,6 +5,7 @@ import {
   SEMANTIC_ROLE_PREFIXES,
   byBucket,
   classify,
+  consumerFiles,
   consumedRoles,
   consumedRolesWithSites,
   knownColourRoles,
@@ -75,6 +76,24 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     expect(classify('--lab-space-sm')).toBe('dimension');
     expect(classify('--lab-surface-shadow-tint')).toBe('local-or-gap');
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
+  });
+
+  // ── (0) Provenance guard — test files and `_`-prefixed scratch files must NEVER
+  // appear in the consumer surface. A raw-text scan cannot distinguish a probe token
+  // inside a JS string literal from a real `var(--lab-x)` usage; including test files
+  // either poisons the zero-unclassified gate or phantom-inflates the consumed surface.
+  it('no *.test.ts or _-prefixed file appears in the consumer surface (provenance guard)', () => {
+    const files = consumerFiles();
+    const testFiles = files.filter((f) => f.endsWith('.test.ts'));
+    const scratchFiles = files.filter((f) => (f.split('/').at(-1) ?? '').startsWith('_'));
+    expect(
+      testFiles,
+      `test files must be excluded from the consumer surface — probe tokens inside string literals\nwould register as consumed names and poison the zero-unclassified gate:\n${testFiles.map((f) => `  ${f}`).join('\n')}`,
+    ).toEqual([]);
+    expect(
+      scratchFiles,
+      `scratch files (basename starts with \`_\`) must be excluded from the consumer surface:\n${scratchFiles.map((f) => `  ${f}`).join('\n')}`,
+    ).toEqual([]);
   });
 
   // ── (1) Every consumed colour role is present in roles.json. A consumed name

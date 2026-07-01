@@ -56,7 +56,7 @@
   font: inherit;
   font-size: var(--_lab-tt-font);
   line-height: var(--lab-line-height-xs, 1.4);
-  box-shadow: 0 0.25rem 0.75rem var(--lab-fx-shadow-minor);
+  box-shadow: var(--lab-elevation-overlay);
   z-index: var(--lab-z-tooltip, 1400);
 }
 .lab-tooltip-content[hidden] {

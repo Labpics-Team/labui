@@ -87,6 +87,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@labpics/ui-shadow':
+        specifier: workspace:*
+        version: link:../shadow
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
@@ -178,6 +181,9 @@ importers:
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../core
+      '@labpics/ui-shadow':
+        specifier: workspace:*
+        version: link:../shadow
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2

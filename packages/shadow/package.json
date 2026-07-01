@@ -2,7 +2,7 @@
   "name": "@labpics/ui-shadow",
   "version": "0.0.0",
   "private": true,
-  "description": "LabUI layered shadow stack — Minor/Ambient/Penumbra/Major, surface-tinted, single light angle, elevation roles.",
+  "description": "LabUI shadow stack — five elevation sizes (XS/S/M/L/XL), four fixed-alpha plies each, verbatim from the owner's Figma styles; neutral anchor, opt-in weak tint, vertical light by default, role aliases.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -21,6 +21,7 @@
   "sideEffects": ["./dist/shadow.css"],
   "scripts": {
     "generate": "tsx scripts/build-shadow.ts",
+    "check-generated": "tsx scripts/build-shadow.ts && git diff --exit-code src/generated/shadow.css",
     "build": "pnpm run generate && tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",

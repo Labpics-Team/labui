@@ -22,7 +22,7 @@ env:
 jobs:
   sca:
     name: supply-chain · secrets · misconfig
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -136,7 +136,7 @@ jobs:
 
   quality:
     name: lint · typecheck · build
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -165,6 +165,14 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Assert generated artifact is not stale (shadow)
+        # Re-runs the generator from source, then asserts `git diff --exit-code`
+        # on the committed artifact. If the committed shadow.css diverges from the
+        # source, this step fails BEFORE the Build step can silently overwrite it.
+        # Without this guard the build would regenerate the file, masking a stale
+        # committed artifact as a false green.
+        run: pnpm --filter @labpics/ui-shadow check-generated
+
       - name: Build
         run: pnpm build
 
@@ -173,7 +181,24 @@ jobs:
 
   e2e:
     name: playwright smoke
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
+    # Робастность: e2e исполняется в ОФИЦИАЛЬНОМ образе Playwright, пришпиленном к
+    # версии репо (1.49.1). Браузеры (Chromium+WebKit) и ВСЕ системные библиотеки
+    # вшиты в образ, поэтому хосту self-hosted раннера не нужно ничего
+    # браузер-специфичного: окружение детерминировано, версия совпадает с
+    # @playwright/test, и всё переживает пересборку раннера. Это заменяет хрупкую
+    # ручную доустановку системных библиотек на хосте.
+    container:
+      # Пиннинг по тегу И digest (как TRIVY_IMAGE выше): тег — для читаемости,
+      # digest — неизменяемая идентичность (тег мутабелен, MS может пересобрать).
+      # Бампить пару вместе.
+      image: mcr.microsoft.com/playwright:v1.49.1-noble@sha256:70e367e0cbf60340a5b5fd562f6247a34eb3196efab9f88a3dd56482d9fe09d2
+      # Контейнер бежит под UID:GID раннер-пользователя (daniel=1000, совпадает с
+      # pwuser в образе) — иначе билд-артефакты в ОБЩЕМ воркспейсе self-hosted
+      # раннера остаются root-owned, и следующий не-контейнерный job (quality)
+      # не может очистить их при checkout → падение. --ipc=host рекомендован
+      # Playwright для стабильности Chromium.
+      options: --user 1000:1000 --ipc=host
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -199,7 +224,12 @@ jobs:
       - name: Install Playwright browsers (Chromium + WebKit)
         # WebKit added with materials-system: the glass material must read the
         # same across engines, so the glass smoke runs on Chromium AND WebKit.
-        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium webkit
+        # NB: job идёт в контейнере mcr.microsoft.com/playwright той же версии,
+        # где браузеры и системные библиотеки уже вшиты в образ — поэтому
+        # --with-deps не нужен (он требовал sudo apt без TTY и падал под
+        # пользователем раннера). Этот шаг — верификация наличия браузеров нужной
+        # версии, фактически no-op в данном образе.
+        run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
       - name: Run smoke tests
         run: pnpm test:e2e

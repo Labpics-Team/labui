@@ -73,7 +73,7 @@ export class LabKbd extends LabElement {
          bottom-biased shadow so the key reads as standing above the page. */
       background-color: ${litVar('--lab-fill-neutral-tinted')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
-      box-shadow: 0 0.0625rem 0 ${litVar('--lab-fx-shadow-penumbra')};
+      box-shadow: var(--lab-elevation-resting);
       color: ${litVar('--lab-label-primary')};
       font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
       font-size: var(--_font);

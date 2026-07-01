@@ -170,7 +170,7 @@ export const dialogFloatingStyles = css`
     background-color: ${litVar('--lab-bg-secondary')};
     color: ${litVar('--lab-label-primary')};
     border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
-    box-shadow: 0 0.75rem 2.5rem ${litVar('--lab-fx-shadow-major')};
+    box-shadow: var(--lab-elevation-modal);
     font: inherit;
     font-size: ${litVar('--lab-font-size-md', '1rem')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};

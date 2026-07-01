@@ -194,7 +194,7 @@ export class LabSwitch extends LabElement {
       height: var(--_thumb);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-control-bg')};
-      box-shadow: 0 0.0625rem 0.125rem ${litVar('--lab-fx-shadow-major')};
+      box-shadow: var(--lab-elevation-raised);
       transition: transform 140ms ease;
       transform: translateX(0);
     }

@@ -136,6 +136,20 @@ export function consumerFiles(): string[] {
       if (rel.endsWith('test/consumed-contract.test.ts')) continue;
       if (rel.endsWith('test/no-hardcoded-colour.ts')) continue;
       if (rel.endsWith('test/no-hardcoded-colour.test.ts')) continue;
+      // Test files hold probe strings, snapshot expectations, and fabricated token
+      // names inside JS string literals — they are NOT consumer source. A raw-text
+      // scan cannot distinguish a probe token inside `expect(…).toBe('var(--lab-x)')`
+      // from an actual `var(--lab-x)` usage, so including test files EITHER poisons
+      // the zero-unclassified gate (probe tokens classified as 'unclassified') OR
+      // phantom-inflates the consumed surface with non-real names.  Skip ALL *.test.ts
+      // files from the consumer surface; the above per-file exclusions keep the
+      // scanner files excluded by exact path.
+      if (rel.endsWith('.test.ts')) continue;
+      // Scratch / probe files: any filename that starts with `_` is a transient
+      // artifact (e.g. `_adv_probe.test.ts`). A stray `--lab-x` token inside such a
+      // file MUST NOT poison the zero-unclassified gate.
+      const basename = rel.split('/').at(-1) ?? '';
+      if (basename.startsWith('_')) continue;
       seen.add(rel);
     }
   }

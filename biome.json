@@ -14,7 +14,8 @@
       "**/test-results/**",
       "**/src/generated/**",
       "**/*.tsbuildinfo",
-      "prototypes/spike-wc-ssr/vendor/**"
+      "prototypes/spike-wc-ssr/vendor/**",
+      ".playwright-mcp/**"
     ]
   },
   "formatter": {

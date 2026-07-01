@@ -339,7 +339,7 @@ export class LabSlider extends LabElement {
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-control-bg')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      box-shadow: 0 0.0625rem 0.1875rem ${litVar('--lab-fx-shadow-major')};
+      box-shadow: var(--lab-elevation-raised);
       outline: none;
       cursor: grab;
       transform: translate(-50%, -50%);

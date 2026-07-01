@@ -10,8 +10,9 @@
  *
  * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
  * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
- * hex, ZERO primitive. Elevation reads the `--lab-fx-shadow-*` role, never a
- * baked-in shadow.
+ * hex, ZERO primitive. Elevation reads the `--lab-elevation-*` contract from
+ * @labpics/ui-shadow (NOT the flat `--lab-fx-shadow-*` tokens — those carry no
+ * geometry, tint, or motion).
  */
 
 [data-lab-card] {
@@ -43,7 +44,7 @@
 
 [data-lab-card][data-variant="elevated"] {
   background-color: var(--lab-bg-secondary);
-  box-shadow: var(--lab-fx-shadow-minor);
+  box-shadow: var(--lab-elevation-resting);
 }
 [data-lab-card][data-variant="outlined"] {
   background-color: var(--lab-bg-primary);
@@ -61,7 +62,7 @@
   border-color: var(--lab-border-soft);
 }
 [data-lab-card][data-interactive][data-variant="elevated"]:hover {
-  box-shadow: var(--lab-fx-shadow-major);
+  box-shadow: var(--lab-elevation-raised);
 }
 [data-lab-card][data-interactive]:focus-within {
   outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
