@@ -16,7 +16,24 @@
   --demo-bg: var(--lab-bg-primary);
   --demo-card: var(--lab-bg-secondary);
   --demo-ink: var(--lab-label-primary);
-  --demo-ink-soft: var(--lab-label-secondary);
+  /* Secondary ink is pinned (not the stub's --lab-label-secondary #b0b0b9, which
+     read APCA Lc 59<75 on #101012). It must clear APCA Lc 75 for SMALL text (12px
+     labels) against the LIGHTEST rung of the dark elevation ladder, not just the
+     page — the dark model lightens the surface as elevation rises, so the muted
+     ink rides up to ~#43 surfaces on XL/modal/tinted-XL. #d2d2da only reached Lc
+     67–69 there (the two confirmed APCA small-text warnings); #e6e6ec clears Lc
+     ≥79 on those surfaces and Lc ≥90 on the darkest #1c1c1e while staying a clear
+     soft-gray below the #f4f4f6/#16161a primary ink (hierarchy preserved).
+     Re-point to var(--lab-label-secondary) once the engine themes it to spec. */
+  --demo-ink-soft: #e6e6ec;
+
+  /* Default (unthemed :root tracks the stub's light palette). Per-level surfaces
+     default to the card surface — overridden per theme below. */
+  --demo-elev-1: var(--demo-card);
+  --demo-elev-2: var(--demo-card);
+  --demo-elev-3: var(--demo-card);
+  --demo-elev-4: var(--demo-card);
+  --demo-elev-5: var(--demo-card);
 }
 
 /* Demo-only light chrome — the stub contract is single-theme, so the demo pins
@@ -25,7 +42,53 @@
   --demo-bg: #f4f4f6;
   --demo-card: #ffffff;
   --demo-ink: #16161a;
-  --demo-ink-soft: #6b6b76;
+  /* Secondary ink clears APCA Lc 79 on the light page (was #6b6b76 = Lc 70<75).
+     Still a softer gray than the primary ink — hierarchy preserved, legible. */
+  --demo-ink-soft: #555560;
+
+  /* Light theme: depth is carried by the drop shadow alone. The dark shadow ink
+     (#101012) has strong luminance contrast against the light page, so the five
+     levels read by shadow. No per-level surface step is needed (and the cards
+     are already the lightest surface, so there is no room to lighten them). */
+  --demo-elev-1: var(--demo-card);
+  --demo-elev-2: var(--demo-card);
+  --demo-elev-3: var(--demo-card);
+  --demo-elev-4: var(--demo-card);
+  --demo-elev-5: var(--demo-card);
+}
+
+/* Dark theme: the elevation ladder is the focal subject, and on a near-black
+   page a drop shadow has almost no luminance contrast against its surround —
+   the shadow ink (#101012) IS the page background, so it contributes ~zero depth
+   (the central confirmed defect: five levels were unorderable in the dark). The
+   established fix is the dark-mode elevation model: convey depth by LIGHTENING
+   the surface as elevation rises, with the shadow as a secondary cue. Higher
+   elevation = lighter surface. Source: Material Design "Dark theme" elevation
+   overlays (m2.material.io/design/color/dark-theme) — a semi-transparent white
+   overlay whose strength grows with elevation; principle restated by the
+   confirmed finding (a drop shadow only reads as depth with luminance contrast
+   against its surround). The step values below are derived from the stub's own
+   dark neutral ladder (bg-secondary #1c1c1e → bg-tertiary #242426) extended by a
+   monotonic white overlay, NOT invented from taste. Surface-only change → no
+   geometry change → no layout shift. */
+[data-theme="dark"] {
+  --demo-bg: var(--lab-bg-primary);   /* #101012 — the page the cards sit on */
+  --demo-card: var(--lab-bg-secondary); /* #1c1c1e — XS, the lowest level */
+  --demo-ink: var(--lab-label-primary);
+  /* Clears APCA Lc 75 (12px) against the LIGHTEST elevation surface, not just the
+     page — see :root note. #e6e6ec → Lc 81/79 on the #43-range XL/tinted-XL rungs
+     (was #d2d2da Lc 69/67 < 75: the two confirmed small-text APCA warnings). */
+  --demo-ink-soft: #e6e6ec;
+
+  /* Five orderable surfaces. Anchored on the stub's real neutral ladder
+     (#1c1c1e, #242426), then a small monotonic white overlay carries the top
+     two levels — each step a clear, perceptible luminance increase over the one
+     below, so the ladder is orderable by surface alone. */
+  --demo-elev-1: var(--lab-bg-secondary);                                   /* #1c1c1e */
+  --demo-elev-2: var(--lab-bg-tertiary);                                    /* #242426 */
+  --demo-elev-3: color-mix(in srgb, var(--lab-bg-tertiary), #ffffff 5%);
+  --demo-elev-4: color-mix(in srgb, var(--lab-bg-tertiary), #ffffff 9%);
+  --demo-elev-5: color-mix(in srgb, var(--lab-bg-tertiary), #ffffff 14%);
 }
 
 * {
@@ -55,7 +118,12 @@ main {
 }
 
 .lede {
-  max-width: 46rem;
+  /* Measure is capped in ch (the font's own advance unit), not rem, so the
+     readable line length holds for every body style regardless of its font-size
+     — 60ch keeps each line inside the 45–75ch comfortable band (was 46rem/736px,
+     which floated free of the font and ran the lede to ~85ch / up to 103ch as
+     rendered). ch is the canonical typographic measure unit. */
+  max-width: 60ch;
   color: var(--demo-ink-soft);
   margin: 0 0 1.5rem;
   line-height: 1.5;
@@ -68,40 +136,49 @@ main {
   gap: 1.5rem;
 }
 
-.control {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-weight: var(--lab-font-weight-semibold, 600);
-}
-
-.control input[type="range"] {
-  width: 12rem;
-}
-
-.control output {
-  min-width: 3ch;
-  font-variant-numeric: tabular-nums;
+/* The light angle is documented, not controlled — see shadow.html. */
+.config-note {
+  flex-basis: 100%;
+  /* Same ch-based measure as .lede. Because ch tracks this element's own 14px
+     font, the smaller note caps at the same 60ch readable line — the rem cap had
+     run it to ~97ch (worse than the lede, since fewer rem-px buy more chars at a
+     smaller font). */
+  max-width: 60ch;
+  margin: 0;
   color: var(--demo-ink-soft);
+  font-size: 0.875rem; /* 14px — on the integer scale, no fractional px */
+  line-height: 1.5;
 }
 
-.advanced {
-  width: 100%;
+.config-note code {
+  font-size: inherit;
 }
 
-.advanced > summary {
-  cursor: pointer;
-  font-weight: var(--lab-font-weight-semibold, 600);
-  color: var(--demo-ink-soft);
-}
-
-.advanced[open] > summary {
-  margin-bottom: 0.75rem;
-}
-
+/* Every specimen group is titled by a real, visible heading wired to its grid
+   via aria-labelledby — none is labelled by an invisible aria-label only. The
+   three headings share one scale (20px) so the page reads as a flat list of
+   peer specimen groups, with the PRIMARY (the XS..XL contract) carrying extra
+   weight + a brand rule so it reads first when scanning headings. The derived
+   groups (roles, tint) stay lighter so the hierarchy is: primitive → derived. */
 .section-head {
-  margin: 1rem 0 0;
-  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem; /* 20px — on the integer scale */
+  font-weight: var(--lab-font-weight-semibold, 600);
+  line-height: 1.3;
+}
+
+.section-head--primary {
+  /* The primary group's heading reads first: heavier weight + a short brand
+     accent rule, so a maintainer scanning headings lands on the core ladder. */
+  font-weight: var(--lab-font-weight-bold, 700);
+  padding-left: 0.625rem;
+  border-left: 3px solid var(--lab-label-brand-primary);
+}
+
+/* The lede that immediately follows a section heading is a group descriptor,
+   not the page intro — tighten the gap so heading + descriptor read as a unit. */
+.section-head + .lede {
+  margin-top: 0;
 }
 
 #theme-toggle {
@@ -156,31 +233,70 @@ main {
 }
 
 .card {
-  background: var(--demo-card);
+  /* Surface defaults to the lowest level; each elevation level overrides it
+     below. In light theme every level resolves to the same card surface (depth
+     is the shadow); in dark theme the surface lightens with elevation so the
+     ladder stays orderable when the shadow contributes ~zero contrast. */
+  background: var(--demo-elev-1);
   border-radius: var(--lab-radius-lg, 0.75rem);
   /* Reserve a fixed height so swapping shadow / theme never shifts layout. */
   min-height: 9rem;
   padding: 1.25rem;
   display: flex;
   align-items: flex-end;
-  /* Elevation changes ease via the system motion token (owner verdict c). */
-  transition: var(--lab-shadow-transition);
+  /* Ease the surface lightening alongside the shadow so a theme swap or hover
+     never snaps. background is added to the system shadow-transition. */
+  transition: var(--lab-shadow-transition), background 200ms ease;
 }
+
+/* Per-level surface — the dark-mode elevation model (light theme: all the same).
+   Size ladder XS→XL = levels 1→5; role aliases map onto the same five surfaces
+   (resting=xs=1, raised=s=2, overlay=l=4, modal=xl=5) so a role reads at the
+   same depth as the size it aliases. */
+.lab-shadow-xs,
+.lab-elevation-resting { background: var(--demo-elev-1); }
+.lab-shadow-s,
+.lab-elevation-raised { background: var(--demo-elev-2); }
+.lab-shadow-m { background: var(--demo-elev-3); }
+.lab-shadow-l,
+.lab-elevation-overlay { background: var(--demo-elev-4); }
+.lab-shadow-xl,
+.lab-elevation-modal { background: var(--demo-elev-5); }
 
 .card-label {
   color: var(--demo-ink-soft);
-  font-size: 0.8rem;
+  /* 12px — on the integer type scale (was 0.8rem = 12.8px fractional). */
+  font-size: 0.75rem;
 }
 
 .card code {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 /* Opt-in tint: a surface raises the tint strength and provides a hue. The
    anchor stays the dark base, so the composite never lightens past the surface
-   (owner constraint: a shadow, never a glow). */
+   (owner constraint: a shadow, never a glow). The tint composes OVER the card's
+   per-level elevation surface (--demo-tint-base, set per size below), so a
+   tinted card still reads its elevation by surface in dark — the tint nudges the
+   hue, it does not flatten the ladder. */
 .card-tinted {
   --lab-surface-shadow-tint: var(--lab-label-brand-primary);
   --lab-shadow-tint-strength: 0.35;
-  background: color-mix(in srgb, var(--demo-card), var(--lab-label-brand-primary) 8%);
+  --demo-tint-base: var(--demo-elev-1);
+  background: color-mix(in srgb, var(--demo-tint-base), var(--lab-label-brand-primary) 8%);
+}
+.card-tinted.lab-shadow-s { --demo-tint-base: var(--demo-elev-2); }
+.card-tinted.lab-shadow-xl { --demo-tint-base: var(--demo-elev-5); }
+
+/* Honour the user's motion preference. Every transition on this page is
+   decorative (shadow/background/colour easing); under prefers-reduced-motion we
+   drop them to an instant state change instead of animating. This guards the
+   body theme swap, the toggle button, and all card elevation transitions. */
+@media (prefers-reduced-motion: reduce) {
+  body,
+  #theme-toggle,
+  #theme-toggle:hover,
+  .card {
+    transition: none;
+  }
 }

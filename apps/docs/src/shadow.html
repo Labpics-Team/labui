@@ -16,36 +16,45 @@
           geometry. Neutral by default; light is vertical. Light and dark are a
           variable swap, not a re-author.
         </p>
+        <p class="lede" data-testid="depth-model-note">
+          In light, depth reads from the drop shadow. In dark — where a shadow
+          has almost no contrast against a near-black page — depth reads from the
+          surface: each level sits on a lighter surface than the one below it
+          (the dark-theme elevation model), with the shadow as a secondary cue.
+        </p>
 
-        <!-- Theme toggle stays in view; the light-angle knob is advanced-only
-             (owner verdict: vertical is the default, angle is a config option). -->
+        <!-- One control only: the theme toggle, which proves light/dark is a
+             variable swap. The light angle is NOT a runtime knob — it is a
+             single generator input baked into the shipped ladder (owner verdict:
+             vertical is the default, angle is a build-time config option). A
+             runtime slider here was a dead-end affordance (the literal contract
+             does not read --lab-light-angle), so it is stated, not faked. -->
         <div class="controls">
           <button type="button" id="theme-toggle" data-testid="theme-toggle">
             Switch to dark
           </button>
 
-          <details class="advanced">
-            <summary>Advanced</summary>
-            <label class="control">
-              <span>Light angle</span>
-              <input
-                type="range"
-                id="angle"
-                data-testid="angle-input"
-                min="0"
-                max="90"
-                step="1"
-                value="0"
-              />
-              <output data-testid="angle-output" id="angle-out">0°</output>
-            </label>
-          </details>
+          <p class="config-note" data-testid="angle-note">
+            Light angle is fixed at <code>0°</code> (vertical). It is a
+            generator input — set <code>--lab-light-angle</code> before the
+            ladder is emitted — not a runtime control.
+          </p>
         </div>
       </header>
 
-      <!-- Size ladder: the primitive. One label per card, no text-on-text and
-           no shadow on the text itself (owner verdict d). -->
-      <section class="grid" data-testid="size-grid" aria-label="Elevation sizes">
+      <!-- Size ladder: the PRIMARY specimen — the XS..XL contract itself. It gets
+           the first, weightiest visible heading so a sighted maintainer scanning
+           headings lands on the core deliverable first; the two groups below are
+           explicitly derived (aliases / opt-in) and read as subordinate. Each
+           section is now titled by a real heading wired via aria-labelledby — no
+           group is labelled by an invisible aria-label only. One label per card,
+           no text-on-text and no shadow on the text itself (owner verdict d). -->
+      <h2 class="section-head section-head--primary" id="size-head">Elevation sizes</h2>
+      <p class="lede">
+        The primitive: five sizes — XS / S / M / L / XL — each exactly four plies.
+        Everything below is named on top of these.
+      </p>
+      <section class="grid" data-testid="size-grid" aria-labelledby="size-head">
         <article class="card lab-shadow-xs" data-testid="card-xs">
           <span class="card-label"><code>.lab-shadow-xs</code></span>
         </article>
@@ -63,9 +72,9 @@
         </article>
       </section>
 
-      <h2 class="section-head">Semantic roles</h2>
+      <h2 class="section-head" id="role-head">Semantic roles</h2>
       <p class="lede">Roles are aliases onto sizes — same geometry, named for intent.</p>
-      <section class="grid" data-testid="role-grid" aria-label="Elevation roles">
+      <section class="grid" data-testid="role-grid" aria-labelledby="role-head">
         <article class="card lab-elevation-resting" data-testid="card-resting">
           <span class="card-label"><code>.lab-elevation-resting</code></span>
         </article>
@@ -80,12 +89,12 @@
         </article>
       </section>
 
-      <h2 class="section-head">Opt-in surface tint</h2>
+      <h2 class="section-head" id="tint-head">Opt-in surface tint</h2>
       <p class="lede">
         A surface may opt into a weak hue. The tint nudges the dark anchor — it
         never lightens the composite past the surface.
       </p>
-      <section class="grid tinted-surface" data-testid="tinted-grid" aria-label="Tinted surfaces">
+      <section class="grid tinted-surface" data-testid="tinted-grid" aria-labelledby="tint-head">
         <article class="card card-tinted lab-shadow-s" data-testid="card-tinted-s">
           <span class="card-label">opt-in tint · S</span>
         </article>
