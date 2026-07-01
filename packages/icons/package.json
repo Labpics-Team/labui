@@ -1,28 +1,27 @@
 {
-  "name": "@labpics/ui-icons",
-  "version": "0.0.0",
+  "name": "@labpics/icons",
+  "version": "0.0.0-stub.0",
   "private": true,
-  "description": "Icon system: variable font + SVG + selective Lottie.",
+  "description": "TEMPORARY local stub bridge for the unpublished @labpics/icons tree-shakeable SVG icon library. Replace with the published package from lab-icons once it ships.",
   "license": "UNLICENSED",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
   },
-  "files": ["dist"],
+  "files": ["index.js", "index.d.ts"],
   "sideEffects": false,
   "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "build": "node -e \"process.stdout.write('stub: no build step\\n')\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "@types/node": "22.10.5",
+    "typescript": "5.7.3",
+    "vitest": "2.1.8"
   }
 }
