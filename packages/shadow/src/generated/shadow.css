@@ -34,30 +34,30 @@
 
   /* Elevation SIZES — the primitive. Each is the owner ladder, four plies. */
   --lab-shadow-xs:
-    0 0px 1px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 1px 1px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 2px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 4px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.0625rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.25rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   --lab-shadow-s:
-    0 1px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 2px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 4px 4px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 12px 8px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   --lab-shadow-m:
-    0 1px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 4px 4px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 12px 8px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 24px 12px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 1.5rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   --lab-shadow-l:
-    0 4px 8px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 12px 12px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 24px 16px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 48px 24px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0.25rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.75rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 1.5rem 1rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 1.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   --lab-shadow-xl:
-    0 16px 36px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 24px 48px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 36px 64px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 48px 96px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 1rem 2.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 1.5rem 3rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 2.25rem 4rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 6rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
 
   /* Semantic ROLE aliases — a role points to a size (size is the primitive). */
   --lab-elevation-resting: var(--lab-shadow-xs);
@@ -71,42 +71,42 @@
    resolves at the element, and ease elevation changes via the motion token. */
 .lab-shadow-xs {
   box-shadow:
-    0 0px 1px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 1px 1px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 2px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 4px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.0625rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.25rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   transition: var(--lab-shadow-transition);
 }
 .lab-shadow-s {
   box-shadow:
-    0 1px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 2px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 4px 4px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 12px 8px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   transition: var(--lab-shadow-transition);
 }
 .lab-shadow-m {
   box-shadow:
-    0 1px 2px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 4px 4px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 12px 8px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 24px 12px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 1.5rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   transition: var(--lab-shadow-transition);
 }
 .lab-shadow-l {
   box-shadow:
-    0 4px 8px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 12px 12px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 24px 16px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 48px 24px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 0.25rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.75rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 1.5rem 1rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 1.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   transition: var(--lab-shadow-transition);
 }
 .lab-shadow-xl {
   box-shadow:
-    0 16px 36px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
-    0 24px 48px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
-    0 36px 64px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
-    0 48px 96px color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+    0 1rem 2.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 1.5rem 3rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 2.25rem 4rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 6rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
   transition: var(--lab-shadow-transition);
 }
 

@@ -10,9 +10,12 @@ domain).
 
 Five elevation **sizes**, each **exactly four** drop-shadow plies. Transcribed
 verbatim from the owner's effect styles (`labui-figma-styles.md`, 2026-06-13) —
-nothing here is a formula. Values are CSS px: `r` = blur radius, `y` = vertical
-offset. At the default vertical light the generated CSS reproduces this table
-ply-for-ply.
+nothing about the GEOMETRY is a formula (only the unit is: Figma px is
+algorithmically converted to rem against the 16px root anchor, `toRem` in
+`src/domain/box-shadow.ts`, so shadows scale with root font-size like every
+other dimension in the system). `r` = blur radius, `y` = vertical offset, both
+transcribed here in their source px for readability. At the default vertical
+light the generated CSS reproduces this table ply-for-ply (in rem).
 
 | Size | slot s1 (α .12) | slot s2 (α .04) | slot s3 (α .02) | slot s4 (α .01) |
 |------|-----------------|-----------------|-----------------|-----------------|
@@ -65,7 +68,8 @@ whole system. The owner's data is a **pure vertical light**: every `offset.x = 0
 So the default is `0deg` and a config option, **not** a demo handle:
 
 - **At angle 0 (default):** the generator emits the literal ladder
-  `0 {y}px {r}px {colour}` — the generated CSS *is* the опора table, bit-for-bit.
+  `0 {y}rem {r}rem {colour}` (y/r converted from the Figma px table) — the
+  generated CSS *is* the опора table, bit-for-bit at the default 16px root.
 - **At a non-zero angle:** each ply's vertical throw is projected onto x/y from
   the one token — `x = y·sin(angle)`, `y = y·cos(angle)` — so rotating the
   single token rotates every ply of every size in lockstep. There is no

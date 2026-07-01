@@ -13,12 +13,13 @@ export const ELEVATION_LEVELS = ['xs', 's', 'm', 'l', 'xl'] as const;
 export type ElevationLevelName = (typeof ELEVATION_LEVELS)[number];
 
 /**
- * One drop-shadow ply's GEOMETRY, in CSS px, taken verbatim from the owner's
- * Figma stack. `blur` is the Gaussian blur radius (Figma `r`); `offsetY` is the
- * downward throw (Figma `y`). There is no per-ply offset-x: the owner's stack is
- * a pure vertical light (all offset.x = 0); horizontal offset is derived ONLY
- * from a non-zero global light angle, never stored here. `spread` is 0
- * everywhere in the owner's data.
+ * One drop-shadow ply's GEOMETRY, stored as the owner's verbatim Figma px and
+ * emitted as rem (`toRem` in `box-shadow.ts` divides by the 16px root anchor).
+ * `blur` is the Gaussian blur radius (Figma `r`); `offsetY` is the downward
+ * throw (Figma `y`). There is no per-ply offset-x: the owner's stack is a pure
+ * vertical light (all offset.x = 0); horizontal offset is derived ONLY from a
+ * non-zero global light angle, never stored here. `spread` is 0 everywhere in
+ * the owner's data.
  */
 export interface SlotGeometry {
   readonly blur: number;
@@ -33,11 +34,12 @@ export interface ElevationLevelShape {
 
 /**
  * THE LADDER — transcribed verbatim from labui-figma-styles.md (the owner's
- * effect-style export, 2026-06-13). Every value here is a Figma `r`/`y` in px;
- * nothing is computed. This is the opora: at light-angle 0 the generated CSS
- * reproduces this table bit-for-bit (offset-x = 0, offset-y = `y`px, blur =
- * `r`px). Do not "tidy" these numbers into a formula — depth is the owner's
- * hand-tuned geometry, not a progression.
+ * effect-style export, 2026-06-13). Every value here is a Figma `r`/`y` in px,
+ * stored as-is; nothing about the GEOMETRY is computed — only the unit is
+ * (px → rem, `toRem`). This is the opora: at light-angle 0 the generated CSS
+ * reproduces this table bit-for-bit at the default 16px root (offset-x = 0,
+ * offset-y = `y`px⇒rem, blur = `r`px⇒rem). Do not "tidy" these numbers into a
+ * formula — depth is the owner's hand-tuned geometry, not a progression.
  *
  *   | Level | s1 (a.12) | s2 (a.04) | s3 (a.02) | s4 (a.01) |
  *   | XS | r1 y0  | r1 y1  | r2 y2   | r2 y4   |
