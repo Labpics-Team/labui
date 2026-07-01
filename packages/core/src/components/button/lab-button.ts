@@ -240,7 +240,12 @@ export class LabButton extends LabElement {
       gap: var(--_gap);
     }
     :host([loading]) .label {
-      visibility: hidden;
+      /* color: transparent — see button.css (React twin) for the full WCAG
+         4.1.2 rationale: neither visibility:hidden NOR opacity:0 is safe here
+         (WebKit drops opacity:0 content from its a11y tree too), so only a
+         paint-level change (colour) may be used to visually hide the label
+         while keeping it the button's accessible name on every engine. */
+      color: transparent;
     }
     .spinner {
       display: none;

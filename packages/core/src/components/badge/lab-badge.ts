@@ -111,7 +111,10 @@ export class LabBadge extends LabElement {
       color: ${litVar('--lab-label-on-neutral')};
     }
     :host([type='fill'][color='brand']) .badge {
-      background-color: ${litVar('--lab-border-brand-strong')};
+      /* --lab-fill-accent (NOT --lab-border-brand-strong): border role is pinned
+         for the 3:1 non-text threshold; this solid surface carries a white text
+         label and needs 4.5:1 — same role Button's accent-fill kind consumes. */
+      background-color: ${litVar('--lab-fill-accent')};
       color: ${litVar('--lab-badge-label-default')};
     }
     :host([type='fill'][color='danger']) .badge {

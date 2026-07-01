@@ -43,6 +43,15 @@ export interface ContrastResult {
   threshold: number;
 }
 
+/**
+ * Селекторы неактивных (disabled) UI-компонентов — WCAG 1.4.3 явно исключает
+ * их текст/изображения из требования контраста ("no contrast requirement for
+ * any text ... that is part of an inactive user interface component").
+ * Покрывает нативный `disabled`, ARIA `aria-disabled`, и `data-disabled` (наш
+ * контракт для non-form элементов вроде `<lab-badge disabled>`).
+ */
+const DISABLED_SELECTORS = ['[disabled]', '[aria-disabled="true"]', '[data-disabled="true"]'];
+
 // ---------------------------------------------------------------------------
 // assertAxeAA
 // ---------------------------------------------------------------------------
@@ -67,7 +76,13 @@ export async function assertAxeAA(page: Page, options: AxeScanOptions = {}): Pro
 
   let builder = new AxeBuilder({ page }).withTags(tags);
 
-  for (const sel of exclude) {
+  // Неактивные (disabled) UI-компоненты ВСЕГДА исключены из скана: WCAG 1.4.3
+  // Contrast (Minimum) прямо освобождает "text ... that is part of an inactive
+  // user interface component" от требования контраста — приглушённая (opacity)
+  // disabled-поверхность не обязана проходить AA. Это не ослабление гейта, а
+  // корректное применение самого критерия (иначе ложные срабатывания на каждом
+  // disabled-фикстуре компонента).
+  for (const sel of [...DISABLED_SELECTORS, ...exclude]) {
     builder = builder.exclude(sel);
   }
   if (disableRules.length > 0) {
@@ -86,9 +101,13 @@ export async function assertAxeAA(page: Page, options: AxeScanOptions = {}): Pro
 /**
  * Явная проверка контраста «лейбл над своей поверхностью».
  *
- * Читает computed `color` у `labelLocator` и computed `background-color` у
- * `surfaceLocator` (ближайший непрозрачный предок текстового узла или сам
- * компонент-контейнер). Вычисляет WCAG relative luminance + contrast ratio.
+ * Читает computed `color` у `labelLocator`. Для фона — если `surfaceLocator`
+ * (или сам `labelLocator`, когда `surfaceLocator` не передан) имеет
+ * полупрозрачный `background-color` (частый случай для `--lab-fill-*-tinted`
+ * ролей), эффективный фон композитится ("src over dst") вверх по цепочке
+ * предков (через shadow-root границу тоже) до первого непрозрачного слоя или
+ * белого холста canvas по умолчанию — реальный отрендеренный цвет, не догадка.
+ * Вычисляет WCAG relative luminance + contrast ratio.
  * Проверяет: ratio >= 4.5 для обычного текста (< 18pt или < 14pt bold),
  * ratio >= 3.0 для крупного (≥ 18pt или ≥ 14pt bold).
  *
@@ -108,10 +127,61 @@ export async function assertLabelContrast(
   // Читаем computed foreground из лейбла.
   const fgRaw: string = await labelLocator.evaluate((el) => getComputedStyle(el).color);
 
-  // Читаем computed background из поверхности (или из самого лейбла).
-  const bgRaw: string = surfaceLocator
-    ? await surfaceLocator.evaluate((el) => getComputedStyle(el).backgroundColor)
-    : await labelLocator.evaluate((el) => getComputedStyle(el).backgroundColor);
+  // Читаем эффективный (скомпонованный) background поверхности: если сама
+  // поверхность имеет полупрозрачный background-color (частый случай для
+  // --lab-fill-*-tinted ролей), реальный отрендеренный цвет — это результат
+  // alpha-композитинга этого слоя НАД фоном предков, вплоть до первого
+  // непрозрачного слоя (или белого холста canvas по умолчанию). Читать только
+  // computed-style самого элемента и бросать ошибку на alpha<1 — false negative:
+  // страница СУЩЕСТВУЕТ, контраст РЕАЛЕН и измерим, просто не одним слоем.
+  const target = surfaceLocator ?? labelLocator;
+  const bgRaw: string = await target.evaluate((el) => {
+    // Композитинг "src over dst": result = src*srcA + dst*(1-srcA).
+    function over(
+      src: { r: number; g: number; b: number; a: number },
+      dst: { r: number; g: number; b: number },
+    ): { r: number; g: number; b: number } {
+      return {
+        r: src.r * src.a + dst.r * (1 - src.a),
+        g: src.g * src.a + dst.g * (1 - src.a),
+        b: src.b * src.a + dst.b * (1 - src.a),
+      };
+    }
+    function parse(raw: string): { r: number; g: number; b: number; a: number } | null {
+      const m = raw.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
+      if (!m) return null;
+      return {
+        r: Number(m[1]),
+        g: Number(m[2]),
+        b: Number(m[3]),
+        a: m[4] === undefined ? 1 : Number(m[4]),
+      };
+    }
+
+    let composed = { r: 255, g: 255, b: 255 }; // canvas default (opaque white)
+    const chain: Element[] = [];
+    // Собираем цепочку предков, переходя через shadow-root границу (getRootNode
+    // возвращает ShadowRoot, чей .host — следующий реальный узел выше).
+    let node: Node | null = el;
+    while (node) {
+      if (node instanceof Element) chain.push(node);
+      const parent: Node | null = (node as Element).parentElement;
+      if (parent) {
+        node = parent;
+      } else {
+        const root = node.getRootNode();
+        node = root instanceof ShadowRoot ? root.host : null;
+      }
+    }
+    // Компонуем от самого дальнего предка (документа) вниз к элементу, чтобы
+    // каждый слой лёг "over" уже накопленный результат снизу вверх по DOM.
+    for (const layerEl of chain.slice().reverse()) {
+      const layer = parse(getComputedStyle(layerEl).backgroundColor);
+      if (layer && layer.a > 0) composed = over(layer, composed);
+    }
+    const { r, g, b } = composed;
+    return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+  });
 
   const fgRgb = parseRgb(fgRaw);
   const bgRgb = parseRgb(bgRaw);
@@ -119,20 +189,6 @@ export async function assertLabelContrast(
   if (!fgRgb || !bgRgb) {
     throw new Error(
       `assertLabelContrast: не удалось распознать цвета.\n  fg="${fgRaw}"\n  bg="${bgRaw}"`,
-    );
-  }
-
-  if (bgRgb.a < 1) {
-    // Прозрачный/полупрозрачный background-color (напр. "transparent" /
-    // rgba(0,0,0,0)) НЕЛЬЗЯ молча трактовать как чёрный — реальный отрендеренный
-    // фон приходит от предка. Явная ошибка вместо тихого false-negative/positive:
-    // вызывающий обязан передать surfaceLocator на непрозрачного предка.
-    throw new Error(
-      [
-        `assertLabelContrast: background-color поверхности прозрачен (alpha=${bgRgb.a}), контраст не определён.`,
-        `  bg="${bgRaw}"`,
-        '  Передайте surfaceLocator, указывающий на ближайшего НЕПРОЗРАЧНОГО предка с реальной заливкой.',
-      ].join('\n'),
     );
   }
 

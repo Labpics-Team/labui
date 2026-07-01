@@ -54,7 +54,10 @@
   color: var(--lab-label-on-neutral);
 }
 [data-lab-badge][data-type="fill"][data-color="brand"] {
-  background-color: var(--lab-border-brand-strong);
+  /* Reuses --lab-fill-accent (NOT --lab-border-brand-strong): the border role is
+     pinned for the 3:1 non-text threshold, this solid surface carries a white
+     text label and needs 4.5:1 — same role Button's accent-fill kind consumes. */
+  background-color: var(--lab-fill-accent);
   color: var(--lab-badge-label-default);
 }
 [data-lab-badge][data-type="fill"][data-color="danger"] {

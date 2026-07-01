@@ -72,15 +72,16 @@ test('disabled badge dims identically on both renderers', async ({ page }) => {
   expect(Number(litOpacity)).toBeLessThan(1);
 });
 
-test('tokens: re-pointing --lab-border-brand-strong re-skins BOTH fill renderers', async ({
-  page,
-}) => {
+test('tokens: re-pointing --lab-fill-accent re-skins BOTH fill renderers', async ({ page }) => {
   const lit = litBadge(page, 'lit-brand-fill');
   const react = reactBadge(page, 'react-brand-fill');
   await expect(react).toBeVisible();
 
+  // Brand-fill consumes --lab-fill-accent (NOT --lab-border-brand-strong): the
+  // border role is pinned for the 3:1 non-text threshold, this solid surface
+  // carries a white text label and needs 4.5:1 (see contract.css/badge.css).
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-border-brand-strong', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-fill-accent', 'rgb(1, 2, 3)');
   });
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');

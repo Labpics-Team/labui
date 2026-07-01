@@ -45,6 +45,15 @@
 
 :root,
 [data-theme="light"] {
+  /* Tells the UA which palette native form controls (button/checkbox/select
+     chrome, scrollbars) should render in. Without it, an unstyled native
+     control nested under a themed ancestor keeps the browser's LIGHT default
+     face while inheriting the theme's (light-on-dark) text colour — the two
+     stop matching, and WebKit in particular does not auto-infer dark chrome
+     the way Chromium sometimes does (cross-engine `color-contrast` gap on any
+     plain slotted `<button>`/native control). */
+  color-scheme: light;
+
   /* BACKGROUNDS — surface roles (Neutral ladder, Grouped, Static, Overlay, Materials) */
   --lab-bg-material-base-01: rgb(153 153 153 / 0.969);
   --lab-bg-material-base-02: rgb(92 92 92);
@@ -207,11 +216,17 @@
    */
 
   /* Solid fills (kind=fill) — FULL-opacity surface, NOT the low-alpha Fills@12.
-   * Accent/Danger solids reuse the opaque accent primitive already pinned by the
-   * `-strong` border roles (identical primitive, full opacity) — honest var() reuse.
+   * Danger solid reuses the opaque danger primitive already pinned by the
+   * `-strong` border role (identical primitive, full opacity) — honest var() reuse.
+   * Accent solid does NOT reuse `--lab-border-brand-strong`: that role is pinned for
+   * BORDER/non-text usage (WCAG 1.4.11, 3:1), while a solid fill carries a white
+   * BODY label (WCAG 1.4.3, 4.5:1) — the same primitive fails the stricter text
+   * threshold (measured 4.02:1 in axe-core). A distinct, slightly darker literal is
+   * used here so button/badge solid-accent surfaces clear AA; PROVISIONAL — owner
+   * sign-off on the exact shade pending (does not change border-brand-strong itself).
    * The neutral solid has no opaque-neutral surface in Figma → PROVISIONAL literal
    * (proto-A: ~#e8e8ec light). */
-  --lab-fill-accent: var(--lab-border-brand-strong);
+  --lab-fill-accent: rgb(0 110 230); /* PROVISIONAL — AA-safe solid accent (≥4.5:1 w/ white), owner sign-off */
   --lab-fill-danger: var(--lab-border-danger-strong);
   --lab-fill-neutral: rgb(232 232 236); /* PROVISIONAL — solid neutral surface, owner sign-off */
 
@@ -240,6 +255,9 @@
 }
 
 [data-theme="dark"] {
+  /* See `color-scheme: light` in the :root block above for the rationale. */
+  color-scheme: dark;
+
   /* BACKGROUNDS — surface roles (Neutral ladder, Grouped, Static, Overlay, Materials) */
   --lab-bg-material-base-01: rgb(37 37 37 / 0.898);
   --lab-bg-material-base-02: rgb(124 124 124);
@@ -285,7 +303,12 @@
   --lab-label-primary: rgb(246 248 250);
   --lab-label-quaternary: rgb(176 176 185 / 0.322);
   --lab-label-secondary: rgb(176 176 185 / 0.722);
-  --lab-label-tertiary: rgb(176 176 185 / 0.522);
+  /* PROVISIONAL — alpha raised 0.522→0.70 (owner sign-off pending): the Figma
+     snapshot alpha, composited over this dark-theme surface (#101012), measures
+     3.18:1 for helper/placeholder text (axe color-contrast), below WCAG AA
+     4.5:1. Same base hue, only the opacity moved so the composited result
+     clears the threshold (~4.85:1) — not a hand-picked new colour. */
+  --lab-label-tertiary: rgb(176 176 185 / 0.7);
   --lab-label-static-dark-primary: rgb(16 16 18);
   --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
   --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
@@ -389,7 +412,7 @@
   --lab-control-bg: rgb(120 120 128 / 0.361);
 
   /* ── DERIVED COMPONENT ROLES (see :root scope for the rationale) ─────────── */
-  --lab-fill-accent: var(--lab-border-brand-strong);
+  --lab-fill-accent: rgb(56 112 200); /* PROVISIONAL — AA-safe solid accent (≥4.5:1 w/ white), owner sign-off */
   --lab-fill-danger: var(--lab-border-danger-strong);
   --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
@@ -408,6 +431,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    /* See `color-scheme: light` in the :root block above for the rationale. */
+    color-scheme: dark;
+
     /* BACKGROUNDS — surface roles (Neutral ladder, Grouped, Static, Overlay, Materials) */
     --lab-bg-material-base-01: rgb(37 37 37 / 0.898);
     --lab-bg-material-base-02: rgb(124 124 124);
@@ -453,7 +479,9 @@
     --lab-label-primary: rgb(246 248 250);
     --lab-label-quaternary: rgb(176 176 185 / 0.322);
     --lab-label-secondary: rgb(176 176 185 / 0.722);
-    --lab-label-tertiary: rgb(176 176 185 / 0.522);
+    /* PROVISIONAL — see [data-theme='dark'] block above for rationale (alpha
+       0.522→0.70, same base hue, clears WCAG AA 4.5:1 on this dark surface). */
+    --lab-label-tertiary: rgb(176 176 185 / 0.7);
     --lab-label-static-dark-primary: rgb(16 16 18);
     --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
     --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
@@ -557,7 +585,7 @@
     --lab-control-bg: rgb(120 120 128 / 0.361);
 
     /* ── DERIVED COMPONENT ROLES (see :root scope for the rationale) ───────── */
-    --lab-fill-accent: var(--lab-border-brand-strong);
+    --lab-fill-accent: rgb(56 112 200); /* PROVISIONAL — AA-safe solid accent (≥4.5:1 w/ white), owner sign-off */
     --lab-fill-danger: var(--lab-border-danger-strong);
     --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
     --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
