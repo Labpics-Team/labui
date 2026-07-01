@@ -119,10 +119,9 @@ multiplier to re-set when lab-colors reconciles the two sources via the JND
 surface contracts. Both source numbers are documented in
 `src/domain/alpha-contract.ts` — neither is a silent placeholder.
 
-**Swap-in plan:** when `lab-colors-v1` (chapter `surface-jnd-contracts`) publishes
-JND-calibrated alphas, they are written to the **same** `--lab-shadow-alpha-*`
-names. The stack re-derives with **zero** geometry changes. See `INTEGRATION.md`
-at the repo root.
+**Swap-in plan:** when `lab-colors` publishes JND-calibrated alphas, they are
+written to the **same** `--lab-shadow-alpha-*` names. The stack re-derives with
+**zero** geometry changes. See `docs/external-deps/lab-colors.md`.
 
 ## Build
 

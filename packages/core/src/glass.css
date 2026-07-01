@@ -1,14 +1,13 @@
 /*
  * @labpics/ui-core/glass.css — BACK-COMPAT SHIM.
  *
- * Owner verdict (labui-v1 / materials-system, 2026-06-13): real Glass is
- * native-only; the web material is reframed to Ambient (honest frosted blur)
- * with Solid as the second mode. PR #6's `glass.css` is no longer the public
- * material — `materials.css` is. This file re-exports materials.css verbatim so
- * any consumer that already imported `@labpics/ui-core/glass.css` keeps working
- * (the `.lab-glass` class and `--lab-glass-*` tokens still resolve, now as
- * aliases into the Ambient primitives). New code must import `materials.css`.
+ * Публичный материал сейчас живёт в materials.css (временный Ambient-подход;
+ * канон 2026-07-01 — флаг-модель Glass/Blur/Solid, настоящий Glass придёт с
+ * ветки feat/liquid-glass). Этот файл ре-экспортирует materials.css, чтобы
+ * потребители, импортировавшие `@labpics/ui-core/glass.css` (PR #6), не
+ * ломались: класс `.lab-glass` и токены `--lab-glass-*` резолвятся как алиасы
+ * Ambient-примитивов. Новый код импортирует materials.css.
  *
- * TODO(labui-v1): once all consumers import materials.css, delete this shim.
+ * TODO: после перевода всех потребителей на materials.css удалить шим.
  */
 @import "./materials.css";

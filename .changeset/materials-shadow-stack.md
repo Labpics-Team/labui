@@ -34,7 +34,7 @@ built on the owner's verbatim Figma effect-style ladder.
   the dark theme uses a PROVISIONAL multiplier (default 1, no amplification), with
   the older Variables-snapshot dark set named for reconciliation. lab-colors'
   JND-calibrated alphas swap in at the same names with zero geometry change
-  (filed in `INTEGRATION.md`).
+  (filed in `docs/external-deps/lab-colors.md`).
 
 The docs app gains a `shadow.html` demo (size ladder + role aliases + opt-in
 tinted surfaces × light/dark; the light-angle knob is advanced-only) and a
