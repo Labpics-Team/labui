@@ -19,8 +19,10 @@
  * error) / aria-errormessage / aria-required over the machine's input getter — merged,
  * never overwritten (disjoint from the machine's aria-invalid).
  *
- * Chips keyed by stable VALUE (the select/combobox canon): tags reorder/remove, and the
- * machine keys its item ids by value, so a chip never receives another tag's getters.
+ * Идентичность чипа — ИНДЕКС в машинном списке (исключение из канона value-key:
+ * allow-duplicates делает значение неуникальным, дубль-ключи ломали бы реконсиляцию).
+ * Список целиком машинный и строится заново из api.value; пропсы машины несут
+ * {index, value} — чип никогда не получает чужие геттеры.
  *
  * Client Component: a tags input is interactive (tag array + input + keyboard). It renders
  * as a leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
@@ -195,10 +197,14 @@ export function TagsInput({
         {api.value.map((tagValue, index) => {
           const itemProps = { index, value: tagValue };
           return (
-            // Keyed by the STABLE value, never the index: tags reorder/remove, and the
-            // machine keys its per-chip getters by value, so a chip never gets another
-            // tag's delete trigger / highlight / edit state.
-            <span key={tagValue} {...api.getItemProps(itemProps)} className="lab-tags-input-item">
+            // Ключ — ИНДЕКС, не значение: при allow-duplicates одинаковые значения дали
+            // бы дубль-ключи React (глючная реконсиляция при удалении/переупорядочке),
+            // а иной стабильной идентичности у тега нет (api.value — голые строки).
+            // Индекс здесь честен: список целиком машинный, строится заново из
+            // api.value; чипы без локального состояния; пропсы машины несут
+            // {index, value} независимо от key.
+            // biome-ignore lint/suspicious/noArrayIndexKey: значение не уникально при allow-duplicates — индекс единственный корректный ключ
+            <span key={index} {...api.getItemProps(itemProps)} className="lab-tags-input-item">
               <span {...api.getItemPreviewProps(itemProps)} className="lab-tags-input-item-preview">
                 <span {...api.getItemTextProps(itemProps)} className="lab-tags-input-item-text">
                   {tagValue}

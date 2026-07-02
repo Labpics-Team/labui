@@ -25,11 +25,12 @@ import * as tagsInputMachine from '@zag-js/tags-input';
  * ADDS the input's description wiring — the same split the other fields use, so neither
  * layer re-implements the other. Visual surface reuses the shared `field-styles`.
  *
- * Chips keyed by stable VALUE (core-CONTRACT §1, the select/combobox canon): tags
- * reorder and remove, so the per-chip getters are mapped onto their node by the chip's
- * VALUE (`CSS.escape`), never the positional index — the machine keys its item ids by
- * value, so honouring that means a chip never receives another tag's delete trigger /
- * highlight / edit state.
+ * Идентичность чипа — ПОЗИЦИЯ в машинном списке (осознанное исключение из канона
+ * value-lookup core-CONTRACT §1): tags-input допускает allow-duplicates, где значение
+ * НЕ уникально — лукап по data-value отдавал бы первый матч, оставляя второй дубль
+ * немым. Узлы маппятся позиционно (render() рисует .item из того же массива в том же
+ * цикле — соответствие 1:1), а ключи МАШИНЫ остаются {index, value}, как ждёт zag
+ * (id чипа = value+index, удаление резолвится по DOM-позиции).
  *
  * Axes (the form-field model — Type × Size × State, plus the tag policy):
  *   - type:        neutral | danger | warning | success   (sentiment of the field)
@@ -167,9 +168,11 @@ export class LabTagsInput extends LabElement {
   /** Stable machine id — the input/label/chip ids and the derived helper/error ids all
    * key off this, so nothing collides across instances. */
   private readonly fieldId = `lab-tags-input-${++tagsInputSeq}`;
-  /** The chip values rendered this pass — the per-chip getters map onto their node by
-   * this stable key (`CSS.escape`), never the positional index. Mirrors the machine's
-   * value list so a removed/reordered tag never leaves a node with stale getters. */
+  /** Значения чипов, отрисованные этим проходом, — per-chip геттеры маппятся на узлы
+   * ПОЗИЦИОННО по этому массиву (тот же массив рисует .item в render() того же цикла,
+   * поэтому соответствие 1:1 — в том числе при allow-duplicates, где значение не
+   * уникально). Зеркалит машинный список: удалённый/переставленный тег не оставляет
+   * узла с протухшими геттерами. */
   private renderedTags: string[] = [];
 
   constructor() {
@@ -470,15 +473,16 @@ export class LabTagsInput extends LabElement {
       setOrRemove(inputEl, 'aria-required', aria['aria-required']);
     }
 
-    // Map each chip's getters onto its node by the STABLE key `value`, never the
-    // positional index. Tags reorder/remove, and the machine keys its per-item getters by
-    // the chip value, so honouring that here means a chip never receives another tag's
-    // delete trigger / highlight / edit state. `CSS.escape` neutralises any quote/bracket
-    // in the value so the selector can't break.
+    // Узел каждого чипа ищется ПО ПОЗИЦИИ в отрендеренном списке: render() рисует
+    // .item из того же массива renderedTags в том же цикле обновления, поэтому
+    // соответствие 1:1 гарантировано — в том числе при allow-duplicates, где лукап
+    // по data-value отдавал бы первый матч (второй дубль оставался немым: его ×
+    // мёртв, а первый чип получал чужой индекс). Ключи МАШИНЫ при этом остаются
+    // {index, value} — как их ждёт zag.
+    const itemEls = root.querySelectorAll<HTMLElement>('.item');
     this.renderedTags.forEach((tagValue, index) => {
       const props = { index, value: tagValue };
-      const selector = `.item[data-value="${CSS.escape(tagValue)}"]`;
-      const itemEl = root.querySelector<HTMLElement>(selector);
+      const itemEl = itemEls[index];
       if (!itemEl) return;
       this.machineCtl.spread(itemEl, api.getItemProps(props));
 

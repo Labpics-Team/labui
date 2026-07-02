@@ -166,7 +166,8 @@ export { filterComboboxItems } from './components/combobox/lab-combobox.js';
 //     (they never reorder — index IS the machine's stable key).
 //   - Tags Input (`@zag-js/tags-input`): a text input + removable chips; the machine owns
 //     the tag array + input + add/remove/edit/keyboard, the field a11y lands on the input.
-//     Chips keyed by stable VALUE (they reorder/remove). The chip-control translations are
+//     Идентичность чипа позиционна — {index, value} (allow-duplicates делает значение
+//     неуникальным, value-ключ глушил бы дубли). The chip-control translations are
 //     shared (runtime) so the delete-trigger / edit-input names are one rule across both
 //     renderers. Type-only axis exports here: no Lit runtime pulled into the React bundle.
 export type {

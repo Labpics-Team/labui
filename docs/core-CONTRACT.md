@@ -228,7 +228,12 @@ A component must:
 
 - spread `api.get*Props()` onto the **correct structural nodes** (the machine
   decides `role`, `aria-*`, `tabindex`, key handlers — the component only places
-  them);
+  them). Пер-итемные геттеры маппятся на узлы по стабильному значению
+  (`.item[data-value=…]` + `CSS.escape`) — КРОМЕ компонентов, где значение не
+  уникально (tags-input с allow-duplicates): там идентичность итема ПОЗИЦИОННА
+  ({index, value}, узел = N-й `.item` списка, отрисованного из того же массива
+  в том же цикле). Откат tags-input на value-lookup возвращает баг немого
+  дубль-чипа (регрессионный тест duplicates в tags-input.spec.ts);
 - set `delegatesFocus: true` on its shadow root (the `LabElement` base does this)
   so focusing the host moves focus to the inner interactive node;
 - keep a real, focusable, native interactive element (`<button>`, `<input>`) at

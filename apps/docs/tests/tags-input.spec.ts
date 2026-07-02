@@ -193,6 +193,33 @@ test('chip delete: clicking the × removes that chip by value (both renderers)',
 });
 
 /**
+ * Дубликаты (allow-duplicates): чипы с ОДИНАКОВЫМ значением остаются независимо
+ * разведёнными — узлы маппятся ПОЗИЦИОННО в отрендеренном списке (лукап по
+ * data-value отдаёт первый матч, и второй дубль остался бы немым: его × мёртв,
+ * а первый чип получил бы чужой индекс). Удаление ВТОРОГО «dup» убирает ровно
+ * один дубль, «solo» цел. Оба рендерера.
+ */
+test('duplicates: identical chips stay independently wired; deleting the 2nd removes exactly one (both renderers)', async ({
+  page,
+}) => {
+  // Lit — база: три чипа, клик по × ВТОРОГО (индекс 1, дубль).
+  await expect.poll(() => litItemValues(page, 'lit-duplicates')).toEqual(['dup', 'dup', 'solo']);
+  await litHost(page, 'lit-duplicates').locator('.item').nth(1).locator('.item-delete').click();
+  await expect.poll(() => litItemValues(page, 'lit-duplicates')).toEqual(['dup', 'solo']);
+
+  // React parity.
+  await expect
+    .poll(() => reactItemValues(page, 'react-duplicates'))
+    .toEqual(['dup', 'dup', 'solo']);
+  await reactField(page, 'react-duplicates')
+    .locator('.lab-tags-input-item')
+    .nth(1)
+    .locator('.lab-tags-input-item-delete')
+    .click();
+  await expect.poll(() => reactItemValues(page, 'react-duplicates')).toEqual(['dup', 'solo']);
+});
+
+/**
  * Delete a11y — the × button carries an accessible name from the SHARED translations
  * ("Delete <tag>"), the same on both renderers.
  */

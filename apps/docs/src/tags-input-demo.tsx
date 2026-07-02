@@ -87,6 +87,9 @@ createRoot(mount).render(
     <span data-testid="react-size-l">
       <TagsInput size="l" label="Large" defaultValue={['a']} />
     </span>
+    <span data-testid="react-duplicates">
+      <TagsInput label="Duplicates" allowDuplicates defaultValue={['dup', 'dup', 'solo']} />
+    </span>
     <TagsInputWithEventReadout />
   </StrictMode>,
 );
