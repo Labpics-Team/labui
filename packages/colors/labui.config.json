@@ -206,18 +206,11 @@
       }
     },
     {
-      "name": "separator",
-      "recipe": {
-        "kind": "decorative-lc",
-        "magnitude": 8.0
-      }
-    },
-    {
       "name": "border-strong",
       "recipe": {
         "kind": "text-anchor",
         "fraction": 0.968,
-        "floor": "aa-text"
+        "floor": "aa-ui"
       }
     },
     {
@@ -299,31 +292,47 @@
       }
     },
     {
-      "name": "shadow-minor",
+      "name": "fx-shadow-minor",
       "recipe": {
-        "kind": "decorative-lc",
-        "magnitude": 8.0
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "dark"
+        },
+        "position": "shadow-minor"
       }
     },
     {
-      "name": "shadow-ambient",
+      "name": "fx-shadow-ambient",
       "recipe": {
-        "kind": "decorative-lc",
-        "magnitude": 9.5
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "dark"
+        },
+        "position": "shadow-ambient"
       }
     },
     {
-      "name": "shadow-penumbra",
+      "name": "fx-shadow-penumbra",
       "recipe": {
-        "kind": "decorative-lc",
-        "magnitude": 11.5
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "dark"
+        },
+        "position": "shadow-penumbra"
       }
     },
     {
-      "name": "shadow-major",
+      "name": "fx-shadow-major",
       "recipe": {
-        "kind": "decorative-lc",
-        "magnitude": 14.0
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "dark"
+        },
+        "position": "shadow-major"
       }
     },
     {
@@ -1024,17 +1033,6 @@
       }
     },
     {
-      "name": "fx-skeleton-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "skeleton-base"
-      }
-    },
-    {
       "name": "fx-skeleton-highlight",
       "recipe": {
         "kind": "ladder",
@@ -1159,6 +1157,10 @@
     {
       "alias": "border-neutral",
       "target": "border-base"
+    },
+    {
+      "alias": "fx-skeleton-base",
+      "target": "fill-quaternary"
     }
   ]
 }
