@@ -223,17 +223,23 @@
     {
       "name": "border-base",
       "recipe": {
-        "kind": "dj-anchor",
-        "light": 6.41,
-        "dark": 10.12
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "mid"
+        },
+        "position": "neutral-border-base"
       }
     },
     {
       "name": "border-soft",
       "recipe": {
-        "kind": "dj-anchor",
-        "light": 3.15,
-        "dark": 5.83
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "mid"
+        },
+        "position": "neutral-border-soft"
       }
     },
     {
@@ -245,33 +251,45 @@
     {
       "name": "fill-primary",
       "recipe": {
-        "kind": "dj-anchor",
-        "light": 7.93,
-        "dark": 17.67
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "mid"
+        },
+        "position": "neutral-fill-primary"
       }
     },
     {
       "name": "fill-secondary",
       "recipe": {
-        "kind": "dj-anchor",
-        "light": 6.41,
-        "dark": 15.78
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "mid"
+        },
+        "position": "neutral-fill-secondary"
       }
     },
     {
       "name": "fill-tertiary",
       "recipe": {
-        "kind": "dj-anchor",
-        "light": 4.63,
-        "dark": 12.01
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "mid"
+        },
+        "position": "neutral-fill-tertiary"
       }
     },
     {
       "name": "fill-quaternary",
       "recipe": {
-        "kind": "dj-anchor",
-        "light": 3.15,
-        "dark": 8.22
+        "kind": "ladder",
+        "source": {
+          "kind": "neutral",
+          "pick": "mid"
+        },
+        "position": "neutral-fill-quaternary"
       }
     },
     {
