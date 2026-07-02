@@ -54,6 +54,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'src/index.html'),
+        // Рантайм-провайдер: живой WASM-движок + watchTheme + acme-конфиг.
+        'engine-live': resolve(__dirname, 'src/engine-live.html'),
         materials: resolve(__dirname, 'src/materials.html'),
         shadow: resolve(__dirname, 'src/shadow.html'),
         proof: resolve(__dirname, 'src/proof.html'),

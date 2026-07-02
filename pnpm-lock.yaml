@@ -41,6 +41,12 @@ importers:
       '@labpics/ui-vue':
         specifier: workspace:*
         version: link:../../packages/vue
+      '@labui/colors':
+        specifier: workspace:*
+        version: link:../../packages/colors
+      labcolors-engine:
+        specifier: npm:@labpics/colors@0.4.1
+        version: '@labpics/colors@0.4.1'
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -82,8 +88,8 @@ importers:
   packages/colors:
     dependencies:
       '@labpics/colors':
-        specifier: 0.4.0
-        version: 0.4.0
+        specifier: 0.4.1
+        version: 0.4.1
     devDependencies:
       vitest:
         specifier: 2.1.8
@@ -951,8 +957,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@labpics/colors@0.4.0':
-    resolution: {integrity: sha512-xnovCgsi3QwplO4zubl84MxHp7tjqzqzOVUnNnPN+6GcfPGNgHK1wlA2aywf33JvdSt/mnbnVMCvth29ok/YoQ==}
+  '@labpics/colors@0.4.1':
+    resolution: {integrity: sha512-43eBwlatOQoSDn0i4H23B4PgdHtDnBULvO+twg1aFBZ3Uq5s2MumwqTTYSbDI1+qbv/JMUPGejq83Q7BfZ+kOw==}
 
   '@lit-labs/ssr-client@1.1.8':
     resolution: {integrity: sha512-PjGh81oKsoI64m3IDjTqqjhC7dr2uC/o0jrllUb5gRAyp/RlAHxapgJrjq9kWz97faCHLQ8jUlTi6tGm+8fgyA==}
@@ -2571,7 +2577,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@labpics/colors@0.4.0': {}
+  '@labpics/colors@0.4.1': {}
 
   '@lit-labs/ssr-client@1.1.8':
     dependencies:
