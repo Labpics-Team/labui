@@ -1147,6 +1147,75 @@
         },
         "position": "focus-ring"
       }
+    },
+    {
+      "name": "badge-fill-brand",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "brand"
+        }
+      }
+    },
+    {
+      "name": "badge-fill-danger",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "sentiment",
+          "name": "danger"
+        }
+      }
+    },
+    {
+      "name": "badge-fill-warning",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "sentiment",
+          "name": "warning"
+        }
+      }
+    },
+    {
+      "name": "badge-fill-success",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "sentiment",
+          "name": "success"
+        }
+      }
+    },
+    {
+      "name": "badge-fill-info",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "sentiment",
+          "name": "info"
+        }
+      }
+    },
+    {
+      "name": "badge-fill-static-dark",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "neutral",
+          "pick": "dark"
+        }
+      }
+    },
+    {
+      "name": "badge-fill-static-light",
+      "recipe": {
+        "kind": "pair-fill",
+        "source": {
+          "kind": "neutral",
+          "pick": "light"
+        }
+      }
     }
   ],
   "aliases": [

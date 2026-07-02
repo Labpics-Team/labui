@@ -14,7 +14,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { createLabuiEngine } from "./engine.mjs";
-import { hexToLin, linOf, linToHex, oklabOf, wcagY } from "./oklab-math.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const referencePath = join(here, "..", "colors-stub", "figma-reference.css");
@@ -53,77 +52,34 @@ function orderedVars(body) {
 const PROVISIONAL_BRIDGE = new Set(["--lab-fill-neutral"]);
 
 /**
- * Пара «заливка × лейбл» бейджа — Figma-якорь + пол движением заливки.
- *
- * Полярность лейбла — ИЗМЕРЕННЫЙ якорь идентичности Figma: белый на
- * brand/danger/info (перцептивно тёмные заливки, Y ≈ 0.21–0.26 — известный
- * класс-дефект WCAG 2.x завышает чёрный на средне-хроматичных фонах; глаз и
- * Figma правы), чернила на warning/success (светлые, Y ≈ 0.42–0.47; success
- * в Figma был белым 2.22:1 — аргументированная поправка: нечитаемо, сама
- * Figma на таком же светлом warning выбрала чернила). Перцептивный
- * кроссовер в ядре — этап-2 (наука, без него данные якоря честнее закона).
- *
- * Пол: белая сторона добирает текстовый AA 4.5 МИНИМАЛЬНЫМ движением
- * заливки по светлоте Oklch (оттенок и хрома идентичности сохранены), не
- * флипом полярности — «сохранить лучшее из Figma и закон» одновременно.
+ * Пара «заливка × лейбл» бейджа — ЗАКОН ЯДРА (crate::pair, движок ≥0.5.0):
+ * badge-fill-* эмитятся движком (сторона — идентичность семьи по
+ * каноническому якорю, заливка сдвинута до строгой победы стороны в штатной
+ * полярности), лейбл — обычный nested resolve на выведенной заливке.
+ * Здесь только предвычисление лейблов для статического контракта.
  */
-const ratioVsWhite = (lin) => 1.05 / (wcagY(lin) + 0.05);
-
-/** Минимально утемнить солид по L Oklab (оттенок/хрома целы) до пола vs белый. */
-function nudgeFillToFloor(hex, floor) {
-  if (!Number.isFinite(floor) || floor <= 1) {
-    throw new Error(`nudgeFillToFloor: пол обязан прийти из движка, получено ${floor}`);
-  }
-  let lin = hexToLin(hex);
-  if (ratioVsWhite(lin) >= floor) return hex;
-  const [L0, a, b] = oklabOf(lin);
-  let lo = 0;
-  let hi = L0;
-  for (let i = 0; i < 48; i++) {
-    const mid = (lo + hi) / 2;
-    if (ratioVsWhite(linOf([mid, a, b])) >= floor) lo = mid;
-    else hi = mid;
-  }
-  return linToHex(linOf([lo, a, b]));
-}
-
-function badgePairDerivation(engineRoles, anchorMap) {
-  // Пол пары — из контракта движка (legalFloor лейбла), не литерал.
-  const labelFloor = engineRoles["label-primary"]?.legalFloor;
-  const hexOf = (roleName) => {
-    const r = engineRoles[roleName];
-    return r && (r.compositeHex || r.tintHex || r.hex);
-  };
-  const staticHex = (name) => {
-    const v = anchorMap.get(name) || "";
-    const m = v.match(/rgb\((\d+) (\d+) (\d+)\)/);
-    if (!m) return undefined;
-    const b = (x) => Number(x).toString(16).padStart(2, "0");
-    return `#${b(m[1])}${b(m[2])}${b(m[3])}`.toUpperCase();
-  };
-  // Полярность — Figma-якорь идентичности; success — аргументированная поправка.
+function badgePairEmission(colors, theme, engineRoles) {
   const families = [
-    ["brand", hexOf("border-brand-strong"), "white"],
-    ["danger", hexOf("border-danger-strong"), "white"],
-    ["warning", hexOf("border-warning-strong"), "ink"],
-    ["success", hexOf("border-success-strong"), "ink"],
-    ["info", hexOf("border-info-strong"), "white"],
-    ["static-dark", staticHex("--lab-border-static-dark-strong"), "white"],
-    ["static-light", staticHex("--lab-border-static-light-strong"), "ink"],
+    "brand",
+    "danger",
+    "warning",
+    "success",
+    "info",
+    "static-dark",
+    "static-light",
   ];
   const lines = [
     "",
-    "  /* Пара бейджа: полярность лейбла — Figma-якорь (белый на тёмных",
-    "     заливках, чернила на светлых); белая сторона добирает AA 4.5",
-    "     минимальным утемнением заливки (оттенок/хрома целы). */",
+    "  /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),",
+    "     лейбл — nested resolve на выведенной заливке. */",
   ];
-  for (const [family, fill, side] of families) {
-    if (!fill) throw new Error(`badge-пара: нет заливки семьи ${family}`);
-    const finalFill = side === "white" ? nudgeFillToFloor(fill, labelFloor) : fill;
-    lines.push(`  --lab-badge-fill-${family}: ${finalFill};`);
-    lines.push(
-      `  --lab-badge-label-on-${family}: var(--lab-label-static-${side === "white" ? "light" : "dark"}-primary);`,
-    );
+  for (const family of families) {
+    const fill = engineRoles[`badge-fill-${family}`];
+    if (!fill) throw new Error(`движок не эмитит badge-fill-${family}`);
+    lines.push(`  --lab-badge-fill-${family}: ${fill.css};`);
+    const fillHex = fill.compositeHex || fill.tintHex;
+    const label = colors.resolveTheme(fillHex, theme).roles["label-primary"];
+    lines.push(`  --lab-badge-label-on-${family}: ${label.css};`);
   }
   return lines.join("\n");
 }
@@ -182,10 +138,10 @@ export async function generateContract() {
   const resolvedDark = colors.resolveTheme(bgDark, "dark");
   const lightBody =
     renderScope(light, engineLight) +
-    badgePairDerivation(resolvedLight.roles, new Map(light));
+    badgePairEmission(colors, "light", resolvedLight.roles);
   const darkBody =
     renderScope(dark, engineDark) +
-    badgePairDerivation(resolvedDark.roles, new Map(dark));
+    badgePairEmission(colors, "dark", resolvedDark.roles);
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
