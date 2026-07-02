@@ -51,6 +51,48 @@ function orderedVars(body) {
  */
 const PROVISIONAL_BRIDGE = new Set(["--lab-fill-neutral"]);
 
+/**
+ * Деривация лейблов бейджа — nested resolve по доктрине: лейбл решается от
+ * ФАКТИЧЕСКОЙ заливки, а не ручным выбором «default/contrast» per-family
+ * (ручной белый на бренде #007AFF давал 4.0:1 — ниже текстового AA 4.5;
+ * солвер несёт пол по закону). Заливка семьи = border-<family>-strong
+ * (солид-якорь); статики — литералы якоря.
+ */
+function badgeLabelDerivation(colors, theme, engineRoles, anchorMap) {
+  const hexOf = (roleName) => {
+    const r = engineRoles[roleName];
+    return r && (r.compositeHex || r.tintHex || r.hex);
+  };
+  const staticHex = (name) => {
+    const v = anchorMap.get(name) || "";
+    const m = v.match(/rgb\((\d+) (\d+) (\d+)\)/);
+    if (!m) return undefined;
+    const b = (x) => Number(x).toString(16).padStart(2, "0");
+    return `#${b(m[1])}${b(m[2])}${b(m[3])}`.toUpperCase();
+  };
+  const fills = [
+    ["brand", hexOf("border-brand-strong")],
+    ["danger", hexOf("border-danger-strong")],
+    ["warning", hexOf("border-warning-strong")],
+    ["success", hexOf("border-success-strong")],
+    ["info", hexOf("border-info-strong")],
+    ["static-dark", staticHex("--lab-border-static-dark-strong")],
+    ["static-light", staticHex("--lab-border-static-light-strong")],
+  ];
+  const lines = [
+    "",
+    "  /* Деривация движком: лейбл на заливке бейджа — nested resolve от",
+    "     фактической заливки (солвер + WCAG-пол), не ручной default/contrast. */",
+  ];
+  for (const [family, fill] of fills) {
+    if (!fill) throw new Error(`badge-деривация: нет заливки семьи ${family}`);
+    const nested = colors.resolveTheme(fill, theme);
+    const label = nested.roles["label-primary"];
+    lines.push(`  --lab-badge-label-on-${family}: ${label.css};`);
+  }
+  return lines.join("\n");
+}
+
 /** Отрендерить один scope: движковые роли — живой эмиссией, прочее — мостом. */
 function renderScope(anchorVars, engineVars) {
   const lines = [];
@@ -94,8 +136,14 @@ export async function generateContract() {
     Object.entries(colors.resolveTheme("#101012", "dark").vars),
   );
 
-  const lightBody = renderScope(light, engineLight);
-  const darkBody = renderScope(dark, engineDark);
+  const resolvedLight = colors.resolveTheme("#FFFFFF", "light");
+  const resolvedDark = colors.resolveTheme("#101012", "dark");
+  const lightBody =
+    renderScope(light, engineLight) +
+    badgeLabelDerivation(colors, "light", resolvedLight.roles, new Map(light));
+  const darkBody =
+    renderScope(dark, engineDark) +
+    badgeLabelDerivation(colors, "dark", resolvedDark.roles, new Map(dark));
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.

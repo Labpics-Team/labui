@@ -112,31 +112,31 @@ export class LabBadge extends LabElement {
     }
     :host([type='fill'][color='brand']) .badge {
       background-color: ${litVar('--lab-border-brand-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      color: ${litVar('--lab-badge-label-on-brand')};
     }
     :host([type='fill'][color='danger']) .badge {
       background-color: ${litVar('--lab-border-danger-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      color: ${litVar('--lab-badge-label-on-danger')};
     }
     :host([type='fill'][color='warning']) .badge {
       background-color: ${litVar('--lab-border-warning-strong')};
-      color: ${litVar('--lab-badge-label-contrast')};
+      color: ${litVar('--lab-badge-label-on-warning')};
     }
     :host([type='fill'][color='success']) .badge {
       background-color: ${litVar('--lab-border-success-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      color: ${litVar('--lab-badge-label-on-success')};
     }
     :host([type='fill'][color='info']) .badge {
       background-color: ${litVar('--lab-border-info-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      color: ${litVar('--lab-badge-label-on-info')};
     }
     :host([type='fill'][color='static-dark']) .badge {
       background-color: ${litVar('--lab-border-static-dark-strong')};
-      color: ${litVar('--lab-label-static-light-primary')};
+      color: ${litVar('--lab-badge-label-on-static-dark')};
     }
     :host([type='fill'][color='static-light']) .badge {
       background-color: ${litVar('--lab-border-static-light-strong')};
-      color: ${litVar('--lab-label-static-dark-primary')};
+      color: ${litVar('--lab-badge-label-on-static-light')};
     }
 
     /* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────── */
@@ -166,11 +166,11 @@ export class LabBadge extends LabElement {
     }
     :host([type='tinted'][color='static-dark']) .badge {
       background-color: ${litVar('--lab-fill-static-dark-primary')};
-      color: ${litVar('--lab-label-static-dark-primary')};
+      color: ${litVar('--lab-badge-label-on-static-light')};
     }
     :host([type='tinted'][color='static-light']) .badge {
       background-color: ${litVar('--lab-fill-static-light-primary')};
-      color: ${litVar('--lab-label-static-light-primary')};
+      color: ${litVar('--lab-badge-label-on-static-dark')};
     }
 
     /* ── disabled: a dimmed, non-interactive presentation ──────────────────── */

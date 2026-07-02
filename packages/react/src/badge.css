@@ -55,31 +55,31 @@
 }
 [data-lab-badge][data-type="fill"][data-color="brand"] {
   background-color: var(--lab-border-brand-strong);
-  color: var(--lab-badge-label-default);
+  color: var(--lab-badge-label-on-brand);
 }
 [data-lab-badge][data-type="fill"][data-color="danger"] {
   background-color: var(--lab-border-danger-strong);
-  color: var(--lab-badge-label-default);
+  color: var(--lab-badge-label-on-danger);
 }
 [data-lab-badge][data-type="fill"][data-color="warning"] {
   background-color: var(--lab-border-warning-strong);
-  color: var(--lab-badge-label-contrast);
+  color: var(--lab-badge-label-on-warning);
 }
 [data-lab-badge][data-type="fill"][data-color="success"] {
   background-color: var(--lab-border-success-strong);
-  color: var(--lab-badge-label-default);
+  color: var(--lab-badge-label-on-success);
 }
 [data-lab-badge][data-type="fill"][data-color="info"] {
   background-color: var(--lab-border-info-strong);
-  color: var(--lab-badge-label-default);
+  color: var(--lab-badge-label-on-info);
 }
 [data-lab-badge][data-type="fill"][data-color="static-dark"] {
   background-color: var(--lab-border-static-dark-strong);
-  color: var(--lab-label-static-light-primary);
+  color: var(--lab-badge-label-on-static-dark);
 }
 [data-lab-badge][data-type="fill"][data-color="static-light"] {
   background-color: var(--lab-border-static-light-strong);
-  color: var(--lab-label-static-dark-primary);
+  color: var(--lab-badge-label-on-static-light);
 }
 
 /* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────────── */
