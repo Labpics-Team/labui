@@ -1,6 +1,6 @@
 import type { SizesConfig } from '../config/types.js';
 import { aliasCssRef } from './alias.js';
-import { rem } from './format.js';
+import { ROOT_FONT_SIZE_PX, rem } from './format.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
 
 /**
@@ -19,7 +19,7 @@ export function buildSizes(config: SizesConfig): {
     kind: 'size',
     name,
     cssValue: rem(value),
-    numeric: value * 16, // канонические px при корне 16px — для тестов/DTCG
+    numeric: value * ROOT_FONT_SIZE_PX,
     dtcgType: 'dimension',
   }));
 

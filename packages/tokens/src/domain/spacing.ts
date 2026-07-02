@@ -1,5 +1,5 @@
 import type { SpacingConfig } from '../config/types.js';
-import { num, rem } from './format.js';
+import { ROOT_FONT_SIZE_PX, num, rem } from './format.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
 import { aliasCssRef } from './alias.js';
 
@@ -21,7 +21,7 @@ export function buildSpacing(config: SpacingConfig): {
       kind: 'space',
       name,
       cssValue: rem(value),
-      numeric: value * 16, // canonical px against a 16px root, for tests/DTCG
+      numeric: value * ROOT_FONT_SIZE_PX,
       dtcgType: 'dimension',
     } satisfies ResolvedToken;
   });

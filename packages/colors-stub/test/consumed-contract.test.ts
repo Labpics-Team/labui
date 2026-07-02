@@ -158,7 +158,10 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
       "// и в строчном: litVar('--lab-fake-line-example')",
       "const real = `width: ${litVar('--lab-space-sm', '0.5rem')};`;",
     ].join('\n');
-    expect(consumedNamesInSource('p.ts', ts).map((s) => s.name)).toEqual(['--lab-space-sm']);
+    const hits = consumedNamesInSource('p.ts', ts);
+    expect(hits.map((s) => s.name)).toEqual(['--lab-space-sm']);
+    // Срез комментариев сохраняет переносы строк: номер строки не плывёт.
+    expect(hits[0]?.line).toBe(3);
 
     const css = '/* пример: var(--lab-fake-css-example) */\n.x { gap: var(--lab-space-sm); }';
     expect(consumedNamesInSource('p.css', css).map((s) => s.name)).toEqual(['--lab-space-sm']);

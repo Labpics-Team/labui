@@ -59,7 +59,9 @@ export function litVar(name: LabVar, fallback?: LabVar | (string & {})): CSSResu
  * локальные ручки `var(--_x)`, никогда голые литералы.
  */
 export function concentricRadius(outer: string, inset: string): string {
-  return `max(calc(${outer} - ${inset}), ${cssVar('--lab-radius-concentric-min', '0.125rem')})`;
+  // Скобки вокруг операндов обязательны: составное выражение в inset
+  // («1px + 1px») без них меняет знак второй половины.
+  return `max(calc((${outer}) - (${inset})), ${cssVar('--lab-radius-concentric-min', '0.125rem')})`;
 }
 
 /** `concentricRadius` в типе Lit `CSSResult` (то же обоснование, что у `litVar`). */

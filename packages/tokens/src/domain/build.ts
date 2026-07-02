@@ -16,7 +16,7 @@ export interface ResolvedTokens {
   readonly spacing: readonly ResolvedToken[];
   readonly spacingAliases: readonly ResolvedAlias[];
   readonly sizes: readonly ResolvedToken[];
-  readonly sizeAliases: readonly ResolvedAlias[];
+  readonly sizesAliases: readonly ResolvedAlias[];
   readonly radii: readonly ResolvedToken[];
   readonly radiiAliases: readonly ResolvedAlias[];
   readonly zIndex: readonly ResolvedToken[];
@@ -40,7 +40,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     spacing: spacing.tokens,
     spacingAliases: spacing.aliases,
     sizes: sizes.tokens,
-    sizeAliases: sizes.aliases,
+    sizesAliases: sizes.aliases,
     radii: radii.tokens,
     radiiAliases: radii.aliases,
     zIndex,

@@ -5,6 +5,7 @@ import {
   MIGRATED,
   canonicalTokens,
   fallbackMatchesCanon,
+  fallbackSurfaceFiles,
   normalizeLit,
   scanDimensionSource,
   scanFallbackDrift,
@@ -117,6 +118,22 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     expect(fallbackMatchesCanon('2rem', canon.get('--lab-font-size-lg') as string)).toBe(false);
     expect(fallbackMatchesCanon('0.5rem', canon.get('--lab-space-sm') as string)).toBe(true);
     expect(fallbackMatchesCanon('8px', canon.get('--lab-space-sm') as string)).toBe(true);
+  });
+
+  it('IGNORES a nested var() fallback (a token reference is not a literal cache)', () => {
+    expect(
+      scanDimensionSource(
+        'p.css',
+        '.x { border-radius: var(--lab-radius-control, var(--lab-radius-lg)); }',
+        canon,
+      ),
+    ).toEqual([]);
+  });
+
+  it('the fallback-drift surface covers React .tsx carriers (proof.tsx)', () => {
+    const surface = fallbackSurfaceFiles();
+    expect(surface).toContain('packages/react/src/proof.tsx');
+    expect(surface.some((f) => f.endsWith('.test.ts'))).toBe(false);
   });
 
   it('IGNORES unitless numbers, durations and percentages (not fixed lengths)', () => {

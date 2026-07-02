@@ -143,7 +143,9 @@ function consumeVarGroups(
       varGroup,
       (whole, name: string, fallback: string | undefined, offset: number) => {
         replaced = true;
-        if (fallback !== undefined && name.startsWith('--lab-')) {
+        // Пустой (после растворения вложенной var()-группы) фолбэк — ссылка на
+        // другой токен, а не литеральный кеш: дрейф-проверке не подлежит.
+        if (fallback !== undefined && fallback.trim().length > 0 && name.startsWith('--lab-')) {
           const canonValue = canon.get(name);
           if (canonValue === undefined) {
             out.push({
@@ -228,13 +230,18 @@ export function scanDimensionSource(
  * скоупятся списком MIGRATED). Поверхность — стили обоих рендереров.
  */
 export function fallbackSurfaceFiles(): string[] {
-  const patterns = ['packages/react/src/**/*.css', 'packages/core/src/**/*.ts'];
+  const patterns = [
+    'packages/react/src/**/*.css',
+    'packages/react/src/**/*.tsx',
+    'packages/react/src/**/*.ts',
+    'packages/core/src/**/*.ts',
+  ];
   const out: string[] = [];
   for (const pattern of patterns) {
     for (const abs of globSync(resolve(repoRoot, pattern))) {
       const rel = relative(repoRoot, abs).split('\\').join('/');
       if (rel.includes('/dist/') || rel.includes('/node_modules/')) continue;
-      if (rel.endsWith('.test.ts')) continue;
+      if (rel.endsWith('.test.ts') || rel.endsWith('.test.tsx')) continue;
       out.push(rel);
     }
   }

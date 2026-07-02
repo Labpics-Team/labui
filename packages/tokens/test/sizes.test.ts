@@ -13,6 +13,9 @@ const tokens = buildTokens(defaultConfig);
  * вариантах биндят «🟠 1.1 Dimention» Size/S=12, Size/M=16, Size/L=20
  * (→ Unit px/6, px/7, px/8 @100%). Ступени tiny в контракте НЕТ: tiny-варианты
  * Figma привязаны к Size/M (побайтная копия medium) — пробел, а не значение.
+ * Нулевой ступени тоже НЕТ — намеренное исключение из правила «каждая шкала
+ * несёт ноль» (контрол нулевого размера вырожден; см. SizesConfig и
+ * docs/dimension-contract.md §2) — тест закрепляет ровно 3 ступени осознанно.
  * Перенастройка любой ступени — ДИЗАЙН-решение и обязана упасть здесь первой.
  */
 describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {

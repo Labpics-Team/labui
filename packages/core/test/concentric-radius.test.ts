@@ -21,10 +21,14 @@ function concentricPx(outerPx: number, insetPx: number, minPx = 2): number {
 }
 
 describe('concentricRadius — emitted CSS (class A)', () => {
-  it('emits max(calc(outer - inset), var(--lab-radius-concentric-min, 0.125rem))', () => {
+  it('emits max(calc((outer) - (inset)), var(--lab-radius-concentric-min, 0.125rem))', () => {
     expect(concentricRadius('var(--_radius)', 'var(--_pad)')).toBe(
-      'max(calc(var(--_radius) - var(--_pad)), var(--lab-radius-concentric-min, 0.125rem))',
+      'max(calc((var(--_radius)) - (var(--_pad))), var(--lab-radius-concentric-min, 0.125rem))',
     );
+  });
+
+  it('parenthesizes compound operands (a compound inset must not flip its sign)', () => {
+    expect(concentricRadius('1rem', '1px + 1px')).toContain('calc((1rem) - (1px + 1px))');
   });
 
   it('the floor rides the semantic token with a canonical 2px (=0.125rem) fallback', () => {
