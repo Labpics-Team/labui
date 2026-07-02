@@ -10,6 +10,7 @@
 /** The scale a token belongs to — drives its CSS prefix and DTCG group. */
 export type ScaleKind =
   | 'space'
+  | 'size'
   | 'radius'
   | 'z'
   | 'font-size'

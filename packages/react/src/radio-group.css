@@ -11,10 +11,13 @@
  */
 
 [data-lab-radio-group] {
-  --_lab-rg-ring: 1.25rem;
-  --_lab-rg-dot: 0.625rem;
+  /* Ручки размера едут на размерном контракте (зеркало Lit-хоста): кольцо =
+     --lab-size-control-* (Figma Size/S,M,L = 12/16/20px), точка = ВЫВОД ring/2
+     — никогда не два свободных числа. */
+  --_lab-rg-ring: var(--lab-size-control-m, 1rem);
+  --_lab-rg-dot: calc(var(--_lab-rg-ring) / 2);
   --_lab-rg-row-gap: var(--lab-space-sm, 0.5rem);
-  --_lab-rg-list-gap: var(--lab-space-md, 0.75rem);
+  --_lab-rg-list-gap: var(--lab-space-md, 1rem);
   --_lab-rg-font: var(--lab-font-size-md, 1rem);
 
   display: flex;
@@ -34,13 +37,11 @@
 }
 
 [data-lab-radio-group][data-size="s"] {
-  --_lab-rg-ring: 1rem;
-  --_lab-rg-dot: 0.5rem;
+  --_lab-rg-ring: var(--lab-size-control-s, 0.75rem);
   --_lab-rg-font: var(--lab-font-size-xs, 0.8333rem);
 }
 [data-lab-radio-group][data-size="l"] {
-  --_lab-rg-ring: 1.5rem;
-  --_lab-rg-dot: 0.75rem;
+  --_lab-rg-ring: var(--lab-size-control-l, 1.25rem);
   --_lab-rg-font: var(--lab-font-size-lg, 1.2rem);
 }
 
@@ -70,7 +71,7 @@
   place-items: center;
   width: var(--_lab-rg-ring);
   height: var(--_lab-rg-ring);
-  border-radius: var(--lab-radius-full, 9999px);
+  border-radius: var(--lab-radius-circle, 9999px);
   border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   background-color: transparent;
   transition: border-color 120ms ease, background-color 120ms ease;
@@ -91,7 +92,7 @@
 [data-lab-radio-group] .lab-radio-dot {
   width: var(--_lab-rg-dot);
   height: var(--_lab-rg-dot);
-  border-radius: var(--lab-radius-full, 9999px);
+  border-radius: var(--lab-radius-circle, 9999px);
   background-color: currentColor;
   transform: scale(0);
   transition: transform 120ms ease;

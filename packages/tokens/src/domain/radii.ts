@@ -1,6 +1,6 @@
 import type { RadiiConfig } from '../config/types.js';
 import { aliasCssRef, cssVarName } from './alias.js';
-import { px, rem } from './format.js';
+import { ROOT_FONT_SIZE_PX, px, rem } from './format.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
 
 /** The reserved token name for the pill / fully-rounded radius. */
@@ -23,7 +23,7 @@ export function buildRadii(config: RadiiConfig): {
     kind: 'radius',
     name,
     cssValue: rem(value),
-    numeric: value * 16,
+    numeric: value * ROOT_FONT_SIZE_PX,
     dtcgType: 'dimension',
   }));
 

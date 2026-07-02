@@ -13,7 +13,7 @@
 
 .lab-select-root {
   --_lab-sel-h: 2.25rem;
-  --_lab-sel-pad-x: var(--lab-space-md, 0.75rem);
+  --_lab-sel-pad-x: var(--lab-space-md, 1rem);
   --_lab-sel-font: var(--lab-font-size-md, 1rem);
 
   display: inline-flex;

@@ -27,13 +27,13 @@ export const fieldStyles: CSSResult = css`
   :host {
     /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
        fallback so the field is usable before tokens load; colour roles never do. */
-    --_field-pad-x: ${litVar('--lab-space-md', '0.75rem')};
+    --_field-pad-x: ${litVar('--lab-space-md', '1rem')};
     --_field-pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-    --_field-radius: ${litVar('--lab-radius-md', '0.5rem')};
-    --_field-gap: ${litVar('--lab-space-xs', '0.375rem')};
+    --_field-radius: ${litVar('--lab-radius-md', '0.375rem')};
+    --_field-gap: ${litVar('--lab-space-xs', '0.25rem')};
     --_field-font: ${litVar('--lab-font-size-md', '1rem')};
     --_field-label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-    --_field-help-font: ${litVar('--lab-font-size-xxs', '0.7222rem')};
+    --_field-help-font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
     --_field-line: ${litVar('--lab-line-height-md', '1.5')};
 
     display: block;
@@ -41,12 +41,12 @@ export const fieldStyles: CSSResult = css`
 
   :host([size='s']) {
     --_field-pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-    --_field-pad-y: ${litVar('--lab-space-xs', '0.375rem')};
+    --_field-pad-y: ${litVar('--lab-space-xs', '0.25rem')};
     --_field-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
   }
   :host([size='l']) {
-    --_field-pad-x: ${litVar('--lab-space-lg', '1rem')};
-    --_field-pad-y: ${litVar('--lab-space-md', '0.75rem')};
+    --_field-pad-x: ${litVar('--lab-space-lg', '1.5rem')};
+    --_field-pad-y: ${litVar('--lab-space-md', '1rem')};
     --_field-font: ${litVar('--lab-font-size-lg', '1.2rem')};
   }
 

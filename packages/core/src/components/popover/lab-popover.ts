@@ -140,7 +140,7 @@ export class LabPopover extends LabElement {
 
   static override styles = css`
     :host {
-      --_pad: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad: ${litVar('--lab-space-md', '1rem')};
       --_min-width: 14rem;
       --_max-width: 22rem;
 
@@ -154,7 +154,7 @@ export class LabPopover extends LabElement {
       --_max-width: 18rem;
     }
     :host([size='l']) {
-      --_pad: ${litVar('--lab-space-lg', '1rem')};
+      --_pad: ${litVar('--lab-space-lg', '1.5rem')};
       --_min-width: 18rem;
       --_max-width: 28rem;
     }

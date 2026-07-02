@@ -30,6 +30,7 @@ const EXT_KEY = 'com.labpics.ui-tokens';
 export function generateDtcg(tokens: ResolvedTokens): string {
   const doc: DtcgGroup = {
     space: dimensionGroup(tokens.spacing),
+    size: dimensionGroup(tokens.sizes),
     radius: dimensionGroup(tokens.radii),
     'z-index': numberGroup(tokens.zIndex),
     'font-size': fontSizeGroup(tokens.fontSizes),
