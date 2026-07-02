@@ -36,9 +36,12 @@ function scopeBody(css, scopePattern) {
 
 /** Упорядоченный список [имя, значение] scope-а якоря (комментарии срезаются). */
 function orderedVars(body) {
-  return [...body.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [
+  // Комментарии срезаются ДО матчинга: закомментированная декларация в якоре
+  // иначе протащилась бы в мост как настоящая (класс фантомных переменных).
+  const clean = body.replace(/\/\*[\s\S]*?\*\//g, '');
+  return [...clean.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [
     m[1],
-    m[2].replace(/\/\*.*?\*\//g, '').trim(),
+    m[2].trim(),
   ]);
 }
 

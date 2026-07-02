@@ -48,6 +48,8 @@ function acmeConfig(): unknown {
 
 // Без top-level await: цель сборки docs — es2020.
 async function main(): Promise<void> {
+  // Дефолт фона — светлая опора паспорта, не хардкод разметки.
+  bgInput.value = (passport as { neutral: { anchors: { light: string } } }).neutral.anchors.light.toLowerCase();
   await init({ module_or_path: wasmUrl });
   const colors = new LabColors();
   colors.loadConfig(JSON.stringify(passport));
