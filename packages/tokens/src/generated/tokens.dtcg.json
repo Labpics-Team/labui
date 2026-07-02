@@ -448,6 +448,19 @@
           "css": "9999px"
         }
       }
+    },
+    "corner-k": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1.1,
+        "unit": "px"
+      },
+      "$description": "Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = derived Figma smoothing zeta=0.6 equivalent, ~2.3 = Apple icon squircle.",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.1"
+        }
+      }
     }
   },
   "z-index": {

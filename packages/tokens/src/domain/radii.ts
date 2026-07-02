@@ -36,7 +36,18 @@ export function buildRadii(config: RadiiConfig): {
     description: 'Pill / fully-rounded — a semantic constant, not computed 50%.',
   };
 
-  const tokens = [...stepTokens, fullToken];
+  const cornerToken: ResolvedToken = {
+    kind: 'radius',
+    name: 'corner-k',
+    cssValue: String(config.cornerK),
+    numeric: config.cornerK,
+    dtcgType: 'number',
+    description:
+      'Corner shape curvature: corner-shape superellipse(K) over any radius. ' +
+      '1 = circle (off), 1.1 = derived Figma smoothing zeta=0.6 equivalent, ~2.3 = Apple icon squircle.',
+  };
+
+  const tokens = [...stepTokens, fullToken, cornerToken];
 
   const aliases: ResolvedAlias[] = Object.entries(config.aliases).map(([name, target]) => {
     assertTargetExists(target, config.steps);

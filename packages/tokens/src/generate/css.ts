@@ -33,7 +33,7 @@ export function generateCss(tokens: ResolvedTokens): string {
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
   ];
 
-  return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n`;
+  return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;
 }
 
 function header(): string {
@@ -43,6 +43,26 @@ function header(): string {
     ' * Source: packages/tokens/src/config + generator. Run `pnpm --filter',
     ' * @labpics/ui-tokens build` to regenerate from the single config source.',
     ' */',
+  ].join('\n');
+}
+
+/**
+ * Форма угла для light-DOM поверхностей (стекло/карточки демо): corner-shape
+ * не наследуется, поэтому применяется универсально — на элементах без радиуса
+ * это no-op, слои на border-radius: inherit держат ту же форму, что клип
+ * панели. Внутри shadow DOM то же правило доставляет LabElement
+ * (finalizeStyles) — документные правила shadow-границу не пересекают.
+ * Без поддержки (не Chromium 139+) свойство игнорируется — обычный радиус.
+ */
+function cornerShapeRule(): string {
+  return [
+    '/* Corner shape — superellipse curvature over any border-radius. */',
+    '*,',
+    '*::before,',
+    '*::after {',
+    '  corner-shape: superellipse(var(--lab-radius-corner-k, 1));',
+    '}',
+    '',
   ].join('\n');
 }
 
