@@ -88,12 +88,52 @@ function parseScope(css, scopePattern) {
   return vars;
 }
 
-/** Нормализовать значение до сравнимой формы: hex → rgb(R G B), пробелы. */
+// Матрицы Oklab — дословно из движка (crates/labcolors-core/src/spaces/oklab.rs):
+// сверка обязана реконструировать oklch тем же путём, что делает браузер.
+const OKLAB_TO_LMS = [
+  [1.0, 0.3963377774, 0.2158037573],
+  [1.0, -0.1055613458, -0.0638541728],
+  [1.0, -0.0894841775, -1.291485548],
+];
+const LMS_TO_SRGB = [
+  [4.0767416621, -3.3077115913, 0.2309699292],
+  [-1.2684380046, 2.6097574011, -0.3413193965],
+  [-0.0041960863, -0.7034186147, 1.707614701],
+];
+const mul = (m, v) => m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const gamma = (v) =>
+  v > 0.0031308 ? 1.055 * v ** (1 / 2.4) - 0.055 : 12.92 * v;
+
+/** oklch(L% C H [/ A]) → те же 8-битные байты, что печатал бы hex движка. */
+function oklchToRgbParts(css) {
+  const inner = css.slice("oklch(".length, -1);
+  const [lch, alphaPart] = inner.split(" / ");
+  const [lRaw, cRaw, hRaw] = lch.trim().split(/\s+/);
+  const L = Number.parseFloat(lRaw) / 100;
+  const C = Number.parseFloat(cRaw);
+  const H = (Number.parseFloat(hRaw) * Math.PI) / 180;
+  const lms = mul(OKLAB_TO_LMS, [L, C * Math.cos(H), C * Math.sin(H)]).map(
+    (x) => x ** 3,
+  );
+  const rgb = mul(LMS_TO_SRGB, lms).map((x) =>
+    Math.min(255, Math.max(0, Math.round(gamma(x) * 255))),
+  );
+  return { rgb, alpha: alphaPart ? Number.parseFloat(alphaPart) : null };
+}
+
+/** Нормализовать значение до сравнимой формы: hex/oklch → rgb(R G B), пробелы. */
 function normalise(value) {
   const hex = value.match(/^#([0-9a-fA-F]{6})$/);
   if (hex) {
     const n = Number.parseInt(hex[1], 16);
     return `rgb(${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255})`;
+  }
+  // Единая oklch-форма движка (0.4.0+) сводится к rgb-байтам стаба той же
+  // математикой Oklab, что у границы; альфа проходит насквозь как данные.
+  if (value.startsWith("oklch(")) {
+    const { rgb, alpha } = oklchToRgbParts(value);
+    const base = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]}`;
+    return alpha === null || alpha === 1 ? `${base})` : `${base} / ${alpha})`;
   }
   // Солидные лестничные позиции граница печатает как rgb(r g b / 1) —
   // семантически тот же солид, что rgb(r g b) стаба.
