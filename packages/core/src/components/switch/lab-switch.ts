@@ -1,3 +1,4 @@
+import * as switchMachine from '@zag-js/switch';
 /**
  * `<lab-switch>` — the first PRODUCTION component that CONSUMES a Zag machine
  * through the Behaviors seam (core-CONTRACT §1, the inverse of Button).
@@ -29,7 +30,6 @@
  * declarative shadow DOM before any JS upgrades it.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as switchMachine from '@zag-js/switch';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

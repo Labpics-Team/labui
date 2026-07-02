@@ -1,5 +1,5 @@
-import type { ResolvedTokens } from '../domain/build.js';
 import { cssVarName } from '../domain/alias.js';
+import type { ResolvedTokens } from '../domain/build.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
 
 /**

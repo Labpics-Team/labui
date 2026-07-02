@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   SHADOW_ALLOWLIST,
-  scanBoxShadow,
   scanAllShadowLiterals,
+  scanBoxShadow,
   shadowTargetFiles,
 } from './no-box-shadow-literal.js';
 

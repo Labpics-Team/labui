@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SLOT_ALPHA, SLOT_ALPHAS, SHADOW_SLOTS } from '../src/domain/layer.js';
+import { SHADOW_SLOTS, SLOT_ALPHA, SLOT_ALPHAS } from '../src/domain/layer.js';
 
 /**
  * Order-only ramp invariant — property test.

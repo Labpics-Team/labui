@@ -7,9 +7,9 @@
  * and read both listboxes' computed styles (visual parity, ADR-0001).
  */
 import '@labpics/ui-core/select';
+import type { LabSelectItem } from '@labpics/ui-core/select';
 // Per-component subpath (the tree-shaking seam): no edit to the React barrel.
 import { Select } from '@labpics/ui-react/select';
-import type { LabSelectItem } from '@labpics/ui-core/select';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';

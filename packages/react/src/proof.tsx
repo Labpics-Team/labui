@@ -13,10 +13,10 @@
  */
 'use client';
 
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as toggle from '@zag-js/toggle';
 import type { CSSProperties, ReactNode } from 'react';
 import { useId } from 'react';
-import * as toggle from '@zag-js/toggle';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import { useZag } from './use-zag.js';
 
 type ToggleSchema = SchemaOf<toggle.Service>;

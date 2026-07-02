@@ -51,7 +51,9 @@ test('shadow DOM: компоненты получают форму через La
     const root = host?.shadowRoot;
     const el = root?.querySelector('*');
     if (!el) return 'MISSING';
-    return getComputedStyle(el as Element).getPropertyValue('corner-shape').trim();
+    return getComputedStyle(el as Element)
+      .getPropertyValue('corner-shape')
+      .trim();
   });
   test.skip(inner === '', 'браузер без corner-shape');
   expect(inner).toBe(CORNER('1.1'));

@@ -24,27 +24,23 @@ export const M_LMS_OKLAB = [
   [0.0259040371, 0.7827717662, -0.808675766],
 ];
 
-export const mulv = (m, v) =>
-  m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
-export const gam = (v) =>
-  v > 0.0031308 ? 1.055 * v ** (1 / 2.4) - 0.055 : 12.92 * v;
-export const degam = (v) =>
-  v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92;
+export const mulv = (m, v) => m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+export const gam = (v) => (v > 0.0031308 ? 1.055 * v ** (1 / 2.4) - 0.055 : 12.92 * v);
+export const degam = (v) => (v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92);
 
 export const hexToLin = (h) => {
-  const n = parseInt(h.slice(1), 16);
+  const n = Number.parseInt(h.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => degam(c / 255));
 };
 export const linToHex = (lin) => {
-  const b = lin.map((v) =>
-    Math.min(255, Math.max(0, Math.round(gam(v) * 255))),
-  );
-  return `#${b.map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+  const b = lin.map((v) => Math.min(255, Math.max(0, Math.round(gam(v) * 255))));
+  return `#${b.map((x) => x.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 };
-export const oklabOf = (lin) =>
-  mulv(M_LMS_OKLAB, mulv(M_SRGB_LMS, lin).map(Math.cbrt));
+export const oklabOf = (lin) => mulv(M_LMS_OKLAB, mulv(M_SRGB_LMS, lin).map(Math.cbrt));
 export const linOf = (lab) =>
-  mulv(M_LMS_SRGB, mulv(M_OKLAB_LMS, lab).map((x) => x ** 3));
+  mulv(
+    M_LMS_SRGB,
+    mulv(M_OKLAB_LMS, lab).map((x) => x ** 3),
+  );
 /** WCAG-люминанс линейного sRGB. */
-export const wcagY = (lin) =>
-  0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+export const wcagY = (lin) => 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];

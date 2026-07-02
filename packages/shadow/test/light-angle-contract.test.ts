@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LIGHT_ANGLE_DEG, composePly, LIGHT_ANGLE_VAR } from '../src/index.js';
+import { DEFAULT_LIGHT_ANGLE_DEG, LIGHT_ANGLE_VAR, composePly } from '../src/index.js';
 import type { ShadowSlotName } from '../src/index.js';
 
 /**

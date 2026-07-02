@@ -17,14 +17,17 @@ import passport from '@labui/colors/labui.config.json';
 import init, { LabColors, watchTheme } from 'labcolors-engine';
 import wasmUrl from 'labcolors-engine/pkg/labcolors_bg.wasm?url';
 
-const surface = document.querySelector<HTMLElement>('#live-surface');
-const bgInput = document.querySelector<HTMLInputElement>('#live-bg');
-const themeSelect = document.querySelector<HTMLSelectElement>('#live-theme');
-const configSelect = document.querySelector<HTMLSelectElement>('#live-config');
-const status = document.querySelector<HTMLOutputElement>('#live-status');
-if (!surface || !bgInput || !themeSelect || !configSelect || !status) {
-  throw new Error('engine-live.html: недостаёт узлов демо');
+/** Обязательный узел демо: отсутствие — честная ошибка, не молчаливый null. */
+function mustFind<T extends Element>(selector: string): T {
+  const el = document.querySelector<T>(selector);
+  if (!el) throw new Error(`engine-live.html: нет узла ${selector}`);
+  return el;
 }
+const surface = mustFind<HTMLElement>('#live-surface');
+const bgInput = mustFind<HTMLInputElement>('#live-bg');
+const themeSelect = mustFind<HTMLSelectElement>('#live-theme');
+const configSelect = mustFind<HTMLSelectElement>('#live-config');
+const status = mustFind<HTMLOutputElement>('#live-status');
 
 // Acme — «клиент студии»: тот же словарь ролей, свои якоря идентичности.
 // Бренд уезжает в фиолетовый; всё остальное (нейтраль, палитра, сентименты,
@@ -49,29 +52,29 @@ async function main(): Promise<void> {
   const colors = new LabColors();
   colors.loadConfig(JSON.stringify(passport));
 
-  const watcher = watchTheme(surface!, {
+  const watcher = watchTheme(surface, {
     colors,
-    theme: themeSelect!.value as 'light' | 'dark',
+    theme: themeSelect.value as 'light' | 'dark',
     // Фон демо-поверхности задаёт пользователь — он и есть истина резолва.
-    background: () => bgInput!.value,
+    background: () => bgInput.value,
   });
 
   function repaint(): void {
-    surface!.style.background = bgInput!.value;
+    surface.style.background = bgInput.value;
     const applied = watcher.refresh(true);
-    status!.value = applied
-      ? `фон ${watcher.background()} · тема ${themeSelect!.value} · конфиг ${configSelect!.value}`
+    status.value = applied
+      ? `фон ${watcher.background()} · тема ${themeSelect.value} · конфиг ${configSelect.value}`
       : 'фон не изменился';
   }
 
-  bgInput!.addEventListener('input', repaint);
-  themeSelect!.addEventListener('change', () => {
+  bgInput.addEventListener('input', repaint);
+  themeSelect.addEventListener('change', () => {
     // Select несёт только light|dark (см. engine-live.html) — сужение честное.
-    watcher.setTheme(themeSelect!.value as 'light' | 'dark');
+    watcher.setTheme(themeSelect.value as 'light' | 'dark');
     repaint();
   });
-  configSelect!.addEventListener('change', () => {
-    const config = configSelect!.value === 'acme' ? acmeConfig() : passport;
+  configSelect.addEventListener('change', () => {
+    const config = configSelect.value === 'acme' ? acmeConfig() : passport;
     colors.loadConfig(JSON.stringify(config));
     repaint();
   });

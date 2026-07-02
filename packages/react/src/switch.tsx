@@ -18,9 +18,9 @@
 'use client';
 
 import type { LabSwitchSize, LabSwitchType } from '@labpics/ui-core';
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as switchMachine from '@zag-js/switch';
 import { type ReactNode, useId } from 'react';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import { useZag } from './use-zag.js';
 import './switch.css';
 

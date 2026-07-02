@@ -18,10 +18,7 @@ import { type Page, expect, test } from '@playwright/test';
 function surfaceVar(page: Page, name: string): Promise<string> {
   return page
     .getByTestId('live-surface')
-    .evaluate(
-      (el, varName) => getComputedStyle(el).getPropertyValue(varName).trim(),
-      name,
-    );
+    .evaluate((el, varName) => getComputedStyle(el).getPropertyValue(varName).trim(), name);
 }
 
 async function setBg(page: Page, hex: string): Promise<void> {
@@ -51,9 +48,7 @@ test('boot: живой движок кладёт oklch-переменные на
 test('закон фона: смена фона поверхности пересчитывает роли', async ({ page }) => {
   const onWhite = await surfaceVar(page, '--lab-label-primary');
   await setBg(page, '#1a1030');
-  await expect
-    .poll(() => surfaceVar(page, '--lab-label-primary'))
-    .not.toBe(onWhite);
+  await expect.poll(() => surfaceVar(page, '--lab-label-primary')).not.toBe(onWhite);
 });
 
 test('тема: light → dark меняет резолв при том же фоне', async ({ page }) => {
@@ -61,21 +56,15 @@ test('тема: light → dark меняет резолв при том же фо
   await setBg(page, '#808080');
   const light = await surfaceVar(page, '--lab-fill-primary');
   await page.getByTestId('live-theme').selectOption('dark');
-  await expect
-    .poll(() => surfaceVar(page, '--lab-fill-primary'))
-    .not.toBe(light);
+  await expect.poll(() => surfaceVar(page, '--lab-fill-primary')).not.toBe(light);
 });
 
-test('кастомизация: конфиг acme перекрашивает бренд без правок компонентов', async ({
-  page,
-}) => {
+test('кастомизация: конфиг acme перекрашивает бренд без правок компонентов', async ({ page }) => {
   const labuiBrand = await surfaceVar(page, '--lab-fill-brand-primary');
   const labuiSuccess = await surfaceVar(page, '--lab-fill-success-primary');
   await page.getByTestId('live-config').selectOption('acme');
   // Бренд уехал в фиолетовый…
-  await expect
-    .poll(() => surfaceVar(page, '--lab-fill-brand-primary'))
-    .not.toBe(labuiBrand);
+  await expect.poll(() => surfaceVar(page, '--lab-fill-brand-primary')).not.toBe(labuiBrand);
   // …а сентимент-семья (унаследованная палитра) осталась той же.
   expect(await surfaceVar(page, '--lab-fill-success-primary')).toBe(labuiSuccess);
 });

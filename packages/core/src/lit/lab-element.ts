@@ -1,3 +1,4 @@
+import type { MachineSchema } from '@zag-js/core';
 /**
  * LabElement — the base class every LabUI Lit component extends.
  *
@@ -15,7 +16,6 @@
  * roles in its own styles and never branches on the active theme/material.
  */
 import { type CSSResultGroup, type CSSResultOrNative, LitElement, css } from 'lit';
-import type { MachineSchema } from '@zag-js/core';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
 import { ZagController } from './zag-controller.js';
 
@@ -39,9 +39,7 @@ const cornerShapeStyles = css`
 
 export class LabElement extends LitElement {
   /** Форма угла — всем наследникам, поверх их собственных styles. */
-  protected static override finalizeStyles(
-    styles?: CSSResultGroup,
-  ): Array<CSSResultOrNative> {
+  protected static override finalizeStyles(styles?: CSSResultGroup): Array<CSSResultOrNative> {
     return [cornerShapeStyles, ...super.finalizeStyles(styles)];
   }
 

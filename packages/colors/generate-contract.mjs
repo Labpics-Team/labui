@@ -8,27 +8,27 @@
 // дисциплины (test/contract-generated.test.mjs).
 //
 // Регенерация: node generate-contract.mjs
-import { readFile, writeFile } from "node:fs/promises";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { createLabuiEngine } from "./engine.mjs";
+import { createLabuiEngine } from './engine.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const referencePath = join(here, "..", "colors-stub", "figma-reference.css");
-const contractPath = join(here, "..", "colors-stub", "contract.css");
+const referencePath = join(here, '..', 'colors-stub', 'figma-reference.css');
+const contractPath = join(here, '..', 'colors-stub', 'contract.css');
 
 /** Вырезать тело scope-блока по началу строки (тот же приём, что в золоте). */
 function scopeBody(css, scopePattern) {
   const m = scopePattern.exec(css);
   if (!m) throw new Error(`scope не найден: ${scopePattern}`);
-  const open = css.indexOf("{", m.index);
+  const open = css.indexOf('{', m.index);
   let depth = 1;
   let i = open + 1;
   while (depth > 0 && i < css.length) {
-    if (css[i] === "{") depth++;
-    if (css[i] === "}") depth--;
+    if (css[i] === '{') depth++;
+    if (css[i] === '}') depth--;
     i++;
   }
   return css.slice(open + 1, i - 1);
@@ -38,7 +38,7 @@ function scopeBody(css, scopePattern) {
 function orderedVars(body) {
   return [...body.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)].map((m) => [
     m[1],
-    m[2].replace(/\/\*.*?\*\//g, "").trim(),
+    m[2].replace(/\/\*.*?\*\//g, '').trim(),
   ]);
 }
 
@@ -49,7 +49,7 @@ function orderedVars(body) {
  * будущей фоновой лестницы (BL-007); движковый солид Neutral(Mid) одинаков в
  * обеих темах — e2e честно ловил несменяемость темы у контролов.
  */
-const PROVISIONAL_BRIDGE = new Set(["--lab-fill-neutral"]);
+const PROVISIONAL_BRIDGE = new Set(['--lab-fill-neutral']);
 
 /**
  * Пара «заливка × лейбл» бейджа — ЗАКОН ЯДРА (crate::pair, движок ≥0.5.0):
@@ -59,36 +59,28 @@ const PROVISIONAL_BRIDGE = new Set(["--lab-fill-neutral"]);
  * Здесь только предвычисление лейблов для статического контракта.
  */
 function badgePairEmission(colors, theme, engineRoles) {
-  const families = [
-    "brand",
-    "danger",
-    "warning",
-    "success",
-    "info",
-    "static-dark",
-    "static-light",
-  ];
+  const families = ['brand', 'danger', 'warning', 'success', 'info', 'static-dark', 'static-light'];
   const lines = [
-    "",
-    "  /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),",
-    "     лейбл — nested resolve на выведенной заливке. */",
+    '',
+    '  /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),',
+    '     лейбл — nested resolve на выведенной заливке. */',
   ];
   for (const family of families) {
     const fill = engineRoles[`badge-fill-${family}`];
     if (!fill) throw new Error(`движок не эмитит badge-fill-${family}`);
     lines.push(`  --lab-badge-fill-${family}: ${fill.css};`);
     const fillHex = fill.compositeHex || fill.tintHex;
-    const label = colors.resolveTheme(fillHex, theme).roles["label-primary"];
+    const label = colors.resolveTheme(fillHex, theme).roles['label-primary'];
     lines.push(`  --lab-badge-label-on-${family}: ${label.css};`);
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** Отрендерить один scope: движковые роли — живой эмиссией, прочее — мостом. */
 function renderScope(anchorVars, engineVars) {
   const lines = [];
   for (const [name, anchorValue] of anchorVars) {
-    if (anchorValue.startsWith("var(")) {
+    if (anchorValue.startsWith('var(')) {
       // Ссылка-алиас: одна истина — связь, не копия значения.
       lines.push(`  ${name}: ${anchorValue};`);
     } else if (PROVISIONAL_BRIDGE.has(name)) {
@@ -101,47 +93,34 @@ function renderScope(anchorVars, engineVars) {
       lines.push(`  ${name}: ${anchorValue}; /* мост: Figma-якорь */`);
     }
   }
-  return lines.join("\n");
+  return lines.join('\n');
 }
 
 /** Сгенерировать полный contract.css из движка и Figma-якоря. */
 export async function generateContract() {
   const require = createRequire(import.meta.url);
-  const enginePkgPath = join(
-    dirname(require.resolve("@labpics/colors")),
-    "package.json",
-  );
-  const enginePkg = JSON.parse(await readFile(enginePkgPath, "utf8"));
+  const enginePkgPath = join(dirname(require.resolve('@labpics/colors')), 'package.json');
+  const enginePkg = JSON.parse(await readFile(enginePkgPath, 'utf8'));
   const { colors, fingerprint } = await createLabuiEngine();
-  const passport = JSON.parse(
-    await readFile(join(here, "labui.config.json"), "utf8"),
-  );
+  const passport = JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8'));
   // Фоны резолва тем — якоря нейтрали ПАСПОРТА, не литералы: клиентский
   // конфиг с другими опорами обязан генерировать против СВОИХ фонов.
   const bgLight = passport.neutral.anchors.light;
   const bgDark = passport.neutral.anchors.dark;
-  const reference = await readFile(referencePath, "utf8");
+  const reference = await readFile(referencePath, 'utf8');
 
-  const light = orderedVars(
-    scopeBody(reference, /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m),
-  );
+  const light = orderedVars(scopeBody(reference, /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m));
   const dark = orderedVars(scopeBody(reference, /^\[data-theme="dark"\]\s*\{/m));
 
-  const engineLight = new Map(
-    Object.entries(colors.resolveTheme(bgLight, "light").vars),
-  );
-  const engineDark = new Map(
-    Object.entries(colors.resolveTheme(bgDark, "dark").vars),
-  );
+  const engineLight = new Map(Object.entries(colors.resolveTheme(bgLight, 'light').vars));
+  const engineDark = new Map(Object.entries(colors.resolveTheme(bgDark, 'dark').vars));
 
-  const resolvedLight = colors.resolveTheme(bgLight, "light");
-  const resolvedDark = colors.resolveTheme(bgDark, "dark");
+  const resolvedLight = colors.resolveTheme(bgLight, 'light');
+  const resolvedDark = colors.resolveTheme(bgDark, 'dark');
   const lightBody =
-    renderScope(light, engineLight) +
-    badgePairEmission(colors, "light", resolvedLight.roles);
+    renderScope(light, engineLight) + badgePairEmission(colors, 'light', resolvedLight.roles);
   const darkBody =
-    renderScope(dark, engineDark) +
-    badgePairEmission(colors, "dark", resolvedDark.roles);
+    renderScope(dark, engineDark) + badgePairEmission(colors, 'dark', resolvedDark.roles);
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
@@ -165,9 +144,9 @@ ${darkBody}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
 ${darkBody
-  .split("\n")
+  .split('\n')
   .map((l) => (l ? `  ${l}` : l))
-  .join("\n")}
+  .join('\n')}
   }
 }
 `;

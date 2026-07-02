@@ -1,7 +1,7 @@
 import type { SpacingConfig } from '../config/types.js';
+import { aliasCssRef } from './alias.js';
 import { ROOT_FONT_SIZE_PX, num, rem } from './format.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
-import { aliasCssRef } from './alias.js';
 
 /**
  * Build the spacing scale: a linear multiplier on a rem base.
