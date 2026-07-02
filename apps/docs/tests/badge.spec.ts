@@ -72,7 +72,7 @@ test('disabled badge dims identically on both renderers', async ({ page }) => {
   expect(Number(litOpacity)).toBeLessThan(1);
 });
 
-test('tokens: re-pointing --lab-border-brand-strong re-skins BOTH fill renderers', async ({
+test('tokens: re-pointing --lab-badge-fill-brand re-skins BOTH fill renderers', async ({
   page,
 }) => {
   const lit = litBadge(page, 'lit-brand-fill');
@@ -80,7 +80,7 @@ test('tokens: re-pointing --lab-border-brand-strong re-skins BOTH fill renderers
   await expect(react).toBeVisible();
 
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-border-brand-strong', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-badge-fill-brand', 'rgb(1, 2, 3)');
   });
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');

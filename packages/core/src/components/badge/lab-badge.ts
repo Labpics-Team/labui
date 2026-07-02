@@ -111,31 +111,31 @@ export class LabBadge extends LabElement {
       color: ${litVar('--lab-label-on-neutral')};
     }
     :host([type='fill'][color='brand']) .badge {
-      background-color: ${litVar('--lab-border-brand-strong')};
+      background-color: ${litVar('--lab-badge-fill-brand')};
       color: ${litVar('--lab-badge-label-on-brand')};
     }
     :host([type='fill'][color='danger']) .badge {
-      background-color: ${litVar('--lab-border-danger-strong')};
+      background-color: ${litVar('--lab-badge-fill-danger')};
       color: ${litVar('--lab-badge-label-on-danger')};
     }
     :host([type='fill'][color='warning']) .badge {
-      background-color: ${litVar('--lab-border-warning-strong')};
+      background-color: ${litVar('--lab-badge-fill-warning')};
       color: ${litVar('--lab-badge-label-on-warning')};
     }
     :host([type='fill'][color='success']) .badge {
-      background-color: ${litVar('--lab-border-success-strong')};
+      background-color: ${litVar('--lab-badge-fill-success')};
       color: ${litVar('--lab-badge-label-on-success')};
     }
     :host([type='fill'][color='info']) .badge {
-      background-color: ${litVar('--lab-border-info-strong')};
+      background-color: ${litVar('--lab-badge-fill-info')};
       color: ${litVar('--lab-badge-label-on-info')};
     }
     :host([type='fill'][color='static-dark']) .badge {
-      background-color: ${litVar('--lab-border-static-dark-strong')};
+      background-color: ${litVar('--lab-badge-fill-static-dark')};
       color: ${litVar('--lab-badge-label-on-static-dark')};
     }
     :host([type='fill'][color='static-light']) .badge {
-      background-color: ${litVar('--lab-border-static-light-strong')};
+      background-color: ${litVar('--lab-badge-fill-static-light')};
       color: ${litVar('--lab-badge-label-on-static-light')};
     }
 

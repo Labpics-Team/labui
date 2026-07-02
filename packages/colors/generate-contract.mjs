@@ -52,13 +52,73 @@ function orderedVars(body) {
 const PROVISIONAL_BRIDGE = new Set(["--lab-fill-neutral"]);
 
 /**
- * Деривация лейблов бейджа — nested resolve по доктрине: лейбл решается от
- * ФАКТИЧЕСКОЙ заливки, а не ручным выбором «default/contrast» per-family
- * (ручной белый на бренде #007AFF давал 4.0:1 — ниже текстового AA 4.5;
- * солвер несёт пол по закону). Заливка семьи = border-<family>-strong
- * (солид-якорь); статики — литералы якоря.
+ * Пара «заливка × лейбл» бейджа — Figma-якорь + пол движением заливки.
+ *
+ * Полярность лейбла — ИЗМЕРЕННЫЙ якорь идентичности Figma: белый на
+ * brand/danger/info (перцептивно тёмные заливки, Y ≈ 0.21–0.26 — известный
+ * класс-дефект WCAG 2.x завышает чёрный на средне-хроматичных фонах; глаз и
+ * Figma правы), чернила на warning/success (светлые, Y ≈ 0.42–0.47; success
+ * в Figma был белым 2.22:1 — аргументированная поправка: нечитаемо, сама
+ * Figma на таком же светлом warning выбрала чернила). Перцептивный
+ * кроссовер в ядре — этап-2 (наука, без него данные якоря честнее закона).
+ *
+ * Пол: белая сторона добирает текстовый AA 4.5 МИНИМАЛЬНЫМ движением
+ * заливки по светлоте Oklch (оттенок и хрома идентичности сохранены), не
+ * флипом полярности — «сохранить лучшее из Figma и закон» одновременно.
  */
-function badgeLabelDerivation(colors, theme, engineRoles, anchorMap) {
+// Oklab-математика — те же матрицы движка (их же использует golden-сверка).
+const M_OKLAB_LMS = [
+  [1.0, 0.3963377774, 0.2158037573],
+  [1.0, -0.1055613458, -0.0638541728],
+  [1.0, -0.0894841775, -1.291485548],
+];
+const M_LMS_SRGB = [
+  [4.0767416621, -3.3077115913, 0.2309699292],
+  [-1.2684380046, 2.6097574011, -0.3413193965],
+  [-0.0041960863, -0.7034186147, 1.707614701],
+];
+const M_SRGB_LMS = [
+  [0.4122214708, 0.5363325363, 0.0514459929],
+  [0.2119034982, 0.6806995451, 0.1073969566],
+  [0.0883024619, 0.2817188376, 0.6299787005],
+];
+const M_LMS_OKLAB = [
+  [0.2104542553, 0.793617785, -0.0040720468],
+  [1.9779984951, -2.428592205, 0.4505937099],
+  [0.0259040371, 0.7827717662, -0.808675766],
+];
+const mulv = (m, v) => m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
+const gam = (v) => (v > 0.0031308 ? 1.055 * v ** (1 / 2.4) - 0.055 : 12.92 * v);
+const degam = (v) => (v > 0.04045 ? ((v + 0.055) / 1.055) ** 2.4 : v / 12.92);
+const hexToLin = (h) => {
+  const n = parseInt(h.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => degam(c / 255));
+};
+const linToHex = (lin) => {
+  const b = lin.map((v) => Math.min(255, Math.max(0, Math.round(gam(v) * 255))));
+  return `#${b.map((x) => x.toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+};
+const oklabOf = (lin) => mulv(M_LMS_OKLAB, mulv(M_SRGB_LMS, lin).map(Math.cbrt));
+const linOf = (lab) => mulv(M_LMS_SRGB, mulv(M_OKLAB_LMS, lab).map((x) => x ** 3));
+const wcagY = (lin) => 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+const ratioVsWhite = (lin) => 1.05 / (wcagY(lin) + 0.05);
+
+/** Минимально утемнить солид по L Oklab (оттенок/хрома целы) до пола vs белый. */
+function nudgeFillToFloor(hex, floor = 4.5) {
+  let lin = hexToLin(hex);
+  if (ratioVsWhite(lin) >= floor) return hex;
+  const [L0, a, b] = oklabOf(lin);
+  let lo = 0;
+  let hi = L0;
+  for (let i = 0; i < 48; i++) {
+    const mid = (lo + hi) / 2;
+    if (ratioVsWhite(linOf([mid, a, b])) >= floor) lo = mid;
+    else hi = mid;
+  }
+  return linToHex(linOf([lo, a, b]));
+}
+
+function badgePairDerivation(engineRoles, anchorMap) {
   const hexOf = (roleName) => {
     const r = engineRoles[roleName];
     return r && (r.compositeHex || r.tintHex || r.hex);
@@ -70,25 +130,29 @@ function badgeLabelDerivation(colors, theme, engineRoles, anchorMap) {
     const b = (x) => Number(x).toString(16).padStart(2, "0");
     return `#${b(m[1])}${b(m[2])}${b(m[3])}`.toUpperCase();
   };
-  const fills = [
-    ["brand", hexOf("border-brand-strong")],
-    ["danger", hexOf("border-danger-strong")],
-    ["warning", hexOf("border-warning-strong")],
-    ["success", hexOf("border-success-strong")],
-    ["info", hexOf("border-info-strong")],
-    ["static-dark", staticHex("--lab-border-static-dark-strong")],
-    ["static-light", staticHex("--lab-border-static-light-strong")],
+  // Полярность — Figma-якорь идентичности; success — аргументированная поправка.
+  const families = [
+    ["brand", hexOf("border-brand-strong"), "white"],
+    ["danger", hexOf("border-danger-strong"), "white"],
+    ["warning", hexOf("border-warning-strong"), "ink"],
+    ["success", hexOf("border-success-strong"), "ink"],
+    ["info", hexOf("border-info-strong"), "white"],
+    ["static-dark", staticHex("--lab-border-static-dark-strong"), "white"],
+    ["static-light", staticHex("--lab-border-static-light-strong"), "ink"],
   ];
   const lines = [
     "",
-    "  /* Деривация движком: лейбл на заливке бейджа — nested resolve от",
-    "     фактической заливки (солвер + WCAG-пол), не ручной default/contrast. */",
+    "  /* Пара бейджа: полярность лейбла — Figma-якорь (белый на тёмных",
+    "     заливках, чернила на светлых); белая сторона добирает AA 4.5",
+    "     минимальным утемнением заливки (оттенок/хрома целы). */",
   ];
-  for (const [family, fill] of fills) {
-    if (!fill) throw new Error(`badge-деривация: нет заливки семьи ${family}`);
-    const nested = colors.resolveTheme(fill, theme);
-    const label = nested.roles["label-primary"];
-    lines.push(`  --lab-badge-label-on-${family}: ${label.css};`);
+  for (const [family, fill, side] of families) {
+    if (!fill) throw new Error(`badge-пара: нет заливки семьи ${family}`);
+    const finalFill = side === "white" ? nudgeFillToFloor(fill) : fill;
+    lines.push(`  --lab-badge-fill-${family}: ${finalFill};`);
+    lines.push(
+      `  --lab-badge-label-on-${family}: var(--lab-label-static-${side === "white" ? "light" : "dark"}-primary);`,
+    );
   }
   return lines.join("\n");
 }
@@ -140,10 +204,10 @@ export async function generateContract() {
   const resolvedDark = colors.resolveTheme("#101012", "dark");
   const lightBody =
     renderScope(light, engineLight) +
-    badgeLabelDerivation(colors, "light", resolvedLight.roles, new Map(light));
+    badgePairDerivation(resolvedLight.roles, new Map(light));
   const darkBody =
     renderScope(dark, engineDark) +
-    badgeLabelDerivation(colors, "dark", resolvedDark.roles, new Map(dark));
+    badgePairDerivation(resolvedDark.roles, new Map(dark));
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.

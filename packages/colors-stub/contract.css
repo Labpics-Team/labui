@@ -161,15 +161,23 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
-  /* Деривация движком: лейбл на заливке бейджа — nested resolve от
-     фактической заливки (солвер + WCAG-пол), не ручной default/contrast. */
-  --lab-badge-label-on-brand: oklch(8.84643% 0.013927 283.183);
-  --lab-badge-label-on-danger: oklch(9.98606% 0.011545 284.115);
-  --lab-badge-label-on-warning: oklch(11.77179% 0.011359 284.521);
-  --lab-badge-label-on-success: oklch(10.99109% 0.012707 284.115);
-  --lab-badge-label-on-info: oklch(9.98606% 0.011545 284.115);
-  --lab-badge-label-on-static-dark: oklch(96.40284% 0.013312 286.147);
-  --lab-badge-label-on-static-light: oklch(14.79140% 0.012878 284.717);
+  /* Пара бейджа: полярность лейбла — Figma-якорь (белый на тёмных
+     заливках, чернила на светлых); белая сторона добирает AA 4.5
+     минимальным утемнением заливки (оттенок/хрома целы). */
+  --lab-badge-fill-brand: #0071F5;
+  --lab-badge-label-on-brand: var(--lab-label-static-light-primary);
+  --lab-badge-fill-danger: #E91D19;
+  --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
+  --lab-badge-fill-warning: #FFA100;
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
+  --lab-badge-fill-success: #34C759;
+  --lab-badge-label-on-success: var(--lab-label-static-dark-primary);
+  --lab-badge-fill-info: #6567EA;
+  --lab-badge-label-on-info: var(--lab-label-static-light-primary);
+  --lab-badge-fill-static-dark: #101012;
+  --lab-badge-label-on-static-dark: var(--lab-label-static-light-primary);
+  --lab-badge-fill-static-light: #FFFFFF;
+  --lab-badge-label-on-static-light: var(--lab-label-static-dark-primary);
 }
 
 [data-theme="dark"] {
@@ -324,15 +332,23 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
-  /* Деривация движком: лейбл на заливке бейджа — nested resolve от
-     фактической заливки (солвер + WCAG-пол), не ручной default/contrast. */
-  --lab-badge-label-on-brand: oklch(11.77179% 0.011359 284.521);
-  --lab-badge-label-on-danger: oklch(10.99109% 0.012707 284.115);
-  --lab-badge-label-on-warning: oklch(12.68545% 0.012584 295.088);
-  --lab-badge-label-on-success: oklch(13.28998% 0.011796 294.965);
-  --lab-badge-label-on-info: oklch(12.02112% 0.013711 295.071);
-  --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
-  --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
+  /* Пара бейджа: полярность лейбла — Figma-якорь (белый на тёмных
+     заливках, чернила на светлых); белая сторона добирает AA 4.5
+     минимальным утемнением заливки (оттенок/хрома целы). */
+  --lab-badge-fill-brand: #2F73E1;
+  --lab-badge-label-on-brand: var(--lab-label-static-light-primary);
+  --lab-badge-fill-danger: #E91C26;
+  --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
+  --lab-badge-fill-warning: #FF9008;
+  --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
+  --lab-badge-fill-success: #30D158;
+  --lab-badge-label-on-success: var(--lab-label-static-dark-primary);
+  --lab-badge-fill-info: #7068DA;
+  --lab-badge-label-on-info: var(--lab-label-static-light-primary);
+  --lab-badge-fill-static-dark: #101012;
+  --lab-badge-label-on-static-dark: var(--lab-label-static-light-primary);
+  --lab-badge-fill-static-light: #FFFFFF;
+  --lab-badge-label-on-static-light: var(--lab-label-static-dark-primary);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -488,14 +504,22 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-border-neutral: var(--lab-border-base);
     --lab-border-danger: var(--lab-border-danger-strong);
     --lab-border-focus: var(--lab-fx-focus-ring-brand);
-    /* Деривация движком: лейбл на заливке бейджа — nested resolve от
-       фактической заливки (солвер + WCAG-пол), не ручной default/contrast. */
-    --lab-badge-label-on-brand: oklch(11.77179% 0.011359 284.521);
-    --lab-badge-label-on-danger: oklch(10.99109% 0.012707 284.115);
-    --lab-badge-label-on-warning: oklch(12.68545% 0.012584 295.088);
-    --lab-badge-label-on-success: oklch(13.28998% 0.011796 294.965);
-    --lab-badge-label-on-info: oklch(12.02112% 0.013711 295.071);
-    --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
-    --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
+    /* Пара бейджа: полярность лейбла — Figma-якорь (белый на тёмных
+       заливках, чернила на светлых); белая сторона добирает AA 4.5
+       минимальным утемнением заливки (оттенок/хрома целы). */
+    --lab-badge-fill-brand: #2F73E1;
+    --lab-badge-label-on-brand: var(--lab-label-static-light-primary);
+    --lab-badge-fill-danger: #E91C26;
+    --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
+    --lab-badge-fill-warning: #FF9008;
+    --lab-badge-label-on-warning: var(--lab-label-static-dark-primary);
+    --lab-badge-fill-success: #30D158;
+    --lab-badge-label-on-success: var(--lab-label-static-dark-primary);
+    --lab-badge-fill-info: #7068DA;
+    --lab-badge-label-on-info: var(--lab-label-static-light-primary);
+    --lab-badge-fill-static-dark: #101012;
+    --lab-badge-label-on-static-dark: var(--lab-label-static-light-primary);
+    --lab-badge-fill-static-light: #FFFFFF;
+    --lab-badge-label-on-static-light: var(--lab-label-static-dark-primary);
   }
 }
