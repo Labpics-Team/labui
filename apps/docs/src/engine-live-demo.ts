@@ -49,9 +49,9 @@ async function main(): Promise<void> {
   const colors = new LabColors();
   colors.loadConfig(JSON.stringify(passport));
 
-  const watcher = watchTheme(surface, {
+  const watcher = watchTheme(surface!, {
     colors,
-    theme: themeSelect!.value,
+    theme: themeSelect!.value as 'light' | 'dark',
     // Фон демо-поверхности задаёт пользователь — он и есть истина резолва.
     background: () => bgInput!.value,
   });
@@ -66,7 +66,8 @@ async function main(): Promise<void> {
 
   bgInput!.addEventListener('input', repaint);
   themeSelect!.addEventListener('change', () => {
-    watcher.setTheme(themeSelect!.value);
+    // Select несёт только light|dark (см. engine-live.html) — сужение честное.
+    watcher.setTheme(themeSelect!.value as 'light' | 'dark');
     repaint();
   });
   configSelect!.addEventListener('change', () => {
