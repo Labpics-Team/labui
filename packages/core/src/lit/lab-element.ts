@@ -40,6 +40,7 @@ const cornerShapeStyles = css`
 export class LabElement extends LitElement {
   /** Форма угла — всем наследникам, поверх их собственных styles. */
   protected static override finalizeStyles(styles?: CSSResultGroup): Array<CSSResultOrNative> {
+    // biome-ignore lint/complexity/noThisInStatic: super в статик-переопределении — точный механизм цепочки Lit (имя класса сломало бы промежуточных наследников)
     return [cornerShapeStyles, ...super.finalizeStyles(styles)];
   }
 
