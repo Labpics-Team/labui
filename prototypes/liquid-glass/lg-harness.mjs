@@ -9,19 +9,31 @@ import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
  *
  *   · serves prototypes/liquid-glass/ from a REPO-RELATIVE http server,
  *   · resolves @playwright/test from THIS repo (apps/docs devDependency),
- *   · keeps the baseline under prototypes/liquid-glass/__gate_baseline__,
  *
- * and exports four async entry points the test files invoke:
+ * and exports the async entry points the test files invoke:
  *   runCacheSuite()        → { pass, cases }              (cache refcount/LRU/leak)
  *   runScratchSuite()      → { memoryBounded, checks }    (scratch lifecycle)
- *   runVisualGate({mode})  → baseline: { ok, froze }      (freeze the references)
- *                            diff:     { pass, threshold, results }  (golden gate)
+ *   runVisualGate({mode,dir,ref}) → baseline: { ok, froze }   (freeze a reference)
+ *                                   diff: { pass, threshold, results } (pixel gate)
+ *   runHermeticGate({base,runs})  → { base, runs, pass }  (freeze base engine ON
+ *                                    THIS machine, diff HEAD engine against it)
  *   runMutationHarness()   → { <dim>: caught, allCaught } (Class-D bite-proof)
+ *
+ * HERMETIC BASELINES — never committed, always frozen on the machine that
+ * diffs them. Screenshot pixels are font/raster-coupled to the OS (Playwright:
+ * "run tests in the same environment where the baseline screenshots were
+ * generated"); a committed PNG set frozen on one OS moves EVERY row on another
+ * and the gate turns into noise (the exact class that kept CI red). Instead the
+ * gate freezes its reference from the BASE git ref (PR base in CI, @{upstream}
+ * locally) in a throwaway worktree and diffs the working engine against it on
+ * the same machine — deterministic everywhere, zero binary artifacts in git.
  *
  * Self-contained: it owns its http server + Chromium lifecycle. No external
  * preview server, no Astro/Vite — it serves the static prototype directly.
  */
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -31,7 +43,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url)); // prototypes/liquid-glass
 const REPO_ROOT = resolve(HERE, '../../'); // repo root
 const PROTO_DIR = HERE; // the engine + playground we serve
-const BASELINE_DIR = resolve(HERE, '__gate_baseline__'); // committed PNG baseline
 
 // Resolve @playwright/test from THIS repo (apps/docs holds it as a devDependency)
 // — never a foreign absolute path. createRequire anchored at apps/docs/package.json
@@ -802,8 +813,14 @@ async function diffPng(page, candB64, refB64) {
 }
 
 export async function runVisualGate({ mode = 'diff', dir, ref } = {}) {
+  if (!ref) {
+    // No committed baseline exists BY DESIGN (test artifacts do not live in the
+    // repo; committed PNGs are machine-coupled anyway). A reference must be
+    // frozen on THIS machine — use runHermeticGate() or pass ref explicitly.
+    throw new Error('runVisualGate: `ref` is required — freeze a reference on this machine first');
+  }
   const serveRoot = dir ? resolve(dir) : PROTO_DIR;
-  const refDir = ref ? resolve(ref) : BASELINE_DIR;
+  const refDir = resolve(ref);
   const { server, port } = await serveDir(serveRoot);
   const normalStates = STATES.filter((s) => !s.reduced);
   const reducedStates = STATES.filter((s) => s.reduced);
@@ -894,10 +911,82 @@ export async function runVisualGate({ mode = 'diff', dir, ref } = {}) {
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
- * #8 — Class-D mutation bite-proof. Port of lg-mutate-test.mjs. For each of the
- *   10 effect dimensions it mkdtemp-copies the engine, weakens ONE dimension,
- *   re-runs the gate against the COMMITTED baseline, and asserts the gate FAILS
- *   (caught). The committed engine is never mutated.
+ * Hermetic gate — freeze the BASE engine on THIS machine, diff HEAD against it.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/** The git ref whose engine is the pixel reference. CI passes the PR base (or
+ *  the pre-push sha) via LG_GATE_BASE; locally the branch upstream is exactly
+ *  "what this branch will merge into". HEAD (= last commit) is the last-resort
+ *  fallback — it still catches uncommitted pixel movement. */
+export function resolveGateBase() {
+  if (process.env.LG_GATE_BASE) return process.env.LG_GATE_BASE;
+  try {
+    const up = execFileSync(
+      'git',
+      ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{upstream}'],
+      { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
+    ).trim();
+    if (up) return up;
+  } catch {
+    // no upstream configured — fall through
+  }
+  return 'HEAD';
+}
+
+/** Check out `base` into a throwaway git worktree, hand its engine dir to `fn`,
+ *  and always clean the worktree up — the repo itself is never touched. */
+async function withBaseEngine(base, fn) {
+  const work = await mkdtemp(join(tmpdir(), 'lg-gate-'));
+  const wt = join(work, 'wt');
+  execFileSync('git', ['worktree', 'add', '--detach', '--force', wt, base], {
+    cwd: REPO_ROOT,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  try {
+    const baseEngine = join(wt, 'prototypes', 'liquid-glass');
+    if (!existsSync(join(baseEngine, 'index.html'))) {
+      throw new Error(
+        `runHermeticGate: base ref '${base}' has no prototypes/liquid-glass engine to freeze`,
+      );
+    }
+    return await fn(baseEngine, work);
+  } finally {
+    try {
+      execFileSync('git', ['worktree', 'remove', '--force', wt], {
+        cwd: REPO_ROOT,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch {
+      // worktree dir is inside `work` — the rm below still reclaims it
+    }
+    await rm(work, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The PR pixel gate: freeze the base-ref engine on THIS machine, then diff the
+ * working engine against that freeze `runs` times (runs>1 = determinism check).
+ * Same machine + same Chromium + same fonts ⇒ the only thing that can move a
+ * row is a change in the engine itself.
+ */
+export async function runHermeticGate({ base = resolveGateBase(), runs = 1 } = {}) {
+  return withBaseEngine(base, async (baseEngine, work) => {
+    const refDir = join(work, 'ref');
+    await runVisualGate({ mode: 'baseline', dir: baseEngine, ref: refDir });
+    const verdicts = [];
+    for (let i = 0; i < runs; i++) {
+      verdicts.push(await runVisualGate({ mode: 'diff', ref: refDir }));
+    }
+    return { base, runs: verdicts, pass: verdicts.every((v) => v.pass) };
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * #8 — Class-D mutation bite-proof. Port of lg-mutate-test.mjs. Freezes the
+ *   CURRENT engine on THIS machine as the reference, then for each of the 10
+ *   effect dimensions mkdtemp-copies the engine, weakens ONE dimension, re-runs
+ *   the gate against that fresh reference, and asserts the gate FAILS (caught).
+ *   The committed engine is never mutated; no baseline is ever committed.
  * ════════════════════════════════════════════════════════════════════════════ */
 // C2: each mutation names the SPECIFIC baseline row that ISOLATES its dimension
 // — the row where that effect is actually visible. A lens-relevant dimension
@@ -995,6 +1084,22 @@ const MUTATIONS = [
 export async function runMutationHarness() {
   const results = {};
   const detail = {};
+  // Hermetic reference: frozen from the CURRENT engine on THIS machine, so a
+  // mutant row can only move because of the mutation — never because the
+  // machine's fonts/raster differ from wherever a committed PNG was born.
+  const refWork = await mkdtemp(join(tmpdir(), 'lg-mut-ref-'));
+  const refDir = join(refWork, 'ref');
+  await runVisualGate({ mode: 'baseline', dir: PROTO_DIR, ref: refDir });
+  try {
+    await runMutations(results, detail, refDir);
+  } finally {
+    await rm(refWork, { recursive: true, force: true });
+  }
+  const allCaught = Object.values(results).every(Boolean);
+  return { ...results, allCaught, detail };
+}
+
+async function runMutations(results, detail, refDir) {
   for (const m of MUTATIONS) {
     const work = await mkdtemp(join(tmpdir(), 'lg-mut-'));
     const copy = join(work, 'engine');
@@ -1009,10 +1114,10 @@ export async function runMutationHarness() {
       if (patched === src) throw new Error(`[${m.dimension}] patch was a no-op`);
       await writeFile(target, patched);
 
-      // Diff the PATCHED copy against the COMMITTED baseline. A weakening must
-      // move pixels past threshold — AND, for C2 correctness, it must do so in
-      // the SPECIFIC row that isolates this dimension, not just somewhere.
-      const verdict = await runVisualGate({ mode: 'diff', dir: copy, ref: BASELINE_DIR });
+      // Diff the PATCHED copy against the fresh on-machine reference. A
+      // weakening must move pixels past threshold — AND, for C2 correctness, it
+      // must do so in the SPECIFIC row that isolates this dimension.
+      const verdict = await runVisualGate({ mode: 'diff', dir: copy, ref: refDir });
       const iso = m.isolating;
       const row = verdict.results.find((r) => r.state === iso.state && r.element === iso.element);
       if (!row) {
@@ -1031,6 +1136,4 @@ export async function runMutationHarness() {
       await rm(work, { recursive: true, force: true });
     }
   }
-  const allCaught = Object.values(results).every(Boolean);
-  return { ...results, allCaught, detail };
 }

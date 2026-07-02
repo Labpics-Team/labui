@@ -3,48 +3,76 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 // Liquid Glass — CI integration wiring (test plan #10).
 //
-// The unit + cache + scratch + mutation suites must run under `pnpm test`
-// (= `pnpm -r --if-present test`, which only picks up a workspace package that
-// HAS a `test` script), and the visual gate under `pnpm test:e2e` (Chromium,
-// workers:1). This test pins that wiring contract so the suite cannot silently
-// fall out of CI.
+// The wiring contract, pinned so no suite can silently fall out of CI and no
+// suite can land in a job that cannot run it:
 //
-// THE CONTRACT UNDER TEST (ch04 must create it):
-//   apps/docs/package.json gains a `test` (or `test:liquid-glass`) script that
-//   runs the Node unit+cache+mutation tests, so `pnpm -r --if-present test`
-//   executes them. The gate runs via the existing `test:e2e` (playwright). CI
-//   (.github/workflows/ci.yml) already invokes `pnpm test` and `pnpm test:e2e`.
+//   · `test` (quality job, NO browsers installed) runs ONLY browserless Node
+//     suites: the pure math unit tests and this wiring test. A browser-launching
+//     suite in the browserless job is a guaranteed CI red — the original class.
+//   · `test:engine` (e2e job, AFTER `playwright install`) runs the
+//     browser-launching Node suites: cache/scratch integration, pending-decode
+//     regression, and the Class-D mutation bite-proof.
+//   · the visual gate runs via `test:e2e` (Playwright, Chromium-only), hermetic
+//     against the base ref that CI resolves into LG_GATE_BASE.
 //
-// RED until apps/docs declares the test script. Failure is an explicit assertion
-// about the MISSING wiring — never a bare import crash.
+// Failure is an explicit assertion about the broken wiring — never a bare
+// import crash.
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DOCS_PKG = resolve(HERE, '../../package.json');
+const CI_YML = resolve(HERE, '../../../../.github/workflows/ci.yml');
 
-test('apps/docs declares a `test` script so `pnpm -r --if-present test` runs the suite', async () => {
+test('`test` stays browserless; `test:engine` carries the browser suites', async () => {
   const pkg = JSON.parse(await readFile(DOCS_PKG, 'utf8'));
   const scripts = pkg.scripts || {};
-  const testScript = scripts.test;
-  assert.ok(
-    typeof testScript === 'string' && testScript.length > 0,
-    'apps/docs/package.json must declare a `test` script that runs the Node ' +
-      'unit+cache+mutation liquid-glass tests (ch04 wiring) so ' +
-      '`pnpm -r --if-present test` picks them up',
-  );
+
+  const testScript = scripts.test || '';
   assert.match(
     testScript,
-    /liquid-glass|lg-|tests[\\/]liquid-glass|node --test/i,
-    `apps/docs \`test\` script must run the liquid-glass node suite, got: ${testScript}`,
+    /lg-math\.unit|lg-ci-wiring/,
+    `apps/docs \`test\` must run the browserless liquid-glass node suites, got: ${testScript}`,
   );
+  for (const browserSuite of ['lg-cache', 'lg-pending-decode', 'lg-mutation']) {
+    assert.ok(
+      !testScript.includes(browserSuite),
+      `\`test\` runs in the browserless quality job — ${browserSuite} launches Chromium and must live in \`test:engine\` (got: ${testScript})`,
+    );
+  }
 
-  // The gate runs via the existing Playwright `test:e2e` (Chromium-only). This is
-  // a precondition the wiring must keep intact alongside the new `test` script —
-  // asserted in the same test so the wiring contract passes/fails as one unit.
+  const engineScript = scripts['test:engine'] || '';
+  for (const browserSuite of ['lg-cache', 'lg-pending-decode', 'lg-mutation']) {
+    assert.match(
+      engineScript,
+      new RegExp(browserSuite),
+      `\`test:engine\` must run ${browserSuite} (browser suites run in the e2e job after playwright install), got: ${engineScript}`,
+    );
+  }
+
   assert.match(
     scripts['test:e2e'] || '',
     /playwright/i,
-    'apps/docs must keep `test:e2e` running Playwright (the gate runs there, Chromium-only)',
+    'apps/docs must keep `test:e2e` running Playwright (the hermetic gate runs there, Chromium-only)',
+  );
+});
+
+test('ci.yml runs the engine suites after browser install and feeds the hermetic gate a base', async () => {
+  const ci = await readFile(CI_YML, 'utf8');
+  assert.match(
+    ci,
+    /test:engine/,
+    'ci.yml must invoke `test:engine` (cache/pending/mutation suites) in the browser-equipped e2e job',
+  );
+  const installIdx = ci.indexOf('playwright install');
+  const engineIdx = ci.indexOf('test:engine');
+  assert.ok(
+    installIdx !== -1 && engineIdx > installIdx,
+    '`test:engine` must run AFTER `playwright install` — the suites launch Chromium',
+  );
+  assert.match(
+    ci,
+    /LG_GATE_BASE/,
+    'ci.yml must resolve LG_GATE_BASE so the visual gate freezes its reference from the PR base on the CI machine itself',
   );
 });

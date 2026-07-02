@@ -1,46 +1,41 @@
-import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 
 /**
- * Liquid Glass — deterministic visual-regression gate (test plan #6), the
- * cross-engine fallback guard (#7), and the determinism + baseline sanity
- * cross-check (#9).
+ * Liquid Glass — hermetic visual-regression gate (test plan #6), the
+ * cross-engine fallback guard (#7), and the determinism cross-check (#9).
  *
- * Golden-master gate: diff BOTH #pane and #panel across the ~14-state matrix
- * (dark/light rest, drag, dispersion 0.9, big-corner, distinct-geo = 2 live cache
- * entries, refraction=0, reduced-transparency via CDP, panel-lens, body/depth
- * sentinels) at meanDelta<1 OR maxDelta<8 OR pctChanged<1, against a baseline
- * re-frozen FROM THIS repo's engine.
+ * HERMETIC, NOT GOLDEN-FILE: the reference is frozen ON THIS MACHINE from the
+ * BASE git ref (PR base in CI via LG_GATE_BASE, the branch upstream locally),
+ * then the working engine is diffed against it across the ~14-state matrix at
+ * meanDelta<1 OR maxDelta<8 OR pctChanged<1. Committed PNG baselines are
+ * font/raster-coupled to the OS that froze them (Playwright: "run tests in the
+ * same environment where the baseline screenshots were generated") and are
+ * test artifacts that do not belong in the repo — freezing per-machine removes
+ * both problems at once. What the gate then asserts is exactly the PR
+ * guarantee: THIS change does not move the glass's pixels.
  *
- * THE CONTRACT UNDER TEST (ch02 + ch03 must create it):
- *   prototypes/liquid-glass/lg-harness.mjs — exports `runVisualGate({ mode })` and
- *   `runMutationHarness()` ported from C:/Users/Daniel/lg-qadiff2.mjs and
- *   lg-mutate-test.mjs (external Windows/@playwright absolute paths DROPPED, repo
- *   baseline dir), serving prototypes/liquid-glass/ from a repo-relative server.
- *   The committed baseline PNGs live under a repo-relative dir, frozen on Linux
- *   Chromium (ch02-t3) — NOT on Windows.
- *
- * RED until the harness module + the committed baseline exist. The gate is
- * Chromium-only: under WebKit (which does not refract) it SKIPS cleanly (#7).
- * Failures are explicit assertions about the MISSING harness/baseline — never a
- * bare import crash, never a flaky timeout standing in for red.
+ * The gate is Chromium-only: under WebKit (which does not refract) it SKIPS
+ * cleanly (#7). Failures are explicit assertions — never a bare import crash,
+ * never a flaky timeout standing in for red.
  */
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const HARNESS = resolve(HERE, '../../../../prototypes/liquid-glass/lg-harness.mjs');
-const BASELINE_DIR = resolve(HERE, '../../../../prototypes/liquid-glass/__gate_baseline__');
 
-// Dynamically load the (not-yet-existing) repo harness. A missing module yields a
-// null harness asserted explicitly below, not an uncaught module-not-found.
+type Verdict = {
+  pass: boolean;
+  threshold: { meanDelta: number; maxDelta: number; pctChanged: number };
+  results: { state: string; element: string; fail: boolean }[];
+};
 type Harness = {
-  runVisualGate?: (opts: { mode: 'diff' }) => Promise<{
+  runHermeticGate?: (opts?: { base?: string; runs?: number }) => Promise<{
+    base: string;
+    runs: Verdict[];
     pass: boolean;
-    threshold: { meanDelta: number; maxDelta: number; pctChanged: number };
-    results: { state: string; element: string; fail: boolean }[];
   }>;
-  runMutationHarness?: () => Promise<Record<string, boolean> & { allCaught: boolean }>;
+  resolveGateBase?: () => string;
 };
 
 let harness: Harness | null = null;
@@ -54,11 +49,14 @@ try {
 function needGate() {
   expect(
     harness,
-    `repo harness prototypes/liquid-glass/lg-harness.mjs must exist (ch02 port of lg-qadiff2.mjs, external absolute paths dropped); import failed: ${String(importError)}`,
+    `repo harness prototypes/liquid-glass/lg-harness.mjs must exist; import failed: ${String(importError)}`,
   ).not.toBeNull();
-  const fn = harness?.runVisualGate;
-  expect(typeof fn, 'lg-harness.mjs must export async runVisualGate({mode})').toBe('function');
-  return fn as NonNullable<Harness['runVisualGate']>;
+  const fn = harness?.runHermeticGate;
+  expect(
+    typeof fn,
+    'lg-harness.mjs must export async runHermeticGate({base?, runs?}) — the on-machine freeze-and-diff gate',
+  ).toBe('function');
+  return fn as NonNullable<Harness['runHermeticGate']>;
 }
 
 // ── #7: cross-engine fallback guard — the lens gate is Chromium-ONLY ──────────
@@ -71,23 +69,19 @@ test.describe('liquid-glass visual gate', () => {
     'lens visual gate is Chromium-only — WebKit falls back to frost (no refraction)',
   );
 
-  // ── #6: deterministic pane+panel golden-master vs the frozen baseline ───────
-  test('pane + panel match the frozen baseline across the full state matrix', async () => {
-    const runVisualGate = needGate();
+  // ── #6: hermetic pane+panel gate — head engine vs base engine, one machine ──
+  test('pane + panel match the base-ref engine across the full state matrix', async () => {
+    test.setTimeout(20 * 60_000); // freeze + diff are multi-minute on slow raster hosts
+    const runHermeticGate = needGate();
 
-    // The baseline must be re-frozen FROM THIS engine and committed (ch02-t3,
-    // Linux Chromium). Its absence is the missing behaviour, asserted directly.
-    expect(
-      existsSync(BASELINE_DIR),
-      `committed gate baseline ${BASELINE_DIR} must exist (ch02-t3: re-frozen from THIS engine on Linux Chromium, both #pane and #panel per state)`,
-    ).toBe(true);
+    const { base, runs, pass } = await runHermeticGate({ runs: 1 });
+    expect(base, 'the gate must resolve a base ref to freeze from').toBeTruthy();
+    const verdict = runs[0];
+    expect(verdict, 'hermetic gate must produce a diff verdict').toBeDefined();
+    if (!verdict) return; // narrowed for TS — the expect above already failed
 
-    const verdict = await runVisualGate({ mode: 'diff' });
-
-    // C1 fix: each state diffs ONLY the element(s) it perturbs, so there are no
-    // byte-identical duplicate rows that diff nothing (was ~28 rows, ~30% of them
-    // duplicate PNGs). The de-duplicated matrix is ~17 unique rows; assert a
-    // meaningful floor and that BOTH elements are still represented.
+    // The de-duplicated matrix must stay substantial and cover BOTH elements —
+    // a shrunken matrix silently narrows the gate.
     expect(
       verdict.results.length,
       'gate must diff a substantial, de-duplicated matrix of perturbed rows',
@@ -95,8 +89,6 @@ test.describe('liquid-glass visual gate', () => {
     const elements = new Set(verdict.results.map((r) => r.element));
     expect(elements.has('#pane'), 'gate must capture #pane').toBe(true);
     expect(elements.has('#panel'), 'gate must capture #panel').toBe(true);
-    // Every diffed row must be a DISTINCT state/element coordinate (no row diffed
-    // twice) — the dedup must not collapse the matrix into repeats.
     const rowKeys = verdict.results.map((r) => `${r.state}/${r.element}`);
     expect(new Set(rowKeys).size, 'every diffed row must be unique').toBe(rowKeys.length);
 
@@ -105,20 +97,20 @@ test.describe('liquid-glass visual gate', () => {
 
     const movers = verdict.results.filter((r) => r.fail).map((r) => `${r.state}/${r.element}`);
     expect(
-      verdict.pass,
-      `picture must match the frozen baseline; movers: ${movers.join(', ')}`,
+      pass,
+      `picture must match the base-ref engine (${base}); movers: ${movers.join(', ')}`,
     ).toBe(true);
   });
 
-  // ── #9: determinism — 3 consecutive diff runs stably PASS (warm-up preserved) ─
+  // ── #9: determinism — 3 consecutive diff runs against ONE freeze stably PASS ─
   test('three consecutive gate runs stably pass (determinism, warm-up preserved)', async () => {
-    const runVisualGate = needGate();
-    expect(existsSync(BASELINE_DIR), `committed gate baseline ${BASELINE_DIR} must exist`).toBe(
-      true,
-    );
-    for (let i = 0; i < 3; i++) {
-      const verdict = await runVisualGate({ mode: 'diff' });
+    test.setTimeout(30 * 60_000);
+    const runHermeticGate = needGate();
+    const { runs, pass } = await runHermeticGate({ runs: 3 });
+    expect(runs.length, 'determinism needs 3 diff runs').toBe(3);
+    for (const [i, verdict] of runs.entries()) {
       expect(verdict.pass, `gate run #${i + 1} must pass (stable, no AA/raster flake)`).toBe(true);
     }
+    expect(pass).toBe(true);
   });
 });
