@@ -470,15 +470,16 @@ export class LabTagsInput extends LabElement {
       setOrRemove(inputEl, 'aria-required', aria['aria-required']);
     }
 
-    // Map each chip's getters onto its node by the STABLE key `value`, never the
-    // positional index. Tags reorder/remove, and the machine keys its per-item getters by
-    // the chip value, so honouring that here means a chip never receives another tag's
-    // delete trigger / highlight / edit state. `CSS.escape` neutralises any quote/bracket
-    // in the value so the selector can't break.
+    // Узел каждого чипа ищется ПО ПОЗИЦИИ в отрендеренном списке: render() рисует
+    // .item из того же массива renderedTags в том же цикле обновления, поэтому
+    // соответствие 1:1 гарантировано — в том числе при allow-duplicates, где лукап
+    // по data-value отдавал бы первый матч (второй дубль оставался немым: его ×
+    // мёртв, а первый чип получал чужой индекс). Ключи МАШИНЫ при этом остаются
+    // {index, value} — как их ждёт zag.
+    const itemEls = root.querySelectorAll<HTMLElement>('.item');
     this.renderedTags.forEach((tagValue, index) => {
       const props = { index, value: tagValue };
-      const selector = `.item[data-value="${CSS.escape(tagValue)}"]`;
-      const itemEl = root.querySelector<HTMLElement>(selector);
+      const itemEl = itemEls[index];
       if (!itemEl) return;
       this.machineCtl.spread(itemEl, api.getItemProps(props));
 
