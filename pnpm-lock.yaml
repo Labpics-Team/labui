@@ -79,6 +79,16 @@ importers:
         specifier: 5.7.3
         version: 5.7.3
 
+  packages/colors:
+    dependencies:
+      '@labpics/colors':
+        specifier: 0.1.0
+        version: 0.1.0
+    devDependencies:
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@22.10.5)
+
   packages/colors-stub:
     devDependencies:
       '@types/node':
@@ -940,6 +950,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@labpics/colors@0.1.0':
+    resolution: {integrity: sha512-jEH/+gS1WcHISqbZVu6j2bc5imGukBHoJt5Zjfh5vEbHSKMu/TRYmkUuHbPDnrIZosdI12/T7otlj0Z14cSanQ==}
 
   '@lit-labs/ssr-client@1.1.8':
     resolution: {integrity: sha512-PjGh81oKsoI64m3IDjTqqjhC7dr2uC/o0jrllUb5gRAyp/RlAHxapgJrjq9kWz97faCHLQ8jUlTi6tGm+8fgyA==}
@@ -2557,6 +2570,8 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@labpics/colors@0.1.0': {}
 
   '@lit-labs/ssr-client@1.1.8':
     dependencies:
