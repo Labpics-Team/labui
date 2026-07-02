@@ -1,5 +1,5 @@
 // Золотая сверка поезда: эмиссия ЖИВОГО движка (опубликованный @labpics/colors
-// + паспорт labui.config.json) против стаба contract.css — значение к значению,
+// + паспорт labui.config.json) против замороженного Figma-якоря (figma-reference.css) — значение к значению,
 // light и dark. Это сквозной гейт всей цепочки «Figma-замеры → паспорт →
 // wasm-граница → переменные», через реальный npm-артефакт, а не исходники.
 //
@@ -13,7 +13,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { createLabuiEngine, PASSPORT_FINGERPRINT } from "../engine.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const stubCssPath = join(here, "..", "..", "colors-stub", "contract.css");
+const stubCssPath = join(here, "..", "..", "colors-stub", "figma-reference.css");
 
 /**
  * Исключения сверки — роли, где эмиссия движка НАМЕРЕННО расходится со стабом.
