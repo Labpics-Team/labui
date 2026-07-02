@@ -19,8 +19,10 @@
  * error) / aria-errormessage / aria-required over the machine's input getter — merged,
  * never overwritten (disjoint from the machine's aria-invalid).
  *
- * Chips keyed by stable VALUE (the select/combobox canon): tags reorder/remove, and the
- * machine keys its item ids by value, so a chip never receives another tag's getters.
+ * Идентичность чипа — ИНДЕКС в машинном списке (исключение из канона value-key:
+ * allow-duplicates делает значение неуникальным, дубль-ключи ломали бы реконсиляцию).
+ * Список целиком машинный и строится заново из api.value; пропсы машины несут
+ * {index, value} — чип никогда не получает чужие геттеры.
  *
  * Client Component: a tags input is interactive (tag array + input + keyboard). It renders
  * as a leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
