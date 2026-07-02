@@ -156,7 +156,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-label-danger: var(--lab-label-danger-primary);
   --lab-label-on-accent: var(--lab-label-static-light-primary);
   --lab-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-label-on-neutral: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-label-on-neutral: rgb(16 16 18); /* мост: провизорная, деривация открыта */
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
@@ -326,7 +326,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-label-danger: var(--lab-label-danger-primary);
   --lab-label-on-accent: var(--lab-label-static-light-primary);
   --lab-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-label-on-neutral: rgb(246 248 250); /* мост: Figma-якорь */
+  --lab-label-on-neutral: rgb(246 248 250); /* мост: провизорная, деривация открыта */
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
@@ -497,7 +497,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-label-danger: var(--lab-label-danger-primary);
     --lab-label-on-accent: var(--lab-label-static-light-primary);
     --lab-label-on-danger: var(--lab-label-static-light-primary);
-    --lab-label-on-neutral: rgb(246 248 250); /* мост: Figma-якорь */
+    --lab-label-on-neutral: rgb(246 248 250); /* мост: провизорная, деривация открыта */
     --lab-border-accent: var(--lab-border-brand-strong);
     --lab-border-neutral: var(--lab-border-base);
     --lab-border-danger: var(--lab-border-danger-strong);

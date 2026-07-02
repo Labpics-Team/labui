@@ -49,7 +49,7 @@ function orderedVars(body) {
  * будущей фоновой лестницы (BL-007); движковый солид Neutral(Mid) одинаков в
  * обеих темах — e2e честно ловил несменяемость темы у контролов.
  */
-const PROVISIONAL_BRIDGE = new Set(['--lab-fill-neutral']);
+const PROVISIONAL_BRIDGE = new Set(['--lab-fill-neutral', '--lab-label-on-neutral']);
 
 /**
  * Пара «заливка × лейбл» бейджа — ЗАКОН ЯДРА (crate::pair, движок ≥0.5.0):
