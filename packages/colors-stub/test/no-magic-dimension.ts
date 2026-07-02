@@ -84,10 +84,7 @@ function lengthToPx(raw: string): number | null {
  * (SSOT-артефакт). Цепочки `var()`-алиасов разрешаются до финальной строки.
  */
 export function canonicalTokens(): Map<string, string> {
-  const css = readFileSync(
-    resolve(repoRoot, 'packages/tokens/src/generated/tokens.css'),
-    'utf8',
-  );
+  const css = readFileSync(resolve(repoRoot, 'packages/tokens/src/generated/tokens.css'), 'utf8');
   const raw = new Map<string, string>();
   for (const m of css.matchAll(/(--lab-[a-z0-9-]+):\s*([^;]+);/g)) {
     raw.set(m[1] as string, (m[2] as string).trim());
@@ -142,30 +139,33 @@ function consumeVarGroups(
   const varGroup = /var\(\s*(--[a-z0-9-_]+)\s*(?:,\s*([^()]*))?\)/gi;
   for (let pass = 0; pass < 8; pass++) {
     let replaced = false;
-    current = current.replace(varGroup, (whole, name: string, fallback: string | undefined, offset: number) => {
-      replaced = true;
-      if (fallback !== undefined && name.startsWith('--lab-')) {
-        const canonValue = canon.get(name);
-        if (canonValue === undefined) {
-          out.push({
-            file,
-            line: lineAt(offset),
-            rule: 'fallback-drift',
-            token: whole,
-            detail: `${name} — не сгенерированный размерный токен: литеральному фолбэку не с чем сверяться`,
-          });
-        } else if (!fallbackMatchesCanon(fallback.trim(), canonValue)) {
-          out.push({
-            file,
-            line: lineAt(offset),
-            rule: 'fallback-drift',
-            token: whole,
-            detail: `фолбэк "${fallback.trim()}" дрейфанул от канона "${canonValue}" (${name})`,
-          });
+    current = current.replace(
+      varGroup,
+      (whole, name: string, fallback: string | undefined, offset: number) => {
+        replaced = true;
+        if (fallback !== undefined && name.startsWith('--lab-')) {
+          const canonValue = canon.get(name);
+          if (canonValue === undefined) {
+            out.push({
+              file,
+              line: lineAt(offset),
+              rule: 'fallback-drift',
+              token: whole,
+              detail: `${name} — не сгенерированный размерный токен: литеральному фолбэку не с чем сверяться`,
+            });
+          } else if (!fallbackMatchesCanon(fallback.trim(), canonValue)) {
+            out.push({
+              file,
+              line: lineAt(offset),
+              rule: 'fallback-drift',
+              token: whole,
+              detail: `фолбэк "${fallback.trim()}" дрейфанул от канона "${canonValue}" (${name})`,
+            });
+          }
         }
-      }
-      return ' '.repeat(whole.length); // сохраняем смещения ради номеров строк
-    });
+        return ' '.repeat(whole.length); // сохраняем смещения ради номеров строк
+      },
+    );
     if (!replaced) break;
   }
   return current;
@@ -196,7 +196,8 @@ export function scanDimensionSource(
         line: lineAt(at),
         rule: 'magic-radius',
         token: (m[1] as string).trim(),
-        detail: 'border-radius обязан состоять из ссылок --lab-radius-* / локальных ручек (концентрический calc разрешён), не из литералов',
+        detail:
+          'border-radius обязан состоять из ссылок --lab-radius-* / локальных ручек (концентрический calc разрешён), не из литералов',
       });
     }
   }
@@ -212,7 +213,8 @@ export function scanDimensionSource(
       line: lineAt(m.index ?? 0),
       rule: 'magic-length',
       token: m[0],
-      detail: 'голый литерал длины — потребляй --lab-* токен (литералы живут только в var()-фолбэках; px — только хэйрлайны §4)',
+      detail:
+        'голый литерал длины — потребляй --lab-* токен (литералы живут только в var()-фолбэках; px — только хэйрлайны §4)',
     });
   }
 

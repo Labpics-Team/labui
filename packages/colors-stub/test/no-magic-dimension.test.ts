@@ -85,7 +85,11 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
 
   it('IGNORES §4 hairline px literals (0 / ±1px / ±2px) but flags 3px', () => {
     expect(
-      scanDimensionSource('p.css', '.x { width: 1px; height: 1px; margin: -1px; top: 2px; }', canon),
+      scanDimensionSource(
+        'p.css',
+        '.x { width: 1px; height: 1px; margin: -1px; top: 2px; }',
+        canon,
+      ),
     ).toEqual([]);
     expect(scanDimensionSource('p.css', '.x { width: 3px; }', canon)).toMatchObject([
       { rule: 'magic-length', token: '3px' },
