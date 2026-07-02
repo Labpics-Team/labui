@@ -64,6 +64,18 @@ the drag-seam) with **zero engine JS per frame**: bounds are measured once per
 gesture and the position write is coalesced to one per frame, so the whole
 per-frame cost is the GPU compositing of the quality-locked filter itself.
 
+### Cost model for glass-heavy UIs
+
+Measured (weak-device emulation, animated backdrop): **`--lg-dispersion` is the
+expensive knob** — it roughly doubles a surface's per-frame GPU cost (the
+chromatic fringe is three displacement passes instead of one). Blur, tint,
+saturation and the rim sheen are cheap. In a UI with many live glass surfaces,
+spend dispersion on the hero surfaces and set `--lg-dispersion: 0` on small or
+numerous ones. The knobs cannot be silently cheapened: half-resolution
+displacement maps and 2-pass dispersion were both measured far above the
+visual-noise floor (maxΔ up to 224/250 on high-frequency backdrops) — the
+quality is load-bearing, so the engine never trades it for speed.
+
 ## Files
 
 - `liquid-glass.css` — the material class (tint, specular, volume, fallbacks).

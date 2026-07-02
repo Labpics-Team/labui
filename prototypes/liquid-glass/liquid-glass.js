@@ -63,8 +63,15 @@ const DEFAULTS = {
 /** Detect whether this engine REFRACTS the backdrop via url() filters. Firefox
  *  and Safari PARSE `backdrop-filter: url(#f)` (so CSS.supports is true) but do
  *  NOT render an SVG filter on a backdrop — only Chromium does. Everyone else
- *  keeps the honest blur fallback. */
+ *  keeps the honest blur fallback. The answer cannot change within a page, so
+ *  it is probed once — not re-parsed from the UA on every attach. */
+let refractionProbe = null;
 export function supportsRefraction() {
+  if (refractionProbe === null) refractionProbe = probeRefraction();
+  return refractionProbe;
+}
+
+function probeRefraction() {
   if (typeof CSS === 'undefined' || !CSS.supports) return false;
   if (
     !CSS.supports('backdrop-filter', 'url(#x)') &&
