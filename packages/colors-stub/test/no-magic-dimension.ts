@@ -22,8 +22,8 @@
  * Lit-исходники сперва нормализуются (`litVar('X', 'f')` → `var(X, f)`), так
  * что один сканер читает shadow-близнеца (TS) и React-близнеца (CSS) одинаково.
  */
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { globSync, readFileSync } from 'node:fs';
+import { relative, resolve } from 'node:path';
 import { repoRoot } from './no-literal-colour-fallback.js';
 
 /**
@@ -218,6 +218,42 @@ export function scanDimensionSource(
     });
   }
 
+  return out;
+}
+
+/**
+ * Правило fallback-drift глобально: дрейф кеша от канона — дефект в ЛЮБОМ
+ * файле компонентов, независимо от волны миграции (в отличие от
+ * magic-length/magic-radius, которые требуют перевода на токены и потому
+ * скоупятся списком MIGRATED). Поверхность — стили обоих рендереров.
+ */
+export function fallbackSurfaceFiles(): string[] {
+  const patterns = ['packages/react/src/**/*.css', 'packages/core/src/**/*.ts'];
+  const out: string[] = [];
+  for (const pattern of patterns) {
+    for (const abs of globSync(resolve(repoRoot, pattern))) {
+      const rel = relative(repoRoot, abs).split('\\').join('/');
+      if (rel.includes('/dist/') || rel.includes('/node_modules/')) continue;
+      if (rel.endsWith('.test.ts')) continue;
+      out.push(rel);
+    }
+  }
+  return out.sort((a, b) => a.localeCompare(b));
+}
+
+/** Дрейф фолбэков по всей поверхности компонентов; живое дерево обязано вернуть []. */
+export function scanFallbackDrift(): DimensionViolation[] {
+  const canon = canonicalTokens();
+  const out: DimensionViolation[] = [];
+  for (const rel of fallbackSurfaceFiles()) {
+    const isTs = rel.endsWith('.ts');
+    const source = readFileSync(resolve(repoRoot, rel), 'utf8');
+    const text = stripComments(isTs ? normalizeLit(source) : source, isTs);
+    const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
+    const hits: DimensionViolation[] = [];
+    consumeVarGroups(text, rel, lineAt, hits, canon);
+    out.push(...hits.filter((v) => v.rule === 'fallback-drift'));
+  }
   return out;
 }
 

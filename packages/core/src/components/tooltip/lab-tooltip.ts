@@ -151,7 +151,7 @@ export class LabTooltip extends LabElement {
     }
     :host([size='l']) {
       --_pad-block: ${litVar('--lab-space-sm', '0.5rem')};
-      --_pad-inline: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad-inline: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_max-width: 22rem;
     }
@@ -198,7 +198,7 @@ export class LabTooltip extends LabElement {
       color: ${litVar('--lab-label-inverted-primary')};
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-xs', '1.4')};
+      line-height: ${litVar('--lab-line-height-xs', '1.5')};
       box-shadow: var(--lab-elevation-overlay);
       z-index: ${litVar('--lab-z-tooltip', '1400')};
     }

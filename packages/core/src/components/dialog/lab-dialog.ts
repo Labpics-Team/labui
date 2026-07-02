@@ -91,17 +91,17 @@ let dialogInstanceSeq = 0;
  */
 export const dialogFloatingStyles = css`
   :host {
-    --_pad: ${litVar('--lab-space-lg', '1rem')};
+    --_pad: ${litVar('--lab-space-lg', '1.5rem')};
     --_min-width: 18rem;
     --_max-width: 32rem;
   }
   :host([data-size='s']) {
-    --_pad: ${litVar('--lab-space-md', '0.75rem')};
+    --_pad: ${litVar('--lab-space-md', '1rem')};
     --_min-width: 16rem;
     --_max-width: 24rem;
   }
   :host([data-size='l']) {
-    --_pad: ${litVar('--lab-space-xl', '1.5rem')};
+    --_pad: ${litVar('--lab-space-xl', '2rem')};
     --_min-width: 22rem;
     --_max-width: 40rem;
   }
@@ -125,7 +125,7 @@ export const dialogFloatingStyles = css`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: ${litVar('--lab-space-lg', '1rem')};
+    padding: ${litVar('--lab-space-lg', '1.5rem')};
     z-index: ${litVar('--lab-z-modal', '1200')};
   }
   .positioner[hidden] {
@@ -163,7 +163,7 @@ export const dialogFloatingStyles = css`
     width: 100%;
     min-width: var(--_min-width);
     max-width: var(--_max-width);
-    max-height: calc(100vh - 2 * ${litVar('--lab-space-lg', '1rem')});
+    max-height: calc(100vh - 2 * ${litVar('--lab-space-lg', '1.5rem')});
     overflow: auto;
     padding: var(--_pad);
     border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
@@ -191,7 +191,7 @@ export const dialogFloatingStyles = css`
     color: ${litVar('--lab-label-primary')};
   }
   .description {
-    margin: 0 0 ${litVar('--lab-space-md', '0.75rem')} 0;
+    margin: 0 0 ${litVar('--lab-space-md', '1rem')} 0;
     color: ${litVar('--lab-label-secondary')};
   }
 
@@ -202,8 +202,8 @@ export const dialogFloatingStyles = css`
 
   .close {
     position: absolute;
-    top: ${litVar('--lab-space-md', '0.75rem')};
-    right: ${litVar('--lab-space-md', '0.75rem')};
+    top: ${litVar('--lab-space-md', '1rem')};
+    right: ${litVar('--lab-space-md', '1rem')};
     display: inline-flex;
     align-items: center;
     justify-content: center;

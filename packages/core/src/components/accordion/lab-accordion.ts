@@ -176,7 +176,7 @@ export class LabAccordion extends LabElement {
       display: flex;
       flex-direction: column;
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      border-radius: ${litVar('--lab-radius-card', '0.75rem')};
+      border-radius: ${litVar('--lab-radius-card', '1rem')};
       overflow: hidden;
     }
     :host([orientation='horizontal']) .root {

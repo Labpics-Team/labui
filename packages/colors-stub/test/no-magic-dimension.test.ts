@@ -7,6 +7,7 @@ import {
   fallbackMatchesCanon,
   normalizeLit,
   scanDimensionSource,
+  scanFallbackDrift,
   scanMigrated,
 } from './no-magic-dimension.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
@@ -29,6 +30,20 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     expect(
       violations,
       `dimension-contract violations (consume --lab-size-*/--lab-space-*/--lab-radius-* or the concentric calc):\n${report}`,
+    ).toEqual([]);
+  });
+
+  // ── (1б) Fallback-drift — ГЛОБАЛЬНО (не по волнам): кеш канона обязан быть
+  // честным в любом файле компонентов уже сегодня; найдено 85 протухших
+  // фолбэков, писавшихся против старого канона токенов.
+  it('every component file caches token fallbacks at canonical values (repo-wide)', () => {
+    const violations = scanFallbackDrift();
+    const report = violations
+      .map((v) => `  ${v.file}:${v.line} ${v.token} — ${v.detail}`)
+      .join('\n');
+    expect(
+      violations,
+      `протухшие var()-фолбэки (обнови литерал до канона generated/tokens.css):\n${report}`,
     ).toEqual([]);
   });
 

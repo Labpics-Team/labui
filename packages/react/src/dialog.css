@@ -60,7 +60,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--lab-space-lg, 1rem);
+  padding: var(--lab-space-lg, 1.5rem);
   z-index: var(--lab-z-modal, 1200);
 }
 .lab-dialog-positioner[data-modal] {
@@ -71,7 +71,7 @@
 }
 
 .lab-dialog-content {
-  --_lab-dlg-pad: var(--lab-space-lg, 1rem);
+  --_lab-dlg-pad: var(--lab-space-lg, 1.5rem);
   --_lab-dlg-min-width: 18rem;
   --_lab-dlg-max-width: 32rem;
 
@@ -80,7 +80,7 @@
   width: 100%;
   min-width: var(--_lab-dlg-min-width);
   max-width: var(--_lab-dlg-max-width);
-  max-height: calc(100vh - 2 * var(--lab-space-lg, 1rem));
+  max-height: calc(100vh - 2 * var(--lab-space-lg, 1.5rem));
   overflow: auto;
   padding: var(--_lab-dlg-pad);
   border-radius: var(--lab-radius-lg, 0.5rem);
@@ -101,12 +101,12 @@
 }
 
 .lab-dialog-content[data-size="s"] {
-  --_lab-dlg-pad: var(--lab-space-md, 0.75rem);
+  --_lab-dlg-pad: var(--lab-space-md, 1rem);
   --_lab-dlg-min-width: 16rem;
   --_lab-dlg-max-width: 24rem;
 }
 .lab-dialog-content[data-size="l"] {
-  --_lab-dlg-pad: var(--lab-space-xl, 1.5rem);
+  --_lab-dlg-pad: var(--lab-space-xl, 2rem);
   --_lab-dlg-min-width: 22rem;
   --_lab-dlg-max-width: 40rem;
 }
@@ -119,7 +119,7 @@
   color: var(--lab-label-primary);
 }
 .lab-dialog-description {
-  margin: 0 0 var(--lab-space-md, 0.75rem) 0;
+  margin: 0 0 var(--lab-space-md, 1rem) 0;
   color: var(--lab-label-secondary);
 }
 
@@ -129,8 +129,8 @@
 
 .lab-dialog-close {
   position: absolute;
-  top: var(--lab-space-md, 0.75rem);
-  right: var(--lab-space-md, 0.75rem);
+  top: var(--lab-space-md, 1rem);
+  right: var(--lab-space-md, 1rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -173,7 +173,7 @@ export class LabMenu extends LabElement {
   static override styles = css`
     :host {
       --_h: 2.25rem;
-      --_pad-x: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
       display: inline-flex;

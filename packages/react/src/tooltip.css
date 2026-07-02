@@ -55,7 +55,7 @@
   color: var(--lab-label-inverted-primary);
   font: inherit;
   font-size: var(--_lab-tt-font);
-  line-height: var(--lab-line-height-xs, 1.4);
+  line-height: var(--lab-line-height-xs, 1.5);
   box-shadow: var(--lab-elevation-overlay);
   z-index: var(--lab-z-tooltip, 1400);
 }
@@ -71,7 +71,7 @@
 }
 .lab-tooltip-content[data-size="l"] {
   --_lab-tt-pad-block: var(--lab-space-sm, 0.5rem);
-  --_lab-tt-pad-inline: var(--lab-space-md, 0.75rem);
+  --_lab-tt-pad-inline: var(--lab-space-md, 1rem);
   --_lab-tt-font: var(--lab-font-size-md, 1rem);
   --_lab-tt-max-width: 22rem;
 }

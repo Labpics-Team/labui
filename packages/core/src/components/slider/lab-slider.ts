@@ -223,10 +223,10 @@ export class LabSlider extends LabElement {
          fallback so the control is usable before tokens load; colour roles never do. */
       --_track-thickness: 0.375rem;
       --_thumb: 1.125rem;
-      --_gap: ${litVar('--lab-space-xs', '0.375rem')};
+      --_gap: ${litVar('--lab-space-xs', '0.25rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_help-font: ${litVar('--lab-font-size-xxs', '0.7222rem')};
+      --_help-font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
       --_line: ${litVar('--lab-line-height-md', '1.5')};
 
       display: block;

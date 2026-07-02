@@ -9,7 +9,9 @@
  *  - Everything is rem-relative; interface scaling is root font-size — the code
  *    embodiment of the Figma Unit modes (75/100/116.6/133.3% scale the whole
  *    ladder; see docs/dimension-contract.md).
- *  - Every scale carries an explicit, correct zero token.
+ *  - Every scale carries an explicit, correct zero token — except `sizes`:
+ *    контрол нулевого размера вырожден, нулевая ступень была бы ловушкой
+ *    (см. SizesConfig).
  *  - Three languages: primitives -> semantic aliases -> (components consume
  *    semantics only). This file defines primitives and the alias mechanism.
  */
