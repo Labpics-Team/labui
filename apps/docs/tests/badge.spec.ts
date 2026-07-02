@@ -43,6 +43,10 @@ test('visual parity: Lit and React resolve the same surface + label colours', as
     'success-tinted',
     'danger-fill',
     'neutral-tinted',
+    // Статики — дыра паритета из ревью поезда: расхождение близнецов на
+    // tinted static прошло бы зелёным без этих строк.
+    'static-dark-fill',
+    'static-light-tinted',
   ] as const) {
     const lit = litBadge(page, `lit-${variant}`);
     const react = reactBadge(page, `react-${variant}`);

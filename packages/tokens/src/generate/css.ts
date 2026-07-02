@@ -48,18 +48,21 @@ function header(): string {
 
 /**
  * Форма угла для light-DOM поверхностей (стекло/карточки демо): corner-shape
- * не наследуется, поэтому применяется универсально — на элементах без радиуса
- * это no-op, слои на border-radius: inherit держат ту же форму, что клип
- * панели. Внутри shadow DOM то же правило доставляет LabElement
- * (finalizeStyles) — документные правила shadow-границу не пересекают.
+ * не наследуется, поэтому внутри скоупа правило универсально — на элементах
+ * без радиуса это no-op, слои на border-radius: inherit держат ту же форму,
+ * что клип панели. Скоуп .lab-scope — opt-in ПОТРЕБИТЕЛЯ (класс на корне его
+ * приложения, обычно <html>): дизайн-система не красит чужой DOM хоста.
+ * Внутри shadow DOM компонентов форму доставляет LabElement (finalizeStyles)
+ * независимо от скоупа — документные правила shadow-границу не пересекают.
  * Без поддержки (не Chromium 139+) свойство игнорируется — обычный радиус.
  */
 function cornerShapeRule(): string {
   return [
-    '/* Corner shape — superellipse curvature over any border-radius. */',
-    '*,',
-    '*::before,',
-    '*::after {',
+    '/* Corner shape — superellipse curvature over any border-radius (opt-in scope). */',
+    ':where(.lab-scope),',
+    ':where(.lab-scope) *,',
+    ':where(.lab-scope) *::before,',
+    ':where(.lab-scope) *::after {',
     '  corner-shape: superellipse(var(--lab-radius-corner-k, 1));',
     '}',
     '',

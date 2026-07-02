@@ -82,4 +82,7 @@ async function main(): Promise<void> {
   repaint();
 }
 
-void main();
+main().catch((err) => {
+  // Честная ошибка вместо вечной «загрузки…»: e2e-boot-гейт увидит текст.
+  status.value = `ошибка движка: ${err instanceof Error ? err.message : String(err)}`;
+});

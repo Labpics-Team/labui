@@ -118,9 +118,10 @@
   --lab-focus-ring-offset: 0.125rem;
 }
 
-/* Corner shape — superellipse curvature over any border-radius. */
-*,
-*::before,
-*::after {
+/* Corner shape — superellipse curvature over any border-radius (opt-in scope). */
+:where(.lab-scope),
+:where(.lab-scope) *,
+:where(.lab-scope) *::before,
+:where(.lab-scope) *::after {
   corner-shape: superellipse(var(--lab-radius-corner-k, 1));
 }

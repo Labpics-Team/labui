@@ -164,13 +164,16 @@ export class LabBadge extends LabElement {
       background-color: ${litVar('--lab-fill-info-primary')};
       color: ${litVar('--lab-label-info-primary')};
     }
+    /* Tinted static: полупрозрачный семейный тинт — лейбл СЕМЕЙНЫЙ примитив
+       (канон Figma и React-близнеца); перекрёстные label-on-* — только для
+       НЕПРОЗРАЧНЫХ fill-заливок закона пары. */
     :host([type='tinted'][color='static-dark']) .badge {
       background-color: ${litVar('--lab-fill-static-dark-primary')};
-      color: ${litVar('--lab-badge-label-on-static-light')};
+      color: ${litVar('--lab-label-static-dark-primary')};
     }
     :host([type='tinted'][color='static-light']) .badge {
       background-color: ${litVar('--lab-fill-static-light-primary')};
-      color: ${litVar('--lab-badge-label-on-static-dark')};
+      color: ${litVar('--lab-label-static-light-primary')};
     }
 
     /* ── disabled: a dimmed, non-interactive presentation ──────────────────── */
