@@ -11,6 +11,8 @@ import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { createLabuiEngine, PASSPORT_FINGERPRINT } from "../engine.mjs";
+import passport from "../labui.config.json" with { type: "json" };
+import { M_LMS_SRGB, M_OKLAB_LMS, gam, mulv } from "../oklab-math.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const stubCssPath = join(here, "..", "..", "colors-stub", "figma-reference.css");
@@ -88,22 +90,6 @@ function parseScope(css, scopePattern) {
   return vars;
 }
 
-// Матрицы Oklab — дословно из движка (crates/labcolors-core/src/spaces/oklab.rs):
-// сверка обязана реконструировать oklch тем же путём, что делает браузер.
-const OKLAB_TO_LMS = [
-  [1.0, 0.3963377774, 0.2158037573],
-  [1.0, -0.1055613458, -0.0638541728],
-  [1.0, -0.0894841775, -1.291485548],
-];
-const LMS_TO_SRGB = [
-  [4.0767416621, -3.3077115913, 0.2309699292],
-  [-1.2684380046, 2.6097574011, -0.3413193965],
-  [-0.0041960863, -0.7034186147, 1.707614701],
-];
-const mul = (m, v) => m.map((r) => r[0] * v[0] + r[1] * v[1] + r[2] * v[2]);
-const gamma = (v) =>
-  v > 0.0031308 ? 1.055 * v ** (1 / 2.4) - 0.055 : 12.92 * v;
-
 /** oklch(L% C H [/ A]) → те же 8-битные байты, что печатал бы hex движка. */
 function oklchToRgbParts(css) {
   const inner = css.slice("oklch(".length, -1);
@@ -112,11 +98,11 @@ function oklchToRgbParts(css) {
   const L = Number.parseFloat(lRaw) / 100;
   const C = Number.parseFloat(cRaw);
   const H = (Number.parseFloat(hRaw) * Math.PI) / 180;
-  const lms = mul(OKLAB_TO_LMS, [L, C * Math.cos(H), C * Math.sin(H)]).map(
+  const lms = mulv(M_OKLAB_LMS, [L, C * Math.cos(H), C * Math.sin(H)]).map(
     (x) => x ** 3,
   );
-  const rgb = mul(LMS_TO_SRGB, lms).map((x) =>
-    Math.min(255, Math.max(0, Math.round(gamma(x) * 255))),
+  const rgb = mulv(M_LMS_SRGB, lms).map((x) =>
+    Math.min(255, Math.max(0, Math.round(gam(x) * 255))),
   );
   return { rgb, alpha: alphaPart ? Number.parseFloat(alphaPart) : null };
 }
@@ -159,8 +145,13 @@ describe("золотая сверка: живой движок против ст
   });
 
   for (const [theme, scope, bg] of [
-    ["light", /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m, "#FFFFFF"],
-    ["dark", /^\[data-theme="dark"\]\s*\{/m, "#101012"],
+    // Фоны резолва — якоря нейтрали паспорта, не литералы.
+    [
+      "light",
+      /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m,
+      passport.neutral.anchors.light,
+    ],
+    ["dark", /^\[data-theme="dark"\]\s*\{/m, passport.neutral.anchors.dark],
   ]) {
     // Боевой гейт поезда: каждое значение стаба воспроизведено движком или
     // исключено ЗАКОНОМ (список исключений с причинами выше). Новое
