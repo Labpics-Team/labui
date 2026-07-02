@@ -41,10 +41,10 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-label-danger-quaternary: oklch(65.42146% 0.232135 28.659 / 0.322);
   --lab-label-danger-secondary: oklch(65.42146% 0.232135 28.659 / 0.722);
   --lab-label-danger-tertiary: oklch(65.42146% 0.232135 28.659 / 0.522);
-  --lab-label-info-primary: oklch(64.03903% 0.193503 278.130 / 1);
-  --lab-label-info-quaternary: oklch(64.03903% 0.193503 278.130 / 0.322);
-  --lab-label-info-secondary: oklch(64.03903% 0.193503 278.130 / 0.722);
-  --lab-label-info-tertiary: oklch(64.03903% 0.193503 278.130 / 0.522);
+  --lab-label-info-primary: oklch(64.03903% 0.193503 278.13 / 1);
+  --lab-label-info-quaternary: oklch(64.03903% 0.193503 278.13 / 0.322);
+  --lab-label-info-secondary: oklch(64.03903% 0.193503 278.13 / 0.722);
+  --lab-label-info-tertiary: oklch(64.03903% 0.193503 278.13 / 0.522);
   --lab-label-inverted-primary: rgb(255 255 255); /* мост: Figma-якорь */
   --lab-label-inverted-quaternary: rgb(176 176 185 / 0.322); /* мост: Figma-якорь */
   --lab-label-inverted-secondary: rgb(176 176 185 / 0.722); /* мост: Figma-якорь */
@@ -77,10 +77,10 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-fill-danger-quaternary: oklch(65.42146% 0.232135 28.659 / 0.02);
   --lab-fill-danger-secondary: oklch(65.42146% 0.232135 28.659 / 0.078);
   --lab-fill-danger-tertiary: oklch(65.42146% 0.232135 28.659 / 0.039);
-  --lab-fill-info-primary: oklch(64.03903% 0.193503 278.130 / 0.122);
-  --lab-fill-info-quaternary: oklch(64.03903% 0.193503 278.130 / 0.02);
-  --lab-fill-info-secondary: oklch(64.03903% 0.193503 278.130 / 0.078);
-  --lab-fill-info-tertiary: oklch(64.03903% 0.193503 278.130 / 0.039);
+  --lab-fill-info-primary: oklch(64.03903% 0.193503 278.13 / 0.122);
+  --lab-fill-info-quaternary: oklch(64.03903% 0.193503 278.13 / 0.02);
+  --lab-fill-info-secondary: oklch(64.03903% 0.193503 278.13 / 0.078);
+  --lab-fill-info-tertiary: oklch(64.03903% 0.193503 278.13 / 0.039);
   --lab-fill-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
   --lab-fill-primary: oklch(57.53363% 0.012136 286.012 / 0.2);
   --lab-fill-quaternary: oklch(57.53363% 0.012136 286.012 / 0.078);
@@ -108,9 +108,9 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-border-danger-base: oklch(65.42146% 0.232135 28.659 / 0.2);
   --lab-border-danger-soft: oklch(65.42146% 0.232135 28.659 / 0.122);
   --lab-border-danger-strong: oklch(65.42146% 0.232135 28.659 / 1);
-  --lab-border-info-base: oklch(64.03903% 0.193503 278.130 / 0.2);
-  --lab-border-info-soft: oklch(64.03903% 0.193503 278.130 / 0.122);
-  --lab-border-info-strong: oklch(64.03903% 0.193503 278.130 / 1);
+  --lab-border-info-base: oklch(64.03903% 0.193503 278.13 / 0.2);
+  --lab-border-info-soft: oklch(64.03903% 0.193503 278.13 / 0.122);
+  --lab-border-info-strong: oklch(64.03903% 0.193503 278.13 / 1);
   --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.161);
   --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
   --lab-border-inverted: rgb(255 255 255); /* мост: Figma-якорь */
@@ -135,7 +135,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424 / 0.522);
   --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659 / 0.522);
   --lab-fx-glow-inverted: oklch(75.99692% 0.012723 286.093 / 0.522);
-  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876 / 0.522);
+  --lab-fx-glow-neutral: oklch(100.00000% 0.0 89.876 / 0.522);
   --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607 / 0.522);
   --lab-fx-shadow-ambient: oklch(17.39406% 0.004094 285.967 / 0.02);
   --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.122);
@@ -165,17 +165,17 @@ oklch); строки «мост: Figma-якорь» — входы и компо
      лейбл — nested resolve на выведенной заливке. */
   --lab-badge-fill-brand: oklch(57.10674% 0.215668 258.445 / 1);
   --lab-badge-label-on-brand: oklch(99.38517% 0.002854 264.542);
-  --lab-badge-fill-danger: oklch(59.02521% 0.231590 28.749 / 1);
+  --lab-badge-fill-danger: oklch(59.02521% 0.23159 28.749 / 1);
   --lab-badge-label-on-danger: oklch(99.19108% 0.003956 286.327);
   --lab-badge-fill-warning: oklch(78.56796% 0.171718 68.607 / 1);
   --lab-badge-label-on-warning: oklch(11.77179% 0.011359 284.521);
   --lab-badge-fill-success: oklch(73.03242% 0.194381 147.444 / 1);
   --lab-badge-label-on-success: oklch(10.99109% 0.012707 284.115);
-  --lab-badge-fill-info: oklch(57.83923% 0.194680 278.084 / 1);
+  --lab-badge-fill-info: oklch(57.83923% 0.19468 278.084 / 1);
   --lab-badge-label-on-info: oklch(99.38517% 0.002854 264.542);
   --lab-badge-fill-static-dark: oklch(17.39406% 0.004094 285.967 / 1);
   --lab-badge-label-on-static-dark: oklch(96.40284% 0.013312 286.147);
-  --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
+  --lab-badge-fill-static-light: oklch(100.00000% 0.0 89.876 / 1);
   --lab-badge-label-on-static-light: oklch(14.79140% 0.012878 284.717);
 }
 
@@ -203,18 +203,18 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-bg-overlay-ghost: rgb(16 16 18 / 0); /* мост: Figma-якорь */
   --lab-bg-overlay-soft: rgb(16 16 18 / 0.2); /* мост: Figma-якорь */
   --lab-bg-overlay-strong: rgb(16 16 18 / 0.8); /* мост: Figma-якорь */
-  --lab-label-brand-primary: oklch(66.12059% 0.180585 259.650 / 1);
-  --lab-label-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.322);
-  --lab-label-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.722);
-  --lab-label-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.522);
+  --lab-label-brand-primary: oklch(66.12059% 0.180585 259.65 / 1);
+  --lab-label-brand-quaternary: oklch(66.12059% 0.180585 259.65 / 0.322);
+  --lab-label-brand-secondary: oklch(66.12059% 0.180585 259.65 / 0.722);
+  --lab-label-brand-tertiary: oklch(66.12059% 0.180585 259.65 / 0.522);
   --lab-label-danger-primary: oklch(65.44304% 0.231674 26.474 / 1);
   --lab-label-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.322);
   --lab-label-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.722);
   --lab-label-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.522);
-  --lab-label-info-primary: oklch(68.10386% 0.168552 282.890 / 1);
-  --lab-label-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.322);
-  --lab-label-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.722);
-  --lab-label-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.522);
+  --lab-label-info-primary: oklch(68.10386% 0.168552 282.89 / 1);
+  --lab-label-info-quaternary: oklch(68.10386% 0.168552 282.89 / 0.322);
+  --lab-label-info-secondary: oklch(68.10386% 0.168552 282.89 / 0.722);
+  --lab-label-info-tertiary: oklch(68.10386% 0.168552 282.89 / 0.522);
   --lab-label-inverted-primary: rgb(16 16 18); /* мост: Figma-якорь */
   --lab-label-inverted-quaternary: rgb(60 60 67 / 0.322); /* мост: Figma-якорь */
   --lab-label-inverted-secondary: rgb(60 60 67 / 0.722); /* мост: Figma-якорь */
@@ -239,18 +239,18 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-label-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.322);
   --lab-label-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.722);
   --lab-label-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.522);
-  --lab-fill-brand-primary: oklch(66.12059% 0.180585 259.650 / 0.122);
-  --lab-fill-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.02);
-  --lab-fill-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.078);
-  --lab-fill-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.039);
+  --lab-fill-brand-primary: oklch(66.12059% 0.180585 259.65 / 0.122);
+  --lab-fill-brand-quaternary: oklch(66.12059% 0.180585 259.65 / 0.02);
+  --lab-fill-brand-secondary: oklch(66.12059% 0.180585 259.65 / 0.078);
+  --lab-fill-brand-tertiary: oklch(66.12059% 0.180585 259.65 / 0.039);
   --lab-fill-danger-primary: oklch(65.44304% 0.231674 26.474 / 0.122);
   --lab-fill-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.02);
   --lab-fill-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.078);
   --lab-fill-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.039);
-  --lab-fill-info-primary: oklch(68.10386% 0.168552 282.890 / 0.122);
-  --lab-fill-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.02);
-  --lab-fill-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.078);
-  --lab-fill-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.039);
+  --lab-fill-info-primary: oklch(68.10386% 0.168552 282.89 / 0.122);
+  --lab-fill-info-quaternary: oklch(68.10386% 0.168552 282.89 / 0.02);
+  --lab-fill-info-secondary: oklch(68.10386% 0.168552 282.89 / 0.078);
+  --lab-fill-info-tertiary: oklch(68.10386% 0.168552 282.89 / 0.039);
   --lab-fill-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
   --lab-fill-primary: oklch(57.53363% 0.012136 286.012 / 0.361);
   --lab-fill-quaternary: oklch(57.53363% 0.012136 286.012 / 0.161);
@@ -272,15 +272,15 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-fill-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.02);
   --lab-fill-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.078);
   --lab-fill-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.039);
-  --lab-border-brand-base: oklch(66.12059% 0.180585 259.650 / 0.2);
-  --lab-border-brand-soft: oklch(66.12059% 0.180585 259.650 / 0.122);
-  --lab-border-brand-strong: oklch(66.12059% 0.180585 259.650 / 1);
+  --lab-border-brand-base: oklch(66.12059% 0.180585 259.65 / 0.2);
+  --lab-border-brand-soft: oklch(66.12059% 0.180585 259.65 / 0.122);
+  --lab-border-brand-strong: oklch(66.12059% 0.180585 259.65 / 1);
   --lab-border-danger-base: oklch(65.44304% 0.231674 26.474 / 0.2);
   --lab-border-danger-soft: oklch(65.44304% 0.231674 26.474 / 0.122);
   --lab-border-danger-strong: oklch(65.44304% 0.231674 26.474 / 1);
-  --lab-border-info-base: oklch(68.10386% 0.168552 282.890 / 0.2);
-  --lab-border-info-soft: oklch(68.10386% 0.168552 282.890 / 0.122);
-  --lab-border-info-strong: oklch(68.10386% 0.168552 282.890 / 1);
+  --lab-border-info-base: oklch(68.10386% 0.168552 282.89 / 0.2);
+  --lab-border-info-soft: oklch(68.10386% 0.168552 282.89 / 0.122);
+  --lab-border-info-strong: oklch(68.10386% 0.168552 282.89 / 1);
   --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.2);
   --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
   --lab-border-inverted: rgb(16 16 18); /* мост: Figma-якорь */
@@ -298,14 +298,14 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-border-warning-base: oklch(75.71376% 0.176429 59.823 / 0.2);
   --lab-border-warning-soft: oklch(75.71376% 0.176429 59.823 / 0.122);
   --lab-border-warning-strong: oklch(75.71376% 0.176429 59.823 / 1);
-  --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.650 / 1);
+  --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.65 / 1);
   --lab-fx-focus-ring-danger: oklch(65.44304% 0.231674 26.474 / 1);
   --lab-fx-focus-ring-neutral: oklch(97.81762% 0.003418 247.858 / 1);
   --lab-fx-focus-ring-warning: oklch(75.71376% 0.176429 59.823 / 1);
-  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650 / 0.522);
+  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.65 / 0.522);
   --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474 / 0.522);
   --lab-fx-glow-inverted: oklch(35.88485% 0.011976 285.781 / 0.522);
-  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876 / 0.522);
+  --lab-fx-glow-neutral: oklch(100.00000% 0.0 89.876 / 0.522);
   --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823 / 0.522);
   --lab-fx-shadow-ambient: oklch(17.39406% 0.004094 285.967 / 0.039);
   --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.2);
@@ -333,7 +333,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
   /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),
      лейбл — nested resolve на выведенной заливке. */
-  --lab-badge-fill-brand: oklch(56.72684% 0.181540 259.780 / 1);
+  --lab-badge-fill-brand: oklch(56.72684% 0.18154 259.78 / 1);
   --lab-badge-label-on-brand: oklch(99.11546% 0.004112 271.371);
   --lab-badge-fill-danger: oklch(59.03730% 0.231241 26.548 / 1);
   --lab-badge-label-on-danger: oklch(99.19108% 0.003956 286.327);
@@ -345,7 +345,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-badge-label-on-info: oklch(99.19108% 0.003956 286.327);
   --lab-badge-fill-static-dark: oklch(17.39406% 0.004094 285.967 / 1);
   --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
-  --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
+  --lab-badge-fill-static-light: oklch(100.00000% 0.0 89.876 / 1);
   --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
 }
 
@@ -374,18 +374,18 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-bg-overlay-ghost: rgb(16 16 18 / 0); /* мост: Figma-якорь */
     --lab-bg-overlay-soft: rgb(16 16 18 / 0.2); /* мост: Figma-якорь */
     --lab-bg-overlay-strong: rgb(16 16 18 / 0.8); /* мост: Figma-якорь */
-    --lab-label-brand-primary: oklch(66.12059% 0.180585 259.650 / 1);
-    --lab-label-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.322);
-    --lab-label-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.722);
-    --lab-label-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.522);
+    --lab-label-brand-primary: oklch(66.12059% 0.180585 259.65 / 1);
+    --lab-label-brand-quaternary: oklch(66.12059% 0.180585 259.65 / 0.322);
+    --lab-label-brand-secondary: oklch(66.12059% 0.180585 259.65 / 0.722);
+    --lab-label-brand-tertiary: oklch(66.12059% 0.180585 259.65 / 0.522);
     --lab-label-danger-primary: oklch(65.44304% 0.231674 26.474 / 1);
     --lab-label-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.322);
     --lab-label-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.722);
     --lab-label-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.522);
-    --lab-label-info-primary: oklch(68.10386% 0.168552 282.890 / 1);
-    --lab-label-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.322);
-    --lab-label-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.722);
-    --lab-label-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.522);
+    --lab-label-info-primary: oklch(68.10386% 0.168552 282.89 / 1);
+    --lab-label-info-quaternary: oklch(68.10386% 0.168552 282.89 / 0.322);
+    --lab-label-info-secondary: oklch(68.10386% 0.168552 282.89 / 0.722);
+    --lab-label-info-tertiary: oklch(68.10386% 0.168552 282.89 / 0.522);
     --lab-label-inverted-primary: rgb(16 16 18); /* мост: Figma-якорь */
     --lab-label-inverted-quaternary: rgb(60 60 67 / 0.322); /* мост: Figma-якорь */
     --lab-label-inverted-secondary: rgb(60 60 67 / 0.722); /* мост: Figma-якорь */
@@ -410,18 +410,18 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-label-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.322);
     --lab-label-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.722);
     --lab-label-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.522);
-    --lab-fill-brand-primary: oklch(66.12059% 0.180585 259.650 / 0.122);
-    --lab-fill-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.02);
-    --lab-fill-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.078);
-    --lab-fill-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.039);
+    --lab-fill-brand-primary: oklch(66.12059% 0.180585 259.65 / 0.122);
+    --lab-fill-brand-quaternary: oklch(66.12059% 0.180585 259.65 / 0.02);
+    --lab-fill-brand-secondary: oklch(66.12059% 0.180585 259.65 / 0.078);
+    --lab-fill-brand-tertiary: oklch(66.12059% 0.180585 259.65 / 0.039);
     --lab-fill-danger-primary: oklch(65.44304% 0.231674 26.474 / 0.122);
     --lab-fill-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.02);
     --lab-fill-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.078);
     --lab-fill-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.039);
-    --lab-fill-info-primary: oklch(68.10386% 0.168552 282.890 / 0.122);
-    --lab-fill-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.02);
-    --lab-fill-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.078);
-    --lab-fill-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.039);
+    --lab-fill-info-primary: oklch(68.10386% 0.168552 282.89 / 0.122);
+    --lab-fill-info-quaternary: oklch(68.10386% 0.168552 282.89 / 0.02);
+    --lab-fill-info-secondary: oklch(68.10386% 0.168552 282.89 / 0.078);
+    --lab-fill-info-tertiary: oklch(68.10386% 0.168552 282.89 / 0.039);
     --lab-fill-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
     --lab-fill-primary: oklch(57.53363% 0.012136 286.012 / 0.361);
     --lab-fill-quaternary: oklch(57.53363% 0.012136 286.012 / 0.161);
@@ -443,15 +443,15 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-fill-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.02);
     --lab-fill-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.078);
     --lab-fill-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.039);
-    --lab-border-brand-base: oklch(66.12059% 0.180585 259.650 / 0.2);
-    --lab-border-brand-soft: oklch(66.12059% 0.180585 259.650 / 0.122);
-    --lab-border-brand-strong: oklch(66.12059% 0.180585 259.650 / 1);
+    --lab-border-brand-base: oklch(66.12059% 0.180585 259.65 / 0.2);
+    --lab-border-brand-soft: oklch(66.12059% 0.180585 259.65 / 0.122);
+    --lab-border-brand-strong: oklch(66.12059% 0.180585 259.65 / 1);
     --lab-border-danger-base: oklch(65.44304% 0.231674 26.474 / 0.2);
     --lab-border-danger-soft: oklch(65.44304% 0.231674 26.474 / 0.122);
     --lab-border-danger-strong: oklch(65.44304% 0.231674 26.474 / 1);
-    --lab-border-info-base: oklch(68.10386% 0.168552 282.890 / 0.2);
-    --lab-border-info-soft: oklch(68.10386% 0.168552 282.890 / 0.122);
-    --lab-border-info-strong: oklch(68.10386% 0.168552 282.890 / 1);
+    --lab-border-info-base: oklch(68.10386% 0.168552 282.89 / 0.2);
+    --lab-border-info-soft: oklch(68.10386% 0.168552 282.89 / 0.122);
+    --lab-border-info-strong: oklch(68.10386% 0.168552 282.89 / 1);
     --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.2);
     --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
     --lab-border-inverted: rgb(16 16 18); /* мост: Figma-якорь */
@@ -469,14 +469,14 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-border-warning-base: oklch(75.71376% 0.176429 59.823 / 0.2);
     --lab-border-warning-soft: oklch(75.71376% 0.176429 59.823 / 0.122);
     --lab-border-warning-strong: oklch(75.71376% 0.176429 59.823 / 1);
-    --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.650 / 1);
+    --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.65 / 1);
     --lab-fx-focus-ring-danger: oklch(65.44304% 0.231674 26.474 / 1);
     --lab-fx-focus-ring-neutral: oklch(97.81762% 0.003418 247.858 / 1);
     --lab-fx-focus-ring-warning: oklch(75.71376% 0.176429 59.823 / 1);
-    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650 / 0.522);
+    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.65 / 0.522);
     --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474 / 0.522);
     --lab-fx-glow-inverted: oklch(35.88485% 0.011976 285.781 / 0.522);
-    --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876 / 0.522);
+    --lab-fx-glow-neutral: oklch(100.00000% 0.0 89.876 / 0.522);
     --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823 / 0.522);
     --lab-fx-shadow-ambient: oklch(17.39406% 0.004094 285.967 / 0.039);
     --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.2);
@@ -504,7 +504,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-border-focus: var(--lab-fx-focus-ring-brand);
     /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),
        лейбл — nested resolve на выведенной заливке. */
-    --lab-badge-fill-brand: oklch(56.72684% 0.181540 259.780 / 1);
+    --lab-badge-fill-brand: oklch(56.72684% 0.18154 259.78 / 1);
     --lab-badge-label-on-brand: oklch(99.11546% 0.004112 271.371);
     --lab-badge-fill-danger: oklch(59.03730% 0.231241 26.548 / 1);
     --lab-badge-label-on-danger: oklch(99.19108% 0.003956 286.327);
@@ -516,7 +516,7 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-badge-label-on-info: oklch(99.19108% 0.003956 286.327);
     --lab-badge-fill-static-dark: oklch(17.39406% 0.004094 285.967 / 1);
     --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
-    --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
+    --lab-badge-fill-static-light: oklch(100.00000% 0.0 89.876 / 1);
     --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
   }
 }
