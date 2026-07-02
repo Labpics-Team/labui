@@ -82,8 +82,8 @@ importers:
   packages/colors:
     dependencies:
       '@labpics/colors':
-        specifier: 0.3.0
-        version: 0.3.0
+        specifier: 0.4.0
+        version: 0.4.0
     devDependencies:
       vitest:
         specifier: 2.1.8
@@ -951,8 +951,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@labpics/colors@0.3.0':
-    resolution: {integrity: sha512-+nZjqx3dXIGgB4Xowwt0rHEUrU062/9ONIHEROGXztDrE12nM5qQd7zyaA/17KU/UzzUbRzjmjg/8dJzg7YBoA==}
+  '@labpics/colors@0.4.0':
+    resolution: {integrity: sha512-xnovCgsi3QwplO4zubl84MxHp7tjqzqzOVUnNnPN+6GcfPGNgHK1wlA2aywf33JvdSt/mnbnVMCvth29ok/YoQ==}
 
   '@lit-labs/ssr-client@1.1.8':
     resolution: {integrity: sha512-PjGh81oKsoI64m3IDjTqqjhC7dr2uC/o0jrllUb5gRAyp/RlAHxapgJrjq9kWz97faCHLQ8jUlTi6tGm+8fgyA==}
@@ -2571,7 +2571,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@labpics/colors@0.3.0': {}
+  '@labpics/colors@0.4.0': {}
 
   '@lit-labs/ssr-client@1.1.8':
     dependencies:
