@@ -37,7 +37,7 @@ import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
-import { dirname, extname, join, resolve, sep } from 'node:path';
+import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url)); // prototypes/liquid-glass
@@ -916,8 +916,9 @@ export async function runVisualGate({ mode = 'diff', dir, ref } = {}) {
 
 /** The git ref whose engine is the pixel reference. CI passes the PR base (or
  *  the pre-push sha) via LG_GATE_BASE; locally the branch upstream is exactly
- *  "what this branch will merge into". HEAD (= last commit) is the last-resort
- *  fallback — it still catches uncommitted pixel movement. */
+ *  "what this branch will merge into". There is deliberately NO silent
+ *  fallback: freezing HEAD and diffing the same tree is a gate that can never
+ *  go red — loud failure beats an evergreen no-op. */
 export function resolveGateBase() {
   if (process.env.LG_GATE_BASE) return process.env.LG_GATE_BASE;
   try {
@@ -928,21 +929,30 @@ export function resolveGateBase() {
     ).trim();
     if (up) return up;
   } catch {
-    // no upstream configured — fall through
+    // no upstream configured — fall through to the loud error below
   }
-  return 'HEAD';
+  throw new Error(
+    'resolveGateBase: cannot resolve a pixel-reference base — set LG_GATE_BASE ' +
+      '(e.g. origin/feat/liquid-glass) or configure an upstream for this branch. ' +
+      'Refusing to fall back to HEAD: diffing a tree against itself is a gate ' +
+      'that can never fail.',
+  );
 }
 
 /** Check out `base` into a throwaway git worktree, hand its engine dir to `fn`,
  *  and always clean the worktree up — the repo itself is never touched. */
 async function withBaseEngine(base, fn) {
   const work = await mkdtemp(join(tmpdir(), 'lg-gate-'));
-  const wt = join(work, 'wt');
-  execFileSync('git', ['worktree', 'add', '--detach', '--force', wt, base], {
-    cwd: REPO_ROOT,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  // git derives the worktree's admin id from the path basename — suffix it with
+  // the unique mkdtemp name so concurrent gates never race for the same id.
+  const wt = join(work, `wt-${basename(work)}`);
+  let added = false;
   try {
+    execFileSync('git', ['worktree', 'add', '--detach', '--force', wt, base], {
+      cwd: REPO_ROOT,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    added = true;
     const baseEngine = join(wt, 'prototypes', 'liquid-glass');
     if (!existsSync(join(baseEngine, 'index.html'))) {
       throw new Error(
@@ -951,13 +961,15 @@ async function withBaseEngine(base, fn) {
     }
     return await fn(baseEngine, work);
   } finally {
-    try {
-      execFileSync('git', ['worktree', 'remove', '--force', wt], {
-        cwd: REPO_ROOT,
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    } catch {
-      // worktree dir is inside `work` — the rm below still reclaims it
+    if (added) {
+      try {
+        execFileSync('git', ['worktree', 'remove', '--force', wt], {
+          cwd: REPO_ROOT,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
+      } catch {
+        // worktree dir is inside `work` — the rm below still reclaims it
+      }
     }
     await rm(work, { recursive: true, force: true });
   }
@@ -1089,8 +1101,8 @@ export async function runMutationHarness() {
   // machine's fonts/raster differ from wherever a committed PNG was born.
   const refWork = await mkdtemp(join(tmpdir(), 'lg-mut-ref-'));
   const refDir = join(refWork, 'ref');
-  await runVisualGate({ mode: 'baseline', dir: PROTO_DIR, ref: refDir });
   try {
+    await runVisualGate({ mode: 'baseline', dir: PROTO_DIR, ref: refDir });
     await runMutations(results, detail, refDir);
   } finally {
     await rm(refWork, { recursive: true, force: true });

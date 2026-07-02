@@ -99,20 +99,24 @@ jobs:
         # baselines are OS/font-coupled and are test artifacts that do not
         # belong in git. persist-credentials is off, so the extra ref is
         # fetched with the ephemeral job token explicitly.
+        # ${{ }} никогда не инлайнится в тело скрипта (инъекционный класс из
+        # GitHub Security Hardening) — все значения приходят через env.
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}"
-          if [ -n "${{ github.base_ref }}" ]; then
-            git fetch --no-tags --depth=1 "$REMOTE" "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
-            echo "LG_GATE_BASE=origin/${{ github.base_ref }}" >> "$GITHUB_ENV"
+          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${REPO}"
+          if [ -n "$BASE_REF" ]; then
+            git fetch --no-tags --depth=1 "$REMOTE" "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+            echo "LG_GATE_BASE=origin/${BASE_REF}" >> "$GITHUB_ENV"
           else
-            BEFORE="${{ github.event.before }}"
-            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] && git fetch --no-tags --depth=1 "$REMOTE" "$BEFORE"; then
-              echo "LG_GATE_BASE=$BEFORE" >> "$GITHUB_ENV"
+            if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git fetch --no-tags --depth=1 "$REMOTE" "$BEFORE_SHA"; then
+              echo "LG_GATE_BASE=$BEFORE_SHA" >> "$GITHUB_ENV"
             else
-              git fetch --no-tags --deepen=1 "$REMOTE" || true
+              git fetch --no-tags --deepen=1 "$REMOTE"
               echo "LG_GATE_BASE=HEAD~1" >> "$GITHUB_ENV"
             fi
           fi

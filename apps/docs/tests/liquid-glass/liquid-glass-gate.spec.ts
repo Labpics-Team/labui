@@ -71,7 +71,9 @@ test.describe('liquid-glass visual gate', () => {
 
   // ── #6: hermetic pane+panel gate — head engine vs base engine, one machine ──
   test('pane + panel match the base-ref engine across the full state matrix', async () => {
-    test.setTimeout(20 * 60_000); // freeze + diff are multi-minute on slow raster hosts
+    // Measured: freeze + one diff ≈ 40s on a slow Windows raster host; 10 min
+    // is a generous ceiling that still fits the job budget with margin.
+    test.setTimeout(10 * 60_000);
     const runHermeticGate = needGate();
 
     const { base, runs, pass } = await runHermeticGate({ runs: 1 });
@@ -104,7 +106,7 @@ test.describe('liquid-glass visual gate', () => {
 
   // ── #9: determinism — 3 consecutive diff runs against ONE freeze stably PASS ─
   test('three consecutive gate runs stably pass (determinism, warm-up preserved)', async () => {
-    test.setTimeout(30 * 60_000);
+    test.setTimeout(15 * 60_000); // one freeze + three diffs (≈4× a single run)
     const runHermeticGate = needGate();
     const { runs, pass } = await runHermeticGate({ runs: 3 });
     expect(runs.length, 'determinism needs 3 diff runs').toBe(3);

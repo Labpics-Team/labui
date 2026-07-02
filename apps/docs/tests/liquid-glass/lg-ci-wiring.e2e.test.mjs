@@ -75,4 +75,23 @@ test('ci.yml runs the engine suites after browser install and feeds the hermetic
     /LG_GATE_BASE/,
     'ci.yml must resolve LG_GATE_BASE so the visual gate freezes its reference from the PR base on the CI machine itself',
   );
+  // The resolve step must land BEFORE the gate consumes it: a step reordered
+  // after `pnpm test:e2e` leaves the gate without a base — resolveGateBase()
+  // then throws (loud red), but the wiring should not rely on the runtime guard.
+  const gateBaseIdx = ci.indexOf('LG_GATE_BASE');
+  const smokeIdx = ci.indexOf('pnpm test:e2e');
+  assert.ok(
+    smokeIdx !== -1 && gateBaseIdx < smokeIdx,
+    'the LG_GATE_BASE resolve step must precede the smoke/gate run in ci.yml',
+  );
+  // The browserless quality job must stay browserless: no engine suites, no
+  // browser installs inside it (its `pnpm test` picks up only browserless tests).
+  const qualityIdx = ci.indexOf('quality:');
+  const e2eJobIdx = ci.indexOf('e2e:');
+  assert.ok(qualityIdx !== -1 && e2eJobIdx > qualityIdx, 'ci.yml must keep quality and e2e jobs');
+  const qualityJob = ci.slice(qualityIdx, e2eJobIdx);
+  assert.ok(
+    !qualityJob.includes('test:engine') && !qualityJob.includes('playwright install'),
+    'the quality job has no browsers — engine suites and browser installs must not appear in it',
+  );
 });
