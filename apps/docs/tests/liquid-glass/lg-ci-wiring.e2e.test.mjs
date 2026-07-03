@@ -57,6 +57,18 @@ test('`test` stays browserless; `test:engine` carries the browser suites', async
   );
 });
 
+test('playwright collects only .spec.ts — node:test harnesses never run twice', async () => {
+  // Дефолтный testMatch Playwright матчит *.test.mjs; импорт node:test-файла
+  // само-исполняет сьют во время коллекции → фермы lg-*/pb-* бежали бы второй
+  // раз внутри smoke-джоба. Конфиг обязан сузить сбор до собственных .spec.ts.
+  const config = await readFile(resolve(HERE, '../../playwright.config.ts'), 'utf8');
+  assert.match(
+    config,
+    /testMatch:\s*\/.*spec\\\.ts\$?\//,
+    'playwright.config.ts must pin testMatch to .spec.ts so *.test.mjs node:test harnesses are excluded from Playwright collection',
+  );
+});
+
 test('ci.yml runs the engine suites after browser install and feeds the hermetic gate a base', async () => {
   const ci = await readFile(CI_YML, 'utf8');
   assert.match(

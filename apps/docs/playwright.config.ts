@@ -19,6 +19,12 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests',
+  // node:test-харнессы (*.test.mjs: lg-*/pb-* фермы) гоняет ОТДЕЛЬНЫЙ CI-шаг
+  // `node --test`; дефолтный testMatch Playwright матчит и их, а импорт
+  // node:test-файла само-исполняет сьют во время коллекции — фермы бежали бы
+  // второй раз внутри smoke-джоба (минуты дубль-нагрузки, вне worker/timeout
+  // модели Playwright). Playwright собирает только свои .spec.ts.
+  testMatch: /.*\.spec\.ts$/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
