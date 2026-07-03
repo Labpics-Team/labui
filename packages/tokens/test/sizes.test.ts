@@ -39,16 +39,18 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
   });
 
   it('is strictly increasing (a size axis must be monotonic)', () => {
-    const ordered = [
-      'control-s',
-      'control-m',
-      'control-l',
-      'control-h-s',
-      'control-h-m',
-      'control-h-l',
-    ].map((n) => tokens.sizes.find((t) => t.name === n)?.numeric as number);
-    for (let i = 1; i < ordered.length; i++) {
-      expect(ordered[i]).toBeGreaterThan(ordered[i - 1] as number);
+    // Две НЕЗАВИСИМЫЕ оси: габарит глиф-бокса и высота контрола. Монотонность
+    // проверяется пер-осно — кросс-осевое сравнение (control-l < control-h-s)
+    // было бы случайным инвариантом текущих чисел, не контрактом.
+    const axes = [
+      ['control-s', 'control-m', 'control-l'],
+      ['control-h-s', 'control-h-m', 'control-h-l'],
+    ];
+    for (const axis of axes) {
+      const ordered = axis.map((n) => tokens.sizes.find((t) => t.name === n)?.numeric as number);
+      for (let i = 1; i < ordered.length; i++) {
+        expect(ordered[i], axis.join('<')).toBeGreaterThan(ordered[i - 1] as number);
+      }
     }
   });
 

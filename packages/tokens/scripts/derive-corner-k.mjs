@@ -25,8 +25,8 @@
 // Золотое сечение по n. Печатает n*, K* = log₂(n*), отклонения при R = 100
 // для K* и для зафиксированного в конфиге K, чтобы подтвердить/отозвать его.
 
-const R = 100;
-const ZETA = 0.6;
+export const R = 100;
+export const ZETA = 0.6;
 
 const rad = (deg) => (deg * Math.PI) / 180;
 
@@ -35,7 +35,7 @@ const rad = (deg) => (deg * Math.PI) / 180;
  * угол-вершина в (0,0), кромки — луч y=0 при x<0 и луч x=0 при y>0,
  * интерьер в квадранте (x<0, y>0). Центр дуги C = (−R, R).
  */
-function figmaCornerPoints(radius, zeta, samplesPerSegment = 4000) {
+export function figmaCornerPoints(radius, zeta, samplesPerSegment = 4000) {
   const p = (1 + zeta) * radius;
   const arcMeasure = 90 * (1 - zeta);
   const arcSectionLength = Math.sin(rad(arcMeasure / 2)) * radius * Math.SQRT2;
@@ -96,7 +96,7 @@ function figmaCornerPoints(radius, zeta, samplesPerSegment = 4000) {
  * прямая кромка. Без продолжения метрика мерила бы расстояние до конца дуги
  * (артефакт p − R), а не расстояние между формами.
  */
-function superellipsePoints(radius, n, edgeExtent, samples = 8000) {
+export function superellipsePoints(radius, n, edgeExtent, samples = 8000) {
   const pts = [];
   // Прямой участок верхней кромки: от (−edgeExtent, 0) до (−R, 0).
   const edgeSamples = Math.ceil(samples / 8);
@@ -120,7 +120,7 @@ function superellipsePoints(radius, n, edgeExtent, samples = 8000) {
 }
 
 /** Максимум расстояния от точек A до полилинии B (одна сторона Хаусдорфа). */
-function maxDeviation(A, B) {
+export function maxDeviation(A, B) {
   let worst = 0;
   for (const [ax, ay] of A) {
     let best = Number.POSITIVE_INFINITY;
@@ -144,59 +144,68 @@ function maxDeviation(A, B) {
 
 const figma = figmaCornerPoints(R, ZETA, 1200);
 
-const EDGE_EXTENT = (1 + ZETA) * R;
-function deviationForN(n) {
+export const EDGE_EXTENT = (1 + ZETA) * R;
+export function deviationForN(n) {
   const se = superellipsePoints(R, n, EDGE_EXTENT, 3000);
   // Симметричный Хаусдорф: форма-к-форме в обе стороны (односторонняя метрика
   // пропустила бы участки, где суперэллипс отходит от кривой Figma).
   return Math.max(maxDeviation(figma, se), maxDeviation(se, figma));
 }
 
-// Золотое сечение по n ∈ [2, 4].
-let lo = 2.0;
-let hi = 4.0;
-const phi = (Math.sqrt(5) - 1) / 2;
-let x1 = hi - phi * (hi - lo);
-let x2 = lo + phi * (hi - lo);
-let f1 = deviationForN(x1);
-let f2 = deviationForN(x2);
-for (let i = 0; i < 60; i++) {
-  if (f1 < f2) {
-    hi = x2;
-    x2 = x1;
-    f2 = f1;
-    x1 = hi - phi * (hi - lo);
-    f1 = deviationForN(x1);
-  } else {
-    lo = x1;
-    x1 = x2;
-    f1 = f2;
-    x2 = lo + phi * (hi - lo);
-    f2 = deviationForN(x2);
+export function fitOptimalN() {
+  // Золотое сечение по n ∈ [2, 4].
+  let lo = 2.0;
+  let hi = 4.0;
+  const phi = (Math.sqrt(5) - 1) / 2;
+  let x1 = hi - phi * (hi - lo);
+  let x2 = lo + phi * (hi - lo);
+  let f1 = deviationForN(x1);
+  let f2 = deviationForN(x2);
+  for (let i = 0; i < 60; i++) {
+    if (f1 < f2) {
+      hi = x2;
+      x2 = x1;
+      f2 = f1;
+      x1 = hi - phi * (hi - lo);
+      f1 = deviationForN(x1);
+    } else {
+      lo = x1;
+      x1 = x2;
+      f1 = f2;
+      x2 = lo + phi * (hi - lo);
+      f2 = deviationForN(x2);
+    }
   }
+  return (lo + hi) / 2;
 }
-const nOpt = (lo + hi) / 2;
-const kOpt = Math.log2(nOpt);
 
-console.info(`Figma corner smoothing ζ = ${ZETA}, R = ${R}px`);
-console.info(
-  `оптимальный суперэллипс: n* = ${nOpt.toFixed(4)}  →  K* = log₂(n*) = ${kOpt.toFixed(4)}`,
-);
-console.info(`макс. отклонение при n*: ${deviationForN(nOpt).toFixed(3)}px / R${R}`);
-for (const k of [1.0, 1.1, kOpt, 2.0]) {
-  const n = 2 ** k;
+const isMain = import.meta.url === `file://${process.argv[1]}`;
+if (isMain) main();
+
+function main() {
+  const nOpt = fitOptimalN();
+  const kOpt = Math.log2(nOpt);
+
+  console.info(`Figma corner smoothing ζ = ${ZETA}, R = ${R}px`);
   console.info(
-    `K = ${k.toFixed(4)} (n = ${n.toFixed(4)}): max dev = ${deviationForN(n).toFixed(3)}px / R${R}`,
+    `оптимальный суперэллипс: n* = ${nOpt.toFixed(4)}  →  K* = log₂(n*) = ${kOpt.toFixed(4)}`,
+  );
+  console.info(`макс. отклонение при n*: ${deviationForN(nOpt).toFixed(3)}px / R${R}`);
+  for (const k of [1.0, 1.1, kOpt, 2.0]) {
+    const n = 2 ** k;
+    console.info(
+      `K = ${k.toFixed(4)} (n = ${n.toFixed(4)}): max dev = ${deviationForN(n).toFixed(3)}px / R${R}`,
+    );
+  }
+
+  // Кривизна входа (у стыка с прямой кромкой) — вторая ось выбора K.
+  // Кривая Figma входит в кромку с НУЛЕВОЙ кривизной (фланк-кубик стартует
+  // коллинеарно кромке: P0→P1 вдоль кромки ⇒ κ(0) = 0) — G2-стык.
+  // Круг (n = 2) входит со скачком кривизны 0 → 1/R — только G1.
+  // Суперэллипс n > 2 входит с κ = 0 (в вершинах оси кривизна ∝ (n−1)·x^{n−2}
+  // при x→0 для n>2 → 0) — воспроизводит G2-характер Figma-кривой.
+  console.info('');
+  console.info(
+    'кривизна входа: Figma ζ>0 — κ=0 (G2); круг K=1 — κ=1/R (G1); суперэллипс K>1 — κ=0 (G2)',
   );
 }
-
-// Кривизна входа (у стыка с прямой кромкой) — вторая ось выбора K.
-// Кривая Figma входит в кромку с НУЛЕВОЙ кривизной (фланк-кубик стартует
-// коллинеарно кромке: P0→P1 вдоль кромки ⇒ κ(0) = 0) — G2-стык.
-// Круг (n = 2) входит со скачком кривизны 0 → 1/R — только G1.
-// Суперэллипс n > 2 входит с κ = 0 (в вершинах оси кривизна ∝ (n−1)·x^{n−2}
-// при x→0 для n>2 → 0) — воспроизводит G2-характер Figma-кривой.
-console.info('');
-console.info(
-  'кривизна входа: Figma ζ>0 — κ=0 (G2); круг K=1 — κ=1/R (G1); суперэллипс K>1 — κ=0 (G2)',
-);
