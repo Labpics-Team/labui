@@ -44,13 +44,15 @@ function orderedVars(body) {
 }
 
 /**
- * Провизорные роли: движок эмитит приближение (для полноты словаря), но его
+ * Провизорный мост: движок эмитит приближение (для полноты словаря), но его
  * деривация ещё не установлена — потребителям публикуется Figma-якорь.
  * fill-neutral: пер-темная нейтральная поверхность (232/35), по сути ступень
- * будущей фоновой лестницы (BL-007); движковый солид Neutral(Mid) одинаков в
- * обеих темах — e2e честно ловил несменяемость темы у контролов.
+ * будущей фоновой лестницы (BL-007). pair-fill(neutral) ТЕМА-ИНВАРИАНТЕН
+ * (light === dark, проверено движком) — не выражает тема-отзывчивую нейтраль,
+ * поэтому заливка остаётся мостом до BL-007. Её ЛЕЙБЛ (label-on-neutral) уже
+ * не статика: nested-resolve label-primary на этой заливке (semanticPairOverrides).
  */
-const PROVISIONAL_BRIDGE = new Set(['--lab-fill-neutral', '--lab-label-on-neutral']);
+const PROVISIONAL_BRIDGE = new Set(['--lab-fill-neutral']);
 
 /**
  * Пара «заливка × лейбл» бейджа — ЗАКОН ЯДРА (crate::pair, движок ≥0.5.0):
@@ -77,11 +79,57 @@ function badgePairEmission(colors, theme, engineRoles) {
   return lines.join('\n');
 }
 
+/** rgb(r g b) → #RRGGBB (вход nested-resolve лейбла на провизорной заливке). */
+function rgbToHex(rgb) {
+  // Провизорные нейтрали непрозрачны; альфа тут — не тихо игнорировать, а падать:
+  // композит лейбла на полупрозрачной заливке зависел бы от фона (другой класс).
+  if (rgb.includes('/')) throw new Error(`ожидался непрозрачный rgb(): ${rgb}`);
+  const m = rgb.match(/rgb\(\s*(\d+)\s+(\d+)\s+(\d+)\s*\)/);
+  if (!m) throw new Error(`ожидался rgb(r g b): ${rgb}`);
+  const hx = (n) => Number(n).toString(16).padStart(2, '0');
+  return `#${hx(m[1])}${hx(m[2])}${hx(m[3])}`.toUpperCase();
+}
+
+/**
+ * Семантический паспорт «несущих лейбл» поверхностей — ЗАКОН ПАРЫ (crate::pair),
+ * тот же, что бейдж. Замороженный figma-reference.css несёт до-законные мосты
+ * (fill-accent = сырой border-brand-strong 4.017:1 < 4.5; label-on-accent =
+ * статический белый) — здесь они ПЕРЕКРЫВАЮТСЯ деривацией движка каскадом.
+ *
+ * ОДИН ИСТОЧНИК ИСТИНЫ — passport.aliases: каждый алиас на `badge-fill-<family>`
+ * объявляет несущую лейбл поверхность закона пары. Из него ДЕРИВИРУЕТСЯ пара:
+ *   fill-<name>     → var(badge-fill-<family>)      (заливка = pair-fill семьи),
+ *   label-on-<name> → var(badge-label-on-<family>)  (парный лейбл заливки).
+ * Смена таргета алиаса в паспорте тянет и заливку, и лейбл — ноль ручной
+ * синхронизации, ноль дубля oklch (ссылка, а не копия; байт-в-байт с badge).
+ *
+ * fill-neutral остаётся провизорным мостом (pair-fill(neutral) тема-инвариантен),
+ * но ЕЁ лейбл — деривация: label-primary, решённый на провизорной заливке.
+ */
+function semanticPairOverrides(colors, theme, anchorMap, aliases) {
+  const o = new Map();
+  for (const { alias, target } of aliases) {
+    const family = target.match(/^badge-fill-(.+)$/)?.[1];
+    if (!family) continue; // не несущая лейбл поверхность — обычный алиас
+    o.set(`--lab-${alias}`, `var(--lab-${target})`);
+    o.set(`--lab-${alias.replace(/^fill-/, 'label-on-')}`, `var(--lab-badge-label-on-${family})`);
+  }
+  const fillNeutral = anchorMap.get('--lab-fill-neutral');
+  if (!fillNeutral) throw new Error('якорь не несёт --lab-fill-neutral для деривации лейбла');
+  const label = colors.resolveTheme(rgbToHex(fillNeutral), theme).roles['label-primary'];
+  o.set('--lab-label-on-neutral', label.css);
+  return o;
+}
+
 /** Отрендерить один scope: движковые роли — живой эмиссией, прочее — мостом. */
-function renderScope(anchorVars, engineVars) {
+function renderScope(anchorVars, engineVars, overrides) {
   const lines = [];
   for (const [name, anchorValue] of anchorVars) {
-    if (anchorValue.startsWith('var(')) {
+    if (overrides.has(name)) {
+      // Закон пары: несущая лейбл поверхность / её лейбл — деривация движка,
+      // перекрывает до-законный мост замороженного Figma-якоря.
+      lines.push(`  ${name}: ${overrides.get(name)}; /* закон пары: деривация движка */`);
+    } else if (anchorValue.startsWith('var(')) {
       // Ссылка-алиас: одна истина — связь, не копия значения.
       lines.push(`  ${name}: ${anchorValue};`);
     } else if (PROVISIONAL_BRIDGE.has(name)) {
@@ -217,13 +265,15 @@ export async function generateContract() {
 
   const resolvedLight = colors.resolveTheme(bgLight, 'light');
   const resolvedDark = colors.resolveTheme(bgDark, 'dark');
+  const overridesLight = semanticPairOverrides(colors, 'light', new Map(light), passport.aliases);
+  const overridesDark = semanticPairOverrides(colors, 'dark', new Map(dark), passport.aliases);
   const lightBody =
-    renderScope(light, engineLight) +
+    renderScope(light, engineLight, overridesLight) +
     badgePairEmission(colors, 'light', resolvedLight.roles) +
     bgLadderEmission('light', engineLight, bgLight) +
     glowBridgeEmission('light');
   const darkBody =
-    renderScope(dark, engineDark) +
+    renderScope(dark, engineDark, overridesDark) +
     badgePairEmission(colors, 'dark', resolvedDark.roles) +
     bgLadderEmission('dark', engineDark, bgDark) +
     glowBridgeEmission('dark');
@@ -232,8 +282,10 @@ export async function generateContract() {
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@${enginePkg.version} + паспорт labui.config.json
 (отпечаток ${fingerprint}). Движковые роли — живая эмиссия (единая форма
-oklch); строки «мост: Figma-якорь» — входы и компонентные поверхности из
-замороженного figma-reference.css, переезжают следующими этапами поезда.
+oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
+лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
+Figma-якорь» — входы и компонентные поверхности из замороженного
+figma-reference.css, переезжают следующими этапами поезда.
 Регенерация: node packages/colors/generate-contract.mjs
 Гейт дисциплины: packages/colors/test/contract-generated.test.mjs
 */
