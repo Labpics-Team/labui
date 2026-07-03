@@ -16,7 +16,8 @@ export type ScaleKind =
   | 'font-size'
   | 'font-weight'
   | 'line-height'
-  | 'tracking'
+  | 'letter-spacing'
+  | 'measure'
   | 'stroke'
   | 'focus-ring';
 

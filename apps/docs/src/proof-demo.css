@@ -45,7 +45,9 @@ body {
   font-family: system-ui, sans-serif;
 }
 :root[data-theme="light"] body {
-  background: #f7f8fa;
+  /* Семантика вместо мостового литерала (#f7f8fa): вторичный тон страницы
+     из контракта движка — в светлой теме демо стоит на secondary-поверхности. */
+  background: var(--lab-bg-secondary);
 }
 
 .row {

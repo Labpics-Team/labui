@@ -144,7 +144,7 @@
       }
     ],
     "hardness": 5.0,
-    "chroma_fraction": 0.88
+    "chroma_fraction": 1.0
   },
   "themes": [
     {
