@@ -13,7 +13,7 @@
  *   · the axis actually follows the configured points (angle),
  * plus DOM invariants (the strip ladder tops out at the strongest stop; strips
  * stay TIGHT — the perf guarantee), determinism, reduced-transparency honesty,
- * and a Class-D mutation bite-proof over five deliberately weakened engines.
+ * and a Class-D mutation bite-proof over eight deliberately weakened engines.
  *
  * Exports:
  *   runPbSuite()     → { pass, checks: {name: {pass, detail}} }
@@ -408,6 +408,62 @@ export async function runPbSuite({ dir } = {}) {
     ok('deterministic', det <= 1, `maxDelta=${det}`);
   });
 
+  // ── regression bolts for review findings (Class B, DOM-level) ──
+  await withPage(dir ?? PROTO_DIR, false, async (page) => {
+    // Array stops passed via attach()/update() must rebuild BY VALUE — a
+    // same-length update used to collapse in the config signature.
+    const arr = await page.evaluate(async () => {
+      const el = document.getElementById('pb');
+      const maxBlur = () =>
+        Math.max(
+          ...[...el.querySelectorAll('.lab-pb__strip')].map((n) =>
+            Number.parseFloat((n.style.backdropFilter.match(/blur\(([\d.]+)px\)/) || [])[1]),
+          ),
+        );
+      const g = window.__PB.attach(el, {
+        stops: [
+          { at: 0, blur: 16 },
+          { at: 1, blur: 0 },
+        ],
+      });
+      const before = maxBlur();
+      g.update({
+        stops: [
+          { at: 0, blur: 4 },
+          { at: 1, blur: 0 },
+        ],
+      });
+      const after = maxBlur();
+      g.destroy();
+      return { before, after };
+    });
+    ok(
+      'array-stops-update-rebuilds',
+      arr.before > arr.after && arr.after < 5,
+      `max increment before=${arr.before} after=${arr.after}`,
+    );
+
+    // An INSET axis clamps flat beyond the outer stops — the strips must
+    // extend to the element edges, not stop at the axis span.
+    const inset = await page.evaluate(async () => {
+      const el = document.getElementById('pb');
+      const g = window.__PB.attach(el, {
+        from: '50% 20%',
+        to: '50% 80%',
+        stops: '0 24px, 1 0px',
+      });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      const tops = [...el.querySelectorAll('.lab-pb__strip')].map((n) => n.offsetTop);
+      g.destroy();
+      return { minTop: Math.min(...tops) };
+    });
+    ok(
+      'clamp-extends-to-edges',
+      inset.minTop <= 1,
+      `strongest strip must reach the element top edge, minTop=${inset.minTop}`,
+    );
+  });
+
   // ── reduced transparency (S6): zero strips, honest no-op ──
   await withPage(dir ?? PROTO_DIR, true, async (page) => {
     await shoot(page, { from: '50% 0%', to: '50% 100%', stops: '0 24px, 1 0px' });
@@ -459,6 +515,27 @@ const MUTATIONS = [
     find: 'export function bandBBox(w, h, A, B, t0, t1) {',
     repl: 'export function bandBBox(w, h, A, B, t0, t1) { return { x: 0, y: 0, w, h }; } function __unusedBandBBox(w, h, A, B, t0, t1) {',
     isolating: 'strips-stay-tight',
+  },
+  {
+    dimension: 'axis',
+    file: 'progressive-blur.js',
+    find: "    x: m[2] === 'px' ? x : (x / 100) * w,\n    y: m[4] === 'px' ? y : (y / 100) * h,",
+    repl: "    x: m[4] === 'px' ? y : (y / 100) * w,\n    y: m[2] === 'px' ? x : (x / 100) * h,",
+    isolating: 'axis-follows-points',
+  },
+  {
+    dimension: 'superlevel-coverage',
+    file: 'progressive-blur.js',
+    find: 'if (runLevel(r) >= k) {',
+    repl: 'if (runLevel(r) === k) {',
+    isolating: 'monotone-profile',
+  },
+  {
+    dimension: 'reduced-transparency',
+    file: 'progressive-blur.js',
+    find: "      matchMedia('(prefers-reduced-transparency: reduce)').matches,",
+    repl: '      false,',
+    isolating: 'reduced-transparency-honest',
   },
 ];
 

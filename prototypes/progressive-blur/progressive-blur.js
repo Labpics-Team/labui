@@ -109,7 +109,11 @@ function render(state) {
   const { el } = state;
   const c = readConfig(el, state);
 
-  const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${c.stops}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
+  // Array stops must serialise by VALUE — `${array}` collapses objects to
+  // "[object Object]" and an update() with same-length different stops would
+  // silently short-circuit as a no-op.
+  const stopsSig = typeof c.stops === 'string' ? c.stops : JSON.stringify(c.stops);
+  const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${stopsSig}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
   if (sig === state.sig) return;
   state.sig = sig;
 
@@ -128,7 +132,12 @@ function render(state) {
   }
   const A = parsePoint(c.from, c.w, c.h);
   const B = parsePoint(c.to, c.w, c.h);
-  if (!A || !B) return;
+  if (!A || !B) {
+    // Same loud-failure discipline as parseStops: a broken axis token renders
+    // nothing, but never silently.
+    console.error(`progressive-blur: unparseable axis point "${!A ? c.from : c.to}"`);
+    return;
+  }
   const dx = B.x - A.x;
   const dy = B.y - A.y;
   const axisLen = Math.hypot(dx, dy);
@@ -174,6 +183,12 @@ function render(state) {
         else intervals.push({ t0: r.t0, t1: r.t1 });
       }
     }
+    // The profile CLAMPS flat beyond the outer stops (blurAt), and the axis
+    // A→B may be INSET in the element — the element regions before t=0 /
+    // after t=1 belong to the clamped-flat profile. An interval touching an
+    // axis end therefore extends to the ELEMENT edge (no seam there), padded
+    // far enough along the axis to reach any corner of the box.
+    const clampPad = (Math.hypot(c.w, c.h) + featherPx) / axisLen;
     for (const iv of intervals) {
       // Feather half-width per edge: fade only where the profile actually
       // CROSSES the level (an interval ending at the axis end has no seam).
@@ -181,10 +196,10 @@ function render(state) {
       const hf = Math.min(f, width) / 2;
       const fadeIn = iv.t0 > 1e-6;
       const fadeOut = iv.t1 < 1 - 1e-6;
-      const inS = fadeIn ? iv.t0 - hf : iv.t0;
+      const inS = fadeIn ? iv.t0 - hf : iv.t0 - clampPad;
       const inE = fadeIn ? iv.t0 + hf : iv.t0;
       const outS = fadeOut ? iv.t1 - hf : iv.t1;
-      const outE = fadeOut ? iv.t1 + hf : iv.t1;
+      const outE = fadeOut ? iv.t1 + hf : iv.t1 + clampPad;
       // Bleed past the visible zone by the blur radius, so backdrop-filter's
       // edge clamping never lands inside the visible mask.
       const bleed = (rInc + 2) / axisLen;
@@ -229,6 +244,21 @@ function render(state) {
  */
 export function attach(el, opts = {}) {
   registry.get(el)?.destroy();
+  // The one integration invariant: a host that forms a backdrop root makes
+  // the strips blur the ELEMENT instead of the page behind it — the effect
+  // silently dies. Shout once instead of degrading quietly.
+  const hostCs = getComputedStyle(el);
+  if (
+    Number.parseFloat(hostCs.opacity) < 1 ||
+    hostCs.filter !== 'none' ||
+    hostCs.maskImage !== 'none' ||
+    hostCs.mixBlendMode !== 'normal'
+  ) {
+    console.warn(
+      'progressive-blur: the host element forms a backdrop root (filter/opacity/mask/blend) — strips will not see the page behind it',
+      el,
+    );
+  }
   const state = {
     el,
     params: { ...opts },
@@ -269,6 +299,7 @@ export function attach(el, opts = {}) {
     mq?.removeEventListener('change', update);
     for (const s of state.strips) s.remove();
     state.strips = [];
+    el.classList.remove('lab-progressive-blur');
     if (registry.get(el) === state) registry.delete(el);
   };
 

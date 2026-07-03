@@ -23,6 +23,8 @@ const CHECKS = [
   'easing-bends-profile',
   'multi-stop-valley',
   'axis-follows-points',
+  'array-stops-update-rebuilds',
+  'clamp-extends-to-edges',
   'deterministic',
   'reduced-transparency-honest',
 ];

@@ -83,19 +83,30 @@ export const EASINGS = {
 
 /** Resolve an easing spec (keyword | 'cubic-bezier(a,b,c,d)' | undefined) to a
  *  function. Unknown specs fall back to linear — a typo must not blank the
- *  effect, only straighten a segment. */
+ *  effect, only straighten a segment. Custom beziers are memoised: the profile
+ *  sampler calls this per sample (512×/render), rebuilding the solver each
+ *  time is pure waste. x1/x2 must sit in [0,1] (the CSS validity rule — the
+ *  solver's x(s) is only invertible there); out-of-range specs fall back to
+ *  linear exactly like CSS drops them. */
+const bezierCache = new Map();
 export function resolveEase(spec) {
   if (!spec) return LINEAR;
-  const kw = EASINGS[spec.trim?.() ?? spec];
+  const key = String(spec).trim();
+  const kw = EASINGS[key];
   if (kw) return kw;
-  const m = /^cubic-bezier\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)$/.exec(
-    String(spec).trim(),
-  );
+  const hit = bezierCache.get(key);
+  if (hit) return hit;
+  const m = /^cubic-bezier\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)$/.exec(key);
+  let fn = LINEAR;
   if (m) {
     const [x1, y1, x2, y2] = m.slice(1).map(Number);
-    if ([x1, y1, x2, y2].every(Number.isFinite)) return cubicBezier(x1, y1, x2, y2);
+    if ([x1, y1, x2, y2].every(Number.isFinite) && x1 >= 0 && x1 <= 1 && x2 >= 0 && x2 <= 1) {
+      fn = cubicBezier(x1, y1, x2, y2);
+    }
   }
-  return LINEAR;
+  if (bezierCache.size > 64) bezierCache.clear(); // pathological churn guard
+  bezierCache.set(key, fn);
+  return fn;
 }
 
 /* ── Stops ──────────────────────────────────────────────────────────────── */
