@@ -1,3 +1,4 @@
+import * as toggle from '@zag-js/toggle';
 /**
  * `<lab-proof>` — a PROOF element, NOT the production Button.
  *
@@ -18,7 +19,6 @@
  * and will not reuse this element, only this seam.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as toggle from '@zag-js/toggle';
 import type { MachineModule, SchemaOf } from '../behaviors/types.js';
 import { litVar } from '../css.js';
 import { LabElement } from '../lit/lab-element.js';
@@ -77,7 +77,7 @@ export class LabProof extends LabElement {
       display: inline-flex;
       vertical-align: middle;
       /* Dimension knobs the size of the control reads from. No literal hex. */
-      --_radius: ${litVar('--lab-radius-control', '--lab-radius-lg')};
+      --_radius: ${litVar('--lab-radius-control', '0.5rem')};
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};

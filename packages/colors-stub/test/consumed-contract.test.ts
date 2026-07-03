@@ -5,9 +5,10 @@ import {
   SEMANTIC_ROLE_PREFIXES,
   byBucket,
   classify,
-  consumerFiles,
+  consumedNamesInSource,
   consumedRoles,
   consumedRolesWithSites,
+  consumerFiles,
   knownColourRoles,
   missingColourRoles,
   repoRoot,
@@ -145,6 +146,25 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
       unclassified,
       `unclassified consumed --lab-* names — for each: (a) add to the colour contract upstream, (b) confirm it is a dimension token, or (c) document it in docs/external-deps/lab-colors.md and add it to the local-or-gap allowlist:\n${report}`,
     ).toEqual([]);
+  });
+
+  // ── (3б) Проза — не потребление: пример `var(--lab-X, …)` в doc-комментарии
+  // (TS) или в CSS-блок-комментарии не должен регистрироваться как потреблённое
+  // имя (класс: комментарии гардов/утилит травили zero-unclassified гейт).
+  // Настоящее потребление в коде того же источника при этом видно.
+  it('ignores --lab-* names in comments, keeps real consumption (prose is not consumption)', () => {
+    const ts = [
+      '/** Пример в прозе: `var(--lab-fake-doc-example, 1rem)`. */',
+      "// и в строчном: litVar('--lab-fake-line-example')",
+      "const real = `width: ${litVar('--lab-space-sm', '0.5rem')};`;",
+    ].join('\n');
+    const hits = consumedNamesInSource('p.ts', ts);
+    expect(hits.map((s) => s.name)).toEqual(['--lab-space-sm']);
+    // Срез комментариев сохраняет переносы строк: номер строки не плывёт.
+    expect(hits[0]?.line).toBe(3);
+
+    const css = '/* пример: var(--lab-fake-css-example) */\n.x { gap: var(--lab-space-sm); }';
+    expect(consumedNamesInSource('p.css', css).map((s) => s.name)).toEqual(['--lab-space-sm']);
   });
 
   // ── (4) Anti-blindness: feed a FABRICATED consumed name into the pure

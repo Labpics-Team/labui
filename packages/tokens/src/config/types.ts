@@ -6,9 +6,12 @@
  * custom properties (`--lab-*`), a typed TS module, and a canonical DTCG export.
  *
  * Design rules encoded here (from the epic's cross-cutting principles):
- *  - Everything is rem-relative; interface scaling is root font-size, never the
- *    dead Unit 75-133% modes.
- *  - Every scale carries an explicit, correct zero token.
+ *  - Everything is rem-relative; interface scaling is root font-size — the code
+ *    embodiment of the Figma Unit modes (75/100/116.6/133.3% scale the whole
+ *    ladder; see docs/dimension-contract.md).
+ *  - Every scale carries an explicit, correct zero token — except `sizes`:
+ *    контрол нулевого размера вырожден, нулевая ступень была бы ловушкой
+ *    (см. SizesConfig).
  *  - Three languages: primitives -> semantic aliases -> (components consume
  *    semantics only). This file defines primitives and the alias mechanism.
  */
@@ -46,6 +49,39 @@ export interface RadiiConfig {
   /** The pill / fully-rounded token value in px (Material 3 uses 9999). */
   readonly fullPx: number;
   /** Semantic aliases: role name -> step key (or the literal `full`). */
+  readonly aliases: Readonly<Record<string, string>>;
+  /**
+   * Форма угла — кривизна CSS `corner-shape: superellipse(K)` поверх любого
+   * радиуса (Chromium 139+; прочие браузеры игнорируют — обычный радиус).
+   * Экспонента кривой n = 2^K (css-borders-4): K=1 — круг (выкл);
+   * ≈2.32 — «иконная» сквирклость Apple (n≈5, K=log₂5).
+   *
+   * K=1.1 — DECLARED-размен, НЕ геометрический фит (деривация 2026-07-03,
+   * воспроизводится: `node packages/tokens/scripts/derive-corner-k.mjs`).
+   * Замер против точной кривой Figma corner smoothing ζ=0.6 (конструкция
+   * figma-squircle: кубик-фланк + дуга 90(1−ζ)° + зеркальный кубик):
+   *   - геометрически ближайший суперэллипс — САМ КРУГ K=1 (1.25px/R100);
+   *   - K=1.1 отклоняется на 2.35px/R100 — дальше круга;
+   *   - выбор K>1 оправдан ВТОРОЙ осью: кривая Figma входит в кромку с
+   *     нулевой кривизной (G2), круг — со скачком 1/R (G1), суперэллипс
+   *     n>2 — с κ=0 (G2). K=1.1 покупает G2-характер входа ценой 2.35px
+   *     геометрии; оба отклонения суб-перцептивны в UI-масштабах.
+   * CSS-ключевое `squircle` (K=2) от ζ=0.6 далеко: 18.9px/R100.
+   */
+  readonly cornerK: number;
+}
+
+/**
+ * Размеры контролов: канонические габариты оси размера компонента
+ * (`s | m | l` на компонентах), в rem. Заземлено привязками живого Figma:
+ * контрол-боксы Check и Radio биндят коллекцию Size (S/M/L = 12/16/20px
+ * @100%), которая сама лежит на Unit px-лестнице (px/6, px/7, px/8).
+ * См. docs/dimension-contract.md §2.
+ */
+export interface SizesConfig {
+  /** Именованные ступени в rem (абсолютные). Нулевой ступени нет: контрол нулевого размера вырожден. */
+  readonly steps: Readonly<Record<string, number>>;
+  /** Семантические алиасы: имя роли -> существующая ступень. Компоненты потребляют их. */
   readonly aliases: Readonly<Record<string, string>>;
 }
 
@@ -142,6 +178,7 @@ export interface BordersConfig {
 /** The complete LabUI token config — the single source of truth. */
 export interface TokensConfig {
   readonly spacing: SpacingConfig;
+  readonly sizes: SizesConfig;
   readonly radii: RadiiConfig;
   readonly zIndex: ZIndexConfig;
   readonly typography: TypographyConfig;

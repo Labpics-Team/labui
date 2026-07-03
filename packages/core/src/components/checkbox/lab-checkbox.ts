@@ -1,3 +1,4 @@
+import * as checkboxMachine from '@zag-js/checkbox';
 /**
  * `<lab-checkbox>` — the production checkbox, CONSUMING the `@zag-js/checkbox`
  * machine through the Behaviors seam (core-CONTRACT §1, the inverse of Button).
@@ -24,7 +25,6 @@
  * No hex, no primitive, no invented role.
  */
 import { type TemplateResult, css, html, svg } from 'lit';
-import * as checkboxMachine from '@zag-js/checkbox';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

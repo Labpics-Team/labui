@@ -6,14 +6,14 @@
 > values, copy a resolver / `semantic.rs` / WASM engine, or modify the
 > `lab-colors` repo. Each gap is owned by the `lab-colors-v1` epic.
 >
-> This is the richer, file:line-anchored companion to the summary table in
-> [`../../INTEGRATION.md`](../../INTEGRATION.md) ("Open requests to
-> `lab-colors-v1`"). It must not contradict that file — it expands it. The
+> This is the CANONICAL, file:line-anchored record of the engine gaps; the
+> root [`../../INTEGRATION.md`](../../INTEGRATION.md) is the short fact-sheet
+> that points here. The
 > governing law is [`../core-CONTRACT.md`](../core-CONTRACT.md) §0 law 2
 > (components speak only the semantic `--lab-*` language) and §5 (the colour
-> engine binds roles under `[data-theme]`). The published-engine swap itself is
-> the LATER `colors-publish-swapout` scope; this file is the consumer-side record
-> of blockers ON `lab-colors-v1`.
+> engine binds roles under `[data-theme]`). The engine is published and wired
+> (see § Published entry below); what remains here is the consumer-side record
+> of capability gaps still bridged locally.
 
 ## The five EXTERNAL-blocker capability classes
 
@@ -77,23 +77,33 @@ in LabUI.
 
 | Gap token (prefix) | Declared at | Role | What the engine should provide |
 | --- | --- | --- | --- |
-| `--lab-mat-` (`--lab-mat-blur`, `--lab-mat-fill-alpha`, `--lab-mat-rim`, …) | `packages/core/src/materials.css:126-129` (+ role block) | Semantic **material role** a surface reads (Solid / BG-Blur / Glass). | The material role layer resolved from the engine's surface model, not LabUI-tuned primitives. |
-| `--lab-ambient-` (`--lab-ambient-base`, `--lab-ambient-rim-color`, …) | `packages/core/src/materials.css:46-93` | Ambient material **primitives** (blur ladder, fill alphas, rim/specular). | Engine-owned primitives; LabUI mirrors Figma values 1:1 as a provisional snapshot. |
+| `--lab-mat-` (`--lab-mat-blur`, `--lab-mat-fill-alpha`, `--lab-mat-rim`, …) | `packages/core/src/materials.css:125-128` (+ role block) | Semantic **material role** a surface reads (Solid / BG-Blur / Glass). | The material role layer resolved from the engine's surface model, not LabUI-tuned primitives. |
+| `--lab-ambient-` (`--lab-ambient-base`, `--lab-ambient-rim-color`, …) | `packages/core/src/materials.css:45-92` | Ambient material **primitives** (blur ladder, fill alphas, rim/specular). | Engine-owned primitives; LabUI mirrors Figma values 1:1 as a provisional snapshot. |
 | `--lab-glass-` | `packages/core/src/materials.css` (legacy alias surface referenced in the materials header) | Prior glass-material aliases the `--lab-mat-*` roles superseded. | Folded into the engine's material roles; recorded so the alias family is not silently dropped. |
 
 ### Published `@labpics/colors` CSS+JS entry
 
-The package itself is an EXTERNAL blocker: `@labpics/colors` is **not published**
-yet. LabUI consumes it today through a local workspace stub.
+`@labpics/colors` **is published** (exact pin `0.5.0` in
+`packages/colors/package.json`) and consumed through three channels: the
+workspace stub still serves the **CSS entry** (`contract.css`) to `apps/docs`,
+but that file is now a **generated engine artifact** —
+`packages/colors/generate-contract.mjs` emits engine-owned roles live from the
+published package + passport, bridging the rest from the frozen Figma anchor
+(`colors-stub/figma-reference.css`), under the regeneration-discipline gate
+(`packages/colors/test/contract-generated.test.mjs`). The **JS runtime entry**
+is consumed by `packages/colors` (`@labui/colors`, non-component package —
+law 2 keeps components CSS-only) and by the `labcolors-engine` alias in
+`apps/docs` for live-engine e2e. The remaining blocker is not publication but
+**bridge coverage**: roles still bridged from the Figma anchor migrate to
+engine emission as the engine ships them.
 
 | Capability | Consuming call site | Provisional source today | What the engine should provide |
 | --- | --- | --- | --- |
-| **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `materials-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]`. PROVISIONAL — placeholder role values owned by the resolver. | The published `@labpics/colors` CSS entry exporting the same `--lab-*` role bindings. Swap-in = repoint the dependency from `workspace:*` to the registry version; the import specifier is unchanged. |
-| **JS runtime entry** (injects `--lab-*` from the background) | _no current consumer — anticipated._ LabUI consumes only the static CSS contract today; no JS resolver is imported (and none may be — law 2). | _(none — LabUI must not implement a resolver / WASM / `semantic.rs`.)_ | The runtime engine that resolves `--lab-*` per surface/background at runtime. Owned by `runtime-engine`; LabUI will consume it as a published entry, never re-implement it. |
+| **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `materials-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]` — **generated engine artifact**: engine-owned roles emitted live from the published `0.5.0` package, the rest bridged from the frozen Figma anchor (`generate-contract.mjs` + `contract-generated` gate). | Bridge coverage: each remaining Figma-bridged role migrates to live engine emission as the engine ships it; the import specifier never changes. |
+| **JS runtime entry** (injects `--lab-*` from the background) | `packages/colors` (`@labui/colors`) — engine wrapper (`engine.mjs`, exact pin `@labpics/colors@0.5.0`); `labcolors-engine` npm-alias in `apps/docs` for live-engine e2e. Components stay CSS-only (law 2) — the runtime consumer is the non-component engine package. | The published wasm runtime, consumed as-is. | Runtime role coverage growing with the engine (e.g. glow/ladder roles land as released versions ship them). |
 
-This expands INTEGRATION.md's first open request ("Published `@labpics/colors` npm
-package exposing a CSS entry … and/or a JS runtime") with the exact consumer
-sites — it does not contradict it.
+This records the "published `@labpics/colors` npm package exposing a CSS entry
+and/or a JS runtime" request with the exact consumer sites.
 
 ### Decorative floor / separator / shadow-ramp magnitudes
 

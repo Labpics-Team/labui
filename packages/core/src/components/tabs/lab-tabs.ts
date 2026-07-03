@@ -1,3 +1,4 @@
+import * as tabsMachine from '@zag-js/tabs';
 /**
  * `<lab-tabs>` — the first COMPOUND component that consumes a GROUP machine
  * through the Behaviors seam (core-CONTRACT §1). This is the canonical compound
@@ -43,7 +44,6 @@
  */
 import { type TemplateResult, css, html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import * as tabsMachine from '@zag-js/tabs';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -235,6 +235,7 @@ export class LabTabs extends LabElement {
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
     }
     .panel:focus-visible {

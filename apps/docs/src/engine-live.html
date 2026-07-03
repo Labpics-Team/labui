@@ -1,0 +1,77 @@
+<!doctype html>
+<html class="lab-scope" lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Live engine (runtime provider)</title>
+    <link rel="stylesheet" href="./primitives-demo.css" />
+    <style>
+      /* Демо-поверхность: фон задаёт ПОЛЬЗОВАТЕЛЬ, роли пересчитывает живой
+         движок (watchTheme). Никакого статического contract.css на этой
+         поверхности — переменные приходят inline от провайдера. */
+      #live-surface {
+        padding: 2rem;
+        border-radius: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        min-height: 8rem;
+      }
+      #live-surface p {
+        width: 100%;
+        color: var(--lab-label-secondary);
+        margin: 0 0 0.5rem;
+      }
+      .controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 1rem 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="engine-live-title">
+        Live engine — рантайм-провайдер поверх <code>@labpics/colors</code>
+      </h1>
+      <p>
+        WASM-движок загружается в браузере с паспортом labui; поверхность ниже
+        обслуживает <code>watchTheme</code>: перекрась фон — роли пересчитаются
+        от фактического цвета, переключи конфиг — та же страница станет чужим
+        брендом («взял → закастомил → внедрил»).
+      </p>
+
+      <div class="controls">
+        <label for="live-bg">Фон поверхности</label>
+        <input id="live-bg" data-testid="live-bg" type="color" value="#ffffff" />
+        <label for="live-theme">Тема</label>
+        <select id="live-theme" data-testid="live-theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+        <label for="live-config">Конфиг</label>
+        <select id="live-config" data-testid="live-config">
+          <option value="labui">labui (паспорт)</option>
+          <option value="acme">acme (фиолетовый бренд)</option>
+        </select>
+        <output id="live-status" data-testid="live-status">загрузка движка…</output>
+      </div>
+
+      <section id="live-surface" data-testid="live-surface">
+        <p>
+          Компоненты пьют те же <code>--lab-*</code>, что и весь labui — но
+          здесь их значения решает живой движок от фона этой поверхности.
+        </p>
+        <lab-badge data-testid="live-brand-fill" color="brand" type="fill">Brand</lab-badge>
+        <lab-badge data-testid="live-success-tinted" color="success" type="tinted">Active</lab-badge>
+        <lab-badge data-testid="live-danger-fill" color="danger" type="fill">3</lab-badge>
+        <lab-badge data-testid="live-neutral-tinted" color="neutral" type="tinted">Neutral</lab-badge>
+        <lab-button data-testid="live-button" variant="primary">Действие</lab-button>
+      </section>
+    </main>
+    <script type="module" src="./engine-live-demo.ts"></script>
+  </body>
+</html>

@@ -43,6 +43,10 @@ test('visual parity: Lit and React resolve the same surface + label colours', as
     'success-tinted',
     'danger-fill',
     'neutral-tinted',
+    // Статики — дыра паритета из ревью поезда: расхождение близнецов на
+    // tinted static прошло бы зелёным без этих строк.
+    'static-dark-fill',
+    'static-light-tinted',
   ] as const) {
     const lit = litBadge(page, `lit-${variant}`);
     const react = reactBadge(page, `react-${variant}`);
@@ -72,16 +76,15 @@ test('disabled badge dims identically on both renderers', async ({ page }) => {
   expect(Number(litOpacity)).toBeLessThan(1);
 });
 
-test('tokens: re-pointing --lab-fill-accent re-skins BOTH fill renderers', async ({ page }) => {
+test('tokens: re-pointing --lab-badge-fill-brand re-skins BOTH fill renderers', async ({
+  page,
+}) => {
   const lit = litBadge(page, 'lit-brand-fill');
   const react = reactBadge(page, 'react-brand-fill');
   await expect(react).toBeVisible();
 
-  // Brand-fill consumes --lab-fill-accent (NOT --lab-border-brand-strong): the
-  // border role is pinned for the 3:1 non-text threshold, this solid surface
-  // carries a white text label and needs 4.5:1 (see contract.css/badge.css).
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-fill-accent', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-badge-fill-brand', 'rgb(1, 2, 3)');
   });
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');

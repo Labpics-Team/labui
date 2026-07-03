@@ -1,5 +1,5 @@
 import type { BordersConfig } from '../config/types.js';
-import { num, rem } from './format.js';
+import { ROOT_FONT_SIZE_PX, num, rem } from './format.js';
 import type { ResolvedToken } from './token.js';
 
 /**
@@ -20,7 +20,7 @@ export function buildBorders(config: BordersConfig): {
     kind: 'stroke',
     name,
     cssValue: rem(value),
-    numeric: value * 16,
+    numeric: value * ROOT_FONT_SIZE_PX,
     dtcgType: 'dimension',
   }));
 
@@ -33,7 +33,7 @@ export function buildBorders(config: BordersConfig): {
     kind: 'focus-ring',
     name,
     cssValue: rem(value),
-    numeric: value * 16,
+    numeric: value * ROOT_FONT_SIZE_PX,
     dtcgType: 'dimension',
   }));
 

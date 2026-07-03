@@ -1,5 +1,5 @@
-import type { ResolvedTokens } from '../domain/build.js';
 import { cssVarName } from '../domain/alias.js';
+import type { ResolvedTokens } from '../domain/build.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
 
 /**
@@ -15,11 +15,14 @@ export function generateTs(tokens: ResolvedTokens): string {
   const parts: string[] = [banner()];
 
   parts.push(scaleConst('space', tokens.spacing, tokens.spacingAliases));
+  parts.push(scaleConst('size', tokens.sizes, tokens.sizesAliases));
   parts.push(scaleConst('radius', tokens.radii, tokens.radiiAliases));
   parts.push(scaleConst('zIndex', tokens.zIndex));
   parts.push(scaleConst('fontSize', tokens.fontSizes));
   parts.push(scaleConst('lineHeight', tokens.lineHeights));
   parts.push(scaleConst('fontWeight', tokens.fontWeights));
+  parts.push(scaleConst('letterSpacing', tokens.letterSpacings));
+  parts.push(scaleConst('measure', tokens.measures));
   parts.push(scaleConst('stroke', tokens.strokes));
   parts.push(scaleConst('focusRing', tokens.focusRing));
 

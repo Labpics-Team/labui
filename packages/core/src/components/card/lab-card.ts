@@ -69,7 +69,7 @@ export class LabCard extends LabElement {
   static override styles = css`
     :host {
       --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-      --_radius: ${litVar('--lab-radius-card', '0.75rem')};
+      --_radius: ${litVar('--lab-radius-card', '1rem')};
 
       display: block;
     }

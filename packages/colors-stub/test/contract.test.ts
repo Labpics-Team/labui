@@ -89,13 +89,13 @@ describe('--lab-* semantic color contract', () => {
       Object.entries(roles.groups).map(([g, list]) => [g, list.length]),
     );
     expect(counts).toEqual({
-      Backgrounds: 23,
+      Backgrounds: 26,
       Labels: 36,
       Fills: 33,
       Border: 26,
-      FX: 15,
+      FX: 23,
       Misc: 3,
-      Component: 15,
+      Component: 29,
     });
   });
 
@@ -104,7 +104,7 @@ describe('--lab-* semantic color contract', () => {
     // roles (solid fills, on-fill contrast, focus ring). Assert them by name so a
     // regression that drops the reconciliation set fails CI loudly.
     const derived = roles.groups.Component ?? [];
-    expect(derived.length, 'Component group must be present in roles.json').toBe(15);
+    expect(derived.length, 'Component group must be present in roles.json').toBe(29);
     for (const [scopeName, body] of [
       ['light', lightBody],
       ['dark', darkBody],
@@ -122,12 +122,19 @@ describe('--lab-* semantic color contract', () => {
   });
 
   it('resolves every declared --lab-* value to a concrete color or var() reference', () => {
-    // Every `--lab-*: <value>;` must be an rgb()/rgba()/#hex/var() — never empty or a token path.
+    // Every `--lab-*: <value>;` must be a concrete color — oklch() (единая форма
+    // эмиссии движка ≥0.4.0), rgb()/rgba()/#hex (мосты Figma-якоря) — или
+    // var(--lab-) ссылка. Никогда не пусто и не token-путь.
     const decls = [...css.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)];
     expect(decls.length).toBeGreaterThan(0);
     const bad = decls
       .map((m) => ({ name: m[1] ?? '', value: (m[2] ?? '').trim() }))
-      .filter(({ value }) => !/^(rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value));
+      .filter(({ name, value }) => {
+        // Ось интенсивности контракта: --lab-*-alpha — юнитлесс-доля [0, 1]
+        // (форма wasm-проекции glow: --lab-<role>-alpha; мост эмитит так же).
+        if (name.endsWith('-alpha')) return !/^(0|1|0?\.[0-9]+)$/.test(value);
+        return !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value);
+      });
     expect(bad, `non-color values: ${bad.map((b) => `${b.name}=${b.value}`).join(', ')}`).toEqual(
       [],
     );

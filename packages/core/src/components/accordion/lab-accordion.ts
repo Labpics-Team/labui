@@ -1,3 +1,4 @@
+import * as accordionMachine from '@zag-js/accordion';
 /**
  * `<lab-accordion>` — a COMPOUND component that consumes the `@zag-js/accordion`
  * GROUP machine through the Behaviors seam (core-CONTRACT §1). It follows the
@@ -47,7 +48,6 @@
  */
 import { type TemplateResult, css, html, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import * as accordionMachine from '@zag-js/accordion';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -176,7 +176,7 @@ export class LabAccordion extends LabElement {
       display: flex;
       flex-direction: column;
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      border-radius: ${litVar('--lab-radius-card', '0.75rem')};
+      border-radius: ${litVar('--lab-radius-card', '1rem')};
       overflow: hidden;
     }
     :host([orientation='horizontal']) .root {
@@ -260,6 +260,7 @@ export class LabAccordion extends LabElement {
       color: ${litVar('--lab-label-secondary')};
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
     }
     /* The machine sets [hidden] on closed panels; belt-and-braces so first paint

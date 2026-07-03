@@ -3,7 +3,7 @@
  *
  * labui consumes `@labpics/colors` EXCLUSIVELY through the `--lab-*` CSS custom
  * property contract. Every consumed name falls into exactly ONE of three buckets
- * (EPIC.md "three consumption buckets"):
+ * (конвенция «три корзины потребления»):
  *
  *   1. `colour-contract` — a semantic colour role owned by @labpics/colors and
  *      mirrored in `roles.json` (any group). THIS is the surface the pin test
@@ -27,6 +27,7 @@
 import { globSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripComments } from './no-magic-dimension.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** Repo root — from `test/` inside `packages/colors-stub`, three levels up. */
@@ -153,7 +154,7 @@ export function consumerFiles(): string[] {
       seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -180,12 +181,28 @@ function* scanNames(source: string): Generator<{ name: string; line: number }> {
   }
 }
 
+/**
+ * Потребление одного файла-источника. Комментарии срезаются ДО скана
+ * (stripComments сохраняет переносы строк — номера строк не плывут): проза —
+ * примеры `var(--lab-X, …)` в doc-комментариях гардов/утилит — не является
+ * потреблением и не должна попадать в contract-гейт как «неклассифицированное
+ * имя». Экспортирована как чистая функция, чтобы класс был закрыт тестом, а не
+ * только живым деревом.
+ */
+export function consumedNamesInSource(
+  relPath: string,
+  source: string,
+): { name: string; line: number }[] {
+  const isTs = relPath.endsWith('.ts') || relPath.endsWith('.tsx');
+  return [...scanNames(stripComments(source, isTs))];
+}
+
 /** First-seen location of every distinct consumed `--lab-*` name. */
 export function consumedRolesWithSites(): Map<string, SeenAt> {
   const out = new Map<string, SeenAt>();
   for (const rel of consumerFiles()) {
     const source = readFileSync(resolve(repoRoot, rel), 'utf8');
-    for (const { name, line } of scanNames(source)) {
+    for (const { name, line } of consumedNamesInSource(rel, source)) {
       if (!out.has(name)) out.set(name, { file: rel, line });
     }
   }
@@ -194,7 +211,7 @@ export function consumedRolesWithSites(): Map<string, SeenAt> {
 
 /** Every distinct consumed `--lab-*` name across the consumer surface, sorted. */
 export function consumedRoles(): string[] {
-  return [...consumedRolesWithSites().keys()].sort();
+  return [...consumedRolesWithSites().keys()].sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -248,7 +265,7 @@ export function missingColourRoles(
     .filter((n) => SEMANTIC_ROLE_PREFIXES.some((p) => n.startsWith(p)))
     .filter((n) => !knownRoles.has(n))
     .filter((n) => classify(n) === 'unclassified')
-    .sort();
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /** The live contract role set — exposed so the pin test shares one source. */

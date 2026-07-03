@@ -17,7 +17,7 @@
 
 [data-lab-card] {
   --_lab-card-pad: var(--lab-space-md, 1rem);
-  --_lab-card-radius: var(--lab-radius-card, 0.75rem);
+  --_lab-card-radius: var(--lab-radius-card, 1rem);
 
   box-sizing: border-box;
   display: flex;

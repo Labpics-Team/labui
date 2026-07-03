@@ -19,6 +19,12 @@ export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig
       steps: { ...defaultConfig.spacing.steps, ...override.spacing?.steps },
       aliases: { ...defaultConfig.spacing.aliases, ...override.spacing?.aliases },
     },
+    sizes: {
+      ...defaultConfig.sizes,
+      ...override.sizes,
+      steps: { ...defaultConfig.sizes.steps, ...override.sizes?.steps },
+      aliases: { ...defaultConfig.sizes.aliases, ...override.sizes?.aliases },
+    },
     radii: {
       ...defaultConfig.radii,
       ...override.radii,

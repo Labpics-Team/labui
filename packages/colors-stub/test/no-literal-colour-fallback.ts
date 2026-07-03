@@ -327,7 +327,7 @@ export function targetFiles(): string[] {
       seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /** Scan the whole governed surface; return every violation across all files. */

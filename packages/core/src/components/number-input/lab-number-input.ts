@@ -1,3 +1,4 @@
+import * as numberInputMachine from '@zag-js/number-input';
 /**
  * `<lab-number-input>` — a numeric form field: a real `<input role="spinbutton">`
  * with increment / decrement triggers, min/max/step clamping, format/parse, and an
@@ -36,9 +37,10 @@
  * styled control in the declarative shadow DOM before any JS upgrades it.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
-import * as numberInputMachine from '@zag-js/number-input';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -48,8 +50,6 @@ import {
   fieldPartIds,
 } from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 export type { LabFieldSize as LabNumberInputSize, LabFieldType as LabNumberInputType };
 
@@ -246,6 +246,7 @@ export class LabNumberInput extends LabElement {
         padding: var(--_field-pad-y) var(--_field-pad-x);
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: var(--_field-line);
         color: ${litVar('--lab-label-primary')};
         background: transparent;
@@ -282,6 +283,7 @@ export class LabNumberInput extends LabElement {
         padding: 0;
         font: inherit;
         font-size: ${litVar('--lab-font-size-xs', '0.8333rem')};
+        letter-spacing: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
         line-height: 1;
         color: ${litVar('--lab-label-secondary')};
         background-color: ${litVar('--lab-fill-neutral-tinted')};

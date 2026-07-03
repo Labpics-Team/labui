@@ -52,6 +52,8 @@ import * as sliderMachine from '@zag-js/slider';
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -59,8 +61,6 @@ import {
   fieldErrorIsActive,
   fieldPartIds,
 } from '../field/field-a11y.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 /** Control size — drives track thickness and thumb diameter. */
 export type LabSliderSize = LabFieldSize;
@@ -223,10 +223,12 @@ export class LabSlider extends LabElement {
          fallback so the control is usable before tokens load; colour roles never do. */
       --_track-thickness: 0.375rem;
       --_thumb: 1.125rem;
-      --_gap: ${litVar('--lab-space-xs', '0.375rem')};
+      --_gap: ${litVar('--lab-space-xs', '0.25rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_help-font: ${litVar('--lab-font-size-xxs', '0.7222rem')};
+      --_label-tracking: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
+      --_help-font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
+      --_help-tracking: ${litVar('--lab-letter-spacing-xxs', '0.0043em')};
       --_line: ${litVar('--lab-line-height-md', '1.5')};
 
       display: block;
@@ -257,6 +259,7 @@ export class LabSlider extends LabElement {
 
     .label {
       font-size: var(--_label-font);
+      letter-spacing: var(--_label-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-secondary')};
     }
@@ -276,6 +279,7 @@ export class LabSlider extends LabElement {
     /* The live value readout (the Zag valueText part). */
     .value-text {
       font-size: var(--_label-font);
+      letter-spacing: var(--_label-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-primary')};
       font-variant-numeric: tabular-nums;
@@ -394,11 +398,13 @@ export class LabSlider extends LabElement {
     /* Helper / error text, reusing the field's low-emphasis treatment. */
     .helper {
       font-size: var(--_help-font);
+      letter-spacing: var(--_help-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-tertiary')};
     }
     .error {
       font-size: var(--_help-font);
+      letter-spacing: var(--_help-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-danger')};
     }

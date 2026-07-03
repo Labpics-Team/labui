@@ -1,3 +1,4 @@
+import * as paginationMachine from '@zag-js/pagination';
 /**
  * `<lab-pagination>` — navigate a paged collection one page at a time.
  *
@@ -36,7 +37,6 @@
  * This mirrors the sibling controls (avatar, switch), which size the same way.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as paginationMachine from '@zag-js/pagination';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

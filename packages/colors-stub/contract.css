@@ -1,420 +1,352 @@
 /*
- * ┌─────────────────────────────────────────────────────────────────────────┐
- * │  STATIC CONTRACT of the @labpics/colors --lab-* CSS custom properties.    │
- * │                                                                          │
- * │  @labpics/colors is NOT published yet — it is produced by the            │
- * │  lab-colors-v1 epic (chapter `native-and-release`). Its real runtime     │
- * │  engine (chapter `runtime-engine`) RESOLVES these --lab-* roles from the  │
- * │  background at runtime (LUT / WASM / CSS injection), per surface.         │
- * │                                                                          │
- * │  This file declares the FULL --lab-* role contract BY HAND so the LabUI  │
- * │  repo can pin and test the INTEGRATION POINT today. The role NAMES are    │
- * │  the stable API that components consume; swapping this static stub for    │
- * │  the published @labpics/colors must be a no-op for every consumer.        │
- * │                                                                          │
- * │  The VALUES below are honest placeholder CONSTANTS — the exact resolved   │
- * │  Light/Dark palette snapshotted from the LabUI Figma Semantic collection  │
- * │  (488-token W3C DTCG export, fileKey LuaiBd4anRi4DMZayKAnY2). They are     │
- * │  NOT computed here: this file does NOT implement the resolver and does     │
- * │  NOT duplicate semantic.rs — that is forbidden. It only DECLARES roles     │
- * │  and pins their snapshot values.                                          │
- * │                                                                          │
- * │  Three-language rule: components read ONLY semantic --lab-* roles.        │
- * │  Primitives (N0..N12, accent hex) are this file's internal kitchen —      │
- * │  never exposed as their own custom properties.                            │
- * │                                                                          │
- * │  Increased-Contrast (IC) modes exist in the source snapshot but are       │
- * │  RESERVED here — not emitted yet. See README.md (## IC — reserved).        │
- * │                                                                          │
- * │  Generated from the DTCG snapshot — do not hand-edit individual values;   │
- * │  re-derive from reference/labui-tokens-snapshot.dtcg.json if they drift.   │
- * │                                                                          │
- * │  TODO(lab-colors-v1/runtime-engine): delete this stub and depend on the   │
- * │  published @labpics/colors. The --lab-* role names MUST stay identical.   │
- * └─────────────────────────────────────────────────────────────────────────┘
- */
-
-/*
- * Theme switching convention (matches the component scaffold):
- *   - :root carries the LIGHT palette (default).
- *   - [data-theme="dark"] forces DARK.
- *   - [data-theme="light"] forces LIGHT (wins over OS preference).
- *   - @media (prefers-color-scheme: dark) applies DARK as a fallback ONLY when
- *     no explicit [data-theme] is set on the element.
- */
+СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
+Источник: @labpics/colors@0.5.0 + паспорт labui.config.json
+(отпечаток e6134db729485be2). Движковые роли — живая эмиссия (единая форма
+oklch); строки «мост: Figma-якорь» — входы и компонентные поверхности из
+замороженного figma-reference.css, переезжают следующими этапами поезда.
+Регенерация: node packages/colors/generate-contract.mjs
+Гейт дисциплины: packages/colors/test/contract-generated.test.mjs
+*/
 
 :root,
 [data-theme="light"] {
-  /* Tells the UA which palette native form controls (button/checkbox/select
-     chrome, scrollbars) should render in. Without it, an unstyled native
-     control nested under a themed ancestor keeps the browser's LIGHT default
-     face while inheriting the theme's (light-on-dark) text colour — the two
-     stop matching, and WebKit in particular does not auto-infer dark chrome
-     the way Chromium sometimes does (cross-engine `color-contrast` gap on any
-     plain slotted `<button>`/native control). */
-  color-scheme: light;
-
-  /* BACKGROUNDS — surface roles (Neutral ladder, Grouped, Static, Overlay, Materials) */
-  --lab-bg-material-base-01: rgb(153 153 153 / 0.969);
-  --lab-bg-material-base-02: rgb(92 92 92);
-  --lab-bg-material-elevated-01: rgb(255 255 255 / 0.8);
-  --lab-bg-material-elevated-02: rgb(38 38 38);
-  --lab-bg-material-muted-01: rgb(179 179 179 / 0.82);
-  --lab-bg-material-muted-02: rgb(56 56 56);
-  --lab-bg-material-soft-01: rgb(166 166 166 / 0.698);
-  --lab-bg-material-soft-02: rgb(51 51 51);
-  --lab-bg-material-subtle-01: rgb(191 191 191 / 0.439);
-  --lab-bg-material-subtle-02: rgb(13 13 13);
-  --lab-bg-grouped-primary: rgb(247 248 250);
-  --lab-bg-grouped-secondary: rgb(255 255 255);
-  --lab-bg-grouped-tertiary: rgb(247 248 250);
-  --lab-bg-inverted: rgb(16 16 18);
-  --lab-bg-primary: rgb(255 255 255);
-  --lab-bg-secondary: rgb(247 248 250);
-  --lab-bg-static-dark: rgb(16 16 18);
-  --lab-bg-static-light: rgb(255 255 255);
-  --lab-bg-tertiary: rgb(255 255 255);
-  --lab-bg-overlay-base: rgb(255 255 255 / 0.478);
-  --lab-bg-overlay-ghost: rgb(255 255 255 / 0);
-  --lab-bg-overlay-soft: rgb(255 255 255 / 0.2);
-  --lab-bg-overlay-strong: rgb(255 255 255 / 0.8);
-
-  /* LABELS — text/icon roles (Neutral ladder @100/@72/@52/@32, Inverted, Static, sentiments) */
-  --lab-label-brand-primary: rgb(0 122 255);
-  --lab-label-brand-quaternary: rgb(0 122 255 / 0.322);
-  --lab-label-brand-secondary: rgb(0 122 255 / 0.722);
-  --lab-label-brand-tertiary: rgb(0 122 255 / 0.522);
-  --lab-label-danger-primary: rgb(255 59 48);
-  --lab-label-danger-quaternary: rgb(255 59 48 / 0.322);
-  --lab-label-danger-secondary: rgb(255 59 48 / 0.722);
-  --lab-label-danger-tertiary: rgb(255 59 48 / 0.522);
-  --lab-label-info-primary: rgb(62 135 255);
-  --lab-label-info-quaternary: rgb(62 135 255 / 0.322);
-  --lab-label-info-secondary: rgb(62 135 255 / 0.722);
-  --lab-label-info-tertiary: rgb(62 135 255 / 0.522);
-  --lab-label-inverted-primary: rgb(255 255 255);
-  --lab-label-inverted-quaternary: rgb(176 176 185 / 0.322);
-  --lab-label-inverted-secondary: rgb(176 176 185 / 0.722);
-  --lab-label-inverted-tertiary: rgb(176 176 185 / 0.522);
-  --lab-label-primary: rgb(16 16 18);
-  --lab-label-quaternary: rgb(60 60 67 / 0.322);
-  --lab-label-secondary: rgb(60 60 67 / 0.722);
-  --lab-label-tertiary: rgb(60 60 67 / 0.522);
-  --lab-label-static-dark-primary: rgb(16 16 18);
-  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
-  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
-  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522);
-  --lab-label-static-light-primary: rgb(255 255 255);
-  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
-  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722);
-  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
-  --lab-label-success-primary: rgb(52 199 89);
-  --lab-label-success-quaternary: rgb(52 199 89 / 0.322);
-  --lab-label-success-secondary: rgb(52 199 89 / 0.722);
-  --lab-label-success-tertiary: rgb(52 199 89 / 0.522);
-  --lab-label-warning-primary: rgb(255 161 0);
-  --lab-label-warning-quaternary: rgb(255 161 0 / 0.322);
-  --lab-label-warning-secondary: rgb(255 161 0 / 0.722);
-  --lab-label-warning-tertiary: rgb(255 161 0 / 0.522);
-
-  /* FILLS — tinted surface roles (Neutral @ ladder, sentiment tints) */
-  --lab-fill-brand-primary: rgb(0 122 255 / 0.122);
-  --lab-fill-brand-quaternary: rgb(0 122 255 / 0.02);
-  --lab-fill-brand-secondary: rgb(0 122 255 / 0.078);
-  --lab-fill-brand-tertiary: rgb(0 122 255 / 0.039);
-  --lab-fill-danger-primary: rgb(255 59 48 / 0.122);
-  --lab-fill-danger-quaternary: rgb(255 59 48 / 0.02);
-  --lab-fill-danger-secondary: rgb(255 59 48 / 0.078);
-  --lab-fill-danger-tertiary: rgb(255 59 48 / 0.039);
-  --lab-fill-info-primary: rgb(62 135 255 / 0.122);
-  --lab-fill-info-quaternary: rgb(62 135 255 / 0.02);
-  --lab-fill-info-secondary: rgb(62 135 255 / 0.078);
-  --lab-fill-info-tertiary: rgb(62 135 255 / 0.039);
-  --lab-fill-none: rgb(120 120 128 / 0);
-  --lab-fill-primary: rgb(120 120 128 / 0.2);
-  --lab-fill-quaternary: rgb(120 120 128 / 0.078);
-  --lab-fill-secondary: rgb(120 120 128 / 0.161);
-  --lab-fill-static-dark-primary: rgb(120 120 128 / 0.361);
-  --lab-fill-static-dark-quaternary: rgb(120 120 128 / 0.161);
-  --lab-fill-static-dark-secondary: rgb(120 120 128 / 0.322);
-  --lab-fill-static-dark-tertiary: rgb(120 120 128 / 0.239);
-  --lab-fill-static-light-primary: rgb(120 120 128 / 0.2);
-  --lab-fill-static-light-quaternary: rgb(120 120 128 / 0.078);
-  --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161);
-  --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122);
-  --lab-fill-tertiary: rgb(120 120 128 / 0.122);
-  --lab-fill-success-primary: rgb(52 199 89 / 0.122);
-  --lab-fill-success-quaternary: rgb(52 199 89 / 0.02);
-  --lab-fill-success-secondary: rgb(52 199 89 / 0.078);
-  --lab-fill-success-tertiary: rgb(52 199 89 / 0.039);
-  --lab-fill-warning-primary: rgb(255 161 0 / 0.122);
-  --lab-fill-warning-quaternary: rgb(255 161 0 / 0.02);
-  --lab-fill-warning-secondary: rgb(255 161 0 / 0.078);
-  --lab-fill-warning-tertiary: rgb(255 161 0 / 0.039);
-
-  /* BORDER — stroke roles (Neutral Strong/Base/Soft/Ghost/Inverted, Static, sentiments) */
-  --lab-border-brand-base: rgb(0 122 255 / 0.2);
-  --lab-border-brand-soft: rgb(0 122 255 / 0.122);
-  --lab-border-brand-strong: rgb(0 122 255);
-  --lab-border-danger-base: rgb(255 59 48 / 0.2);
-  --lab-border-danger-soft: rgb(255 59 48 / 0.122);
-  --lab-border-danger-strong: rgb(255 59 48);
-  --lab-border-info-base: rgb(62 135 255 / 0.2);
-  --lab-border-info-soft: rgb(62 135 255 / 0.122);
-  --lab-border-info-strong: rgb(62 135 255);
-  --lab-border-base: rgb(120 120 128 / 0.161);
-  --lab-border-ghost: rgb(120 120 128 / 0);
-  --lab-border-inverted: rgb(255 255 255);
-  --lab-border-soft: rgb(120 120 128 / 0.078);
-  --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
-  --lab-border-static-dark-soft: rgb(120 120 128 / 0.122);
-  --lab-border-static-dark-strong: rgb(16 16 18);
-  --lab-border-static-light-base: rgb(120 120 128 / 0.161);
-  --lab-border-static-light-soft: rgb(120 120 128 / 0.078);
-  --lab-border-static-light-strong: rgb(255 255 255);
-  --lab-border-strong: rgb(16 16 18);
-  --lab-border-success-base: rgb(52 199 89 / 0.2);
-  --lab-border-success-soft: rgb(52 199 89 / 0.122);
-  --lab-border-success-strong: rgb(52 199 89);
-  --lab-border-warning-base: rgb(255 161 0 / 0.2);
-  --lab-border-warning-soft: rgb(255 161 0 / 0.122);
-  --lab-border-warning-strong: rgb(255 161 0);
-
-  /* FX — effects (Glow, Focus-ring, Skeleton, Shadow stack) */
-  --lab-fx-focus-ring-brand: rgb(0 122 255);
-  --lab-fx-focus-ring-danger: rgb(255 59 48);
-  --lab-fx-focus-ring-neutral: rgb(16 16 18);
-  --lab-fx-focus-ring-warning: rgb(255 161 0);
-  --lab-fx-glow-brand: rgb(0 122 255 / 0.522);
-  --lab-fx-glow-danger: rgb(255 59 48 / 0.522);
-  --lab-fx-glow-inverted: rgb(176 176 185);
-  --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
-  --lab-fx-glow-warning: rgb(255 161 0 / 0.522);
-  --lab-fx-shadow-ambient: rgb(16 16 18 / 0.02);
-  --lab-fx-shadow-major: rgb(16 16 18 / 0.122);
-  --lab-fx-shadow-minor: rgb(16 16 18 / 0.012);
-  --lab-fx-shadow-penumbra: rgb(16 16 18 / 0.039);
-  --lab-fx-skeleton-base: rgb(120 120 128 / 0.078);
-  --lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);
-
-  /* MISC — composed roles (Control-bg, Badge label pairing) */
-  --lab-badge-label-contrast: rgb(16 16 18);
-  --lab-badge-label-default: rgb(255 255 255);
-  --lab-control-bg: rgb(255 255 255);
-
-  /* ── DERIVED COMPONENT ROLES ────────────────────────────────────────────── */
-  /*
-   * Flat, component-facing roles consumed by Button/proof (proto-A surface).
-   * These are NOT 1:1 in the faithful Figma Semantic taxonomy above — they are
-   * DERIVED from it. The real @labpics/colors engine MUST resolve these names too
-   * (filed as a core requirement); this stub pins them so components render today.
-   *
-   * Composition rule: where an exact Figma equivalent exists, alias it via var()
-   * (one source of truth, zero value duplication). Where no equivalent exists
-   * (the SOLID full-opacity neutral fill + its on-fill contrast), the value is a
-   * design literal marked PROVISIONAL — final visual acceptance is the owner's.
-   */
-
-  /* Solid fills (kind=fill) — FULL-opacity surface, NOT the low-alpha Fills@12.
-   * Danger solid reuses the opaque danger primitive already pinned by the
-   * `-strong` border role (identical primitive, full opacity) — honest var() reuse.
-   * Accent solid does NOT reuse `--lab-border-brand-strong`: that role is pinned for
-   * BORDER/non-text usage (WCAG 1.4.11, 3:1), while a solid fill carries a white
-   * BODY label (WCAG 1.4.3, 4.5:1) — the same primitive fails the stricter text
-   * threshold (measured 4.02:1 in axe-core). A distinct, slightly darker literal is
-   * used here so button/badge solid-accent surfaces clear AA; PROVISIONAL — owner
-   * sign-off on the exact shade pending (does not change border-brand-strong itself).
-   * The neutral solid has no opaque-neutral surface in Figma → PROVISIONAL literal
-   * (proto-A: ~#e8e8ec light). */
-  --lab-fill-accent: rgb(0 110 230); /* PROVISIONAL — AA-safe solid accent (≥4.5:1 w/ white), owner sign-off */
+  --lab-bg-material-base-01: rgb(153 153 153 / 0.969); /* мост: Figma-якорь */
+  --lab-bg-material-base-02: rgb(92 92 92); /* мост: Figma-якорь */
+  --lab-bg-material-elevated-01: rgb(255 255 255 / 0.8); /* мост: Figma-якорь */
+  --lab-bg-material-elevated-02: rgb(38 38 38); /* мост: Figma-якорь */
+  --lab-bg-material-muted-01: rgb(179 179 179 / 0.82); /* мост: Figma-якорь */
+  --lab-bg-material-muted-02: rgb(56 56 56); /* мост: Figma-якорь */
+  --lab-bg-material-soft-01: rgb(166 166 166 / 0.698); /* мост: Figma-якорь */
+  --lab-bg-material-soft-02: rgb(51 51 51); /* мост: Figma-якорь */
+  --lab-bg-material-subtle-01: rgb(191 191 191 / 0.439); /* мост: Figma-якорь */
+  --lab-bg-material-subtle-02: rgb(13 13 13); /* мост: Figma-якорь */
+  --lab-bg-grouped-primary: rgb(247 248 250); /* мост: Figma-якорь */
+  --lab-bg-grouped-secondary: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-bg-grouped-tertiary: rgb(247 248 250); /* мост: Figma-якорь */
+  --lab-bg-inverted: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-bg-primary: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-bg-secondary: rgb(247 248 250); /* мост: Figma-якорь */
+  --lab-bg-static-dark: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-bg-static-light: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-bg-tertiary: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-bg-overlay-base: rgb(255 255 255 / 0.478); /* мост: Figma-якорь */
+  --lab-bg-overlay-ghost: rgb(255 255 255 / 0); /* мост: Figma-якорь */
+  --lab-bg-overlay-soft: rgb(255 255 255 / 0.2); /* мост: Figma-якорь */
+  --lab-bg-overlay-strong: rgb(255 255 255 / 0.8); /* мост: Figma-якорь */
+  --lab-label-brand-primary: oklch(60.27647% 0.217712 257.424 / 1);
+  --lab-label-brand-quaternary: oklch(60.27647% 0.217712 257.424 / 0.322);
+  --lab-label-brand-secondary: oklch(60.27647% 0.217712 257.424 / 0.722);
+  --lab-label-brand-tertiary: oklch(60.27647% 0.217712 257.424 / 0.522);
+  --lab-label-danger-primary: oklch(65.42146% 0.232135 28.659 / 1);
+  --lab-label-danger-quaternary: oklch(65.42146% 0.232135 28.659 / 0.322);
+  --lab-label-danger-secondary: oklch(65.42146% 0.232135 28.659 / 0.722);
+  --lab-label-danger-tertiary: oklch(65.42146% 0.232135 28.659 / 0.522);
+  --lab-label-info-primary: oklch(64.03903% 0.193503 278.130 / 1);
+  --lab-label-info-quaternary: oklch(64.03903% 0.193503 278.130 / 0.322);
+  --lab-label-info-secondary: oklch(64.03903% 0.193503 278.130 / 0.722);
+  --lab-label-info-tertiary: oklch(64.03903% 0.193503 278.130 / 0.522);
+  --lab-label-inverted-primary: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-label-inverted-quaternary: rgb(176 176 185 / 0.322); /* мост: Figma-якорь */
+  --lab-label-inverted-secondary: rgb(176 176 185 / 0.722); /* мост: Figma-якорь */
+  --lab-label-inverted-tertiary: rgb(176 176 185 / 0.522); /* мост: Figma-якорь */
+  --lab-label-primary: oklch(14.79140% 0.012878 284.717);
+  --lab-label-quaternary: oklch(80.14049% 0.013952 286.081);
+  --lab-label-secondary: oklch(55.16643% 0.013808 285.938);
+  --lab-label-tertiary: oklch(66.97448% 0.014606 285.999);
+  --lab-label-static-dark-primary: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322); /* мост: Figma-якорь */
+  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722); /* мост: Figma-якорь */
+  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522); /* мост: Figma-якорь */
+  --lab-label-static-light-primary: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322); /* мост: Figma-якорь */
+  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722); /* мост: Figma-якорь */
+  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522); /* мост: Figma-якорь */
+  --lab-label-success-primary: oklch(73.03242% 0.194381 147.444 / 1);
+  --lab-label-success-quaternary: oklch(73.03242% 0.194381 147.444 / 0.322);
+  --lab-label-success-secondary: oklch(73.03242% 0.194381 147.444 / 0.722);
+  --lab-label-success-tertiary: oklch(73.03242% 0.194381 147.444 / 0.522);
+  --lab-label-warning-primary: oklch(78.56796% 0.171718 68.607 / 1);
+  --lab-label-warning-quaternary: oklch(78.56796% 0.171718 68.607 / 0.322);
+  --lab-label-warning-secondary: oklch(78.56796% 0.171718 68.607 / 0.722);
+  --lab-label-warning-tertiary: oklch(78.56796% 0.171718 68.607 / 0.522);
+  --lab-fill-brand-primary: oklch(60.27647% 0.217712 257.424 / 0.122);
+  --lab-fill-brand-quaternary: oklch(60.27647% 0.217712 257.424 / 0.02);
+  --lab-fill-brand-secondary: oklch(60.27647% 0.217712 257.424 / 0.078);
+  --lab-fill-brand-tertiary: oklch(60.27647% 0.217712 257.424 / 0.039);
+  --lab-fill-danger-primary: oklch(65.42146% 0.232135 28.659 / 0.122);
+  --lab-fill-danger-quaternary: oklch(65.42146% 0.232135 28.659 / 0.02);
+  --lab-fill-danger-secondary: oklch(65.42146% 0.232135 28.659 / 0.078);
+  --lab-fill-danger-tertiary: oklch(65.42146% 0.232135 28.659 / 0.039);
+  --lab-fill-info-primary: oklch(64.03903% 0.193503 278.130 / 0.122);
+  --lab-fill-info-quaternary: oklch(64.03903% 0.193503 278.130 / 0.02);
+  --lab-fill-info-secondary: oklch(64.03903% 0.193503 278.130 / 0.078);
+  --lab-fill-info-tertiary: oklch(64.03903% 0.193503 278.130 / 0.039);
+  --lab-fill-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-fill-primary: oklch(57.53363% 0.012136 286.012 / 0.2);
+  --lab-fill-quaternary: oklch(57.53363% 0.012136 286.012 / 0.078);
+  --lab-fill-secondary: oklch(57.53363% 0.012136 286.012 / 0.161);
+  --lab-fill-static-dark-primary: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
+  --lab-fill-static-dark-quaternary: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+  --lab-fill-static-dark-secondary: rgb(120 120 128 / 0.322); /* мост: Figma-якорь */
+  --lab-fill-static-dark-tertiary: rgb(120 120 128 / 0.239); /* мост: Figma-якорь */
+  --lab-fill-static-light-primary: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
+  --lab-fill-static-light-quaternary: rgb(120 120 128 / 0.078); /* мост: Figma-якорь */
+  --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+  --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122); /* мост: Figma-якорь */
+  --lab-fill-tertiary: oklch(57.53363% 0.012136 286.012 / 0.122);
+  --lab-fill-success-primary: oklch(73.03242% 0.194381 147.444 / 0.122);
+  --lab-fill-success-quaternary: oklch(73.03242% 0.194381 147.444 / 0.02);
+  --lab-fill-success-secondary: oklch(73.03242% 0.194381 147.444 / 0.078);
+  --lab-fill-success-tertiary: oklch(73.03242% 0.194381 147.444 / 0.039);
+  --lab-fill-warning-primary: oklch(78.56796% 0.171718 68.607 / 0.122);
+  --lab-fill-warning-quaternary: oklch(78.56796% 0.171718 68.607 / 0.02);
+  --lab-fill-warning-secondary: oklch(78.56796% 0.171718 68.607 / 0.078);
+  --lab-fill-warning-tertiary: oklch(78.56796% 0.171718 68.607 / 0.039);
+  --lab-border-brand-base: oklch(60.27647% 0.217712 257.424 / 0.2);
+  --lab-border-brand-soft: oklch(60.27647% 0.217712 257.424 / 0.122);
+  --lab-border-brand-strong: oklch(60.27647% 0.217712 257.424 / 1);
+  --lab-border-danger-base: oklch(65.42146% 0.232135 28.659 / 0.2);
+  --lab-border-danger-soft: oklch(65.42146% 0.232135 28.659 / 0.122);
+  --lab-border-danger-strong: oklch(65.42146% 0.232135 28.659 / 1);
+  --lab-border-info-base: oklch(64.03903% 0.193503 278.130 / 0.2);
+  --lab-border-info-soft: oklch(64.03903% 0.193503 278.130 / 0.122);
+  --lab-border-info-strong: oklch(64.03903% 0.193503 278.130 / 1);
+  --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.161);
+  --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-border-inverted: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-border-soft: oklch(57.53363% 0.012136 286.012 / 0.078);
+  --lab-border-static-dark-base: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
+  --lab-border-static-dark-soft: rgb(120 120 128 / 0.122); /* мост: Figma-якорь */
+  --lab-border-static-dark-strong: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-border-static-light-base: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+  --lab-border-static-light-soft: rgb(120 120 128 / 0.078); /* мост: Figma-якорь */
+  --lab-border-static-light-strong: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-border-strong: oklch(14.79140% 0.012878 284.717);
+  --lab-border-success-base: oklch(73.03242% 0.194381 147.444 / 0.2);
+  --lab-border-success-soft: oklch(73.03242% 0.194381 147.444 / 0.122);
+  --lab-border-success-strong: oklch(73.03242% 0.194381 147.444 / 1);
+  --lab-border-warning-base: oklch(78.56796% 0.171718 68.607 / 0.2);
+  --lab-border-warning-soft: oklch(78.56796% 0.171718 68.607 / 0.122);
+  --lab-border-warning-strong: oklch(78.56796% 0.171718 68.607 / 1);
+  --lab-fx-focus-ring-brand: oklch(60.27647% 0.217712 257.424 / 1);
+  --lab-fx-focus-ring-danger: oklch(65.42146% 0.232135 28.659 / 1);
+  --lab-fx-focus-ring-neutral: oklch(17.39406% 0.004094 285.967 / 1);
+  --lab-fx-focus-ring-warning: oklch(78.56796% 0.171718 68.607 / 1);
+  --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424 / 0.522);
+  --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659 / 0.522);
+  --lab-fx-glow-inverted: oklch(75.99692% 0.012723 286.093 / 0.522);
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876 / 0.522);
+  --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607 / 0.522);
+  --lab-fx-shadow-ambient: oklch(17.39406% 0.004094 285.967 / 0.02);
+  --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.122);
+  --lab-fx-shadow-minor: oklch(17.39406% 0.004094 285.967 / 0.012);
+  --lab-fx-shadow-penumbra: oklch(17.39406% 0.004094 285.967 / 0.039);
+  --lab-fx-skeleton-base: oklch(57.53363% 0.012136 286.012 / 0.078);
+  --lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);
+  --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-control-bg: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-fill-accent: var(--lab-border-brand-strong);
   --lab-fill-danger: var(--lab-border-danger-strong);
-  --lab-fill-neutral: rgb(232 232 236); /* PROVISIONAL — solid neutral surface, owner sign-off */
-
-  /* Tinted fills (kind=tinted) - Figma Fills sentiment @12 - exact var() reuse. */
+  --lab-fill-neutral: rgb(232 232 236); /* мост: провизорная, деривация открыта */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
   --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
   --lab-fill-neutral-tinted: var(--lab-fill-primary);
-
-  /* Sentiment text (tinted/border/ghost kinds) — exact var() reuse. */
   --lab-label-accent: var(--lab-label-brand-primary);
   --lab-label-danger: var(--lab-label-danger-primary);
-
-  /* Contrast label ON a solid fill. On-accent/on-danger = white (static-light),
-   * matches the opaque accent/danger primitives. On-neutral pairs the PROVISIONAL
-   * neutral solid → its contrast is also PROVISIONAL. */
   --lab-label-on-accent: var(--lab-label-static-light-primary);
   --lab-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-label-on-neutral: rgb(16 16 18); /* PROVISIONAL — pairs solid neutral fill */
-
-  /* Borders (outline for kind=border) — opaque sentiment strokes + neutral base.
-   * Focus ring ≈ Figma FX/Focus-ring/Brand — exact var() reuse. */
+  --lab-label-on-neutral: rgb(16 16 18); /* мост: провизорная, деривация открыта */
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
+  /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),
+     лейбл — nested resolve на выведенной заливке. */
+  --lab-badge-fill-brand: oklch(57.10674% 0.215668 258.445 / 1);
+  --lab-badge-label-on-brand: oklch(99.38517% 0.002854 264.542);
+  --lab-badge-fill-danger: oklch(59.02521% 0.231590 28.749 / 1);
+  --lab-badge-label-on-danger: oklch(99.19108% 0.003956 286.327);
+  --lab-badge-fill-warning: oklch(78.56796% 0.171718 68.607 / 1);
+  --lab-badge-label-on-warning: oklch(11.77179% 0.011359 284.521);
+  --lab-badge-fill-success: oklch(73.03242% 0.194381 147.444 / 1);
+  --lab-badge-label-on-success: oklch(10.99109% 0.012707 284.115);
+  --lab-badge-fill-info: oklch(57.83923% 0.194680 278.084 / 1);
+  --lab-badge-label-on-info: oklch(99.38517% 0.002854 264.542);
+  --lab-badge-fill-static-dark: oklch(17.39406% 0.004094 285.967 / 1);
+  --lab-badge-label-on-static-dark: oklch(96.40284% 0.013312 286.147);
+  --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
+  --lab-badge-label-on-static-light: oklch(14.79140% 0.012878 284.717);
+  /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);
+     маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).
+     Переезд моста: перекрывает Figma-якорь каскадом. */
+  --lab-bg-tone-1: #FFFFFF; /* вход: фон резолва (паспортный якорь нейтрали) */
+  --lab-bg-tone-2: oklch(97.84197% 0.010603 286.202);
+  --lab-bg-tone-3: oklch(97.84197% 0.010603 286.202);
+  --lab-bg-primary: var(--lab-bg-tone-1);
+  --lab-bg-secondary: var(--lab-bg-tone-2);
+  --lab-bg-tertiary: var(--lab-bg-tone-1);
+  --lab-bg-grouped-primary: var(--lab-bg-tone-2);
+  --lab-bg-grouped-secondary: var(--lab-bg-tone-1);
+  --lab-bg-grouped-tertiary: var(--lab-bg-tone-2);
+  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+     свет несёт border-reveal. */
+  --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424);
+  --lab-fx-glow-brand-core: oklch(78.84894% 0.062240 265.472);
+  --lab-fx-glow-brand-alpha: 0;
+  --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659);
+  --lab-fx-glow-danger-core: oklch(81.62208% 0.103545 27.533);
+  --lab-fx-glow-danger-alpha: 0;
+  --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607);
+  --lab-fx-glow-warning-core: oklch(88.80612% 0.081204 68.866);
+  --lab-fx-glow-warning-alpha: 0;
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-core: oklch(99.97226% 0.001314 106.423);
+  --lab-fx-glow-neutral-alpha: 0;
 }
 
 [data-theme="dark"] {
-  /* See `color-scheme: light` in the :root block above for the rationale. */
-  color-scheme: dark;
-
-  /* BACKGROUNDS — surface roles (Neutral ladder, Grouped, Static, Overlay, Materials) */
-  --lab-bg-material-base-01: rgb(37 37 37 / 0.898);
-  --lab-bg-material-base-02: rgb(124 124 124);
-  --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8);
-  --lab-bg-material-elevated-02: rgb(31 31 31);
-  --lab-bg-material-muted-01: rgb(37 37 37 / 0.82);
-  --lab-bg-material-muted-02: rgb(140 140 140);
-  --lab-bg-material-soft-01: rgb(37 37 37 / 0.698);
-  --lab-bg-material-soft-02: rgb(156 156 156);
-  --lab-bg-material-subtle-01: rgb(37 37 37 / 0.549);
-  --lab-bg-material-subtle-02: rgb(156 156 156);
-  --lab-bg-grouped-primary: rgb(16 16 18);
-  --lab-bg-grouped-secondary: rgb(28 28 30);
-  --lab-bg-grouped-tertiary: rgb(36 36 38);
-  --lab-bg-inverted: rgb(246 248 250);
-  --lab-bg-primary: rgb(16 16 18);
-  --lab-bg-secondary: rgb(28 28 30);
-  --lab-bg-static-dark: rgb(16 16 18);
-  --lab-bg-static-light: rgb(255 255 255);
-  --lab-bg-tertiary: rgb(36 36 38);
-  --lab-bg-overlay-base: rgb(16 16 18 / 0.478);
-  --lab-bg-overlay-ghost: rgb(16 16 18 / 0);
-  --lab-bg-overlay-soft: rgb(16 16 18 / 0.2);
-  --lab-bg-overlay-strong: rgb(16 16 18 / 0.8);
-
-  /* LABELS — text/icon roles (Neutral ladder @100/@72/@52/@32, Inverted, Static, sentiments) */
-  --lab-label-brand-primary: rgb(74 143 255);
-  --lab-label-brand-quaternary: rgb(74 143 255 / 0.322);
-  --lab-label-brand-secondary: rgb(74 143 255 / 0.722);
-  --lab-label-brand-tertiary: rgb(74 143 255 / 0.522);
-  --lab-label-danger-primary: rgb(255 58 58);
-  --lab-label-danger-quaternary: rgb(255 58 58 / 0.322);
-  --lab-label-danger-secondary: rgb(255 58 58 / 0.722);
-  --lab-label-danger-tertiary: rgb(255 58 58 / 0.522);
-  --lab-label-info-primary: rgb(86 150 255);
-  --lab-label-info-quaternary: rgb(86 150 255 / 0.322);
-  --lab-label-info-secondary: rgb(86 150 255 / 0.722);
-  --lab-label-info-tertiary: rgb(86 150 255 / 0.522);
-  --lab-label-inverted-primary: rgb(16 16 18);
-  --lab-label-inverted-quaternary: rgb(60 60 67 / 0.322);
-  --lab-label-inverted-secondary: rgb(60 60 67 / 0.722);
-  --lab-label-inverted-tertiary: rgb(60 60 67 / 0.522);
-  --lab-label-primary: rgb(246 248 250);
-  --lab-label-quaternary: rgb(176 176 185 / 0.322);
-  --lab-label-secondary: rgb(176 176 185 / 0.722);
-  /* PROVISIONAL — alpha raised 0.522→0.70 (owner sign-off pending): the Figma
-     snapshot alpha, composited over this dark-theme surface (#101012), measures
-     3.18:1 for helper/placeholder text (axe color-contrast), below WCAG AA
-     4.5:1. Same base hue, only the opacity moved so the composited result
-     clears the threshold (~4.85:1) — not a hand-picked new colour. */
-  --lab-label-tertiary: rgb(176 176 185 / 0.7);
-  --lab-label-static-dark-primary: rgb(16 16 18);
-  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
-  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
-  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522);
-  --lab-label-static-light-primary: rgb(255 255 255);
-  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
-  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722);
-  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
-  --lab-label-success-primary: rgb(48 209 88);
-  --lab-label-success-quaternary: rgb(48 209 88 / 0.322);
-  --lab-label-success-secondary: rgb(48 209 88 / 0.722);
-  --lab-label-success-tertiary: rgb(48 209 88 / 0.522);
-  --lab-label-warning-primary: rgb(255 144 8);
-  --lab-label-warning-quaternary: rgb(255 144 8 / 0.322);
-  --lab-label-warning-secondary: rgb(255 144 8 / 0.722);
-  --lab-label-warning-tertiary: rgb(255 144 8 / 0.522);
-
-  /* FILLS — tinted surface roles (Neutral @ ladder, sentiment tints) */
-  --lab-fill-brand-primary: rgb(74 143 255 / 0.122);
-  --lab-fill-brand-quaternary: rgb(74 143 255 / 0.02);
-  --lab-fill-brand-secondary: rgb(74 143 255 / 0.078);
-  --lab-fill-brand-tertiary: rgb(74 143 255 / 0.039);
-  --lab-fill-danger-primary: rgb(255 58 58 / 0.122);
-  --lab-fill-danger-quaternary: rgb(255 58 58 / 0.02);
-  --lab-fill-danger-secondary: rgb(255 58 58 / 0.078);
-  --lab-fill-danger-tertiary: rgb(255 58 58 / 0.039);
-  --lab-fill-info-primary: rgb(86 150 255 / 0.122);
-  --lab-fill-info-quaternary: rgb(86 150 255 / 0.02);
-  --lab-fill-info-secondary: rgb(86 150 255 / 0.078);
-  --lab-fill-info-tertiary: rgb(86 150 255 / 0.039);
-  --lab-fill-none: rgb(120 120 128 / 0);
-  --lab-fill-primary: rgb(120 120 128 / 0.361);
-  --lab-fill-quaternary: rgb(120 120 128 / 0.161);
-  --lab-fill-secondary: rgb(120 120 128 / 0.322);
-  --lab-fill-static-dark-primary: rgb(120 120 128 / 0.361);
-  --lab-fill-static-dark-quaternary: rgb(120 120 128 / 0.161);
-  --lab-fill-static-dark-secondary: rgb(120 120 128 / 0.322);
-  --lab-fill-static-dark-tertiary: rgb(120 120 128 / 0.239);
-  --lab-fill-static-light-primary: rgb(120 120 128 / 0.2);
-  --lab-fill-static-light-quaternary: rgb(120 120 128 / 0.078);
-  --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161);
-  --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122);
-  --lab-fill-tertiary: rgb(120 120 128 / 0.239);
-  --lab-fill-success-primary: rgb(48 209 88 / 0.122);
-  --lab-fill-success-quaternary: rgb(48 209 88 / 0.02);
-  --lab-fill-success-secondary: rgb(48 209 88 / 0.078);
-  --lab-fill-success-tertiary: rgb(48 209 88 / 0.039);
-  --lab-fill-warning-primary: rgb(255 144 8 / 0.122);
-  --lab-fill-warning-quaternary: rgb(255 144 8 / 0.02);
-  --lab-fill-warning-secondary: rgb(255 144 8 / 0.078);
-  --lab-fill-warning-tertiary: rgb(255 144 8 / 0.039);
-
-  /* BORDER — stroke roles (Neutral Strong/Base/Soft/Ghost/Inverted, Static, sentiments) */
-  --lab-border-brand-base: rgb(74 143 255 / 0.2);
-  --lab-border-brand-soft: rgb(74 143 255 / 0.122);
-  --lab-border-brand-strong: rgb(74 143 255);
-  --lab-border-danger-base: rgb(255 58 58 / 0.2);
-  --lab-border-danger-soft: rgb(255 58 58 / 0.122);
-  --lab-border-danger-strong: rgb(255 58 58);
-  --lab-border-info-base: rgb(86 150 255 / 0.2);
-  --lab-border-info-soft: rgb(86 150 255 / 0.122);
-  --lab-border-info-strong: rgb(86 150 255);
-  --lab-border-base: rgb(120 120 128 / 0.2);
-  --lab-border-ghost: rgb(120 120 128 / 0);
-  --lab-border-inverted: rgb(16 16 18);
-  --lab-border-soft: rgb(120 120 128 / 0.122);
-  --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
-  --lab-border-static-dark-soft: rgb(120 120 128 / 0.122);
-  --lab-border-static-dark-strong: rgb(16 16 18);
-  --lab-border-static-light-base: rgb(120 120 128 / 0.161);
-  --lab-border-static-light-soft: rgb(120 120 128 / 0.078);
-  --lab-border-static-light-strong: rgb(255 255 255);
-  --lab-border-strong: rgb(246 248 250);
-  --lab-border-success-base: rgb(48 209 88 / 0.2);
-  --lab-border-success-soft: rgb(48 209 88 / 0.122);
-  --lab-border-success-strong: rgb(48 209 88);
-  --lab-border-warning-base: rgb(255 144 8 / 0.2);
-  --lab-border-warning-soft: rgb(255 144 8 / 0.122);
-  --lab-border-warning-strong: rgb(255 144 8);
-
-  /* FX — effects (Glow, Focus-ring, Skeleton, Shadow stack) */
-  --lab-fx-focus-ring-brand: rgb(74 143 255);
-  --lab-fx-focus-ring-danger: rgb(255 58 58);
-  --lab-fx-focus-ring-neutral: rgb(246 248 250);
-  --lab-fx-focus-ring-warning: rgb(255 144 8);
-  --lab-fx-glow-brand: rgb(74 143 255 / 0.522);
-  --lab-fx-glow-danger: rgb(255 58 58 / 0.522);
-  --lab-fx-glow-inverted: rgb(60 60 67);
-  --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
-  --lab-fx-glow-warning: rgb(255 144 8 / 0.522);
-  --lab-fx-shadow-ambient: rgb(16 16 18 / 0.039);
-  --lab-fx-shadow-major: rgb(16 16 18 / 0.2);
-  --lab-fx-shadow-minor: rgb(16 16 18 / 0.02);
-  --lab-fx-shadow-penumbra: rgb(16 16 18 / 0.122);
-  --lab-fx-skeleton-base: rgb(120 120 128 / 0.122);
-  --lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);
-
-  /* MISC — composed roles (Control-bg, Badge label pairing) */
-  --lab-badge-label-contrast: rgb(16 16 18);
-  --lab-badge-label-default: rgb(255 255 255);
-  --lab-control-bg: rgb(120 120 128 / 0.361);
-
-  /* ── DERIVED COMPONENT ROLES (see :root scope for the rationale) ─────────── */
-  --lab-fill-accent: rgb(56 112 200); /* PROVISIONAL — AA-safe solid accent (≥4.5:1 w/ white), owner sign-off */
+  --lab-bg-material-base-01: rgb(37 37 37 / 0.898); /* мост: Figma-якорь */
+  --lab-bg-material-base-02: rgb(124 124 124); /* мост: Figma-якорь */
+  --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8); /* мост: Figma-якорь */
+  --lab-bg-material-elevated-02: rgb(31 31 31); /* мост: Figma-якорь */
+  --lab-bg-material-muted-01: rgb(37 37 37 / 0.82); /* мост: Figma-якорь */
+  --lab-bg-material-muted-02: rgb(140 140 140); /* мост: Figma-якорь */
+  --lab-bg-material-soft-01: rgb(37 37 37 / 0.698); /* мост: Figma-якорь */
+  --lab-bg-material-soft-02: rgb(156 156 156); /* мост: Figma-якорь */
+  --lab-bg-material-subtle-01: rgb(37 37 37 / 0.549); /* мост: Figma-якорь */
+  --lab-bg-material-subtle-02: rgb(156 156 156); /* мост: Figma-якорь */
+  --lab-bg-grouped-primary: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-bg-grouped-secondary: rgb(28 28 30); /* мост: Figma-якорь */
+  --lab-bg-grouped-tertiary: rgb(36 36 38); /* мост: Figma-якорь */
+  --lab-bg-inverted: rgb(246 248 250); /* мост: Figma-якорь */
+  --lab-bg-primary: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-bg-secondary: rgb(28 28 30); /* мост: Figma-якорь */
+  --lab-bg-static-dark: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-bg-static-light: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-bg-tertiary: rgb(36 36 38); /* мост: Figma-якорь */
+  --lab-bg-overlay-base: rgb(16 16 18 / 0.478); /* мост: Figma-якорь */
+  --lab-bg-overlay-ghost: rgb(16 16 18 / 0); /* мост: Figma-якорь */
+  --lab-bg-overlay-soft: rgb(16 16 18 / 0.2); /* мост: Figma-якорь */
+  --lab-bg-overlay-strong: rgb(16 16 18 / 0.8); /* мост: Figma-якорь */
+  --lab-label-brand-primary: oklch(66.12059% 0.180585 259.650 / 1);
+  --lab-label-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.322);
+  --lab-label-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.722);
+  --lab-label-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.522);
+  --lab-label-danger-primary: oklch(65.44304% 0.231674 26.474 / 1);
+  --lab-label-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.322);
+  --lab-label-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.722);
+  --lab-label-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.522);
+  --lab-label-info-primary: oklch(68.10386% 0.168552 282.890 / 1);
+  --lab-label-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.322);
+  --lab-label-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.722);
+  --lab-label-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.522);
+  --lab-label-inverted-primary: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-label-inverted-quaternary: rgb(60 60 67 / 0.322); /* мост: Figma-якорь */
+  --lab-label-inverted-secondary: rgb(60 60 67 / 0.722); /* мост: Figma-якорь */
+  --lab-label-inverted-tertiary: rgb(60 60 67 / 0.522); /* мост: Figma-якорь */
+  --lab-label-primary: oklch(95.80222% 0.013333 286.145);
+  --lab-label-quaternary: oklch(52.03953% 0.014016 285.903);
+  --lab-label-secondary: oklch(76.98233% 0.014096 286.064);
+  --lab-label-tertiary: oklch(66.28324% 0.013174 286.035);
+  --lab-label-static-dark-primary: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322); /* мост: Figma-якорь */
+  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722); /* мост: Figma-якорь */
+  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522); /* мост: Figma-якорь */
+  --lab-label-static-light-primary: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322); /* мост: Figma-якорь */
+  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722); /* мост: Figma-якорь */
+  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522); /* мост: Figma-якорь */
+  --lab-label-success-primary: oklch(75.55508% 0.208246 146.984 / 1);
+  --lab-label-success-quaternary: oklch(75.55508% 0.208246 146.984 / 0.322);
+  --lab-label-success-secondary: oklch(75.55508% 0.208246 146.984 / 0.722);
+  --lab-label-success-tertiary: oklch(75.55508% 0.208246 146.984 / 0.522);
+  --lab-label-warning-primary: oklch(75.71376% 0.176429 59.823 / 1);
+  --lab-label-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.322);
+  --lab-label-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.722);
+  --lab-label-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.522);
+  --lab-fill-brand-primary: oklch(66.12059% 0.180585 259.650 / 0.122);
+  --lab-fill-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.02);
+  --lab-fill-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.078);
+  --lab-fill-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.039);
+  --lab-fill-danger-primary: oklch(65.44304% 0.231674 26.474 / 0.122);
+  --lab-fill-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.02);
+  --lab-fill-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.078);
+  --lab-fill-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.039);
+  --lab-fill-info-primary: oklch(68.10386% 0.168552 282.890 / 0.122);
+  --lab-fill-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.02);
+  --lab-fill-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.078);
+  --lab-fill-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.039);
+  --lab-fill-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-fill-primary: oklch(57.53363% 0.012136 286.012 / 0.361);
+  --lab-fill-quaternary: oklch(57.53363% 0.012136 286.012 / 0.161);
+  --lab-fill-secondary: oklch(57.53363% 0.012136 286.012 / 0.322);
+  --lab-fill-static-dark-primary: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
+  --lab-fill-static-dark-quaternary: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+  --lab-fill-static-dark-secondary: rgb(120 120 128 / 0.322); /* мост: Figma-якорь */
+  --lab-fill-static-dark-tertiary: rgb(120 120 128 / 0.239); /* мост: Figma-якорь */
+  --lab-fill-static-light-primary: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
+  --lab-fill-static-light-quaternary: rgb(120 120 128 / 0.078); /* мост: Figma-якорь */
+  --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+  --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122); /* мост: Figma-якорь */
+  --lab-fill-tertiary: oklch(57.53363% 0.012136 286.012 / 0.239);
+  --lab-fill-success-primary: oklch(75.55508% 0.208246 146.984 / 0.122);
+  --lab-fill-success-quaternary: oklch(75.55508% 0.208246 146.984 / 0.02);
+  --lab-fill-success-secondary: oklch(75.55508% 0.208246 146.984 / 0.078);
+  --lab-fill-success-tertiary: oklch(75.55508% 0.208246 146.984 / 0.039);
+  --lab-fill-warning-primary: oklch(75.71376% 0.176429 59.823 / 0.122);
+  --lab-fill-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.02);
+  --lab-fill-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.078);
+  --lab-fill-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.039);
+  --lab-border-brand-base: oklch(66.12059% 0.180585 259.650 / 0.2);
+  --lab-border-brand-soft: oklch(66.12059% 0.180585 259.650 / 0.122);
+  --lab-border-brand-strong: oklch(66.12059% 0.180585 259.650 / 1);
+  --lab-border-danger-base: oklch(65.44304% 0.231674 26.474 / 0.2);
+  --lab-border-danger-soft: oklch(65.44304% 0.231674 26.474 / 0.122);
+  --lab-border-danger-strong: oklch(65.44304% 0.231674 26.474 / 1);
+  --lab-border-info-base: oklch(68.10386% 0.168552 282.890 / 0.2);
+  --lab-border-info-soft: oklch(68.10386% 0.168552 282.890 / 0.122);
+  --lab-border-info-strong: oklch(68.10386% 0.168552 282.890 / 1);
+  --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.2);
+  --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-border-inverted: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-border-soft: oklch(57.53363% 0.012136 286.012 / 0.122);
+  --lab-border-static-dark-base: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
+  --lab-border-static-dark-soft: rgb(120 120 128 / 0.122); /* мост: Figma-якорь */
+  --lab-border-static-dark-strong: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-border-static-light-base: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+  --lab-border-static-light-soft: rgb(120 120 128 / 0.078); /* мост: Figma-якорь */
+  --lab-border-static-light-strong: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-border-strong: oklch(95.80222% 0.013333 286.145);
+  --lab-border-success-base: oklch(75.55508% 0.208246 146.984 / 0.2);
+  --lab-border-success-soft: oklch(75.55508% 0.208246 146.984 / 0.122);
+  --lab-border-success-strong: oklch(75.55508% 0.208246 146.984 / 1);
+  --lab-border-warning-base: oklch(75.71376% 0.176429 59.823 / 0.2);
+  --lab-border-warning-soft: oklch(75.71376% 0.176429 59.823 / 0.122);
+  --lab-border-warning-strong: oklch(75.71376% 0.176429 59.823 / 1);
+  --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.650 / 1);
+  --lab-fx-focus-ring-danger: oklch(65.44304% 0.231674 26.474 / 1);
+  --lab-fx-focus-ring-neutral: oklch(97.81762% 0.003418 247.858 / 1);
+  --lab-fx-focus-ring-warning: oklch(75.71376% 0.176429 59.823 / 1);
+  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650 / 0.522);
+  --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474 / 0.522);
+  --lab-fx-glow-inverted: oklch(35.88485% 0.011976 285.781 / 0.522);
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876 / 0.522);
+  --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823 / 0.522);
+  --lab-fx-shadow-ambient: oklch(17.39406% 0.004094 285.967 / 0.039);
+  --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.2);
+  --lab-fx-shadow-minor: oklch(17.39406% 0.004094 285.967 / 0.02);
+  --lab-fx-shadow-penumbra: oklch(17.39406% 0.004094 285.967 / 0.122);
+  --lab-fx-skeleton-base: oklch(57.53363% 0.012136 286.012 / 0.161);
+  --lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);
+  --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
+  --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
+  --lab-control-bg: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
+  --lab-fill-accent: var(--lab-border-brand-strong);
   --lab-fill-danger: var(--lab-border-danger-strong);
-  --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
+  --lab-fill-neutral: rgb(35 35 39); /* мост: провизорная, деривация открыта */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
   --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
   --lab-fill-neutral-tinted: var(--lab-fill-primary);
@@ -422,172 +354,198 @@
   --lab-label-danger: var(--lab-label-danger-primary);
   --lab-label-on-accent: var(--lab-label-static-light-primary);
   --lab-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-label-on-neutral: rgb(246 248 250); /* PROVISIONAL — pairs solid neutral fill */
+  --lab-label-on-neutral: rgb(246 248 250); /* мост: провизорная, деривация открыта */
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
+  /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),
+     лейбл — nested resolve на выведенной заливке. */
+  --lab-badge-fill-brand: oklch(56.72684% 0.181540 259.780 / 1);
+  --lab-badge-label-on-brand: oklch(99.11546% 0.004112 271.371);
+  --lab-badge-fill-danger: oklch(59.03730% 0.231241 26.548 / 1);
+  --lab-badge-label-on-danger: oklch(99.19108% 0.003956 286.327);
+  --lab-badge-fill-warning: oklch(75.71376% 0.176429 59.823 / 1);
+  --lab-badge-label-on-warning: oklch(12.68545% 0.012584 295.088);
+  --lab-badge-fill-success: oklch(75.55508% 0.208246 146.984 / 1);
+  --lab-badge-label-on-success: oklch(13.28998% 0.011796 294.965);
+  --lab-badge-fill-info: oklch(57.55452% 0.169064 282.871 / 1);
+  --lab-badge-label-on-info: oklch(99.19108% 0.003956 286.327);
+  --lab-badge-fill-static-dark: oklch(17.39406% 0.004094 285.967 / 1);
+  --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
+  --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
+  --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
+  /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);
+     маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).
+     Переезд моста: перекрывает Figma-якорь каскадом. */
+  --lab-bg-tone-1: #101012; /* вход: фон резолва (паспортный якорь нейтрали) */
+  --lab-bg-tone-2: oklch(22.90853% 0.011513 285.456);
+  --lab-bg-tone-3: oklch(26.28365% 0.011112 285.610);
+  --lab-bg-primary: var(--lab-bg-tone-1);
+  --lab-bg-secondary: var(--lab-bg-tone-2);
+  --lab-bg-tertiary: var(--lab-bg-tone-3);
+  --lab-bg-grouped-primary: var(--lab-bg-tone-1);
+  --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
+  --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
+  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+     свет несёт border-reveal. */
+  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+  --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+  --lab-fx-glow-brand-alpha: 0.036;
+  --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+  --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+  --lab-fx-glow-danger-alpha: 0.046;
+  --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+  --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+  --lab-fx-glow-warning-alpha: 0.0333;
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
+  --lab-fx-glow-neutral-alpha: 0.0188;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    /* See `color-scheme: light` in the :root block above for the rationale. */
-    color-scheme: dark;
-
-    /* BACKGROUNDS — surface roles (Neutral ladder, Grouped, Static, Overlay, Materials) */
-    --lab-bg-material-base-01: rgb(37 37 37 / 0.898);
-    --lab-bg-material-base-02: rgb(124 124 124);
-    --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8);
-    --lab-bg-material-elevated-02: rgb(31 31 31);
-    --lab-bg-material-muted-01: rgb(37 37 37 / 0.82);
-    --lab-bg-material-muted-02: rgb(140 140 140);
-    --lab-bg-material-soft-01: rgb(37 37 37 / 0.698);
-    --lab-bg-material-soft-02: rgb(156 156 156);
-    --lab-bg-material-subtle-01: rgb(37 37 37 / 0.549);
-    --lab-bg-material-subtle-02: rgb(156 156 156);
-    --lab-bg-grouped-primary: rgb(16 16 18);
-    --lab-bg-grouped-secondary: rgb(28 28 30);
-    --lab-bg-grouped-tertiary: rgb(36 36 38);
-    --lab-bg-inverted: rgb(246 248 250);
-    --lab-bg-primary: rgb(16 16 18);
-    --lab-bg-secondary: rgb(28 28 30);
-    --lab-bg-static-dark: rgb(16 16 18);
-    --lab-bg-static-light: rgb(255 255 255);
-    --lab-bg-tertiary: rgb(36 36 38);
-    --lab-bg-overlay-base: rgb(16 16 18 / 0.478);
-    --lab-bg-overlay-ghost: rgb(16 16 18 / 0);
-    --lab-bg-overlay-soft: rgb(16 16 18 / 0.2);
-    --lab-bg-overlay-strong: rgb(16 16 18 / 0.8);
-
-    /* LABELS — text/icon roles (Neutral ladder @100/@72/@52/@32, Inverted, Static, sentiments) */
-    --lab-label-brand-primary: rgb(74 143 255);
-    --lab-label-brand-quaternary: rgb(74 143 255 / 0.322);
-    --lab-label-brand-secondary: rgb(74 143 255 / 0.722);
-    --lab-label-brand-tertiary: rgb(74 143 255 / 0.522);
-    --lab-label-danger-primary: rgb(255 58 58);
-    --lab-label-danger-quaternary: rgb(255 58 58 / 0.322);
-    --lab-label-danger-secondary: rgb(255 58 58 / 0.722);
-    --lab-label-danger-tertiary: rgb(255 58 58 / 0.522);
-    --lab-label-info-primary: rgb(86 150 255);
-    --lab-label-info-quaternary: rgb(86 150 255 / 0.322);
-    --lab-label-info-secondary: rgb(86 150 255 / 0.722);
-    --lab-label-info-tertiary: rgb(86 150 255 / 0.522);
-    --lab-label-inverted-primary: rgb(16 16 18);
-    --lab-label-inverted-quaternary: rgb(60 60 67 / 0.322);
-    --lab-label-inverted-secondary: rgb(60 60 67 / 0.722);
-    --lab-label-inverted-tertiary: rgb(60 60 67 / 0.522);
-    --lab-label-primary: rgb(246 248 250);
-    --lab-label-quaternary: rgb(176 176 185 / 0.322);
-    --lab-label-secondary: rgb(176 176 185 / 0.722);
-    /* PROVISIONAL — see [data-theme='dark'] block above for rationale (alpha
-       0.522→0.70, same base hue, clears WCAG AA 4.5:1 on this dark surface). */
-    --lab-label-tertiary: rgb(176 176 185 / 0.7);
-    --lab-label-static-dark-primary: rgb(16 16 18);
-    --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
-    --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
-    --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522);
-    --lab-label-static-light-primary: rgb(255 255 255);
-    --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
-    --lab-label-static-light-secondary: rgb(255 255 255 / 0.722);
-    --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
-    --lab-label-success-primary: rgb(48 209 88);
-    --lab-label-success-quaternary: rgb(48 209 88 / 0.322);
-    --lab-label-success-secondary: rgb(48 209 88 / 0.722);
-    --lab-label-success-tertiary: rgb(48 209 88 / 0.522);
-    --lab-label-warning-primary: rgb(255 144 8);
-    --lab-label-warning-quaternary: rgb(255 144 8 / 0.322);
-    --lab-label-warning-secondary: rgb(255 144 8 / 0.722);
-    --lab-label-warning-tertiary: rgb(255 144 8 / 0.522);
-
-    /* FILLS — tinted surface roles (Neutral @ ladder, sentiment tints) */
-    --lab-fill-brand-primary: rgb(74 143 255 / 0.122);
-    --lab-fill-brand-quaternary: rgb(74 143 255 / 0.02);
-    --lab-fill-brand-secondary: rgb(74 143 255 / 0.078);
-    --lab-fill-brand-tertiary: rgb(74 143 255 / 0.039);
-    --lab-fill-danger-primary: rgb(255 58 58 / 0.122);
-    --lab-fill-danger-quaternary: rgb(255 58 58 / 0.02);
-    --lab-fill-danger-secondary: rgb(255 58 58 / 0.078);
-    --lab-fill-danger-tertiary: rgb(255 58 58 / 0.039);
-    --lab-fill-info-primary: rgb(86 150 255 / 0.122);
-    --lab-fill-info-quaternary: rgb(86 150 255 / 0.02);
-    --lab-fill-info-secondary: rgb(86 150 255 / 0.078);
-    --lab-fill-info-tertiary: rgb(86 150 255 / 0.039);
-    --lab-fill-none: rgb(120 120 128 / 0);
-    --lab-fill-primary: rgb(120 120 128 / 0.361);
-    --lab-fill-quaternary: rgb(120 120 128 / 0.161);
-    --lab-fill-secondary: rgb(120 120 128 / 0.322);
-    --lab-fill-static-dark-primary: rgb(120 120 128 / 0.361);
-    --lab-fill-static-dark-quaternary: rgb(120 120 128 / 0.161);
-    --lab-fill-static-dark-secondary: rgb(120 120 128 / 0.322);
-    --lab-fill-static-dark-tertiary: rgb(120 120 128 / 0.239);
-    --lab-fill-static-light-primary: rgb(120 120 128 / 0.2);
-    --lab-fill-static-light-quaternary: rgb(120 120 128 / 0.078);
-    --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161);
-    --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122);
-    --lab-fill-tertiary: rgb(120 120 128 / 0.239);
-    --lab-fill-success-primary: rgb(48 209 88 / 0.122);
-    --lab-fill-success-quaternary: rgb(48 209 88 / 0.02);
-    --lab-fill-success-secondary: rgb(48 209 88 / 0.078);
-    --lab-fill-success-tertiary: rgb(48 209 88 / 0.039);
-    --lab-fill-warning-primary: rgb(255 144 8 / 0.122);
-    --lab-fill-warning-quaternary: rgb(255 144 8 / 0.02);
-    --lab-fill-warning-secondary: rgb(255 144 8 / 0.078);
-    --lab-fill-warning-tertiary: rgb(255 144 8 / 0.039);
-
-    /* BORDER — stroke roles (Neutral Strong/Base/Soft/Ghost/Inverted, Static, sentiments) */
-    --lab-border-brand-base: rgb(74 143 255 / 0.2);
-    --lab-border-brand-soft: rgb(74 143 255 / 0.122);
-    --lab-border-brand-strong: rgb(74 143 255);
-    --lab-border-danger-base: rgb(255 58 58 / 0.2);
-    --lab-border-danger-soft: rgb(255 58 58 / 0.122);
-    --lab-border-danger-strong: rgb(255 58 58);
-    --lab-border-info-base: rgb(86 150 255 / 0.2);
-    --lab-border-info-soft: rgb(86 150 255 / 0.122);
-    --lab-border-info-strong: rgb(86 150 255);
-    --lab-border-base: rgb(120 120 128 / 0.2);
-    --lab-border-ghost: rgb(120 120 128 / 0);
-    --lab-border-inverted: rgb(16 16 18);
-    --lab-border-soft: rgb(120 120 128 / 0.122);
-    --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
-    --lab-border-static-dark-soft: rgb(120 120 128 / 0.122);
-    --lab-border-static-dark-strong: rgb(16 16 18);
-    --lab-border-static-light-base: rgb(120 120 128 / 0.161);
-    --lab-border-static-light-soft: rgb(120 120 128 / 0.078);
-    --lab-border-static-light-strong: rgb(255 255 255);
-    --lab-border-strong: rgb(246 248 250);
-    --lab-border-success-base: rgb(48 209 88 / 0.2);
-    --lab-border-success-soft: rgb(48 209 88 / 0.122);
-    --lab-border-success-strong: rgb(48 209 88);
-    --lab-border-warning-base: rgb(255 144 8 / 0.2);
-    --lab-border-warning-soft: rgb(255 144 8 / 0.122);
-    --lab-border-warning-strong: rgb(255 144 8);
-
-    /* FX — effects (Glow, Focus-ring, Skeleton, Shadow stack) */
-    --lab-fx-focus-ring-brand: rgb(74 143 255);
-    --lab-fx-focus-ring-danger: rgb(255 58 58);
-    --lab-fx-focus-ring-neutral: rgb(246 248 250);
-    --lab-fx-focus-ring-warning: rgb(255 144 8);
-    --lab-fx-glow-brand: rgb(74 143 255 / 0.522);
-    --lab-fx-glow-danger: rgb(255 58 58 / 0.522);
-    --lab-fx-glow-inverted: rgb(60 60 67);
-    --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
-    --lab-fx-glow-warning: rgb(255 144 8 / 0.522);
-    --lab-fx-shadow-ambient: rgb(16 16 18 / 0.039);
-    --lab-fx-shadow-major: rgb(16 16 18 / 0.2);
-    --lab-fx-shadow-minor: rgb(16 16 18 / 0.02);
-    --lab-fx-shadow-penumbra: rgb(16 16 18 / 0.122);
-    --lab-fx-skeleton-base: rgb(120 120 128 / 0.122);
-    --lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);
-
-    /* MISC — composed roles (Control-bg, Badge label pairing) */
-    --lab-badge-label-contrast: rgb(16 16 18);
-    --lab-badge-label-default: rgb(255 255 255);
-    --lab-control-bg: rgb(120 120 128 / 0.361);
-
-    /* ── DERIVED COMPONENT ROLES (see :root scope for the rationale) ───────── */
-    --lab-fill-accent: rgb(56 112 200); /* PROVISIONAL — AA-safe solid accent (≥4.5:1 w/ white), owner sign-off */
+    --lab-bg-material-base-01: rgb(37 37 37 / 0.898); /* мост: Figma-якорь */
+    --lab-bg-material-base-02: rgb(124 124 124); /* мост: Figma-якорь */
+    --lab-bg-material-elevated-01: rgb(130 130 130 / 0.8); /* мост: Figma-якорь */
+    --lab-bg-material-elevated-02: rgb(31 31 31); /* мост: Figma-якорь */
+    --lab-bg-material-muted-01: rgb(37 37 37 / 0.82); /* мост: Figma-якорь */
+    --lab-bg-material-muted-02: rgb(140 140 140); /* мост: Figma-якорь */
+    --lab-bg-material-soft-01: rgb(37 37 37 / 0.698); /* мост: Figma-якорь */
+    --lab-bg-material-soft-02: rgb(156 156 156); /* мост: Figma-якорь */
+    --lab-bg-material-subtle-01: rgb(37 37 37 / 0.549); /* мост: Figma-якорь */
+    --lab-bg-material-subtle-02: rgb(156 156 156); /* мост: Figma-якорь */
+    --lab-bg-grouped-primary: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-bg-grouped-secondary: rgb(28 28 30); /* мост: Figma-якорь */
+    --lab-bg-grouped-tertiary: rgb(36 36 38); /* мост: Figma-якорь */
+    --lab-bg-inverted: rgb(246 248 250); /* мост: Figma-якорь */
+    --lab-bg-primary: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-bg-secondary: rgb(28 28 30); /* мост: Figma-якорь */
+    --lab-bg-static-dark: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-bg-static-light: rgb(255 255 255); /* мост: Figma-якорь */
+    --lab-bg-tertiary: rgb(36 36 38); /* мост: Figma-якорь */
+    --lab-bg-overlay-base: rgb(16 16 18 / 0.478); /* мост: Figma-якорь */
+    --lab-bg-overlay-ghost: rgb(16 16 18 / 0); /* мост: Figma-якорь */
+    --lab-bg-overlay-soft: rgb(16 16 18 / 0.2); /* мост: Figma-якорь */
+    --lab-bg-overlay-strong: rgb(16 16 18 / 0.8); /* мост: Figma-якорь */
+    --lab-label-brand-primary: oklch(66.12059% 0.180585 259.650 / 1);
+    --lab-label-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.322);
+    --lab-label-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.722);
+    --lab-label-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.522);
+    --lab-label-danger-primary: oklch(65.44304% 0.231674 26.474 / 1);
+    --lab-label-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.322);
+    --lab-label-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.722);
+    --lab-label-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.522);
+    --lab-label-info-primary: oklch(68.10386% 0.168552 282.890 / 1);
+    --lab-label-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.322);
+    --lab-label-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.722);
+    --lab-label-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.522);
+    --lab-label-inverted-primary: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-label-inverted-quaternary: rgb(60 60 67 / 0.322); /* мост: Figma-якорь */
+    --lab-label-inverted-secondary: rgb(60 60 67 / 0.722); /* мост: Figma-якорь */
+    --lab-label-inverted-tertiary: rgb(60 60 67 / 0.522); /* мост: Figma-якорь */
+    --lab-label-primary: oklch(95.80222% 0.013333 286.145);
+    --lab-label-quaternary: oklch(52.03953% 0.014016 285.903);
+    --lab-label-secondary: oklch(76.98233% 0.014096 286.064);
+    --lab-label-tertiary: oklch(66.28324% 0.013174 286.035);
+    --lab-label-static-dark-primary: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322); /* мост: Figma-якорь */
+    --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722); /* мост: Figma-якорь */
+    --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522); /* мост: Figma-якорь */
+    --lab-label-static-light-primary: rgb(255 255 255); /* мост: Figma-якорь */
+    --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322); /* мост: Figma-якорь */
+    --lab-label-static-light-secondary: rgb(255 255 255 / 0.722); /* мост: Figma-якорь */
+    --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522); /* мост: Figma-якорь */
+    --lab-label-success-primary: oklch(75.55508% 0.208246 146.984 / 1);
+    --lab-label-success-quaternary: oklch(75.55508% 0.208246 146.984 / 0.322);
+    --lab-label-success-secondary: oklch(75.55508% 0.208246 146.984 / 0.722);
+    --lab-label-success-tertiary: oklch(75.55508% 0.208246 146.984 / 0.522);
+    --lab-label-warning-primary: oklch(75.71376% 0.176429 59.823 / 1);
+    --lab-label-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.322);
+    --lab-label-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.722);
+    --lab-label-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.522);
+    --lab-fill-brand-primary: oklch(66.12059% 0.180585 259.650 / 0.122);
+    --lab-fill-brand-quaternary: oklch(66.12059% 0.180585 259.650 / 0.02);
+    --lab-fill-brand-secondary: oklch(66.12059% 0.180585 259.650 / 0.078);
+    --lab-fill-brand-tertiary: oklch(66.12059% 0.180585 259.650 / 0.039);
+    --lab-fill-danger-primary: oklch(65.44304% 0.231674 26.474 / 0.122);
+    --lab-fill-danger-quaternary: oklch(65.44304% 0.231674 26.474 / 0.02);
+    --lab-fill-danger-secondary: oklch(65.44304% 0.231674 26.474 / 0.078);
+    --lab-fill-danger-tertiary: oklch(65.44304% 0.231674 26.474 / 0.039);
+    --lab-fill-info-primary: oklch(68.10386% 0.168552 282.890 / 0.122);
+    --lab-fill-info-quaternary: oklch(68.10386% 0.168552 282.890 / 0.02);
+    --lab-fill-info-secondary: oklch(68.10386% 0.168552 282.890 / 0.078);
+    --lab-fill-info-tertiary: oklch(68.10386% 0.168552 282.890 / 0.039);
+    --lab-fill-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+    --lab-fill-primary: oklch(57.53363% 0.012136 286.012 / 0.361);
+    --lab-fill-quaternary: oklch(57.53363% 0.012136 286.012 / 0.161);
+    --lab-fill-secondary: oklch(57.53363% 0.012136 286.012 / 0.322);
+    --lab-fill-static-dark-primary: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
+    --lab-fill-static-dark-quaternary: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+    --lab-fill-static-dark-secondary: rgb(120 120 128 / 0.322); /* мост: Figma-якорь */
+    --lab-fill-static-dark-tertiary: rgb(120 120 128 / 0.239); /* мост: Figma-якорь */
+    --lab-fill-static-light-primary: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
+    --lab-fill-static-light-quaternary: rgb(120 120 128 / 0.078); /* мост: Figma-якорь */
+    --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+    --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122); /* мост: Figma-якорь */
+    --lab-fill-tertiary: oklch(57.53363% 0.012136 286.012 / 0.239);
+    --lab-fill-success-primary: oklch(75.55508% 0.208246 146.984 / 0.122);
+    --lab-fill-success-quaternary: oklch(75.55508% 0.208246 146.984 / 0.02);
+    --lab-fill-success-secondary: oklch(75.55508% 0.208246 146.984 / 0.078);
+    --lab-fill-success-tertiary: oklch(75.55508% 0.208246 146.984 / 0.039);
+    --lab-fill-warning-primary: oklch(75.71376% 0.176429 59.823 / 0.122);
+    --lab-fill-warning-quaternary: oklch(75.71376% 0.176429 59.823 / 0.02);
+    --lab-fill-warning-secondary: oklch(75.71376% 0.176429 59.823 / 0.078);
+    --lab-fill-warning-tertiary: oklch(75.71376% 0.176429 59.823 / 0.039);
+    --lab-border-brand-base: oklch(66.12059% 0.180585 259.650 / 0.2);
+    --lab-border-brand-soft: oklch(66.12059% 0.180585 259.650 / 0.122);
+    --lab-border-brand-strong: oklch(66.12059% 0.180585 259.650 / 1);
+    --lab-border-danger-base: oklch(65.44304% 0.231674 26.474 / 0.2);
+    --lab-border-danger-soft: oklch(65.44304% 0.231674 26.474 / 0.122);
+    --lab-border-danger-strong: oklch(65.44304% 0.231674 26.474 / 1);
+    --lab-border-info-base: oklch(68.10386% 0.168552 282.890 / 0.2);
+    --lab-border-info-soft: oklch(68.10386% 0.168552 282.890 / 0.122);
+    --lab-border-info-strong: oklch(68.10386% 0.168552 282.890 / 1);
+    --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.2);
+    --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+    --lab-border-inverted: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-border-soft: oklch(57.53363% 0.012136 286.012 / 0.122);
+    --lab-border-static-dark-base: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
+    --lab-border-static-dark-soft: rgb(120 120 128 / 0.122); /* мост: Figma-якорь */
+    --lab-border-static-dark-strong: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-border-static-light-base: rgb(120 120 128 / 0.161); /* мост: Figma-якорь */
+    --lab-border-static-light-soft: rgb(120 120 128 / 0.078); /* мост: Figma-якорь */
+    --lab-border-static-light-strong: rgb(255 255 255); /* мост: Figma-якорь */
+    --lab-border-strong: oklch(95.80222% 0.013333 286.145);
+    --lab-border-success-base: oklch(75.55508% 0.208246 146.984 / 0.2);
+    --lab-border-success-soft: oklch(75.55508% 0.208246 146.984 / 0.122);
+    --lab-border-success-strong: oklch(75.55508% 0.208246 146.984 / 1);
+    --lab-border-warning-base: oklch(75.71376% 0.176429 59.823 / 0.2);
+    --lab-border-warning-soft: oklch(75.71376% 0.176429 59.823 / 0.122);
+    --lab-border-warning-strong: oklch(75.71376% 0.176429 59.823 / 1);
+    --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.650 / 1);
+    --lab-fx-focus-ring-danger: oklch(65.44304% 0.231674 26.474 / 1);
+    --lab-fx-focus-ring-neutral: oklch(97.81762% 0.003418 247.858 / 1);
+    --lab-fx-focus-ring-warning: oklch(75.71376% 0.176429 59.823 / 1);
+    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650 / 0.522);
+    --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474 / 0.522);
+    --lab-fx-glow-inverted: oklch(35.88485% 0.011976 285.781 / 0.522);
+    --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876 / 0.522);
+    --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823 / 0.522);
+    --lab-fx-shadow-ambient: oklch(17.39406% 0.004094 285.967 / 0.039);
+    --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.2);
+    --lab-fx-shadow-minor: oklch(17.39406% 0.004094 285.967 / 0.02);
+    --lab-fx-shadow-penumbra: oklch(17.39406% 0.004094 285.967 / 0.122);
+    --lab-fx-skeleton-base: oklch(57.53363% 0.012136 286.012 / 0.161);
+    --lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);
+    --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
+    --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
+    --lab-control-bg: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
+    --lab-fill-accent: var(--lab-border-brand-strong);
     --lab-fill-danger: var(--lab-border-danger-strong);
-    --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
+    --lab-fill-neutral: rgb(35 35 39); /* мост: провизорная, деривация открыта */
     --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
     --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
     --lab-fill-neutral-tinted: var(--lab-fill-primary);
@@ -595,10 +553,54 @@
     --lab-label-danger: var(--lab-label-danger-primary);
     --lab-label-on-accent: var(--lab-label-static-light-primary);
     --lab-label-on-danger: var(--lab-label-static-light-primary);
-    --lab-label-on-neutral: rgb(246 248 250); /* PROVISIONAL — pairs solid neutral fill */
+    --lab-label-on-neutral: rgb(246 248 250); /* мост: провизорная, деривация открыта */
     --lab-border-accent: var(--lab-border-brand-strong);
     --lab-border-neutral: var(--lab-border-base);
     --lab-border-danger: var(--lab-border-danger-strong);
     --lab-border-focus: var(--lab-fx-focus-ring-brand);
+    /* Пара бейджа: заливка — закон ядра (сторона семьи + сдвиг к полу),
+       лейбл — nested resolve на выведенной заливке. */
+    --lab-badge-fill-brand: oklch(56.72684% 0.181540 259.780 / 1);
+    --lab-badge-label-on-brand: oklch(99.11546% 0.004112 271.371);
+    --lab-badge-fill-danger: oklch(59.03730% 0.231241 26.548 / 1);
+    --lab-badge-label-on-danger: oklch(99.19108% 0.003956 286.327);
+    --lab-badge-fill-warning: oklch(75.71376% 0.176429 59.823 / 1);
+    --lab-badge-label-on-warning: oklch(12.68545% 0.012584 295.088);
+    --lab-badge-fill-success: oklch(75.55508% 0.208246 146.984 / 1);
+    --lab-badge-label-on-success: oklch(13.28998% 0.011796 294.965);
+    --lab-badge-fill-info: oklch(57.55452% 0.169064 282.871 / 1);
+    --lab-badge-label-on-info: oklch(99.19108% 0.003956 286.327);
+    --lab-badge-fill-static-dark: oklch(17.39406% 0.004094 285.967 / 1);
+    --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
+    --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
+    --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
+    /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);
+       маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).
+       Переезд моста: перекрывает Figma-якорь каскадом. */
+    --lab-bg-tone-1: #101012; /* вход: фон резолва (паспортный якорь нейтрали) */
+    --lab-bg-tone-2: oklch(22.90853% 0.011513 285.456);
+    --lab-bg-tone-3: oklch(26.28365% 0.011112 285.610);
+    --lab-bg-primary: var(--lab-bg-tone-1);
+    --lab-bg-secondary: var(--lab-bg-tone-2);
+    --lab-bg-tertiary: var(--lab-bg-tone-3);
+    --lab-bg-grouped-primary: var(--lab-bg-tone-1);
+    --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
+    --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
+    /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+       решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+       краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+       свет несёт border-reveal. */
+    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+    --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+    --lab-fx-glow-brand-alpha: 0.036;
+    --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+    --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+    --lab-fx-glow-danger-alpha: 0.046;
+    --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+    --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+    --lab-fx-glow-warning-alpha: 0.0333;
+    --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+    --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
+    --lab-fx-glow-neutral-alpha: 0.0188;
   }
 }

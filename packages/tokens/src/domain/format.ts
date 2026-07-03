@@ -7,6 +7,13 @@
  * config always produces byte-identical output.
  */
 
+/**
+ * Корень px-канона: rem-значения шкал переводятся в канонические px при
+ * корневом шрифте 16px (для тестов/DTCG). Сам рантайм всегда rem-относителен —
+ * константа существует только как единица пересчёта канона.
+ */
+export const ROOT_FONT_SIZE_PX = 16;
+
 /** Round to `precision` decimals, killing floating-point drift. */
 export function round(value: number, precision = 4): number {
   if (!Number.isFinite(value)) {

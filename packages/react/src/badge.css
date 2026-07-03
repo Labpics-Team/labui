@@ -17,6 +17,7 @@
 [data-lab-badge] {
   --_lab-badge-radius: var(--lab-radius-full, 9999px);
   --_lab-badge-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-badge-tracking: var(--lab-letter-spacing-xs, -0.0042em);
   --_lab-badge-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-badge-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-badge-gap: var(--lab-space-xs, 0.25rem);
@@ -32,6 +33,7 @@
   border-radius: var(--_lab-badge-radius);
   font: inherit;
   font-size: var(--_lab-badge-font);
+  letter-spacing: var(--_lab-badge-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   font-weight: var(--lab-font-weight-semibold, 600);
   white-space: nowrap;
@@ -54,35 +56,32 @@
   color: var(--lab-label-on-neutral);
 }
 [data-lab-badge][data-type="fill"][data-color="brand"] {
-  /* Reuses --lab-fill-accent (NOT --lab-border-brand-strong): the border role is
-     pinned for the 3:1 non-text threshold, this solid surface carries a white
-     text label and needs 4.5:1 — same role Button's accent-fill kind consumes. */
-  background-color: var(--lab-fill-accent);
-  color: var(--lab-badge-label-default);
+  background-color: var(--lab-badge-fill-brand);
+  color: var(--lab-badge-label-on-brand);
 }
 [data-lab-badge][data-type="fill"][data-color="danger"] {
-  background-color: var(--lab-border-danger-strong);
-  color: var(--lab-badge-label-default);
+  background-color: var(--lab-badge-fill-danger);
+  color: var(--lab-badge-label-on-danger);
 }
 [data-lab-badge][data-type="fill"][data-color="warning"] {
-  background-color: var(--lab-border-warning-strong);
-  color: var(--lab-badge-label-contrast);
+  background-color: var(--lab-badge-fill-warning);
+  color: var(--lab-badge-label-on-warning);
 }
 [data-lab-badge][data-type="fill"][data-color="success"] {
-  background-color: var(--lab-border-success-strong);
-  color: var(--lab-badge-label-default);
+  background-color: var(--lab-badge-fill-success);
+  color: var(--lab-badge-label-on-success);
 }
 [data-lab-badge][data-type="fill"][data-color="info"] {
-  background-color: var(--lab-border-info-strong);
-  color: var(--lab-badge-label-default);
+  background-color: var(--lab-badge-fill-info);
+  color: var(--lab-badge-label-on-info);
 }
 [data-lab-badge][data-type="fill"][data-color="static-dark"] {
-  background-color: var(--lab-border-static-dark-strong);
-  color: var(--lab-label-static-light-primary);
+  background-color: var(--lab-badge-fill-static-dark);
+  color: var(--lab-badge-label-on-static-dark);
 }
 [data-lab-badge][data-type="fill"][data-color="static-light"] {
-  background-color: var(--lab-border-static-light-strong);
-  color: var(--lab-label-static-dark-primary);
+  background-color: var(--lab-badge-fill-static-light);
+  color: var(--lab-badge-label-on-static-light);
 }
 
 /* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────────── */

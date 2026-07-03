@@ -42,6 +42,17 @@ export const space = {
 
 export type SpaceToken = keyof typeof space;
 
+export const size = {
+  'control-s': 'var(--lab-size-control-s)',
+  'control-m': 'var(--lab-size-control-m)',
+  'control-l': 'var(--lab-size-control-l)',
+  'control-h-s': 'var(--lab-size-control-h-s)',
+  'control-h-m': 'var(--lab-size-control-h-m)',
+  'control-h-l': 'var(--lab-size-control-h-l)',
+} as const;
+
+export type SizeToken = keyof typeof size;
+
 export const radius = {
   '0': 'var(--lab-radius-0)',
   xs: 'var(--lab-radius-xs)',
@@ -54,11 +65,13 @@ export const radius = {
   '4xl': 'var(--lab-radius-4xl)',
   '5xl': 'var(--lab-radius-5xl)',
   full: 'var(--lab-radius-full)',
+  'corner-k': 'var(--lab-radius-corner-k)',
   none: 'var(--lab-radius-none)',
   control: 'var(--lab-radius-control)',
   card: 'var(--lab-radius-card)',
   pill: 'var(--lab-radius-pill)',
   circle: 'var(--lab-radius-circle)',
+  'concentric-min': 'var(--lab-radius-concentric-min)',
 } as const;
 
 export type RadiusToken = keyof typeof radius;
@@ -121,6 +134,29 @@ export const fontWeight = {
 } as const;
 
 export type FontWeightToken = keyof typeof fontWeight;
+
+export const letterSpacing = {
+  xxs: 'var(--lab-letter-spacing-xxs)',
+  xs: 'var(--lab-letter-spacing-xs)',
+  md: 'var(--lab-letter-spacing-md)',
+  lg: 'var(--lab-letter-spacing-lg)',
+  xl: 'var(--lab-letter-spacing-xl)',
+  '2xl': 'var(--lab-letter-spacing-2xl)',
+  '3xl': 'var(--lab-letter-spacing-3xl)',
+  '4xl': 'var(--lab-letter-spacing-4xl)',
+  '5xl': 'var(--lab-letter-spacing-5xl)',
+  '6xl': 'var(--lab-letter-spacing-6xl)',
+} as const;
+
+export type LetterSpacingToken = keyof typeof letterSpacing;
+
+export const measure = {
+  narrow: 'var(--lab-measure-narrow)',
+  base: 'var(--lab-measure-base)',
+  wide: 'var(--lab-measure-wide)',
+} as const;
+
+export type MeasureToken = keyof typeof measure;
 
 export const stroke = {
   hairline: 'var(--lab-stroke-hairline)',

@@ -58,7 +58,40 @@ export const defaultConfig: TokensConfig = {
     },
   },
 
+  sizes: {
+    // Габариты контрол-бокса канонической оси размера компонента (s|m|l).
+    // Заземлено ПРИВЯЗКАМИ живого Figma (2026-07-02, figma-console): боксы
+    // Check и Radio во всех вариантах биндят «🟠 1.1 Dimention» Size/S=12,
+    // Size/M=16, Size/L=20 (→ Unit px/6, px/7, px/8 @100%) — одна шкала на оба
+    // сета и на каждый следующий квадратный контрол. Ось tiny в Figma сегодня
+    // не определена (tiny-варианты привязаны к Size/M — побайтная копия medium),
+    // поэтому шага tiny здесь НЕТ: пробел = открытый вопрос владельцу, не
+    // выдуманное значение (docs/dimension-contract.md §2).
+    steps: {
+      'control-s': 0.75, // 12px — Figma Size/S (Unit px/6)
+      'control-m': 1, // 16px — Figma Size/M (Unit px/7)
+      'control-l': 1.25, // 20px — Figma Size/L (Unit px/8)
+      // Ось ВЫСОТ контролов (аудит 2026-07-03): до неё высоты жили хардкодами
+      // в компонентах ДВУМЯ несовместимыми семействами — button/pin-input
+      // 32/40/48 против menu/select 30/36/44, где 30px вне 4px-сетки
+      // (30/4 = 7.5 — прямое нарушение декларированного грида). Ступени ниже —
+      // доминирующее семейство (button, эталон миграции гардов), все на
+      // 4px-сетке. СТАТУС: DECLARED — Figma-якоря высот пока нет (ось Size
+      // биндит только глиф-боксы 12/16/20); при появлении привязки значения
+      // сверить и пометить как заземлённые. Миграция menu/select на ось —
+      // отдельная волна (меняет их геометрию на +2/+4px).
+      'control-h-s': 2, // 32px — высота контрола size=s
+      'control-h-m': 2.5, // 40px — высота контрола size=m (дефолт)
+      'control-h-l': 3, // 48px — высота контрола size=l
+    },
+    aliases: {},
+  },
+
   radii: {
+    // Форма угла: DECLARED-размен «G2-вход ценой 2.35px/R100 геометрии от
+    // кривой Figma ζ=0.6» (см. RadiiConfig.cornerK; воспроизводимая деривация —
+    // scripts/derive-corner-k.mjs: геометрический фит был бы K=1, круг).
+    cornerK: 1.1,
     // Geometric rem progression (Tailwind v4 shape). Step 0 is the zero token.
     steps: {
       '0': 0, //   0px — explicit zero
@@ -79,6 +112,10 @@ export const defaultConfig: TokensConfig = {
       card: '2xl', // 16px — cards, panels
       pill: 'full',
       circle: 'full',
+      // Floor of the concentric-radius law: an inner radius derived as
+      // `outer - inset` never drops below this (2px), so a deeply nested corner
+      // rounds instead of going square. See docs/dimension-contract.md §3.
+      'concentric-min': 'xs',
     },
   },
 

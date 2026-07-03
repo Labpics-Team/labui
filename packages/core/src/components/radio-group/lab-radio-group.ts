@@ -1,3 +1,4 @@
+import * as radioGroupMachine from '@zag-js/radio-group';
 /**
  * `<lab-radio-group>` — the FIRST COMPOUND LabUI component, consuming the
  * `@zag-js/radio-group` machine through the Behaviors seam (core-CONTRACT §1).
@@ -22,7 +23,9 @@
  *
  * Axes (the Figma model — Type × Size × Orientation × State × Disabled):
  *   - type:        accent | neutral | danger   (intent of the SELECTED dot)
- *   - size:        s | m | l
+ *   - size:        s | m | l                   (каноническая ось размера: Figma
+ *                  Check и Radio биндят Size/S,M,L = 12/16/20px; ось tiny в
+ *                  Figma не определена — см. docs/dimension-contract.md §2)
  *   - orientation: horizontal | vertical       (machine-owned; reflected for CSS)
  *   - value:       controlled selected value (reflected for CSS + SSR)
  *   - defaultValue: uncontrolled initial value (read once by the machine at init)
@@ -39,7 +42,6 @@
  * primitive, no invented role.
  */
 import { type TemplateResult, css, html, nothing } from 'lit';
-import * as radioGroupMachine from '@zag-js/radio-group';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -47,7 +49,11 @@ import type { ZagController } from '../../lit/zag-controller.js';
 
 /** Semantic intent of the selected radio's dot + ring. */
 export type LabRadioGroupType = 'accent' | 'neutral' | 'danger';
-/** Control size. */
+/**
+ * Размер контрола — каноническая ось размерного контракта (--lab-size-control-*).
+ * Чекбокс-близнец ещё не мигрирован и несёт pre-contract локальные числа —
+ * его волна миграции приземлит его на эту же шкалу.
+ */
 export type LabRadioGroupSize = 's' | 'm' | 'l';
 /** Layout direction of the radio list (machine-owned, drives roving keys). */
 export type LabRadioGroupOrientation = 'horizontal' | 'vertical';
@@ -151,26 +157,30 @@ export class LabRadioGroup extends LabElement {
 
   static override styles = css`
     :host {
-      /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
-         fallback so the control is usable before tokens load; colour roles never
-         do (css.ts rule). */
-      --_ring: 1.25rem;
-      --_dot: 0.625rem;
+      /* Ручки размера, на которые ложится ось size, — размерный контракт, а не
+         локальные числа: кольцо едет на --lab-size-control-* (каноническая шкала
+         контрол-бокса, заземлена привязками Figma Size/S,M,L = 12/16/20px), а
+         точка ВЫВОДИТСЯ (ring/2 — закон, измеренный на small и medium; large в
+         Figma сегодня выбивается — открытое наблюдение, см.
+         docs/dimension-contract.md §2), поэтому шаг размера не может развести
+         кольцо и точку. Размерный токен может нести литеральный фолбэк, чтобы
+         контрол жил до загрузки токенов (фолбэк обязан равняться канону токена
+         — под гардом); цветовые роли фолбэков не несут (правило css.ts). */
+      --_ring: ${litVar('--lab-size-control-m', '1rem')};
+      --_dot: calc(var(--_ring) / 2);
       --_row-gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_list-gap: ${litVar('--lab-space-md', '0.75rem')};
+      --_list-gap: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
       display: block;
     }
 
     :host([size='s']) {
-      --_ring: 1rem;
-      --_dot: 0.5rem;
+      --_ring: ${litVar('--lab-size-control-s', '0.75rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
-      --_ring: 1.5rem;
-      --_dot: 0.75rem;
+      --_ring: ${litVar('--lab-size-control-l', '1.25rem')};
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 
@@ -219,7 +229,7 @@ export class LabRadioGroup extends LabElement {
       place-items: center;
       width: var(--_ring);
       height: var(--_ring);
-      border-radius: ${litVar('--lab-radius-full', '9999px')};
+      border-radius: ${litVar('--lab-radius-circle', '9999px')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       background-color: transparent;
       transition:
@@ -244,7 +254,7 @@ export class LabRadioGroup extends LabElement {
     .dot {
       width: var(--_dot);
       height: var(--_dot);
-      border-radius: ${litVar('--lab-radius-full', '9999px')};
+      border-radius: ${litVar('--lab-radius-circle', '9999px')};
       background-color: currentColor;
       transform: scale(0);
       transition: transform 120ms ease;

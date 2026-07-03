@@ -140,7 +140,7 @@ export class LabPopover extends LabElement {
 
   static override styles = css`
     :host {
-      --_pad: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad: ${litVar('--lab-space-md', '1rem')};
       --_min-width: 14rem;
       --_max-width: 22rem;
 
@@ -154,7 +154,7 @@ export class LabPopover extends LabElement {
       --_max-width: 18rem;
     }
     :host([size='l']) {
-      --_pad: ${litVar('--lab-space-lg', '1rem')};
+      --_pad: ${litVar('--lab-space-lg', '1.5rem')};
       --_min-width: 18rem;
       --_max-width: 28rem;
     }
@@ -214,6 +214,7 @@ export class LabPopover extends LabElement {
       box-shadow: var(--lab-elevation-overlay);
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
       z-index: ${litVar('--lab-z-dropdown', '900')};
     }
@@ -231,6 +232,7 @@ export class LabPopover extends LabElement {
     .heading {
       margin: 0 0 ${litVar('--lab-space-xs', '0.25rem')} 0;
       font-size: ${litVar('--lab-font-size-lg', '1.2rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-lg', '-0.0177em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
       color: ${litVar('--lab-label-primary')};
     }

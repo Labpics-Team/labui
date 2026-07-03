@@ -37,6 +37,14 @@
   --lab-space-2xl: var(--lab-space-12); /* -> 12 */
   --lab-space-3xl: var(--lab-space-16); /* -> 16 */
 
+  /* Sizes — габариты контрол-бокса оси размера компонента (rem) */
+  --lab-size-control-s: 0.75rem;
+  --lab-size-control-m: 1rem;
+  --lab-size-control-l: 1.25rem;
+  --lab-size-control-h-s: 2rem;
+  --lab-size-control-h-m: 2.5rem;
+  --lab-size-control-h-l: 3rem;
+
   /* Radii — geometric rem + full pill */
   --lab-radius-0: 0rem;
   --lab-radius-xs: 0.125rem;
@@ -49,11 +57,13 @@
   --lab-radius-4xl: 2rem;
   --lab-radius-5xl: 3rem;
   --lab-radius-full: 9999px; /* Pill / fully-rounded — a semantic constant, not computed 50%. */
+  --lab-radius-corner-k: 1.1; /* Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 "fit" is retracted; see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle. */
   --lab-radius-none: var(--lab-radius-0); /* -> 0 */
   --lab-radius-control: var(--lab-radius-lg); /* -> lg */
   --lab-radius-card: var(--lab-radius-2xl); /* -> 2xl */
   --lab-radius-pill: var(--lab-radius-full); /* -> full */
   --lab-radius-circle: var(--lab-radius-full); /* -> full */
+  --lab-radius-concentric-min: var(--lab-radius-xs); /* -> xs */
 
   /* Z-index — semantic layers, gap-spaced */
   --lab-z-primary: 0; /* Base content plane. */
@@ -73,9 +83,9 @@
   --lab-z-tooltip: 1400; /* Top-most hint layer. */
 
   /* Typography — fluid font-size gradient (clamp, no media queries) */
-  --lab-font-size-xxs: clamp(0.5739rem, -0.2096vw + 0.7364rem, 0.6944rem);
-  --lab-font-size-xs: clamp(0.7576rem, -0.1318vw + 0.8597rem, 0.8333rem);
-  --lab-font-size-md: clamp(1rem, 0vw + 1rem, 1rem);
+  --lab-font-size-xxs: 0.6944rem;
+  --lab-font-size-xs: 0.8333rem;
+  --lab-font-size-md: 1rem;
   --lab-font-size-lg: clamp(1.2rem, 0.2087vw + 1.1583rem, 1.32rem);
   --lab-font-size-xl: clamp(1.44rem, 0.5259vw + 1.3348rem, 1.7424rem);
   --lab-font-size-2xl: clamp(1.728rem, 0.9947vw + 1.5291rem, 2.3rem);
@@ -102,6 +112,23 @@
   --lab-font-weight-semibold: 600;
   --lab-font-weight-bold: 700;
 
+  /* Typography — оптический трекинг (em, парно к кеглям: мелкие разрежены, крупные ужаты) */
+  --lab-letter-spacing-xxs: 0.0043em;
+  --lab-letter-spacing-xs: -0.0042em;
+  --lab-letter-spacing-md: -0.011em;
+  --lab-letter-spacing-lg: -0.0177em;
+  --lab-letter-spacing-xl: -0.0209em;
+  --lab-letter-spacing-2xl: -0.022em;
+  --lab-letter-spacing-3xl: -0.0223em;
+  --lab-letter-spacing-4xl: -0.0223em;
+  --lab-letter-spacing-5xl: -0.0223em;
+  --lab-letter-spacing-6xl: -0.0223em;
+
+  /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
+  --lab-measure-narrow: 45ch;
+  --lab-measure-base: 66ch;
+  --lab-measure-wide: 75ch;
+
   /* Borders — stroke widths (rem) */
   --lab-stroke-hairline: 0.0625rem;
   --lab-stroke-thick: 0.125rem;
@@ -109,4 +136,12 @@
   /* Borders — focus ring (width + offset, rem) */
   --lab-focus-ring-width: 0.125rem;
   --lab-focus-ring-offset: 0.125rem;
+}
+
+/* Corner shape — superellipse curvature over any border-radius (opt-in scope). */
+:where(.lab-scope),
+:where(.lab-scope) *,
+:where(.lab-scope) *::before,
+:where(.lab-scope) *::after {
+  corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));
 }
