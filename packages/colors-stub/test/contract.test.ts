@@ -93,7 +93,7 @@ describe('--lab-* semantic color contract', () => {
       Labels: 36,
       Fills: 33,
       Border: 26,
-      FX: 15,
+      FX: 23,
       Misc: 3,
       Component: 29,
     });
@@ -129,9 +129,12 @@ describe('--lab-* semantic color contract', () => {
     expect(decls.length).toBeGreaterThan(0);
     const bad = decls
       .map((m) => ({ name: m[1] ?? '', value: (m[2] ?? '').trim() }))
-      .filter(
-        ({ value }) => !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value),
-      );
+      .filter(({ name, value }) => {
+        // Ось интенсивности контракта: --lab-*-alpha — юнитлесс-доля [0, 1]
+        // (форма wasm-проекции glow: --lab-<role>-alpha; мост эмитит так же).
+        if (name.endsWith('-alpha')) return !/^(0|1|0?\.[0-9]+)$/.test(value);
+        return !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value);
+      });
     expect(bad, `non-color values: ${bad.map((b) => `${b.name}=${b.value}`).join(', ')}`).toEqual(
       [],
     );

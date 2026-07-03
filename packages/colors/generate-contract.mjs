@@ -14,6 +14,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createLabuiEngine } from './engine.mjs';
+import { hexToLin, oklabOf } from './oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const referencePath = join(here, '..', 'colors-stub', 'figma-reference.css');
@@ -141,6 +142,60 @@ function bgLadderEmission(theme, engineVars, bgBase) {
   return lines.join('\n');
 }
 
+/** hex → oklch-строка в форме эмиссии движка (L% C h). */
+function hexToOklch(hex) {
+  const [l, a, b] = oklabOf(hexToLin(hex));
+  const c = Math.hypot(a, b);
+  let h = (Math.atan2(b, a) * 180) / Math.PI;
+  if (h < 0) h += 360;
+  return `oklch(${(l * 100).toFixed(5)}% ${c.toFixed(6)} ${h.toFixed(3)})`;
+}
+
+/**
+ * Мост свечения (ADR-0002 §5 «свет, не краска», волна glow поезда).
+ *
+ * Released-движок (0.5.x) ещё не знает kind:"glow" — паспорт держит легаси
+ * ladder-краску (oklch/0.522). Этот блок перекрывает её КАСКАДОМ контрактом
+ * света: halo (источник), core (пересвет), α ступени Base — значения РЕШЕНЫ
+ * движком ветки поезда (пример glow_mirror_derivation @ lab-colors ecbf067:
+ * screen-солвер, бисекция под |ΔJ'| = 2.3006 на фоне резолва темы; ноль
+ * придуманных чисел). Светлая тема: screen над белым физически гаснет
+ * (деградация солвера, |ΔJ'| = 0) → α = 0, свет несёт только border-reveal
+ * (halo/core остаются для тонировки обводки). При релизе 0.6.0 паспорт
+ * переезжает на kind:"glow", блок заменяется живой эмиссией — байт-парность
+ * гарантирует тот же пример. fx-glow-inverted — НЕ свечение (Translucent
+ * по дизайну), остаётся на легаси-эмиссии.
+ */
+function glowBridgeEmission(theme) {
+  const solved = {
+    dark: {
+      brand: { halo: '#4A8FFF', core: '#B3C3EA', alpha: 0.036 },
+      danger: { halo: '#FF3A3A', core: '#FFA79F', alpha: 0.046 },
+      warning: { halo: '#FF9008', core: '#FFC89B', alpha: 0.0333 },
+      neutral: { halo: '#FFFFFF', core: '#FFFEFE', alpha: 0.0188 },
+    },
+    light: {
+      brand: { halo: '#007AFF', core: '#A7BAE3', alpha: 0 },
+      danger: { halo: '#FF3B30', core: '#FFA99E', alpha: 0 },
+      warning: { halo: '#FFA100', core: '#FED1A0', alpha: 0 },
+      neutral: { halo: '#FFFFFF', core: '#FFFFFE', alpha: 0 },
+    },
+  }[theme];
+  const lines = [
+    '',
+    '  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,',
+    '     решено движком поезда (glow_mirror_derivation); перекрывает легаси-',
+    '     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,',
+    '     свет несёт border-reveal. */',
+  ];
+  for (const [role, g] of Object.entries(solved)) {
+    lines.push(`  --lab-fx-glow-${role}: ${hexToOklch(g.halo)};`);
+    lines.push(`  --lab-fx-glow-${role}-core: ${hexToOklch(g.core)};`);
+    lines.push(`  --lab-fx-glow-${role}-alpha: ${g.alpha};`);
+  }
+  return lines.join('\n');
+}
+
 /** Сгенерировать полный contract.css из движка и Figma-якоря. */
 export async function generateContract() {
   const require = createRequire(import.meta.url);
@@ -165,11 +220,13 @@ export async function generateContract() {
   const lightBody =
     renderScope(light, engineLight) +
     badgePairEmission(colors, 'light', resolvedLight.roles) +
-    bgLadderEmission('light', engineLight, bgLight);
+    bgLadderEmission('light', engineLight, bgLight) +
+    glowBridgeEmission('light');
   const darkBody =
     renderScope(dark, engineDark) +
     badgePairEmission(colors, 'dark', resolvedDark.roles) +
-    bgLadderEmission('dark', engineDark, bgDark);
+    bgLadderEmission('dark', engineDark, bgDark) +
+    glowBridgeEmission('dark');
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.

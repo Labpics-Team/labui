@@ -189,6 +189,22 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-bg-grouped-primary: var(--lab-bg-tone-2);
   --lab-bg-grouped-secondary: var(--lab-bg-tone-1);
   --lab-bg-grouped-tertiary: var(--lab-bg-tone-2);
+  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+     свет несёт border-reveal. */
+  --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424);
+  --lab-fx-glow-brand-core: oklch(78.84894% 0.062240 265.472);
+  --lab-fx-glow-brand-alpha: 0;
+  --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659);
+  --lab-fx-glow-danger-core: oklch(81.62208% 0.103545 27.533);
+  --lab-fx-glow-danger-alpha: 0;
+  --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607);
+  --lab-fx-glow-warning-core: oklch(88.80612% 0.081204 68.866);
+  --lab-fx-glow-warning-alpha: 0;
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-core: oklch(99.97226% 0.001314 106.423);
+  --lab-fx-glow-neutral-alpha: 0;
 }
 
 [data-theme="dark"] {
@@ -371,6 +387,22 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-bg-grouped-primary: var(--lab-bg-tone-1);
   --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
   --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
+  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+     свет несёт border-reveal. */
+  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+  --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+  --lab-fx-glow-brand-alpha: 0.036;
+  --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+  --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+  --lab-fx-glow-danger-alpha: 0.046;
+  --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+  --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+  --lab-fx-glow-warning-alpha: 0.0333;
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
+  --lab-fx-glow-neutral-alpha: 0.0188;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -554,5 +586,21 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-bg-grouped-primary: var(--lab-bg-tone-1);
     --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
     --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
+    /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+       решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+       краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+       свет несёт border-reveal. */
+    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+    --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+    --lab-fx-glow-brand-alpha: 0.036;
+    --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+    --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+    --lab-fx-glow-danger-alpha: 0.046;
+    --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+    --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+    --lab-fx-glow-warning-alpha: 0.0333;
+    --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+    --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
+    --lab-fx-glow-neutral-alpha: 0.0188;
   }
 }

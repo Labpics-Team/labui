@@ -8,26 +8,29 @@
 /*
   Прототип свечения (labui ADR-0002 §5, волна glow).
 
-  ПРОВЕНАНС ЗНАЧЕНИЙ — движок @labpics/colors (glow.rs + пример
-  glow_mirror_derivation, ветка поезда):
+  ПРОВЕНАНС ЗНАЧЕНИЙ — контракт @labpics/colors-stub (glow-мост поезда,
+  блок «Свечение — свет, не краска» в contract.css; решено движком:
+  пример glow_mirror_derivation):
     контракт (зеркало теней): subtle=0.8563, base=2.3006, bloom=13.3251 |ΔJ'|
-    решено для бренда #4A8FFF на #101012 (dim surround):
-      α: subtle=0.0112, base=0.0360, bloom=0.2126
-      слои: core (пересвет) = #B3C3EA, halo = #4A8FFF
+    прототип читает --lab-fx-glow-brand{,-core,-alpha} с фолбэками из того
+    же вывода примера (страница работоспособна и без подключённого контракта).
   Оператор наложения — КОНТРАКТНЫЙ screen (не темнит по построению);
-  радиусы — из spacing-шкалы токенов. Прототип — этап поезда, как
-  liquid-glass: в прод пойдёт срезом над --lab-* контрактом.
+  радиусы — из spacing-шкалы токенов. Ступени subtle/bloom масштабируются
+  от контрактной α Base отношением целей ΔJ' (0.8563/2.3006 и 13.3251/2.3006 —
+  линейность screen по α в первом порядке; точные α — при живой эмиссии 0.6.0).
 */
 :root {
   --bg: var(--lab-bg-primary, #101012);
   --bg-2: var(--lab-bg-secondary, #1c1c1e);
   --label: var(--lab-label-primary, #f2f2f7);
   --brand: var(--lab-fill-brand, #4a8fff);
-  --glow-core: #b3c3ea;      /* движок: пересвет бренда (J' к белому, M'/2) */
-  --glow-halo: #4a8fff;      /* движок: halo = источник */
-  --a-subtle: 0.0112;        /* движок: α ступеней (см. провенанс выше) */
-  --a-base: 0.036;
-  --a-bloom: 0.2126;
+  /* Контракт (glow-мост): фолбэки — тот же вывод примера движка. */
+  --glow-core: var(--lab-fx-glow-brand-core, #b3c3ea); /* пересвет (J' к белому, M'/2) */
+  --glow-halo: var(--lab-fx-glow-brand, #4a8fff);      /* halo = источник */
+  --a-base: var(--lab-fx-glow-brand-alpha, 0.036);     /* контрактная ступень Base */
+  /* subtle/bloom — масштаб от Base отношением целей ΔJ' (см. провенанс). */
+  --a-subtle: calc(var(--a-base) * 0.3722);  /* 0.8563 / 2.3006 */
+  --a-bloom: calc(var(--a-base) * 5.7920);   /* 13.3251 / 2.3006 */
   --r-core: var(--lab-space-2, 0.5rem);
   --r-halo: var(--lab-space-8, 2rem);
   --border: var(--lab-border-base, rgb(84 84 90 / 0.6));
