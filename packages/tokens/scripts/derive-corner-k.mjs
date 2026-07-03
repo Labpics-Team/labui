@@ -156,6 +156,11 @@ export function deviationForN(n) {
 
 export function fitOptimalN() {
   // Золотое сечение по n ∈ [2, 4].
+  // 28 итераций: интервал 2·φ^28 ≈ 3e-6 — на шесть порядков точнее допуска
+  // потребителя (тест сравнивает n* с 2.02, зазор 0.02). Прежние 60 итераций
+  // давали ≈2e-13 ценой ~62 вызовов deviationForN (~29 млн сегментных
+  // дистанций каждый): на медленном CI-раннере синхронный блок >60с рвал
+  // RPC vitest-воркера («Timeout calling onTaskUpdate») при зелёных тестах.
   let lo = 2.0;
   let hi = 4.0;
   const phi = (Math.sqrt(5) - 1) / 2;
@@ -163,7 +168,7 @@ export function fitOptimalN() {
   let x2 = lo + phi * (hi - lo);
   let f1 = deviationForN(x1);
   let f2 = deviationForN(x2);
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 28; i++) {
     if (f1 < f2) {
       hi = x2;
       x2 = x1;
