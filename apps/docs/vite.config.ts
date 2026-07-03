@@ -57,6 +57,9 @@ export default defineConfig({
         // Рантайм-провайдер: живой WASM-движок + watchTheme + acme-конфиг.
         'engine-live': resolve(__dirname, 'src/engine-live.html'),
         materials: resolve(__dirname, 'src/materials.html'),
+        // Materials FLAG demo: data-material solid|glass|blur over the --lab-*
+        // contract (@labpics/ui-materials). One attribute flips card + modal.
+        'materials-flag': resolve(__dirname, 'src/materials-flag.html'),
         shadow: resolve(__dirname, 'src/shadow.html'),
         proof: resolve(__dirname, 'src/proof.html'),
         // The reusable component-doc template (rendered from a ComponentDoc

@@ -1,0 +1,182 @@
+/*
+ * @labpics/ui-materials — material.css
+ *
+ * The MATERIAL axis as a scope attribute: `data-material="solid|glass|blur"`
+ * sits beside `data-theme` and re-skins every `.lab-material` surface below it
+ * with ZERO markup change — the owner's hard requirement (design ch6, §Модель).
+ *
+ * This file lives STRICTLY ON TOP of the `--lab-*` contract. It invents no
+ * colour: every tint and base is a `--lab-bg-material-*` emission from
+ * @labpics/colors (which already rebinds per `data-theme`, so a tier token
+ * auto-adapts light↔dark with no branching here). All package mechanics are
+ * PRIVATE custom properties (`--_*`) so nothing new enters the `--lab-*`
+ * contract surface.
+ *
+ * ── Tint pair (Figma two-layer Materials fill → web) ──────────────────────
+ *   `--lab-bg-material-<tier>-01`  translucent tint layer; its alpha is the
+ *                                   glass density (base ≈ dense, subtle ≈ sheer).
+ *   `--lab-bg-material-<tier>-02`  opaque base layer that backs the solid canon.
+ *   SOLID canon  = 01 painted over 02, opaque (also the universal fallback).
+ *   GLASS/BLUR   = 01 alone (translucent) over a live backdrop + backdrop-filter.
+ *
+ * ── Guarantee ─────────────────────────────────────────────────────────────
+ *   Legibility of a label on GLASS is proven by the α-boundary math in this
+ *   package's TS domain (see material-guarantee.ts + test/alpha-boundary.test).
+ *   With the current PROVISIONAL Figma-anchor alphas, several sheer tiers do
+ *   NOT hold their label across the whole backdrop range — see README
+ *   "Unguaranteed pairs". Solid always holds (opaque), which is why every
+ *   degradation below collapses to it.
+ *
+ * ── Blur radii ────────────────────────────────────────────────────────────
+ *   48px (glass) / 128px (blur) — the Figma BG-blur ladder (BG-blur Base 48,
+ *   Strong 128). Literals because `-webkit-backdrop-filter` cannot follow
+ *   var() on Safari ≤18.2; the unprefixed property uses the var().
+ */
+
+.lab-material {
+  /* Tier fill — default tier is `base`; a `.lab-material--<tier>` modifier
+   * re-points these. Colour comes only from the contract. */
+  --_tint: var(--lab-bg-material-base-01);
+  --_base: var(--lab-bg-material-base-02);
+
+  /* Mechanics constants (effect params, not colour). */
+  --_blur-glass: 48px;
+  --_blur-blur: 128px;
+  --_saturate-on: 180%;
+
+  /* Mode-driven knobs — default = SOLID (the canon + universal fallback). */
+  --_base-paint: var(--_base); /* opaque base under the tint */
+  --_blur: 0px;
+  --_saturate: 100%;
+
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--lab-radius-card, 12px);
+
+  /* ONE paint rule for every mode. Solid: tint over opaque base. Glass/blur:
+   * tint over `transparent` (base dropped) so the blurred live backdrop reads. */
+  background: linear-gradient(var(--_tint), var(--_tint)), var(--_base-paint);
+  backdrop-filter: blur(var(--_blur)) saturate(var(--_saturate));
+  -webkit-backdrop-filter: none; /* solid default; each mode restates literally */
+}
+
+/* ── Tier modifiers — re-point the fill only (mode-agnostic). ─────────────── */
+.lab-material--base {
+  --_tint: var(--lab-bg-material-base-01);
+  --_base: var(--lab-bg-material-base-02);
+}
+.lab-material--muted {
+  --_tint: var(--lab-bg-material-muted-01);
+  --_base: var(--lab-bg-material-muted-02);
+}
+.lab-material--soft {
+  --_tint: var(--lab-bg-material-soft-01);
+  --_base: var(--lab-bg-material-soft-02);
+}
+.lab-material--subtle {
+  --_tint: var(--lab-bg-material-subtle-01);
+  --_base: var(--lab-bg-material-subtle-02);
+}
+.lab-material--elevated {
+  --_tint: var(--lab-bg-material-elevated-01);
+  --_base: var(--lab-bg-material-elevated-02);
+}
+
+/* ── GLASS — translucent tint + live backdrop blur (Figma BG-blur 48). ────── */
+[data-material="glass"] .lab-material,
+[data-material="glass"].lab-material {
+  --_base-paint: transparent;
+  --_blur: var(--_blur-glass);
+  --_saturate: var(--_saturate-on);
+  -webkit-backdrop-filter: blur(48px) saturate(180%);
+}
+
+/* ── BLUR — frostier tier, heavier backdrop blur (Figma BG-blur 128). ─────── */
+[data-material="blur"] .lab-material,
+[data-material="blur"].lab-material {
+  --_base-paint: transparent;
+  --_blur: var(--_blur-blur);
+  --_saturate: var(--_saturate-on);
+  -webkit-backdrop-filter: blur(128px) saturate(180%);
+}
+
+/* ── SOLID — explicit manual override. ALWAYS wins: the DS escape hatch and the
+ * canon. Placed after glass/blur so at equal specificity it takes precedence
+ * whenever an ancestor is set to solid. ──────────────────────────────────── */
+[data-material="solid"] .lab-material,
+[data-material="solid"].lab-material {
+  --_base-paint: var(--_base);
+  --_blur: 0px;
+  --_saturate: 100%;
+  -webkit-backdrop-filter: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * DETERMINISTIC DEGRADATIONS — each collapses glass/blur to the SOLID canon.
+ * Selector lists mirror the mode blocks (equal specificity) and sit AFTER them,
+ * so at equal specificity source order lets the degradation win. The solid
+ * canon is opaque → label contract always holds, blur cost is zero.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1. No backdrop-filter support → solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="blur"] .lab-material,
+  [data-material="blur"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 2. prefers-reduced-transparency → solid (accessibility over aesthetics). */
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
+@media (prefers-reduced-transparency: reduce) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="blur"] .lab-material,
+  [data-material="blur"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 3. prefers-contrast: more → solid (strengthen: opaque tint, maximum contrast). */
+@media (prefers-contrast: more) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="blur"] .lab-material,
+  [data-material="blur"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 4. forced-colors: active → system surface, translucency stripped. We DON'T
+ * hardcode system colours (Canvas/CanvasText): we drop the tint GRADIENT and
+ * the blur so only an opaque `background-color` remains, which the UA's default
+ * forced-color-adjust maps to the system surface (and the label to system
+ * text). Idiomatic forced-colors: let the platform own its palette. */
+@media (forced-colors: active) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="blur"] .lab-material,
+  [data-material="blur"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

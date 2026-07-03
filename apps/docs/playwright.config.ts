@@ -47,6 +47,7 @@ const SMOKE_SPECS = [
   'proof.spec.ts',
   'tokens.spec.ts',
   'materials.spec.ts',
+  'materials-flag.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
