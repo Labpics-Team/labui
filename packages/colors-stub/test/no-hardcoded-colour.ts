@@ -58,6 +58,9 @@ import {
  */
 export const ALLOWLIST: readonly string[] = [
   'packages/colors-stub/contract.css',
+  // Замороженный Figma-якорь: он ЕСТЬ сырые замеры (включая material rgb-литералы),
+  // против него меряет золотая сверка — не компонентный код, не редактируется.
+  'packages/colors-stub/figma-reference.css',
   'packages/core/src/materials.css',
   'packages/shadow/src/generated/shadow.css',
   'packages/shadow/src/config.ts',

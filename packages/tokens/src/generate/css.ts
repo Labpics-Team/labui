@@ -63,7 +63,7 @@ function cornerShapeRule(): string {
     ':where(.lab-scope) *,',
     ':where(.lab-scope) *::before,',
     ':where(.lab-scope) *::after {',
-    '  corner-shape: superellipse(var(--lab-radius-corner-k, 1));',
+    '  corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));',
     '}',
     '',
   ].join('\n');

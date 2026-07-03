@@ -144,7 +144,11 @@
       "--lab-fx-skeleton-base",
       "--lab-fx-skeleton-highlight"
     ],
-    "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],
+    "Misc": [
+      "--lab-badge-label-contrast",
+      "--lab-badge-label-default",
+      "--lab-control-bg"
+    ],
     "Component": [
       "--lab-fill-accent",
       "--lab-fill-neutral",
@@ -160,7 +164,21 @@
       "--lab-border-accent",
       "--lab-border-neutral",
       "--lab-border-danger",
-      "--lab-border-focus"
+      "--lab-border-focus",
+      "--lab-badge-fill-brand",
+      "--lab-badge-label-on-brand",
+      "--lab-badge-fill-danger",
+      "--lab-badge-label-on-danger",
+      "--lab-badge-fill-warning",
+      "--lab-badge-label-on-warning",
+      "--lab-badge-fill-success",
+      "--lab-badge-label-on-success",
+      "--lab-badge-fill-info",
+      "--lab-badge-label-on-info",
+      "--lab-badge-fill-static-dark",
+      "--lab-badge-label-on-static-dark",
+      "--lab-badge-fill-static-light",
+      "--lab-badge-label-on-static-light"
     ]
   },
   "aliases": []

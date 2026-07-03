@@ -82,6 +82,7 @@ export const SEMANTIC_ROLE_PREFIXES = [
   '--lab-bg-', // backgrounds
   '--lab-fx-', // glow / focus-ring / shadow / skeleton
   '--lab-mat-', // material roles (from materials.css)
+  '--lab-badge-', // component pair roles (crate::pair — fill + label-on)
 ] as const;
 
 /** The dimension role families (from @labpics/ui-tokens). Always legal to read. */

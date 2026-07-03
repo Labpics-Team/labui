@@ -33,7 +33,7 @@ const cornerShapeStyles = css`
   *,
   *::before,
   *::after {
-    corner-shape: superellipse(var(--lab-radius-corner-k, 1));
+    corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));
   }
 `;
 
