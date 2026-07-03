@@ -166,6 +166,22 @@
   ],
   "roles": [
     {
+      "name": "bg-tone-2",
+      "recipe": {
+        "kind": "dj-anchor",
+        "light": 2.03,
+        "dark": 5.78
+      }
+    },
+    {
+      "name": "bg-tone-3",
+      "recipe": {
+        "kind": "dj-anchor",
+        "light": 2.03,
+        "dark": 9.6
+      }
+    },
+    {
       "name": "label-primary",
       "recipe": {
         "kind": "text-anchor",

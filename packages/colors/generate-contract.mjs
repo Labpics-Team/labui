@@ -96,6 +96,51 @@ function renderScope(anchorVars, engineVars) {
   return lines.join('\n');
 }
 
+/**
+ * Лестница фонов (labui ADR-0002 §1): тона — контрактные dJ'-шаги движка
+ * (роли bg-tone-2/3 паспорта, значения ИЗМЕРЕНЫ по собственному Figma-якорю
+ * labui: light 2.03; dark 5.78 и 9.60 от базы), маппинг ролей на тона — закон
+ * асимметрии тем: светлая 2 тона × 3 применения (elevation тенями), тёмная
+ * 3 тона × 2 (elevation осветлением). Объявления ПЕРЕКРЫВАЮТ мостовые строки
+ * bg-* каскадом (позже в том же блоке) — это и есть переезд моста.
+ */
+function bgLadderEmission(theme, engineVars, bgBase) {
+  const t2 = engineVars.get('--lab-bg-tone-2');
+  const t3 = engineVars.get('--lab-bg-tone-3');
+  if (!t2 || !t3) throw new Error('движок не эмитит bg-tone-2/3 — паспорт рассинхронизирован');
+  const map =
+    theme === 'light'
+      ? {
+          primary: '1',
+          secondary: '2',
+          tertiary: '1',
+          'grouped-primary': '2',
+          'grouped-secondary': '1',
+          'grouped-tertiary': '2',
+        }
+      : {
+          primary: '1',
+          secondary: '2',
+          tertiary: '3',
+          'grouped-primary': '1',
+          'grouped-secondary': '2',
+          'grouped-tertiary': '3',
+        };
+  const lines = [
+    '',
+    "  /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);",
+    '     маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).',
+    '     Переезд моста: перекрывает Figma-якорь каскадом. */',
+    `  --lab-bg-tone-1: ${bgBase}; /* вход: фон резолва (паспортный якорь нейтрали) */`,
+    `  --lab-bg-tone-2: ${t2};`,
+    `  --lab-bg-tone-3: ${t3};`,
+  ];
+  for (const [role, tone] of Object.entries(map)) {
+    lines.push(`  --lab-bg-${role}: var(--lab-bg-tone-${tone});`);
+  }
+  return lines.join('\n');
+}
+
 /** Сгенерировать полный contract.css из движка и Figma-якоря. */
 export async function generateContract() {
   const require = createRequire(import.meta.url);
@@ -118,9 +163,13 @@ export async function generateContract() {
   const resolvedLight = colors.resolveTheme(bgLight, 'light');
   const resolvedDark = colors.resolveTheme(bgDark, 'dark');
   const lightBody =
-    renderScope(light, engineLight) + badgePairEmission(colors, 'light', resolvedLight.roles);
+    renderScope(light, engineLight) +
+    badgePairEmission(colors, 'light', resolvedLight.roles) +
+    bgLadderEmission('light', engineLight, bgLight);
   const darkBody =
-    renderScope(dark, engineDark) + badgePairEmission(colors, 'dark', resolvedDark.roles);
+    renderScope(dark, engineDark) +
+    badgePairEmission(colors, 'dark', resolvedDark.roles) +
+    bgLadderEmission('dark', engineDark, bgDark);
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.

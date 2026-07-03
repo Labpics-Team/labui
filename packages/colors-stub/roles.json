@@ -2,6 +2,10 @@
   "$comment": "Canonical --lab-* semantic role contract. Source of truth for the presence test. Regenerate together with contract.css from reference/labui-tokens-snapshot.dtcg.json. Do not hand-edit. IC modes are reserved (not listed).",
   "groups": {
     "Backgrounds": [
+      "--lab-bg-grouped-primary",
+      "--lab-bg-grouped-secondary",
+      "--lab-bg-grouped-tertiary",
+      "--lab-bg-inverted",
       "--lab-bg-material-base-01",
       "--lab-bg-material-base-02",
       "--lab-bg-material-elevated-01",
@@ -12,19 +16,18 @@
       "--lab-bg-material-soft-02",
       "--lab-bg-material-subtle-01",
       "--lab-bg-material-subtle-02",
-      "--lab-bg-grouped-primary",
-      "--lab-bg-grouped-secondary",
-      "--lab-bg-grouped-tertiary",
-      "--lab-bg-inverted",
+      "--lab-bg-overlay-base",
+      "--lab-bg-overlay-ghost",
+      "--lab-bg-overlay-soft",
+      "--lab-bg-overlay-strong",
       "--lab-bg-primary",
       "--lab-bg-secondary",
       "--lab-bg-static-dark",
       "--lab-bg-static-light",
       "--lab-bg-tertiary",
-      "--lab-bg-overlay-base",
-      "--lab-bg-overlay-ghost",
-      "--lab-bg-overlay-soft",
-      "--lab-bg-overlay-strong"
+      "--lab-bg-tone-1",
+      "--lab-bg-tone-2",
+      "--lab-bg-tone-3"
     ],
     "Labels": [
       "--lab-label-brand-primary",

@@ -89,7 +89,7 @@ describe('--lab-* semantic color contract', () => {
       Object.entries(roles.groups).map(([g, list]) => [g, list.length]),
     );
     expect(counts).toEqual({
-      Backgrounds: 23,
+      Backgrounds: 26,
       Labels: 36,
       Fills: 33,
       Border: 26,
