@@ -364,28 +364,34 @@ export async function runPendingDecodeRegression() {
         // bumps gen → 2, invalidating the 1st render's pending onload. Without the
         // pending-branch re-arm, NOTHING is scheduled for gen 2 → lens never lands.
         g.update({});
-        // NOW flush the decode. The only onload(s) that fire are the ones the
-        // engine armed. The fix arms one for gen 2; the bug armed none survivable.
-        flush();
-        // settle any straggler onload the re-arm itself may queue.
-        flush();
-
-        const bf =
-          getComputedStyle(el).backdropFilter || getComputedStyle(el).webkitBackdropFilter || '';
-        const m = bf.match(/url\(["']?#([^"')]+)/);
-        const hasUrl = !!m;
-        let hasFeImageHref = false;
-        if (m) {
-          const f = document.getElementById(m[1]);
-          const img = f?.querySelector('feImage');
-          const href =
-            img &&
-            (img.getAttribute('href') ||
-              img.getAttributeNS('http://www.w3.org/1999/xlink', 'href'));
-          hasFeImageHref = !!href && href.length > 80;
+        // Flush-and-poll: the map's PNG now encodes off-thread (toBlob), so the
+        // engine arms its Image a tick AFTER update() — a fixed pair of flushes
+        // would race it. We flush every frame until the lens lands or the budget
+        // runs out. RED-proof intact: with the re-arm reverted, nothing is EVER
+        // armed for gen 2, so this loop exhausts its budget and stays red.
+        const check = () => {
+          const bf =
+            getComputedStyle(el).backdropFilter || getComputedStyle(el).webkitBackdropFilter || '';
+          const m = bf.match(/url\(["']?#([^"')]+)/);
+          const hasUrl = !!m;
+          let hasFeImageHref = false;
+          if (m) {
+            const f = document.getElementById(m[1]);
+            const img = f?.querySelector('feImage');
+            const href =
+              img &&
+              (img.getAttribute('href') ||
+                img.getAttributeNS('http://www.w3.org/1999/xlink', 'href'));
+            hasFeImageHref = !!href && (href.length > 80 || href.startsWith('blob:'));
+          }
+          detail = `backdrop-filter=${JSON.stringify(bf.slice(0, 120))} hasUrl=${hasUrl} hasFeImageHref=${hasFeImageHref}`;
+          return hasUrl && hasFeImageHref;
+        };
+        for (let i = 0; i < 120 && !lensStamped; i++) {
+          flush();
+          await new Promise((r) => requestAnimationFrame(r));
+          lensStamped = check();
         }
-        lensStamped = hasUrl && hasFeImageHref;
-        detail = `backdrop-filter=${JSON.stringify(bf.slice(0, 120))} hasUrl=${hasUrl} hasFeImageHref=${hasFeImageHref}`;
       } finally {
         g?.destroy();
         el.remove();
@@ -672,7 +678,9 @@ async function settle(page, expectLens) {
       const href =
         img &&
         (img.getAttribute('href') || img.getAttributeNS('http://www.w3.org/1999/xlink', 'href'));
-      return !!href && href.length > 80 ? href : null;
+      // A settled href is either a multi-KB data-URI or a blob: URL (the
+      // engine encodes the map off-thread via toBlob when available).
+      return !!href && (href.length > 80 || href.startsWith('blob:')) ? href : null;
     };
     const settledOne = (id) => {
       const h = lensHref(id);

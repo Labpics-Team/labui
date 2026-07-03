@@ -56,7 +56,9 @@ displacement filter; the rest are pure CSS and update with no JS.
 
 The expensive part — the displacement map — is regenerated **only on resize**
 (built once per geometry, shared across same-sized instances, resize storms
-collapse to one trailing-edge build). Tuning refraction/dispersion updates only
+collapse to one trailing-edge build), and its heaviest chunk — the PNG encode —
+runs **off the main thread** (`canvas.toBlob`); only the ¼-symmetric field
+loop stays synchronous. Tuning refraction/dispersion updates only
 the `feDisplacementMap` scale attributes in place — no markup re-parse, no
 feImage re-attach; blur / saturate / tint are pure CSS. Dragging the pane moves
 it on `left`/`top` (a transform would shear the lens off its filter region —
