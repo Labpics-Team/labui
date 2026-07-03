@@ -7,6 +7,7 @@ import {
   MATERIAL_TIERS,
   type ThemeName,
   type TierFill,
+  fillKey,
 } from '../src/material-guarantee';
 
 /*
@@ -71,7 +72,7 @@ export function readContractMaterials(): ContractMaterials {
   for (const theme of ['light', 'dark'] as const) {
     const section = sections[theme];
     for (const tier of MATERIAL_TIERS) {
-      fills.set(`${theme}/${tier}`, {
+      fills.set(fillKey(theme, tier), {
         tint: readColour(section, `--lab-bg-material-${tier}-01`),
         base: readColour(section, `--lab-bg-material-${tier}-02`),
       });

@@ -61,6 +61,24 @@ Guaranteed today: **light** {base, muted, soft, elevated} and **dark** {base}.
 This is a finding on the provisional alphas, not a defect of the mechanics —
 the golden test locks the set so a silent regression trips CI.
 
+### Model caveat (escalated to the design / lab-colors science owner)
+
+The ch6 `L_eff` formula interpolates in **luminance** space. Real browser alpha
+compositing is per-channel in **gamma sRGB**, and lab-colors' own alpha
+derivation composites in **linear sRGB** — three spaces that disagree. The
+luminance-linear model is **conservative** for white labels on dark surfaces
+(the safety-critical polarity case — every unguaranteed finding above holds
+under all three models) but **optimistic** for near-black labels at a dark
+backdrop. Concrete case: `light/soft` is guaranteed here (~5.7:1 by this model)
+yet composites to ~4.1:1 in real sRGB paint — **below AA**.
+
+So a `guaranteed` verdict means *"legal under the ch6 luminance-linear
+α-boundary model"*, not a hard physical AA promise. The composite space must be
+reconciled with lab-colors' linear-sRGB derivation **before the provisional
+Figma alphas are frozen**. This package implements the ch6 formula faithfully by
+mandate; it does not unilaterally pick the composite space (that is the
+lab-colors science owner's call).
+
 ## Placement rules (invariants)
 
 - Glass is a **navigational / transient** layer (bars, modals, popovers) — not

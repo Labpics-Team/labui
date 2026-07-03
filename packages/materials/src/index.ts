@@ -35,5 +35,6 @@ export {
   WCAG_AA_LARGE,
   evaluateTier,
   guaranteeReport,
+  fillKey,
   verdictKey,
 } from './material-guarantee';

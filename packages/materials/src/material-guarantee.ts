@@ -22,6 +22,21 @@
  * test feeds it the values parsed straight from the generated contract so the
  * guarantee tracks the contract with no second copy of the numbers (DRY / no
  * drift — the same discipline the colours train uses for contract.css).
+ *
+ * ── MODEL CAVEAT (escalated to the design / lab-colors science owner) ───────
+ * The ch6 formula interpolates in LUMINANCE space. Real browser alpha
+ * compositing happens per-channel in gamma-encoded sRGB, and lab-colors'
+ * own alpha-derivation composites in LINEAR sRGB — three different spaces that
+ * do not agree. The luminance-linear model is CONSERVATIVE for white labels on
+ * dark surfaces (our safety-critical case: unguaranteed findings hold under
+ * every model) but OPTIMISTIC for near-black labels at a dark backdrop. Concrete
+ * case: `light/soft` is guaranteed here (~5.7:1 by this model) yet composites to
+ * ~4.1:1 in real sRGB paint — below AA. So a `guaranteed` verdict means "legal
+ * under the ch6 luminance-linear α-boundary model", NOT a hard physical AA
+ * promise. The composite space must be reconciled with lab-colors' linear-sRGB
+ * derivation BEFORE the provisional Figma alphas are frozen (README →
+ * "Model caveat"). This module implements the ch6 formula faithfully by mandate;
+ * it does not unilaterally pick the composite space.
  */
 
 import { type Rgba, compositeOver, contrastRatio, relativeLuminance } from './luminance';
@@ -77,9 +92,14 @@ export interface TierVerdict {
   readonly guaranteed: boolean;
 }
 
+/** The one stable `theme/tier` key format — used for both fill lookup and reporting. */
+export function fillKey(theme: ThemeName, tier: MaterialTier): string {
+  return `${theme}/${tier}`;
+}
+
 /** A stable `theme/tier` key for reporting. */
 export function verdictKey(v: Pick<TierVerdict, 'theme' | 'tier'>): string {
-  return `${v.theme}/${v.tier}`;
+  return fillKey(v.theme, v.tier);
 }
 
 /**
@@ -172,9 +192,9 @@ export function guaranteeReport(
       throw new Error(`guaranteeReport: no label candidates for theme "${theme}"`);
     }
     for (const tier of MATERIAL_TIERS) {
-      const fill = fills.get(`${theme}/${tier}`);
+      const fill = fills.get(fillKey(theme, tier));
       if (fill === undefined) {
-        throw new Error(`guaranteeReport: missing fill for ${theme}/${tier}`);
+        throw new Error(`guaranteeReport: missing fill for ${fillKey(theme, tier)}`);
       }
       verdicts.push(evaluateTier(tier, theme, fill, candidates, options));
     }
