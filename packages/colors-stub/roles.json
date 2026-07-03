@@ -144,11 +144,7 @@
       "--lab-fx-skeleton-base",
       "--lab-fx-skeleton-highlight"
     ],
-    "Misc": [
-      "--lab-badge-label-contrast",
-      "--lab-badge-label-default",
-      "--lab-control-bg"
-    ],
+    "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],
     "Component": [
       "--lab-fill-accent",
       "--lab-fill-neutral",
