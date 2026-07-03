@@ -12,6 +12,7 @@
 [data-lab-kbd] {
   --_lab-kbd-radius: var(--lab-radius-control, 0.5rem);
   --_lab-kbd-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-kbd-tracking: var(--lab-letter-spacing-xs, -0.0042em);
   --_lab-kbd-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-kbd-min: 1.5rem;
 
@@ -30,6 +31,7 @@
   color: var(--lab-label-primary);
   font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
   font-size: var(--_lab-kbd-font);
+  letter-spacing: var(--_lab-kbd-tracking);
   line-height: 1;
   font-weight: var(--lab-font-weight-semibold, 600);
   white-space: nowrap;
@@ -37,11 +39,13 @@
 
 [data-lab-kbd][data-size="s"] {
   --_lab-kbd-font: var(--lab-font-size-xxs, 0.6944rem);
+  --_lab-kbd-tracking: var(--lab-letter-spacing-xxs, 0.0043em);
   --_lab-kbd-pad-x: var(--lab-space-xs, 0.25rem);
   --_lab-kbd-min: 1.25rem;
 }
 [data-lab-kbd][data-size="l"] {
   --_lab-kbd-font: var(--lab-font-size-md, 1rem);
+  --_lab-kbd-tracking: var(--lab-letter-spacing-md, -0.011em);
   --_lab-kbd-pad-x: var(--lab-space-md, 1rem);
   --_lab-kbd-min: 2rem;
 }

@@ -226,7 +226,9 @@ export class LabSlider extends LabElement {
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
+      --_label-tracking: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
       --_help-font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
+      --_help-tracking: ${litVar('--lab-letter-spacing-xxs', '0.0043em')};
       --_line: ${litVar('--lab-line-height-md', '1.5')};
 
       display: block;
@@ -257,6 +259,7 @@ export class LabSlider extends LabElement {
 
     .label {
       font-size: var(--_label-font);
+      letter-spacing: var(--_label-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-secondary')};
     }
@@ -276,6 +279,7 @@ export class LabSlider extends LabElement {
     /* The live value readout (the Zag valueText part). */
     .value-text {
       font-size: var(--_label-font);
+      letter-spacing: var(--_label-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-primary')};
       font-variant-numeric: tabular-nums;
@@ -394,11 +398,13 @@ export class LabSlider extends LabElement {
     /* Helper / error text, reusing the field's low-emphasis treatment. */
     .helper {
       font-size: var(--_help-font);
+      letter-spacing: var(--_help-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-tertiary')};
     }
     .error {
       font-size: var(--_help-font);
+      letter-spacing: var(--_help-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-danger')};
     }

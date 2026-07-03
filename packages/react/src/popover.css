@@ -61,6 +61,7 @@
   box-shadow: var(--lab-elevation-overlay);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
+  letter-spacing: var(--lab-letter-spacing-md, -0.011em);
   line-height: var(--lab-line-height-md, 1.5);
   z-index: var(--lab-z-dropdown, 900);
 }
@@ -89,6 +90,7 @@
 .lab-popover-heading {
   margin: 0 0 var(--lab-space-xs, 0.25rem) 0;
   font-size: var(--lab-font-size-lg, 1.2rem);
+  letter-spacing: var(--lab-letter-spacing-lg, -0.0177em);
   line-height: var(--lab-line-height-md, 1.5);
   color: var(--lab-label-primary);
 }

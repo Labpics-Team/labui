@@ -29,6 +29,11 @@ export function generateCss(tokens: ResolvedTokens): string {
     ]),
     section('Typography — line-height multipliers', tokenLines(tokens.lineHeights)),
     section('Typography — font-weight scale (unitless)', tokenLines(tokens.fontWeights)),
+    section(
+      'Typography — оптический трекинг (em, парно к кеглям: мелкие разрежены, крупные ужаты)',
+      tokenLines(tokens.letterSpacings),
+    ),
+    section('Typography — мера строки (Bringhurst 45–75ch, 66 идеал)', tokenLines(tokens.measures)),
     section('Borders — stroke widths (rem)', tokenLines(tokens.strokes)),
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
   ];

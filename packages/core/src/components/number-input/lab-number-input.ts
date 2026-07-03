@@ -246,6 +246,7 @@ export class LabNumberInput extends LabElement {
         padding: var(--_field-pad-y) var(--_field-pad-x);
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: var(--_field-line);
         color: ${litVar('--lab-label-primary')};
         background: transparent;
@@ -282,6 +283,7 @@ export class LabNumberInput extends LabElement {
         padding: 0;
         font: inherit;
         font-size: ${litVar('--lab-font-size-xs', '0.8333rem')};
+        letter-spacing: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
         line-height: 1;
         color: ${litVar('--lab-label-secondary')};
         background-color: ${litVar('--lab-fill-neutral-tinted')};

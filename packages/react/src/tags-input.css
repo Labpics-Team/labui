@@ -17,11 +17,14 @@
 [data-lab-tags-input] {
   --_lab-field-pad-x: var(--lab-space-md, 1rem);
   --_lab-field-pad-y: var(--lab-space-sm, 0.5rem);
-  --_lab-field-radius: var(--lab-radius-md, 0.375rem);
+  --_lab-field-radius: var(--lab-radius-control, 0.5rem);
   --_lab-field-gap: var(--lab-space-xs, 0.25rem);
   --_lab-field-font: var(--lab-font-size-md, 1rem);
+  --_lab-field-tracking: var(--lab-letter-spacing-md, -0.011em);
   --_lab-field-label-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-field-label-tracking: var(--lab-letter-spacing-xs, -0.0042em);
   --_lab-field-help-font: var(--lab-font-size-xxs, 0.6944rem);
+  --_lab-field-help-tracking: var(--lab-letter-spacing-xxs, 0.0043em);
   --_lab-field-line: var(--lab-line-height-md, 1.5);
 
   display: block;
@@ -31,11 +34,13 @@
   --_lab-field-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-field-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-field-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-field-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-tags-input][data-size="l"] {
   --_lab-field-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-field-pad-y: var(--lab-space-md, 1rem);
   --_lab-field-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-field-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 [data-lab-tags-input].lab-field {
@@ -47,6 +52,7 @@
 
 [data-lab-tags-input] .lab-field-label {
   font-size: var(--_lab-field-label-font);
+  letter-spacing: var(--_lab-field-label-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-secondary);
 }
@@ -131,6 +137,7 @@
   max-width: 100%;
   padding: 0.125rem 0.125rem 0.125rem 0.5rem;
   font-size: var(--_lab-field-label-font);
+  letter-spacing: var(--_lab-field-label-tracking);
   line-height: 1.4;
   color: var(--lab-label-primary);
   background-color: var(--lab-fill-neutral-tinted);
@@ -164,6 +171,7 @@
   padding: 0;
   font: inherit;
   font-size: var(--_lab-field-label-font);
+  letter-spacing: var(--_lab-field-label-tracking);
   color: var(--lab-label-primary);
   background: transparent;
   border: 0;
@@ -209,6 +217,7 @@
   padding: 0.125rem 0;
   font: inherit;
   font-size: var(--_lab-field-font);
+  letter-spacing: var(--_lab-field-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-primary);
   background: transparent;
@@ -223,12 +232,14 @@
 
 [data-lab-tags-input] .lab-field-helper {
   font-size: var(--_lab-field-help-font);
+  letter-spacing: var(--_lab-field-help-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-tertiary);
 }
 
 [data-lab-tags-input] .lab-field-error {
   font-size: var(--_lab-field-help-font);
+  letter-spacing: var(--_lab-field-help-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-danger);
 }

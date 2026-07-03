@@ -17,6 +17,7 @@
 [data-lab-badge] {
   --_lab-badge-radius: var(--lab-radius-full, 9999px);
   --_lab-badge-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-badge-tracking: var(--lab-letter-spacing-xs, -0.0042em);
   --_lab-badge-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-badge-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-badge-gap: var(--lab-space-xs, 0.25rem);
@@ -32,6 +33,7 @@
   border-radius: var(--_lab-badge-radius);
   font: inherit;
   font-size: var(--_lab-badge-font);
+  letter-spacing: var(--_lab-badge-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   font-weight: var(--lab-font-weight-semibold, 600);
   white-space: nowrap;

@@ -15,6 +15,7 @@
 [data-lab-breadcrumb] {
   --_lab-bc-gap: var(--lab-space-sm, 0.5rem);
   --_lab-bc-font: var(--lab-font-size-md, 1rem);
+  --_lab-bc-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: block;
 }
@@ -22,10 +23,12 @@
 [data-lab-breadcrumb][data-size="s"] {
   --_lab-bc-gap: var(--lab-space-xs, 0.25rem);
   --_lab-bc-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-bc-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-breadcrumb][data-size="l"] {
   --_lab-bc-gap: var(--lab-space-md, 1rem);
   --_lab-bc-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-bc-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 .lab-breadcrumb-list {
@@ -38,6 +41,7 @@
   list-style: none;
   font: inherit;
   font-size: var(--_lab-bc-font);
+  letter-spacing: var(--_lab-bc-tracking);
   line-height: var(--lab-line-height-md, 1.5);
 }
 

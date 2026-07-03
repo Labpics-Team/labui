@@ -46,6 +46,9 @@ export const size = {
   'control-s': 'var(--lab-size-control-s)',
   'control-m': 'var(--lab-size-control-m)',
   'control-l': 'var(--lab-size-control-l)',
+  'control-h-s': 'var(--lab-size-control-h-s)',
+  'control-h-m': 'var(--lab-size-control-h-m)',
+  'control-h-l': 'var(--lab-size-control-h-l)',
 } as const;
 
 export type SizeToken = keyof typeof size;
@@ -131,6 +134,29 @@ export const fontWeight = {
 } as const;
 
 export type FontWeightToken = keyof typeof fontWeight;
+
+export const letterSpacing = {
+  xxs: 'var(--lab-letter-spacing-xxs)',
+  xs: 'var(--lab-letter-spacing-xs)',
+  md: 'var(--lab-letter-spacing-md)',
+  lg: 'var(--lab-letter-spacing-lg)',
+  xl: 'var(--lab-letter-spacing-xl)',
+  '2xl': 'var(--lab-letter-spacing-2xl)',
+  '3xl': 'var(--lab-letter-spacing-3xl)',
+  '4xl': 'var(--lab-letter-spacing-4xl)',
+  '5xl': 'var(--lab-letter-spacing-5xl)',
+  '6xl': 'var(--lab-letter-spacing-6xl)',
+} as const;
+
+export type LetterSpacingToken = keyof typeof letterSpacing;
+
+export const measure = {
+  narrow: 'var(--lab-measure-narrow)',
+  base: 'var(--lab-measure-base)',
+  wide: 'var(--lab-measure-wide)',
+} as const;
+
+export type MeasureToken = keyof typeof measure;
 
 export const stroke = {
   hairline: 'var(--lab-stroke-hairline)',

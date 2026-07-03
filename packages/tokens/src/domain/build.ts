@@ -23,6 +23,8 @@ export interface ResolvedTokens {
   readonly fontSizes: readonly ResolvedToken[];
   readonly lineHeights: readonly ResolvedToken[];
   readonly fontWeights: readonly ResolvedToken[];
+  readonly letterSpacings: readonly ResolvedToken[];
+  readonly measures: readonly ResolvedToken[];
   readonly strokes: readonly ResolvedToken[];
   readonly focusRing: readonly ResolvedToken[];
 }
@@ -47,6 +49,8 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     fontSizes: typography.fontSizes,
     lineHeights: typography.lineHeights,
     fontWeights: typography.fontWeights,
+    letterSpacings: typography.letterSpacings,
+    measures: typography.measures,
     strokes: borders.strokes,
     focusRing: borders.focusRing,
   };

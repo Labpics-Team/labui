@@ -426,6 +426,7 @@ export class LabCombobox extends LabElement {
         box-shadow: var(--lab-elevation-overlay);
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: ${litVar('--lab-line-height-md', '1.5')};
         z-index: ${litVar('--lab-z-dropdown', '900')};
       }
@@ -479,6 +480,7 @@ export class LabCombobox extends LabElement {
         padding: ${litVar('--lab-space-xs', '0.25rem')} ${litVar('--lab-space-sm', '0.5rem')};
         color: ${litVar('--lab-label-tertiary')};
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
       }
 
       @media (prefers-reduced-motion: reduce) {

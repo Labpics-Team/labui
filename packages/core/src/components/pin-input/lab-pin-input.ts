@@ -259,6 +259,7 @@ export class LabPinInput extends LabElement {
         padding: 0;
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: var(--_field-line);
         text-align: center;
         color: ${litVar('--lab-label-primary')};

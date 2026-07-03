@@ -80,6 +80,14 @@ describe('fluid typography — gradient model', () => {
   it('emits rem in every clamp position (WCAG zoom) and never a bare vw-only value', () => {
     const { fontSizes } = buildTypography(ty);
     for (const t of fontSizes) {
+      // Фиксированные шаги (slope 0): суб-базовые — по аудиту 2026-07-03
+      // (инвертированный флюид), база — вырожденный clamp вокруг константы.
+      // Оба эмитятся чистым rem; живой градиент — только положительные шаги.
+      if (t.fluid !== undefined && t.fluid.slopeVw === 0) {
+        expect(t.cssValue).toMatch(/^[\d.]+rem$/);
+        expect(t.fluid.slopeVw).toBe(0);
+        continue;
+      }
       expect(t.cssValue.startsWith('clamp(')).toBe(true);
       // Assert the actual contract per clamp position, not a surrogate count:
       // floor and ceiling are pure rem; the preferred part mixes vw + rem so

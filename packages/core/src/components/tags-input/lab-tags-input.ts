@@ -338,6 +338,7 @@ export class LabTagsInput extends LabElement {
         max-width: 100%;
         padding: 0.125rem 0.125rem 0.125rem 0.5rem;
         font-size: var(--_field-label-font);
+        letter-spacing: var(--_field-label-tracking);
         line-height: 1.4;
         color: ${litVar('--lab-label-primary')};
         background-color: ${litVar('--lab-fill-neutral-tinted')};
@@ -365,6 +366,7 @@ export class LabTagsInput extends LabElement {
         padding: 0;
         font: inherit;
         font-size: var(--_field-label-font);
+        letter-spacing: var(--_field-label-tracking);
         color: ${litVar('--lab-label-primary')};
         background: transparent;
         border: 0;
@@ -412,6 +414,7 @@ export class LabTagsInput extends LabElement {
         padding: 0.125rem 0;
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: var(--_field-line);
         color: ${litVar('--lab-label-primary')};
         background: transparent;

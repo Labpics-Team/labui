@@ -36,6 +36,10 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     'font-size': fontSizeGroup(tokens.fontSizes),
     'line-height': numberGroup(tokens.lineHeights),
     'font-weight': numberGroup(tokens.fontWeights),
+    // DTCG dimension допускает только px|rem — em/ch эмитим числом
+    // (магнитуда em / счёт символов), точная CSS-строка в $extensions.css.
+    'letter-spacing': numberGroup(tokens.letterSpacings),
+    measure: numberGroup(tokens.measures),
     stroke: dimensionGroup(tokens.strokes),
     'focus-ring': dimensionGroup(tokens.focusRing),
   };

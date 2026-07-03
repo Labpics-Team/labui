@@ -1,7 +1,7 @@
 /*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@0.5.0 + паспорт labui.config.json
-(отпечаток a97994470b2581f3). Движковые роли — живая эмиссия (единая форма
+(отпечаток e6134db729485be2). Движковые роли — живая эмиссия (единая форма
 oklch); строки «мост: Figma-якорь» — входы и компонентные поверхности из
 замороженного figma-reference.css, переезжают следующими этапами поезда.
 Регенерация: node packages/colors/generate-contract.mjs
@@ -177,6 +177,34 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-badge-label-on-static-dark: oklch(96.40284% 0.013312 286.147);
   --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
   --lab-badge-label-on-static-light: oklch(14.79140% 0.012878 284.717);
+  /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);
+     маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).
+     Переезд моста: перекрывает Figma-якорь каскадом. */
+  --lab-bg-tone-1: #FFFFFF; /* вход: фон резолва (паспортный якорь нейтрали) */
+  --lab-bg-tone-2: oklch(97.84197% 0.010603 286.202);
+  --lab-bg-tone-3: oklch(97.84197% 0.010603 286.202);
+  --lab-bg-primary: var(--lab-bg-tone-1);
+  --lab-bg-secondary: var(--lab-bg-tone-2);
+  --lab-bg-tertiary: var(--lab-bg-tone-1);
+  --lab-bg-grouped-primary: var(--lab-bg-tone-2);
+  --lab-bg-grouped-secondary: var(--lab-bg-tone-1);
+  --lab-bg-grouped-tertiary: var(--lab-bg-tone-2);
+  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+     свет несёт border-reveal. */
+  --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424);
+  --lab-fx-glow-brand-core: oklch(78.84894% 0.062240 265.472);
+  --lab-fx-glow-brand-alpha: 0;
+  --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659);
+  --lab-fx-glow-danger-core: oklch(81.62208% 0.103545 27.533);
+  --lab-fx-glow-danger-alpha: 0;
+  --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607);
+  --lab-fx-glow-warning-core: oklch(88.80612% 0.081204 68.866);
+  --lab-fx-glow-warning-alpha: 0;
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-core: oklch(99.97226% 0.001314 106.423);
+  --lab-fx-glow-neutral-alpha: 0;
 }
 
 [data-theme="dark"] {
@@ -347,6 +375,34 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
   --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
   --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
+  /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);
+     маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).
+     Переезд моста: перекрывает Figma-якорь каскадом. */
+  --lab-bg-tone-1: #101012; /* вход: фон резолва (паспортный якорь нейтрали) */
+  --lab-bg-tone-2: oklch(22.90853% 0.011513 285.456);
+  --lab-bg-tone-3: oklch(26.28365% 0.011112 285.610);
+  --lab-bg-primary: var(--lab-bg-tone-1);
+  --lab-bg-secondary: var(--lab-bg-tone-2);
+  --lab-bg-tertiary: var(--lab-bg-tone-3);
+  --lab-bg-grouped-primary: var(--lab-bg-tone-1);
+  --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
+  --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
+  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+     свет несёт border-reveal. */
+  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+  --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+  --lab-fx-glow-brand-alpha: 0.036;
+  --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+  --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+  --lab-fx-glow-danger-alpha: 0.046;
+  --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+  --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+  --lab-fx-glow-warning-alpha: 0.0333;
+  --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
+  --lab-fx-glow-neutral-alpha: 0.0188;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -518,5 +574,33 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-badge-label-on-static-dark: oklch(95.80222% 0.013333 286.145);
     --lab-badge-fill-static-light: oklch(100.00000% 0.000000 89.876 / 1);
     --lab-badge-label-on-static-light: oklch(16.15235% 0.010487 285.166);
+    /* Лестница фонов: тона — контрактные dJ'-шаги движка (ADR-0002 §1);
+       маппинг ролей на тона — асимметрия тем (2×3 light / 3×2 dark).
+       Переезд моста: перекрывает Figma-якорь каскадом. */
+    --lab-bg-tone-1: #101012; /* вход: фон резолва (паспортный якорь нейтрали) */
+    --lab-bg-tone-2: oklch(22.90853% 0.011513 285.456);
+    --lab-bg-tone-3: oklch(26.28365% 0.011112 285.610);
+    --lab-bg-primary: var(--lab-bg-tone-1);
+    --lab-bg-secondary: var(--lab-bg-tone-2);
+    --lab-bg-tertiary: var(--lab-bg-tone-3);
+    --lab-bg-grouped-primary: var(--lab-bg-tone-1);
+    --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
+    --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
+    /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
+       решено движком поезда (glow_mirror_derivation); перекрывает легаси-
+       краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
+       свет несёт border-reveal. */
+    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+    --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+    --lab-fx-glow-brand-alpha: 0.036;
+    --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+    --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+    --lab-fx-glow-danger-alpha: 0.046;
+    --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+    --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+    --lab-fx-glow-warning-alpha: 0.0333;
+    --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
+    --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
+    --lab-fx-glow-neutral-alpha: 0.0188;
   }
 }

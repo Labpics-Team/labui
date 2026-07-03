@@ -18,21 +18,25 @@
   --_lab-pg-size: 2.25rem;
   --_lab-pg-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-pg-font: var(--lab-font-size-md, 1rem);
+  --_lab-pg-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: flex;
   align-items: center;
   gap: var(--_lab-pg-gap);
   font: inherit;
   font-size: var(--_lab-pg-font);
+  letter-spacing: var(--_lab-pg-tracking);
 }
 
 [data-lab-pagination][data-size="s"] {
   --_lab-pg-size: 1.75rem;
   --_lab-pg-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-pg-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-pagination][data-size="l"] {
   --_lab-pg-size: 2.75rem;
   --_lab-pg-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-pg-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 .lab-pagination-item,
