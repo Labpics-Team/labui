@@ -8,35 +8,34 @@
  * reach — pure black (luminance 0) and pure white (luminance 1) — and require
  * the surface's committed label to clear its WCAG floor at BOTH.
  *
- * Effective-background luminance of the composite (design ch6, §Контракт):
+ * Effective-background luminance of the composite — bounded in the SAME space
+ * the browser paints: straight-alpha compositing per-channel in gamma-encoded
+ * sRGB (see {@link compositeOver}), then WCAG luminance of that composite. This
+ * is byte-identical to lab-colors' own `composite_over_encoded` (proven by the
+ * 12-pair Figma-neutral roundtrip in `crates/labcolors-core/src/alpha.rs`), so
+ * the guarantee, the engine, and the screen all agree.
  *
- *     L_eff = α · L_tint + (1 − α) · L_bd,   L_bd ∈ [0, 1]
+ *     effLow  = L( tint  over  black )   (backdrop L_bd = 0)
+ *     effHigh = L( tint  over  white )   (backdrop L_bd = 1)
  *
- * → the reachable band is [α·L_tint , α·L_tint + (1−α)]. A dense tier (α→1)
- * collapses the band onto the tint and is easy to guarantee; a sheer tier (α→0)
- * spreads the band across the whole luminance axis and usually cannot hold one
- * fixed label at both ends. That is not a bug to hide — it is the finding the
- * design asks us to surface for the provisional Figma alphas.
+ * Luminance rises monotonically in every channel and the composite rises
+ * monotonically in every backdrop channel, so BLACK and WHITE backdrops give the
+ * TRUE minimum and maximum composite luminance — over every backdrop, coloured
+ * ones included, not just greys. A dense tier (α→1) collapses the band onto the
+ * tint and is easy to guarantee; a sheer tier (α→0) spreads it across the whole
+ * axis and usually cannot hold one fixed label. That is the finding to surface.
+ *
+ * The honest verdict is the WORST contrast ANYWHERE in the reachable band
+ * [effLow, effHigh] — not merely at its ends. Composite luminance sweeps that
+ * interval continuously as the backdrop varies, so a committed label whose own
+ * luminance lies INSIDE the band is driven to 1:1 contrast by some backdrop even
+ * when both endpoints pass. `guaranteed` is therefore a REAL browser-AA promise
+ * in gamma-encoded composite space, not a model artefact.
  *
  * This module is pure: it takes parsed colours in, returns verdicts out. The
  * test feeds it the values parsed straight from the generated contract so the
  * guarantee tracks the contract with no second copy of the numbers (DRY / no
  * drift — the same discipline the colours train uses for contract.css).
- *
- * ── MODEL CAVEAT (escalated to the design / lab-colors science owner) ───────
- * The ch6 formula interpolates in LUMINANCE space. Real browser alpha
- * compositing happens per-channel in gamma-encoded sRGB, and lab-colors'
- * own alpha-derivation composites in LINEAR sRGB — three different spaces that
- * do not agree. The luminance-linear model is CONSERVATIVE for white labels on
- * dark surfaces (our safety-critical case: unguaranteed findings hold under
- * every model) but OPTIMISTIC for near-black labels at a dark backdrop. Concrete
- * case: `light/soft` is guaranteed here (~5.7:1 by this model) yet composites to
- * ~4.1:1 in real sRGB paint — below AA. So a `guaranteed` verdict means "legal
- * under the ch6 luminance-linear α-boundary model", NOT a hard physical AA
- * promise. The composite space must be reconciled with lab-colors' linear-sRGB
- * derivation BEFORE the provisional Figma alphas are frozen (README →
- * "Model caveat"). This module implements the ch6 formula faithfully by mandate;
- * it does not unilaterally pick the composite space.
  */
 
 import { type Rgba, compositeOver, contrastRatio, relativeLuminance } from './luminance';
@@ -88,9 +87,15 @@ export interface TierVerdict {
   readonly contrastLow: number;
   readonly contrastHigh: number;
   readonly floor: number;
-  /** True iff the committed label clears the floor at BOTH backdrop boundaries. */
+  /** Worst committed-label contrast anywhere in the reachable band [effLow, effHigh]. */
+  readonly worstContrast: number;
+  /** True iff the committed label clears the floor across the WHOLE backdrop band. */
   readonly guaranteed: boolean;
 }
+
+/** The two backdrop extremes that bound the composite luminance band. */
+const BLACK_BACKDROP: Rgba = { r: 0, g: 0, b: 0, a: 1 };
+const WHITE_BACKDROP: Rgba = { r: 255, g: 255, b: 255, a: 1 };
 
 /** The one stable `theme/tier` key format — used for both fill lookup and reporting. */
 export function fillKey(theme: ThemeName, tier: MaterialTier): string {
@@ -149,14 +154,25 @@ export function evaluateTier(
   const label = commitLabel(solidLuminance, labelCandidates);
   const labelLuminance = relativeLuminance(label.colour);
 
-  // L_tint is the luminance of the tint COLOUR (alpha is the mix weight, not part of the colour).
-  const tintLuminance = relativeLuminance({ ...fill.tint, a: 1 });
-  const alpha = fill.tint.a;
-  const effLow = alpha * tintLuminance; // L_bd = 0
-  const effHigh = alpha * tintLuminance + (1 - alpha); // L_bd = 1
+  // Bound the band in the browser's real paint space: the tint composited
+  // per-channel in gamma-encoded sRGB over pure black (min) and pure white (max).
+  // Monotonicity of luminance and of the composite makes these the TRUE extrema
+  // over every backdrop — coloured ones too — so effLow ≤ effHigh by construction.
+  const effLow = relativeLuminance(compositeOver(fill.tint, BLACK_BACKDROP));
+  const effHigh = relativeLuminance(compositeOver(fill.tint, WHITE_BACKDROP));
 
   const contrastLow = contrastRatio(labelLuminance, effLow);
   const contrastHigh = contrastRatio(labelLuminance, effHigh);
+
+  // The guarantee is the worst contrast across the WHOLE band, not just its ends.
+  // If the label's own luminance lies strictly inside the band, some backdrop
+  // drives the composite to exactly the label's luminance → 1:1 contrast, illegal,
+  // even though both endpoints may pass. Outside the band the worst is the nearer
+  // endpoint (whichever composite luminance sits closest to the label).
+  const worstContrast =
+    labelLuminance > effLow && labelLuminance < effHigh
+      ? contrastRatio(labelLuminance, labelLuminance) // = 1: a backdrop matches the label exactly
+      : Math.min(contrastLow, contrastHigh);
 
   return {
     tier,
@@ -169,7 +185,8 @@ export function evaluateTier(
     contrastLow,
     contrastHigh,
     floor,
-    guaranteed: contrastLow >= floor && contrastHigh >= floor,
+    worstContrast,
+    guaranteed: worstContrast >= floor,
   };
 }
 

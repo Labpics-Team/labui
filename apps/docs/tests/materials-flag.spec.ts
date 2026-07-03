@@ -1,3 +1,4 @@
+import { evaluateTier } from '@labpics/ui-materials';
 import { type Page, expect, test } from '@playwright/test';
 
 /**
@@ -127,6 +128,92 @@ test('the label token is the SAME in solid and glass (legal in both by construct
   // The surface commits ONE polarity label; the mode never changes it — so the
   // base-tier glass legality proven by the α-boundary unit test carries over.
   expect(glass).toBe(solid);
+});
+
+/**
+ * DIFFERENTIAL (class C): the α-boundary the guarantee computes must equal the
+ * REAL browser composite. The guarantee bounds each tier by the tint composited
+ * over black (effLow) and over white (effHigh); here the browser's own compositor
+ * paints that exact composite on a <canvas> and we read the pixel back with
+ * getImageData — an independent oracle (the engine paints, not our JS). They must
+ * agree within a byte of rounding across the whole tier ladder.
+ *
+ * RED-proof: revert evaluateTier to the blend-of-luminances (effLow = α·L_tint …)
+ * and this FAILS on the sheer tiers — e.g. light/soft blend effLow ≈ 0.266 vs the
+ * browser's real composite ≈ 0.174 (Δ ≈ 0.09 ≫ tolerance), the very gap that made
+ * `light/soft` a misleading "guaranteed". Restore the composite bound → GREEN.
+ */
+const MATERIAL_TIERS = ['base', 'muted', 'soft', 'subtle', 'elevated'] as const;
+const LUM_TOLERANCE = 0.02; // ~1 byte of canvas rounding
+
+test('DIFFERENTIAL: guarantee effLow/effHigh equal the browser composite (black/white backdrop)', async ({
+  page,
+}) => {
+  // The browser compositor is the oracle: paint tint over black and over white on
+  // a canvas, read the composited pixel's luminance for every tier.
+  const measured = await page.evaluate((tiers) => {
+    const root = getComputedStyle(document.documentElement);
+    const resolve = (token: string) => {
+      const probe = document.createElement('span');
+      probe.style.color = root.getPropertyValue(token);
+      document.body.appendChild(probe);
+      const c = getComputedStyle(probe).color;
+      probe.remove();
+      return c;
+    };
+    const lin = (c: number) => {
+      const s = c / 255;
+      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+    };
+    const lum = (r: number, g: number, b: number) =>
+      0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    const sampleOver = (tintCss: string, backdrop: string) => {
+      const cv = document.createElement('canvas');
+      cv.width = 4;
+      cv.height = 4;
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        throw new Error('no 2d canvas context');
+      }
+      ctx.fillStyle = backdrop;
+      ctx.fillRect(0, 0, 4, 4);
+      ctx.fillStyle = tintCss; // straight-alpha source-over — the browser's real composite
+      ctx.fillRect(0, 0, 4, 4);
+      const d = ctx.getImageData(2, 2, 1, 1).data;
+      return lum(d[0] ?? 0, d[1] ?? 0, d[2] ?? 0);
+    };
+    return tiers.map((tier) => {
+      const tintCss = resolve(`--lab-bg-material-${tier}-01`);
+      return {
+        tier,
+        tintCss,
+        lumOverBlack: sampleOver(tintCss, 'rgb(0, 0, 0)'),
+        lumOverWhite: sampleOver(tintCss, 'rgb(255, 255, 255)'),
+      };
+    });
+  }, MATERIAL_TIERS);
+
+  // Parse the browser-resolved tint and route it through the REAL guarantee code.
+  const parse = (css: string) => {
+    const n = css.match(/[\d.]+/g)?.map(Number) ?? [];
+    return { r: n[0] ?? 0, g: n[1] ?? 0, b: n[2] ?? 0, a: n[3] ?? 1 };
+  };
+  const OPAQUE_BLACK = { r: 0, g: 0, b: 0, a: 1 };
+  const PROBE_LABEL = [{ name: 'probe', colour: OPAQUE_BLACK }];
+
+  for (const row of measured) {
+    const tint = parse(row.tintCss);
+    // effLow/effHigh depend only on the tint; base + label are inert here.
+    const verdict = evaluateTier(row.tier, 'light', { tint, base: OPAQUE_BLACK }, PROBE_LABEL);
+    expect(
+      Math.abs(verdict.effLow - row.lumOverBlack),
+      `${row.tier}: effLow (guarantee) vs composite-over-black (browser)`,
+    ).toBeLessThan(LUM_TOLERANCE);
+    expect(
+      Math.abs(verdict.effHigh - row.lumOverWhite),
+      `${row.tier}: effHigh (guarantee) vs composite-over-white (browser)`,
+    ).toBeLessThan(LUM_TOLERANCE);
+  }
 });
 
 test('placement: no glass-on-glass nesting on the page', async ({ page }) => {

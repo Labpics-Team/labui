@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { contrastRatio, relativeLuminance } from '../src/luminance';
+import { type Rgba, compositeOver, contrastRatio, relativeLuminance } from '../src/luminance';
 import {
   type LabelCandidate,
   WCAG_AA_NORMAL,
@@ -60,7 +60,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
     expect(verdict.guaranteed).toBe(false);
   });
 
-  it('L_eff bounds match α·L_tint and α·L_tint + (1−α) exactly', () => {
+  it('effLow/effHigh are the REAL gamma-composite over black/white (browser paint space)', () => {
     const tint = { r: 128, g: 128, b: 128, a: 0.6 };
     const verdict = evaluateTier(
       'soft',
@@ -68,9 +68,62 @@ describe('evaluateTier — the α-boundary decision bites', () => {
       { tint, base: { r: 0, g: 0, b: 0, a: 1 } },
       POLARITY,
     );
-    const lTint = relativeLuminance({ ...tint, a: 1 });
-    expect(verdict.effLow).toBeCloseTo(0.6 * lTint, 10);
-    expect(verdict.effHigh).toBeCloseTo(0.6 * lTint + 0.4, 10);
+    // The bound is the luminance of the tint composited per-channel in gamma sRGB
+    // over pure black (min) and pure white (max) — NOT a blend of luminances.
+    expect(verdict.effLow).toBeCloseTo(
+      relativeLuminance(compositeOver(tint, { r: 0, g: 0, b: 0, a: 1 })),
+      10,
+    );
+    expect(verdict.effHigh).toBeCloseTo(
+      relativeLuminance(compositeOver(tint, { r: 255, g: 255, b: 255, a: 1 })),
+      10,
+    );
+    expect(verdict.effLow).toBeLessThan(verdict.effHigh);
+  });
+
+  it('black/white are the TRUE luminance extrema — even over COLOURED backdrops (closes the class)', () => {
+    // Monotonicity claim: no backdrop of any hue can push the composite luminance
+    // outside [effLow, effHigh]. Sweep a grid of coloured backdrops and assert it.
+    const tint: Rgba = { r: 191, g: 120, b: 40, a: 0.44 };
+    const verdict = evaluateTier(
+      'soft',
+      'light',
+      { tint, base: { r: 0, g: 0, b: 0, a: 1 } },
+      POLARITY,
+    );
+    const EPS = 1e-9;
+    for (let r = 0; r <= 255; r += 51) {
+      for (let g = 0; g <= 255; g += 51) {
+        for (let b = 0; b <= 255; b += 51) {
+          const composited = relativeLuminance(compositeOver(tint, { r, g, b, a: 1 }));
+          expect(composited).toBeGreaterThanOrEqual(verdict.effLow - EPS);
+          expect(composited).toBeLessThanOrEqual(verdict.effHigh + EPS);
+        }
+      }
+    }
+  });
+
+  it('INTERIOR worst-case: both endpoints legal, label INSIDE the band → NOT guaranteed', () => {
+    // A near-transparent white tint spreads the band across almost the whole axis
+    // (effLow≈0, effHigh≈1). A mid-grey label (L≈0.18) clears the WCAG floor at
+    // BOTH endpoints, yet a backdrop exists that matches its luminance exactly →
+    // 1:1 contrast. Endpoint-only logic would wrongly call this guaranteed.
+    const midGrey: LabelCandidate = { name: 'mid-grey', colour: { r: 117, g: 117, b: 117, a: 1 } };
+    const verdict = evaluateTier(
+      'subtle',
+      'light',
+      { tint: { r: 255, g: 255, b: 255, a: 0.005 }, base: { r: 0, g: 0, b: 0, a: 1 } },
+      [midGrey],
+    );
+    const labelLum = relativeLuminance(midGrey.colour);
+    expect(labelLum).toBeGreaterThan(verdict.effLow);
+    expect(labelLum).toBeLessThan(verdict.effHigh);
+    // Both ENDS are legal…
+    expect(verdict.contrastLow).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
+    expect(verdict.contrastHigh).toBeGreaterThanOrEqual(WCAG_AA_NORMAL);
+    // …but the INTERIOR worst-case collapses to 1:1, so the tier is NOT guaranteed.
+    expect(verdict.worstContrast).toBeLessThan(WCAG_AA_NORMAL);
+    expect(verdict.guaranteed).toBe(false);
   });
 });
 
@@ -94,17 +147,16 @@ describe('guarantee over the LIVE contract (parsed from colors-stub/contract.css
     expect(unguaranteedKeys).toContain('dark/subtle');
   });
 
-  // GOLDEN — locks the current unguaranteed set. This is the report's finding.
-  // When the colours train replaces the provisional Figma alphas, this array is
-  // the single place that re-baselines (and the diff is the proof of change).
-  it('locks the current unguaranteed set (provisional Figma alphas)', () => {
-    const EXPECTED_UNGUARANTEED = [
-      'dark/elevated',
-      'dark/muted',
-      'dark/soft',
-      'dark/subtle',
-      'light/subtle',
-    ];
+  // GOLDEN — locks the current unguaranteed set in REAL gamma-composite space.
+  // Re-derived when the α-boundary moved off the blend-of-luminances onto the
+  // browser's true composite (compositeOver): `light/soft` fell out of the
+  // guaranteed set (blend read ~5.7:1, real paint ~4.1:1 — below AA), while
+  // `dark/muted` and `dark/soft` JOINED it (the blend was wrongly pessimistic for
+  // a dark tint over a bright backdrop; real composite is darker → white label
+  // holds ≥AA). When the colours train replaces the provisional Figma alphas,
+  // this array is the single place that re-baselines.
+  it('locks the current unguaranteed set (real gamma-composite α-boundary)', () => {
+    const EXPECTED_UNGUARANTEED = ['dark/elevated', 'dark/subtle', 'light/soft', 'light/subtle'];
     expect(unguaranteedKeys).toEqual(EXPECTED_UNGUARANTEED);
   });
 });

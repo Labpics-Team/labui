@@ -30,17 +30,25 @@ Labels/borders do **not** carry material — they react to the effective surface
 
 Glass paints a translucent tint over an **unknown** backdrop, so legibility can
 only be promised if the committed label stays legal across the whole range the
-backdrop can take. We bound that range by the two backdrop extremes:
+backdrop can take. We bound that range in the **same space the browser paints** —
+straight-alpha compositing per-channel in **gamma-encoded sRGB** — by the two
+backdrop extremes:
 
 ```
-L_eff = α · L_tint + (1 − α) · L_bd,   L_bd ∈ [0, 1]
-→ band = [ α·L_tint , α·L_tint + (1−α) ]
+effLow  = L( tint over black )      (backdrop L_bd = 0)  → minimum
+effHigh = L( tint over white )      (backdrop L_bd = 1)  → maximum
 ```
 
-A tier is **guaranteed** only if its polarity-committed label clears the WCAG
-AA floor (4.5:1) at **both** boundaries. The math lives in
+Luminance and the composite are both monotonic per channel, so black and white
+give the **true** extrema over *every* backdrop (coloured ones included). A tier
+is **guaranteed** only if its polarity-committed label clears the WCAG AA floor
+(4.5:1) at the **worst point of the whole band** `[effLow, effHigh]` — not just
+its ends: a label whose own luminance falls **inside** the band is driven to 1:1
+contrast by some backdrop even when both endpoints pass. The math lives in
 `material-guarantee.ts`; `test/alpha-boundary.test.ts` runs it over the values
-parsed straight from the generated contract (no second copy of the numbers).
+parsed straight from the generated contract (no second copy of the numbers), and
+`apps/docs/tests/materials-flag.spec.ts` differentially checks `effLow`/`effHigh`
+against the real browser compositor (`canvas` `getImageData`).
 
 ### Unguaranteed pairs (current PROVISIONAL Figma-anchor alphas)
 
@@ -51,33 +59,33 @@ them (they render fine as `solid`):
 
 | theme | tier | why |
 |---|---|---|
+| light | soft | near-black label, real composite worst ≈ 4.1:1 on a dark backdrop — **below AA** |
 | light | subtle | sheer α=.439, band straddles the polarity crossover |
-| dark | muted | white label fails at the bright-backdrop boundary (~4.3:1) |
-| dark | soft | near-black tint at α=.698 — white label washes out on light backdrop |
 | dark | subtle | sheerest dark tier, band spans almost the full axis |
 | dark | elevated | white label fails at the bright-backdrop boundary |
 
-Guaranteed today: **light** {base, muted, soft, elevated} and **dark** {base}.
-This is a finding on the provisional alphas, not a defect of the mechanics —
-the golden test locks the set so a silent regression trips CI.
+Guaranteed today: **light** {base, muted, elevated} and **dark** {base, muted,
+soft}. This is a finding on the provisional alphas, not a defect of the
+mechanics — the golden test locks the set so a silent regression trips CI.
 
-### Model caveat (escalated to the design / lab-colors science owner)
+> **Re-derivation note.** Moving the α-boundary onto the real composite flipped
+> three pairs honestly: `light/soft` **lost** its guarantee (the old
+> blend-of-luminances read ~5.7:1 where the browser paints ~4.1:1), while
+> `dark/muted` and `dark/soft` **gained** one (the blend was wrongly pessimistic
+> for a dark tint over a bright backdrop — the real gamma composite is darker, so
+> the white label actually holds ≥ AA).
 
-The ch6 `L_eff` formula interpolates in **luminance** space. Real browser alpha
-compositing is per-channel in **gamma sRGB**, and lab-colors' own alpha
-derivation composites in **linear sRGB** — three spaces that disagree. The
-luminance-linear model is **conservative** for white labels on dark surfaces
-(the safety-critical polarity case — every unguaranteed finding above holds
-under all three models) but **optimistic** for near-black labels at a dark
-backdrop. Concrete case: `light/soft` is guaranteed here (~5.7:1 by this model)
-yet composites to ~4.1:1 in real sRGB paint — **below AA**.
+### Composite space (resolved)
 
-So a `guaranteed` verdict means *"legal under the ch6 luminance-linear
-α-boundary model"*, not a hard physical AA promise. The composite space must be
-reconciled with lab-colors' linear-sRGB derivation **before the provisional
-Figma alphas are frozen**. This package implements the ch6 formula faithfully by
-mandate; it does not unilaterally pick the composite space (that is the
-lab-colors science owner's call).
+The guarantee bounds the composite in **gamma-encoded sRGB**, per-channel —
+exactly what the browser paints and byte-identical to lab-colors' own
+`composite_over_encoded` (proven by the 12-pair Figma-neutral roundtrip in
+`crates/labcolors-core/src/alpha.rs`). Luminance is measured with WCAG Rec.709
+coefficients on that composite, the same colorimetry lab-colors uses. Engine,
+guarantee, and screen agree; a `guaranteed` verdict is a **real browser-AA
+promise**, not a model artefact. (The earlier worry that lab-colors composites in
+*linear* sRGB was a misread — its linear path is colorimetry-only; compositing is
+in the encoded space.)
 
 ## Placement rules (invariants)
 
