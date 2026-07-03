@@ -22,7 +22,9 @@
     "@labpics/ui-vue": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "vue": "3.5.13"
+    "vue": "3.5.13",
+    "labcolors-engine": "npm:@labpics/colors@0.5.0",
+    "@labui/colors": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.49.1",

@@ -76,6 +76,8 @@ export const defaultConfig: TokensConfig = {
   },
 
   radii: {
+    // Форма угла: ζ=0.6-эквивалент (см. RadiiConfig.cornerK — деривация).
+    cornerK: 1.1,
     // Geometric rem progression (Tailwind v4 shape). Step 0 is the zero token.
     steps: {
       '0': 0, //   0px — explicit zero

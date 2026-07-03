@@ -62,6 +62,7 @@ export const radius = {
   '4xl': 'var(--lab-radius-4xl)',
   '5xl': 'var(--lab-radius-5xl)',
   full: 'var(--lab-radius-full)',
+  'corner-k': 'var(--lab-radius-corner-k)',
   none: 'var(--lab-radius-none)',
   control: 'var(--lab-radius-control)',
   card: 'var(--lab-radius-card)',

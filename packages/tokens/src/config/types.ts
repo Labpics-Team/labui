@@ -50,6 +50,16 @@ export interface RadiiConfig {
   readonly fullPx: number;
   /** Semantic aliases: role name -> step key (or the literal `full`). */
   readonly aliases: Readonly<Record<string, string>>;
+  /**
+   * Форма угла — кривизна CSS `corner-shape: superellipse(K)` поверх любого
+   * радиуса (Chromium 139+; прочие браузеры игнорируют — обычный радиус).
+   * K=1 — круг (выкл); 1.1 — выведенный эквивалент Figma corner smoothing
+   * ζ=0.6 (фит точной Figma-кривой: ζ=0.6 ≈ круг ±1.4px/R100 с G2-входом —
+   * суперэллипс K>1 даёт ту же непрерывность кривизны); ≈2.3 — «иконная»
+   * сквирклость Apple (полная форма n≈5, K=log₂5). CSS-ключевое `squircle`
+   * (K=2) НЕ равно ζ=0.6 — вдвое жирнее к углу.
+   */
+  readonly cornerK: number;
 }
 
 /**

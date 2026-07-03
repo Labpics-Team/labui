@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classify, byBucket, consumedRoles, LOCAL_OR_GAP_PREFIXES } from './consumed-contract.js';
+import { LOCAL_OR_GAP_PREFIXES, byBucket, classify, consumedRoles } from './consumed-contract.js';
 
 /**
  * Consumed contract preserved — contract test.

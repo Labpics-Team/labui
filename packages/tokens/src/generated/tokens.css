@@ -54,6 +54,7 @@
   --lab-radius-4xl: 2rem;
   --lab-radius-5xl: 3rem;
   --lab-radius-full: 9999px; /* Pill / fully-rounded — a semantic constant, not computed 50%. */
+  --lab-radius-corner-k: 1.1; /* Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = derived Figma smoothing zeta=0.6 equivalent, ~2.3 = Apple icon squircle. */
   --lab-radius-none: var(--lab-radius-0); /* -> 0 */
   --lab-radius-control: var(--lab-radius-lg); /* -> lg */
   --lab-radius-card: var(--lab-radius-2xl); /* -> 2xl */
@@ -115,4 +116,12 @@
   /* Borders — focus ring (width + offset, rem) */
   --lab-focus-ring-width: 0.125rem;
   --lab-focus-ring-offset: 0.125rem;
+}
+
+/* Corner shape — superellipse curvature over any border-radius (opt-in scope). */
+:where(.lab-scope),
+:where(.lab-scope) *,
+:where(.lab-scope) *::before,
+:where(.lab-scope) *::after {
+  corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));
 }

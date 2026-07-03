@@ -35,7 +35,9 @@ describe('spacing scale — linear rem multiplier', () => {
 
 describe('radii scale — geometric rem + pill', () => {
   it('is non-decreasing across named steps', () => {
-    const steps = tokens.radii.filter((t) => t.name !== 'full');
+    // Монотонность — закон ДЛИН лестницы: full (семантический пилюль) и
+    // unitless-ручки формы (corner-k, dtcgType number) — не ступени длины.
+    const steps = tokens.radii.filter((t) => t.name !== 'full' && t.dtcgType !== 'number');
     for (let i = 1; i < steps.length; i++) {
       expect(steps[i]?.numeric).toBeGreaterThanOrEqual(steps[i - 1]?.numeric as number);
     }

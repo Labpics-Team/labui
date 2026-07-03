@@ -1,3 +1,4 @@
+import * as accordionMachine from '@zag-js/accordion';
 /**
  * `<lab-accordion>` — a COMPOUND component that consumes the `@zag-js/accordion`
  * GROUP machine through the Behaviors seam (core-CONTRACT §1). It follows the
@@ -47,7 +48,6 @@
  */
 import { type TemplateResult, css, html, nothing } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import * as accordionMachine from '@zag-js/accordion';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

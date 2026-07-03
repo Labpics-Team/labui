@@ -14,7 +14,9 @@
       "**/test-results/**",
       "**/src/generated/**",
       "**/*.tsbuildinfo",
-      ".playwright-mcp/**"
+      ".playwright-mcp/**",
+      "packages/colors-stub/contract.css",
+      "packages/colors-stub/figma-reference.css"
     ]
   },
   "formatter": {

@@ -1,3 +1,4 @@
+import * as progressMachine from '@zag-js/progress';
 /**
  * `<lab-progress>` — a linear progress bar that CONSUMES the `@zag-js/progress`
  * machine through the Behaviors seam (core-CONTRACT §1). Like `<lab-switch>` it
@@ -40,7 +41,6 @@
  * before any JS upgrades it.
  */
 import { type TemplateResult, css, html, nothing } from 'lit';
-import * as progressMachine from '@zag-js/progress';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

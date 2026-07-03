@@ -1,3 +1,4 @@
+import * as radioGroupMachine from '@zag-js/radio-group';
 /**
  * `<lab-radio-group>` — the FIRST COMPOUND LabUI component, consuming the
  * `@zag-js/radio-group` machine through the Behaviors seam (core-CONTRACT §1).
@@ -41,7 +42,6 @@
  * primitive, no invented role.
  */
 import { type TemplateResult, css, html, nothing } from 'lit';
-import * as radioGroupMachine from '@zag-js/radio-group';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

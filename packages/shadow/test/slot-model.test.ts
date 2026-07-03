@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SHADOW_SLOTS, SLOT_ALPHA, SLOT_ALPHAS } from '../src/domain/layer.js';
 import { ELEVATION_LEVELS, ELEVATION_SHAPES, alphaVar } from '../src/domain/elevation.js';
+import { SHADOW_SLOTS, SLOT_ALPHA, SLOT_ALPHAS } from '../src/domain/layer.js';
 
 /**
  * Shadow unit suite — s1..s4 slot model.

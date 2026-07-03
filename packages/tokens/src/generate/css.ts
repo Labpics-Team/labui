@@ -1,5 +1,5 @@
-import type { ResolvedTokens } from '../domain/build.js';
 import { cssVarName } from '../domain/alias.js';
+import type { ResolvedTokens } from '../domain/build.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
 
 /**
@@ -33,7 +33,7 @@ export function generateCss(tokens: ResolvedTokens): string {
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
   ];
 
-  return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n`;
+  return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;
 }
 
 function header(): string {
@@ -43,6 +43,29 @@ function header(): string {
     ' * Source: packages/tokens/src/config + generator. Run `pnpm --filter',
     ' * @labpics/ui-tokens build` to regenerate from the single config source.',
     ' */',
+  ].join('\n');
+}
+
+/**
+ * Форма угла для light-DOM поверхностей (стекло/карточки демо): corner-shape
+ * не наследуется, поэтому внутри скоупа правило универсально — на элементах
+ * без радиуса это no-op, слои на border-radius: inherit держат ту же форму,
+ * что клип панели. Скоуп .lab-scope — opt-in ПОТРЕБИТЕЛЯ (класс на корне его
+ * приложения, обычно <html>): дизайн-система не красит чужой DOM хоста.
+ * Внутри shadow DOM компонентов форму доставляет LabElement (finalizeStyles)
+ * независимо от скоупа — документные правила shadow-границу не пересекают.
+ * Без поддержки (не Chromium 139+) свойство игнорируется — обычный радиус.
+ */
+function cornerShapeRule(): string {
+  return [
+    '/* Corner shape — superellipse curvature over any border-radius (opt-in scope). */',
+    ':where(.lab-scope),',
+    ':where(.lab-scope) *,',
+    ':where(.lab-scope) *::before,',
+    ':where(.lab-scope) *::after {',
+    '  corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));',
+    '}',
+    '',
   ].join('\n');
 }
 

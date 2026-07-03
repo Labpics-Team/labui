@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   MIGRATED,
   canonicalTokens,
@@ -11,7 +12,6 @@ import {
   scanFallbackDrift,
   scanMigrated,
 } from './no-magic-dimension.js';
-import { repoRoot } from './no-literal-colour-fallback.js';
 
 /**
  * CI-гард no-magic-dimension (docs/dimension-contract.md) в скоупе списка

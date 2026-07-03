@@ -1,3 +1,4 @@
+import * as numberInputMachine from '@zag-js/number-input';
 /**
  * `<lab-number-input>` — a numeric form field: a real `<input role="spinbutton">`
  * with increment / decrement triggers, min/max/step clamping, format/parse, and an
@@ -36,9 +37,10 @@
  * styled control in the declarative shadow DOM before any JS upgrades it.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
-import * as numberInputMachine from '@zag-js/number-input';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -48,8 +50,6 @@ import {
   fieldPartIds,
 } from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 export type { LabFieldSize as LabNumberInputSize, LabFieldType as LabNumberInputType };
 

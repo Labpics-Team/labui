@@ -111,32 +111,32 @@ export class LabBadge extends LabElement {
       color: ${litVar('--lab-label-on-neutral')};
     }
     :host([type='fill'][color='brand']) .badge {
-      background-color: ${litVar('--lab-border-brand-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      background-color: ${litVar('--lab-badge-fill-brand')};
+      color: ${litVar('--lab-badge-label-on-brand')};
     }
     :host([type='fill'][color='danger']) .badge {
-      background-color: ${litVar('--lab-border-danger-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      background-color: ${litVar('--lab-badge-fill-danger')};
+      color: ${litVar('--lab-badge-label-on-danger')};
     }
     :host([type='fill'][color='warning']) .badge {
-      background-color: ${litVar('--lab-border-warning-strong')};
-      color: ${litVar('--lab-badge-label-contrast')};
+      background-color: ${litVar('--lab-badge-fill-warning')};
+      color: ${litVar('--lab-badge-label-on-warning')};
     }
     :host([type='fill'][color='success']) .badge {
-      background-color: ${litVar('--lab-border-success-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      background-color: ${litVar('--lab-badge-fill-success')};
+      color: ${litVar('--lab-badge-label-on-success')};
     }
     :host([type='fill'][color='info']) .badge {
-      background-color: ${litVar('--lab-border-info-strong')};
-      color: ${litVar('--lab-badge-label-default')};
+      background-color: ${litVar('--lab-badge-fill-info')};
+      color: ${litVar('--lab-badge-label-on-info')};
     }
     :host([type='fill'][color='static-dark']) .badge {
-      background-color: ${litVar('--lab-border-static-dark-strong')};
-      color: ${litVar('--lab-label-static-light-primary')};
+      background-color: ${litVar('--lab-badge-fill-static-dark')};
+      color: ${litVar('--lab-badge-label-on-static-dark')};
     }
     :host([type='fill'][color='static-light']) .badge {
-      background-color: ${litVar('--lab-border-static-light-strong')};
-      color: ${litVar('--lab-label-static-dark-primary')};
+      background-color: ${litVar('--lab-badge-fill-static-light')};
+      color: ${litVar('--lab-badge-label-on-static-light')};
     }
 
     /* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────── */
@@ -164,6 +164,9 @@ export class LabBadge extends LabElement {
       background-color: ${litVar('--lab-fill-info-primary')};
       color: ${litVar('--lab-label-info-primary')};
     }
+    /* Tinted static: полупрозрачный семейный тинт — лейбл СЕМЕЙНЫЙ примитив
+       (канон Figma и React-близнеца); перекрёстные label-on-* — только для
+       НЕПРОЗРАЧНЫХ fill-заливок закона пары. */
     :host([type='tinted'][color='static-dark']) .badge {
       background-color: ${litVar('--lab-fill-static-dark-primary')};
       color: ${litVar('--lab-label-static-dark-primary')};

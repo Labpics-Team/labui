@@ -52,6 +52,8 @@ import * as sliderMachine from '@zag-js/slider';
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -59,8 +61,6 @@ import {
   fieldErrorIsActive,
   fieldPartIds,
 } from '../field/field-a11y.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 /** Control size — drives track thickness and thumb diameter. */
 export type LabSliderSize = LabFieldSize;
