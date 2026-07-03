@@ -1,7 +1,7 @@
 /*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@0.5.0 + паспорт labui.config.json
-(отпечаток e6134db729485be2). Движковые роли — живая эмиссия (единая форма
+(отпечаток 31b89f156aafb518). Движковые роли — живая эмиссия (единая форма
 oklch); строки «мост: Figma-якорь» — входы и компонентные поверхности из
 замороженного figma-reference.css, переезжают следующими этапами поезда.
 Регенерация: node packages/colors/generate-contract.mjs
@@ -146,17 +146,17 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
   --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
   --lab-control-bg: rgb(255 255 255); /* мост: Figma-якорь */
-  --lab-fill-accent: var(--lab-border-brand-strong);
-  --lab-fill-danger: var(--lab-border-danger-strong);
+  --lab-fill-accent: var(--lab-badge-fill-brand); /* закон пары: деривация движка */
+  --lab-fill-danger: var(--lab-badge-fill-danger); /* закон пары: деривация движка */
   --lab-fill-neutral: rgb(232 232 236); /* мост: провизорная, деривация открыта */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
   --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
   --lab-fill-neutral-tinted: var(--lab-fill-primary);
   --lab-label-accent: var(--lab-label-brand-primary);
   --lab-label-danger: var(--lab-label-danger-primary);
-  --lab-label-on-accent: var(--lab-label-static-light-primary);
-  --lab-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-label-on-neutral: rgb(16 16 18); /* мост: провизорная, деривация открыта */
+  --lab-label-on-accent: var(--lab-badge-label-on-brand); /* закон пары: деривация движка */
+  --lab-label-on-danger: var(--lab-badge-label-on-danger); /* закон пары: деривация движка */
+  --lab-label-on-neutral: oklch(13.77177% 0.013406 284.503); /* закон пары: деривация движка */
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
@@ -344,17 +344,17 @@ oklch); строки «мост: Figma-якорь» — входы и компо
   --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
   --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
   --lab-control-bg: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
-  --lab-fill-accent: var(--lab-border-brand-strong);
-  --lab-fill-danger: var(--lab-border-danger-strong);
+  --lab-fill-accent: var(--lab-badge-fill-brand); /* закон пары: деривация движка */
+  --lab-fill-danger: var(--lab-badge-fill-danger); /* закон пары: деривация движка */
   --lab-fill-neutral: rgb(35 35 39); /* мост: провизорная, деривация открыта */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
   --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
   --lab-fill-neutral-tinted: var(--lab-fill-primary);
   --lab-label-accent: var(--lab-label-brand-primary);
   --lab-label-danger: var(--lab-label-danger-primary);
-  --lab-label-on-accent: var(--lab-label-static-light-primary);
-  --lab-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-label-on-neutral: rgb(246 248 250); /* мост: провизорная, деривация открыта */
+  --lab-label-on-accent: var(--lab-badge-label-on-brand); /* закон пары: деривация движка */
+  --lab-label-on-danger: var(--lab-badge-label-on-danger); /* закон пары: деривация движка */
+  --lab-label-on-neutral: oklch(96.07323% 0.011987 286.172); /* закон пары: деривация движка */
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
@@ -543,17 +543,17 @@ oklch); строки «мост: Figma-якорь» — входы и компо
     --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
     --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
     --lab-control-bg: rgb(120 120 128 / 0.361); /* мост: Figma-якорь */
-    --lab-fill-accent: var(--lab-border-brand-strong);
-    --lab-fill-danger: var(--lab-border-danger-strong);
+    --lab-fill-accent: var(--lab-badge-fill-brand); /* закон пары: деривация движка */
+    --lab-fill-danger: var(--lab-badge-fill-danger); /* закон пары: деривация движка */
     --lab-fill-neutral: rgb(35 35 39); /* мост: провизорная, деривация открыта */
     --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
     --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
     --lab-fill-neutral-tinted: var(--lab-fill-primary);
     --lab-label-accent: var(--lab-label-brand-primary);
     --lab-label-danger: var(--lab-label-danger-primary);
-    --lab-label-on-accent: var(--lab-label-static-light-primary);
-    --lab-label-on-danger: var(--lab-label-static-light-primary);
-    --lab-label-on-neutral: rgb(246 248 250); /* мост: провизорная, деривация открыта */
+    --lab-label-on-accent: var(--lab-badge-label-on-brand); /* закон пары: деривация движка */
+    --lab-label-on-danger: var(--lab-badge-label-on-danger); /* закон пары: деривация движка */
+    --lab-label-on-neutral: oklch(96.07323% 0.011987 286.172); /* закон пары: деривация движка */
     --lab-border-accent: var(--lab-border-brand-strong);
     --lab-border-neutral: var(--lab-border-base);
     --lab-border-danger: var(--lab-border-danger-strong);
