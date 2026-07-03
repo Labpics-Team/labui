@@ -34,7 +34,13 @@ test('`test` stays browserless; `test:engine` carries the browser suites', async
     /lg-math\.unit|lg-ci-wiring/,
     `apps/docs \`test\` must run the browserless liquid-glass node suites, got: ${testScript}`,
   );
-  for (const browserSuite of ['lg-cache', 'lg-pending-decode', 'lg-mutation']) {
+  assert.match(
+    testScript,
+    /pb-math\.unit/,
+    `apps/docs \`test\` must run the browserless progressive-blur math suite, got: ${testScript}`,
+  );
+  const BROWSER_SUITES = ['lg-cache', 'lg-pending-decode', 'lg-mutation', 'pb-gate', 'pb-mutation'];
+  for (const browserSuite of BROWSER_SUITES) {
     assert.ok(
       !testScript.includes(browserSuite),
       `\`test\` runs in the browserless quality job — ${browserSuite} launches Chromium and must live in \`test:engine\` (got: ${testScript})`,
@@ -42,7 +48,7 @@ test('`test` stays browserless; `test:engine` carries the browser suites', async
   }
 
   const engineScript = scripts['test:engine'] || '';
-  for (const browserSuite of ['lg-cache', 'lg-pending-decode', 'lg-mutation']) {
+  for (const browserSuite of BROWSER_SUITES) {
     assert.match(
       engineScript,
       new RegExp(browserSuite),
