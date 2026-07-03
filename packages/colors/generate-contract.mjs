@@ -10,10 +10,15 @@
 // Регенерация: node generate-contract.mjs
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { createLabuiEngine } from './engine.mjs';
+import {
+  FULL_PASSPORT_PATH,
+  THIN_PASSPORT_PATH,
+  createLabuiEngine,
+  engineSupportsPreset,
+} from './engine.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const referencePath = join(here, '..', 'colors-stub', 'figma-reference.css');
@@ -96,13 +101,17 @@ function renderScope(anchorVars, engineVars) {
   return lines.join('\n');
 }
 
-/** Сгенерировать полный contract.css из движка и Figma-якоря. */
-export async function generateContract() {
+/** Сгенерировать полный contract.css из движка и Figma-якоря.
+ *  По умолчанию — ТОНКИЙ паспорт (BL-007): его словарь ролей движок раскрывает
+ *  пресетом. Полный паспорт даёт байт-идентичный вывод по построению (тождество
+ *  доказывает test/thin-identity.test.mjs), потому шапка и тело от выбора пути
+ *  не зависят. Путь остаётся параметром — сверка тождества гоняет оба явно. */
+export async function generateContract(passportPath = THIN_PASSPORT_PATH) {
   const require = createRequire(import.meta.url);
   const enginePkgPath = join(dirname(require.resolve('@labpics/colors')), 'package.json');
   const enginePkg = JSON.parse(await readFile(enginePkgPath, 'utf8'));
-  const { colors, fingerprint } = await createLabuiEngine();
-  const passport = JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8'));
+  const { colors, fingerprint } = await createLabuiEngine(passportPath);
+  const passport = JSON.parse(await readFile(passportPath, 'utf8'));
   // Фоны резолва тем — якоря нейтрали ПАСПОРТА, не литералы: клиентский
   // конфиг с другими опорами обязан генерировать против СВОИХ фонов.
   const bgLight = passport.neutral.anchors.light;
@@ -152,9 +161,12 @@ ${darkBody
 `;
 }
 
-// Прямой запуск — записать файл.
+// Прямой запуск — записать файл. Регенерация из ТОНКОГО паспорта, когда движок
+// понимает пресеты; на пре-пресетном (опубликованный 0.5.0) — откат на полный
+// эталон (вывод байт-в-байт тот же), чтобы регенерация работала на обоих движках.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  const css = await generateContract();
+  const passportPath = (await engineSupportsPreset()) ? THIN_PASSPORT_PATH : FULL_PASSPORT_PATH;
+  const css = await generateContract(passportPath);
   await writeFile(contractPath, css);
-  console.log(`contract.css сгенерирован (${css.length} байт)`);
+  console.log(`contract.css сгенерирован из ${basename(passportPath)} (${css.length} байт)`);
 }
