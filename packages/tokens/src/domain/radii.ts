@@ -44,7 +44,8 @@ export function buildRadii(config: RadiiConfig): {
     dtcgType: 'number',
     description:
       'Corner shape curvature: corner-shape superellipse(K) over any radius. ' +
-      '1 = circle (off), 1.1 = derived Figma smoothing zeta=0.6 equivalent, ~2.3 = Apple icon squircle.',
+      '1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 "fit" is retracted; ' +
+      'see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle.',
   };
 
   const tokens = [...stepTokens, fullToken, cornerToken];

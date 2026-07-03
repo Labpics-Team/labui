@@ -25,6 +25,8 @@
 // Золотое сечение по n. Печатает n*, K* = log₂(n*), отклонения при R = 100
 // для K* и для зафиксированного в конфиге K, чтобы подтвердить/отозвать его.
 
+import { fileURLToPath } from 'node:url';
+
 export const R = 100;
 export const ZETA = 0.6;
 
@@ -179,7 +181,10 @@ export function fitOptimalN() {
   return (lo + hi) / 2;
 }
 
-const isMain = import.meta.url === `file://${process.argv[1]}`;
+// Кросс-платформенный self-run: сравнение OS-путей (сборка `file://${argv}`
+// ломалась на Windows — argv с бэкслэшами не совпадал с URL). Конвенция
+// репозитория — см. generate-contract.mjs.
+const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) main();
 
 function main() {

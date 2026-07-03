@@ -57,7 +57,7 @@
   --lab-radius-4xl: 2rem;
   --lab-radius-5xl: 3rem;
   --lab-radius-full: 9999px; /* Pill / fully-rounded — a semantic constant, not computed 50%. */
-  --lab-radius-corner-k: 1.1; /* Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = derived Figma smoothing zeta=0.6 equivalent, ~2.3 = Apple icon squircle. */
+  --lab-radius-corner-k: 1.1; /* Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 "fit" is retracted; see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle. */
   --lab-radius-none: var(--lab-radius-0); /* -> 0 */
   --lab-radius-control: var(--lab-radius-lg); /* -> lg */
   --lab-radius-card: var(--lab-radius-2xl); /* -> 2xl */
