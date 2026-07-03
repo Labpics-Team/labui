@@ -15,6 +15,7 @@
 [data-lab-progress] {
   --_lab-progress-thickness: 0.5rem;
   --_lab-progress-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-progress-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 
   display: flex;
   flex-direction: column;
@@ -38,6 +39,7 @@
 .lab-progress-label {
   font: inherit;
   font-size: var(--_lab-progress-font);
+  letter-spacing: var(--_lab-progress-tracking);
   font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-primary);
 }
@@ -45,6 +47,7 @@
 .lab-progress-value-text {
   font: inherit;
   font-size: var(--_lab-progress-font);
+  letter-spacing: var(--_lab-progress-tracking);
   color: var(--lab-label-secondary);
   font-variant-numeric: tabular-nums;
 }

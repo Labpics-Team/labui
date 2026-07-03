@@ -262,5 +262,5 @@ ${darkBody
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const css = await generateContract();
   await writeFile(contractPath, css);
-  console.log(`contract.css сгенерирован (${css.length} байт)`);
+  console.info(`contract.css сгенерирован (${css.length} байт)`);
 }

@@ -93,6 +93,8 @@ export const DIMENSION_PREFIXES = [
   '--lab-z-',
   '--lab-font-',
   '--lab-line-height-',
+  '--lab-letter-spacing-', // оптический трекинг, парный кеглям (волна типографики)
+  '--lab-measure-', // мера строки, ch (Bringhurst 45/66/75)
   '--lab-stroke-', // border / divider line widths (not the --lab-border-* colour role)
   '--lab-focus-ring-', // focus indicator width + offset
 ] as const;

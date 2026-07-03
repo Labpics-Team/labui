@@ -17,6 +17,7 @@
   --_lab-tabs-pad-x: var(--lab-space-md, 1rem);
   --_lab-tabs-pad-y: var(--lab-space-sm, 0.5rem);
   --_lab-tabs-font: var(--lab-font-size-md, 1rem);
+  --_lab-tabs-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: flex;
   flex-direction: column;
@@ -30,11 +31,13 @@
   --_lab-tabs-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-tabs-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-tabs-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-tabs-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-tabs][data-size="l"] {
   --_lab-tabs-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-tabs-pad-y: var(--lab-space-md, 1rem);
   --_lab-tabs-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-tabs-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 .lab-tabs-list {
@@ -63,6 +66,7 @@
   border-bottom: var(--lab-stroke-thick) solid transparent;
   font: inherit;
   font-size: var(--_lab-tabs-font);
+  letter-spacing: var(--_lab-tabs-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-secondary);
@@ -107,6 +111,7 @@
   color: var(--lab-label-primary);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
+  letter-spacing: var(--lab-letter-spacing-md, -0.011em);
   line-height: var(--lab-line-height-md, 1.5);
 }
 .lab-tabs-panel:focus-visible {

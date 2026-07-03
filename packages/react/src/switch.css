@@ -18,6 +18,7 @@
   --_lab-sw-thumb: 1.125rem;
   --_lab-sw-gap: var(--lab-space-sm, 0.5rem);
   --_lab-sw-font: var(--lab-font-size-md, 1rem);
+  --_lab-sw-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: inline-flex;
   align-items: center;
@@ -25,6 +26,7 @@
   gap: var(--_lab-sw-gap);
   font: inherit;
   font-size: var(--_lab-sw-font);
+  letter-spacing: var(--_lab-sw-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   color: var(--lab-label-primary);
   cursor: pointer;
@@ -35,12 +37,14 @@
   --_lab-sw-track-h: 1.25rem;
   --_lab-sw-thumb: 0.875rem;
   --_lab-sw-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-sw-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-switch][data-size="l"] {
   --_lab-sw-track-w: 3.25rem;
   --_lab-sw-track-h: 1.75rem;
   --_lab-sw-thumb: 1.375rem;
   --_lab-sw-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-sw-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 [data-lab-switch] .lab-switch-control {
