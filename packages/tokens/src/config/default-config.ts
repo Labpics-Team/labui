@@ -88,7 +88,9 @@ export const defaultConfig: TokensConfig = {
   },
 
   radii: {
-    // Форма угла: ζ=0.6-эквивалент (см. RadiiConfig.cornerK — деривация).
+    // Форма угла: DECLARED-размен «G2-вход ценой 2.35px/R100 геометрии от
+    // кривой Figma ζ=0.6» (см. RadiiConfig.cornerK; воспроизводимая деривация —
+    // scripts/derive-corner-k.mjs: геометрический фит был бы K=1, круг).
     cornerK: 1.1,
     // Geometric rem progression (Tailwind v4 shape). Step 0 is the zero token.
     steps: {
