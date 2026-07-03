@@ -18,7 +18,7 @@
 [data-lab-number-input] {
   --_lab-field-pad-x: var(--lab-space-md, 1rem);
   --_lab-field-pad-y: var(--lab-space-sm, 0.5rem);
-  --_lab-field-radius: var(--lab-radius-md, 0.375rem);
+  --_lab-field-radius: var(--lab-radius-control, 0.5rem);
   --_lab-field-gap: var(--lab-space-xs, 0.25rem);
   --_lab-field-font: var(--lab-font-size-md, 1rem);
   --_lab-field-label-font: var(--lab-font-size-xs, 0.8333rem);

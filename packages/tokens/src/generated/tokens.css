@@ -41,6 +41,9 @@
   --lab-size-control-s: 0.75rem;
   --lab-size-control-m: 1rem;
   --lab-size-control-l: 1.25rem;
+  --lab-size-control-h-s: 2rem;
+  --lab-size-control-h-m: 2.5rem;
+  --lab-size-control-h-l: 3rem;
 
   /* Radii — geometric rem + full pill */
   --lab-radius-0: 0rem;

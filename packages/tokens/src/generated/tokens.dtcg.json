@@ -313,6 +313,42 @@
           "css": "1.25rem"
         }
       }
+    },
+    "control-h-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "control-h-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.5rem"
+        }
+      }
+    },
+    "control-h-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
     }
   },
   "radius": {

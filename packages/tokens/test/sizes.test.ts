@@ -23,6 +23,11 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'control-s': 12,
     'control-m': 16,
     'control-l': 20,
+    // Ось высот контролов (аудит 2026-07-03): доминирующее семейство button
+    // 32/40/48, все на 4px-сетке; DECLARED до появления Figma-якоря высот.
+    'control-h-s': 32,
+    'control-h-m': 40,
+    'control-h-l': 48,
   };
 
   it('carries exactly the canonical steps with their Figma px values', () => {
@@ -34,9 +39,14 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
   });
 
   it('is strictly increasing (a size axis must be monotonic)', () => {
-    const ordered = ['control-s', 'control-m', 'control-l'].map(
-      (n) => tokens.sizes.find((t) => t.name === n)?.numeric as number,
-    );
+    const ordered = [
+      'control-s',
+      'control-m',
+      'control-l',
+      'control-h-s',
+      'control-h-m',
+      'control-h-l',
+    ].map((n) => tokens.sizes.find((t) => t.name === n)?.numeric as number);
     for (let i = 1; i < ordered.length; i++) {
       expect(ordered[i]).toBeGreaterThan(ordered[i - 1] as number);
     }

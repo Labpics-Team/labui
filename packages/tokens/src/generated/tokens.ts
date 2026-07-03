@@ -46,6 +46,9 @@ export const size = {
   'control-s': 'var(--lab-size-control-s)',
   'control-m': 'var(--lab-size-control-m)',
   'control-l': 'var(--lab-size-control-l)',
+  'control-h-s': 'var(--lab-size-control-h-s)',
+  'control-h-m': 'var(--lab-size-control-h-m)',
+  'control-h-l': 'var(--lab-size-control-h-l)',
 } as const;
 
 export type SizeToken = keyof typeof size;

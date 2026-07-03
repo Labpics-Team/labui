@@ -29,7 +29,7 @@ export const fieldStyles: CSSResult = css`
        fallback so the field is usable before tokens load; colour roles never do. */
     --_field-pad-x: ${litVar('--lab-space-md', '1rem')};
     --_field-pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-    --_field-radius: ${litVar('--lab-radius-md', '0.375rem')};
+    --_field-radius: ${litVar('--lab-radius-control', '0.5rem')};
     --_field-gap: ${litVar('--lab-space-xs', '0.25rem')};
     --_field-font: ${litVar('--lab-font-size-md', '1rem')};
     --_field-label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
