@@ -79,10 +79,13 @@ function badgePairEmission(colors, theme, engineRoles) {
   return lines.join('\n');
 }
 
-/** rgb(r g b [/ a]) → #RRGGBB (вход nested-resolve лейбла на провизорной заливке). */
+/** rgb(r g b) → #RRGGBB (вход nested-resolve лейбла на провизорной заливке). */
 function rgbToHex(rgb) {
-  const m = rgb.match(/rgb\(\s*(\d+)\s+(\d+)\s+(\d+)/);
-  if (!m) throw new Error(`ожидался rgb(): ${rgb}`);
+  // Провизорные нейтрали непрозрачны; альфа тут — не тихо игнорировать, а падать:
+  // композит лейбла на полупрозрачной заливке зависел бы от фона (другой класс).
+  if (rgb.includes('/')) throw new Error(`ожидался непрозрачный rgb(): ${rgb}`);
+  const m = rgb.match(/rgb\(\s*(\d+)\s+(\d+)\s+(\d+)\s*\)/);
+  if (!m) throw new Error(`ожидался rgb(r g b): ${rgb}`);
   const hx = (n) => Number(n).toString(16).padStart(2, '0');
   return `#${hx(m[1])}${hx(m[2])}${hx(m[3])}`.toUpperCase();
 }
@@ -91,22 +94,26 @@ function rgbToHex(rgb) {
  * Семантический паспорт «несущих лейбл» поверхностей — ЗАКОН ПАРЫ (crate::pair),
  * тот же, что бейдж. Замороженный figma-reference.css несёт до-законные мосты
  * (fill-accent = сырой border-brand-strong 4.017:1 < 4.5; label-on-accent =
- * статический белый) — здесь они ПЕРЕКРЫВАЮТСЯ деривацией движка:
- *   fill-accent = var(badge-fill-brand)   (паспортный алиас pair-fill brand),
- *   fill-danger = var(badge-fill-danger)  (паспортный алиас pair-fill danger),
- *   label-on-*  = var(badge-label-on-*)   (парный лейбл заливки, nested resolve),
- * — DRY-ссылки на уже эмитируемые движком badge-роли: один закон, ноль дубля
- * (badge-fill-brand и fill-accent совпадают байт-в-байт → алиас, а не копия).
+ * статический белый) — здесь они ПЕРЕКРЫВАЮТСЯ деривацией движка каскадом.
+ *
+ * ОДИН ИСТОЧНИК ИСТИНЫ — passport.aliases: каждый алиас на `badge-fill-<family>`
+ * объявляет несущую лейбл поверхность закона пары. Из него ДЕРИВИРУЕТСЯ пара:
+ *   fill-<name>     → var(badge-fill-<family>)      (заливка = pair-fill семьи),
+ *   label-on-<name> → var(badge-label-on-<family>)  (парный лейбл заливки).
+ * Смена таргета алиаса в паспорте тянет и заливку, и лейбл — ноль ручной
+ * синхронизации, ноль дубля oklch (ссылка, а не копия; байт-в-байт с badge).
+ *
  * fill-neutral остаётся провизорным мостом (pair-fill(neutral) тема-инвариантен),
  * но ЕЁ лейбл — деривация: label-primary, решённый на провизорной заливке.
  */
-function semanticPairOverrides(colors, theme, anchorMap) {
-  const o = new Map([
-    ['--lab-fill-accent', 'var(--lab-badge-fill-brand)'],
-    ['--lab-fill-danger', 'var(--lab-badge-fill-danger)'],
-    ['--lab-label-on-accent', 'var(--lab-badge-label-on-brand)'],
-    ['--lab-label-on-danger', 'var(--lab-badge-label-on-danger)'],
-  ]);
+function semanticPairOverrides(colors, theme, anchorMap, aliases) {
+  const o = new Map();
+  for (const { alias, target } of aliases) {
+    const family = target.match(/^badge-fill-(.+)$/)?.[1];
+    if (!family) continue; // не несущая лейбл поверхность — обычный алиас
+    o.set(`--lab-${alias}`, `var(--lab-${target})`);
+    o.set(`--lab-${alias.replace(/^fill-/, 'label-on-')}`, `var(--lab-badge-label-on-${family})`);
+  }
   const fillNeutral = anchorMap.get('--lab-fill-neutral');
   if (!fillNeutral) throw new Error('якорь не несёт --lab-fill-neutral для деривации лейбла');
   const label = colors.resolveTheme(rgbToHex(fillNeutral), theme).roles['label-primary'];
@@ -258,8 +265,8 @@ export async function generateContract() {
 
   const resolvedLight = colors.resolveTheme(bgLight, 'light');
   const resolvedDark = colors.resolveTheme(bgDark, 'dark');
-  const overridesLight = semanticPairOverrides(colors, 'light', new Map(light));
-  const overridesDark = semanticPairOverrides(colors, 'dark', new Map(dark));
+  const overridesLight = semanticPairOverrides(colors, 'light', new Map(light), passport.aliases);
+  const overridesDark = semanticPairOverrides(colors, 'dark', new Map(dark), passport.aliases);
   const lightBody =
     renderScope(light, engineLight, overridesLight) +
     badgePairEmission(colors, 'light', resolvedLight.roles) +
@@ -275,8 +282,10 @@ export async function generateContract() {
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@${enginePkg.version} + паспорт labui.config.json
 (отпечаток ${fingerprint}). Движковые роли — живая эмиссия (единая форма
-oklch); строки «мост: Figma-якорь» — входы и компонентные поверхности из
-замороженного figma-reference.css, переезжают следующими этапами поезда.
+oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
+лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
+Figma-якорь» — входы и компонентные поверхности из замороженного
+figma-reference.css, переезжают следующими этапами поезда.
 Регенерация: node packages/colors/generate-contract.mjs
 Гейт дисциплины: packages/colors/test/contract-generated.test.mjs
 */
