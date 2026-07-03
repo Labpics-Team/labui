@@ -28,7 +28,9 @@
  *     refcounted module-level cache (the panel and a same-sized pane build it
  *     once), and never rebuilt on drag / theme / strength / dispersion changes.
  *     Resize storms collapse to a single trailing-edge build. Scratch buffers
- *     are reused across builds to keep GC pressure flat.
+ *     are reused across builds to keep GC pressure flat. The PNG encode — the
+ *     heaviest chunk of a build — runs OFF the main thread (canvas.toBlob);
+ *     only the ¼-symmetric field loop stays synchronous.
  *   · A same-structure re-stamp (strength/dispersion tuning) updates only the
  *     feDisplacementMap scale attributes — no markup re-parse, no feImage href
  *     re-attach, no node churn. The emitted filter is byte-identical.
@@ -276,7 +278,22 @@ function buildMap(w, h, corner, depth, dpr) {
     }
   }
   sCtx.putImageData(img, 0, 0);
-  const out = { href: sCanvas.toDataURL(), unit: 2 * maxAbs, mapW: W, mapH: H };
+  // The PNG encode was the LAST big synchronous chunk of a build (heavier than
+  // the ¼-symmetric field loop). toBlob snapshots the canvas bitmap AT CALL
+  // TIME (spec: a synchronous copy) and encodes off the main thread; the href
+  // arrives one tick later through `ready` — every consumer already survives
+  // that (the feImage decode was async anyway, and the pending-decode re-arm
+  // machinery covers the window). toDataURL remains the fallback reference
+  // path; both encoders emit lossless PNG of the same bitmap, so the decoded
+  // RGBA — and therefore the rendered lens — is byte-identical either way.
+  const out = { href: null, ready: null, unit: 2 * maxAbs, mapW: W, mapH: H };
+  if (typeof sCanvas.toBlob === 'function' && typeof URL !== 'undefined' && URL.createObjectURL) {
+    out.ready = new Promise((resolve) => {
+      sCanvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : ''), 'image/png');
+    });
+  } else {
+    out.href = sCanvas.toDataURL();
+  }
   // Burst is (probably) over: schedule scratch release after idle. A storm keeps
   // re-arming the timer so reuse stays flat while builds keep coming.
   armScratchRelease();
@@ -304,6 +321,19 @@ function touchLru(geoKey, entry) {
   mapCache.set(geoKey, entry);
 }
 
+/** Free an evicted entry's blob URL. An entry evicted while its encode is
+ *  still in flight is flagged; the resolver revokes on arrival. (Revoking
+ *  invalidates future fetches only — an feImage that already decoded the
+ *  bitmap keeps rendering, and zero-ref eviction means no live instance
+ *  targets this geometry anyway.) */
+function releaseHref(entry) {
+  entry.evicted = true;
+  if (entry.href?.startsWith('blob:')) {
+    URL.revokeObjectURL(entry.href);
+    entry.href = null;
+  }
+}
+
 // Evict oldest zero-ref (zombie) entries until at most ZOMBIE_CAP remain.
 function evictZombies() {
   let zombies = 0;
@@ -312,6 +342,7 @@ function evictZombies() {
   for (const [key, e] of mapCache) {
     if (e.refs <= 0) {
       mapCache.delete(key);
+      releaseHref(e);
       if (--zombies <= ZOMBIE_CAP) break;
     }
   }
@@ -324,7 +355,18 @@ function acquireMap(geoKey, w, h, corner, depth, dpr) {
     if (hit.refs === 1) touchLru(geoKey, hit); // revived a zombie → mark MRU
     return hit;
   }
-  const entry = { ...buildMap(w, h, corner, depth, dpr), refs: 1 };
+  const entry = { ...buildMap(w, h, corner, depth, dpr), refs: 1, evicted: false };
+  if (entry.ready) {
+    // Cache-layer resolver registers FIRST, so by the time any render-layer
+    // consumer sees the href, entry.href is already settled.
+    entry.ready.then((href) => {
+      if (entry.evicted && href.startsWith('blob:')) {
+        URL.revokeObjectURL(href);
+        return;
+      }
+      entry.href = href;
+    });
+  }
   mapCache.set(geoKey, entry);
   return entry;
 }
@@ -524,6 +566,19 @@ function render(state) {
     }
   };
 
+  // Arm the decode→stamp chain for a map whose href may still be encoding
+  // (toBlob) — the gen-guard in stamp() drops stale arms either way.
+  const armStamp = (map, mapMs) => {
+    const decode = (href) => {
+      if (!href) return; // encode failed (never seen in practice) → stay frost
+      const im = new Image();
+      im.onload = im.onerror = () => stamp(map, mapMs);
+      im.src = href;
+    };
+    if (map.href) decode(map.href);
+    else if (map.ready) map.ready.then(decode);
+  };
+
   state.geoKey = geoKey;
   // Cheap re-stamp path: we already HOLD a ref for this exact geometry (gated on
   // heldKey, NOT state.map, so a repeat render mid-decode never re-acquires — the
@@ -535,10 +590,7 @@ function render(state) {
     if (state.map) {
       stamp(state.map, 0); // decoded → reuse map, cheap re-stamp
     } else if (state.pendingMap) {
-      const pm = state.pendingMap; // decode in flight → re-arm a stamp for THIS gen
-      const im = new Image();
-      im.onload = im.onerror = () => stamp(pm, 0);
-      im.src = pm.href;
+      armStamp(state.pendingMap, 0); // decode/encode in flight → re-arm for THIS gen
     }
     return;
   }
@@ -554,12 +606,10 @@ function render(state) {
   state.pendingMap = map; // so a same-geometry re-render mid-decode can re-arm a stamp
   if (prevHeld && prevHeld !== geoKey) releaseMap(prevHeld);
   const mapMs = state.onPerf ? Math.max(performance.now() - tMap, 0.001) : 1;
-  // Decode the map before referencing it (feImage decode is async even for a
-  // data-URI); stamping after decode avoids a one-frame flash of the un-lensed
-  // backdrop. The gen-guard in stamp() drops this if a newer render superseded.
-  const im = new Image();
-  im.onload = im.onerror = () => stamp(map, mapMs);
-  im.src = map.href;
+  // Decode the map before referencing it (feImage decode is async either way);
+  // stamping after decode avoids a one-frame flash of the un-lensed backdrop.
+  // The gen-guard in stamp() drops this if a newer render superseded.
+  armStamp(map, mapMs);
 }
 
 /**
