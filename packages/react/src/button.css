@@ -151,7 +151,15 @@
   gap: var(--_lab-btn-gap);
 }
 [data-lab-button][data-loading="true"] .lab-button-label {
-  visibility: hidden;
+  /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of
+     those strip the label from the accessibility tree in at least one engine
+     (visibility:hidden everywhere; WebKit ALSO drops opacity:0 from its a11y
+     tree, unlike Chromium), so the busy button loses its accessible name
+     entirely (axe `button-name`/WCAG 4.1.2). `color: transparent` only
+     changes paint — the layout box is reserved (no shift) and the text node
+     stays in the a11y tree on every engine, so "Saving…" remains the
+     accessible name while the spinner is visually shown. */
+  color: transparent;
 }
 [data-lab-button] .lab-button-spinner {
   display: none;

@@ -54,7 +54,18 @@
             <div slot="header">Interactive</div>
             <div>
               A whole-card target whose action is a real control.
-              <button type="button" data-testid="lit-interactive-control">Open</button>
+              <!-- Deliberately a bare native <button> (proves the card never
+                   fabricates a role) — color:initial undoes the ambient
+                   dark-theme text colour this fixture inherits from the page,
+                   which otherwise clashes with the browser's own unstyled
+                   native button face (WCAG contrast fail on WebKit). -->
+              <button
+                type="button"
+                data-testid="lit-interactive-control"
+                style="color: initial"
+              >
+                Open
+              </button>
             </div>
             <div slot="footer">Footer</div>
           </lab-card>
