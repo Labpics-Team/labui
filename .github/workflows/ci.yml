@@ -269,12 +269,11 @@ jobs:
     # ~319 × 2. Короче окно = меньше голодания/флака на нагруженном self-hosted
     # пуле, и гейт остаётся быстрым и блокирующим. ПОЛНОЕ покрытие НЕ потеряно —
     # весь набор гоняется по расписанию в `.github/workflows/e2e-full.yml`.
-    #
-    # Engine-фермы (liquid-glass + progressive-blur, оба Class-D mutation
-    # bite-proof) тоже бегут здесь — им нужны браузеры, которые ставит этот
-    # job; их Chromium-запуски поверх smoke-подмножества стоят пару минут,
-    # отсюда 15 вместо 12.
-    timeout-minutes: 15
+    # 12 минут хватало чистому smoke-набору; в этом же job'е живут engine-сьюты
+    # обеих ферм (liquid-glass + progressive-blur, ~13 прогонов под Chromium) и
+    # hermetic VRT-гейт — им нужен запас, но не 35 «облачных» минут:
+    # self-hosted пул заметно быстрее.
+    timeout-minutes: 25
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
       # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
