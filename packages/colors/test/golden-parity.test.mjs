@@ -46,6 +46,37 @@ const EXPECTED_DIVERGENCES = new Map([
   ['--lab-label-tertiary', 'лейбл решается солвером от фона'],
   ['--lab-label-quaternary', 'лейбл решается солвером от фона'],
   ['--lab-border-strong', 'сильная ступень решается солвером от фона'],
+  // Вагон M1 (закон пары): сентимент-лейблы мигрировали с «акцент+альфа»
+  // на text-anchor тинт-лестницу — паспорт декларирует recipe
+  // {kind: text-anchor, floor: aa-text}, солвер тянет тинт от чернил к
+  // акценту от фактического фона; стаб несёт до-законную альфа-лестницу.
+  ['--lab-label-brand-primary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-brand-secondary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-brand-tertiary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-brand-quaternary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-danger-primary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-danger-secondary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-danger-tertiary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-danger-quaternary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-success-primary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-success-secondary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-success-tertiary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-success-quaternary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-warning-primary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-warning-secondary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-warning-tertiary', 'M1: text-anchor тинт, солвер от фона'],
+  ['--lab-label-warning-quaternary', 'M1: text-anchor тинт, солвер от фона'],
+  // Та же сильная ступень для сентиментов: recipe {kind: ladder,
+  // position: border-strong, floor: aa-ui} — солвер от фона. brand/danger
+  // совпали со стабом побайтно (решение легло в акцент), потому их тут нет.
+  ['--lab-border-success-strong', 'сильная ступень решается солвером от фона'],
+  ['--lab-border-warning-strong', 'сильная ступень решается солвером от фона'],
+  // Glow-семья теперь recipe {kind: glow, source: sentiment|brand}: эмиссия
+  // солидом от РЕШЁННОГО солвером источника, а не сырой акцент @52 стаба.
+  ['--lab-fx-glow-brand', 'glow от солвер-источника, не сырой акцент @52'],
+  ['--lab-fx-glow-danger', 'glow от солвер-источника, не сырой акцент @52'],
+  ['--lab-fx-glow-neutral', 'glow от солвер-источника, не сырой акцент @52'],
+  ['--lab-fx-glow-warning', 'glow от солвер-источника, не сырой акцент @52'],
   // Figma-ошибка (заземлена): вся glow-семья @52, а FX/Glow/Inverted привязан
   // к сырому солиду Neutral/4 вместо лежащего рядом 4@52 — движок @52
   // консистентен и прав.
