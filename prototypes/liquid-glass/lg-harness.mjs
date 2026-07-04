@@ -35,5 +35,10 @@
 // this facade keeps every existing import path stable.
 export { PROTO_DIR, REPO_ROOT, chromium, serveDir } from './harness/common.mjs';
 export { runCacheSuite, runPendingDecodeRegression, runScratchSuite } from './harness/suites.mjs';
-export { baseHasEngine, resolveGateBase, runHermeticGate, runVisualGate } from './harness/visual-gate.mjs';
+export {
+  baseHasEngine,
+  resolveGateBase,
+  runHermeticGate,
+  runVisualGate,
+} from './harness/visual-gate.mjs';
 export { runMutationHarness } from './harness/mutations.mjs';
