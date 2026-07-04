@@ -14,9 +14,9 @@
 'use client';
 
 import type { LabCheckboxChecked, LabCheckboxSize, LabCheckboxType } from '@labpics/ui-core';
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as checkboxMachine from '@zag-js/checkbox';
 import { type ReactNode, useCallback, useId } from 'react';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import { useZag } from './use-zag.js';
 import './checkbox.css';
 

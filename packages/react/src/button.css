@@ -20,6 +20,7 @@
      before tokens load; colour roles below never carry a fallback. */
   --_lab-btn-radius: var(--lab-radius-control, 0.5rem);
   --_lab-btn-font: var(--lab-font-size-md, 1rem);
+  --_lab-btn-tracking: var(--lab-letter-spacing-md, -0.011em);
   --_lab-btn-pad-x: var(--lab-space-md, 1rem);
   --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
   --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
@@ -35,11 +36,12 @@
   min-height: var(--_lab-btn-min);
   padding: var(--_lab-btn-pad-y) var(--_lab-btn-pad-x);
   border-radius: var(--_lab-btn-radius);
-  border: 0.0625rem solid transparent;
+  border: var(--lab-stroke-hairline) solid transparent;
   font: inherit;
   font-size: var(--_lab-btn-font);
+  letter-spacing: var(--_lab-btn-tracking);
   line-height: var(--lab-line-height-md, 1.5);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   cursor: pointer;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
   /* Base surface; [data-type][data-kind] rules set longhands directly. */
@@ -49,12 +51,14 @@
 
 [data-lab-button][data-size="s"] {
   --_lab-btn-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0042em);
   --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-btn-min: 2rem;
 }
 [data-lab-button][data-size="l"] {
   --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0177em);
   --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-btn-pad-y: var(--lab-space-md, 1rem);
   --_lab-btn-min: 3rem;
@@ -126,8 +130,8 @@
   filter: brightness(0.92);
 }
 [data-lab-button]:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* ── disabled ────────────────────────────────────────────────────────────── */
@@ -147,14 +151,22 @@
   gap: var(--_lab-btn-gap);
 }
 [data-lab-button][data-loading="true"] .lab-button-label {
-  visibility: hidden;
+  /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of
+     those strip the label from the accessibility tree in at least one engine
+     (visibility:hidden everywhere; WebKit ALSO drops opacity:0 from its a11y
+     tree, unlike Chromium), so the busy button loses its accessible name
+     entirely (axe `button-name`/WCAG 4.1.2). `color: transparent` only
+     changes paint — the layout box is reserved (no shift) and the text node
+     stays in the a11y tree on every engine, so "Saving…" remains the
+     accessible name while the spinner is visually shown. */
+  color: transparent;
 }
 [data-lab-button] .lab-button-spinner {
   display: none;
   position: absolute;
   width: 1em;
   height: 1em;
-  border: 0.125rem solid currentColor;
+  border: var(--lab-stroke-thick) solid currentColor;
   border-right-color: transparent;
   border-radius: var(--lab-radius-full, 9999px);
   animation: lab-button-spin 0.7s linear infinite;

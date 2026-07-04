@@ -100,7 +100,7 @@ export const popoverDoc: ComponentDoc = {
       index: 4,
       name: 'Content (dialog)',
       description:
-        'The floating panel — role="dialog", tabindex=-1, hidden until open, aria-modal when modal. The raised surface (--lab-surface-raised + --lab-label-primary) with a --lab-border-soft hairline, --lab-fx-shadow-major lift, layered at --lab-z-dropdown / --lab-z-modal.',
+        'The floating panel — role="dialog", tabindex=-1, hidden until open, aria-modal when modal. The raised surface (--lab-bg-secondary + --lab-label-primary) with a --lab-border-soft hairline, --lab-fx-shadow-major lift, layered at --lab-z-dropdown / --lab-z-modal.',
     },
     {
       index: 5,

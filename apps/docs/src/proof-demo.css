@@ -40,12 +40,14 @@
 body {
   margin: 0;
   padding: var(--lab-space-8, 2rem);
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
   font-family: system-ui, sans-serif;
 }
 :root[data-theme="light"] body {
-  background: #f7f8fa;
+  /* Семантика вместо мостового литерала (#f7f8fa): вторичный тон страницы
+     из контракта движка — в светлой теме демо стоит на secondary-поверхности. */
+  background: var(--lab-bg-secondary);
 }
 
 .row {
@@ -57,4 +59,10 @@ body {
 
 h1 {
   font-size: var(--lab-font-size-2xl, 2rem);
+  letter-spacing: var(--lab-letter-spacing-2xl, -0.022em);
+}
+
+/* Текстовые блоки держат меру строки (Bringhurst 45–75ch, 66 идеал). */
+p {
+  max-inline-size: var(--lab-measure-base, 66ch);
 }

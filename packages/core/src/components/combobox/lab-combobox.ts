@@ -58,7 +58,7 @@
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The input reuses
  * the shared `field-styles` surface (`--lab-bg-primary`, `--lab-border-base`,
  * sentiment borders, `--lab-border-focus` ring); the listbox is the raised surface
- * (`--lab-surface-raised` + `--lab-label-primary`) with a `--lab-border-soft` hairline
+ * (`--lab-bg-secondary` + `--lab-label-primary`) with a `--lab-border-soft` hairline
  * and `--lab-fx-shadow-major` lift at `--lab-z-dropdown`; the highlighted option fills
  * with `--lab-fill-neutral-tinted`, the selected option's label is `--lab-label-accent`.
  * No hex, no primitive, no colour-role fallback.
@@ -399,8 +399,8 @@ export class LabCombobox extends LabElement {
         opacity: 0.45;
       }
       .trigger:focus-visible {
-        outline: 0.125rem solid ${litVar('--lab-border-focus')};
-        outline-offset: -0.125rem;
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: calc(-1 * ${litVar('--lab-focus-ring-offset')});
         border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
       }
 
@@ -420,12 +420,13 @@ export class LabCombobox extends LabElement {
         padding: ${litVar('--lab-space-xs', '0.25rem')};
         list-style: none;
         border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-        background-color: ${litVar('--lab-surface-raised')};
+        background-color: ${litVar('--lab-bg-secondary')};
         color: ${litVar('--lab-label-primary')};
-        border: 0.0625rem solid ${litVar('--lab-border-soft')};
-        box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
+        border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
+        box-shadow: var(--lab-elevation-overlay);
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: ${litVar('--lab-line-height-md', '1.5')};
         z-index: ${litVar('--lab-z-dropdown', '900')};
       }
@@ -454,7 +455,7 @@ export class LabCombobox extends LabElement {
       /* Selected — the machine sets data-state=checked + aria-selected. */
       .item[data-state='checked'] .item-text {
         color: ${litVar('--lab-label-accent')};
-        font-weight: 600;
+        font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       }
       .item[data-disabled] {
         cursor: not-allowed;
@@ -479,6 +480,7 @@ export class LabCombobox extends LabElement {
         padding: ${litVar('--lab-space-xs', '0.25rem')} ${litVar('--lab-space-sm', '0.5rem')};
         color: ${litVar('--lab-label-tertiary')};
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
       }
 
       @media (prefers-reduced-motion: reduce) {

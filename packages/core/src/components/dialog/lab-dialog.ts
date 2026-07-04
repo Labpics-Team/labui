@@ -51,7 +51,7 @@
  * `finalFocusEl` wiring in the constructor.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The panel is the
- * raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a
+ * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and a `--lab-fx-shadow-major` lift, layered at
  * `--lab-z-modal`; the scrim is `--lab-bg-overlay-base` at `--lab-z-modal-underlay`.
  * No hex, no primitive, no invented role. The portal carries the page's
@@ -91,17 +91,17 @@ let dialogInstanceSeq = 0;
  */
 export const dialogFloatingStyles = css`
   :host {
-    --_pad: ${litVar('--lab-space-lg', '1rem')};
+    --_pad: ${litVar('--lab-space-lg', '1.5rem')};
     --_min-width: 18rem;
     --_max-width: 32rem;
   }
   :host([data-size='s']) {
-    --_pad: ${litVar('--lab-space-md', '0.75rem')};
+    --_pad: ${litVar('--lab-space-md', '1rem')};
     --_min-width: 16rem;
     --_max-width: 24rem;
   }
   :host([data-size='l']) {
-    --_pad: ${litVar('--lab-space-xl', '1.5rem')};
+    --_pad: ${litVar('--lab-space-xl', '2rem')};
     --_min-width: 22rem;
     --_max-width: 40rem;
   }
@@ -125,7 +125,7 @@ export const dialogFloatingStyles = css`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: ${litVar('--lab-space-lg', '1rem')};
+    padding: ${litVar('--lab-space-lg', '1.5rem')};
     z-index: ${litVar('--lab-z-modal', '1200')};
   }
   .positioner[hidden] {
@@ -163,35 +163,37 @@ export const dialogFloatingStyles = css`
     width: 100%;
     min-width: var(--_min-width);
     max-width: var(--_max-width);
-    max-height: calc(100vh - 2 * ${litVar('--lab-space-lg', '1rem')});
+    max-height: calc(100vh - 2 * ${litVar('--lab-space-lg', '1.5rem')});
     overflow: auto;
     padding: var(--_pad);
     border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
-    background-color: ${litVar('--lab-surface-raised')};
+    background-color: ${litVar('--lab-bg-secondary')};
     color: ${litVar('--lab-label-primary')};
-    border: 0.0625rem solid ${litVar('--lab-border-soft')};
-    box-shadow: 0 0.75rem 2.5rem ${litVar('--lab-fx-shadow-major')};
+    border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
+    box-shadow: var(--lab-elevation-modal);
     font: inherit;
     font-size: ${litVar('--lab-font-size-md', '1rem')};
+    letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};
   }
   .content[hidden] {
     display: none;
   }
   .content:focus-visible {
-    outline: 0.125rem solid ${litVar('--lab-border-focus')};
-    outline-offset: 0.125rem;
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
 
   .heading {
     margin: 0 0 ${litVar('--lab-space-sm', '0.5rem')} 0;
     padding-right: 2rem;
     font-size: ${litVar('--lab-font-size-lg', '1.2rem')};
+    letter-spacing: ${litVar('--lab-letter-spacing-lg', '-0.0177em')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};
     color: ${litVar('--lab-label-primary')};
   }
   .description {
-    margin: 0 0 ${litVar('--lab-space-md', '0.75rem')} 0;
+    margin: 0 0 ${litVar('--lab-space-md', '1rem')} 0;
     color: ${litVar('--lab-label-secondary')};
   }
 
@@ -202,8 +204,8 @@ export const dialogFloatingStyles = css`
 
   .close {
     position: absolute;
-    top: ${litVar('--lab-space-md', '0.75rem')};
-    right: ${litVar('--lab-space-md', '0.75rem')};
+    top: ${litVar('--lab-space-md', '1rem')};
+    right: ${litVar('--lab-space-md', '1rem')};
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -223,8 +225,8 @@ export const dialogFloatingStyles = css`
     color: ${litVar('--lab-label-primary')};
   }
   .close:focus-visible {
-    outline: 0.125rem solid ${litVar('--lab-border-focus')};
-    outline-offset: 0.125rem;
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
 `;
 
@@ -344,8 +346,8 @@ export class LabDialog extends LabElement {
       cursor: pointer;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
     }
   `;

@@ -50,7 +50,7 @@
  * `<select>` is wired for form submission.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The listbox is
- * the raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a
+ * the raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and `--lab-fx-shadow-major` lift, layered at
  * `--lab-z-dropdown`; the highlighted option fills with `--lab-fill-neutral-tinted`,
  * the selected option's label is `--lab-label-accent`. No hex, no primitive.
@@ -229,7 +229,7 @@ export class LabSelect extends LabElement {
   static override styles = css`
     :host {
       --_h: 2.25rem;
-      --_pad-x: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
 
@@ -250,7 +250,7 @@ export class LabSelect extends LabElement {
 
     .label {
       font-size: var(--_font);
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-primary')};
     }
 
@@ -272,9 +272,9 @@ export class LabSelect extends LabElement {
       height: var(--_h);
       margin: 0;
       padding: 0 var(--_pad-x);
-      border: 0.0625rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: var(--_font);
@@ -293,8 +293,8 @@ export class LabSelect extends LabElement {
       opacity: 0.45;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* Trigger value text — placeholder colour when nothing is selected. The
@@ -337,10 +337,10 @@ export class LabSelect extends LabElement {
       padding: ${litVar('--lab-space-xs', '0.25rem')};
       list-style: none;
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-      background-color: ${litVar('--lab-surface-raised')};
+      background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
-      border: 0.0625rem solid ${litVar('--lab-border-soft')};
-      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
+      box-shadow: var(--lab-elevation-overlay);
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
@@ -371,7 +371,7 @@ export class LabSelect extends LabElement {
     /* Selected — the machine sets data-state=checked + aria-selected. */
     .item[data-state='checked'] .item-text {
       color: ${litVar('--lab-label-accent')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
     }
     .item[data-disabled] {
       cursor: not-allowed;

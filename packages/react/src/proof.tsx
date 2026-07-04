@@ -13,10 +13,10 @@
  */
 'use client';
 
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as toggle from '@zag-js/toggle';
 import type { CSSProperties, ReactNode } from 'react';
 import { useId } from 'react';
-import * as toggle from '@zag-js/toggle';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import { useZag } from './use-zag.js';
 
 type ToggleSchema = SchemaOf<toggle.Service>;
@@ -44,11 +44,11 @@ const baseStyle: CSSProperties = {
   minHeight: '2.5rem',
   padding: 'var(--lab-space-sm, 0.5rem) var(--lab-space-md, 1rem)',
   borderRadius: 'var(--lab-radius-control, var(--lab-radius-lg))',
-  border: '0.0625rem solid var(--lab-border-neutral)',
+  border: 'var(--lab-stroke-hairline) solid var(--lab-border-neutral)',
   font: 'inherit',
   fontSize: 'var(--lab-font-size-md, 1rem)',
   lineHeight: 'var(--lab-line-height-md, 1.5)',
-  fontWeight: 600,
+  fontWeight: 'var(--lab-font-weight-semibold, 600)',
   cursor: 'pointer',
   transition: 'background-color 120ms ease, color 120ms ease, border-color 120ms ease',
 };

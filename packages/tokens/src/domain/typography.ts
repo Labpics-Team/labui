@@ -25,11 +25,26 @@ import type { FluidBounds, ResolvedToken } from './token.js';
 export function buildTypography(config: TypographyConfig): {
   fontSizes: ResolvedToken[];
   lineHeights: ResolvedToken[];
+  fontWeights: ResolvedToken[];
+  letterSpacings: ResolvedToken[];
+  measures: ResolvedToken[];
 } {
   assertConfig(config);
 
   const fontSizes: ResolvedToken[] = [];
   const lineHeights: ResolvedToken[] = [];
+  const letterSpacings: ResolvedToken[] = [];
+
+  // Font-weight scale: unitless number tokens, config order preserved. Value is
+  // the raw weight (e.g. 600), so a literal `font-weight: 600` becomes a 1:1
+  // token reference with no visual change.
+  const fontWeights: ResolvedToken[] = Object.entries(config.weights).map(([name, weight]) => ({
+    kind: 'font-weight',
+    name,
+    cssValue: num(weight),
+    numeric: weight,
+    dtcgType: 'number',
+  }));
 
   for (let step = -config.stepsDown; step <= config.stepsUp; step++) {
     const name = labelFor(config, step);
@@ -55,13 +70,75 @@ export function buildTypography(config: TypographyConfig): {
       numeric: multiplier,
       dtcgType: 'number',
     });
+
+    // Оптический трекинг парно к размеру (ось letter-spacing, 2026-07-03):
+    // мелкие кегли разрежаются, крупные ужимаются. Значение в em — следует
+    // за рендерным размером; репрезентативный пиксель шага — широкий якорь
+    // (канонический модуль шкалы; для фиксированных суб-базовых он и есть
+    // единственный размер).
+    letterSpacings.push({
+      kind: 'letter-spacing',
+      name,
+      cssValue: `${num(round4(opticalTrackingEm(bounds.maxPx)))}em`,
+      numeric: round4(opticalTrackingEm(bounds.maxPx)),
+      dtcgType: 'dimension',
+    });
   }
 
-  return { fontSizes, lineHeights };
+  // Мера строки (line measure): классическая типографская вилка 45–75
+  // знаков на строку, 66 — идеал (Bringhurst, «The Elements of Typographic
+  // Style» §2.1.2). `ch` — ширина «0» текущего шрифта: мера следует и за
+  // гарнитурой, и за кеглем.
+  const measures: ResolvedToken[] = [
+    { kind: 'measure', name: 'narrow', cssValue: '45ch', numeric: 45, dtcgType: 'dimension' },
+    { kind: 'measure', name: 'base', cssValue: '66ch', numeric: 66, dtcgType: 'dimension' },
+    { kind: 'measure', name: 'wide', cssValue: '75ch', numeric: 75, dtcgType: 'dimension' },
+  ];
+
+  return { fontSizes, lineHeights, fontWeights, letterSpacings, measures };
+}
+
+/**
+ * Оптический трекинг (em) как функция кегля (px):
+ *   tracking(z) = A + B·e^(C·z),  A = −0.0223, B = 0.185, C = −0.1745
+ *
+ * DECLARED-CALIBRATION: экспоненциальный фит класса системных UI-тел
+ * (SF/Helvetica). Вдохновлено практикой iA (dynamic metrics), но кривая
+ * НЕ из публикации — коэффициенты A/B/C задекларированы этим репо. В статье
+ * iA «Responsive Typography: The Basics» формул кривой нет; прежняя
+ * атрибуция «опубликованная кривая iA» отозвана (проверено fetch-ем, 2026-07-03).
+ *
+ * Контрольные точки (пересчёт из формулы, 2026-07-03):
+ *   z ≈ 12.125px → 0 em      — нейтраль (суб-базовый кегль почти не трогается);
+ *   z = 16px     → −1.10% em — базовый текст слегка ужат;
+ *   z = 32px     → −2.16% em — к асимптоте A = −2.23% em (дисплейные).
+ * Ниже нейтрали трекинг положителен (разрежение мелких): z = 8px → +2.35% em.
+ * Формула, не таблица — шкала остаётся непрерывной при любой конфигурации шагов.
+ */
+export function opticalTrackingEm(sizePx: number): number {
+  const A = -0.0223;
+  const B = 0.185;
+  const C = -0.1745;
+  return A + B * Math.exp(C * sizePx);
+}
+
+function round4(x: number): number {
+  return Math.round(x * 10000) / 10000;
 }
 
 /** Compute the clamp anchors and linear-preferred coefficients for a step. */
 export function fluidBounds(config: TypographyConfig, step: number): FluidBounds {
+  // Sub-base steps are FIXED rem (slope 0) — аудит 2026-07-03: при базе,
+  // одинаковой на обоих якорях, ratioMin^n > ratioMax^n для n < 0, и
+  // «флюид» ИНВЕРТИРОВАЛСЯ — подписи/копирайты УМЕНЬШАЛИСЬ с ростом
+  // вьюпорта (xs: 13.33px @320 → 12.12px @1240). Демпфирование — закон
+  // заголовков (растут медленнее на узких), у суб-базовых кеглей закон
+  // обратный: пол разборчивости. Фиксируем на НАРРОУ-якоре (большем из
+  // двух, ratioMin^n): расширение вьюпорта никогда не сжимает текст.
+  if (step < 0) {
+    const px = config.basePx * config.ratioMin ** step;
+    return { step, minPx: px, maxPx: px, slopeVw: 0, interceptRem: px / config.remBasePx };
+  }
   const minPx = config.basePx * config.ratioMin ** step;
   const maxPx = config.basePx * config.ratioMax ** step;
   const { minViewportPx: minVp, maxViewportPx: maxVp, remBasePx } = config;
@@ -91,10 +168,13 @@ export function effectiveSizePx(
 }
 
 function clampString(config: TypographyConfig, b: FluidBounds): string {
-  // CSS clamp requires LOWER <= UPPER. For steps below base, ratioMin^n >
-  // ratioMax^n, so the narrow-anchor size is the LARGER one: the floor is the
-  // wide anchor and the ceiling is the narrow anchor. Order by actual magnitude
-  // so the gradient stays live instead of freezing at a swapped bound.
+  // Fixed step (sub-base, slope 0): plain rem — clamp вокруг константы был бы
+  // шумом; rem сохраняет масштабирование зумом (WCAG 1.4.4).
+  if (b.slopeVw === 0 && b.minPx === b.maxPx) {
+    return rem(b.minPx / config.remBasePx);
+  }
+  // CSS clamp requires LOWER <= UPPER; for live-gradient steps the floor is
+  // the smaller anchor by magnitude.
   const lowerPx = Math.min(b.minPx, b.maxPx);
   const upperPx = Math.max(b.minPx, b.maxPx);
   const lowerRem = rem(lowerPx / config.remBasePx);
@@ -145,5 +225,14 @@ function assertConfig(config: TypographyConfig): void {
   }
   if (config.remBasePx <= 0) {
     throw new Error('typography remBasePx must be positive');
+  }
+  const weightEntries = Object.entries(config.weights ?? {});
+  if (weightEntries.length === 0) {
+    throw new Error('typography weights must define at least one named weight');
+  }
+  for (const [name, weight] of weightEntries) {
+    if (!Number.isInteger(weight) || weight < 1 || weight > 1000) {
+      throw new Error(`typography weight "${name}" must be an integer in [1, 1000], got ${weight}`);
+    }
   }
 }

@@ -118,6 +118,114 @@ test('a11y: keyboard activates the button (Enter) on the React renderer', async 
   expect(await page.evaluate(() => (window as unknown as { __clicks: number }).__clicks)).toBe(1);
 });
 
+test('a11y name: an icon-only button is named via aria-label on BOTH renderers (WCAG 4.1.2)', async ({
+  page,
+}) => {
+  // The icon-only specimen has an EMPTY default slot/children — the icon is the
+  // only visible content and is decorative (aria-hidden). The accessible name can
+  // therefore come ONLY from the consumer-set `aria-label`. On the Lit element that
+  // host attribute must cross the shadow boundary onto the inner <button>; on the
+  // React twin it must reach the native <button>. `getByRole(..., { name })` runs
+  // the browser's REAL accessible-name computation, identically on Chromium + WebKit
+  // — the definition of "has a name" an AT would use, not an attribute proxy.
+  await expect(reactButton(page, 'react-icon-only')).toBeVisible();
+
+  // React: the native <button> (the testid node) must resolve the name "Add item".
+  await expect(
+    reactButton(page, 'react-icon-only'),
+    'React icon-only button must be named by aria-label',
+  ).toHaveAccessibleName('Add item');
+
+  // Lit: the inner shadow <button> must resolve the SAME name. Scoping the role
+  // query under the host pierces the shadow root, so this asserts the host
+  // aria-label was forwarded across the boundary onto the inner button (it is NOT a
+  // light-DOM ancestor of the shadow button, so nothing names it implicitly).
+  await expect(
+    page.getByTestId('lit-icon-only').getByRole('button'),
+    'Lit icon-only inner <button> must be named by the forwarded aria-label',
+  ).toHaveAccessibleName('Add item');
+
+  // The decorative icon must NOT contribute a competing name on either renderer:
+  // the resolved name is EXACTLY "Add item", with no leaked glyph/text.
+  await expect(page.getByTestId('lit-icon-only').getByRole('button')).toHaveAccessibleName(
+    /^Add item$/,
+  );
+  await expect(reactButton(page, 'react-icon-only')).toHaveAccessibleName(/^Add item$/);
+});
+
+test('behaviour: a default-type button inside a <form> does NOT submit (htmlType=button)', async ({
+  page,
+}) => {
+  // htmlType defaults to "button" on both renderers, so activating the button must
+  // not submit the surrounding form. We record submit events on the form and click
+  // the button; the count must stay zero.
+  await expect(reactButton(page, 'react-in-form')).toBeVisible();
+
+  // Lit: the inner <button> lives in the shadow root but the <form> is in light DOM.
+  const litSubmits = await page.evaluate(() => {
+    const form = document.querySelector('[data-testid="lit-form"]') as HTMLFormElement;
+    let n = 0;
+    form.addEventListener('submit', () => {
+      n += 1;
+    });
+    const host = document.querySelector('[data-testid="lit-in-form"]') as HTMLElement;
+    host.shadowRoot?.querySelector('button')?.click();
+    return n;
+  });
+  expect(litSubmits, 'Lit: a type=button button must not submit the form').toBe(0);
+
+  // React.
+  const reactSubmits = await page.evaluate(() => {
+    const form = document.querySelector('[data-testid="react-form"]') as HTMLFormElement;
+    let n = 0;
+    form.addEventListener('submit', () => {
+      n += 1;
+    });
+    (document.querySelector('[data-testid="react-in-form"]') as HTMLButtonElement)?.click();
+    return n;
+  });
+  expect(reactSubmits, 'React: a type=button button must not submit the form').toBe(0);
+});
+
+test('behaviour: a disabled button does NOT fire click (count stays zero), not just disabled', async ({
+  page,
+}) => {
+  // toBeDisabled() proves the attribute; this proves the BEHAVIOUR: a native
+  // disabled <button> dispatches no click event even when `.click()` is called
+  // programmatically, so any handler never runs.
+  await expect(reactButton(page, 'react-disabled')).toBeDisabled();
+  await expect(litButton(page, 'lit-disabled')).toBeDisabled();
+
+  // Lit: attach a counter on the host AND the inner button, then click the inner
+  // disabled button programmatically. The count must remain zero.
+  const litClicks = await page.evaluate(() => {
+    const host = document.querySelector('[data-testid="lit-disabled"]') as HTMLElement;
+    let n = 0;
+    host.addEventListener('click', () => {
+      n += 1;
+    });
+    const btn = host.shadowRoot?.querySelector('button');
+    btn?.addEventListener('click', () => {
+      n += 1;
+    });
+    btn?.click();
+    return n;
+  });
+  expect(litClicks, 'Lit: disabled button must dispatch no click').toBe(0);
+
+  // React.
+  const reactClicks = await page.evaluate(() => {
+    const btn = document.querySelector('[data-testid="react-disabled"]') as HTMLButtonElement;
+    let n = 0;
+    btn.addEventListener('click', () => {
+      n += 1;
+    });
+    btn.click();
+    return n;
+  });
+  expect(reactClicks, 'React: disabled button must dispatch no click').toBe(0);
+});
+
 test('focus-visible: Lit host delegates focus to the inner button', async ({ page }) => {
   await page.getByTestId('lit-accent-fill').evaluate((host: HTMLElement) => host.focus());
   const innerFocused = await page.evaluate(() => {

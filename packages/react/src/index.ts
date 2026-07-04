@@ -114,4 +114,28 @@ export { Menu, type MenuProps } from './menu.js';
 // contract and the narrowing rule are one source of truth across both renderers.
 export { Combobox, type ComboboxProps } from './combobox.js';
 
+// ADVANCED FORM INPUTS — native-React twins of the Lit `<lab-pin-input>` /
+// `<lab-tags-input>`, running the SAME `@zag-js/{pin-input,tags-input}` machines via
+// `useZag`. Both REUSE the SAME shared `field-a11y` helper for the label / helper / error
+// association as the other fields (one ARIA source of truth across both renderers):
+//   - PinInput: N single-character segments; the machine owns each box's value +
+//     focus-auto-advance + paste-fill + masking; the field a11y lands on the control group.
+//     Segments keyed by index (they never reorder — the machine's own stable key).
+//   - TagsInput: a text input + removable chips; the machine owns the tag array + input +
+//     add/remove/edit/keyboard; the field a11y lands on the input. Chips keyed by stable
+//     value (they reorder/remove); the chip-control accessible names are the SAME shared
+//     translations as the Lit element.
+export {
+  PinInput,
+  type PinInputProps,
+  type LabPinInputSize,
+  type LabPinInputType,
+} from './pin-input.js';
+export {
+  TagsInput,
+  type TagsInputProps,
+  type LabTagsInputSize,
+  type LabTagsInputType,
+} from './tags-input.js';
+
 export const PACKAGE_NAME = '@labpics/ui-react';

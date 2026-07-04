@@ -27,6 +27,7 @@
  * element; the radius reads `--lab-radius-full`. No hex, no primitive.
  */
 import { type TemplateResult, css, html } from 'lit';
+import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 
 /** Spinner size. */
@@ -74,7 +75,7 @@ export class LabLoader extends LabElement {
       height: var(--_diameter);
       border: var(--_stroke) solid currentColor;
       border-right-color: transparent;
-      border-radius: 9999px;
+      border-radius: ${litVar('--lab-radius-full', '9999px')};
       animation: spin 0.7s linear infinite;
     }
 

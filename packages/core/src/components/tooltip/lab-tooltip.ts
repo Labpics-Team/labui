@@ -1,3 +1,4 @@
+import * as tooltipMachine from '@zag-js/tooltip';
 /**
  * `<lab-tooltip>` — the FIRST positioned-overlay component, and the canon every
  * later overlay (Popover, Menu, Select, Dialog) follows.
@@ -45,7 +46,6 @@
  * there is no flash and no work done before interaction.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as tooltipMachine from '@zag-js/tooltip';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -151,7 +151,7 @@ export class LabTooltip extends LabElement {
     }
     :host([size='l']) {
       --_pad-block: ${litVar('--lab-space-sm', '0.5rem')};
-      --_pad-inline: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad-inline: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_max-width: 22rem;
     }
@@ -173,8 +173,8 @@ export class LabTooltip extends LabElement {
       cursor: default;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
     }
 
@@ -198,8 +198,8 @@ export class LabTooltip extends LabElement {
       color: ${litVar('--lab-label-inverted-primary')};
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-xs', '1.4')};
-      box-shadow: 0 0.25rem 0.75rem ${litVar('--lab-fx-shadow-minor')};
+      line-height: ${litVar('--lab-line-height-xs', '1.5')};
+      box-shadow: var(--lab-elevation-overlay);
       z-index: ${litVar('--lab-z-tooltip', '1400')};
     }
     .content[hidden] {

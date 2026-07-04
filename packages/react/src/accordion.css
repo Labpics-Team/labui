@@ -16,11 +16,12 @@
   --_lab-accordion-pad-x: var(--lab-space-md, 1rem);
   --_lab-accordion-pad-y: var(--lab-space-sm, 0.5rem);
   --_lab-accordion-font: var(--lab-font-size-md, 1rem);
+  --_lab-accordion-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: flex;
   flex-direction: column;
-  border: 0.0625rem solid var(--lab-border-base);
-  border-radius: var(--lab-radius-card, 0.75rem);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
+  border-radius: var(--lab-radius-card, 1rem);
   overflow: hidden;
 }
 [data-lab-accordion][data-orientation="horizontal"] {
@@ -31,11 +32,13 @@
   --_lab-accordion-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-accordion-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-accordion-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-accordion-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-accordion][data-size="l"] {
   --_lab-accordion-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-accordion-pad-y: var(--lab-space-md, 1rem);
   --_lab-accordion-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-accordion-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 .lab-accordion-item {
@@ -44,11 +47,11 @@
   min-width: 0;
 }
 .lab-accordion-item:not(:last-child) {
-  border-bottom: 0.0625rem solid var(--lab-border-base);
+  border-bottom: var(--lab-stroke-hairline) solid var(--lab-border-base);
 }
 [data-lab-accordion][data-orientation="horizontal"] .lab-accordion-item:not(:last-child) {
   border-bottom: none;
-  border-inline-end: 0.0625rem solid var(--lab-border-base);
+  border-inline-end: var(--lab-stroke-hairline) solid var(--lab-border-base);
 }
 
 .lab-accordion-trigger {
@@ -65,8 +68,9 @@
   background: transparent;
   font: inherit;
   font-size: var(--_lab-accordion-font);
+  letter-spacing: var(--_lab-accordion-tracking);
   line-height: var(--lab-line-height-md, 1.5);
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   text-align: start;
   color: var(--lab-label-primary);
   cursor: pointer;
@@ -84,8 +88,8 @@
   cursor: not-allowed;
 }
 .lab-accordion-trigger:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: -0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: calc(-1 * var(--lab-focus-ring-offset));
 }
 
 .lab-accordion-indicator {
@@ -109,6 +113,7 @@
   color: var(--lab-label-secondary);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
+  letter-spacing: var(--lab-letter-spacing-md, -0.011em);
   line-height: var(--lab-line-height-md, 1.5);
 }
 .lab-accordion-content[hidden] {

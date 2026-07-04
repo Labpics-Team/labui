@@ -31,11 +31,12 @@
  *   - interactive: a hoverable/focusable affordance for whole-card targets (bool)
  *
  * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
- * dimension tokens through `litVar`. The surface reads `--lab-surface-base` /
- * `--lab-surface-raised`; borders read `--lab-border-base` / `--lab-border-soft`;
- * elevation reads the `--lab-fx-shadow-*` role (NOT a baked-in hex shadow — an
- * honest elevation comes from the role layer or it does not exist); the focus
- * ring reads `--lab-border-focus`. No hex, no primitive, no invented role.
+ * dimension tokens through `litVar`. The surface reads `--lab-bg-primary` /
+ * `--lab-bg-secondary`; borders read `--lab-border-base` / `--lab-border-soft`;
+ * elevation reads the `--lab-elevation-*` contract from @labpics/ui-shadow (NOT
+ * the flat `--lab-fx-shadow-*` single-colour tokens — those carry no geometry,
+ * tint, or motion); the focus ring reads `--lab-border-focus`. No hex, no
+ * primitive, no invented role.
  */
 import { type TemplateResult, css, html } from 'lit';
 import { litVar } from '../../css.js';
@@ -68,7 +69,7 @@ export class LabCard extends LabElement {
   static override styles = css`
     :host {
       --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-      --_radius: ${litVar('--lab-radius-card', '0.75rem')};
+      --_radius: ${litVar('--lab-radius-card', '1rem')};
 
       display: block;
     }
@@ -92,22 +93,22 @@ export class LabCard extends LabElement {
       flex-direction: column;
       overflow: hidden;
       border-radius: var(--_radius);
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
       /* A transparent border is always present so the variant rules only swap its
          colour — the box never resizes between variants (CLS, craft-frontend P4). */
-      border: 0.0625rem solid transparent;
+      border: ${litVar('--lab-stroke-hairline')} solid transparent;
     }
 
-    /* ── variant=elevated: raised surface + an honest role-layer shadow ─────── */
+    /* ── variant=elevated: raised surface + contract elevation token ────────── */
     :host([variant='elevated']) .card {
-      background-color: ${litVar('--lab-surface-raised')};
-      box-shadow: ${litVar('--lab-fx-shadow-minor')};
+      background-color: ${litVar('--lab-bg-secondary')};
+      box-shadow: var(--lab-elevation-resting);
     }
 
     /* ── variant=outlined: flat surface, a real border ──────────────────────── */
     :host([variant='outlined']) .card {
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       border-color: ${litVar('--lab-border-base')};
     }
 
@@ -125,13 +126,13 @@ export class LabCard extends LabElement {
       border-color: ${litVar('--lab-border-soft')};
     }
     :host([interactive][variant='elevated']:hover) .card {
-      box-shadow: ${litVar('--lab-fx-shadow-major')};
+      box-shadow: var(--lab-elevation-raised);
     }
     /* The host delegates focus; draw the ring when any inner control is
        focus-visible OR the host itself is focused (consumer-set tabindex). */
     :host([interactive]:focus-within) .card {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* ── slot regions ───────────────────────────────────────────────────────── */

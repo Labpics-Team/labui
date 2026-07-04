@@ -228,14 +228,19 @@ A component must:
 
 - spread `api.get*Props()` onto the **correct structural nodes** (the machine
   decides `role`, `aria-*`, `tabindex`, key handlers — the component only places
-  them);
+  them). Пер-итемные геттеры маппятся на узлы по стабильному значению
+  (`.item[data-value=…]` + `CSS.escape`) — КРОМЕ компонентов, где значение не
+  уникально (tags-input с allow-duplicates): там идентичность итема ПОЗИЦИОННА
+  ({index, value}, узел = N-й `.item` списка, отрисованного из того же массива
+  в том же цикле). Откат tags-input на value-lookup возвращает баг немого
+  дубль-чипа (регрессионный тест duplicates в tags-input.spec.ts);
 - set `delegatesFocus: true` on its shadow root (the `LabElement` base does this)
   so focusing the host moves focus to the inner interactive node;
 - keep a real, focusable, native interactive element (`<button>`, `<input>`) at
   the interaction point — never a `div` with a click handler;
 - expose a focus-visible ring via the **`--lab-border-focus`** role, never a
   removed outline;
-- meet WCAG 2.1 AA. **WCAG floors are never traded for aesthetics** (EPIC.md). An
+- meet WCAG 2.1 AA. **WCAG floors are never traded for aesthetics** (требование владельца). An
   element is separated by a **surface/Fills token**, not a border drawn on top.
 
 A component must **not** re-implement ARIA/keyboard the machine already provides,

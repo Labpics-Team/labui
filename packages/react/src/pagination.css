@@ -18,21 +18,25 @@
   --_lab-pg-size: 2.25rem;
   --_lab-pg-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-pg-font: var(--lab-font-size-md, 1rem);
+  --_lab-pg-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: flex;
   align-items: center;
   gap: var(--_lab-pg-gap);
   font: inherit;
   font-size: var(--_lab-pg-font);
+  letter-spacing: var(--_lab-pg-tracking);
 }
 
 [data-lab-pagination][data-size="s"] {
   --_lab-pg-size: 1.75rem;
   --_lab-pg-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-pg-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-pagination][data-size="l"] {
   --_lab-pg-size: 2.75rem;
   --_lab-pg-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-pg-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 .lab-pagination-item,
@@ -45,11 +49,11 @@
   min-width: var(--_lab-pg-size);
   height: var(--_lab-pg-size);
   padding-inline: var(--_lab-pg-pad-x);
-  border: 0.0625rem solid transparent;
+  border: var(--lab-stroke-hairline) solid transparent;
   border-radius: var(--lab-radius-control, 0.5rem);
   background: transparent;
   font: inherit;
-  font-weight: 600;
+  font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-secondary);
   cursor: pointer;
   transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
@@ -75,8 +79,8 @@
 
 .lab-pagination-item:focus-visible,
 .lab-pagination-trigger:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 .lab-pagination-ellipsis {

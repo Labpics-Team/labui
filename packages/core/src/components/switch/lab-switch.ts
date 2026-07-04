@@ -1,3 +1,4 @@
+import * as switchMachine from '@zag-js/switch';
 /**
  * `<lab-switch>` — the first PRODUCTION component that CONSUMES a Zag machine
  * through the Behaviors seam (core-CONTRACT §1, the inverse of Button).
@@ -29,7 +30,6 @@
  * declarative shadow DOM before any JS upgrades it.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as switchMachine from '@zag-js/switch';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -194,7 +194,7 @@ export class LabSwitch extends LabElement {
       height: var(--_thumb);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-control-bg')};
-      box-shadow: 0 0.0625rem 0.125rem ${litVar('--lab-fx-shadow-major')};
+      box-shadow: var(--lab-elevation-raised);
       transition: transform 140ms ease;
       transform: translateX(0);
     }
@@ -237,8 +237,8 @@ export class LabSwitch extends LabElement {
        SIBLING of the control (so it stays in the a11y tree), so match it from
        the shared root rather than as a descendant of the control. */
     .root:has(input:focus-visible) .control {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     :host([disabled]) .root {

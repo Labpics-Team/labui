@@ -45,6 +45,10 @@ export const COLOUR_ROLE_PREFIXES = [
   'fx', // glow / focus-ring / shadow / skeleton — all colour-bearing
   'accent',
   'mat', // material roles
+  'badge', // --lab-badge-label-* (Misc group) — colour-bearing, consumed in lab-badge
+  'control', // --lab-control-bg — colour-bearing, consumed in switch/slider
+  'ambient', // --lab-ambient-*-color material primitives (materials.css)
+  'glass', // --lab-glass-* material aliases (materials.css) — colour-bearing
   'neutral', // primitive (must never be read, let alone fallback-baked)
 ] as const;
 
@@ -60,7 +64,7 @@ const COLOUR_TOKEN = `--lab-(?:${COLOUR_ROLE_PREFIXES.join('|')})-[a-z0-9-]+`;
  * on a legitimate blend-mode fallback. Maintaining the named-colour set is cheap and
  * exact; matching "any bare identifier" is what mis-flagged `screen`.
  */
-const NAMED_COLOURS = [
+export const NAMED_COLOURS = [
   'transparent',
   'currentcolor',
   'aliceblue',
@@ -222,7 +226,7 @@ const NAMED_COLOURS = [
  * blend-mode `var(--lab-mat-theme-blend, screen)` (`screen`/`multiply`/`overlay`/… are
  * absent from this set, so they are never matched).
  */
-const SYSTEM_COLOURS = [
+export const SYSTEM_COLOURS = [
   'Canvas',
   'CanvasText',
   'LinkText',
@@ -258,7 +262,7 @@ const SYSTEM_COLOURS = [
  * alternative purely for readability — alternation is order-independent for these
  * since each carries its own trailing `(` and `-` is not a word char.
  */
-const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
+export const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
 
 /** CSS form: `var(--lab-<colour-role>, <colour-literal>)`. */
 const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}`, 'gi');
@@ -323,7 +327,7 @@ export function targetFiles(): string[] {
       seen.add(rel);
     }
   }
-  return [...seen].sort();
+  return [...seen].sort((a, b) => a.localeCompare(b));
 }
 
 /** Scan the whole governed surface; return every violation across all files. */

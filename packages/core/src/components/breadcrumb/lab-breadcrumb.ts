@@ -123,14 +123,14 @@ export class LabBreadcrumb extends LabElement {
       text-decoration: underline;
     }
     a:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     /* The current page — the final crumb. Text, never a link. */
     .current {
       color: ${litVar('--lab-label-primary')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
     }
 
     /* Decorative trail glyph — announced by no screen reader (aria-hidden). */

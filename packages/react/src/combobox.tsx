@@ -33,11 +33,11 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type MachineModule,
   type PropTypes,
   type SchemaOf,
   fieldControlAria,
+  fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
   filterComboboxItems,
@@ -100,15 +100,6 @@ export interface ComboboxProps {
   onInputValueChange?: (inputValue: string) => void;
   /** Fires when the machine opens or closes the listbox. */
   onOpenChange?: (open: boolean) => void;
-}
-
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function ariaProps(aria: FieldControlAria): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
 }
 
 export function Combobox({
@@ -250,7 +241,11 @@ export function Combobox({
         ) : null}
       </label>
       <div {...api.getControlProps()} className="lab-combobox-control">
-        <input {...api.getInputProps()} {...ariaProps(a11y)} className="lab-combobox-input" />
+        <input
+          {...api.getInputProps()}
+          {...fieldControlAriaProps(a11y)}
+          className="lab-combobox-input"
+        />
         {/* The machine's getTriggerProps sets aria-label ("Toggle suggestions"),
             aria-haspopup/expanded/controls and tabIndex=-1, so the caret button is an
             accessible, non-tab-stop toggle — no aria-hidden (it owns a real name). */}

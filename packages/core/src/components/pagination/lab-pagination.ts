@@ -1,3 +1,4 @@
+import * as paginationMachine from '@zag-js/pagination';
 /**
  * `<lab-pagination>` — navigate a paged collection one page at a time.
  *
@@ -36,7 +37,6 @@
  * This mirrors the sibling controls (avatar, switch), which size the same way.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as paginationMachine from '@zag-js/pagination';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -157,11 +157,11 @@ export class LabPagination extends LabElement {
       min-width: var(--_size);
       height: var(--_size);
       padding-inline: var(--_pad-x);
-      border: 0.0625rem solid transparent;
+      border: ${litVar('--lab-stroke-hairline')} solid transparent;
       border-radius: ${litVar('--lab-radius-control', '0.5rem')};
       background: transparent;
       font: inherit;
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-secondary')};
       cursor: pointer;
       transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
@@ -188,8 +188,8 @@ export class LabPagination extends LabElement {
 
     .item:focus-visible,
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     .ellipsis {

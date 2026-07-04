@@ -25,8 +25,8 @@
   cursor: pointer;
 }
 .lab-dialog-trigger:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
   border-radius: var(--lab-radius-sm, 0.25rem);
 }
 
@@ -60,7 +60,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--lab-space-lg, 1rem);
+  padding: var(--lab-space-lg, 1.5rem);
   z-index: var(--lab-z-modal, 1200);
 }
 .lab-dialog-positioner[data-modal] {
@@ -71,7 +71,7 @@
 }
 
 .lab-dialog-content {
-  --_lab-dlg-pad: var(--lab-space-lg, 1rem);
+  --_lab-dlg-pad: var(--lab-space-lg, 1.5rem);
   --_lab-dlg-min-width: 18rem;
   --_lab-dlg-max-width: 32rem;
 
@@ -80,33 +80,34 @@
   width: 100%;
   min-width: var(--_lab-dlg-min-width);
   max-width: var(--_lab-dlg-max-width);
-  max-height: calc(100vh - 2 * var(--lab-space-lg, 1rem));
+  max-height: calc(100vh - 2 * var(--lab-space-lg, 1.5rem));
   overflow: auto;
   padding: var(--_lab-dlg-pad);
   border-radius: var(--lab-radius-lg, 0.5rem);
-  background-color: var(--lab-surface-raised);
+  background-color: var(--lab-bg-secondary);
   color: var(--lab-label-primary);
-  border: 0.0625rem solid var(--lab-border-soft);
-  box-shadow: 0 0.75rem 2.5rem var(--lab-fx-shadow-major);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-soft);
+  box-shadow: var(--lab-elevation-modal);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
+  letter-spacing: var(--lab-letter-spacing-md, -0.011em);
   line-height: var(--lab-line-height-md, 1.5);
 }
 .lab-dialog-content[hidden] {
   display: none;
 }
 .lab-dialog-content:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 .lab-dialog-content[data-size="s"] {
-  --_lab-dlg-pad: var(--lab-space-md, 0.75rem);
+  --_lab-dlg-pad: var(--lab-space-md, 1rem);
   --_lab-dlg-min-width: 16rem;
   --_lab-dlg-max-width: 24rem;
 }
 .lab-dialog-content[data-size="l"] {
-  --_lab-dlg-pad: var(--lab-space-xl, 1.5rem);
+  --_lab-dlg-pad: var(--lab-space-xl, 2rem);
   --_lab-dlg-min-width: 22rem;
   --_lab-dlg-max-width: 40rem;
 }
@@ -115,11 +116,12 @@
   margin: 0 0 var(--lab-space-sm, 0.5rem) 0;
   padding-right: 2rem;
   font-size: var(--lab-font-size-lg, 1.2rem);
+  letter-spacing: var(--lab-letter-spacing-lg, -0.0177em);
   line-height: var(--lab-line-height-md, 1.5);
   color: var(--lab-label-primary);
 }
 .lab-dialog-description {
-  margin: 0 0 var(--lab-space-md, 0.75rem) 0;
+  margin: 0 0 var(--lab-space-md, 1rem) 0;
   color: var(--lab-label-secondary);
 }
 
@@ -129,8 +131,8 @@
 
 .lab-dialog-close {
   position: absolute;
-  top: var(--lab-space-md, 0.75rem);
-  right: var(--lab-space-md, 0.75rem);
+  top: var(--lab-space-md, 1rem);
+  right: var(--lab-space-md, 1rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -150,6 +152,6 @@
   color: var(--lab-label-primary);
 }
 .lab-dialog-close:focus-visible {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }

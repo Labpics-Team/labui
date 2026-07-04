@@ -27,13 +27,16 @@ export const fieldStyles: CSSResult = css`
   :host {
     /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
        fallback so the field is usable before tokens load; colour roles never do. */
-    --_field-pad-x: ${litVar('--lab-space-md', '0.75rem')};
+    --_field-pad-x: ${litVar('--lab-space-md', '1rem')};
     --_field-pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-    --_field-radius: ${litVar('--lab-radius-md', '0.5rem')};
-    --_field-gap: ${litVar('--lab-space-xs', '0.375rem')};
+    --_field-radius: ${litVar('--lab-radius-control', '0.5rem')};
+    --_field-gap: ${litVar('--lab-space-xs', '0.25rem')};
     --_field-font: ${litVar('--lab-font-size-md', '1rem')};
+    --_field-tracking: ${litVar('--lab-letter-spacing-md', '-0.011em')};
     --_field-label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-    --_field-help-font: ${litVar('--lab-font-size-xxs', '0.7222rem')};
+    --_field-label-tracking: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
+    --_field-help-font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
+    --_field-help-tracking: ${litVar('--lab-letter-spacing-xxs', '0.0043em')};
     --_field-line: ${litVar('--lab-line-height-md', '1.5')};
 
     display: block;
@@ -41,13 +44,15 @@ export const fieldStyles: CSSResult = css`
 
   :host([size='s']) {
     --_field-pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-    --_field-pad-y: ${litVar('--lab-space-xs', '0.375rem')};
+    --_field-pad-y: ${litVar('--lab-space-xs', '0.25rem')};
     --_field-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
+    --_field-tracking: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
   }
   :host([size='l']) {
-    --_field-pad-x: ${litVar('--lab-space-lg', '1rem')};
-    --_field-pad-y: ${litVar('--lab-space-md', '0.75rem')};
+    --_field-pad-x: ${litVar('--lab-space-lg', '1.5rem')};
+    --_field-pad-y: ${litVar('--lab-space-md', '1rem')};
     --_field-font: ${litVar('--lab-font-size-lg', '1.2rem')};
+    --_field-tracking: ${litVar('--lab-letter-spacing-lg', '-0.0177em')};
   }
 
   .field {
@@ -61,6 +66,7 @@ export const fieldStyles: CSSResult = css`
      keeps it in the a11y tree (clip), never display:none (which removes it). */
   .label {
     font-size: var(--_field-label-font);
+    letter-spacing: var(--_field-label-tracking);
     line-height: var(--_field-line);
     color: ${litVar('--lab-label-secondary')};
   }
@@ -90,10 +96,11 @@ export const fieldStyles: CSSResult = css`
     padding: var(--_field-pad-y) var(--_field-pad-x);
     font: inherit;
     font-size: var(--_field-font);
+    letter-spacing: var(--_field-tracking);
     line-height: var(--_field-line);
     color: ${litVar('--lab-label-primary')};
     background-color: ${litVar('--lab-bg-primary')};
-    border: 0.0625rem solid ${litVar('--lab-border-base')};
+    border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     border-radius: var(--_field-radius);
     outline: none;
     transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -112,7 +119,7 @@ export const fieldStyles: CSSResult = css`
   /* Focus-visible ring from the focus role — never a removed outline. */
   .control:focus-visible {
     border-color: ${litVar('--lab-border-focus')};
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-focus')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
   }
 
   /* Sentiment: the type axis re-points border + label. Driven by the reflected
@@ -121,19 +128,19 @@ export const fieldStyles: CSSResult = css`
     border-color: ${litVar('--lab-border-danger')};
   }
   :host([type='danger']) .control:focus-visible {
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-danger')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
   }
   :host([type='warning']) .control {
     border-color: ${litVar('--lab-border-warning-strong')};
   }
   :host([type='warning']) .control:focus-visible {
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-warning-strong')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
   }
   :host([type='success']) .control {
     border-color: ${litVar('--lab-border-success-strong')};
   }
   :host([type='success']) .control:focus-visible {
-    box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-success-strong')};
+    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
   }
 
   /* Readonly: a flatter, non-editable surface that still reads its value. */
@@ -151,6 +158,7 @@ export const fieldStyles: CSSResult = css`
   /* Helper / description text — below the control, low-emphasis. */
   .helper {
     font-size: var(--_field-help-font);
+    letter-spacing: var(--_field-help-tracking);
     line-height: var(--_field-line);
     color: ${litVar('--lab-label-tertiary')};
   }
@@ -159,6 +167,7 @@ export const fieldStyles: CSSResult = css`
      rendered when invalid + a message exists, so it is never an empty live region. */
   .error {
     font-size: var(--_field-help-font);
+    letter-spacing: var(--_field-help-tracking);
     line-height: var(--_field-line);
     color: ${litVar('--lab-label-danger')};
   }

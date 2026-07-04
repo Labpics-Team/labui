@@ -1,4 +1,4 @@
-import { defineConfig, type Options } from 'tsup';
+import { type Options, defineConfig } from 'tsup';
 
 /**
  * Shared tsup preset for LabUI library packages.

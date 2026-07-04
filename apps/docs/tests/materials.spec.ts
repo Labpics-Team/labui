@@ -135,7 +135,7 @@ test('.lab-ambient tint FOLLOWS the --lab-* colour core (not hardcoded)', async 
   const before = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
 
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-surface-raised', 'rgb(7, 130, 200)');
+    document.documentElement.style.setProperty('--lab-bg-secondary', 'rgb(7, 130, 200)');
   });
 
   const after = await card.evaluate((el) => getComputedStyle(el).backgroundColor);

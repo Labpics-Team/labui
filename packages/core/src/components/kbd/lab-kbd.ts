@@ -72,13 +72,13 @@ export class LabKbd extends LabElement {
       /* The raised cap: a neutral tinted surface, a neutral base rim, and a thin
          bottom-biased shadow so the key reads as standing above the page. */
       background-color: ${litVar('--lab-fill-neutral-tinted')};
-      border: 0.0625rem solid ${litVar('--lab-border-neutral')};
-      box-shadow: 0 0.0625rem 0 ${litVar('--lab-fx-shadow-penumbra')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      box-shadow: var(--lab-elevation-resting);
       color: ${litVar('--lab-label-primary')};
       font-family: ui-monospace, "SF Mono", "Cascadia Code", "Fira Code", monospace;
       font-size: var(--_font);
       line-height: 1;
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       white-space: nowrap;
     }
   `;
