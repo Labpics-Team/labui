@@ -98,8 +98,8 @@ importers:
   packages/colors:
     dependencies:
       '@labpics/colors':
-        specifier: 0.6.1
-        version: 0.6.1
+        specifier: 0.6.2
+        version: 0.6.2
     devDependencies:
       vitest:
         specifier: 3.2.6
@@ -719,6 +719,9 @@ packages:
 
   '@labpics/colors@0.6.1':
     resolution: {integrity: sha512-8icnPaHh490qw5efzgEbFFPtBLlqt18LMTxkP7kFtqGI0WDQyDEiTQcAygWWGv7Hn28hWIvXmwE9PAn8QJoJAQ==}
+
+  '@labpics/colors@0.6.2':
+    resolution: {integrity: sha512-zilUt3OHixV7MsLX/FkAaI/umpsxyaRklW8qQvWMnR35SQmwCuSe7eFHdNWDRMuhiv/An6LmPpwSTr+sMRWbUw==}
 
   '@lit-labs/ssr-client@1.1.8':
     resolution: {integrity: sha512-PjGh81oKsoI64m3IDjTqqjhC7dr2uC/o0jrllUb5gRAyp/RlAHxapgJrjq9kWz97faCHLQ8jUlTi6tGm+8fgyA==}
@@ -2176,6 +2179,8 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@labpics/colors@0.6.1': {}
+
+  '@labpics/colors@0.6.2': {}
 
   '@lit-labs/ssr-client@1.1.8':
     dependencies:
