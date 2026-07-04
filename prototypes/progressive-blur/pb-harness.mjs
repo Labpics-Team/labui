@@ -186,8 +186,11 @@ function bandMean(profile, a, b) {
   return vals.reduce((s, v) => s + v, 0) / Math.max(1, vals.length);
 }
 
-/* Thresholds — calibrated on the honest engine (see PR notes), with the
- * mutation harness proving each one still bites when its dimension breaks. */
+/* Thresholds — calibrated on the honest engine (see PR notes). Three are
+ * proven to bite by named mutants (monoTolerance ← superlevel-coverage,
+ * easingMidRatio ← easing, areaBudget ← strip-tightness); the other four
+ * (strongAttenuation, maxWindowJump, bandingScope, valleyDepth) are
+ * calibration-only — no dedicated mutant. See MUTATIONS for the honest map. */
 const T = {
   strongAttenuation: 0.3, // blurred end retains < 30% of sharp-end contrast
   monoTolerance: 0.12, // profile may wiggle ≤12% of sharp energy against monotonicity

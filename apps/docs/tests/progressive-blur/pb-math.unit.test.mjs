@@ -142,6 +142,25 @@ test('bandify: non-monotone profile owns disjoint runs of the same level', () =>
   for (const r of runs) assert.ok(r.t1 - r.t0 >= 0.005 - 1e-9, 'no sub-sliver runs survive');
 });
 
+test('bandify: steep transition breeds a real sub-sliver and the 0.005 merge absorbs it', () => {
+  // Two stops 0.002 apart cross the whole ladder: at 512 samples exactly one
+  // sample (t = 0.5) lands inside the window and owns a 1/512 ≈ 0.00195 run.
+  // Without the sliver-merge guard that run reaches the DOM as a sub-pixel
+  // strip; mutating the guard (0.005 → 0) makes THIS test fail. The smooth
+  // valley profile above never breeds a sliver, so this is the named killer.
+  const { runs } = bandify(parseStops('0 0px, 0.499 0px, 0.501 24px, 1 24px'));
+  assert.ok(runs.length >= 2, `cliff must keep both flanks, got ${runs.length}`);
+  for (const r of runs) {
+    assert.ok(r.t1 - r.t0 >= 0.005 - 1e-9, `sliver run survived: [${r.t0}, ${r.t1}]`);
+  }
+  assert.equal(runs[0].t0, 0);
+  assert.equal(runs[runs.length - 1].t1, 1);
+  for (let i = 1; i < runs.length; i++) {
+    assert.ok(Math.abs(runs[i].t0 - runs[i - 1].t1) < 1e-9, 'merge must not leave gaps');
+  }
+  assert.equal(runs[runs.length - 1].blur, 24, 'strongest stop still renders exactly');
+});
+
 test('bandBBox: axis-aligned slabs are tight; diagonal slabs clip to the box; misses are null', () => {
   const vertical = bandBBox(100, 200, { x: 50, y: 0 }, { x: 50, y: 200 }, 0.25, 0.5);
   assert.deepEqual(vertical, { x: 0, y: 50, w: 100, h: 50 });

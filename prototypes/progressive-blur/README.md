@@ -79,5 +79,11 @@ monotonicity, no banding cliffs, easing measurably bending the profile,
 multi-stop valleys, axis orientation, plus DOM invariants (cumulative √Σr²
 equals the strongest stop exactly; feather fades present; ladder dense;
 strips tight), determinism and reduced-transparency honesty. A Class-D
-mutation harness weakens five dimensions (feather, level count, easing,
-blur strength, strip tightness) and proves the named check catches each.
+mutation harness weakens eight dimensions (feather, level count, easing,
+blur strength, strip tightness, axis, superlevel coverage, reduced
+transparency) and proves each one's named isolating check flips to fail.
+Honest accounting: 8 of the 14 physical checks own a mutant killer; the
+other six (strong-end attenuation, banding cliff, multi-stop valley,
+determinism, array-stops rebuild, clamp extent) are exercised by the suite
+but have no dedicated mutant. The pure-math sliver-merge guard has its own
+unit-level killer in `apps/docs/tests/progressive-blur/pb-math.unit.test.mjs`.
