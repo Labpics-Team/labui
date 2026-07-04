@@ -24,7 +24,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "vue": "3.5.13",
-    "labcolors-engine": "npm:@labpics/colors@0.6.0",
+    "labcolors-engine": "npm:@labpics/colors@0.6.1",
     "@labui/colors": "workspace:*"
   },
   "devDependencies": {
