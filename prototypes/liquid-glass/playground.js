@@ -94,6 +94,20 @@ function fmt(spec, value) {
   return Number(value).toFixed(2);
 }
 
+/* Engine updates from knob input are coalesced to one per frame: a range input
+ * can emit several `input` events between two paints, and every intermediate
+ * engine render would be computed but never shown. The knob's CSS custom
+ * property is written synchronously — only the engine re-read is deferred to
+ * the next frame, so the painted result is identical. */
+let glassRaf = 0;
+function scheduleGlassUpdate() {
+  if (glassRaf) return;
+  glassRaf = requestAnimationFrame(() => {
+    glassRaf = 0;
+    glass.update({});
+  });
+}
+
 function setKnob(spec, value, fromPreset) {
   pane.style.setProperty(spec.v, spec.unit ? `${value}${spec.unit}` : `${value}`);
   const row = inputs.get(spec.v);
@@ -101,8 +115,9 @@ function setKnob(spec, value, fromPreset) {
     row.out.textContent = fmt(spec, value);
     if (fromPreset) row.input.value = value;
   }
-  glass.update({});
-  if (!fromPreset) clearPresetSelection();
+  if (fromPreset) return; // applyPreset batches: ONE engine update + CSS dump for all knobs
+  scheduleGlassUpdate();
+  clearPresetSelection();
   writeCss();
 }
 
@@ -291,32 +306,61 @@ function writeCss() {
 }
 writeCss();
 
-/* ── Drag (1:1 pointer tracking via transform — compositor-friendly) ─────────── */
+/* ── Drag (1:1 pointer tracking; one write per frame, zero layout reads) ──────
+ * Position via left/top, NOT transform: a CSS transform on the glass element
+ * moves its painted result but NOT the SVG displacement map's user space, so a
+ * transformed pane shows the lens offset from the frost (a hard seam). left/top
+ * keeps the element's box (and its filter) coincident with where it paints.
+ *
+ * The stage/pane/panel bounds CANNOT change mid-gesture, so they are measured
+ * once per gesture (pointerdown) and on window resize — never per move. Each
+ * pointermove is pure arithmetic; the left/top write is coalesced to one per
+ * frame (events can outpace paints), and pointerup flushes synchronously so the
+ * final position never waits for a frame. Per dragged frame the main thread
+ * does exactly one style write — no getBoundingClientRect, no forced reflow. */
 let x = 0;
 let y = 0;
 let px = 0;
 let py = 0;
 let dragging = false;
+let bounds = { maxX: 0, maxY: 0 };
+let moveRaf = 0;
 
-function clampInto() {
+function measureBounds() {
   const s = stage.getBoundingClientRect();
   const r = pane.getBoundingClientRect();
   // keep the pane fully on stage and clear of the control panel on the right
   const panelLeft = panel.getBoundingClientRect().left - s.left;
-  const maxX = Math.max(0, Math.min(s.width - r.width, panelLeft - r.width - 12));
-  const maxY = Math.max(0, s.height - r.height);
-  x = Math.min(Math.max(x, 0), maxX);
-  y = Math.min(Math.max(y, 0), maxY);
+  bounds = {
+    maxX: Math.max(0, Math.min(s.width - r.width, panelLeft - r.width - 12)),
+    maxY: Math.max(0, s.height - r.height),
+  };
+}
+
+function clampInto() {
+  x = Math.min(Math.max(x, 0), bounds.maxX);
+  y = Math.min(Math.max(y, 0), bounds.maxY);
 }
 
 function place() {
-  // Position via left/top, NOT transform: a CSS transform on the glass element
-  // moves its painted result but NOT the SVG displacement map's user space, so a
-  // transformed pane shows the lens offset from the frost (a hard seam). left/top
-  // keeps the element's box (and its filter) coincident with where it paints.
-  pane.style.transform = 'none';
   pane.style.left = `${x}px`;
   pane.style.top = `${y}px`;
+}
+
+function schedulePlace() {
+  if (moveRaf) return;
+  moveRaf = requestAnimationFrame(() => {
+    moveRaf = 0;
+    place();
+  });
+}
+
+function flushPlace() {
+  if (moveRaf) {
+    cancelAnimationFrame(moveRaf);
+    moveRaf = 0;
+  }
+  place();
 }
 
 // Initial position: left third, vertically centred.
@@ -325,7 +369,9 @@ function initPosition() {
   const r = pane.getBoundingClientRect();
   x = s.width * 0.26;
   y = (s.height - r.height) * 0.5;
+  measureBounds();
   clampInto();
+  pane.style.transform = 'none';
   place();
 }
 initPosition();
@@ -335,6 +381,8 @@ pane.addEventListener('pointerdown', (e) => {
   perf.dragging = true;
   px = e.clientX;
   py = e.clientY;
+  measureBounds();
+  pane.style.transform = 'none';
   pane.classList.add('is-drag');
   pane.setPointerCapture(e.pointerId);
 });
@@ -345,12 +393,13 @@ pane.addEventListener('pointermove', (e) => {
   px = e.clientX;
   py = e.clientY;
   clampInto();
-  place();
+  schedulePlace();
 });
 function endDrag(e) {
   if (!dragging) return;
   dragging = false;
   perf.dragging = false;
+  flushPlace();
   pane.classList.remove('is-drag');
   if (e.pointerId !== undefined && pane.hasPointerCapture(e.pointerId)) {
     pane.releasePointerCapture(e.pointerId);
@@ -359,6 +408,7 @@ function endDrag(e) {
 pane.addEventListener('pointerup', endDrag);
 pane.addEventListener('pointercancel', endDrag);
 window.addEventListener('resize', () => {
+  measureBounds();
   clampInto();
-  place();
+  flushPlace();
 });

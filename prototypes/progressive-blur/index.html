@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>LabUI · Progressive Blur</title>
+    <link rel="stylesheet" href="./progressive-blur.css" />
+    <link rel="stylesheet" href="./playground.css" />
+  </head>
+  <body>
+    <div class="stage" id="stage">
+      <!-- The live content the blur reads through. -->
+      <div class="stage__content" id="content"></div>
+      <!-- The effect surface. Position/size it like any overlay; the runtime
+           builds the strip stack inside. -->
+      <div class="pb" id="pb"></div>
+      <header class="demo-chrome" id="chrome">
+        <span class="demo-chrome__dot"></span>
+        <span class="demo-chrome__title">Progressive Blur</span>
+        <span class="demo-chrome__sub" id="engine">engine: …</span>
+      </header>
+    </div>
+
+    <aside class="panel" aria-label="Controls">
+      <div class="panel__head">Progressive Blur — stops · curves · axis</div>
+      <div class="panel__presets" id="presets" role="group" aria-label="Presets"></div>
+
+      <label class="panel__label" for="stops">Stops — «позиция блюр [кривая]», через запятую</label>
+      <textarea id="stops" rows="2" spellcheck="false"></textarea>
+
+      <div class="row">
+        <label for="feather">Feather</label>
+        <input type="range" id="feather" min="0" max="64" step="1" value="24" />
+        <output id="feather-out">auto</output>
+      </div>
+      <div class="row">
+        <label for="levels">Levels</label>
+        <input type="range" id="levels" min="2" max="8" step="1" value="6" />
+        <output id="levels-out">6</output>
+      </div>
+
+    <details class="panel__css" open>
+        <summary>Конфигурация (CSS custom properties)</summary>
+        <pre id="css-out"></pre>
+      </details>
+    </aside>
+
+    <script type="module" src="./playground.js"></script>
+  </body>
+</html>

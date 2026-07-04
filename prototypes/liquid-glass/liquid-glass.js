@@ -28,7 +28,12 @@
  *     refcounted module-level cache (the panel and a same-sized pane build it
  *     once), and never rebuilt on drag / theme / strength / dispersion changes.
  *     Resize storms collapse to a single trailing-edge build. Scratch buffers
- *     are reused across builds to keep GC pressure flat.
+ *     are reused across builds to keep GC pressure flat. The PNG encode — the
+ *     heaviest chunk of a build — runs OFF the main thread (canvas.toBlob);
+ *     only the ¼-symmetric field loop stays synchronous.
+ *   · A same-structure re-stamp (strength/dispersion tuning) updates only the
+ *     feDisplacementMap scale attributes — no markup re-parse, no feImage href
+ *     re-attach, no node churn. The emitted filter is byte-identical.
  *
  * Zero dependencies, browser-native ES module. Pairs with liquid-glass.css.
  */
@@ -60,8 +65,15 @@ const DEFAULTS = {
 /** Detect whether this engine REFRACTS the backdrop via url() filters. Firefox
  *  and Safari PARSE `backdrop-filter: url(#f)` (so CSS.supports is true) but do
  *  NOT render an SVG filter on a backdrop — only Chromium does. Everyone else
- *  keeps the honest blur fallback. */
+ *  keeps the honest blur fallback. The answer cannot change within a page, so
+ *  it is probed once — not re-parsed from the UA on every attach. */
+let refractionProbe = null;
 export function supportsRefraction() {
+  if (refractionProbe === null) refractionProbe = probeRefraction();
+  return refractionProbe;
+}
+
+function probeRefraction() {
   if (typeof CSS === 'undefined' || !CSS.supports) return false;
   if (
     !CSS.supports('backdrop-filter', 'url(#x)') &&
@@ -266,7 +278,22 @@ function buildMap(w, h, corner, depth, dpr) {
     }
   }
   sCtx.putImageData(img, 0, 0);
-  const out = { href: sCanvas.toDataURL(), unit: 2 * maxAbs, mapW: W, mapH: H };
+  // The PNG encode was the LAST big synchronous chunk of a build (heavier than
+  // the ¼-symmetric field loop). toBlob snapshots the canvas bitmap AT CALL
+  // TIME (spec: a synchronous copy) and encodes off the main thread; the href
+  // arrives one tick later through `ready` — every consumer already survives
+  // that (the feImage decode was async anyway, and the pending-decode re-arm
+  // machinery covers the window). toDataURL remains the fallback reference
+  // path; both encoders emit lossless PNG of the same bitmap, so the decoded
+  // RGBA — and therefore the rendered lens — is byte-identical either way.
+  const out = { href: null, ready: null, unit: 2 * maxAbs, mapW: W, mapH: H };
+  if (typeof sCanvas.toBlob === 'function' && typeof URL !== 'undefined' && URL.createObjectURL) {
+    out.ready = new Promise((resolve) => {
+      sCanvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : ''), 'image/png');
+    });
+  } else {
+    out.href = sCanvas.toDataURL();
+  }
   // Burst is (probably) over: schedule scratch release after idle. A storm keeps
   // re-arming the timer so reuse stays flat while builds keep coming.
   armScratchRelease();
@@ -294,6 +321,19 @@ function touchLru(geoKey, entry) {
   mapCache.set(geoKey, entry);
 }
 
+/** Free an evicted entry's blob URL. An entry evicted while its encode is
+ *  still in flight is flagged; the resolver revokes on arrival. (Revoking
+ *  invalidates future fetches only — an feImage that already decoded the
+ *  bitmap keeps rendering, and zero-ref eviction means no live instance
+ *  targets this geometry anyway.) */
+function releaseHref(entry) {
+  entry.evicted = true;
+  if (entry.href?.startsWith('blob:')) {
+    URL.revokeObjectURL(entry.href);
+    entry.href = null;
+  }
+}
+
 // Evict oldest zero-ref (zombie) entries until at most ZOMBIE_CAP remain.
 function evictZombies() {
   let zombies = 0;
@@ -302,6 +342,7 @@ function evictZombies() {
   for (const [key, e] of mapCache) {
     if (e.refs <= 0) {
       mapCache.delete(key);
+      releaseHref(e);
       if (--zombies <= ZOMBIE_CAP) break;
     }
   }
@@ -314,7 +355,18 @@ function acquireMap(geoKey, w, h, corner, depth, dpr) {
     if (hit.refs === 1) touchLru(geoKey, hit); // revived a zombie → mark MRU
     return hit;
   }
-  const entry = { ...buildMap(w, h, corner, depth, dpr), refs: 1 };
+  const entry = { ...buildMap(w, h, corner, depth, dpr), refs: 1, evicted: false };
+  if (entry.ready) {
+    // Cache-layer resolver registers FIRST, so by the time any render-layer
+    // consumer sees the href, entry.href is already settled.
+    entry.ready.then((href) => {
+      if (entry.evicted && href.startsWith('blob:')) {
+        URL.revokeObjectURL(href);
+        return;
+      }
+      entry.href = href;
+    });
+  }
   mapCache.set(geoKey, entry);
   return entry;
 }
@@ -331,6 +383,18 @@ function releaseMap(geoKey) {
 
 const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
+/** feDisplacementMap scale formatting — ONE formatter for the markup build and
+ *  the attribute-only re-stamp, so both paths emit byte-identical values. */
+const fmtScale = (s) => s.toFixed(2);
+
+/** Per-channel spread of the chromatic fringe. The single source for the
+ *  dispersion→scale fan: the markup build and the attribute-only re-stamp both
+ *  call this, so a change here (or a mutation-gate patch) hits every path. */
+function dispersionSpread(dispersion) {
+  const k = dispersion * 0.08; // gentle per-channel spread
+  return k;
+}
+
 /**
  * Compose the <filter> body:
  *   1. feImage(map)                          → R/G displacement field
@@ -342,13 +406,53 @@ const escAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(
 function filterMarkup(href, w, h, scale, dispersion) {
   const atlas = `<feImage href="${escAttr(href)}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="none" result="map"/>`;
   const dm = (s) =>
-    `<feDisplacementMap in="SourceGraphic" in2="map" scale="${s.toFixed(2)}" xChannelSelector="R" yChannelSelector="G"`;
+    `<feDisplacementMap in="SourceGraphic" in2="map" scale="${fmtScale(s)}" xChannelSelector="R" yChannelSelector="G"`;
 
   if (dispersion < 0.02) {
     return `${atlas}${dm(scale)}/>`;
   }
-  const k = dispersion * 0.08; // gentle per-channel spread
+  const k = dispersionSpread(dispersion);
   return `${atlas}${dm(scale * (1 + k))} result="dR"/><feColorMatrix in="dR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR"/>${dm(scale)} result="dG"/><feColorMatrix in="dG" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>${dm(scale * (1 - k))} result="dB"/><feColorMatrix in="dB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/><feBlend in="cR" in2="cG" mode="screen" result="cRG"/><feBlend in="cRG" in2="cB" mode="screen"/>`;
+}
+
+/**
+ * Stamp the lens into the <filter>. A STRUCTURAL change (new map/geometry, or
+ * crossing the dispersion on/off threshold) rebuilds the primitive markup; a
+ * same-structure re-stamp (refraction/dispersion tuning, theme nudge, cache-hit
+ * re-render) only updates the feDisplacementMap `scale` attributes in place.
+ * Attribute values go through the same fmtScale as the markup build, so the
+ * rendered filter is byte-identical on either path — what the attribute path
+ * REMOVES is pure churn: re-parsing a markup string that embeds the multi-KB
+ * data-URI map, recreating ~10 SVG nodes, and re-attaching the feImage href on
+ * every slider tick.
+ */
+function applyLens(state, map, p, scale) {
+  const { filter } = state;
+  const dispersed = p.dispersion >= 0.02;
+  const k = dispersed ? dispersionSpread(p.dispersion) : 0;
+  const scales = dispersed
+    ? [fmtScale(scale * (1 + k)), fmtScale(scale), fmtScale(scale * (1 - k))]
+    : [fmtScale(scale)];
+  const s = state.stamped;
+  if (s && s.href === map.href && s.w === p.w && s.h === p.h && s.dispersed === dispersed) {
+    for (let i = 0; i < state.dispNodes.length; i++) {
+      if (state.dispNodes[i].getAttribute('scale') !== scales[i]) {
+        state.dispNodes[i].setAttribute('scale', scales[i]);
+      }
+    }
+    s.scales = scales;
+    return;
+  }
+  // Region == element box in element-LOCAL px (filterUnits=userSpaceOnUse) →
+  // travels with the element on left/top; the lens stays aligned when dragged
+  // (shuding's anti-seam rule). Do NOT CSS-transform a glass element.
+  filter.setAttribute('x', '0');
+  filter.setAttribute('y', '0');
+  filter.setAttribute('width', String(p.w));
+  filter.setAttribute('height', String(p.h));
+  filter.innerHTML = filterMarkup(map.href, p.w, p.h, scale, p.dispersion);
+  state.dispNodes = Array.from(filter.querySelectorAll('feDisplacementMap'));
+  state.stamped = { href: map.href, w: p.w, h: p.h, dispersed, scales };
 }
 
 function readParams(el, state) {
@@ -376,7 +480,14 @@ function readParams(el, state) {
   };
 }
 
-function setBackdrop(el, value) {
+/** Write the backdrop-filter pair once per DISTINCT value: a refraction-only
+ *  re-stamp keeps the string identical, and skipping the redundant write keeps
+ *  the style system out of the hot tuning path entirely. */
+function setBackdrop(el, value, state) {
+  if (state) {
+    if (state.lastBackdrop === value) return;
+    state.lastBackdrop = value;
+  }
   el.style.backdropFilter = value;
   el.style.webkitBackdropFilter = value;
 }
@@ -392,10 +503,14 @@ function dropMap(state) {
   state.geoKey = null;
   state.map = null;
   state.pendingMap = null;
+  // The <filter> keeps stale primitives (harmless — nothing references them),
+  // but the stamp bookkeeping must reset so a later re-enable rebuilds structure.
+  state.stamped = null;
+  state.dispNodes = null;
 }
 
 function render(state) {
-  const { el, id, filter } = state;
+  const { el, id } = state;
   const p = readParams(el, state);
   // Frost FIRST, then the lens: blurring the backdrop before the displacement
   // means the lens bends already-soft content (clean refraction) instead of
@@ -405,13 +520,13 @@ function render(state) {
   // Non-refracting / reduced / disabled → the CSS class declares the same blur
   // tail, so clear inline and let the stylesheet own the fallback.
   if (p.reduced || !state.enabled || !state.refracts) {
-    setBackdrop(el, p.reduced || !state.enabled ? '' : tail);
+    setBackdrop(el, p.reduced || !state.enabled ? '' : tail, state);
     dropMap(state);
     return;
   }
   // refraction ≈ 0 → plain frost, no displacement (opt-out of the lens).
   if (p.refraction <= 0.01) {
-    setBackdrop(el, tail);
+    setBackdrop(el, tail, state);
     dropMap(state);
     return;
   }
@@ -432,17 +547,11 @@ function render(state) {
     if (state.gen !== gen) return; // a newer render superseded this one
     state.map = map;
     const scale = map.unit * p.refraction;
-    // Region == element box in element-LOCAL px (filterUnits=userSpaceOnUse) →
-    // travels with the element on left/top; the lens stays aligned when dragged
-    // (shuding's anti-seam rule). Do NOT CSS-transform a glass element.
-    filter.setAttribute('x', '0');
-    filter.setAttribute('y', '0');
-    filter.setAttribute('width', String(p.w));
-    filter.setAttribute('height', String(p.h));
-    filter.innerHTML = filterMarkup(map.href, p.w, p.h, scale, p.dispersion);
+    applyLens(state, map, p, scale);
     setBackdrop(
       el,
       `blur(${p.blur}px) url(#${id}) saturate(${p.saturate}) brightness(${p.brightness}) contrast(${p.contrast})`,
+      state,
     );
     if (state.onPerf) {
       state.onPerf({
@@ -457,6 +566,19 @@ function render(state) {
     }
   };
 
+  // Arm the decode→stamp chain for a map whose href may still be encoding
+  // (toBlob) — the gen-guard in stamp() drops stale arms either way.
+  const armStamp = (map, mapMs) => {
+    const decode = (href) => {
+      if (!href) return; // encode failed (never seen in practice) → stay frost
+      const im = new Image();
+      im.onload = im.onerror = () => stamp(map, mapMs);
+      im.src = href;
+    };
+    if (map.href) decode(map.href);
+    else if (map.ready) map.ready.then(decode);
+  };
+
   state.geoKey = geoKey;
   // Cheap re-stamp path: we already HOLD a ref for this exact geometry (gated on
   // heldKey, NOT state.map, so a repeat render mid-decode never re-acquires — the
@@ -468,10 +590,7 @@ function render(state) {
     if (state.map) {
       stamp(state.map, 0); // decoded → reuse map, cheap re-stamp
     } else if (state.pendingMap) {
-      const pm = state.pendingMap; // decode in flight → re-arm a stamp for THIS gen
-      const im = new Image();
-      im.onload = im.onerror = () => stamp(pm, 0);
-      im.src = pm.href;
+      armStamp(state.pendingMap, 0); // decode/encode in flight → re-arm for THIS gen
     }
     return;
   }
@@ -487,12 +606,10 @@ function render(state) {
   state.pendingMap = map; // so a same-geometry re-render mid-decode can re-arm a stamp
   if (prevHeld && prevHeld !== geoKey) releaseMap(prevHeld);
   const mapMs = state.onPerf ? Math.max(performance.now() - tMap, 0.001) : 1;
-  // Decode the map before referencing it (feImage decode is async even for a
-  // data-URI); stamping after decode avoids a one-frame flash of the un-lensed
-  // backdrop. The gen-guard in stamp() drops this if a newer render superseded.
-  const im = new Image();
-  im.onload = im.onerror = () => stamp(map, mapMs);
-  im.src = map.href;
+  // Decode the map before referencing it (feImage decode is async either way);
+  // stamping after decode avoids a one-frame flash of the un-lensed backdrop.
+  // The gen-guard in stamp() drops this if a newer render superseded.
+  armStamp(map, mapMs);
 }
 
 /**
@@ -525,6 +642,9 @@ export function attach(el, opts = {}) {
     geoKey: null, // geometry last targeted by render() (drives the cheap-restamp)
     heldKey: null, // geometry we currently hold a cache ref for (drives refcount)
     map: null,
+    stamped: null, // what the <filter> currently holds (drives the attribute-only re-stamp)
+    dispNodes: null, // live feDisplacementMap nodes of the current structure
+    lastBackdrop: undefined, // last backdrop-filter string we wrote (skip repeats)
     // Optional perf hook — DEV only. When provided, render() reports timing
     // ({reason:'rebuild'|'restamp', mapMs, totalMs, mapW, mapH}). Pass nothing in
     // production → zero overhead (no performance.now() calls, no allocation).
@@ -569,7 +689,7 @@ export function attach(el, opts = {}) {
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
     filter.remove();
-    setBackdrop(el, '');
+    setBackdrop(el, '', state);
     if (registry.get(el) === state) registry.delete(el);
   };
 

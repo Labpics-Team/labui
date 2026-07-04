@@ -51,6 +51,10 @@ const SMOKE_SPECS = [
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
+  // VRT-гейт liquid-glass («ни одного изменённого пикселя») ОБЯЗАН гоняться
+  // per-PR: он сторожит сам класс perf-изменений движка. Без него smoke-режим
+  // молча пропускал бы главный bite-гейт (декларация без исполнения).
+  'liquid-glass-gate.spec.ts',
 ];
 
 const smoke = process.env.E2E_SMOKE === '1';
@@ -65,9 +69,13 @@ const PORT = Number(process.env.PW_PORT ?? 4321);
 
 export default defineConfig({
   testDir: './tests',
-  // Per-PR smoke сужает набор до критического пути; полный прогон (без E2E_SMOKE)
-  // оставляет дефолтный testMatch → все *.spec.ts.
-  ...(smoke ? { testMatch: SMOKE_SPECS.map((f) => `**/${f}`) } : {}),
+  // Per-PR smoke (E2E_SMOKE=1) сужает набор до критического пути. Полный
+  // прогон (e2e-full) собирает ТОЛЬКО .spec.ts, не дефолтный testMatch:
+  // node:test-харнессы (*.test.mjs: lg-*/pb-* фермы) гоняет отдельный CI-шаг
+  // `node --test`, а импорт node:test-файла само-исполняет сьют во время
+  // коллекции — фермы бежали бы второй раз внутри e2e-джоба (минуты
+  // дубль-нагрузки, вне worker/timeout модели Playwright).
+  testMatch: smoke ? SMOKE_SPECS.map((f) => `**/${f}`) : /.*\.spec\.ts$/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
