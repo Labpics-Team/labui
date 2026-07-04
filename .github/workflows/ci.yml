@@ -270,8 +270,9 @@ jobs:
     # пуле, и гейт остаётся быстрым и блокирующим. ПОЛНОЕ покрытие НЕ потеряно —
     # весь набор гоняется по расписанию в `.github/workflows/e2e-full.yml`.
     # 12 минут хватало чистому smoke-набору; в этом же job'е живут engine-сьюты
-    # (~11 полных прогонов гейта под Chromium) и hermetic VRT-гейт liquid-glass —
-    # им нужен запас, но не 35 «облачных» минут: self-hosted пул заметно быстрее.
+    # обеих ферм (liquid-glass + progressive-blur, ~13 прогонов под Chromium) и
+    # hermetic VRT-гейт — им нужен запас, но не 35 «облачных» минут:
+    # self-hosted пул заметно быстрее.
     timeout-minutes: 25
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
@@ -325,11 +326,11 @@ jobs:
         # без TTY и падал под пользователем раннера).
         run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
-      - name: Liquid-glass engine suites (browser Node tests)
-        # Cache/scratch integration, pending-decode regression, mutation
-        # bite-proof — they launch Chromium, so they live here, not in the
-        # browserless quality job. The mutation harness freezes its pixel
-        # reference on THIS machine (no committed baselines).
+      - name: Engine suites — liquid-glass + progressive-blur (browser Node tests)
+        # Cache/scratch integration, pending-decode regression, оба Class-D
+        # mutation bite-proof — сьюты запускают Chromium, поэтому живут здесь,
+        # а не в browserless quality job. Mutation-харнессы замораживают свой
+        # pixel-reference на ЭТОЙ машине (никаких закоммиченных baseline'ов).
         run: pnpm --filter @labpics/ui-docs test:engine
 
       - name: Resolve hermetic VRT base (freeze-on-machine)
