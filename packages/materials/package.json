@@ -1,0 +1,39 @@
+{
+  "name": "@labpics/ui-materials",
+  "version": "0.0.0",
+  "private": true,
+  "description": "LabUI material mode axis — data-material solid|glass|blur scope over the --lab-* contract, with the α-boundary label guarantee and deterministic degradations.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./material.css": "./dist/material.css",
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "sideEffects": ["./dist/material.css"],
+  "scripts": {
+    "build": "tsup && tsx scripts/copy-artifacts.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "@labpics/colors": "workspace:*"
+  },
+  "devDependencies": {
+    "@labpics/colors": "workspace:*",
+    "@types/node": "22.10.5",
+    "tsup": "8.3.6",
+    "tsx": "4.19.2",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
+  }
+}

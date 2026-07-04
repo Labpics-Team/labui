@@ -10,22 +10,23 @@
  *
  * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
  * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
- * hex, ZERO primitive. Elevation reads the `--lab-fx-shadow-*` role, never a
- * baked-in shadow.
+ * hex, ZERO primitive. Elevation reads the `--lab-elevation-*` contract from
+ * @labpics/ui-shadow (NOT the flat `--lab-fx-shadow-*` tokens — those carry no
+ * geometry, tint, or motion).
  */
 
 [data-lab-card] {
   --_lab-card-pad: var(--lab-space-md, 1rem);
-  --_lab-card-radius: var(--lab-radius-card, 0.75rem);
+  --_lab-card-radius: var(--lab-radius-card, 1rem);
 
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   border-radius: var(--_lab-card-radius);
-  background-color: var(--lab-surface-base);
+  background-color: var(--lab-bg-primary);
   color: var(--lab-label-primary);
-  border: 0.0625rem solid transparent;
+  border: var(--lab-stroke-hairline) solid transparent;
 }
 
 [data-lab-card][data-padding="none"] {
@@ -42,11 +43,11 @@
 }
 
 [data-lab-card][data-variant="elevated"] {
-  background-color: var(--lab-surface-raised);
-  box-shadow: var(--lab-fx-shadow-minor);
+  background-color: var(--lab-bg-secondary);
+  box-shadow: var(--lab-elevation-resting);
 }
 [data-lab-card][data-variant="outlined"] {
-  background-color: var(--lab-surface-base);
+  background-color: var(--lab-bg-primary);
   border-color: var(--lab-border-base);
 }
 [data-lab-card][data-variant="filled"] {
@@ -61,11 +62,11 @@
   border-color: var(--lab-border-soft);
 }
 [data-lab-card][data-interactive][data-variant="elevated"]:hover {
-  box-shadow: var(--lab-fx-shadow-major);
+  box-shadow: var(--lab-elevation-raised);
 }
 [data-lab-card][data-interactive]:focus-within {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 .lab-card-media {

@@ -17,12 +17,12 @@
 body {
   margin: 0;
   padding: var(--lab-space-8, 2rem);
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
   font-family: system-ui, sans-serif;
 }
 :root[data-theme="light"] body {
-  background: var(--lab-surface-base);
+  background: var(--lab-bg-primary);
 }
 
 h1 {
@@ -39,7 +39,7 @@ h1 {
 .renderer {
   margin-block: var(--lab-space-6, 1.5rem);
   padding: var(--lab-space-4, 1rem);
-  border: 0.0625rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   border-radius: var(--lab-radius-lg, 0.75rem);
 }
 

@@ -71,7 +71,11 @@ export const Avatar = forwardRef<HTMLSpanElement, AvatarProps>(function Avatar(
       <span
         className="lab-avatar-disc"
         role={showImage ? undefined : 'img'}
-        aria-label={showImage ? undefined : name || undefined}
+        // Without an image the disc is `role="img"` (WCAG 4.1.2 needs a real
+        // name for that role): an unnamed avatar still renders the honest
+        // neutral placeholder glyph, so it needs a generic fallback name
+        // instead of an empty aria-label (axe `role-img-alt`).
+        aria-label={showImage ? undefined : name || 'Avatar'}
       >
         {showImage ? (
           <img src={src} alt={name} onError={() => setFailedSrc(src)} />

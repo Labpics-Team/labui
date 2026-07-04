@@ -1,0 +1,125 @@
+/*
+ * Materials FLAG demo — page chrome only.
+ *
+ * The material itself lives in @labpics/ui-materials (material.css); this file
+ * is fixture layout: the content scene the glass reads against, the modal +
+ * card placement, and the control bar. It never re-defines the material.
+ *
+ * Owner criterion (design ch6): flipping ONE `data-material` attribute turns
+ * the modal + card solid→glass with no markup change.
+ */
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+
+/* The material under test — imported, never re-defined. */
+@import "@labpics/ui-materials/material.css";
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--lab-bg-primary);
+  font-family: system-ui, sans-serif;
+  color: var(--lab-label-primary);
+}
+
+/* ── Content scene (behind the glass) ──────────────────────────────────────
+ * A saturated colour field + tiles so the backdrop blur has structure to
+ * soften and the label-on-glass sits over real content. Zero network. */
+.scene {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(60% 60% at 20% 20%, var(--lab-label-info-primary), transparent 70%),
+    radial-gradient(50% 50% at 80% 30%, var(--lab-label-success-primary), transparent 70%),
+    radial-gradient(70% 70% at 60% 90%, var(--lab-label-danger-primary), transparent 70%),
+    var(--lab-bg-secondary);
+}
+
+.stage {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+/* ── The material surfaces — the CARD and the MODAL panel. Both are
+ * `.lab-material .lab-material--base`; this class only adds layout. ───────── */
+.demo-panel {
+  width: min(28rem, 100%);
+  padding: 1.5rem;
+}
+
+/* Polarity label: the base tier's committed foreground per theme (guaranteed by
+ * the α-boundary math for base in both themes). Text stays legal solid↔glass
+ * because it never changes with the mode. */
+[data-theme="light"] .demo-panel {
+  color: var(--lab-label-static-dark-primary);
+}
+[data-theme="dark"] .demo-panel {
+  color: var(--lab-label-static-light-primary);
+}
+
+.demo-panel h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+}
+
+.demo-panel p {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.demo-btn {
+  appearance: none;
+  border: 0;
+  border-radius: var(--lab-radius-control, 8px);
+  padding: 0.55rem 1.1rem;
+  font: inherit;
+  cursor: pointer;
+  color: var(--lab-label-inverted-primary);
+  background: var(--lab-label-brand-primary);
+}
+
+/* ── Control bar ───────────────────────────────────────────────────────────*/
+.bar {
+  position: fixed;
+  z-index: 3;
+  inset: 0 0 auto 0;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: var(--lab-bg-primary);
+  border-bottom: 1px solid var(--lab-border-base, var(--lab-bg-tertiary));
+}
+.bar strong {
+  color: var(--lab-label-primary);
+}
+.control {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  color: var(--lab-label-secondary);
+  font-size: 0.85rem;
+}
+.control select {
+  font: inherit;
+}
+
+/* ── Modal overlay ─────────────────────────────────────────────────────────*/
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  display: none;
+  place-items: center;
+  padding: 2rem;
+  background: var(--lab-bg-overlay-strong);
+}
+.modal-overlay[data-open="true"] {
+  display: grid;
+}

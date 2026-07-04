@@ -277,6 +277,80 @@
       }
     }
   },
+  "size": {
+    "control-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
+    "control-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "control-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "control-h-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 32,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2rem"
+        }
+      }
+    },
+    "control-h-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 40,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.5rem"
+        }
+      }
+    },
+    "control-h-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
+    }
+  },
   "radius": {
     "0": {
       "$type": "dimension",
@@ -410,6 +484,19 @@
           "css": "9999px"
         }
       }
+    },
+    "corner-k": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1.1,
+        "unit": "px"
+      },
+      "$description": "Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 \"fit\" is retracted; see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle.",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.1"
+        }
+      }
     }
   },
   "z-index": {
@@ -493,18 +580,18 @@
     "xxs": {
       "$type": "dimension",
       "$value": {
-        "value": 9.1827,
+        "value": 11.1111,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "clamp(0.5739rem, -0.2096vw + 0.7364rem, 0.6944rem)",
+          "css": "0.6944rem",
           "fluid": {
             "step": -2,
             "minPx": 11.1111,
-            "maxPx": 9.1827,
-            "slopeVw": -0.2096,
-            "interceptRem": 0.7364
+            "maxPx": 11.1111,
+            "slopeVw": 0,
+            "interceptRem": 0.6944
           }
         }
       }
@@ -512,18 +599,18 @@
     "xs": {
       "$type": "dimension",
       "$value": {
-        "value": 12.1212,
+        "value": 13.3333,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "clamp(0.7576rem, -0.1318vw + 0.8597rem, 0.8333rem)",
+          "css": "0.8333rem",
           "fluid": {
             "step": -1,
             "minPx": 13.3333,
-            "maxPx": 12.1212,
-            "slopeVw": -0.1318,
-            "interceptRem": 0.8597
+            "maxPx": 13.3333,
+            "slopeVw": 0,
+            "interceptRem": 0.8333
           }
         }
       }
@@ -536,7 +623,7 @@
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "clamp(1rem, 0vw + 1rem, 1rem)",
+          "css": "1rem",
           "fluid": {
             "step": 0,
             "minPx": 16,
@@ -721,6 +808,132 @@
     "6xl": {
       "$type": "number",
       "$value": 1.2
+    }
+  },
+  "font-weight": {
+    "regular": {
+      "$type": "number",
+      "$value": 400
+    },
+    "medium": {
+      "$type": "number",
+      "$value": 500
+    },
+    "semibold": {
+      "$type": "number",
+      "$value": 600
+    },
+    "bold": {
+      "$type": "number",
+      "$value": 700
+    }
+  },
+  "letter-spacing": {
+    "xxs": {
+      "$type": "number",
+      "$value": 0.0043
+    },
+    "xs": {
+      "$type": "number",
+      "$value": -0.0042
+    },
+    "md": {
+      "$type": "number",
+      "$value": -0.011
+    },
+    "lg": {
+      "$type": "number",
+      "$value": -0.0177
+    },
+    "xl": {
+      "$type": "number",
+      "$value": -0.0209
+    },
+    "2xl": {
+      "$type": "number",
+      "$value": -0.022
+    },
+    "3xl": {
+      "$type": "number",
+      "$value": -0.0223
+    },
+    "4xl": {
+      "$type": "number",
+      "$value": -0.0223
+    },
+    "5xl": {
+      "$type": "number",
+      "$value": -0.0223
+    },
+    "6xl": {
+      "$type": "number",
+      "$value": -0.0223
+    }
+  },
+  "measure": {
+    "narrow": {
+      "$type": "number",
+      "$value": 45
+    },
+    "base": {
+      "$type": "number",
+      "$value": 66
+    },
+    "wide": {
+      "$type": "number",
+      "$value": 75
+    }
+  },
+  "stroke": {
+    "hairline": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
+        }
+      }
+    },
+    "thick": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    }
+  },
+  "focus-ring": {
+    "width": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    },
+    "offset": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
     }
   }
 }

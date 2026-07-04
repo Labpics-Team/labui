@@ -1,6 +1,6 @@
 import type { RadiiConfig } from '../config/types.js';
 import { aliasCssRef, cssVarName } from './alias.js';
-import { px, rem } from './format.js';
+import { ROOT_FONT_SIZE_PX, px, rem } from './format.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
 
 /** The reserved token name for the pill / fully-rounded radius. */
@@ -23,7 +23,7 @@ export function buildRadii(config: RadiiConfig): {
     kind: 'radius',
     name,
     cssValue: rem(value),
-    numeric: value * 16,
+    numeric: value * ROOT_FONT_SIZE_PX,
     dtcgType: 'dimension',
   }));
 
@@ -36,7 +36,19 @@ export function buildRadii(config: RadiiConfig): {
     description: 'Pill / fully-rounded — a semantic constant, not computed 50%.',
   };
 
-  const tokens = [...stepTokens, fullToken];
+  const cornerToken: ResolvedToken = {
+    kind: 'radius',
+    name: 'corner-k',
+    cssValue: String(config.cornerK),
+    numeric: config.cornerK,
+    dtcgType: 'number',
+    description:
+      'Corner shape curvature: corner-shape superellipse(K) over any radius. ' +
+      '1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 "fit" is retracted; ' +
+      'see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle.',
+  };
+
+  const tokens = [...stepTokens, fullToken, cornerToken];
 
   const aliases: ResolvedAlias[] = Object.entries(config.aliases).map(([name, target]) => {
     assertTargetExists(target, config.steps);

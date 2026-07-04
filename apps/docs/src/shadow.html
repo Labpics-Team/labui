@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="light">
+<html class="lab-scope" lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -11,63 +11,86 @@
       <header class="demo-head">
         <h1 data-testid="shadow-title">Shadow stack</h1>
         <p class="lede">
-          Four layers — Minor / Ambient / Penumbra / Major — composed into four
-          elevation roles. Surface-tinted (never pure black), one global light
-          angle. Light and dark are a variable swap, not a re-author.
+          Five elevation sizes — XS / S / M / L / XL — each exactly four plies,
+          straight from the owner's styles. Fixed per-slot alphas; depth is
+          geometry. Neutral by default; light is vertical. Light and dark are a
+          variable swap, not a re-author.
         </p>
 
-        <!-- Controls are the only JS on the page; the cards render without it. -->
+        <!-- Theme toggle stays in view; the light-angle knob is advanced-only
+             (owner verdict: vertical is the default, angle is a config option). -->
         <div class="controls">
-          <label class="control">
-            <span>Light angle</span>
-            <input
-              type="range"
-              id="angle"
-              data-testid="angle-input"
-              min="0"
-              max="90"
-              step="1"
-              value="35"
-            />
-            <output data-testid="angle-output" id="angle-out">35°</output>
-          </label>
-
           <button type="button" id="theme-toggle" data-testid="theme-toggle">
             Switch to dark
           </button>
+
+          <details class="advanced">
+            <summary>Advanced</summary>
+            <label class="control">
+              <span>Light angle</span>
+              <input
+                type="range"
+                id="angle"
+                data-testid="angle-input"
+                min="0"
+                max="90"
+                step="1"
+                value="0"
+              />
+              <output data-testid="angle-output" id="angle-out">0°</output>
+            </label>
+          </details>
         </div>
       </header>
 
-      <section class="grid" data-testid="elevation-grid">
-        <article class="card lab-elevation-resting" data-testid="card-resting">
-          <h2>resting</h2>
-          <p><code>.lab-elevation-resting</code></p>
+      <!-- Size ladder: the primitive. One label per card, no text-on-text and
+           no shadow on the text itself (owner verdict d). -->
+      <section class="grid" data-testid="size-grid" aria-label="Elevation sizes">
+        <article class="card lab-shadow-xs" data-testid="card-xs">
+          <span class="card-label"><code>.lab-shadow-xs</code></span>
         </article>
-        <article class="card lab-elevation-raised" data-testid="card-raised">
-          <h2>raised</h2>
-          <p><code>.lab-elevation-raised</code></p>
+        <article class="card lab-shadow-s" data-testid="card-s">
+          <span class="card-label"><code>.lab-shadow-s</code></span>
         </article>
-        <article class="card lab-elevation-overlay" data-testid="card-overlay">
-          <h2>overlay</h2>
-          <p><code>.lab-elevation-overlay</code></p>
+        <article class="card lab-shadow-m" data-testid="card-m">
+          <span class="card-label"><code>.lab-shadow-m</code></span>
         </article>
-        <article class="card lab-elevation-modal" data-testid="card-modal">
-          <h2>modal</h2>
-          <p><code>.lab-elevation-modal</code></p>
+        <article class="card lab-shadow-l" data-testid="card-l">
+          <span class="card-label"><code>.lab-shadow-l</code></span>
+        </article>
+        <article class="card lab-shadow-xl" data-testid="card-xl">
+          <span class="card-label"><code>.lab-shadow-xl</code></span>
         </article>
       </section>
 
-      <!-- A second surface with its own tint, proving the shadow takes the
-           surface hue (not black) — owner verification: ">= 2 surfaces".
-           The class form resolves --lab-surface-shadow-tint at the element. -->
-      <section class="grid tinted-surface" data-testid="tinted-grid">
-        <article class="card card-tinted lab-elevation-raised" data-testid="card-tinted-raised">
-          <h2>raised · tinted</h2>
-          <p>shadow takes the surface hue</p>
+      <h2 class="section-head">Semantic roles</h2>
+      <p class="lede">Roles are aliases onto sizes — same geometry, named for intent.</p>
+      <section class="grid" data-testid="role-grid" aria-label="Elevation roles">
+        <article class="card lab-elevation-resting" data-testid="card-resting">
+          <span class="card-label"><code>.lab-elevation-resting</code></span>
         </article>
-        <article class="card card-tinted lab-elevation-modal" data-testid="card-tinted-modal">
-          <h2>modal · tinted</h2>
-          <p>same role, tinted shadow</p>
+        <article class="card lab-elevation-raised" data-testid="card-raised">
+          <span class="card-label"><code>.lab-elevation-raised</code></span>
+        </article>
+        <article class="card lab-elevation-overlay" data-testid="card-overlay">
+          <span class="card-label"><code>.lab-elevation-overlay</code></span>
+        </article>
+        <article class="card lab-elevation-modal" data-testid="card-modal">
+          <span class="card-label"><code>.lab-elevation-modal</code></span>
+        </article>
+      </section>
+
+      <h2 class="section-head">Opt-in surface tint</h2>
+      <p class="lede">
+        A surface may opt into a weak hue. The tint nudges the dark anchor — it
+        never lightens the composite past the surface.
+      </p>
+      <section class="grid tinted-surface" data-testid="tinted-grid" aria-label="Tinted surfaces">
+        <article class="card card-tinted lab-shadow-s" data-testid="card-tinted-s">
+          <span class="card-label">opt-in tint · S</span>
+        </article>
+        <article class="card card-tinted lab-shadow-xl" data-testid="card-tinted-xl">
+          <span class="card-label">opt-in tint · XL</span>
         </article>
       </section>
     </main>

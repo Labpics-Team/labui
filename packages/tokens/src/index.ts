@@ -18,6 +18,7 @@ export { resolveConfig } from './config/merge.js';
 export type {
   LineHeightBand,
   RadiiConfig,
+  SizesConfig,
   SpacingConfig,
   TokensConfig,
   TokensConfigOverride,

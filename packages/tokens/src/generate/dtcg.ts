@@ -30,10 +30,18 @@ const EXT_KEY = 'com.labpics.ui-tokens';
 export function generateDtcg(tokens: ResolvedTokens): string {
   const doc: DtcgGroup = {
     space: dimensionGroup(tokens.spacing),
+    size: dimensionGroup(tokens.sizes),
     radius: dimensionGroup(tokens.radii),
     'z-index': numberGroup(tokens.zIndex),
     'font-size': fontSizeGroup(tokens.fontSizes),
     'line-height': numberGroup(tokens.lineHeights),
+    'font-weight': numberGroup(tokens.fontWeights),
+    // DTCG dimension допускает только px|rem — em/ch эмитим числом
+    // (магнитуда em / счёт символов), точная CSS-строка в $extensions.css.
+    'letter-spacing': numberGroup(tokens.letterSpacings),
+    measure: numberGroup(tokens.measures),
+    stroke: dimensionGroup(tokens.strokes),
+    'focus-ring': dimensionGroup(tokens.focusRing),
   };
   return `${JSON.stringify(doc, null, 2)}\n`;
 }

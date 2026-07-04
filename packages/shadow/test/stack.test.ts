@@ -1,81 +1,148 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DARK_ALPHA_MULTIPLIER_DEFAULT,
+  DEFAULT_LIGHT_ANGLE_DEG,
   ELEVATION_LEVELS,
-  LAYER_SHAPES,
-  SHADOW_LAYERS,
+  ELEVATION_ROLES,
+  ELEVATION_SHAPES,
+  LIGHT_ANGLE_VAR,
+  ROLE_TO_SIZE,
+  SHADOW_COLOR_VAR,
+  SHADOW_SLOTS,
+  SLOT_ALPHA,
   alphaVar,
   composeElevation,
-  composeLayer,
+  composePly,
+  defaultAlphas,
   generateShadowCss,
-  provisionalAlpha,
-  provisionalAlphas,
-  LIGHT_ANGLE_VAR,
-  SHADOW_COLOR_VAR,
 } from '../src/index.js';
-import { ELEVATION_SHAPES } from '../src/domain/elevation.js';
 
 describe('shadow stack — structure', () => {
-  it('has exactly the four owner-named layers in stack order', () => {
-    expect(SHADOW_LAYERS).toEqual(['minor', 'ambient', 'penumbra', 'major']);
-    expect(LAYER_SHAPES.map((l) => l.name)).toEqual([...SHADOW_LAYERS]);
+  it('has exactly the five owner-named elevation sizes', () => {
+    expect(ELEVATION_LEVELS).toEqual(['xs', 's', 'm', 'l', 'xl']);
+    expect(ELEVATION_SHAPES.map((l) => l.name)).toEqual([...ELEVATION_LEVELS]);
   });
 
-  it('has exactly the four semantic elevation roles', () => {
-    expect(ELEVATION_LEVELS).toEqual(['resting', 'raised', 'overlay', 'modal']);
+  it('has exactly the four fixed-alpha slots in stack order', () => {
+    expect(SHADOW_SLOTS).toEqual(['s1', 's2', 's3', 's4']);
   });
 
-  it('layer distance and blur grow monotonically Minor -> Major', () => {
-    for (let i = 1; i < LAYER_SHAPES.length; i++) {
-      const prev = LAYER_SHAPES[i - 1];
-      const curr = LAYER_SHAPES[i];
-      if (!prev || !curr) throw new Error('layer shape missing');
-      expect(curr.distance).toBeGreaterThan(prev.distance);
-      expect(curr.blur).toBeGreaterThan(prev.blur);
-    }
-  });
-
-  it('elevation depth grows and alpha damping falls resting -> modal', () => {
-    for (let i = 1; i < ELEVATION_SHAPES.length; i++) {
-      const prev = ELEVATION_SHAPES[i - 1];
-      const curr = ELEVATION_SHAPES[i];
-      if (!prev || !curr) throw new Error('elevation shape missing');
-      expect(curr.depth).toBeGreaterThan(prev.depth);
-      expect(curr.alphaScale).toBeLessThan(prev.alphaScale);
+  it('every elevation level has EXACTLY four plies (equal-layeredness 4×5)', () => {
+    for (const level of ELEVATION_SHAPES) {
+      expect(Object.keys(level.slots).sort()).toEqual(['s1', 's2', 's3', 's4']);
+      const value = composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG);
+      // Plies are comma-joined; four plies → exactly three top-level commas.
+      const plies = value.split('),\n');
+      expect(plies.length).toBe(4);
     }
   });
 });
 
-describe('shadow stack — single global light angle', () => {
-  it('every ply derives x/y offset from the one --lab-light-angle token', () => {
-    for (const level of ELEVATION_SHAPES) {
-      for (const layer of LAYER_SHAPES) {
-        const ply = composeLayer(level, layer);
-        expect(ply).toContain(`sin(var(${LIGHT_ANGLE_VAR}))`);
-        expect(ply).toContain(`cos(var(${LIGHT_ANGLE_VAR}))`);
-      }
-    }
+describe('shadow stack — fixed per-slot alphas (owner law)', () => {
+  it('alphas are 0.12 / 0.04 / 0.02 / 0.01 and identical across all levels', () => {
+    expect(defaultAlphas()).toEqual([0.12, 0.04, 0.02, 0.01]);
+    expect(SLOT_ALPHA).toEqual({ s1: 0.12, s2: 0.04, s3: 0.02, s4: 0.01 });
   });
 
-  it('no per-level angle leaks — angle appears only via the global var', () => {
+  it('the generated contract emits exactly the fixed alphas on :root', () => {
     const css = generateShadowCss();
-    // The only literal angle in the file is the single token definition.
-    const literalAngles = css.match(/\d+deg/g) ?? [];
-    expect(literalAngles).toEqual(['35deg']);
+    expect(css).toContain('--lab-shadow-alpha-s1: 0.12;');
+    expect(css).toContain('--lab-shadow-alpha-s2: 0.04;');
+    expect(css).toContain('--lab-shadow-alpha-s3: 0.02;');
+    expect(css).toContain('--lab-shadow-alpha-s4: 0.01;');
+  });
+
+  it('default dark multiplier is 1 — styles export gives one alpha set', () => {
+    expect(DARK_ALPHA_MULTIPLIER_DEFAULT).toBe(1);
+    const css = generateShadowCss();
+    // With multiplier 1 the dark block re-states the same alphas.
+    const darkBlock = css.slice(css.indexOf('[data-theme="dark"]'));
+    expect(darkBlock).toContain('--lab-shadow-alpha-s1: 0.12;');
   });
 });
 
-describe('shadow stack — surface tint, never pure black', () => {
-  it('every ply colours through the surface-tint var, not a hex', () => {
+/** Convert a Figma px value to the rem string the generator emits (base 16px). */
+function px(value: number): string {
+  return `${Math.round((value / 16) * 10000) / 10000}rem`;
+}
+
+describe('shadow stack — verbatim opora ladder at angle 0', () => {
+  // The owner's table, transcribed independently of the source module, so this
+  // test is a true cross-check (r = blur, y = offsetY, both Figma px).
+  const TABLE: Record<string, ReadonlyArray<{ r: number; y: number }>> = {
+    xs: [
+      { r: 1, y: 0 },
+      { r: 1, y: 1 },
+      { r: 2, y: 2 },
+      { r: 2, y: 4 },
+    ],
+    s: [
+      { r: 2, y: 1 },
+      { r: 2, y: 2 },
+      { r: 4, y: 4 },
+      { r: 8, y: 12 },
+    ],
+    m: [
+      { r: 2, y: 1 },
+      { r: 4, y: 4 },
+      { r: 8, y: 12 },
+      { r: 12, y: 24 },
+    ],
+    l: [
+      { r: 8, y: 4 },
+      { r: 12, y: 12 },
+      { r: 16, y: 24 },
+      { r: 24, y: 48 },
+    ],
+    xl: [
+      { r: 36, y: 16 },
+      { r: 48, y: 24 },
+      { r: 64, y: 36 },
+      { r: 96, y: 48 },
+    ],
+  };
+
+  it('default angle is 0 (vertical light, offset-x 0)', () => {
+    expect(DEFAULT_LIGHT_ANGLE_DEG).toBe(0);
+  });
+
+  it('each ply at angle 0 is `0 {y}rem {r}rem <color>` — bit-for-bit the table (rem-converted)', () => {
     for (const level of ELEVATION_SHAPES) {
-      const value = composeElevation(level, LAYER_SHAPES);
+      const expected = TABLE[level.name];
+      if (!expected) throw new Error(`no table row for ${level.name}`);
+      SHADOW_SLOTS.forEach((slot, i) => {
+        const row = expected[i];
+        if (!row) throw new Error(`no table cell ${level.name}.${slot}`);
+        const ply = composePly(slot, level.slots[slot], 0);
+        expect(ply.startsWith(`0 ${px(row.y)} ${px(row.r)} `)).toBe(true);
+      });
+    }
+  });
+
+  it('no calc/sin/cos leaks at the default angle — the ladder is literal', () => {
+    const css = generateShadowCss();
+    // Geometry is literal at angle 0; the only sin/cos path is the non-zero
+    // branch, which the default never emits.
+    expect(css).not.toContain('sin(');
+    expect(css).not.toContain('cos(');
+  });
+});
+
+describe('shadow stack — non-zero angle rotates via the one token', () => {
+  it('a non-zero angle projects throw onto x/y from the single global token', () => {
+    const ply = composePly('s4', { blur: 8, offsetY: 12 }, 30);
+    expect(ply).toContain(`sin(var(${LIGHT_ANGLE_VAR}))`);
+    expect(ply).toContain(`cos(var(${LIGHT_ANGLE_VAR}))`);
+  });
+});
+
+describe('shadow stack — neutral anchor, opt-in weak tint', () => {
+  it('every ply colours through the neutral anchor, never pure black', () => {
+    for (const level of ELEVATION_SHAPES) {
+      const value = composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG);
       expect(value).toContain(`var(${SHADOW_COLOR_VAR})`);
     }
-  });
-
-  it('no ply hardcodes black (#000 / rgb(0,0,0) / pure black keywords)', () => {
     const css = generateShadowCss();
-    // Strip the documented fallback anchor lines; the box-shadow plies must be
-    // tint-driven only.
     const plies = css
       .split('\n')
       .filter((line) => line.includes('color-mix'))
@@ -83,70 +150,72 @@ describe('shadow stack — surface tint, never pure black', () => {
     expect(plies).not.toMatch(/#000\b|#000000\b|rgb\(\s*0\s*,\s*0\s*,\s*0/i);
     expect(plies).not.toContain('black');
   });
+
+  it('the default tint strength is 0 — neutral until a surface opts in', () => {
+    const css = generateShadowCss();
+    expect(css).toContain('--lab-shadow-tint-strength: 0;');
+  });
+
+  it('lightness constraint: the ink base is the dark anchor, tint only nudges it', () => {
+    // Each ply mixes (anchor -> tint by strength), then (transparent -> ink by
+    // alpha). With the dark anchor #101012 as the mix base, and the tint applied
+    // only by --lab-shadow-tint-strength (default 0), the composite ink can
+    // never be lighter than #101012 at strength 0 — so on a dark surface the
+    // shadow is a shadow, not a glow.
+    const ply = composePly('s1', { blur: 2, offsetY: 1 }, 0);
+    expect(ply).toContain(`color-mix(in srgb, var(${SHADOW_COLOR_VAR}),`);
+    expect(ply).toContain('var(--lab-shadow-tint-strength)');
+  });
 });
 
-describe('shadow stack — alpha contract seam', () => {
-  it('plies read alpha from --lab-shadow-alpha-* (the lab-colors seam)', () => {
-    const resting = ELEVATION_SHAPES[0];
-    if (!resting) throw new Error('resting elevation missing');
-    for (const layer of LAYER_SHAPES) {
-      const ply = composeLayer(resting, layer);
-      expect(ply).toContain(`var(${alphaVar(layer.name)})`);
+describe('shadow stack — sizes, role aliases, motion', () => {
+  it('emits each size in both delivery forms (token + utility class)', () => {
+    const css = generateShadowCss();
+    for (const size of ELEVATION_LEVELS) {
+      expect(css).toContain(`--lab-shadow-${size}:`);
+      expect(css).toContain(`.lab-shadow-${size} {`);
     }
   });
 
-  it('provisional alphas match the Figma FX/Shadow stack (light @1/2/4/12)', () => {
-    expect(provisionalAlphas('light')).toEqual([0.01, 0.02, 0.04, 0.12]);
-  });
-
-  it('provisional alphas match the Figma FX/Shadow stack (dark @2/4/12/20)', () => {
-    expect(provisionalAlphas('dark')).toEqual([0.02, 0.04, 0.12, 0.2]);
-  });
-
-  it('dark layer alpha is heavier than light at every layer (Figma anchor)', () => {
-    for (const layer of SHADOW_LAYERS) {
-      expect(provisionalAlpha('dark', layer)).toBeGreaterThan(provisionalAlpha('light', layer));
+  it('role aliases point to their mapped sizes (resting→xs … modal→xl)', () => {
+    expect(ROLE_TO_SIZE).toEqual({ resting: 'xs', raised: 's', overlay: 'l', modal: 'xl' });
+    const css = generateShadowCss();
+    for (const role of ELEVATION_ROLES) {
+      expect(css).toContain(`--lab-elevation-${role}: var(--lab-shadow-${ROLE_TO_SIZE[role]});`);
+      expect(css).toContain(`.lab-elevation-${role} {`);
     }
+  });
+
+  it('emits the motion tokens and wires box-shadow transitions', () => {
+    const css = generateShadowCss();
+    expect(css).toContain('--lab-shadow-transition-duration:');
+    expect(css).toContain('--lab-shadow-transition-easing:');
+    expect(css).toContain(
+      '--lab-shadow-transition: box-shadow var(--lab-shadow-transition-duration) var(--lab-shadow-transition-easing);',
+    );
+    expect(css).toContain('transition: var(--lab-shadow-transition);');
   });
 });
 
 describe('shadow stack — generated CSS contract', () => {
-  it('defines the global angle token, the four alpha contracts, the four roles', () => {
+  it('defines the global angle token, four alpha contracts, five sizes, four roles', () => {
     const css = generateShadowCss();
-    expect(css).toContain(`${LIGHT_ANGLE_VAR}: 35deg;`);
-    for (const layer of SHADOW_LAYERS) {
-      expect(css).toContain(`${alphaVar(layer)}:`);
+    expect(css).toContain(`${LIGHT_ANGLE_VAR}: 0deg;`);
+    for (const slot of SHADOW_SLOTS) {
+      expect(css).toContain(`${alphaVar(slot)}:`);
     }
-    for (const level of ELEVATION_LEVELS) {
-      expect(css).toContain(`--lab-elevation-${level}:`);
+    for (const size of ELEVATION_LEVELS) {
+      expect(css).toContain(`--lab-shadow-${size}:`);
     }
-  });
-
-  it('emits each role in both delivery forms (token + utility class)', () => {
-    const css = generateShadowCss();
-    for (const level of ELEVATION_LEVELS) {
-      expect(css).toContain(`--lab-elevation-${level}:`);
-      expect(css).toContain(`.lab-elevation-${level} {`);
+    for (const role of ELEVATION_ROLES) {
+      expect(css).toContain(`--lab-elevation-${role}:`);
     }
   });
 
-  it('every class form reads the per-surface tint var so it resolves at the element', () => {
+  it('light and dark differ ONLY in variable values, not in size formulas', () => {
     const css = generateShadowCss();
-    // Each class body must contain the surface-tint lookup; that is what makes a
-    // tinted surface tint its own shadow (the token form cannot, by CSS rules).
-    for (const level of ELEVATION_LEVELS) {
-      const body = css.match(new RegExp(`\\.lab-elevation-${level}\\s*\\{[^}]+\\}`));
-      expect(body, `.lab-elevation-${level} class block missing`).not.toBeNull();
-      expect(body?.[0]).toContain('var(--lab-surface-shadow-tint, var(--lab-shadow-color))');
-    }
-  });
-
-  it('light and dark themes differ ONLY in variable values, not in elevation formulas', () => {
-    const css = generateShadowCss();
-    // Elevation roles are declared once on :root; theme blocks re-set only the
-    // alpha + colour vars. So there is exactly one definition of each role.
-    for (const level of ELEVATION_LEVELS) {
-      const count = css.split(`--lab-elevation-${level}:`).length - 1;
+    for (const size of ELEVATION_LEVELS) {
+      const count = css.split(`--lab-shadow-${size}:`).length - 1;
       expect(count).toBe(1);
     }
     expect(css).toContain('[data-theme="dark"]');

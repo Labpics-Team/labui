@@ -3,106 +3,153 @@
  * Source: packages/shadow/src (config + generator). Run
  * `pnpm --filter @labpics/ui-shadow build` to regenerate.
  *
- * Layered box-shadow stack (Minor/Ambient/Penumbra/Major), surface-tinted
- * (never pure black), one global light angle, alphas through the
- * --lab-shadow-alpha-* contract (stub = Figma provisional; final = lab-colors
- * JND calibration, swapped in at the same names).
+ * Five elevation sizes (XS/S/M/L/XL), each exactly four drop-shadow plies,
+ * transcribed verbatim from the owner's Figma effect styles. Per-slot alphas
+ * are fixed (.12/.04/.02/.01); depth is geometry only. Default light is
+ * vertical (angle 0, offset-x 0). Neutral anchor #101012 (never pure black);
+ * surface tint is opt-in and weak. Semantic roles (resting/raised/overlay/
+ * modal) are aliases onto sizes.
  */
 :root {
-  /* Single global light source — every elevation derives x/y offset from this. */
-  --lab-light-angle: 35deg;
+  /* Single global light source — angle 0 = vertical (offset-x 0), the owner default. */
+  --lab-light-angle: 0deg;
 
-  /* Theme shadow-colour anchor. A per-surface --lab-surface-shadow-tint (from
-     the --lab-* core contract) overrides this at the element; absent that, the
-     shadow falls back to this theme dark anchor — never a hardcoded #000. */
+  /* Neutral shadow anchor (Figma N12, never pure black). The theme blocks
+     re-set only its value; a surface may opt into a weak tint below. */
   --lab-shadow-color: #101012;
+  --lab-shadow-tint-strength: 0;
 
-  /* Per-layer alpha contract — integration seam with lab-colors JND alphas.
-     Defaults to the light-theme Figma provisional values; the theme blocks
-     below override per theme. Swapping in JND alphas = re-set these names. */
-  --lab-shadow-alpha-minor: 0.01;
-  --lab-shadow-alpha-ambient: 0.02;
-  --lab-shadow-alpha-penumbra: 0.04;
-  --lab-shadow-alpha-major: 0.12;
+  /* Motion tokens — elevation changes ease their box-shadow, never snap. */
+  --lab-shadow-transition-duration: 160ms;
+  --lab-shadow-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
+  --lab-shadow-transition: box-shadow var(--lab-shadow-transition-duration) var(--lab-shadow-transition-easing);
 
-  /* Semantic elevation roles — a surface consumes a role, never raw layers.
-     Each is the same four-ply stack scaled by one depth + alpha damping. */
-  --lab-elevation-resting:
-    calc(0.0625rem * sin(var(--lab-light-angle))) calc(0.0625rem * cos(var(--lab-light-angle))) 0.125rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 1) * 100%)),
-    calc(0.125rem * sin(var(--lab-light-angle))) calc(0.125rem * cos(var(--lab-light-angle))) 0.25rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 1) * 100%)),
-    calc(0.25rem * sin(var(--lab-light-angle))) calc(0.25rem * cos(var(--lab-light-angle))) 0.5rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 1) * 100%)),
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 1) * 100%));
-  --lab-elevation-raised:
-    calc(0.125rem * sin(var(--lab-light-angle))) calc(0.125rem * cos(var(--lab-light-angle))) 0.25rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 0.85) * 100%)),
-    calc(0.25rem * sin(var(--lab-light-angle))) calc(0.25rem * cos(var(--lab-light-angle))) 0.5rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 0.85) * 100%)),
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 0.85) * 100%)),
-    calc(1rem * sin(var(--lab-light-angle))) calc(1rem * cos(var(--lab-light-angle))) 2rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 0.85) * 100%));
-  --lab-elevation-overlay:
-    calc(0.25rem * sin(var(--lab-light-angle))) calc(0.25rem * cos(var(--lab-light-angle))) 0.5rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 0.7) * 100%)),
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 0.7) * 100%)),
-    calc(1rem * sin(var(--lab-light-angle))) calc(1rem * cos(var(--lab-light-angle))) 2rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 0.7) * 100%)),
-    calc(2rem * sin(var(--lab-light-angle))) calc(2rem * cos(var(--lab-light-angle))) 4rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 0.7) * 100%));
-  --lab-elevation-modal:
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 0.55) * 100%)),
-    calc(1rem * sin(var(--lab-light-angle))) calc(1rem * cos(var(--lab-light-angle))) 2rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 0.55) * 100%)),
-    calc(2rem * sin(var(--lab-light-angle))) calc(2rem * cos(var(--lab-light-angle))) 4rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 0.55) * 100%)),
-    calc(4rem * sin(var(--lab-light-angle))) calc(4rem * cos(var(--lab-light-angle))) 8rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 0.55) * 100%));
+  /* Per-slot alpha contract — fixed across every level, the lab-colors JND
+     seam. Defaults to the owner Figma alphas; the dark theme block applies a
+     provisional multiplier. Swapping in JND alphas = re-set these names. */
+  --lab-shadow-alpha-s1: 0.12;
+  --lab-shadow-alpha-s2: 0.04;
+  --lab-shadow-alpha-s3: 0.02;
+  --lab-shadow-alpha-s4: 0.01;
+
+  /* Elevation SIZES — the primitive. Each is the owner ladder, four plies. */
+  --lab-shadow-xs:
+    0 0rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.0625rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.25rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  --lab-shadow-s:
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  --lab-shadow-m:
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 1.5rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  --lab-shadow-l:
+    0 0.25rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.75rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 1.5rem 1rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 1.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  --lab-shadow-xl:
+    0 1rem 2.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 1.5rem 3rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 2.25rem 4rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 6rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+
+  /* Semantic ROLE aliases — a role points to a size (size is the primitive). */
+  --lab-elevation-resting: var(--lab-shadow-xs);
+  --lab-elevation-raised: var(--lab-shadow-s);
+  --lab-elevation-overlay: var(--lab-shadow-l);
+  --lab-elevation-modal: var(--lab-shadow-xl);
 
 }
 
-/* Elevation role classes — set box-shadow directly so a per-surface
-   --lab-surface-shadow-tint resolves at the element (the tinted-shadow path). */
-.lab-elevation-resting {
+/* Size classes — set box-shadow directly so an opt-in --lab-surface-shadow-tint
+   resolves at the element, and ease elevation changes via the motion token. */
+.lab-shadow-xs {
   box-shadow:
-    calc(0.0625rem * sin(var(--lab-light-angle))) calc(0.0625rem * cos(var(--lab-light-angle))) 0.125rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 1) * 100%)),
-    calc(0.125rem * sin(var(--lab-light-angle))) calc(0.125rem * cos(var(--lab-light-angle))) 0.25rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 1) * 100%)),
-    calc(0.25rem * sin(var(--lab-light-angle))) calc(0.25rem * cos(var(--lab-light-angle))) 0.5rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 1) * 100%)),
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 1) * 100%));
+    0 0rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.0625rem 0.0625rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.25rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  transition: var(--lab-shadow-transition);
+}
+.lab-shadow-s {
+  box-shadow:
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.125rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  transition: var(--lab-shadow-transition);
+}
+.lab-shadow-m {
+  box-shadow:
+    0 0.0625rem 0.125rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.25rem 0.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 0.75rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 1.5rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  transition: var(--lab-shadow-transition);
+}
+.lab-shadow-l {
+  box-shadow:
+    0 0.25rem 0.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 0.75rem 0.75rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 1.5rem 1rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 1.5rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  transition: var(--lab-shadow-transition);
+}
+.lab-shadow-xl {
+  box-shadow:
+    0 1rem 2.25rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s1) * 100%)),
+    0 1.5rem 3rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s2) * 100%)),
+    0 2.25rem 4rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s3) * 100%)),
+    0 3rem 6rem color-mix(in srgb, transparent, color-mix(in srgb, var(--lab-shadow-color), var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(var(--lab-shadow-tint-strength) * 100%)) calc(var(--lab-shadow-alpha-s4) * 100%));
+  transition: var(--lab-shadow-transition);
+}
+
+/* Role classes — semantic alias onto the size class box-shadow. */
+.lab-elevation-resting {
+  box-shadow: var(--lab-shadow-xs);
+  transition: var(--lab-shadow-transition);
 }
 .lab-elevation-raised {
-  box-shadow:
-    calc(0.125rem * sin(var(--lab-light-angle))) calc(0.125rem * cos(var(--lab-light-angle))) 0.25rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 0.85) * 100%)),
-    calc(0.25rem * sin(var(--lab-light-angle))) calc(0.25rem * cos(var(--lab-light-angle))) 0.5rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 0.85) * 100%)),
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 0.85) * 100%)),
-    calc(1rem * sin(var(--lab-light-angle))) calc(1rem * cos(var(--lab-light-angle))) 2rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 0.85) * 100%));
+  box-shadow: var(--lab-shadow-s);
+  transition: var(--lab-shadow-transition);
 }
 .lab-elevation-overlay {
-  box-shadow:
-    calc(0.25rem * sin(var(--lab-light-angle))) calc(0.25rem * cos(var(--lab-light-angle))) 0.5rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 0.7) * 100%)),
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 0.7) * 100%)),
-    calc(1rem * sin(var(--lab-light-angle))) calc(1rem * cos(var(--lab-light-angle))) 2rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 0.7) * 100%)),
-    calc(2rem * sin(var(--lab-light-angle))) calc(2rem * cos(var(--lab-light-angle))) 4rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 0.7) * 100%));
+  box-shadow: var(--lab-shadow-l);
+  transition: var(--lab-shadow-transition);
 }
 .lab-elevation-modal {
-  box-shadow:
-    calc(0.5rem * sin(var(--lab-light-angle))) calc(0.5rem * cos(var(--lab-light-angle))) 1rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-minor) * 0.55) * 100%)),
-    calc(1rem * sin(var(--lab-light-angle))) calc(1rem * cos(var(--lab-light-angle))) 2rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-ambient) * 0.55) * 100%)),
-    calc(2rem * sin(var(--lab-light-angle))) calc(2rem * cos(var(--lab-light-angle))) 4rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-penumbra) * 0.55) * 100%)),
-    calc(4rem * sin(var(--lab-light-angle))) calc(4rem * cos(var(--lab-light-angle))) 8rem color-mix(in srgb, transparent, var(--lab-surface-shadow-tint, var(--lab-shadow-color)) calc(calc(var(--lab-shadow-alpha-major) * 0.55) * 100%));
+  box-shadow: var(--lab-shadow-xl);
+  transition: var(--lab-shadow-transition);
 }
 
 [data-theme="light"] {
   --lab-shadow-color: #101012;
-  --lab-shadow-alpha-minor: 0.01;
-  --lab-shadow-alpha-ambient: 0.02;
-  --lab-shadow-alpha-penumbra: 0.04;
-  --lab-shadow-alpha-major: 0.12;
+  --lab-shadow-alpha-s1: 0.12;
+  --lab-shadow-alpha-s2: 0.04;
+  --lab-shadow-alpha-s3: 0.02;
+  --lab-shadow-alpha-s4: 0.01;
 }
 
 [data-theme="dark"] {
   --lab-shadow-color: #101012;
-  --lab-shadow-alpha-minor: 0.02;
-  --lab-shadow-alpha-ambient: 0.04;
-  --lab-shadow-alpha-penumbra: 0.12;
-  --lab-shadow-alpha-major: 0.2;
+  --lab-shadow-alpha-s1: 0.12;
+  --lab-shadow-alpha-s2: 0.04;
+  --lab-shadow-alpha-s3: 0.02;
+  --lab-shadow-alpha-s4: 0.01;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --lab-shadow-color: #101012;
-    --lab-shadow-alpha-minor: 0.02;
-    --lab-shadow-alpha-ambient: 0.04;
-    --lab-shadow-alpha-penumbra: 0.12;
-    --lab-shadow-alpha-major: 0.2;
+    --lab-shadow-alpha-s1: 0.12;
+    --lab-shadow-alpha-s2: 0.04;
+    --lab-shadow-alpha-s3: 0.02;
+    --lab-shadow-alpha-s4: 0.01;
   }
 }

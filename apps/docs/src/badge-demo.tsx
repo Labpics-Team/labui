@@ -30,6 +30,12 @@ createRoot(mount).render(
     <Badge data-testid="react-neutral-tinted" color="neutral" type="tinted">
       Draft
     </Badge>
+    <Badge data-testid="react-static-dark-fill" color="static-dark" type="fill">
+      Dark
+    </Badge>
+    <Badge data-testid="react-static-light-tinted" color="static-light" type="tinted">
+      Light
+    </Badge>
     <Badge data-testid="react-disabled" color="brand" type="fill" disabled>
       Off
     </Badge>

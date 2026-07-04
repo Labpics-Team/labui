@@ -13,6 +13,7 @@
   --_lab-cb-radius: var(--lab-radius-sm, 0.25rem);
   --_lab-cb-gap: var(--lab-space-sm, 0.5rem);
   --_lab-cb-font: var(--lab-font-size-md, 1rem);
+  --_lab-cb-tracking: var(--lab-letter-spacing-md, -0.011em);
 
   display: inline-flex;
   align-items: center;
@@ -20,6 +21,7 @@
   gap: var(--_lab-cb-gap);
   font: inherit;
   font-size: var(--_lab-cb-font);
+  letter-spacing: var(--_lab-cb-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   color: var(--lab-label-primary);
   cursor: pointer;
@@ -28,14 +30,17 @@
 [data-lab-checkbox][data-size="tiny"] {
   --_lab-cb-box: 0.875rem;
   --_lab-cb-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-cb-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-checkbox][data-size="s"] {
   --_lab-cb-box: 1rem;
   --_lab-cb-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-cb-tracking: var(--lab-letter-spacing-xs, -0.0042em);
 }
 [data-lab-checkbox][data-size="l"] {
   --_lab-cb-box: 1.5rem;
   --_lab-cb-font: var(--lab-font-size-lg, 1.2rem);
+  --_lab-cb-tracking: var(--lab-letter-spacing-lg, -0.0177em);
 }
 
 [data-lab-checkbox] .lab-checkbox-control {
@@ -48,7 +53,7 @@
   width: var(--_lab-cb-box);
   height: var(--_lab-cb-box);
   border-radius: var(--_lab-cb-radius);
-  border: 0.0938rem solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   background-color: transparent;
   color: transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -93,8 +98,8 @@
 /* The input is now a SIBLING of the control (so it stays in the a11y tree), so
    match focus-visible from the root, not as a descendant of the control. */
 [data-lab-checkbox]:has(input:focus-visible) .lab-checkbox-control {
-  outline: 0.125rem solid var(--lab-border-focus);
-  outline-offset: 0.125rem;
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-checkbox][data-disabled] {

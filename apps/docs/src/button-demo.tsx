@@ -13,24 +13,9 @@ import '@labpics/ui-core/button';
 import { Button } from '@labpics/ui-react';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { wireThemeSwitch } from './theme-switch.js';
 
-const root = document.documentElement;
-
-const THEMES = ['dark', 'light'] as const;
-type Theme = (typeof THEMES)[number];
-
-function isTheme(value: string): value is Theme {
-  return (THEMES as readonly string[]).includes(value);
-}
-
-const select = document.querySelector<HTMLSelectElement>('[data-testid="theme-select"]');
-if (select) {
-  const current = root.getAttribute('data-theme');
-  if (current) select.value = current;
-  select.addEventListener('change', () => {
-    if (isTheme(select.value)) root.setAttribute('data-theme', select.value);
-  });
-}
+wireThemeSwitch();
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in button.html');
@@ -52,5 +37,26 @@ createRoot(mount).render(
     <Button data-testid="react-disabled" type="accent" kind="fill" disabled>
       Off
     </Button>
+    {/* Icon-only: no children, so the ONLY name source is aria-label, forwarded
+        to the native <button> via {...rest}. The iconSlot holds a decorative glyph. */}
+    <Button
+      data-testid="react-icon-only"
+      type="accent"
+      kind="fill"
+      icon
+      aria-label="Add item"
+      iconSlot={
+        <svg viewBox="0 0 16 16" fill="none" aria-hidden="true" width={16} height={16}>
+          <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+        </svg>
+      }
+    />
+    {/* Default-type button inside a form: clicking must NOT submit (htmlType
+        defaults to "button"). */}
+    <form data-testid="react-form" onSubmit={(e) => e.preventDefault()}>
+      <Button data-testid="react-in-form" type="neutral" kind="tinted">
+        Plain
+      </Button>
+    </form>
   </StrictMode>,
 );

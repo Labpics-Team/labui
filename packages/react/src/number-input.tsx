@@ -26,10 +26,10 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type LabFieldSize,
   type LabFieldType,
   fieldControlAria,
+  fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
 } from '@labpics/ui-core';
@@ -85,17 +85,6 @@ export interface NumberInputProps {
   name?: string;
   /** Fires when the machine changes the value (machine is source of truth). */
   onValueChange?: (value: string, valueAsNumber: number) => void;
-}
-
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function ariaProps(
-  aria: Pick<FieldControlAria, 'aria-describedby' | 'aria-errormessage' | 'aria-required'>,
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
 }
 
 export function NumberInput({
@@ -172,7 +161,7 @@ export function NumberInput({
       <div {...api.getControlProps()} className="lab-field-control">
         <input
           {...api.getInputProps()}
-          {...ariaProps(fieldAria)}
+          {...fieldControlAriaProps(fieldAria)}
           className="lab-number-input-input"
           placeholder={placeholder}
         />

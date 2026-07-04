@@ -32,6 +32,7 @@
     "./materials.css": "./dist/materials.css",
     "./glass.css": "./dist/glass.css",
     "./theme.css": "./dist/theme.css",
+    "./shadow.css": "./dist/shadow.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
@@ -39,15 +40,18 @@
     "./dist/materials.css",
     "./dist/glass.css",
     "./dist/theme.css",
+    "./dist/shadow.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@labpics/ui-shadow": "workspace:*",
     "@zag-js/accordion": "1.41.2",
     "@zag-js/checkbox": "1.41.2",
     "@zag-js/combobox": "1.41.2",
@@ -55,6 +59,7 @@
     "@zag-js/dialog": "1.41.2",
     "@zag-js/menu": "1.41.2",
     "@zag-js/number-input": "1.41.2",
+    "@zag-js/pin-input": "1.41.2",
     "@zag-js/popover": "1.41.2",
     "@zag-js/pagination": "1.41.2",
     "@zag-js/progress": "1.41.2",
@@ -63,6 +68,7 @@
     "@zag-js/slider": "1.41.2",
     "@zag-js/switch": "1.41.2",
     "@zag-js/tabs": "1.41.2",
+    "@zag-js/tags-input": "1.41.2",
     "@zag-js/toggle": "1.41.2",
     "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
@@ -81,6 +87,7 @@
     "@lit-labs/ssr": "4.1.0",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
   }
 }

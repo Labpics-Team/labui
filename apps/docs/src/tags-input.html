@@ -1,0 +1,100 @@
+<!doctype html>
+<html class="lab-scope" lang="en" data-theme="dark" data-material="ambient">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Tags Input parity (Lit ↔ React)</title>
+    <link rel="stylesheet" href="./button-demo.css" />
+    <style>
+      .specimens {
+        gap: 2rem;
+        align-items: flex-start;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 data-testid="tags-input-title">
+        Tags Input parity — <code>&lt;lab-tags-input&gt;</code> (Lit) ↔
+        <code>&lt;TagsInput&gt;</code> (React)
+      </h1>
+      <p>
+        Two renderers, one <code>@zag-js/tags-input</code> machine through the same seam.
+        The machine owns the tag array, the input value, add-on-Enter,
+        Backspace-removes-the-last, the highlighted-tag navigation, each chip's delete
+        trigger + its accessible name, edit-in-place, the paste-split on the delimiter, and
+        the max-tags / overflow validity. The label / helper / error wiring is computed by
+        the SAME shared <code>field-a11y</code> helper on both renderers (on the input),
+        and both paint the same <code>--lab-*</code> roles.
+      </p>
+
+      <div class="row">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" data-testid="theme-select">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <!-- Lit renderer. The default chips ride the JSON default-value attribute. -->
+      <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
+        <h2>Lit</h2>
+        <div class="specimens">
+          <lab-tags-input
+            data-testid="lit-neutral"
+            label="Tags"
+            placeholder="Add a tag…"
+            helper="Press Enter or comma to add a tag."
+            default-value='["design","system"]'
+          ></lab-tags-input>
+          <lab-tags-input
+            data-testid="lit-invalid"
+            type="danger"
+            invalid
+            label="Tags"
+            placeholder="Add a tag…"
+            error="Too many tags."
+            default-value='["one","two"]'
+          ></lab-tags-input>
+          <lab-tags-input
+            data-testid="lit-required"
+            label="Keywords"
+            required
+            placeholder="Add a keyword…"
+          ></lab-tags-input>
+          <lab-tags-input
+            data-testid="lit-disabled"
+            label="Locked"
+            disabled
+            default-value='["fixed"]'
+          ></lab-tags-input>
+          <lab-tags-input
+            data-testid="lit-size-s"
+            size="s"
+            label="Small"
+            default-value='["a"]'
+          ></lab-tags-input>
+          <lab-tags-input
+            data-testid="lit-size-l"
+            size="l"
+            label="Large"
+            default-value='["a"]'
+          ></lab-tags-input>
+          <lab-tags-input
+            data-testid="lit-duplicates"
+            allow-duplicates
+            label="Duplicates"
+            default-value='["dup","dup","solo"]'
+          ></lab-tags-input>
+        </div>
+      </section>
+
+      <!-- React renderer: native, mounted from tags-input-demo.tsx into this node. -->
+      <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
+        <h2>React</h2>
+        <div id="react-root" class="specimens"></div>
+      </section>
+    </main>
+    <script type="module" src="./tags-input-demo.tsx"></script>
+  </body>
+</html>

@@ -13,24 +13,9 @@ import '@labpics/ui-core/card';
 import { Card } from '@labpics/ui-react/card';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { wireThemeSwitch } from './theme-switch.js';
 
-const root = document.documentElement;
-
-const THEMES = ['dark', 'light'] as const;
-type Theme = (typeof THEMES)[number];
-
-function isTheme(value: string): value is Theme {
-  return (THEMES as readonly string[]).includes(value);
-}
-
-const select = document.querySelector<HTMLSelectElement>('[data-testid="theme-select"]');
-if (select) {
-  const current = root.getAttribute('data-theme');
-  if (current) select.value = current;
-  select.addEventListener('change', () => {
-    if (isTheme(select.value)) root.setAttribute('data-theme', select.value);
-  });
-}
+wireThemeSwitch();
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in card.html');
@@ -67,7 +52,14 @@ createRoot(mount).render(
         footer="Footer"
       >
         A whole-card target whose action is a real control.{' '}
-        <button type="button" data-testid="react-interactive-control">
+        {/* Deliberately a bare native <button> (fixture proves the card never
+            fabricates a role) — `color: initial` undoes the ambient dark-theme
+            text colour this fixture inherits from the page, which otherwise
+            clashes with the browser's own (unstyled) native button face and
+            fails WCAG contrast on WebKit. A real consumer styling their own
+            slotted control would set BOTH colours from --lab-* roles; here we
+            only need to stop fighting the UA default with an inherited one. */}
+        <button type="button" data-testid="react-interactive-control" style={{ color: 'initial' }}>
           Open
         </button>
       </Card>
