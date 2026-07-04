@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@labpics/colors": "0.5.0"
+    "@labpics/colors": "0.6.0"
   },
   "devDependencies": {
     "vitest": "3.2.6"
