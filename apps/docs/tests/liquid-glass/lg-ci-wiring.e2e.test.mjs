@@ -62,11 +62,24 @@ test('playwright collects only .spec.ts — node:test harnesses never run twice'
   // само-исполняет сьют во время коллекции → фермы lg-*/pb-* бежали бы второй
   // раз внутри smoke-джоба. Конфиг обязан сузить сбор до собственных .spec.ts.
   const config = await readFile(resolve(HERE, '../../playwright.config.ts'), 'utf8');
+  // testMatch задан БЕЗУСЛОВНО (не опциональным спредом под флагом): полное
+  // плечо пинит собственный .spec.ts-регекс, smoke-плечо строится из
+  // SMOKE_SPECS. Оба плеча обязаны исключать *.test.mjs из коллекции.
   assert.match(
     config,
-    /testMatch:\s*\/.*spec\\\.ts\$?\//,
-    'playwright.config.ts must pin testMatch to .spec.ts so *.test.mjs node:test harnesses are excluded from Playwright collection',
+    /testMatch:\s*smoke\s*\?\s*SMOKE_SPECS[\s\S]{0,200}?:\s*\/\.\*\\\.spec\\\.ts\$\//,
+    'playwright.config.ts must pin testMatch unconditionally (smoke ? SMOKE_SPECS… : /.*\\.spec\\.ts$/) so *.test.mjs node:test harnesses are excluded from Playwright collection in BOTH modes',
   );
+  const specsBlock = config.match(/const SMOKE_SPECS\s*=\s*\[([\s\S]*?)\];/);
+  assert.ok(specsBlock, 'playwright.config.ts must declare the curated SMOKE_SPECS list');
+  const entries = [...specsBlock[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  assert.ok(entries.length > 0, 'SMOKE_SPECS must not be empty');
+  for (const entry of entries) {
+    assert.ok(
+      entry.endsWith('.spec.ts'),
+      `SMOKE_SPECS entry "${entry}" is not a .spec.ts — the smoke arm would let Playwright collect a node:test harness and self-run it during collection`,
+    );
+  }
 });
 
 test('ci.yml runs the engine suites after browser install and feeds the hermetic gate a base', async () => {
