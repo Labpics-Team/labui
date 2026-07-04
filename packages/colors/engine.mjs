@@ -12,7 +12,9 @@ const here = dirname(fileURLToPath(import.meta.url));
  *  грузится любым движком (включая опубликованный 0.5.0). */
 export const FULL_PASSPORT_PATH = join(here, 'labui.config.json');
 /** Тонкий паспорт (BL-007): roles/aliases опущены, движок раскрывает их
- *  пресетом «labui». Требует пресет-способного движка (@labpics/colors ≥0.6). */
+ *  пресетом «labui». Требует пресет-способного движка (@labpics/colors ≥0.6.1):
+ *  опубликованный 0.6.0 срезан с main (gitHead 8ddbbde) ДО влития ветки
+ *  feat/thin-config-preset и пресетов не знает. */
 export const THIN_PASSPORT_PATH = join(here, 'labui.config.thin.json');
 
 /** Поднять движок с загруженным паспортом labui; вернуть { colors, fingerprint }.
@@ -32,10 +34,10 @@ export async function createLabuiEngine(passportPath = FULL_PASSPORT_PATH) {
 
 /** Сигнатура отказа ПРЕ-пресетного движка: конфиг с пресетом отвергается,
  *  т.к. движок всё ещё требует раскрытый словарь (serde сообщает первое
- *  опущенное поле). Опубликованный 0.5.0 бросает
- *  «invalid_config: … missing field `roles` …». Пресет-способный движок (≥0.6)
+ *  опущенное поле). Опубликованные 0.5.0 и 0.6.0 бросают
+ *  «invalid_config: … missing field `roles` …». Пресет-способный движок (≥0.6.1)
  *  тонкий паспорт ГРУЗИТ и в эту ветку не попадает — потому точная сигнатура,
- *  а не любой invalid_config: реально сломанный тонкий паспорт на ≥0.6 дал бы
+ *  а не любой invalid_config: реально сломанный тонкий паспорт на ≥0.6.1 дал бы
  *  иную ошибку и обязан упасть, а не быть молча пропущенным. */
 export function isPresetUnsupported(err) {
   const msg = String(err?.message ?? err);
@@ -49,18 +51,20 @@ export async function engineVersion() {
   return version;
 }
 
-/** Пре-пресетная линия (<0.6): пресеты появляются с 0.6.0. */
+/** Пре-пресетная линия (<0.6.1): пресеты появляются с 0.6.1 — релиз 0.6.0
+ *  (Front D, координированный бамп) ушёл в npm без ветки feat/thin-config-preset,
+ *  поэтому 0.6.0 включительно считается пре-пресетным. */
 function isPrePresetVersion(version) {
-  const [major, minor] = String(version).split('.').map(Number);
-  return major === 0 && minor < 6;
+  const [major, minor, patch] = String(version).split('.').map(Number);
+  return major === 0 && (minor < 6 || (minor === 6 && (patch ?? 0) < 1));
 }
 
 let presetSupport;
 /** Фиче-детект: понимает ли слинкованный движок тонкий (пресетный) паспорт?
  *  Успех загрузки тонкого → true (в т.ч. dev-сборка ветки с версией 0.5.0, но
  *  уже пресет-способная). Отказ пропускаем в false ТОЛЬКО когда движок пре-
- *  пресетный (<0.6) И ошибка несёт известную сигнатуру опущенного словаря. На
- *  ЛЮБОМ движке ≥0.6 отказ загрузки тонкого — реальный баг: пробрасываем (RED),
+ *  пресетный (<0.6.1) И ошибка несёт известную сигнатуру опущенного словаря. На
+ *  ЛЮБОМ движке ≥0.6.1 отказ загрузки тонкого — реальный баг: пробрасываем (RED),
  *  чтобы сломанный пресет-движок не был молча замаскирован под «нет пресетов».
  *  Мемоизация на процесс — детект зовут и тесты, и генератор. */
 export async function engineSupportsPreset() {
