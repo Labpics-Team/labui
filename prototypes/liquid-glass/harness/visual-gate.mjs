@@ -438,6 +438,30 @@ export function resolveGateBase() {
   );
 }
 
+/** TRUE ⇔ `base` is a REAL commit that already carries the engine. An unknown
+ *  or typo'd ref stays LOUD (throws — same policy as resolveGateBase): only a
+ *  genuine first introduction — a resolvable base that predates
+ *  prototypes/liquid-glass — reports false, letting callers downgrade the
+ *  differential gate to an EXPLICIT skip instead of an undefined diff. */
+export function baseHasEngine(base = resolveGateBase()) {
+  // Stage 1 — the ref itself must resolve; a bad ref is a broken gate, not a
+  // first introduction, and must fail red.
+  execFileSync('git', ['rev-parse', '--verify', '--quiet', `${base}^{commit}`], {
+    cwd: REPO_ROOT,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  // Stage 2 — does that commit carry the engine entry point?
+  try {
+    execFileSync('git', ['cat-file', '-e', `${base}:prototypes/liquid-glass/index.html`], {
+      cwd: REPO_ROOT,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Check out `base` into a throwaway git worktree, hand its engine dir to `fn`,
  *  and always clean the worktree up — the repo itself is never touched. */
 async function withBaseEngine(base, fn) {

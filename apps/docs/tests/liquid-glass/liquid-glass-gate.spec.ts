@@ -36,6 +36,7 @@ type Harness = {
     pass: boolean;
   }>;
   resolveGateBase?: () => string;
+  baseHasEngine?: (base?: string) => boolean;
 };
 
 let harness: Harness | null = null;
@@ -68,6 +69,23 @@ test.describe('liquid-glass visual gate', () => {
     ({ browserName }) => browserName !== 'chromium',
     'lens visual gate is Chromium-only — WebKit falls back to frost (no refraction)',
   );
+
+  // ── #10: first-introduction guard — a differential gate needs a reference ──
+  // On the PR that FIRST lands the engine, the resolved base ref is real but
+  // predates prototypes/liquid-glass: there is nothing to freeze and the diff
+  // is undefined by construction. That exact case skips EXPLICITLY; the gate
+  // arms itself the moment the engine exists on the base. Anything else — an
+  // unknown ref, a broken probe — returns false here so the tests still run
+  // and fail red inside runHermeticGate (loud failure beats an evergreen no-op).
+  test.skip(() => {
+    const probe = harness?.baseHasEngine;
+    if (typeof probe !== 'function') return false; // stale harness → let needGate() go red
+    try {
+      return !probe();
+    } catch {
+      return false; // unresolvable base stays a loud in-test failure
+    }
+  }, 'first introduction: base ref predates prototypes/liquid-glass — no reference engine to freeze; the differential gate arms automatically once the engine lands on the base');
 
   // ── #6: hermetic pane+panel gate — head engine vs base engine, one machine ──
   test('pane + panel match the base-ref engine across the full state matrix', async () => {
