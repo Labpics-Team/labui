@@ -1,3 +1,4 @@
+import * as tabsMachine from '@zag-js/tabs';
 /**
  * `<lab-tabs>` — the first COMPOUND component that consumes a GROUP machine
  * through the Behaviors seam (core-CONTRACT §1). This is the canonical compound
@@ -43,7 +44,6 @@
  */
 import { type TemplateResult, css, html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
-import * as tabsMachine from '@zag-js/tabs';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -163,12 +163,12 @@ export class LabTabs extends LabElement {
       display: flex;
       flex-direction: row;
       gap: var(--_gap);
-      border-bottom: 0.0625rem solid ${litVar('--lab-border-base')};
+      border-bottom: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     }
     :host([orientation='vertical']) .list {
       flex-direction: column;
       border-bottom: none;
-      border-inline-end: 0.0625rem solid ${litVar('--lab-border-base')};
+      border-inline-end: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     }
 
     /* The Zag trigger element — one button per tab. */
@@ -185,11 +185,11 @@ export class LabTabs extends LabElement {
       background: transparent;
       /* The selected underline rides on this transparent border so layout never
          shifts between idle and selected (craft-frontend P4 / CLS). */
-      border-bottom: 0.125rem solid transparent;
+      border-bottom: ${litVar('--lab-stroke-thick')} solid transparent;
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-secondary')};
       white-space: nowrap;
       cursor: pointer;
@@ -198,7 +198,7 @@ export class LabTabs extends LabElement {
     :host([orientation='vertical']) .trigger {
       justify-content: flex-start;
       border-bottom: none;
-      border-inline-end: 0.125rem solid transparent;
+      border-inline-end: ${litVar('--lab-stroke-thick')} solid transparent;
       margin-inline-end: -0.0625rem;
     }
 
@@ -223,8 +223,8 @@ export class LabTabs extends LabElement {
 
     /* Focus is roving (machine-driven); draw the ring on the focused trigger. */
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: -0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: calc(-1 * ${litVar('--lab-focus-ring-offset')});
       border-radius: ${litVar('--lab-radius-control', '0.5rem')};
     }
 
@@ -235,11 +235,12 @@ export class LabTabs extends LabElement {
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
     }
     .panel:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-control', '0.5rem')};
     }
     /* Unselected panels are hidden by the machine (it sets [hidden]); this is a

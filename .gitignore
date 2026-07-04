@@ -16,6 +16,7 @@ playwright-report/
 blob-report/
 .playwright/
 playwright/.cache/
+.playwright-mcp/
 
 # Ad-hoc demo screenshots (owner-review artifacts, regenerated on demand)
 screenshots/
@@ -41,3 +42,6 @@ pnpm-debug.log*
 # Coverage
 coverage/
 .nyc_output/
+
+# design-phase audit artifacts (specs/screenshots) — не в продуктовом репо
+.design/

@@ -1,37 +1,40 @@
-import { SHADOW_LAYERS, type ShadowLayerName } from './layer.js';
+import { SHADOW_SLOTS, SLOT_ALPHA, type ShadowSlotName } from './layer.js';
 
-/**
- * PROVISIONAL per-layer alphas, in real alpha units (0..1), sourced from the
- * owner's Figma FX/Shadow stack:
- *   - light: Minor @1 / Ambient @2 / Penumbra @4 / Major @12 (% → /100);
- *   - dark:  Minor @2 / Ambient @4 / Penumbra @12 / Major @20.
- *
- * These are the STUB values behind the `--lab-shadow-alpha-*` contract. They are
- * NOT a placeholder in the wrong units — they are honest Figma percentages
- * converted to alpha. The FINAL values come from lab-colors' JND calibration
- * (surface-jnd-contracts); when published they are written to the same contract
- * names and the stack re-derives untouched. Source is documented, not hardcoded
- * geometry.
- */
 export type ShadowTheme = 'light' | 'dark';
 
-type AlphaByLayer = Readonly<Record<ShadowLayerName, number>>;
+/**
+ * The default per-slot alphas are the owner's FIXED Figma values, identical
+ * across every elevation level: s1=0.12 / s2=0.04 / s3=0.02 / s4=0.01. Both
+ * themes use the SAME set — the owner's effect-style export (2026-06-13) gives
+ * one ladder; a theme changes only the colour anchor, not the alphas.
+ *
+ * CONFLICT OF SOURCES (named, not papered over): the older Variables snapshot
+ * carried a SEPARATE dark alpha set (@2/@4/@12/@20). We take the fresher styles
+ * export as the default (one set, no dark-specific alphas). Any dark
+ * amplification is applied as a PROVISIONAL multiplier (below), defaulting to 1
+ * — i.e. faithful to the styles, with the Variables direction available as an
+ * opt-in until the two sources are reconciled by lab-colors.
+ */
+export function defaultAlpha(slot: ShadowSlotName): number {
+  return SLOT_ALPHA[slot];
+}
 
-const FIGMA_PROVISIONAL_ALPHAS: Readonly<Record<ShadowTheme, AlphaByLayer>> = {
-  light: { minor: 0.01, ambient: 0.02, penumbra: 0.04, major: 0.12 },
-  dark: { minor: 0.02, ambient: 0.04, penumbra: 0.12, major: 0.2 },
-};
+/** Ordered default alphas, slot order = stack order. Same for both themes. */
+export function defaultAlphas(): readonly number[] {
+  return SHADOW_SLOTS.map((slot) => defaultAlpha(slot));
+}
 
 /**
- * The provisional alpha for a layer in a theme. The single read-point for the
- * Figma stub values so the source stays documented in exactly one place.
+ * PROVISIONAL dark-amplification multiplier applied to every slot alpha on the
+ * dark theme. Default 1 = no amplification (the styles export gives one set).
+ *
+ * Provenance of the two source numbers, both named so nothing is a silent
+ * placeholder:
+ *   - Styles export (2026-06-13, FRESHER): one alpha set, no dark-specific
+ *     values → multiplier 1.
+ *   - Variables snapshot (older, 488 tokens): dark @2/@4/@12/@20 vs light
+ *     @1/@2/@4/@12 → roughly a 2× lift on the near plies.
+ * We default to the fresher source (1). When lab-colors reconciles the JND
+ * surface contracts, this multiplier is the single knob to re-set.
  */
-export function provisionalAlpha(theme: ShadowTheme, layer: ShadowLayerName): number {
-  return FIGMA_PROVISIONAL_ALPHAS[theme][layer];
-}
-
-/** Ordered list of provisional alphas for a theme, layer order = stack order. */
-export function provisionalAlphas(theme: ShadowTheme): readonly number[] {
-  const byLayer = FIGMA_PROVISIONAL_ALPHAS[theme];
-  return SHADOW_LAYERS.map((layer) => byLayer[layer]);
-}
+export const DARK_ALPHA_MULTIPLIER_DEFAULT = 1;

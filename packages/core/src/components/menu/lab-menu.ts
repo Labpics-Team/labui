@@ -52,7 +52,7 @@
  * hand-written roving/positioning/dismiss).
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The menu is the
- * raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a
+ * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and `--lab-fx-shadow-major` lift, layered at
  * `--lab-z-dropdown`; the highlighted item fills with `--lab-fill-neutral-tinted`;
  * a danger item's label is `--lab-label-danger`; a separator is `--lab-border-soft`.
@@ -173,7 +173,7 @@ export class LabMenu extends LabElement {
   static override styles = css`
     :host {
       --_h: 2.25rem;
-      --_pad-x: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
       display: inline-flex;
@@ -201,9 +201,9 @@ export class LabMenu extends LabElement {
       height: var(--_h);
       margin: 0;
       padding: 0 var(--_pad-x);
-      border: 0.0625rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-      background-color: ${litVar('--lab-surface-base')};
+      background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: var(--_font);
@@ -222,8 +222,8 @@ export class LabMenu extends LabElement {
       opacity: 0.45;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     .trigger-caret {
@@ -251,10 +251,10 @@ export class LabMenu extends LabElement {
       padding: ${litVar('--lab-space-xs', '0.25rem')};
       list-style: none;
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
-      background-color: ${litVar('--lab-surface-raised')};
+      background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
-      border: 0.0625rem solid ${litVar('--lab-border-soft')};
-      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
+      box-shadow: var(--lab-elevation-overlay);
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};

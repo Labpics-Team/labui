@@ -34,6 +34,7 @@
  * the shared `field-styles`. No hex, no primitive, no colour-role fallback.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
+import { LabElement } from '../../lit/lab-element.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -43,7 +44,6 @@ import {
   fieldPartIds,
 } from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
-import { LabElement } from '../../lit/lab-element.js';
 
 export type { LabFieldSize as LabInputSize, LabFieldType as LabInputType };
 

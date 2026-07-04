@@ -102,9 +102,9 @@ test('visual parity: Lit and React resolve the same elevated surface colour', as
   expect(reactBg).toBe(litBg);
 });
 
-test('tokens: re-pointing --lab-surface-raised re-skins BOTH elevated cards', async ({ page }) => {
+test('tokens: re-pointing --lab-bg-secondary re-skins BOTH elevated cards', async ({ page }) => {
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-surface-raised', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-bg-secondary', 'rgb(1, 2, 3)');
   });
   await expect.poll(() => litCard(page, 'lit-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
   await expect.poll(() => reactCard(page, 'react-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');

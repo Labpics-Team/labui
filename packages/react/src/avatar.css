@@ -12,6 +12,7 @@
 [data-lab-avatar] {
   --_lab-avatar-diameter: 2.5rem;
   --_lab-avatar-font: var(--lab-font-size-xs, 0.8333rem);
+  --_lab-avatar-tracking: var(--lab-letter-spacing-xs, -0.0042em);
   --_lab-avatar-dot: 0.75rem;
 
   display: inline-flex;
@@ -21,11 +22,13 @@
 [data-lab-avatar][data-size="s"] {
   --_lab-avatar-diameter: 1.75rem;
   --_lab-avatar-font: var(--lab-font-size-xxs, 0.6944rem);
+  --_lab-avatar-tracking: var(--lab-letter-spacing-xxs, 0.0043em);
   --_lab-avatar-dot: 0.625rem;
 }
 [data-lab-avatar][data-size="l"] {
   --_lab-avatar-diameter: 3.5rem;
   --_lab-avatar-font: var(--lab-font-size-md, 1rem);
+  --_lab-avatar-tracking: var(--lab-letter-spacing-md, -0.011em);
   --_lab-avatar-dot: 1rem;
 }
 
@@ -43,7 +46,8 @@
   color: var(--lab-label-primary);
   font: inherit;
   font-size: var(--_lab-avatar-font);
-  font-weight: 600;
+  letter-spacing: var(--_lab-avatar-tracking);
+  font-weight: var(--lab-font-weight-semibold, 600);
   line-height: 1;
   user-select: none;
 }
@@ -83,7 +87,7 @@
   width: var(--_lab-avatar-dot);
   height: var(--_lab-avatar-dot);
   border-radius: var(--lab-radius-full, 9999px);
-  box-shadow: 0 0 0 0.125rem var(--lab-bg-primary);
+  box-shadow: 0 0 0 var(--lab-stroke-thick) var(--lab-bg-primary);
 }
 [data-lab-avatar][data-status="online"] .lab-avatar-status {
   background-color: var(--lab-border-success-strong);

@@ -12,7 +12,7 @@
  * │  binding `--lab-*` roles under these selectors, in this cascade order):    │
  * │    1. [data-theme="light"] / [data-theme="dark"] on the nearest ancestor;  │
  * │    2. @media (prefers-color-scheme) fallback when no attribute is set;      │
- * │    3. the dark default (bare :root).                                        │
+ * │    3. the light default (bare :root) — как в contract.css @labpics/colors.  │
  * │                                                                            │
  * │  `materials.css` already binds the material roles under [data-theme] and    │
  * │  [data-material] using exactly this convention, so the two compose.        │
@@ -23,16 +23,16 @@
  * └───────────────────────────────────────────────────────────────────────────┘
  */
 
-/* 3. Dark default — bare root. The colours layer binds dark role values here. */
+/* 3. Light default — bare root. The colours layer binds light role values here. */
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 /* 2. prefers-color-scheme fallback (only applies when no [data-theme] is set,
  *    because an explicit attribute selector below has higher specificity). */
-@media (prefers-color-scheme: light) {
+@media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    color-scheme: light;
+    color-scheme: dark;
   }
 }
 

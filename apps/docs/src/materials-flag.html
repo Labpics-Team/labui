@@ -1,0 +1,72 @@
+<!doctype html>
+<html class="lab-scope" lang="en" data-material="solid" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Materials flag (solid · glass · blur)</title>
+    <link rel="stylesheet" href="./materials-flag-demo.css" />
+  </head>
+  <body>
+    <!-- Content the glass reads against — a saturated colour scene, no text-on-text. -->
+    <div class="scene" data-testid="scene" aria-hidden="true"></div>
+
+    <header class="bar">
+      <strong>LabUI · Materials flag</strong>
+      <label class="control">
+        <span>Material</span>
+        <select data-testid="mode-select" aria-label="Material mode">
+          <option value="solid" selected>Solid</option>
+          <option value="glass">Glass</option>
+          <option value="blur">Blur</option>
+        </select>
+      </label>
+      <label class="control">
+        <span>Theme</span>
+        <select data-testid="theme-select" aria-label="Colour theme">
+          <option value="dark" selected>Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </label>
+      <button type="button" class="demo-btn" data-testid="open-modal">Open modal</button>
+    </header>
+
+    <main class="stage">
+      <h1 class="sr-only" data-testid="title">Materials flag</h1>
+
+      <!-- CARD — one material surface. Flips with data-material, zero markup change. -->
+      <section
+        class="lab-material lab-material--base demo-panel"
+        data-testid="surface-card"
+        aria-label="Product card on the material surface"
+      >
+        <h2>Aurora Lamp</h2>
+        <p data-testid="card-label">
+          Warm dimmable light with a brushed-aluminium base. This card is a
+          material surface — flip the Material control to see solid become glass.
+        </p>
+        <button type="button" class="demo-btn">Add to cart</button>
+      </section>
+    </main>
+
+    <!-- MODAL — the owner's demo criterion: a modal panel that turns glass on
+         one attribute flip. The overlay is NOT a material surface (no nesting). -->
+    <div class="modal-overlay" data-testid="modal-overlay" role="presentation">
+      <section
+        class="lab-material lab-material--base demo-panel"
+        data-testid="surface-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        <h2 id="modal-title">Confirm</h2>
+        <p data-testid="modal-label">
+          The same <code>data-material</code> attribute skins this modal too.
+          Its label stays legal whether the panel is solid or glass.
+        </p>
+        <button type="button" class="demo-btn" data-testid="close-modal">Done</button>
+      </section>
+    </div>
+
+    <script type="module" src="./materials-flag-demo.ts"></script>
+  </body>
+</html>

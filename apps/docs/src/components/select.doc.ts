@@ -108,7 +108,7 @@ export const selectDoc: ComponentDoc = {
       index: 6,
       name: 'Content (listbox)',
       description:
-        'The floating listbox — role="listbox", hidden until open, aria-activedescendant → the highlighted option id, aria-multiselectable when multiple. The raised surface (--lab-surface-raised) with a --lab-border-soft hairline, --lab-fx-shadow-major lift, layered at --lab-z-dropdown.',
+        'The floating listbox — role="listbox", hidden until open, aria-activedescendant → the highlighted option id, aria-multiselectable when multiple. The raised surface (--lab-bg-secondary) with a --lab-border-soft hairline, --lab-fx-shadow-major lift, layered at --lab-z-dropdown.',
     },
     {
       index: 7,

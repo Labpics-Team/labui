@@ -16,8 +16,10 @@
  * other fields use. The machine owns each thumb's slider role + value ARIA and points
  * the thumb's `aria-labelledby` at the label part; this twin renders the label as the
  * machine's label part (giving the thumbs their name) and ADDS the field's
- * describedby/errormessage on the label region so a reader announces the helper/error
- * with the group — ONE source of truth across both renderers.
+ * describedby/errormessage on each focusable `role="slider"` THUMB — the element a
+ * reader lands on, mirroring number-input's field ARIA on its `<input>` — so the
+ * helper/error is actually announced. (On the inert group label it never would be: the
+ * label never receives focus.) ONE source of truth across both renderers.
  *
  * Compound, keyed by INDEX (the slider's stable thumb key): `getThumbProps({ index })`
  * is spread per thumb; React's key and the machine's index agree, so a thumb never
@@ -32,10 +34,10 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type LabSliderOrientation,
   type LabSliderSize,
   fieldControlAria,
+  fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
 } from '@labpics/ui-core';
@@ -91,17 +93,6 @@ export interface SliderProps {
   onValueChange?: (value: number[]) => void;
   /** Fires when a value change gesture ends (drag release / key commit). */
   onValueChangeEnd?: (value: number[]) => void;
-}
-
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function describeProps(
-  aria: Pick<FieldControlAria, 'aria-describedby' | 'aria-errormessage'>,
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
 }
 
 export function Slider({
@@ -174,7 +165,7 @@ export function Slider({
     >
       <div className="lab-slider-label-row">
         {/* biome-ignore lint/a11y/noLabelWithoutControl: getLabelProps() spreads htmlFor → the first thumb's hidden input (the machine owns the association); Biome can't see through the spread. */}
-        <label {...api.getLabelProps()} {...describeProps(fieldAria)} className="lab-slider-label">
+        <label {...api.getLabelProps()} className="lab-slider-label">
           {label}
         </label>
         {showValue ? (
@@ -202,9 +193,17 @@ export function Slider({
             // by index and the id it puts on the thumb is what aria-labelledby/roving
             // target. React's key and the machine's index agree, so a thumb never gets
             // another thumb's props — the index IS the thumb's identity here, not an
-            // incidental list position.
-            // biome-ignore lint/suspicious/noArrayIndexKey: the thumb index is the machine's stable thumb key (getThumbProps keys by index), not an incidental list order.
-            <div key={index} {...api.getThumbProps({ index })} className="lab-slider-thumb">
+            // incidental list position. The field description (helper/error) is spread
+            // onto the focusable role="slider" thumb — the element a reader lands on,
+            // not the inert group label — mirroring number-input's field ARIA on its
+            // <input>; spread AFTER getThumbProps so the machine's ARIA cannot clobber it.
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: the thumb index is the machine's stable thumb key (getThumbProps keys by index), not an incidental list order.
+              key={index}
+              {...api.getThumbProps({ index })}
+              {...fieldControlAriaProps(fieldAria)}
+              className="lab-slider-thumb"
+            >
               <input {...api.getHiddenInputProps({ index })} />
             </div>
           ))}

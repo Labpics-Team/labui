@@ -1,3 +1,4 @@
+import * as toggle from '@zag-js/toggle';
 /**
  * `<lab-proof>` — a PROOF element, NOT the production Button.
  *
@@ -18,7 +19,6 @@
  * and will not reuse this element, only this seam.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as toggle from '@zag-js/toggle';
 import type { MachineModule, SchemaOf } from '../behaviors/types.js';
 import { litVar } from '../css.js';
 import { LabElement } from '../lit/lab-element.js';
@@ -77,7 +77,7 @@ export class LabProof extends LabElement {
       display: inline-flex;
       vertical-align: middle;
       /* Dimension knobs the size of the control reads from. No literal hex. */
-      --_radius: ${litVar('--lab-radius-control', '--lab-radius-lg')};
+      --_radius: ${litVar('--lab-radius-control', '0.5rem')};
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
@@ -91,11 +91,11 @@ export class LabProof extends LabElement {
       min-height: 2.5rem;
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
-      border: 0.0625rem solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       cursor: pointer;
       /* Unpressed: neutral tinted surface + primary label — semantic roles only. */
       background-color: ${litVar('--lab-fill-neutral-tinted')};
@@ -115,8 +115,8 @@ export class LabProof extends LabElement {
     }
 
     button:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     :host([disabled]) button,

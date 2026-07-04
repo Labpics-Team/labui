@@ -129,7 +129,7 @@ export class LabAvatar extends LabElement {
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: var(--_font);
-      font-weight: 600;
+      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       line-height: 1;
       user-select: none;
     }
@@ -173,7 +173,7 @@ export class LabAvatar extends LabElement {
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       /* A ring in the surrounding background so the dot reads as separate even on
          a same-colour avatar — separation by surface, not a hairline. */
-      box-shadow: 0 0 0 0.125rem ${litVar('--lab-bg-primary')};
+      box-shadow: 0 0 0 ${litVar('--lab-stroke-thick')} ${litVar('--lab-bg-primary')};
     }
     :host([status='online']) .status {
       background-color: ${litVar('--lab-border-success-strong')};
@@ -204,7 +204,13 @@ export class LabAvatar extends LabElement {
   override render(): TemplateResult {
     const showImage = Boolean(this.src) && !this._imageFailed;
     const initials = this.initials;
-    const accessibleName = this.name || undefined;
+    // Without an image, the host is `role="img"` (WCAG 4.1.2 needs a real name for
+    // that role) — an unnamed avatar (no `name` prop) still renders the honest
+    // neutral placeholder glyph, so it needs an honest generic fallback name
+    // rather than an empty aria-label (axe `role-img-alt`). With an image, `alt`
+    // on the <img> itself carries the name (empty alt there is a valid "decorative
+    // image" signal, so no fallback is forced onto that path).
+    const accessibleName = showImage ? this.name : this.name || 'Avatar';
     const statusLabel = this.status !== 'none' ? STATUS_LABEL[this.status] : undefined;
 
     return html`

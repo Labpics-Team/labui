@@ -1,3 +1,4 @@
+import * as numberInputMachine from '@zag-js/number-input';
 /**
  * `<lab-number-input>` — a numeric form field: a real `<input role="spinbutton">`
  * with increment / decrement triggers, min/max/step clamping, format/parse, and an
@@ -36,9 +37,10 @@
  * styled control in the declarative shadow DOM before any JS upgrades it.
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
-import * as numberInputMachine from '@zag-js/number-input';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -48,8 +50,6 @@ import {
   fieldPartIds,
 } from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
 
 export type { LabFieldSize as LabNumberInputSize, LabFieldType as LabNumberInputType };
 
@@ -213,7 +213,7 @@ export class LabNumberInput extends LabElement {
         padding: 0;
         overflow: hidden;
         background-color: ${litVar('--lab-bg-primary')};
-        border: 0.0625rem solid ${litVar('--lab-border-base')};
+        border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
         transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -246,6 +246,7 @@ export class LabNumberInput extends LabElement {
         padding: var(--_field-pad-y) var(--_field-pad-x);
         font: inherit;
         font-size: var(--_field-font);
+        letter-spacing: var(--_field-tracking);
         line-height: var(--_field-line);
         color: ${litVar('--lab-label-primary')};
         background: transparent;
@@ -270,7 +271,7 @@ export class LabNumberInput extends LabElement {
         display: flex;
         flex-direction: column;
         flex: 0 0 auto;
-        border-inline-start: 0.0625rem solid ${litVar('--lab-border-soft')};
+        border-inline-start: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
       }
 
       .trigger {
@@ -282,6 +283,7 @@ export class LabNumberInput extends LabElement {
         padding: 0;
         font: inherit;
         font-size: ${litVar('--lab-font-size-xs', '0.8333rem')};
+        letter-spacing: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
         line-height: 1;
         color: ${litVar('--lab-label-secondary')};
         background-color: ${litVar('--lab-fill-neutral-tinted')};
@@ -291,7 +293,7 @@ export class LabNumberInput extends LabElement {
         transition: background-color 120ms ease, color 120ms ease;
       }
       .trigger:first-child {
-        border-block-end: 0.0625rem solid ${litVar('--lab-border-soft')};
+        border-block-end: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
       }
       .trigger:hover:not([data-disabled]) {
         background-color: ${litVar('--lab-fill-neutral')};
@@ -319,16 +321,16 @@ export class LabNumberInput extends LabElement {
          under :host so it beats the :host .control resting border above. */
       :host .control:has(.input:focus-visible) {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-focus')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
       }
       :host([type='danger']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-danger')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
       }
       :host([type='warning']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-warning-strong')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
       }
       :host([type='success']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 0.125rem ${litVar('--lab-border-success-strong')};
+        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
       }
 
       @media (prefers-reduced-motion: reduce) {

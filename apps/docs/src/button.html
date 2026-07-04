@@ -1,21 +1,22 @@
 <!doctype html>
-<html lang="en" data-theme="dark" data-material="ambient">
+<html class="lab-scope" lang="en" data-theme="dark" data-material="ambient">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>LabUI — Button parity (Lit ↔ React)</title>
+    <title>LabUI — Button parity (Lit · React · Vue)</title>
     <link rel="stylesheet" href="./button-demo.css" />
   </head>
   <body>
     <main>
       <h1 data-testid="button-title">
-        Button parity — <code>&lt;lab-button&gt;</code> (Lit) ↔ <code>&lt;Button&gt;</code> (React)
+        Button parity — <code>&lt;lab-button&gt;</code> (Lit) · <code>&lt;Button&gt;</code> (React,
+        native) · <code>&lt;Button&gt;</code> (Vue, over <code>&lt;lab-button&gt;</code>)
       </h1>
       <p>
-        Two renderers, one design system. The same axes, the same semantic
-        <code>--lab-*</code> roles, the same structure and states. This page mounts
-        both side by side so the Playwright suite can assert visual parity and
-        behaviour on each.
+        One design system. React is the native renderer; Vue is a thin wrapper that
+        mounts the Lit <code>&lt;lab-button&gt;</code> Web Component (ADR-0001, A-prime).
+        This page mounts all three side by side under one <code>[data-theme]</code> so
+        the Playwright suite can assert visual parity and behaviour on each.
       </p>
 
       <div class="row">
@@ -35,6 +36,19 @@
           <lab-button data-testid="lit-danger-border" type="danger" kind="border">Delete</lab-button>
           <lab-button data-testid="lit-loading" type="accent" kind="fill" loading>Saving</lab-button>
           <lab-button data-testid="lit-disabled" type="accent" kind="fill" disabled>Off</lab-button>
+          <!-- Icon-only: the default slot is empty, so the ONLY name source is the
+               host aria-label, which must forward to the inner shadow <button>
+               (WCAG 4.1.2). The icon slot holds a decorative glyph. -->
+          <lab-button data-testid="lit-icon-only" type="accent" kind="fill" icon aria-label="Add item">
+            <svg slot="icon" viewBox="0 0 16 16" fill="none" aria-hidden="true" width="16" height="16">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+            </svg>
+          </lab-button>
+          <!-- Default-type button inside a form: clicking it must NOT submit the
+               form (htmlType defaults to "button", not "submit"). -->
+          <form data-testid="lit-form" onsubmit="return false">
+            <lab-button data-testid="lit-in-form" type="neutral" kind="tinted">Plain</lab-button>
+          </form>
         </div>
       </section>
 
@@ -43,7 +57,15 @@
         <h2>React</h2>
         <div id="react-root" class="specimens"></div>
       </section>
+
+      <!-- Vue renderer: a thin wrapper mounting the Lit <lab-button> Web Component,
+           mounted from button-demo-vue.ts into this node. -->
+      <section class="renderer" aria-label="Vue renderer" data-testid="vue-renderer">
+        <h2>Vue</h2>
+        <div id="vue-root" class="specimens"></div>
+      </section>
     </main>
     <script type="module" src="./button-demo.tsx"></script>
+    <script type="module" src="./button-demo-vue.ts"></script>
   </body>
 </html>

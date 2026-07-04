@@ -54,7 +54,12 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'src/index.html'),
+        // Рантайм-провайдер: живой WASM-движок + watchTheme + acme-конфиг.
+        'engine-live': resolve(__dirname, 'src/engine-live.html'),
         materials: resolve(__dirname, 'src/materials.html'),
+        // Materials FLAG demo: data-material solid|glass|blur over the --lab-*
+        // contract (@labpics/ui-materials). One attribute flips card + modal.
+        'materials-flag': resolve(__dirname, 'src/materials-flag.html'),
         shadow: resolve(__dirname, 'src/shadow.html'),
         proof: resolve(__dirname, 'src/proof.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
@@ -126,6 +131,13 @@ export default defineConfig({
         // FUSED with a filterable text input + the shared field-a11y wiring. For the
         // open/filter/navigate/select/dismiss/position + parity + value-change suite.
         combobox: resolve(__dirname, 'src/combobox.html'),
+        // Advanced form inputs: Lit element + native-React twin side by side, running the
+        // SAME Zag machine (pin-input / tags-input). Pin Input's machine owns each box's
+        // value + focus auto-advance + paste-fill + masking; Tags Input's owns the tag
+        // array + add/remove/edit/keyboard. Both REUSE the SAME shared field-a11y helper
+        // for the label/helper/error association — asserted on BOTH renderers in the suite.
+        'pin-input': resolve(__dirname, 'src/pin-input.html'),
+        'tags-input': resolve(__dirname, 'src/tags-input.html'),
       },
     },
   },

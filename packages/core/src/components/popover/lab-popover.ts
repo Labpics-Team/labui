@@ -48,7 +48,7 @@
  * (style encapsulation), not a bug in the machine.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The panel is the
- * raised surface (`--lab-surface-raised` + `--lab-label-primary`) with a `--lab-
+ * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a `--lab-
  * border-soft` hairline, `--lab-fx-shadow-major` lift, and layering by
  * `--lab-z-dropdown` (non-modal) / `--lab-z-modal` (modal). The scrim is
  * `--lab-bg-overlay-base` at `--lab-z-modal-underlay`. No hex, no primitive, no
@@ -140,7 +140,7 @@ export class LabPopover extends LabElement {
 
   static override styles = css`
     :host {
-      --_pad: ${litVar('--lab-space-md', '0.75rem')};
+      --_pad: ${litVar('--lab-space-md', '1rem')};
       --_min-width: 14rem;
       --_max-width: 22rem;
 
@@ -154,7 +154,7 @@ export class LabPopover extends LabElement {
       --_max-width: 18rem;
     }
     :host([size='l']) {
-      --_pad: ${litVar('--lab-space-lg', '1rem')};
+      --_pad: ${litVar('--lab-space-lg', '1.5rem')};
       --_min-width: 18rem;
       --_max-width: 28rem;
     }
@@ -174,8 +174,8 @@ export class LabPopover extends LabElement {
       cursor: pointer;
     }
     .trigger:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
     }
 
@@ -200,7 +200,7 @@ export class LabPopover extends LabElement {
        arrow reuses the same surface role so it fuses to the panel edge. */
     .content {
       --arrow-size: 0.625rem;
-      --arrow-background: ${litVar('--lab-surface-raised')};
+      --arrow-background: ${litVar('--lab-bg-secondary')};
 
       box-sizing: border-box;
       position: relative;
@@ -208,12 +208,13 @@ export class LabPopover extends LabElement {
       max-width: var(--_max-width);
       padding: var(--_pad);
       border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
-      background-color: ${litVar('--lab-surface-raised')};
+      background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
-      border: 0.0625rem solid ${litVar('--lab-border-soft')};
-      box-shadow: 0 0.5rem 1.5rem ${litVar('--lab-fx-shadow-major')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
+      box-shadow: var(--lab-elevation-overlay);
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
       z-index: ${litVar('--lab-z-dropdown', '900')};
     }
@@ -224,13 +225,14 @@ export class LabPopover extends LabElement {
       display: none;
     }
     .content:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     .heading {
       margin: 0 0 ${litVar('--lab-space-xs', '0.25rem')} 0;
       font-size: ${litVar('--lab-font-size-lg', '1.2rem')};
+      letter-spacing: ${litVar('--lab-letter-spacing-lg', '-0.0177em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
       color: ${litVar('--lab-label-primary')};
     }
@@ -263,8 +265,8 @@ export class LabPopover extends LabElement {
       color: ${litVar('--lab-label-primary')};
     }
     .close:focus-visible {
-      outline: 0.125rem solid ${litVar('--lab-border-focus')};
-      outline-offset: 0.125rem;
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
 
     .arrow {

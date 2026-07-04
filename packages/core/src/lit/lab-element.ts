@@ -1,3 +1,4 @@
+import type { MachineSchema } from '@zag-js/core';
 /**
  * LabElement — the base class every LabUI Lit component extends.
  *
@@ -14,15 +15,35 @@
  * Theming is invisible here by design: the element reads semantic `--lab-*`
  * roles in its own styles and never branches on the active theme/material.
  */
-import { LitElement } from 'lit';
-import type { MachineSchema } from '@zag-js/core';
+import { type CSSResultGroup, type CSSResultOrNative, LitElement, css } from 'lit';
 import type { MachineModule, MachineProps } from '../behaviors/types.js';
 import { ZagController } from './zag-controller.js';
 
 /** Process-wide counter backing {@link LabElement.uid} — stable per instance. */
 let labUidCounter = 0;
 
+/**
+ * Форма угла для shadow-контента: документные правила shadow-границу не
+ * пересекают, а corner-shape не наследуется — лист добавляется каждому
+ * компоненту через finalizeStyles (одна точка на всю систему). Значение ручки
+ * приходит кастом-свойством (те наследуются): --lab-radius-corner-k из
+ * токен-слоя. Без поддержки (не Chromium 139+) свойство игнорируется.
+ */
+const cornerShapeStyles = css`
+  *,
+  *::before,
+  *::after {
+    corner-shape: superellipse(var(--lab-radius-corner-k, 1.1));
+  }
+`;
+
 export class LabElement extends LitElement {
+  /** Форма угла — всем наследникам, поверх их собственных styles. */
+  protected static override finalizeStyles(styles?: CSSResultGroup): Array<CSSResultOrNative> {
+    // biome-ignore lint/complexity/noThisInStatic: super в статик-переопределении — точный механизм цепочки Lit (имя класса сломало бы промежуточных наследников)
+    return [cornerShapeStyles, ...super.finalizeStyles(styles)];
+  }
+
   static override shadowRootOptions: ShadowRootInit = {
     ...LitElement.shadowRootOptions,
     delegatesFocus: true,
