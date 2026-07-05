@@ -11,6 +11,10 @@
  *
  * The package owns MECHANICS (backdrop stack, degradations, the guarantee).
  * It owns NO colour: tint and label values come from @labpics/colors.
+ *
+ * Since ADR-0003 it also ships the refraction engine (`./engine/`) behind ONE
+ * declarative entry: `mountMaterialRuntime()`. The engine itself (attach,
+ * filters, caches) is package-internal — never part of this surface.
  */
 
 export {
@@ -20,6 +24,8 @@ export {
   contrastRatio,
   compositeOver,
 } from './luminance';
+
+export { mountMaterialRuntime } from './engine/runtime';
 
 export {
   type MaterialMode,

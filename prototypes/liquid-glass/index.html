@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>LabUI · Liquid Glass</title>
+    <link rel="stylesheet" href="./liquid-glass.css" />
+    <link rel="stylesheet" href="./playground.css" />
+  </head>
+  <body>
+    <!-- The live backdrop the glass refracts. Swappable. -->
+    <div class="stage" id="stage">
+      <img class="stage__bg" id="bg" src="./assets/backdrop.svg" alt="" draggable="false" />
+
+      <!-- The draggable Liquid Glass pane -->
+      <div class="pane lab-liquid-glass" id="pane" role="figure" aria-label="Liquid glass pane">
+        <div class="pane__content">
+          <div class="pane__dot"></div>
+          <div class="pane__title">Liquid Glass</div>
+          <div class="pane__sub">drag me over the picture</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Control panel (itself glass) -->
+    <aside class="panel lab-liquid-glass" id="panel" aria-label="Controls">
+      <header class="panel__head">
+        <div class="panel__brand">
+          <span class="panel__logo"></span>
+          <div>
+            <div class="panel__name">Liquid Glass</div>
+            <div class="panel__by" id="engine">engine: …</div>
+          </div>
+        </div>
+        <div class="panel__themes" role="group" aria-label="Theme">
+          <button type="button" data-theme-btn="light" class="seg">Light</button>
+          <button type="button" data-theme-btn="dark" class="seg is-on">Dark</button>
+        </div>
+      </header>
+
+      <div class="panel__presets" id="presets" role="group" aria-label="Presets"></div>
+
+      <div class="panel__group">
+        <div class="panel__label">Glass — Figma parity</div>
+        <div class="controls" id="glass-controls"></div>
+      </div>
+
+      <div class="panel__group">
+        <div class="panel__label">Surface</div>
+        <div class="controls" id="surface-controls"></div>
+      </div>
+
+      <div class="panel__group">
+        <div class="panel__label">Backdrop</div>
+        <div class="panel__bgs" id="bgs" role="group" aria-label="Background"></div>
+        <label class="upload">
+          <input type="file" id="bgfile" accept="image/*" hidden />
+          <span>Use your own image…</span>
+        </label>
+      </div>
+
+      <details class="panel__css">
+        <summary>CSS for this glass</summary>
+        <pre id="css-out"></pre>
+      </details>
+    </aside>
+
+    <script type="module" src="./playground.js"></script>
+  </body>
+</html>

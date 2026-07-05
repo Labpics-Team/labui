@@ -44,6 +44,16 @@
   --_blur-blur: 128px;
   --_saturate-on: 180%;
 
+  /* Engine knobs (ADR-0003) — read by the refraction engine
+     (engine/liquid-glass.ts) as unitless numbers / filter factors. Inert for
+     the pure-CSS stack: the paint rule below never references them, so
+     non-refracting browsers pay nothing. */
+  --_lg-refraction: 1;
+  --_lg-depth: 40;
+  --_lg-dispersion: 0.4;
+  --_lg-brightness: 1.05;
+  --_lg-contrast: 1.2;
+
   /* Mode-driven knobs — default = SOLID (the canon + universal fallback). */
   --_base-paint: var(--_base); /* opaque base under the tint */
   --_blur: 0px;
@@ -98,6 +108,22 @@
   --_blur: var(--_blur-blur);
   --_saturate: var(--_saturate-on);
   -webkit-backdrop-filter: blur(128px) saturate(180%);
+}
+
+/* ── ENGINE-HELD GLASS (ADR-0003) — `lab-material--lensed`. ─────────────────
+ * While the refraction engine holds a surface it adds this state class,
+ * re-binding the ONE blur knob to the lens-calibrated radius: a real lens
+ * bends near-crisp backdrop (prototype calibration rdev ≈4–6px, engine
+ * default 4), not 48px frost. No second token — `--_blur` stays the single
+ * source; the engine's inline stack references it via var() and re-binds
+ * live. Same 0-2-0 specificity as the mode blocks, declared after them (wins
+ * while the class is present) and before the degradations (which still win,
+ * so reduced-transparency/contrast collapse also kills the lens radius).
+ * No -webkit literal needed: the class exists only under the Chromium-gated
+ * engine, which writes the inline pair itself. */
+[data-material] .lab-material--lensed,
+[data-material].lab-material--lensed {
+  --_blur: 4px;
 }
 
 /* ── SOLID — explicit manual override. ALWAYS wins: the DS escape hatch and the
