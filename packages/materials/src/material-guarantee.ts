@@ -221,8 +221,14 @@ export function bandOverCorridor(
   tint: Rgba,
   corridor: BackdropCorridor,
 ): { readonly effLow: number; readonly effHigh: number } {
-  const lumA = relativeLuminance(compositeOver(tint, corridor.min));
-  const lumB = relativeLuminance(compositeOver(tint, corridor.max));
+  // Normalise a hand-built {min, max} into a true per-channel box first: identity
+  // for every valid corridor (so byte-identical for all internal callers), but two
+  // arbitrary colours passed as {min, max} are not necessarily a box — without the
+  // hull the band could come out NARROWER than the reachable set, the one failure
+  // direction this module must never take (over-promise).
+  const box = cornerCorridor([corridor.min, corridor.max]);
+  const lumA = relativeLuminance(compositeOver(tint, box.min));
+  const lumB = relativeLuminance(compositeOver(tint, box.max));
   return { effLow: Math.min(lumA, lumB), effHigh: Math.max(lumA, lumB) };
 }
 

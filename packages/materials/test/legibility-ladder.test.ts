@@ -150,8 +150,47 @@ describe('corridorFromPixels — per-channel extremes of a readable region', () 
     }
   });
 
-  it('throws on an empty / fully-transparent region (no readable background)', () => {
+  it('throws on an empty region (nothing to bound)', () => {
     expect(() => corridorFromPixels(new Uint8ClampedArray([]))).toThrow();
-    expect(() => corridorFromPixels(new Uint8ClampedArray([1, 2, 3, 0]))).toThrow();
+  });
+
+  it('a fully-transparent pixel contributes the FULL unknown range, not its bytes', () => {
+    // α = 0 reveals everything beneath and asserts nothing: the corridor must be
+    // the full [0,255] box regardless of the (meaningless) colour bytes.
+    const corridor = corridorFromPixels(new Uint8ClampedArray([1, 2, 3, 0]));
+    expect(corridor.min).toEqual({ r: 0, g: 0, b: 0, a: 1 });
+    expect(corridor.max).toEqual({ r: 255, g: 255, b: 255, a: 1 });
+  });
+
+  it('REGRESSION: semi-transparent pixels widen toward the unknown beneath (no over-promise)', () => {
+    // A dark pixel at α≈0.5 may sit over anything, including white: treating it as
+    // opaque dark would declare a white label `guaranteed` over content that can
+    // actually render near-white under it. The widened corridor must force the
+    // honest verdict instead.
+    const semiTransparentDark = new Uint8ClampedArray([10, 10, 10, 128]);
+    const corridor = corridorFromPixels(semiTransparentDark);
+    // Upper corner must reach at least the revealed share of a white underlay.
+    expect(corridor.max.r).toBeGreaterThan(120);
+    const d = resolveOnImageRegion(WHITE_LABEL, corridor);
+    expect(d.outcome).toBe('scrim-required');
+    // The SAME bytes fully opaque are genuinely dark → guaranteed (sanity: the
+    // widening is driven by alpha, not by a blanket pessimism).
+    const opaqueDark = corridorFromPixels(new Uint8ClampedArray([10, 10, 10, 255]));
+    expect(resolveOnImageRegion(WHITE_LABEL, opaqueDark).outcome).toBe('guaranteed');
+  });
+});
+
+describe('scrim re-verification composes the FULL paint stack (scrim over tint over region)', () => {
+  it('a scrim computed for a tinted region re-verifies against tint+region, not the raw region', () => {
+    // A sheer light tint over a high-contrast region: unreachable → forced scrim.
+    const region = corridorFromPixels(new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]));
+    const tint: Rgba = { r: 240, g: 240, b: 240, a: 0.35 };
+    const first = resolveOnImageRegion(WHITE_LABEL, region, { tint });
+    expect(first.outcome).toBe('scrim-required');
+    if (first.outcome !== 'scrim-required' || first.scrim === null) return;
+    // Round-trip with BOTH tint and scrim: the solver must verify the same stack
+    // the scrim was derived for — and the computed floor must restore AA on it.
+    const painted = resolveOnImageRegion(WHITE_LABEL, region, { tint, scrim: first.scrim });
+    expect(painted.outcome).toBe('guaranteed');
   });
 });

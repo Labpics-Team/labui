@@ -23,7 +23,8 @@
  *   (d) tainted — {@link resolveOnTainted}: cross-origin / tainted pixels cannot
  *                 be read, so the backdrop is UNKNOWN → scrim is mandatory by
  *                 contract. The resolver STRUCTURALLY cannot return `guaranteed`
- *                 here — this is caught by a test, not a reviewer.
+ *                 here — its return type is {@link ScrimDecision} (compiler-
+ *                 enforced), pinned by a test on top.
  *   (e) boundary— {@link resolveOnBoundary}: a label straddling two regions must
  *                 hold over the UNION of their corridors.
  *
@@ -142,6 +143,27 @@ export function computeScrimFloor(
   return { colour: scrimColour, alpha: hi };
 }
 
+/** The forced-scrim branch: compute the floor over the residual corridor. Split
+ * out of {@link decide} so contract-mandatory rungs (tainted) can call it DIRECTLY
+ * and be compiler-narrowed to {@link ScrimDecision} — `guaranteed` is unreachable
+ * by type, not by a runtime string convention. */
+function scrimDecision(
+  kase: LadderCase,
+  label: Rgba,
+  tint: Rgba,
+  corridor: BackdropCorridor,
+  floor: number,
+  reason: string,
+): ScrimDecision {
+  const scrim = computeScrimFloor(
+    label,
+    residualCorridor(tint, corridor),
+    polarityScrim(label),
+    floor,
+  );
+  return { outcome: 'scrim-required', case: kase, reason, floor, scrim };
+}
+
 /** The shared core: derive the band, decide guaranteed vs scrim over one corridor. */
 function decide(
   kase: LadderCase,
@@ -149,24 +171,21 @@ function decide(
   tint: Rgba,
   corridor: BackdropCorridor,
   floor: number,
-  reasonOverride?: string,
 ): LadderDecision {
   const labelLum = relativeLuminance(label);
   const { effLow, effHigh } = bandOverCorridor(tint, corridor);
   const worst = worstContrastOverBand(labelLum, effLow, effHigh);
-  if (worst >= floor && reasonOverride === undefined) {
+  if (worst >= floor) {
     return { outcome: 'guaranteed', case: kase, effLow, effHigh, worstContrast: worst, floor };
   }
-  const scrim = computeScrimFloor(
+  return scrimDecision(
+    kase,
     label,
-    residualCorridor(tint, corridor),
-    polarityScrim(label),
+    tint,
+    corridor,
     floor,
+    `worst contrast ${worst.toFixed(2)}:1 below floor ${floor}:1 across [${effLow.toFixed(3)}, ${effHigh.toFixed(3)}]`,
   );
-  const reason =
-    reasonOverride ??
-    `worst contrast ${worst.toFixed(2)}:1 below floor ${floor}:1 across [${effLow.toFixed(3)}, ${effHigh.toFixed(3)}]`;
-  return { outcome: 'scrim-required', case: kase, reason, floor, scrim };
 }
 
 export interface LadderOptions {
@@ -196,14 +215,16 @@ export interface ImageRegionOptions extends LadderOptions {
   /** A material tint between the label and the image (default: none — label sits directly on the image). */
   readonly tint?: Rgba;
   /** A scrim already applied under the label (used to re-check a computed floor). */
-  readonly scrim?: { readonly colour: Rgba; readonly alpha: number };
+  readonly scrim?: ScrimFloor;
 }
 
 /**
  * (c) A label on a readable image/gradient region, bounded by its per-channel
  * corridor. With no tint the label sits directly on the region; with a `scrim`
- * option the label sits on that scrim painted over the region (used to verify a
- * computed {@link ScrimFloor} actually restores the floor).
+ * option the label sits on that scrim painted over the FULL stack beneath it —
+ * scrim over tint over region, the same stack {@link decide} computes its forced
+ * floor for — so re-checking a computed {@link ScrimFloor} verifies the paint
+ * stack it was actually derived from, not a different one.
  */
 export function resolveOnImageRegion(
   label: Rgba,
@@ -213,7 +234,8 @@ export function resolveOnImageRegion(
   const floor = options.floor ?? WCAG_AA_NORMAL;
   if (options.scrim) {
     const scrimTint = { ...options.scrim.colour, a: options.scrim.alpha };
-    return decide('image', label, scrimTint, region, floor);
+    const base = options.tint === undefined ? region : residualCorridor(options.tint, region);
+    return decide('image', label, scrimTint, base, floor);
   }
   return decide('image', label, options.tint ?? TRANSPARENT, region, floor);
 }
@@ -239,11 +261,12 @@ export function resolveOnBoundary(
  * (d) A cross-origin / tainted background: `getImageData` is unreadable, so the
  * backdrop is UNKNOWN = the full [black, white] corridor. The label cannot be
  * proven legal → scrim mandatory BY CONTRACT. Structurally cannot return
- * `guaranteed` (a `reasonOverride` forces the scrim branch), which the ladder test
- * pins — the enforcement is a test, not a reviewer's eye.
+ * `guaranteed`: the return type is {@link ScrimDecision} and the function calls
+ * the scrim branch directly — the compiler enforces the contract, the ladder test
+ * pins the runtime behaviour on top.
  */
-export function resolveOnTainted(label: Rgba, options: LadderOptions = {}): LadderDecision {
-  return decide(
+export function resolveOnTainted(label: Rgba, options: LadderOptions = {}): ScrimDecision {
+  return scrimDecision(
     'tainted',
     label,
     TRANSPARENT,
@@ -254,38 +277,41 @@ export function resolveOnTainted(label: Rgba, options: LadderOptions = {}): Ladd
 }
 
 /**
- * The per-channel corridor of a readable pixel region (RGBA bytes, stride 4).
- * Only pixels with alpha > 0 count (a fully-transparent pixel reveals whatever is
- * below and carries no colour of its own). The corridor's corners bound every
- * pixel's composite luminance from outside (monotonicity), so the guarantee built
- * on it is conservative — never over-promised. Throws if the region has no
- * readable (opaque) pixel: there is no background to prove anything about.
+ * The per-channel corridor of a readable pixel region (straight-alpha RGBA bytes,
+ * stride 4). An OPAQUE pixel contributes its own colour. A NON-opaque pixel
+ * (alpha < 255) partially reveals UNKNOWN content beneath the sampled layer, so
+ * its on-screen colour is `α·c + (1−α)·u` with `u` unknown in [0, 255] — the
+ * corridor widens per channel to `[α·c, α·c + (1−α)·255]`, never trusting the
+ * sampled byte alone. (A fully-transparent pixel therefore contributes the full
+ * [0, 255] range: it reveals everything and asserts nothing.) Treating
+ * semi-transparent pixels as opaque would narrow the corridor below the reachable
+ * set — the one failure that over-promises — which is exactly what this widening
+ * forecloses. The corridor's corners then bound every reachable on-screen colour
+ * from outside (monotonicity), so the guarantee built on it stays conservative.
+ * Throws only on an empty region: there is nothing to prove anything about.
  */
 export function corridorFromPixels(pixels: Uint8ClampedArray): BackdropCorridor {
+  if (pixels.length < 4) {
+    throw new Error('corridorFromPixels: region is empty — no pixels to bound');
+  }
   let minR = 255;
   let minG = 255;
   let minB = 255;
   let maxR = 0;
   let maxG = 0;
   let maxB = 0;
-  let seen = false;
   for (let i = 0; i + 3 < pixels.length; i += 4) {
-    if ((pixels[i + 3] ?? 0) === 0) {
-      continue;
-    }
-    const r = pixels[i] ?? 0;
-    const g = pixels[i + 1] ?? 0;
-    const b = pixels[i + 2] ?? 0;
-    if (r < minR) minR = r;
-    if (g < minG) minG = g;
-    if (b < minB) minB = b;
-    if (r > maxR) maxR = r;
-    if (g > maxG) maxG = g;
-    if (b > maxB) maxB = b;
-    seen = true;
-  }
-  if (!seen) {
-    throw new Error('corridorFromPixels: region has no readable (opaque) pixel');
+    const alpha = (pixels[i + 3] ?? 0) / 255;
+    const reveal = (1 - alpha) * 255;
+    const loR = alpha * (pixels[i] ?? 0);
+    const loG = alpha * (pixels[i + 1] ?? 0);
+    const loB = alpha * (pixels[i + 2] ?? 0);
+    if (loR < minR) minR = loR;
+    if (loG < minG) minG = loG;
+    if (loB < minB) minB = loB;
+    if (loR + reveal > maxR) maxR = loR + reveal;
+    if (loG + reveal > maxG) maxG = loG + reveal;
+    if (loB + reveal > maxB) maxB = loB + reveal;
   }
   return {
     min: { r: minR, g: minG, b: minB, a: 1 },
