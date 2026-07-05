@@ -237,6 +237,44 @@ let sCtx: CanvasRenderingContext2D | null = null;
 let scratchIdleTimer: ReturnType<typeof setTimeout> | null = null;
 const SCRATCH_IDLE_MS = 2000;
 
+/* ── SDF distance-field cache (separable field: geometry × depth) ────────────
+ * The signed distance `inside = -sdRoundRect(px,py,w,h,r)` is a pure function of
+ * GEOMETRY (w,h,corner,sc) — it does NOT depend on `depth`. Only `band` (=depth)
+ * and the double-smoothstep profile applied to `inside/band` do. So the SDF is
+ * SEPARABLE: cache the raw distance field per geometry, and a depth change reuses
+ * it with ZERO sdRoundRect recomputes — the sqrt-heavy 43% of the field loop
+ * (measured: 894µs→510µs on a 360×220@dpr2 panel) is skipped, only the cheap
+ * depth-dependent profile + encode re-run (ceiling criterion б).
+ *
+ * GROW-ONLY, NO FIRST-BUILD REGRESSION: the field loop caches EXACTLY the rim
+ * columns it already walks (rim-skip stops each row at the first flat column).
+ * A first build stores what it computes; a later SMALLER band reads a subset
+ * (0 recompute); a LARGER band resumes from the covered edge (only the delta
+ * ring calls sdRoundRect — still 0 FULL recomputes). Values are stored as
+ * Float64Array — the exact IEEE-754 double sdRoundRect returned — so feeding a
+ * cached value through the identical downstream arithmetic is BYTE-IDENTICAL.
+ * Proven two ways: the golden corpus locks the cold + shrink-hit bytes, and
+ * engine-sdf-cache hashes BOTH the grow-resume and the shrink-hit outputs against
+ * a from-scratch build (delta-ring end/mirror/encode byte-verified, not just
+ * counter-verified).
+ *
+ * KEY = `${w}x${h}x${corner}x${sc}` — every input that moves `inside` (r derives
+ * from w,h,corner; px/py from sc). Dropping any component collides two distinct
+ * geometries onto one field → wrong bytes (a golden red + the key-mutation test).
+ *
+ * MEMORY: one Float64Array(halfW·halfH) per geometry — comparable to the 8N-byte
+ * sDx scratch it rides beside. Bounded by SDF_CACHE_CAP (LRU) for burst safety
+ * and cleared with the scratch on idle, so steady state retains nothing. */
+interface SdfEntry {
+  inside: Float64Array; // quarter distance field, indexed [Y*halfW + X]
+  covered: Int32Array; // per top-half row: how many columns have been computed
+  halfW: number;
+  halfH: number;
+}
+const SDF_CACHE_CAP = 4;
+const sdfCache = new Map<string, SdfEntry>(); // geometry (no depth) → distance field
+let sdfComputeCount = 0; // cumulative sdRoundRect calls (the counter-assert reads this)
+
 function releaseScratch(): void {
   sDx = null;
   sRGBA = null;
@@ -247,6 +285,7 @@ function releaseScratch(): void {
   }
   sCanvas = null;
   sCtx = null;
+  sdfCache.clear(); // the distance fields are scratch too — no steady-state retention
 }
 
 function armScratchRelease(): void {
@@ -275,7 +314,8 @@ function armScratchRelease(): void {
  * No canvas/ImageData here — buildMap() rasterises the returned bytes for the
  * browser, while a bare Node test runner can call this directly and hash the
  * map. Exported under a `__` name (like __cacheStats) so it stays OFF the
- * package surface (ADR-0003 §3): only buildMap and the golden test read it.
+ * package surface (ADR-0003 §3): buildMap, the golden test, the sdf-cache test,
+ * and the bench read it — never a package consumer.
  */
 export function __computeDisplacementField(
   w: number,
@@ -298,9 +338,40 @@ export function __computeDisplacementField(
   }
   const di = sDx;
   const halfH = (H + 1) >> 1; // rows we actually visit (top half incl. centre)
+  const halfW = (W + 1) >> 1; // ceil — covers the centre column on odd W
   if (!sRowEnd || sRowEnd.length < halfH) sRowEnd = new Int32Array(halfH);
   const rowEnd = sRowEnd; // rim width per visited row → the encode pass reuses it
   let maxAbs = 1e-6;
+
+  // Separable SDF field: `inside` depends only on geometry (w,h,corner,sc), not
+  // on `depth`. Fetch (or lazily create) the per-geometry distance-field cache
+  // so a depth change reads the sqrt-heavy `inside` back with 0 recomputes.
+  const sdfKey = `${w}x${h}x${corner}x${sc}`;
+  let sdf = sdfCache.get(sdfKey);
+  // Dims guard: the key ⇒ (halfW,halfH) deterministically today, so this never
+  // fires — but if a future key edit ever let a mis-sized field answer a key, an
+  // unguarded hit would misindex `inside`/`covered` and SILENTLY drop out-of-range
+  // Float64Array writes → wrong bytes, no error. Treating a size mismatch as a
+  // loud MISS (rebuild) makes halfW/halfH load-bearing instead of dead fields.
+  if (sdf && (sdf.halfW !== halfW || sdf.halfH !== halfH)) sdf = undefined;
+  if (sdf) {
+    sdfCache.delete(sdfKey);
+    sdfCache.set(sdfKey, sdf); // LRU touch (Map keeps insertion order)
+  } else {
+    sdf = {
+      inside: new Float64Array(halfW * halfH),
+      covered: new Int32Array(halfH),
+      halfW,
+      halfH,
+    };
+    sdfCache.set(sdfKey, sdf);
+    while (sdfCache.size > SDF_CACHE_CAP) {
+      const oldest = sdfCache.keys().next().value as string;
+      sdfCache.delete(oldest); // evict LRU — burst bound (idle release clears all)
+    }
+  }
+  const sInside = sdf.inside;
+  const sCovered = sdf.covered;
 
   // 4-way symmetry: the map is mirror-symmetric about both centre axes. The SDF
   // sdRoundRect is symmetric in px↔(w−px) and py↔(h−py); the pull magnitude m
@@ -310,7 +381,6 @@ export function __computeDisplacementField(
   // its row's value). Within a row we also mirror left↔right (dx negated). This
   // collapses the expensive SDF/sqrt/double-smoothstep work to ~1/4 of pixels.
   // Output bytes are bit-identical to the full double loop.
-  const halfW = (W + 1) >> 1; // ceil — covers the centre column on odd W
   const invSc = 1 / sc;
   const invBand = 1 / band;
   for (let Y = 0; Y < H; Y++) {
@@ -320,6 +390,8 @@ export function __computeDisplacementField(
     const rowB = Ym * W;
     const py = (Y + 0.5) * invSc;
     const cyPy = cy - py; // dy magnitude factor for this row
+    const rowBase = Y * halfW; // this row's slice of the cached distance field
+    const covered = sCovered[Y] as number; // columns already computed for this row
     // RIM-SKIP. A pixel is a no-op (dx=dy=0) once inside ≥ band — the
     // double-smoothstep bottoms out — and, because `inside` RISES monotonically
     // across the left half (distance to a convex-body boundary is concave, so it
@@ -333,7 +405,18 @@ export function __computeDisplacementField(
     let end = halfW; // no interior crossing ⇒ the whole left half is rim
     for (let X = 0; X < halfW; X++) {
       const px = (X + 0.5) * invSc;
-      const inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
+      // Cached distance (the exact float64 sdRoundRect returned → byte-identical)
+      // or a fresh compute past the covered edge. Depth-free, so a depth change
+      // reads it back with 0 sqrt recomputes; a larger band computes only the
+      // delta ring [covered, end].
+      let inside: number;
+      if (X < covered) {
+        inside = sInside[rowBase + X] as number;
+      } else {
+        inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
+        sInside[rowBase + X] = inside;
+        sdfComputeCount++; // the counter-assert: 0 on a same-geometry depth reuse
+      }
       if (inside >= band) {
         end = X; // first flat column — the rest of the row is flat too (monotone)
         break;
@@ -369,6 +452,11 @@ export function __computeDisplacementField(
       di[p] = -dx;
       di[p + 1] = -dy;
     }
+    // Extend coverage to the furthest column we computed (never shrink — a later
+    // smaller band must still find the wider cached run). `end` computed inside[end]
+    // on a miss (the break reads it), so cols [0,end] are cached ⇒ covered = end+1.
+    const reach = end < halfW ? end + 1 : halfW;
+    if (reach > (sCovered[Y] as number)) sCovered[Y] = reach;
     rowEnd[Y] = end; // rim width for this row — the encode pass and its bottom twin reuse it
   }
 
@@ -916,4 +1004,17 @@ export function __cacheStats(): {
   let zombies = 0;
   for (const e of mapCache.values()) e.refs > 0 ? live++ : zombies++;
   return { size: mapCache.size, live, zombies, zombieCap: ZOMBIE_CAP, scratchAllocated: !!sDx };
+}
+
+/** Inert introspection for the SDF-cache counter-asserts (ceiling criterion б):
+ *  `sdfComputes` is the cumulative sdRoundRect call count — a same-geometry depth
+ *  reuse adds ZERO; a key-differing geometry adds a fresh rim. `sdfEntries` is the
+ *  live per-geometry field count (bounded by SDF_CACHE_CAP). Never read on a render
+ *  path. */
+export function __fieldStats(): {
+  sdfComputes: number;
+  sdfEntries: number;
+  sdfCacheCap: number;
+} {
+  return { sdfComputes: sdfComputeCount, sdfEntries: sdfCache.size, sdfCacheCap: SDF_CACHE_CAP };
 }
