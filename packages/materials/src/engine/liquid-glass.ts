@@ -231,6 +231,7 @@ function ensureDefs(): SVGDefsElement {
 // scratch. The next build re-allocates lazily (cost paid once, off the hot path).
 let sDx: Float32Array | null = null;
 let sRGBA: Uint8ClampedArray | null = null; // reused RGBA byte scratch (grown on demand) → no per-build zero-fill
+let sRowEnd: Int32Array | null = null; // per-row rim width (rim-skip): shared field→encode so both loops stop at the same column
 let sCanvas: HTMLCanvasElement | null = null;
 let sCtx: CanvasRenderingContext2D | null = null;
 let scratchIdleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -239,6 +240,7 @@ const SCRATCH_IDLE_MS = 2000;
 function releaseScratch(): void {
   sDx = null;
   sRGBA = null;
+  sRowEnd = null;
   if (sCanvas) {
     sCanvas.width = 0; // drop the backing store immediately, not just the ref
     sCanvas.height = 0;
@@ -257,25 +259,31 @@ function armScratchRelease(): void {
 }
 
 /**
- * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution.
- *   R = x sample-shift, G = y sample-shift (0.5 = none) → for feDisplacementMap
+ * The DOM-free hot core: compute ONE displacement map's RGBA bytes at
+ * DEVICE-pixel resolution, plus the feDisplacementMap `scale` unit.
+ *   R = x sample-shift, G = y sample-shift (no shift → the neutral byte 128)
  *
  * For each interior pixel the sample position is pulled toward the centre by a
- * factor that is ~1 at the rim and eases (double-smoothstep) to 0 over a
- * `depth`-px band — a continuous magnifying lens with a clear middle. The pull
- * is always inward, so the lens never samples outside the element.
+ * factor ~1 at the rim, easing (double-smoothstep) to 0 over a `depth`-px band —
+ * a continuous magnifying lens with a clear middle. The pull is always inward,
+ * so the lens never samples outside the element.
  *
  * Geometry-only (no strength baked in): the displacement is encoded normalised,
  * and `unit` is the feDisplacementMap `scale` that reconstructs the true pixel
  * shift at refraction = 1. So changing refraction is a cheap scale change.
+ *
+ * No canvas/ImageData here — buildMap() rasterises the returned bytes for the
+ * browser, while a bare Node test runner can call this directly and hash the
+ * map. Exported under a `__` name (like __cacheStats) so it stays OFF the
+ * package surface (ADR-0003 §3): only buildMap and the golden test read it.
  */
-function buildMap(
+export function __computeDisplacementField(
   w: number,
   h: number,
   corner: number,
   depth: number,
   dpr: number,
-): Omit<MapEntry, 'refs' | 'evicted'> {
+): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
   const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2)); // rim lens thickness
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
@@ -289,6 +297,9 @@ function buildMap(
     sDx = new Float32Array(2 * N); // interleaved [dx,dy] pairs → one cache stream
   }
   const di = sDx;
+  const halfH = (H + 1) >> 1; // rows we actually visit (top half incl. centre)
+  if (!sRowEnd || sRowEnd.length < halfH) sRowEnd = new Int32Array(halfH);
+  const rowEnd = sRowEnd; // rim width per visited row → the encode pass reuses it
   let maxAbs = 1e-6;
 
   // 4-way symmetry: the map is mirror-symmetric about both centre axes. The SDF
@@ -309,10 +320,24 @@ function buildMap(
     const rowB = Ym * W;
     const py = (Y + 0.5) * invSc;
     const cyPy = cy - py; // dy magnitude factor for this row
+    // RIM-SKIP. A pixel is a no-op (dx=dy=0) once inside ≥ band — the
+    // double-smoothstep bottoms out — and, because `inside` RISES monotonically
+    // across the left half (distance to a convex-body boundary is concave, so it
+    // only climbs toward the centre; verified with a zero-violation monotonicity
+    // probe over the whole geometry corpus incl. the r = half circle), every
+    // column past that first crossing is a no-op too. So we stop the row at that
+    // column: [0,end) carry the rim, and the encode pass leaves [end,halfW) at the
+    // prefilled neutral byte (128) that a zero displacement encodes to. Output is
+    // byte-for-byte identical; the flat interior grows with area, so large maps
+    // skip most of the work.
+    let end = halfW; // no interior crossing ⇒ the whole left half is rim
     for (let X = 0; X < halfW; X++) {
-      const Xm = W - 1 - X;
       const px = (X + 0.5) * invSc;
       const inside = -sdRoundRect(px, py, w, h, r); // >0 inside, 0 at the edge
+      if (inside >= band) {
+        end = X; // first flat column — the rest of the row is flat too (monotone)
+        break;
+      }
       let dx = 0;
       let dy = 0;
       if (inside > 0) {
@@ -330,6 +355,7 @@ function buildMap(
       // Top-left (X,Y) and its three mirror twins. dx flips across the vertical
       // axis, dy flips across the horizontal axis. Writing Xm/Ym twice when they
       // equal X/Y (centre col/row on odd dims) is a harmless idempotent re-store.
+      const Xm = W - 1 - X;
       let p = (rowT + X) << 1;
       di[p] = dx;
       di[p + 1] = dy;
@@ -343,43 +369,39 @@ function buildMap(
       di[p] = -dx;
       di[p + 1] = -dy;
     }
+    rowEnd[Y] = end; // rim width for this row — the encode pass and its bottom twin reuse it
   }
 
   // Encode [-maxAbs, maxAbs] → [0,1] with no clipping. feDisplacementMap shifts
   // by scale·(channel − 0.5); with scale = 2·maxAbs the shift reconstructs the
-  // true pixel displacement exactly.
-  if (!sCanvas) {
-    sCanvas = document.createElement('canvas');
-    sCtx = sCanvas.getContext('2d');
-  }
-  if (!sCtx) throw new Error('liquid-glass: 2d canvas context unavailable');
-  sCanvas.width = W;
-  sCanvas.height = H;
-  // Reused RGBA scratch instead of ctx.createImageData(W,H): createImageData
-  // ALLOCATES and ZERO-FILLS 4·N bytes every build — wasted, since the loop below
-  // overwrites every byte. We keep a grown-on-demand Uint8ClampedArray and wrap an
-  // exact-length subarray view in a fresh ImageData (the constructor requires
-  // view.length === 4·W·H). Bytes written are bit-identical; only the redundant
-  // allocation+zero-fill is removed on warm builds.
+  // true pixel displacement exactly. Reused RGBA scratch instead of a fresh
+  // createImageData: an exact-length subarray view is wrapped in a fresh
+  // ImageData by buildMap (the constructor requires view.length === 4·W·H).
   const need = N * 4;
   if (!sRGBA || sRGBA.length < need) sRGBA = new Uint8ClampedArray(need);
   const data = sRGBA.length === need ? sRGBA : sRGBA.subarray(0, need);
-  const img = new ImageData(data, W, H);
   const norm = 1 / (2 * maxAbs);
   const norm255 = norm * 255;
-  // Encode with the SAME 4-way symmetry used to compute the field, so the
-  // per-pixel Float32 read + multiply-add runs for ~N/4 pixels instead of N.
-  // For a mirror twin dx→−dx (dy→−dy), so its R byte = −dx·norm255+127.5: we
-  // recompute that float directly (no derived 255−v trick, which could round
-  // differently) → bytes stay bit-identical to the flat pass. B/A are constant.
   const u32 = new Uint32Array(data.buffer, data.byteOffset, N);
-  u32.fill(0xff800000); // little-endian RGBA: R=0 G=0 B=128 A=255 (R/G overwritten)
+  // Prefill the WHOLE map with the neutral byte (R=G=B=128, A=255). The flat
+  // interior the rim-skip left uncomputed encodes to EXACTLY this (a zero
+  // displacement → 0·norm255+127.5 → Uint8Clamped 128), so the rim loop below
+  // only has to overwrite R/G on the ring. (The old fill was 0xff800000 with a
+  // full-map R/G rewrite; the interior R/G are now the fill — byte-identical.)
+  u32.fill(0xff808080); // little-endian RGBA: R=128 G=128 B=128 A=255
+  // Encode with the SAME 4-way symmetry used to compute the field, so the
+  // per-pixel Float32 read + multiply-add runs for ~N/4 pixels instead of N, and
+  // for a mirror twin dx→−dx (dy→−dy) we recompute −dx·norm255+127.5 directly (no
+  // derived 255−v trick, which could round differently) → bytes stay bit-identical
+  // to the flat pass. Each row only walks its own rim width [0,rowEnd[Y]); the
+  // interior columns keep the neutral prefill.
   for (let Y = 0; Y < H; Y++) {
     const Ym = H - 1 - Y;
     if (Ym < Y) break;
     const rowT = Y * W;
     const rowB = Ym * W;
-    for (let X = 0; X < halfW; X++) {
+    const end = rowEnd[Y] as number; // this row's rim width serves its bottom twin too
+    for (let X = 0; X < end; X++) {
       const Xm = W - 1 - X;
       const kT = rowT + X;
       const pT = kT << 1;
@@ -403,7 +425,30 @@ function buildMap(
       data[i + 1] = gNeg;
     }
   }
-  sCtx.putImageData(img, 0, 0);
+  return { data, W, H, unit: 2 * maxAbs };
+}
+
+/**
+ * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution and wrap
+ * it for the browser: the DOM-free field core rasterised onto a reused canvas,
+ * then encoded to a PNG off the main thread.
+ */
+function buildMap(
+  w: number,
+  h: number,
+  corner: number,
+  depth: number,
+  dpr: number,
+): Omit<MapEntry, 'refs' | 'evicted'> {
+  const { data, W, H, unit } = __computeDisplacementField(w, h, corner, depth, dpr);
+  if (!sCanvas) {
+    sCanvas = document.createElement('canvas');
+    sCtx = sCanvas.getContext('2d');
+  }
+  if (!sCtx) throw new Error('liquid-glass: 2d canvas context unavailable');
+  sCanvas.width = W;
+  sCanvas.height = H;
+  sCtx.putImageData(new ImageData(data, W, H), 0, 0);
   // The PNG encode was the LAST big synchronous chunk of a build (heavier than
   // the ¼-symmetric field loop). toBlob snapshots the canvas bitmap AT CALL
   // TIME (spec: a synchronous copy) and encodes off the main thread; the href
@@ -415,7 +460,7 @@ function buildMap(
   const out: Omit<MapEntry, 'refs' | 'evicted'> = {
     href: null,
     ready: null,
-    unit: 2 * maxAbs,
+    unit,
     mapW: W,
     mapH: H,
   };
