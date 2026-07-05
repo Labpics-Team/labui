@@ -20,7 +20,7 @@ body {
   overflow: hidden;
 }
 
-/* Busy scrolling-style content: text rows + colourful cards, so the变 blur
+/* Busy scrolling-style content: text rows + colourful cards, so the blur
  * gradient is obvious on real UI material. */
 .stage__content {
   position: absolute;

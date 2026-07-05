@@ -616,7 +616,11 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
   return {
     w: Math.max(1, Math.round(rect.width)),
     h: Math.max(1, Math.round(rect.height)),
-    corner: Math.round(Number.parseFloat(cs.borderTopLeftRadius) || DEFAULTS.corner),
+    // Number.isFinite, NOT `||`: an explicit `border-radius: 0` is a real
+    // author choice (sharp lens), not an invitation to the default corner.
+    corner: ((r: number): number => Math.round(Number.isFinite(r) ? r : DEFAULTS.corner))(
+      Number.parseFloat(cs.borderTopLeftRadius),
+    ),
     refraction: p.refraction ?? num('--_lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--_lg-depth', DEFAULTS.depth)),
     dispersion: p.dispersion ?? num('--_lg-dispersion', DEFAULTS.dispersion),
@@ -658,6 +662,10 @@ function dropMap(state: EngineState): void {
 function render(state: EngineState): void {
   const { el, id } = state;
   const p = readParams(el, state);
+  // Bump gen BEFORE the early returns: a frost/disabled render must also
+  // invalidate any in-flight decode→stamp armed by a previous render, or the
+  // stale stamp would land its lens backdrop OVER the frost we write below.
+  const gen = ++state.gen;
 
   // Non-refracting / reduced / disabled → write NOTHING inline: material.css
   // owns the frost fallback stack (package-boundary change vs the prototype,
@@ -684,7 +692,6 @@ function render(state: EngineState): void {
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
   const geoKey = `${p.w}x${p.h}x${p.corner}x${p.depth}x${dpr.toFixed(2)}`;
-  const gen = ++state.gen;
   const t0 = state.onPerf ? performance.now() : 0;
 
   const stamp = (map: MapEntry, mapMs: number): void => {

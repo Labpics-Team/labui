@@ -349,8 +349,10 @@ jobs:
         run: |
           set -euo pipefail
           REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${REPO}"
-          if [ -n "$BASE_REF" ]; then
-            git fetch --no-tags --depth=1 "$REMOTE" "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          if [ -n "$BASE_REF" ] && git fetch --no-tags --depth=1 "$REMOTE" "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"; then
+            # Symmetric with the BEFORE_SHA branch below: a failed base fetch
+            # (deleted/renamed base ref) degrades to HEAD~1 instead of dying
+            # under `set -e` before the gate even runs.
             echo "LG_GATE_BASE=origin/${BASE_REF}" >> "$GITHUB_ENV"
           else
             if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git fetch --no-tags --depth=1 "$REMOTE" "$BEFORE_SHA"; then

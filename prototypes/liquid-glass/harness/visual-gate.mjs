@@ -276,8 +276,20 @@ async function diffPng(page, candB64, refB64) {
         load(`data:image/png;base64,${a}`),
         load(`data:image/png;base64,${b}`),
       ]);
-      const w = Math.min(ia.width, ib.width);
-      const h = Math.min(ia.height, ib.height);
+      // A size mismatch IS a visual diff — cropping to the overlap would let a
+      // layout regression (grown/shrunk element) sail under the delta
+      // thresholds. Report worst-case deltas so every consumer fails loudly.
+      if (ia.width !== ib.width || ia.height !== ib.height) {
+        return {
+          meanDelta: 255,
+          maxDelta: 255,
+          pctChanged: 100,
+          wh: `${ia.width}x${ia.height} != ${ib.width}x${ib.height}`,
+          sizeMismatch: true,
+        };
+      }
+      const w = ia.width;
+      const h = ia.height;
       const mk = (im) => {
         const c = new OffscreenCanvas(w, h);
         const x = c.getContext('2d');

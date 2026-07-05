@@ -91,7 +91,7 @@ test('scratch suite: grows-on-demand, released after idle, cache bounded under s
   const { memoryBounded, checks } = await runScratchSuite();
 
   assert.equal(
-    checks.scratchAfterBuild ?? checks.firstPaintSynchronous !== undefined,
+    checks.scratchAfterBuild,
     true,
     'scratch must be allocated right after a build (scratchAllocated === true)',
   );
