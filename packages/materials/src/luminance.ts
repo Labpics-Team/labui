@@ -75,6 +75,11 @@ export function contrastRatio(l1: number, l2: number): number {
  * Composite a straight-alpha source over a fully-opaque backdrop, returning the
  * opaque result. This is the "solid canon" of a two-layer material fill: the
  * translucent `01` tint painted over the opaque `02` base.
+ *
+ * Channels stay CONTINUOUS (unrounded) — this feeds the luminance/guarantee math,
+ * where quantising before taking luminance would inject the very byte error the
+ * guarantee is trying to bound. For the byte the screen actually shows, use
+ * {@link compositeOverByte}.
  */
 export function compositeOver(source: Rgba, base: Rgba): Rgba {
   const a = source.a;
@@ -84,4 +89,42 @@ export function compositeOver(source: Rgba, base: Rgba): Rgba {
     b: source.b * a + base.b * (1 - a),
     a: 1,
   };
+}
+
+/** An opaque sRGB colour quantised to 8-bit channels (0..255 integers). */
+export interface Rgb8 {
+  readonly r: number;
+  readonly g: number;
+  readonly b: number;
+}
+
+/**
+ * BYTE-EXACT composite (task #52) — the same straight-alpha composite as
+ * {@link compositeOver}, but quantised to the 8-bit channel the display commits.
+ *
+ * The quantiser is `Uint8ClampedArray` assignment: **round-half-to-even + clamp
+ * to [0,255]** — bit-for-bit the rule the browser stores canvas pixels with
+ * (`ImageData` is a `Uint8ClampedArray`) and the rule the engine writes its
+ * displacement map with (`lg-math.ts` `encodeChannel`). So this JS byte is the
+ * one the screen paints — no "invisible" rounding slack between reference and
+ * prod path.
+ *
+ * It is also byte-identical to lab-colors' SSOT `composite_over_encoded` +
+ * `hex_from_srgb_encoded` over the material contract's domain: those tints/alphas
+ * are tie-free (no channel composite lands on an exact `.5`), so round-half-even
+ * and lab-colors' round-half-away-from-zero agree on every one — proven byte-for-
+ * byte by `byte-composite-golden.test.ts` against the 12 Figma-neutral pairs and
+ * guarded against future ties by that suite's tie-freeness invariant. (Should a
+ * future contract value land on a tie, the two rules would diverge by 1 LSB — the
+ * guard turns that into a loud finding, not a silent drift.)
+ */
+export function compositeOverByte(source: Rgba, base: Rgba): Rgb8 {
+  const a = source.a;
+  // A fresh clamped view per call: assignment performs the round-half-even+clamp
+  // in one step, identically to canvas ImageData and the engine's byte scratch.
+  const out = new Uint8ClampedArray(3);
+  out[0] = source.r * a + base.r * (1 - a);
+  out[1] = source.g * a + base.g * (1 - a);
+  out[2] = source.b * a + base.b * (1 - a);
+  return { r: out[0], g: out[1], b: out[2] };
 }

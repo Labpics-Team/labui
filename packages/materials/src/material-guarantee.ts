@@ -97,6 +97,82 @@ export interface TierVerdict {
 const BLACK_BACKDROP: Rgba = { r: 0, g: 0, b: 0, a: 1 };
 const WHITE_BACKDROP: Rgba = { r: 255, g: 255, b: 255, a: 1 };
 
+/*
+ * ADR-0004 (Решение 2) — the corridor generalisation.
+ *
+ * The α-boundary guarantee is ONE class of math parametrised by the reachable
+ * BACKDROP corridor. The material case (unknown live backdrop) is the full
+ * corridor [black, white]; a KNOWN region (an image/gradient under a label) is
+ * the corridor of the per-channel extremes actually reachable there.
+ *
+ * A `BackdropCorridor` is a per-channel axis-aligned box: `min` is the
+ * per-channel-minimum backdrop colour, `max` the per-channel-maximum. Because the
+ * composite `α·t + (1−α)·b` is affine and increasing in each backdrop channel and
+ * WCAG luminance is increasing in each composite channel, `L(tint over ·)` attains
+ * its extrema over the box exactly at `min` and `max` (the monotonicity closed by
+ * `alpha-boundary.test.ts` "black/white are the TRUE luminance extrema"). Corner
+ * backdrops therefore bound the reachable composite luminance from OUTSIDE the true
+ * set, so the guarantee is conservative — it may demand a scrim where a tighter
+ * analysis would not, but it never promises legibility it cannot prove.
+ *
+ * The chosen API is the smallest that stays verifiable (task freedom → less API,
+ * more proof): the corridor is two backdrop COLOURS, not a luminance scalar pair.
+ * Luminance scalars would lose the per-channel structure the monotonicity proof
+ * needs (two backdrops of equal luminance but different chroma composite to
+ * different luminance), so the honest bound is corner colours, not L-endpoints.
+ */
+export interface BackdropCorridor {
+  /** Per-channel-minimum backdrop colour (darkest reachable corner). */
+  readonly min: Rgba;
+  /** Per-channel-maximum backdrop colour (brightest reachable corner). */
+  readonly max: Rgba;
+}
+
+/** The material default: any live backdrop → the full [black, white] corridor. */
+export const FULL_BACKDROP: BackdropCorridor = { min: BLACK_BACKDROP, max: WHITE_BACKDROP };
+
+/**
+ * The tightest axis-aligned corridor enclosing a set of backdrop colours: the
+ * per-channel min/max corner. Over the whole colour cube this returns exactly
+ * [black, white] (recovering the material default); over a sampled image region
+ * it returns the box the region's pixels live in. Alpha is pinned to 1 (backdrops
+ * are opaque — a corridor is a range of colours the surface paints over).
+ */
+export function cornerCorridor(backdrops: readonly Rgba[]): BackdropCorridor {
+  const first = backdrops[0];
+  if (first === undefined) {
+    throw new Error('cornerCorridor: at least one backdrop colour is required');
+  }
+  let minR = first.r;
+  let minG = first.g;
+  let minB = first.b;
+  let maxR = first.r;
+  let maxG = first.g;
+  let maxB = first.b;
+  for (const bd of backdrops) {
+    if (bd.r < minR) minR = bd.r;
+    if (bd.g < minG) minG = bd.g;
+    if (bd.b < minB) minB = bd.b;
+    if (bd.r > maxR) maxR = bd.r;
+    if (bd.g > maxG) maxG = bd.g;
+    if (bd.b > maxB) maxB = bd.b;
+  }
+  return {
+    min: { r: minR, g: minG, b: minB, a: 1 },
+    max: { r: maxR, g: maxG, b: maxB, a: 1 },
+  };
+}
+
+/**
+ * The corridor a label crossing TWO backgrounds sees: the per-channel union of
+ * both corridors (min-of-mins, max-of-maxes). A label straddling a boundary must
+ * hold across the reachable colours of BOTH regions — this is exactly their box
+ * hull (ADR-0004 Решение 4, "лейбл, пересекающий границу → коридор = объединение").
+ */
+export function unionCorridor(a: BackdropCorridor, b: BackdropCorridor): BackdropCorridor {
+  return cornerCorridor([a.min, a.max, b.min, b.max]);
+}
+
 /** The one stable `theme/tier` key format — used for both fill lookup and reporting. */
 export function fillKey(theme: ThemeName, tier: MaterialTier): string {
   return `${theme}/${tier}`;
@@ -132,8 +208,50 @@ function commitLabel(
   return best;
 }
 
+/**
+ * The reachable composite-luminance band of a tint over a backdrop corridor: the
+ * tint composited over each corner, taken as [min, max]. The corners are the TRUE
+ * extrema over the corridor box (monotonicity — see {@link BackdropCorridor}); the
+ * min/max guard keeps effLow ≤ effHigh even for a mis-ordered corridor.
+ *
+ * Shared by {@link evaluateTier} and the legibility ladder so there is ONE band
+ * math, not two copies that can drift.
+ */
+export function bandOverCorridor(
+  tint: Rgba,
+  corridor: BackdropCorridor,
+): { readonly effLow: number; readonly effHigh: number } {
+  const lumA = relativeLuminance(compositeOver(tint, corridor.min));
+  const lumB = relativeLuminance(compositeOver(tint, corridor.max));
+  return { effLow: Math.min(lumA, lumB), effHigh: Math.max(lumA, lumB) };
+}
+
+/**
+ * The WORST committed-label contrast anywhere in the reachable band — the honest
+ * verdict, not the endpoint-only one. If the label's own luminance lies strictly
+ * INSIDE the band, some backdrop drives the composite to exactly the label's
+ * luminance → 1:1 contrast (illegal) even when both ends pass. Outside the band the
+ * worst is the nearer endpoint. Shared by {@link evaluateTier} and the ladder.
+ */
+export function worstContrastOverBand(
+  labelLuminance: number,
+  effLow: number,
+  effHigh: number,
+): number {
+  if (labelLuminance > effLow && labelLuminance < effHigh) {
+    return 1; // a backdrop matches the label exactly
+  }
+  return Math.min(contrastRatio(labelLuminance, effLow), contrastRatio(labelLuminance, effHigh));
+}
+
 export interface EvaluateOptions {
   readonly floor?: number;
+  /**
+   * The reachable backdrop corridor the surface paints over. Defaults to
+   * {@link FULL_BACKDROP} = [black, white] — the material case (unknown live
+   * backdrop). Narrow it to bound a KNOWN region (see `legibility-ladder.ts`).
+   */
+  readonly backdrop?: BackdropCorridor;
 }
 
 /**
@@ -148,31 +266,21 @@ export function evaluateTier(
   options: EvaluateOptions = {},
 ): TierVerdict {
   const floor = options.floor ?? WCAG_AA_NORMAL;
+  const backdrop = options.backdrop ?? FULL_BACKDROP;
 
   const solid = compositeOver(fill.tint, fill.base);
   const solidLuminance = relativeLuminance(solid);
   const label = commitLabel(solidLuminance, labelCandidates);
   const labelLuminance = relativeLuminance(label.colour);
 
-  // Bound the band in the browser's real paint space: the tint composited
-  // per-channel in gamma-encoded sRGB over pure black (min) and pure white (max).
-  // Monotonicity of luminance and of the composite makes these the TRUE extrema
-  // over every backdrop — coloured ones too — so effLow ≤ effHigh by construction.
-  const effLow = relativeLuminance(compositeOver(fill.tint, BLACK_BACKDROP));
-  const effHigh = relativeLuminance(compositeOver(fill.tint, WHITE_BACKDROP));
+  // Bound the band in the browser's real paint space over the corridor's two
+  // corner backdrops (default [black, white] = every backdrop). One shared math
+  // with the ladder — see bandOverCorridor / worstContrastOverBand.
+  const { effLow, effHigh } = bandOverCorridor(fill.tint, backdrop);
 
   const contrastLow = contrastRatio(labelLuminance, effLow);
   const contrastHigh = contrastRatio(labelLuminance, effHigh);
-
-  // The guarantee is the worst contrast across the WHOLE band, not just its ends.
-  // If the label's own luminance lies strictly inside the band, some backdrop
-  // drives the composite to exactly the label's luminance → 1:1 contrast, illegal,
-  // even though both endpoints may pass. Outside the band the worst is the nearer
-  // endpoint (whichever composite luminance sits closest to the label).
-  const worstContrast =
-    labelLuminance > effLow && labelLuminance < effHigh
-      ? contrastRatio(labelLuminance, labelLuminance) // = 1: a backdrop matches the label exactly
-      : Math.min(contrastLow, contrastHigh);
+  const worstContrast = worstContrastOverBand(labelLuminance, effLow, effHigh);
 
   return {
     tier,

@@ -1,4 +1,4 @@
-import { evaluateTier } from '@labpics/ui-materials';
+import { compositeOverByte } from '@labpics/ui-materials';
 import { type Page, expect, test } from '@playwright/test';
 
 /**
@@ -131,26 +131,26 @@ test('the label token is the SAME in solid and glass (legal in both by construct
 });
 
 /**
- * DIFFERENTIAL (class C): the α-boundary the guarantee computes must equal the
- * REAL browser composite. The guarantee bounds each tier by the tint composited
- * over black (effLow) and over white (effHigh); here the browser's own compositor
- * paints that exact composite on a <canvas> and we read the pixel back with
- * getImageData — an independent oracle (the engine paints, not our JS). They must
- * agree within a byte of rounding across the whole tier ladder.
+ * DIFFERENTIAL (class C) — task #52, BYTE-EXACT. The browser's own compositor is
+ * the oracle: it paints the tint straight-alpha over black/white on a <canvas> and
+ * we read the committed pixel back with getImageData. Our `compositeOverByte`
+ * (round-half-even — the exact ImageData/engine byte) must reproduce that pixel
+ * BYTE-FOR-BYTE across the whole tier ladder. No luminance tolerance, no
+ * "invisible-rounding" slack: the reference composite and the prod paint are the
+ * same byte or the test is red. (Verified maxGap = 0/20 across Chromium AND WebKit
+ * for every contract tier before this assertion was tightened.)
  *
- * RED-proof: revert evaluateTier to the blend-of-luminances (effLow = α·L_tint …)
- * and this FAILS on the sheer tiers — e.g. light/soft blend effLow ≈ 0.266 vs the
- * browser's real composite ≈ 0.174 (Δ ≈ 0.09 ≫ tolerance), the very gap that made
- * `light/soft` a misleading "guaranteed". Restore the composite bound → GREEN.
+ * RED-proof: swap `compositeOverByte` to truncation (`| 0`), round-half-up, or a
+ * linear-light composite and this FAILS on the sheer tiers (e.g. light/base over
+ * black paints #949494, truncation predicts #939393). Restore → GREEN.
  */
 const MATERIAL_TIERS = ['base', 'muted', 'soft', 'subtle', 'elevated'] as const;
-const LUM_TOLERANCE = 0.02; // ~1 byte of canvas rounding
 
-test('DIFFERENTIAL: guarantee effLow/effHigh equal the browser composite (black/white backdrop)', async ({
+test('DIFFERENTIAL byte-exact: compositeOverByte reproduces the canvas pixel (black/white backdrop)', async ({
   page,
 }) => {
   // The browser compositor is the oracle: paint tint over black and over white on
-  // a canvas, read the composited pixel's luminance for every tier.
+  // a canvas, read the committed pixel BYTES back for every tier.
   const measured = await page.evaluate((tiers) => {
     const root = getComputedStyle(document.documentElement);
     const resolve = (token: string) => {
@@ -161,13 +161,7 @@ test('DIFFERENTIAL: guarantee effLow/effHigh equal the browser composite (black/
       probe.remove();
       return c;
     };
-    const lin = (c: number) => {
-      const s = c / 255;
-      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-    };
-    const lum = (r: number, g: number, b: number) =>
-      0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-    const sampleOver = (tintCss: string, backdrop: string) => {
+    const sampleBytes = (tintCss: string, backdrop: string): [number, number, number] => {
       const cv = document.createElement('canvas');
       cv.width = 4;
       cv.height = 4;
@@ -180,39 +174,41 @@ test('DIFFERENTIAL: guarantee effLow/effHigh equal the browser composite (black/
       ctx.fillStyle = tintCss; // straight-alpha source-over — the browser's real composite
       ctx.fillRect(0, 0, 4, 4);
       const d = ctx.getImageData(2, 2, 1, 1).data;
-      return lum(d[0] ?? 0, d[1] ?? 0, d[2] ?? 0);
+      return [d[0] ?? 0, d[1] ?? 0, d[2] ?? 0];
     };
     return tiers.map((tier) => {
       const tintCss = resolve(`--lab-bg-material-${tier}-01`);
       return {
         tier,
         tintCss,
-        lumOverBlack: sampleOver(tintCss, 'rgb(0, 0, 0)'),
-        lumOverWhite: sampleOver(tintCss, 'rgb(255, 255, 255)'),
+        overBlack: sampleBytes(tintCss, 'rgb(0, 0, 0)'),
+        overWhite: sampleBytes(tintCss, 'rgb(255, 255, 255)'),
       };
     });
   }, MATERIAL_TIERS);
 
-  // Parse the browser-resolved tint and route it through the REAL guarantee code.
+  // Parse the SAME browser-resolved tint string the canvas painted, and route it
+  // through the exact byte composite. Both sides consume `tintCss`, so any alpha
+  // quantisation the browser applied is shared — the only variable is the rounding.
   const parse = (css: string) => {
     const n = css.match(/[\d.]+/g)?.map(Number) ?? [];
     return { r: n[0] ?? 0, g: n[1] ?? 0, b: n[2] ?? 0, a: n[3] ?? 1 };
   };
-  const OPAQUE_BLACK = { r: 0, g: 0, b: 0, a: 1 };
-  const PROBE_LABEL = [{ name: 'probe', colour: OPAQUE_BLACK }];
+  const BLACK = { r: 0, g: 0, b: 0, a: 1 };
+  const WHITE = { r: 255, g: 255, b: 255, a: 1 };
 
   for (const row of measured) {
     const tint = parse(row.tintCss);
-    // effLow/effHigh depend only on the tint; base + label are inert here.
-    const verdict = evaluateTier(row.tier, 'light', { tint, base: OPAQUE_BLACK }, PROBE_LABEL);
+    const black = compositeOverByte(tint, BLACK);
+    const white = compositeOverByte(tint, WHITE);
     expect(
-      Math.abs(verdict.effLow - row.lumOverBlack),
-      `${row.tier}: effLow (guarantee) vs composite-over-black (browser)`,
-    ).toBeLessThan(LUM_TOLERANCE);
+      [black.r, black.g, black.b],
+      `${row.tier}: compositeOverByte vs canvas over BLACK`,
+    ).toEqual(row.overBlack);
     expect(
-      Math.abs(verdict.effHigh - row.lumOverWhite),
-      `${row.tier}: effHigh (guarantee) vs composite-over-white (browser)`,
-    ).toBeLessThan(LUM_TOLERANCE);
+      [white.r, white.g, white.b],
+      `${row.tier}: compositeOverByte vs canvas over WHITE`,
+    ).toEqual(row.overWhite);
   }
 });
 
