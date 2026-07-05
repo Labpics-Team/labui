@@ -124,8 +124,22 @@ export async function assertLabelContrast(
   surfaceLocator?: Locator,
   isLargeText = false,
 ): Promise<ContrastResult> {
-  // Читаем computed foreground из лейбла.
-  const fgRaw: string = await labelLocator.evaluate((el) => getComputedStyle(el).color);
+  // Читаем computed foreground из лейбла. Нормализуем через canvas: движок
+  // эмитит роли в oklch(), и computed color сохраняет этот синтаксис (CSS
+  // Color 4 сериализация), а Node-сторона парсит только rgb/rgba. Canvas
+  // 2d-контекст парсит ЛЮБОЙ валидный CSS-цвет — рисуем 1px и читаем байты:
+  // тот же путь, каким цвет реально приходит на экран, не свой конвертер.
+  const fgRaw: string = await labelLocator.evaluate((el) => {
+    const raw = getComputedStyle(el).color;
+    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    if (!ctx) return raw;
+    ctx.canvas.width = 1;
+    ctx.canvas.height = 1;
+    ctx.fillStyle = raw;
+    ctx.fillRect(0, 0, 1, 1);
+    const d = ctx.getImageData(0, 0, 1, 1).data;
+    return `rgba(${d[0] ?? 0}, ${d[1] ?? 0}, ${d[2] ?? 0}, ${((d[3] ?? 255) / 255).toFixed(3)})`;
+  });
 
   // Читаем эффективный (скомпонованный) background поверхности: если сама
   // поверхность имеет полупрозрачный background-color (частый случай для
@@ -147,15 +161,36 @@ export async function assertLabelContrast(
         b: src.b * src.a + dst.b * (1 - src.a),
       };
     }
+    // Canvas-нормализация: слои фона тоже эмитятся движком в oklch(), а не
+    // только в rgb/rgba — парсим ЛЮБОЙ валидный CSS-цвет тем же путём, каким
+    // он приходит на экран (1px fill + чтение байтов), вместо своего регэкспа.
+    const normCtx = document
+      .createElement('canvas')
+      .getContext('2d', { willReadFrequently: true });
+    if (normCtx) {
+      normCtx.canvas.width = 1;
+      normCtx.canvas.height = 1;
+    }
     function parse(raw: string): { r: number; g: number; b: number; a: number } | null {
       const m = raw.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-      if (!m) return null;
-      return {
-        r: Number(m[1]),
-        g: Number(m[2]),
-        b: Number(m[3]),
-        a: m[4] === undefined ? 1 : Number(m[4]),
-      };
+      if (m) {
+        return {
+          r: Number(m[1]),
+          g: Number(m[2]),
+          b: Number(m[3]),
+          a: m[4] === undefined ? 1 : Number(m[4]),
+        };
+      }
+      if (!normCtx || !raw) return null;
+      normCtx.clearRect(0, 0, 1, 1);
+      // Сентинел: если raw не парсится, fillStyle остаётся прежним — тогда
+      // честно возвращаем null, а не мусорный цвет сентинела.
+      normCtx.fillStyle = '#010203';
+      normCtx.fillStyle = raw;
+      if (normCtx.fillStyle === '#010203' && raw.toLowerCase() !== '#010203') return null;
+      normCtx.fillRect(0, 0, 1, 1);
+      const d = normCtx.getImageData(0, 0, 1, 1).data;
+      return { r: d[0] ?? 0, g: d[1] ?? 0, b: d[2] ?? 0, a: (d[3] ?? 255) / 255 };
     }
 
     let composed = { r: 255, g: 255, b: 255 }; // canvas default (opaque white)
