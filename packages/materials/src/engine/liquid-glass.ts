@@ -252,8 +252,11 @@ const SCRATCH_IDLE_MS = 2000;
  * (0 recompute); a LARGER band resumes from the covered edge (only the delta
  * ring calls sdRoundRect — still 0 FULL recomputes). Values are stored as
  * Float64Array — the exact IEEE-754 double sdRoundRect returned — so feeding a
- * cached value through the identical downstream arithmetic is BYTE-IDENTICAL
- * (the golden lock proves it across the whole corpus).
+ * cached value through the identical downstream arithmetic is BYTE-IDENTICAL.
+ * Proven two ways: the golden corpus locks the cold + shrink-hit bytes, and
+ * engine-sdf-cache hashes BOTH the grow-resume and the shrink-hit outputs against
+ * a from-scratch build (delta-ring end/mirror/encode byte-verified, not just
+ * counter-verified).
  *
  * KEY = `${w}x${h}x${corner}x${sc}` — every input that moves `inside` (r derives
  * from w,h,corner; px/py from sc). Dropping any component collides two distinct
@@ -311,7 +314,8 @@ function armScratchRelease(): void {
  * No canvas/ImageData here — buildMap() rasterises the returned bytes for the
  * browser, while a bare Node test runner can call this directly and hash the
  * map. Exported under a `__` name (like __cacheStats) so it stays OFF the
- * package surface (ADR-0003 §3): only buildMap and the golden test read it.
+ * package surface (ADR-0003 §3): buildMap, the golden test, the sdf-cache test,
+ * and the bench read it — never a package consumer.
  */
 export function __computeDisplacementField(
   w: number,
@@ -344,6 +348,12 @@ export function __computeDisplacementField(
   // so a depth change reads the sqrt-heavy `inside` back with 0 recomputes.
   const sdfKey = `${w}x${h}x${corner}x${sc}`;
   let sdf = sdfCache.get(sdfKey);
+  // Dims guard: the key ⇒ (halfW,halfH) deterministically today, so this never
+  // fires — but if a future key edit ever let a mis-sized field answer a key, an
+  // unguarded hit would misindex `inside`/`covered` and SILENTLY drop out-of-range
+  // Float64Array writes → wrong bytes, no error. Treating a size mismatch as a
+  // loud MISS (rebuild) makes halfW/halfH load-bearing instead of dead fields.
+  if (sdf && (sdf.halfW !== halfW || sdf.halfH !== halfH)) sdf = undefined;
   if (sdf) {
     sdfCache.delete(sdfKey);
     sdfCache.set(sdfKey, sdf); // LRU touch (Map keeps insertion order)

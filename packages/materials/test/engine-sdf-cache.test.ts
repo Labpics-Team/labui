@@ -21,12 +21,20 @@
  */
 import { describe, expect, it } from 'vitest';
 import { __computeDisplacementField, __fieldStats } from '../src/engine/liquid-glass';
+import { hashBytes } from './engine-map-corpus';
 
 /** sdRoundRect calls added by running `fn()`. */
 function computesDelta(fn: () => void): number {
   const before = __fieldStats().sdfComputes;
   fn();
   return __fieldStats().sdfComputes - before;
+}
+
+/** Evict every live SDF entry so the next build of ANY geometry is a cold miss.
+ *  (Cap+1 distinct throwaway geometries flush the LRU.) */
+function evictAllSdf(): void {
+  const { sdfCacheCap } = __fieldStats();
+  for (let i = 0; i <= sdfCacheCap; i++) __computeDisplacementField(1700 + i * 17, 440, 20, 40, 1);
 }
 
 describe('SDF cache — depth is O(encode), 0 field recomputes (criterion б)', () => {
@@ -63,6 +71,35 @@ describe('SDF cache — depth is O(encode), 0 field recomputes (criterion б)', 
     // Exact partition: the incremental computes sum to the from-scratch total —
     // proves ZERO double-compute of the covered region AND zero missed column.
     expect(narrow + grow).toBe(fromScratch72);
+  });
+});
+
+describe('SDF cache — HIT bytes are IDENTICAL to a from-scratch build (byte-verify)', () => {
+  // The golden corpus (engine-map-golden) locks the COLD + shrink-hit bytes, but no
+  // corpus pair exercises a depth INCREASE on a shared key, so the delta-ring resume
+  // (end/mirror/encode over [covered, newEnd)) is otherwise only COUNTER-verified.
+  // Here we hash both cache-HIT paths against a from-scratch rebuild of the same
+  // geometry. TRAP: the returned `data` is a view into reused scratch — hash it
+  // BEFORE the next build overwrites the buffer.
+
+  it('grow-resume output equals a from-scratch build (delta ring is byte-correct)', () => {
+    const G = { w: 419, h: 283, corner: 27, dpr: 2 };
+    const at = (d: number) => __computeDisplacementField(G.w, G.h, G.corner, d, G.dpr);
+    at(24); // warm at a narrow band
+    const grownHash = hashBytes(at(72).data); // grow → delta-ring resume; hash NOW
+    evictAllSdf(); // flush G so the next build is cold
+    const freshHash = hashBytes(at(72).data); // from-scratch band-72; hash NOW
+    expect(grownHash).toBe(freshHash);
+  });
+
+  it('shrink-hit output equals a from-scratch build (cached read is byte-correct)', () => {
+    const G = { w: 421, h: 289, corner: 23, dpr: 2 };
+    const at = (d: number) => __computeDisplacementField(G.w, G.h, G.corner, d, G.dpr);
+    at(80); // warm at a wide band
+    const hitHash = hashBytes(at(28).data); // shrink → all-cached read; hash NOW
+    evictAllSdf();
+    const freshHash = hashBytes(at(28).data); // from-scratch band-28; hash NOW
+    expect(hitHash).toBe(freshHash);
   });
 });
 
