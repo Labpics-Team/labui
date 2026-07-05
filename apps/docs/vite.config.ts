@@ -7,9 +7,10 @@ import { type Plugin, defineConfig } from 'vite';
 //
 // Multi-page: each demo fixture is its own .html entry so every material
 // surface is verified in isolation without touching the token fixtures.
-// `materials.html` is the Ambient/Solid material demo (mode + theme switchers,
-// product card + sign-in form + the Ambient blur ladder) — it replaces the old
-// `glass.html` per the owner's verdict (web glass is native-only). `shadow.html`
+// `materials-flag.html` is the material demo (data-material solid|glass|blur
+// over the --lab-* contract); the older Ambient/Solid `materials.html` was
+// removed with the core material shims (#41) — the engine owns materials now
+// (`packages/materials`, ADR-0003). `shadow.html`
 // is the shadow-stack demo. `proof.html` is the core-scaffold proof:
 // `<lab-proof>` client-rendered AND server-rendered (declarative shadow DOM).
 
@@ -56,7 +57,6 @@ export default defineConfig({
         index: resolve(__dirname, 'src/index.html'),
         // Рантайм-провайдер: живой WASM-движок + watchTheme + acme-конфиг.
         'engine-live': resolve(__dirname, 'src/engine-live.html'),
-        materials: resolve(__dirname, 'src/materials.html'),
         // Materials FLAG demo: data-material solid|glass|blur over the --lab-*
         // contract (@labpics/ui-materials). One attribute flips card + modal.
         'materials-flag': resolve(__dirname, 'src/materials-flag.html'),

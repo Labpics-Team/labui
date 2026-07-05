@@ -13,8 +13,9 @@
  *   - the Lit SSR shim → `@labpics/ui-core/ssr`;
  *   - the `<lab-proof>` element (self-registering) → `@labpics/ui-core/proof`.
  *
- * CSS surfaces (`materials.css`, `glass.css`, `theme.css`) ship as side-effect
- * stylesheet exports.
+ * CSS surfaces (`theme.css`, the re-exported `shadow.css`) ship as side-effect
+ * stylesheet exports. The material axis lives in `@labpics/ui-materials`
+ * (material.css) — the temporary core material was torn down in #41.
  */
 
 // Behaviors seam — the cross-renderer contract.

@@ -14,8 +14,8 @@
  * │    2. @media (prefers-color-scheme) fallback when no attribute is set;      │
  * │    3. the light default (bare :root) — как в contract.css @labpics/colors.  │
  * │                                                                            │
- * │  `materials.css` already binds the material roles under [data-theme] and    │
- * │  [data-material] using exactly this convention, so the two compose.        │
+ * │  `@labpics/ui-materials` (material.css) already binds the material axis     │
+ * │  under [data-material] using exactly this convention, so the two compose.  │
  * │                                                                            │
  * │  The blocks below are the agreed INSERTION POINTS. @labpics/colors fills    │
  * │  their bodies with role bindings; this scaffold only guarantees the         │

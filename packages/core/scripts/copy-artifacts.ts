@@ -1,7 +1,8 @@
 /**
  * Copy the non-JS artifacts (CSS) from `src/` into `dist/` after tsup has built
- * the JS/types, so the package's `./materials.css` (and the `./glass.css`
- * back-compat shim) exports resolve for consumers.
+ * the JS/types, so the package's `./theme.css` export resolves for consumers.
+ * (The temporary `materials.css` / `glass.css` surfaces were torn down in #41 —
+ * the material axis is owned by `@labpics/ui-materials`.)
  *
  * Also copies the generated `shadow.css` from @labpics/ui-shadow into
  * `dist/shadow.css` so consumers can import `@labpics/ui-core/shadow.css` as the
@@ -28,7 +29,7 @@ function main(): void {
   mkdirSync(dist, { recursive: true });
 
   // Own source CSS files.
-  const ownFiles = ['materials.css', 'glass.css', 'theme.css'];
+  const ownFiles = ['theme.css'];
   for (const file of ownFiles) {
     copyFileSync(join(src, file), join(dist, file));
   }

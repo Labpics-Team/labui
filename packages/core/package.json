@@ -29,16 +29,12 @@
       "import": "./dist/components/*/index.js",
       "require": "./dist/components/*/index.cjs"
     },
-    "./materials.css": "./dist/materials.css",
-    "./glass.css": "./dist/glass.css",
     "./theme.css": "./dist/theme.css",
     "./shadow.css": "./dist/shadow.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
   "sideEffects": [
-    "./dist/materials.css",
-    "./dist/glass.css",
     "./dist/theme.css",
     "./dist/shadow.css",
     "./dist/proof/lab-proof.js",

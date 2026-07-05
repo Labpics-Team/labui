@@ -7,8 +7,10 @@ import { expect, test } from '@playwright/test';
  * corner smoothing ζ=0.6) применяется универсальным правилом tokens.css в
  * light DOM и листом LabElement.finalizeStyles в каждом shadow root.
  * Класс-риск, который этот сьют держит: `corner-shape` НЕ наследуется, а слои
- * стекла живут на `border-radius: inherit` — расхождение формы панели и её
- * ободков было бы визуальным дефектом, невидимым юнит-тестам.
+ * материала (ободок/зерно) живут на `border-radius: inherit` — расхождение
+ * формы панели и её слоёв было бы визуальным дефектом, невидимым юнит-тестам.
+ * Поверхность-проба — `surface-card` флаг-демо (`materials-flag.html`); старая
+ * страница `materials.html` снесена вместе с core-шимами (#41).
  *
  * В браузерах без поддержки (webkit на сегодня) computed-значение пустое —
  * сьют честно скипается: там свойство игнорируется целиком и ломаться нечему.
@@ -34,14 +36,18 @@ async function cornerShape(
 }
 
 test('стекло: панель и её слои несут одну форму угла (light DOM)', async ({ page }) => {
-  await page.goto('/materials.html');
-  const pane = await cornerShape(page, '[data-testid="ladder-base"]');
+  await page.goto('/materials-flag.html');
+  // Меряем в режиме glass — именно там у поверхности появляются слои.
+  await page.evaluate(() => {
+    document.documentElement.setAttribute('data-material', 'glass');
+  });
+  const pane = await cornerShape(page, '[data-testid="surface-card"]');
   test.skip(pane === '', 'браузер без corner-shape — свойство игнорируется целиком');
   expect(pane).toBe(CORNER('1.1'));
   // Слои на border-radius: inherit обязаны совпасть с формой панели —
   // иначе клип панели суперэллипсный, а ободок/зерно круглые.
-  expect(await cornerShape(page, '[data-testid="ladder-base"]', '::before')).toBe(pane);
-  expect(await cornerShape(page, '[data-testid="ladder-base"]', '::after')).toBe(pane);
+  expect(await cornerShape(page, '[data-testid="surface-card"]', '::before')).toBe(pane);
+  expect(await cornerShape(page, '[data-testid="surface-card"]', '::after')).toBe(pane);
 });
 
 test('shadow DOM: компоненты получают форму через LabElement', async ({ page }) => {
@@ -60,11 +66,11 @@ test('shadow DOM: компоненты получают форму через La
 });
 
 test('ручка токена управляет формой (identity-настройка клиента)', async ({ page }) => {
-  await page.goto('/materials.html');
-  const before = await cornerShape(page, '[data-testid="ladder-base"]');
+  await page.goto('/materials-flag.html');
+  const before = await cornerShape(page, '[data-testid="surface-card"]');
   test.skip(before === '', 'браузер без corner-shape');
   await page.evaluate(() => {
     document.documentElement.style.setProperty('--lab-radius-corner-k', '2.3');
   });
-  expect(await cornerShape(page, '[data-testid="ladder-base"]')).toBe(CORNER('2.3'));
+  expect(await cornerShape(page, '[data-testid="surface-card"]')).toBe(CORNER('2.3'));
 });

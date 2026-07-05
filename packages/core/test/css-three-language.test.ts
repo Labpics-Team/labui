@@ -27,7 +27,8 @@ describe('classifyLabVar — three-language boundary', () => {
   it('ACCEPTS a semantic-role reference as "semantic"', () => {
     expect(classifyLabVar('--lab-label-primary')).toBe('semantic');
     expect(classifyLabVar('--lab-fill-brand-primary')).toBe('semantic');
-    expect(classifyLabVar('--lab-mat-blur')).toBe('semantic');
+    // (`--lab-mat-*` был третьей пробой; семейство ушло вместе с core-шимами, #41.)
+    expect(classifyLabVar('--lab-fx-shadow-major')).toBe('semantic');
   });
 
   it('ACCEPTS a dimension reference as "dimension"', () => {
