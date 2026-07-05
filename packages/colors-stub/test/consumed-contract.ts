@@ -62,8 +62,6 @@ export const SEMANTIC_ROLE_PREFIXES: readonly string[] =
  * Sources of the declarations:
  *   - `packages/shadow/src/generated/shadow.css`: `--lab-shadow-*`,
  *     `--lab-light-angle`, `--lab-elevation-*`.
- *   - `packages/core/src/materials.css`: `--lab-mat-*`, `--lab-ambient-*`,
- *     `--lab-glass-*`.
  *   - `--lab-surface-shadow-tint`: per-surface shadow tint read from the core
  *     contract (a single exact name, not a family).
  */
@@ -72,9 +70,6 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-surface-shadow-tint', // exact: per-surface shadow tint (shadow.css seam)
   '--lab-shadow-color', // exact: theme shadow-colour anchor (shadow.css)
   '--lab-light-angle', // exact: single global light source (shadow.css)
-  '--lab-mat-', // material roles (materials.css)
-  '--lab-ambient-', // ambient material primitives (materials.css)
-  '--lab-glass-', // glass material aliases (materials.css)
   '--lab-elevation-', // semantic elevation roles (shadow.css)
 ] as const;
 
@@ -247,15 +242,15 @@ export function byBucket(): Record<Bucket, string[]> {
  * dropped/renamed role. "Looks like a colour role" = matches a
  * `SEMANTIC_ROLE_PREFIXES` prefix; "absent" = not in `knownRoles`.
  *
- * The `--lab-mat-` prefix is deliberately BOTH a semantic prefix (css.ts) AND a
- * `local-or-gap` token family (materials.css, owned locally — intentionally NOT
- * in roles.json). So a name that classifies into a NON-colour bucket
- * (`local-or-gap` / `dimension`) is NOT a missing colour role — only names that
- * fall through to `unclassified` (look like a colour role, in no other bucket)
- * are flagged. This routes through the single `classify` chokepoint, so the rule
- * never forks. The pin test feeds the live consumed set here AND a fabricated
- * `--lab-label-*` name to prove the "missing" path fires (green = pinned, not
- * blind).
+ * A name that classifies into a NON-colour bucket (`local-or-gap` /
+ * `dimension`) is NOT a missing colour role — only names that fall through to
+ * `unclassified` (look like a colour role, in no other bucket) are flagged.
+ * (Historically `--lab-mat-` sat in BOTH lists — a semantic prefix in css.ts
+ * AND a local-or-gap family; the family was torn down with the temporary core
+ * material, #41.) This routes through the single `classify` chokepoint, so the
+ * rule never forks. The pin test feeds the live consumed set here AND a
+ * fabricated `--lab-label-*` name to prove the "missing" path fires (green =
+ * pinned, not blind).
  */
 export function missingColourRoles(
   names: readonly string[],

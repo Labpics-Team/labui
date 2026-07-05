@@ -166,18 +166,18 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
     expect(scanSource('p.ts', "color: ${litVar('--lab-fx-shadow-major')};")).toEqual([]);
   });
 
-  // ── Blend modes are NOT colours. `var(--lab-mat-theme-blend, screen)` is a legitimate
-  // non-colour keyword fallback on a material role and must stay unflagged — widening the
+  // ── Blend modes are NOT colours. A non-colour keyword fallback on a token from a
+  // colour-bearing family (here `--lab-fx-*`) must stay unflagged — widening the
   // literal set to system colours must not regress this (word-boundary correctness).
+  // (The historical case was `--lab-mat-theme-blend`; the mat family is gone, #41 —
+  // the guarded CLASS of bug is family-agnostic, so the probe uses a live family.)
   it('ALLOWS a blend-mode keyword fallback (screen / multiply / overlay)', () => {
-    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-mat-theme-blend, screen);')).toEqual([]);
-    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-mat-theme-blend, multiply);')).toEqual(
+    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-fx-blend, screen);')).toEqual([]);
+    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-fx-blend, multiply);')).toEqual([]);
+    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-fx-blend, overlay);')).toEqual([]);
+    expect(scanSource('p.ts', "mix-blend-mode: ${litVar('--lab-fx-blend', 'screen')};")).toEqual(
       [],
     );
-    expect(scanSource('p.css', 'mix-blend-mode: var(--lab-mat-theme-blend, overlay);')).toEqual([]);
-    expect(
-      scanSource('p.ts', "mix-blend-mode: ${litVar('--lab-mat-theme-blend', 'screen')};"),
-    ).toEqual([]);
   });
 
   // ── Word-boundary guard: an identifier that merely CONTAINS a system-colour keyword as

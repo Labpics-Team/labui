@@ -44,11 +44,8 @@ export const COLOUR_ROLE_PREFIXES = [
   'overlay',
   'fx', // glow / focus-ring / shadow / skeleton — all colour-bearing
   'accent',
-  'mat', // material roles
   'badge', // --lab-badge-label-* (Misc group) — colour-bearing, consumed in lab-badge
   'control', // --lab-control-bg — colour-bearing, consumed in switch/slider
-  'ambient', // --lab-ambient-*-color material primitives (materials.css)
-  'glass', // --lab-glass-* material aliases (materials.css) — colour-bearing
   'neutral', // primitive (must never be read, let alone fallback-baked)
 ] as const;
 
@@ -59,10 +56,10 @@ const COLOUR_TOKEN = `--lab-(?:${COLOUR_ROLE_PREFIXES.join('|')})-[a-z0-9-]+`;
  * The full set of CSS named colours (CSS Color Module Level 4) plus the system
  * keywords that resolve to a COLOUR (`currentColor`, `transparent`). This is a CLOSED,
  * bounded set — it deliberately excludes CSS keywords that are NOT colours but can sit
- * in a fallback of a non-colour `--lab-mat-*` token (e.g. the blend-mode `screen` /
- * `multiply` / `overlay`, or `inherit` / `none`), so the scanner never false-positives
- * on a legitimate blend-mode fallback. Maintaining the named-colour set is cheap and
- * exact; matching "any bare identifier" is what mis-flagged `screen`.
+ * in a fallback of a non-colour token in a colour-bearing family (e.g. a blend-mode
+ * `screen` / `multiply` / `overlay`, or `inherit` / `none`), so the scanner never
+ * false-positives on a legitimate keyword fallback. Maintaining the named-colour set is
+ * cheap and exact; matching "any bare identifier" is what mis-flagged `screen`.
  */
 export const NAMED_COLOURS = [
   'transparent',
@@ -222,8 +219,8 @@ export const NAMED_COLOURS = [
  * to a platform COLOUR (e.g. `Canvas` is the OS canvas background). They are bare
  * identifiers, so they are matched as WHOLE WORDS (a `\b…\b`-bounded, case-insensitive
  * alternation) — never as substrings. This bounding is what keeps a legitimate
- * NON-colour keyword fallback on a `--lab-mat-*` role unflagged, in particular the
- * blend-mode `var(--lab-mat-theme-blend, screen)` (`screen`/`multiply`/`overlay`/… are
+ * NON-colour keyword fallback on a colour-family role unflagged, in particular a
+ * blend-mode `var(--lab-fx-blend, screen)` (`screen`/`multiply`/`overlay`/… are
  * absent from this set, so they are never matched).
  */
 export const SYSTEM_COLOURS = [

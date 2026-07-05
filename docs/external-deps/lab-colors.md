@@ -73,13 +73,20 @@ in LabUI.
 | `--lab-light-angle` | `packages/shadow/src/generated/shadow.css:13` | `35deg` | Single global light-source angle driving every elevation offset. |
 | `--lab-elevation-` (`--lab-elevation-{resting,raised,overlay,modal}`) | `packages/shadow/src/generated/shadow.css:30-49` | composed from the alphas + angle above | Semantic elevation roles. Provisional until the engine owns the shadow geometry/alpha contract. |
 
-### Materials — `packages/core/src/materials.css`
+### Materials — CLOSED (refraction engine landed, ADR-0003)
 
-| Gap token (prefix) | Declared at | Role | What the engine should provide |
-| --- | --- | --- | --- |
-| `--lab-mat-` (`--lab-mat-blur`, `--lab-mat-fill-alpha`, `--lab-mat-rim`, …) | `packages/core/src/materials.css:125-128` (+ role block) | Semantic **material role** a surface reads (Solid / BG-Blur / Glass). | The material role layer resolved from the engine's surface model, not LabUI-tuned primitives. |
-| `--lab-ambient-` (`--lab-ambient-base`, `--lab-ambient-rim-color`, …) | `packages/core/src/materials.css:45-92` | Ambient material **primitives** (blur ladder, fill alphas, rim/specular). | Engine-owned primitives; LabUI mirrors Figma values 1:1 as a provisional snapshot. |
-| `--lab-glass-` | `packages/core/src/materials.css` (legacy alias surface referenced in the materials header) | Prior glass-material aliases the `--lab-mat-*` roles superseded. | Folded into the engine's material roles; recorded so the alias family is not silently dropped. |
+Former gap surface: `packages/core/src/materials.css` — the `--lab-mat-*`
+semantic material roles, `--lab-ambient-*` primitives and legacy `--lab-glass-*`
+aliases it declared provisionally. **Closed**: the Liquid Glass refraction
+engine landed in `packages/materials/src/engine/` (ADR-0003 ch-02), and the
+provisional core shims (`materials.css`, `glass.css`) were removed in the
+follow-up sweep (#41). All three families left `LOCAL_OR_GAP_PREFIXES`
+(`consumed-contract.ts`), `SEMANTIC_ROLE_PREFIXES` (`packages/core/src/css.ts`)
+and the hardcoded-colour / box-shadow scanner allowlists in the same sweep. The
+only remaining literal carrier is the frozen Figma anchor
+(`packages/colors-stub/figma-reference.css`) — raw measurements, not consumed
+code. A future material gap gets a **new** record here; these retired prefixes
+must not be revived.
 
 ### Published `@labpics/colors` CSS+JS entry
 
@@ -99,7 +106,7 @@ engine emission as the engine ships them.
 
 | Capability | Consuming call site | Provisional source today | What the engine should provide |
 | --- | --- | --- | --- |
-| **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `materials-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]` — **generated engine artifact**: engine-owned roles emitted live from the published `0.5.0` package, the rest bridged from the frozen Figma anchor (`generate-contract.mjs` + `contract-generated` gate). | Bridge coverage: each remaining Figma-bridged role migrates to live engine emission as the engine ships it; the import specifier never changes. |
+| **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]` — **generated engine artifact**: engine-owned roles emitted live from the published `0.5.0` package, the rest bridged from the frozen Figma anchor (`generate-contract.mjs` + `contract-generated` gate). | Bridge coverage: each remaining Figma-bridged role migrates to live engine emission as the engine ships it; the import specifier never changes. |
 | **JS runtime entry** (injects `--lab-*` from the background) | `packages/colors` (`@labui/colors`) — engine wrapper (`engine.mjs`, exact pin `@labpics/colors@0.5.0`); `labcolors-engine` npm-alias in `apps/docs` for live-engine e2e. Components stay CSS-only (law 2) — the runtime consumer is the non-component engine package. | The published wasm runtime, consumed as-is. | Runtime role coverage growing with the engine (e.g. glow/ladder roles land as released versions ship them). |
 
 This records the "published `@labpics/colors` npm package exposing a CSS entry

@@ -45,9 +45,6 @@ import {
  * boundary where colour values are DECLARED, not consumed:
  *   - `contract.css` — the colour contract; it IS the values (the @labpics/colors
  *     stub). Shape pinned by `contract.test.ts`.
- *   - `materials.css` — provisional material primitives; an engine-gap recorded
- *     in `docs/external-deps/lab-colors.md` (CH-03). In plain `src/`, so NOT
- *     covered by the `/src/generated/` exclude — MUST be allowlisted.
  *   - `generated/shadow.css` — provisional shadow anchor + JND alphas (same gap
  *     record). Also covered by `/src/generated/`; listed for an explicit record.
  *   - `shadow/src/config.ts` — the source-of-truth that GENERATES shadow.css; it
@@ -61,7 +58,6 @@ export const ALLOWLIST: readonly string[] = [
   // Замороженный Figma-якорь: он ЕСТЬ сырые замеры (включая material rgb-литералы),
   // против него меряет золотая сверка — не компонентный код, не редактируется.
   'packages/colors-stub/figma-reference.css',
-  'packages/core/src/materials.css',
   'packages/shadow/src/generated/shadow.css',
   'packages/shadow/src/config.ts',
 ];

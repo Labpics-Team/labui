@@ -8,15 +8,16 @@
  *
  * The selector convention below is the agreed contract between this scaffold and
  * the @labpics/colors engine. The colors package MUST bind its role variables
- * under exactly these selectors; `materials.css` already binds the material
- * roles under the same `[data-theme]` / `[data-material]` attributes, so the two
- * layers compose without coordination beyond this constant.
+ * under exactly these selectors; `@labpics/ui-materials` (material.css) binds
+ * the material axis under the same `[data-theme]` / `[data-material]`
+ * attributes, so the two layers compose without coordination beyond this
+ * constant.
  */
 
 /** Attribute that selects the colour theme. Default (absent) resolves to light. */
 export const THEME_ATTR = 'data-theme';
 
-/** Attribute that selects the material mode. Default (absent) resolves to ambient. */
+/** Attribute that selects the material mode. Default (absent) resolves to solid. */
 export const MATERIAL_ATTR = 'data-material';
 
 /** The colour themes a root may declare. */
@@ -24,11 +25,14 @@ export const THEMES = ['light', 'dark'] as const;
 export type Theme = (typeof THEMES)[number];
 
 /**
- * The material modes a root may declare. `glassy` — временный алиас `ambient`
- * до приземления настоящего Glass (feat/liquid-glass) — kept here so the type
- * is honest about what `data-material` accepts, not so components branch on it.
+ * The material modes a root may declare — the flag model (канон 2026-07-01:
+ * материал — флаг Glass/Blur/Solid; Solid ≡ Background). The axis itself is
+ * owned by `@labpics/ui-materials` (ADR-0003); this constant only fixes the
+ * attribute convention. The former `ambient`/`glassy` stub modes were torn
+ * down with the temporary core material (#41) — `solid` is the default and
+ * the universal fallback.
  */
-export const MATERIALS = ['ambient', 'solid', 'glassy'] as const;
+export const MATERIALS = ['solid', 'glass', 'blur'] as const;
 export type Material = (typeof MATERIALS)[number];
 
 /**

@@ -9,7 +9,7 @@
  *
  * Values are a closed set, validated before being written to the DOM — never
  * trust a value onto the root unchecked, even from our own <option>s
- * (craft-frontend P11). This mirrors the existing materials-demo convention.
+ * (craft-frontend P11).
  */
 import { el } from './dom.js';
 
@@ -19,9 +19,12 @@ const CONTROLS = {
     { value: 'dark', label: 'Dark' },
     { value: 'light', label: 'Light' },
   ],
+  // Канон оси материала — packages/materials/src/material.css:
+  // `data-material="solid|glass|blur"` (ambient/solid ушли с core-шимами, #41).
   'data-material': [
-    { value: 'ambient', label: 'Ambient' },
     { value: 'solid', label: 'Solid' },
+    { value: 'glass', label: 'Glass' },
+    { value: 'blur', label: 'Blur' },
   ],
 } as const;
 

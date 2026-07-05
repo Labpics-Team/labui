@@ -3,10 +3,11 @@
  *
  * primitives -> semantic roles -> components. A component reads ONLY the
  * semantic role layer (`--lab-label-*`, `--lab-fill-*`, `--lab-border-*`,
- * `--lab-bg-*`, `--lab-fx-*`), the material roles (`--lab-mat-*`), and the
- * dimension layer (`--lab-space-*`, `--lab-radius-*`, `--lab-z-*`,
- * `--lab-font-*`, `--lab-line-height-*`). It NEVER reads a primitive
- * (`--lab-neutral-*`, `--lab-accent-*`) and NEVER hardcodes a hex.
+ * `--lab-bg-*`, `--lab-fx-*`) and the dimension layer (`--lab-space-*`,
+ * `--lab-radius-*`, `--lab-z-*`, `--lab-font-*`, `--lab-line-height-*`).
+ * It NEVER reads a primitive (`--lab-neutral-*`, `--lab-accent-*`) and NEVER
+ * hardcodes a hex. Material mechanics belong to `@labpics/ui-materials` and
+ * are private (`--_*`) — a component never reads them at all.
  *
  * `cssVar` is the single way to reference a token in TS-authored styles, so the
  * `--lab-*` contract is the only surface a component touches. The exact role
@@ -81,7 +82,6 @@ export const SEMANTIC_ROLE_PREFIXES = [
   '--lab-border-', // borders
   '--lab-bg-', // backgrounds
   '--lab-fx-', // glow / focus-ring / shadow / skeleton
-  '--lab-mat-', // material roles (from materials.css)
   '--lab-badge-', // component pair roles (crate::pair — fill + label-on)
 ] as const;
 

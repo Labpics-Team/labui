@@ -28,7 +28,9 @@ import { defineConfig, devices } from '@playwright/test';
  *   smoke.spec.ts     — страница рендерится + контракт цвета --lab-*
  *   proof.spec.ts     — сквозной seam ядра: SSR / render / toggle / токены / тема
  *   tokens.spec.ts    — контракт дизайн-токенов
- *   materials.spec.ts — стеклянный материал, кросс-движковый (ради него включён webkit)
+ *   materials-flag.spec.ts — материал по флагу data-material, кросс-движковый
+ *                       (ради него включён webkit; старый materials.spec.ts
+ *                       снесён вместе с демо Ambient/Solid, #41)
  *   button.spec.ts    — базовый интерактивный компонент + axe-a11y
  *   input.spec.ts     — базовое поле формы + axe-a11y
  *   checkbox.spec.ts  — базовый контрол формы + axe-a11y
@@ -46,7 +48,6 @@ const SMOKE_SPECS = [
   'smoke.spec.ts',
   'proof.spec.ts',
   'tokens.spec.ts',
-  'materials.spec.ts',
   'materials-flag.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
