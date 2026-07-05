@@ -164,9 +164,7 @@ export async function assertLabelContrast(
     // Canvas-нормализация: слои фона тоже эмитятся движком в oklch(), а не
     // только в rgb/rgba — парсим ЛЮБОЙ валидный CSS-цвет тем же путём, каким
     // он приходит на экран (1px fill + чтение байтов), вместо своего регэкспа.
-    const normCtx = document
-      .createElement('canvas')
-      .getContext('2d', { willReadFrequently: true });
+    const normCtx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
     if (normCtx) {
       normCtx.canvas.width = 1;
       normCtx.canvas.height = 1;
