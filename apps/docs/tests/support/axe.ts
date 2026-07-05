@@ -135,7 +135,12 @@ export async function assertLabelContrast(
     if (!ctx) return raw;
     ctx.canvas.width = 1;
     ctx.canvas.height = 1;
+    // Сентинел: невалидное присваивание fillStyle молча игнорируется, и канвас
+    // остался бы на дефолтном чёрном — вернулся бы rgba(0,0,0,1) как «валидный»
+    // цвет. Возвращаем raw как есть: parseRgb ниже упадёт громкой ошибкой.
+    ctx.fillStyle = '#010203';
     ctx.fillStyle = raw;
+    if (ctx.fillStyle === '#010203' && raw.toLowerCase() !== '#010203') return raw;
     ctx.fillRect(0, 0, 1, 1);
     const d = ctx.getImageData(0, 0, 1, 1).data;
     return `rgba(${d[0] ?? 0}, ${d[1] ?? 0}, ${d[2] ?? 0}, ${((d[3] ?? 255) / 255).toFixed(3)})`;
