@@ -87,6 +87,50 @@ promise**, not a model artefact. (The earlier worry that lab-colors composites i
 *linear* sRGB was a misread — its linear path is colorimetry-only; compositing is
 in the encoded space.)
 
+## Corridor guarantee (ADR-0004 Решение 2)
+
+The α-boundary is ONE class of math parametrised by the reachable **backdrop
+corridor**. The material case is the corridor `[black, white]` (any live backdrop);
+a KNOWN region narrows it to the per-channel extremes actually reachable there.
+`evaluateTier(…, { backdrop })` takes a `BackdropCorridor` (default = the full
+`[black, white]` — byte-identical to the old behaviour), and `bandOverCorridor` /
+`worstContrastOverBand` are the shared primitives the tier evaluator and the ladder
+both build on (one math, no drift). `cornerCorridor(colours…)` and `unionCorridor`
+construct corridors from a sampled region and from two adjacent regions.
+
+## Byte-exact composite (task #52)
+
+`compositeOverByte(source, base)` is the straight-alpha composite quantised to the
+8-bit channel the **display commits** — `Uint8ClampedArray` round-half-to-even, the
+exact byte the browser's `ImageData` and the engine's map both store. It is proven
+**byte-for-byte** (zero tolerance) against lab-colors' SSOT `composite_over_encoded`
+on the 12 Figma-neutral pairs (`byte-composite-golden.test.ts`), the material
+contract domain is proven tie-free (so round-half-even ≡ lab-colors' round-half-away
+here), and the composited contract pixels are frozen in a versioned golden
+(`byte-composite-corridor-golden.test.ts` — re-bless only with a `GOLDEN_VERSION`
+bump + CHANGELOG line). The docs differential (`materials-flag.spec.ts`) compares
+`compositeOverByte` against the real canvas pixel **byte-exact** — no luminance
+tolerance — verified equal across Chromium AND WebKit.
+
+## Legibility ladder (task #58)
+
+`legibility-ladder.ts` resolves a label on ANY background to one of two states —
+a proven corridor guarantee, or a mandatory scrim floor the SYSTEM inserts. There
+is no "put the text down and hope" path (the resolver structurally cannot return
+`guaranteed` unless the corridor worst-case clears the floor):
+
+| Case | Rung | Guarantee |
+|---|---|---|
+| solid | `resolveOnSolid` | corridor collapses to a point → direct contrast |
+| material | `resolveOnMaterial` | tint over unknown backdrop → `[black, white]` corridor |
+| image (readable) | `resolveOnImageRegion` | per-channel region corridor → solver → forced `computeScrimFloor` if unreachable |
+| tainted (cross-origin) | `resolveOnTainted` | pixels unreadable → **scrim mandatory by contract** (never `guaranteed`) |
+| boundary (two regions) | `resolveOnBoundary` | must hold over the `unionCorridor` of both |
+
+The browser wiring (`getImageData` in a try/catch → `SecurityError` = tainted →
+`resolveOnTainted`) is a thin consumer adapter; the module never imports the DOM,
+so every rung is exhaustively unit-tested.
+
 ## Placement rules (invariants)
 
 - Glass is a **navigational / transient** layer (bars, modals, popovers) — not
@@ -110,6 +154,21 @@ in the encoded space.)
 ## API
 
 ```ts
-import { guaranteeReport, evaluateTier, relativeLuminance } from '@labpics/ui-materials';
+import {
+  guaranteeReport,
+  evaluateTier, // now accepts { backdrop } — the corridor
+  relativeLuminance,
+  compositeOverByte, // byte-exact composite (#52)
+  cornerCorridor,
+  unionCorridor,
+  // legibility ladder (#58):
+  resolveOnSolid,
+  resolveOnMaterial,
+  resolveOnImageRegion,
+  resolveOnBoundary,
+  resolveOnTainted,
+  corridorFromPixels,
+  computeScrimFloor,
+} from '@labpics/ui-materials';
 import '@labpics/ui-materials/material.css';
 ```

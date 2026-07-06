@@ -19,13 +19,32 @@
 
 export {
   type Rgba,
+  type Rgb8,
   parseRgb,
   relativeLuminance,
   contrastRatio,
   compositeOver,
+  compositeOverByte,
 } from './luminance';
 
 export { mountMaterialRuntime } from './engine/runtime';
+
+export {
+  type LadderCase,
+  type LadderDecision,
+  type GuaranteedDecision,
+  type ScrimDecision,
+  type ScrimFloor,
+  type LadderOptions,
+  type ImageRegionOptions,
+  resolveOnSolid,
+  resolveOnMaterial,
+  resolveOnImageRegion,
+  resolveOnBoundary,
+  resolveOnTainted,
+  computeScrimFloor,
+  corridorFromPixels,
+} from './legibility-ladder';
 
 export {
   type MaterialMode,
@@ -36,11 +55,15 @@ export {
   type TierVerdict,
   type GuaranteeReport,
   type EvaluateOptions,
+  type BackdropCorridor,
   MATERIAL_TIERS,
   WCAG_AA_NORMAL,
   WCAG_AA_LARGE,
+  FULL_BACKDROP,
   evaluateTier,
   guaranteeReport,
+  cornerCorridor,
+  unionCorridor,
   fillKey,
   verdictKey,
 } from './material-guarantee';
