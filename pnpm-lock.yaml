@@ -52,8 +52,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/colors
       labcolors-engine:
-        specifier: npm:@labpics/colors@0.6.1
-        version: '@labpics/colors@0.6.1'
+        specifier: npm:@labpics/colors@0.6.2
+        version: '@labpics/colors@0.6.2'
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -716,9 +716,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
-
-  '@labpics/colors@0.6.1':
-    resolution: {integrity: sha512-8icnPaHh490qw5efzgEbFFPtBLlqt18LMTxkP7kFtqGI0WDQyDEiTQcAygWWGv7Hn28hWIvXmwE9PAn8QJoJAQ==}
 
   '@labpics/colors@0.6.2':
     resolution: {integrity: sha512-zilUt3OHixV7MsLX/FkAaI/umpsxyaRklW8qQvWMnR35SQmwCuSe7eFHdNWDRMuhiv/An6LmPpwSTr+sMRWbUw==}
@@ -2177,8 +2174,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@labpics/colors@0.6.1': {}
 
   '@labpics/colors@0.6.2': {}
 
