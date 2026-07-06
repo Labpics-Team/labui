@@ -392,12 +392,41 @@ export async function runScratchSuite() {
       const afterBack = mod.__cacheStats();
       const warmHit = afterBack.size <= sizeBeforeBack;
 
-      // 3. Scratch allocated right after a build.
-      const scratchAfterBuild = mod.__cacheStats().scratchAllocated;
+      // The scratch lifecycle is two invariants, measured in the order that makes
+      // BOTH race-free. The engine frees scratch on a SCRATCH_IDLE_MS (2000ms
+      // wall-clock) timer that a build ARMS. The warm resize-back above is a cache
+      // HIT — it neither builds nor re-arms — so the last real build was back in the
+      // march (step 1). Reading "scratch allocated after a build" HERE would race
+      // that stale timer: on a starved shared runner the gap since the march build
+      // exceeds 2000ms (rAF throttling / timer starvation under load), the release
+      // fires first, and the read returns false — the CI-only flake at
+      // lg-cache.integration.test.mjs:93. Reorder so the read is synchronized to a
+      // build instead of to wall-clock.
 
-      // 4. Past the idle window → scratch released.
-      await sleep(2400);
-      const scratchAfterIdle = mod.__cacheStats().scratchAllocated;
+      // 3. Idle release (steady state): with no build activity for > SCRATCH_IDLE_MS
+      //    the scratch is freed — no permanent high-water mark. Sleeping LONGER than
+      //    the timer is robust on a slow runner (over-waiting only helps). Derive the
+      //    wait from the engine's own SCRATCH_IDLE_MS + a buffer instead of a literal,
+      //    so a change to the source timer can never desync this read (CodeRabbit).
+      await sleep(mod.SCRATCH_IDLE_MS + 400);
+      const scratchAfterIdle = mod.__cacheStats().scratchAllocated; // expect false
+
+      // 4. A build re-allocates scratch. Force a genuine MISS build (geometry
+      //    strictly larger than every marched size → a geoKey never seen → no cache
+      //    hit) and read scratchAllocated in the SAME synchronous turn: the timer
+      //    the build just armed cannot have fired, so the read is time-INDEPENDENT.
+      //    Because step 3 left scratch RELEASED, observing it TRUE here proves the
+      //    BUILD did the allocation — a cache HIT would not build and scratch would
+      //    stay false. That is the regression lock, provided by the sequence itself
+      //    (release → forced MISS build → read): if the probe ever degrades into a
+      //    HIT, this reads false and fails loudly, instead of silently reviving the
+      //    stale, timer-racing read.
+      const probeW = Math.max(...sizes.map((s) => s[0])) + 13;
+      const probeH = Math.max(...sizes.map((s) => s[1])) + 11;
+      host.style.width = `${probeW}px`;
+      host.style.height = `${probeH}px`;
+      g.refresh(); // sync: render → acquireMap MISS → buildMap → scratch allocated
+      const scratchAfterBuild = mod.__cacheStats().scratchAllocated; // expect true
 
       g.destroy();
       host.remove();
@@ -408,8 +437,8 @@ export async function runScratchSuite() {
         peakCacheSize: peak,
         afterMarch,
         warmHit,
-        scratchAfterBuild,
         scratchAfterIdle,
+        scratchAfterBuild,
         afterDestroy,
         firstPaintSync,
       };
@@ -417,6 +446,12 @@ export async function runScratchSuite() {
 
     const cap = result.afterMarch.zombieCap;
     const checks = {
+      // Race-free and single-responsibility. The MISS-lock (scratchAfterBuild true
+      // means the BUILD allocated it, not a stale hit) comes from the SEQUENCE — the
+      // probe runs only after scratchNotRetainedAtSteadyState has released scratch —
+      // so this check need not (and must not) re-assert idle-release: keeping the two
+      // invariants separate makes a failure name its true cause instead of tripping
+      // the "allocated after build" message when it's actually release that broke.
       scratchAfterBuild: result.scratchAfterBuild === true,
       firstPaintSynchronous: result.firstPaintSync === true,
       cacheBounded: result.peakCacheSize <= result.afterMarch.live + cap + 1,

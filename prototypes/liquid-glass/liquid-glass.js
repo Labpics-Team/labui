@@ -115,7 +115,7 @@ let sRGBA = null; // reused RGBA byte scratch (grown on demand) → no per-build
 let sCanvas = null;
 let sCtx = null;
 let scratchIdleTimer = 0;
-const SCRATCH_IDLE_MS = 2000;
+export const SCRATCH_IDLE_MS = 2000;
 
 function releaseScratch() {
   sDx = null;
