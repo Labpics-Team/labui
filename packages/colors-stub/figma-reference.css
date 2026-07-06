@@ -161,7 +161,8 @@
   --lab-border-info-soft: rgb(62 135 255 / 0.122);
   --lab-border-info-strong: rgb(62 135 255);
   --lab-border-base: rgb(120 120 128 / 0.161);
-  --lab-border-ghost: rgb(120 120 128 / 0);
+  --lab-border-none: rgb(120 120 128 / 0);
+  --lab-border-ghost: var(--lab-border-none);
   --lab-border-inverted: rgb(255 255 255);
   --lab-border-soft: rgb(120 120 128 / 0.078);
   --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
@@ -356,7 +357,8 @@
   --lab-border-info-soft: rgb(86 150 255 / 0.122);
   --lab-border-info-strong: rgb(86 150 255);
   --lab-border-base: rgb(120 120 128 / 0.2);
-  --lab-border-ghost: rgb(120 120 128 / 0);
+  --lab-border-none: rgb(120 120 128 / 0);
+  --lab-border-ghost: var(--lab-border-none);
   --lab-border-inverted: rgb(16 16 18);
   --lab-border-soft: rgb(120 120 128 / 0.122);
   --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
@@ -524,7 +526,8 @@
     --lab-border-info-soft: rgb(86 150 255 / 0.122);
     --lab-border-info-strong: rgb(86 150 255);
     --lab-border-base: rgb(120 120 128 / 0.2);
-    --lab-border-ghost: rgb(120 120 128 / 0);
+    --lab-border-none: rgb(120 120 128 / 0);
+    --lab-border-ghost: var(--lab-border-none);
     --lab-border-inverted: rgb(16 16 18);
     --lab-border-soft: rgb(120 120 128 / 0.122);
     --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
