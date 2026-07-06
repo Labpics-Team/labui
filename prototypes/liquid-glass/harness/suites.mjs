@@ -405,8 +405,10 @@ export async function runScratchSuite() {
 
       // 3. Idle release (steady state): with no build activity for > SCRATCH_IDLE_MS
       //    the scratch is freed — no permanent high-water mark. Sleeping LONGER than
-      //    the timer is robust on a slow runner (over-waiting only helps).
-      await sleep(2400);
+      //    the timer is robust on a slow runner (over-waiting only helps). Derive the
+      //    wait from the engine's own SCRATCH_IDLE_MS + a buffer instead of a literal,
+      //    so a change to the source timer can never desync this read (CodeRabbit).
+      await sleep(mod.SCRATCH_IDLE_MS + 400);
       const scratchAfterIdle = mod.__cacheStats().scratchAllocated; // expect false
 
       // 4. A build re-allocates scratch. Force a genuine MISS build (geometry
