@@ -115,6 +115,7 @@
       "--lab-border-base",
       "--lab-border-ghost",
       "--lab-border-inverted",
+      "--lab-border-none",
       "--lab-border-soft",
       "--lab-border-static-dark-base",
       "--lab-border-static-dark-soft",

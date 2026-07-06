@@ -1,7 +1,7 @@
 /*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@0.6.2 + паспорт labui.config.json
-(отпечаток 854f0378ac8317b4). Движковые роли — живая эмиссия (единая форма
+(отпечаток 5013ba77a61f58ff). Движковые роли — живая эмиссия (единая форма
 oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
 лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
 Figma-якорь» — входы и компонентные поверхности из замороженного
@@ -114,7 +114,8 @@ figma-reference.css, переезжают следующими этапами п
   --lab-border-info-soft: oklch(64.03903% 0.193503 278.130 / 0.122);
   --lab-border-info-strong: oklch(64.03903% 0.193503 278.130 / 1);
   --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.161);
-  --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-border-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-border-ghost: var(--lab-border-none);
   --lab-border-inverted: rgb(255 255 255); /* мост: Figma-якорь */
   --lab-border-soft: oklch(57.53363% 0.012136 286.012 / 0.078);
   --lab-border-static-dark-base: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
@@ -312,7 +313,8 @@ figma-reference.css, переезжают следующими этапами п
   --lab-border-info-soft: oklch(68.10386% 0.168552 282.890 / 0.122);
   --lab-border-info-strong: oklch(68.10386% 0.168552 282.890 / 1);
   --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.2);
-  --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-border-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+  --lab-border-ghost: var(--lab-border-none);
   --lab-border-inverted: rgb(16 16 18); /* мост: Figma-якорь */
   --lab-border-soft: oklch(57.53363% 0.012136 286.012 / 0.122);
   --lab-border-static-dark-base: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
@@ -511,7 +513,8 @@ figma-reference.css, переезжают следующими этапами п
     --lab-border-info-soft: oklch(68.10386% 0.168552 282.890 / 0.122);
     --lab-border-info-strong: oklch(68.10386% 0.168552 282.890 / 1);
     --lab-border-base: oklch(57.53363% 0.012136 286.012 / 0.2);
-    --lab-border-ghost: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+    --lab-border-none: rgb(120 120 128 / 0); /* мост: Figma-якорь */
+    --lab-border-ghost: var(--lab-border-none);
     --lab-border-inverted: rgb(16 16 18); /* мост: Figma-якорь */
     --lab-border-soft: oklch(57.53363% 0.012136 286.012 / 0.122);
     --lab-border-static-dark-base: rgb(120 120 128 / 0.2); /* мост: Figma-якорь */
