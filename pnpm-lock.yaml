@@ -86,6 +86,21 @@ importers:
         specifier: 6.4.3
         version: 6.4.3(@types/node@22.10.5)(tsx@4.19.2)
 
+  packages/adapter-codegen:
+    devDependencies:
+      '@types/node':
+        specifier: 22.10.5
+        version: 22.10.5
+      tsx:
+        specifier: 4.19.2
+        version: 4.19.2
+      typescript:
+        specifier: 5.7.3
+        version: 5.7.3
+      vitest:
+        specifier: 3.2.6
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
+
   packages/astro:
     devDependencies:
       tsup:
@@ -103,7 +118,7 @@ importers:
     devDependencies:
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/colors-stub:
     devDependencies:
@@ -115,7 +130,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/core:
     dependencies:
@@ -203,7 +218,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/icons:
     devDependencies:
@@ -215,7 +230,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/materials:
     devDependencies:
@@ -236,7 +251,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/react:
     dependencies:
@@ -342,7 +357,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/solid:
     devDependencies:
@@ -378,7 +393,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/node@22.10.5)(tsx@4.19.2)
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
   packages/vue:
     dependencies:
@@ -386,12 +401,21 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
+      '@lit-labs/ssr':
+        specifier: 4.1.0
+        version: 4.1.0(@types/node@22.10.5)
+      happy-dom:
+        specifier: 15.11.7
+        version: 15.11.7
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.15)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
+      vitest:
+        specifier: 3.2.6
+        version: 3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.7.3)
@@ -1322,6 +1346,10 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  happy-dom@15.11.7:
+    resolution: {integrity: sha512-KyrFvnl+J9US63TEzwoiJOQzZBJY7KgBushJA8X61DMbNsH+2ONkDuLDnCnwUiPTF42tLoEmrPyoqbenVA5zrg==}
+    engines: {node: '>=18.0.0'}
+
   human-id@1.0.2:
     resolution: {integrity: sha512-UNopramDEhHJD+VR+ehk8rOslwSfByxPIZyJRfV739NDhN5LF1fa1MqnzKm2lGTQRjNrjK19Q5fhkgIfjlVUKw==}
 
@@ -1854,6 +1882,14 @@ packages:
 
   webidl-conversions@4.0.2:
     resolution: {integrity: sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==}
+
+  webidl-conversions@7.0.0:
+    resolution: {integrity: sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==}
+    engines: {node: '>=12'}
+
+  whatwg-mimetype@3.0.0:
+    resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
+    engines: {node: '>=12'}
 
   whatwg-url@7.1.0:
     resolution: {integrity: sha512-WUu7Rg1DroM7oQvGWfOiAK21n74Gg+T4elXEQYkOhtyLeWiJFoOGLXPKI/9gzIie9CtwVLm8wtw6YJdKyxSjeg==}
@@ -2911,6 +2947,12 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  happy-dom@15.11.7:
+    dependencies:
+      entities: 4.5.0
+      webidl-conversions: 7.0.0
+      whatwg-mimetype: 3.0.0
+
   human-id@1.0.2: {}
 
   iconv-lite@0.4.24:
@@ -3334,7 +3376,7 @@ snapshots:
       fsevents: 2.3.3
       tsx: 4.19.2
 
-  vitest@3.2.6(@types/node@22.10.5)(tsx@4.19.2):
+  vitest@3.2.6(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.6
@@ -3361,6 +3403,7 @@ snapshots:
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.10.5
+      happy-dom: 15.11.7
     transitivePeerDependencies:
       - jiti
       - less
@@ -3388,6 +3431,10 @@ snapshots:
   web-streams-polyfill@3.3.3: {}
 
   webidl-conversions@4.0.2: {}
+
+  webidl-conversions@7.0.0: {}
+
+  whatwg-mimetype@3.0.0: {}
 
   whatwg-url@7.1.0:
     dependencies:
