@@ -28,6 +28,7 @@ export function buildTypography(config: TypographyConfig): {
   fontWeights: ResolvedToken[];
   letterSpacings: ResolvedToken[];
   measures: ResolvedToken[];
+  fonts: ResolvedToken[];
 } {
   assertConfig(config);
 
@@ -60,9 +61,10 @@ export function buildTypography(config: TypographyConfig): {
       fluid: bounds,
     });
 
-    // Line-height as a unitless multiplier of the step's mid-size, banded by
-    // step. Unitless so it tracks the fluid font-size automatically.
-    const multiplier = lineHeightMultiplier(config, step);
+    // Оптический интерлиньяж от кегля (не банды): множитель считается по
+    // репрезентативному кеглю шага (широкий якорь — канонический модуль шкалы) и
+    // базовому кеглю. Безразмерный, поэтому следует за флюидным font-size.
+    const multiplier = round4(lineHeightOptical(bounds.maxPx, config.basePx));
     lineHeights.push({
       kind: 'line-height',
       name,
@@ -95,30 +97,85 @@ export function buildTypography(config: TypographyConfig): {
     { kind: 'measure', name: 'wide', cssValue: '75ch', numeric: 75, dtcgType: 'dimension' },
   ];
 
-  return { fontSizes, lineHeights, fontWeights, letterSpacings, measures };
+  // Оболочка шрифта: семейство (фолбэк-стек) и OpenType-фичи. Строковые токены —
+  // cssValue уже готовая CSS-строка; stringValue несёт DTCG-нативное значение
+  // (массив имён для fontFamily, строку для fontFeatureSettings). Имена дают
+  // ровно --lab-font-family / --lab-font-family-mono / --lab-font-feature-<role>.
+  const fonts: ResolvedToken[] = [
+    {
+      kind: 'font',
+      name: 'family',
+      cssValue: cssFamilyStack(config.fontFamily.sans),
+      stringValue: config.fontFamily.sans,
+      dtcgType: 'fontFamily',
+    },
+    {
+      kind: 'font',
+      name: 'family-mono',
+      cssValue: cssFamilyStack(config.fontFamily.mono),
+      stringValue: config.fontFamily.mono,
+      dtcgType: 'fontFamily',
+    },
+    ...Object.entries(config.fontFeatures).map(
+      ([role, value]): ResolvedToken => ({
+        kind: 'font',
+        name: `feature-${role}`,
+        cssValue: value,
+        stringValue: value,
+        dtcgType: 'fontFeatureSettings',
+      }),
+    ),
+  ];
+
+  return { fontSizes, lineHeights, fontWeights, letterSpacings, measures, fonts };
+}
+
+/**
+ * CSS-стек семейств: имена через запятую, с кавычками там, где имя НЕ является
+ * одиночным CSS-идентификатором (пробелы → кавычки: 'Geist Mono'). Дженерики
+ * (`sans-serif`, `ui-monospace`) и `-apple-system` — валидные идентификаторы,
+ * остаются без кавычек (кавычки на дженерике сломали бы его семантику).
+ */
+function cssFamilyStack(names: readonly string[]): string {
+  return names.map(cssFamilyName).join(', ');
+}
+
+function cssFamilyName(name: string): string {
+  return /^-?[a-zA-Z][a-zA-Z0-9-]*$/.test(name) ? name : `'${name}'`;
 }
 
 /**
  * Оптический трекинг (em) как функция кегля (px):
- *   tracking(z) = A + B·e^(C·z),  A = −0.0223, B = 0.185, C = −0.1745
+ *   tracking(z) = A + B·e^(C·z),  A = −0.047, B = 0.1112, C = −0.066
  *
- * DECLARED-CALIBRATION: экспоненциальный фит класса системных UI-тел
- * (SF/Helvetica). Вдохновлено практикой iA (dynamic metrics), но кривая
- * НЕ из публикации — коэффициенты A/B/C задекларированы этим репо. В статье
- * iA «Responsive Typography: The Basics» формул кривой нет; прежняя
- * атрибуция «опубликованная кривая iA» отозвана (проверено fetch-ем, 2026-07-03).
+ * КАЛИБРОВКА ИЗ ОТПЕЧАТКОВ Geist (Figma), не по памяти. Спайн — канонический
+ * прогресс Display→Text, один стиль на размер (кегль px → letter-spacing px):
+ *   112→−5, 80→−4, 64→−3, 48→−2, 32→−1, 24→−0.5, 20→−0.33, 16→−0.25, 14→0, 12→0.
+ * Коэффициенты — px-взвешенный МНК по этому спайну (воспроизводимо:
+ * scripts/derive-typography.mjs). Форма выбрана честно: exp-к-асимптоте бьёт
+ * альтернативу reciprocal (em=A+B/z) по невязкам — SSE 0.19 против 0.35 px²,
+ * max|r| 0.285 против 0.362 px. Асимптота A — предел ужатия дисплея; e^(C·z)
+ * гаснет с ростом кегля; кривая монотонно убывает и пересекает 0 у ~13px.
  *
- * Контрольные точки (пересчёт из формулы, 2026-07-03):
- *   z ≈ 12.125px → 0 em      — нейтраль (суб-базовый кегль почти не трогается);
- *   z = 16px     → −1.10% em — базовый текст слегка ужат;
- *   z = 32px     → −2.16% em — к асимптоте A = −2.23% em (дисплейные).
- * Ниже нейтрали трекинг положителен (разрежение мелких): z = 8px → +2.35% em.
+ * Невязки по спайну ≤ 0.285px (кегли 80/112: −4/−5px — округлённые дизайнером
+ * значения гладкой кривой; «немонотонность» em сверху = это px-квантование,
+ * не трещина закона). Контрольные точки (из формулы):
+ *   z = 11px → +0.64% em — ниже кроссинга разрежён (учебная оптика мелкого);
+ *   z ≈ 13.05px → 0 em   — нуль-кроссинг (captions Figma 12/14 = 0, в пределах округления);
+ *   z = 16px → −0.83% em — body слегка ужат;
+ *   z = 112px → −4.69% em — почти на асимптоте A = −4.7% em.
+ *
+ * ВНЕ ЗАКОНА (осознанные исключения, документируются, в фит НЕ входят):
+ *   • 16px-Emphasized (Medium) = 0 — ось ВЕСА (Common/Regular 16px = −0.25px
+ *     лежит на кривой); одна кривая на размер, вес — отдельная ось.
+ *   • Caption/XXS 8px = −0.25px — микро-нудж caption ниже нуль-кроссинга (закон
+ *     там разрежает); 8px ниже эмитируемой шкалы (min-шаг ~11px) — на токены не влияет.
  * Формула, не таблица — шкала остаётся непрерывной при любой конфигурации шагов.
  */
 export function opticalTrackingEm(sizePx: number): number {
-  const A = -0.0223;
-  const B = 0.185;
-  const C = -0.1745;
+  const A = -0.047;
+  const B = 0.1112;
+  const C = -0.066;
   return A + B * Math.exp(C * sizePx);
 }
 
@@ -185,14 +242,46 @@ function clampString(config: TypographyConfig, b: FluidBounds): string {
   return `clamp(${lowerRem}, ${preferred}, ${upperRem})`;
 }
 
-function lineHeightMultiplier(config: TypographyConfig, step: number): number {
-  // Highest matching threshold wins; bands are evaluated from the top.
-  const sorted = [...config.lineHeightBands].sort((a, b) => b.fromStep - a.fromStep);
-  for (const band of sorted) {
-    if (step >= band.fromStep) return band.multiplier;
-  }
-  // Unreachable when a band has a sufficiently low fromStep; guard anyway.
-  throw new Error(`no line-height band matches step ${step}`);
+/**
+ * Оптический интерлиньяж (line-height, безразмерный множитель кегля) как функция
+ * кегля z и базового кегля basePx:
+ *   lh(z) = SOLID + reading(z) − taper(z)
+ *
+ * КАЛИБРОВКА ИЗ ОТПЕЧАТКОВ Geist. Ключевое наблюдение (см. derive-typography.mjs):
+ * leading (lh − кегль) = 0 ВЕЗДЕ (набор «в сплошную», mult 1.0), кроме трёх точек —
+ *   body 16px → +8px (mult 1.5) — читаемость многострочной прозы;
+ *   мега-дисплей 112px → −16px (0.857) — отрицательный интерлиньяж крупного;
+ *   caption 14px → −2px (0.857) — микро-плотность (задокументированный выброс).
+ * Чистой f(z) НЕТ: 14→0.857 против 16→1.5 против 20→1.0 рвут монотон — интерлиньяж
+ * управляется РОЛЬЮ (проза против дисплея), а роль привязана к кеглю кусочно.
+ * Поэтому модель — три оптических члена, каждый функция z/basePx (шкало-инвариантна),
+ * замена «грубых бэндов» 1.2/1.3/1.5, которые Geist-отпечаткам не соответствовали:
+ *
+ *   SOLID = 1.0                       — по умолчанию набор «в сплошную» (lh = кегль);
+ *   reading(z) = 0.5·exp(−½·(ln(z/base)/σ)²), σ=0.05 — надбавка читаемости, пик на
+ *     базовом кегле (body → 1.5); σ подобрана так, что на ближайшем шаге шкалы
+ *     (Δln≥0.182) надбавка <0.005 — незаметна, поэтому captions и заголовки
+ *     остаются solid, ровно как в отпечатках (иначе — «спайк» на body);
+ *   taper(z) = K·max(0, ln(z/base/5)), K=0.4246 — суб-solid отрицательный
+ *     интерлиньяж выше «колена» base·5 (=80px@16); K из отпечатка 112→0.857:
+ *     K = (1−96/112)/ln(112/80). Между 80 и 112px отпечатка нет — лог-линейная
+ *     интерполяция (простейшая монотонная связь).
+ *
+ * Воспроизводит КАЖДЫЙ solid/body-отпечаток точно (невязка <0.001), кроме
+ * caption-14 (−2px микро-выброс, вне закона; 14px — не шаг эмитируемой шкалы).
+ * basePx из конфига: при смене базы пик читаемости и колено следуют за ней
+ * (когерентно rem-модели). Формула, не банды — интерлиньяж непрерывен по кеглю.
+ */
+export function lineHeightOptical(sizePx: number, basePx: number): number {
+  const SOLID = 1;
+  const READ_AMP = 0.5; // body → SOLID + 0.5 = 1.5 (ровно)
+  const READ_SIGMA = 0.05; // ширина надбавки в log-кегле (гаснет к соседнему шагу)
+  const KNEE_MULT = 5; // колено суб-solid = base·5 (80px при base 16)
+  const TAPER_K = 0.4246; // = (1 − 96/112)/ln(112/80), из отпечатка Display/6XL
+  const u = Math.log(sizePx / basePx);
+  const reading = READ_AMP * Math.exp(-0.5 * (u / READ_SIGMA) ** 2);
+  const taper = TAPER_K * Math.max(0, u - Math.log(KNEE_MULT));
+  return SOLID + reading - taper;
 }
 
 function labelFor(config: TypographyConfig, step: number): string {
@@ -208,9 +297,6 @@ function assertConfig(config: TypographyConfig): void {
   }
   if (!Number.isInteger(config.stepsUp) || config.stepsUp < 0) {
     throw new Error('typography stepsUp must be a non-negative integer');
-  }
-  if (config.lineHeightBands.length === 0) {
-    throw new Error('typography lineHeightBands must not be empty');
   }
   if (config.ratioMin <= 0 || config.ratioMax <= 0) {
     throw new Error('typography ratios must be positive');
@@ -233,6 +319,36 @@ function assertConfig(config: TypographyConfig): void {
   for (const [name, weight] of weightEntries) {
     if (!Number.isInteger(weight) || weight < 1 || weight > 1000) {
       throw new Error(`typography weight "${name}" must be an integer in [1, 1000], got ${weight}`);
+    }
+  }
+  // Семейства: оба стека непусты (пустой стек = текст без фолбэка, невидимка при
+  // не загруженном шрифте) и завершены аварийным дженериком.
+  const GENERICS = new Set([
+    'sans-serif',
+    'serif',
+    'monospace',
+    'system-ui',
+    'ui-monospace',
+    'ui-sans-serif',
+    'ui-serif',
+    'cursive',
+    'fantasy',
+  ]);
+  for (const key of ['sans', 'mono'] as const) {
+    const stack = config.fontFamily?.[key];
+    if (!Array.isArray(stack) || stack.length === 0) {
+      throw new Error(`typography fontFamily.${key} must be a non-empty stack`);
+    }
+    if (!GENERICS.has(stack[stack.length - 1] as string)) {
+      throw new Error(
+        `typography fontFamily.${key} must end with a generic fallback (e.g. ${key === 'mono' ? 'monospace' : 'sans-serif'}), got "${stack[stack.length - 1]}"`,
+      );
+    }
+  }
+  // Фичи: значения — непустые строки (валидный font-feature-settings).
+  for (const [role, value] of Object.entries(config.fontFeatures ?? {})) {
+    if (typeof value !== 'string' || value.trim() === '') {
+      throw new Error(`typography fontFeatures "${role}" must be a non-empty string`);
     }
   }
 }

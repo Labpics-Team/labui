@@ -18,7 +18,7 @@
   --_lab-pg-size: 2.25rem;
   --_lab-pg-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-pg-font: var(--lab-font-size-md, 1rem);
-  --_lab-pg-tracking: var(--lab-letter-spacing-md, -0.011em);
+  --_lab-pg-tracking: var(--lab-letter-spacing-md, -0.0083em);
 
   display: flex;
   align-items: center;
@@ -31,12 +31,12 @@
 [data-lab-pagination][data-size="s"] {
   --_lab-pg-size: 1.75rem;
   --_lab-pg-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-pg-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-pg-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 [data-lab-pagination][data-size="l"] {
   --_lab-pg-size: 2.75rem;
   --_lab-pg-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-pg-tracking: var(--lab-letter-spacing-lg, -0.0177em);
+  --_lab-pg-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }
 
 .lab-pagination-item,

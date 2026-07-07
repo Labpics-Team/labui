@@ -283,7 +283,7 @@ export class LabNumberInput extends LabElement {
         padding: 0;
         font: inherit;
         font-size: ${litVar('--lab-font-size-xs', '0.8333rem')};
-        letter-spacing: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
+        letter-spacing: ${litVar('--lab-letter-spacing-xs', '-0.0009em')};
         line-height: 1;
         color: ${litVar('--lab-label-secondary')};
         background-color: ${litVar('--lab-fill-neutral-tinted')};

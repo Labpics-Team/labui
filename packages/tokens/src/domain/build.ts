@@ -25,6 +25,8 @@ export interface ResolvedTokens {
   readonly fontWeights: readonly ResolvedToken[];
   readonly letterSpacings: readonly ResolvedToken[];
   readonly measures: readonly ResolvedToken[];
+  /** Оболочка шрифта: семейство (--lab-font-family[-mono]) + фичи (--lab-font-feature-*). */
+  readonly fonts: readonly ResolvedToken[];
   readonly strokes: readonly ResolvedToken[];
   readonly focusRing: readonly ResolvedToken[];
 }
@@ -51,6 +53,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     fontWeights: typography.fontWeights,
     letterSpacings: typography.letterSpacings,
     measures: typography.measures,
+    fonts: typography.fonts,
     strokes: borders.strokes,
     focusRing: borders.focusRing,
   };

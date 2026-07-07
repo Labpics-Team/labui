@@ -19,7 +19,7 @@
   --_lab-rg-row-gap: var(--lab-space-sm, 0.5rem);
   --_lab-rg-list-gap: var(--lab-space-md, 1rem);
   --_lab-rg-font: var(--lab-font-size-md, 1rem);
-  --_lab-rg-tracking: var(--lab-letter-spacing-md, -0.011em);
+  --_lab-rg-tracking: var(--lab-letter-spacing-md, -0.0083em);
 
   display: flex;
   flex-direction: row;
@@ -41,12 +41,12 @@
 [data-lab-radio-group][data-size="s"] {
   --_lab-rg-ring: var(--lab-size-control-s, 0.75rem);
   --_lab-rg-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-rg-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-rg-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 [data-lab-radio-group][data-size="l"] {
   --_lab-rg-ring: var(--lab-size-control-l, 1.25rem);
   --_lab-rg-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-rg-tracking: var(--lab-letter-spacing-lg, -0.0177em);
+  --_lab-rg-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }
 
 [data-lab-radio-group] .lab-radio-group-label {

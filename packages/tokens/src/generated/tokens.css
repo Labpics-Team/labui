@@ -95,16 +95,16 @@
   --lab-font-size-6xl: clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem);
 
   /* Typography — line-height multipliers */
-  --lab-line-height-xxs: 1.5;
-  --lab-line-height-xs: 1.5;
+  --lab-line-height-xxs: 1;
+  --lab-line-height-xs: 1.0006;
   --lab-line-height-md: 1.5;
-  --lab-line-height-lg: 1.3;
-  --lab-line-height-xl: 1.3;
-  --lab-line-height-2xl: 1.3;
-  --lab-line-height-3xl: 1.2;
-  --lab-line-height-4xl: 1.2;
-  --lab-line-height-5xl: 1.2;
-  --lab-line-height-6xl: 1.2;
+  --lab-line-height-lg: 1;
+  --lab-line-height-xl: 1;
+  --lab-line-height-2xl: 1;
+  --lab-line-height-3xl: 1;
+  --lab-line-height-4xl: 1;
+  --lab-line-height-5xl: 0.9761;
+  --lab-line-height-6xl: 0.8582;
 
   /* Typography — font-weight scale (unitless) */
   --lab-font-weight-regular: 400;
@@ -113,21 +113,27 @@
   --lab-font-weight-bold: 700;
 
   /* Typography — оптический трекинг (em, парно к кеглям: мелкие разрежены, крупные ужаты) */
-  --lab-letter-spacing-xxs: 0.0043em;
-  --lab-letter-spacing-xs: -0.0042em;
-  --lab-letter-spacing-md: -0.011em;
-  --lab-letter-spacing-lg: -0.0177em;
-  --lab-letter-spacing-xl: -0.0209em;
-  --lab-letter-spacing-2xl: -0.022em;
-  --lab-letter-spacing-3xl: -0.0223em;
-  --lab-letter-spacing-4xl: -0.0223em;
-  --lab-letter-spacing-5xl: -0.0223em;
-  --lab-letter-spacing-6xl: -0.0223em;
+  --lab-letter-spacing-xxs: 0.0064em;
+  --lab-letter-spacing-xs: -0.0009em;
+  --lab-letter-spacing-md: -0.0083em;
+  --lab-letter-spacing-lg: -0.0194em;
+  --lab-letter-spacing-xl: -0.0293em;
+  --lab-letter-spacing-2xl: -0.0372em;
+  --lab-letter-spacing-3xl: -0.0425em;
+  --lab-letter-spacing-4xl: -0.0454em;
+  --lab-letter-spacing-5xl: -0.0466em;
+  --lab-letter-spacing-6xl: -0.0469em;
 
   /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
   --lab-measure-narrow: 45ch;
   --lab-measure-base: 66ch;
   --lab-measure-wide: 75ch;
+
+  /* Typography — семейство шрифта (фолбэк-стек, Geist первым) + OpenType-фичи */
+  --lab-font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --lab-font-family-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --lab-font-feature-tabular: "tnum" 1;
+  --lab-font-feature-fractions: "frac" 1;
 
   /* Borders — stroke widths (rem) */
   --lab-stroke-hairline: 0.0625rem;

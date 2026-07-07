@@ -158,6 +158,15 @@ export const measure = {
 
 export type MeasureToken = keyof typeof measure;
 
+export const font = {
+  family: 'var(--lab-font-family)',
+  'family-mono': 'var(--lab-font-family-mono)',
+  'feature-tabular': 'var(--lab-font-feature-tabular)',
+  'feature-fractions': 'var(--lab-font-feature-fractions)',
+} as const;
+
+export type FontToken = keyof typeof font;
+
 export const stroke = {
   hairline: 'var(--lab-stroke-hairline)',
   thick: 'var(--lab-stroke-thick)',

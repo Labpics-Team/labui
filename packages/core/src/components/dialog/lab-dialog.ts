@@ -173,7 +173,7 @@ export const dialogFloatingStyles = css`
     box-shadow: var(--lab-elevation-modal);
     font: inherit;
     font-size: ${litVar('--lab-font-size-md', '1rem')};
-    letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
+    letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.0083em')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};
   }
   .content[hidden] {
@@ -188,7 +188,7 @@ export const dialogFloatingStyles = css`
     margin: 0 0 ${litVar('--lab-space-sm', '0.5rem')} 0;
     padding-right: 2rem;
     font-size: ${litVar('--lab-font-size-lg', '1.2rem')};
-    letter-spacing: ${litVar('--lab-letter-spacing-lg', '-0.0177em')};
+    letter-spacing: ${litVar('--lab-letter-spacing-lg', '-0.0194em')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};
     color: ${litVar('--lab-label-primary')};
   }

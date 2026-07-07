@@ -15,7 +15,7 @@
   --_lab-sel-h: 2.25rem;
   --_lab-sel-pad-x: var(--lab-space-md, 1rem);
   --_lab-sel-font: var(--lab-font-size-md, 1rem);
-  --_lab-sel-tracking: var(--lab-letter-spacing-md, -0.011em);
+  --_lab-sel-tracking: var(--lab-letter-spacing-md, -0.0083em);
 
   display: inline-flex;
   flex-direction: column;
@@ -25,12 +25,12 @@
 .lab-select-root[data-size="s"] {
   --_lab-sel-h: 1.875rem;
   --_lab-sel-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-sel-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-sel-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 .lab-select-root[data-size="l"] {
   --_lab-sel-h: 2.75rem;
   --_lab-sel-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-sel-tracking: var(--lab-letter-spacing-lg, -0.0177em);
+  --_lab-sel-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }
 
 .lab-select-label {
@@ -136,17 +136,17 @@
   box-shadow: var(--lab-elevation-overlay);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
-  letter-spacing: var(--lab-letter-spacing-md, -0.011em);
+  letter-spacing: var(--lab-letter-spacing-md, -0.0083em);
   line-height: var(--lab-line-height-md, 1.5);
   z-index: var(--lab-z-dropdown, 900);
 }
 .lab-select-content[data-size="s"] {
   font-size: var(--lab-font-size-xs, 0.8333rem);
-  letter-spacing: var(--lab-letter-spacing-xs, -0.0042em);
+  letter-spacing: var(--lab-letter-spacing-xs, -0.0009em);
 }
 .lab-select-content[data-size="l"] {
   font-size: var(--lab-font-size-lg, 1.2rem);
-  letter-spacing: var(--lab-letter-spacing-lg, -0.0177em);
+  letter-spacing: var(--lab-letter-spacing-lg, -0.0194em);
 }
 .lab-select-content[hidden] {
   display: none;

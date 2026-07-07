@@ -16,9 +16,9 @@
   --_lab-thumb: 1.125rem;
   --_lab-gap: var(--lab-space-xs, 0.25rem);
   --_lab-label-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-label-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-label-tracking: var(--lab-letter-spacing-xs, -0.0009em);
   --_lab-help-font: var(--lab-font-size-xxs, 0.6944rem);
-  --_lab-help-tracking: var(--lab-letter-spacing-xxs, 0.0043em);
+  --_lab-help-tracking: var(--lab-letter-spacing-xxs, 0.0064em);
   --_lab-line: var(--lab-line-height-md, 1.5);
 
   display: flex;

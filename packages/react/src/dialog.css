@@ -90,7 +90,7 @@
   box-shadow: var(--lab-elevation-modal);
   font: inherit;
   font-size: var(--lab-font-size-md, 1rem);
-  letter-spacing: var(--lab-letter-spacing-md, -0.011em);
+  letter-spacing: var(--lab-letter-spacing-md, -0.0083em);
   line-height: var(--lab-line-height-md, 1.5);
 }
 .lab-dialog-content[hidden] {
@@ -116,7 +116,7 @@
   margin: 0 0 var(--lab-space-sm, 0.5rem) 0;
   padding-right: 2rem;
   font-size: var(--lab-font-size-lg, 1.2rem);
-  letter-spacing: var(--lab-letter-spacing-lg, -0.0177em);
+  letter-spacing: var(--lab-letter-spacing-lg, -0.0194em);
   line-height: var(--lab-line-height-md, 1.5);
   color: var(--lab-label-primary);
 }

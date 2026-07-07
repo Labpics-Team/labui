@@ -134,12 +134,11 @@ export interface TypographyConfig {
    */
   readonly stepLabels: Readonly<Record<string, string>>;
   /**
-   * Line-height multiplier as a function of step. Larger steps (display) get a
-   * tighter ratio (~1.2), body/label looser (~1.5) per Material 3. Expressed as
-   * thresholds: the first entry whose `fromStep <= step` wins, evaluated from
-   * the highest threshold down.
+   * Интерлиньяж (line-height) — НЕ конфиг: выведен как оптический закон из
+   * отпечатков Geist (`lineHeightOptical` в domain/typography.ts), а не банды.
+   * Читает `basePx` (пик читаемости body) и репрезентативный кегль шага. Прежнее
+   * поле `lineHeightBands` удалено — оно кодировало неверную модель (1.2/1.3/1.5).
    */
-  readonly lineHeightBands: readonly LineHeightBand[];
   /** rem value to use as the conversion base when emitting rem (px / remBasePx). */
   readonly remBasePx: number;
   /**
@@ -149,12 +148,26 @@ export interface TypographyConfig {
    * MUST be non-empty; each value an integer in [1, 1000].
    */
   readonly weights: Readonly<Record<string, number>>;
-}
-
-/** A line-height band: steps at or above `fromStep` use `multiplier`. */
-export interface LineHeightBand {
-  readonly fromStep: number;
-  readonly multiplier: number;
+  /**
+   * Семейства шрифта как фолбэк-стеки (первым — фирменная гарнитура). Это
+   * КЛИЕНТСКАЯ ручка (ребренд = один оверрайд), а не выводимое значение:
+   * `sans` → токен `--lab-font-family`, `mono` → `--lab-font-family-mono`.
+   * Дизайн-система применяет их на скоупе `[data-theme]` (см. @labpics/ui-core
+   * theme.css); компоненты остаются на `font: inherit`. Оба стека MUST быть
+   * непусты и завершаться аварийным дженериком (`sans-serif` / `monospace`).
+   */
+  readonly fontFamily: {
+    readonly sans: readonly string[];
+    readonly mono: readonly string[];
+  };
+  /**
+   * Осмысленные OpenType-фичи как токены `--lab-font-feature-<role>`: роль →
+   * значение `font-feature-settings`. Значения заведены ТОЛЬКО на реально
+   * существующие в гарнитуре фичи (для Geist проверено чтением бинарников) —
+   * выдуманная фича была бы no-op. Потребитель включает точечно, напр.
+   * `font-feature-settings: var(--lab-font-feature-tabular)` на числовой ячейке.
+   */
+  readonly fontFeatures: Readonly<Record<string, string>>;
 }
 
 /**
