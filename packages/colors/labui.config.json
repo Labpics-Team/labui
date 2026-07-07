@@ -1351,23 +1351,16 @@
       }
     },
     {
-      "name": "badge-fill-static-dark",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "neutral",
-          "pick": "dark"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-static-light",
+      "name": "badge-fill-static",
       "recipe": {
         "kind": "pair-fill",
         "source": {
           "kind": "neutral",
           "pick": "light"
         }
+      },
+      "flag": {
+        "pick": ["dark", "light"]
       }
     }
   ],

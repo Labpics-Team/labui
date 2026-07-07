@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { createLabuiEngine, PASSPORT_FINGERPRINT } from '../engine.mjs';
+import { PASSPORT_FINGERPRINT, createLabuiEngine } from '../engine.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const configPath = join(here, '..', 'labui.config.json');
@@ -58,8 +58,10 @@ describe('три уровня: семантика (roles) vs компонент 
       'badge-fill-warning',
       'badge-fill-success',
       'badge-fill-info',
-      'badge-fill-static-dark',
-      'badge-fill-static-light',
+      // Ось static свёрнута в ОДИН лист + флаг pick:[dark,light] (флаги вместо
+      // веток). Резолвер разворачивает его на границе wasm в badge-fill-static-
+      // dark/-light байт-идентично (см. flags-dry.test.mjs, engine.expandFlags).
+      'badge-fill-static',
     ]);
     // все листья слоя — именно компонент-юзкейс (слой не протёк семантикой)
     expect(names.every((n) => COMPONENT_USECASE.test(n))).toBe(true);
