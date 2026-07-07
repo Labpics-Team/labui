@@ -7,6 +7,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Svelte tooling cache (svelte-package intermediate)
+.svelte-kit/
+
 # tsup transient bundled-config artifacts
 tsup.config.bundled_*.mjs
 
