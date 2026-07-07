@@ -1,13 +1,21 @@
 /**
- * @labpics/ui-vue — the Vue adapter for LabUI (ADR-0001, A-prime).
+ * @labpics/ui-vue — Vue-адаптер LabUI (ADR-0001, A-prime).
  *
- * Vue is NOT a native renderer. Per A-prime, React is the single native
- * implementation; Vue / Svelte / Solid / Astro are delivered AS the Lit Web
- * Components. So the components here are THIN wrappers that mount the shared
- * `<lab-*>` custom elements from @labpics/ui-core and forward props / events /
- * slots — the markup, styles, a11y and behaviour live once in the Lit core and
- * are never re-implemented per stack.
+ * Vue — НЕ родной рендерер. По A-prime родная реализация одна — React; Vue / Svelte /
+ * Solid / Astro поставляются КАК Lit web-components. Компоненты здесь — тонкие обёртки,
+ * монтирующие общие `<lab-*>` из @labpics/ui-core и пробрасывающие пропы / события /
+ * слоты. Разметка, стили, a11y и поведение живут один раз в ядре и не переписываются.
+ *
+ * Все обёртки СГЕНЕРИРОВАНЫ из ядра (`src/generated`, покрытие всех 27 компонентов),
+ * общая логика проброса — в фабрике (`src/runtime/create-lab-component.ts`).
+ * SSR — через отдельный вход `@labpics/ui-vue/ssr`.
  */
-
-// PRODUCTION Button — a thin Vue wrapper over the Lit `<lab-button>`.
-export { Button, type ButtonProps, type ButtonSlots } from './button.js';
+export * from './generated/index.js';
+export {
+  type LabComponent,
+  type LabComponentSpec,
+  type LabEventHandlers,
+  type LabPropKind,
+  type LabPropSpec,
+  createLabComponent,
+} from './runtime/create-lab-component.js';
