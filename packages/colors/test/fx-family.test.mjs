@@ -104,3 +104,83 @@ describe('FX-семья: алиас skeleton', () => {
     expect(['fill-tertiary', 'fill-quaternary']).toContain(alias.target);
   });
 });
+
+// Пропагация в ОПУБЛИКОВАННЫЙ контракт (contract.css + roles.json) — тот класс
+// бага, что паспортная правка не доходила до артефакта: generate-contract.mjs
+// хардкодил glow на 4 легаси-сентимента (base only) и не эмитил focus-ring
+// success/info. Гейт КУСАЕТСЯ на до-фикс генераторе (18 glow + 6 focus-ring
+// отсутствуют в контракте, монотонность subtle<base<bloom невыразима — alpha
+// ступеней нет). Провенанс значений — живая эмиссия @labpics/colors, не литерал.
+describe('FX-семья: пропагация в опубликованный контракт', () => {
+  const stubDir = join(here, '..', '..', 'colors-stub');
+  /** @type {string} */
+  let contractCss;
+  /** @type {{ groups: Record<string, string[]> }} */
+  let rolesJson;
+  /** @type {string} */
+  let darkBody;
+
+  beforeAll(async () => {
+    contractCss = await readFile(join(stubDir, 'contract.css'), 'utf8');
+    rolesJson = JSON.parse(await readFile(join(stubDir, 'roles.json'), 'utf8'));
+    darkBody = scopeBody(contractCss, '[data-theme="dark"]');
+  });
+
+  /** Тело top-level scope по началу селектора (сбалансированные скобки). */
+  function scopeBody(css, selector) {
+    const start = css.indexOf(selector);
+    if (start === -1) throw new Error(`scope не найден: ${selector}`);
+    const open = css.indexOf('{', start);
+    let depth = 0;
+    for (let i = open; i < css.length; i++) {
+      if (css[i] === '{') depth++;
+      else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i);
+    }
+    throw new Error(`несбалансированные скобки: ${selector}`);
+  }
+
+  /** Объявлена ли роль (в позиции декларации) в данном теле. */
+  function declares(body, role) {
+    const re = new RegExp(`(^|[;{\\s])${role.replace(/[-]/g, '\\-')}\\s*:`, 'm');
+    return re.test(body);
+  }
+
+  /** Полный набор glow-color-ролей: 6 сентиментов × 3 ступени (base без суффикса). */
+  const GLOW_COLOR_ROLES = SENTIMENTS.flatMap((s) =>
+    GLOW_STEPS.map((step) => `--lab-fx-glow-${step === 'base' ? s : `${s}-${step}`}`),
+  );
+  const FOCUS_ROLES = SENTIMENTS.map((s) => `--lab-fx-focus-ring-${s}`);
+
+  it('contract.css объявляет glow base/subtle/bloom × 6 сентиментов (18)', () => {
+    const missing = GLOW_COLOR_ROLES.filter((r) => !declares(contractCss, r));
+    expect(missing, 'glow-роли, не дошедшие до contract.css').toEqual([]);
+  });
+
+  it('contract.css объявляет focus-ring × 6 сентиментов', () => {
+    const missing = FOCUS_ROLES.filter((r) => !declares(contractCss, r));
+    expect(missing, 'focus-ring-роли, не дошедшие до contract.css').toEqual([]);
+  });
+
+  it('roles.json (FX-группа) перечисляет 18 glow + 6 focus-ring', () => {
+    const fx = new Set(rolesJson.groups.FX ?? []);
+    const missing = [...GLOW_COLOR_ROLES, ...FOCUS_ROLES].filter((r) => !fx.has(r));
+    expect(missing, 'FX-роли, не занесённые в roles.json').toEqual([]);
+  });
+
+  it('монотонность в dark: subtle-α < base-α < bloom-α на каждый сентимент', () => {
+    const alphaOf = (role) => {
+      const m = new RegExp(`${role.replace(/[-]/g, '\\-')}\\s*:\\s*([0-9.]+)\\s*;`).exec(darkBody);
+      return m ? Number.parseFloat(m[1]) : Number.NaN;
+    };
+    for (const s of SENTIMENTS) {
+      const sub = alphaOf(`--lab-fx-glow-${s}-subtle-alpha`);
+      const base = alphaOf(`--lab-fx-glow-${s}-alpha`);
+      const bloom = alphaOf(`--lab-fx-glow-${s}-bloom-alpha`);
+      expect(sub, `${s}: subtle-α не число`).not.toBeNaN();
+      expect(base, `${s}: base-α не число`).not.toBeNaN();
+      expect(bloom, `${s}: bloom-α не число`).not.toBeNaN();
+      expect(sub, `${s}: subtle<base`).toBeLessThan(base);
+      expect(base, `${s}: base<bloom`).toBeLessThan(bloom);
+    }
+  });
+});
