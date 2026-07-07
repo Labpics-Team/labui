@@ -250,6 +250,36 @@
       }
     },
     {
+      "name": "border-brand-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-danger-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-warning-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-success-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-info-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
       "name": "fill-primary",
       "recipe": {
         "kind": "ladder",
@@ -1333,7 +1363,9 @@
         },
         "position": "focus-ring"
       }
-    },
+    }
+  ],
+  "components": [
     {
       "name": "badge-fill-brand",
       "recipe": {
@@ -1428,10 +1460,6 @@
     {
       "alias": "icon",
       "target": "label-tertiary"
-    },
-    {
-      "alias": "border-ghost",
-      "target": "border-none"
     }
   ]
 }
