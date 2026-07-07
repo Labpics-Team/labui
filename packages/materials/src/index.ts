@@ -48,6 +48,13 @@ export {
 
 export {
   type MaterialMode,
+  LIVE_BLUR_MODES,
+  MATERIAL_FILL_FAMILY,
+  isLiveBlur,
+  canNest,
+} from './background-policy';
+
+export {
   type MaterialTier,
   type ThemeName,
   type TierFill,
