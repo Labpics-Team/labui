@@ -83,7 +83,11 @@ async function main() {
     ),
     mutation: flatten ? 'flatten' : dropGlow ? `drop:${dropGlow}` : 'none',
   };
-  writeFileSync(join(artifactDir, `measurements${suffix}.json`), JSON.stringify(summary, null, 2));
+  // Трейлинг-newline: Biome format-check требует финальный перевод строки в JSON.
+  writeFileSync(
+    join(artifactDir, `measurements${suffix}.json`),
+    `${JSON.stringify(summary, null, 2)}\n`,
+  );
 
   console.info(`PNG-артефакт: ${pngPath}`);
   console.info('Замеры (glow luminance-delta над фоном):');
