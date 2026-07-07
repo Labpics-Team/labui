@@ -37,30 +37,30 @@ const lhModel = (z) => {
 
 // --- ТРЕКИНГ: спайн (без 16-Emphasized и 8px-XXS) ---
 const spine = FP.filter((p) => p.role !== 'Text/M-Emphasized' && p.role !== 'Caption/XXS');
-console.log('=== ТРЕКИНГ  tracking(z) = A + B·e^(C·z) ===');
-console.log(`A=${TRACK.A} B=${TRACK.B} C=${TRACK.C}`);
+console.info('=== ТРЕКИНГ  tracking(z) = A + B·e^(C·z) ===');
+console.info(`A=${TRACK.A} B=${TRACK.B} C=${TRACK.C}`);
 let maxT = 0;
 for (const p of FP) {
   const r = (track(p.z) - p.ls / p.z) * p.z;
   const tag = p.role === 'Text/M-Emphasized' ? 'вне закона: ось веса' : p.role === 'Caption/XXS' ? 'вне закона: caption' : '';
   if (!tag) maxT = Math.max(maxT, Math.abs(r));
-  console.log(`  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${(track(p.z) * p.z).toFixed(3)}px отпечаток=${String(p.ls).padStart(5)}px  r=${(r >= 0 ? ' ' : '') + r.toFixed(3)}px  ${tag}`);
+  console.info(`  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${(track(p.z) * p.z).toFixed(3)}px отпечаток=${String(p.ls).padStart(5)}px  r=${(r >= 0 ? ' ' : '') + r.toFixed(3)}px  ${tag}`);
 }
-console.log(`  max|r| на спайне = ${maxT.toFixed(3)}px (допуск теста 0.35px)`);
+console.info(`  max|r| на спайне = ${maxT.toFixed(3)}px (допуск теста 0.35px)`);
 
 // --- LINE-HEIGHT: solid + reading - taper (repro без caption-14) ---
-console.log('\n=== LINE-HEIGHT  lh(z) = SOLID + reading(z) − taper(z) ===');
-console.log(`BASE=${LH.BASE} AMP=${LH.READ_AMP} SIGMA=${LH.READ_SIGMA} KNEE=BASE·${LH.KNEE_U} K=${LH.TAPER_K}`);
+console.info('\n=== LINE-HEIGHT  lh(z) = SOLID + reading(z) − taper(z) ===');
+console.info(`BASE=${LH.BASE} AMP=${LH.READ_AMP} SIGMA=${LH.READ_SIGMA} KNEE=BASE·${LH.KNEE_U} K=${LH.TAPER_K}`);
 let maxL = 0;
 for (const p of FP) {
   const r = lhModel(p.z) - p.lh / p.z;
   const tag = p.role === 'Caption/S' ? 'вне закона: caption-микро −2px' : '';
   if (!tag) maxL = Math.max(maxL, Math.abs(r));
-  console.log(`  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${lhModel(p.z).toFixed(4)} отпечаток=${(p.lh / p.z).toFixed(4)}  r=${(r >= 0 ? ' ' : '') + r.toFixed(4)}  ${tag}`);
+  console.info(`  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${lhModel(p.z).toFixed(4)} отпечаток=${(p.lh / p.z).toFixed(4)}  r=${(r >= 0 ? ' ' : '') + r.toFixed(4)}  ${tag}`);
 }
-console.log(`  max|r| на repro = ${maxL.toFixed(4)} (допуск теста 0.01)`);
+console.info(`  max|r| на repro = ${maxL.toFixed(4)} (допуск теста 0.01)`);
 
 // Итоговый вывод (аналог derive-corner-k): фиксируем деривацию как факт.
-console.log('\nВывод: exp-к-асимптоте для трекинга (SSE 0.19 против 0.35 px² у reciprocal),');
-console.log('для line-height — set-solid + reading-надбавка на body + суб-solid тапер сверху;');
-console.log('чистой f(z) для line-height нет (14→0.857 против 16→1.5 рвут монотон — см. domain).');
+console.info('\nВывод: exp-к-асимптоте для трекинга (SSE 0.19 против 0.35 px² у reciprocal),');
+console.info('для line-height — set-solid + reading-надбавка на body + суб-solid тапер сверху;');
+console.info('чистой f(z) для line-height нет (14→0.857 против 16→1.5 рвут монотон — см. domain).');

@@ -235,7 +235,7 @@ export class LabTabs extends LabElement {
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
-      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.0083em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
     }
     .panel:focus-visible {

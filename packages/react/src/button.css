@@ -20,7 +20,7 @@
      before tokens load; colour roles below never carry a fallback. */
   --_lab-btn-radius: var(--lab-radius-control, 0.5rem);
   --_lab-btn-font: var(--lab-font-size-md, 1rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-md, -0.011em);
+  --_lab-btn-tracking: var(--lab-letter-spacing-md, -0.0083em);
   --_lab-btn-pad-x: var(--lab-space-md, 1rem);
   --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
   --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
@@ -51,14 +51,14 @@
 
 [data-lab-button][data-size="s"] {
   --_lab-btn-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0009em);
   --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-btn-min: 2rem;
 }
 [data-lab-button][data-size="l"] {
   --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0177em);
+  --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0194em);
   --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-btn-pad-y: var(--lab-space-md, 1rem);
   --_lab-btn-min: 3rem;

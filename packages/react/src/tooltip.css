@@ -45,7 +45,7 @@
   --_lab-tt-pad-block: var(--lab-space-xs, 0.25rem);
   --_lab-tt-pad-inline: var(--lab-space-sm, 0.5rem);
   --_lab-tt-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-tt-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-tt-tracking: var(--lab-letter-spacing-xs, -0.0009em);
   --_lab-tt-max-width: 18rem;
 
   box-sizing: border-box;
@@ -57,7 +57,7 @@
   font: inherit;
   font-size: var(--_lab-tt-font);
   letter-spacing: var(--_lab-tt-tracking);
-  line-height: var(--lab-line-height-xs, 1.5);
+  line-height: var(--lab-line-height-xs, 1.0006);
   box-shadow: var(--lab-elevation-overlay);
   z-index: var(--lab-z-tooltip, 1400);
 }
@@ -69,14 +69,14 @@
   --_lab-tt-pad-block: var(--lab-space-xs, 0.25rem);
   --_lab-tt-pad-inline: var(--lab-space-xs, 0.25rem);
   --_lab-tt-font: var(--lab-font-size-xxs, 0.6944rem);
-  --_lab-tt-tracking: var(--lab-letter-spacing-xxs, 0.0043em);
+  --_lab-tt-tracking: var(--lab-letter-spacing-xxs, 0.0064em);
   --_lab-tt-max-width: 14rem;
 }
 .lab-tooltip-content[data-size="l"] {
   --_lab-tt-pad-block: var(--lab-space-sm, 0.5rem);
   --_lab-tt-pad-inline: var(--lab-space-md, 1rem);
   --_lab-tt-font: var(--lab-font-size-md, 1rem);
-  --_lab-tt-tracking: var(--lab-letter-spacing-md, -0.011em);
+  --_lab-tt-tracking: var(--lab-letter-spacing-md, -0.0083em);
   --_lab-tt-max-width: 22rem;
 }
 
