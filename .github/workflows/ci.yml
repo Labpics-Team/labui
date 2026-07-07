@@ -326,6 +326,29 @@ jobs:
         # без TTY и падал под пользователем раннера).
         run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
 
+      - name: FX-render гейт (рендер → пиксельная проверка FX-токенов #93)
+        # Гейт эмитированных FX-токенов (glow 6×3 + focus-ring 6): рендерит харнесс
+        # в chromium, замеряет ПИКСЕЛИ скриншота на лету и валит job при нарушении
+        # инвариантов (base-glow non-blank; монотонность subtle<base<bloom;
+        # focus-ring non-blank). Замеры считаются ЗДЕСЬ, а НЕ читаются из
+        # репозитория — в git нет ни PNG, ни measurements (artifacts/ gitignored).
+        # Chromium уже поставлен предыдущим шагом; contract.css — коммит из чекаута.
+        # Быстрый (одна страница) → ставим до дорогих сьютов, чтобы падать рано.
+        run: pnpm --filter @labui/colors fx:render
+
+      - name: Upload FX-render артефакт (PNG для обзора владельцем)
+        # PNG результата — artifact workflow, НЕ репозитория: пишется на лету в
+        # gitignored packages/colors/artifacts/fx-render/ и отдаётся отсюда. Гейт
+        # пишет PNG ДО ассертов, поэтому !cancelled() отдаёт снимок и на RED —
+        # владельцу видно, ЧТО именно сломалось (glow пропал/сплющился).
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fx-render
+          path: packages/colors/artifacts/fx-render/
+          retention-days: 7
+          if-no-files-found: ignore
+
       - name: Engine suites — liquid-glass + progressive-blur (browser Node tests)
         # Cache/scratch integration, pending-decode regression, оба Class-D
         # mutation bite-proof — сьюты запускают Chromium, поэтому живут здесь,
