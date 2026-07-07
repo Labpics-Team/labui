@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { normalizeCssColor, relativeLuminance } from './support/color.js';
 
 /**
  * Shadow-stack smoke. Proves the generated @labpics/ui-shadow contract is wired
@@ -127,33 +128,27 @@ test('dark theme: the shadow is darker than the surface — a shadow, not a glow
   await page.getByTestId('theme-toggle').click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-  // Relative luminance of an `rgb()/rgba()` or `color(srgb r g b)` string.
-  const luminance = (color: string): number => {
-    const srgb = color.match(/color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/);
-    if (srgb) {
-      return 0.2126 * Number(srgb[1]) + 0.7152 * Number(srgb[2]) + 0.0722 * Number(srgb[3]);
-    }
-    const rgb = color.match(/rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)/);
-    if (rgb) {
-      return (0.2126 * Number(rgb[1]) + 0.7152 * Number(rgb[2]) + 0.0722 * Number(rgb[3])) / 255;
-    }
-    return Number.NaN;
-  };
-
-  // The card surface and its strongest (first) shadow ply, both as the engine
-  // resolves them on the dark theme.
-  const { surface, ply } = await page.getByTestId('card-xl').evaluate((el) => {
+  // Сырые резолвнутые цвета: фон карточки и цвет сильнейшей (первой) ply тени —
+  // ровно как их сериализует движок. Оба приходят в CSS Color 4 (движок эмитит
+  // роли в oklch()), поэтому первый цветовой токен box-shadow ловим ЛЮБОЙ
+  // цветовой функцией, а нормализацию в sRGB отдаём браузеру (normalizeCssColor).
+  const { surfaceRaw, plyRaw } = await page.getByTestId('card-xl').evaluate((el) => {
     const cs = getComputedStyle(el);
-    const shadow = cs.boxShadow;
-    const firstColor = shadow.match(/(?:color\(srgb[^)]*\)|rgba?\([^)]*\))/)?.[0] ?? '';
-    return { surface: cs.backgroundColor, ply: firstColor };
+    const firstColor =
+      cs.boxShadow.match(/(?:rgba?|hsla?|hwb|oklch|oklab|lab|lch|color)\([^)]*\)/)?.[0] ?? '';
+    return { surfaceRaw: cs.backgroundColor, plyRaw: firstColor };
   });
 
-  const surfaceL = luminance(surface);
-  const shadowL = luminance(ply);
-  expect(Number.isNaN(surfaceL)).toBe(false);
-  expect(Number.isNaN(shadowL)).toBe(false);
-  // The composite shadow ink is the #101012 anchor at low alpha — strictly
-  // darker than the dark surface it sits on. Never a glow.
-  expect(shadowL).toBeLessThan(surfaceL);
+  const surface = await normalizeCssColor(page, surfaceRaw);
+  const ply = await normalizeCssColor(page, plyRaw);
+  if (!surface || !ply) {
+    throw new Error(
+      `dark-theme shadow: браузер не распознал цвет.\n  surface="${surfaceRaw}"\n  ply="${plyRaw}"`,
+    );
+  }
+
+  // Тень-краска (#101012 анкер) СТРОГО темнее тёмной поверхности, на которой
+  // лежит — тень, не свечение. Сравниваем по WCAG relative luminance цвета
+  // краски (альфа не участвует: сравнивается ЦВЕТ, не композит).
+  expect(relativeLuminance(ply)).toBeLessThan(relativeLuminance(surface));
 });
