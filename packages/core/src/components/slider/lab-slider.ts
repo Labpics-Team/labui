@@ -226,9 +226,9 @@ export class LabSlider extends LabElement {
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_label-tracking: ${litVar('--lab-letter-spacing-xs', '-0.0042em')};
+      --_label-tracking: ${litVar('--lab-letter-spacing-xs', '-0.0009em')};
       --_help-font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
-      --_help-tracking: ${litVar('--lab-letter-spacing-xxs', '0.0043em')};
+      --_help-tracking: ${litVar('--lab-letter-spacing-xxs', '0.0064em')};
       --_line: ${litVar('--lab-line-height-md', '1.5')};
 
       display: block;

@@ -23,6 +23,7 @@ export function generateTs(tokens: ResolvedTokens): string {
   parts.push(scaleConst('fontWeight', tokens.fontWeights));
   parts.push(scaleConst('letterSpacing', tokens.letterSpacings));
   parts.push(scaleConst('measure', tokens.measures));
+  parts.push(scaleConst('font', tokens.fonts));
   parts.push(scaleConst('stroke', tokens.strokes));
   parts.push(scaleConst('focusRing', tokens.focusRing));
 

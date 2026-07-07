@@ -20,11 +20,11 @@
   --_lab-field-radius: var(--lab-radius-control, 0.5rem);
   --_lab-field-gap: var(--lab-space-xs, 0.25rem);
   --_lab-field-font: var(--lab-font-size-md, 1rem);
-  --_lab-field-tracking: var(--lab-letter-spacing-md, -0.011em);
+  --_lab-field-tracking: var(--lab-letter-spacing-md, -0.0083em);
   --_lab-field-label-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-field-label-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-field-label-tracking: var(--lab-letter-spacing-xs, -0.0009em);
   --_lab-field-help-font: var(--lab-font-size-xxs, 0.6944rem);
-  --_lab-field-help-tracking: var(--lab-letter-spacing-xxs, 0.0043em);
+  --_lab-field-help-tracking: var(--lab-letter-spacing-xxs, 0.0064em);
   --_lab-field-line: var(--lab-line-height-md, 1.5);
 
   display: block;
@@ -34,13 +34,13 @@
   --_lab-field-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-field-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-field-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-field-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-field-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 [data-lab-tags-input][data-size="l"] {
   --_lab-field-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-field-pad-y: var(--lab-space-md, 1rem);
   --_lab-field-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-field-tracking: var(--lab-letter-spacing-lg, -0.0177em);
+  --_lab-field-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }
 
 [data-lab-tags-input].lab-field {

@@ -250,6 +250,36 @@
       }
     },
     {
+      "name": "border-brand-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-danger-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-warning-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-success-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
+      "name": "border-info-none",
+      "recipe": {
+        "kind": "zero"
+      }
+    },
+    {
       "name": "fill-primary",
       "recipe": {
         "kind": "ladder",
@@ -969,49 +999,6 @@
       }
     },
     {
-      "name": "fx-focus-ring-brand",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-danger",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-warning",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-neutral",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "edge"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
       "name": "fx-glow-brand",
       "recipe": {
         "kind": "glow",
@@ -1229,28 +1216,6 @@
       }
     },
     {
-      "name": "fx-focus-ring-success",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-info",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
       "name": "fill-neutral",
       "recipe": {
         "kind": "ladder",
@@ -1333,7 +1298,9 @@
         },
         "position": "focus-ring"
       }
-    },
+    }
+  ],
+  "components": [
     {
       "name": "badge-fill-brand",
       "recipe": {
@@ -1384,23 +1351,16 @@
       }
     },
     {
-      "name": "badge-fill-static-dark",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "neutral",
-          "pick": "dark"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-static-light",
+      "name": "badge-fill-static",
       "recipe": {
         "kind": "pair-fill",
         "source": {
           "kind": "neutral",
           "pick": "light"
         }
+      },
+      "flag": {
+        "pick": ["dark", "light"]
       }
     }
   ],
@@ -1430,8 +1390,28 @@
       "target": "label-tertiary"
     },
     {
-      "alias": "border-ghost",
-      "target": "border-none"
+      "alias": "fx-focus-ring-neutral",
+      "target": "label-primary"
+    },
+    {
+      "alias": "fx-focus-ring-brand",
+      "target": "label-brand-primary"
+    },
+    {
+      "alias": "fx-focus-ring-danger",
+      "target": "label-danger-primary"
+    },
+    {
+      "alias": "fx-focus-ring-warning",
+      "target": "label-warning-primary"
+    },
+    {
+      "alias": "fx-focus-ring-success",
+      "target": "label-success-primary"
+    },
+    {
+      "alias": "fx-focus-ring-info",
+      "target": "label-info-primary"
     }
   ]
 }

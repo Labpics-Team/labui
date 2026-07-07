@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { defaultConfig } from '../src/config/default-config.js';
 import { resolveConfig } from '../src/config/merge.js';
-import { buildTypography, effectiveSizePx, fluidBounds } from '../src/domain/typography.js';
+import {
+  buildTypography,
+  effectiveSizePx,
+  fluidBounds,
+  lineHeightOptical,
+} from '../src/domain/typography.js';
 
 const ty = defaultConfig.typography;
 
@@ -133,12 +138,65 @@ describe('fluid typography — gradient model', () => {
     expect(effectiveSizePx(steeper.typography, 0, 800)).toBeCloseTo(16, 6);
   });
 
-  it('line-height is tighter for large steps and looser for body (Material 3 banding)', () => {
+  it('line-height Geist: body (md) leaded 1.5, дисплей set-solid, мега-дисплей суб-solid', () => {
     const { lineHeights } = buildTypography(ty);
     const byName = new Map(lineHeights.map((t) => [t.name, t.numeric as number]));
-    // display (6xl) tighter than body (md).
-    expect(byName.get('6xl')).toBeLessThan(byName.get('md') as number);
-    expect(byName.get('md')).toBeCloseTo(1.5, 6);
-    expect(byName.get('6xl')).toBeCloseTo(1.2, 6);
+    // Body (16px) — читаемая проза, интерлиньяж 1.5 (отпечаток Text/M).
+    expect(byName.get('md')).toBeCloseTo(1.5, 3);
+    // Заголовки/дисплей набраны СПЛОШНЯКОМ (lh = кегль, 1.0) — отпечатки 20…80px.
+    expect(byName.get('lg')).toBeCloseTo(1.0, 3);
+    expect(byName.get('4xl')).toBeCloseTo(1.0, 3);
+    // Мега-дисплей (6xl, ~112px) — суб-solid 0.857 (отрицательный интерлиньяж),
+    // это НЕ 1.2 старой банды: закон из отпечатка Display/6XL 112→96px.
+    expect(byName.get('6xl')).toBeCloseTo(0.857, 2);
+    expect(byName.get('6xl')).toBeLessThan(1.0);
+    // Captions набраны плотно (~solid), не разлохмачены старой 1.5.
+    expect(byName.get('xs')).toBeCloseTo(1.0, 2);
+  });
+});
+
+// Отпечатки Geist [кегль px, line-height px]. Спайн = solid+body (без caption-14,
+// задокументированного −2px микро-выброса). Модель воспроизводит их из кегля.
+const LH_FP: ReadonlyArray<readonly [number, number]> = [
+  [112, 96],
+  [80, 80],
+  [64, 64],
+  [48, 48],
+  [32, 32],
+  [24, 24],
+  [20, 20],
+  [16, 24],
+  [12, 12],
+];
+
+describe('line-height — оптическая модель из отпечатков Geist', () => {
+  it('воспроизводит solid/body-отпечатки из кегля (допуск 0.01 мультипликатора)', () => {
+    for (const [z, lhPx] of LH_FP) {
+      const fit = lineHeightOptical(z, ty.basePx);
+      expect(
+        Math.abs(fit - lhPx / z),
+        `z=${z}px: fit ${fit.toFixed(4)} vs ${(lhPx / z).toFixed(4)}`,
+      ).toBeLessThanOrEqual(0.01);
+    }
+  });
+
+  it('caption-14 (0.857) — задокументированный выброс ВНЕ закона (модель даёт ~solid)', () => {
+    // 14px — не шаг эмитируемой шкалы; закон ставит его ~1.0, дизайнер нудж −2px.
+    const fit = lineHeightOptical(14, ty.basePx);
+    expect(fit).toBeCloseTo(1.0, 1); // модель — почти solid
+    expect(Math.abs(fit - 12 / 14)).toBeGreaterThan(0.1); // отпечаток 0.857 вне модели
+  });
+
+  it('шкало-инвариантна: при смене базы пик читаемости следует за базой', () => {
+    // База 20 → body-надбавка на 20px (не на 16); 16px становится «мельче base» → solid.
+    expect(lineHeightOptical(20, 20)).toBeCloseTo(1.5, 3);
+    expect(lineHeightOptical(16, 20)).toBeCloseTo(1.0, 1);
+  });
+
+  it('динамика: reading-пик на body, solid на дисплее, суб-solid у мега-дисплея', () => {
+    expect(lineHeightOptical(16, 16)).toBeCloseTo(1.5, 3); // body
+    expect(lineHeightOptical(48, 16)).toBeCloseTo(1.0, 3); // дисплей solid
+    expect(lineHeightOptical(112, 16)).toBeLessThan(1.0); // мега суб-solid
+    expect(lineHeightOptical(112, 16)).toBeCloseTo(0.857, 2);
   });
 });

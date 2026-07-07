@@ -166,13 +166,8 @@ export const defaultConfig: TokensConfig = {
       '6': '5xl',
       '7': '6xl', // display-xl
     },
-    // Material 3 guidance: large steps tight (~1.2), body/label loose (~1.5).
-    // Evaluated highest threshold first: step >= 4 -> 1.2, >= 1 -> 1.3, else 1.5.
-    lineHeightBands: [
-      { fromStep: 4, multiplier: 1.2 },
-      { fromStep: 1, multiplier: 1.3 },
-      { fromStep: -99, multiplier: 1.5 },
-    ],
+    // Интерлиньяж выведен из отпечатков Geist оптическим законом
+    // (lineHeightOptical), а не бэндами — поэтому здесь поля нет. См. типы.
     // Font-weight roles. `semibold` (600) is the emphasis weight every component
     // used as a literal before this scale existed; values match 1:1 so the scale
     // is value-preserving. A client re-weights its whole UI via one override.
@@ -181,6 +176,39 @@ export const defaultConfig: TokensConfig = {
       medium: 500,
       semibold: 600,
       bold: 700,
+    },
+    // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
+    // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие
+    // системные фолбэки и аварийный дженерик в хвосте, чтобы текст читался и без
+    // подгруженного Geist (font-display: swap). Клиент меняет ребренд оверрайдом.
+    fontFamily: {
+      sans: [
+        'Geist',
+        '-apple-system',
+        'BlinkMacSystemFont',
+        'Segoe UI',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'sans-serif',
+      ],
+      mono: [
+        'Geist Mono',
+        'ui-monospace',
+        'SFMono-Regular',
+        'Menlo',
+        'Consolas',
+        'Liberation Mono',
+        'monospace',
+      ],
+    },
+    // OpenType-фичи Geist (проверено чтением бинарников, GSUB): заведены только
+    // существующие. tnum — табличные (моноширинные) цифры Sans, для выравнивания
+    // чисел в таблицах/дашбордах (Mono уже табличный). frac — дробные глифы.
+    // zero/calt/onum в Geist ОТСУТСТВУЮТ — токенов на них НЕТ (были бы no-op).
+    fontFeatures: {
+      tabular: '"tnum" 1',
+      fractions: '"frac" 1',
     },
   },
   // Stroke widths + focus ring (rem). Grounded against Figma (🧪Lab UI v.1):

@@ -260,7 +260,7 @@ export class LabAccordion extends LabElement {
       color: ${litVar('--lab-label-secondary')};
       font: inherit;
       font-size: ${litVar('--lab-font-size-md', '1rem')};
-      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.011em')};
+      letter-spacing: ${litVar('--lab-letter-spacing-md', '-0.0083em')};
       line-height: ${litVar('--lab-line-height-md', '1.5')};
     }
     /* The machine sets [hidden] on closed panels; belt-and-braces so first paint

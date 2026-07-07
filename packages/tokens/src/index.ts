@@ -16,7 +16,6 @@
 export { defaultConfig } from './config/default-config.js';
 export { resolveConfig } from './config/merge.js';
 export type {
-  LineHeightBand,
   RadiiConfig,
   SizesConfig,
   SpacingConfig,

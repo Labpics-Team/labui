@@ -1,0 +1,21 @@
+{
+  "name": "@labpics/fonts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Self-host Geist и Geist Mono (вариативные woff2, OFL 1.1) для LabUI — опциональный пакет: @font-face + шрифтовые файлы, семейство подхватывают токены --lab-font-family.",
+  "license": "OFL-1.1",
+  "type": "module",
+  "exports": {
+    "./fonts.css": "./fonts.css",
+    "./fonts/*": "./fonts/*",
+    "./package.json": "./package.json"
+  },
+  "files": ["fonts.css", "fonts", "OFL.txt", "PROVENANCE.md"],
+  "sideEffects": ["./fonts.css"],
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "3.2.6"
+  }
+}

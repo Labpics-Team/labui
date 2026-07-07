@@ -198,7 +198,7 @@ export class LabTooltip extends LabElement {
       color: ${litVar('--lab-label-inverted-primary')};
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-xs', '1.5')};
+      line-height: ${litVar('--lab-line-height-xs', '1.0006')};
       box-shadow: var(--lab-elevation-overlay);
       z-index: ${litVar('--lab-z-tooltip', '1400')};
     }

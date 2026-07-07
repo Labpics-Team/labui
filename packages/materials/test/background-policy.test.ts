@@ -1,0 +1,102 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+import {
+  LIVE_BLUR_MODES,
+  MATERIAL_FILL_FAMILY,
+  type MaterialMode,
+  canNest,
+  isLiveBlur,
+} from '../src/background-policy';
+
+/*
+ * A. Политика фонов — явный, проверяемый контракт (ADR-0002 §1, ADR-0004 Решение 4):
+ *   1. Какие МОДЫ читают живой фон (live-blur): glass / blur / acrylic; solid — нет.
+ *   2. Инвариант вложенности: live-blur НЕЛЬЗЯ вкладывать в live-blur (двойной
+ *      live-блюр = шов). solid вкладывается во что угодно и принимает что угодно.
+ *   3. Какое СЕМЕЙСТВО токенов красит собственную заливку материала: только
+ *      `--lab-bg-material-*` (материал не тянет произвольные bg-роли).
+ *
+ * Классы: А (unit, RED-provable на известных входах) + скан-инвариант по material.css.
+ */
+
+const ALL_MODES: readonly MaterialMode[] = ['solid', 'glass', 'blur', 'acrylic'];
+
+describe('isLiveBlur — какие моды читают живой фон', () => {
+  it('glass / blur / acrylic читают живой фон', () => {
+    expect(isLiveBlur('glass')).toBe(true);
+    expect(isLiveBlur('blur')).toBe(true);
+    expect(isLiveBlur('acrylic')).toBe(true);
+  });
+
+  it('solid — непрозрачный, живого фона не читает', () => {
+    expect(isLiveBlur('solid')).toBe(false);
+  });
+
+  it('LIVE_BLUR_MODES = ровно {glass, blur, acrylic}', () => {
+    expect([...LIVE_BLUR_MODES].sort()).toEqual(['acrylic', 'blur', 'glass']);
+  });
+
+  it('каждый live-blur — не solid, и наоборот (полное разбиение множества мод)', () => {
+    for (const m of ALL_MODES) {
+      expect(isLiveBlur(m)).toBe(m !== 'solid');
+    }
+  });
+});
+
+describe('canNest — запрет вложенного live-блюра', () => {
+  it('live-blur внутри live-blur ЗАПРЕЩЁН (двойной live-блюр = шов)', () => {
+    for (const outer of LIVE_BLUR_MODES) {
+      for (const inner of LIVE_BLUR_MODES) {
+        expect(canNest(outer, inner), `${outer} ⊃ ${inner}`).toBe(false);
+      }
+    }
+  });
+
+  it('всё внутри solid — разрешено (непрозрачный хозяин не даёт шва)', () => {
+    for (const inner of ALL_MODES) {
+      expect(canNest('solid', inner), `solid ⊃ ${inner}`).toBe(true);
+    }
+  });
+
+  it('solid внутри live-blur — разрешён (непрозрачный вложенный не создаёт двойного блюра)', () => {
+    for (const outer of LIVE_BLUR_MODES) {
+      expect(canNest(outer, 'solid'), `${outer} ⊃ solid`).toBe(true);
+    }
+  });
+
+  it('запрещено СИММЕТРИЧНО ровно для пар live×live', () => {
+    for (const outer of ALL_MODES) {
+      for (const inner of ALL_MODES) {
+        const forbidden = isLiveBlur(outer) && isLiveBlur(inner);
+        expect(canNest(outer, inner)).toBe(!forbidden);
+      }
+    }
+  });
+});
+
+describe('MATERIAL_FILL_FAMILY — единственное семейство собственной заливки материала', () => {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const cssPath = resolve(here, '..', 'src', 'material.css');
+  const css = readFileSync(cssPath, 'utf8');
+
+  it('семейство = префикс --lab-bg-material-', () => {
+    expect(MATERIAL_FILL_FAMILY).toBe('--lab-bg-material-');
+  });
+
+  it('каждый --_tint / --_base ссылается ТОЛЬКО на var(--lab-bg-material-*) (не на произвольную bg-роль)', () => {
+    // Собственную заливку материала (тинт 01 + база 02) красят ТОЛЬКО токены
+    // семейства материала. Живой фон ПОД стеклом — любая bg-роль (сцена), но это
+    // фон-хозяин, а не заливка поверхности. Гвард держит границу.
+    const fillDecls = [...css.matchAll(/--_(?:tint|base):\s*([^;]+);/g)].map((m) =>
+      (m[1] as string).trim(),
+    );
+    expect(fillDecls.length).toBeGreaterThan(0);
+    for (const value of fillDecls) {
+      const ref = /^var\((--lab-[a-z0-9-]+)\)$/.exec(value);
+      expect(ref, `заливка "${value}" обязана быть var(--lab-bg-material-*)`).not.toBeNull();
+      expect((ref?.[1] as string).startsWith(MATERIAL_FILL_FAMILY)).toBe(true);
+    }
+  });
+});

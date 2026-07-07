@@ -771,11 +771,11 @@
   "line-height": {
     "xxs": {
       "$type": "number",
-      "$value": 1.5
+      "$value": 1
     },
     "xs": {
       "$type": "number",
-      "$value": 1.5
+      "$value": 1.0006
     },
     "md": {
       "$type": "number",
@@ -783,31 +783,31 @@
     },
     "lg": {
       "$type": "number",
-      "$value": 1.3
+      "$value": 1
     },
     "xl": {
       "$type": "number",
-      "$value": 1.3
+      "$value": 1
     },
     "2xl": {
       "$type": "number",
-      "$value": 1.3
+      "$value": 1
     },
     "3xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 1
     },
     "4xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 1
     },
     "5xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 0.9761
     },
     "6xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 0.8582
     }
   },
   "font-weight": {
@@ -831,43 +831,43 @@
   "letter-spacing": {
     "xxs": {
       "$type": "number",
-      "$value": 0.0043
+      "$value": 0.0064
     },
     "xs": {
       "$type": "number",
-      "$value": -0.0042
+      "$value": -0.0009
     },
     "md": {
       "$type": "number",
-      "$value": -0.011
+      "$value": -0.0083
     },
     "lg": {
       "$type": "number",
-      "$value": -0.0177
+      "$value": -0.0194
     },
     "xl": {
       "$type": "number",
-      "$value": -0.0209
+      "$value": -0.0293
     },
     "2xl": {
       "$type": "number",
-      "$value": -0.022
+      "$value": -0.0372
     },
     "3xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0425
     },
     "4xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0454
     },
     "5xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0466
     },
     "6xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0469
     }
   },
   "measure": {
@@ -882,6 +882,51 @@
     "wide": {
       "$type": "number",
       "$value": 75
+    }
+  },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "$value": [
+        "Geist",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica Neue",
+        "Arial",
+        "sans-serif"
+      ]
+    },
+    "family-mono": {
+      "$type": "fontFamily",
+      "$value": [
+        "Geist Mono",
+        "ui-monospace",
+        "SFMono-Regular",
+        "Menlo",
+        "Consolas",
+        "Liberation Mono",
+        "monospace"
+      ]
+    },
+    "feature-tabular": {
+      "$type": "fontFeatureSettings",
+      "$value": "\"tnum\" 1",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "\"tnum\" 1"
+        }
+      }
+    },
+    "feature-fractions": {
+      "$type": "fontFeatureSettings",
+      "$value": "\"frac\" 1",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "\"frac\" 1"
+        }
+      }
     }
   },
   "stroke": {

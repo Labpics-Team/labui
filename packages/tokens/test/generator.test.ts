@@ -171,3 +171,52 @@ describe('config merge — user override over defaults', () => {
     expect(resolveConfig()).toEqual(defaultConfig);
   });
 });
+
+describe('typography — семейство шрифта и OpenType-фичи (Geist)', () => {
+  it('эмитит --lab-font-family (sans, Geist первым) и --lab-font-family-mono во все три артефакта', () => {
+    const { css, ts, dtcg } = generate(defaultConfig);
+    // CSS: фолбэк-стек, Geist первым; mono — с Geist Mono (в кавычках: пробел).
+    expect(css).toMatch(/--lab-font-family:\s*Geist,/);
+    expect(css).toMatch(/--lab-font-family-mono:\s*'Geist Mono',/);
+    expect(css).toContain('sans-serif;'); // аварийный дженерик в хвосте sans
+    expect(css).toContain('monospace;'); // аварийный дженерик в хвосте mono
+    // TS: типизированные var-ссылки (живой CSS-var — источник истины).
+    expect(ts).toContain('export const font');
+    expect(ts).toContain("family: 'var(--lab-font-family)'");
+    expect(ts).toContain("'family-mono': 'var(--lab-font-family-mono)'");
+    // DTCG: тип fontFamily, значение — массив стека (Geist первым).
+    const doc = JSON.parse(dtcg);
+    expect(doc.font.family.$type).toBe('fontFamily');
+    expect(doc.font.family.$value[0]).toBe('Geist');
+    expect(doc.font['family-mono'].$value[0]).toBe('Geist Mono');
+  });
+
+  it('эмитит осмысленные OpenType-фичи (tnum/frac) — только реально существующие в Geist', () => {
+    const { css, dtcg } = generate(defaultConfig);
+    expect(css).toContain('--lab-font-feature-tabular: "tnum" 1;');
+    expect(css).toContain('--lab-font-feature-fractions: "frac" 1;');
+    // Выдуманных фич НЕТ (zero/calt/onum в Geist отсутствуют — были бы no-op).
+    expect(css).not.toContain('"zero"');
+    expect(css).not.toContain('"calt"');
+    expect(css).not.toContain('"onum"');
+    const doc = JSON.parse(dtcg);
+    expect(doc.font['feature-tabular'].$value).toBe('"tnum" 1');
+    expect(doc.font['feature-tabular'].$type).toBe('fontFeatureSettings');
+  });
+
+  it('семейство переопределяемо клиентом (ребренд — один оверрайд), фичи key-merge', () => {
+    const changed = generateFromOverride({
+      typography: {
+        fontFamily: { sans: ['Brand', 'sans-serif'], mono: ['Brand Mono', 'monospace'] },
+      },
+    });
+    expect(changed.css).toMatch(/--lab-font-family:\s*Brand, sans-serif;/);
+    expect(changed.css).toMatch(/--lab-font-family-mono:\s*'Brand Mono', monospace;/);
+    // fontFeatures — Record, key-merge: ретюн одной фичи не сносит остальные.
+    const feat = generateFromOverride({
+      typography: { fontFeatures: { tabular: '"tnum" 1, "cv01" 1' } },
+    });
+    expect(feat.css).toContain('--lab-font-feature-tabular: "tnum" 1, "cv01" 1;');
+    expect(feat.css).toContain('--lab-font-feature-fractions: "frac" 1;');
+  });
+});

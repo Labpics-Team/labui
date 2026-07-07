@@ -15,7 +15,7 @@
 [data-lab-progress] {
   --_lab-progress-thickness: 0.5rem;
   --_lab-progress-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-progress-tracking: var(--lab-letter-spacing-xs, -0.0042em);
+  --_lab-progress-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 
   display: flex;
   flex-direction: column;

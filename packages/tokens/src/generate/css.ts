@@ -34,6 +34,10 @@ export function generateCss(tokens: ResolvedTokens): string {
       tokenLines(tokens.letterSpacings),
     ),
     section('Typography — мера строки (Bringhurst 45–75ch, 66 идеал)', tokenLines(tokens.measures)),
+    section(
+      'Typography — семейство шрифта (фолбэк-стек, Geist первым) + OpenType-фичи',
+      tokenLines(tokens.fonts),
+    ),
     section('Borders — stroke widths (rem)', tokenLines(tokens.strokes)),
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
   ];
