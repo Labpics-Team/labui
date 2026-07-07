@@ -252,6 +252,51 @@ function fxBridgeEmission(theme, engineVars, roles, anchorNames) {
   return lines.join('\n');
 }
 
+/**
+ * Закон шиммера скелетона (ADR-0002 §5 «свет, не краска», волна FX-консолидации).
+ *
+ * ПОЧЕМУ закон, а не эмиссия движка: замороженный Figma-якорь несёт highlight =
+ * mid-нейтраль при ФИКСИРОВАННОЙ α (0.039) в ОБЕИХ темах, и движок повторяет это
+ * дословно. «Меньше серого оверлея = светлее» верно ТОЛЬКО над светлым фоном:
+ * в light highlight (α 0.039) действительно светлее base (fill-quaternary, α 0.078).
+ * В dark base тяжелее (α 0.161), и highlight при α 0.039 композитится ТЕМНЕЕ base —
+ * блик светит в ОБРАТНУЮ сторону (тёмный провал вместо светлого). Заземлено
+ * замером: light Δ(hl−base)=+0.031, dark Δ=−0.016 по oklab-светлоте. Это
+ * Figma-недосмотр того же класса, что fx-glow-inverted (см. golden-parity).
+ *
+ * ЗАКОН: highlight — та же нейтраль base, доведённая до МАКСИМУМА светлоты (белый
+ * анкор neutral.anchors.light, L=100% C=0) при ТОЙ ЖЕ α, что у base. Белый оверлей
+ * при любом весе композитится СВЕТЛЕЕ mid-серого на ЛЮБОЙ поверхности в ОБЕИХ
+ * темах (монотонность композита по светлоте оверлея) — блик гарантированно
+ * светлый. Hue и α берутся ИЗ эмитированного base (лестница объективизации:
+ * вывод из существующих величин системы) — ноль хардкода цвета, ноль
+ * per-тема-константы. Байт-стабильность: α highlight === α base посимвольно.
+ *
+ * @param {string} baseSkeletonCss  значение --lab-fx-skeleton-base (translucent oklch)
+ * @returns {string} значение --lab-fx-skeleton-highlight (белый при α base)
+ */
+export function skeletonHighlightCss(baseSkeletonCss) {
+  const m = /oklch\(\s*[\d.]+%\s+[\d.]+\s+([\d.]+)\s*\/\s*([\d.]+)\s*\)/.exec(baseSkeletonCss);
+  if (!m) {
+    throw new Error(`fx-skeleton-base не translucent oklch(.../α): ${baseSkeletonCss}`);
+  }
+  const [, hue, alpha] = m;
+  return `oklch(100.00000% 0.000000 ${hue} / ${alpha})`;
+}
+
+/** Эмиссия шиммера: перекрывает каскадом мостовой highlight Figma-якоря. */
+function skeletonShimmerEmission(engineVars) {
+  const baseCss = engineVars.get('--lab-fx-skeleton-base');
+  if (!baseCss) throw new Error('движок не эмитит fx-skeleton-base для деривации шиммера');
+  return [
+    '',
+    '  /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты',
+    '     (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.',
+    '     Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */',
+    `  --lab-fx-skeleton-highlight: ${skeletonHighlightCss(baseCss)};`,
+  ].join('\n');
+}
+
 /** Сгенерировать полный contract.css из движка и Figma-якоря. */
 export async function generateContract() {
   const require = createRequire(import.meta.url);
@@ -281,12 +326,14 @@ export async function generateContract() {
     renderScope(light, engineLight, overridesLight) +
     badgePairEmission(colors, 'light', resolvedLight.roles) +
     bgLadderEmission('light', engineLight, bgLight) +
-    fxBridgeEmission('light', engineLight, resolvedLight.roles, anchorLight);
+    fxBridgeEmission('light', engineLight, resolvedLight.roles, anchorLight) +
+    skeletonShimmerEmission(engineLight);
   const darkBody =
     renderScope(dark, engineDark, overridesDark) +
     badgePairEmission(colors, 'dark', resolvedDark.roles) +
     bgLadderEmission('dark', engineDark, bgDark) +
-    fxBridgeEmission('dark', engineDark, resolvedDark.roles, anchorDark);
+    fxBridgeEmission('dark', engineDark, resolvedDark.roles, anchorDark) +
+    skeletonShimmerEmission(engineDark);
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
