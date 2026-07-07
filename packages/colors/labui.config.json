@@ -1077,6 +1077,180 @@
       }
     },
     {
+      "name": "fx-glow-neutral-subtle",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "neutral",
+          "pick": "light"
+        },
+        "step": "subtle"
+      }
+    },
+    {
+      "name": "fx-glow-neutral-bloom",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "neutral",
+          "pick": "light"
+        },
+        "step": "bloom"
+      }
+    },
+    {
+      "name": "fx-glow-brand-subtle",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "brand"
+        },
+        "step": "subtle"
+      }
+    },
+    {
+      "name": "fx-glow-brand-bloom",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "brand"
+        },
+        "step": "bloom"
+      }
+    },
+    {
+      "name": "fx-glow-danger-subtle",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "danger"
+        },
+        "step": "subtle"
+      }
+    },
+    {
+      "name": "fx-glow-danger-bloom",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "danger"
+        },
+        "step": "bloom"
+      }
+    },
+    {
+      "name": "fx-glow-warning-subtle",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "warning"
+        },
+        "step": "subtle"
+      }
+    },
+    {
+      "name": "fx-glow-warning-bloom",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "warning"
+        },
+        "step": "bloom"
+      }
+    },
+    {
+      "name": "fx-glow-success",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "success"
+        },
+        "step": "base"
+      }
+    },
+    {
+      "name": "fx-glow-success-subtle",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "success"
+        },
+        "step": "subtle"
+      }
+    },
+    {
+      "name": "fx-glow-success-bloom",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "success"
+        },
+        "step": "bloom"
+      }
+    },
+    {
+      "name": "fx-glow-info",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "info"
+        },
+        "step": "base"
+      }
+    },
+    {
+      "name": "fx-glow-info-subtle",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "info"
+        },
+        "step": "subtle"
+      }
+    },
+    {
+      "name": "fx-glow-info-bloom",
+      "recipe": {
+        "kind": "glow",
+        "source": {
+          "kind": "sentiment",
+          "name": "info"
+        },
+        "step": "bloom"
+      }
+    },
+    {
+      "name": "fx-focus-ring-success",
+      "recipe": {
+        "kind": "ladder",
+        "source": {
+          "kind": "sentiment",
+          "name": "success"
+        },
+        "position": "focus-ring"
+      }
+    },
+    {
+      "name": "fx-focus-ring-info",
+      "recipe": {
+        "kind": "ladder",
+        "source": {
+          "kind": "sentiment",
+          "name": "info"
+        },
+        "position": "focus-ring"
+      }
+    },
+    {
       "name": "fill-neutral",
       "recipe": {
         "kind": "ladder",

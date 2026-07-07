@@ -14,7 +14,6 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { createLabuiEngine } from './engine.mjs';
-import { hexToLin, oklabOf } from './oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const referencePath = join(here, '..', 'colors-stub', 'figma-reference.css');
@@ -190,56 +189,65 @@ function bgLadderEmission(theme, engineVars, bgBase) {
   return lines.join('\n');
 }
 
-/** hex → oklch-строка в форме эмиссии движка (L% C h). */
-function hexToOklch(hex) {
-  const [l, a, b] = oklabOf(hexToLin(hex));
-  const c = Math.hypot(a, b);
-  let h = (Math.atan2(b, a) * 180) / Math.PI;
-  if (h < 0) h += 360;
-  return `oklch(${(l * 100).toFixed(5)}% ${c.toFixed(6)} ${h.toFixed(3)})`;
+// Полный набор FX-семьи: 6 сентиментов × 3 прогрессивные ступени glow, каждый —
+// свет (halo/core/α). Порядок сентиментов зеркалит канон гейта fx-family.
+const FX_SENTIMENTS = ['neutral', 'brand', 'danger', 'warning', 'success', 'info'];
+const GLOW_STEPS = ['base', 'subtle', 'bloom'];
+
+/** Имя glow-переменной: base — без суффикса ступени. */
+function glowVar(sentiment, step) {
+  return step === 'base' ? `--lab-fx-glow-${sentiment}` : `--lab-fx-glow-${sentiment}-${step}`;
 }
 
 /**
- * Мост свечения (ADR-0002 §5 «свет, не краска», волна glow поезда).
+ * Мост FX-семьи (ADR-0002 §5 «свет, не краска», волна glow поезда) — ЖИВАЯ
+ * эмиссия @labpics/colors, не литералы. Движок (≥0.6) знает kind:"glow" и сам
+ * решает halo/core/α ступеней (screen-солвер, бисекция под целевым |ΔJ'| на
+ * фоне резолва темы) — их берём напрямую из resolveTheme().vars.
  *
- * Released-движок (0.5.x) ещё не знает kind:"glow" — паспорт держит легаси
- * ladder-краску (oklch/0.522). Этот блок перекрывает её КАСКАДОМ контрактом
- * света: halo (источник), core (пересвет), α ступени Base — значения РЕШЕНЫ
- * движком ветки поезда (пример glow_mirror_derivation @ lab-colors ecbf067:
- * screen-солвер, бисекция под |ΔJ'| = 2.3006 на фоне резолва темы; ноль
- * придуманных чисел). Светлая тема: screen над белым физически гаснет
- * (деградация солвера, |ΔJ'| = 0) → α = 0, свет несёт только border-reveal
- * (halo/core остаются для тонировки обводки). При релизе 0.6.0 паспорт
- * переезжает на kind:"glow", блок заменяется живой эмиссией — байт-парность
- * гарантирует тот же пример. fx-glow-inverted — НЕ свечение (Translucent
- * по дизайну), остаётся на легаси-эмиссии.
+ * ГЛАВНОЕ: α деградированного свечения. В светлой теме screen над белым
+ * физически гаснет (|ΔJ'| = 0, role.degraded) — движок отдаёт α-сентинел 1.0,
+ * который как оверлей-непрозрачность был бы неверным (сплошной halo). Контракт
+ * публикует α = 0 (свет несёт border-reveal, halo/core остаются для тонировки
+ * обводки) — решение выведено из ЖИВОГО флага role.degraded, а не из литерала.
+ *
+ * Перекрывает КАСКАДОМ базовые glow-строки renderScope (та же живая величина;
+ * добавляет ступени subtle/bloom и сентименты success/info). focus-ring
+ * success/info добавляются здесь же — их нет в замороженном Figma-якоре (Figma
+ * их не несёт), потому renderScope их не эмитит; 4 якорных focus-ring уже
+ * выведены renderScope байт-идентично, дублировать не нужно.
+ * fx-glow-inverted — НЕ свечение (Translucent по дизайну), остаётся у renderScope.
  */
-function glowBridgeEmission(theme) {
-  const solved = {
-    dark: {
-      brand: { halo: '#4A8FFF', core: '#B3C3EA', alpha: 0.036 },
-      danger: { halo: '#FF3A3A', core: '#FFA79F', alpha: 0.046 },
-      warning: { halo: '#FF9008', core: '#FFC89B', alpha: 0.0333 },
-      neutral: { halo: '#FFFFFF', core: '#FFFEFE', alpha: 0.0188 },
-    },
-    light: {
-      brand: { halo: '#007AFF', core: '#A7BAE3', alpha: 0 },
-      danger: { halo: '#FF3B30', core: '#FFA99E', alpha: 0 },
-      warning: { halo: '#FFA100', core: '#FED1A0', alpha: 0 },
-      neutral: { halo: '#FFFFFF', core: '#FFFFFE', alpha: 0 },
-    },
-  }[theme];
+function fxBridgeEmission(theme, engineVars, roles, anchorNames) {
   const lines = [
     '',
-    '  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,',
-    '     решено движком поезда (glow_mirror_derivation); перекрывает легаси-',
-    '     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,',
-    '     свет несёт border-reveal. */',
+    '  /* FX-семья — живая эмиссия движка (свет, не краска, ADR-0002 §5):',
+    '     glow base/subtle/bloom × 6 сентиментов (halo/core/α решены screen-',
+    '     солвером) + focus-ring success/info (нет в Figma-якоре). α светлой',
+    '     темы = 0: screen над белым гаснет (role.degraded), свет — border-reveal. */',
   ];
-  for (const [role, g] of Object.entries(solved)) {
-    lines.push(`  --lab-fx-glow-${role}: ${hexToOklch(g.halo)};`);
-    lines.push(`  --lab-fx-glow-${role}-core: ${hexToOklch(g.core)};`);
-    lines.push(`  --lab-fx-glow-${role}-alpha: ${g.alpha};`);
+  for (const s of FX_SENTIMENTS) {
+    for (const step of GLOW_STEPS) {
+      const v = glowVar(s, step);
+      const roleKey = v.slice('--lab-'.length); // fx-glow-<s>[-<step>]
+      const role = roles[roleKey];
+      if (!role || role.kind !== 'glow') throw new Error(`движок не эмитит glow ${roleKey}`);
+      const color = engineVars.get(v);
+      const core = engineVars.get(`${v}-core`);
+      if (!color || !core) throw new Error(`движок не эмитит vars для ${v}`);
+      // Деградация (screen над белым гаснет) → α = 0; иначе живая α движка.
+      const alpha = role.degraded ? '0' : engineVars.get(`${v}-alpha`);
+      lines.push(`  ${v}: ${color};`);
+      lines.push(`  ${v}-core: ${core};`);
+      lines.push(`  ${v}-alpha: ${alpha};`);
+    }
+  }
+  for (const s of FX_SENTIMENTS) {
+    const v = `--lab-fx-focus-ring-${s}`;
+    if (anchorNames.has(v)) continue; // якорные 4 выведены renderScope байт-идентично
+    const value = engineVars.get(v);
+    if (!value) throw new Error(`движок не эмитит ${v}`);
+    lines.push(`  ${v}: ${value};`);
   }
   return lines.join('\n');
 }
@@ -267,16 +275,18 @@ export async function generateContract() {
   const resolvedDark = colors.resolveTheme(bgDark, 'dark');
   const overridesLight = semanticPairOverrides(colors, 'light', new Map(light), passport.aliases);
   const overridesDark = semanticPairOverrides(colors, 'dark', new Map(dark), passport.aliases);
+  const anchorLight = new Set(light.map(([name]) => name));
+  const anchorDark = new Set(dark.map(([name]) => name));
   const lightBody =
     renderScope(light, engineLight, overridesLight) +
     badgePairEmission(colors, 'light', resolvedLight.roles) +
     bgLadderEmission('light', engineLight, bgLight) +
-    glowBridgeEmission('light');
+    fxBridgeEmission('light', engineLight, resolvedLight.roles, anchorLight);
   const darkBody =
     renderScope(dark, engineDark, overridesDark) +
     badgePairEmission(colors, 'dark', resolvedDark.roles) +
     bgLadderEmission('dark', engineDark, bgDark) +
-    glowBridgeEmission('dark');
+    fxBridgeEmission('dark', engineDark, resolvedDark.roles, anchorDark);
 
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.

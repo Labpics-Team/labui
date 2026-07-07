@@ -1,7 +1,7 @@
 /*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@0.6.2 + паспорт labui.config.json
-(отпечаток 5013ba77a61f58ff). Движковые роли — живая эмиссия (единая форма
+(отпечаток 227ebef09f51e981). Движковые роли — живая эмиссия (единая форма
 oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
 лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
 Figma-якорь» — входы и компонентные поверхности из замороженного
@@ -192,22 +192,66 @@ figma-reference.css, переезжают следующими этапами п
   --lab-bg-grouped-primary: var(--lab-bg-tone-2);
   --lab-bg-grouped-secondary: var(--lab-bg-tone-1);
   --lab-bg-grouped-tertiary: var(--lab-bg-tone-2);
-  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
-     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
-     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
-     свет несёт border-reveal. */
-  --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424);
-  --lab-fx-glow-brand-core: oklch(78.84894% 0.062240 265.472);
-  --lab-fx-glow-brand-alpha: 0;
-  --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659);
-  --lab-fx-glow-danger-core: oklch(81.62208% 0.103545 27.533);
-  --lab-fx-glow-danger-alpha: 0;
-  --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607);
-  --lab-fx-glow-warning-core: oklch(88.80612% 0.081204 68.866);
-  --lab-fx-glow-warning-alpha: 0;
+  /* FX-семья — живая эмиссия движка (свет, не краска, ADR-0002 §5):
+     glow base/subtle/bloom × 6 сентиментов (halo/core/α решены screen-
+     солвером) + focus-ring success/info (нет в Figma-якоре). α светлой
+     темы = 0: screen над белым гаснет (role.degraded), свет — border-reveal. */
   --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
   --lab-fx-glow-neutral-core: oklch(99.97226% 0.001314 106.423);
   --lab-fx-glow-neutral-alpha: 0;
+  --lab-fx-glow-neutral-subtle: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-subtle-core: oklch(99.97226% 0.001314 106.423);
+  --lab-fx-glow-neutral-subtle-alpha: 0;
+  --lab-fx-glow-neutral-bloom: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-bloom-core: oklch(99.97226% 0.001314 106.423);
+  --lab-fx-glow-neutral-bloom-alpha: 0;
+  --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424);
+  --lab-fx-glow-brand-core: oklch(78.84894% 0.062240 265.472);
+  --lab-fx-glow-brand-alpha: 0;
+  --lab-fx-glow-brand-subtle: oklch(60.27647% 0.217712 257.424);
+  --lab-fx-glow-brand-subtle-core: oklch(78.84894% 0.062240 265.472);
+  --lab-fx-glow-brand-subtle-alpha: 0;
+  --lab-fx-glow-brand-bloom: oklch(60.27647% 0.217712 257.424);
+  --lab-fx-glow-brand-bloom-core: oklch(78.84894% 0.062240 265.472);
+  --lab-fx-glow-brand-bloom-alpha: 0;
+  --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659);
+  --lab-fx-glow-danger-core: oklch(81.62208% 0.103545 27.533);
+  --lab-fx-glow-danger-alpha: 0;
+  --lab-fx-glow-danger-subtle: oklch(65.42146% 0.232135 28.659);
+  --lab-fx-glow-danger-subtle-core: oklch(81.62208% 0.103545 27.533);
+  --lab-fx-glow-danger-subtle-alpha: 0;
+  --lab-fx-glow-danger-bloom: oklch(65.42146% 0.232135 28.659);
+  --lab-fx-glow-danger-bloom-core: oklch(81.62208% 0.103545 27.533);
+  --lab-fx-glow-danger-bloom-alpha: 0;
+  --lab-fx-glow-warning: oklch(78.56796% 0.171718 68.607);
+  --lab-fx-glow-warning-core: oklch(88.80612% 0.081204 68.866);
+  --lab-fx-glow-warning-alpha: 0;
+  --lab-fx-glow-warning-subtle: oklch(78.56796% 0.171718 68.607);
+  --lab-fx-glow-warning-subtle-core: oklch(88.80612% 0.081204 68.866);
+  --lab-fx-glow-warning-subtle-alpha: 0;
+  --lab-fx-glow-warning-bloom: oklch(78.56796% 0.171718 68.607);
+  --lab-fx-glow-warning-bloom-core: oklch(88.80612% 0.081204 68.866);
+  --lab-fx-glow-warning-bloom-alpha: 0;
+  --lab-fx-glow-success: oklch(73.03242% 0.194381 147.444);
+  --lab-fx-glow-success-core: oklch(86.01599% 0.071689 144.311);
+  --lab-fx-glow-success-alpha: 0;
+  --lab-fx-glow-success-subtle: oklch(73.03242% 0.194381 147.444);
+  --lab-fx-glow-success-subtle-core: oklch(86.01599% 0.071689 144.311);
+  --lab-fx-glow-success-subtle-alpha: 0;
+  --lab-fx-glow-success-bloom: oklch(73.03242% 0.194381 147.444);
+  --lab-fx-glow-success-bloom-core: oklch(86.01599% 0.071689 144.311);
+  --lab-fx-glow-success-bloom-alpha: 0;
+  --lab-fx-glow-info: oklch(64.03903% 0.193503 278.130);
+  --lab-fx-glow-info-core: oklch(80.88028% 0.060397 283.914);
+  --lab-fx-glow-info-alpha: 0;
+  --lab-fx-glow-info-subtle: oklch(64.03903% 0.193503 278.130);
+  --lab-fx-glow-info-subtle-core: oklch(80.88028% 0.060397 283.914);
+  --lab-fx-glow-info-subtle-alpha: 0;
+  --lab-fx-glow-info-bloom: oklch(64.03903% 0.193503 278.130);
+  --lab-fx-glow-info-bloom-core: oklch(80.88028% 0.060397 283.914);
+  --lab-fx-glow-info-bloom-alpha: 0;
+  --lab-fx-focus-ring-success: oklch(73.03242% 0.194381 147.444 / 1);
+  --lab-fx-focus-ring-info: oklch(64.03903% 0.193503 278.130 / 1);
 }
 
 [data-theme="dark"] {
@@ -391,22 +435,66 @@ figma-reference.css, переезжают следующими этапами п
   --lab-bg-grouped-primary: var(--lab-bg-tone-1);
   --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
   --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
-  /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
-     решено движком поезда (glow_mirror_derivation); перекрывает легаси-
-     краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
-     свет несёт border-reveal. */
-  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
-  --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
-  --lab-fx-glow-brand-alpha: 0.036;
-  --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
-  --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
-  --lab-fx-glow-danger-alpha: 0.046;
-  --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
-  --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
-  --lab-fx-glow-warning-alpha: 0.0333;
+  /* FX-семья — живая эмиссия движка (свет, не краска, ADR-0002 §5):
+     glow base/subtle/bloom × 6 сентиментов (halo/core/α решены screen-
+     солвером) + focus-ring success/info (нет в Figma-якоре). α светлой
+     темы = 0: screen над белым гаснет (role.degraded), свет — border-reveal. */
   --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
   --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
   --lab-fx-glow-neutral-alpha: 0.0188;
+  --lab-fx-glow-neutral-subtle: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-subtle-core: oklch(99.77841% 0.001061 17.178);
+  --lab-fx-glow-neutral-subtle-alpha: 0.0063;
+  --lab-fx-glow-neutral-bloom: oklch(100.00000% 0.000000 89.876);
+  --lab-fx-glow-neutral-bloom-core: oklch(99.77841% 0.001061 17.178);
+  --lab-fx-glow-neutral-bloom-alpha: 0.1151;
+  --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+  --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+  --lab-fx-glow-brand-alpha: 0.0360;
+  --lab-fx-glow-brand-subtle: oklch(66.12059% 0.180585 259.650);
+  --lab-fx-glow-brand-subtle-core: oklch(81.80254% 0.057858 267.572);
+  --lab-fx-glow-brand-subtle-alpha: 0.0112;
+  --lab-fx-glow-brand-bloom: oklch(66.12059% 0.180585 259.650);
+  --lab-fx-glow-brand-bloom-core: oklch(81.80254% 0.057858 267.572);
+  --lab-fx-glow-brand-bloom-alpha: 0.2126;
+  --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+  --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+  --lab-fx-glow-danger-alpha: 0.0460;
+  --lab-fx-glow-danger-subtle: oklch(65.44304% 0.231674 26.474);
+  --lab-fx-glow-danger-subtle-core: oklch(81.30400% 0.105483 25.317);
+  --lab-fx-glow-danger-subtle-alpha: 0.0146;
+  --lab-fx-glow-danger-bloom: oklch(65.44304% 0.231674 26.474);
+  --lab-fx-glow-danger-bloom-core: oklch(81.30400% 0.105483 25.317);
+  --lab-fx-glow-danger-bloom-alpha: 0.2322;
+  --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+  --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+  --lab-fx-glow-warning-alpha: 0.0333;
+  --lab-fx-glow-warning-subtle: oklch(75.71376% 0.176429 59.823);
+  --lab-fx-glow-warning-subtle-core: oklch(87.11345% 0.086025 60.617);
+  --lab-fx-glow-warning-subtle-alpha: 0.0111;
+  --lab-fx-glow-warning-bloom: oklch(75.71376% 0.176429 59.823);
+  --lab-fx-glow-warning-bloom-core: oklch(87.11345% 0.086025 60.617);
+  --lab-fx-glow-warning-bloom-alpha: 0.1778;
+  --lab-fx-glow-success: oklch(75.55508% 0.208246 146.984);
+  --lab-fx-glow-success-core: oklch(87.30148% 0.078010 142.661);
+  --lab-fx-glow-success-alpha: 0.0332;
+  --lab-fx-glow-success-subtle: oklch(75.55508% 0.208246 146.984);
+  --lab-fx-glow-success-subtle-core: oklch(87.30148% 0.078010 142.661);
+  --lab-fx-glow-success-subtle-alpha: 0.0128;
+  --lab-fx-glow-success-bloom: oklch(75.55508% 0.208246 146.984);
+  --lab-fx-glow-success-bloom-core: oklch(87.30148% 0.078010 142.661);
+  --lab-fx-glow-success-bloom-alpha: 0.1761;
+  --lab-fx-glow-info: oklch(68.10386% 0.168552 282.890);
+  --lab-fx-glow-info-core: oklch(82.98842% 0.057085 288.441);
+  --lab-fx-glow-info-alpha: 0.0356;
+  --lab-fx-glow-info-subtle: oklch(68.10386% 0.168552 282.890);
+  --lab-fx-glow-info-subtle-core: oklch(82.98842% 0.057085 288.441);
+  --lab-fx-glow-info-subtle-alpha: 0.0119;
+  --lab-fx-glow-info-bloom: oklch(68.10386% 0.168552 282.890);
+  --lab-fx-glow-info-bloom-core: oklch(82.98842% 0.057085 288.441);
+  --lab-fx-glow-info-bloom-alpha: 0.2015;
+  --lab-fx-focus-ring-success: oklch(75.55508% 0.208246 146.984 / 1);
+  --lab-fx-focus-ring-info: oklch(68.10386% 0.168552 282.890 / 1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -591,21 +679,65 @@ figma-reference.css, переезжают следующими этапами п
     --lab-bg-grouped-primary: var(--lab-bg-tone-1);
     --lab-bg-grouped-secondary: var(--lab-bg-tone-2);
     --lab-bg-grouped-tertiary: var(--lab-bg-tone-3);
-    /* Свечение — свет, не краска (ADR-0002 §5): halo/core/α ступени Base,
-       решено движком поезда (glow_mirror_derivation); перекрывает легаси-
-       краску каскадом. Светлая тема: α = 0 — screen над белым гаснет,
-       свет несёт border-reveal. */
-    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
-    --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
-    --lab-fx-glow-brand-alpha: 0.036;
-    --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
-    --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
-    --lab-fx-glow-danger-alpha: 0.046;
-    --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
-    --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
-    --lab-fx-glow-warning-alpha: 0.0333;
+    /* FX-семья — живая эмиссия движка (свет, не краска, ADR-0002 §5):
+       glow base/subtle/bloom × 6 сентиментов (halo/core/α решены screen-
+       солвером) + focus-ring success/info (нет в Figma-якоре). α светлой
+       темы = 0: screen над белым гаснет (role.degraded), свет — border-reveal. */
     --lab-fx-glow-neutral: oklch(100.00000% 0.000000 89.876);
     --lab-fx-glow-neutral-core: oklch(99.77841% 0.001061 17.178);
     --lab-fx-glow-neutral-alpha: 0.0188;
+    --lab-fx-glow-neutral-subtle: oklch(100.00000% 0.000000 89.876);
+    --lab-fx-glow-neutral-subtle-core: oklch(99.77841% 0.001061 17.178);
+    --lab-fx-glow-neutral-subtle-alpha: 0.0063;
+    --lab-fx-glow-neutral-bloom: oklch(100.00000% 0.000000 89.876);
+    --lab-fx-glow-neutral-bloom-core: oklch(99.77841% 0.001061 17.178);
+    --lab-fx-glow-neutral-bloom-alpha: 0.1151;
+    --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
+    --lab-fx-glow-brand-core: oklch(81.80254% 0.057858 267.572);
+    --lab-fx-glow-brand-alpha: 0.0360;
+    --lab-fx-glow-brand-subtle: oklch(66.12059% 0.180585 259.650);
+    --lab-fx-glow-brand-subtle-core: oklch(81.80254% 0.057858 267.572);
+    --lab-fx-glow-brand-subtle-alpha: 0.0112;
+    --lab-fx-glow-brand-bloom: oklch(66.12059% 0.180585 259.650);
+    --lab-fx-glow-brand-bloom-core: oklch(81.80254% 0.057858 267.572);
+    --lab-fx-glow-brand-bloom-alpha: 0.2126;
+    --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
+    --lab-fx-glow-danger-core: oklch(81.30400% 0.105483 25.317);
+    --lab-fx-glow-danger-alpha: 0.0460;
+    --lab-fx-glow-danger-subtle: oklch(65.44304% 0.231674 26.474);
+    --lab-fx-glow-danger-subtle-core: oklch(81.30400% 0.105483 25.317);
+    --lab-fx-glow-danger-subtle-alpha: 0.0146;
+    --lab-fx-glow-danger-bloom: oklch(65.44304% 0.231674 26.474);
+    --lab-fx-glow-danger-bloom-core: oklch(81.30400% 0.105483 25.317);
+    --lab-fx-glow-danger-bloom-alpha: 0.2322;
+    --lab-fx-glow-warning: oklch(75.71376% 0.176429 59.823);
+    --lab-fx-glow-warning-core: oklch(87.11345% 0.086025 60.617);
+    --lab-fx-glow-warning-alpha: 0.0333;
+    --lab-fx-glow-warning-subtle: oklch(75.71376% 0.176429 59.823);
+    --lab-fx-glow-warning-subtle-core: oklch(87.11345% 0.086025 60.617);
+    --lab-fx-glow-warning-subtle-alpha: 0.0111;
+    --lab-fx-glow-warning-bloom: oklch(75.71376% 0.176429 59.823);
+    --lab-fx-glow-warning-bloom-core: oklch(87.11345% 0.086025 60.617);
+    --lab-fx-glow-warning-bloom-alpha: 0.1778;
+    --lab-fx-glow-success: oklch(75.55508% 0.208246 146.984);
+    --lab-fx-glow-success-core: oklch(87.30148% 0.078010 142.661);
+    --lab-fx-glow-success-alpha: 0.0332;
+    --lab-fx-glow-success-subtle: oklch(75.55508% 0.208246 146.984);
+    --lab-fx-glow-success-subtle-core: oklch(87.30148% 0.078010 142.661);
+    --lab-fx-glow-success-subtle-alpha: 0.0128;
+    --lab-fx-glow-success-bloom: oklch(75.55508% 0.208246 146.984);
+    --lab-fx-glow-success-bloom-core: oklch(87.30148% 0.078010 142.661);
+    --lab-fx-glow-success-bloom-alpha: 0.1761;
+    --lab-fx-glow-info: oklch(68.10386% 0.168552 282.890);
+    --lab-fx-glow-info-core: oklch(82.98842% 0.057085 288.441);
+    --lab-fx-glow-info-alpha: 0.0356;
+    --lab-fx-glow-info-subtle: oklch(68.10386% 0.168552 282.890);
+    --lab-fx-glow-info-subtle-core: oklch(82.98842% 0.057085 288.441);
+    --lab-fx-glow-info-subtle-alpha: 0.0119;
+    --lab-fx-glow-info-bloom: oklch(68.10386% 0.168552 282.890);
+    --lab-fx-glow-info-bloom-core: oklch(82.98842% 0.057085 288.441);
+    --lab-fx-glow-info-bloom-alpha: 0.2015;
+    --lab-fx-focus-ring-success: oklch(75.55508% 0.208246 146.984 / 1);
+    --lab-fx-focus-ring-info: oklch(68.10386% 0.168552 282.890 / 1);
   }
 }
