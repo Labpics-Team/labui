@@ -20,7 +20,6 @@ export const Tabs: LabComponent<TabsProps, 'value-change'> = createLabComponent<
   TabsProps,
   'value-change'
 >('lab-tabs', {
-  props: ['orientation', 'size', 'activationMode', 'value', 'defaultValue', 'items'],
   specs: [
       { name: 'orientation', attr: 'orientation', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

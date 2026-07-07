@@ -19,7 +19,6 @@ export const Breadcrumb: LabComponent<BreadcrumbProps, never> = createLabCompone
   BreadcrumbProps,
   never
 >('lab-breadcrumb', {
-  props: ['size', 'separator', 'items'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'separator', attr: 'separator', kind: 'string' },

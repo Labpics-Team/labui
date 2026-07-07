@@ -20,7 +20,6 @@ export const Combobox: LabComponent<ComboboxProps, 'input-value-change' | 'open-
   ComboboxProps,
   'input-value-change' | 'open-change' | 'value-change'
 >('lab-combobox', {
-  props: ['type', 'size', 'placement', 'multiple', 'disabled', 'readonly', 'required', 'invalid', 'name', 'placeholder', 'label', 'labelHidden', 'helper', 'error', 'value', 'defaultValue', 'items'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

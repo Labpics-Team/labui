@@ -19,7 +19,6 @@ export const Card: LabComponent<CardProps, never> = createLabComponent<
   CardProps,
   never
 >('lab-card', {
-  props: ['variant', 'padding', 'interactive'],
   specs: [
       { name: 'variant', attr: 'variant', kind: 'string' },
       { name: 'padding', attr: 'padding', kind: 'string' },

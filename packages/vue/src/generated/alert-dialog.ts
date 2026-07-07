@@ -20,7 +20,6 @@ export const AlertDialog: LabComponent<AlertDialogProps, 'open-change'> = create
   AlertDialogProps,
   'open-change'
 >('lab-alert-dialog', {
-  props: ['size', 'modal', 'closable', 'heading', 'description'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'modal', attr: 'modal', kind: 'string' },

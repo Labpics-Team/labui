@@ -20,7 +20,6 @@ export const NumberInput: LabComponent<NumberInputProps, 'value-change' | 'value
   NumberInputProps,
   'value-change' | 'value-commit'
 >('lab-number-input', {
-  props: ['type', 'size', 'label', 'labelHidden', 'helper', 'error', 'value', 'defaultValue', 'placeholder', 'min', 'max', 'step', 'scrubber', 'allowMouseWheel', 'readonly', 'disabled', 'required', 'invalid', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

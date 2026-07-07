@@ -20,7 +20,6 @@ export const Switch: LabComponent<SwitchProps, 'checked-change'> = createLabComp
   SwitchProps,
   'checked-change'
 >('lab-switch', {
-  props: ['type', 'size', 'checked', 'defaultChecked', 'disabled', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

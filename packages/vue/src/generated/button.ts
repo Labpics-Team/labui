@@ -19,7 +19,6 @@ export const Button: LabComponent<ButtonProps, never> = createLabComponent<
   ButtonProps,
   never
 >('lab-button', {
-  props: ['type', 'kind', 'size', 'icon', 'loading', 'disabled', 'htmlType'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'kind', attr: 'kind', kind: 'string' },

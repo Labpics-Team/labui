@@ -20,7 +20,6 @@ export const Pagination: LabComponent<PaginationProps, 'page-change'> = createLa
   PaginationProps,
   'page-change'
 >('lab-pagination', {
-  props: ['size', 'count', 'pageSize', 'siblingCount', 'page', 'defaultPage'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'count', attr: 'count', kind: 'string' },

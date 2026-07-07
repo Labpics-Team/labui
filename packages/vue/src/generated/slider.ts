@@ -20,7 +20,6 @@ export const Slider: LabComponent<SliderProps, 'value-change' | 'value-change-en
   SliderProps,
   'value-change' | 'value-change-end'
 >('lab-slider', {
-  props: ['size', 'orientation', 'label', 'labelHidden', 'helper', 'error', 'value', 'defaultValue', 'min', 'max', 'step', 'marks', 'showValue', 'readonly', 'disabled', 'invalid', 'name'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'orientation', attr: 'orientation', kind: 'string' },

@@ -20,7 +20,6 @@ export const Textarea: LabComponent<TextareaProps, 'lab-change' | 'lab-input'> =
   TextareaProps,
   'lab-change' | 'lab-input'
 >('lab-textarea', {
-  props: ['type', 'size', 'label', 'labelHidden', 'helper', 'error', 'value', 'placeholder', 'rows', 'autoResize', 'readonly', 'disabled', 'required', 'invalid', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

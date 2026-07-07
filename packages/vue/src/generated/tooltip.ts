@@ -20,7 +20,6 @@ export const Tooltip: LabComponent<TooltipProps, 'open-change'> = createLabCompo
   TooltipProps,
   'open-change'
 >('lab-tooltip', {
-  props: ['placement', 'size', 'content', 'openDelay', 'closeDelay', 'disabled', 'arrow'],
   specs: [
       { name: 'placement', attr: 'placement', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

@@ -20,7 +20,6 @@ export const Select: LabComponent<SelectProps, 'open-change' | 'value-change'> =
   SelectProps,
   'open-change' | 'value-change'
 >('lab-select', {
-  props: ['size', 'placement', 'multiple', 'disabled', 'name', 'placeholder', 'label', 'value', 'defaultValue', 'items'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'placement', attr: 'placement', kind: 'string' },

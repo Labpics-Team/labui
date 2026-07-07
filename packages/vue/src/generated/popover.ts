@@ -20,7 +20,6 @@ export const Popover: LabComponent<PopoverProps, 'open-change'> = createLabCompo
   PopoverProps,
   'open-change'
 >('lab-popover', {
-  props: ['placement', 'size', 'modal', 'closable', 'arrow', 'heading', 'description'],
   specs: [
       { name: 'placement', attr: 'placement', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

@@ -19,7 +19,6 @@ export const Kbd: LabComponent<KbdProps, never> = createLabComponent<
   KbdProps,
   never
 >('lab-kbd', {
-  props: ['size'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
   ],

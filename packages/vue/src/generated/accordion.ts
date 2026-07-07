@@ -20,7 +20,6 @@ export const Accordion: LabComponent<AccordionProps, 'value-change'> = createLab
   AccordionProps,
   'value-change'
 >('lab-accordion', {
-  props: ['orientation', 'size', 'multiple', 'collapsible', 'disabled', 'value', 'defaultValue', 'items'],
   specs: [
       { name: 'orientation', attr: 'orientation', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

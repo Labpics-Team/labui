@@ -19,7 +19,6 @@ export const Avatar: LabComponent<AvatarProps, never> = createLabComponent<
   AvatarProps,
   never
 >('lab-avatar', {
-  props: ['size', 'color', 'status', 'src', 'name'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'color', attr: 'color', kind: 'string' },

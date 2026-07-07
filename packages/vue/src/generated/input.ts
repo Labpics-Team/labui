@@ -20,7 +20,6 @@ export const Input: LabComponent<InputProps, 'lab-change' | 'lab-input'> = creat
   InputProps,
   'lab-change' | 'lab-input'
 >('lab-input', {
-  props: ['type', 'size', 'label', 'labelHidden', 'helper', 'error', 'value', 'placeholder', 'inputType', 'autocomplete', 'readonly', 'disabled', 'required', 'invalid', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

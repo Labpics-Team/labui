@@ -20,7 +20,6 @@ export const Checkbox: LabComponent<CheckboxProps, 'checked-change'> = createLab
   CheckboxProps,
   'checked-change'
 >('lab-checkbox', {
-  props: ['type', 'size', 'checked', 'indeterminate', 'defaultChecked', 'defaultIndeterminate', 'disabled', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

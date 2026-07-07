@@ -19,7 +19,6 @@ export const Loader: LabComponent<LoaderProps, never> = createLabComponent<
   LoaderProps,
   never
 >('lab-loader', {
-  props: ['size', 'label'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'label', attr: 'label', kind: 'string' },

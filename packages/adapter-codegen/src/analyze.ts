@@ -52,12 +52,14 @@ function readPropOptions(init: ts.Expression): {
   attributeFalse: boolean;
   isBoolean: boolean;
   hasConverter: boolean;
+  isComplexType: boolean;
   isState: boolean;
 } {
   let attr: string | undefined;
   let attributeFalse = false;
   let isBoolean = false;
   let hasConverter = false;
+  let isComplexType = false;
   let isState = false;
   if (ts.isObjectLiteralExpression(init)) {
     for (const opt of init.properties) {
@@ -67,8 +69,13 @@ function readPropOptions(init: ts.Expression): {
         if (ts.isStringLiteral(opt.initializer)) attr = opt.initializer.text;
         else if (opt.initializer.kind === ts.SyntaxKind.FalseKeyword) attributeFalse = true;
       } else if (key === 'type') {
-        if (ts.isIdentifier(opt.initializer) && opt.initializer.text === 'Boolean')
-          isBoolean = true;
+        if (ts.isIdentifier(opt.initializer)) {
+          const t = opt.initializer.text;
+          if (t === 'Boolean') isBoolean = true;
+          // Object/Array — непримитив: атрибут из массива стал бы "[object Object]",
+          // поэтому такой проп передаём JS-свойством даже без attribute:false/converter.
+          else if (t === 'Object' || t === 'Array') isComplexType = true;
+        }
       } else if (key === 'converter') {
         hasConverter = true;
       } else if (key === 'state') {
@@ -77,13 +84,13 @@ function readPropOptions(init: ts.Expression): {
       }
     }
   }
-  return { attr, attributeFalse, isBoolean, hasConverter, isState };
+  return { attr, attributeFalse, isBoolean, hasConverter, isComplexType, isState };
 }
 
 /** Классифицирует проп по опциям Lit (см. {@link PropKind}). */
 function classify(o: ReturnType<typeof readPropOptions>): PropKind {
   if (o.isBoolean) return 'boolean';
-  if (o.attributeFalse || o.hasConverter) return 'prop';
+  if (o.attributeFalse || o.hasConverter || o.isComplexType) return 'prop';
   return 'string';
 }
 

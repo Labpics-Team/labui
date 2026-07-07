@@ -20,7 +20,6 @@ export const Dialog: LabComponent<DialogProps, 'open-change'> = createLabCompone
   DialogProps,
   'open-change'
 >('lab-dialog', {
-  props: ['size', 'modal', 'closable', 'heading', 'description'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'modal', attr: 'modal', kind: 'string' },

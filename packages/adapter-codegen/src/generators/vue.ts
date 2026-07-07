@@ -41,7 +41,6 @@ export const ${c.pascal}: LabComponent<${c.pascal}Props, ${events}> = createLabC
   ${c.pascal}Props,
   ${events}
 >('${c.tag}', {
-  props: ${tsStringArray(propNames)},
   specs: [
 ${specs}
   ],

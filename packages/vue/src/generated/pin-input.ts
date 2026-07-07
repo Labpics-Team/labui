@@ -20,7 +20,6 @@ export const PinInput: LabComponent<PinInputProps, 'value-change' | 'value-compl
   PinInputProps,
   'value-change' | 'value-complete' | 'value-invalid'
 >('lab-pin-input', {
-  props: ['type', 'size', 'label', 'labelHidden', 'helper', 'error', 'count', 'valueType', 'mask', 'otp', 'placeholder', 'value', 'defaultValue', 'readonly', 'disabled', 'required', 'invalid', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

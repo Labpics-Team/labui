@@ -20,7 +20,6 @@ export const RadioGroup: LabComponent<RadioGroupProps, 'value-change'> = createL
   RadioGroupProps,
   'value-change'
 >('lab-radio-group', {
-  props: ['type', 'size', 'orientation', 'value', 'defaultValue', 'disabled', 'name', 'label', 'items'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

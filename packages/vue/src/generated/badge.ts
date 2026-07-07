@@ -19,7 +19,6 @@ export const Badge: LabComponent<BadgeProps, never> = createLabComponent<
   BadgeProps,
   never
 >('lab-badge', {
-  props: ['color', 'type', 'disabled'],
   specs: [
       { name: 'color', attr: 'color', kind: 'string' },
       { name: 'type', attr: 'type', kind: 'string' },

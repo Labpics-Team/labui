@@ -20,7 +20,6 @@ export const TagsInput: LabComponent<TagsInputProps, 'input-value-change' | 'val
   TagsInputProps,
   'input-value-change' | 'value-change' | 'value-invalid'
 >('lab-tags-input', {
-  props: ['type', 'size', 'label', 'labelHidden', 'helper', 'error', 'placeholder', 'max', 'delimiter', 'editable', 'addOnPaste', 'allowDuplicates', 'value', 'defaultValue', 'readonly', 'disabled', 'required', 'invalid', 'name'],
   specs: [
       { name: 'type', attr: 'type', kind: 'string' },
       { name: 'size', attr: 'size', kind: 'string' },

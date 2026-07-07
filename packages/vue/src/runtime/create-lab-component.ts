@@ -40,9 +40,7 @@ export interface LabPropSpec {
 
 /** Описание компонента для фабрики. */
 export interface LabComponentSpec {
-  /** Имена всех пропов — объявляются Vue как props (а не fallthrough-attrs). */
-  readonly props: readonly string[];
-  /** Спеки проброса, по одной на проп. */
+  /** Спеки проброса, по одной на проп. Имена пропов для Vue выводятся отсюда. */
   readonly specs: readonly LabPropSpec[];
   /** Имена кастом-событий (kebab) — для типизации обработчиков. */
   readonly events: readonly string[];
@@ -75,12 +73,14 @@ export function createLabComponent<Props, Events extends string>(
   tag: string,
   spec: LabComponentSpec,
 ): LabComponent<Props, Events> {
+  // Имена объявленных пропов — из спек (одна точка правды, без дубля в манифесте).
+  const propNames = spec.specs.map((s) => s.name);
   const component = defineComponent({
     name: `Lab_${tag}`,
     // Натив (aria-label, id, class, data-*, слушатели событий) пробрасываем вручную
     // ниже — отключаем авто-наследование, чтобы не применить дважды.
     inheritAttrs: false,
-    props: spec.props as unknown as string[],
+    props: propNames,
     setup(props: Record<string, unknown>, { slots, attrs }) {
       return () => {
         // Натив и слушатели событий (onValueChange → 'value-change') — сначала,
@@ -110,5 +110,8 @@ export function createLabComponent<Props, Events extends string>(
       };
     },
   });
+  // Каст стирает Props/Events на границе фабрики (рантайм оперирует Record). Типовая
+  // гарантия — на этапе ГЕНЕРАЦИИ: тип `Props` (Pick<LabX, …>) и массив `specs`
+  // co-генерируются из одного манифеста, поэтому разойтись не могут.
   return component as unknown as LabComponent<Props, Events>;
 }

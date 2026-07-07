@@ -20,7 +20,6 @@ export const Menu: LabComponent<MenuProps, 'open-change' | 'select'> = createLab
   MenuProps,
   'open-change' | 'select'
 >('lab-menu', {
-  props: ['size', 'placement', 'disabled', 'label', 'items'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'placement', attr: 'placement', kind: 'string' },

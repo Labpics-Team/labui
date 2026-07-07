@@ -19,7 +19,6 @@ export const Progress: LabComponent<ProgressProps, never> = createLabComponent<
   ProgressProps,
   never
 >('lab-progress', {
-  props: ['size', 'value', 'min', 'max', 'label', 'showValueText'],
   specs: [
       { name: 'size', attr: 'size', kind: 'string' },
       { name: 'value', attr: 'value', kind: 'prop' },
