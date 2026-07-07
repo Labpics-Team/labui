@@ -831,43 +831,43 @@
   "letter-spacing": {
     "xxs": {
       "$type": "number",
-      "$value": 0.0043
+      "$value": 0.0064
     },
     "xs": {
       "$type": "number",
-      "$value": -0.0042
+      "$value": -0.0009
     },
     "md": {
       "$type": "number",
-      "$value": -0.011
+      "$value": -0.0083
     },
     "lg": {
       "$type": "number",
-      "$value": -0.0177
+      "$value": -0.0194
     },
     "xl": {
       "$type": "number",
-      "$value": -0.0209
+      "$value": -0.0293
     },
     "2xl": {
       "$type": "number",
-      "$value": -0.022
+      "$value": -0.0372
     },
     "3xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0425
     },
     "4xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0454
     },
     "5xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0466
     },
     "6xl": {
       "$type": "number",
-      "$value": -0.0223
+      "$value": -0.0469
     }
   },
   "measure": {

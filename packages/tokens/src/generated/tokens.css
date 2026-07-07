@@ -113,16 +113,16 @@
   --lab-font-weight-bold: 700;
 
   /* Typography — оптический трекинг (em, парно к кеглям: мелкие разрежены, крупные ужаты) */
-  --lab-letter-spacing-xxs: 0.0043em;
-  --lab-letter-spacing-xs: -0.0042em;
-  --lab-letter-spacing-md: -0.011em;
-  --lab-letter-spacing-lg: -0.0177em;
-  --lab-letter-spacing-xl: -0.0209em;
-  --lab-letter-spacing-2xl: -0.022em;
-  --lab-letter-spacing-3xl: -0.0223em;
-  --lab-letter-spacing-4xl: -0.0223em;
-  --lab-letter-spacing-5xl: -0.0223em;
-  --lab-letter-spacing-6xl: -0.0223em;
+  --lab-letter-spacing-xxs: 0.0064em;
+  --lab-letter-spacing-xs: -0.0009em;
+  --lab-letter-spacing-md: -0.0083em;
+  --lab-letter-spacing-lg: -0.0194em;
+  --lab-letter-spacing-xl: -0.0293em;
+  --lab-letter-spacing-2xl: -0.0372em;
+  --lab-letter-spacing-3xl: -0.0425em;
+  --lab-letter-spacing-4xl: -0.0454em;
+  --lab-letter-spacing-5xl: -0.0466em;
+  --lab-letter-spacing-6xl: -0.0469em;
 
   /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
   --lab-measure-narrow: 45ch;
