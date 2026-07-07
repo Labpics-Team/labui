@@ -1,0 +1,52 @@
+// Типы разделяемого FX-render гейта (реализация — fx-gate.mjs). Нужны, чтобы
+// apps/docs playwright-спека (TS, allowJs:false) резолвила импорт под strict.
+
+export const SENTIMENTS: readonly string[];
+export const GLOW_STEPS: readonly string[];
+
+export interface BBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface Sample {
+  r: number;
+  g: number;
+  b: number;
+  L: number;
+  n: number;
+}
+
+export interface DecodedPng {
+  width: number;
+  height: number;
+  rgb: Uint8Array;
+}
+
+export interface Measurements {
+  backdropL: number;
+  glow: Record<string, { subtle: Sample; base: Sample; bloom: Sample }>;
+  focus: Record<string, Sample>;
+}
+
+export function buildHarnessHtml(
+  contractCss: string,
+  opts?: { flatten?: boolean; dropGlow?: string | null; dropFocus?: string | null },
+): string;
+
+export function decodePng(buf: Buffer | Uint8Array): DecodedPng;
+
+export function sampleRegion(png: DecodedPng, bbox: BBox): Sample;
+
+export function assertFxRender(m: Measurements): {
+  deltas: Record<string, { subtle: number; base: number; bloom: number }>;
+  focus: Record<string, Sample>;
+};
+
+export function renderAndMeasure(
+  chromium: unknown,
+  contractCss: string,
+  opts?: { flatten?: boolean; dropGlow?: string | null; dropFocus?: string | null },
+): Promise<{ png: Buffer; measurements: Measurements }>;

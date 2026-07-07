@@ -45,3 +45,10 @@ coverage/
 
 # design-phase audit artifacts (specs/screenshots) — не в продуктовом репо
 .design/
+
+# FX-render гейт: PNG-скриншоты и measurements пишутся сюда на лету (локально
+# `pnpm --filter @labui/colors fx:render` и в CI-джобе e2e) как эфемерное
+# доказательство для владельца. Это бинарь/вывод, а не исходник — в git он
+# раздувал бы пакет colors, поэтому каталог игнорируется. В CI сам PNG отдаётся
+# как artifact workflow (actions/upload-artifact), провенанс замеров — на лету.
+packages/colors/artifacts/
