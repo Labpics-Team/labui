@@ -47,28 +47,6 @@ function barrelFile(components: readonly ComponentMeta[]): string {
   return `${generatedHeader()}\n${lines.join('\n')}\n`;
 }
 
-/**
- * Аугментация JSX: делает `<lab-*>` известными тегами в Solid TSX, чтобы сырое
- * использование элементов типизировалось. Атрибуты — нестрого (HTMLAttributes),
- * т.к. типизированный путь — сами обёртки; здесь только чтобы теги были валидны.
- */
-function jsxTypesFile(components: readonly ComponentMeta[]): string {
-  const entries = components
-    .map((c) => `      '${c.tag}': JSX.HTMLAttributes<HTMLElement>;`)
-    .join('\n');
-  return `${generatedHeader()}
-import type { JSX } from 'solid-js';
-
-declare module 'solid-js' {
-  namespace JSX {
-    interface IntrinsicElements {
-${entries}
-    }
-  }
-}
-`;
-}
-
 /** Генерирует все Solid-файлы. Возвращает список изменённых путей. */
 export function generateSolid(manifest: Manifest): string[] {
   const outDir = join(adapterSrc('solid'), 'generated');
@@ -79,7 +57,5 @@ export function generateSolid(manifest: Manifest): string[] {
   }
   const indexPath = join(outDir, 'index.ts');
   if (writeIfChanged(indexPath, barrelFile(manifest.components))) changed.push(indexPath);
-  const jsxPath = join(outDir, 'jsx.d.ts');
-  if (writeIfChanged(jsxPath, jsxTypesFile(manifest.components))) changed.push(jsxPath);
   return changed;
 }
