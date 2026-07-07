@@ -1,0 +1,1612 @@
+{
+  "version": 1,
+  "components": [
+    {
+      "tag": "lab-accordion",
+      "subpath": "accordion",
+      "pascal": "Accordion",
+      "className": "LabAccordion",
+      "props": [
+        {
+          "name": "orientation",
+          "attr": "orientation",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "multiple",
+          "attr": "multiple",
+          "kind": "boolean"
+        },
+        {
+          "name": "collapsible",
+          "attr": "collapsible",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": true
+      }
+    },
+    {
+      "tag": "lab-alert-dialog",
+      "subpath": "alert-dialog",
+      "pascal": "AlertDialog",
+      "className": "LabAlertDialog",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "string"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "open-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-avatar",
+      "subpath": "avatar",
+      "pascal": "Avatar",
+      "className": "LabAvatar",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "color",
+          "attr": "color",
+          "kind": "string"
+        },
+        {
+          "name": "status",
+          "attr": "status",
+          "kind": "string"
+        },
+        {
+          "name": "src",
+          "attr": "src",
+          "kind": "string"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-badge",
+      "subpath": "badge",
+      "pascal": "Badge",
+      "className": "LabBadge",
+      "props": [
+        {
+          "name": "color",
+          "attr": "color",
+          "kind": "string"
+        },
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": true,
+        "named": [
+          "dot"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-breadcrumb",
+      "subpath": "breadcrumb",
+      "pascal": "Breadcrumb",
+      "className": "LabBreadcrumb",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "separator",
+          "attr": "separator",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-button",
+      "subpath": "button",
+      "pascal": "Button",
+      "className": "LabButton",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "kind",
+          "attr": "kind",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "icon",
+          "attr": "icon",
+          "kind": "boolean"
+        },
+        {
+          "name": "loading",
+          "attr": "loading",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "htmlType",
+          "attr": "html-type",
+          "kind": "string"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": true,
+        "named": [
+          "icon"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-card",
+      "subpath": "card",
+      "pascal": "Card",
+      "className": "LabCard",
+      "props": [
+        {
+          "name": "variant",
+          "attr": "variant",
+          "kind": "string"
+        },
+        {
+          "name": "padding",
+          "attr": "padding",
+          "kind": "string"
+        },
+        {
+          "name": "interactive",
+          "attr": "interactive",
+          "kind": "boolean"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": true,
+        "named": [
+          "footer",
+          "header",
+          "media"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-checkbox",
+      "subpath": "checkbox",
+      "pascal": "Checkbox",
+      "className": "LabCheckbox",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "checked",
+          "attr": "checked",
+          "kind": "boolean"
+        },
+        {
+          "name": "indeterminate",
+          "attr": "indeterminate",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultChecked",
+          "attr": "default-checked",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultIndeterminate",
+          "attr": "default-indeterminate",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "checked-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-combobox",
+      "subpath": "combobox",
+      "pascal": "Combobox",
+      "className": "LabCombobox",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "multiple",
+          "attr": "multiple",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "input-value-change",
+        "open-change",
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-dialog",
+      "subpath": "dialog",
+      "pascal": "Dialog",
+      "className": "LabDialog",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "string"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "open-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-input",
+      "subpath": "input",
+      "pascal": "Input",
+      "className": "LabInput",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "inputType",
+          "attr": "input-type",
+          "kind": "string"
+        },
+        {
+          "name": "autocomplete",
+          "attr": "autocomplete",
+          "kind": "string"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "lab-change",
+        "lab-input"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-kbd",
+      "subpath": "kbd",
+      "pascal": "Kbd",
+      "className": "LabKbd",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": true,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-loader",
+      "subpath": "loader",
+      "pascal": "Loader",
+      "className": "LabLoader",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-menu",
+      "subpath": "menu",
+      "pascal": "Menu",
+      "className": "LabMenu",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "open-change",
+        "select"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-number-input",
+      "subpath": "number-input",
+      "pascal": "NumberInput",
+      "className": "LabNumberInput",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "min",
+          "attr": "min",
+          "kind": "string"
+        },
+        {
+          "name": "max",
+          "attr": "max",
+          "kind": "string"
+        },
+        {
+          "name": "step",
+          "attr": "step",
+          "kind": "string"
+        },
+        {
+          "name": "scrubber",
+          "attr": "scrubber",
+          "kind": "boolean"
+        },
+        {
+          "name": "allowMouseWheel",
+          "attr": "allow-mouse-wheel",
+          "kind": "boolean"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "value-change",
+        "value-commit"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-pagination",
+      "subpath": "pagination",
+      "pascal": "Pagination",
+      "className": "LabPagination",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "count",
+          "attr": "count",
+          "kind": "string"
+        },
+        {
+          "name": "pageSize",
+          "attr": "page-size",
+          "kind": "string"
+        },
+        {
+          "name": "siblingCount",
+          "attr": "sibling-count",
+          "kind": "string"
+        },
+        {
+          "name": "page",
+          "attr": "page",
+          "kind": "string"
+        },
+        {
+          "name": "defaultPage",
+          "attr": "default-page",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "page-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-pin-input",
+      "subpath": "pin-input",
+      "pascal": "PinInput",
+      "className": "LabPinInput",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "count",
+          "attr": "count",
+          "kind": "string"
+        },
+        {
+          "name": "valueType",
+          "attr": "value-type",
+          "kind": "string"
+        },
+        {
+          "name": "mask",
+          "attr": "mask",
+          "kind": "boolean"
+        },
+        {
+          "name": "otp",
+          "attr": "otp",
+          "kind": "boolean"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "value-change",
+        "value-complete",
+        "value-invalid"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-popover",
+      "subpath": "popover",
+      "pascal": "Popover",
+      "className": "LabPopover",
+      "props": [
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "boolean"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "arrow",
+          "attr": "arrow",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "open-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-progress",
+      "subpath": "progress",
+      "pascal": "Progress",
+      "className": "LabProgress",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "min",
+          "attr": "min",
+          "kind": "string"
+        },
+        {
+          "name": "max",
+          "attr": "max",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "showValueText",
+          "attr": "show-value-text",
+          "kind": "boolean"
+        }
+      ],
+      "events": [],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-radio-group",
+      "subpath": "radio-group",
+      "pascal": "RadioGroup",
+      "className": "LabRadioGroup",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "orientation",
+          "attr": "orientation",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-select",
+      "subpath": "select",
+      "pascal": "Select",
+      "className": "LabSelect",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "multiple",
+          "attr": "multiple",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "open-change",
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-slider",
+      "subpath": "slider",
+      "pascal": "Slider",
+      "className": "LabSlider",
+      "props": [
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "orientation",
+          "attr": "orientation",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "min",
+          "attr": "min",
+          "kind": "string"
+        },
+        {
+          "name": "max",
+          "attr": "max",
+          "kind": "string"
+        },
+        {
+          "name": "step",
+          "attr": "step",
+          "kind": "string"
+        },
+        {
+          "name": "marks",
+          "attr": "marks",
+          "kind": "prop"
+        },
+        {
+          "name": "showValue",
+          "attr": "show-value",
+          "kind": "boolean"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "value-change",
+        "value-change-end"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-switch",
+      "subpath": "switch",
+      "pascal": "Switch",
+      "className": "LabSwitch",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "checked",
+          "attr": "checked",
+          "kind": "boolean"
+        },
+        {
+          "name": "defaultChecked",
+          "attr": "default-checked",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "checked-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "icon-off",
+          "icon-on"
+        ],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-tabs",
+      "subpath": "tabs",
+      "pascal": "Tabs",
+      "className": "LabTabs",
+      "props": [
+        {
+          "name": "orientation",
+          "attr": "orientation",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "activationMode",
+          "attr": "activation-mode",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "string"
+        },
+        {
+          "name": "items",
+          "attr": "items",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "value-change"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": true
+      }
+    },
+    {
+      "tag": "lab-tags-input",
+      "subpath": "tags-input",
+      "pascal": "TagsInput",
+      "className": "LabTagsInput",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "max",
+          "attr": "max",
+          "kind": "string"
+        },
+        {
+          "name": "delimiter",
+          "attr": "delimiter",
+          "kind": "string"
+        },
+        {
+          "name": "editable",
+          "attr": "editable",
+          "kind": "boolean"
+        },
+        {
+          "name": "addOnPaste",
+          "attr": "add-on-paste",
+          "kind": "boolean"
+        },
+        {
+          "name": "allowDuplicates",
+          "attr": "allow-duplicates",
+          "kind": "boolean"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "prop"
+        },
+        {
+          "name": "defaultValue",
+          "attr": "default-value",
+          "kind": "prop"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "input-value-change",
+        "value-change",
+        "value-invalid"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-textarea",
+      "subpath": "textarea",
+      "pascal": "Textarea",
+      "className": "LabTextarea",
+      "props": [
+        {
+          "name": "type",
+          "attr": "type",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "label",
+          "attr": "label",
+          "kind": "string"
+        },
+        {
+          "name": "labelHidden",
+          "attr": "label-hidden",
+          "kind": "boolean"
+        },
+        {
+          "name": "helper",
+          "attr": "helper",
+          "kind": "string"
+        },
+        {
+          "name": "error",
+          "attr": "error",
+          "kind": "string"
+        },
+        {
+          "name": "value",
+          "attr": "value",
+          "kind": "string"
+        },
+        {
+          "name": "placeholder",
+          "attr": "placeholder",
+          "kind": "string"
+        },
+        {
+          "name": "rows",
+          "attr": "rows",
+          "kind": "string"
+        },
+        {
+          "name": "autoResize",
+          "attr": "auto-resize",
+          "kind": "boolean"
+        },
+        {
+          "name": "readonly",
+          "attr": "readonly",
+          "kind": "boolean"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "required",
+          "attr": "required",
+          "kind": "boolean"
+        },
+        {
+          "name": "invalid",
+          "attr": "invalid",
+          "kind": "boolean"
+        },
+        {
+          "name": "name",
+          "attr": "name",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "lab-change",
+        "lab-input"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-tooltip",
+      "subpath": "tooltip",
+      "pascal": "Tooltip",
+      "className": "LabTooltip",
+      "props": [
+        {
+          "name": "placement",
+          "attr": "placement",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
+        },
+        {
+          "name": "content",
+          "attr": "content",
+          "kind": "string"
+        },
+        {
+          "name": "openDelay",
+          "attr": "open-delay",
+          "kind": "string"
+        },
+        {
+          "name": "closeDelay",
+          "attr": "close-delay",
+          "kind": "string"
+        },
+        {
+          "name": "disabled",
+          "attr": "disabled",
+          "kind": "boolean"
+        },
+        {
+          "name": "arrow",
+          "attr": "arrow",
+          "kind": "boolean"
+        }
+      ],
+      "events": [
+        "open-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content"
+        ],
+        "dynamic": false
+      }
+    }
+  ]
+}

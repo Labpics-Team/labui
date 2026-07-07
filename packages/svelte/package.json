@@ -2,27 +2,50 @@
   "name": "@labpics/ui-svelte",
   "version": "0.0.0",
   "private": true,
-  "description": "Svelte adapter for LabUI.",
+  "description": "Svelte 5 adapter for LabUI (ADR-0001, A-prime): thin Svelte wrappers that mount the shared Lit Web Components (<lab-button>, …) from @labpics/ui-core and forward props/events/slots. Svelte consumes the custom elements — it does not re-implement them. Axis types come from @labpics/ui-core.",
   "license": "UNLICENSED",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
+  "svelte": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "svelte": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./ssr": {
+      "types": "./dist/ssr.d.ts",
+      "import": "./dist/ssr.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": false,
+  "sideEffects": ["**/*.svelte", "**/*.css", "./dist/**/*.js"],
   "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "build": "svelte-package -i src -o dist",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@labpics/ui-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@lit-labs/ssr": "^4.1.0",
+    "svelte": ">=5"
+  },
+  "peerDependenciesMeta": {
+    "@lit-labs/ssr": {
+      "optional": true
+    }
   },
   "devDependencies": {
-    "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "@lit-labs/ssr": "4.1.0",
+    "@sveltejs/package": "2.3.7",
+    "@sveltejs/vite-plugin-svelte": "5.0.3",
+    "happy-dom": "15.11.7",
+    "svelte": "5.19.0",
+    "svelte-check": "4.1.4",
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
   }
 }

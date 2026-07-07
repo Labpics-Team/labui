@@ -19,12 +19,17 @@ not bundled here.
 | `packages/shadow`     | `@labpics/ui-shadow` | Shadow/elevation stack generator (`--lab-elevation-*`) |
 | `packages/colors-stub`| `@labpics/colors`    | TEMPORARY workspace stub of the unpublished color core (see below) |
 | `packages/icons`      | `@labpics/icons`     | TEMPORARY stub bridge for the external icon core (see below) |
-| `packages/react`      | `@labpics/ui-react`  | React / Next adapter                                 |
-| `packages/vue`        | `@labpics/ui-vue`    | Vue adapter                                          |
-| `packages/solid`      | `@labpics/ui-solid`  | Solid adapter                                        |
-| `packages/svelte`     | `@labpics/ui-svelte` | Svelte adapter                                       |
-| `packages/astro`      | `@labpics/ui-astro`  | Astro adapter                                        |
+| `packages/react`      | `@labpics/ui-react`  | React / Next adapter (native renderer, ADR-0001)     |
+| `packages/vue`        | `@labpics/ui-vue`    | Vue adapter over the Lit web components + SSR        |
+| `packages/solid`      | `@labpics/ui-solid`  | Solid adapter over the Lit web components + SSR      |
+| `packages/svelte`     | `@labpics/ui-svelte` | Svelte 5 adapter over the Lit web components + SSR   |
+| `packages/astro`      | `@labpics/ui-astro`  | Astro integration over the Lit web components + SSR  |
+| `packages/adapter-codegen` | `@labpics/adapter-codegen` | Private dev tool: generates the adapter wrappers from the core manifest |
 | `apps/docs`           | `@labpics/ui-docs`   | Documentation site + Playwright smoke fixtures       |
+
+The Vue/Svelte/Solid/Astro wrappers are **generated** from a single manifest derived
+from the core sources (`@labpics/adapter-codegen`), so their API cannot drift from the
+Lit/React versions. See [docs/adapters.md](docs/adapters.md).
 
 ## Color core: `@labpics/colors`
 
@@ -62,7 +67,7 @@ LabUI. `packages/icons` is a thin, build-free stub bridge (mirrors
 
 ```bash
 pnpm install          # install workspace
-pnpm -r build         # build every package (placeholders build clean)
+pnpm -r build         # build every package
 pnpm -r typecheck     # strict typecheck across the workspace
 pnpm lint             # Biome lint
 pnpm format           # Biome format (write)

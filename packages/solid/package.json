@@ -2,7 +2,7 @@
   "name": "@labpics/ui-solid",
   "version": "0.0.0",
   "private": true,
-  "description": "Solid adapter for LabUI.",
+  "description": "Solid adapter for LabUI (ADR-0001, A-prime): thin Solid wrappers that mount the shared Lit Web Components (<lab-button>, …) from @labpics/ui-core and forward props/events/slots. Solid consumes the custom elements — it does not re-implement them. Axis types come from @labpics/ui-core.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -13,16 +13,44 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./ssr": {
+      "types": "./dist/ssr.d.ts",
+      "import": "./dist/ssr.js",
+      "require": "./dist/ssr.cjs"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "require": "./dist/*.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": false,
+  "sideEffects": ["**/*.css", "./dist/*.js", "./dist/*.cjs"],
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@labpics/ui-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "@lit-labs/ssr": "^4.1.0",
+    "solid-js": ">=1.8"
+  },
+  "peerDependenciesMeta": {
+    "@lit-labs/ssr": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@lit-labs/ssr": "4.1.0",
+    "happy-dom": "15.11.7",
+    "solid-js": "1.9.3",
     "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "3.2.6"
   }
 }
