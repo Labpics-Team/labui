@@ -34,7 +34,18 @@ const EXPECTED_DIVERGENCES = new Map([
   ['--lab-fill-info-secondary', 'разведение оттенка с брендом'],
   ['--lab-fill-info-tertiary', 'разведение оттенка с брендом'],
   ['--lab-fx-glow-info', 'разведение оттенка с брендом'],
-  ['--lab-fx-focus-ring-info', 'разведение оттенка с брендом'],
+  // EC4 (focus-appearance, WCAG 2.4.13): focus-ring НАСЛЕДУЕТ сильный штрих
+  // семьи Label (label-{sentiment}-primary, WCAG ~16–20:1), а не эмитит сырой
+  // Figma-акцент — тот на светлой теме проваливал 3:1 (warning/success ~2.0).
+  // Движок канон-обоснованно прав (доступность по построению); figma-reference
+  // несёт до-законный сырой акцент — владелец реконсайлит Figma отдельным
+  // проходом. brand/danger/neutral/warning есть в стабе → исключение с законом;
+  // success/info в стабе отсутствуют (добавлены позже Figma-якорей).
+  ['--lab-fx-focus-ring-brand', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
+  ['--lab-fx-focus-ring-danger', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
+  ['--lab-fx-focus-ring-neutral', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
+  ['--lab-fx-focus-ring-warning', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
+  ['--lab-fx-focus-ring-info', 'EC4: focus-ring наследует label-strong (+ разведение оттенка)'],
   ['--lab-label-info-quaternary', 'разведение оттенка с брендом'],
   ['--lab-fill-info-quaternary', 'разведение оттенка с брендом'],
   // Лейблы и border-strong — СОЛВЕР, не статические чернила: текст обязан

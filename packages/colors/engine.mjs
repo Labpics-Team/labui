@@ -16,10 +16,20 @@ export async function createLabuiEngine() {
   const wasm = await readFile(join(pkgDir, 'pkg', 'labcolors_bg.wasm'));
   await mod.default({ module_or_path: wasm });
   const colors = new mod.LabColors();
-  const passport = await readFile(join(here, 'labui.config.json'), 'utf8');
-  const fingerprint = colors.loadConfig(passport);
+  const parsed = JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8'));
+  // Компонентный слой (юзкейсы-переназначения, напр. пары бейджа — закон пары
+  // ядра) на диске отделён от семантики (гигиена трёх уровней). Ядро его как
+  // ключ не знает: иммутабельно снимаем `components` (omit через rest, без
+  // мутирующего delete — правило Biome noDelete) и вливаем его роли в roles.
+  // Движок видит единый набор и вычисляет их идентично, а паспорт держит слои
+  // раздельно; порядок ключей/ролей сохранён → отпечаток паспорта не дрейфует.
+  const { components, ...config } = parsed;
+  if (Array.isArray(components)) {
+    config.roles = [...config.roles, ...components];
+  }
+  const fingerprint = colors.loadConfig(JSON.stringify(config));
   return { colors, fingerprint };
 }
 
 /** Пин отпечатка паспорта (см. README): дрейф конфига виден по несовпадению. */
-export const PASSPORT_FINGERPRINT = '227ebef09f51e981';
+export const PASSPORT_FINGERPRINT = '0efffdee130a3d75';

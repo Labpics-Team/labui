@@ -1,7 +1,7 @@
 /*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@0.6.2 + паспорт labui.config.json
-(отпечаток 227ebef09f51e981). Движковые роли — живая эмиссия (единая форма
+(отпечаток 0efffdee130a3d75). Движковые роли — живая эмиссия (единая форма
 oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
 лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
 Figma-якорь» — входы и компонентные поверхности из замороженного
@@ -131,10 +131,10 @@ figma-reference.css, переезжают следующими этапами п
   --lab-border-warning-base: oklch(78.56796% 0.171718 68.607 / 0.2);
   --lab-border-warning-soft: oklch(78.56796% 0.171718 68.607 / 0.122);
   --lab-border-warning-strong: oklch(67.73500% 0.148484 68.161 / 1);
-  --lab-fx-focus-ring-brand: oklch(60.27647% 0.217712 257.424 / 1);
-  --lab-fx-focus-ring-danger: oklch(65.42146% 0.232135 28.659 / 1);
-  --lab-fx-focus-ring-neutral: oklch(17.39406% 0.004094 285.967 / 1);
-  --lab-fx-focus-ring-warning: oklch(78.56796% 0.171718 68.607 / 1);
+  --lab-fx-focus-ring-brand: oklch(9.99349% 0.034966 256.638);
+  --lab-fx-focus-ring-danger: oklch(12.29128% 0.050438 29.234);
+  --lab-fx-focus-ring-neutral: oklch(14.79140% 0.012878 284.717);
+  --lab-fx-focus-ring-warning: oklch(17.53733% 0.038053 69.736);
   --lab-fx-glow-brand: oklch(60.27647% 0.217712 257.424);
   --lab-fx-glow-danger: oklch(65.42146% 0.232135 28.659);
   --lab-fx-glow-inverted: oklch(75.99692% 0.012723 286.093 / 0.522);
@@ -250,8 +250,8 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-glow-info-bloom: oklch(64.03903% 0.193503 278.130);
   --lab-fx-glow-info-bloom-core: oklch(80.88028% 0.060397 283.914);
   --lab-fx-glow-info-bloom-alpha: 0;
-  --lab-fx-focus-ring-success: oklch(73.03242% 0.194381 147.444 / 1);
-  --lab-fx-focus-ring-info: oklch(64.03903% 0.193503 278.130 / 1);
+  --lab-fx-focus-ring-success: oklch(13.01439% 0.039836 145.937);
+  --lab-fx-focus-ring-info: oklch(9.14723% 0.055231 280.270);
 }
 
 [data-theme="dark"] {
@@ -374,10 +374,10 @@ figma-reference.css, переезжают следующими этапами п
   --lab-border-warning-base: oklch(75.71376% 0.176429 59.823 / 0.2);
   --lab-border-warning-soft: oklch(75.71376% 0.176429 59.823 / 0.122);
   --lab-border-warning-strong: oklch(75.71376% 0.176429 59.823 / 1);
-  --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.650 / 1);
-  --lab-fx-focus-ring-danger: oklch(65.44304% 0.231674 26.474 / 1);
-  --lab-fx-focus-ring-neutral: oklch(97.81762% 0.003418 247.858 / 1);
-  --lab-fx-focus-ring-warning: oklch(75.71376% 0.176429 59.823 / 1);
+  --lab-fx-focus-ring-brand: oklch(94.59338% 0.025831 259.045);
+  --lab-fx-focus-ring-danger: oklch(97.73677% 0.011109 31.066);
+  --lab-fx-focus-ring-neutral: oklch(95.80222% 0.013333 286.145);
+  --lab-fx-focus-ring-warning: oklch(98.06851% 0.011733 59.571);
   --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
   --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
   --lab-fx-glow-inverted: oklch(35.88485% 0.011976 285.781 / 0.522);
@@ -493,8 +493,8 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-glow-info-bloom: oklch(68.10386% 0.168552 282.890);
   --lab-fx-glow-info-bloom-core: oklch(82.98842% 0.057085 288.441);
   --lab-fx-glow-info-bloom-alpha: 0.2015;
-  --lab-fx-focus-ring-success: oklch(75.55508% 0.208246 146.984 / 1);
-  --lab-fx-focus-ring-info: oklch(68.10386% 0.168552 282.890 / 1);
+  --lab-fx-focus-ring-success: oklch(93.74350% 0.110616 146.789);
+  --lab-fx-focus-ring-info: oklch(95.33533% 0.022793 283.266);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -618,10 +618,10 @@ figma-reference.css, переезжают следующими этапами п
     --lab-border-warning-base: oklch(75.71376% 0.176429 59.823 / 0.2);
     --lab-border-warning-soft: oklch(75.71376% 0.176429 59.823 / 0.122);
     --lab-border-warning-strong: oklch(75.71376% 0.176429 59.823 / 1);
-    --lab-fx-focus-ring-brand: oklch(66.12059% 0.180585 259.650 / 1);
-    --lab-fx-focus-ring-danger: oklch(65.44304% 0.231674 26.474 / 1);
-    --lab-fx-focus-ring-neutral: oklch(97.81762% 0.003418 247.858 / 1);
-    --lab-fx-focus-ring-warning: oklch(75.71376% 0.176429 59.823 / 1);
+    --lab-fx-focus-ring-brand: oklch(94.59338% 0.025831 259.045);
+    --lab-fx-focus-ring-danger: oklch(97.73677% 0.011109 31.066);
+    --lab-fx-focus-ring-neutral: oklch(95.80222% 0.013333 286.145);
+    --lab-fx-focus-ring-warning: oklch(98.06851% 0.011733 59.571);
     --lab-fx-glow-brand: oklch(66.12059% 0.180585 259.650);
     --lab-fx-glow-danger: oklch(65.44304% 0.231674 26.474);
     --lab-fx-glow-inverted: oklch(35.88485% 0.011976 285.781 / 0.522);
@@ -737,7 +737,7 @@ figma-reference.css, переезжают следующими этапами п
     --lab-fx-glow-info-bloom: oklch(68.10386% 0.168552 282.890);
     --lab-fx-glow-info-bloom-core: oklch(82.98842% 0.057085 288.441);
     --lab-fx-glow-info-bloom-alpha: 0.2015;
-    --lab-fx-focus-ring-success: oklch(75.55508% 0.208246 146.984 / 1);
-    --lab-fx-focus-ring-info: oklch(68.10386% 0.168552 282.890 / 1);
+    --lab-fx-focus-ring-success: oklch(93.74350% 0.110616 146.789);
+    --lab-fx-focus-ring-info: oklch(95.33533% 0.022793 283.266);
   }
 }
