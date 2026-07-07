@@ -1,0 +1,20 @@
+<!-- СГЕНЕРИРОВАНО @labpics/adapter-codegen — НЕ РЕДАКТИРОВАТЬ вручную. -->
+<!-- Источник истины: packages/adapter-codegen/manifest.generated.json, -->
+<!-- выведенный из исходников @labpics/ui-core (тэги lab-*, @property, события). -->
+<!-- Регенерация: pnpm --filter @labpics/adapter-codegen generate. -->
+<!-- Правки вносить в генератор/манифест, иначе перегенерация их сотрёт. -->
+---
+import { renderTooltip } from '@labpics/ui-astro/ssr';
+
+const dsd = renderTooltip(Astro.props, {
+  default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
+  content: Astro.slots.has('content') ? await Astro.slots.render('content') : undefined,
+});
+---
+<Fragment set:html={dsd} />
+<script>
+  // Порядок важен: hydrate-support ДО lit; затем регистрация элемента — LitElement
+  // сам гидрируется из declarative shadow DOM.
+  import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
+  import '@labpics/ui-core/tooltip';
+</script>

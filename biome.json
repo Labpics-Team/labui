@@ -13,6 +13,7 @@
       "**/playwright-report/**",
       "**/test-results/**",
       "**/src/generated/**",
+      "**/src/astro/**",
       "**/*.tsbuildinfo",
       ".playwright-mcp/**",
       "packages/colors-stub/contract.css",
