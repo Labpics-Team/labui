@@ -1,0 +1,36 @@
+/*
+ * @labpics/fonts — self-host Geist и Geist Mono (вариативные woff2).
+ * СГЕНЕРИРОВАНО вручную, но провенанс строгий: см. PROVENANCE.md
+ * (источник vercel/geist-font@v1.7.2, лицензия OFL 1.1 — OFL.txt рядом).
+ *
+ * ПОЧЕМУ вариативный шрифт одним файлом на семейство: ось `wght` 100..900
+ * непрерывна — один woff2 покрывает все начертания (Thin..Black), поэтому
+ * весовая шкала токенов (--lab-font-weight-*) отдаёт ЛЮБОЙ вес без догрузки
+ * отдельных файлов. Диапазон `font-weight: 100 900` в @font-face — это и есть
+ * объявление вариативной оси браузеру (значения вне диапазона он зажимает).
+ *
+ * ПОЧЕМУ `font-display: swap`: текст рисуется немедленно системным фолбэком и
+ * бесшовно подменяется на Geist по загрузке — ноль «невидимого текста» (FOIT),
+ * критично для первого рендера. Фолбэк-стек живёт в токене --lab-font-family
+ * (@labpics/ui-tokens), метрически близкий, поэтому подмена почти незаметна.
+ *
+ * Пути к woff2 — относительные к этому файлу; они разрешаются от места, куда
+ * потребитель положил пакет (экспорт `./fonts/*` в package.json). Italic Geist
+ * поставляет ОТДЕЛЬНЫМИ файлами (оси наклона у шрифта нет) — вне этой волны.
+ */
+
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/Geist-Variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./fonts/GeistMono-Variable.woff2') format('woff2');
+}
