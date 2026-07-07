@@ -27,6 +27,26 @@ function roleNames() {
   return new Set(passport.roles.map((r) => r.name));
 }
 
+/** Имена алиасов паспорта (флаг наследования: alias→target). */
+function aliasNames() {
+  return new Set((passport.aliases ?? []).map((a) => a.alias));
+}
+
+// EC4: цвет focus-ring НЕ эмитится независимо — он НАСЛЕДУЕТ сильный штрих
+// семьи Label соответствующего сентимента (label-{sentiment}-primary) через
+// явный флаг наследования alias→target. label-primary — самый контрастный
+// уровень (text-anchor, floor aa-text, WCAG ~17–20:1), потому focus-appearance
+// (WCAG 2.4.13) гарантирован по построению, а не эмиссией отдельного акцента,
+// который на светлой теме проваливал 3:1 (warning/success были ~2.0–2.2).
+const FOCUS_LABEL_TARGET = {
+  neutral: 'label-primary',
+  brand: 'label-brand-primary',
+  danger: 'label-danger-primary',
+  warning: 'label-warning-primary',
+  success: 'label-success-primary',
+  info: 'label-info-primary',
+};
+
 /** Имя glow-роли для сентимента и ступени: base — без суффикса. */
 function glowRole(sentiment, step) {
   return step === 'base' ? `fx-glow-${sentiment}` : `fx-glow-${sentiment}-${step}`;
@@ -39,10 +59,19 @@ describe('FX-семья: полнота сентиментов glow и focus-rin
     expect(missing, 'сентименты без glow-роли').toEqual([]);
   });
 
-  it('focus-ring перечисляет ВСЕ 6 сентиментов (падает при отсутствии любого)', () => {
-    const names = roleNames();
+  it('focus-ring перечисляет ВСЕ 6 сентиментов (алиасы наследования)', () => {
+    const names = aliasNames();
     const missing = SENTIMENTS.filter((s) => !names.has(`fx-focus-ring-${s}`));
-    expect(missing, 'сентименты без focus-ring-роли').toEqual([]);
+    expect(missing, 'сентименты без focus-ring-алиаса').toEqual([]);
+  });
+
+  it('focus-ring наследует сильный штрих Label (EC4): alias→label-{sentiment}-primary', () => {
+    const byAlias = new Map((passport.aliases ?? []).map((a) => [a.alias, a.target]));
+    for (const s of SENTIMENTS) {
+      expect(byAlias.get(`fx-focus-ring-${s}`), `${s}: focus-ring не алиас на label-strong`).toBe(
+        FOCUS_LABEL_TARGET[s],
+      );
+    }
   });
 
   it('glow прогрессивен: каждый сентимент несёт 3 ступени GlowStep', () => {
@@ -84,15 +113,53 @@ describe('FX-семья: инварианты на живом движке', () 
     }
   });
 
-  it('focus-ring не ослабляет WCAG-пол: композит ≥ 3:1 (AA UI) для всех сентиментов', () => {
-    // Доступность по построению: focus-appearance (WCAG 2.4.13) — не-текстовый
-    // контур, пол AA UI 3:1. Роль резолвится на нейтральном фоне темы; движок
-    // возвращает compositeWcag непрозрачного штриха.
-    for (const s of SENTIMENTS) {
-      const r = darkRoles[`fx-focus-ring-${s}`];
-      expect(r, `${s}: focus-ring не эмитится`).toBeTruthy();
-      const wcag = r.compositeWcag ?? r.contrastWcag;
-      expect(wcag, `${s}: focus-ring WCAG=${wcag} < 3:1`).toBeGreaterThanOrEqual(3.0);
+  // WCAG-пол focus-ring (≥3:1, WCAG 2.4.13) проверяется на ОБЕИХ темах в
+  // блоке «focus-ring НАСЛЕДУЕТ label-strong (EC4)» ниже — после перехода на
+  // наследование алиас-роль несёт wcagRatio (не compositeWcag), и новый гейт
+  // покрывает light+dark строго; дублировать здесь single-theme нельзя.
+});
+
+// EC4 контракт-гейт (класс А, живой движок): резолвнутый цвет focus-ring
+// БАЙТ-РАВЕН резолвнутому label-{sentiment}-strong на КАЖДОЙ теме. Гейт
+// КУСАЕТСЯ: если источник focus-ring переключить обратно на независимую
+// ladder-эмиссию акцента (или на не-label рампу), css/hex разойдутся и тест
+// покраснеет (RED-proof — см. probe: ladder focus-ring давал oklch(60% ...),
+// label-primary даёт oklch(9.9% ...)). Геометрия кольца (ширина/CSS) — вне
+// цветовой деривации, тут не проверяется (North EC4: геометрия отделена).
+describe('FX-семья: focus-ring НАСЛЕДУЕТ label-strong (EC4, байт-равенство)', () => {
+  /** @type {{colors: any}} */
+  let engine;
+  beforeAll(async () => {
+    engine = await createLabuiEngine();
+  });
+
+  for (const mode of ['light', 'dark']) {
+    it(`focus-ring цвет == label-{sentiment}-strong для всех 6 сентиментов (${mode})`, () => {
+      const anchors = passport.neutral.anchors[mode];
+      const roles = engine.colors.resolveTheme(anchors, mode).roles;
+      for (const s of SENTIMENTS) {
+        const focus = roles[`fx-focus-ring-${s}`];
+        const label = roles[FOCUS_LABEL_TARGET[s]];
+        expect(focus, `${mode}/${s}: focus-ring не резолвится`).toBeTruthy();
+        expect(label, `${mode}/${s}: label-strong не резолвится`).toBeTruthy();
+        // Цвет байт-равен: css + hex (алиас копирует значение target, только
+        // cssVar именуется --lab-fx-focus-ring-<s> — это и есть наследование).
+        expect(focus.css, `${mode}/${s}: css focus != label`).toBe(label.css);
+        expect(focus.hex ?? focus.compositeHex, `${mode}/${s}: hex focus != label`).toBe(
+          label.hex ?? label.compositeHex,
+        );
+      }
+    });
+  }
+
+  it('focus-ring не ослабляет WCAG-пол: наследованный контраст ≥ 3:1 (AA UI, обе темы)', () => {
+    for (const mode of ['light', 'dark']) {
+      const roles = engine.colors.resolveTheme(passport.neutral.anchors[mode], mode).roles;
+      for (const s of SENTIMENTS) {
+        const r = roles[`fx-focus-ring-${s}`];
+        const wcag = r.wcagRatio ?? r.compositeWcag ?? r.contrastWcag;
+        expect(wcag, `${mode}/${s}: focus WCAG=${wcag} < 3:1`).toBeGreaterThanOrEqual(3.0);
+      }
     }
   });
 });

@@ -999,49 +999,6 @@
       }
     },
     {
-      "name": "fx-focus-ring-brand",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-danger",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-warning",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-neutral",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "edge"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
       "name": "fx-glow-brand",
       "recipe": {
         "kind": "glow",
@@ -1259,28 +1216,6 @@
       }
     },
     {
-      "name": "fx-focus-ring-success",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
-      "name": "fx-focus-ring-info",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "focus-ring"
-      }
-    },
-    {
       "name": "fill-neutral",
       "recipe": {
         "kind": "ladder",
@@ -1460,6 +1395,30 @@
     {
       "alias": "icon",
       "target": "label-tertiary"
+    },
+    {
+      "alias": "fx-focus-ring-neutral",
+      "target": "label-primary"
+    },
+    {
+      "alias": "fx-focus-ring-brand",
+      "target": "label-brand-primary"
+    },
+    {
+      "alias": "fx-focus-ring-danger",
+      "target": "label-danger-primary"
+    },
+    {
+      "alias": "fx-focus-ring-warning",
+      "target": "label-warning-primary"
+    },
+    {
+      "alias": "fx-focus-ring-success",
+      "target": "label-success-primary"
+    },
+    {
+      "alias": "fx-focus-ring-info",
+      "target": "label-info-primary"
     }
   ]
 }
