@@ -60,9 +60,10 @@ export function buildTypography(config: TypographyConfig): {
       fluid: bounds,
     });
 
-    // Line-height as a unitless multiplier of the step's mid-size, banded by
-    // step. Unitless so it tracks the fluid font-size automatically.
-    const multiplier = lineHeightMultiplier(config, step);
+    // Оптический интерлиньяж от кегля (не банды): множитель считается по
+    // репрезентативному кеглю шага (широкий якорь — канонический модуль шкалы) и
+    // базовому кеглю. Безразмерный, поэтому следует за флюидным font-size.
+    const multiplier = round4(lineHeightOptical(bounds.maxPx, config.basePx));
     lineHeights.push({
       kind: 'line-height',
       name,
@@ -196,14 +197,46 @@ function clampString(config: TypographyConfig, b: FluidBounds): string {
   return `clamp(${lowerRem}, ${preferred}, ${upperRem})`;
 }
 
-function lineHeightMultiplier(config: TypographyConfig, step: number): number {
-  // Highest matching threshold wins; bands are evaluated from the top.
-  const sorted = [...config.lineHeightBands].sort((a, b) => b.fromStep - a.fromStep);
-  for (const band of sorted) {
-    if (step >= band.fromStep) return band.multiplier;
-  }
-  // Unreachable when a band has a sufficiently low fromStep; guard anyway.
-  throw new Error(`no line-height band matches step ${step}`);
+/**
+ * Оптический интерлиньяж (line-height, безразмерный множитель кегля) как функция
+ * кегля z и базового кегля basePx:
+ *   lh(z) = SOLID + reading(z) − taper(z)
+ *
+ * КАЛИБРОВКА ИЗ ОТПЕЧАТКОВ Geist. Ключевое наблюдение (см. derive-typography.mjs):
+ * leading (lh − кегль) = 0 ВЕЗДЕ (набор «в сплошную», mult 1.0), кроме трёх точек —
+ *   body 16px → +8px (mult 1.5) — читаемость многострочной прозы;
+ *   мега-дисплей 112px → −16px (0.857) — отрицательный интерлиньяж крупного;
+ *   caption 14px → −2px (0.857) — микро-плотность (задокументированный выброс).
+ * Чистой f(z) НЕТ: 14→0.857 против 16→1.5 против 20→1.0 рвут монотон — интерлиньяж
+ * управляется РОЛЬЮ (проза против дисплея), а роль привязана к кеглю кусочно.
+ * Поэтому модель — три оптических члена, каждый функция z/basePx (шкало-инвариантна),
+ * замена «грубых бэндов» 1.2/1.3/1.5, которые Geist-отпечаткам не соответствовали:
+ *
+ *   SOLID = 1.0                       — по умолчанию набор «в сплошную» (lh = кегль);
+ *   reading(z) = 0.5·exp(−½·(ln(z/base)/σ)²), σ=0.05 — надбавка читаемости, пик на
+ *     базовом кегле (body → 1.5); σ подобрана так, что на ближайшем шаге шкалы
+ *     (Δln≥0.182) надбавка <0.005 — незаметна, поэтому captions и заголовки
+ *     остаются solid, ровно как в отпечатках (иначе — «спайк» на body);
+ *   taper(z) = K·max(0, ln(z/base/5)), K=0.4246 — суб-solid отрицательный
+ *     интерлиньяж выше «колена» base·5 (=80px@16); K из отпечатка 112→0.857:
+ *     K = (1−96/112)/ln(112/80). Между 80 и 112px отпечатка нет — лог-линейная
+ *     интерполяция (простейшая монотонная связь).
+ *
+ * Воспроизводит КАЖДЫЙ solid/body-отпечаток точно (невязка <0.001), кроме
+ * caption-14 (−2px микро-выброс, вне закона; 14px — не шаг эмитируемой шкалы).
+ * basePx из конфига: при смене базы пик читаемости и колено следуют за ней
+ * (когерентно rem-модели). Формула, не банды — интерлиньяж непрерывен по кеглю.
+ */
+export function lineHeightOptical(sizePx: number, basePx: number): number {
+  const SOLID = 1;
+  const READ_AMP = 0.5; // body → SOLID + 0.5 = 1.5 (ровно)
+  const READ_SIGMA = 0.05; // ширина надбавки в log-кегле (гаснет к соседнему шагу)
+  const KNEE_MULT = 5; // колено суб-solid = base·5 (80px при base 16)
+  const TAPER_K = 0.4246; // = (1 − 96/112)/ln(112/80), из отпечатка Display/6XL
+  const u = Math.log(sizePx / basePx);
+  const reading = READ_AMP * Math.exp(-0.5 * (u / READ_SIGMA) ** 2);
+  const taper = TAPER_K * Math.max(0, u - Math.log(KNEE_MULT));
+  return SOLID + reading - taper;
 }
 
 function labelFor(config: TypographyConfig, step: number): string {
@@ -219,9 +252,6 @@ function assertConfig(config: TypographyConfig): void {
   }
   if (!Number.isInteger(config.stepsUp) || config.stepsUp < 0) {
     throw new Error('typography stepsUp must be a non-negative integer');
-  }
-  if (config.lineHeightBands.length === 0) {
-    throw new Error('typography lineHeightBands must not be empty');
   }
   if (config.ratioMin <= 0 || config.ratioMax <= 0) {
     throw new Error('typography ratios must be positive');

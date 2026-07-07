@@ -771,11 +771,11 @@
   "line-height": {
     "xxs": {
       "$type": "number",
-      "$value": 1.5
+      "$value": 1
     },
     "xs": {
       "$type": "number",
-      "$value": 1.5
+      "$value": 1.0006
     },
     "md": {
       "$type": "number",
@@ -783,31 +783,31 @@
     },
     "lg": {
       "$type": "number",
-      "$value": 1.3
+      "$value": 1
     },
     "xl": {
       "$type": "number",
-      "$value": 1.3
+      "$value": 1
     },
     "2xl": {
       "$type": "number",
-      "$value": 1.3
+      "$value": 1
     },
     "3xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 1
     },
     "4xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 1
     },
     "5xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 0.9761
     },
     "6xl": {
       "$type": "number",
-      "$value": 1.2
+      "$value": 0.8582
     }
   },
   "font-weight": {

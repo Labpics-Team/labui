@@ -95,16 +95,16 @@
   --lab-font-size-6xl: clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem);
 
   /* Typography — line-height multipliers */
-  --lab-line-height-xxs: 1.5;
-  --lab-line-height-xs: 1.5;
+  --lab-line-height-xxs: 1;
+  --lab-line-height-xs: 1.0006;
   --lab-line-height-md: 1.5;
-  --lab-line-height-lg: 1.3;
-  --lab-line-height-xl: 1.3;
-  --lab-line-height-2xl: 1.3;
-  --lab-line-height-3xl: 1.2;
-  --lab-line-height-4xl: 1.2;
-  --lab-line-height-5xl: 1.2;
-  --lab-line-height-6xl: 1.2;
+  --lab-line-height-lg: 1;
+  --lab-line-height-xl: 1;
+  --lab-line-height-2xl: 1;
+  --lab-line-height-3xl: 1;
+  --lab-line-height-4xl: 1;
+  --lab-line-height-5xl: 0.9761;
+  --lab-line-height-6xl: 0.8582;
 
   /* Typography — font-weight scale (unitless) */
   --lab-font-weight-regular: 400;
