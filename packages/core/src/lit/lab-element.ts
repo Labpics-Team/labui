@@ -68,6 +68,14 @@ export class LabElement extends LitElement {
    * text nodes do not count.
    */
   protected hasDefaultSlotContent(): boolean {
+    // SSR-safety: under @lit-labs/ssr the element instance has no traversable light
+    // DOM, and the global DOM shim's `childNodes` is not iterable — iterating it
+    // throws. We cannot know the slotted content at server render time, so assume the
+    // common case (a visible default-slot label is present) and let client hydration
+    // resolve the icon-only edge case. Client behaviour (iterable childNodes) is
+    // unchanged; only the non-iterable SSR path is guarded.
+    const nodes = this.childNodes as ArrayLike<Node> & { [Symbol.iterator]?: unknown };
+    if (typeof nodes?.[Symbol.iterator] !== 'function') return true;
     for (const node of this.childNodes) {
       if (node.nodeType === Node.TEXT_NODE) {
         if (node.textContent?.trim()) return true;

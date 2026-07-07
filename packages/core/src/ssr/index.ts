@@ -22,6 +22,8 @@ import '@lit-labs/ssr/lib/install-global-dom-shim.js';
 import { render } from '@lit-labs/ssr';
 import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { type TemplateResult, html } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 
 /**
  * Render a Lit template to a declarative-shadow-DOM HTML string.
@@ -38,6 +40,10 @@ export function renderToString(template: TemplateResult): string {
 /**
  * Re-exported so SSR callers can author templates without a direct `lit`
  * dependency — the SSR entry is the one place a non-Lit host touches Lit at all.
+ * `ifDefined` (omit an attribute when its value is undefined) and `unsafeHTML`
+ * (inject a pre-rendered raw HTML string as slotted light-DOM content) are the two
+ * directives the framework adapters' generated SSR helpers need to author a
+ * `<lab-*>` template, so they ship from this single SSR surface too.
  */
-export { html };
+export { html, ifDefined, unsafeHTML };
 export type { TemplateResult };
