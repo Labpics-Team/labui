@@ -6,6 +6,8 @@
 //   node test/fx-render/render-fx.mjs --flatten          # bite: ступени сплющены → RED
 //   node test/fx-render/render-fx.mjs --drop=success     # bite: glow-токен убран → RED
 //   node test/fx-render/render-fx.mjs --drop-focus=success  # bite: focus-ring убран → RED
+//   node test/fx-render/render-fx.mjs --skeleton=flatten    # bite: блик==resting → RED
+//   node test/fx-render/render-fx.mjs --skeleton=invert     # bite: Figma-инверсия → RED
 //
 // chromium берём из @labpics/ui-docs-стора (@playwright/test) по абсолютному
 // пути — пакет colors не тянет playwright как зависимость (гейт живёт в e2e-джобе,
@@ -64,7 +66,9 @@ async function main() {
   const dropGlow = dropArg ? dropArg.slice('--drop='.length) : null;
   const dropFocusArg = args.find((a) => a.startsWith('--drop-focus='));
   const dropFocus = dropFocusArg ? dropFocusArg.slice('--drop-focus='.length) : null;
-  const bite = flatten || dropGlow || dropFocus;
+  const skelArg = args.find((a) => a.startsWith('--skeleton='));
+  const skeletonBite = skelArg ? skelArg.slice('--skeleton='.length) : null;
+  const bite = flatten || dropGlow || dropFocus || skeletonBite;
 
   const contractCss = readFileSync(contractPath, 'utf8');
   const chromium = await loadChromium();
@@ -73,6 +77,7 @@ async function main() {
     flatten,
     dropGlow,
     dropFocus,
+    skeletonBite,
   });
 
   // Артефакт для владельца — сохраняем ВСЕГДА (в т.ч. в bite-прогоне: наглядно
@@ -84,7 +89,9 @@ async function main() {
       ? `-drop-${dropGlow}`
       : dropFocus
         ? `-drop-focus-${dropFocus}`
-        : '';
+        : skeletonBite
+          ? `-skeleton-${skeletonBite}`
+          : '';
   const pngPath = join(artifactDir, `fx-render${suffix}.png`);
   writeFileSync(pngPath, png);
 
@@ -107,13 +114,20 @@ async function main() {
         { r: Math.round(f.r), g: Math.round(f.g), b: Math.round(f.b), L: Number(f.L.toFixed(2)) },
       ]),
     ),
+    skeleton: {
+      base: Number(measurements.skeleton.base.L.toFixed(2)),
+      highlight: Number(measurements.skeleton.highlight.L.toFixed(2)),
+      lift: Number((measurements.skeleton.highlight.L - measurements.skeleton.base.L).toFixed(2)),
+    },
     mutation: flatten
       ? 'flatten'
       : dropGlow
         ? `drop:${dropGlow}`
         : dropFocus
           ? `drop-focus:${dropFocus}`
-          : 'none',
+          : skeletonBite
+            ? `skeleton:${skeletonBite}`
+            : 'none',
   };
   // Трейлинг-newline: Biome format-check требует финальный перевод строки в JSON.
   writeFileSync(
@@ -126,6 +140,9 @@ async function main() {
   for (const [s, d] of Object.entries(summary.glowDeltaFromBackdrop)) {
     console.info(`  ${s.padEnd(8)} subtle=${d.subtle}  base=${d.base}  bloom=${d.bloom}`);
   }
+  console.info(
+    `Скелетон (luminance): base=${summary.skeleton.base} highlight=${summary.skeleton.highlight} lift=${summary.skeleton.lift}`,
+  );
 
   try {
     assertFxRender(measurements);

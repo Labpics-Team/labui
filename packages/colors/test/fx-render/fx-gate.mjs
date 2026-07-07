@@ -23,6 +23,9 @@ export const GLOW_STEPS = ['subtle', 'base', 'bloom'];
 const BACKDROP = '#0d0d12';
 const TILE = 128; // px, deviceScaleFactor:1 → CSS px == device px
 
+/** Слои шиммера скелетона: resting-блок (base) и блик (highlight). */
+export const SKELETON_LAYERS = ['base', 'highlight'];
+
 /** Имя glow-роли (color/core/alpha) для сентимента и ступени. */
 function glowVar(sentiment, step, suffix = '') {
   const stepSeg = step === 'base' ? '' : `-${step}`;
@@ -44,7 +47,7 @@ function glowVar(sentiment, step, suffix = '') {
  *               реально кусается, а не no-op.
  */
 export function buildHarnessHtml(contractCss, opts = {}) {
-  const { flatten = false, dropGlow = null, dropFocus = null } = opts;
+  const { flatten = false, dropGlow = null, dropFocus = null, skeletonBite = null } = opts;
 
   // Мутации-биты как override-слой (не трогаем сам контракт).
   const mutations = [];
@@ -54,6 +57,16 @@ export function buildHarnessHtml(contractCss, opts = {}) {
       mutations.push(`${glowVar(s, 'subtle', '-alpha')}: var(${glowVar(s, 'base', '-alpha')});`);
       mutations.push(`${glowVar(s, 'bloom', '-alpha')}: var(${glowVar(s, 'base', '-alpha')});`);
     }
+  }
+  if (skeletonBite === 'flatten') {
+    // highlight := base: блик исчезает (равная светлота) → инвариант осветления РУШИТСЯ.
+    mutations.push('--lab-fx-skeleton-highlight: var(--lab-fx-skeleton-base);');
+  }
+  if (skeletonBite === 'invert') {
+    // Старый Figma-highlight (mid@0.039): в dark ТЕМНЕЕ base → инвариант РУШИТСЯ.
+    // Литерал живёт ТОЛЬКО в bite-мутации (эмуляция до-законного значения),
+    // не в контракте — доказывает, что гейт ловит регресс к Figma-инверсии.
+    mutations.push('--lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);');
   }
   if (dropGlow) {
     // initial → custom-prop становится guaranteed-invalid → var() пуст →
@@ -95,6 +108,16 @@ export function buildHarnessHtml(contractCss, opts = {}) {
     </div>`,
   ).join('');
 
+  // Ряд шиммера скелетона: base (resting) и highlight (блик) — сплошная заливка
+  // translucent-токеном над тёмным фоном плитки. Инвариант: highlight СВЕТЛЕЕ base.
+  const skelCell = (layer) => `<div class="tile" data-swatch="skeleton:${layer}">
+      <div class="skel" style="background:var(--lab-fx-skeleton-${layer})"></div>
+    </div>`;
+  const skeletonRow = `<div class="row">
+      <div class="label">skeleton</div>
+      ${skelCell('base')}${skelCell('highlight')}
+    </div>`;
+
   return `<!doctype html><html data-theme="dark"><head><meta charset="utf-8">
 <style>
 ${contractCss}
@@ -111,11 +134,13 @@ body{margin:0;padding:24px;background:${BACKDROP};font:12px system-ui,sans-serif
     color-mix(in srgb, var(--halo) calc(var(--a)*100%), transparent) 40%,
     transparent 72%)}
 .focus{position:absolute;inset:24px;border-radius:6px}
+.skel{position:absolute;inset:0}
 .bg{width:${TILE}px;height:${TILE}px;background:${BACKDROP};border-radius:8px}
 </style></head><body>
 <div class="grid">
   <div class="head"><div>sentiment</div><div>subtle</div><div>base</div><div>bloom</div><div>focus-ring</div></div>
   ${rows}
+  ${skeletonRow}
   <div class="row"><div class="label">ref</div>
     <div class="tile" data-swatch="ref:backdrop"><div class="bg"></div></div>
   </div>
@@ -307,10 +332,27 @@ export function assertFxRender(m) {
     }
   }
 
+  // (a'') шиммер скелетона: highlight (блик) СВЕТЛЕЕ base (resting) — закон
+  // осветления. Пиксельная проверка ловит Figma-инверсию dark (highlight темнее
+  // base) и flatten (highlight==base). Замер над тёмным фоном плитки.
+  const SKEL_MARGIN = 2.0; // пикс. luminance-запас блика над resting
+  if (!m.skeleton) {
+    problems.push('замеры скелетона отсутствуют');
+  } else {
+    const { base, highlight } = m.skeleton;
+    const lift = highlight.L - base.L;
+    deltas.skeleton = { base: base.L, highlight: highlight.L, lift };
+    if (!(lift > SKEL_MARGIN)) {
+      problems.push(
+        `skeleton: блик НЕ светлее resting (highlight ${highlight.L.toFixed(2)} − base ${base.L.toFixed(2)} = ${lift.toFixed(2)} ≤ ${SKEL_MARGIN})`,
+      );
+    }
+  }
+
   if (problems.length) {
     throw new Error(`FX-render гейт КРАСНЫЙ:\n  - ${problems.join('\n  - ')}`);
   }
-  return { deltas, focus: m.focus };
+  return { deltas, focus: m.focus, skeleton: m.skeleton };
 }
 
 /**
@@ -336,6 +378,11 @@ export async function renderAndMeasure(chromium, contractCss, opts = {}) {
       }
       boxes[`${s}:focus`] = await page.locator(`[data-swatch="${s}:focus"]`).boundingBox();
     }
+    for (const layer of SKELETON_LAYERS) {
+      boxes[`skeleton:${layer}`] = await page
+        .locator(`[data-swatch="skeleton:${layer}"]`)
+        .boundingBox();
+    }
     boxes['ref:backdrop'] = await page.locator('[data-swatch="ref:backdrop"]').boundingBox();
 
     const png = await page.screenshot({ fullPage: true, animations: 'disabled' });
@@ -352,7 +399,11 @@ export async function renderAndMeasure(chromium, contractCss, opts = {}) {
       };
       focus[s] = sampleRegion(decoded, boxes[`${s}:focus`]);
     }
-    return { png, measurements: { backdropL, glow, focus } };
+    const skeleton = {
+      base: sampleRegion(decoded, boxes['skeleton:base']),
+      highlight: sampleRegion(decoded, boxes['skeleton:highlight']),
+    };
+    return { png, measurements: { backdropL, glow, focus, skeleton } };
   } finally {
     await browser.close();
   }
