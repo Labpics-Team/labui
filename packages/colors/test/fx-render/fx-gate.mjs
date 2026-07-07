@@ -341,7 +341,6 @@ export function assertFxRender(m) {
   } else {
     const { base, highlight } = m.skeleton;
     const lift = highlight.L - base.L;
-    deltas.skeleton = { base: base.L, highlight: highlight.L, lift };
     if (!(lift > SKEL_MARGIN)) {
       problems.push(
         `skeleton: блик НЕ светлее resting (highlight ${highlight.L.toFixed(2)} − base ${base.L.toFixed(2)} = ${lift.toFixed(2)} ≤ ${SKEL_MARGIN})`,
