@@ -46,9 +46,14 @@ function readIhdr(png: Uint8Array) {
   };
 }
 
-/** Инфлейтит единственный IDAT и возвращает отфильтрованные строки. */
+/** Склеивает ВСЕ IDAT-чанки, инфлейтит и возвращает отфильтрованные строки.
+ * PNG штатно допускает несколько IDAT (поток zlib разрезан по чанкам) — читать
+ * только первый значило бы молча декодировать часть строк, если будущий энкодер
+ * начнёт резать поток. */
 function readIdat(png: Uint8Array): Uint8Array {
-  // Прошагать чанки от смещения 8, найти IDAT.
+  // Прошагать чанки от смещения 8, собрать все IDAT по порядку.
+  const parts: Uint8Array[] = [];
+  let total = 0;
   let i = 8;
   while (i < png.length) {
     const len = u32(png, i);
@@ -59,11 +64,20 @@ function readIdat(png: Uint8Array): Uint8Array {
       png[i + 7] ?? 0,
     );
     if (type === 'IDAT') {
-      return new Uint8Array(inflateSync(png.slice(i + 8, i + 8 + len)));
+      const part = png.slice(i + 8, i + 8 + len);
+      parts.push(part);
+      total += part.length;
     }
     i += 12 + len; // length(4)+type(4)+data(len)+crc(4)
   }
-  throw new Error('IDAT chunk not found');
+  if (parts.length === 0) throw new Error('IDAT chunk not found');
+  const joined = new Uint8Array(total);
+  let at = 0;
+  for (const part of parts) {
+    joined.set(part, at);
+    at += part.length;
+  }
+  return new Uint8Array(inflateSync(joined));
 }
 
 describe('acrylic-noise PNG — валидный, детерминированный, объявленной геометрии', () => {

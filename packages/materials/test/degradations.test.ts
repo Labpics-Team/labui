@@ -43,9 +43,10 @@ function dropsNoise(body: string): boolean {
   return body.includes('--_noise: none');
 }
 
-/** Every degradation must list the acrylic mode selectors at their (0,1,1)
- * specificity — a bare `.lab-material` (0,1,0) cannot override the acrylic mode
- * block, so acrylic would silently keep its live blur under the degradation. */
+/** Every degradation must list the acrylic mode selectors at their (0,2,0)
+ * specificity (attribute + class — both count in the middle column) — a bare
+ * `.lab-material` (0,1,0) cannot override the acrylic mode block, so acrylic
+ * would silently keep its live blur under the degradation. */
 function coversAcrylic(body: string): boolean {
   return (
     body.includes('[data-material="acrylic"] .lab-material') &&
@@ -69,9 +70,26 @@ describe('material.css deterministic degradations', () => {
       const body = atRuleBody(header);
       expect(forcesSolid(body), 'forces the opaque solid canon').toBe(true);
       expect(dropsNoise(body), 'drops the acrylic grain (--_noise: none)').toBe(true);
-      expect(coversAcrylic(body), 'covers acrylic at its (0,1,1) specificity').toBe(true);
+      expect(coversAcrylic(body), 'covers acrylic at its (0,2,0) specificity').toBe(true);
     });
   }
+
+  it('2. reduced-transparency ≡ live-verified paths (Playwright cannot emulate it)', () => {
+    // Playwright's emulateMedia has no `prefers-reduced-transparency`, so path 2 —
+    // the accessibility path — has no live browser assert. Compensation: its body
+    // must be IDENTICAL (modulo whitespace) to path 1 (@supports) and path 3
+    // (contrast: more). Path 3 IS live-verified in the e2e (emulateMedia contrast),
+    // and identity transfers that verification to path 2. If the bodies ever fork,
+    // this goes red and path 2 needs its own proof.
+    const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+    const noBackdrop = normalize(atRuleBody(/@supports not \(\(backdrop-filter/));
+    const reducedTransparency = normalize(
+      atRuleBody(/@media \(prefers-reduced-transparency: reduce\)/),
+    );
+    const contrastMore = normalize(atRuleBody(/@media \(prefers-contrast: more\)/));
+    expect(reducedTransparency, 'path 2 ≡ path 3 (live-verified)').toBe(contrastMore);
+    expect(reducedTransparency, 'path 2 ≡ path 1 (@supports)').toBe(noBackdrop);
+  });
 
   it('4. forced-colors also strips the tint gradient + blur (UA maps the palette)', () => {
     const body = atRuleBody(/@media \(forced-colors: active\)/);
