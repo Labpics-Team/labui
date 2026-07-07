@@ -148,6 +148,26 @@ export interface TypographyConfig {
    * MUST be non-empty; each value an integer in [1, 1000].
    */
   readonly weights: Readonly<Record<string, number>>;
+  /**
+   * Семейства шрифта как фолбэк-стеки (первым — фирменная гарнитура). Это
+   * КЛИЕНТСКАЯ ручка (ребренд = один оверрайд), а не выводимое значение:
+   * `sans` → токен `--lab-font-family`, `mono` → `--lab-font-family-mono`.
+   * Дизайн-система применяет их на скоупе `[data-theme]` (см. @labpics/ui-core
+   * theme.css); компоненты остаются на `font: inherit`. Оба стека MUST быть
+   * непусты и завершаться аварийным дженериком (`sans-serif` / `monospace`).
+   */
+  readonly fontFamily: {
+    readonly sans: readonly string[];
+    readonly mono: readonly string[];
+  };
+  /**
+   * Осмысленные OpenType-фичи как токены `--lab-font-feature-<role>`: роль →
+   * значение `font-feature-settings`. Значения заведены ТОЛЬКО на реально
+   * существующие в гарнитуре фичи (для Geist проверено чтением бинарников) —
+   * выдуманная фича была бы no-op. Потребитель включает точечно, напр.
+   * `font-feature-settings: var(--lab-font-feature-tabular)` на числовой ячейке.
+   */
+  readonly fontFeatures: Readonly<Record<string, string>>;
 }
 
 /**

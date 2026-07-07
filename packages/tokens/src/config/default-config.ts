@@ -177,6 +177,39 @@ export const defaultConfig: TokensConfig = {
       semibold: 600,
       bold: 700,
     },
+    // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
+    // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие
+    // системные фолбэки и аварийный дженерик в хвосте, чтобы текст читался и без
+    // подгруженного Geist (font-display: swap). Клиент меняет ребренд оверрайдом.
+    fontFamily: {
+      sans: [
+        'Geist',
+        '-apple-system',
+        'BlinkMacSystemFont',
+        'Segoe UI',
+        'Roboto',
+        'Helvetica Neue',
+        'Arial',
+        'sans-serif',
+      ],
+      mono: [
+        'Geist Mono',
+        'ui-monospace',
+        'SFMono-Regular',
+        'Menlo',
+        'Consolas',
+        'Liberation Mono',
+        'monospace',
+      ],
+    },
+    // OpenType-фичи Geist (проверено чтением бинарников, GSUB): заведены только
+    // существующие. tnum — табличные (моноширинные) цифры Sans, для выравнивания
+    // чисел в таблицах/дашбордах (Mono уже табличный). frac — дробные глифы.
+    // zero/calt/onum в Geist ОТСУТСТВУЮТ — токенов на них НЕТ (были бы no-op).
+    fontFeatures: {
+      tabular: '"tnum" 1',
+      fractions: '"frac" 1',
+    },
   },
   // Stroke widths + focus ring (rem). Grounded against Figma (🧪Lab UI v.1):
   // hairline = 1px — the universal component border (button/card/checkbox/radio/

@@ -28,6 +28,7 @@ export function buildTypography(config: TypographyConfig): {
   fontWeights: ResolvedToken[];
   letterSpacings: ResolvedToken[];
   measures: ResolvedToken[];
+  fonts: ResolvedToken[];
 } {
   assertConfig(config);
 
@@ -96,7 +97,51 @@ export function buildTypography(config: TypographyConfig): {
     { kind: 'measure', name: 'wide', cssValue: '75ch', numeric: 75, dtcgType: 'dimension' },
   ];
 
-  return { fontSizes, lineHeights, fontWeights, letterSpacings, measures };
+  // Оболочка шрифта: семейство (фолбэк-стек) и OpenType-фичи. Строковые токены —
+  // cssValue уже готовая CSS-строка; stringValue несёт DTCG-нативное значение
+  // (массив имён для fontFamily, строку для fontFeatureSettings). Имена дают
+  // ровно --lab-font-family / --lab-font-family-mono / --lab-font-feature-<role>.
+  const fonts: ResolvedToken[] = [
+    {
+      kind: 'font',
+      name: 'family',
+      cssValue: cssFamilyStack(config.fontFamily.sans),
+      stringValue: config.fontFamily.sans,
+      dtcgType: 'fontFamily',
+    },
+    {
+      kind: 'font',
+      name: 'family-mono',
+      cssValue: cssFamilyStack(config.fontFamily.mono),
+      stringValue: config.fontFamily.mono,
+      dtcgType: 'fontFamily',
+    },
+    ...Object.entries(config.fontFeatures).map(
+      ([role, value]): ResolvedToken => ({
+        kind: 'font',
+        name: `feature-${role}`,
+        cssValue: value,
+        stringValue: value,
+        dtcgType: 'fontFeatureSettings',
+      }),
+    ),
+  ];
+
+  return { fontSizes, lineHeights, fontWeights, letterSpacings, measures, fonts };
+}
+
+/**
+ * CSS-стек семейств: имена через запятую, с кавычками там, где имя НЕ является
+ * одиночным CSS-идентификатором (пробелы → кавычки: 'Geist Mono'). Дженерики
+ * (`sans-serif`, `ui-monospace`) и `-apple-system` — валидные идентификаторы,
+ * остаются без кавычек (кавычки на дженерике сломали бы его семантику).
+ */
+function cssFamilyStack(names: readonly string[]): string {
+  return names.map(cssFamilyName).join(', ');
+}
+
+function cssFamilyName(name: string): string {
+  return /^-?[a-zA-Z][a-zA-Z0-9-]*$/.test(name) ? name : `'${name}'`;
 }
 
 /**
@@ -274,6 +319,26 @@ function assertConfig(config: TypographyConfig): void {
   for (const [name, weight] of weightEntries) {
     if (!Number.isInteger(weight) || weight < 1 || weight > 1000) {
       throw new Error(`typography weight "${name}" must be an integer in [1, 1000], got ${weight}`);
+    }
+  }
+  // Семейства: оба стека непусты (пустой стек = текст без фолбэка, невидимка при
+  // не загруженном шрифте) и завершены аварийным дженериком.
+  const GENERICS = new Set(['sans-serif', 'serif', 'monospace', 'system-ui', 'ui-monospace', 'ui-sans-serif', 'ui-serif', 'cursive', 'fantasy']);
+  for (const key of ['sans', 'mono'] as const) {
+    const stack = config.fontFamily?.[key];
+    if (!Array.isArray(stack) || stack.length === 0) {
+      throw new Error(`typography fontFamily.${key} must be a non-empty stack`);
+    }
+    if (!GENERICS.has(stack[stack.length - 1] as string)) {
+      throw new Error(
+        `typography fontFamily.${key} must end with a generic fallback (e.g. ${key === 'mono' ? 'monospace' : 'sans-serif'}), got "${stack[stack.length - 1]}"`,
+      );
+    }
+  }
+  // Фичи: значения — непустые строки (валидный font-feature-settings).
+  for (const [role, value] of Object.entries(config.fontFeatures ?? {})) {
+    if (typeof value !== 'string' || value.trim() === '') {
+      throw new Error(`typography fontFeatures "${role}" must be a non-empty string`);
     }
   }
 }

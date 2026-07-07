@@ -9,8 +9,8 @@ import type { ResolvedToken } from '../domain/token.js';
  * form.
  */
 interface DtcgToken {
-  $type: 'dimension' | 'number';
-  $value: number | { value: number; unit: 'px' | 'rem' };
+  $type: 'dimension' | 'number' | 'fontFamily' | 'fontFeatureSettings';
+  $value: number | { value: number; unit: 'px' | 'rem' } | string | readonly string[];
   $description?: string;
   $extensions?: Record<string, unknown>;
 }
@@ -40,6 +40,9 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     // (магнитуда em / счёт символов), точная CSS-строка в $extensions.css.
     'letter-spacing': numberGroup(tokens.letterSpacings),
     measure: numberGroup(tokens.measures),
+    // Оболочка шрифта: fontFamily ($value — массив стека) + fontFeatureSettings
+    // (нестандартный для DTCG тип: точная CSS-строка ещё и в $extensions.css).
+    font: fontGroup(tokens.fonts),
     stroke: dimensionGroup(tokens.strokes),
     'focus-ring': dimensionGroup(tokens.focusRing),
   };
@@ -96,6 +99,35 @@ function fontSizeGroup(list: readonly ResolvedToken[]): DtcgGroup {
         },
       },
     };
+  }
+  return group;
+}
+
+/**
+ * Строковые токены оболочки шрифта. fontFamily → DTCG-нативный тип со значением
+ * массивом стека. fontFeatureSettings → тип нестандартный для DTCG, но узел
+ * валиден ($type + $value); точную CSS-строку дублируем в $extensions.css.
+ */
+function fontGroup(list: readonly ResolvedToken[]): DtcgGroup {
+  const group: DtcgGroup = {};
+  for (const t of list) {
+    if (t.stringValue == null) {
+      throw new Error(`Font token "${t.name}" is missing its stringValue`);
+    }
+    if (t.dtcgType === 'fontFamily') {
+      group[t.name] = {
+        $type: 'fontFamily',
+        $value: t.stringValue,
+        ...(t.description ? { $description: t.description } : {}),
+      };
+    } else {
+      group[t.name] = {
+        $type: 'fontFeatureSettings',
+        $value: t.stringValue,
+        ...(t.description ? { $description: t.description } : {}),
+        $extensions: { [EXT_KEY]: { css: t.cssValue } },
+      };
+    }
   }
   return group;
 }

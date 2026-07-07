@@ -884,6 +884,51 @@
       "$value": 75
     }
   },
+  "font": {
+    "family": {
+      "$type": "fontFamily",
+      "$value": [
+        "Geist",
+        "-apple-system",
+        "BlinkMacSystemFont",
+        "Segoe UI",
+        "Roboto",
+        "Helvetica Neue",
+        "Arial",
+        "sans-serif"
+      ]
+    },
+    "family-mono": {
+      "$type": "fontFamily",
+      "$value": [
+        "Geist Mono",
+        "ui-monospace",
+        "SFMono-Regular",
+        "Menlo",
+        "Consolas",
+        "Liberation Mono",
+        "monospace"
+      ]
+    },
+    "feature-tabular": {
+      "$type": "fontFeatureSettings",
+      "$value": "\"tnum\" 1",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "\"tnum\" 1"
+        }
+      }
+    },
+    "feature-fractions": {
+      "$type": "fontFeatureSettings",
+      "$value": "\"frac\" 1",
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "\"frac\" 1"
+        }
+      }
+    }
+  },
   "stroke": {
     "hairline": {
       "$type": "dimension",

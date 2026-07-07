@@ -13,6 +13,7 @@ export type ScaleKind =
   | 'size'
   | 'radius'
   | 'z'
+  | 'font' // семейство (--lab-font-family[-mono]) + OpenType-фичи (--lab-font-feature-*)
   | 'font-size'
   | 'font-weight'
   | 'line-height'
@@ -38,8 +39,13 @@ export interface ResolvedToken {
   readonly cssValue: string;
   /** Canonical numeric magnitude (px for dimensions, int for z), if scalar. */
   readonly numeric?: number;
+  /**
+   * DTCG-native значение строковых токенов (семейство/фичи), которого нет в
+   * `numeric`: массив имён для `fontFamily`, строка для `fontFeatureSettings`.
+   */
+  readonly stringValue?: string | readonly string[];
   /** DTCG `$type` for this token. */
-  readonly dtcgType: 'dimension' | 'number';
+  readonly dtcgType: 'dimension' | 'number' | 'fontFamily' | 'fontFeatureSettings';
   /** Present for fluid typography steps — the clamp anchors. */
   readonly fluid?: FluidBounds;
   /** Optional human description (e.g. z-index layer purpose). */

@@ -129,6 +129,12 @@
   --lab-measure-base: 66ch;
   --lab-measure-wide: 75ch;
 
+  /* Typography — семейство шрифта (фолбэк-стек, Geist первым) + OpenType-фичи */
+  --lab-font-family: Geist, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --lab-font-family-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  --lab-font-feature-tabular: "tnum" 1;
+  --lab-font-feature-fractions: "frac" 1;
+
   /* Borders — stroke widths (rem) */
   --lab-stroke-hairline: 0.0625rem;
   --lab-stroke-thick: 0.125rem;
