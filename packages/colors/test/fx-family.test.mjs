@@ -11,9 +11,41 @@ import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import { createLabuiEngine } from '../engine.mjs';
+import { skeletonHighlightCss } from '../generate-contract.mjs';
 import passport from '../labui.config.json' with { type: 'json' };
+import { degam, hexToLin, oklabOf } from '../oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
+
+// ─── Перцептивные утилиты (oklab) для законов glow/skeleton ───
+/** Хью (град, 0–360) и хрома цвета из hex через ту же Oklab-математику движка. */
+function hueChroma(hex) {
+  const [, a, b] = oklabOf(hexToLin(hex));
+  const hue = ((Math.atan2(b, a) * 180) / Math.PI + 360) % 360;
+  return { hue, chroma: Math.hypot(a, b) };
+}
+/** Кратчайшая дуга между двумя хью (град, 0–180). */
+function hueDist(h1, h2) {
+  const d = Math.abs(h1 - h2) % 360;
+  return d > 180 ? 360 - d : d;
+}
+/** Светлота oklab композита translucent-оверлея (tint,α) над surface — БЛЕНД В
+ * sRGB(гамма)-пространстве, как CSS-alpha и движок (линейный блендинг соврал бы). */
+function compositeOklabL(tintHex, alpha, surfaceHex) {
+  const srgb = (h) => {
+    const n = Number.parseInt(h.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  };
+  const o = srgb(tintHex);
+  const s = srgb(surfaceHex);
+  const blend = o.map((c, i) => (c * alpha + s[i] * (1 - alpha)) / 255);
+  return oklabOf(blend.map(degam))[0];
+}
+/** Разобрать tint-hex и α из translucent-oklch движка/контракта. */
+function parseTranslucent(role) {
+  const tint = role.tintHex ?? role.hex ?? role.compositeHex;
+  return { tint, alpha: role.alpha };
+}
 
 // Обязательный набор сентиментов FX-семьи (канон LabUI-таксономия §FX):
 // нейтраль + бренд + 4 сентимента. Отсутствие любого = красный.
@@ -249,5 +281,152 @@ describe('FX-семья: пропагация в опубликованный к
       expect(sub, `${s}: subtle<base`).toBeLessThan(base);
       expect(base, `${s}: base<bloom`).toBeLessThan(bloom);
     }
+  });
+});
+
+// Прогрессия glow — ЗАКОН, а не три ручных множителя на сентимент. Провенанс:
+// поле achievedDj движка — ДОСТИГНУТЫЙ перцептивный |ΔJ'| свечения над фоном
+// (солвер бисектит α под фикс. целью ступени). Тесты доказывают, что цель
+// ступени ОБЩАЯ для всех 6 сентиментов (одна лестница), а не набор per-сентимент.
+describe("FX-семья: glow-прогрессия — ЗАКОН фиксированного |ΔJ'| на ступень (dark)", () => {
+  /** @type {Record<string, any>} */
+  let darkRoles;
+  beforeAll(async () => {
+    const e = await createLabuiEngine();
+    // Монотонность/лестницу мерим на dark: в light screen над белым гаснет
+    // (achievedDj=0, degraded) — там |ΔJ'| невыразим.
+    darkRoles = e.colors.resolveTheme(passport.neutral.anchors.dark, 'dark').roles;
+  });
+
+  const djOf = (s, step) => darkRoles[glowRole(s, step)].achievedDj;
+  const band = (step) => {
+    const v = SENTIMENTS.map((s) => djOf(s, step));
+    return { min: Math.min(...v), max: Math.max(...v), spread: Math.max(...v) - Math.min(...v) };
+  };
+
+  it('цель ступени ОБЩАЯ для всех сентиментов: полосы achievedDj попарно ДИЗЪЮНКТНЫ', () => {
+    // Будь ступени per-сентимент множителями — base одного сентимента мог бы
+    // попасть в диапазон subtle другого. Непересечение полос доказывает ОДНУ
+    // разделяемую лестницу целей (закон), а не 6 независимых настроек.
+    const sub = band('subtle');
+    const ba = band('base');
+    const bl = band('bloom');
+    expect(sub.max, `subtle-полоса [${sub.min},${sub.max}] пересекает base`).toBeLessThan(ba.min);
+    expect(ba.max, `base-полоса [${ba.min},${ba.max}] пересекает bloom`).toBeLessThan(bl.min);
+  });
+
+  it("лестница — ФИКСИРОВАННЫЙ |ΔJ'| на ступень, а НЕ фиксированное ОТНОШЕНИЕ", () => {
+    // Подпись «фикс. цель + абсолютный допуск солвера»: разброс внутри полосы
+    // почти ПОСТОЯНЕН по ступеням, хотя цель растёт ~1→2.5→13. Закон
+    // «фикс. отношение» дал бы spread(bloom) ≈ (bloom/subtle ≈ 13×) × spread(subtle)
+    // — отношение разбросов > 3. Фактор < 3 решительно отвергает эту гипотезу.
+    const spreads = GLOW_STEPS.map((st) => band(st).spread);
+    const ratio = Math.max(...spreads) / Math.min(...spreads);
+    expect(
+      ratio,
+      `разброс масштабируется с величиной (fixed-ratio): spreads=${spreads}`,
+    ).toBeLessThan(3);
+  });
+
+  it('воспроизводимость: повторная загрузка движка даёт БИТ-идентичный achievedDj', async () => {
+    const e2 = await createLabuiEngine();
+    const r2 = e2.colors.resolveTheme(passport.neutral.anchors.dark, 'dark').roles;
+    for (const s of SENTIMENTS) {
+      for (const st of GLOW_STEPS) {
+        expect(r2[glowRole(s, st)].achievedDj, `${s}/${st} не детерминирован`).toBe(djOf(s, st));
+      }
+    }
+  });
+});
+
+// ХРОМАТИЧЕСКАЯ идентичность (задача владельца: success/info не должны
+// деградировать в серое/чужую семью; info легитимно делит хью с брендом).
+// Инвариант: halo glow каждого ЦВЕТНОГО сентимента приземляется в СВОЮ семью
+// палитры и держит хрому. Провенанс ожидаемого хью — якорь семьи из паспорта
+// (sentiments.categories → palette), не литерал в тесте.
+describe('FX-семья: glow несёт хроматическую идентичность сентимента (success/info)', () => {
+  const COLORED = ['brand', 'danger', 'warning', 'success', 'info'];
+  // Семья сентимента → ключ палитры (brand — отдельный якорь бренда).
+  const FAMILY_KEY = Object.fromEntries(
+    passport.sentiments.categories.map((c) => [c.name, c.family]),
+  );
+  /** hex-якорь семьи сентимента для темы (brand/palette). */
+  function familyAnchor(sentiment, theme) {
+    if (sentiment === 'brand') return passport.brand[theme];
+    const key = FAMILY_KEY[sentiment];
+    return passport.palette.find((p) => p.key === key).anchors[theme];
+  }
+
+  for (const theme of ['light', 'dark']) {
+    it(`halo каждого цветного glow держит хрому и приземляется в СВОЮ семью (${theme})`, async () => {
+      const e = await createLabuiEngine();
+      const roles = e.colors.resolveTheme(passport.neutral.anchors[theme], theme).roles;
+      // Набор якорей всех семей — для проверки «ближайшая семья = своя».
+      const anchors = COLORED.map((s) => ({ s, ...hueChroma(familyAnchor(s, theme)) }));
+      for (const s of COLORED) {
+        const halo = roles[`fx-glow-${s}`].haloHex;
+        const { hue, chroma } = hueChroma(halo);
+        const own = anchors.find((a) => a.s === s);
+        // (1) Хрома не сдулась в серое: ≥ 40% хромы якоря семьи (заземление, не литерал).
+        expect(
+          chroma,
+          `${theme}/${s}: halo обесцветился (chroma=${chroma.toFixed(3)})`,
+        ).toBeGreaterThan(0.4 * own.chroma);
+        // (2) Ближайшая по хью семья — СВОЯ (параметр-free классификация). Отделяет
+        // success(зелёный) от info(синий) от danger(красный) по построению.
+        const nearest = anchors.reduce((best, a) =>
+          hueDist(hue, a.hue) < hueDist(hue, best.hue) ? a : best,
+        );
+        expect(
+          nearest.s,
+          `${theme}/${s}: halo(${hue.toFixed(0)}°) ближе к семье ${nearest.s}`,
+        ).toBe(s);
+      }
+    });
+  }
+});
+
+// Шиммер скелетона — ЗАКОН осветления (см. generate-contract.mjs). Инвариант:
+// highlight перцептивно СВЕТЛЕЕ base в ОБЕИХ темах. Гейт КУСАЕТСЯ: старое
+// Figma-значение highlight (mid@0.039) в dark ТЕМНЕЕ base — RED-доказательство ниже.
+describe('FX-семья: шиммер скелетона светлее base в обеих темах (закон осветления)', () => {
+  /** @type {any} */
+  let engine;
+  beforeAll(async () => {
+    engine = await createLabuiEngine();
+  });
+
+  it('чистый закон skeletonHighlightCss: белый (L=100% C=0) при α base', () => {
+    const out = skeletonHighlightCss('oklch(57.53363% 0.012136 286.012 / 0.161)');
+    expect(out).toBe('oklch(100.00000% 0.000000 286.012 / 0.161)');
+    // Хью сохранён из base (родословная), α посимвольно равна base (байт-стабильность).
+    expect(out).toMatch(/ 286\.012 \/ 0\.161\)$/);
+  });
+
+  for (const theme of ['light', 'dark']) {
+    it(`highlight композитится СВЕТЛЕЕ base над фоном темы (${theme})`, () => {
+      const bg = passport.neutral.anchors[theme];
+      const roles = engine.colors.resolveTheme(bg, theme).roles;
+      const base = parseTranslucent(roles['fx-skeleton-base']);
+      // highlight по закону = белый при α base.
+      const WHITE = passport.neutral.anchors.light;
+      const baseL = compositeOklabL(base.tint, base.alpha, bg);
+      const hlL = compositeOklabL(WHITE, base.alpha, bg);
+      expect(
+        hlL,
+        `${theme}: highlight(${hlL.toFixed(4)}) ≤ base(${baseL.toFixed(4)})`,
+      ).toBeGreaterThan(baseL);
+    });
+  }
+
+  it('RED-доказательство: СТАРЫЙ Figma-highlight (mid@0.039) в dark ТЕМНЕЕ base', () => {
+    // Гарантия, что тест реально кусается: до-законное значение нарушало инвариант.
+    const bg = passport.neutral.anchors.dark;
+    const roles = engine.colors.resolveTheme(bg, 'dark').roles;
+    const base = parseTranslucent(roles['fx-skeleton-base']);
+    const MID = passport.neutral.anchors.mid;
+    const baseL = compositeOklabL(base.tint, base.alpha, bg);
+    const oldHlL = compositeOklabL(MID, 0.039, bg); // старый highlight
+    expect(oldHlL, 'старый highlight не темнее base — тест не кусался бы').toBeLessThan(baseL);
   });
 });

@@ -3,6 +3,7 @@
 
 export const SENTIMENTS: readonly string[];
 export const GLOW_STEPS: readonly string[];
+export const SKELETON_LAYERS: readonly string[];
 
 export interface BBox {
   x: number;
@@ -29,12 +30,18 @@ export interface Measurements {
   backdropL: number;
   glow: Record<string, { subtle: Sample; base: Sample; bloom: Sample }>;
   focus: Record<string, Sample>;
+  skeleton: { base: Sample; highlight: Sample };
 }
 
-export function buildHarnessHtml(
-  contractCss: string,
-  opts?: { flatten?: boolean; dropGlow?: string | null; dropFocus?: string | null },
-): string;
+/** Опции харнесса: bite-мутации glow/focus/skeleton (override-слой). */
+export interface HarnessOpts {
+  flatten?: boolean;
+  dropGlow?: string | null;
+  dropFocus?: string | null;
+  skeletonBite?: 'flatten' | 'invert' | null;
+}
+
+export function buildHarnessHtml(contractCss: string, opts?: HarnessOpts): string;
 
 export function decodePng(buf: Buffer | Uint8Array): DecodedPng;
 
@@ -43,10 +50,11 @@ export function sampleRegion(png: DecodedPng, bbox: BBox): Sample;
 export function assertFxRender(m: Measurements): {
   deltas: Record<string, { subtle: number; base: number; bloom: number }>;
   focus: Record<string, Sample>;
+  skeleton: { base: Sample; highlight: Sample };
 };
 
 export function renderAndMeasure(
   chromium: unknown,
   contractCss: string,
-  opts?: { flatten?: boolean; dropGlow?: string | null; dropFocus?: string | null },
+  opts?: HarnessOpts,
 ): Promise<{ png: Buffer; measurements: Measurements }>;

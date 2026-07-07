@@ -252,6 +252,10 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-glow-info-bloom-alpha: 0;
   --lab-fx-focus-ring-success: oklch(13.01439% 0.039836 145.937);
   --lab-fx-focus-ring-info: oklch(9.14723% 0.055231 280.270);
+  /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты
+     (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.
+     Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */
+  --lab-fx-skeleton-highlight: oklch(100.00000% 0.000000 286.012 / 0.078);
 }
 
 [data-theme="dark"] {
@@ -495,6 +499,10 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-glow-info-bloom-alpha: 0.2015;
   --lab-fx-focus-ring-success: oklch(93.74350% 0.110616 146.789);
   --lab-fx-focus-ring-info: oklch(95.33533% 0.022793 283.266);
+  /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты
+     (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.
+     Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */
+  --lab-fx-skeleton-highlight: oklch(100.00000% 0.000000 286.012 / 0.161);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -739,5 +747,9 @@ figma-reference.css, переезжают следующими этапами п
     --lab-fx-glow-info-bloom-alpha: 0.2015;
     --lab-fx-focus-ring-success: oklch(93.74350% 0.110616 146.789);
     --lab-fx-focus-ring-info: oklch(95.33533% 0.022793 283.266);
+    /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты
+       (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.
+       Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */
+    --lab-fx-skeleton-highlight: oklch(100.00000% 0.000000 286.012 / 0.161);
   }
 }
