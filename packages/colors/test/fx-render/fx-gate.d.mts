@@ -33,7 +33,7 @@ export interface Measurements {
 
 export function buildHarnessHtml(
   contractCss: string,
-  opts?: { flatten?: boolean; dropGlow?: string | null },
+  opts?: { flatten?: boolean; dropGlow?: string | null; dropFocus?: string | null },
 ): string;
 
 export function decodePng(buf: Buffer | Uint8Array): DecodedPng;
@@ -48,5 +48,5 @@ export function assertFxRender(m: Measurements): {
 export function renderAndMeasure(
   chromium: unknown,
   contractCss: string,
-  opts?: { flatten?: boolean; dropGlow?: string | null },
+  opts?: { flatten?: boolean; dropGlow?: string | null; dropFocus?: string | null },
 ): Promise<{ png: Buffer; measurements: Measurements }>;

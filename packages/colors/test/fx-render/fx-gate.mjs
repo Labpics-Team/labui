@@ -35,13 +35,16 @@ function glowVar(sentiment, step, suffix = '') {
  * inline-контракта под [data-theme="dark"].
  *
  * @param {string} contractCss  содержимое colors-stub/contract.css
- * @param {{flatten?: boolean, dropGlow?: string}} [opts]
- *   flatten  — сплющить ступени (subtle=base=bloom): монотонность РУШИТСЯ (bite).
- *   dropGlow — убрать glow-токены сентимента (эмуляция «токен не дошёл»): свотч
- *              пустой → non-blank РУШИТСЯ (bite).
+ * @param {{flatten?: boolean, dropGlow?: string, dropFocus?: string}} [opts]
+ *   flatten   — сплющить ступени (subtle=base=bloom): монотонность РУШИТСЯ (bite).
+ *   dropGlow  — убрать glow-токены сентимента (эмуляция «токен не дошёл»): свотч
+ *               пустой → glow non-blank РУШИТСЯ (bite инварианта §a).
+ *   dropFocus — убрать focus-ring-токен сентимента: свотч пуст → focus-ring
+ *               non-blank РУШИТСЯ (bite инварианта §a'). Доказывает, что §a'
+ *               реально кусается, а не no-op.
  */
 export function buildHarnessHtml(contractCss, opts = {}) {
-  const { flatten = false, dropGlow = null } = opts;
+  const { flatten = false, dropGlow = null, dropFocus = null } = opts;
 
   // Мутации-биты как override-слой (не трогаем сам контракт).
   const mutations = [];
@@ -60,6 +63,11 @@ export function buildHarnessHtml(contractCss, opts = {}) {
       mutations.push(`${glowVar(dropGlow, step, '-core')}: initial;`);
       mutations.push(`${glowVar(dropGlow, step, '-alpha')}: initial;`);
     }
+  }
+  if (dropFocus) {
+    // initial → var(--lab-fx-focus-ring-<s>) пуст → background свотча невалиден
+    // → прозрачно → L≈фон: эмуляция «focus-ring-токен не дошёл до рендера».
+    mutations.push(`--lab-fx-focus-ring-${dropFocus}: initial;`);
   }
   const mutationCss = mutations.length ? `[data-theme="dark"]{${mutations.join('')}}` : '';
 

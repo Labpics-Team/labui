@@ -2,9 +2,10 @@
 // PNG-артефакт для владельца и прогоняет ОБЪЕКТИВНЫЕ инварианты (кидает при RED).
 //
 // Запуск:
-//   node test/fx-render/render-fx.mjs            # зелёный прогон + артефакт
-//   node test/fx-render/render-fx.mjs --flatten  # bite: ступени сплющены → RED
-//   node test/fx-render/render-fx.mjs --drop=success  # bite: токен убран → RED
+//   node test/fx-render/render-fx.mjs                    # зелёный прогон + артефакт
+//   node test/fx-render/render-fx.mjs --flatten          # bite: ступени сплющены → RED
+//   node test/fx-render/render-fx.mjs --drop=success     # bite: glow-токен убран → RED
+//   node test/fx-render/render-fx.mjs --drop-focus=success  # bite: focus-ring убран → RED
 //
 // chromium берём из @labpics/ui-docs-стора (@playwright/test) по абсолютному
 // пути — пакет colors не тянет playwright как зависимость (гейт живёт в e2e-джобе,
@@ -25,13 +26,25 @@ const contractPath = join(repoRoot, 'packages', 'colors-stub', 'contract.css');
 // workflow (upload-artifact), а локально просто перезаписывается на месте.
 const artifactDir = join(repoRoot, 'packages', 'colors', 'artifacts', 'fx-render');
 
+/** Числовой semver-ключ из имени .pnpm-папки '@playwright+test@1.55.1(...)'. */
+function pwVersionKey(entry) {
+  const m = entry.match(/@playwright\+test@(\d+)\.(\d+)\.(\d+)/);
+  return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [0, 0, 0];
+}
+
 /** Резолв @playwright/test из pnpm-стора (без зависимости в этом пакете). */
 async function loadChromium() {
   const pnpmDir = join(repoRoot, 'node_modules', '.pnpm');
   const entries = readdirSync(pnpmDir).filter((e) => e.startsWith('@playwright+test@'));
   if (entries.length === 0) throw new Error('@playwright/test не найден в node_modules/.pnpm');
-  // Берём наибольшую версию (лексикографически достаточно для major-стабильности).
-  entries.sort();
+  // Берём наибольшую версию по ЧИСЛОВОМУ semver (лексикографика путала бы
+  // 1.9.0 > 1.10.0). При одной версии в сторе выбор тривиален, но сравнение
+  // корректно и когда их несколько (напр. после бампа @playwright/test).
+  entries.sort((a, b) => {
+    const [ma, na, pa] = pwVersionKey(a);
+    const [mb, nb, pb] = pwVersionKey(b);
+    return ma - mb || na - nb || pa - pb;
+  });
   const pkg = join(
     pnpmDir,
     entries[entries.length - 1],
@@ -49,7 +62,9 @@ async function main() {
   const flatten = args.includes('--flatten');
   const dropArg = args.find((a) => a.startsWith('--drop='));
   const dropGlow = dropArg ? dropArg.slice('--drop='.length) : null;
-  const bite = flatten || dropGlow;
+  const dropFocusArg = args.find((a) => a.startsWith('--drop-focus='));
+  const dropFocus = dropFocusArg ? dropFocusArg.slice('--drop-focus='.length) : null;
+  const bite = flatten || dropGlow || dropFocus;
 
   const contractCss = readFileSync(contractPath, 'utf8');
   const chromium = await loadChromium();
@@ -57,12 +72,19 @@ async function main() {
   const { png, measurements } = await renderAndMeasure(chromium, contractCss, {
     flatten,
     dropGlow,
+    dropFocus,
   });
 
   // Артефакт для владельца — сохраняем ВСЕГДА (в т.ч. в bite-прогоне: наглядно
-  // видно, что glow пропал/сплющился), но красим отдельно по гейту.
+  // видно, что glow/focus-ring пропал или сплющился), но красим отдельно по гейту.
   mkdirSync(artifactDir, { recursive: true });
-  const suffix = flatten ? '-flatten' : dropGlow ? `-drop-${dropGlow}` : '';
+  const suffix = flatten
+    ? '-flatten'
+    : dropGlow
+      ? `-drop-${dropGlow}`
+      : dropFocus
+        ? `-drop-focus-${dropFocus}`
+        : '';
   const pngPath = join(artifactDir, `fx-render${suffix}.png`);
   writeFileSync(pngPath, png);
 
@@ -85,7 +107,13 @@ async function main() {
         { r: Math.round(f.r), g: Math.round(f.g), b: Math.round(f.b), L: Number(f.L.toFixed(2)) },
       ]),
     ),
-    mutation: flatten ? 'flatten' : dropGlow ? `drop:${dropGlow}` : 'none',
+    mutation: flatten
+      ? 'flatten'
+      : dropGlow
+        ? `drop:${dropGlow}`
+        : dropFocus
+          ? `drop-focus:${dropFocus}`
+          : 'none',
   };
   // Трейлинг-newline: Biome format-check требует финальный перевод строки в JSON.
   writeFileSync(
