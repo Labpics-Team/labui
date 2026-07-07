@@ -1,0 +1,74 @@
+{
+  "backdropL": 13.361,
+  "glowDeltaFromBackdrop": {
+    "neutral": {
+      "subtle": 4.51,
+      "base": 4.51,
+      "bloom": 4.51
+    },
+    "brand": {
+      "subtle": 5.121,
+      "base": 5.121,
+      "bloom": 5.121
+    },
+    "danger": {
+      "subtle": 5.262,
+      "base": 5.262,
+      "bloom": 5.262
+    },
+    "warning": {
+      "subtle": 5.348,
+      "base": 5.348,
+      "bloom": 5.348
+    },
+    "success": {
+      "subtle": 5.682,
+      "base": 5.682,
+      "bloom": 5.682
+    },
+    "info": {
+      "subtle": 5.278,
+      "base": 5.278,
+      "bloom": 5.278
+    }
+  },
+  "focusRing": {
+    "neutral": {
+      "r": 246,
+      "g": 248,
+      "b": 250,
+      "L": 247.72
+    },
+    "brand": {
+      "r": 74,
+      "g": 143,
+      "b": 255,
+      "L": 136.42
+    },
+    "danger": {
+      "r": 255,
+      "g": 58,
+      "b": 58,
+      "L": 99.88
+    },
+    "warning": {
+      "r": 255,
+      "g": 144,
+      "b": 8,
+      "L": 157.78
+    },
+    "success": {
+      "r": 48,
+      "g": 209,
+      "b": 88,
+      "L": 166.04
+    },
+    "info": {
+      "r": 140,
+      "g": 135,
+      "b": 252,
+      "L": 144.51
+    }
+  },
+  "mutation": "flatten"
+}

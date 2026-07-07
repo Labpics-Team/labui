@@ -7,7 +7,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "generate": "node generate-contract.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "fx:render": "node test/fx-render/render-fx.mjs"
   },
   "dependencies": {
     "@labpics/colors": "0.6.2"
