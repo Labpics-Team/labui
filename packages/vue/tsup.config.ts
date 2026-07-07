@@ -15,7 +15,15 @@ const genDir = join(here, 'src', 'generated');
  */
 const componentEntries = Object.fromEntries(
   readdirSync(genDir)
-    .filter((file) => file.endsWith('.ts') && file !== 'index.ts')
+    // Только клиентские обёртки: барели (index/ssr) и SSR-функции (*.ssr.ts) идут
+    // отдельными входами (index/ssr) — не дублируем их per-component.
+    .filter(
+      (file) =>
+        file.endsWith('.ts') &&
+        !file.endsWith('.ssr.ts') &&
+        file !== 'index.ts' &&
+        file !== 'ssr.ts',
+    )
     .map((file) => [file.slice(0, -'.ts'.length), `src/generated/${file}`]),
 );
 
