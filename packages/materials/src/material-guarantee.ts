@@ -40,8 +40,12 @@
 
 import { type Rgba, compositeOver, contrastRatio, relativeLuminance } from './luminance';
 
-/** The three material modes, exactly the `data-material` scope values. */
-export type MaterialMode = 'solid' | 'glass' | 'blur';
+/**
+ * The material modes — exactly the `data-material` scope values.
+ * `acrylic` (ADR-0004 Решение 1) joins the live-blur family beside `glass`/`blur`;
+ * `solid` is the opaque canon + universal degradation floor.
+ */
+export type MaterialMode = 'solid' | 'glass' | 'blur' | 'acrylic';
 
 /** The five material tiers, names lifted verbatim from the Figma Materials styles. */
 export const MATERIAL_TIERS = ['base', 'muted', 'soft', 'subtle', 'elevated'] as const;

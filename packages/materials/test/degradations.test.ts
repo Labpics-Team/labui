@@ -37,37 +37,85 @@ function forcesSolid(body: string): boolean {
   return body.includes('--_blur: 0px') && body.includes('--_base-paint: var(--_base)');
 }
 
+/** A degradation must ALSO drop the acrylic grain (`--_noise: none`) — otherwise a
+ * degraded acrylic would still tile the noise over the opaque solid canon. */
+function dropsNoise(body: string): boolean {
+  return body.includes('--_noise: none');
+}
+
+/** Every degradation must list the acrylic mode selectors at their (0,1,1)
+ * specificity — a bare `.lab-material` (0,1,0) cannot override the acrylic mode
+ * block, so acrylic would silently keep its live blur under the degradation. */
+function coversAcrylic(body: string): boolean {
+  return (
+    body.includes('[data-material="acrylic"] .lab-material') &&
+    body.includes('[data-material="acrylic"].lab-material')
+  );
+}
+
 describe('material.css deterministic degradations', () => {
-  it('1. @supports (no backdrop-filter) → solid', () => {
-    expect(forcesSolid(atRuleBody(/@supports not \(\(backdrop-filter/))).toBe(true);
-  });
+  // Each downgrade path must force the solid canon, drop the acrylic grain, AND
+  // cover the acrylic mode at its own specificity (a bare `.lab-material` cannot
+  // override the acrylic mode block — the grain/blur would silently survive).
+  const DEGRADATIONS: readonly [string, RegExp][] = [
+    ['1. @supports (no backdrop-filter)', /@supports not \(\(backdrop-filter/],
+    ['2. prefers-reduced-transparency', /@media \(prefers-reduced-transparency: reduce\)/],
+    ['3. prefers-contrast: more', /@media \(prefers-contrast: more\)/],
+    ['4. forced-colors: active', /@media \(forced-colors: active\)/],
+  ];
 
-  it('2. prefers-reduced-transparency → solid', () => {
-    expect(forcesSolid(atRuleBody(/@media \(prefers-reduced-transparency: reduce\)/))).toBe(true);
-  });
+  for (const [name, header] of DEGRADATIONS) {
+    it(`${name} → solid, drops grain, covers acrylic`, () => {
+      const body = atRuleBody(header);
+      expect(forcesSolid(body), 'forces the opaque solid canon').toBe(true);
+      expect(dropsNoise(body), 'drops the acrylic grain (--_noise: none)').toBe(true);
+      expect(coversAcrylic(body), 'covers acrylic at its (0,1,1) specificity').toBe(true);
+    });
+  }
 
-  it('3. prefers-contrast: more → solid', () => {
-    expect(forcesSolid(atRuleBody(/@media \(prefers-contrast: more\)/))).toBe(true);
-  });
-
-  it('4. forced-colors: active → opaque surface, translucency stripped (UA maps the palette)', () => {
+  it('4. forced-colors also strips the tint gradient + blur (UA maps the palette)', () => {
     const body = atRuleBody(/@media \(forced-colors: active\)/);
-    // Force the opaque solid canon and drop the tint gradient + blur so only an
-    // opaque background-color remains for the UA's forced-color-adjust to map.
-    expect(forcesSolid(body)).toBe(true);
     expect(body).toContain('background-image: none');
     expect(body).toContain('backdrop-filter: none');
   });
 
-  it('manual override: data-material="solid" restores the opaque canon', () => {
+  it('manual override: data-material="solid" restores the opaque canon and drops grain', () => {
     expect(css).toContain('[data-material="solid"] .lab-material');
     expect(css).toContain('[data-material="solid"].lab-material');
+    const body = atRuleBody(/\[data-material="solid"\] \.lab-material,/);
+    expect(forcesSolid(body)).toBe(true);
+    expect(dropsNoise(body)).toBe(true);
   });
 
-  it('glass and blur modes both exist and drop the opaque base', () => {
+  it('glass, blur and acrylic modes all exist and drop the opaque base', () => {
     expect(css).toContain('[data-material="glass"] .lab-material');
     expect(css).toContain('[data-material="blur"] .lab-material');
+    expect(css).toContain('[data-material="acrylic"] .lab-material');
     // Live modes paint the tint over `transparent` so the backdrop reads through.
     expect(css).toContain('--_base-paint: transparent');
+  });
+
+  it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
+    const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
+    expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
+    expect(body).toContain('--_blur: var(--_blur-glass)'); // 48px reused, not a new literal
+    expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused
+    expect(body).toContain('--_base-paint: transparent'); // live backdrop reads through
+  });
+
+  it('acrylic inherits the SAME tint as glass (does NOT re-point --_tint/--_base)', () => {
+    // ADR-0004 Решение 2: until the corridor-compression C is measured, acrylic
+    // keeps the tint over the same [0,1] corridor as glass → its α-boundary verdict
+    // is IDENTICAL to glass. Re-pointing the tier fill here would silently fork the
+    // guarantee, so the acrylic block must touch neither --_tint nor --_base.
+    const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
+    expect(body).not.toContain('--_tint:');
+    expect(body).not.toContain('--_base:');
+  });
+
+  it('the grain is OFF by default (var(--_noise, none) paints nothing for non-acrylic)', () => {
+    // The one paint rule falls back to `none` when --_noise is unset, so solid/
+    // glass/blur are byte-identical to the pre-grain background.
+    expect(css).toContain('var(--_noise, none), linear-gradient(');
   });
 });

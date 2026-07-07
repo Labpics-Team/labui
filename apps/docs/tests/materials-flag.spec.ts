@@ -1,21 +1,41 @@
 import { compositeOverByte } from '@labpics/ui-materials';
 import { type Page, expect, test } from '@playwright/test';
+import { normalizeCssColor, relativeLuminance } from './support/color.js';
 
 /**
- * Materials FLAG demo (solid | glass | blur) — the owner's exit criterion.
+ * Materials FLAG demo (solid | glass | blur | acrylic) — the owner's exit criterion.
  *
  * Proves, in a real browser across Chromium + WebKit:
- *   1. ONE `data-material` attribute flips the card AND the modal solid→glass
+ *   1. ONE `data-material` attribute flips the card AND the modal solid→glass→acrylic
  *      (zero markup change) — measured on the actual computed backdrop-filter.
- *   2. The label stays legal in BOTH modes: the solid composite contrast is
- *      measured from the LIVE resolved contract tokens (compositing 01 over 02
- *      in-page — we do NOT sample canvas lightness, which headless Chromium
- *      mis-reads for a plain fill; the composite of the resolved values is the
- *      honest, deterministic measurement), and the label token does not change
- *      with the mode (glass legality for the `base` tier is proven by the
- *      package's α-boundary unit test).
- *   3. No glass-on-glass nesting (placement invariant).
+ *   2. The label stays legal in every live mode: the solid composite contrast is
+ *      measured from the LIVE resolved contract tokens (compositing 01 over 02),
+ *      and the label token does not change with the mode.
+ *   3. Acrylic paints the ~2% grain layer (a data-URI image on top of the tint),
+ *      degrades honestly to solid under reduced-capability media, and never nests.
+ *
+ * Colour reading goes through `support/color.ts` (`normalizeCssColor` — the browser
+ * itself normalises any CSS Color 4 form to sRGB bytes), never a bespoke regex that
+ * silently returns NaN/garbage on `oklch()` (the class PR #101 closed for shadow).
  */
+
+/** Straight-alpha source-over composite in sRGB bytes (the material's solid canon). */
+function over(
+  src: { r: number; g: number; b: number; a: number },
+  base: { r: number; g: number; b: number },
+): { r: number; g: number; b: number; a: number } {
+  return {
+    r: src.r * src.a + base.r * (1 - src.a),
+    g: src.g * src.a + base.g * (1 - src.a),
+    b: src.b * src.a + base.b * (1 - src.a),
+    a: 1,
+  };
+}
+
+/** WCAG contrast ratio between two relative luminances (not a colour parser). */
+function contrast(l1: number, l2: number): number {
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
 
 function readBackdropFilter(page: Page, testId: string): Promise<string> {
   return page.getByTestId(testId).evaluate((el) => {
@@ -30,6 +50,16 @@ function readBackdropFilter(page: Page, testId: string): Promise<string> {
     return 'none';
   });
 }
+
+/** The card's computed `background-image` — carries the acrylic grain layer (a
+ * `url(data:image/png…)`) only in acrylic mode. */
+function readBackgroundImage(page: Page, testId: string): Promise<string> {
+  return page.getByTestId(testId).evaluate((el) => getComputedStyle(el).backgroundImage);
+}
+
+/** A LIVE blur is `blur(<non-zero>px)`. Solid serialises to `none` (WebKit) or the
+ * no-op `blur(0px) saturate(1)` (Chromium) — neither is a live blur. */
+const hasLiveBlur = (filter: string): boolean => /blur\((?!0px\))/.test(filter);
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/materials-flag.html');
@@ -47,10 +77,6 @@ test('renders the card and (on open) the modal surface', async ({ page }) => {
 
 test('one data-material flip turns card AND modal solid→glass', async ({ page }) => {
   await page.getByTestId('open-modal').click();
-
-  // A LIVE blur is `blur(<non-zero>px)`. Solid serialises to `none` (WebKit) or
-  // the no-op `blur(0px) saturate(1)` (Chromium) — neither is a live blur.
-  const hasLiveBlur = (filter: string): boolean => /blur\((?!0px\))/.test(filter);
 
   // Solid (default): no live blur on either surface.
   expect(hasLiveBlur(await readBackdropFilter(page, 'surface-card'))).toBe(false);
@@ -72,62 +98,89 @@ test('one data-material flip turns card AND modal solid→glass', async ({ page 
   expect(radius(cardBlur)).toBeGreaterThan(radius(cardGlass));
 });
 
-test('the base-tier label is legal on the solid composite (live contract tokens)', async ({
+test('acrylic flip: live blur + saturate + the ~2% grain layer (data-URI over the tint)', async ({
   page,
 }) => {
-  const result = await page.getByTestId('surface-card').evaluate((el) => {
-    // In-page sRGB / WCAG helpers — measure the RESOLVED contract, not literals.
-    const parse = (s: string) => {
-      const probe = document.createElement('span');
-      probe.style.color = s;
-      document.body.appendChild(probe);
-      const resolved = getComputedStyle(probe).color;
-      probe.remove();
-      const n = resolved.match(/[\d.]+/g)?.map(Number) ?? [];
-      return { r: n[0] ?? 0, g: n[1] ?? 0, b: n[2] ?? 0, a: n[3] ?? 1 };
-    };
-    const lin = (c: number) => {
-      const s = c / 255;
-      return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-    };
-    const lum = (c: { r: number; g: number; b: number }) =>
-      0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
-    const over = (
-      src: { r: number; g: number; b: number; a: number },
-      base: { r: number; g: number; b: number },
-    ) => ({
-      r: src.r * src.a + base.r * (1 - src.a),
-      g: src.g * src.a + base.g * (1 - src.a),
-      b: src.b * src.a + base.b * (1 - src.a),
-    });
-    const contrast = (l1: number, l2: number) =>
-      (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  // Solid default paints NO grain layer (no data-URI image in the background).
+  expect(await readBackgroundImage(page, 'surface-card')).not.toContain('data:image/png');
 
-    const rootCS = getComputedStyle(document.documentElement);
-    const tint = parse(rootCS.getPropertyValue('--lab-bg-material-base-01'));
-    const base = parse(rootCS.getPropertyValue('--lab-bg-material-base-02'));
-    const label = parse(getComputedStyle(el).color);
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'acrylic'));
 
-    const solid = over(tint, base);
-    return { contrast: contrast(lum(label), lum(solid)), label: getComputedStyle(el).color };
-  });
+  // Acrylic reads the live backdrop: a real (non-zero) blur + saturate.
+  const filter = await readBackdropFilter(page, 'surface-card');
+  expect(hasLiveBlur(filter)).toBe(true);
+  expect(filter).toContain('saturate');
 
-  expect(result.contrast).toBeGreaterThanOrEqual(4.5);
+  // …and the grain layer is now on top of the tint gradient — the ONE thing that
+  // distinguishes acrylic from plain blur (ADR-0004 Решение 1 §4).
+  const bg = await readBackgroundImage(page, 'surface-card');
+  expect(bg).toContain('data:image/png');
+  expect(bg).toContain('linear-gradient'); // grain sits ABOVE the tint, not instead of it
 });
 
-test('the label token is the SAME in solid and glass (legal in both by construction)', async ({
+test('the base-tier label is legal on the solid composite (live contract tokens via support/color)', async ({
+  page,
+}) => {
+  // Read the RESOLVED contract tokens + label as strings, normalise each to sRGB
+  // bytes with the browser (oklch-safe), then composite + contrast in Node.
+  const { tintRaw, baseRaw, labelRaw } = await page.getByTestId('surface-card').evaluate((el) => {
+    const root = getComputedStyle(document.documentElement);
+    return {
+      tintRaw: root.getPropertyValue('--lab-bg-material-base-01'),
+      baseRaw: root.getPropertyValue('--lab-bg-material-base-02'),
+      labelRaw: getComputedStyle(el).color,
+    };
+  });
+
+  const tint = await normalizeCssColor(page, tintRaw);
+  const base = await normalizeCssColor(page, baseRaw);
+  const label = await normalizeCssColor(page, labelRaw);
+  expect(tint, `tint "${tintRaw}" resolved`).not.toBeNull();
+  expect(base, `base "${baseRaw}" resolved`).not.toBeNull();
+  expect(label, `label "${labelRaw}" resolved`).not.toBeNull();
+  if (!tint || !base || !label) return;
+
+  const solid = over(tint, base);
+  const ratio = contrast(relativeLuminance(label), relativeLuminance(solid));
+  expect(ratio).toBeGreaterThanOrEqual(4.5);
+});
+
+test('the label token is the SAME across solid, glass and acrylic (legal in all by construction)', async ({
   page,
 }) => {
   const labelColour = () =>
     page.getByTestId('card-label').evaluate((el) => getComputedStyle(el).color);
 
   const solid = await labelColour();
-  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glass'));
-  const glass = await labelColour();
-
   // The surface commits ONE polarity label; the mode never changes it — so the
-  // base-tier glass legality proven by the α-boundary unit test carries over.
-  expect(glass).toBe(solid);
+  // base-tier glass legality proven by the α-boundary unit test carries over, and
+  // acrylic inherits the SAME tint/corridor as glass (ADR-0004 Решение 2).
+  for (const mode of ['glass', 'acrylic'] as const) {
+    await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
+    expect(await labelColour(), `label unchanged in ${mode}`).toBe(solid);
+  }
+});
+
+test('acrylic degrades to solid under reduced-capability media (honest fallback)', async ({
+  page,
+}) => {
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'acrylic'));
+  expect(hasLiveBlur(await readBackdropFilter(page, 'surface-card'))).toBe(true);
+
+  // forced-colors: active → the opaque solid canon, translucency + grain stripped.
+  await page.emulateMedia({ forcedColors: 'active' });
+  const forced = await readBackdropFilter(page, 'surface-card');
+  expect(hasLiveBlur(forced), 'no live blur under forced-colors').toBe(false);
+  expect(await readBackgroundImage(page, 'surface-card')).not.toContain('data:image/png');
+
+  // prefers-contrast: more → solid too (strengthen: opaque, maximum contrast).
+  await page.emulateMedia({ forcedColors: null, contrast: 'more' });
+  expect(
+    hasLiveBlur(await readBackdropFilter(page, 'surface-card')),
+    'no live blur under prefers-contrast: more',
+  ).toBe(false);
+
+  await page.emulateMedia({ contrast: null });
 });
 
 /**
@@ -137,8 +190,15 @@ test('the label token is the SAME in solid and glass (legal in both by construct
  * (round-half-even — the exact ImageData/engine byte) must reproduce that pixel
  * BYTE-FOR-BYTE across the whole tier ladder. No luminance tolerance, no
  * "invisible-rounding" slack: the reference composite and the prod paint are the
- * same byte or the test is red. (Verified maxGap = 0/20 across Chromium AND WebKit
- * for every contract tier before this assertion was tightened.)
+ * same byte or the test is red.
+ *
+ * The tint is parsed from its DECLARED string (`rgb(r g b / a)`), NOT through the
+ * byte-quantising `normalizeCssColor`: byte-exactness needs the *exact declared
+ * alpha* (0.898…), and re-rasterising the tint would quantise that alpha to a byte
+ * and could fork the composite by 1 LSB. To still close the silent-oklch class
+ * (PR #101), we ASSERT the resolved tint is an `rgb()` form — if the colours train
+ * ever emits the tint as `oklch()`, this fails LOUDLY (a signal to move the byte
+ * path onto a canvas oracle for alpha too), never computing garbage silently.
  *
  * RED-proof: swap `compositeOverByte` to truncation (`| 0`), round-half-up, or a
  * linear-light composite and this FAILS on the sheer tiers (e.g. light/base over
@@ -149,8 +209,6 @@ const MATERIAL_TIERS = ['base', 'muted', 'soft', 'subtle', 'elevated'] as const;
 test('DIFFERENTIAL byte-exact: compositeOverByte reproduces the canvas pixel (black/white backdrop)', async ({
   page,
 }) => {
-  // The browser compositor is the oracle: paint tint over black and over white on
-  // a canvas, read the committed pixel BYTES back for every tier.
   const measured = await page.evaluate((tiers) => {
     const root = getComputedStyle(document.documentElement);
     const resolve = (token: string) => {
@@ -187,10 +245,13 @@ test('DIFFERENTIAL byte-exact: compositeOverByte reproduces the canvas pixel (bl
     });
   }, MATERIAL_TIERS);
 
-  // Parse the SAME browser-resolved tint string the canvas painted, and route it
-  // through the exact byte composite. Both sides consume `tintCss`, so any alpha
-  // quantisation the browser applied is shared — the only variable is the rounding.
-  const parse = (css: string) => {
+  // Parse the SAME browser-resolved tint string the canvas painted (declared alpha
+  // preserved), guarding against a future oklch emission (loud, not silent).
+  const parse = (css: string, tier: string) => {
+    expect(
+      /^rgba?\(/i.test(css.trim()),
+      `tier ${tier}: tint "${css}" must be an rgb() form for the byte-exact path (oklch would need a canvas oracle for alpha)`,
+    ).toBe(true);
     const n = css.match(/[\d.]+/g)?.map(Number) ?? [];
     return { r: n[0] ?? 0, g: n[1] ?? 0, b: n[2] ?? 0, a: n[3] ?? 1 };
   };
@@ -198,7 +259,7 @@ test('DIFFERENTIAL byte-exact: compositeOverByte reproduces the canvas pixel (bl
   const WHITE = { r: 255, g: 255, b: 255, a: 1 };
 
   for (const row of measured) {
-    const tint = parse(row.tintCss);
+    const tint = parse(row.tintCss, row.tier);
     const black = compositeOverByte(tint, BLACK);
     const white = compositeOverByte(tint, WHITE);
     expect(
@@ -212,11 +273,17 @@ test('DIFFERENTIAL byte-exact: compositeOverByte reproduces the canvas pixel (bl
   }
 });
 
-test('placement: no glass-on-glass nesting on the page', async ({ page }) => {
+test('placement: no live-blur-on-live-blur nesting on the page (glass/blur/acrylic)', async ({
+  page,
+}) => {
+  // The background policy forbids nesting a live-blur material inside another
+  // (double live blur = seam). Assert it across every live mode, not just glass.
   await page.getByTestId('open-modal').click();
-  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glass'));
-  const nested = await page.evaluate(
-    () => document.querySelectorAll('.lab-material .lab-material').length,
-  );
-  expect(nested).toBe(0);
+  for (const mode of ['glass', 'blur', 'acrylic'] as const) {
+    await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
+    const nested = await page.evaluate(
+      () => document.querySelectorAll('.lab-material .lab-material').length,
+    );
+    expect(nested, `no nested material under ${mode}`).toBe(0);
+  }
 });

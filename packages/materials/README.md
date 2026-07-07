@@ -1,8 +1,8 @@
 # @labpics/ui-materials
 
 The **material mode axis** for LabUI surfaces. A single scope attribute —
-`data-material="solid | glass | blur"` — sits beside `data-theme` and re-skins
-every `.lab-material` surface below it with **zero markup change**.
+`data-material="solid | glass | blur | acrylic"` — sits beside `data-theme` and
+re-skins every `.lab-material` surface below it with **zero markup change**.
 
 This package owns **mechanics**, never colour. Tint and base come from the
 `--lab-*` contract (`@labpics/colors`); this package assembles them into a
@@ -23,8 +23,14 @@ A material surface address is `tier × theme × mode`:
     The canon: contrast always holds, backdrop cost is zero.
   - `glass` — 01 alone (translucent) over the live backdrop + `blur(48px)`.
   - `blur` — frostier tier, `blur(128px)`.
+  - `acrylic` — Fluent-class **diffusion** (not glass's refraction): `blur(48px)`
+    + `saturate(180%)` + tint + a baked **~2% grain** (see "Acrylic" below).
 
 Labels/borders do **not** carry material — they react to the effective surface.
+
+`glass`, `blur` and `acrylic` are the **live-blur** family (translucent tint over a
+`backdrop-filter`); `solid` is opaque. That partition drives the background policy
+and the degradation ladder below.
 
 ## The α-boundary guarantee
 
@@ -131,25 +137,80 @@ The browser wiring (`getImageData` in a try/catch → `SecurityError` = tainted 
 `resolveOnTainted`) is a thin consumer adapter; the module never imports the DOM,
 so every rung is exhaustively unit-tested.
 
+## Acrylic (ADR-0004 Решение 1)
+
+Acrylic is **diffusion** (a low-frequency blur that scatters the backdrop), not
+glass's **refraction** (a lens that offsets the sampled backdrop) — two physics, not
+two presets. The recipe **reuses the ladder** (no new magic value):
+
+| Layer | Value | Provenance |
+|---|---|---|
+| `backdrop-filter: blur()` | `--_blur-glass` (48px) | Figma BG-blur Base, ∈ Fluent 30–60px |
+| `saturate()` | `--_saturate-on` (180%) | reused, not a new token |
+| tint | `--lab-bg-material-<tier>-01` (straight-alpha) | **DECLARED** trade-off: NOT Fluent luminosity/exclusion blend — that would break the byte-exact guarantee, so the tint composites straight-alpha like every other mode |
+| grain | `--_acrylic-noise` (~2%, baked into alpha) | ADR-0002 §1; the ONE thing that separates acrylic from plain blur — it kills gradient banding under the blur |
+
+Because acrylic uses the **same tint over the same unmeasured `[0,1]` corridor** as
+glass (ADR-0004 Решение 2 — the compression multiplier `C` is not yet measured), its
+α-boundary verdict is **identical to glass's**: no new guaranteed/unguaranteed pairs.
+
+The grain is a **one-generation** asset (a tiled data-URI PNG), not a runtime filter
+(`feTurbulence` recomputes every frame; a decoded PNG rasterises once). It is produced
+deterministically by `scripts/build-acrylic-noise.ts` (fixed seed, a dependency-free
+`node:zlib` PNG encoder — no binary in git) and inlined into `material.css` between
+`ACRYLIC-NOISE:GENERATED` sentinels. `pnpm --filter @labpics/ui-materials check-generated`
+re-generates and `git diff --exit-code`s it; `test/acrylic-noise.test.ts` decodes the
+asset (dims, colour type, baked alpha) and seals inline ≡ generator (no drift).
+
+## Background policy (`background-policy.ts`)
+
+The explicit, tested contract of *which material reads what*:
+
+- **Live-blur family** = `glass | blur | acrylic` (`isLiveBlur`, `LIVE_BLUR_MODES`);
+  `solid` is opaque.
+- **No live-blur nested in live-blur** (`canNest(outer, inner)`): two stacked live
+  blurs read as a seam. `solid` nests freely in either direction.
+- **A material's own fill comes only from `--lab-bg-material-*`** (`MATERIAL_FILL_FAMILY`).
+  The live backdrop *under* the surface may be any `bg` role (the scene), but the
+  surface's tint/base never pull an arbitrary background role — a `material.css` scan
+  test seals it.
+
+## Degradation ladder (honest fallback)
+
+The material picks the strongest surface the environment actually supports and falls
+back deterministically — no JS, pure CSS `@supports`/`@media`:
+
+- **Refraction** (Chromium + engine) → glass gets the lens (`--_blur` re-bound to the
+  calibrated radius). Acrylic has **no** lens rung — it is diffusion, not refraction.
+- **`backdrop-filter` present** → the live-blur CSS stack (glass/blur/acrylic).
+- **No `backdrop-filter`, or `prefers-reduced-transparency`, or `prefers-contrast: more`,
+  or `forced-colors: active`** → the **opaque solid canon of the same tier** (grain
+  dropped, blur zeroed). Solid is opaque, so the label contract always holds and the
+  backdrop cost is zero. `data-material="solid"` is the manual escape hatch and always
+  wins. Every downgrade path is guarded by `test/degradations.test.ts`.
+
 ## Placement rules (invariants)
 
-- Glass is a **navigational / transient** layer (bars, modals, popovers) — not
-  a skin for large content regions.
-- **Never nest glass in glass** (`glass-on-glass` reads as a seam / striping).
-  Enforced in the docs demo by an e2e selector check.
-- Do not butt two glass panes edge-to-edge (visible seam).
-- **Text on glass uses only guaranteed surface tokens** (polarity foreground).
+- Glass/acrylic are a **navigational / transient** layer (bars, modals, popovers) —
+  not a skin for large content regions.
+- **Never nest a live-blur material in a live-blur material** (`glass-on-glass`,
+  `acrylic-on-acrylic`, … read as a seam / striping). `canNest` encodes it; the docs
+  demo enforces it across every live mode with an e2e selector check.
+- Do not butt two live-blur panes edge-to-edge (visible seam).
+- **Text on a material uses only guaranteed surface tokens** (polarity foreground).
   Accent / link text on glass is not permitted.
 
-## Deferred to the next slice
+## Deferred to a later slice
 
-- **Refraction lens** (SVG displacement from `feat/liquid-glass`,
-  `liquid-glass.js` ≈ 26 KB / 700+ lines) is **not** ported here: it exceeds the
-  slice's complexity ceiling and is a **cosmetic** enhancement over an already-
-  guaranteed surface. It lands as an opt-in effect in a dedicated slice with its
-  own visual-regression gate (design ch6: "гарантия — только α-bound; эффекты —
-  косметический слой ПОВЕРХ").
-- **Static noise grain / edge rim / accent×glass** — later slices.
+- **Refraction lens** — LANDED (ADR-0003 ch-02, PR #85): the SVG-displacement engine
+  lives in `./engine/`, mounted declaratively via `mountMaterialRuntime()`.
+- **Acrylic grain** — LANDED (this slice): see "Acrylic" above.
+- **Parity oracle** (CAM16-UCS ΔE budget across solid/acrylic/glass, ADR-0004
+  Решение 3/4) — still a blueprint; a scheduled, expensive browser oracle, not a
+  per-PR gate. Readability on the material is already covered by the legibility ladder.
+- **Corridor compression `C`** (ADR-0004 Решение 2) — unmeasured; until then acrylic
+  conservatively inherits glass's `[0,1]` corridor.
+- **Edge rim / accent×glass** — later slices.
 
 ## API
 
@@ -169,6 +230,11 @@ import {
   resolveOnTainted,
   corridorFromPixels,
   computeScrimFloor,
+  // background policy (A):
+  isLiveBlur,
+  canNest,
+  LIVE_BLUR_MODES,
+  MATERIAL_FILL_FAMILY,
 } from '@labpics/ui-materials';
 import '@labpics/ui-materials/material.css';
 ```
