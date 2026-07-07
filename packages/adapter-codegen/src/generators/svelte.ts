@@ -39,8 +39,15 @@ function specLiteral(p: PropMeta): string {
 function componentFile(c: ComponentMeta): string {
   const propNames = c.props.map((p) => p.name);
   const handlerNames = c.events.map(handlerName);
-  // Именованные слоты → snippet-пропы (camelCase-имя → kebab-слот).
-  const namedSlots = c.slots.named.map((slot) => ({ slot, prop: camel(slot) }));
+  const propNameSet = new Set(propNames);
+  // Именованные слоты → snippet-пропы (camelCase-имя → kebab-слот). Слот, чьё имя
+  // совпадает с одноимённым пропом (напр. tooltip: проп content + слот content), из
+  // типизированных snippet-пропов ИСКЛЮЧАЕМ — иначе коллизия в едином Props-интерфейсе
+  // (проп string vs snippet). Проп покрывает строковый случай; rich-контент потребитель
+  // передаёт light-DOM детьми с атрибутом slot="content".
+  const namedSlots = c.slots.named
+    .filter((slot) => !propNameSet.has(camel(slot)))
+    .map((slot) => ({ slot, prop: camel(slot) }));
 
   const propDecls = c.props.map((p) => `    ${p.name}?: ${c.className}['${p.name}'];`).join('\n');
   const eventDecls = handlerNames.map((h) => `    ${h}?: (event: CustomEvent) => void;`).join('\n');
