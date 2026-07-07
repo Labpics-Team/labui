@@ -173,9 +173,10 @@ describe('line-height — оптическая модель из отпечат�
   it('воспроизводит solid/body-отпечатки из кегля (допуск 0.01 мультипликатора)', () => {
     for (const [z, lhPx] of LH_FP) {
       const fit = lineHeightOptical(z, ty.basePx);
-      expect(Math.abs(fit - lhPx / z), `z=${z}px: fit ${fit.toFixed(4)} vs ${(lhPx / z).toFixed(4)}`).toBeLessThanOrEqual(
-        0.01,
-      );
+      expect(
+        Math.abs(fit - lhPx / z),
+        `z=${z}px: fit ${fit.toFixed(4)} vs ${(lhPx / z).toFixed(4)}`,
+      ).toBeLessThanOrEqual(0.01);
     }
   });
 

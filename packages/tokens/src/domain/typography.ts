@@ -323,7 +323,17 @@ function assertConfig(config: TypographyConfig): void {
   }
   // Семейства: оба стека непусты (пустой стек = текст без фолбэка, невидимка при
   // не загруженном шрифте) и завершены аварийным дженериком.
-  const GENERICS = new Set(['sans-serif', 'serif', 'monospace', 'system-ui', 'ui-monospace', 'ui-sans-serif', 'ui-serif', 'cursive', 'fantasy']);
+  const GENERICS = new Set([
+    'sans-serif',
+    'serif',
+    'monospace',
+    'system-ui',
+    'ui-monospace',
+    'ui-sans-serif',
+    'ui-serif',
+    'cursive',
+    'fantasy',
+  ]);
   for (const key of ['sans', 'mono'] as const) {
     const stack = config.fontFamily?.[key];
     if (!Array.isArray(stack) || stack.length === 0) {

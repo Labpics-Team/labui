@@ -42,21 +42,32 @@ console.info(`A=${TRACK.A} B=${TRACK.B} C=${TRACK.C}`);
 let maxT = 0;
 for (const p of FP) {
   const r = (track(p.z) - p.ls / p.z) * p.z;
-  const tag = p.role === 'Text/M-Emphasized' ? 'вне закона: ось веса' : p.role === 'Caption/XXS' ? 'вне закона: caption' : '';
+  const tag =
+    p.role === 'Text/M-Emphasized'
+      ? 'вне закона: ось веса'
+      : p.role === 'Caption/XXS'
+        ? 'вне закона: caption'
+        : '';
   if (!tag) maxT = Math.max(maxT, Math.abs(r));
-  console.info(`  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${(track(p.z) * p.z).toFixed(3)}px отпечаток=${String(p.ls).padStart(5)}px  r=${(r >= 0 ? ' ' : '') + r.toFixed(3)}px  ${tag}`);
+  console.info(
+    `  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${(track(p.z) * p.z).toFixed(3)}px отпечаток=${String(p.ls).padStart(5)}px  r=${(r >= 0 ? ' ' : '') + r.toFixed(3)}px  ${tag}`,
+  );
 }
 console.info(`  max|r| на спайне = ${maxT.toFixed(3)}px (допуск теста 0.35px)`);
 
 // --- LINE-HEIGHT: solid + reading - taper (repro без caption-14) ---
 console.info('\n=== LINE-HEIGHT  lh(z) = SOLID + reading(z) − taper(z) ===');
-console.info(`BASE=${LH.BASE} AMP=${LH.READ_AMP} SIGMA=${LH.READ_SIGMA} KNEE=BASE·${LH.KNEE_U} K=${LH.TAPER_K}`);
+console.info(
+  `BASE=${LH.BASE} AMP=${LH.READ_AMP} SIGMA=${LH.READ_SIGMA} KNEE=BASE·${LH.KNEE_U} K=${LH.TAPER_K}`,
+);
 let maxL = 0;
 for (const p of FP) {
   const r = lhModel(p.z) - p.lh / p.z;
   const tag = p.role === 'Caption/S' ? 'вне закона: caption-микро −2px' : '';
   if (!tag) maxL = Math.max(maxL, Math.abs(r));
-  console.info(`  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${lhModel(p.z).toFixed(4)} отпечаток=${(p.lh / p.z).toFixed(4)}  r=${(r >= 0 ? ' ' : '') + r.toFixed(4)}  ${tag}`);
+  console.info(
+    `  ${p.role.padEnd(18)} z=${String(p.z).padStart(3)}  fit=${lhModel(p.z).toFixed(4)} отпечаток=${(p.lh / p.z).toFixed(4)}  r=${(r >= 0 ? ' ' : '') + r.toFixed(4)}  ${tag}`,
+  );
 }
 console.info(`  max|r| на repro = ${maxL.toFixed(4)} (допуск теста 0.01)`);
 

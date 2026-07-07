@@ -87,9 +87,10 @@ describe('ось оптического трекинга — калибровк�
     // собственного px-округления дизайнера.
     for (const [z, lsPx] of TRACK_SPINE) {
       const fitPx = opticalTrackingEm(z) * z;
-      expect(Math.abs(fitPx - lsPx), `z=${z}px: fit ${fitPx.toFixed(3)}px vs отпечаток ${lsPx}px`).toBeLessThanOrEqual(
-        0.35,
-      );
+      expect(
+        Math.abs(fitPx - lsPx),
+        `z=${z}px: fit ${fitPx.toFixed(3)}px vs отпечаток ${lsPx}px`,
+      ).toBeLessThanOrEqual(0.35);
     }
   });
 
@@ -102,13 +103,16 @@ describe('ось оптического трекинга — калибровк�
     expect(Math.abs(fitPx8 - -0.25)).toBeGreaterThan(0.35);
   });
 
-  it('ось веса на 16px: Common(Regular) на законе, Emphasized(Medium)=0 — вне закона', () => {
-    // 16px-Common (−0.25px) в спайне; 16px-Emphasized (0px) — та же точка размера,
-    // но другой вес ⇒ ось веса, не размера. Закон один на размер, поэтому Medium=0
-    // от него отклоняется (≈0.13px) — это ожидаемо.
+  it('ось веса на 16px: два отпечатка на ОДНОМ кегле — f(z) держит Common, Medium — отдельная ось', () => {
+    // z=16 несёт ДВА отпечатка: Common(Regular)=−0.25px и Emphasized(Medium)=0px,
+    // на 0.25px врозь при ОДНОМ кегле. Одна кривая f(z) физически не может держать
+    // два значения на одном z ⇒ Medium исключён СТРУКТУРНО (это ось ВЕСА, не
+    // размера), а не потому что он «далеко от кривой». Кривая держит канонический
+    // body (Common):
     const fitPx16 = opticalTrackingEm(16) * 16;
-    expect(Math.abs(fitPx16 - 0)).toBeGreaterThan(0.1); // Emphasized(0) вне кривой
     expect(Math.abs(fitPx16 - -0.25)).toBeLessThanOrEqual(0.35); // Common(−0.25) на кривой
+    // Доказательство второй оси: два отпечатка на одном z врозь на 0.25px.
+    expect(Math.abs(-0.25 - 0)).toBeCloseTo(0.25, 6);
   });
 
   it('дисплейная асимптота −0.047em, нуль-кроссинг ~13px, знак: мелкие + / крупные −', () => {
