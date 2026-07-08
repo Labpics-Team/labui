@@ -43,6 +43,14 @@ function dropsNoise(body: string): boolean {
   return body.includes('--_noise: none');
 }
 
+/** A degradation must ALSO drop the specular rim (`--_rim: none`) — otherwise a
+ * degraded glass/acrylic would keep its 1px light-catching edge after the
+ * translucency it belongs to is gone. The rim rides transparency; when the
+ * surface collapses to the opaque solid canon, the rim collapses with it. */
+function dropsRim(body: string): boolean {
+  return body.includes('--_rim: none');
+}
+
 /** Every degradation must list the acrylic mode selectors at their (0,2,0)
  * specificity (attribute + class — both count in the middle column) — a bare
  * `.lab-material` (0,1,0) cannot override the acrylic mode block, so acrylic
@@ -66,10 +74,11 @@ describe('material.css deterministic degradations', () => {
   ];
 
   for (const [name, header] of DEGRADATIONS) {
-    it(`${name} → solid, drops grain, covers acrylic`, () => {
+    it(`${name} → solid, drops grain + rim, covers acrylic`, () => {
       const body = atRuleBody(header);
       expect(forcesSolid(body), 'forces the opaque solid canon').toBe(true);
       expect(dropsNoise(body), 'drops the acrylic grain (--_noise: none)').toBe(true);
+      expect(dropsRim(body), 'drops the specular rim (--_rim: none)').toBe(true);
       expect(coversAcrylic(body), 'covers acrylic at its (0,2,0) specificity').toBe(true);
     });
   }
@@ -97,12 +106,15 @@ describe('material.css deterministic degradations', () => {
     expect(body).toContain('backdrop-filter: none');
   });
 
-  it('manual override: data-material="solid" restores the opaque canon and drops grain', () => {
+  it('manual override: data-material="solid" restores the opaque canon and drops grain + rim', () => {
     expect(css).toContain('[data-material="solid"] .lab-material');
     expect(css).toContain('[data-material="solid"].lab-material');
     const body = atRuleBody(/\[data-material="solid"\] \.lab-material,/);
     expect(forcesSolid(body)).toBe(true);
     expect(dropsNoise(body)).toBe(true);
+    // A solid override nested under a glass/acrylic ancestor inherits the
+    // ancestor's --_rim through the cascade; solid must reset it to none.
+    expect(dropsRim(body)).toBe(true);
   });
 
   it('glass, blur and acrylic modes all exist and drop the opaque base', () => {

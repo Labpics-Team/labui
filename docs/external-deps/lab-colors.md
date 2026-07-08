@@ -88,9 +88,71 @@ only remaining literal carrier is the frozen Figma anchor
 code. A future material gap gets a **new** record here; these retired prefixes
 must not be revived.
 
+### Material tint pairs — two-layer derivation (Стекло v2, слайс A)
+
+The `--lab-bg-material-<tier>-01/-02` pairs (tiers `base/muted/soft/subtle/
+elevated`, per theme) are **still `мост: Figma-якорь` bridges** — raw eyedropper
+greys, hue-less (equal RGB channels), α picked by hand. They are the last
+Materials family not yet engine-derived, and the owner's target is to replace
+them with live emission: a translucent tint in the **neutral hue** (286° — the
+same `hue_override_deg` the bg ladder and every neutral emission already use)
+whose **α is solved** for the tier's **target tone** (the `bg-tone` `dj-anchor`
+ladder), over an opaque neutral base at that tone.
+
+| Gap token (prefix) | Declared at | Provisional value | What the engine should provide |
+| --- | --- | --- | --- |
+| `--lab-bg-material-` (`-<tier>-01` tint / `-<tier>-02` base) | `packages/colors-stub/contract.css:15-24` (light), `:262-271` (dark); consumed by `packages/materials/src/material.css` (`--_tint`/`--_base`) | grey Figma-anchor pairs, e.g. light/base `rgb(153 153 153 / 0.969)` over `rgb(92 92 92)` | A **two-layer material recipe** deriving `01` (neutral-hue translucent tint) + `02` (opaque neutral base) so the solid canon `01`-over-`02` lands on the tier's target tone, with the α-boundary guarantee computable from the emitted values (see request below). |
+
+**Investigation (why this is a request, not a labui-side solve).** The published
+`@labpics/colors@0.6.2` wasm `LabColors` class exposes only `loadConfig`,
+`muddiness`, `recheckContrast`, `resolveTheme` — **no** standalone composite
+primitives (`composite_over_encoded` / `invert_composite_encoded`) and **no**
+material ladder position (the Rust `position` menu is fixed:
+`label-* / fill-* / border-* / focus-ring / glow / skeleton-*`; probing
+`neutral-material-base` returns `invalid_config: неизвестная позиция лестницы`).
+The `alpha-analog` recipe DOES exist (emits a `TranslucentRole` — a neutral
+translucent tint at a **given** α whose composite over the resolve bg equals a
+source solid), and `dj-anchor` DOES emit an opaque neutral at a target |ΔJ'|
+(how `bg-tone-2/3` work). But neither models the two-layer `01`-over-`02` where
+**α is solved for a target tone of a separate opaque base** — that is the
+missing capability. Per the owner's law (physics in the Rust engine, semantics
+in the consumer passport) and the standing rule "labui must NOT reimplement
+colour science in JS", labui does **not** derive these locally; it keeps the
+bridge and files this request.
+
+**Requested engine API (one of two shapes).**
+
+1. **Preferred — a `material` recipe kind** in the passport role menu, e.g.
+   `{ kind: "material", source: { kind: "neutral", pick: "mid" }, tone: <dj-anchor light/dark>, density: <α> }`,
+   emitting **both** layers per role (a `MaterialResolved` result carrying
+   `tintCss` = `oklch(L% C H / α)` at hue 286°, `baseCss` = opaque `oklch`, and
+   `compositeHex` = the solid canon), with the **byte-exact** composite guarantee
+   already proven for the alpha-analog family (`≤ 1 LSB` vs
+   `compositeOverByte`, the discipline in `byte-composite-golden.test.ts`). The
+   passport then declares 5 tiers × the tone/density ladder; labui emits them via
+   a `materialTintEmission` in `generate-contract.mjs` exactly as the bg ladder
+   and fx family are emitted today (cascade-override of the Figma bridge).
+2. **Alternative — expose the two composite primitives** standalone in the JS
+   API: `compositeOverEncoded(tint, base) → hex` and
+   `invertCompositeEncoded(targetHex, alpha, backdropHex) → tintHex` (both in the
+   gamma-encoded sRGB space the browser paints, matching
+   `crates/labcolors-core/src/alpha.rs`), plus the `TranslucentResolved` shape.
+   labui then runs the tier→tone→density solver at generation time with the same
+   byte-exact tests. This is heavier on the labui side (a generation-time solver)
+   but needs no new recipe.
+
+**Guarantees the engine must preserve.** (a) The emitted tint is `oklch(… / α)`
+in the neutral hue, α ∈ (0,1]; (b) `01`-over-`02` is byte-exact to the target
+tone (`≤ 1 LSB`); (c) the α-boundary verdict (`guaranteed` / `unguaranteed`
+pairs — `packages/materials/README.md` "Unguaranteed pairs") is recomputable
+from the emitted `01`/`02` with no second copy of the numbers. Until shipped,
+labui keeps the Figma bridge; **slice C (accent-glass)** additionally needs the
+engine's accent hue-drift control (`HUE_DRIFT_PENALTY_SLOPE`) exposed so a
+tinted accent glass can cap chroma under translucency without drifting hue.
+
 ### Published `@labpics/colors` CSS+JS entry
 
-`@labpics/colors` **is published** (exact pin `0.5.0` in
+`@labpics/colors` **is published** (exact pin `0.6.2` in
 `packages/colors/package.json`) and consumed through three channels: the
 workspace stub still serves the **CSS entry** (`contract.css`) to `apps/docs`,
 but that file is now a **generated engine artifact** —
@@ -106,8 +168,8 @@ engine emission as the engine ships them.
 
 | Capability | Consuming call site | Provisional source today | What the engine should provide |
 | --- | --- | --- | --- |
-| **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]` — **generated engine artifact**: engine-owned roles emitted live from the published `0.5.0` package, the rest bridged from the frozen Figma anchor (`generate-contract.mjs` + `contract-generated` gate). | Bridge coverage: each remaining Figma-bridged role migrates to live engine emission as the engine ships it; the import specifier never changes. |
-| **JS runtime entry** (injects `--lab-*` from the background) | `packages/colors` (`@labui/colors`) — engine wrapper (`engine.mjs`, exact pin `@labpics/colors@0.5.0`); `labcolors-engine` npm-alias in `apps/docs` for live-engine e2e. Components stay CSS-only (law 2) — the runtime consumer is the non-component engine package. | The published wasm runtime, consumed as-is. | Runtime role coverage growing with the engine (e.g. glow/ladder roles land as released versions ship them). |
+| **CSS entry** (`contract.css`) | `apps/docs/package.json:17` (`"@labpics/colors": "workspace:*"`); `@import "@labpics/colors/contract.css"` at `apps/docs/src/styles.css:9` (+ `button-demo.css`, `primitives-demo.css`, `proof-demo.css`, `shadow-demo.css`, `template/component-page.css`). | `packages/colors-stub/contract.css`, exposed via `packages/colors-stub/package.json:8-12` `exports["./contract.css"]` — **generated engine artifact**: engine-owned roles emitted live from the published `0.6.2` package, the rest bridged from the frozen Figma anchor (`generate-contract.mjs` + `contract-generated` gate). | Bridge coverage: each remaining Figma-bridged role migrates to live engine emission as the engine ships it; the import specifier never changes. |
+| **JS runtime entry** (injects `--lab-*` from the background) | `packages/colors` (`@labui/colors`) — engine wrapper (`engine.mjs`, exact pin `@labpics/colors@0.6.2`); `labcolors-engine` npm-alias in `apps/docs` for live-engine e2e. Components stay CSS-only (law 2) — the runtime consumer is the non-component engine package. | The published wasm runtime, consumed as-is. | Runtime role coverage growing with the engine (e.g. glow/ladder roles land as released versions ship them). |
 
 This records the "published `@labpics/colors` npm package exposing a CSS entry
 and/or a JS runtime" request with the exact consumer sites.

@@ -59,6 +59,40 @@
   --_blur: 0px;
   --_saturate: 100%;
 
+  /* ── SPECULAR RIM (Стекло v2, слайс B) ────────────────────────────────────
+   * 1px внутренняя градиентная обводка: свет, пойманный кромкой стекла — ярко
+   * сверху, гаснет вниз. Приватная ручка `--_rim` (unset по умолчанию, как
+   * `--_noise`): моды пере-биндят ЕЁ, единое paint-правило не трогается. Ринг
+   * живёт на `::before` (mask-composite) — уважает `border-radius`, ноль
+   * изменения разметки.
+   *
+   * PROVENANCE цвета: спекуляр АХРОМАТИЧЕН — белый свет отражается кромкой белым
+   * независимо от тинта поверхности (физика зеркального отражения, не бренд-
+   * цвет). Источник — тема-инвариантные статик-фоновые токены контракта
+   * `--lab-bg-static-light` (белый) / `--lab-bg-static-dark` (почти-чёрный),
+   * через идиом `color-mix(in srgb, transparent, <токен> α)` (тот же, что у
+   * shadow-движка; gard no-hardcoded-colour пропускает color-mix над токенами,
+   * но не сырой rgb()). Ноль литеральных цветов в material.css.
+   *
+   * PROVENANCE альф — DECLARED, визуально откалибровано (скриншоты в PR):
+   *   light: белый α .50 (верх) → .05 (низ) — заметный блик на светлом фоне;
+   *   dark:  белый блик α .12 (верх) → едва тёмный низ (bg-static-dark α .04):
+   *          на тёмной поверхности резкий белый штрих был бы жёстким, низ —
+   *          намёк на глубину кромки.
+   * Тема ребиндит `--_rim-active` (светлая — дефолт; тёмный оверрайд ниже),
+   * ноль хардкода темы — система остаётся динамичной. */
+  --_rim-light: linear-gradient(
+    to bottom,
+    color-mix(in srgb, transparent, var(--lab-bg-static-light) 50%),
+    color-mix(in srgb, transparent, var(--lab-bg-static-light) 5%)
+  );
+  --_rim-dark: linear-gradient(
+    to bottom,
+    color-mix(in srgb, transparent, var(--lab-bg-static-light) 12%),
+    color-mix(in srgb, transparent, var(--lab-bg-static-dark) 4%)
+  );
+  --_rim-active: var(--_rim-light);
+
   /* ACRYLIC grain (ADR-0004 Решение 1 §4 / ADR-0002 §1). OFF for every mode but
    * acrylic: `--_noise` is unset here, so `var(--_noise, none)` below paints
    * nothing. The acrylic mode binds it to `--_acrylic-noise` (the generated
@@ -84,6 +118,38 @@
   -webkit-backdrop-filter: none; /* solid default; each mode restates literally */
 }
 
+/* ── SPECULAR RIM RING (::before) ──────────────────────────────────────────
+ * The 1px light-catching edge. Painted on a pseudo-element (ZERO markup change —
+ * the owner's law), so it respects the surface's `border-radius: inherit` where
+ * a `border-image` gradient would square the corners and a single `box-shadow`
+ * inset cannot carry a vertical gradient. The `mask-composite` pair punches out
+ * the interior, leaving only the 1px padding-box ring.
+ *
+ * OFF by default: `var(--_rim, none)` paints nothing until glass/acrylic bind
+ * `--_rim` — so for solid/blur the ring is an empty, pixel-identical layer.
+ * `z-index: -1` sits it ABOVE the tint but BELOW the label (the surface owns the
+ * light, the text stays on top); `pointer-events: none` keeps the edge inert.
+ * `-webkit-mask*` literals mirror the `-webkit-backdrop-filter` discipline for
+ * Safari ≤18.2 (the standard `mask`/`mask-composite` drives modern engines).
+ * The mask fill is `currentColor` (an ALLOWED keyword — no literal colour in
+ * material.css): only its ALPHA is read (mask-mode match-source), and label
+ * `color` is opaque in the contract, so the ring is a clean full 1px band; its
+ * hue is irrelevant — the ring's colour comes from `--_rim`, not the mask. */
+.lab-material::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--_rim, none);
+  -webkit-mask: linear-gradient(currentColor 0 0) content-box, linear-gradient(currentColor 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(currentColor 0 0) content-box, linear-gradient(currentColor 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
 /* ── Tier modifiers — re-point the fill only (mode-agnostic). ─────────────── */
 .lab-material--base {
   --_tint: var(--lab-bg-material-base-01);
@@ -106,12 +172,21 @@
   --_base: var(--lab-bg-material-elevated-02);
 }
 
+/* ── Theme rebind of the specular rim (asymmetry: light bright / dark subtle) ──
+ * (0,2,0) — attribute + class, like the mode blocks — so it beats the base
+ * `.lab-material` (0,1,0). Only rebinds the private `--_rim-active` handle. */
+[data-theme="dark"] .lab-material,
+[data-theme="dark"].lab-material {
+  --_rim-active: var(--_rim-dark);
+}
+
 /* ── GLASS — translucent tint + live backdrop blur (Figma BG-blur 48). ────── */
 [data-material="glass"] .lab-material,
 [data-material="glass"].lab-material {
   --_base-paint: transparent;
   --_blur: var(--_blur-glass);
   --_saturate: var(--_saturate-on);
+  --_rim: var(--_rim-active); /* refractive edge catches light → specular rim ON */
   -webkit-backdrop-filter: blur(48px) saturate(180%);
 }
 
@@ -121,6 +196,8 @@
   --_base-paint: transparent;
   --_blur: var(--_blur-blur);
   --_saturate: var(--_saturate-on);
+  --_rim: none; /* heavy frost is diffuse — no sharp edge; and resets a stale
+                * --_rim inherited from a glass/acrylic ancestor mode block */
   -webkit-backdrop-filter: blur(128px) saturate(180%);
 }
 
@@ -139,6 +216,7 @@
   --_blur: var(--_blur-glass);
   --_saturate: var(--_saturate-on);
   --_noise: var(--_acrylic-noise);
+  --_rim: var(--_rim-active); /* Fluent acrylic carries a luminous edge stroke → rim ON */
   -webkit-backdrop-filter: blur(48px) saturate(180%);
 }
 
@@ -167,6 +245,8 @@
   --_blur: 0px;
   --_saturate: 100%;
   --_noise: none;
+  --_rim: none; /* opaque canon — not glass; also resets a --_rim inherited from
+                * a glass/acrylic ancestor when this element is overridden solid */
   -webkit-backdrop-filter: none;
 }
 
@@ -190,6 +270,7 @@
     --_blur: 0px;
     --_saturate: 100%;
     --_noise: none;
+    --_rim: none;
     -webkit-backdrop-filter: none;
   }
 }
@@ -208,6 +289,7 @@
     --_blur: 0px;
     --_saturate: 100%;
     --_noise: none;
+    --_rim: none;
     -webkit-backdrop-filter: none;
   }
 }
@@ -225,6 +307,7 @@
     --_blur: 0px;
     --_saturate: 100%;
     --_noise: none;
+    --_rim: none;
     -webkit-backdrop-filter: none;
   }
 }
@@ -246,6 +329,7 @@
     --_blur: 0px;
     --_saturate: 100%;
     --_noise: none;
+    --_rim: none;
     background-image: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

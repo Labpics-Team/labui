@@ -287,3 +287,110 @@ test('placement: no live-blur-on-live-blur nesting on the page (glass/blur/acryl
     expect(nested, `no nested material under ${mode}`).toBe(0);
   }
 });
+
+/** The `::before` rim ring's resolved `background-image` (the specular gradient,
+ * or `none` when `--_rim` is unset). Reading the pseudo-element is the only way
+ * to observe the ring in a real browser. */
+function readRimBackground(page: Page, testId: string): Promise<string> {
+  return page
+    .getByTestId(testId)
+    .evaluate((el) => getComputedStyle(el, '::before').backgroundImage);
+}
+
+/** A live rim is a gradient painted into the `::before`; `none` means no rim. */
+const hasRim = (bg: string): boolean => bg !== 'none' && /gradient/i.test(bg);
+
+test('specular rim: ON for glass + acrylic, OFF for solid + blur (::before gradient)', async ({
+  page,
+}) => {
+  // Solid default paints no rim — the ::before is an empty, pixel-identical layer.
+  expect(hasRim(await readRimBackground(page, 'surface-card')), 'no rim on solid').toBe(false);
+
+  // Glass & acrylic — the light-catching edge appears (a gradient in the ::before).
+  for (const mode of ['glass', 'acrylic'] as const) {
+    await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
+    expect(hasRim(await readRimBackground(page, 'surface-card')), `rim ON for ${mode}`).toBe(true);
+  }
+
+  // Blur is heavy frost — diffuse, no sharp edge → no rim.
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'blur'));
+  expect(hasRim(await readRimBackground(page, 'surface-card')), 'no rim on blur').toBe(false);
+});
+
+test('specular rim is a 1px EDGE ring, not a fill (browser honours mask-composite at runtime)', async ({
+  page,
+}) => {
+  // hasRim proves a gradient is painted; this proves the ring GEOMETRY is live —
+  // the browser actually applies the mask-composite that carves the interior out.
+  // Without it the gradient would flood the whole ::before (a filled rectangle),
+  // and the plain gradient check would stay green. Read the RUNTIME computed
+  // mask-composite (Chromium `maskComposite=exclude`, WebKit
+  // `webkitMaskComposite=xor`) + the 1px padding-box thickness on the ::before.
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glass'));
+  const ring = await page.getByTestId('surface-card').evaluate((el) => {
+    const cs = getComputedStyle(el, '::before');
+    const rec = cs as unknown as Record<string, string>;
+    return {
+      composite: cs.maskComposite || rec.webkitMaskComposite || '',
+      padding: cs.paddingTop,
+    };
+  });
+  // The ring-producing composite: `exclude` (standard) or `xor` (-webkit) — never
+  // `add`/`source-over`, which would NOT punch out the interior.
+  expect(
+    /exclude|xor/.test(ring.composite),
+    `mask-composite carves the ring (got "${ring.composite}")`,
+  ).toBe(true);
+  expect(ring.padding, '1px ring thickness').toBe('1px');
+});
+
+test('specular rim rebinds with the theme (light brighter than dark at the top edge)', async ({
+  page,
+}) => {
+  // The top stop of the rim gradient is white at a theme-specific alpha (light .50,
+  // dark .12). Read the ::before background in glass under each theme and compare
+  // the top-stop alpha — light must be the brighter edge. Colour parsing goes
+  // through the browser-normalised bytes (oklch/color-mix-safe), never a regex.
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glass'));
+
+  const topAlpha = async (): Promise<number> => {
+    const bg = await readRimBackground(page, 'surface-card');
+    // The browser serialises the color-mix stops as `color(srgb …)` (Chromium)
+    // or `rgba(…)` (WebKit); grab the FIRST stop and let the canvas-based
+    // normaliser read its byte alpha (any CSS Color 4 form is handled).
+    const firstStop = bg.match(/(?:color|rgba?|oklch|oklab|hsla?)\([^)]*\)/i)?.[0] ?? '';
+    const parsed = await normalizeCssColor(page, firstStop);
+    return parsed?.a ?? 0;
+  };
+
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+  const light = await topAlpha();
+  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
+  const dark = await topAlpha();
+
+  expect(light, 'light rim top-stop resolved').toBeGreaterThan(0);
+  expect(dark, 'dark rim top-stop resolved').toBeGreaterThan(0);
+  expect(light, 'light rim edge is brighter than dark').toBeGreaterThan(dark);
+});
+
+test('specular rim is stripped under degradation (forced-colors, contrast:more)', async ({
+  page,
+}) => {
+  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glass'));
+  expect(hasRim(await readRimBackground(page, 'surface-card')), 'rim present in glass').toBe(true);
+
+  // forced-colors: active → opaque solid canon, rim stripped with the translucency.
+  await page.emulateMedia({ forcedColors: 'active' });
+  expect(hasRim(await readRimBackground(page, 'surface-card')), 'no rim under forced-colors').toBe(
+    false,
+  );
+
+  // prefers-contrast: more → solid too, rim gone.
+  await page.emulateMedia({ forcedColors: null, contrast: 'more' });
+  expect(
+    hasRim(await readRimBackground(page, 'surface-card')),
+    'no rim under prefers-contrast: more',
+  ).toBe(false);
+
+  await page.emulateMedia({ contrast: null });
+});
