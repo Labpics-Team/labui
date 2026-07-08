@@ -31,4 +31,17 @@ describe('theme.css — гарнитура ДС на скоупе [data-theme]',
       expect(block, 'font-family не должен стоять на голом :root').not.toContain('font-family');
     }
   });
+
+  it('запрещает синтетику шрифта на [data-theme]: font-synthesis: none (гард против фейк-наклона)', () => {
+    // Решение владельца 2026-07-08: наклон в ДС не используем — эмфаза весом/цветом.
+    // (Italic у Geist существует отдельными файлами, вкл. вариативный
+    // Geist-Italic[wght].woff2, но ДС его не вендорит; см. @labpics/fonts
+    // PROVENANCE.md.) Реального italic-фейса в документе нет, поэтому <em>/<i> иначе
+    // дали бы синтетический скос — гард font-synthesis: none его запрещает, на том
+    // же скоупе [data-theme], где живёт font-family.
+    // Тот же бабл `[data-theme] { … font-synthesis: none … }` (в комментарии нет
+    // фигурных скобок, поэтому [^}]* доходит до декларации, не выходя из бабла).
+    // RED-proof: убрать декларацию — падает; ослабить до `weight` — падает.
+    expect(themeCss).toMatch(/\[data-theme\]\s*\{[^}]*font-synthesis:\s*none;/);
+  });
 });

@@ -98,9 +98,11 @@ code {
 }
 
 .nav-planned {
+  /* Де-эмфаза цветом (не наклоном): ДС осознанно не подключает italic-фейс
+   * (эмфаза весом/цветом, решение 2026-07-08), а базовый слой ставит
+   * font-synthesis: none — синтетический наклон тут был бы мёртвой декларацией. */
   color: var(--lab-label-secondary);
   cursor: default;
-  font-style: italic;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -388,6 +390,6 @@ input:focus-visible {
 .empty-state {
   margin: 0;
   padding: var(--lab-space-4, 1rem);
+  /* Де-эмфаза цветом, не наклоном — см. .nav-planned (font-synthesis: none). */
   color: var(--lab-label-secondary);
-  font-style: italic;
 }
