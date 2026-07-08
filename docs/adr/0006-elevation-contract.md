@@ -39,13 +39,19 @@ var(--lab-focus-ring-offset)` + 4 инсет-варианта `calc(-1 * var(--l
 Отдельно — сепарационное кольцо avatar: `0 0 0 var(--lab-stroke-thick) var(--lab-bg-primary)`
 (lab-avatar.ts:176, avatar.css:90) — не фокус, вырез поверхности.
 
-**Свечения.** `text-shadow`: 0 вхождений. `drop-shadow()`: 0. Из FX-словаря contract.css
-живут без потребителей 13 ролей: `--lab-fx-glow-{brand,danger,inverted,neutral,warning}`
-(contract.css:137-141), `--lab-fx-shadow-{minor,ambient,penumbra,major}`,
-`--lab-fx-focus-ring-{brand,danger,neutral,warning}`. Все упоминания `fx-shadow-*` в
-компонентах — только устаревшие комментарии до-стекового времени (card.ts:37,
-combobox.ts:62, dialog.ts:55, kbd.ts:20, menu.ts:56, popover.ts:52, select.ts:54,
-tooltip.ts:38); код везде потребляет `--lab-elevation-*`.
+**Свечения.** `text-shadow`: 0 вхождений. `drop-shadow()`: 0. FX-группа контракта —
+66 ролей (`roles.json` `/groups/FX`; 216 объявлений в contract.css по темам):
+glow-семья 6 сентиментов × ступени base/subtle/bloom × {halo, core, α} = 54 —
+**живая эмиссия движка** `@labpics/colors` ≥0.6 (`packages/colors/generate-contract.mjs`,
+`fxBridgeEmission`: screen-солвер, α светлой темы = 0 по `role.degraded`), плюс
+`--lab-fx-focus-ring-*` ×6, `--lab-fx-shadow-{minor,ambient,penumbra,major}` ×4
+(до-стековое наследие, в эмиссии генератора отсутствуют — якорный мост), плюс
+`--lab-fx-glow-inverted` и `--lab-fx-skeleton-highlight` (ADR-0005). Прямой потребитель
+в компонентах один — fx-skeleton-highlight; косвенный якорь канона —
+`--lab-border-focus: var(--lab-fx-focus-ring-brand)` внутри самого contract.css (:162).
+Все упоминания `fx-shadow-*` в компонентах — только устаревшие комментарии до-стекового
+времени (card.ts:37, combobox.ts:62, dialog.ts:55, kbd.ts:20, menu.ts:56, popover.ts:52,
+select.ts:54, tooltip.ts:38); код везде потребляет `--lab-elevation-*`.
 
 **z-index.** 15 уровней `--lab-z-*` с шагом 100, 0..1400 (tokens.css:69-83), закон в
 `docs/dimension-contract.md` §7, гард `no-magic-zindex`; сирот-литералов ноль
@@ -106,20 +112,31 @@ Figma-споку, прикладываю before/after светлой и тёмн
 
 ## 4. Решение — свечения
 
-1. **Яркое свечение (glow) как ярус эффектов — отвергнуто.** Вердикт владельца
-   зафиксирован в shadow README: тень всегда темнее поверхности, «никогда не свечение»;
-   движок конструктивно не умеет светлеть (color-mix от тёмного якоря). Семантика
-   «привлечь внимание/фокус» решается кольцами (§3) и elevation-осветлением тёмной темы
-   (ADR-0002), а не размытым светлым box-shadow. Будущий brand-акцент тени — это
-   `--lab-surface-shadow-tint` + `--lab-shadow-tint-strength` (тень остаётся тенью по
-   построению). Изменение этого вердикта — новый ADR с решением владельца, не роль.
-2. **Снос 13 мёртвых FX-ролей**: `fx-glow-*` ×5, `fx-shadow-*` ×4, `fx-focus-ring-*` ×4 —
-   ноль потребителей; elevation-стек и ring-канон вытеснили их полностью.
-   Прецедент ADR-0005: мосты ради фантомов не тащим. Единственный житель FX-словаря после
-   сноса — `--lab-fx-skeleton-highlight` (ADR-0005); комментарий к `SEMANTIC_ROLE_PREFIXES`
-   (`packages/core/src/css.ts:84`) обновить. Стейл-комментарии `fx-shadow-*` в 8 компонентах
-   вычищаются той же волной.
-3. `text-shadow` и `drop-shadow()` — сегодня 0 вхождений; замораживаются гардом на нуле
+1. **Свечение никогда не эмитится теневым движком.** Вердикт владельца (shadow README):
+   тень всегда темнее поверхности; движок конструктивно не умеет светлеть (color-mix от
+   тёмного якоря `#101012`). Рукописные светлые/размытые box-shadow-свечения в компонентах
+   запрещены (гард §8). Семантика «привлечь внимание/фокус» решается кольцами (§3) и
+   elevation-осветлением тёмной темы (ADR-0002); тинт тени — только
+   `--lab-surface-shadow-tint` + `--lab-shadow-tint-strength` (тень остаётся тенью).
+2. **Glow-ярус — домен движка цвета; адопция отложена.** Glow-семья FX — не мёртвый мост,
+   а живая эмиссия `@labpics/colors` (ADR-0002 §5 «свет, не краска»: base/subtle/bloom ×
+   6 сентиментов, halo/core/α решены screen-солвером; перепись §1). Компоненты сегодня не
+   потребляют ни одной glow-роли, и эта волна их не адоптирует: «когда продукту нужен
+   brand/danger-glow» — продуктовое решение с владельцем, не побочка контракта элевации.
+   Glow не входит в связки уровней §2; появление потребителя — через правку этого ADR.
+3. **`fx-focus-ring-*` не трогаем.** `--lab-fx-focus-ring-brand` — якорь всего ring-канона
+   (`--lab-border-focus` алиасится на него внутри contract.css:162).
+4. **Снос `--lab-fx-shadow-{minor,ambient,penumbra,major}`** — единственные действительно
+   мёртвые FX-роли: до-стековое наследие (старые альфы minor/ambient/penumbra/major),
+   полностью вытеснены слот-моделью `packages/shadow` (s1..s4); ноль потребителей.
+   Прецедент и механизм ADR-0005: deprecation-мост ради фантомов не тащим; снос через
+   `packages/colors/generate-contract.mjs` + `roles.json` + регенерация (гейты
+   contract-generated / contract.test / fx-family); чтение снесённого авто-ловится
+   missing-role детекцией `consumed-contract`. Комментарий к `SEMANTIC_ROLE_PREFIXES`
+   (`packages/core/src/css.ts:84`) обновить: FX = glow-эмиссия движка + focus-ring +
+   skeleton-highlight. Стейл-комментарии `fx-shadow-*` в 8 компонентах вычищаются той же
+   волной.
+5. `text-shadow` и `drop-shadow()` — сегодня 0 вхождений; замораживаются гардом на нуле
    (§8): появление любого — через изменение этого ADR.
 
 ## 5. Решение — scrim-закон
@@ -181,8 +198,10 @@ Figma-споку, прикладываю before/after светлой и тёмн
 
 ## План имплементации (следующий PR)
 
-Миграция 7 полей + slider (react + core-близнецы) на outline-канон; снос 13 FX-ролей
-(generate-contract.mjs + регенерация contract.css + baseline); вычистка 8
-стейл-комментариев; css.ts:84; гарды §8; before/after light+dark. Размерные свойства
+Миграция 7 полей + slider (react + core-близнецы) на outline-канон; снос `fx-shadow-*`
+×4 (`packages/colors/generate-contract.mjs` + `roles.json` + регенерация, гейты
+contract-generated / contract.test / fx-family / consumed-contract); вычистка 8
+стейл-комментариев; css.ts:84; гарды §8; before/after light+dark. Glow-семья и
+`fx-focus-ring-*` не трогаются (§4.2–4.3). Размерные свойства
 (width/height/padding/margin/radius/font-size) не трогаются — параллельная волна другого
 агента.
