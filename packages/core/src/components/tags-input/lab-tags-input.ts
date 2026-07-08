@@ -305,7 +305,7 @@ export class LabTagsInput extends LabElement {
         border-color: ${litVar('--lab-border-success-strong')};
       }
       :host([readonly]) .control {
-        background-color: ${litVar('--lab-fill-neutral-tinted')};
+        background-color: ${litVar('--lab-fill-primary')};
         border-color: ${litVar('--lab-border-soft')};
         cursor: default;
       }
@@ -341,7 +341,7 @@ export class LabTagsInput extends LabElement {
         letter-spacing: var(--_field-label-tracking);
         line-height: 1.4;
         color: ${litVar('--lab-label-primary')};
-        background-color: ${litVar('--lab-fill-neutral-tinted')};
+        background-color: ${litVar('--lab-fill-primary')};
         border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
       }
       .item[data-highlighted] {

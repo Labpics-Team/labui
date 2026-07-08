@@ -37,7 +37,7 @@ import * as radioGroupMachine from '@zag-js/radio-group';
  * `MachineModule`, no hand-written roving logic).
  *
  * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles. The unchecked
- * ring is `--lab-border-neutral`; the checked ring is `--lab-border-{type}`; the
+ * ring is `--lab-border-base`; the checked ring is `--lab-border-{type}`; the
  * dot is `--lab-fill-{type}`; the label is `--lab-label-primary`. No hex, no
  * primitive, no invented role.
  */
@@ -230,7 +230,7 @@ export class LabRadioGroup extends LabElement {
       width: var(--_ring);
       height: var(--_ring);
       border-radius: ${litVar('--lab-radius-circle', '9999px')};
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       background-color: transparent;
       transition:
         border-color 120ms ease,
@@ -244,7 +244,7 @@ export class LabRadioGroup extends LabElement {
       border-color: ${litVar('--lab-border-accent')};
     }
     :host([type='neutral']) .control[data-state='checked'] {
-      border-color: ${litVar('--lab-border-neutral')};
+      border-color: ${litVar('--lab-border-base')};
     }
     :host([type='danger']) .control[data-state='checked'] {
       border-color: ${litVar('--lab-border-danger')};

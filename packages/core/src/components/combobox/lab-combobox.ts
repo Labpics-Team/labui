@@ -60,7 +60,7 @@
  * sentiment borders, `--lab-border-focus` ring); the listbox is the raised surface
  * (`--lab-bg-secondary` + `--lab-label-primary`) with a `--lab-border-soft` hairline
  * and `--lab-fx-shadow-major` lift at `--lab-z-dropdown`; the highlighted option fills
- * with `--lab-fill-neutral-tinted`, the selected option's label is `--lab-label-accent`.
+ * with `--lab-fill-primary`, the selected option's label is `--lab-label-accent`.
  * No hex, no primitive, no colour-role fallback.
  *
  * SSR (core-CONTRACT §7): a combobox is client-only. The server emits the labelled
@@ -450,7 +450,7 @@ export class LabCombobox extends LabElement {
       }
       /* Highlight (keyboard/pointer) — the machine sets data-highlighted. */
       .item[data-highlighted] {
-        background-color: ${litVar('--lab-fill-neutral-tinted')};
+        background-color: ${litVar('--lab-fill-primary')};
       }
       /* Selected — the machine sets data-state=checked + aria-selected. */
       .item[data-state='checked'] .item-text {

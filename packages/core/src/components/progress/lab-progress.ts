@@ -32,7 +32,7 @@ import * as progressMachine from '@zag-js/progress';
  *   - label:                 an optional visible label (machine's label part)
  *
  * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimension
- * tokens via `litVar`. The track reads `--lab-fill-neutral-tinted`; the range
+ * tokens via `litVar`. The track reads `--lab-fill-primary`; the range
  * reads `--lab-fill-accent`; the label reads `--lab-label-primary`; the value
  * text reads `--lab-label-secondary`. No hex, no primitive, no invented role.
  *
@@ -156,7 +156,7 @@ export class LabProgress extends LabElement {
       width: 100%;
       height: var(--_thickness);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       overflow: hidden;
     }
 

@@ -21,7 +21,7 @@ import * as switchMachine from '@zag-js/switch';
  *
  * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimension
  * tokens via `litVar`. The ON track is `--lab-fill-{accent|neutral|danger}`; the
- * OFF track is `--lab-fill-neutral-tinted`; the thumb is `--lab-control-bg`. No
+ * OFF track is `--lab-fill-primary`; the thumb is `--lab-control-bg`. No
  * hex, no primitive, no invented role. A theme is a different binding of those
  * roles on an ancestor — the element never knows which theme is active.
  *
@@ -166,7 +166,7 @@ export class LabSwitch extends LabElement {
       height: var(--_track-h);
       padding: 0.125rem;
       border-radius: ${litVar('--lab-radius-full', '9999px')};
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       transition: background-color 140ms ease;
     }
 

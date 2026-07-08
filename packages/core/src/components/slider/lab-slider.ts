@@ -39,7 +39,7 @@
  *   - state:       disabled · readonly · invalid   (reflected, drive CSS + ARIA)
  *
  * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles + dimensions via
- * `litVar`. The track is `--lab-fill-neutral-tinted`; the filled range is
+ * `litVar`. The track is `--lab-fill-primary`; the filled range is
  * `--lab-fill-accent`; the thumb is `--lab-control-bg` with a `--lab-border-base`
  * ring; the focus ring is `--lab-border-focus`. No hex, no primitive, no colour-role
  * fallback.
@@ -304,7 +304,7 @@ export class LabSlider extends LabElement {
       position: relative;
       flex: 1 1 auto;
       border-radius: ${litVar('--lab-radius-full', '9999px')};
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
     }
     :host([orientation='horizontal']) .track {
       width: 100%;

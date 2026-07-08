@@ -231,7 +231,7 @@ export class LabNumberInput extends LabElement {
         border-color: ${litVar('--lab-border-success-strong')};
       }
       :host([readonly]) .control {
-        background-color: ${litVar('--lab-fill-neutral-tinted')};
+        background-color: ${litVar('--lab-fill-primary')};
         border-color: ${litVar('--lab-border-soft')};
       }
       :host([disabled]) .control {
@@ -286,7 +286,7 @@ export class LabNumberInput extends LabElement {
         letter-spacing: ${litVar('--lab-letter-spacing-xs', '-0.0009em')};
         line-height: 1;
         color: ${litVar('--lab-label-secondary')};
-        background-color: ${litVar('--lab-fill-neutral-tinted')};
+        background-color: ${litVar('--lab-fill-primary')};
         border: 0;
         cursor: pointer;
         user-select: none;

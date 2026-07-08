@@ -145,7 +145,7 @@ export const fieldStyles: CSSResult = css`
 
   /* Readonly: a flatter, non-editable surface that still reads its value. */
   .control:read-only {
-    background-color: ${litVar('--lab-fill-neutral-tinted')};
+    background-color: ${litVar('--lab-fill-primary')};
     border-color: ${litVar('--lab-border-soft')};
   }
 

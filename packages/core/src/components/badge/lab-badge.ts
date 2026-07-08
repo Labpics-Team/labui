@@ -141,7 +141,7 @@ export class LabBadge extends LabElement {
 
     /* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────── */
     :host([type='tinted'][color='neutral']) .badge {
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       color: ${litVar('--lab-label-primary')};
     }
     :host([type='tinted'][color='brand']) .badge {

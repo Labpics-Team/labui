@@ -21,7 +21,7 @@ import * as checkboxMachine from '@zag-js/checkbox';
  *
  * Token contract (core-CONTRACT §2): ONLY semantic --lab-* roles. The checked /
  * mixed box fill is `--lab-fill-{accent|neutral|danger}`; the unchecked border is
- * `--lab-border-neutral`; the glyph is `--lab-label-on-{accent|neutral|danger}`.
+ * `--lab-border-base`; the glyph is `--lab-label-on-{accent|neutral|danger}`.
  * No hex, no primitive, no invented role.
  */
 import { type TemplateResult, css, html, svg } from 'lit';
@@ -187,7 +187,7 @@ export class LabCheckbox extends LabElement {
       width: var(--_box);
       height: var(--_box);
       border-radius: var(--_radius);
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       background-color: transparent;
       color: transparent;
       transition:
@@ -207,7 +207,7 @@ export class LabCheckbox extends LabElement {
     :host([checked][type='neutral']) .control,
     :host([indeterminate][type='neutral']) .control {
       background-color: ${litVar('--lab-fill-neutral')};
-      border-color: ${litVar('--lab-border-neutral')};
+      border-color: ${litVar('--lab-border-base')};
       color: ${litVar('--lab-label-on-neutral')};
     }
     :host([checked][type='danger']) .control,

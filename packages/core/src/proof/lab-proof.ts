@@ -91,14 +91,14 @@ export class LabProof extends LabElement {
       min-height: 2.5rem;
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       font: inherit;
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
       font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       cursor: pointer;
       /* Unpressed: neutral tinted surface + primary label — semantic roles only. */
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       color: ${litVar('--lab-label-primary')};
       transition:
         background-color 120ms ease,
