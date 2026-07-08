@@ -27,6 +27,18 @@ web-components** `<lab-*>` из `@labpics/ui-core`: адаптеры Vue/Svelte/
 
 Детали и примеры каждого — в README пакета. Ниже — SSR-рецепты и Angular.
 
+## Стейт-оверлеи в близнецах (#109)
+
+hover/pressed обеих реализаций — один паттерн (`docs/vocabulary.md`,
+«Стейт-оверлеи»): статик-роль покоя в базовом правиле + `color-mix`-оверлей
+под `@supports`, тинт по рецепту D, brightness-fallback в `@supports not`.
+Lit-ядро скоупит его `:host([type][kind]) button` в shadow root; React-близнец
+зеркалит те же оси через `[data-lab-button][data-type][data-kind]`. Паритет
+набора оверлеев и ролей покоя пинится гейтом
+`packages/colors/test/state-overlay-contrast.test.mjs` — немой дрейф любого из
+близнецов краснит CI. Обёрткам Vue/Svelte/Solid/Astro/Angular делать ничего
+не нужно: стили состояний живут в shadow-CSS ядра и приезжают с `<lab-*>`.
+
 ## Почему SSR web-компонентов особенный
 
 Глубокий SSR (styled first paint без FOUC) — свойство `@lit-labs/ssr`, а не хост-
