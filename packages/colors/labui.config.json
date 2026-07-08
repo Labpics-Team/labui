@@ -1366,14 +1366,6 @@
   ],
   "aliases": [
     {
-      "alias": "fill-neutral-tinted",
-      "target": "fill-primary"
-    },
-    {
-      "alias": "border-neutral",
-      "target": "border-base"
-    },
-    {
       "alias": "fx-skeleton-base",
       "target": "fill-quaternary"
     },

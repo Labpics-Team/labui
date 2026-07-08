@@ -77,7 +77,7 @@
   width: var(--_lab-rg-ring);
   height: var(--_lab-rg-ring);
   border-radius: var(--lab-radius-circle, 9999px);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background-color: transparent;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
@@ -88,7 +88,7 @@
   border-color: var(--lab-border-accent);
 }
 [data-lab-radio-group][data-type="neutral"] .lab-radio-control[data-state="checked"] {
-  border-color: var(--lab-border-neutral);
+  border-color: var(--lab-border-base);
 }
 [data-lab-radio-group][data-type="danger"] .lab-radio-control[data-state="checked"] {
   border-color: var(--lab-border-danger);

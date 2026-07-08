@@ -148,7 +148,7 @@
   cursor: pointer;
 }
 .lab-dialog-close:hover {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   color: var(--lab-label-primary);
 }
 .lab-dialog-close:focus-visible {

@@ -86,7 +86,7 @@
 
 /* ── type=tinted: low-alpha sentiment tint + sentiment label ───────────────── */
 [data-lab-badge][data-type="tinted"][data-color="neutral"] {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   color: var(--lab-label-primary);
 }
 [data-lab-badge][data-type="tinted"][data-color="brand"] {

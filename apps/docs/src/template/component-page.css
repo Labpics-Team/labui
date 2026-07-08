@@ -88,13 +88,13 @@ code {
 
 .nav-link:hover,
 .nav-link:focus-visible {
-  background: var(--lab-fill-neutral-tinted);
+  background: var(--lab-fill-primary);
 }
 
 .nav-link[aria-current="page"] {
   border-color: var(--lab-border-accent);
   color: var(--lab-label-primary);
-  background: var(--lab-fill-neutral-tinted);
+  background: var(--lab-fill-primary);
 }
 
 .nav-planned {
@@ -134,7 +134,7 @@ code {
   gap: var(--lab-space-2, 0.5rem);
   padding: var(--lab-space-1, 0.25rem) var(--lab-space-3, 0.75rem);
   border-radius: var(--lab-radius-full, 9999px);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   font-size: var(--lab-font-size-sm, 0.875rem);
   font-weight: var(--lab-font-weight-semibold, 600);
 }
@@ -156,7 +156,7 @@ code {
   flex-wrap: wrap;
   gap: var(--lab-space-4, 1rem);
   padding: var(--lab-space-4, 1rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -173,7 +173,7 @@ select {
   font: inherit;
   padding: var(--lab-space-1, 0.25rem) var(--lab-space-2, 0.5rem);
   border-radius: var(--lab-radius-md, 0.5rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background: var(--lab-bg-primary);
   color: var(--lab-label-primary);
 }
@@ -188,7 +188,7 @@ input:focus-visible {
 .doc-section {
   margin-bottom: var(--lab-space-10, 2.5rem);
   padding-top: var(--lab-space-6, 1.5rem);
-  border-top: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border-top: var(--lab-stroke-hairline) solid var(--lab-border-base);
 }
 
 .doc-section > h2 {
@@ -208,7 +208,7 @@ input:focus-visible {
 
 .matrix-table th,
 .matrix-table td {
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   padding: var(--lab-space-4, 1rem);
   text-align: left;
   vertical-align: middle;
@@ -251,7 +251,7 @@ input:focus-visible {
   align-items: center;
   min-height: 8rem;
   padding: var(--lab-space-8, 2rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -307,7 +307,7 @@ input:focus-visible {
 
 .guidance-col {
   padding: var(--lab-space-4, 1rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -342,7 +342,7 @@ input:focus-visible {
   display: flex;
   justify-content: center;
   padding: var(--lab-space-10, 2.5rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-lg, 0.75rem);
   background: var(--lab-bg-secondary);
 }
@@ -370,7 +370,7 @@ input:focus-visible {
 
 .api-table th,
 .api-table td {
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   padding: var(--lab-space-3, 0.75rem);
   text-align: left;
   vertical-align: top;

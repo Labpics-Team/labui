@@ -23,7 +23,7 @@
   height: var(--_lab-menu-h);
   margin: 0;
   padding: 0 var(--lab-space-md, 1rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-md, 0.375rem);
   background-color: var(--lab-bg-primary);
   color: var(--lab-label-primary);
@@ -120,7 +120,7 @@
   user-select: none;
 }
 .lab-menu-item[data-highlighted] {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
 }
 .lab-menu-item[data-disabled] {
   cursor: not-allowed;

@@ -33,7 +33,7 @@ h1 {
 .renderer {
   margin-block: var(--lab-space-6, 1.5rem);
   padding: var(--lab-space-4, 1rem);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-lg, 0.75rem);
 }
 

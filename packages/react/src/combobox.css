@@ -135,7 +135,7 @@
 }
 
 [data-lab-combobox] .lab-combobox-input:read-only {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border-color: var(--lab-border-soft);
 }
 
@@ -240,7 +240,7 @@
   user-select: none;
 }
 .lab-combobox-item[data-highlighted] {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
 }
 .lab-combobox-item[data-state="checked"] .lab-combobox-item-text {
   color: var(--lab-label-accent);

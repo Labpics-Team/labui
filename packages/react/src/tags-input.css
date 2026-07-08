@@ -102,7 +102,7 @@
   border-color: var(--lab-border-success-strong);
 }
 [data-lab-tags-input][data-readonly] .lab-tags-input-control {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border-color: var(--lab-border-soft);
   cursor: default;
 }
@@ -140,7 +140,7 @@
   letter-spacing: var(--_lab-field-label-tracking);
   line-height: 1.4;
   color: var(--lab-label-primary);
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border-radius: var(--lab-radius-sm, 0.25rem);
 }
 [data-lab-tags-input] .lab-tags-input-item[data-highlighted] {

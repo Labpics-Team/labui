@@ -130,7 +130,7 @@
 }
 
 [data-lab-textarea] .lab-field-control:read-only {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border-color: var(--lab-border-soft);
 }
 

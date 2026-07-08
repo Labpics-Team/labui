@@ -51,7 +51,7 @@
   border-color: var(--lab-border-base);
 }
 [data-lab-card][data-variant="filled"] {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
 }
 
 [data-lab-card][data-interactive] {

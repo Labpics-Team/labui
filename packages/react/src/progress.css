@@ -57,7 +57,7 @@
   width: 100%;
   height: var(--_lab-progress-thickness);
   border-radius: var(--lab-radius-full, 9999px);
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   overflow: hidden;
 }
 
