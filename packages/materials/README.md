@@ -162,6 +162,37 @@ deterministically by `scripts/build-acrylic-noise.ts` (fixed seed, a dependency-
 re-generates and `git diff --exit-code`s it; `test/acrylic-noise.test.ts` decodes the
 asset (dims, colour type, baked alpha) and seals inline ≡ generator (no drift).
 
+## Specular rim (Стекло v2)
+
+The 1px light-catching edge on glass and acrylic — a vertical gradient, bright at
+the top, fading down, that reads as light glancing off the surface's edge. It is a
+private handle `--_rim` (unset by default, like `--_noise`): the modes rebind **it**,
+never the single paint rule. The ring is painted on a **`::before`** with the
+`mask-composite` gradient-border technique — so it respects `border-radius` (a
+`border-image` gradient would square the corners; a `box-shadow` inset cannot carry
+a vertical gradient) at **zero markup change**. `z-index: -1` sits it above the tint
+but below the label; `pointer-events: none` keeps it inert.
+
+- **ON** for `glass` (refractive edge catches light) and `acrylic` (Fluent's luminous
+  edge stroke); **OFF** for `blur` (heavy frost is diffuse — no sharp edge) and `solid`
+  (opaque canon — not glass).
+- **Colour is achromatic and from the contract, never a literal.** Specular reflection
+  is white regardless of the surface tint (physics), so the source is the theme-
+  invariant static-surface tokens `--lab-bg-static-light` / `--lab-bg-static-dark`,
+  through `color-mix(in srgb, transparent, <token> α)` — the same idiom the shadow
+  engine uses, so `no-hardcoded-colour` stays green (zero raw `rgb()` in `material.css`).
+- **Theme rebinds** `--_rim-active` (light bright / dark subtle), so the system stays
+  dynamic. DECLARED alphas (visually calibrated): light white `.50 → .05`; dark white
+  `.12` top → faint dark `.04` bottom.
+- Every **degradation** (no `backdrop-filter` / reduced-transparency / contrast:more /
+  forced-colors) resets `--_rim: none` with the translucency — the rim rides the
+  glass, and collapses with it to the opaque solid canon.
+
+Gated by `test/specular-rim.test.ts` (structure + provenance) and
+`test/degradations.test.ts` (`dropsRim`), plus the live browser assertions in
+`apps/docs/tests/materials-flag.spec.ts` (rim ON glass/acrylic, OFF solid/blur,
+theme brightness, stripped under degradation).
+
 ## Background policy (`background-policy.ts`)
 
 The explicit, tested contract of *which material reads what*:
