@@ -31,4 +31,15 @@ describe('theme.css — гарнитура ДС на скоупе [data-theme]',
       expect(block, 'font-family не должен стоять на голом :root').not.toContain('font-family');
     }
   });
+
+  it('запрещает синтетику шрифта на [data-theme]: font-synthesis: none (гард против фейк-наклона)', () => {
+    // Решение 2026-07-08: наклон не используем — у Geist italic-ассета НЕТ (одна
+    // ось `wght`, vercel/geist-font: 0 italic-файлов), а синтетический наклон
+    // ниже планки ДС. Гард обязан стоять на том же скоупе [data-theme], где живёт
+    // font-family, — где применяется шрифт ДС, там браузер ничего не подделывает.
+    // Тот же бабл `[data-theme] { … font-synthesis: none … }` (в комментарии нет
+    // фигурных скобок, поэтому [^}]* доходит до декларации, не выходя из бабла).
+    // RED-proof: убрать декларацию — падает; ослабить до `weight` — падает.
+    expect(themeCss).toMatch(/\[data-theme\]\s*\{[^}]*font-synthesis:\s*none;/);
+  });
 });

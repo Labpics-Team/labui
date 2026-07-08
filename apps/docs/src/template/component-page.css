@@ -98,9 +98,11 @@ code {
 }
 
 .nav-planned {
+  /* Де-эмфаза цветом (не наклоном): у Geist italic-ассета нет, а базовый слой
+   * ставит font-synthesis: none — синтетический наклон тут был бы мёртвой
+   * декларацией. Эмфаза/де-эмфаза в ДС — весом и цветом (решение 2026-07-08). */
   color: var(--lab-label-secondary);
   cursor: default;
-  font-style: italic;
 }
 
 /* ── Header ───────────────────────────────────────────────────────────────── */
@@ -388,6 +390,6 @@ input:focus-visible {
 .empty-state {
   margin: 0;
   padding: var(--lab-space-4, 1rem);
+  /* Де-эмфаза цветом, не наклоном — см. .nav-planned (font-synthesis: none). */
   color: var(--lab-label-secondary);
-  font-style: italic;
 }
