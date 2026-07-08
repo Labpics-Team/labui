@@ -14,6 +14,10 @@ import '@labpics/ui-core/badge';
 import '@labpics/ui-core/button';
 // Паспорт labui — тот же JSON, что питает golden-сверку пакета @labui/colors.
 import passport from '@labui/colors/labui.config.json';
+// Разворот паспорта к границе wasm (влив components + флаги) — ТОТ ЖЕ канон,
+// что у node-движка golden-сверки: сырой дисковый паспорт ядро честно
+// отвергает (aliases → badge-fill-* живут в компонентном слое).
+import { prepareEngineConfig } from '@labui/colors/prepare-config.mjs';
 import init, { LabColors, watchTheme } from 'labcolors-engine';
 import wasmUrl from 'labcolors-engine/pkg/labcolors_bg.wasm?url';
 
@@ -54,7 +58,7 @@ async function main(): Promise<void> {
   ).neutral.anchors.light.toLowerCase();
   await init({ module_or_path: wasmUrl });
   const colors = new LabColors();
-  colors.loadConfig(JSON.stringify(passport));
+  colors.loadConfig(JSON.stringify(prepareEngineConfig(passport)));
 
   const watcher = watchTheme(surface, {
     colors,
@@ -78,8 +82,9 @@ async function main(): Promise<void> {
     repaint();
   });
   configSelect.addEventListener('change', () => {
+    // Acme мутирует только якоря — разворот слоёв нужен обоим конфигам одинаково.
     const config = configSelect.value === 'acme' ? acmeConfig() : passport;
-    colors.loadConfig(JSON.stringify(config));
+    colors.loadConfig(JSON.stringify(prepareEngineConfig(config)));
     repaint();
   });
 
