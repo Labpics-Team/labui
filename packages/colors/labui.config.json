@@ -1386,10 +1386,6 @@
       "target": "badge-fill-danger"
     },
     {
-      "alias": "icon",
-      "target": "label-tertiary"
-    },
-    {
       "alias": "fx-focus-ring-neutral",
       "target": "label-primary"
     },

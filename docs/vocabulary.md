@@ -53,7 +53,6 @@
 
 | алиас                 | цель                |
 | --------------------- | ------------------- |
-| `icon`                | `label-tertiary`    |
 | `border-ghost`        | `border-none`       |
 | `border-neutral`      | `border-base`       |
 | `fill-neutral-tinted` | `fill-primary`      |
