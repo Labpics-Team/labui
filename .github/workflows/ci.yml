@@ -248,6 +248,16 @@ jobs:
         # committed artifact as a false green.
         run: pnpm --filter @labpics/ui-shadow check-generated
 
+      - name: Assert generated artifact is not stale (tokens)
+        # Тот же инвариант для SSOT-размеров (spacing/radii/z-index/typography):
+        # генератор перегоняется из конфига, `git diff --exit-code` на
+        # committed tokens.css/dtcg. Без этого гейта изменение конфига без
+        # регенерации оставило бы СТАРЫЙ канон tokens.css — а именно его читают
+        # drift-гарды (no-magic-dimension) как истину: молчаливо сверяли бы всё
+        # против устаревшей шкалы. Стоит ДО Build, который иначе перегенерировал
+        # бы файл и замаскировал протухший коммит ложным зелёным.
+        run: pnpm --filter @labpics/ui-tokens check-generated
+
       - name: Build
         run: pnpm build
 
