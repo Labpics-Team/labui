@@ -75,6 +75,11 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
   it('classifies the bucket boundaries correctly', () => {
     expect(classify('--lab-label-primary')).toBe('colour-contract');
     expect(classify('--lab-space-sm')).toBe('dimension');
+    // #109 state-overlay tint fractions: ui-tokens-owned dimensionless % scalars
+    // (tokens.css), NOT colour roles and NOT engine gaps — the colour lives in the
+    // component-layer color-mix() recipe-D pattern, only the fraction is a token.
+    expect(classify('--lab-state-hover')).toBe('dimension');
+    expect(classify('--lab-state-pressed')).toBe('dimension');
     expect(classify('--lab-surface-shadow-tint')).toBe('local-or-gap');
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
   });

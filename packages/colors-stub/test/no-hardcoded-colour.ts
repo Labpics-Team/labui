@@ -103,6 +103,39 @@ function stripComments(source: string, isCss: boolean): string {
 }
 
 /**
+ * Two LICENSED spans are blanked (space-filled, newline-preserving — line numbers
+ * of later findings stay exact) after comment stripping, BEFORE any matching:
+ *
+ *   1. `@supports` PRELUDES (`@supports … {` up to the block brace). A prelude is
+ *      a capability PROBE — it never paints. The canonical color-mix feature probe
+ *      is `@supports (color: color-mix(in oklab, red, blue))` (#109 fallback law);
+ *      `red`/`blue` there are probe syntax, not consumed colours. Only the prelude
+ *      is blanked — a literal colour inside the @supports BLOCK still fires.
+ *   2. The recipe-D state-overlay combinator (#109), in BOTH authored forms (CSS
+ *      `var()` — including biome's multi-line layout — and Lit `${litVar(…)}`):
+ *      `color-mix(in oklab, <--lab-* role ref>, black <--lab-state-* fraction ref>)`.
+ *      This exact shape cannot introduce a brand colour: the base is a role token,
+ *      `black` is the achromatic darkening anchor mandated by design law in both
+ *      themes (docs/vocabulary.md § stated overlays, «почему к чёрному»), and the
+ *      fraction is a governed `--lab-state-*` token. Its correctness is separately
+ *      CI-gated (state-overlay-{contrast,muddiness}); the shared parser in
+ *      `packages/colors/test/state-overlays-shared.mjs` pins the same shape. ANY
+ *      deviation — `white`, a literal fraction (`black 30%`), a non-role base, a
+ *      non-state fraction var, or free-standing `black` — stays flagged.
+ */
+const SUPPORTS_PRELUDE_RE = /@supports[^{]*/g;
+const LAB_REF = String.raw`(?:var\(\s*--lab-[a-z0-9-]+\s*\)|\$\{litVar\(\s*'--lab-[a-z0-9-]+'\s*\)\})`;
+const STATE_FRACTION_REF = String.raw`(?:var\(\s*--lab-state-(?:hover|pressed)\s*(?:,\s*[\d.]+%\s*)?\)|\$\{litVar\(\s*'--lab-state-(?:hover|pressed)'\s*(?:,\s*'[\d.]+%'\s*)?\)\})`;
+const RECIPE_D_RE = new RegExp(
+  String.raw`color-mix\(\s*in oklab\s*,\s*${LAB_REF}\s*,\s*black\s+${STATE_FRACTION_REF}\s*\)`,
+  'gi',
+);
+function blankLicensedSpans(text: string): string {
+  const blank = (m: string): string => m.replace(/[^\n]/g, ' ');
+  return text.replace(SUPPORTS_PRELUDE_RE, blank).replace(RECIPE_D_RE, blank);
+}
+
+/**
  * Functional colour-PRODUCING forms + hex — these introduce a literal colour and
  * cannot occur innocently, so they match anywhere on a (comment-stripped) line.
  *
@@ -292,7 +325,7 @@ function isColourValuePosition(text: string, index: number): boolean {
 export function scanSource(relPath: string, source: string): Violation[] {
   if (ALLOWLIST.includes(relPath)) return [];
   const isCss = relPath.endsWith('.css');
-  const text = stripComments(source, isCss);
+  const text = blankLicensedSpans(stripComments(source, isCss));
   const out: Violation[] = [];
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
   // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal

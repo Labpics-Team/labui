@@ -97,6 +97,7 @@ export const DIMENSION_PREFIXES = [
   '--lab-measure-', // мера строки, ch (Bringhurst 45/66/75)
   '--lab-stroke-', // border / divider line widths (not the --lab-border-* colour role)
   '--lab-focus-ring-', // focus indicator width + offset
+  '--lab-state-', // state-overlay tint fractions (#109: hover 8% / pressed 14%) — dimensionless % scalars owned by @labpics/ui-tokens (tokens.css), NOT colour roles: the colour comes from the color-mix() recipe-D pattern at the component layer
 ] as const;
 
 /**

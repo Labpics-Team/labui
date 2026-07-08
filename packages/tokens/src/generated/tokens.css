@@ -143,7 +143,7 @@
   --lab-focus-ring-width: 0.125rem;
   --lab-focus-ring-offset: 0.125rem;
 
-  /* State overlays — фракции color-mix к тинту рецепта D (#109) */
+  /* State overlays — фракции color-mix к тинту рецепта D (задача 109) */
   --lab-state-hover: 8%; /* Доля тинта рецепта D, подмешиваемая в роль покоя на hover. */
   --lab-state-pressed: 14%; /* Доля тинта рецепта D в нажатом состоянии — глубже hover. */
 }

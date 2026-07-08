@@ -40,7 +40,9 @@ export function generateCss(tokens: ResolvedTokens): string {
     ),
     section('Borders — stroke widths (rem)', tokenLines(tokens.strokes)),
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
-    section('State overlays — фракции color-mix к тинту рецепта D (#109)', tokenLines(tokens.states)),
+    // «задача 109», не «#109» — три hex-цифры после решётки читаются сканером
+    // no-hardcoded-colour как #RGB-литерал (строка — не комментарий для .ts).
+    section('State overlays — фракции color-mix к тинту рецепта D (задача 109)', tokenLines(tokens.states)),
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;
