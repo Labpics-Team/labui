@@ -59,4 +59,4 @@ function expandFlags(roles) {
 }
 
 /** Пин отпечатка паспорта (см. README): дрейф конфига виден по несовпадению. */
-export const PASSPORT_FINGERPRINT = '0a400bfe55937274';
+export const PASSPORT_FINGERPRINT = '9ff4b8fc350cb182';
