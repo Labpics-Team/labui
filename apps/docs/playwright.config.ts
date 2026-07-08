@@ -48,6 +48,9 @@ const SMOKE_SPECS = [
   'smoke.spec.ts',
   'proof.spec.ts',
   'tokens.spec.ts',
+  // z-шкала доезжает до DOM и держит порядок наложения (scrim<panel, dropdown<modal,
+  // tooltip сверху). Дешёвый детерминированный smoke → в per-PR критический путь.
+  'z-order.spec.ts',
   'materials-flag.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
