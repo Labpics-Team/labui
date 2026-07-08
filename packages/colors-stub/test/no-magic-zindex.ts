@@ -24,7 +24,7 @@
  * Lit-исходники сперва нормализуются (`litVar('X','f')` → `var(X, f)`), так что один
  * сканер читает shadow-близнеца (TS) и React-близнеца (CSS) одинаково.
  */
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { repoRoot } from './no-literal-colour-fallback.js';
 import {
@@ -65,11 +65,21 @@ const Z_REF = /--lab-z-[a-z0-9-]+/g;
 /** Любая ссылка `--lab-*` внутри значения z-index (для проверки семейства). */
 const LAB_REF = /--lab-[a-z0-9-]+/g;
 /**
- * Объявление `z-index: … ;`. Негативный lookbehind `(?<![-\w])` отсекает
- * кастом-свойство `--z-index` (ручка Floating UI): её имя тоже содержит подстроку
- * «z-index», но property `z-index` ей не является.
+ * CSS-объявление `z-index: <value>` (и Lit-css-близнец). Значение — до
+ * терминатора `;` ИЛИ `}`: последнее объявление в правиле легально без `;`
+ * (`.x { z-index: 900 }`), и его нельзя оставить дырой в гарде. Негативный
+ * lookbehind `(?<![-\w])` отсекает кастом-свойство `--z-index` (ручка Floating
+ * UI): её имя содержит подстроку «z-index», но property `z-index` ей не является.
  */
-const ZINDEX_DECL = /(?<![-\w])z-index\s*:\s*([^;]+);/gi;
+const ZINDEX_DECL = /(?<![-\w])z-index\s*:\s*([^;}]+?)\s*(?=[;}])/gi;
+/**
+ * React-инлайн-стиль: camelCase `zIndex: <value>` в объект-литерале (`.tsx`/`.ts`).
+ * Поверхность гарда включает `packages/react/**` .tsx, а идиоматичный React-способ
+ * положить слой — именно camelCase, поэтому его нельзя не покрыть. Lookbehind
+ * `(?<![.\w])` отсекает доступ к свойству (`getComputedStyle(el).zIndex`); значение
+ * — до `,`/`;`/`}`/переноса.
+ */
+const ZINDEX_CAMEL = /(?<![.\w])zIndex\s*:\s*([^,;}\n]+?)\s*(?=[,;}\n])/g;
 /** Ключевые слова z-index — не число и не слой, легальны как есть. */
 const Z_KEYWORDS = /\b(?:auto|inherit|initial|unset|revert(?:-layer)?)\b/gi;
 
@@ -86,8 +96,60 @@ function stripVarGroups(text: string): string {
 }
 
 /**
+ * Единая проверка ЗНАЧЕНИЯ z-index (kebab и camelCase формы читают её же — один
+ * закон, без второй копии). Три класса: чужое семейство `--lab-*`, несуществующий
+ * уровень `--lab-z-*` и голое число в обход шкалы.
+ */
+function analyzeZValue(
+  value: string,
+  relPath: string,
+  line: number,
+  zLevels: Map<string, number>,
+  out: ZIndexViolation[],
+): void {
+  const token = `z-index: ${value}`;
+
+  // (2)(3) Каждый токен --lab-* в значении обязан быть каноническим уровнем шкалы.
+  for (const ref of value.matchAll(LAB_REF)) {
+    const name = ref[0];
+    if (!name.startsWith('--lab-z-')) {
+      out.push({
+        file: relPath,
+        line,
+        rule: 'wrong-family',
+        token,
+        detail: `${name} — не z-семейство: глобальный слой едет только на --lab-z-* (§7)`,
+      });
+    } else if (!zLevels.has(name)) {
+      out.push({
+        file: relPath,
+        line,
+        rule: 'unknown-z-level',
+        token,
+        detail: `${name} — имя вне 15 канонических уровней шкалы (generated/tokens.css)`,
+      });
+    }
+  }
+
+  // (1) Остаток без var()-групп и ключевых слов не должен нести голое число:
+  // такое число — слой «на глаз» в обход шкалы, ровно война z-index.
+  const residue = stripVarGroups(value).replace(Z_KEYWORDS, ' ');
+  const bare = /(?<![\w.#-])-?\d+(?:\.\d+)?\b/.exec(residue);
+  if (bare) {
+    out.push({
+      file: relPath,
+      line,
+      rule: 'magic-zindex',
+      token,
+      detail: `голое число z-index "${bare[0].trim()}" — потребляй именованный слой --lab-z-* (нет войнам z-index)`,
+    });
+  }
+}
+
+/**
  * Скан z-index в одном файле. `.ts`/`.tsx` нормализуются из Lit-формы; комментарии
  * срезаются (проза «mirrors z-index into --z-index» не должна спотыкать сканер).
+ * Читаются обе формы: CSS `z-index:` и — только в JS/TS — React-инлайн `zIndex:`.
  */
 export function scanZIndexSource(
   relPath: string,
@@ -100,45 +162,12 @@ export function scanZIndexSource(
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
 
   for (const m of text.matchAll(ZINDEX_DECL)) {
-    const value = (m[1] as string).trim();
-    const at = m.index ?? 0;
-    const token = `z-index: ${value}`;
-
-    // (2)(3) Каждый токен --lab-* в значении z-index обязан быть каноническим
-    // уровнем шкалы: чужое семейство или несуществующий уровень — дефект.
-    for (const ref of value.matchAll(LAB_REF)) {
-      const name = ref[0];
-      if (!name.startsWith('--lab-z-')) {
-        out.push({
-          file: relPath,
-          line: lineAt(at),
-          rule: 'wrong-family',
-          token,
-          detail: `${name} — не z-семейство: глобальный слой едет только на --lab-z-* (§7)`,
-        });
-      } else if (!zLevels.has(name)) {
-        out.push({
-          file: relPath,
-          line: lineAt(at),
-          rule: 'unknown-z-level',
-          token,
-          detail: `${name} — имя вне 15 канонических уровней шкалы (generated/tokens.css)`,
-        });
-      }
-    }
-
-    // (1) Остаток без var()-групп и ключевых слов не должен нести голое число:
-    // такое число — слой «на глаз» в обход шкалы, ровно война z-index.
-    const residue = stripVarGroups(value).replace(Z_KEYWORDS, ' ');
-    const bare = /(?<![\w.#-])-?\d+(?:\.\d+)?\b/.exec(residue);
-    if (bare) {
-      out.push({
-        file: relPath,
-        line: lineAt(at),
-        rule: 'magic-zindex',
-        token,
-        detail: `голое число z-index "${bare[0].trim()}" — потребляй именованный слой --lab-z-* (нет войнам z-index)`,
-      });
+    analyzeZValue((m[1] as string).trim(), relPath, lineAt(m.index ?? 0), zLevels, out);
+  }
+  // camelCase существует только в JS/TS-объекте стилей; в CSS такой формы нет.
+  if (isTs) {
+    for (const m of text.matchAll(ZINDEX_CAMEL)) {
+      analyzeZValue((m[1] as string).trim(), relPath, lineAt(m.index ?? 0), zLevels, out);
     }
   }
   return out;
@@ -155,15 +184,19 @@ export function scanZIndexSurface(): ZIndexViolation[] {
   return out;
 }
 
+/** Файл поверхности → нормализованный текст (Lit-форма + срез комментариев). */
+function readNormalized(rel: string): string {
+  const isTs = rel.endsWith('.ts') || rel.endsWith('.tsx');
+  const raw = readFileSync(resolve(repoRoot, rel), 'utf8');
+  return stripComments(isTs ? normalizeLit(raw) : raw, isTs);
+}
+
 /** `--lab-z-*` уровни, реально потребляемые поверхностью (имя → каноническое значение). */
 export function consumedZLevels(): Map<string, number> {
   const zLevels = canonicalZLevels();
   const used = new Map<string, number>();
   for (const rel of fallbackSurfaceFiles()) {
-    const isTs = rel.endsWith('.ts') || rel.endsWith('.tsx');
-    const raw = readFileSync(resolve(repoRoot, rel), 'utf8');
-    const text = stripComments(isTs ? normalizeLit(raw) : raw, isTs);
-    for (const m of text.matchAll(ZINDEX_DECL)) {
+    for (const m of readNormalized(rel).matchAll(ZINDEX_DECL)) {
       for (const ref of (m[1] as string).matchAll(Z_REF)) {
         const v = zLevels.get(ref[0]);
         if (v !== undefined) used.set(ref[0], v);
@@ -191,10 +224,7 @@ export function zLevelsByComponent(): {
         : null;
     if (!target) continue;
 
-    const isTs = rel.endsWith('.ts');
-    const raw = readFileSync(resolve(repoRoot, rel), 'utf8');
-    const text = stripComments(isTs ? normalizeLit(raw) : raw, isTs);
-    for (const m of text.matchAll(ZINDEX_DECL)) {
+    for (const m of readNormalized(rel).matchAll(ZINDEX_DECL)) {
       for (const ref of (m[1] as string).matchAll(Z_REF)) {
         const set = target.bucket.get(target.name) ?? new Set<string>();
         set.add(ref[0]);
@@ -203,4 +233,23 @@ export function zLevelsByComponent(): {
     }
   }
   return { core, react };
+}
+
+/**
+ * Целые z-index-литералы в приватном слое механик материалов
+ * (`packages/materials/src/**`) — ВНЕ компонентной поверхности гарда. Единственный
+ * легальный — локальный `-1` (тинт под лейблом внутри СОБСТВЕННОГО контекста
+ * поверхности, docs §7). Возвращается, чтобы тест закрепил границу списком, а не
+ * только прозой: новый глобальный слой в materials/*.css сразу покраснеет.
+ */
+export function materialsZIndexLiterals(): number[] {
+  const out: number[] = [];
+  for (const abs of globSync(resolve(repoRoot, 'packages/materials/src/**/*.css'))) {
+    const css = stripComments(readFileSync(abs, 'utf8'), false);
+    for (const m of css.matchAll(ZINDEX_DECL)) {
+      const bare = /^-?\d+$/.exec((m[1] as string).trim());
+      if (bare) out.push(Number.parseInt(bare[0], 10));
+    }
+  }
+  return out.sort((a, b) => a - b);
 }

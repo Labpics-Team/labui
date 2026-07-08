@@ -5,6 +5,7 @@ import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   canonicalZLevels,
   consumedZLevels,
+  materialsZIndexLiterals,
   scanZIndexSource,
   scanZIndexSurface,
   zLevelsByComponent,
@@ -65,6 +66,28 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
     ).toBe(true);
   });
 
+  it('DETECTS a semicolon-less terminal declaration (last decl in a rule, no `;`)', () => {
+    // `.x { z-index: 9999 }` — валидный CSS без завершающей `;`; не должен пролезть.
+    expect(scanZIndexSource('p.css', '.x { z-index: 9999 }', zLevels)).toMatchObject([
+      { rule: 'magic-zindex' },
+    ]);
+  });
+
+  it('DETECTS a React inline-style camelCase zIndex literal (.tsx surface)', () => {
+    // Идиоматичный React-способ положить слой — camelCase в объекте стилей.
+    expect(
+      scanZIndexSource('c.tsx', 'const s = { zIndex: 9999 };', zLevels).map((v) => v.rule),
+    ).toContain('magic-zindex');
+  });
+
+  it('IGNORES a property ACCESS to .zIndex and a runtime variable value (camelCase)', () => {
+    const ok = [
+      'const z = getComputedStyle(el).zIndex;', // чтение свойства, не объявление слоя
+      'const s = { zIndex: layerVar };', // рантайм-значение, не голое число
+    ].join('\n');
+    expect(scanZIndexSource('c.tsx', ok, zLevels)).toEqual([]);
+  });
+
   // ── (3) Негативные доказательства — легальные формы никогда не флагаются.
   it('IGNORES a canonical named layer with its guarded literal fallback', () => {
     const ok = [
@@ -117,12 +140,11 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
       ['--lab-z-dropdown', '--lab-z-modal', '--lab-z-modal-underlay', '--lab-z-tooltip'].sort(),
     );
     const v = (name: string) => consumed.get(name) as number;
-    // dropdown (900) < modal-underlay (1100) < modal (1200) < tooltip (1400).
+    // Порядок «как сейчас»: dropdown (900) ПОД модалом; скрим (underlay 1100) ПОД
+    // панелью (modal 1200); tooltip (1400) НАД всем.
     expect(v('--lab-z-dropdown')).toBeLessThan(v('--lab-z-modal-underlay'));
     expect(v('--lab-z-modal-underlay')).toBeLessThan(v('--lab-z-modal'));
     expect(v('--lab-z-modal')).toBeLessThan(v('--lab-z-tooltip'));
-    // Явно: скрим ПОД панелью модала (underlay < modal) — «как сейчас».
-    expect(v('--lab-z-modal-underlay')).toBeLessThan(v('--lab-z-modal'));
   });
 
   // ── (6) ПАРИТЕТ core↔react (задача, scope #4): один компонент кладётся на один
@@ -152,5 +174,14 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
     const { core, react } = zLevelsByComponent();
     expect(core.has('dialog')).toBe(true);
     expect(react.has('dialog')).toBe(true);
+  });
+
+  // ── (8) Граница локального стека (docs §7): приватный слой механик материалов
+  // ВНЕ компонентной поверхности, но его единственный z-index-литерал — локальный
+  // -1 (тинт под лейблом). Аллоулист закрепляет исключение списком: новый
+  // ГЛОБАЛЬНЫЙ слой, просочившийся в materials/*.css, тут же покраснеет (иначе
+  // carve-out был бы «прозой без исполнения»).
+  it('materials keeps ONLY the documented local -1 stacking literal (carve-out is enforced)', () => {
+    expect(materialsZIndexLiterals()).toEqual([-1]);
   });
 });

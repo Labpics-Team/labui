@@ -63,6 +63,12 @@ test.describe('z-index scale reaches the DOM and preserves stacking order', () =
     const host = page.getByTestId('lit-dialog');
     const portal = page.locator('[data-portal-for="lit-dialog"]');
 
+    // Сначала докажем, что контракт токенов реально загружен на :root — иначе
+    // computed z-index ниже свалился бы в ЛИТЕРАЛ-фолбэк (1100/1200) и тест прошёл
+    // бы при мёртвом пайплайне токенов. Этот гард делает тест самодостаточным.
+    expect(await rootZ(page, '--lab-z-modal-underlay'), 'tokens.css loaded on :root').toBe(1100);
+    expect(await rootZ(page, '--lab-z-modal')).toBe(1200);
+
     await host.locator('.trigger').click();
     await expect(portal.locator('.content')).toBeVisible();
 
