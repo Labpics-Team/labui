@@ -1,27 +1,58 @@
 # LabUI
 
-> Кросс-стек дизайн-система Labpics: токен-ориентированная, потребляет внешнее
-> цветовое ядро `@labpics/colors` как пакет, а не переизобретает его.
+> Кросс-стек дизайн-система Labpics: одна родная реализация компонентов,
+> пять стеков потребления, цвет и иконки — внешние ядра, а не копии.
 
-LabUI — дизайн-система, работающая одинаково в пяти стеках. Она даёт размерные
-токены (rem-относительные), плавную типографику (Geist), переключаемые материалы
-поверхностей (`solid` / `glass` / `blur` / `acrylic`), лестницу теней и мост к
-внешнему набору иконок. Компоненты читают **только семантические токены** `--lab-*`;
-цвет и иконки консумируются как отдельные пакеты и никогда не дублируются внутри.
-JS-моушн живёт в отдельном пакете `@labpics/motion` (внешний, как и цветовое ядро),
-здесь он не встроен.
+Компоненты LabUI читают **только семантические CSS-токены `--lab-*`** — имена
+переменных и есть контракт. Размеры rem-относительные, типографика плавная
+(Geist, `clamp()`), материалы поверхностей переключаются осью `data-material`
+(`solid` / `glass` / `blur` / `acrylic`), тени и высоты — генерируемая лестница.
+Цвет (`@labpics/colors`), иконки (`@labpics/icons`) и JS-моушн (`@labpics/motion`) —
+внешние пакеты: LabUI их потребляет и не дублирует.
 
-## Архитектура (ADR-0001, «A-prime»)
+## Как это устроено (ADR-0001, «A-prime»)
 
-Родная реализация каждого компонента — **одна**: React-рендерер поверх поведений
-[Zag](https://zagjs.com). Те же поведения оборачивает Lit-элемент `<lab-*>` в ядре, и
-четыре остальных стека (Vue / Solid / Svelte / Astro) **потребляют** эти
-web-components, а не переписывают их. Разметка, стили, a11y и логика заведены один раз
-в ядре.
+Родная реализация каждого компонента ровно одна: поведения
+[Zag](https://zagjs.com), обёрнутые двумя рендерерами — Lit-элементом `<lab-*>`
+в ядре и родным React-рендерером (без Lit в React-пути). Vue / Solid / Svelte /
+Astro компоненты не переписывают: они **потребляют** web-components ядра через
+обёртки, которые `@labpics/adapter-codegen` генерирует из единого манифеста,
+выведенного из исходников ядра, — поэтому API адаптеров не может разойтись с
+Lit/React-версиями.
 
-Обёртки Vue / Solid / Svelte / Astro **генерируются** из единого манифеста, выведенного
-из исходников ядра (`@labpics/adapter-codegen`), поэтому их API не может разойтись с
-Lit/React-версиями. Подробности — [docs/adapters.md](docs/adapters.md), решение —
+```mermaid
+%%{init: {'theme':'base','themeVariables':{
+  'lineColor':'#787880','textColor':'#0A0A10',
+  'edgeLabelBackground':'#F7F7FF',
+  'clusterBkg':'transparent','clusterBorder':'#787880'
+}}}%%
+flowchart LR
+  zag["Поведения Zag<br/>(разметка, a11y, логика — один раз)"]
+  core["@labpics/ui-core<br/>Lit-элементы &lt;lab-*&gt;"]
+  react["@labpics/ui-react<br/>родной React / Next"]
+  codegen["@labpics/adapter-codegen<br/>манифест → обёртки"]
+  vue["@labpics/ui-vue"]
+  solid["@labpics/ui-solid"]
+  svelte["@labpics/ui-svelte"]
+  astro["@labpics/ui-astro"]
+
+  zag --> core
+  zag --> react
+  core -- "манифест ядра" --> codegen
+  codegen --> vue & solid & svelte & astro
+  core -. "web components + SSR" .-> vue & solid & svelte & astro
+
+  classDef node fill:#F7F7FF,stroke:#787880,color:#0A0A10
+  class zag,vue,solid,svelte,astro node
+  classDef accent fill:#006FF3,stroke:#787880,color:#FCFDFF
+  class core,react accent
+  classDef dark fill:#101012,stroke:#787880,color:#F2F2FC
+  class codegen dark
+```
+
+Ядро закрывает **27 компонентов** (`packages/core/src/components/*`, без
+служебного `field`); у каждого адаптера — сгенерированная обёртка под все 27.
+Подробности — [docs/adapters.md](docs/adapters.md), решение —
 [docs/adr/0001-cross-stack-base.md](docs/adr/0001-cross-stack-base.md).
 
 ## Пакеты
@@ -32,12 +63,12 @@ Lit/React-версиями. Подробности — [docs/adapters.md](docs/a
 
 | Путь | Пакет | Назначение |
 | --- | --- | --- |
-| `packages/tokens` | `@labpics/ui-tokens` | Генератор + сгенерированные токены: отступы, радиусы, z-index, плавная типографика, вес, штрихи ([README](packages/tokens/README.md)) |
+| `packages/tokens` | `@labpics/ui-tokens` | Генератор + сгенерированные токены: отступы, радиусы, z-index, плавная типографика (`clamp()`), веса, штрихи, фокус-кольцо, доли стейт-оверлеев `--lab-state-hover/pressed` ([README](packages/tokens/README.md)) |
 | `packages/core` | `@labpics/ui-core` | Кросс-стек ядро: Lit base-элемент + шов поведений Zag, контракт темы/материала, Lit SSR shim. Общее для Lit-рендерера (4 стека) и родного React |
-| `packages/shadow` | `@labpics/ui-shadow` | Генератор лестницы теней/высот `--lab-shadow-*` / `--lab-elevation-*` (5 размеров XS/S/M/L/XL) ([README](packages/shadow/README.md)) |
+| `packages/shadow` | `@labpics/ui-shadow` | Генератор лестницы теней `--lab-shadow-{xs,s,m,l,xl}` и семантических высот `--lab-elevation-{resting,raised,overlay,modal}` ([README](packages/shadow/README.md)) |
 | `packages/materials` | `@labpics/ui-materials` | Ось режима материала (`data-material` = solid\|glass\|blur\|acrylic) над контрактом `--lab-*`: α-гарантия границы, specular rim, детерминированные деградации ([README](packages/materials/README.md)) |
 | `packages/fonts` | `@labpics/fonts` | Self-host Geist и Geist Mono (вариативные woff2, OFL 1.1). Опциональный пакет ([README](packages/fonts/README.md)) |
-| `packages/colors` | `@labui/colors` | labui-сторона цветового движка: паспорт бренда (`labui.config.json`) + генерация baseline и золотая сверка со стабом через опубликованный `@labpics/colors` ([README](packages/colors/README.md)) |
+| `packages/colors` | `@labui/colors` | labui-сторона цветового движка: паспорт бренда (`labui.config.json`), генерация baseline, золотая сверка со стабом через опубликованный `@labpics/colors`, CI-гейты пар и стейт-оверлеев ([README](packages/colors/README.md)) |
 | `packages/colors-stub` | `@labpics/colors` | ВРЕМЕННЫЙ стаб CSS-контракта `--lab-*` в воркспейсе; тает по мере того, как движок забирает роли (см. ниже) ([README](packages/colors-stub/README.md)) |
 | `packages/icons` | `@labpics/icons` | ВРЕМЕННЫЙ стаб-мост к внешнему ядру иконок (пока не опубликовано) ([README](packages/icons/README.md)) |
 | `packages/react` | `@labpics/ui-react` | Родной React / Next рендерер (те же поведения Zag, без Lit в React-пути; ADR-0001) |
@@ -48,31 +79,52 @@ Lit/React-версиями. Подробности — [docs/adapters.md](docs/a
 | `packages/adapter-codegen` | `@labpics/adapter-codegen` | Приватный dev-инструмент: генерирует обёртки адаптеров из манифеста ядра ([README](packages/adapter-codegen/README.md)) |
 | `apps/docs` | `@labpics/ui-docs` | Сайт документации + Playwright smoke/e2e-фикстуры |
 
-Ядро закрывает **27 компонентов** (`packages/core/src/components/*`, без служебного
-`field`); адаптеры Vue/Solid/Svelte/Astro генерируют обёртку под каждый из них.
-
 ## Внешние ядра: цвет, иконки, моушн
 
 LabUI **потребляет** эти ядра, а не реализует их. Шов — CSS-переменные `--lab-*`
-(имена переменных = контракт, их нельзя менять).
+(имена переменных = контракт, их нельзя менять; словарь ролей —
+[docs/vocabulary.md](docs/vocabulary.md)).
 
 - **Цвет — `@labpics/colors`.** Движок **опубликован в npm**; labui пинит `0.6.2`
-  (`labcolors-engine` в [`apps/docs/package.json`](apps/docs/package.json),
-  зависимость [`packages/colors/package.json`](packages/colors/package.json)).
-  Потребление тремя каналами: (1) CSS-контракт `--lab-*` — из workspace-стаба
-  `packages/colors-stub` (пока не перенесён на реестр); (2) живой движок (wasm) —
-  через `packages/colors` (`@labui/colors`) для генерации и золотой сверки;
-  (3) alias `labcolors-engine` в `apps/docs` — для e2e движка вживую. Полная карта
-  шва и план снятия стаба — [`INTEGRATION.md`](INTEGRATION.md) и
+  (зависимость [`packages/colors/package.json`](packages/colors/package.json),
+  alias `labcolors-engine` в [`apps/docs/package.json`](apps/docs/package.json)).
+  Потребление тремя каналами — см. схему ниже. Полная карта шва и план снятия
+  стаба — [`INTEGRATION.md`](INTEGRATION.md) и
   [`docs/external-deps/lab-colors.md`](docs/external-deps/lab-colors.md).
 - **Иконки — `@labpics/icons`.** Реальный пакет (`Labpics-Team/lab-icons`, 444 SVG
   Filled + Outline, tree-shakeable ESM, `currentColor`) пока **не опубликован**
-  (`private: true`, без тегов/релизов) — это блокер на том репозитории, не на LabUI.
-  `packages/icons` — тонкий build-free стаб-мост, чтобы резолвился import-спецификатор
-  ([`docs/external-deps/lab-icons.md`](docs/external-deps/lab-icons.md)).
+  (`private: true`, без тегов/релизов) — это блокер на том репозитории, не на
+  LabUI. `packages/icons` — тонкий build-free стаб-мост, чтобы резолвился
+  import-спецификатор ([`docs/external-deps/lab-icons.md`](docs/external-deps/lab-icons.md)).
 - **Моушн — `@labpics/motion`.** Внешний пакет; компонент потянет его, когда
-  понадобится JS-управляемая анимация. Сейчас ни один пакет воркспейса на него не
-  завязан.
+  понадобится JS-управляемая анимация. Сейчас ни один пакет воркспейса на него
+  не завязан.
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{
+  'lineColor':'#787880','textColor':'#0A0A10',
+  'edgeLabelBackground':'#F7F7FF',
+  'clusterBkg':'transparent','clusterBorder':'#787880'
+}}}%%
+flowchart LR
+  npm["npm: @labpics/colors@0.6.2<br/>(опубликованный движок)"]
+  labui["packages/colors<br/>@labui/colors — паспорт,<br/>baseline, золотая сверка, гейты"]
+  stub["packages/colors-stub<br/>@labpics/colors (workspace-стаб)<br/>contract.css"]
+  docs["apps/docs<br/>alias labcolors-engine"]
+  comp["Компоненты читают<br/>только --lab-*"]
+
+  npm -- "пин 0.6.2" --> labui
+  labui -- "генерация + сверка" --> stub
+  stub -- "CSS-контракт --lab-*" --> comp
+  npm -- "живой движок (e2e)" --> docs
+
+  classDef node fill:#F7F7FF,stroke:#787880,color:#0A0A10
+  class labui,stub,docs node
+  classDef dark fill:#101012,stroke:#787880,color:#F2F2FC
+  class npm dark
+  classDef accent fill:#006FF3,stroke:#787880,color:#FCFDFF
+  class comp accent
+```
 
 ## Инструментарий
 
@@ -108,5 +160,6 @@ pnpm test:e2e         # Playwright smoke (в первый прогон став�
 
 ## Лицензия
 
-`UNLICENSED` до первой публикации (см. `package.json`). До релиз-главы публикаций нет.
-Исключение — `@labpics/fonts`: шрифты Geist под OFL 1.1 (см. `packages/fonts/OFL.txt`).
+`UNLICENSED` до первой публикации (см. `package.json`). До релиз-главы публикаций
+нет. Исключение — `@labpics/fonts`: шрифты Geist под OFL 1.1
+(см. `packages/fonts/OFL.txt`).
