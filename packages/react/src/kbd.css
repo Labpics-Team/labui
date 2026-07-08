@@ -29,14 +29,7 @@
   border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   box-shadow: var(--lab-elevation-resting);
   color: var(--lab-label-primary);
-  font-family: var(
-    --lab-font-family-mono,
-    ui-monospace,
-    "SF Mono",
-    "Cascadia Code",
-    "Fira Code",
-    monospace
-  );
+  font-family: var(--lab-font-family-mono);
   font-size: var(--_lab-kbd-font);
   letter-spacing: var(--_lab-kbd-tracking);
   line-height: 1;
