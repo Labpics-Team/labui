@@ -75,7 +75,7 @@ describe('consumed-not-reinvented guard — box-shadow contract', () => {
   });
 
   it('DETECTS any non-elevation var(--lab-*) single-colour token', () => {
-    expect(scanBoxShadow('p.css', 'box-shadow: var(--lab-fill-neutral-tinted);')).toHaveLength(1);
+    expect(scanBoxShadow('p.css', 'box-shadow: var(--lab-fill-primary);')).toHaveLength(1);
   });
 
   // ── (3) Allowed-form proofs — these must NOT produce a hit. ─────────────────

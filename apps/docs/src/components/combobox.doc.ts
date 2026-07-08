@@ -118,7 +118,7 @@ export const comboboxDoc: ComponentDoc = {
       index: 7,
       name: 'Option',
       description:
-        'One VISIBLE option — role="option", keyed by data-value. Only options matching the typed query are rendered. The machine sets aria-selected + data-state="checked" on the chosen option and data-highlighted on the navigated one. The selected label is --lab-label-accent; the highlight fill is --lab-fill-neutral-tinted.',
+        'One VISIBLE option — role="option", keyed by data-value. Only options matching the typed query are rendered. The machine sets aria-selected + data-state="checked" on the chosen option and data-highlighted on the navigated one. The selected label is --lab-label-accent; the highlight fill is --lab-fill-primary.',
     },
     {
       index: 8,

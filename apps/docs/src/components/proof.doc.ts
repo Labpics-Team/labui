@@ -73,7 +73,7 @@ export const proofDoc: ComponentDoc = {
       index: 1,
       name: 'Container (button)',
       description:
-        'The interactive surface. Reads --lab-fill-neutral-tinted (unpressed) or --lab-fill-accent (pressed) for its background and --lab-border-neutral / --lab-border-accent for its edge. Pure semantic roles, no hex.',
+        'The interactive surface. Reads --lab-fill-primary (unpressed) or --lab-fill-accent (pressed) for its background and --lab-border-base / --lab-border-accent for its edge. Pure semantic roles, no hex.',
     },
     {
       index: 2,

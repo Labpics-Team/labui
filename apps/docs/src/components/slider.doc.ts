@@ -83,7 +83,7 @@ export const sliderDoc: ComponentDoc = {
       index: 3,
       name: 'Track',
       description:
-        'The Zag track — the full rail the value runs along, --lab-fill-neutral-tinted. The control reserves room around it so the thumb never clips at the ends.',
+        'The Zag track — the full rail the value runs along, --lab-fill-primary. The control reserves room around it so the thumb never clips at the ends.',
     },
     {
       index: 4,

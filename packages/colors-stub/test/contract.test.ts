@@ -92,10 +92,10 @@ describe('--lab-* semantic color contract', () => {
       Backgrounds: 26,
       Labels: 36,
       Fills: 33,
-      Border: 27,
+      Border: 26,
       FX: 67,
       Misc: 3,
-      Component: 29,
+      Component: 27,
     });
   });
 
@@ -104,7 +104,7 @@ describe('--lab-* semantic color contract', () => {
     // roles (solid fills, on-fill contrast, focus ring). Assert them by name so a
     // regression that drops the reconciliation set fails CI loudly.
     const derived = roles.groups.Component ?? [];
-    expect(derived.length, 'Component group must be present in roles.json').toBe(29);
+    expect(derived.length, 'Component group must be present in roles.json').toBe(27);
     for (const [scopeName, body] of [
       ['light', lightBody],
       ['dark', darkBody],

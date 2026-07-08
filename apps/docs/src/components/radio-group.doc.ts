@@ -114,7 +114,7 @@ export const radioGroupDoc: ComponentDoc = {
       index: 4,
       name: 'Ring + dot (item control)',
       description:
-        'The Zag item-control element: a circular ring bordered with --lab-border-neutral, filling to --lab-border-{type} when checked, with an inner dot in --lab-fill-{type} that scales in. The machine’s data-state drives it — not hand-rolled.',
+        'The Zag item-control element: a circular ring bordered with --lab-border-base, filling to --lab-border-{type} when checked, with an inner dot in --lab-fill-{type} that scales in. The machine’s data-state drives it — not hand-rolled.',
     },
     {
       index: 5,

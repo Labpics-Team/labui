@@ -89,7 +89,7 @@ export const progressDoc: ComponentDoc = {
       index: 4,
       name: 'Track (progressbar)',
       description:
-        'The Zag track element — role="progressbar" with aria-valuemin / aria-valuemax / aria-valuenow. A --lab-fill-neutral-tinted rail.',
+        'The Zag track element — role="progressbar" with aria-valuemin / aria-valuemax / aria-valuenow. A --lab-fill-primary rail.',
     },
     {
       index: 5,

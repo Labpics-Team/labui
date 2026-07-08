@@ -162,7 +162,6 @@
   --lab-border-info-strong: rgb(62 135 255);
   --lab-border-base: rgb(120 120 128 / 0.161);
   --lab-border-none: rgb(120 120 128 / 0);
-  --lab-border-ghost: var(--lab-border-none);
   --lab-border-inverted: rgb(255 255 255);
   --lab-border-soft: rgb(120 120 128 / 0.078);
   --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
@@ -226,7 +225,6 @@
   /* Tinted fills (kind=tinted) - Figma Fills sentiment @12 - exact var() reuse. */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
   --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
-  --lab-fill-neutral-tinted: var(--lab-fill-primary);
 
   /* Sentiment text (tinted/border/ghost kinds) — exact var() reuse. */
   --lab-label-accent: var(--lab-label-brand-primary);
@@ -242,7 +240,6 @@
   /* Borders (outline for kind=border) — opaque sentiment strokes + neutral base.
    * Focus ring ≈ Figma FX/Focus-ring/Brand — exact var() reuse. */
   --lab-border-accent: var(--lab-border-brand-strong);
-  --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
 }
@@ -358,7 +355,6 @@
   --lab-border-info-strong: rgb(86 150 255);
   --lab-border-base: rgb(120 120 128 / 0.2);
   --lab-border-none: rgb(120 120 128 / 0);
-  --lab-border-ghost: var(--lab-border-none);
   --lab-border-inverted: rgb(16 16 18);
   --lab-border-soft: rgb(120 120 128 / 0.122);
   --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
@@ -403,14 +399,12 @@
   --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
   --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
   --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
-  --lab-fill-neutral-tinted: var(--lab-fill-primary);
   --lab-label-accent: var(--lab-label-brand-primary);
   --lab-label-danger: var(--lab-label-danger-primary);
   --lab-label-on-accent: var(--lab-label-static-light-primary);
   --lab-label-on-danger: var(--lab-label-static-light-primary);
   --lab-label-on-neutral: rgb(246 248 250); /* PROVISIONAL — pairs solid neutral fill */
   --lab-border-accent: var(--lab-border-brand-strong);
-  --lab-border-neutral: var(--lab-border-base);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
 }
@@ -527,7 +521,6 @@
     --lab-border-info-strong: rgb(86 150 255);
     --lab-border-base: rgb(120 120 128 / 0.2);
     --lab-border-none: rgb(120 120 128 / 0);
-    --lab-border-ghost: var(--lab-border-none);
     --lab-border-inverted: rgb(16 16 18);
     --lab-border-soft: rgb(120 120 128 / 0.122);
     --lab-border-static-dark-base: rgb(120 120 128 / 0.2);
@@ -572,14 +565,12 @@
     --lab-fill-neutral: rgb(35 35 39); /* PROVISIONAL — solid neutral surface, owner sign-off */
     --lab-fill-accent-tinted: var(--lab-fill-brand-primary);
     --lab-fill-danger-tinted: var(--lab-fill-danger-primary);
-    --lab-fill-neutral-tinted: var(--lab-fill-primary);
     --lab-label-accent: var(--lab-label-brand-primary);
     --lab-label-danger: var(--lab-label-danger-primary);
     --lab-label-on-accent: var(--lab-label-static-light-primary);
     --lab-label-on-danger: var(--lab-label-static-light-primary);
     --lab-label-on-neutral: rgb(246 248 250); /* PROVISIONAL — pairs solid neutral fill */
     --lab-border-accent: var(--lab-border-brand-strong);
-    --lab-border-neutral: var(--lab-border-base);
     --lab-border-danger: var(--lab-border-danger-strong);
     --lab-border-focus: var(--lab-fx-focus-ring-brand);
   }
