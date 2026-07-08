@@ -34,13 +34,22 @@ export function writeIfChanged(path: string, content: string): boolean {
   return true;
 }
 
+/**
+ * Оборачивает значение в одинарные кавычки, экранируя бэкслеш и кавычку, —
+ * иначе имя с `'`/`\` (напр. событие `it's-open`) эмитило бы невалидный TS.
+ * Бэкслеш экранируется первым, чтобы не удвоить уже вставленные экранирования.
+ */
+function tsStringLiteral(value: string): string {
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
 /** Массив строк в TS-литерал одинарных кавычек: ['a','b']. */
 export function tsStringArray(values: readonly string[]): string {
-  return `[${values.map((v) => `'${v}'`).join(', ')}]`;
+  return `[${values.map(tsStringLiteral).join(', ')}]`;
 }
 
 /** Union строковых литералов или 'never' для пустого списка событий. */
 export function tsStringUnion(values: readonly string[]): string {
   if (values.length === 0) return 'never';
-  return values.map((v) => `'${v}'`).join(' | ');
+  return values.map(tsStringLiteral).join(' | ');
 }
