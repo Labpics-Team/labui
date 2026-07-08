@@ -42,7 +42,7 @@ const TINTED = [
   ['--lab-fill-warning-primary', '--lab-label-warning-primary'],
   ['--lab-fill-success-primary', '--lab-label-success-primary'],
   ['--lab-fill-info-primary', '--lab-label-info-primary'],
-  ['--lab-fill-neutral-tinted', '--lab-label-primary'], // нейтральный тинт
+  ['--lab-fill-primary', '--lab-label-primary'], // нейтральный тинт (цель миграции fill-neutral-tinted, #101)
 ];
 
 // Акцентный/сентимент-текст на фоне страницы (ghost/border/ховер/выбор).

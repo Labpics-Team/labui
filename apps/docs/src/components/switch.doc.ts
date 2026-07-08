@@ -86,7 +86,7 @@ export const switchDoc: ComponentDoc = {
       index: 2,
       name: 'Track (control)',
       description:
-        'The Zag control element. Off uses --lab-fill-neutral-tinted; on uses --lab-fill-accent / -neutral / -danger by type. A pill via --lab-radius-full.',
+        'The Zag control element. Off uses --lab-fill-primary; on uses --lab-fill-accent / -neutral / -danger by type. A pill via --lab-radius-full.',
     },
     {
       index: 3,

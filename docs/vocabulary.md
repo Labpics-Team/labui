@@ -46,25 +46,16 @@
   `packages/colors/test/pair-legality.test.mjs` (WCAG-пол каждой пары в обеих
   темах, замер на сгенерированном `contract.css`). Семантика — ADR-0002 §4.
 
-## Deprecated-мосты (не `passport.aliases`)
+## Мосты замороженного референса — сняты (#101)
 
-Токены ниже эмитятся НЕ из паспорта, а как **bridge-мосты** из замороженного
-`packages/colors-stub/figma-reference.css` (по 3 скоупа) + `roles.json`. Записи в
-`passport.aliases` для них были инертны (паспорт эмитит алиасы только для целей
-`badge-fill-*`) и сняты как мёртвый конфиг (см. история сноса `icon`).
-
-В новом коде НЕ используются — предпочитай цель. Все потребители переписаны на
-цель (2026-07-08, `packages/react` + `apps/docs` + `proof.tsx`), потребителей **0**.
-Сам снос строк из contract.css трогает замороженный референс + `roles.json` +
-`accent-substrate-legality.test.mjs` — владельческая задача (#101).
-
-| мост                  | цель              | статус                          |
-| --------------------- | ----------------- | ------------------------------- |
-| `border-ghost`        | `border-none`     | 0 потребителей, снос ждёт #101  |
-| `border-neutral`      | `border-base`     | 0 потребителей, снос ждёт #101  |
-| `fill-neutral-tinted` | `fill-primary`    | 0 потребителей, снос ждёт #101  |
+Три до-законных bridge-моста (`border-ghost`, `border-neutral`,
+`fill-neutral-tinted`) эмитились не из паспорта, а дословно из замороженного
+`packages/colors-stub/figma-reference.css` — держались только для сверки с ним.
+Их несущие алиасы мигрированы на цель (#97: `border-none`, `border-base`,
+`fill-primary` соответственно, потребителей 0), после чего сами мосты сняты из
+`figma-reference.css`, сгенерированного `contract.css` и `roles.json` (#101). В
+коде — цель напрямую.
 
 `fx-skeleton-base` (ранее числился здесь) — **не deprecated**, а несущий вход
 FX-контракта: из него `generate-contract.mjs` (`skeletonShimmerEmission`)
-деривирует `fx-skeleton-highlight`. Его рецикл/переклассификация — владельческая
-задача #100.
+деривирует `fx-skeleton-highlight`. Его рецикл/переклассификация — задача #100.

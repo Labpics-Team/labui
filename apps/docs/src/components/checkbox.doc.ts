@@ -102,7 +102,7 @@ export const checkboxDoc: ComponentDoc = {
       index: 2,
       name: 'Box (control)',
       description:
-        'The Zag control element. Unchecked is a transparent box bordered with --lab-border-neutral; checked OR mixed fills with --lab-fill-accent / -neutral / -danger by type.',
+        'The Zag control element. Unchecked is a transparent box bordered with --lab-border-base; checked OR mixed fills with --lab-fill-accent / -neutral / -danger by type.',
     },
     {
       index: 3,

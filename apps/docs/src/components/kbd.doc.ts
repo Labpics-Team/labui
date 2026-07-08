@@ -52,7 +52,7 @@ export const kbdDoc: ComponentDoc = {
       index: 1,
       name: 'Cap (kbd)',
       description:
-        'A real <kbd> element — the semantic carrier of "keyboard input". Its surface reads --lab-fill-neutral-tinted, its rim --lab-border-neutral, and a thin bottom-biased shadow from --lab-fx-shadow-penumbra gives the raised, standing-above-the-page look.',
+        'A real <kbd> element — the semantic carrier of "keyboard input". Its surface reads --lab-fill-primary, its rim --lab-border-base, and a thin bottom-biased shadow from --lab-fx-shadow-penumbra gives the raised, standing-above-the-page look.',
     },
     {
       index: 2,

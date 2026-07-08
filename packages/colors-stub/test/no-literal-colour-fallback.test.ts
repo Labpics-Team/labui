@@ -83,9 +83,7 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
   // old 9-name whitelist missed — are flagged on a colour role in both forms.
   it('DETECTS arbitrary CSS named colours (navy / tomato / rebeccapurple)', () => {
     expect(scanSource('p.css', 'color: var(--lab-label-primary, navy);')).toHaveLength(1);
-    expect(scanSource('p.css', 'background: var(--lab-fill-neutral-tinted, tomato);')).toHaveLength(
-      1,
-    );
+    expect(scanSource('p.css', 'background: var(--lab-fill-primary, tomato);')).toHaveLength(1);
     expect(scanSource('p.css', 'color: var(--lab-label-accent, rebeccapurple);')).toHaveLength(1);
     expect(
       scanSource('p.ts', "color: ${litVar('--lab-label-primary', 'rebeccapurple')};"),

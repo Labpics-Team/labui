@@ -114,7 +114,7 @@ export const selectDoc: ComponentDoc = {
       index: 7,
       name: 'Option',
       description:
-        'One option — role="option", keyed by data-value. The machine sets aria-selected + data-state="checked" on the chosen option and data-highlighted on the navigated one. The selected label is --lab-label-accent; the highlight fill is --lab-fill-neutral-tinted.',
+        'One option — role="option", keyed by data-value. The machine sets aria-selected + data-state="checked" on the chosen option and data-highlighted on the navigated one. The selected label is --lab-label-accent; the highlight fill is --lab-fill-primary.',
     },
     {
       index: 8,

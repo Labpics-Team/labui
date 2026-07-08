@@ -92,7 +92,7 @@ export const numberInputDoc: ComponentDoc = {
       index: 4,
       name: 'Increment / decrement triggers',
       description:
-        'Two real <button>s the machine drives — they step by the step prop and the machine sets data-disabled on each at the bounds (canIncrement / canDecrement). The surface is --lab-fill-neutral-tinted, hairline-separated by --lab-border-soft.',
+        'Two real <button>s the machine drives — they step by the step prop and the machine sets data-disabled on each at the bounds (canIncrement / canDecrement). The surface is --lab-fill-primary, hairline-separated by --lab-border-soft.',
     },
     {
       index: 5,
