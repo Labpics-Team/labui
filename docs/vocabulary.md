@@ -56,6 +56,9 @@
 `figma-reference.css`, сгенерированного `contract.css` и `roles.json` (#101). В
 коде — цель напрямую.
 
-`fx-skeleton-base` (ранее числился здесь) — **не deprecated**, а несущий вход
-FX-контракта: из него `generate-contract.mjs` (`skeletonShimmerEmission`)
-деривирует `fx-skeleton-highlight`. Его рецикл/переклассификация — задача #100.
+Скелетон-база — **Fill, не FX** (#100, ADR-0005): поверхность-заглушка
+адресуется существующей ступенью `fill-quaternary`; особый вход
+`fx-skeleton-base` снесён полностью (потребителей 0, совместимость ради
+фантомов не тащим). Шиммер `fx-skeleton-highlight` остаётся в FX как случай
+осветления и деривируется от `fill-quaternary` в `generate-contract.mjs`
+(`skeletonShimmerEmission`) — байт-в-байт как прежде.

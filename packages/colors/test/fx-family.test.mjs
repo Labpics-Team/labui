@@ -196,11 +196,18 @@ describe('FX-семья: focus-ring НАСЛЕДУЕТ label-strong (EC4, бай
   });
 });
 
-describe('FX-семья: алиас skeleton', () => {
-  it('fx-skeleton-base = алиас на fill Tertiary/Quaternary', () => {
+describe('FX-семья: skeleton — база ушла в Fill, шиммер остался в FX', () => {
+  // Решение владельца (#100): поверхность-заглушка — это Fill (существующая
+  // ступень fill-лестницы), а FX-словарь строго тени/свечения. fx-skeleton-base
+  // снесён полностью (потребителей 0), база адресуется fill-quaternary напрямую;
+  // шиммер fx-skeleton-highlight остаётся в FX как случай осветления (glow-кейс).
+  it('fx-skeleton-base снесён из паспорта — база скелетона есть fill-quaternary', () => {
     const alias = passport.aliases.find((a) => a.alias === 'fx-skeleton-base');
-    expect(alias, 'алиас fx-skeleton-base отсутствует').toBeTruthy();
-    expect(['fill-tertiary', 'fill-quaternary']).toContain(alias.target);
+    expect(alias, 'fx-skeleton-base ещё жив в passport.aliases').toBeUndefined();
+    expect(
+      passport.roles.some((r) => r.name === 'fill-quaternary'),
+      'fill-quaternary — существующая ступень fill-лестницы, адресует базу',
+    ).toBe(true);
   });
 });
 
@@ -264,6 +271,24 @@ describe('FX-семья: пропагация в опубликованный к
     const fx = new Set(rolesJson.groups.FX ?? []);
     const missing = [...GLOW_COLOR_ROLES, ...FOCUS_ROLES].filter((r) => !fx.has(r));
     expect(missing, 'FX-роли, не занесённые в roles.json').toEqual([]);
+  });
+
+  // #100: база-заглушка — Fill (fill-quaternary), FX держит только шиммер.
+  it('contract.css: fx-skeleton-base снесён, шиммер fx-skeleton-highlight остался', () => {
+    expect(
+      declares(contractCss, '--lab-fx-skeleton-base'),
+      'fx-skeleton-base ещё объявлен в contract.css — база должна быть fill-quaternary',
+    ).toBe(false);
+    expect(
+      declares(contractCss, '--lab-fx-skeleton-highlight'),
+      'шиммер fx-skeleton-highlight пропал из FX-контракта',
+    ).toBe(true);
+  });
+
+  it('roles.json (FX-группа): fx-skeleton-base снят, fx-skeleton-highlight есть', () => {
+    const fx = new Set(rolesJson.groups.FX ?? []);
+    expect(fx.has('--lab-fx-skeleton-base'), 'fx-skeleton-base ещё в roles.json FX').toBe(false);
+    expect(fx.has('--lab-fx-skeleton-highlight'), 'шиммер снят из roles.json FX').toBe(true);
   });
 
   it('монотонность в dark: subtle-α < base-α < bloom-α на каждый сентимент', () => {
@@ -407,7 +432,8 @@ describe('FX-семья: шиммер скелетона светлее base в 
     it(`highlight композитится СВЕТЛЕЕ base над фоном темы (${theme})`, () => {
       const bg = passport.neutral.anchors[theme];
       const roles = engine.colors.resolveTheme(bg, theme).roles;
-      const base = parseTranslucent(roles['fx-skeleton-base']);
+      // База скелетона — fill-quaternary (шиммер деривируется от неё, #100).
+      const base = parseTranslucent(roles['fill-quaternary']);
       // highlight по закону = белый при α base.
       const WHITE = passport.neutral.anchors.light;
       const baseL = compositeOklabL(base.tint, base.alpha, bg);
@@ -423,7 +449,7 @@ describe('FX-семья: шиммер скелетона светлее base в 
     // Гарантия, что тест реально кусается: до-законное значение нарушало инвариант.
     const bg = passport.neutral.anchors.dark;
     const roles = engine.colors.resolveTheme(bg, 'dark').roles;
-    const base = parseTranslucent(roles['fx-skeleton-base']);
+    const base = parseTranslucent(roles['fill-quaternary']);
     const MID = passport.neutral.anchors.mid;
     const baseL = compositeOklabL(base.tint, base.alpha, bg);
     const oldHlL = compositeOklabL(MID, 0.039, bg); // старый highlight

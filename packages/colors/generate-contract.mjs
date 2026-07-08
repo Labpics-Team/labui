@@ -272,13 +272,15 @@ function fxBridgeEmission(theme, engineVars, roles, anchorNames) {
  * вывод из существующих величин системы) — ноль хардкода цвета, ноль
  * per-тема-константы. Байт-стабильность: α highlight === α base посимвольно.
  *
- * @param {string} baseSkeletonCss  значение --lab-fx-skeleton-base (translucent oklch)
+ * @param {string} baseSkeletonCss  значение базы-заглушки --lab-fill-quaternary (translucent oklch)
  * @returns {string} значение --lab-fx-skeleton-highlight (белый при α base)
  */
 export function skeletonHighlightCss(baseSkeletonCss) {
   const m = /oklch\(\s*[\d.]+%\s+[\d.]+\s+([\d.]+)\s*\/\s*([\d.]+)\s*\)/.exec(baseSkeletonCss);
   if (!m) {
-    throw new Error(`fx-skeleton-base не translucent oklch(.../α): ${baseSkeletonCss}`);
+    throw new Error(
+      `база скелетона (fill-quaternary) не translucent oklch(.../α): ${baseSkeletonCss}`,
+    );
   }
   const [, hue, alpha] = m;
   return `oklch(100.00000% 0.000000 ${hue} / ${alpha})`;
@@ -286,13 +288,16 @@ export function skeletonHighlightCss(baseSkeletonCss) {
 
 /** Эмиссия шиммера: перекрывает каскадом мостовой highlight Figma-якоря. */
 function skeletonShimmerEmission(engineVars) {
-  const baseCss = engineVars.get('--lab-fx-skeleton-base');
-  if (!baseCss) throw new Error('движок не эмитит fx-skeleton-base для деривации шиммера');
+  // База-заглушка скелетона — Fill (fill-quaternary), не особый FX-вход (#100):
+  // FX-словарь строго тени/свечения. Шиммер деривируется от fill-quaternary —
+  // байт-в-байт как бывший fx-skeleton-base (та же ступень fill-лестницы).
+  const baseCss = engineVars.get('--lab-fill-quaternary');
+  if (!baseCss) throw new Error('движок не эмитит fill-quaternary для деривации шиммера скелетона');
   return [
     '',
-    '  /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты',
-    '     (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.',
-    '     Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */',
+    '  /* Шиммер скелетона (закон): highlight — нейтраль base (fill-quaternary) в',
+    '     максимуме светлоты (белый анкор) при α base → светлее base на любой',
+    '     поверхности в ОБЕИХ темах. Чинит Figma-инверсию dark-блика. */',
     `  --lab-fx-skeleton-highlight: ${skeletonHighlightCss(baseCss)};`,
   ].join('\n');
 }

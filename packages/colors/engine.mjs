@@ -27,4 +27,4 @@ export async function createLabuiEngine() {
 }
 
 /** Пин отпечатка паспорта (см. README): дрейф конфига виден по несовпадению. */
-export const PASSPORT_FINGERPRINT = '9ff4b8fc350cb182';
+export const PASSPORT_FINGERPRINT = '8b03771cdb8659ab';
