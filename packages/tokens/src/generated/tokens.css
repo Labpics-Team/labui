@@ -41,9 +41,21 @@
   --lab-size-control-s: 0.75rem;
   --lab-size-control-m: 1rem;
   --lab-size-control-l: 1.25rem;
+  --lab-size-control-xl: 1.5rem;
   --lab-size-control-h-s: 2rem;
   --lab-size-control-h-m: 2.5rem;
   --lab-size-control-h-l: 3rem;
+  --lab-size-overlay-11: 11rem;
+  --lab-size-overlay-12: 12rem;
+  --lab-size-overlay-14: 14rem;
+  --lab-size-overlay-16: 16rem;
+  --lab-size-overlay-18: 18rem;
+  --lab-size-overlay-20: 20rem;
+  --lab-size-overlay-22: 22rem;
+  --lab-size-overlay-24: 24rem;
+  --lab-size-overlay-28: 28rem;
+  --lab-size-overlay-32: 32rem;
+  --lab-size-overlay-40: 40rem;
 
   /* Radii — geometric rem + full pill */
   --lab-radius-0: 0rem;

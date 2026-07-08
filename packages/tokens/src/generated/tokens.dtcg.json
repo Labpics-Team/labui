@@ -314,6 +314,18 @@
         }
       }
     },
+    "control-xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
     "control-h-s": {
       "$type": "dimension",
       "$value": {
@@ -347,6 +359,138 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "3rem"
+        }
+      }
+    },
+    "overlay-11": {
+      "$type": "dimension",
+      "$value": {
+        "value": 176,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "11rem"
+        }
+      }
+    },
+    "overlay-12": {
+      "$type": "dimension",
+      "$value": {
+        "value": 192,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "12rem"
+        }
+      }
+    },
+    "overlay-14": {
+      "$type": "dimension",
+      "$value": {
+        "value": 224,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "14rem"
+        }
+      }
+    },
+    "overlay-16": {
+      "$type": "dimension",
+      "$value": {
+        "value": 256,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "16rem"
+        }
+      }
+    },
+    "overlay-18": {
+      "$type": "dimension",
+      "$value": {
+        "value": 288,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "18rem"
+        }
+      }
+    },
+    "overlay-20": {
+      "$type": "dimension",
+      "$value": {
+        "value": 320,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "20rem"
+        }
+      }
+    },
+    "overlay-22": {
+      "$type": "dimension",
+      "$value": {
+        "value": 352,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "22rem"
+        }
+      }
+    },
+    "overlay-24": {
+      "$type": "dimension",
+      "$value": {
+        "value": 384,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "24rem"
+        }
+      }
+    },
+    "overlay-28": {
+      "$type": "dimension",
+      "$value": {
+        "value": 448,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "28rem"
+        }
+      }
+    },
+    "overlay-32": {
+      "$type": "dimension",
+      "$value": {
+        "value": 512,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "32rem"
+        }
+      }
+    },
+    "overlay-40": {
+      "$type": "dimension",
+      "$value": {
+        "value": 640,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "40rem"
         }
       }
     }

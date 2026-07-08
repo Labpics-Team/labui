@@ -46,9 +46,21 @@ export const size = {
   'control-s': 'var(--lab-size-control-s)',
   'control-m': 'var(--lab-size-control-m)',
   'control-l': 'var(--lab-size-control-l)',
+  'control-xl': 'var(--lab-size-control-xl)',
   'control-h-s': 'var(--lab-size-control-h-s)',
   'control-h-m': 'var(--lab-size-control-h-m)',
   'control-h-l': 'var(--lab-size-control-h-l)',
+  'overlay-11': 'var(--lab-size-overlay-11)',
+  'overlay-12': 'var(--lab-size-overlay-12)',
+  'overlay-14': 'var(--lab-size-overlay-14)',
+  'overlay-16': 'var(--lab-size-overlay-16)',
+  'overlay-18': 'var(--lab-size-overlay-18)',
+  'overlay-20': 'var(--lab-size-overlay-20)',
+  'overlay-22': 'var(--lab-size-overlay-22)',
+  'overlay-24': 'var(--lab-size-overlay-24)',
+  'overlay-28': 'var(--lab-size-overlay-28)',
+  'overlay-32': 'var(--lab-size-overlay-32)',
+  'overlay-40': 'var(--lab-size-overlay-40)',
 } as const;
 
 export type SizeToken = keyof typeof size;
