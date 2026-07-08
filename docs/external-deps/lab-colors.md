@@ -26,9 +26,9 @@ the owning `lab-colors-v1` chapter.
 | # | Capability class | Consuming call site (`file:line`) | Owner chapter | Detailed below |
 | --- | --- | --- | --- | --- |
 | 1 | **Published `@labpics/colors` CSS+JS entry** | `apps/docs/package.json:17` (`workspace:*`) + `apps/docs/src/styles.css:9` (`@import "@labpics/colors/contract.css"`); stub `exports` at `packages/colors-stub/package.json:8-12`. JS runtime entry: **no current consumer — anticipated**. | `native-and-release` / `runtime-engine` | [§ Published package entry](#published-labpicscolors-cssjs-entry) |
-| 2 | **Frozen decorative floor / separator / shadow-ramp magnitudes** | separator: `packages/tokens/src/generated/tokens.css:106` (`--lab-stroke-hairline`); shadow-ramp geometry: `packages/shadow/src/generated/shadow.css:30-49`. | `runtime-engine` / `surface-jnd-contracts` | [§ Decorative magnitudes](#decorative-floor--separator--shadow-ramp-magnitudes) |
-| 3 | `--lab-surface-shadow-tint` | `packages/shadow/src/generated/shadow.css:31` | `runtime-engine` | [§ Shadow stack](#shadow-stack--packagesshadowsrcgeneratedshadowcss) |
-| 4 | `--lab-shadow-alpha-*` JND alphas | `packages/shadow/src/generated/shadow.css:23-26` | `surface-jnd-contracts` | [§ Shadow stack](#shadow-stack--packagesshadowsrcgeneratedshadowcss) |
+| 2 | **Frozen decorative floor / separator / shadow-ramp magnitudes** | separator: `packages/tokens/src/generated/tokens.css:106` (`--lab-stroke-hairline`); shadow-ramp geometry: `packages/shadow/src/generated/shadow.css:36-61` (roles alias at `:63-66`). | `runtime-engine` / `surface-jnd-contracts` | [§ Decorative magnitudes](#decorative-floor--separator--shadow-ramp-magnitudes) |
+| 3 | `--lab-surface-shadow-tint` | `packages/shadow/src/generated/shadow.css:37` | `runtime-engine` | [§ Shadow stack](#shadow-stack--packagesshadowsrcgeneratedshadowcss) |
+| 4 | `--lab-shadow-alpha-*` JND alphas | `packages/shadow/src/generated/shadow.css:30-33` | `surface-jnd-contracts` | [§ Shadow stack](#shadow-stack--packagesshadowsrcgeneratedshadowcss) |
 | 5 | **IC (inclusive / contrast) theme calibration** | **no current consumer — anticipated** (`THEMES = ['light','dark']` only — `packages/core/src/theme.ts:23`). | `surface-jnd-contracts` | [§ IC theme calibration](#ic-inclusive--contrast-theme-calibration) |
 
 Classes 3 and 4 are `--lab-*` token families and are additionally locked by the
