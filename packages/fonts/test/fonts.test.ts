@@ -45,6 +45,15 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
     expect(css.match(/font-display:\s*swap;/g)).toHaveLength(2);
   });
 
+  it('регистрирует ТОЛЬКО прямые начертания — italic-фейса нет (решение ДС: без italic)', () => {
+    // Geist italic существует у апстрима, но ДС его не вендорит (эмфаза весом/
+    // цветом; см. PROVENANCE.md). Пин на уровне регистрации: оба @font-face —
+    // `font-style: normal`, и ни один не заявляет наклон. RED-proof: добавить
+    // @font-face с `font-style: italic` (или src на *Italic.woff2) — падает.
+    expect(css.match(/font-style:\s*normal;/g)).toHaveLength(2);
+    expect(css).not.toMatch(/font-style:\s*italic/);
+  });
+
   it('src каждого face ссылается на существующий валидный WOFF2', () => {
     for (const f of FACES) {
       expect(css).toContain(`url("./${f.file}") format("woff2")`);
