@@ -67,11 +67,11 @@ in LabUI.
 
 | Gap token (prefix / exact) | Declared at | Provisional value | What the engine should provide |
 | --- | --- | --- | --- |
-| `--lab-shadow-color` | `packages/shadow/src/generated/shadow.css:18`, `packages/shadow/src/config.ts` | `#101012` | Theme shadow-colour anchor — the dark base a shadow tints toward when no per-surface tint resolves. |
-| `--lab-shadow-` (alphas: `--lab-shadow-alpha-{minor,ambient,penumbra,major}`) | `packages/shadow/src/generated/shadow.css:23-26` | `0.01 / 0.02 / 0.04 / 0.12` | JND-calibrated shadow alphas from the surface-JND contracts; same variable names, swap-in is a no-op. |
-| `--lab-surface-shadow-tint` | consumed in `packages/shadow/src/generated/shadow.css:31` (`color-mix` body); resolved per-element when present | _(unset — falls back to `--lab-shadow-color`)_ | Per-surface shadow hue: the surface's own colour, so a shadow is never pure black. Resolved by the runtime engine's surface roles. |
-| `--lab-light-angle` | `packages/shadow/src/generated/shadow.css:13` | `35deg` | Single global light-source angle driving every elevation offset. |
-| `--lab-elevation-` (`--lab-elevation-{resting,raised,overlay,modal}`) | `packages/shadow/src/generated/shadow.css:30-49` | composed from the alphas + angle above | Semantic elevation roles. Provisional until the engine owns the shadow geometry/alpha contract. |
+| `--lab-shadow-color` | `packages/shadow/src/generated/shadow.css:19`, `packages/shadow/src/config.ts` | `#101012` | Theme shadow-colour anchor — the dark base a shadow tints toward when no per-surface tint resolves. |
+| `--lab-shadow-` (slot alphas: `--lab-shadow-alpha-{s1,s2,s3,s4}`) | `packages/shadow/src/generated/shadow.css:30-33`; contract in `packages/shadow/src/domain/alpha-contract.ts` | `0.12 / 0.04 / 0.02 / 0.01` (per-slot, theme-invariant while `DARK_ALPHA_MULTIPLIER_DEFAULT = 1`) | JND-calibrated per-slot shadow alphas (and, if measurement says so, a dark-theme multiplier ≠ 1); same variable names, swap-in is a no-op. |
+| `--lab-surface-shadow-tint` | consumed in `packages/shadow/src/generated/shadow.css:37` (`color-mix` body); resolved per-element when present | _(unset — falls back to `--lab-shadow-color`)_ | Per-surface shadow hue: the surface's own colour, so a shadow is never pure black. Resolved by the runtime engine's surface roles. |
+| `--lab-light-angle` | `packages/shadow/src/generated/shadow.css:15` | `0deg` (vertical light — owner's Figma export, 2026-06-13) | Single global light-source angle driving every elevation offset. |
+| `--lab-elevation-` (`--lab-elevation-{resting,raised,overlay,modal}`) | `packages/shadow/src/generated/shadow.css:63-66` | aliases onto the five-size ladder `--lab-shadow-{xs,s,m,l,xl}` (`:36-61`); roles map resting→xs, raised→s, overlay→l, modal→xl (`m` is a deliberate ladder gap) | Semantic elevation roles. Provisional until the engine owns the shadow geometry/alpha contract. |
 
 ### Materials — CLOSED (refraction engine landed, ADR-0003)
 
@@ -185,7 +185,7 @@ magnitude, only snapshot it.
 | Magnitude | Declared at | Provisional value | What the engine should provide |
 | --- | --- | --- | --- |
 | **Separator floor** — `--lab-stroke-hairline` | `packages/tokens/src/generated/tokens.css:106`; source-of-truth `packages/tokens/src/config/default-config.ts:156`. Consumed e.g. `packages/core/src/components/accordion/lab-accordion.ts:178`, `packages/react/src/card.css:28`. | `0.0625rem` (1px, Figma `strokeWeight` 1) | The JND-calibrated separator magnitude — "barely perceptible but sufficient", a calibrated value, not a guess. Same token name; swap-in is value-only. |
-| **Shadow-ramp geometry** — the per-elevation offset/blur ramp | `packages/shadow/src/generated/shadow.css:30-49` (`--lab-elevation-{resting,raised,overlay,modal}`); generated from `packages/shadow/src/config.ts`. | resting → modal spatial ramp (`0.0625rem` → `0.5rem` base offsets, `0.125rem` → `8rem` blur), alpha-damped 1 / 0.85 / 0.7 / 0.55 | The frozen elevation-ramp geometry resolved from the engine's shadow contract. Provisional until the engine owns the geometry; same role names, no consumer edit. |
+| **Shadow-ramp geometry** — the per-size offset/blur ramp | `packages/shadow/src/generated/shadow.css:36-61` (`--lab-shadow-{xs,s,m,l,xl}`, four plies per size); roles alias at `:63-66`; generated from `packages/shadow/src/config.ts`. | five-size ladder with monotone offset-y/blur growth per ply, fixed per-slot alphas `s1..s4` = `0.12 / 0.04 / 0.02 / 0.01` | The frozen elevation-ramp geometry resolved from the engine's shadow contract. Provisional until the engine owns the geometry; same role names, no consumer edit. |
 
 > **Decorative floor** (a min-contrast magnitude for purely decorative surfaces)
 > has **no distinct consuming call site in LabUI today** — it is recorded here as
