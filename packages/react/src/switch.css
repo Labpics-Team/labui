@@ -57,7 +57,7 @@
   height: var(--_lab-sw-track-h);
   padding: 0.125rem;
   border-radius: var(--lab-radius-full, 9999px);
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   transition: background-color 140ms ease;
 }
 

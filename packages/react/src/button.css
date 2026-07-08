@@ -94,7 +94,7 @@
   color: var(--lab-label-on-neutral);
 }
 [data-lab-button][data-type="neutral"][data-kind="tinted"] {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   color: var(--lab-label-primary);
 }
 [data-lab-button][data-type="neutral"][data-kind="border"] {

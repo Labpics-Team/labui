@@ -42,7 +42,7 @@
   height: var(--_lab-avatar-diameter);
   border-radius: var(--lab-radius-full, 9999px);
   overflow: hidden;
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   color: var(--lab-label-primary);
   font: inherit;
   font-size: var(--_lab-avatar-font);

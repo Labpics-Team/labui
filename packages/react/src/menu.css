@@ -120,7 +120,7 @@
   user-select: none;
 }
 .lab-menu-item[data-highlighted] {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
 }
 .lab-menu-item[data-disabled] {
   cursor: not-allowed;

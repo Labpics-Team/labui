@@ -88,13 +88,13 @@ code {
 
 .nav-link:hover,
 .nav-link:focus-visible {
-  background: var(--lab-fill-neutral-tinted);
+  background: var(--lab-fill-primary);
 }
 
 .nav-link[aria-current="page"] {
   border-color: var(--lab-border-accent);
   color: var(--lab-label-primary);
-  background: var(--lab-fill-neutral-tinted);
+  background: var(--lab-fill-primary);
 }
 
 .nav-planned {

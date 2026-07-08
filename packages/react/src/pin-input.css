@@ -138,7 +138,7 @@
 
 /* Readonly / disabled surfaces. */
 [data-lab-pin-input][data-readonly] .lab-pin-input-segment {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border-color: var(--lab-border-soft);
 }
 [data-lab-pin-input] .lab-pin-input-segment:disabled {

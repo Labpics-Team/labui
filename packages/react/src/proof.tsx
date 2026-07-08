@@ -54,7 +54,7 @@ const baseStyle: CSSProperties = {
 };
 
 const unpressedStyle: CSSProperties = {
-  backgroundColor: 'var(--lab-fill-neutral-tinted)',
+  backgroundColor: 'var(--lab-fill-primary)',
   color: 'var(--lab-label-primary)',
 };
 

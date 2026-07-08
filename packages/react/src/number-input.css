@@ -138,7 +138,7 @@
   letter-spacing: var(--lab-letter-spacing-xs, -0.0009em);
   line-height: 1;
   color: var(--lab-label-secondary);
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border: 0;
   cursor: pointer;
   user-select: none;
@@ -194,7 +194,7 @@
 
 /* Readonly / disabled surfaces. */
 [data-lab-number-input][data-readonly] .lab-field-control {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border-color: var(--lab-border-soft);
 }
 [data-lab-number-input][data-disabled] .lab-field-control {

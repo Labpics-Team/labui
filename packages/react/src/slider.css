@@ -86,7 +86,7 @@
   position: relative;
   flex: 1 1 auto;
   border-radius: var(--lab-radius-full, 9999px);
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
 }
 [data-lab-slider][data-orientation="horizontal"] .lab-slider-track {
   width: 100%;

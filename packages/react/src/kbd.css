@@ -25,7 +25,7 @@
   min-height: var(--_lab-kbd-min);
   padding-inline: var(--_lab-kbd-pad-x);
   border-radius: var(--_lab-kbd-radius);
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
   box-shadow: var(--lab-elevation-resting);
   color: var(--lab-label-primary);

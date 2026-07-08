@@ -61,7 +61,7 @@
 
 .lab-pagination-item:hover:not([data-selected]):not(:disabled),
 .lab-pagination-trigger:hover:not(:disabled) {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   color: var(--lab-label-primary);
 }
 

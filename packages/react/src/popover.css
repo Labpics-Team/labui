@@ -118,7 +118,7 @@
   cursor: pointer;
 }
 .lab-popover-close:hover {
-  background-color: var(--lab-fill-neutral-tinted);
+  background-color: var(--lab-fill-primary);
   color: var(--lab-label-primary);
 }
 .lab-popover-close:focus-visible {
