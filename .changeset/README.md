@@ -1,14 +1,14 @@
 # Changesets
 
-This folder is managed by [Changesets](https://github.com/changesets/changesets).
+Этой папкой управляет [Changesets](https://github.com/changesets/changesets).
 
-When you change a published package, add a changeset:
+Когда меняете публикуемый пакет, добавьте changeset:
 
 ```bash
 pnpm changeset
 ```
 
-Pick the affected packages and a semver bump (patch / minor / major), write a
-one-line summary. The changeset file is committed with your PR; releases consume
-it in the `release` chapter. `@labpics/ui-docs` is ignored (private app, never
-published).
+Выберите затронутые пакеты и semver-бамп (patch / minor / major), напишите
+однострочное резюме. Файл changeset коммитится вместе с вашим PR; релизы
+используют его в главе `release`. `@labpics/ui-docs` игнорируется (приватное
+приложение, никогда не публикуется).

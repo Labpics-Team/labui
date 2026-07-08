@@ -1,87 +1,90 @@
 # Liquid Glass (web)
 
-Real Apple-style **Liquid Glass** for the web — the backdrop actually **refracts**
-(bends like a lens) at the rim, with chromatic dispersion and a soft top-lit
-rim sheen. Lightweight, pure CSS + a tiny zero-dependency runtime, fully
-configurable, and driven by the **same parameter model as Figma's native Glass
-effect**.
+Настоящий **Liquid Glass** в стиле Apple для веба — фон действительно
+**преломляется** (изгибается как линза) у кромки, с хроматической дисперсией и
+мягким бликом на кромке от подсветки сверху. Лёгкий, чистый CSS + крошечный
+рантайм без зависимостей, полностью настраиваемый, работающий на **той же
+модели параметров, что и нативный эффект Glass в Figma**.
 
-## Run the playground
+## Запуск песочницы
 
 ```bash
 node serve.mjs        # → http://127.0.0.1:4477
 ```
 
-Open the URL in **Chrome or Edge**. Drag the pane over the picture and watch the
-background bend behind it. Toggle Light/Dark, try the presets, and move the
-sliders — they are 1:1 with Figma/iOS Glass settings.
+Откройте URL в **Chrome или Edge**. Перетащите панель поверх картинки и смотрите,
+как фон изгибается за ней. Переключайте Light/Dark, пробуйте пресеты и двигайте
+ползунки — они 1:1 с настройками Glass в Figma/iOS.
 
-## Why Chromium for the refraction
+## Почему для преломления нужен Chromium
 
-The lens is an SVG `feDisplacementMap` wired into `backdrop-filter: url(#…)`.
-**Only Chromium renders an SVG filter on a backdrop today** — Firefox and Safari
-parse it but don't apply it (Mozilla bug 1961378, WebKit bug 245510). The
-runtime feature-detects the real engine: on Chromium you get the full lens; on
-everything else it degrades **honestly** to a clean frosted blur (never a broken
-surface). `prefers-reduced-transparency` collapses it to an opaque card.
+Линза — это SVG `feDisplacementMap`, подключённый к `backdrop-filter: url(#…)`.
+**Сегодня только Chromium применяет SVG-фильтр к фону** — Firefox и Safari его
+парсят, но не применяют (Mozilla bug 1961378, WebKit bug 245510). Рантайм
+определяет реальный движок через feature-detection: на Chromium вы получаете
+полноценную линзу; на всём остальном эффект **честно** деградирует до чистого
+матового размытия (никогда — до сломанной поверхности).
+`prefers-reduced-transparency` сворачивает его в непрозрачную карточку.
 
-## Use the material
+## Использование материала
 
 ```html
 <link rel="stylesheet" href="liquid-glass.css" />
 <div class="lab-liquid-glass" id="card">…</div>
 <script type="module">
   import { attach } from './liquid-glass.js';
-  attach(document.getElementById('card')); // adds the lens + keeps it size-synced
+  attach(document.getElementById('card')); // добавляет линзу и держит её синхронной по размеру
 </script>
 ```
 
-Configure entirely through CSS custom properties (set inline, per-theme, or
-per-instance). Each maps to a Figma Glass knob:
+Настраивается целиком через CSS-переменные (задаются inline, на тему или на
+конкретный экземпляр). Каждая соответствует ручке Glass в Figma:
 
-| CSS variable        | Figma           | Range        | What it does                         |
+| CSS-переменная      | Figma           | Диапазон     | Что делает                           |
 | ------------------- | --------------- | ------------ | ------------------------------------ |
-| `--lg-radius`       | radius          | `0–40px`     | backdrop blur (frostiness)           |
-| `--lg-refraction`   | refraction      | `0–1`        | edge bend strength (lens)            |
-| `--lg-depth`        | depth           | `2–34px`     | width of the refractive rim band     |
-| `--lg-dispersion`   | dispersion      | `0–1`        | chromatic fringe at the rim          |
-| `--lg-corner`       | corner radius   | `0–90px`     | pane radius                          |
-| `--lg-tint` / `--lg-tint-opacity` | fill | rgb / `0–1` | body tint                          |
-| `--lg-saturate`     | —               | `1–2.6`      | backdrop colour boost                |
+| `--lg-radius`       | radius          | `0–40px`     | размытие фона (матовость)            |
+| `--lg-refraction`   | refraction      | `0–1`        | сила изгиба у кромки (линза)         |
+| `--lg-depth`        | depth           | `2–34px`     | ширина преломляющей полосы у кромки  |
+| `--lg-dispersion`   | dispersion      | `0–1`        | хроматическая кайма у кромки         |
+| `--lg-corner`       | corner radius   | `0–90px`     | радиус панели                        |
+| `--lg-tint` / `--lg-tint-opacity` | fill | rgb / `0–1` | тонировка тела                     |
+| `--lg-saturate`     | —               | `1–2.6`      | усиление цвета фона                  |
 
-`refraction`, `depth`, and `dispersion` are read by the runtime to (re)build the
-displacement filter; the rest are pure CSS and update with no JS.
+`refraction`, `depth` и `dispersion` читаются рантаймом, чтобы (пере)собрать
+фильтр смещения; остальные — чистый CSS и обновляются без JS.
 
-## Performance
+## Производительность
 
-The expensive part — the displacement map — is regenerated **only on resize**
-(built once per geometry, shared across same-sized instances, resize storms
-collapse to one trailing-edge build), and its heaviest chunk — the PNG encode —
-runs **off the main thread** (`canvas.toBlob`); only the ¼-symmetric field
-loop stays synchronous. Tuning refraction/dispersion updates only
-the `feDisplacementMap` scale attributes in place — no markup re-parse, no
-feImage re-attach; blur / saturate / tint are pure CSS. Dragging the pane moves
-it on `left`/`top` (a transform would shear the lens off its filter region —
-the drag-seam) with **zero engine JS per frame**: bounds are measured once per
-gesture and the position write is coalesced to one per frame, so the whole
-per-frame cost is the GPU compositing of the quality-locked filter itself.
+Дорогая часть — карта смещения — пересобирается **только при ресайзе** (строится
+один раз на геометрию, переиспользуется между экземплярами одного размера, шторм
+ресайзов схлопывается в одну сборку по заднему фронту), а её самый тяжёлый кусок —
+кодирование PNG — выполняется **вне основного потока** (`canvas.toBlob`);
+синхронным остаётся только цикл по ¼-симметричному полю. Подстройка
+refraction/dispersion меняет на месте лишь атрибуты scale у `feDisplacementMap` —
+без повторного разбора разметки, без переподключения feImage; blur / saturate /
+tint — чистый CSS. Перетаскивание панели двигает её через `left`/`top` (transform
+сдвинул бы линзу с её области фильтра — шов перетаскивания) с **нулевым JS движка
+на кадр**: границы измеряются один раз за жест, а запись позиции сводится к одной
+на кадр, так что вся стоимость кадра — это GPU-композитинг самого фильтра с
+зафиксированным качеством.
 
-### Cost model for glass-heavy UIs
+### Модель стоимости для UI с обилием стекла
 
-Measured (weak-device emulation, animated backdrop): **`--lg-dispersion` is the
-expensive knob** — it roughly doubles a surface's per-frame GPU cost (the
-chromatic fringe is three displacement passes instead of one). Blur, tint,
-saturation and the rim sheen are cheap. In a UI with many live glass surfaces,
-spend dispersion on the hero surfaces and set `--lg-dispersion: 0` on small or
-numerous ones. The knobs cannot be silently cheapened: half-resolution
-displacement maps and 2-pass dispersion were both measured far above the
-visual-noise floor (maxΔ up to 224/250 on high-frequency backdrops) — the
-quality is load-bearing, so the engine never trades it for speed.
+Замерено (эмуляция слабого устройства, анимированный фон): **`--lg-dispersion` —
+дорогая ручка** — она примерно удваивает GPU-стоимость поверхности на кадр
+(хроматическая кайма — это три прохода смещения вместо одного). Размытие,
+тонировка, насыщенность и блик на кромке дёшевы. В UI со множеством живых
+стеклянных поверхностей тратьте дисперсию на главные поверхности и ставьте
+`--lg-dispersion: 0` на мелких или многочисленных. Ручки нельзя тихо удешевить:
+карты смещения половинного разрешения и дисперсия в 2 прохода обе замерены далеко
+выше порога визуального шума (maxΔ до 224/250 на высокочастотных фонах) —
+качество несущее, поэтому движок никогда не разменивает его на скорость.
 
-## Files
+## Файлы
 
-- `liquid-glass.css` — the material class (tint, specular, volume, fallbacks).
-- `liquid-glass.js` — the refraction runtime (`attach`, `supportsRefraction`).
-- `index.html` + `playground.{css,js}` — the configurator demo.
-- `assets/backdrop.svg` — the demo backdrop (straight lines + circles make the
-  bend and dispersion obvious).
+- `liquid-glass.css` — класс материала (тонировка, блик, объём, запасные
+  варианты).
+- `liquid-glass.js` — рантайм преломления (`attach`, `supportsRefraction`).
+- `index.html` + `playground.{css,js}` — демо-конфигуратор.
+- `assets/backdrop.svg` — фон для демо (прямые линии + круги делают изгиб и
+  дисперсию наглядными).

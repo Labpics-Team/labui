@@ -1,236 +1,127 @@
-# `@labpics/colors` (local stub)
+# `@labpics/colors` (локальный стаб)
 
-**Temporary.** This package vendors the `--lab-*` CSS custom-property contract by
-hand so LabUI can pin and test the color integration point before the real
-`@labpics/colors` is published.
+**Временный.** Пакет держит CSS-контракт кастом-свойств `--lab-*` внутри воркспейса,
+чтобы LabUI мог пинить и тестировать точку интеграции цвета. Движок `@labpics/colors`
+**уже опубликован** (labui пинит `0.6.2`), но CSS-контракт воркспейса всё ещё
+резолвится на этот стаб. Стаб **тает**: движок забирает роли живой эмиссией, и пакет
+исчезнет, когда мостовых ролей не останется. Полная карта шва и план снятия —
+[`../../INTEGRATION.md`](../../INTEGRATION.md).
 
-- Real package: produced by `lab-colors-v1` → chapter `native-and-release`.
-- Real runtime: `lab-colors-v1` → chapter `runtime-engine` (resolves `--lab-*`
-  from the background at runtime, per surface).
+- Реальный движок: репозиторий `lab-colors` (глава `native-and-release`).
+- Реальный рантайм: `runtime-engine` — резолвит `--lab-*` из фона на лету, по каждой
+  поверхности.
 
-## What this is
+## Что это
 
-`contract.css` declares the **full semantic `--lab-*` role contract** — the names
-components consume — and pins each role to a placeholder constant. The values are
-the exact resolved Light/Dark palette snapshotted from the LabUI Figma **Semantic**
-collection (488-token W3C DTCG export, `fileKey LuaiBd4anRi4DMZayKAnY2`,
-`reference/labui-tokens-snapshot.dtcg.json`). They are **not computed here** — this
-file does **not** implement the resolver and does **not** duplicate `semantic.rs`.
+`contract.css` объявляет **полный семантический контракт ролей `--lab-*`** — имена,
+которые читают компоненты — и пинит каждую роль значением Light/Dark. Значения **здесь
+не вычисляются**: файл не реализует резолвер и не дублирует `semantic.rs`.
 
-**Three-language rule.** Components read **only** semantic `--lab-*` roles. The
-primitives (`N0..N12`, accent hex) are this file's internal kitchen — they are
-never exposed as their own custom properties. A role is the public API; a primitive
-is an implementation detail.
+`contract.css` — **не рукопись, а генерируемый артефакт движка** (см. «Провенанс»).
+`roles.json` — машинно-читаемый канонический список ролей (якорь антидрейфа); тест
+присутствия ([`test/contract.test.ts`](test/contract.test.ts)) требует, чтобы
+`contract.css` отдавал ровно этот набор в каждой теме, — выпавшая или переименованная
+роль роняет CI. **Точный, всегда актуальный перечень ролей живёт в `roles.json` и
+`contract.css`; проза его не дублирует.**
 
-`roles.json` is the machine-readable canonical role list (the drift anchor). The
-presence test (`test/contract.test.ts`) asserts `contract.css` exposes exactly that
-set in every theme scope, so a dropped or renamed role fails CI.
+### Правило трёх языков
 
-## Theme switching
+Компоненты читают **только** семантические роли `--lab-*`. Примитивы (`N0..N12`,
+hex-акценты) — внутренняя кухня, наружу отдельными свойствами не выходят. Роль —
+публичный API; примитив — деталь реализации.
 
-- `:root` carries the **Light** palette (default).
-- `[data-theme="dark"]` forces **Dark**.
-- `[data-theme="light"]` forces **Light** (wins over OS preference).
-- `@media (prefers-color-scheme: dark)` applies **Dark** as a fallback only when no
-  explicit `[data-theme]` is set.
+## Роли контракта
 
-## Role catalog
+Контракт — **221 роль в семи группах** (числа сверены с `roles.json`):
 
-Each role lists the Figma Semantic path it mirrors (for traceability) and its
-primitive mapping. `N*` = Neutral ladder primitive; `@NN` = alpha step (percent).
-Sentiment accents: Brand `#007AFF`, Danger/Red `#FF3B30`, Warning/Orange `#FFA100`,
-Success/Green `#34C759`, Info/Blue `#3E87FF` (Light-mode anchors).
-
-### Backgrounds (23) — surface roles
-
-| Role | Semantic path | Mapping (Light → Dark) |
+| Группа | Ролей | Что это |
 | --- | --- | --- |
-| `--lab-bg-primary` | Backgrounds/Neutral/Primary | N0 → N0(dark) |
-| `--lab-bg-secondary` | Backgrounds/Neutral/Secondary | N1 → N1(dark) |
-| `--lab-bg-tertiary` | Backgrounds/Neutral/Tertiary | N0 → N2(dark) |
-| `--lab-bg-inverted` | Backgrounds/Neutral/Inverted | N12 → N12(dark) |
-| `--lab-bg-grouped-primary` | Backgrounds/Neutral/Grouped/Primary | N1 → N0(dark) |
-| `--lab-bg-grouped-secondary` | Backgrounds/Neutral/Grouped/Secondary | N0 → N1(dark) |
-| `--lab-bg-grouped-tertiary` | Backgrounds/Neutral/Grouped/Tertiary | N1 → N2(dark) |
-| `--lab-bg-static-light` | Backgrounds/Neutral/Static/Light | White (both modes) |
-| `--lab-bg-static-dark` | Backgrounds/Neutral/Static/Dark | Dark (both modes) |
-| `--lab-bg-overlay-ghost` | Backgrounds/Overlay/Ghost | N0 @0 / Dark @0 |
-| `--lab-bg-overlay-soft` | Backgrounds/Overlay/Soft | @20 |
-| `--lab-bg-overlay-base` | Backgrounds/Overlay/Base | @48 |
-| `--lab-bg-overlay-strong` | Backgrounds/Overlay/Strong | @80 |
-| `--lab-bg-material-elevated-01` / `-02` | Backgrounds/Materials/Elevated/01·02 | translucent + tint layers |
-| `--lab-bg-material-base-01` / `-02` | Backgrounds/Materials/Base/01·02 | translucent + tint layers |
-| `--lab-bg-material-muted-01` / `-02` | Backgrounds/Materials/Muted/01·02 | translucent + tint layers |
-| `--lab-bg-material-soft-01` / `-02` | Backgrounds/Materials/Soft/01·02 | translucent + tint layers |
-| `--lab-bg-material-subtle-01` / `-02` | Backgrounds/Materials/Subtle/01·02 | translucent + tint layers |
+| Backgrounds | 26 | поверхности: neutral, grouped, static, overlay, материалы `01`/`02` |
+| Labels | 36 | текст / иконки; лестница прозрачности primary/secondary/tertiary/quaternary на каждую семью |
+| Fills | 33 | тонированные поверхности: neutral + сентименты + static |
+| Border | 27 | штрихи: neutral, static, сентименты strong/base/soft |
+| FX | 67 | эффекты: glow, focus-ring, skeleton (base + shimmer), тени. Законы glow и шиммера — в [`../colors/README.md`](../colors/README.md) |
+| Misc | 3 | составные роли: `control-bg`, `badge-*` |
+| Component | 29 | плоский слой, который компоненты читают напрямую (derived из Semantic) |
 
-> Materials are two-layer recipes (`01` translucent base + `02` tint). The
-> `mix-blend-mode` and `backdrop-filter` parts of the Figma material are **not**
-> colors and are intentionally out of this contract — they belong to component CSS.
+> Материалы — двухслойные рецепты (`01` полупрозрачная база + `02` тинт). Части
+> `mix-blend-mode` / `backdrop-filter` из Figma-материала — **не** цвета и в контракт
+> намеренно не входят: это дело CSS компонентов (`@labpics/ui-materials`).
 
-### Labels (36) — text / icon roles
+## Переключение темы
 
-Opacity ladder per family: Primary `@100`, Secondary `@72`, Tertiary `@52`,
-Quaternary `@32`.
+- `:root` несёт палитру **Light** (по умолчанию).
+- `[data-theme="dark"]` форсит **Dark**.
+- `[data-theme="light"]` форсит **Light** (перебивает системную настройку ОС).
+- `@media (prefers-color-scheme: dark)` даёт **Dark** фолбэком — только когда явного
+  `[data-theme]` нет.
 
-| Role family | Semantic path | Primary mapping |
-| --- | --- | --- |
-| `--lab-label-{primary,secondary,tertiary,quaternary}` | Labels/Neutral/* | Primary=N12; Secondary=N8 @72; Tertiary=N8 @52; Quaternary=N8 @32 |
-| `--lab-label-inverted-{primary,secondary,tertiary,quaternary}` | Labels/Neutral/Inverted/* | Primary=N0; ladder on N4 |
-| `--lab-label-brand-{primary,secondary,tertiary,quaternary}` | Labels/Brand/* | Primary=Brand; ladder @72/@52/@32 |
-| `--lab-label-danger-{primary,secondary,tertiary,quaternary}` | Labels/Danger/* | Primary=Red; ladder |
-| `--lab-label-warning-{primary,secondary,tertiary,quaternary}` | Labels/Warning/* | Primary=Orange; ladder |
-| `--lab-label-success-{primary,secondary,tertiary,quaternary}` | Labels/Success/* | Primary=Green; ladder |
-| `--lab-label-info-{primary,secondary,tertiary,quaternary}` | Labels/Info/* | Primary=Blue; ladder |
-| `--lab-label-static-light-{primary,secondary,tertiary,quaternary}` | Labels/Static/Light/* | White ladder |
-| `--lab-label-static-dark-{primary,secondary,tertiary,quaternary}` | Labels/Static/Dark/* | Dark ladder |
+## Component — derived-слой и PROVISIONAL-роли
 
-> `--lab-label-primary` is surface-relative: the stub value is the resolved
-> snapshot anchor (`N12` on light, `N0` on dark), not a fixed near-white. The real
-> engine recomputes it from the actual background.
+Группа Component — **плоский, обращённый к компонентам** слой (его читают Button и
+`proof`): SOLID-заливки на полной непрозрачности, on-fill контрастные лейблы, фокус-ринг.
+Эти роли **не 1:1** с точной таксономией Figma Semantic — они из неё *выведены*. Реальный
+движок `@labpics/colors` обязан резолвить и эти имена (заведено как требование к ядру);
+стаб пинит их, чтобы компоненты рендерились сегодня.
 
-### Fills (33) — tinted surface roles
+**Правило композиции.** Где точный эквивалент Figma есть — роль **алиасит его через
+`var()`** (один источник, ноль дублирования значения). Где эквивалента нет (сплошная
+нейтральная поверхность и её контрастный лейбл) — значение помечено `PROVISIONAL` в
+`contract.css` и ждёт визуальной приёмки владельца:
 
-Neutral fill base is `N6` (`#787880`). Sentiment ladder: Primary `@12`,
-Secondary `@8`, Tertiary `@4`, Quaternary `@2`.
+- `--lab-fill-neutral` и её пара `--lab-label-on-neutral` — **PROVISIONAL** (мост,
+  деривация движком открыта). У Figma нет непрозрачной нейтральной *поверхности* (только
+  Fills с низкой α), поэтому сплошная нейтральная заливка — дизайн-решение.
+- Акцент- и danger-солиды **не** provisional: они переиспользуют тот же непрозрачный
+  примитив, что и роли `-strong` (то же значение, полная непрозрачность).
 
-| Role family | Semantic path | Mapping |
-| --- | --- | --- |
-| `--lab-fill-{primary,secondary,tertiary,quaternary,none}` | Fills/Neutral/* | N6 Light @20/@16/@12/@8/@0 (Dark @36/@32/@24/@16/@0) |
-| `--lab-fill-static-light-{primary,secondary,tertiary,quaternary}` | Fills/Neutral/Static/Light/* | N6 @20/@16/@12/@8 |
-| `--lab-fill-static-dark-{primary,secondary,tertiary,quaternary}` | Fills/Neutral/Static/Dark/* | N6 @36/@32/@24/@16 |
-| `--lab-fill-brand-{primary,secondary,tertiary,quaternary}` | Fills/Brand/* | Brand @12/@8/@4/@2 |
-| `--lab-fill-danger-{primary,secondary,tertiary,quaternary}` | Fills/Danger/* | Red @12/@8/@4/@2 |
-| `--lab-fill-warning-{primary,secondary,tertiary,quaternary}` | Fills/Warning/* | Orange @12/@8/@4/@2 |
-| `--lab-fill-success-{primary,secondary,tertiary,quaternary}` | Fills/Success/* | Green @12/@8/@4/@2 |
-| `--lab-fill-info-{primary,secondary,tertiary,quaternary}` | Fills/Info/* | Blue @12/@8/@4/@2 |
+### Снятые алиасы (миграция)
 
-### Border (26) — stroke roles
+Оригинальный 5-переменный стаб когда-то отдавал три back-compat алиаса. Они **убраны** —
+каждый потребитель читает системную роль напрямую, так что переход на опубликованный
+`@labpics/colors` (который алиасы не эмитил) остаётся no-op. Тест контракта запрещает их
+возврат:
 
-| Role family | Semantic path | Mapping |
-| --- | --- | --- |
-| `--lab-border-strong` | Border/Neutral/Strong | N12 |
-| `--lab-border-base` | Border/Neutral/Base | N6 @16 (Dark @20) |
-| `--lab-border-soft` | Border/Neutral/Soft | N6 @8 (Dark @12) |
-| `--lab-border-ghost` | Border/Neutral/Ghost | N6 @0 |
-| `--lab-border-inverted` | Border/Neutral/Inverted | N0 |
-| `--lab-border-static-light-{strong,base,soft}` | Border/Neutral/Static/Light/* | White / N6 @16 / @8 |
-| `--lab-border-static-dark-{strong,base,soft}` | Border/Neutral/Static/Dark/* | Dark / N6 @20 / @12 |
-| `--lab-border-{brand,danger,warning,success,info}-{strong,base,soft}` | Border/{sentiment}/* | Strong=accent; Base @20; Soft @12 |
-
-### FX (15) — effects
-
-| Role | Semantic path | Mapping |
-| --- | --- | --- |
-| `--lab-fx-glow-neutral` | FX/Glow/Neutral | White @52 |
-| `--lab-fx-glow-inverted` | FX/Glow/Inverted | N4 |
-| `--lab-fx-glow-{brand,danger,warning}` | FX/Glow/* | accent @52 |
-| `--lab-fx-focus-ring-neutral` | FX/Focus-ring/Neutral | N12 |
-| `--lab-fx-focus-ring-{brand,danger,warning}` | FX/Focus-ring/* | accent (opaque) |
-| `--lab-fx-skeleton-base` | FX/Skeleton/Base | N6 @8 (Dark @12) |
-| `--lab-fx-skeleton-highlight` | FX/Skeleton/Highlight | N6 @4 |
-| `--lab-fx-shadow-minor` | FX/Shadow/Minor | Dark @1 (Dark-mode @2) |
-| `--lab-fx-shadow-ambient` | FX/Shadow/Ambient | Dark @2 (Dark-mode @4) |
-| `--lab-fx-shadow-penumbra` | FX/Shadow/Penumbra | Dark @4 (Dark-mode @12) |
-| `--lab-fx-shadow-major` | FX/Shadow/Major | Dark @12 (Dark-mode @20) |
-
-> Focus-ring **Success** and **Info** are absent from the source snapshot
-> (Figma only ships Neutral/Brand/Danger/Warning focus rings); they are therefore
-> **not** in the contract. Add them upstream first if a component needs them.
-
-### Misc (3) — composed roles
-
-| Role | Semantic path | Mapping |
-| --- | --- | --- |
-| `--lab-control-bg` | Misc/Control/Control-bg | Light=Backgrounds/Neutral/Primary; Dark=Fills/Neutral/Primary |
-| `--lab-badge-label-contrast` | Misc/Badge/Label-contrast | Labels/Static/Dark/Primary |
-| `--lab-badge-label-default` | Misc/Badge/Label-default | Labels/Static/Light/Primary |
-
-### Component (15) — derived component roles
-
-A **flat, component-facing** layer consumed by Button and `proof` (the proto-A
-consumption surface). These roles are **not 1:1 in the faithful Figma Semantic
-taxonomy** above — they are *derived* from it: the SOLID full-opacity fills, the
-on-fill contrast labels, and the focus ring that components read directly. The real
-`@labpics/colors` engine **must** resolve these names too (filed as a core
-requirement); this stub pins them so components render today.
-
-**Composition rule.** Where an exact Figma equivalent exists, the role **aliases it
-via `var()`** — one source of truth, zero value duplication. Where no equivalent
-exists (the solid neutral surface and its contrast label), the value is a design
-**literal marked `PROVISIONAL`** in `contract.css`; final visual acceptance is the
-owner's.
-
-| Role | Kind | Source | Light → Dark |
-| --- | --- | --- | --- |
-| `--lab-fill-accent` | solid fill | `var(--lab-border-brand-strong)` | Brand opaque `#007AFF` → `#4A8FFF` |
-| `--lab-fill-danger` | solid fill | `var(--lab-border-danger-strong)` | Red opaque `#FF3B30` → `#FF3A3A` |
-| `--lab-fill-neutral` | solid fill | **PROVISIONAL** literal | `#e8e8ec` → `#232327` (proto-A) |
-| `--lab-fill-accent-tinted` | tinted fill | `var(--lab-fill-brand-primary)` | Brand @12 (both modes) |
-| `--lab-fill-danger-tinted` | tinted fill | `var(--lab-fill-danger-primary)` | Red @12 (both modes) |
-| `--lab-fill-neutral-tinted` | tinted fill | `var(--lab-fill-primary)` | Neutral N6 @20 → @36 |
-| `--lab-label-accent` | sentiment text | `var(--lab-label-brand-primary)` | Brand text |
-| `--lab-label-danger` | sentiment text | `var(--lab-label-danger-primary)` | Red text |
-| `--lab-label-on-accent` | on-fill contrast | `var(--lab-label-static-light-primary)` | White (both modes) |
-| `--lab-label-on-danger` | on-fill contrast | `var(--lab-label-static-light-primary)` | White (both modes) |
-| `--lab-label-on-neutral` | on-fill contrast | **PROVISIONAL** literal | `#101012` → `#f6f8fa` (pairs solid neutral) |
-| `--lab-border-accent` | outline | `var(--lab-border-brand-strong)` | Brand opaque |
-| `--lab-border-neutral` | outline | `var(--lab-border-base)` | N6 @16 → @20 |
-| `--lab-border-danger` | outline | `var(--lab-border-danger-strong)` | Red opaque |
-| `--lab-border-focus` | focus ring | `var(--lab-fx-focus-ring-brand)` | Brand opaque |
-
-> **PROVISIONAL roles** — `--lab-fill-neutral` and its contrast partner
-> `--lab-label-on-neutral`. Figma has no opaque-neutral *surface* (only low-alpha
-> Fills), so a solid neutral fill is a design decision. The literal values are taken
-> from proto-A `fixtures/themes.css` (bench-passed) and must be visually accepted by
-> the owner before they are considered final. The accent/danger solids are **not**
-> provisional — they reuse the same opaque accent primitive the `-strong` border
-> roles already pin (identical value, full opacity).
->
-> Why solid `--lab-fill-accent` reuses `--lab-border-brand-strong`: both resolve to
-> the opaque Brand primitive (`#007AFF` light / `#4A8FFF` dark). Aliasing avoids a
-> second literal for the same primitive — a single source of truth that moves
-> together if the snapshot is re-derived.
-
-### Retired aliases (migration note)
-
-The original 5-variable stub once shipped three back-compat aliases. They have been
-**removed** — every consumer now reads the systematic role directly, so the swap to
-the published `@labpics/colors` (which never emitted the aliases) stays a no-op. The
-contract test forbids their reintroduction. If you still reference an old name, map it:
-
-| Retired alias | Use instead |
+| Снятый алиас | Использовать вместо |
 | --- | --- |
 | `--lab-surface-base` | `--lab-bg-primary` |
 | `--lab-surface-raised` | `--lab-bg-secondary` |
 | `--lab-accent` | `--lab-label-brand-primary` |
 
-(`--lab-label-primary` and `--lab-label-secondary` from the original stub already
-exist as first-class roles in the Labels group, with the same names.)
+## IC — зарезервировано
 
-## IC — reserved
+Источник несёт варианты **Increased-Contrast** (`Light-mode/IC`, `Dark-mode/IC`). Здесь
+они намеренно **не эмитятся**: *структура* роли зарезервирована, а IC-значения ждут
+дизайн-приёмки и выбранного механизма активации (напр. скоуп `[data-contrast="more"]`).
+При добавлении IC обязан переиспользовать те же имена `--lab-*` под этим скоупом — новых
+имён ролей нет.
 
-The source snapshot ships **Increased-Contrast** variants (`Light-mode/IC`,
-`Dark-mode/IC`) for every role. They are intentionally **not emitted** here yet —
-the role *structure* is reserved, but IC values await design sign-off and a chosen
-activation mechanism (e.g. a `[data-contrast="more"]` scope). When added, IC must
-reuse the same `--lab-*` names under that scope; no new role names.
+## Провенанс и регенерация
 
-## Provenance & regeneration
+`contract.css` — **генерируемый артефакт**, а не источник истины. Рукописная эра
+закончилась:
 
-`contract.css` and `roles.json` are generated from
-`reference/labui-tokens-snapshot.dtcg.json` (the `4.2 Semantic` collection, modes
-`Light-mode` / `Dark-mode`). Do not hand-edit individual values — re-derive from the
-snapshot if they drift. The presence test guards the role **names**; **values** are
-owned by the resolver and calibrated by the design owner.
+- **Источник значений** — живые замеры Figma «🧪Lab UI (v.1)», заморожены дословно в
+  [`figma-reference.css`](figma-reference.css) (якорь золотой сверки, руками не правится).
+- **Генератор** — [`../colors/generate-contract.mjs`](../colors/generate-contract.mjs):
+  эмитит роли живого движка из опубликованного `@labpics/colors` + паспорта
+  (`labui.config.json`), остальное — мост от замороженного Figma-якоря. Значения выходят
+  как `rgb()` / `oklch()`, не как рукописный hex.
+- **Гейты**: `../colors/test/contract-generated.test.mjs` (сборка ≡ генератор),
+  `test/contract.test.ts` (присутствие имён = `roles.json`), `../colors/test/golden-parity.test.mjs`
+  (сверка живого движка со стабом; каждое расхождение либо воспроизведено, либо исключено
+  законом-причиной).
 
-## Swap-out plan
+Значения руками не правьте — перевыводите генератором. Тесты сторожат **имена** ролей;
+**значения** принадлежат резолверу и калибруются владельцем-дизайнером.
 
-1. When `@labpics/colors` is published, replace the workspace `@labpics/colors`
-   dependency target from this stub to the registry package.
-2. The `--lab-*` variable **names** must not change, so consumers
-   (`apps/docs`, components) need zero edits.
-3. Delete `packages/colors-stub`.
+## План снятия стаба
 
-Do **not** add a color resolver here. Missing core API is filed as a request to
-`lab-colors-v1`, never implemented in LabUI.
+1. CSS-контракт `--lab-*` в воркспейсе перевести с этого стаба на опубликованный
+   `@labpics/colors` (движок уже в реестре, пин `0.6.2`).
+2. **Имена** переменных `--lab-*` не меняются, поэтому потребителям (`apps/docs`,
+   компоненты) правок не нужно.
+3. Удалить `packages/colors-stub`.
+
+Резолвер цвета сюда **не** добавлять. Недостающий API ядра — запрос к `lab-colors`,
+никогда не реализуется внутри LabUI.
