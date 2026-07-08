@@ -173,11 +173,23 @@ export function scanZIndexSource(
   return out;
 }
 
+/**
+ * Поверхность z-гарда: компонентные близнецы БЕЗ `packages/materials/`.
+ * Размерный гард расширил fallbackSurfaceFiles() на materials (слепая зона
+ * дрейфа фолбэков, аудит 2026-07-09) — для z-шкалы это расширение не действует:
+ * у приватного слоя механик материалов СВОЯ документированная граница
+ * (materialsZIndexLiterals: единственный легальный локальный `-1`, docs §7),
+ * и её стережёт отдельный тест списком, а не поверхностный скан.
+ */
+function zSurfaceFiles(): string[] {
+  return fallbackSurfaceFiles().filter((rel) => !rel.startsWith('packages/materials/'));
+}
+
 /** Скан всей компонентной поверхности; живое дерево обязано вернуть []. */
 export function scanZIndexSurface(): ZIndexViolation[] {
   const zLevels = canonicalZLevels();
   const out: ZIndexViolation[] = [];
-  for (const rel of fallbackSurfaceFiles()) {
+  for (const rel of zSurfaceFiles()) {
     const source = readFileSync(resolve(repoRoot, rel), 'utf8');
     out.push(...scanZIndexSource(rel, source, zLevels));
   }
@@ -195,7 +207,7 @@ function readNormalized(rel: string): string {
 export function consumedZLevels(): Map<string, number> {
   const zLevels = canonicalZLevels();
   const used = new Map<string, number>();
-  for (const rel of fallbackSurfaceFiles()) {
+  for (const rel of zSurfaceFiles()) {
     for (const m of readNormalized(rel).matchAll(ZINDEX_DECL)) {
       for (const ref of (m[1] as string).matchAll(Z_REF)) {
         const v = zLevels.get(ref[0]);
@@ -214,7 +226,7 @@ export function zLevelsByComponent(): {
   const core = new Map<string, Set<string>>();
   const react = new Map<string, Set<string>>();
 
-  for (const rel of fallbackSurfaceFiles()) {
+  for (const rel of zSurfaceFiles()) {
     const coreMatch = /packages\/core\/src\/components\/([^/]+)\//.exec(rel);
     const reactMatch = /packages\/react\/src\/([^/]+)\.css$/.exec(rel);
     const target = coreMatch

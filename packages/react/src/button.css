@@ -24,7 +24,7 @@
   --_lab-btn-pad-x: var(--lab-space-md, 1rem);
   --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
   --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-min: 2.5rem;
+  --_lab-btn-min: var(--lab-size-control-h-m, 2.5rem);
 
   box-sizing: border-box;
   position: relative;
@@ -54,14 +54,14 @@
   --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0009em);
   --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
-  --_lab-btn-min: 2rem;
+  --_lab-btn-min: var(--lab-size-control-h-s, 2rem);
 }
 [data-lab-button][data-size="l"] {
   --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
   --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0194em);
   --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
   --_lab-btn-pad-y: var(--lab-space-md, 1rem);
-  --_lab-btn-min: 3rem;
+  --_lab-btn-min: var(--lab-size-control-h-l, 3rem);
 }
 
 /* Icon-only: square, no text padding asymmetry. */

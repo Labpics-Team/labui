@@ -36,6 +36,38 @@ export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
     'packages/core/src/components/radio-group/lab-radio-group.ts',
     'packages/react/src/radio-group.css',
   ],
+  // ── Волна 2 (задача #121 этап 3, ADR-0006): байт-идентичная токенизация —
+  // `<литерал>` → `var(--lab-X, <литерал>)`, пиксели не менялись (гейт PR —
+  // diff computed-снапшота = пусто). Компоненты с вне-контрактными осями
+  // (menu/select 30/36/44, checkbox tiny=14, avatar, switch track, стрелки
+  // поповеров…) в список НЕ вошли — их судьба решается §7 ADR-0006 у владельца.
+  accordion: [
+    'packages/core/src/components/accordion/lab-accordion.ts',
+    'packages/react/src/accordion.css',
+  ],
+  badge: ['packages/core/src/components/badge/lab-badge.ts', 'packages/react/src/badge.css'],
+  breadcrumb: [
+    'packages/core/src/components/breadcrumb/lab-breadcrumb.ts',
+    'packages/react/src/breadcrumb.css',
+  ],
+  button: ['packages/core/src/components/button/lab-button.ts', 'packages/react/src/button.css'],
+  card: ['packages/core/src/components/card/lab-card.ts', 'packages/react/src/card.css'],
+  input: [
+    'packages/core/src/components/input/lab-input.ts',
+    'packages/core/src/components/field/field-styles.ts',
+    'packages/react/src/input.css',
+  ],
+  kbd: ['packages/core/src/components/kbd/lab-kbd.ts', 'packages/react/src/kbd.css'],
+  'pin-input': [
+    'packages/core/src/components/pin-input/lab-pin-input.ts',
+    'packages/react/src/pin-input.css',
+  ],
+  tabs: ['packages/core/src/components/tabs/lab-tabs.ts', 'packages/react/src/tabs.css'],
+  textarea: [
+    'packages/core/src/components/textarea/lab-textarea.ts',
+    'packages/core/src/components/field/field-styles.ts',
+    'packages/react/src/textarea.css',
+  ],
 };
 
 /** Одна находка; форма зеркалит цветовые гарды — один репортер на всех. */
@@ -210,6 +242,11 @@ export function scanDimensionSource(
   for (const m of residue.matchAll(/(?<![\w.#-])(-?\d*\.?\d+)(px|rem|em)\b/g)) {
     const px = lengthToPx(`${m[1]}${m[2]}`);
     if (m[2] === 'px' && px !== null && HAIRLINE_PX.has(px)) continue; // хэйрлайны §4
+    // §1 (ADR-0006): em-длина — пропорция КЕГЛЯ, не фиксированный размер:
+    // кегль сам едет на --lab-font-size-* токенах, значит em-значение уже
+    // выражено через контракт (глифы/паддинги, масштабирующиеся со шрифтом).
+    // Фиксированные длины обязаны быть rem/px — их ловим как раньше.
+    if (m[2] === 'em') continue;
     out.push({
       file: relPath,
       line: lineAt(m.index ?? 0),
@@ -235,6 +272,10 @@ export function fallbackSurfaceFiles(): string[] {
     'packages/react/src/**/*.tsx',
     'packages/react/src/**/*.ts',
     'packages/core/src/**/*.ts',
+    // Слепая зона аудита 2026-07-09: materials красит углы/габариты тем же
+    // var()-механизмом, но не входила в поверхность — дрейф фолбэка
+    // --lab-radius-card (12px при каноне 1rem) жил невидимым.
+    'packages/materials/src/**/*.css',
   ];
   const out: string[] = [];
   for (const pattern of patterns) {
