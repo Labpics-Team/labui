@@ -16,13 +16,15 @@
     },
     "./tokens.css": "./dist/tokens.css",
     "./tokens.dtcg.json": "./dist/tokens.dtcg.json",
+    "./motion.css": "./dist/motion.css",
+    "./motion.dtcg.json": "./dist/motion.dtcg.json",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": ["./dist/tokens.css"],
+  "sideEffects": ["./dist/tokens.css", "./dist/motion.css"],
   "scripts": {
-    "generate": "tsx scripts/build-tokens.ts",
-    "check-generated": "tsx scripts/build-tokens.ts && git diff --exit-code src/generated/tokens.css src/generated/tokens.dtcg.json src/generated/tokens.ts",
+    "generate": "tsx scripts/build-tokens.ts && tsx scripts/build-motion.ts",
+    "check-generated": "tsx scripts/build-tokens.ts && tsx scripts/build-motion.ts && git diff --exit-code src/generated/tokens.css src/generated/tokens.dtcg.json src/generated/tokens.ts src/generated/motion.css src/generated/motion.dtcg.json src/generated/motion.ts",
     "build": "pnpm run generate && tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",

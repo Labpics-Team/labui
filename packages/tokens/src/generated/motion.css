@@ -1,0 +1,52 @@
+/*
+ * LabUI motion tokens — GENERATED. Do not edit by hand.
+ * Source: packages/tokens/src/motion (config + generator). Run
+ * `pnpm --filter @labpics/ui-tokens generate` to regenerate.
+ */
+:root {
+  /* Durations — ms scale (grounded on M3/Fluent/Carbon grids) */
+  --lab-motion-duration-instant: 0ms; /* no animation — the zero anchor and reduced-motion snap */
+  --lab-motion-duration-fast: 100ms; /* micro-interactions — hover, small state changes */
+  --lab-motion-duration-base: 200ms; /* the default — most component transitions */
+  --lab-motion-duration-slow: 300ms; /* larger elements, more deliberate moves */
+  --lab-motion-duration-slower: 500ms; /* full-screen / large surface transitions */
+
+  /* Easings — cubic-bezier primitives (overshoot only in `emphasized`) */
+  --lab-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1); /* general-purpose — both ends eased */
+  --lab-motion-easing-decelerate: cubic-bezier(0, 0, 0, 1); /* entrances — fast in, gentle settle */
+  --lab-motion-easing-accelerate: cubic-bezier(0.3, 0, 1, 1); /* exits — gentle start, quick out */
+  --lab-motion-easing-emphasized: cubic-bezier(0.38, 1.21, 0.22, 1); /* the one restrained overshoot — for emphasis only */
+
+  /* Springs — canonical (duration, bounce); value is a generated linear() fallback */
+  --lab-motion-spring-smooth: linear(0, 0.0288, 0.0974, 0.186, 0.2816, 0.3764, 0.4656, 0.5468, 0.6189, 0.6819, 0.7361, 0.7822, 0.821, 0.8535, 0.8806, 0.9029, 0.9213, 0.9364, 0.9487, 0.9587, 0.9668, 0.9734, 0.9787, 0.983, 1); /* effects spring — opacity/colour, interruptible, no bounce — pair with --lab-motion-spring-smooth-duration */
+  --lab-motion-spring-smooth-duration: 350ms;
+  --lab-motion-spring-expressive: linear(0, 0.0303, 0.1066, 0.2105, 0.3275, 0.447, 0.5614, 0.6657, 0.7571, 0.8343, 0.8972, 0.9467, 0.9841, 1.0109, 1.0288, 1.0396, 1.0449, 1.0459, 1.044, 1.0402, 1.0353, 1.0298, 1.0244, 1.0192, 1); /* spatial spring — the single restrained overshoot, for emphasis — pair with --lab-motion-spring-expressive-duration */
+  --lab-motion-spring-expressive-duration: 500ms;
+
+  /* Semantic roles — references into the physical tier (no duplicated values) */
+  --lab-motion-entrance-duration: var(--lab-motion-duration-base); /* -> duration.base */
+  --lab-motion-entrance-easing: var(--lab-motion-easing-decelerate); /* -> easing.decelerate */
+  --lab-motion-exit-duration: var(--lab-motion-duration-fast); /* -> duration.fast */
+  --lab-motion-exit-easing: var(--lab-motion-easing-accelerate); /* -> easing.accelerate */
+  --lab-motion-transition-duration: var(--lab-motion-duration-base); /* -> duration.base */
+  --lab-motion-transition-easing: var(--lab-motion-easing-standard); /* -> easing.standard */
+  --lab-motion-emphasis-duration: var(--lab-motion-duration-slow); /* -> duration.slow */
+  --lab-motion-emphasis-easing: var(--lab-motion-easing-emphasized); /* -> easing.emphasized */
+  --lab-motion-emphasis-spring: var(--lab-motion-spring-expressive); /* -> spring.expressive */
+}
+
+/* Reduced-motion — first-class: neutralise overshoot, snap movement, keep a
+ * vestibular-safe crossfade for appearance/disappearance. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lab-motion-entrance-duration: var(--lab-motion-duration-fast); /* -> duration.fast */
+    --lab-motion-entrance-easing: linear;
+    --lab-motion-exit-duration: var(--lab-motion-duration-fast); /* -> duration.fast */
+    --lab-motion-exit-easing: linear;
+    --lab-motion-transition-duration: var(--lab-motion-duration-instant); /* -> duration.instant */
+    --lab-motion-transition-easing: linear;
+    --lab-motion-emphasis-duration: var(--lab-motion-duration-instant); /* -> duration.instant */
+    --lab-motion-emphasis-easing: linear;
+    --lab-motion-emphasis-spring: linear; /* bounce neutralised */
+  }
+}
