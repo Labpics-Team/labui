@@ -21,7 +21,8 @@
     "check": "biome check .",
     "test:e2e": "pnpm --filter @labpics/ui-docs test:e2e",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version",
+    "perf:size": "node -e \"const fs=require('fs'),zlib=require('zlib');function s(p){try{const b=fs.readFileSync(p);const g=zlib.gzipSync(b).length;return {raw:(b.length/1024).toFixed(1),gz:(g/1024).toFixed(1)};}catch(e){return null;}}console.log('=== Perf size baseline ===');['packages/colors-stub/contract.css','packages/shadow/dist/shadow.css','packages/core/dist/index.js','packages/react/dist/index.js','packages/materials/dist/material.css'].forEach(p=>{const r=s(p);if(r)console.log(p+': raw '+r.raw+'KB gz '+r.gz+'KB');});\""
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
