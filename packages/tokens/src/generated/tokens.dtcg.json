@@ -980,5 +980,17 @@
         }
       }
     }
+  },
+  "state": {
+    "hover": {
+      "$type": "number",
+      "$value": 0.08,
+      "$description": "Доля тинта рецепта D, подмешиваемая в роль покоя на hover."
+    },
+    "pressed": {
+      "$type": "number",
+      "$value": 0.14,
+      "$description": "Доля тинта рецепта D в нажатом состоянии — глубже hover."
+    }
   }
 }

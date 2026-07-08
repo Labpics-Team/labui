@@ -226,4 +226,12 @@ export const defaultConfig: TokensConfig = {
       offset: 0.125, //   2px gap from the element edge (Figma -2px inset)
     },
   },
+  // Стейт-оверлеи (#109, решение владельца — финальное): доли
+  // color-mix(in oklab, <роль покоя>, <тинт рецепта D> p%). Единственные
+  // ручки формы состояний; CI-гейты (contrast/muddiness в @labui/colors)
+  // читают их из СГЕНЕРИРОВАННОГО tokens.css, не из литералов компонентов.
+  states: {
+    hover: 8, //   8% к тинту — заметный, не кричащий сдвиг
+    pressed: 14, //  14% — глубже hover; ужесточение автоматически ужесточает гейты
+  },
 };

@@ -188,6 +188,16 @@ export interface BordersConfig {
   };
 }
 
+/**
+ * Стейт-оверлеи (#109): доли color-mix-микса роли покоя к тинту рецепта D,
+ * в ПРОЦЕНТАХ (hover: 8 → `--lab-state-hover: 8%`). Форма состояния одна на
+ * всю систему; pressed обязан быть глубже hover (валидируется билдером).
+ */
+export interface StatesConfig {
+  readonly hover: number;
+  readonly pressed: number;
+}
+
 /** The complete LabUI token config — the single source of truth. */
 export interface TokensConfig {
   readonly spacing: SpacingConfig;
@@ -196,6 +206,7 @@ export interface TokensConfig {
   readonly zIndex: ZIndexConfig;
   readonly typography: TypographyConfig;
   readonly borders: BordersConfig;
+  readonly states: StatesConfig;
 }
 
 /** A deep-partial of {@link TokensConfig} for user overrides. */

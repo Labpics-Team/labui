@@ -180,3 +180,10 @@ export const focusRing = {
 } as const;
 
 export type FocusRingToken = keyof typeof focusRing;
+
+export const state = {
+  hover: 'var(--lab-state-hover)',
+  pressed: 'var(--lab-state-pressed)',
+} as const;
+
+export type StateToken = keyof typeof state;

@@ -40,6 +40,7 @@ export function generateCss(tokens: ResolvedTokens): string {
     ),
     section('Borders — stroke widths (rem)', tokenLines(tokens.strokes)),
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
+    section('State overlays — фракции color-mix к тинту рецепта D (#109)', tokenLines(tokens.states)),
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;

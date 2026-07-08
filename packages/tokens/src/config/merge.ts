@@ -63,5 +63,9 @@ export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig
       widths: { ...defaultConfig.borders.widths, ...override.borders?.widths },
       focusRing: { ...defaultConfig.borders.focusRing, ...override.borders?.focusRing },
     },
+    states: {
+      ...defaultConfig.states,
+      ...override.states,
+    },
   };
 }

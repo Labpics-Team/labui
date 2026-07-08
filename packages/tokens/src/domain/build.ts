@@ -3,6 +3,7 @@ import { buildBorders } from './borders.js';
 import { buildRadii } from './radii.js';
 import { buildSizes } from './sizes.js';
 import { buildSpacing } from './spacing.js';
+import { buildStates } from './states.js';
 import type { ResolvedAlias, ResolvedToken } from './token.js';
 import { buildTypography } from './typography.js';
 import { buildZIndex } from './zindex.js';
@@ -29,6 +30,8 @@ export interface ResolvedTokens {
   readonly fonts: readonly ResolvedToken[];
   readonly strokes: readonly ResolvedToken[];
   readonly focusRing: readonly ResolvedToken[];
+  /** Фракции стейт-оверлеев (#109): hover/pressed, проценты color-mix. */
+  readonly states: readonly ResolvedToken[];
 }
 
 /** Resolve a config into the full token set (pure; no I/O). */
@@ -56,5 +59,6 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     fonts: typography.fonts,
     strokes: borders.strokes,
     focusRing: borders.focusRing,
+    states: buildStates(config.states),
   };
 }
