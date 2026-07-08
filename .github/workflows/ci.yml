@@ -48,6 +48,12 @@ jobs:
   sca:
     name: supply-chain · secrets · misconfig
     runs-on: [self-hosted, Linux, X64]
+    # Защита от fork-PR: НЕ гоняем недоверенный код форков на своей инфре.
+    # Форк-PR пропускается (job skipped, раннер не выделяется); push в main
+    # и same-repo PR (коллаборатор) — гоняются как прежде.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 10
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
@@ -190,6 +196,10 @@ jobs:
   quality:
     name: lint · typecheck · build
     runs-on: [self-hosted, Linux, X64]
+    # Защита от fork-PR — см. комментарий в job `sca` выше.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 15
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
@@ -267,6 +277,10 @@ jobs:
   e2e:
     name: playwright smoke (critical path)
     runs-on: [self-hosted, Linux, X64]
+    # Защита от fork-PR — см. комментарий в job `sca` выше.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     # e2e исполняется на ХОСТЕ раннера (как daniel), НЕ в контейнере: системные
     # библиотеки браузеров установлены на раннере один раз (provision-as-code),
     # версия совпадает с @playwright/test. Так избегаем хрупкого пула 3.4GB-образа
