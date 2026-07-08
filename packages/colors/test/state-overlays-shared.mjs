@@ -260,12 +260,21 @@ const OVERLAY_DECL_RE =
   /(background-color|border-color|color)\s*:\s*color-mix\(in oklab,\s*var\((--lab-[a-z0-9-]+)\),\s*(black|var\(--lab-label-primary\))\s+var\(--lab-state-(hover|pressed),\s*([\d.]+)%\)\)/g;
 
 /**
+ * Каноникализация форматирования: гейт судит СЕМАНТИКУ CSS, а не решения
+ * форматтера — biome переносит длинные color-mix() на несколько строк, для
+ * регексов выше это эквивалентно однострочной записи.
+ */
+function flattenWhitespace(css) {
+  return css.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+}
+
+/**
  * Экстракция оверлеев из позитивных @supports-блоков компонентного источника.
  * → Map 'type/kind/state/prop' → { role, tint: 'black'|'ink', step, fallbackPct }.
  */
 export function extractOverlays(cssText, flavor) {
   const out = new Map();
-  for (const body of supportsBlocks(cssText, false)) {
+  for (const body of supportsBlocks(flattenWhitespace(cssText), false)) {
     for (const rule of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       const combo = COMBO_RE[flavor].exec(rule[1]);
       if (!combo) continue;
@@ -291,7 +300,7 @@ export function extractOverlays(cssText, flavor) {
 /** Роли покоя из базовых (без псевдоклассов) правил — дрейф-гард REST_ROLES. */
 export function extractRestRoles(cssText, flavor) {
   const out = new Map();
-  for (const rule of cssText.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+  for (const rule of flattenWhitespace(cssText).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (/:hover|:active|:focus|:disabled/.test(rule[1])) continue;
     const combo = COMBO_RE[flavor].exec(rule[1]);
     if (!combo) continue;
@@ -322,9 +331,13 @@ export function extractFallbackBrightness(cssText) {
   return out;
 }
 
-/** Источник без негативных @supports-блоков (для «brightness только в fallback»). */
+/**
+ * Источник без негативных @supports-блоков (для «brightness только в fallback»).
+ * Комментарии срезаются: гейт судит ДЕКЛАРАЦИИ, а не прозу — упоминание
+ * brightness в пояснительном комментарии нарушением не является.
+ */
 export function withoutFallbackBlocks(cssText) {
-  let css = cssText;
+  let css = cssText.replace(/\/\*[\s\S]*?\*\//g, '');
   for (;;) {
     const at = css.indexOf(NOT_HEAD);
     if (at === -1) return css;

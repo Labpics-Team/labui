@@ -117,7 +117,9 @@ describe('стейт-оверлеи #109: токены и паттерн', () =>
         if (o.tint !== want.tint) problems.push(`${key}: тинт ${o.tint} ≠ ${want.tint} (рецепт D)`);
         if (o.step !== state) problems.push(`${key}: токен шага --lab-state-${o.step} ≠ ${state}`);
         if (Math.abs(o.fallbackPct / 100 - fractions[state]) > 1e-9)
-          problems.push(`${key}: литеральный fallback ${o.fallbackPct}% ≠ токену ${fractions[state] * 100}%`);
+          problems.push(
+            `${key}: литеральный fallback ${o.fallbackPct}% ≠ токену ${fractions[state] * 100}%`,
+          );
       }
       expect(problems, problems.join('\n')).toEqual([]);
       // Ничего лишнего: оверлеи только из пинна (немой дрейф в обе стороны).
@@ -131,7 +133,10 @@ describe('стейт-оверлеи #109: токены и паттерн', () =>
       for (const state of ['hover', 'pressed']) {
         const k = (1 - fractions[state]) ** 3;
         expect(fb[state], `fallback ${state} отсутствует`).toBeDefined();
-        expect(Math.abs(fb[state] - k), `${state}: brightness(${fb[state]}) ≠ (1−p)^3 = ${k.toFixed(4)}`).toBeLessThanOrEqual(5e-4);
+        expect(
+          Math.abs(fb[state] - k),
+          `${state}: brightness(${fb[state]}) ≠ (1−p)^3 = ${k.toFixed(4)}`,
+        ).toBeLessThanOrEqual(5e-4);
       }
     });
   }
@@ -160,7 +165,11 @@ describe('стейт-оверлеи #109: оракул движка — WCAG-п�
           const mixed = mixOklabPremul({ lin: surfSolid, alpha: 1 }, BLACK, p);
           const label = parseColor(resolveValue(text, v));
           const labelSolid = label.alpha === 1 ? label.lin : overGamma(label, mixed.lin);
-          const wcag = colors.recheckContrast(linToHex(mixed.lin), [linToHex(labelSolid)], theme)[1];
+          const wcag = colors.recheckContrast(
+            linToHex(mixed.lin),
+            [linToHex(labelSolid)],
+            theme,
+          )[1];
           expect(wcag, `${wcag.toFixed(3)}:1`).toBeGreaterThanOrEqual(AA_TEXT);
         });
       }
@@ -178,7 +187,11 @@ describe('стейт-оверлеи #109: оракул движка — WCAG-п�
           const surfSolid = mixed.alpha === 1 ? mixed.lin : overGamma(mixed, themeBgLin);
           const label = parseColor(resolveValue(text, v));
           const labelSolid = label.alpha === 1 ? label.lin : overGamma(label, surfSolid);
-          const wcag = colors.recheckContrast(linToHex(surfSolid), [linToHex(labelSolid)], theme)[1];
+          const wcag = colors.recheckContrast(
+            linToHex(surfSolid),
+            [linToHex(labelSolid)],
+            theme,
+          )[1];
           expect(wcag, `${wcag.toFixed(3)}:1`).toBeGreaterThanOrEqual(AA_TEXT);
         });
       }
@@ -196,7 +209,11 @@ describe('стейт-оверлеи #109: оракул движка — WCAG-п�
           const mixedLabel = mixOklabPremul(label, ink, p);
           const labelSolid =
             mixedLabel.alpha === 1 ? mixedLabel.lin : overGamma(mixedLabel, surfSolid);
-          const wcag = colors.recheckContrast(linToHex(surfSolid), [linToHex(labelSolid)], theme)[1];
+          const wcag = colors.recheckContrast(
+            linToHex(surfSolid),
+            [linToHex(labelSolid)],
+            theme,
+          )[1];
           expect(wcag, `${wcag.toFixed(3)}:1`).toBeGreaterThanOrEqual(AA_TEXT);
         });
       }
@@ -210,7 +227,9 @@ describe('стейт-оверлеи #109: RED-proof детекторов', () =>
     // Оракул обязан работать даже до реализации токенов — грузим движок напрямую.
     const engine = colors ?? (await createLabuiEngine()).colors;
     expect(engine.recheckContrast('#ffffff', ['#777777'], 'light')[1]).toBeLessThan(AA_TEXT);
-    expect(engine.recheckContrast('#ffffff', ['#000000'], 'light')[1]).toBeGreaterThanOrEqual(AA_TEXT);
+    expect(engine.recheckContrast('#ffffff', ['#000000'], 'light')[1]).toBeGreaterThanOrEqual(
+      AA_TEXT,
+    );
   });
 
   it('экстрактор не признаёт оверлей с чужим тинтом (белый ≠ рецепт D)', () => {

@@ -10,7 +10,7 @@
 //   (б) p-микс в oklab сдвигает цвет ровно на p-долю пути к якорю; muddiness
 //       ограничена [0,1] и локально ~липшицева по oklab-координатам, значит
 //       прирост грязи от сдвига к ЧИСТОМУ якорю ограничен долей микса;
-//       эмпирический sup Δ/p по всей таблице ролей контракта ≈ 0.91 < 1 —
+//       эмпирический sup Δ/p по всей таблице ролей контракта ≈ 0.97 < 1 —
 //       запас есть, но не размазанный (замер: state-overlay-economy.mjs);
 //   (в) порог масштабируется вместе с ручками --lab-state-*: ужесточение
 //       фракций автоматически ужесточает гейт — в тесте нет ни одной константы,
@@ -83,12 +83,10 @@ describe('стейт-оверлеи #109: гейт грязи', () => {
     expect(colors.muddiness('#000000')).toBeLessThanOrEqual(0.01);
     for (const theme of ['light', 'dark']) {
       const ink = parseColor(resolveValue(INK_ROLE, vars[theme]));
-      const inkSolid =
-        ink.alpha === 1 ? ink.lin : overGamma(ink, parseColor(THEME_BG[theme]).lin);
-      expect(
-        colors.muddiness(linToHex(inkSolid)),
-        `чернила ${theme} нечисты`,
-      ).toBeLessThanOrEqual(0.01);
+      const inkSolid = ink.alpha === 1 ? ink.lin : overGamma(ink, parseColor(THEME_BG[theme]).lin);
+      expect(colors.muddiness(linToHex(inkSolid)), `чернила ${theme} нечисты`).toBeLessThanOrEqual(
+        0.01,
+      );
     }
   });
 
