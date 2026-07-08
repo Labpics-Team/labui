@@ -21,11 +21,11 @@ Astro компоненты не переписывают: они **потреб�
 Lit/React-версиями.
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{
-  "primaryColor":"#FFFFFF","primaryTextColor":"#0A0A10","primaryBorderColor":"#787880",
-  "lineColor":"#787880","textColor":"#787880",
-  "clusterBkg":"transparent","clusterBorder":"#787880",
-  "edgeLabelBackground":"#FFFFFF"}}}%%
+%%{init: {'theme':'base','themeVariables':{
+  'lineColor':'#787880','textColor':'#0A0A10',
+  'edgeLabelBackground':'#F7F7FF',
+  'clusterBkg':'transparent','clusterBorder':'#787880'
+}}}%%
 flowchart LR
   zag["Поведения Zag<br/>(разметка, a11y, логика — один раз)"]
   core["@labpics/ui-core<br/>Lit-элементы &lt;lab-*&gt;"]
@@ -42,10 +42,12 @@ flowchart LR
   codegen --> vue & solid & svelte & astro
   core -. "web components + SSR" .-> vue & solid & svelte & astro
 
-  classDef brand fill:#006FF3,stroke:#787880,color:#FCFDFF
-  class core,react brand
-  classDef tool fill:#101012,stroke:#787880,color:#F2F2FC
-  class codegen tool
+  classDef node fill:#F7F7FF,stroke:#787880,color:#0A0A10
+  class zag,vue,solid,svelte,astro node
+  classDef accent fill:#006FF3,stroke:#787880,color:#FCFDFF
+  class core,react accent
+  classDef dark fill:#101012,stroke:#787880,color:#F2F2FC
+  class codegen dark
 ```
 
 Ядро закрывает **27 компонентов** (`packages/core/src/components/*`, без
@@ -99,11 +101,11 @@ LabUI **потребляет** эти ядра, а не реализует их.
   не завязан.
 
 ```mermaid
-%%{init: {"theme":"base","themeVariables":{
-  "primaryColor":"#FFFFFF","primaryTextColor":"#0A0A10","primaryBorderColor":"#787880",
-  "lineColor":"#787880","textColor":"#787880",
-  "clusterBkg":"transparent","clusterBorder":"#787880",
-  "edgeLabelBackground":"#FFFFFF"}}}%%
+%%{init: {'theme':'base','themeVariables':{
+  'lineColor':'#787880','textColor':'#0A0A10',
+  'edgeLabelBackground':'#F7F7FF',
+  'clusterBkg':'transparent','clusterBorder':'#787880'
+}}}%%
 flowchart LR
   npm["npm: @labpics/colors@0.6.2<br/>(опубликованный движок)"]
   labui["packages/colors<br/>@labui/colors — паспорт,<br/>baseline, золотая сверка, гейты"]
@@ -116,10 +118,12 @@ flowchart LR
   stub -- "CSS-контракт --lab-*" --> comp
   npm -- "живой движок (e2e)" --> docs
 
-  classDef tool fill:#101012,stroke:#787880,color:#F2F2FC
-  class npm tool
-  classDef brand fill:#006FF3,stroke:#787880,color:#FCFDFF
-  class comp brand
+  classDef node fill:#F7F7FF,stroke:#787880,color:#0A0A10
+  class labui,stub,docs node
+  classDef dark fill:#101012,stroke:#787880,color:#F2F2FC
+  class npm dark
+  classDef accent fill:#006FF3,stroke:#787880,color:#FCFDFF
+  class comp accent
 ```
 
 ## Инструментарий
