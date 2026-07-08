@@ -35,6 +35,17 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
   private unsubscribe?: () => void;
   /** Cleanups from each `spread()` call, run before the next paint to avoid leaks. */
   private spreadCleanups: Array<() => void> = [];
+  /**
+   * Memoised `connect()` result for the CURRENT render. `connect()` rebuilds the
+   * whole prop-getter API from the live service; it is a pure snapshot of the
+   * state at call time, so within one render every `.api` read is identical.
+   * Busy components read `.api` 2–3× per render (slider/progress 3×), each a full
+   * rebuild. We cache it and invalidate on the only two things that can change the
+   * snapshot: a machine transition (`subscribe`) and a fresh render cycle
+   * (`hostUpdate`, where reflected props flow in). Behaviour is byte-identical to
+   * rebuilding every access — the result equals the same-state `connect()`.
+   */
+  private apiCache?: Api;
 
   /**
    * @param host     the Lit element hosting this controller.
@@ -63,12 +74,19 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
 
   hostConnected(): void {
     this.machine = new VanillaMachine(this.module.machine, () => this.machineProps());
-    this.unsubscribe = this.machine.subscribe(() => this.host.requestUpdate());
+    this.unsubscribe = this.machine.subscribe(() => {
+      this.apiCache = undefined; // state changed → the memoised snapshot is stale
+      this.host.requestUpdate();
+    });
     this.machine.start();
     this.host.requestUpdate();
   }
 
   hostUpdate(): void {
+    // New render cycle: reflected props are about to flow in, so any snapshot from
+    // the previous cycle is stale. Invalidate before feeding props; the render's
+    // first `.api` read rebuilds against the fresh state.
+    this.apiCache = undefined;
     // Feed the latest host props into the running machine before it renders, so
     // a reflected attribute change (e.g. `disabled`) reaches the machine.
     this.machine?.updateProps(() => this.machineProps());
@@ -80,6 +98,7 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     this.unsubscribe = undefined;
     this.machine?.stop();
     this.machine = undefined;
+    this.apiCache = undefined;
   }
 
   /** The live machine API for this render. Call inside `render()`/`updated()`. */
@@ -87,7 +106,13 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     if (!this.machine) {
       throw new Error('ZagController.api read before hostConnected — machine not started.');
     }
-    return this.module.connect(this.machine.service as Service<T>, normalizeProps);
+    // Reuse this render's snapshot; rebuild only after a transition or a new
+    // render cycle invalidated it (see `apiCache`). connect() is pure over the
+    // current state, so a reused snapshot is byte-identical to a fresh rebuild.
+    return (this.apiCache ??= this.module.connect(
+      this.machine.service as Service<T>,
+      normalizeProps,
+    ));
   }
 
   /** Send an event to the machine. */
