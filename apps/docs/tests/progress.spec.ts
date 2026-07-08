@@ -199,9 +199,9 @@ test('visual parity: Lit and React resolve the same track colour', async ({ page
   expect(reactBg).toBe(litBg);
 });
 
-test('tokens: re-pointing --lab-fill-neutral-tinted re-skins BOTH tracks', async ({ page }) => {
+test('tokens: re-pointing --lab-fill-primary re-skins BOTH tracks', async ({ page }) => {
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-fill-neutral-tinted', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-fill-primary', 'rgb(1, 2, 3)');
   });
   await expect.poll(() => litTrack(page, 'lit-determinate').evaluate(bg)).toBe('rgb(1, 2, 3)');
   await expect.poll(() => reactTrack(page, 'react-determinate').evaluate(bg)).toBe('rgb(1, 2, 3)');

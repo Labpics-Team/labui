@@ -302,7 +302,7 @@ export class LabPinInput extends LabElement {
 
       /* Readonly / disabled surfaces. */
       :host([readonly]) .segment {
-        background-color: ${litVar('--lab-fill-neutral-tinted')};
+        background-color: ${litVar('--lab-fill-primary')};
         border-color: ${litVar('--lab-border-soft')};
       }
       .segment:disabled {

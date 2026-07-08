@@ -125,7 +125,7 @@ export class LabAvatar extends LabElement {
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       overflow: hidden;
       /* Default fallback surface: a neutral tinted disc with primary-label text. */
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       color: ${litVar('--lab-label-primary')};
       font: inherit;
       font-size: var(--_font);

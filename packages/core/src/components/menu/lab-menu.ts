@@ -54,7 +54,7 @@
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The menu is the
  * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and `--lab-fx-shadow-major` lift, layered at
- * `--lab-z-dropdown`; the highlighted item fills with `--lab-fill-neutral-tinted`;
+ * `--lab-z-dropdown`; the highlighted item fills with `--lab-fill-primary`;
  * a danger item's label is `--lab-label-danger`; a separator is `--lab-border-soft`.
  * No hex, no primitive.
  *
@@ -201,7 +201,7 @@ export class LabMenu extends LabElement {
       height: var(--_h);
       margin: 0;
       padding: 0 var(--_pad-x);
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
       background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
@@ -280,7 +280,7 @@ export class LabMenu extends LabElement {
     }
     /* Highlight (keyboard/pointer) — the machine sets data-highlighted. */
     .item[data-highlighted] {
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
     }
     .item[data-disabled] {
       cursor: not-allowed;

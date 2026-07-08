@@ -77,7 +77,7 @@ test('theme: flipping [data-theme] re-skins the proof with zero element edits', 
   const proof = page.getByTestId('proof-client');
   const button = proof.locator('button');
 
-  // Read a role the theme rebinds: the unpressed border uses --lab-border-neutral,
+  // Read a role the theme rebinds: the unpressed border uses --lab-border-base,
   // which the demo theme defines distinctly per theme.
   const darkBorder = await button.evaluate((el) => getComputedStyle(el).borderTopColor);
 

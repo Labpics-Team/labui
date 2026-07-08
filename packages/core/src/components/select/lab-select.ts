@@ -52,7 +52,7 @@
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The listbox is
  * the raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and `--lab-fx-shadow-major` lift, layered at
- * `--lab-z-dropdown`; the highlighted option fills with `--lab-fill-neutral-tinted`,
+ * `--lab-z-dropdown`; the highlighted option fills with `--lab-fill-primary`,
  * the selected option's label is `--lab-label-accent`. No hex, no primitive.
  *
  * SSR (core-CONTRACT §7): a select is client-only. The server emits the trigger and
@@ -272,7 +272,7 @@ export class LabSelect extends LabElement {
       height: var(--_h);
       margin: 0;
       padding: 0 var(--_pad-x);
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       border-radius: ${litVar('--lab-radius-md', '0.375rem')};
       background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
@@ -366,7 +366,7 @@ export class LabSelect extends LabElement {
     }
     /* Highlight (keyboard/pointer) — the machine sets data-highlighted. */
     .item[data-highlighted] {
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
     }
     /* Selected — the machine sets data-state=checked + aria-selected. */
     .item[data-state='checked'] .item-text {

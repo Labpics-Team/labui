@@ -114,7 +114,7 @@ export class LabCard extends LabElement {
 
     /* ── variant=filled: a tinted, borderless surface ───────────────────────── */
     :host([variant='filled']) .card {
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
     }
 
     /* ── interactive: hover + focus affordance for whole-card targets ───────── */

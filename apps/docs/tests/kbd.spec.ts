@@ -55,13 +55,13 @@ test('visual parity: Lit and React resolve the same cap colours per size', async
   }
 });
 
-test('tokens: re-pointing --lab-fill-neutral-tinted re-skins BOTH renderers', async ({ page }) => {
+test('tokens: re-pointing --lab-fill-primary re-skins BOTH renderers', async ({ page }) => {
   const lit = litKbd(page, 'lit-m');
   const react = reactKbd(page, 'react-m');
   await expect(react).toBeVisible();
 
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-fill-neutral-tinted', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-fill-primary', 'rgb(1, 2, 3)');
   });
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');

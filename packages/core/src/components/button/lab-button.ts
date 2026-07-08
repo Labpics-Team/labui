@@ -182,12 +182,12 @@ export class LabButton extends LabElement {
       color: ${litVar('--lab-label-on-neutral')};
     }
     :host([type='neutral'][kind='tinted']) button {
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       color: ${litVar('--lab-label-primary')};
     }
     :host([type='neutral'][kind='border']) button {
       color: ${litVar('--lab-label-primary')};
-      border-color: ${litVar('--lab-border-neutral')};
+      border-color: ${litVar('--lab-border-base')};
     }
     :host([type='neutral'][kind='ghost']) button {
       color: ${litVar('--lab-label-primary')};

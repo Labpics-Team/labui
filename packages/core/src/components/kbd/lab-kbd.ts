@@ -71,8 +71,8 @@ export class LabKbd extends LabElement {
       border-radius: var(--_radius);
       /* The raised cap: a neutral tinted surface, a neutral base rim, and a thin
          bottom-biased shadow so the key reads as standing above the page. */
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
-      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-neutral')};
+      background-color: ${litVar('--lab-fill-primary')};
+      border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       box-shadow: var(--lab-elevation-resting);
       color: ${litVar('--lab-label-primary')};
       font-family: ${litVar('--lab-font-family-mono')};

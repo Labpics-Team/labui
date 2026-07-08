@@ -221,7 +221,7 @@ export const dialogFloatingStyles = css`
     cursor: pointer;
   }
   .close:hover {
-    background-color: ${litVar('--lab-fill-neutral-tinted')};
+    background-color: ${litVar('--lab-fill-primary')};
     color: ${litVar('--lab-label-primary')};
   }
   .close:focus-visible {

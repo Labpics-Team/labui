@@ -169,7 +169,7 @@ export class LabPagination extends LabElement {
 
     .item:hover:not([data-selected]):not(:disabled),
     .trigger:hover:not(:disabled) {
-      background-color: ${litVar('--lab-fill-neutral-tinted')};
+      background-color: ${litVar('--lab-fill-primary')};
       color: ${litVar('--lab-label-primary')};
     }
 
