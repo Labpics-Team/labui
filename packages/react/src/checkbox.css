@@ -53,7 +53,7 @@
   width: var(--_lab-cb-box);
   height: var(--_lab-cb-box);
   border-radius: var(--_lab-cb-radius);
-  border: var(--lab-stroke-hairline) solid var(--lab-border-neutral);
+  border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background-color: transparent;
   color: transparent;
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
@@ -69,7 +69,7 @@
 [data-lab-checkbox][data-checked][data-type="neutral"] .lab-checkbox-control,
 [data-lab-checkbox][data-indeterminate][data-type="neutral"] .lab-checkbox-control {
   background-color: var(--lab-fill-neutral);
-  border-color: var(--lab-border-neutral);
+  border-color: var(--lab-border-base);
   color: var(--lab-label-on-neutral);
 }
 [data-lab-checkbox][data-checked][data-type="danger"] .lab-checkbox-control,

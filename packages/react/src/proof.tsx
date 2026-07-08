@@ -44,7 +44,7 @@ const baseStyle: CSSProperties = {
   minHeight: '2.5rem',
   padding: 'var(--lab-space-sm, 0.5rem) var(--lab-space-md, 1rem)',
   borderRadius: 'var(--lab-radius-control, var(--lab-radius-lg))',
-  border: 'var(--lab-stroke-hairline) solid var(--lab-border-neutral)',
+  border: 'var(--lab-stroke-hairline) solid var(--lab-border-base)',
   font: 'inherit',
   fontSize: 'var(--lab-font-size-md, 1rem)',
   lineHeight: 'var(--lab-line-height-md, 1.5)',

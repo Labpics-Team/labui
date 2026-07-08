@@ -99,7 +99,7 @@
 }
 [data-lab-button][data-type="neutral"][data-kind="border"] {
   color: var(--lab-label-primary);
-  border-color: var(--lab-border-neutral);
+  border-color: var(--lab-border-base);
 }
 [data-lab-button][data-type="neutral"][data-kind="ghost"] {
   color: var(--lab-label-primary);
