@@ -109,10 +109,11 @@ export class ZagController<T extends MachineSchema, Api> implements ReactiveCont
     // Reuse this render's snapshot; rebuild only after a transition or a new
     // render cycle invalidated it (see `apiCache`). connect() is pure over the
     // current state, so a reused snapshot is byte-identical to a fresh rebuild.
-    return (this.apiCache ??= this.module.connect(
+    this.apiCache ??= this.module.connect(
       this.machine.service as Service<T>,
       normalizeProps,
-    ));
+    );
+    return this.apiCache;
   }
 
   /** Send an event to the machine. */
