@@ -10,12 +10,17 @@
  *      background конкретного текстового узла, вычисляет WCAG contrast ratio и
  *      проверяет против AA-порога (4.5:1 обычный / 3:1 крупный текст).
  *
+ * Цветовая математика (нормализация CSS-цвета, relative luminance, contrast
+ * ratio) в этом модуле НЕ живёт — единственная реализация в `support/color.ts`,
+ * отсюда только импортируется (там же — вердикт о каноне порога 0.03928).
+ *
  * @module tests/support/axe
  */
 
 import AxeBuilder from '@axe-core/playwright';
 import type { Locator, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
+import { type Srgb, contrastRatio, normalizeCssColor } from './color.js';
 
 // ---------------------------------------------------------------------------
 // Типы
@@ -124,27 +129,14 @@ export async function assertLabelContrast(
   surfaceLocator?: Locator,
   isLargeText = false,
 ): Promise<ContrastResult> {
-  // Читаем computed foreground из лейбла. Нормализуем через canvas: движок
-  // эмитит роли в oklch(), и computed color сохраняет этот синтаксис (CSS
-  // Color 4 сериализация), а Node-сторона парсит только rgb/rgba. Canvas
-  // 2d-контекст парсит ЛЮБОЙ валидный CSS-цвет — рисуем 1px и читаем байты:
-  // тот же путь, каким цвет реально приходит на экран, не свой конвертер.
-  const fgRaw: string = await labelLocator.evaluate((el) => {
-    const raw = getComputedStyle(el).color;
-    const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-    if (!ctx) return raw;
-    ctx.canvas.width = 1;
-    ctx.canvas.height = 1;
-    // Сентинел: невалидное присваивание fillStyle молча игнорируется, и канвас
-    // остался бы на дефолтном чёрном — вернулся бы rgba(0,0,0,1) как «валидный»
-    // цвет. Возвращаем raw как есть: parseRgb ниже упадёт громкой ошибкой.
-    ctx.fillStyle = '#010203';
-    ctx.fillStyle = raw;
-    if (ctx.fillStyle === '#010203' && raw.toLowerCase() !== '#010203') return raw;
-    ctx.fillRect(0, 0, 1, 1);
-    const d = ctx.getImageData(0, 0, 1, 1).data;
-    return `rgba(${d[0] ?? 0}, ${d[1] ?? 0}, ${d[2] ?? 0}, ${((d[3] ?? 255) / 255).toFixed(3)})`;
-  });
+  // Читаем computed foreground из лейбла. Движок эмитит роли в oklch(), и
+  // computed color сохраняет этот синтаксис (CSS Color 4 сериализация) —
+  // нормализацию в целочисленный sRGB делает КАНОНИЧЕСКИЙ примитив
+  // `normalizeCssColor` из support/color.ts (canvas руками браузера, с
+  // двух-сентинельной валидацией), а не локальная копия конвертера.
+  const page = labelLocator.page();
+  const fgRaw: string = await labelLocator.evaluate((el) => getComputedStyle(el).color);
+  const fgRgb: Srgb | null = await normalizeCssColor(page, fgRaw);
 
   // Читаем эффективный (скомпонованный) background поверхности: если сама
   // поверхность имеет полупрозрачный background-color (частый случай для
@@ -154,55 +146,15 @@ export async function assertLabelContrast(
   // computed-style самого элемента и бросать ошибку на alpha<1 — false negative:
   // страница СУЩЕСТВУЕТ, контраст РЕАЛЕН и измерим, просто не одним слоем.
   const target = surfaceLocator ?? labelLocator;
-  const bgRaw: string = await target.evaluate((el) => {
-    // Композитинг "src over dst": result = src*srcA + dst*(1-srcA).
-    function over(
-      src: { r: number; g: number; b: number; a: number },
-      dst: { r: number; g: number; b: number },
-    ): { r: number; g: number; b: number } {
-      return {
-        r: src.r * src.a + dst.r * (1 - src.a),
-        g: src.g * src.a + dst.g * (1 - src.a),
-        b: src.b * src.a + dst.b * (1 - src.a),
-      };
-    }
-    // Canvas-нормализация: слои фона тоже эмитятся движком в oklch(), а не
-    // только в rgb/rgba — парсим ЛЮБОЙ валидный CSS-цвет тем же путём, каким
-    // он приходит на экран (1px fill + чтение байтов), вместо своего регэкспа.
-    const normCtx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
-    if (normCtx) {
-      normCtx.canvas.width = 1;
-      normCtx.canvas.height = 1;
-    }
-    function parse(raw: string): { r: number; g: number; b: number; a: number } | null {
-      const m = raw.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-      if (m) {
-        return {
-          r: Number(m[1]),
-          g: Number(m[2]),
-          b: Number(m[3]),
-          a: m[4] === undefined ? 1 : Number(m[4]),
-        };
-      }
-      if (!normCtx || !raw) return null;
-      normCtx.clearRect(0, 0, 1, 1);
-      // Сентинел: если raw не парсится, fillStyle остаётся прежним — тогда
-      // честно возвращаем null, а не мусорный цвет сентинела.
-      normCtx.fillStyle = '#010203';
-      normCtx.fillStyle = raw;
-      if (normCtx.fillStyle === '#010203' && raw.toLowerCase() !== '#010203') return null;
-      normCtx.fillRect(0, 0, 1, 1);
-      const d = normCtx.getImageData(0, 0, 1, 1).data;
-      return { r: d[0] ?? 0, g: d[1] ?? 0, b: d[2] ?? 0, a: (d[3] ?? 255) / 255 };
-    }
-
-    let composed = { r: 255, g: 255, b: 255 }; // canvas default (opaque white)
-    const chain: Element[] = [];
-    // Собираем цепочку предков, переходя через shadow-root границу (getRootNode
-    // возвращает ShadowRoot, чей .host — следующий реальный узел выше).
+  // В браузере — только СБОР слоёв: цепочка computed background-color от
+  // элемента вверх, через shadow-root границу (getRootNode возвращает
+  // ShadowRoot, чей .host — следующий реальный узел выше). Парсинг каждого
+  // слоя — канонический `normalizeCssColor` на Node-стороне, не своя копия.
+  const bgLayersRaw: string[] = await target.evaluate((el) => {
+    const layers: string[] = [];
     let node: Node | null = el;
     while (node) {
-      if (node instanceof Element) chain.push(node);
+      if (node instanceof Element) layers.push(getComputedStyle(node).backgroundColor);
       const parent: Node | null = (node as Element).parentElement;
       if (parent) {
         node = parent;
@@ -211,23 +163,28 @@ export async function assertLabelContrast(
         node = root instanceof ShadowRoot ? root.host : null;
       }
     }
-    // Компонуем от самого дальнего предка (документа) вниз к элементу, чтобы
-    // каждый слой лёг "over" уже накопленный результат снизу вверх по DOM.
-    for (const layerEl of chain.slice().reverse()) {
-      const layer = parse(getComputedStyle(layerEl).backgroundColor);
-      if (layer && layer.a > 0) composed = over(layer, composed);
-    }
-    const { r, g, b } = composed;
-    return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+    return layers;
   });
 
-  const fgRgb = parseRgb(fgRaw);
-  const bgRgb = parseRgb(bgRaw);
+  // Композитинг "src over dst" (result = src*srcA + dst*(1-srcA)): компонуем
+  // от самого дальнего предка (документа) вниз к элементу поверх белого холста
+  // canvas по умолчанию — каждый слой ложится "over" накопленный результат.
+  let composed = { r: 255, g: 255, b: 255 }; // canvas default (opaque white)
+  for (const rawLayer of bgLayersRaw.slice().reverse()) {
+    const layer = await normalizeCssColor(page, rawLayer);
+    if (layer && layer.a > 0) {
+      composed = {
+        r: layer.r * layer.a + composed.r * (1 - layer.a),
+        g: layer.g * layer.a + composed.g * (1 - layer.a),
+        b: layer.b * layer.a + composed.b * (1 - layer.a),
+      };
+    }
+  }
+  const bgRgb: Srgb = { r: composed.r, g: composed.g, b: composed.b, a: 1 };
+  const bgRaw = `rgb(${Math.round(composed.r)}, ${Math.round(composed.g)}, ${Math.round(composed.b)})`;
 
-  if (!fgRgb || !bgRgb) {
-    throw new Error(
-      `assertLabelContrast: не удалось распознать цвета.\n  fg="${fgRaw}"\n  bg="${bgRaw}"`,
-    );
+  if (!fgRgb) {
+    throw new Error(`assertLabelContrast: не удалось распознать цвет лейбла.\n  fg="${fgRaw}"`);
   }
 
   const ratio = contrastRatio(fgRgb, bgRgb);
@@ -242,45 +199,8 @@ export async function assertLabelContrast(
 }
 
 // ---------------------------------------------------------------------------
-// Вспомогательные функции (WCAG contrast ratio)
+// Вспомогательные функции
 // ---------------------------------------------------------------------------
-
-type Rgb = { r: number; g: number; b: number; a: number };
-
-/**
- * Разбирает строку `rgb(r, g, b)` или `rgba(r, g, b, a)` в компоненты 0-255
- * + альфа (0-1, по умолчанию 1 — непрозрачно). Альфа ОБЯЗАНА разбираться:
- * `background-color: transparent` computed-стиль браузера возвращает
- * `rgba(0, 0, 0, 0)`, и без учёта альфы это молча читалось бы как непрозрачный
- * чёрный — ложно занижая/завышая контраст поверхности, чей реальный фон
- * приходит от предка.
- */
-function parseRgb(raw: string): Rgb | null {
-  const m = raw.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-  if (!m) return null;
-  return {
-    r: Number(m[1]),
-    g: Number(m[2]),
-    b: Number(m[3]),
-    a: m[4] === undefined ? 1 : Number(m[4]),
-  };
-}
-
-/** Relative luminance по WCAG 2.x (sRGB → linearised). */
-function relativeLuminance({ r, g, b }: Rgb): number {
-  const lin = (c: number) => {
-    const s = c / 255;
-    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-/** Contrast ratio WCAG (1.0–21.0). */
-function contrastRatio(a: Rgb, b: Rgb): number {
-  const La = relativeLuminance(a) + 0.05;
-  const Lb = relativeLuminance(b) + 0.05;
-  return La > Lb ? La / Lb : Lb / La;
-}
 
 /** Форматирует список axe-нарушений для читаемого вывода теста. */
 function formatViolations(
