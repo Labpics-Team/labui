@@ -123,11 +123,214 @@
 }
 
 /* ── interactive states (hover / active / focus) ─────────────────────────── */
-[data-lab-button]:hover {
-  filter: brightness(1.08);
+/* Состояние — НЕ новый цвет и НЕ фильтр: роль ПОКОЯ (статик-роль первой
+   строкой в базовых правилах выше), сдвинутая на долю --lab-state-* к тинту
+   рецепта D (#109, docs/vocabulary.md «Стейт-оверлеи»). Класс A — несущие
+   лейбл заливки (kind=fill): тинт ЧЁРНЫЙ в обеих темах; класс B — тинт-
+   поверхности/текст/бордеры: чернила темы (--lab-label-primary). Ручки — в
+   @labpics/ui-tokens; CI-гейты: state-overlay-{contrast,muddiness}. */
+@supports (color: color-mix(in oklab, red, blue)) {
+  [data-lab-button][data-type="accent"][data-kind="fill"]:hover:not(:disabled) {
+    background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover, 8%));
+  }
+  [data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-accent),
+      black var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="accent"][data-kind="tinted"]:hover:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-accent-tinted),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="accent"][data-kind="tinted"]:active:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-accent-tinted),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="accent"][data-kind="border"]:hover:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-accent),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--lab-border-accent),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="accent"][data-kind="border"]:active:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-accent),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--lab-border-accent),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="accent"][data-kind="ghost"]:hover:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-accent),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="accent"][data-kind="ghost"]:active:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-accent),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="fill"]:hover:not(:disabled) {
+    background-color: color-mix(in oklab, var(--lab-fill-neutral), black var(--lab-state-hover, 8%));
+  }
+  [data-lab-button][data-type="neutral"][data-kind="fill"]:active:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-neutral),
+      black var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="tinted"]:hover:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-primary),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="tinted"]:active:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-primary),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="border"]:hover:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-primary),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--lab-border-base),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="border"]:active:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-primary),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--lab-border-base),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="ghost"]:hover:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-primary),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="ghost"]:active:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-primary),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="fill"]:hover:not(:disabled) {
+    background-color: color-mix(in oklab, var(--lab-fill-danger), black var(--lab-state-hover, 8%));
+  }
+  [data-lab-button][data-type="danger"][data-kind="fill"]:active:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-danger),
+      black var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="tinted"]:hover:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-danger-tinted),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="tinted"]:active:not(:disabled) {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-danger-tinted),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="border"]:hover:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-danger),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--lab-border-danger),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="border"]:active:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-danger),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+    border-color: color-mix(
+      in oklab,
+      var(--lab-border-danger),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="ghost"]:hover:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-danger),
+      var(--lab-label-primary) var(--lab-state-hover, 8%)
+    );
+  }
+  [data-lab-button][data-type="danger"][data-kind="ghost"]:active:not(:disabled) {
+    color: color-mix(
+      in oklab,
+      var(--lab-label-danger),
+      var(--lab-label-primary) var(--lab-state-pressed, 14%)
+    );
+  }
 }
-[data-lab-button]:active {
-  filter: brightness(0.92);
+/* Fallback без мёртвого hover (движки до color-mix): старая форма —
+   filter: brightness(k), k = (1−p)^3 — ΔL-эквивалент микса к чёрному
+   (brightness множит линейный sRGB на k, oklab-L — на k^(1/3); у чёрного
+   L=0 ⇒ k^(1/3) = 1−p; для класса A точно при любой базе, для класса B —
+   ближайшая одноконстантная аппроксимация, в тёмной теме направление
+   расходится с миксом — задокументировано). Вёрстка не смещается: filter
+   не участвует в лейауте. Disabled гасится ниже каскадом (filter: none). */
+@supports not (color: color-mix(in oklab, red, blue)) {
+  [data-lab-button]:hover {
+    filter: brightness(0.7787);
+  }
+  [data-lab-button]:active {
+    filter: brightness(0.6361);
+  }
 }
 [data-lab-button]:focus-visible {
   outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);

@@ -20,7 +20,8 @@ export type ScaleKind =
   | 'letter-spacing'
   | 'measure'
   | 'stroke'
-  | 'focus-ring';
+  | 'focus-ring'
+  | 'state'; // фракции стейт-оверлеев (#109): --lab-state-hover / --lab-state-pressed, %
 
 /**
  * A fully resolved token.

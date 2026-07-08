@@ -8,7 +8,8 @@
   "scripts": {
     "generate": "node generate-contract.mjs",
     "test": "vitest run",
-    "fx:render": "node test/fx-render/render-fx.mjs"
+    "fx:render": "node test/fx-render/render-fx.mjs",
+    "measure:overlays": "node test/state-overlay-economy.mjs"
   },
   "dependencies": {
     "@labpics/colors": "0.6.2"

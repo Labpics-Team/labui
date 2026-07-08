@@ -211,11 +211,98 @@ export class LabButton extends LabElement {
     }
 
     /* ── interactive states (hover / active / focus) ───────────────────── */
-    button:hover {
-      filter: brightness(1.08);
+    /* Паттерн стейт-оверлеев #109 — см. button.css (React-близнец): роль
+       покоя + color-mix к тинту рецепта D под @supports; fallback ниже. */
+    @supports (color: color-mix(in oklab, red, blue)) {
+    :host([type='accent'][kind='fill']) button:hover:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-hover', '8%')});
     }
-    button:active {
-      filter: brightness(0.92);
+    :host([type='accent'][kind='fill']) button:active:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='accent'][kind='tinted']) button:hover:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='accent'][kind='tinted']) button:active:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='accent'][kind='border']) button:hover:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+      border-color: color-mix(in oklab, ${litVar('--lab-border-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='accent'][kind='border']) button:active:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+      border-color: color-mix(in oklab, ${litVar('--lab-border-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='accent'][kind='ghost']) button:hover:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='accent'][kind='ghost']) button:active:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-accent')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='neutral'][kind='fill']) button:hover:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-neutral')}, black ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='neutral'][kind='fill']) button:active:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-neutral')}, black ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='neutral'][kind='tinted']) button:hover:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='neutral'][kind='tinted']) button:active:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='neutral'][kind='border']) button:hover:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+      border-color: color-mix(in oklab, ${litVar('--lab-border-base')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='neutral'][kind='border']) button:active:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+      border-color: color-mix(in oklab, ${litVar('--lab-border-base')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='neutral'][kind='ghost']) button:hover:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='neutral'][kind='ghost']) button:active:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-primary')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='danger'][kind='fill']) button:hover:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger')}, black ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='danger'][kind='fill']) button:active:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger')}, black ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='danger'][kind='tinted']) button:hover:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='danger'][kind='tinted']) button:active:not(:disabled) {
+      background-color: color-mix(in oklab, ${litVar('--lab-fill-danger-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='danger'][kind='border']) button:hover:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+      border-color: color-mix(in oklab, ${litVar('--lab-border-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='danger'][kind='border']) button:active:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+      border-color: color-mix(in oklab, ${litVar('--lab-border-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    :host([type='danger'][kind='ghost']) button:hover:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
+    }
+    :host([type='danger'][kind='ghost']) button:active:not(:disabled) {
+      color: color-mix(in oklab, ${litVar('--lab-label-danger')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-pressed', '14%')});
+    }
+    }
+    /* Fallback без мёртвого hover: k = (1−p)^3 — ΔL-эквивалент микса к
+       чёрному (вывод — в button.css React-близнеца). Disabled гасится ниже
+       каскадом (filter: none). */
+    @supports not (color: color-mix(in oklab, red, blue)) {
+      button:hover {
+        filter: brightness(0.7787);
+      }
+      button:active {
+        filter: brightness(0.6361);
+      }
     }
     button:focus-visible {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
