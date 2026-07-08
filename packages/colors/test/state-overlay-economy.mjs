@@ -22,19 +22,14 @@ import {
   THEME_BG,
   THEME_SCOPE,
   TOKENS_CSS_PATH,
-  linToHex,
-  mixOklabPremul,
-  overGamma,
+  overlayDelta,
   parseColor,
   readStateFractions,
   resolveValue,
   scopeVars,
-  tintFor,
 } from './state-overlays-shared.mjs';
 
 import { oklabOf } from '../oklab-math.mjs';
-
-const BLACK = { lin: [0, 0, 0], alpha: 1 };
 
 const [{ colors }, contractRaw, tokensRaw] = await Promise.all([
   createLabuiEngine(),
@@ -71,16 +66,12 @@ let swept = 0;
 const violations = [];
 for (const theme of ['light', 'dark']) {
   const themeBgLin = parseColor(THEME_BG[theme]).lin;
-  const ink = parseColor(resolveValue(INK_ROLE, vars[theme]));
   for (const state of states) {
     const p = fractions[state];
     for (const name of colorRoles[theme]) {
-      const base = parseColor(resolveValue(name, vars[theme]));
-      const tint = tintFor(name) === 'black' ? BLACK : ink;
-      const baseSolid = base.alpha === 1 ? base.lin : overGamma(base, themeBgLin);
-      const mixed = mixOklabPremul(base, tint, p);
-      const mixedSolid = mixed.alpha === 1 ? mixed.lin : overGamma(mixed, themeBgLin);
-      const delta = colors.muddiness(linToHex(mixedSolid)) - colors.muddiness(linToHex(baseSolid));
+      // Δmud — общий overlayDelta из state-overlays-shared.mjs (та же копия
+      // правды, что в гейте грязи): эмпирика замера и предикат гейта не расходятся.
+      const delta = overlayDelta(colors, vars[theme], themeBgLin, name, p);
       swept++;
       const ratio = delta / p;
       if (ratio > sup) {

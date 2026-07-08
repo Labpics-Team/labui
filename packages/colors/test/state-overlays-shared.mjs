@@ -171,6 +171,23 @@ export const INK_ROLE = '--lab-label-primary';
 /** Рецепт D: тинт по имени роли. */
 export const tintFor = (role) => (CLASS_A_FILLS.has(role) ? 'black' : 'ink');
 
+const BLACK = { lin: [0, 0, 0], alpha: 1 };
+
+/**
+ * Δmud одной роли при миксе к тинту рецепта D на фракции p (композиты — в гамме).
+ * ЕДИНСТВЕННАЯ копия правды Δmud: гейт грязи (state-overlay-muddiness.test.mjs)
+ * и замер экономии (state-overlay-economy.mjs) зовут её, а не повторяют шаги —
+ * правка порядка композита/обработки альфы меняет обе стороны синхронно.
+ */
+export function overlayDelta(colors, vars, themeBgLin, name, p) {
+  const base = parseColor(resolveValue(name, vars));
+  const tint = tintFor(name) === 'black' ? BLACK : parseColor(resolveValue(INK_ROLE, vars));
+  const baseSolid = base.alpha === 1 ? base.lin : overGamma(base, themeBgLin);
+  const mixed = mixOklabPremul(base, tint, p);
+  const mixedSolid = mixed.alpha === 1 ? mixed.lin : overGamma(mixed, themeBgLin);
+  return colors.muddiness(linToHex(mixedSolid)) - colors.muddiness(linToHex(baseSolid));
+}
+
 /** Фракции состояний из СГЕНЕРИРОВАННОГО tokens.css — единственный источник ручек. */
 export function readStateFractions(tokensCss) {
   const out = {};
@@ -256,8 +273,12 @@ export function supportsBlocks(css, negated) {
   return bodies;
 }
 
-const OVERLAY_DECL_RE =
-  /(background-color|border-color|color)\s*:\s*color-mix\(in oklab,\s*var\((--lab-[a-z0-9-]+)\),\s*(black|var\(--lab-label-primary\))\s+var\(--lab-state-(hover|pressed),\s*([\d.]+)%\)\)/g;
+// Альтернатива тинта собирается из INK_ROLE (регекс-безопасно: имя роли —
+// только [a-z-]), а не дублируется литералом: смена роли чернил — одно место.
+const OVERLAY_DECL_RE = new RegExp(
+  String.raw`(background-color|border-color|color)\s*:\s*color-mix\(in oklab,\s*var\((--lab-[a-z0-9-]+)\),\s*(black|var\(${INK_ROLE}\))\s+var\(--lab-state-(hover|pressed),\s*([\d.]+)%\)\)`,
+  'g',
+);
 
 /**
  * Каноникализация форматирования: гейт судит СЕМАНТИКУ CSS, а не решения

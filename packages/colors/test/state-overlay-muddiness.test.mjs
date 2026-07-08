@@ -35,16 +35,14 @@ import {
   THEME_SCOPE,
   TOKENS_CSS_PATH,
   linToHex,
-  mixOklabPremul,
   overGamma,
+  overlayDelta,
   parseColor,
   readStateFractions,
   resolveValue,
   scopeVars,
-  tintFor,
 } from './state-overlays-shared.mjs';
 
-const BLACK = { lin: [0, 0, 0], alpha: 1 };
 const EPS = 1e-9;
 
 let ctxPromise;
@@ -66,16 +64,8 @@ function ctx() {
   return ctxPromise;
 }
 
-/** Δmud одной роли при миксе к тинту рецепта D на фракции p (композиты — в гамме). */
-function overlayDelta(colors, vars, themeBgLin, name, p) {
-  const base = parseColor(resolveValue(name, vars));
-  const ink = parseColor(resolveValue(INK_ROLE, vars));
-  const tint = tintFor(name) === 'black' ? BLACK : ink;
-  const baseSolid = base.alpha === 1 ? base.lin : overGamma(base, themeBgLin);
-  const mixed = mixOklabPremul(base, tint, p);
-  const mixedSolid = mixed.alpha === 1 ? mixed.lin : overGamma(mixed, themeBgLin);
-  return colors.muddiness(linToHex(mixedSolid)) - colors.muddiness(linToHex(baseSolid));
-}
+// Δmud — из state-overlays-shared.mjs (overlayDelta): одна копия правды с
+// замером экономии, здесь только предикат гейта.
 
 describe('стейт-оверлеи #109: гейт грязи', () => {
   it('пред-условие инварианта: якоря рецепта чисты (mud ≤ 0.01)', async () => {
