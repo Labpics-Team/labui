@@ -99,14 +99,20 @@ const worstInkL = Math.max(
 );
 const fbDev = states.map((s) => `${s}: |ΔL| ≤ ${(fractions[s] * worstInkL).toFixed(4)}`);
 
-console.log('=== #109 стейт-оверлеи: замер ===');
-console.log(`роли-цвета: light ${colorRoles.light.size}, dark ${colorRoles.dark.size}, союз ${union.size}`);
-console.log(`состояния: ${states.map((s) => `${s} ${+(fractions[s] * 100).toFixed(4)}%`).join(', ')}`);
-console.log(`ТОКЕНОВ НЕ РОДИЛОСЬ: ${union.size} ролей × ${states.length} состояний = ${saved}`);
-console.log(`свип гейта грязи: ${swept} комбинаций, sup Δmud/p = ${sup.toFixed(4)} (${supAt})`);
-console.log(`fallback класс A: точный (тинт чёрный, L=0); класс B: ${fbDev.join('; ')} (L чернил ≤ ${worstInkL.toFixed(4)})`);
+console.info('=== #109 стейт-оверлеи: замер ===');
+console.info(
+  `роли-цвета: light ${colorRoles.light.size}, dark ${colorRoles.dark.size}, союз ${union.size}`,
+);
+console.info(
+  `состояния: ${states.map((s) => `${s} ${+(fractions[s] * 100).toFixed(4)}%`).join(', ')}`,
+);
+console.info(`ТОКЕНОВ НЕ РОДИЛОСЬ: ${union.size} ролей × ${states.length} состояний = ${saved}`);
+console.info(`свип гейта грязи: ${swept} комбинаций, sup Δmud/p = ${sup.toFixed(4)} (${supAt})`);
+console.info(
+  `fallback класс A: точный (тинт чёрный, L=0); класс B: ${fbDev.join('; ')} (L чернил ≤ ${worstInkL.toFixed(4)})`,
+);
 if (violations.length > 0) {
   console.error(`НАРУШЕНИЯ ИНВАРИАНТА (${violations.length}):\n${violations.join('\n')}`);
   process.exit(1);
 }
-console.log('инвариант Δmud ≤ p: выполнен на всём свипе');
+console.info('инвариант Δmud ≤ p: выполнен на всём свипе');

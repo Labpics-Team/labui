@@ -42,7 +42,10 @@ export function generateCss(tokens: ResolvedTokens): string {
     section('Borders — focus ring (width + offset, rem)', tokenLines(tokens.focusRing)),
     // «задача 109», не «#109» — три hex-цифры после решётки читаются сканером
     // no-hardcoded-colour как #RGB-литерал (строка — не комментарий для .ts).
-    section('State overlays — фракции color-mix к тинту рецепта D (задача 109)', tokenLines(tokens.states)),
+    section(
+      'State overlays — фракции color-mix к тинту рецепта D (задача 109)',
+      tokenLines(tokens.states),
+    ),
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;

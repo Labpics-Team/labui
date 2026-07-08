@@ -42,8 +42,7 @@ function assertConfig(config: StatesConfig): void {
   }
   if (config.pressed <= config.hover) {
     throw new Error(
-      `states.pressed (${config.pressed}) must exceed states.hover (${config.hover}) — ` +
-        'pressed углубляет ту же форму, а не спорит с ней',
+      `states.pressed (${config.pressed}) must exceed states.hover (${config.hover}) — pressed углубляет ту же форму, а не спорит с ней`,
     );
   }
 }

@@ -180,27 +180,37 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
   // recipe-D state-overlay combinator are licensed; EVERY deviation stays flagged.
   it('IGNORES the canonical color-mix @supports probe (a prelude never paints)', () => {
     expect(
-      scanSource('p.css', '@supports (color: color-mix(in oklab, red, blue)) { .x { color: var(--lab-label-primary); } }'),
+      scanSource(
+        'p.css',
+        '@supports (color: color-mix(in oklab, red, blue)) { .x { color: var(--lab-label-primary); } }',
+      ),
     ).toEqual([]);
     expect(
-      scanSource('p.css', '@supports not (color: color-mix(in oklab, red, blue)) { .x { filter: brightness(0.92); } }'),
+      scanSource(
+        'p.css',
+        '@supports not (color: color-mix(in oklab, red, blue)) { .x { filter: brightness(0.92); } }',
+      ),
     ).toEqual([]);
     // Same probe inside a Lit template literal (the core twin).
     expect(
-      scanSource('p.ts', 'css`@supports not (color: color-mix(in oklab, red, blue)) { button:hover { filter: brightness(0.7787); } }`'),
+      scanSource(
+        'p.ts',
+        'css`@supports not (color: color-mix(in oklab, red, blue)) { button:hover { filter: brightness(0.7787); } }`',
+      ),
     ).toEqual([]);
   });
 
   it('DETECTS a colour inside the @supports BLOCK (only the prelude is licensed)', () => {
-    expect(
-      scanSource('p.css', '@supports (display: grid) { .x { color: red; } }'),
-    ).toHaveLength(1);
+    expect(scanSource('p.css', '@supports (display: grid) { .x { color: red; } }')).toHaveLength(1);
   });
 
   it('IGNORES the recipe-D overlay combinator in all three authored forms (#109)', () => {
     // CSS, single line.
     expect(
-      scanSource('p.css', '.x{background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover, 8%));}'),
+      scanSource(
+        'p.css',
+        '.x{background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover, 8%));}',
+      ),
     ).toEqual([]);
     // CSS, biome multi-line layout.
     expect(
@@ -221,15 +231,22 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
   it('DETECTS every deviation from the licensed recipe-D shape (RED-proof)', () => {
     // Literal fraction instead of a governed --lab-state-* token.
     expect(
-      scanSource('p.css', '.x{background: color-mix(in oklab, var(--lab-fill-accent), black 30%);}').length,
+      scanSource('p.css', '.x{background: color-mix(in oklab, var(--lab-fill-accent), black 30%);}')
+        .length,
     ).toBeGreaterThan(0);
     // Non-achromatic tint in the same shape.
     expect(
-      scanSource('p.css', '.x{background: color-mix(in oklab, var(--lab-fill-accent), white var(--lab-state-hover, 8%));}').length,
+      scanSource(
+        'p.css',
+        '.x{background: color-mix(in oklab, var(--lab-fill-accent), white var(--lab-state-hover, 8%));}',
+      ).length,
     ).toBeGreaterThan(0);
     // Non-role base.
     expect(
-      scanSource('p.css', '.x{background: color-mix(in oklab, red, black var(--lab-state-hover, 8%));}').length,
+      scanSource(
+        'p.css',
+        '.x{background: color-mix(in oklab, red, black var(--lab-state-hover, 8%));}',
+      ).length,
     ).toBeGreaterThan(0);
     // Free-standing black remains a plain leak.
     expect(scanSource('p.css', '.x{background: black;}')).toHaveLength(1);
