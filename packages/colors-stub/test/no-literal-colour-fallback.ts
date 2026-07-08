@@ -5,9 +5,10 @@
  * legal ONLY for a DIMENSION token (a sensible default keeps a component usable before
  * tokens load) or when the fallback is ANOTHER `--lab-*` token (token → token). A
  * COLOUR / FX role (`--lab-label-*`, `--lab-fill-*`, `--lab-border-*`, `--lab-bg-*`,
- * `--lab-surface-*`, `--lab-overlay-*`, `--lab-fx-*`, `--lab-accent-*`, …) must NEVER
- * bake a literal colour as its fallback — a missing role is a contract bug to fix in the
- * colour layer, not to paper over with a hardcoded `rgb()/hsl()/#hex/named-colour`.
+ * `--lab-surface-*`, `--lab-overlay-*`, `--lab-fx-*`, `--lab-accent-*`, `--lab-badge-*`,
+ * `--lab-control-*`, …) must NEVER bake a literal colour as its fallback — a missing role
+ * is a contract bug to fix in the colour layer, not to paper over with a hardcoded
+ * `rgb()/hsl()/#hex/named-colour/gradient`.
  *
  * This class of regression closed in #23/#24 and was reintroduced in #31
  * (`--lab-fx-shadow-major, rgb(0 0 0 / 0.25)`). This module is the scanner; the sibling
@@ -250,6 +251,9 @@ export const SYSTEM_COLOURS = [
  * are explicitly NOT colour literals and are allowed, so they are absent here.
  *   - functional: rgb()/rgba()/hsl()/hsla()/hwb()/lab()/lch()/oklab()/oklch()/color()
  *               + color-mix()/light-dark() (modern colour-producing functions)
+ *               + device-cmyk() (a colour-producing function)
+ *               + linear-/radial-/conic-gradient() (colour-bearing <image> values — a
+ *                 gradient fallback bakes literal colour stops just like a flat colour)
  *   - hex: #rgb … #rrggbbaa
  *   - any CSS named colour (the full Level-4 set + currentColor/transparent)
  *   - any CSS system-colour keyword (Canvas / ButtonFace / Field / …), whole-word only
@@ -257,9 +261,21 @@ export const SYSTEM_COLOURS = [
  * carry the `i` flag and the named/system-colour alternations are matched
  * case-insensitively. `color-mix(`/`light-dark(` are listed BEFORE the bare `color(`
  * alternative purely for readability — alternation is order-independent for these
- * since each carries its own trailing `(` and `-` is not a word char.
+ * since each carries its own trailing `(` and `-` is not a word char. Each function
+ * alternative is anchored on its full name + `(`, so it matches ONLY in the
+ * fallback-value position (right after `var(--lab-<role>, ` / the TS string opener),
+ * never on a bare `gradient` substring or an unrelated declaration value. The gradient
+ * names carry a `(?<!repeating-)` negative lookbehind so `repeating-linear-gradient(`
+ * (and the radial/conic repeating forms) is intrinsically excluded — a `\b` left-anchor
+ * is NOT sufficient here, since `-` is a non-word char and a word boundary sits between
+ * `repeating-` and `linear`, which would let a bare `\blinear-gradient\(` match the inner
+ * substring. `repeating-*-gradient` paints a tiling pattern of the SAME baked colour
+ * stops, so it is just as much a literal-colour fallback — but the recurrence class this
+ * guard exists for is a single flat colour/gradient, and a repeating gradient is vanishing
+ * in role fallbacks; excluding it keeps the scanner precise and matches the documented
+ * intent. (A future tightening could drop the lookbehind to also flag repeating forms.)
  */
-export const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
+export const COLOUR_LITERAL = `(?:rgba?\\(|hsla?\\(|hwb\\(|(?:ok)?lab\\(|(?:ok)?lch\\(|color-mix\\(|light-dark\\(|device-cmyk\\(|(?<!repeating-)(?:linear|radial|conic)-gradient\\(|color\\(|#[0-9a-f]{3,8}\\b|\\b(?:${NAMED_COLOURS.join('|')})\\b|\\b(?:${SYSTEM_COLOURS.join('|')})\\b)`;
 
 /** CSS form: `var(--lab-<colour-role>, <colour-literal>)`. */
 const CSS_RE = new RegExp(`var\\(\\s*(${COLOUR_TOKEN})\\s*,\\s*${COLOUR_LITERAL}`, 'gi');

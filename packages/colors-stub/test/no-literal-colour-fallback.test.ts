@@ -144,6 +144,94 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
     ).toHaveLength(1);
   });
 
+  // ── Component colour-role families badge/control (Misc group in roles.json;
+  // --lab-badge-label-* and --lab-control-bg resolve to rgb() in contract.css). Badge is
+  // a SHIPPED component — a literal fallback on either family is the #23/#24/#31 bug class
+  // and must be flagged in BOTH authored forms.
+  it('DETECTS a literal fallback on a --lab-badge-* role (CSS and TS)', () => {
+    const css = scanSource('p.css', 'color: var(--lab-badge-label-default, #fff);');
+    expect(css).toHaveLength(1);
+    expect(css[0]?.token).toBe('--lab-badge-label-default');
+
+    const ts = scanSource('p.ts', "color: ${litVar('--lab-badge-label-default', '#fff')};");
+    expect(ts).toHaveLength(1);
+    expect(ts[0]?.token).toBe('--lab-badge-label-default');
+
+    // the contrast role too, with a named colour.
+    expect(scanSource('p.css', 'color: var(--lab-badge-label-contrast, black);')).toHaveLength(1);
+  });
+
+  it('DETECTS a literal fallback on a --lab-control-* role (CSS and TS)', () => {
+    const css = scanSource('p.css', 'background: var(--lab-control-bg, rgb(255 255 255));');
+    expect(css).toHaveLength(1);
+    expect(css[0]?.token).toBe('--lab-control-bg');
+
+    const ts = scanSource('p.ts', "background: ${litVar('--lab-control-bg', 'rgb(255 255 255)')};");
+    expect(ts).toHaveLength(1);
+    expect(ts[0]?.token).toBe('--lab-control-bg');
+  });
+
+  // ── Gradient & device-cmyk literals — colour/image-producing values. A gradient
+  // fallback bakes literal colour stops, so it is forbidden as a role fallback exactly
+  // like a flat colour. Each function form is flagged on a colour role in both authored
+  // forms; matched ONLY in the fallback-value position (the leading `var(--lab-…, ` /
+  // TS string opener), never on a bare `gradient` substring.
+  it('DETECTS linear-gradient() / radial-gradient() / conic-gradient() on a colour role', () => {
+    const lin = scanSource('p.css', 'background: var(--lab-bg-base, linear-gradient(#fff, #000));');
+    expect(lin).toHaveLength(1);
+    expect(lin[0]?.token).toBe('--lab-bg-base');
+
+    expect(
+      scanSource('p.css', 'background: var(--lab-bg-base, radial-gradient(#fff, #000));'),
+    ).toHaveLength(1);
+    expect(
+      scanSource('p.css', 'background: var(--lab-bg-base, conic-gradient(#fff, #000));'),
+    ).toHaveLength(1);
+
+    // TS form.
+    expect(
+      scanSource('p.ts', "background: ${litVar('--lab-bg-base', 'linear-gradient(#fff, #000)')};"),
+    ).toHaveLength(1);
+  });
+
+  it('DETECTS a device-cmyk() literal on a colour role (CSS and TS)', () => {
+    const css = scanSource('p.css', 'color: var(--lab-label-primary, device-cmyk(0 0 0 1));');
+    expect(css).toHaveLength(1);
+    expect(css[0]?.token).toBe('--lab-label-primary');
+
+    expect(
+      scanSource('p.ts', "color: ${litVar('--lab-label-primary', 'device-cmyk(0 0 0 1)')};"),
+    ).toHaveLength(1);
+  });
+
+  // ── `repeating-*-gradient(` must NOT match — neither as a bare declaration nor, the
+  // subtle case, as a colour-role FALLBACK value. A `\b` left-anchor is insufficient (a
+  // word boundary sits between `repeating-` and `linear`), so the literal carries a
+  // `(?<!repeating-)` negative lookbehind. This test pins that lookbehind so a future
+  // revert to a bare `\b` (which WOULD false-positive on the repeating forms) fails CI.
+  it('ALLOWS repeating-*-gradient() — bare declaration AND in a colour-role fallback', () => {
+    // bare declaration (out of any var() fallback) — out of scope entirely.
+    expect(scanSource('p.css', '.x { background: linear-gradient(#fff, #000); }')).toEqual([]);
+    expect(
+      scanSource('p.css', '.x { background: repeating-linear-gradient(45deg, #fff 0 1px); }'),
+    ).toEqual([]);
+    // the subtle case: repeating forms in the FALLBACK position must stay unflagged.
+    expect(
+      scanSource('p.css', 'background: var(--lab-bg-base, repeating-linear-gradient(#fff, #000));'),
+    ).toEqual([]);
+    expect(
+      scanSource('p.css', 'background: var(--lab-bg-base, repeating-radial-gradient(#fff, #000));'),
+    ).toEqual([]);
+    expect(
+      scanSource('p.css', 'background: var(--lab-bg-base, repeating-conic-gradient(#fff, #000));'),
+    ).toEqual([]);
+    // a non-repeating gradient on a DIMENSION token's fallback stays unflagged — the
+    // gradient literal only fires behind a COLOUR-role prefix, never `--lab-space-*`.
+    expect(
+      scanSource('p.css', 'background: var(--lab-space-xs, linear-gradient(#fff, #000));'),
+    ).toEqual([]);
+  });
+
   it('ALLOWS a dimension token with a literal dimension fallback', () => {
     expect(scanSource('p.css', 'padding: var(--lab-space-xs, 0.25rem);')).toEqual([]);
     expect(scanSource('p.ts', "padding: ${litVar('--lab-radius-md', '0.375rem')};")).toEqual([]);
