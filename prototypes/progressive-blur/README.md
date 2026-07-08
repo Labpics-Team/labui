@@ -1,89 +1,93 @@
 # Progressive Blur (web)
 
-Variable-strength **backdrop blur along an axis** — the real thing, not the
-"one blur + opacity mask" fake (that cross-fades blurred pixels against SHARP
-ones across the whole surface, so sharp content ghosts through mid-fade).
-Configured like a **Figma gradient**: an axis from point A to point B, any
-number of stops (`position → blur`), an optional **easing curve per segment**
-(CSS keywords or `cubic-bezier(…)`). Zero dependencies, zero per-frame JS,
-fully tokenisable through CSS custom properties.
+**Размытие фона переменной силы вдоль оси** — настоящее, а не подделка «одно
+размытие + маска прозрачности» (она смешивает размытые пиксели с РЕЗКИМИ по всей
+поверхности, из-за чего резкое содержимое просвечивает в середине перехода).
+Настраивается как **градиент в Figma**: ось из точки A в точку B, любое число
+стопов (`position → blur`), опциональная **кривая сглаживания на сегмент**
+(CSS-ключевые слова или `cubic-bezier(…)`). Ноль зависимостей, ноль JS на кадр,
+полностью токенизируется через CSS-переменные.
 
-## Run the playground
+## Запуск песочницы
 
 ```bash
 node serve.mjs        # → http://127.0.0.1:4478
 ```
 
-## How it works — the cumulative (onion) stack
+## Как это работает — накопительный (луковичный) стек
 
-The web has no variable-radius backdrop blur, so the profile B(t) is
-discretised onto a geometric ladder of levels; for each level one child strip
-covers the **superlevel region** `{ t : B(t) ≥ L_k }` with the **incremental**
-radius `√(L_k² − L_{k−1}²)`. A strip's backdrop includes the strips painted
-before it, and Gaussian blurs compose as `√Σr²` — so the interior of every
-band renders **exactly** its ladder level, and each feathered edge cross-fades
-only the small increment against the composition beneath it: the gentlest
-possible seam. Non-monotone profiles (`0 0px, 50% 20px, 1 0px`) fall out for
-free — a level simply owns several disjoint strips.
+В вебе нет размытия фона с переменным радиусом, поэтому профиль B(t)
+дискретизируется на геометрическую лестницу уровней; для каждого уровня одна
+дочерняя полоса покрывает **надуровневую область** `{ t : B(t) ≥ L_k }` с
+**инкрементальным** радиусом `√(L_k² − L_{k−1}²)`. Фон полосы включает полосы,
+отрисованные до неё, а гауссовы размытия складываются как `√Σr²` — поэтому
+внутренность каждой полосы рендерится **точно** в свой уровень лестницы, и каждый
+растушёванный край смешивает лишь малый инкремент с композицией под ним:
+максимально мягкий шов. Немонотонные профили (`0 0px, 50% 20px, 1 0px`)
+получаются бесплатно — уровень просто владеет несколькими непересекающимися
+полосами.
 
-The naive alternative — disjoint strips with absolute radii — is broken by
-construction: overlapping siblings re-blur each other's output (a weaker strip
-can never show a sharper picture than the stronger strip painted beneath it),
-so every seam becomes order-dependent. The cumulative model turns that
-browser behaviour into the mechanism instead of fighting it.
+Наивная альтернатива — непересекающиеся полосы с абсолютными радиусами — сломана
+по построению: перекрывающиеся соседи повторно размывают вывод друг друга (более
+слабая полоса никогда не покажет более резкую картину, чем более сильная полоса,
+отрисованная под ней), поэтому каждый шов становится зависимым от порядка.
+Накопительная модель превращает это поведение браузера в механизм, вместо того
+чтобы бороться с ним.
 
-## Use the effect
+## Использование эффекта
 
 ```html
 <link rel="stylesheet" href="progressive-blur.css" />
 <div class="lab-progressive-blur" id="veil" style="position:absolute; inset:0 0 auto 0; height:45%"></div>
 <script type="module">
   import { attach } from './progressive-blur.js';
-  attach(document.getElementById('veil')); // reads --pb-* and keeps itself size-synced
+  attach(document.getElementById('veil')); // читает --pb-* и держит себя синхронным по размеру
 </script>
 ```
 
-| Custom property | Default        | What it does                                        |
+| CSS-переменная  | По умолчанию   | Что делает                                          |
 | --------------- | -------------- | --------------------------------------------------- |
-| `--pb-from`     | `50% 0%`       | axis start (`x y`, % of the box or px)               |
-| `--pb-to`       | `50% 100%`     | axis end                                             |
-| `--pb-stops`    | `0 16px, 1 0px`| Figma-like stops: `<at> <blur>px [easing]`, any count |
-| `--pb-levels`   | `6`            | max strip count (quality/cost knob)                  |
-| `--pb-feather`  | `auto`         | cross-fade width along the axis (px)                 |
+| `--pb-from`     | `50% 0%`       | начало оси (`x y`, % от бокса или px)                |
+| `--pb-to`       | `50% 100%`     | конец оси                                            |
+| `--pb-stops`    | `0 16px, 1 0px`| стопы в стиле Figma: `<at> <blur>px [easing]`, любое количество |
+| `--pb-levels`   | `6`            | макс. число полос (ручка качества/стоимости)         |
+| `--pb-feather`  | `auto`         | ширина растушёвки вдоль оси (px)                      |
 
-Easing attaches to the stop a segment ENDS at:
+Сглаживание привязывается к стопу, на котором сегмент ЗАКАНЧИВАЕТСЯ:
 `0 24px, 55% 4px ease-in-out, 1 0px cubic-bezier(.2,0,.8,1)`.
 
-The host must not form a backdrop root (no `filter`, `opacity < 1`, `mask` or
-blend on it) — the strips would blur the element instead of the page behind.
+Хост не должен образовывать backdrop root (никаких `filter`, `opacity < 1`,
+`mask` или blend на нём) — полосы размыли бы сам элемент, а не страницу за ним.
 
-## Performance
+## Производительность
 
-Zero per-frame JS: geometry rebuilds only on resize/config change (trailing-
-edge rAF) and is a handful of style writes. Strips are tight superlevel
-bboxes carrying only incremental radii; blur cost scales ~linearly with
-radius and the increments telescope, so the whole stack costs about as much
-as ONE full-surface blur at the strongest stop — not N×.
+Ноль JS на кадр: геометрия пересобирается только при ресайзе/изменении
+конфигурации (rAF по заднему фронту) и сводится к горстке записей стилей. Полосы —
+это плотные надуровневые bbox'ы, несущие лишь инкрементальные радиусы; стоимость
+размытия растёт ~линейно с радиусом, а инкременты телескопируются, поэтому весь
+стек стоит примерно как ОДНО размытие всей поверхности на самом сильном стопе — а
+не N×.
 
-## Honest degradation
+## Честная деградация
 
-`prefers-reduced-transparency` → no strips at all (runtime + CSS backstop).
-No `backdrop-filter` support → no strips, content stays untouched.
+`prefers-reduced-transparency` → полос нет вообще (рантайм + подстраховка на CSS).
+Нет поддержки `backdrop-filter` → полос нет, содержимое остаётся нетронутым.
 
-## Testing (pb-harness.mjs)
+## Тестирование (pb-harness.mjs)
 
-A new effect has no golden pixels, so the gate is **physical**: a two-scale
-test pattern renders behind the surface and the local-contrast profile along
-the axis is measured off screenshots — attenuation at the strong end,
-monotonicity, no banding cliffs, easing measurably bending the profile,
-multi-stop valleys, axis orientation, plus DOM invariants (cumulative √Σr²
-equals the strongest stop exactly; feather fades present; ladder dense;
-strips tight), determinism and reduced-transparency honesty. A Class-D
-mutation harness weakens eight dimensions (feather, level count, easing,
-blur strength, strip tightness, axis, superlevel coverage, reduced
-transparency) and proves each one's named isolating check flips to fail.
-Honest accounting: 8 of the 14 physical checks own a mutant killer; the
-other six (strong-end attenuation, banding cliff, multi-stop valley,
-determinism, array-stops rebuild, clamp extent) are exercised by the suite
-but have no dedicated mutant. The pure-math sliver-merge guard has its own
-unit-level killer in `apps/docs/tests/progressive-blur/pb-math.unit.test.mjs`.
+У нового эффекта нет эталонных пикселей, поэтому гейт **физический**: за
+поверхностью рендерится двухмасштабный тест-паттерн, и профиль локального
+контраста вдоль оси измеряется по скриншотам — затухание на сильном конце,
+монотонность, отсутствие обрывов бандинга, измеримый изгиб профиля от сглаживания,
+впадины на нескольких стопах, ориентация оси, плюс DOM-инварианты (накопительный
+√Σr² точно равен самому сильному стопу; переходы растушёвки присутствуют; лестница
+плотная; полосы плотно подогнаны), детерминизм и честность reduced-transparency.
+Class-D мутационный харнес ослабляет восемь измерений (растушёвка, число уровней,
+сглаживание, сила размытия, плотность полос, ось, покрытие надуровня, reduced
+transparency) и доказывает, что для каждого именованная изолирующая проверка
+падает. Честный учёт: 8 из 14 физических проверок имеют убийцу мутанта; остальные
+шесть (затухание на сильном конце, обрыв бандинга, впадина на нескольких стопах,
+детерминизм, пересборка на массиве стопов, протяжённость clamp) прогоняются
+набором тестов, но выделенного мутанта не имеют. Чисто математический guard
+слияния тонких полос имеет собственного убийцу на уровне юнит-теста в
+`apps/docs/tests/progressive-blur/pb-math.unit.test.mjs`.

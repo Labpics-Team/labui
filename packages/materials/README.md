@@ -1,259 +1,260 @@
 # @labpics/ui-materials
 
-The **material mode axis** for LabUI surfaces. A single scope attribute —
-`data-material="solid | glass | blur | acrylic"` — sits beside `data-theme` and
-re-skins every `.lab-material` surface below it with **zero markup change**.
+**Ось режимов материала** для поверхностей LabUI. Единственный scope-атрибут —
+`data-material="solid | glass | blur | acrylic"` — стоит рядом с `data-theme` и
+переоформляет каждую поверхность `.lab-material` под ним при **нулевом изменении разметки**.
 
-This package owns **mechanics**, never colour. Tint and base come from the
-`--lab-*` contract (`@labpics/colors`); this package assembles them into a
-backdrop stack, guards legibility, and degrades deterministically.
+Этот пакет владеет **механикой**, а не цветом. Tint и база приходят из
+контракта `--lab-*` (`@labpics/colors`); этот пакет собирает их в стек
+подложки, защищает читаемость и деградирует детерминированно.
 
-## Axes model
+## Модель осей
 
-A material surface address is `tier × theme × mode`:
+Адрес поверхности материала — `tier × theme × mode`:
 
-- **tier** (`.lab-material--{base,muted,soft,subtle,elevated}`) — the Figma
-  Materials fill. Each tier is a two-layer pair from the contract:
-  `--lab-bg-material-<tier>-01` (translucent tint; its alpha is the glass
-  density) over `--lab-bg-material-<tier>-02` (opaque base).
-- **theme** (`data-theme`) — the contract rebinds the tier tokens per theme, so
-  a tier auto-adapts light↔dark. This package does no theme branching.
-- **mode** (`data-material`):
-  - `solid` (default + universal fallback) — 01 painted over 02, **opaque**.
-    The canon: contrast always holds, backdrop cost is zero.
-  - `glass` — 01 alone (translucent) over the live backdrop + `blur(48px)`.
-  - `blur` — frostier tier, `blur(128px)`.
-  - `acrylic` — Fluent-class **diffusion** (not glass's refraction): `blur(48px)`
-    + `saturate(180%)` + tint + a baked **~2% grain** (see "Acrylic" below).
+- **tier** (`.lab-material--{base,muted,soft,subtle,elevated}`) — заливка Figma
+  Materials. Каждый tier — это двухслойная пара из контракта:
+  `--lab-bg-material-<tier>-01` (полупрозрачный tint; его alpha — плотность
+  стекла) над `--lab-bg-material-<tier>-02` (непрозрачная база).
+- **тема** (`data-theme`) — контракт перепривязывает токены tier для каждой темы,
+  поэтому tier авто-адаптируется light↔dark. Этот пакет не делает ветвления по теме.
+- **режим** (`data-material`):
+  - `solid` (по умолчанию + универсальный фолбэк) — 01 нанесён поверх 02, **непрозрачно**.
+    Канон: контраст держится всегда, стоимость подложки — ноль.
+  - `glass` — только 01 (полупрозрачный) над живой подложкой + `blur(48px)`.
+  - `blur` — более матовый tier, `blur(128px)`.
+  - `acrylic` — **diffusion** уровня Fluent (не refraction, как у glass): `blur(48px)`
+    + `saturate(180%)` + tint + запечённое **~2% зерно** (см. «Acrylic» ниже).
 
-Labels/borders do **not** carry material — they react to the effective surface.
+Метки/границы **не** несут материал — они реагируют на эффективную поверхность.
 
-`glass`, `blur` and `acrylic` are the **live-blur** family (translucent tint over a
-`backdrop-filter`); `solid` is opaque. That partition drives the background policy
-and the degradation ladder below.
+`glass`, `blur` и `acrylic` — это семейство **live-blur** (полупрозрачный tint над
+`backdrop-filter`); `solid` непрозрачен. Это разделение определяет политику фона
+и лестницу деградации ниже.
 
-## The α-boundary guarantee
+## Гарантия α-boundary
 
-Glass paints a translucent tint over an **unknown** backdrop, so legibility can
-only be promised if the committed label stays legal across the whole range the
-backdrop can take. We bound that range in the **same space the browser paints** —
-straight-alpha compositing per-channel in **gamma-encoded sRGB** — by the two
-backdrop extremes:
+Glass наносит полупрозрачный tint над **неизвестной** подложкой, поэтому читаемость
+можно обещать, только если зафиксированная метка остаётся легальной на всём диапазоне,
+который может принять подложка. Мы ограничиваем этот диапазон в **том же пространстве,
+в котором рисует браузер** — поканальный композитинг straight-alpha в
+**gamma-encoded sRGB** — двумя экстремумами подложки:
 
 ```
 effLow  = L( tint over black )      (backdrop L_bd = 0)  → minimum
 effHigh = L( tint over white )      (backdrop L_bd = 1)  → maximum
 ```
 
-Luminance and the composite are both monotonic per channel, so black and white
-give the **true** extrema over *every* backdrop (coloured ones included). A tier
-is **guaranteed** only if its polarity-committed label clears the WCAG AA floor
-(4.5:1) at the **worst point of the whole band** `[effLow, effHigh]` — not just
-its ends: a label whose own luminance falls **inside** the band is driven to 1:1
-contrast by some backdrop even when both endpoints pass. The math lives in
-`material-guarantee.ts`; `test/alpha-boundary.test.ts` runs it over the values
-parsed straight from the generated contract (no second copy of the numbers), and
-`apps/docs/tests/materials-flag.spec.ts` differentially checks `effLow`/`effHigh`
-against the real browser compositor (`canvas` `getImageData`).
+Яркость и композит монотонны поканально, поэтому чёрный и белый дают **истинные**
+экстремумы над *любой* подложкой (включая цветные). Tier считается **guaranteed**
+только если его метка, закреплённая по полярности, преодолевает порог WCAG AA
+(4.5:1) в **худшей точке всей полосы** `[effLow, effHigh]` — а не только на её концах:
+метку, чья собственная яркость попадает **внутрь** полосы, какая-нибудь подложка
+загоняет в контраст 1:1, даже когда оба конца проходят. Математика живёт в
+`material-guarantee.ts`; `test/alpha-boundary.test.ts` прогоняет её на значениях,
+распарсенных прямо из сгенерированного контракта (без второй копии чисел), а
+`apps/docs/tests/materials-flag.spec.ts` дифференциально сверяет `effLow`/`effHigh`
+с реальным композитором браузера (`canvas` `getImageData`).
 
-### Unguaranteed pairs (current PROVISIONAL Figma-anchor alphas)
+### Негарантированные пары (текущие PROVISIONAL Figma-якорные alpha)
 
-The `--lab-bg-material-*` emissions are still `мост: Figma-якорь` bridges — not
-yet engine-derived. Under those alphas the guarantee flags these pairs, which
-therefore **must not** carry text on glass until the colours train re-emits
-them (they render fine as `solid`):
+Значения, эмитируемые `--lab-bg-material-*`, — это пока мосты `мост: Figma-якорь`,
+ещё не выведенные движком. При этих alpha гарантия помечает следующие пары, которые
+поэтому **не должны** нести текст на glass, пока поезд colors не переиздаст их (как
+`solid` они рендерятся нормально):
 
-| theme | tier | why |
+| тема | tier | почему |
 |---|---|---|
-| light | soft | near-black label, real composite worst ≈ 4.1:1 on a dark backdrop — **below AA** |
-| light | subtle | sheer α=.439, band straddles the polarity crossover |
-| dark | subtle | sheerest dark tier, band spans almost the full axis |
-| dark | elevated | white label fails at the bright-backdrop boundary |
+| light | soft | почти чёрная метка, реальный композит в худшем ≈ 4.1:1 на тёмной подложке — **ниже AA** |
+| light | subtle | прозрачный α=.439, полоса лежит на переходе полярности |
+| dark | subtle | самый прозрачный тёмный tier, полоса охватывает почти всю ось |
+| dark | elevated | белая метка не проходит на границе яркой подложки |
 
-Guaranteed today: **light** {base, muted, elevated} and **dark** {base, muted,
-soft}. This is a finding on the provisional alphas, not a defect of the
-mechanics — the golden test locks the set so a silent regression trips CI.
+Guaranteed сегодня: **light** {base, muted, elevated} и **dark** {base, muted,
+soft}. Это находка на предварительных alpha, а не дефект механики — golden-тест
+фиксирует набор, чтобы тихая регрессия роняла CI.
 
-> **Re-derivation note.** Moving the α-boundary onto the real composite flipped
-> three pairs honestly: `light/soft` **lost** its guarantee (the old
-> blend-of-luminances read ~5.7:1 where the browser paints ~4.1:1), while
-> `dark/muted` and `dark/soft` **gained** one (the blend was wrongly pessimistic
-> for a dark tint over a bright backdrop — the real gamma composite is darker, so
-> the white label actually holds ≥ AA).
+> **Замечание о повторном выводе.** Перенос α-boundary на реальный композит честно
+> перевернул три пары: `light/soft` **потеряла** свою гарантию (старый
+> blend-of-luminances читал ~5.7:1 там, где браузер рисует ~4.1:1), тогда как
+> `dark/muted` и `dark/soft` **получили** её (blend был ошибочно пессимистичен
+> для тёмного tint над яркой подложкой — реальный gamma-композит темнее, поэтому
+> белая метка на деле держит ≥ AA).
 
-### Composite space (resolved)
+### Пространство композита (решено)
 
-The guarantee bounds the composite in **gamma-encoded sRGB**, per-channel —
-exactly what the browser paints and byte-identical to lab-colors' own
-`composite_over_encoded` (proven by the 12-pair Figma-neutral roundtrip in
-`crates/labcolors-core/src/alpha.rs`). Luminance is measured with WCAG Rec.709
-coefficients on that composite, the same colorimetry lab-colors uses. Engine,
-guarantee, and screen agree; a `guaranteed` verdict is a **real browser-AA
-promise**, not a model artefact. (The earlier worry that lab-colors composites in
-*linear* sRGB was a misread — its linear path is colorimetry-only; compositing is
-in the encoded space.)
+Гарантия ограничивает композит в **gamma-encoded sRGB**, поканально — ровно то,
+что рисует браузер, и байт-идентично собственному `composite_over_encoded` из
+lab-colors (доказано 12-парным Figma-нейтральным roundtrip в
+`crates/labcolors-core/src/alpha.rs`). Яркость измеряется коэффициентами WCAG Rec.709
+на этом композите — та же колориметрия, что использует lab-colors. Движок,
+гарантия и экран согласованы; вердикт `guaranteed` — это **реальное обещание
+браузерного AA**, а не артефакт модели. (Прежнее опасение, что lab-colors накладывает
+в *линейном* sRGB, было неверным прочтением — его линейный путь только для
+колориметрии; композитинг — в кодированном пространстве.)
 
-## Corridor guarantee (ADR-0004 Решение 2)
+## Гарантия коридора (ADR-0004 Решение 2)
 
-The α-boundary is ONE class of math parametrised by the reachable **backdrop
-corridor**. The material case is the corridor `[black, white]` (any live backdrop);
-a KNOWN region narrows it to the per-channel extremes actually reachable there.
-`evaluateTier(…, { backdrop })` takes a `BackdropCorridor` (default = the full
-`[black, white]` — byte-identical to the old behaviour), and `bandOverCorridor` /
-`worstContrastOverBand` are the shared primitives the tier evaluator and the ladder
-both build on (one math, no drift). `cornerCorridor(colours…)` and `unionCorridor`
-construct corridors from a sampled region and from two adjacent regions.
+α-boundary — это ОДИН класс математики, параметризованный достижимым **коридором
+подложки**. Случай материала — это коридор `[black, white]` (любая живая подложка);
+ИЗВЕСТНАЯ область сужает его до поканальных экстремумов, реально достижимых там.
+`evaluateTier(…, { backdrop })` принимает `BackdropCorridor` (по умолчанию = полный
+`[black, white]` — байт-идентично старому поведению), а `bandOverCorridor` /
+`worstContrastOverBand` — это общие примитивы, на которых строятся и оценщик tier,
+и лестница (одна математика, без дрифта). `cornerCorridor(colours…)` и `unionCorridor`
+конструируют коридоры из сэмплированной области и из двух соседних областей.
 
-## Byte-exact composite (task #52)
+## Байт-точный композит (task #52)
 
-`compositeOverByte(source, base)` is the straight-alpha composite quantised to the
-8-bit channel the **display commits** — `Uint8ClampedArray` round-half-to-even, the
-exact byte the browser's `ImageData` and the engine's map both store. It is proven
-**byte-for-byte** (zero tolerance) against lab-colors' SSOT `composite_over_encoded`
-on the 12 Figma-neutral pairs (`byte-composite-golden.test.ts`), the material
-contract domain is proven tie-free (so round-half-even ≡ lab-colors' round-half-away
-here), and the composited contract pixels are frozen in a versioned golden
-(`byte-composite-corridor-golden.test.ts` — re-bless only with a `GOLDEN_VERSION`
-bump + CHANGELOG line). The docs differential (`materials-flag.spec.ts`) compares
-`compositeOverByte` against the real canvas pixel **byte-exact** — no luminance
-tolerance — verified equal across Chromium AND WebKit.
+`compositeOverByte(source, base)` — это композит straight-alpha, квантованный до
+8-битного канала, который **фиксирует дисплей** — `Uint8ClampedArray` round-half-to-even,
+тот самый байт, который хранят и `ImageData` браузера, и карта движка. Он доказан
+**байт-в-байт** (нулевой допуск) против SSOT `composite_over_encoded` из lab-colors
+на 12 Figma-нейтральных парах (`byte-composite-golden.test.ts`), домен контракта
+материала доказан tie-free (поэтому здесь round-half-even ≡ round-half-away из
+lab-colors), а скомпозированные пиксели контракта заморожены в версионированном golden
+(`byte-composite-corridor-golden.test.ts` — переблагословлять только с бампом
+`GOLDEN_VERSION` + строкой в CHANGELOG). Дифференциальный тест доков
+(`materials-flag.spec.ts`) сравнивает `compositeOverByte` с реальным пикселем canvas
+**байт-точно** — без допуска по яркости — проверено равным в Chromium И WebKit.
 
-## Legibility ladder (task #58)
+## Лестница читаемости (task #58)
 
-`legibility-ladder.ts` resolves a label on ANY background to one of two states —
-a proven corridor guarantee, or a mandatory scrim floor the SYSTEM inserts. There
-is no "put the text down and hope" path (the resolver structurally cannot return
-`guaranteed` unless the corridor worst-case clears the floor):
+`legibility-ladder.ts` разрешает метку на ЛЮБОМ фоне в одно из двух состояний —
+доказанная гарантия коридора либо обязательный порог scrim, который вставляет СИСТЕМА.
+Пути «положи текст и надейся» нет (резолвер структурно не может вернуть
+`guaranteed`, пока худший случай коридора не преодолеет порог):
 
-| Case | Rung | Guarantee |
+| Случай | Ступень | Гарантия |
 |---|---|---|
-| solid | `resolveOnSolid` | corridor collapses to a point → direct contrast |
-| material | `resolveOnMaterial` | tint over unknown backdrop → `[black, white]` corridor |
-| image (readable) | `resolveOnImageRegion` | per-channel region corridor → solver → forced `computeScrimFloor` if unreachable |
-| tainted (cross-origin) | `resolveOnTainted` | pixels unreadable → **scrim mandatory by contract** (never `guaranteed`) |
-| boundary (two regions) | `resolveOnBoundary` | must hold over the `unionCorridor` of both |
+| solid | `resolveOnSolid` | коридор схлопывается в точку → прямой контраст |
+| материал | `resolveOnMaterial` | tint над неизвестной подложкой → коридор `[black, white]` |
+| изображение (читаемое) | `resolveOnImageRegion` | поканальный коридор области → солвер → принудительный `computeScrimFloor`, если недостижимо |
+| tainted (cross-origin) | `resolveOnTainted` | пиксели нечитаемы → **scrim обязателен по контракту** (никогда не `guaranteed`) |
+| граница (две области) | `resolveOnBoundary` | должно держаться над `unionCorridor` обеих |
 
-The browser wiring (`getImageData` in a try/catch → `SecurityError` = tainted →
-`resolveOnTainted`) is a thin consumer adapter; the module never imports the DOM,
-so every rung is exhaustively unit-tested.
+Обвязка браузера (`getImageData` в try/catch → `SecurityError` = tainted →
+`resolveOnTainted`) — тонкий адаптер-потребитель; модуль никогда не импортирует DOM,
+поэтому каждая ступень исчерпывающе покрыта юнит-тестами.
 
 ## Acrylic (ADR-0004 Решение 1)
 
-Acrylic is **diffusion** (a low-frequency blur that scatters the backdrop), not
-glass's **refraction** (a lens that offsets the sampled backdrop) — two physics, not
-two presets. The recipe **reuses the ladder** (no new magic value):
+Acrylic — это **diffusion** (низкочастотное размытие, рассеивающее подложку), а не
+**refraction** стекла (линза, смещающая сэмплированную подложку) — две физики, а не
+два пресета. Рецепт **переиспользует лестницу** (без нового магического значения):
 
-| Layer | Value | Provenance |
+| Слой | Значение | Происхождение |
 |---|---|---|
 | `backdrop-filter: blur()` | `--_blur-glass` (48px) | Figma BG-blur Base, ∈ Fluent 30–60px |
-| `saturate()` | `--_saturate-on` (180%) | reused, not a new token |
-| tint | `--lab-bg-material-<tier>-01` (straight-alpha) | **DECLARED** trade-off: NOT Fluent luminosity/exclusion blend — that would break the byte-exact guarantee, so the tint composites straight-alpha like every other mode |
-| grain | `--_acrylic-noise` (~2%, baked into alpha) | ADR-0002 §1; the ONE thing that separates acrylic from plain blur — it kills gradient banding under the blur |
+| `saturate()` | `--_saturate-on` (180%) | переиспользован, не новый токен |
+| tint | `--lab-bg-material-<tier>-01` (straight-alpha) | **ЗАЯВЛЕННЫЙ** компромисс: НЕ Fluent luminosity/exclusion-блендинг — это сломало бы байт-точную гарантию, поэтому tint накладывается straight-alpha, как и любой другой режим |
+| зерно | `--_acrylic-noise` (~2%, baked into alpha) | ADR-0002 §1; ЕДИНСТВЕННОЕ, что отличает acrylic от простого размытия — устраняет полосы на градиенте под размытием |
 
-Because acrylic uses the **same tint over the same unmeasured `[0,1]` corridor** as
-glass (ADR-0004 Решение 2 — the compression multiplier `C` is not yet measured), its
-α-boundary verdict is **identical to glass's**: no new guaranteed/unguaranteed pairs.
+Поскольку acrylic использует **тот же tint над тем же неизмеренным коридором `[0,1]`**,
+что и glass (ADR-0004 Решение 2 — множитель сжатия `C` ещё не измерен), его
+вердикт α-boundary **идентичен вердикту glass**: никаких новых пар guaranteed/unguaranteed.
 
-The grain is a **one-generation** asset (a tiled data-URI PNG), not a runtime filter
-(`feTurbulence` recomputes every frame; a decoded PNG rasterises once). It is produced
-deterministically by `scripts/build-acrylic-noise.ts` (fixed seed, a dependency-free
-`node:zlib` PNG encoder — no binary in git) and inlined into `material.css` between
-`ACRYLIC-NOISE:GENERATED` sentinels. `pnpm --filter @labpics/ui-materials check-generated`
-re-generates and `git diff --exit-code`s it; `test/acrylic-noise.test.ts` decodes the
-asset (dims, colour type, baked alpha) and seals inline ≡ generator (no drift).
+Зерно — это **одногенерационный** ассет (тайловый data-URI PNG), а не рантайм-фильтр
+(`feTurbulence` пересчитывается каждый кадр; декодированный PNG растрируется один раз).
+Оно детерминированно производится `scripts/build-acrylic-noise.ts` (фиксированный seed,
+PNG-энкодер на `node:zlib` без зависимостей — никаких бинарников в git) и встраивается
+в `material.css` между маркерами `ACRYLIC-NOISE:GENERATED`. `pnpm --filter @labpics/ui-materials check-generated`
+перегенерирует его и прогоняет `git diff --exit-code`; `test/acrylic-noise.test.ts` декодирует
+ассет (размеры, тип цвета, запечённая alpha) и фиксирует, что inline ≡ генератор (без дрифта).
 
 ## Specular rim (Стекло v2)
 
-The 1px light-catching edge on glass and acrylic — a vertical gradient, bright at
-the top, fading down, that reads as light glancing off the surface's edge. It is a
-private handle `--_rim` (unset by default, like `--_noise`): the modes rebind **it**,
-never the single paint rule. The ring is painted on a **`::before`** with the
-`mask-composite` gradient-border technique — so it respects `border-radius` (a
-`border-image` gradient would square the corners; a `box-shadow` inset cannot carry
-a vertical gradient) at **zero markup change**. `z-index: -1` sits it above the tint
-but below the label; `pointer-events: none` keeps it inert.
+Кромка 1px, ловящая свет, на glass и acrylic — вертикальный градиент, яркий сверху,
+затухающий книзу, читается как свет, скользящий по краю поверхности. Это приватная
+ручка `--_rim` (по умолчанию не задана, как `--_noise`): режимы перепривязывают **её**,
+а не единственное правило отрисовки. Кольцо рисуется на **`::before`** техникой
+градиентной границы `mask-composite` — поэтому оно соблюдает `border-radius` (градиент
+`border-image` сделал бы углы квадратными; `box-shadow` inset не может нести вертикальный
+градиент) при **нулевом изменении разметки**. `z-index: -1` помещает его над tint,
+но под меткой; `pointer-events: none` держит его инертным.
 
-- **ON** for `glass` (refractive edge catches light) and `acrylic` (Fluent's luminous
-  edge stroke); **OFF** for `blur` (heavy frost is diffuse — no sharp edge) and `solid`
-  (opaque canon — not glass).
-- **Colour is achromatic and from the contract, never a literal.** Specular reflection
-  is white regardless of the surface tint (physics), so the source is the theme-
-  invariant static-surface tokens `--lab-bg-static-light` / `--lab-bg-static-dark`,
-  through `color-mix(in srgb, transparent, <token> α)` — the same idiom the shadow
-  engine uses, so `no-hardcoded-colour` stays green (zero raw `rgb()` in `material.css`).
-- **Theme rebinds** `--_rim-active` (light bright / dark subtle), so the system stays
-  dynamic. DECLARED alphas (visually calibrated): light white `.50 → .05`; dark white
-  `.12` top → faint dark `.04` bottom.
-- Every **degradation** (no `backdrop-filter` / reduced-transparency / contrast:more /
-  forced-colors) resets `--_rim: none` with the translucency — the rim rides the
-  glass, and collapses with it to the opaque solid canon.
+- **ВКЛ.** для `glass` (преломляющая кромка ловит свет) и `acrylic` (светящийся обвод
+  кромки во Fluent); **ВЫКЛ.** для `blur` (плотная матовость диффузна — нет резкой кромки)
+  и `solid` (непрозрачный канон — не glass).
+- **Цвет ахроматичен и берётся из контракта, никогда не литерал.** Зеркальное (specular)
+  отражение белое независимо от tint поверхности (физика), поэтому источник — тема-
+  инвариантные токены статической поверхности `--lab-bg-static-light` / `--lab-bg-static-dark`,
+  через `color-mix(in srgb, transparent, <token> α)` — тот же идиом, что использует движок
+  теней, поэтому `no-hardcoded-colour` остаётся зелёным (ноль сырых `rgb()` в `material.css`).
+- **Тема перепривязывает** `--_rim-active` (в светлой — ярко / в тёмной — приглушённо),
+  поэтому система остаётся динамической. ЗАЯВЛЕННЫЕ alpha (откалиброваны визуально):
+  в светлой белый `.50 → .05`; в тёмной белый `.12` сверху → слабый тёмный `.04` снизу.
+- Каждая **деградация** (нет `backdrop-filter` / reduced-transparency / contrast:more /
+  forced-colors) сбрасывает `--_rim: none` вместе с полупрозрачностью — кромка привязана
+  к glass и вместе с ним схлопывается в непрозрачный канон solid.
 
-Gated by `test/specular-rim.test.ts` (structure + provenance) and
-`test/degradations.test.ts` (`dropsRim`), plus the live browser assertions in
-`apps/docs/tests/materials-flag.spec.ts` (rim ON glass/acrylic, OFF solid/blur,
-theme brightness, stripped under degradation).
+Под контролем `test/specular-rim.test.ts` (структура + происхождение) и
+`test/degradations.test.ts` (`dropsRim`), плюс живые браузерные проверки в
+`apps/docs/tests/materials-flag.spec.ts` (кромка ВКЛ. на glass/acrylic, ВЫКЛ. на
+solid/blur, яркость по теме, снимается при деградации).
 
-## Background policy (`background-policy.ts`)
+## Политика фона (`background-policy.ts`)
 
-The explicit, tested contract of *which material reads what*:
+Явный, покрытый тестами контракт того, *какой материал что читает*:
 
-- **Live-blur family** = `glass | blur | acrylic` (`isLiveBlur`, `LIVE_BLUR_MODES`);
-  `solid` is opaque.
-- **No live-blur nested in live-blur** (`canNest(outer, inner)`): two stacked live
-  blurs read as a seam. `solid` nests freely in either direction.
-- **A material's own fill comes only from `--lab-bg-material-*`** (`MATERIAL_FILL_FAMILY`).
-  The live backdrop *under* the surface may be any `bg` role (the scene), but the
-  surface's tint/base never pull an arbitrary background role — a `material.css` scan
-  test seals it.
+- **Семейство live-blur** = `glass | blur | acrylic` (`isLiveBlur`, `LIVE_BLUR_MODES`);
+  `solid` непрозрачен.
+- **Нельзя вкладывать live-blur в live-blur** (`canNest(outer, inner)`): два наложенных
+  live-blur читаются как шов. `solid` вкладывается свободно в обе стороны.
+- **Собственная заливка материала берётся только из `--lab-bg-material-*`** (`MATERIAL_FILL_FAMILY`).
+  Живая подложка *под* поверхностью может быть любой ролью `bg` (сцена), но tint/база
+  поверхности никогда не тянут произвольную фоновую роль — это фиксирует сканирующий
+  тест `material.css`.
 
-## Degradation ladder (honest fallback)
+## Лестница деградации (честный фолбэк)
 
-The material picks the strongest surface the environment actually supports and falls
-back deterministically — no JS, pure CSS `@supports`/`@media`:
+Материал выбирает самую сильную поверхность, которую реально поддерживает окружение,
+и откатывается детерминированно — без JS, чистый CSS `@supports`/`@media`:
 
-- **Refraction** (Chromium + engine) → glass gets the lens (`--_blur` re-bound to the
-  calibrated radius). Acrylic has **no** lens rung — it is diffusion, not refraction.
-- **`backdrop-filter` present** → the live-blur CSS stack (glass/blur/acrylic).
-- **No `backdrop-filter`, or `prefers-reduced-transparency`, or `prefers-contrast: more`,
-  or `forced-colors: active`** → the **opaque solid canon of the same tier** (grain
-  dropped, blur zeroed). Solid is opaque, so the label contract always holds and the
-  backdrop cost is zero. `data-material="solid"` is the manual escape hatch and always
-  wins. Every downgrade path is guarded by `test/degradations.test.ts`.
+- **Refraction** (Chromium + движок) → glass получает линзу (`--_blur` перепривязан к
+  откалиброванному радиусу). У acrylic **нет** ступени линзы — это diffusion, не refraction.
+- **`backdrop-filter` присутствует** → CSS-стек live-blur (glass/blur/acrylic).
+- **Нет `backdrop-filter`, либо `prefers-reduced-transparency`, либо `prefers-contrast: more`,
+  либо `forced-colors: active`** → **непрозрачный канон solid того же tier** (зерно
+  убрано, blur обнулён). Solid непрозрачен, поэтому контракт метки держится всегда, а
+  стоимость подложки — ноль. `data-material="solid"` — это ручной аварийный выход, и он
+  всегда побеждает. Каждый путь понижения покрыт `test/degradations.test.ts`.
 
-## Placement rules (invariants)
+## Правила размещения (инварианты)
 
-- Glass/acrylic are a **navigational / transient** layer (bars, modals, popovers) —
-  not a skin for large content regions.
-- **Never nest a live-blur material in a live-blur material** (`glass-on-glass`,
-  `acrylic-on-acrylic`, … read as a seam / striping). `canNest` encodes it; the docs
-  demo enforces it across every live mode with an e2e selector check.
-- Do not butt two live-blur panes edge-to-edge (visible seam).
-- **Text on a material uses only guaranteed surface tokens** (polarity foreground).
-  Accent / link text on glass is not permitted.
+- Glass/acrylic — это **навигационный / транзиентный** слой (бары, модалки, поповеры) —
+  не оформление для больших контентных областей.
+- **Никогда не вкладывай live-blur-материал в live-blur-материал** (`glass-on-glass`,
+  `acrylic-on-acrylic`, … читаются как шов / полосы). `canNest` кодирует это; демо в
+  доках обеспечивает соблюдение этого для каждого live-режима e2e-проверкой селектора.
+- Не стыкуй две live-blur-панели встык (видимый шов).
+- **Текст на материале использует только guaranteed-токены поверхности** (передний план
+  по полярности). Акцентный / ссылочный текст на glass не допускается.
 
-## Deferred to a later slice
+## Отложено на будущий срез
 
-- **Refraction lens** — LANDED (ADR-0003 ch-02, PR #85): the SVG-displacement engine
-  lives in `./engine/`, mounted declaratively via `mountMaterialRuntime()`.
-- **Acrylic grain** — LANDED (this slice): see "Acrylic" above.
-- **Parity oracle** (CAM16-UCS ΔE budget across solid/acrylic/glass, ADR-0004
-  Решение 3/4) — still a blueprint; a scheduled, expensive browser oracle, not a
-  per-PR gate. Readability on the material is already covered by the legibility ladder.
-- **Corridor compression `C`** (ADR-0004 Решение 2) — unmeasured; until then acrylic
-  conservatively inherits glass's `[0,1]` corridor.
-- **Edge rim / accent×glass** — later slices.
+- **Refraction-линза** — ВНЕДРЕНО (ADR-0003 ch-02, PR #85): движок SVG-смещения
+  живёт в `./engine/`, монтируется декларативно через `mountMaterialRuntime()`.
+- **Зерно acrylic** — ВНЕДРЕНО (этот срез): см. «Acrylic» выше.
+- **Оракул паритета** (бюджет CAM16-UCS ΔE по solid/acrylic/glass, ADR-0004
+  Решение 3/4) — пока чертёж; плановый, дорогой браузерный оракул, не гейт на каждый PR.
+  Читаемость на материале уже покрыта лестницей читаемости.
+- **Сжатие коридора `C`** (ADR-0004 Решение 2) — не измерено; до тех пор acrylic
+  консервативно наследует коридор `[0,1]` от glass.
+- **Specular rim (световая кромка)** — ВНЕДРЕНО (Стекло v2, PR #106): см. «Specular rim» выше.
+- **accent×glass** (акцентный текст на стекле) — будущий срез.
 
 ## API
 
 ```ts
 import {
   guaranteeReport,
-  evaluateTier, // now accepts { backdrop } — the corridor
+  evaluateTier, // теперь принимает { backdrop } — коридор
   relativeLuminance,
-  compositeOverByte, // byte-exact composite (#52)
+  compositeOverByte, // байт-точный композит (#52)
   cornerCorridor,
   unionCorridor,
-  // legibility ladder (#58):
+  // лестница читаемости (#58):
   resolveOnSolid,
   resolveOnMaterial,
   resolveOnImageRegion,
@@ -261,7 +262,7 @@ import {
   resolveOnTainted,
   corridorFromPixels,
   computeScrimFloor,
-  // background policy (A):
+  // политика фона (A):
   isLiveBlur,
   canNest,
   LIVE_BLUR_MODES,

@@ -1,23 +1,24 @@
 # `@labpics/ui-shadow`
 
-The LabUI shadow stack. A pure, deterministic generator turns the owner's
-verbatim Figma effect-style ladder into the `--lab-shadow-*` / `--lab-elevation-*`
-CSS contract that any surface in any stack can consume — it owns shadow
-**geometry** only, never colour resolution or JND math (those are lab-colors'
-domain).
+Стек теней LabUI. Чистый детерминированный генератор превращает дословную лестницу
+стилей эффектов Figma от владельца в CSS-контракт `--lab-shadow-*` /
+`--lab-elevation-*`, который может потреблять любая поверхность в любом стеке — он
+владеет только **геометрией** тени, но не разрешением цвета и не JND-математикой
+(это домен lab-colors).
 
-## The ladder (опора)
+## Лестница (опора)
 
-Five elevation **sizes**, each **exactly four** drop-shadow plies. Transcribed
-verbatim from the owner's effect styles (`labui-figma-styles.md`, 2026-06-13) —
-nothing about the GEOMETRY is a formula (only the unit is: Figma px is
-algorithmically converted to rem against the 16px root anchor, `toRem` in
-`src/domain/box-shadow.ts`, so shadows scale with root font-size like every
-other dimension in the system). `r` = blur radius, `y` = vertical offset, both
-transcribed here in their source px for readability. At the default vertical
-light the generated CSS reproduces this table ply-for-ply (in rem).
+Пять **размеров** высоты (elevation), каждый — **ровно из четырёх** слоёв
+drop-shadow. Перенесены дословно из стилей эффектов владельца
+(`labui-figma-styles.md`, 2026-06-13) — в ГЕОМЕТРИИ нет ни одной формулы (формула
+только в единице: px из Figma алгоритмически конвертируются в rem относительно
+корневого якоря 16px, `toRem` в `src/domain/box-shadow.ts`, поэтому тени
+масштабируются с корневым размером шрифта, как любой другой размер в системе).
+`r` = радиус размытия, `y` = вертикальное смещение, оба перенесены здесь в
+исходных px для читаемости. При вертикальном свете по умолчанию сгенерированный
+CSS воспроизводит эту таблицу слой-в-слой (в rem).
 
-| Size | slot s1 (α .12) | slot s2 (α .04) | slot s3 (α .02) | slot s4 (α .01) |
+| Размер | слот s1 (α .12) | слот s2 (α .04) | слот s3 (α .02) | слот s4 (α .01) |
 |------|-----------------|-----------------|-----------------|-----------------|
 | `xs` | r1 y0  | r1 y1   | r2 y2   | r2 y4   |
 | `s`  | r2 y1  | r2 y2   | r4 y4   | r8 y12  |
@@ -25,110 +26,111 @@ light the generated CSS reproduces this table ply-for-ply (in rem).
 | `l`  | r8 y4  | r12 y12 | r16 y24 | r24 y48 |
 | `xl` | r36 y16| r48 y24 | r64 y36 | r96 y48 |
 
-Two laws of the ladder:
+Два закона лестницы:
 
-- **Equal-layeredness.** Every size is four plies — no more, no fewer.
-- **Fixed alphas.** The per-slot alpha is identical across every size
-  (`s1 .12 / s2 .04 / s3 .02 / s4 .01`). Depth is communicated by **geometry
-  alone** (growing blur + offset), never by making the ink denser.
+- **Равнослойность.** Каждый размер — четыре слоя, не больше и не меньше.
+- **Фиксированные альфы.** Альфа каждого слота одинакова для всех размеров
+  (`s1 .12 / s2 .04 / s3 .02 / s4 .01`). Глубина передаётся **только геометрией**
+  (растущее размытие + смещение), а не уплотнением чернил.
 
-A component consumes a **size**, in one of two forms:
+Компонент потребляет **размер** в одной из двух форм:
 
 ```html
-<!-- Class form — RECOMMENDED. box-shadow is set on the element, so an opt-in
-     --lab-surface-shadow-tint resolves at the element; the class also wires
-     the box-shadow transition so elevation changes ease. -->
+<!-- Форма-класс — РЕКОМЕНДУЕТСЯ. box-shadow ставится на элемент, поэтому
+     опциональный --lab-surface-shadow-tint резолвится на элементе; класс также
+     подключает transition для box-shadow, чтобы смена высоты шла плавно. -->
 <div class="card lab-shadow-m">…</div>
 ```
 ```css
-/* Token form — for components that prefer a custom property. */
+/* Форма-токен — для компонентов, предпочитающих кастомное свойство. */
 .button { box-shadow: var(--lab-shadow-s); }
 ```
 
-## Semantic role aliases
+## Семантические ролевые алиасы
 
-The size is the **primitive**; a semantic **role** is a named alias onto a size
-— the HIG pattern "size is the primitive, role is the alias", the same shape as
-the token system. A role is just a pointer:
+Размер — это **примитив**; семантическая **роль** — именованный алиас на размер —
+паттерн HIG «размер — примитив, роль — алиас», той же формы, что и токен-система.
+Роль — просто указатель:
 
-| Role | → Size | Why |
+| Роль | → Размер | Зачем |
 |------|--------|-----|
-| `--lab-elevation-resting` | `xs` | a resting surface barely lifts off the page |
-| `--lab-elevation-raised`  | `s`  | a raised card sits just above its neighbours |
-| `--lab-elevation-overlay` | `l`  | a popover/overlay floats clearly above content |
-| `--lab-elevation-modal`   | `xl` | a modal dominates, floating above everything |
+| `--lab-elevation-resting` | `xs` | покоящаяся поверхность едва приподнята над страницей |
+| `--lab-elevation-raised`  | `s`  | приподнятая карточка лежит чуть выше соседей |
+| `--lab-elevation-overlay` | `l`  | поповер/оверлей заметно парит над контентом |
+| `--lab-elevation-modal`   | `xl` | модалка доминирует, паря над всем |
 
-(`m` is an intentional gap — a size with no role, available directly. The older
-`resting/raised/overlay/modal` names survive only as these aliases.)
+(`m` — намеренный пропуск: размер без роли, доступный напрямую. Прежние имена
+`resting/raised/overlay/modal` сохраняются только как эти алиасы.)
 
-## One global light angle — vertical by default
+## Один глобальный угол света — вертикальный по умолчанию
 
-There is exactly one light source. `--lab-light-angle` (an `<angle>`) drives the
-whole system. The owner's data is a **pure vertical light**: every `offset.x = 0`.
-So the default is `0deg` and a config option, **not** a demo handle:
+Источник света ровно один. `--lab-light-angle` (тип `<angle>`) управляет всей
+системой. Данные владельца — **чистый вертикальный свет**: каждый `offset.x = 0`.
+Поэтому по умолчанию `0deg`, и это опция конфига, **а не** демо-ручка:
 
-- **At angle 0 (default):** the generator emits the literal ladder
-  `0 {y}rem {r}rem {colour}` (y/r converted from the Figma px table) — the
-  generated CSS *is* the опора table, bit-for-bit at the default 16px root.
-- **At a non-zero angle:** each ply's vertical throw is projected onto x/y from
-  the one token — `x = y·sin(angle)`, `y = y·cos(angle)` — so rotating the
-  single token rotates every ply of every size in lockstep. There is no
-  per-size angle.
+- **При угле 0 (по умолчанию):** генератор эмитит буквальную лестницу
+  `0 {y}rem {r}rem {colour}` (y/r сконвертированы из px-таблицы Figma) —
+  сгенерированный CSS *и есть* таблица-опора, бит-в-бит при корне 16px по умолчанию.
+- **При ненулевом угле:** вертикальный вынос каждого слоя проецируется на x/y из
+  одного токена — `x = y·sin(angle)`, `y = y·cos(angle)` — так что поворот
+  единственного токена поворачивает каждый слой каждого размера синхронно. Угла на
+  каждый размер нет.
 
-## Neutral anchor, opt-in weak tint — never a glow
+## Нейтральный якорь, опциональный слабый оттенок — никогда не свечение
 
-Per the owner's verdict the default shadow is **neutral**: the theme's dark
-anchor `#101012` (Figma N12 — **not** pure black, which dirties colour). A
-surface may **opt into** a weak hue:
+По вердикту владельца тень по умолчанию **нейтральна**: тёмный якорь темы `#101012`
+(Figma N12 — **не** чистый чёрный, который грязнит цвет). Поверхность может
+**опционально включить** слабый оттенок:
 
 ```css
 .my-card {
-  --lab-surface-shadow-tint: var(--lab-accent); /* the hue */
-  --lab-shadow-tint-strength: 0.35;             /* opt-in, weak (default 0) */
+  --lab-surface-shadow-tint: var(--lab-label-brand-primary); /* оттенок */
+  --lab-shadow-tint-strength: 0.35;                          /* опционально, слабо (по умолчанию 0) */
 }
 ```
 
-The tint **nudges** the dark anchor; it never replaces it. Because every ply's
-ink is `color-mix(anchor → tint by strength)` over the dark anchor base, the
-composite is always darker than the surface — on a dark theme the shadow stays a
-shadow, never a glow. This is the owner's lightness constraint, enforced
-structurally (the anchor is the mix base) and covered by tests.
+Оттенок **подталкивает** тёмный якорь, но никогда не заменяет его. Поскольку
+чернила каждого слоя — это `color-mix(anchor → tint by strength)` поверх базы
+тёмного якоря, композит всегда темнее поверхности — на тёмной теме тень остаётся
+тенью, а не свечением. Это ограничение владельца по светлоте, обеспеченное
+структурно (якорь — база смешивания) и покрытое тестами.
 
-## Smooth elevation transitions
+## Плавные переходы высоты
 
-Surfaces that change elevation (hover/focus/state) **ease** their shadow rather
-than snapping. The size and role classes wire `transition: var(--lab-shadow-transition)`;
-the motion is tuned in one place via tokens:
+Поверхности, меняющие высоту (hover/focus/состояние), **плавно** анимируют свою
+тень, а не переключают её скачком. Классы размера и роли подключают
+`transition: var(--lab-shadow-transition)`; движение настраивается в одном месте
+через токены:
 
 ```
 --lab-shadow-transition-duration / -easing / (composite) --lab-shadow-transition
 ```
 
-## The `--lab-shadow-alpha-*` contract — lab-colors seam
+## Контракт `--lab-shadow-alpha-*` — шов с lab-colors
 
-Per-slot alphas are **not** baked into the geometry. They are read at runtime
-from a four-variable contract `--lab-shadow-alpha-{s1,s2,s3,s4}`. Today these
-carry the owner's **fixed** Figma alphas (`.12 / .04 / .02 / .01`).
+Альфы каждого слота **не** зашиты в геометрию. Они читаются в рантайме из
+контракта на четыре переменные `--lab-shadow-alpha-{s1,s2,s3,s4}`. Сейчас они
+несут **фиксированные** альфы Figma от владельца (`.12 / .04 / .02 / .01`).
 
-**Dark amplification — PROVISIONAL.** The fresh styles export (2026-06-13) gives
-**one** alpha set; a theme changes only the colour anchor, not the alphas. So the
-dark theme uses a `DARK_ALPHA_MULTIPLIER_DEFAULT = 1` (no amplification). The
-older Variables snapshot carried a *separate* dark set (`@2/@4/@12/@20`, roughly
-a 2× lift on the near plies); that direction is named and available as the single
-multiplier to re-set when lab-colors reconciles the two sources via the JND
-surface contracts. Both source numbers are documented in
-`src/domain/alpha-contract.ts` — neither is a silent placeholder.
+**Усиление на тёмной теме — ПРЕДВАРИТЕЛЬНО.** Свежий экспорт стилей (2026-06-13)
+даёт **один** набор альф; тема меняет только цветовой якорь, а не альфы. Поэтому
+тёмная тема использует `DARK_ALPHA_MULTIPLIER_DEFAULT = 1` (без усиления). Прежний
+снимок Variables нёс *отдельный* тёмный набор (`@2/@4/@12/@20`, примерно 2× подъём
+на ближних слоях); это направление названо и доступно как единственный множитель
+для переустановки, когда lab-colors согласует два источника через контракты
+JND-поверхностей. Оба исходных числа задокументированы в
+`src/domain/alpha-contract.ts` — ни одно не является тихой заглушкой.
 
-**Swap-in plan:** when `lab-colors` publishes JND-calibrated alphas, they are
-written to the **same** `--lab-shadow-alpha-*` names. The stack re-derives with
-**zero** geometry changes. See `docs/external-deps/lab-colors.md`.
+**План замены:** когда `lab-colors` опубликует альфы, откалиброванные по JND, они
+будут записаны в **те же** имена `--lab-shadow-alpha-*`. Стек пере-выводится с
+**нулём** изменений геометрии. См. `docs/external-deps/lab-colors.md`.
 
-## Build
+## Сборка
 
 ```sh
 pnpm --filter @labpics/ui-shadow generate   # regenerate src/generated/shadow.css
 pnpm --filter @labpics/ui-shadow build       # generate + tsup + copy artifact
 ```
 
-The generated `shadow.css` is committed so consumers and the docs site can
-`@import "@labpics/ui-shadow/shadow.css"` without running the generator.
+Сгенерированный `shadow.css` закоммичен, чтобы потребители и сайт документации
+могли выполнить `@import "@labpics/ui-shadow/shadow.css"` без запуска генератора.

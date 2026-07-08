@@ -1,40 +1,41 @@
 # @labpics/ui-tokens
 
-LabUI dimension tokens: **spacing, radii, z-index, fluid typography, and
-font-weight**, all generated from one typed config into three artifacts with no
-divergence.
+Размерные токены LabUI: **отступы, радиусы, z-index, плавная типографика и
+насыщенность шрифта** — все генерируются из одного типизированного конфига в три
+артефакта без расхождений.
 
-## The model
+## Модель
 
-One config (`src/config`) is the single source of truth. A pure, idempotent
-generator (`src/domain` + `src/generate`) produces:
+Один конфиг (`src/config`) — единственный источник истины. Чистый идемпотентный
+генератор (`src/domain` + `src/generate`) производит:
 
-| Artifact | What | Consumed by |
+| Артефакт | Что это | Кто потребляет |
 |---|---|---|
-| `tokens.css` | `:root { --lab-* }` custom properties | the runtime contract — `@import "@labpics/ui-tokens/tokens.css"` |
-| `tokens.dtcg.json` | canonical W3C DTCG export | future `figma-snapshot-export` round-trip |
-| generated TS | typed `var(--lab-*)` refs + literal-union types | `import { space, fontSize } from "@labpics/ui-tokens"` |
+| `tokens.css` | кастомные свойства `:root { --lab-* }` | рантайм-контракт — `@import "@labpics/ui-tokens/tokens.css"` |
+| `tokens.dtcg.json` | канонический экспорт W3C DTCG | будущий round-trip с `figma-snapshot-export` |
+| сгенерированный TS | типизированные ссылки `var(--lab-*)` + типы literal-union | `import { space, fontSize } from "@labpics/ui-tokens"` |
 
-**Three-language split:** primitives → semantic aliases → components consume
-semantics only. Aliases are emitted as `var()` references, never duplicated
-values, so re-theming via `:root` overrides just works at paint time.
+**Разделение на три языка:** примитивы → семантические алиасы → компоненты
+потребляют только семантику. Алиасы эмитятся как ссылки `var()`, а не
+дублированные значения, поэтому ре-темизация через переопределения `:root`
+работает прямо на этапе отрисовки.
 
-**Interface scaling = root font-size.** Everything is rem-relative. The dead
-Unit 75–133% modes do not exist; changing `font-size` on `:root` rescales every
-dimension coherently.
+**Масштабирование интерфейса = корневой размер шрифта.** Всё задано относительно
+rem. Мёртвых режимов Unit 75–133% не существует; смена `font-size` на `:root`
+согласованно перемасштабирует каждый размер.
 
-**Every scale has an explicit zero token.** `--lab-space-0`, `--lab-radius-0`,
-and the lowest z-index (`--lab-z-primary: 0`) are all defined — closing the
-Figma `pt/0 @ 133.3%` data gap by design.
+**У каждой шкалы есть явный нулевой токен.** `--lab-space-0`, `--lab-radius-0` и
+наименьший z-index (`--lab-z-primary: 0`) — все определены, что намеренно
+закрывает пробел данных Figma `pt/0 @ 133.3%`.
 
-## Scales
+## Шкалы
 
-### Spacing — linear rem multiplier (Tailwind v4 model)
+### Отступы — линейный множитель rem (модель Tailwind v4)
 
-`base = 0.25rem` (4px). Step `N` → `N × base`. Steps: `0, 1..12, 14, 16, 18, 20,
-22, 24, 26, 28, 30, 32`. Semantic aliases: `none, xs, sm, md, lg, xl, 2xl, 3xl`.
+`base = 0.25rem` (4px). Шаг `N` → `N × base`. Шаги: `0, 1..12, 14, 16, 18, 20,
+22, 24, 26, 28, 30, 32`. Семантические алиасы: `none, xs, sm, md, lg, xl, 2xl, 3xl`.
 
-| Step | rem | px (16px root) |
+| Шаг | rem | px (корень 16px) |
 |---|---|---|
 | `0` | 0rem | 0 |
 | `1` | 0.25rem | 4 |
@@ -43,84 +44,86 @@ Figma `pt/0 @ 133.3%` data gap by design.
 | `16` (3xl) | 4rem | 64 |
 | `32` | 8rem | 128 |
 
-### Radii — geometric rem + pill
+### Радиусы — геометрический rem + pill
 
-Steps `0, xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl` (`0 → 3rem`), plus
-`full = 9999px` (a semantic pill constant, **not** computed 50%). Aliases:
+Шаги `0, xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl` (`0 → 3rem`), плюс
+`full = 9999px` (семантическая константа pill, **не** вычисленные 50%). Алиасы:
 `none, control (8px), card (16px), pill, circle`.
 
-### Z-index — 15 semantic gap-100 levels
+### Z-index — 15 семантических уровней с шагом 100
 
-Daniel's 15 Figma layers, re-mapped to a clean, collision-free, monotonic
-sequence (gap 100, room to insert):
+15 слоёв Figma Даниила, переотображённые в чистую, бесколлизийную, монотонную
+последовательность (шаг 100, место для вставки):
 
 `primary 0 · secondary 100 · tertiary 200 · quaternary 300 · grouped-primary 400
 · grouped-secondary 500 · grouped-tertiary 600 · inverted 700 · skip-link 800 ·
 dropdown 900 · sticky 1000 · modal-underlay 1100 · modal 1200 · toast 1300 ·
 tooltip 1400`
 
-Each level documents its purpose. Components reach for a named layer, never a
-magic number — no z-index wars.
+Каждый уровень документирует своё назначение. Компоненты обращаются к
+именованному слою, а не к магическому числу — никаких войн z-index.
 
-### Typography — continuous fluid gradient (no media queries)
+### Типографика — непрерывный плавный градиент (без media-запросов)
 
-Each step is one `clamp(min, slope·vw + intercept, max)`. The min comes from
-`base × ratioMin^n`, the max from `base × ratioMax^n`. Because `ratioMin <
-ratioMax`, large steps are **damped**: their narrow-viewport floor is
-disproportionately smaller, so headings grow slower on small screens while the
-base step is identical at both anchors. **rem is kept in every clamp position**
-(WCAG 1.4.4 zoom). No `@media`, ever — the words "mobile"/"desktop" never appear.
+Каждый шаг — это один `clamp(min, slope·vw + intercept, max)`. Минимум берётся
+из `base × ratioMin^n`, максимум — из `base × ratioMax^n`. Поскольку `ratioMin <
+ratioMax`, крупные шаги **демпфируются**: их нижняя граница на узком вьюпорте
+непропорционально меньше, поэтому заголовки растут медленнее на малых экранах,
+тогда как базовый шаг одинаков в обоих якорях. **rem сохраняется в каждой позиции
+clamp** (WCAG 1.4.4, зум). Никогда никаких `@media` — слова «mobile»/«desktop» не
+встречаются.
 
-Default config: `base 16px`, anchors `320px / 1240px`, `ratioMin 1.2`,
-`ratioMax 1.32`, `+7 / -2` steps.
+Конфиг по умолчанию: `base 16px`, якоря `320px / 1240px`, `ratioMin 1.2`,
+`ratioMax 1.32`, шаги `+7 / -2`.
 
-| Step | label | narrow (320px) | wide (1240px) |
+| Шаг | метка | узкий (320px) | широкий (1240px) |
 |---|---|---|---|
-| 0 | md (base) | 16px | 16px (immovable) |
+| 0 | md (база) | 16px | 16px (неподвижно) |
 | +4 | 3xl | 33.2px | 48.6px |
-| +7 | 6xl (display) | 57.3px | 111.7px |
+| +7 | 6xl (дисплейный) | 57.3px | 111.7px |
 
-The +7 display step is ~2× larger at the wide anchor than the narrow one — exactly
-the requested damping.
+Шаг +7 (дисплейный) на широком якоре примерно в 2× крупнее, чем на узком — ровно
+запрошенное демпфирование.
 
-### Font-weight — unitless themeable scale
+### Насыщенность шрифта — безразмерная темизируемая шкала
 
-Named roles → numeric weights, emitted as unitless `--lab-font-weight-*` tokens so
-weight is a per-client axis instead of a literal baked into components. Default:
-`regular 400`, `medium 500`, `semibold 600`, `bold 700`. Components read
-`--lab-font-weight-semibold` (the emphasis weight) rather than a hard `600`; a client
-re-weights its whole UI through the same override path as every other scale.
+Именованные роли → числовые значения насыщенности, эмитятся как безразмерные
+токены `--lab-font-weight-*`, так что насыщенность — это ось на уровне клиента, а
+не литерал, зашитый в компоненты. По умолчанию: `regular 400`, `medium 500`,
+`semibold 600`, `bold 700`. Компоненты читают `--lab-font-weight-semibold`
+(акцентную насыщенность), а не жёсткое `600`; клиент переназначает насыщенность
+всего своего UI через тот же путь переопределения, что и любая другая шкала.
 
-### Borders — stroke widths + focus ring
+### Границы — толщины обводок + фокус-кольцо
 
-Line thickness is a themeable axis too. Stroke widths emit as `--lab-stroke-*`
-(`hairline` 1px, `thick` 2px) — deliberately **not** `--lab-border-*`, which is the
-*colour* role namespace; a stroke is a dimension. Values are grounded against Figma
-(🧪Lab UI v.1): every component border — button, card, checkbox, radio, input, menu —
-is a 1px `strokeWeight`, so `hairline` is the universal border. The focus indicator is
-its own sub-system, `--lab-focus-ring-width` / `--lab-focus-ring-offset` (both 2px,
-matching the Figma 2px focus-ring stroke offset 2px outside the edge), so a brand can
-make its focus ring bolder or further out than its component borders.
+Толщина линии — тоже темизируемая ось. Толщины обводок эмитятся как `--lab-stroke-*`
+(`hairline` 1px, `thick` 2px) — намеренно **не** `--lab-border-*`, пространство имён
+роли *цвета*; обводка — это размер. Значения сверены с Figma (🧪Lab UI v.1): граница
+каждого компонента — button, card, checkbox, radio, input, menu — это `strokeWeight`
+1px, поэтому `hairline` — универсальная граница. Индикатор фокуса — отдельная
+подсистема, `--lab-focus-ring-width` / `--lab-focus-ring-offset` (обе 2px, совпадая
+с обводкой фокус-кольца Figma 2px, смещённой на 2px наружу от края), так что бренд
+может сделать своё фокус-кольцо толще или дальше наружу, чем границы его компонентов.
 
-## Configuring
+## Настройка
 
 ```ts
 import { generateFromOverride } from '@labpics/ui-tokens';
 
-// A user override merges over the defaults (records key-by-key; order-sensitive
-// arrays replaced wholesale). Changing one ratio re-derives the whole scale.
+// Пользовательский оверрайд мержится поверх дефолтов (записи ключ-за-ключом;
+// массивы с важным порядком заменяются целиком). Смена одного ratio пере-выводит всю шкалу.
 const { css, dtcg, ts } = generateFromOverride({
   typography: { ratioMax: 1.4 },
   spacing: { steps: { '40': 40 } },
 });
 ```
 
-## Build
+## Сборка
 
 ```sh
 pnpm --filter @labpics/ui-tokens build   # generate → bundle → copy artifacts
 pnpm --filter @labpics/ui-tokens test    # vitest: invariants + round-trip
 ```
 
-Generated files in `src/generated/` are committed so consumers and the docs site
-can import the CSS without running the generator.
+Сгенерированные файлы в `src/generated/` закоммичены, чтобы потребители и сайт
+документации могли импортировать CSS без запуска генератора.
