@@ -84,7 +84,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 
 [data-lab-number-input] .lab-field-control:hover:not([data-disabled]) {
@@ -142,7 +142,7 @@
   border: 0;
   cursor: pointer;
   user-select: none;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-number-input] .lab-number-input-trigger-inc {
   border-block-end: var(--lab-stroke-hairline) solid var(--lab-border-soft);
@@ -214,11 +214,4 @@
   letter-spacing: var(--_lab-field-help-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-danger);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-number-input] .lab-field-control,
-  [data-lab-number-input] .lab-number-input-trigger {
-    transition: none;
-  }
 }

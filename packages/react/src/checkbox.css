@@ -56,7 +56,7 @@
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background-color: transparent;
   color: transparent;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 
 /* Checked OR mixed fills per type and reveals the glyph (mirrors the Lit host). */
@@ -118,10 +118,4 @@
   clip-path: inset(50%);
   overflow: hidden;
   white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-checkbox] .lab-checkbox-control {
-    transition: none;
-  }
 }

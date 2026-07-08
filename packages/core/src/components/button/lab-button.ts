@@ -140,9 +140,9 @@ export class LabButton extends LabElement {
       font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       cursor: pointer;
       transition:
-        background-color 120ms ease,
-        border-color 120ms ease,
-        color 120ms ease;
+        background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       /* Base surface. The [type][kind] rules below set the longhands DIRECTLY
          (not via an intermediate --_bg custom property): a var()->var() chain
          across the shadow boundary fails to re-invalidate in Chromium when the
@@ -351,9 +351,6 @@ export class LabButton extends LabElement {
     @media (prefers-reduced-motion: reduce) {
       .spinner {
         animation-duration: 0s;
-      }
-      button {
-        transition: none;
       }
     }
     @keyframes spin {

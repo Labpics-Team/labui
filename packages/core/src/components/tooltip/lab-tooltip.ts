@@ -214,12 +214,6 @@ export class LabTooltip extends LabElement {
     .arrow-tip {
       border-top-left-radius: 0.0625rem;
     }
-
-    @media (prefers-reduced-motion: reduce) {
-      .content {
-        transition: none;
-      }
-    }
   `;
 
   override updated(): void {

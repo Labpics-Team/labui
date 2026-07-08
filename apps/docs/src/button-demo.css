@@ -13,6 +13,7 @@
 @import "@labpics/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-core/theme.css";
+@import "@labpics/ui-core/selection.css";
 
 body {
   margin: 0;

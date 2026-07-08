@@ -97,7 +97,7 @@
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
   outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   appearance: none;
 }
 
@@ -161,7 +161,7 @@
   background: transparent;
   color: var(--lab-label-secondary);
   cursor: pointer;
-  transition: transform 120ms ease;
+  transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-combobox] .lab-combobox-trigger[data-state="open"] {
   transform: rotate(180deg);
@@ -268,10 +268,4 @@
   color: var(--lab-label-tertiary);
   font-size: var(--lab-font-size-md, 1rem);
   letter-spacing: var(--lab-letter-spacing-md, -0.0083em);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-combobox] .lab-combobox-trigger {
-    transition: none;
-  }
 }

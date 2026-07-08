@@ -216,7 +216,7 @@ export class LabNumberInput extends LabElement {
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
-        transition: border-color 120ms ease, box-shadow 120ms ease;
+        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       }
       :host(:not([disabled]):not([readonly])) .control:hover {
         border-color: ${litVar('--lab-border-strong')};
@@ -290,7 +290,7 @@ export class LabNumberInput extends LabElement {
         border: 0;
         cursor: pointer;
         user-select: none;
-        transition: background-color 120ms ease, color 120ms ease;
+        transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       }
       .trigger:first-child {
         border-block-end: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
@@ -331,12 +331,6 @@ export class LabNumberInput extends LabElement {
       }
       :host([type='success']) .control:has(.input:focus-visible) {
         box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .trigger {
-          transition: none;
-        }
       }
     `,
   ];

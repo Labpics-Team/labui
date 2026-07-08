@@ -120,7 +120,7 @@ export class LabCard extends LabElement {
     /* ── interactive: hover + focus affordance for whole-card targets ───────── */
     :host([interactive]) .card {
       cursor: pointer;
-      transition: box-shadow 160ms ease, border-color 160ms ease;
+      transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     :host([interactive]:hover) .card {
       border-color: ${litVar('--lab-border-soft')};

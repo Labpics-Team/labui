@@ -30,12 +30,14 @@
       "require": "./dist/components/*/index.cjs"
     },
     "./theme.css": "./dist/theme.css",
+    "./selection.css": "./dist/selection.css",
     "./shadow.css": "./dist/shadow.css",
     "./package.json": "./package.json"
   },
   "files": ["dist"],
   "sideEffects": [
     "./dist/theme.css",
+    "./dist/selection.css",
     "./dist/shadow.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",

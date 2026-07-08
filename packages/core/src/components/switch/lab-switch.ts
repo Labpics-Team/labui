@@ -167,7 +167,7 @@ export class LabSwitch extends LabElement {
       padding: 0.125rem;
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-fill-primary')};
-      transition: background-color 140ms ease;
+      transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
 
     /* ON track surface, per type. Driven by the reflected checked attribute,
@@ -195,7 +195,7 @@ export class LabSwitch extends LabElement {
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-control-bg')};
       box-shadow: var(--lab-elevation-raised);
-      transition: transform 140ms ease;
+      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       transform: translateX(0);
     }
     :host([checked]) .thumb {
@@ -215,7 +215,7 @@ export class LabSwitch extends LabElement {
       color: ${litVar('--lab-label-on-accent')};
       transform: translateY(-50%);
       opacity: 0;
-      transition: opacity 140ms ease;
+      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       pointer-events: none;
     }
     .icon-on {
@@ -258,14 +258,6 @@ export class LabSwitch extends LabElement {
       clip-path: inset(50%);
       overflow: hidden;
       white-space: nowrap;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .thumb,
-      .control,
-      .icon {
-        transition: none;
-      }
     }
   `;
 

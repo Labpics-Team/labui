@@ -14,6 +14,7 @@
 @import "@labpics/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-core/theme.css";
+@import "@labpics/ui-core/selection.css";
 @import "@labpics/ui-materials/material.css";
 
 /* ── Reset + page frame ───────────────────────────────────────────────────── */

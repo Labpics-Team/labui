@@ -86,7 +86,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   cursor: text;
 }
 [data-lab-tags-input]:not([data-disabled]):not([data-readonly]) .lab-tags-input-control:hover {
@@ -194,7 +194,7 @@
   border: 0;
   border-radius: var(--lab-radius-sm, 0.25rem);
   cursor: pointer;
-  transition: color 120ms ease, background-color 120ms ease;
+  transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-tags-input] .lab-tags-input-item-delete:hover:not([data-disabled]) {
   color: var(--lab-label-primary);
@@ -242,11 +242,4 @@
   letter-spacing: var(--_lab-field-help-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-danger);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-tags-input] .lab-tags-input-control,
-  [data-lab-tags-input] .lab-tags-input-item-delete {
-    transition: none;
-  }
 }

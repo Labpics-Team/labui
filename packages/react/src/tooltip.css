@@ -86,9 +86,3 @@
 .lab-tooltip-arrow-tip {
   border-top-left-radius: 0.0625rem;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .lab-tooltip-content {
-    transition: none;
-  }
-}

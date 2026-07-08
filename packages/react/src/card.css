@@ -56,7 +56,7 @@
 
 [data-lab-card][data-interactive] {
   cursor: pointer;
-  transition: box-shadow 160ms ease, border-color 160ms ease;
+  transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-card][data-interactive]:hover {
   border-color: var(--lab-border-soft);
@@ -88,10 +88,4 @@
 
 .lab-card-footer {
   padding: 0 var(--_lab-card-pad) var(--_lab-card-pad);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-card][data-interactive] {
-    transition: none;
-  }
 }

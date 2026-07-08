@@ -85,7 +85,7 @@
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
   outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   appearance: none;
   resize: vertical;
   min-height: calc(var(--_lab-field-line) * 2em);
@@ -151,10 +151,4 @@
   letter-spacing: var(--_lab-field-help-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-danger);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-textarea] .lab-field-control {
-    transition: none;
-  }
 }

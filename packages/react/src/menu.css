@@ -32,7 +32,7 @@
   letter-spacing: var(--_lab-menu-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   cursor: pointer;
-  transition: border-color 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 .lab-menu-trigger[data-size="s"] {
   --_lab-menu-h: 1.875rem;
@@ -62,7 +62,7 @@
 .lab-menu-trigger-caret {
   display: inline-flex;
   color: var(--lab-label-secondary);
-  transition: transform 120ms ease;
+  transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 .lab-menu-trigger[data-state="open"] .lab-menu-trigger-caret {
   transform: rotate(180deg);
@@ -137,11 +137,4 @@
   height: 0.0625rem;
   margin: var(--lab-space-xs, 0.25rem) 0;
   background-color: var(--lab-border-soft);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lab-menu-trigger,
-  .lab-menu-trigger-caret {
-    transition: none;
-  }
 }

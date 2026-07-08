@@ -389,7 +389,7 @@ export class LabCombobox extends LabElement {
         background: transparent;
         color: ${litVar('--lab-label-secondary')};
         cursor: pointer;
-        transition: transform 120ms ease;
+        transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       }
       .trigger[data-state='open'] {
         transform: rotate(180deg);
@@ -481,12 +481,6 @@ export class LabCombobox extends LabElement {
         color: ${litVar('--lab-label-tertiary')};
         font-size: var(--_field-font);
         letter-spacing: var(--_field-tracking);
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .trigger {
-          transition: none;
-        }
       }
     `,
   ];

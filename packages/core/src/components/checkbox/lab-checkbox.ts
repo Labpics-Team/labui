@@ -191,9 +191,9 @@ export class LabCheckbox extends LabElement {
       background-color: transparent;
       color: transparent;
       transition:
-        background-color 120ms ease,
-        border-color 120ms ease,
-        color 120ms ease;
+        background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
 
     /* Checked OR mixed fills the box per type and reveals the glyph. The longhand
@@ -259,12 +259,6 @@ export class LabCheckbox extends LabElement {
       clip-path: inset(50%);
       overflow: hidden;
       white-space: nowrap;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .control {
-        transition: none;
-      }
     }
   `;
 

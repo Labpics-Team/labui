@@ -63,7 +63,7 @@
   letter-spacing: var(--_lab-sel-tracking);
   line-height: var(--lab-line-height-md, 1.5);
   cursor: pointer;
-  transition: border-color 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 .lab-select-trigger:hover {
   border-color: var(--lab-border-strong);
@@ -96,7 +96,7 @@
   flex: 0 0 auto;
   display: inline-flex;
   color: var(--lab-label-secondary);
-  transition: transform 120ms ease;
+  transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 .lab-select-indicator[data-state="open"] {
   transform: rotate(180deg);
@@ -187,11 +187,4 @@
   flex: 0 0 auto;
   display: inline-flex;
   color: var(--lab-label-accent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lab-select-indicator,
-  .lab-select-trigger {
-    transition: none;
-  }
 }

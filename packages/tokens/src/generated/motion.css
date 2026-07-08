@@ -28,7 +28,7 @@
   --lab-motion-entrance-easing: var(--lab-motion-easing-decelerate); /* -> easing.decelerate */
   --lab-motion-exit-duration: var(--lab-motion-duration-fast); /* -> duration.fast */
   --lab-motion-exit-easing: var(--lab-motion-easing-accelerate); /* -> easing.accelerate */
-  --lab-motion-transition-duration: var(--lab-motion-duration-base); /* -> duration.base */
+  --lab-motion-transition-duration: var(--lab-motion-duration-fast); /* -> duration.fast */
   --lab-motion-transition-easing: var(--lab-motion-easing-standard); /* -> easing.standard */
   --lab-motion-emphasis-duration: var(--lab-motion-duration-slow); /* -> duration.slow */
   --lab-motion-emphasis-easing: var(--lab-motion-easing-emphasized); /* -> easing.emphasized */

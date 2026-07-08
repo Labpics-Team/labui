@@ -280,7 +280,7 @@ export class LabSelect extends LabElement {
       font-size: var(--_font);
       line-height: ${litVar('--lab-line-height-md', '1.5')};
       cursor: pointer;
-      transition: border-color 120ms ease;
+      transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     .trigger:hover {
       border-color: ${litVar('--lab-border-strong')};
@@ -315,7 +315,7 @@ export class LabSelect extends LabElement {
       flex: 0 0 auto;
       display: inline-flex;
       color: ${litVar('--lab-label-secondary')};
-      transition: transform 120ms ease;
+      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     .indicator[data-state='open'] {
       transform: rotate(180deg);
@@ -403,13 +403,6 @@ export class LabSelect extends LabElement {
       clip-path: inset(50%);
       overflow: hidden;
       white-space: nowrap;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .indicator,
-      .trigger {
-        transition: none;
-      }
     }
   `;
 

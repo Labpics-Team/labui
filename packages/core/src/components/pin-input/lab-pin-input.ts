@@ -267,7 +267,7 @@ export class LabPinInput extends LabElement {
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         outline: none;
-        transition: border-color 120ms ease, box-shadow 120ms ease;
+        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
         appearance: none;
       }
       .segment::placeholder {
@@ -323,12 +323,6 @@ export class LabPinInput extends LabElement {
       }
       :host([type='success']) .segment:focus-visible {
         box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .segment {
-          transition: none;
-        }
       }
     `,
   ];

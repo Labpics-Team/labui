@@ -218,7 +218,7 @@ export class LabAccordion extends LabElement {
       text-align: start;
       color: ${litVar('--lab-label-primary')};
       cursor: pointer;
-      transition: color 120ms ease;
+      transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
 
     .trigger:hover:not([data-disabled]) {
@@ -244,7 +244,7 @@ export class LabAccordion extends LabElement {
       width: 0.75em;
       height: 0.75em;
       color: currentColor;
-      transition: transform 160ms ease;
+      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     .indicator svg {
       width: 100%;
@@ -267,13 +267,6 @@ export class LabAccordion extends LabElement {
        never flashes every panel before the machine upgrades. */
     .content[hidden] {
       display: none;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .trigger,
-      .indicator {
-        transition: none;
-      }
     }
   `;
 

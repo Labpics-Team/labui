@@ -72,7 +72,7 @@
   color: var(--lab-label-secondary);
   white-space: nowrap;
   cursor: pointer;
-  transition: color 120ms ease, border-color 120ms ease;
+  transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-tabs][data-orientation="vertical"] .lab-tabs-trigger {
   justify-content: flex-start;
@@ -121,10 +121,4 @@
 }
 .lab-tabs-panel[hidden] {
   display: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lab-tabs-trigger {
-    transition: none;
-  }
 }

@@ -58,7 +58,7 @@
   padding: 0.125rem;
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-fill-primary);
-  transition: background-color 140ms ease;
+  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 
 /* ON track per type — driven by data-checked + data-type, mirroring the Lit host. */
@@ -82,7 +82,7 @@
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-control-bg);
   box-shadow: var(--lab-elevation-raised);
-  transition: transform 140ms ease;
+  transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   transform: translateX(0);
 }
 [data-lab-switch][data-checked] .lab-switch-thumb {
@@ -101,7 +101,7 @@
   color: var(--lab-label-on-accent);
   transform: translateY(-50%);
   opacity: 0;
-  transition: opacity 140ms ease;
+  transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   pointer-events: none;
 }
 [data-lab-switch] .lab-switch-icon-on {
@@ -142,12 +142,4 @@
   clip-path: inset(50%);
   overflow: hidden;
   white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-switch] .lab-switch-thumb,
-  [data-lab-switch] .lab-switch-control,
-  [data-lab-switch] .lab-switch-icon {
-    transition: none;
-  }
 }
