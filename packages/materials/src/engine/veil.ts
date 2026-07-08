@@ -288,11 +288,14 @@ function render(state: VeilState): void {
         const center = { x: box.x + box.w / 2, y: box.y + box.h / 2 };
         const tStart = tOf(center) - gl / 2 / axisLen;
         const at = (t: number): number => (t - tStart) * axisLen;
+        // Mask fill is `currentColor` — the package's allowed no-literal-colour
+        // keyword for masks (see material.css): only its ALPHA is read here,
+        // hue is irrelevant to mask-image.
         const seg: string[] = [];
-        if (fadeIn) seg.push(`transparent ${px(at(inS))}`, `#000 ${px(at(inE))}`);
-        else seg.push(`#000 ${px(at(inS))}`);
-        if (fadeOut) seg.push(`#000 ${px(at(outS))}`, `transparent ${px(at(outE))}`);
-        else seg.push(`#000 ${px(at(outE))}`);
+        if (fadeIn) seg.push(`transparent ${px(at(inS))}`, `currentColor ${px(at(inE))}`);
+        else seg.push(`currentColor ${px(at(inS))}`);
+        if (fadeOut) seg.push(`currentColor ${px(at(outS))}`, `transparent ${px(at(outE))}`);
+        else seg.push(`currentColor ${px(at(outE))}`);
         const mask = `linear-gradient(${cssAngle}deg, ${seg.join(', ')})`;
         strip.style.setProperty('mask-image', mask);
         strip.style.setProperty('-webkit-mask-image', mask);
