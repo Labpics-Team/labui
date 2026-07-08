@@ -1,0 +1,56 @@
+/*
+ * Прототип #109 — паттерн color-mix() стейт-оверлеев. НЕ для мержа.
+ * Демонстрация рекомендации (VERDICT.md §Развилка, вариант D + fallback).
+ *
+ * Заменяет: filter: brightness() (текущий baseline, красит ВСЮ плитку включая
+ * текст) И избавляет от 240 стейт-токенов (--lab-fill-*-hover/-pressed × 80 ролей).
+ */
+
+/* ── Доли состояний — ОДНИ на всю систему, не per-role ── */
+:root {
+  --lab-state-hover: 8%;
+  --lab-state-pressed: 14%;
+}
+
+/* ── Класс А: несущие лейбл заливки (accent/danger fill) ──────────────────────
+ * Сдвиг К ЧЁРНОМУ в ОБЕИХ темах: двигает заливку ОТ светлого label-on-* →
+ * контраст пары РАСТЁТ (замер: dark 4.51→6.30). Осветление здесь запрещено —
+ * пара сидит на полу 4.5, любой lighten её роняет (WCAG 1.4.3 на hover). */
+[data-lab-button][data-type="accent"][data-kind="fill"] {
+  /* Fallback-строка: без color-mix рендерится resting-роль (fail-safe, поверхность не пропадает). */
+  background-color: var(--lab-fill-accent);
+}
+@supports (color: color-mix(in oklab, red, blue)) {
+  [data-lab-button][data-type="accent"][data-kind="fill"]:hover {
+    background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover));
+  }
+  [data-lab-button][data-type="accent"][data-kind="fill"]:active {
+    background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-pressed));
+  }
+}
+
+/* ── Класс Б: нейтраль / tinted / ghost — тема-адаптивный сдвиг к ЧЕРНИЛАМ ──────
+ * Тинт = --lab-label-primary (тёмный в light, светлый в dark) → ОДИН рецепт
+ * затемняет light и осветляет dark. Большой контраст-запас поглощает сдвиг. */
+[data-lab-button][data-type="neutral"][data-kind="tinted"] {
+  background-color: var(--lab-fill-primary);
+}
+@supports (color: color-mix(in oklab, red, blue)) {
+  [data-lab-button][data-type="neutral"][data-kind="tinted"]:hover {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-primary),
+      var(--lab-label-primary) var(--lab-state-hover)
+    );
+  }
+  [data-lab-button][data-type="neutral"][data-kind="tinted"]:active {
+    background-color: color-mix(
+      in oklab,
+      var(--lab-fill-primary),
+      var(--lab-label-primary) var(--lab-state-pressed)
+    );
+  }
+}
+
+/* ── disabled — НЕ оверлей: нейтрализация до on-surface + opacity (Material 3),
+ * WCAG-exempt по 1.4.3. focus — ring (--lab-border-focus), не цветовой сдвиг. */
