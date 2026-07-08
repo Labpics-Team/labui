@@ -59,8 +59,8 @@ export function buildHarnessHtml(contractCss, opts = {}) {
     }
   }
   if (skeletonBite === 'flatten') {
-    // highlight := base: блик исчезает (равная светлота) → инвариант осветления РУШИТСЯ.
-    mutations.push('--lab-fx-skeleton-highlight: var(--lab-fx-skeleton-base);');
+    // highlight := base (fill-quaternary): блик исчезает (равная светлота) → инвариант осветления РУШИТСЯ.
+    mutations.push('--lab-fx-skeleton-highlight: var(--lab-fill-quaternary);');
   }
   if (skeletonBite === 'invert') {
     // Старый Figma-highlight (mid@0.039): в dark ТЕМНЕЕ base → инвариант РУШИТСЯ.
@@ -110,8 +110,10 @@ export function buildHarnessHtml(contractCss, opts = {}) {
 
   // Ряд шиммера скелетона: base (resting) и highlight (блик) — сплошная заливка
   // translucent-токеном над тёмным фоном плитки. Инвариант: highlight СВЕТЛЕЕ base.
+  // База-заглушка — Fill (fill-quaternary, #100); шиммер — FX (fx-skeleton-highlight).
+  const skelToken = { base: '--lab-fill-quaternary', highlight: '--lab-fx-skeleton-highlight' };
   const skelCell = (layer) => `<div class="tile" data-swatch="skeleton:${layer}">
-      <div class="skel" style="background:var(--lab-fx-skeleton-${layer})"></div>
+      <div class="skel" style="background:var(${skelToken[layer]})"></div>
     </div>`;
   const skeletonRow = `<div class="row">
       <div class="label">skeleton</div>

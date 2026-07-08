@@ -192,7 +192,6 @@
   --lab-fx-shadow-major: rgb(16 16 18 / 0.122);
   --lab-fx-shadow-minor: rgb(16 16 18 / 0.012);
   --lab-fx-shadow-penumbra: rgb(16 16 18 / 0.039);
-  --lab-fx-skeleton-base: rgb(120 120 128 / 0.078);
   --lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);
 
   /* MISC — composed roles (Control-bg, Badge label pairing) */
@@ -385,7 +384,6 @@
   --lab-fx-shadow-major: rgb(16 16 18 / 0.2);
   --lab-fx-shadow-minor: rgb(16 16 18 / 0.02);
   --lab-fx-shadow-penumbra: rgb(16 16 18 / 0.122);
-  --lab-fx-skeleton-base: rgb(120 120 128 / 0.122);
   --lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);
 
   /* MISC — composed roles (Control-bg, Badge label pairing) */
@@ -551,7 +549,6 @@
     --lab-fx-shadow-major: rgb(16 16 18 / 0.2);
     --lab-fx-shadow-minor: rgb(16 16 18 / 0.02);
     --lab-fx-shadow-penumbra: rgb(16 16 18 / 0.122);
-    --lab-fx-skeleton-base: rgb(120 120 128 / 0.122);
     --lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);
 
     /* MISC — composed roles (Control-bg, Badge label pairing) */

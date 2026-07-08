@@ -1,7 +1,7 @@
 /*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@0.6.2 + паспорт labui.config.json
-(отпечаток 9ff4b8fc350cb182). Движковые роли — живая эмиссия (единая форма
+(отпечаток 8b03771cdb8659ab). Движковые роли — живая эмиссия (единая форма
 oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
 лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
 Figma-якорь» — входы и компонентные поверхности из замороженного
@@ -143,7 +143,6 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.122);
   --lab-fx-shadow-minor: oklch(17.39406% 0.004094 285.967 / 0.012);
   --lab-fx-shadow-penumbra: oklch(17.39406% 0.004094 285.967 / 0.039);
-  --lab-fx-skeleton-base: oklch(57.53363% 0.012136 286.012 / 0.078);
   --lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);
   --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
   --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
@@ -249,9 +248,9 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-glow-info-bloom-alpha: 0;
   --lab-fx-focus-ring-success: oklch(13.01439% 0.039836 145.937);
   --lab-fx-focus-ring-info: oklch(9.14723% 0.055231 280.270);
-  /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты
-     (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.
-     Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */
+  /* Шиммер скелетона (закон): highlight — нейтраль base (fill-quaternary) в
+     максимуме светлоты (белый анкор) при α base → светлее base на любой
+     поверхности в ОБЕИХ темах. Чинит Figma-инверсию dark-блика. */
   --lab-fx-skeleton-highlight: oklch(100.00000% 0.000000 286.012 / 0.078);
 }
 
@@ -387,7 +386,6 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.2);
   --lab-fx-shadow-minor: oklch(17.39406% 0.004094 285.967 / 0.02);
   --lab-fx-shadow-penumbra: oklch(17.39406% 0.004094 285.967 / 0.122);
-  --lab-fx-skeleton-base: oklch(57.53363% 0.012136 286.012 / 0.161);
   --lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);
   --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
   --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
@@ -493,9 +491,9 @@ figma-reference.css, переезжают следующими этапами п
   --lab-fx-glow-info-bloom-alpha: 0.2015;
   --lab-fx-focus-ring-success: oklch(93.74350% 0.110616 146.789);
   --lab-fx-focus-ring-info: oklch(95.33533% 0.022793 283.266);
-  /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты
-     (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.
-     Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */
+  /* Шиммер скелетона (закон): highlight — нейтраль base (fill-quaternary) в
+     максимуме светлоты (белый анкор) при α base → светлее base на любой
+     поверхности в ОБЕИХ темах. Чинит Figma-инверсию dark-блика. */
   --lab-fx-skeleton-highlight: oklch(100.00000% 0.000000 286.012 / 0.161);
 }
 
@@ -632,7 +630,6 @@ figma-reference.css, переезжают следующими этапами п
     --lab-fx-shadow-major: oklch(17.39406% 0.004094 285.967 / 0.2);
     --lab-fx-shadow-minor: oklch(17.39406% 0.004094 285.967 / 0.02);
     --lab-fx-shadow-penumbra: oklch(17.39406% 0.004094 285.967 / 0.122);
-    --lab-fx-skeleton-base: oklch(57.53363% 0.012136 286.012 / 0.161);
     --lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);
     --lab-badge-label-contrast: rgb(16 16 18); /* мост: Figma-якорь */
     --lab-badge-label-default: rgb(255 255 255); /* мост: Figma-якорь */
@@ -738,9 +735,9 @@ figma-reference.css, переезжают следующими этапами п
     --lab-fx-glow-info-bloom-alpha: 0.2015;
     --lab-fx-focus-ring-success: oklch(93.74350% 0.110616 146.789);
     --lab-fx-focus-ring-info: oklch(95.33533% 0.022793 283.266);
-    /* Шиммер скелетона (закон): highlight — нейтраль base в максимуме светлоты
-       (белый анкор) при α base → светлее base на любой поверхности в ОБЕИХ темах.
-       Чинит Figma-инверсию dark-блика; перекрывает мост каскадом. */
+    /* Шиммер скелетона (закон): highlight — нейтраль base (fill-quaternary) в
+       максимуме светлоты (белый анкор) при α base → светлее base на любой
+       поверхности в ОБЕИХ темах. Чинит Figma-инверсию dark-блика. */
     --lab-fx-skeleton-highlight: oklch(100.00000% 0.000000 286.012 / 0.161);
   }
 }

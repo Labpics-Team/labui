@@ -196,7 +196,6 @@
       "--lab-fx-shadow-major",
       "--lab-fx-shadow-minor",
       "--lab-fx-shadow-penumbra",
-      "--lab-fx-skeleton-base",
       "--lab-fx-skeleton-highlight"
     ],
     "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],

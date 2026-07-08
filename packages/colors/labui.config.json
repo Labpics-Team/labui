@@ -1366,10 +1366,6 @@
   ],
   "aliases": [
     {
-      "alias": "fx-skeleton-base",
-      "target": "fill-quaternary"
-    },
-    {
       "alias": "fill-accent",
       "target": "badge-fill-brand"
     },

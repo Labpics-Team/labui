@@ -39,10 +39,10 @@ hex-акценты) — внутренняя кухня, наружу отдел
 | Backgrounds | 26 | поверхности: neutral, grouped, static, overlay, материалы `01`/`02` |
 | Labels | 36 | текст / иконки; лестница прозрачности primary/secondary/tertiary/quaternary на каждую семью |
 | Fills | 33 | тонированные поверхности: neutral + сентименты + static |
-| Border | 27 | штрихи: neutral, static, сентименты strong/base/soft |
-| FX | 67 | эффекты: glow, focus-ring, skeleton (base + shimmer), тени. Законы glow и шиммера — в [`../colors/README.md`](../colors/README.md) |
+| Border | 26 | штрихи: neutral, static, сентименты strong/base/soft |
+| FX | 66 | эффекты: glow, focus-ring, skeleton (только shimmer — база в Fill), тени. Законы glow и шиммера — в [`../colors/README.md`](../colors/README.md) |
 | Misc | 3 | составные роли: `control-bg`, `badge-*` |
-| Component | 29 | плоский слой, который компоненты читают напрямую (derived из Semantic) |
+| Component | 27 | плоский слой, который компоненты читают напрямую (derived из Semantic) |
 
 > Материалы — двухслойные рецепты (`01` полупрозрачная база + `02` тинт). Части
 > `mix-blend-mode` / `backdrop-filter` из Figma-материала — **не** цвета и в контракт
