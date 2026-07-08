@@ -1,0 +1,375 @@
+{
+  "motion": {
+    "duration": {
+      "instant": {
+        "$type": "duration",
+        "$value": {
+          "value": 0,
+          "unit": "ms"
+        },
+        "$description": "no animation — the zero anchor and reduced-motion snap",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "e",
+              "source": "design-choice: explicit zero anchor (repo law — every scale defines its zero) and the reduced-motion snap target"
+            }
+          }
+        }
+      },
+      "fast": {
+        "$type": "duration",
+        "$value": {
+          "value": 100,
+          "unit": "ms"
+        },
+        "$description": "micro-interactions — hover, small state changes",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "Fluent durationFaster = 100ms (§2); M3 short2 = 100ms (§1.1)"
+            }
+          }
+        }
+      },
+      "base": {
+        "$type": "duration",
+        "$value": {
+          "value": 200,
+          "unit": "ms"
+        },
+        "$description": "the default — most component transitions",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "Fluent durationNormal = 200ms (§2); M3 short4 = 200ms (§1.1)"
+            }
+          }
+        }
+      },
+      "slow": {
+        "$type": "duration",
+        "$value": {
+          "value": 300,
+          "unit": "ms"
+        },
+        "$description": "larger elements, more deliberate moves",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "M3 medium2 = 300ms (§1.1); Carbon moderate-02 = 240ms neighbour (§3)"
+            }
+          }
+        }
+      },
+      "slower": {
+        "$type": "duration",
+        "$value": {
+          "value": 500,
+          "unit": "ms"
+        },
+        "$description": "full-screen / large surface transitions",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "M3 long2 = 500ms (§1.1); Fluent upper duration band ≈ 500ms (§2)"
+            }
+          }
+        }
+      }
+    },
+    "easing": {
+      "standard": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.2,
+          0,
+          0,
+          1
+        ],
+        "$description": "general-purpose — both ends eased",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "M3 easing-standard official = cubic-bezier(0.2,0,0,1) (§1.1)"
+            }
+          }
+        }
+      },
+      "decelerate": {
+        "$type": "cubicBezier",
+        "$value": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "$description": "entrances — fast in, gentle settle",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "M3 easing-standard-decelerate official = cubic-bezier(0,0,0,1) (§1.1)"
+            }
+          }
+        }
+      },
+      "accelerate": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.3,
+          0,
+          1,
+          1
+        ],
+        "$description": "exits — gentle start, quick out",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "M3 easing-standard-accelerate official = cubic-bezier(0.3,0,1,1) (§1.1)"
+            }
+          }
+        }
+      },
+      "emphasized": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.38,
+          1.21,
+          0.22,
+          1
+        ],
+        "$description": "the one restrained overshoot — for emphasis only",
+        "$extensions": {
+          "com.labpics.motion": {
+            "provenance": {
+              "class": "b",
+              "source": "M3 Expressive Spatial default web-fallback = cubic-bezier(0.38,1.21,0.22,1) (§1.2). Caveat: secondary source (CodePen repro of the M3 spec) — verify against m3.material.io before a value bump. y1=1.21 is the single restrained overshoot."
+            }
+          }
+        }
+      }
+    },
+    "spring": {
+      "smooth": {
+        "$type": "cubicBezier",
+        "$value": [
+          0,
+          0,
+          0,
+          1
+        ],
+        "$description": "effects spring — opacity/colour, interruptible, no bounce",
+        "$extensions": {
+          "com.labpics.motion": {
+            "type": "spring",
+            "model": "duration-bounce",
+            "category": "effects",
+            "duration": {
+              "value": 0.35,
+              "unit": "s"
+            },
+            "bounce": 0,
+            "dampingRatio": 1,
+            "stiffness": 322.2728,
+            "mass": 1,
+            "web": {
+              "linear": "linear(0, 0.0288, 0.0974, 0.186, 0.2816, 0.3764, 0.4656, 0.5468, 0.6189, 0.6819, 0.7361, 0.7822, 0.821, 0.8535, 0.8806, 0.9029, 0.9213, 0.9364, 0.9487, 0.9587, 0.9668, 0.9734, 0.9787, 0.983, 1)",
+              "cubicBezier": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "duration": {
+                "value": 350,
+                "unit": "ms"
+              }
+            },
+            "provenance": {
+              "duration": {
+                "class": "e",
+                "source": "design-choice: 0.35s, aligned to the base/slow duration band"
+              },
+              "bounce": {
+                "class": "b",
+                "source": "bounce 0 = critical damping, no overshoot (§6; matches M3 effects dampingRatio = 1, §1.2)"
+              }
+            }
+          }
+        }
+      },
+      "expressive": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.38,
+          1.21,
+          0.22,
+          1
+        ],
+        "$description": "spatial spring — the single restrained overshoot, for emphasis",
+        "$extensions": {
+          "com.labpics.motion": {
+            "type": "spring",
+            "model": "duration-bounce",
+            "category": "spatial",
+            "duration": {
+              "value": 0.5,
+              "unit": "s"
+            },
+            "bounce": 0.3,
+            "dampingRatio": 0.7,
+            "stiffness": 157.9137,
+            "mass": 1,
+            "web": {
+              "linear": "linear(0, 0.0303, 0.1066, 0.2105, 0.3275, 0.447, 0.5614, 0.6657, 0.7571, 0.8343, 0.8972, 0.9467, 0.9841, 1.0109, 1.0288, 1.0396, 1.0449, 1.0459, 1.044, 1.0402, 1.0353, 1.0298, 1.0244, 1.0192, 1)",
+              "cubicBezier": [
+                0.38,
+                1.21,
+                0.22,
+                1
+              ],
+              "duration": {
+                "value": 500,
+                "unit": "ms"
+              }
+            },
+            "provenance": {
+              "duration": {
+                "class": "e",
+                "source": "design-choice: 0.5s perceptual duration, aligned to the slower band"
+              },
+              "bounce": {
+                "class": "e",
+                "source": "design-choice: bounce 0.3 (dampingRatio 0.7) → ~4.6% overshoot, a restrained bounce. Category grounded on M3 Expressive spatial (damping < standard, §1.2); the (duration,bounce) model is grounded (§6 / Stage 0)."
+              }
+            }
+          }
+        }
+      }
+    },
+    "entrance": {
+      "$type": "transition",
+      "$value": {
+        "duration": "{motion.duration.base}",
+        "delay": {
+          "value": 0,
+          "unit": "ms"
+        },
+        "timingFunction": "{motion.easing.decelerate}"
+      },
+      "$description": "element appears — decelerate, settles into place",
+      "$extensions": {
+        "com.labpics.motion": {
+          "provenance": {
+            "class": "b",
+            "source": "M3: incoming elements use the decelerate easing (§1.1)"
+          },
+          "reducedMotion": {
+            "duration": "{motion.duration.fast}",
+            "timingFunction": [
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "exit": {
+      "$type": "transition",
+      "$value": {
+        "duration": "{motion.duration.fast}",
+        "delay": {
+          "value": 0,
+          "unit": "ms"
+        },
+        "timingFunction": "{motion.easing.accelerate}"
+      },
+      "$description": "element leaves — accelerate, quicker than entrance",
+      "$extensions": {
+        "com.labpics.motion": {
+          "provenance": {
+            "class": "b",
+            "source": "M3: outgoing elements use the accelerate easing (§1.1); exit faster than entrance is an (e) HIG/Material convention"
+          },
+          "reducedMotion": {
+            "duration": "{motion.duration.fast}",
+            "timingFunction": [
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "transition": {
+      "$type": "transition",
+      "$value": {
+        "duration": "{motion.duration.base}",
+        "delay": {
+          "value": 0,
+          "unit": "ms"
+        },
+        "timingFunction": "{motion.easing.standard}"
+      },
+      "$description": "in-place state change / move — standard easing",
+      "$extensions": {
+        "com.labpics.motion": {
+          "provenance": {
+            "class": "b",
+            "source": "M3: standard easing for general in-place change (§1.1)"
+          },
+          "reducedMotion": {
+            "duration": "{motion.duration.instant}",
+            "timingFunction": [
+              0,
+              0,
+              1,
+              1
+            ]
+          }
+        }
+      }
+    },
+    "emphasis": {
+      "$type": "transition",
+      "$value": {
+        "duration": "{motion.duration.slow}",
+        "delay": {
+          "value": 0,
+          "unit": "ms"
+        },
+        "timingFunction": "{motion.easing.emphasized}"
+      },
+      "$description": "attention moment — the restrained overshoot lives here",
+      "$extensions": {
+        "com.labpics.motion": {
+          "provenance": {
+            "class": "e",
+            "source": "design-choice: the one attention moment that overshoots. Easing grounded (§1.2); backing spring = expressive."
+          },
+          "reducedMotion": {
+            "duration": "{motion.duration.instant}",
+            "timingFunction": [
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          "spring": "{motion.spring.expressive}"
+        }
+      }
+    }
+  }
+}
