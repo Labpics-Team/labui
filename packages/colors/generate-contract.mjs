@@ -120,10 +120,28 @@ function semanticPairOverrides(colors, theme, anchorMap, aliases) {
   return o;
 }
 
+/**
+ * Роли, снятые с контракта (ADR-0006 «Elevation contract»): плоские
+ * одноцветные --lab-fx-shadow-* вытеснены слоёной лестницей
+ * --lab-elevation-* (packages/shadow); в замороженном Figma-якоре они
+ * остаются как исторический факт экспорта, но в живой контракт не
+ * эмитятся. Потребителей на дату сноса нет (перегреп: 0 совпадений вне
+ * комментариев); от регрессии держит гард no-box-shadow-literal.
+ */
+export const RETIRED_ROLES = new Set([
+  '--lab-fx-shadow-minor',
+  '--lab-fx-shadow-ambient',
+  '--lab-fx-shadow-penumbra',
+  '--lab-fx-shadow-major',
+]);
+
 /** Отрендерить один scope: движковые роли — живой эмиссией, прочее — мостом. */
 function renderScope(anchorVars, engineVars, overrides) {
   const lines = [];
   for (const [name, anchorValue] of anchorVars) {
+    if (RETIRED_ROLES.has(name)) {
+      continue; // снята с контракта (ADR-0006), якорь не редактируется
+    }
     if (overrides.has(name)) {
       // Закон пары: несущая лейбл поверхность / её лейбл — деривация движка,
       // перекрывает до-законный мост замороженного Figma-якоря.

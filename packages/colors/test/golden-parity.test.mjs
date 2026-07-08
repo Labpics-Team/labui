@@ -34,6 +34,14 @@ const EXPECTED_DIVERGENCES = new Map([
   ['--lab-fill-info-secondary', 'разведение оттенка с брендом'],
   ['--lab-fill-info-tertiary', 'разведение оттенка с брендом'],
   ['--lab-fx-glow-info', 'разведение оттенка с брендом'],
+  // Снос ADR-0006 («Elevation contract»): плоские одноцветные fx-shadow-*
+  // вытеснены слоёной лестницей --lab-elevation-* (packages/shadow); движок
+  // рецептов больше не несёт, замороженный якорь хранит их как исторический
+  // факт Figma-экспорта (RETIRED_ROLES в generate-contract.mjs).
+  ['--lab-fx-shadow-minor', 'ADR-0006: роль снята с контракта'],
+  ['--lab-fx-shadow-ambient', 'ADR-0006: роль снята с контракта'],
+  ['--lab-fx-shadow-penumbra', 'ADR-0006: роль снята с контракта'],
+  ['--lab-fx-shadow-major', 'ADR-0006: роль снята с контракта'],
   // EC4 (focus-appearance, WCAG 2.4.13): focus-ring НАСЛЕДУЕТ сильный штрих
   // семьи Label (label-{sentiment}-primary, WCAG ~16–20:1), а не эмитит сырой
   // Figma-акцент — тот на светлой теме проваливал 3:1 (warning/success ~2.0).

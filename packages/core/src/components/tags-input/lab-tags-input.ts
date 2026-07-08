@@ -289,7 +289,7 @@ export class LabTagsInput extends LabElement {
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
-        transition: border-color 120ms ease, box-shadow 120ms ease;
+        transition: border-color 120ms ease;
         cursor: text;
       }
       :host(:not([disabled]):not([readonly])) .control:hover {
@@ -317,16 +317,20 @@ export class LabTagsInput extends LabElement {
          input has no border of its own — the .control frame carries it). */
       :host .control:has(.input:focus-visible) {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='danger']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-danger')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='warning']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-warning-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='success']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-success-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
 
       /* One tag chip — a pill with the tag text and a delete button. The machine sets

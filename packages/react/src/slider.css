@@ -122,10 +122,9 @@
   background-color: var(--lab-control-bg);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   box-shadow: var(--lab-elevation-raised);
-  outline: none;
   cursor: grab;
   transform: translate(-50%, -50%);
-  transition: box-shadow 120ms ease;
+  transition: border-color 120ms ease;
 }
 [data-lab-slider][data-orientation="horizontal"] .lab-slider-thumb {
   top: 50%;
@@ -135,11 +134,13 @@
 }
 [data-lab-slider] .lab-slider-thumb:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-slider][data-invalid] .lab-slider-thumb:focus-visible {
   border-color: var(--lab-border-danger);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-danger);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-slider] .lab-slider-thumb[data-dragging] {
   cursor: grabbing;

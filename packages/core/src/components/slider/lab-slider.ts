@@ -344,10 +344,9 @@ export class LabSlider extends LabElement {
       background-color: ${litVar('--lab-control-bg')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       box-shadow: var(--lab-elevation-raised);
-      outline: none;
       cursor: grab;
       transform: translate(-50%, -50%);
-      transition: box-shadow 120ms ease;
+      transition: border-color 120ms ease;
     }
     :host([orientation='horizontal']) .thumb {
       top: 50%;
@@ -357,11 +356,13 @@ export class LabSlider extends LabElement {
     }
     .thumb:focus-visible {
       border-color: ${litVar('--lab-border-focus')};
-      box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
     :host([invalid]) .thumb:focus-visible {
       border-color: ${litVar('--lab-border-danger')};
-      box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
+      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-danger')};
+      outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
     .thumb[data-dragging] {
       cursor: grabbing;
