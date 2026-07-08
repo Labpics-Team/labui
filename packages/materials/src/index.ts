@@ -14,7 +14,9 @@
  *
  * Since ADR-0003 it also ships the refraction engine (`./engine/`) behind ONE
  * declarative entry: `mountMaterialRuntime()`. The engine itself (attach,
- * filters, caches) is package-internal — never part of this surface.
+ * filters, caches) is package-internal — never part of this surface. The same
+ * entry now also mounts lab-veil (`[data-veil]` progressive blur,
+ * `./engine/veil.ts` + `./engine/veil-math.ts`) — equally package-internal.
  */
 
 export {
