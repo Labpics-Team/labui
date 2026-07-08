@@ -27,6 +27,6 @@ export async function createLabuiEngine() {
 }
 
 /** Пин отпечатка паспорта (см. README): дрейф конфига виден по несовпадению.
- * Бамп 3d0fed67065f42e7: снос рецептов fx-shadow-* (ADR-0006, замена на
+ * Бамп 3d0fed67065f42e7: снос рецептов fx-shadow-* (ADR-0007, замена на
  * слоёную лестницу --lab-elevation-*), прежний пин 8b03771cdb8659ab. */
 export const PASSPORT_FINGERPRINT = '3d0fed67065f42e7';

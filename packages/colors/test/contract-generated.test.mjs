@@ -28,7 +28,7 @@ describe('сгенерированный контракт', () => {
     const names = (css) => new Set([...css.matchAll(/(--lab-[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
     const anchor = names(await readFile(referencePath, 'utf8'));
     const contract = names(await readFile(contractPath, 'utf8'));
-    const lost = [...anchor].filter((n) => !contract.has(n) && !RETIRED_ROLES.has(n)); // снятые с контракта роли (ADR-0006) легально отсутствуют
+    const lost = [...anchor].filter((n) => !contract.has(n) && !RETIRED_ROLES.has(n)); // снятые с контракта роли (ADR-0007) легально отсутствуют
     expect(lost, 'переменные якоря, потерянные генерацией').toEqual([]);
   });
 });
