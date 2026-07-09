@@ -9,8 +9,8 @@
  */
 
 [data-lab-loader] {
-  --_lab-loader-diameter: 1.5rem;
-  --_lab-loader-stroke: 0.1875rem;
+  --_lab-loader-diameter: var(--lab-size-control-xl, 1.5rem);
+  --_lab-loader-stroke: var(--lab-size-loader-stroke-m, 0.1875rem);
 
   display: inline-flex;
   vertical-align: middle;
@@ -18,12 +18,12 @@
 }
 
 [data-lab-loader][data-size="s"] {
-  --_lab-loader-diameter: 1rem;
-  --_lab-loader-stroke: 0.125rem;
+  --_lab-loader-diameter: var(--lab-size-control-m, 1rem);
+  --_lab-loader-stroke: var(--lab-size-loader-stroke-s, 0.125rem);
 }
 [data-lab-loader][data-size="l"] {
-  --_lab-loader-diameter: 2.5rem;
-  --_lab-loader-stroke: 0.25rem;
+  --_lab-loader-diameter: var(--lab-size-control-h-m, 2.5rem);
+  --_lab-loader-stroke: var(--lab-size-loader-stroke-l, 0.25rem);
 }
 
 [data-lab-loader] .lab-loader-spinner {
@@ -32,7 +32,7 @@
   height: var(--_lab-loader-diameter);
   border: var(--_lab-loader-stroke) solid currentColor;
   border-right-color: transparent;
-  border-radius: 9999px;
+  border-radius: var(--lab-radius-full, 9999px);
   animation: lab-loader-spin 0.7s linear infinite;
 }
 

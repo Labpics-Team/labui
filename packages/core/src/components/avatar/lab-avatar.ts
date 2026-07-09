@@ -95,23 +95,23 @@ export class LabAvatar extends LabElement {
 
   static override styles = css`
     :host {
-      --_diameter: 2.5rem;
+      --_diameter: ${litVar('--lab-size-avatar-m', '2.5rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_dot: 0.75rem;
+      --_dot: ${litVar('--lab-size-avatar-dot-m', '0.75rem')}; /* dot as token (derivation open per ADR) */
 
       display: inline-flex;
       vertical-align: middle;
     }
 
     :host([size='s']) {
-      --_diameter: 1.75rem;
+      --_diameter: ${litVar('--lab-size-avatar-s', '1.75rem')};
       --_font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
-      --_dot: 0.625rem;
+      --_dot: ${litVar('--lab-size-avatar-dot-s', '0.625rem')};
     }
     :host([size='l']) {
-      --_diameter: 3.5rem;
+      --_diameter: ${litVar('--lab-size-avatar-l', '3.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
-      --_dot: 1rem;
+      --_dot: ${litVar('--lab-size-avatar-dot-l', '1rem')};
     }
 
     .avatar {

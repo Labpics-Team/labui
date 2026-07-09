@@ -199,7 +199,7 @@ export class LabTabs extends LabElement {
       justify-content: flex-start;
       border-bottom: none;
       border-inline-end: ${litVar('--lab-stroke-thick')} solid transparent;
-      margin-inline-end: -0.0625rem;
+      margin-inline-end: calc(-1 * ${litVar('--lab-stroke-hairline', '0.0625rem')});
     }
 
     .trigger:hover:not([data-disabled]) {

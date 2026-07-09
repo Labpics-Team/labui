@@ -13,7 +13,7 @@
  */
 
 [data-lab-progress] {
-  --_lab-progress-thickness: 0.5rem;
+  --_lab-progress-thickness: var(--lab-space-sm, 0.5rem);
   --_lab-progress-font: var(--lab-font-size-xs, 0.8333rem);
   --_lab-progress-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 
@@ -23,10 +23,10 @@
 }
 
 [data-lab-progress][data-size="s"] {
-  --_lab-progress-thickness: 0.25rem;
+  --_lab-progress-thickness: var(--lab-space-xs, 0.25rem);
 }
 [data-lab-progress][data-size="l"] {
-  --_lab-progress-thickness: 0.75rem;
+  --_lab-progress-thickness: var(--lab-space-3, 0.75rem);
 }
 
 .lab-progress-meta {

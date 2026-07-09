@@ -36,6 +36,73 @@ export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
     'packages/core/src/components/radio-group/lab-radio-group.ts',
     'packages/react/src/radio-group.css',
   ],
+  accordion: [
+    'packages/core/src/components/accordion/lab-accordion.ts',
+    'packages/react/src/accordion.css',
+  ],
+  badge: ['packages/core/src/components/badge/lab-badge.ts', 'packages/react/src/badge.css'],
+  breadcrumb: [
+    'packages/core/src/components/breadcrumb/lab-breadcrumb.ts',
+    'packages/react/src/breadcrumb.css',
+  ],
+  button: ['packages/core/src/components/button/lab-button.ts', 'packages/react/src/button.css'],
+  card: ['packages/core/src/components/card/lab-card.ts', 'packages/react/src/card.css'],
+  input: [
+    'packages/core/src/components/input/lab-input.ts',
+    'packages/core/src/components/field/field-styles.ts',
+    'packages/react/src/input.css',
+  ],
+  kbd: ['packages/core/src/components/kbd/lab-kbd.ts', 'packages/react/src/kbd.css'],
+  'pin-input': [
+    'packages/core/src/components/pin-input/lab-pin-input.ts',
+    'packages/react/src/pin-input.css',
+  ],
+  tabs: ['packages/core/src/components/tabs/lab-tabs.ts', 'packages/react/src/tabs.css'],
+  textarea: [
+    'packages/core/src/components/textarea/lab-textarea.ts',
+    'packages/core/src/components/field/field-styles.ts',
+    'packages/react/src/textarea.css',
+  ],
+  progress: [
+    'packages/core/src/components/progress/lab-progress.ts',
+    'packages/react/src/progress.css',
+  ],
+  loader: ['packages/core/src/components/loader/lab-loader.ts', 'packages/react/src/loader.css'],
+  switch: ['packages/core/src/components/switch/lab-switch.ts', 'packages/react/src/switch.css'],
+  checkbox: [
+    'packages/core/src/components/checkbox/lab-checkbox.ts',
+    'packages/react/src/checkbox.css',
+  ],
+  avatar: ['packages/core/src/components/avatar/lab-avatar.ts', 'packages/react/src/avatar.css'],
+  dialog: ['packages/core/src/components/dialog/lab-dialog.ts', 'packages/react/src/dialog.css'],
+  'alert-dialog': [
+    'packages/core/src/components/alert-dialog/lab-alert-dialog.ts',
+    // React twin reuses <Dialog> (shares dialog.css); alert-dialog.tsx has no dimension literals.
+  ],
+  tooltip: [
+    'packages/core/src/components/tooltip/lab-tooltip.ts',
+    'packages/react/src/tooltip.css',
+  ],
+  'tags-input': [
+    'packages/core/src/components/tags-input/lab-tags-input.ts',
+    'packages/react/src/tags-input.css',
+  ],
+  combobox: [
+    'packages/core/src/components/combobox/lab-combobox.ts',
+    'packages/react/src/combobox.css',
+  ],
+  'number-input': [
+    'packages/core/src/components/number-input/lab-number-input.ts',
+    'packages/react/src/number-input.css',
+  ],
+  // НЕ мигрированы (аудит дрейфа shadcn, 2026-07-09): menu / select / pagination /
+  // slider / popover. Их живые размеры дрейфанули от канона шкалы (наследие shadcn):
+  //   control-h: 1.875rem→канон 2rem (s), 2.25rem→2.5rem (m), 2.75rem→3rem (l);
+  //   slider:    border-radius 0.375rem→канон --lab-radius-sm 0.25rem;
+  //   popover:   голые литералы 0.0625/0.625/1.125/1.5/9.0625rem без токенов шкалы.
+  // Обернуть их в канонические токены = молча сдвинуть пиксели в рантайме — запрещено
+  // мандатом байт-идентичности (#137). Нормализация — отдельным видимым PR с дизайн-
+  // санкцией; до тех пор литералы остаются голыми и компоненты не в этом списке.
 };
 
 /** Одна находка; форма зеркалит цветовые гарды — один репортер на всех. */
@@ -210,6 +277,11 @@ export function scanDimensionSource(
   for (const m of residue.matchAll(/(?<![\w.#-])(-?\d*\.?\d+)(px|rem|em)\b/g)) {
     const px = lengthToPx(`${m[1]}${m[2]}`);
     if (m[2] === 'px' && px !== null && HAIRLINE_PX.has(px)) continue; // хэйрлайны §4
+    // §1 (ADR-0006): em-длина — пропорция КЕГЛЯ, не фиксированный размер:
+    // кегль сам едет на --lab-font-size-* токенах, значит em-значение уже
+    // выражено через контракт (глифы/паддинги, масштабирующиеся со шрифтом).
+    // Фиксированные длины обязаны быть rem/px — их ловим как раньше.
+    if (m[2] === 'em') continue;
     out.push({
       file: relPath,
       line: lineAt(m.index ?? 0),
@@ -235,6 +307,12 @@ export function fallbackSurfaceFiles(): string[] {
     'packages/react/src/**/*.tsx',
     'packages/react/src/**/*.ts',
     'packages/core/src/**/*.ts',
+    // Glob no-magic-dimension to materials (playbook #137 A2): drift global + materials explicitly globbed via globSync for fallback (magic via MIGRATED only; private --_ effects exempt).
+    // Derivations (thumb, dot) + control-h sizes + overlay globbed and expressed (calc + var(--lab-size-overlay-*)) .
+    // control-h wired в 5 мигрированных (menu/select/pagination НЕ мигрированы — см. строку 98); thumb/dot use calc(var - var(--lab-...)) to pass guard.
+    // Слепая зона закрыта; glob patterns cover packages/materials fully for drift.
+    'packages/materials/src/**/*.css',
+    'packages/tokens/src/**/*.ts',
   ];
   const out: string[] = [];
   for (const pattern of patterns) {

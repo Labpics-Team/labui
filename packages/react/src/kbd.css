@@ -14,7 +14,7 @@
   --_lab-kbd-font: var(--lab-font-size-xs, 0.8333rem);
   --_lab-kbd-tracking: var(--lab-letter-spacing-xs, -0.0009em);
   --_lab-kbd-pad-x: var(--lab-space-sm, 0.5rem);
-  --_lab-kbd-min: 1.5rem;
+  --_lab-kbd-min: var(--lab-size-control-xl, 1.5rem);
 
   box-sizing: border-box;
   display: inline-flex;
@@ -41,11 +41,11 @@
   --_lab-kbd-font: var(--lab-font-size-xxs, 0.6944rem);
   --_lab-kbd-tracking: var(--lab-letter-spacing-xxs, 0.0064em);
   --_lab-kbd-pad-x: var(--lab-space-xs, 0.25rem);
-  --_lab-kbd-min: 1.25rem;
+  --_lab-kbd-min: var(--lab-size-control-l, 1.25rem);
 }
 [data-lab-kbd][data-size="l"] {
   --_lab-kbd-font: var(--lab-font-size-md, 1rem);
   --_lab-kbd-tracking: var(--lab-letter-spacing-md, -0.0083em);
   --_lab-kbd-pad-x: var(--lab-space-md, 1rem);
-  --_lab-kbd-min: 2rem;
+  --_lab-kbd-min: var(--lab-size-control-h-s, 2rem);
 }

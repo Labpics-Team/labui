@@ -7,7 +7,7 @@ import type {
   SpringCategory,
   SpringSpec,
 } from './model.js';
-import { resolveSpringPhysics, type SpringPhysics, springLinear } from './spring.js';
+import { type SpringPhysics, resolveSpringPhysics, springLinear } from './spring.js';
 
 /**
  * Resolve the motion config into the framework-free intermediate every

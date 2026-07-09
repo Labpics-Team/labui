@@ -253,8 +253,8 @@ export class LabPinInput extends LabElement {
          <lab-input>. Square by default; centred text. */
       .segment {
         box-sizing: border-box;
-        width: 2.5rem;
-        height: 2.5rem;
+        width: ${litVar('--lab-size-control-h-m', '2.5rem')};
+        height: ${litVar('--lab-size-control-h-m', '2.5rem')};
         margin: 0;
         padding: 0;
         font: inherit;
@@ -276,12 +276,12 @@ export class LabPinInput extends LabElement {
       }
 
       :host([size='s']) .segment {
-        width: 2rem;
-        height: 2rem;
+        width: ${litVar('--lab-size-control-h-s', '2rem')};
+        height: ${litVar('--lab-size-control-h-s', '2rem')};
       }
       :host([size='l']) .segment {
-        width: 3rem;
-        height: 3rem;
+        width: ${litVar('--lab-size-control-h-l', '3rem')};
+        height: ${litVar('--lab-size-control-h-l', '3rem')};
       }
 
       :host(:not([disabled]):not([readonly])) .segment:hover {

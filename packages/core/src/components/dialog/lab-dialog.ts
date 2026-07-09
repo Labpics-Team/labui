@@ -92,18 +92,18 @@ let dialogInstanceSeq = 0;
 export const dialogFloatingStyles = css`
   :host {
     --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-    --_min-width: 18rem;
-    --_max-width: 32rem;
+    --_min-width: ${litVar('--lab-size-overlay-18', '18rem')};
+    --_max-width: ${litVar('--lab-size-overlay-32', '32rem')};
   }
   :host([data-size='s']) {
     --_pad: ${litVar('--lab-space-md', '1rem')};
-    --_min-width: 16rem;
-    --_max-width: 24rem;
+    --_min-width: ${litVar('--lab-size-overlay-16', '16rem')};
+    --_max-width: ${litVar('--lab-size-overlay-24', '24rem')};
   }
   :host([data-size='l']) {
     --_pad: ${litVar('--lab-space-xl', '2rem')};
-    --_min-width: 22rem;
-    --_max-width: 40rem;
+    --_min-width: ${litVar('--lab-size-overlay-22', '22rem')};
+    --_max-width: ${litVar('--lab-size-overlay-40', '40rem')};
   }
 
   /* Modal scrim — the machine toggles its hidden attribute from open state. */
@@ -186,7 +186,7 @@ export const dialogFloatingStyles = css`
 
   .heading {
     margin: 0 0 ${litVar('--lab-space-sm', '0.5rem')} 0;
-    padding-right: 2rem;
+    padding-right: ${litVar('--lab-space-xl', '2rem')};
     font-size: ${litVar('--lab-font-size-lg', '1.2rem')};
     letter-spacing: ${litVar('--lab-letter-spacing-lg', '-0.0194em')};
     line-height: ${litVar('--lab-line-height-md', '1.5')};
@@ -209,14 +209,14 @@ export const dialogFloatingStyles = css`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: ${litVar('--lab-space-7', '1.75rem')};
+    height: ${litVar('--lab-space-7', '1.75rem')};
     padding: 0;
     border: 0;
     border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
     background: none;
     color: ${litVar('--lab-label-secondary')};
-    font-size: 1.25rem;
+    font-size: ${litVar('--lab-space-5', '1.25rem')};
     line-height: 1;
     cursor: pointer;
   }

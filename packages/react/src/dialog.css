@@ -72,8 +72,8 @@
 
 .lab-dialog-content {
   --_lab-dlg-pad: var(--lab-space-lg, 1.5rem);
-  --_lab-dlg-min-width: 18rem;
-  --_lab-dlg-max-width: 32rem;
+  --_lab-dlg-min-width: var(--lab-size-overlay-18, 18rem);
+  --_lab-dlg-max-width: var(--lab-size-overlay-32, 32rem);
 
   box-sizing: border-box;
   position: relative;
@@ -103,18 +103,18 @@
 
 .lab-dialog-content[data-size="s"] {
   --_lab-dlg-pad: var(--lab-space-md, 1rem);
-  --_lab-dlg-min-width: 16rem;
-  --_lab-dlg-max-width: 24rem;
+  --_lab-dlg-min-width: var(--lab-size-overlay-16, 16rem);
+  --_lab-dlg-max-width: var(--lab-size-overlay-24, 24rem);
 }
 .lab-dialog-content[data-size="l"] {
   --_lab-dlg-pad: var(--lab-space-xl, 2rem);
-  --_lab-dlg-min-width: 22rem;
-  --_lab-dlg-max-width: 40rem;
+  --_lab-dlg-min-width: var(--lab-size-overlay-22, 22rem);
+  --_lab-dlg-max-width: var(--lab-size-overlay-40, 40rem);
 }
 
 .lab-dialog-heading {
   margin: 0 0 var(--lab-space-sm, 0.5rem) 0;
-  padding-right: 2rem;
+  padding-right: var(--lab-space-xl, 2rem);
   font-size: var(--lab-font-size-lg, 1.2rem);
   letter-spacing: var(--lab-letter-spacing-lg, -0.0194em);
   line-height: var(--lab-line-height-md, 1.5);
@@ -136,14 +136,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: var(--lab-space-7, 1.75rem);
+  height: var(--lab-space-7, 1.75rem);
   padding: 0;
   border: 0;
   border-radius: var(--lab-radius-sm, 0.25rem);
   background: none;
   color: var(--lab-label-secondary);
-  font-size: 1.25rem;
+  font-size: var(--lab-space-5, 1.25rem);
   line-height: 1;
   cursor: pointer;
 }

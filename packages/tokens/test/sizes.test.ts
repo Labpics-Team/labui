@@ -15,19 +15,62 @@ const tokens = buildTokens(defaultConfig);
  * Figma привязаны к Size/M (побайтная копия medium) — пробел, а не значение.
  * Нулевой ступени тоже НЕТ — намеренное исключение из правила «каждая шкала
  * несёт ноль» (контрол нулевого размера вырожден; см. SizesConfig и
- * docs/dimension-contract.md §2) — тест закрепляет ровно 3 ступени осознанно.
+ * docs/dimension-contract.md §2).
+ * Расширение таксономии #137 (регенерация b69c000, аудит 2026-07-09): шкала
+ * несёт все оси размерного контракта; оси без Figma-якоря помечены DECLARED.
  * Перенастройка любой ступени — ДИЗАЙН-решение и обязана упасть здесь первой.
  */
 describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
   const CANON_PX: Readonly<Record<string, number>> = {
+    // Глиф-бокс контрола: Figma-биндинги Size/S=12, Size/M=16, Size/L=20;
+    // xl=24 — DECLARED (аудит #137), продолжение 4px-прогрессии.
     'control-s': 12,
     'control-m': 16,
     'control-l': 20,
+    'control-xl': 24,
     // Ось высот контролов (аудит 2026-07-03): доминирующее семейство button
     // 32/40/48, все на 4px-сетке; DECLARED до появления Figma-якоря высот.
     'control-h-s': 32,
     'control-h-m': 40,
     'control-h-l': 48,
+    // Switch (аудит 2026-07-09, DECLARED): трек Ш/В и бегунок, 4px-сетка
+    // по ширине трека, thumb = track-h − 2×3px зазор.
+    'switch-track-s': 36,
+    'switch-track-m': 44,
+    'switch-track-l': 52,
+    'switch-track-h-s': 20,
+    'switch-track-h-m': 24,
+    'switch-track-h-l': 28,
+    'switch-thumb-s': 14,
+    'switch-thumb-m': 18,
+    'switch-thumb-l': 22,
+    // Loader: толщина штриха спиннера (DECLARED).
+    'loader-stroke-s': 2,
+    'loader-stroke-m': 3,
+    'loader-stroke-l': 4,
+    // Checkbox tiny: единственная легитимная под-S ступень глиф-бокса
+    // (плотные таблицы); НЕ входит в ось control-* сознательно.
+    'checkbox-tiny': 14,
+    // Avatar и статус-точка (DECLARED).
+    'avatar-s': 28,
+    'avatar-m': 40,
+    'avatar-l': 56,
+    'avatar-dot-s': 10,
+    'avatar-dot-m': 12,
+    'avatar-dot-l': 16,
+    // Оверлеи: ширины поповеров/меню/панелей, шаг в rem-единицах имени
+    // (overlay-N = N rem), монотонная лестница 11→40 (DECLARED).
+    'overlay-11': 176,
+    'overlay-12': 192,
+    'overlay-14': 224,
+    'overlay-16': 256,
+    'overlay-18': 288,
+    'overlay-20': 320,
+    'overlay-22': 352,
+    'overlay-24': 384,
+    'overlay-28': 448,
+    'overlay-32': 512,
+    'overlay-40': 640,
   };
 
   it('carries exactly the canonical steps with their Figma px values', () => {
@@ -43,8 +86,28 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     // проверяется пер-осно — кросс-осевое сравнение (control-l < control-h-s)
     // было бы случайным инвариантом текущих чисел, не контрактом.
     const axes = [
-      ['control-s', 'control-m', 'control-l'],
+      ['control-s', 'control-m', 'control-l', 'control-xl'],
       ['control-h-s', 'control-h-m', 'control-h-l'],
+      ['switch-track-s', 'switch-track-m', 'switch-track-l'],
+      ['switch-track-h-s', 'switch-track-h-m', 'switch-track-h-l'],
+      ['switch-thumb-s', 'switch-thumb-m', 'switch-thumb-l'],
+      ['loader-stroke-s', 'loader-stroke-m', 'loader-stroke-l'],
+      ['avatar-s', 'avatar-m', 'avatar-l'],
+      ['avatar-dot-s', 'avatar-dot-m', 'avatar-dot-l'],
+      // Оверлеи: полная лестница — имя (rem) и значение растут вместе.
+      [
+        'overlay-11',
+        'overlay-12',
+        'overlay-14',
+        'overlay-16',
+        'overlay-18',
+        'overlay-20',
+        'overlay-22',
+        'overlay-24',
+        'overlay-28',
+        'overlay-32',
+        'overlay-40',
+      ],
     ];
     for (const axis of axes) {
       const ordered = axis.map((n) => tokens.sizes.find((t) => t.name === n)?.numeric as number);

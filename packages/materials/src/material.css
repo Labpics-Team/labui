@@ -104,7 +104,7 @@
 
   position: relative;
   isolation: isolate;
-  border-radius: var(--lab-radius-card, 12px);
+  border-radius: var(--lab-radius-card, 1rem);
 
   /* ONE paint rule for every mode. Solid: tint over opaque base. Glass/blur:
    * tint over `transparent` (base dropped) so the blurred live backdrop reads.

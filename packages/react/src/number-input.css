@@ -130,7 +130,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
+  width: var(--lab-space-7, 1.75rem);
   margin: 0;
   padding: 0;
   font: inherit;
@@ -157,10 +157,10 @@
 }
 
 [data-lab-number-input][data-size="s"] .lab-number-input-trigger {
-  width: 1.5rem;
+  width: var(--lab-space-6, 1.5rem);
 }
 [data-lab-number-input][data-size="l"] .lab-number-input-trigger {
-  width: 2rem;
+  width: var(--lab-size-control-h-s, 2rem);
 }
 
 /* Focus ring: the control surface lights when the inner input is focus-visible. */

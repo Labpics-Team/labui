@@ -43,7 +43,7 @@ export class LabKbd extends LabElement {
       --_radius: ${litVar('--lab-radius-control', '0.5rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
       --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min: 1.5rem;
+      --_min: ${litVar('--lab-size-control-xl', '1.5rem')};
 
       display: inline-flex;
       vertical-align: middle;
@@ -52,12 +52,12 @@ export class LabKbd extends LabElement {
     :host([size='s']) {
       --_font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
       --_pad-x: ${litVar('--lab-space-xs', '0.25rem')};
-      --_min: 1.25rem;
+      --_min: ${litVar('--lab-size-control-l', '1.25rem')};
     }
     :host([size='l']) {
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
-      --_min: 2rem;
+      --_min: ${litVar('--lab-size-control-h-s', '2rem')};
     }
 
     kbd {

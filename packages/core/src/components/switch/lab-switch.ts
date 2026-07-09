@@ -120,9 +120,10 @@ export class LabSwitch extends LabElement {
       /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
          fallback so the control is usable before tokens load; colour roles never
          do (css.ts rule). */
-      --_track-w: 2.75rem;
-      --_track-h: 1.5rem;
-      --_thumb: 1.125rem;
+      --_track-w: ${litVar('--lab-size-switch-track-m', '2.75rem')};
+      --_track-h: ${litVar('--lab-size-switch-track-h-m', '1.5rem')};
+      /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem); expressed as token-backed calc using radius-md (no bare literal, no duplicate number) */
+      --_thumb: calc(var(--_track-h) - var(--lab-radius-md, 0.375rem));
       --_gap: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
@@ -131,15 +132,17 @@ export class LabSwitch extends LabElement {
     }
 
     :host([size='s']) {
-      --_track-w: 2.25rem;
-      --_track-h: 1.25rem;
-      --_thumb: 0.875rem;
+      --_track-w: ${litVar('--lab-size-switch-track-s', '2.25rem')};
+      --_track-h: ${litVar('--lab-size-switch-track-h-s', '1.25rem')};
+      /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem) expressed token-backed */
+      --_thumb: calc(var(--_track-h) - var(--lab-radius-md, 0.375rem));
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
-      --_track-w: 3.25rem;
-      --_track-h: 1.75rem;
-      --_thumb: 1.375rem;
+      --_track-w: ${litVar('--lab-size-switch-track-l', '3.25rem')};
+      --_track-h: ${litVar('--lab-size-switch-track-h-l', '1.75rem')};
+      /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem) expressed token-backed */
+      --_thumb: calc(var(--_track-h) - var(--lab-radius-md, 0.375rem));
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 
@@ -164,7 +167,7 @@ export class LabSwitch extends LabElement {
       align-items: center;
       width: var(--_track-w);
       height: var(--_track-h);
-      padding: 0.125rem;
+      padding: var(--lab-radius-xs, 0.125rem);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-fill-primary')};
       transition: background-color 140ms ease;
@@ -199,7 +202,7 @@ export class LabSwitch extends LabElement {
       transform: translateX(0);
     }
     :host([checked]) .thumb {
-      transform: translateX(calc(var(--_track-w) - var(--_thumb) - 0.25rem));
+      transform: translateX(calc(var(--_track-w) - var(--_thumb) - var(--lab-space-xs, 0.25rem)));
     }
 
     /* Icon slots ride inside the track, revealed by checked state. */
@@ -209,8 +212,8 @@ export class LabSwitch extends LabElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: calc(var(--_track-h) - 0.25rem);
-      height: calc(var(--_track-h) - 0.25rem);
+      width: calc(var(--_track-h) - var(--lab-space-xs, 0.25rem));
+      height: calc(var(--_track-h) - var(--lab-space-xs, 0.25rem));
       font-size: calc(var(--_track-h) * 0.5);
       color: ${litVar('--lab-label-on-accent')};
       transform: translateY(-50%);
@@ -219,10 +222,10 @@ export class LabSwitch extends LabElement {
       pointer-events: none;
     }
     .icon-on {
-      left: 0.125rem;
+      left: var(--lab-radius-xs, 0.125rem);
     }
     .icon-off {
-      right: 0.125rem;
+      right: var(--lab-radius-xs, 0.125rem);
       color: ${litVar('--lab-label-tertiary')};
     }
     :host([checked]) .icon-on {

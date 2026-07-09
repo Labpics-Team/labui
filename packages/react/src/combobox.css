@@ -87,7 +87,8 @@
   flex: 1 1 auto;
   width: 100%;
   margin: 0;
-  padding: var(--_lab-field-pad-y) 2.25rem var(--_lab-field-pad-y) var(--_lab-field-pad-x);
+  padding: var(--_lab-field-pad-y) var(--lab-size-switch-track-s, 2.25rem) var(--_lab-field-pad-y)
+    var(--_lab-field-pad-x);
   font: inherit;
   font-size: var(--_lab-field-font);
   letter-spacing: var(--_lab-field-tracking);
@@ -153,7 +154,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
+  width: var(--lab-size-switch-track-s, 2.25rem);
   height: 100%;
   margin: 0;
   padding: 0;
@@ -197,8 +198,8 @@
 
 .lab-combobox-content {
   box-sizing: border-box;
-  min-width: var(--reference-width, 12rem);
-  max-height: 16rem;
+  min-width: var(--reference-width, var(--lab-size-overlay-12, 12rem));
+  max-height: var(--lab-size-overlay-16, 16rem);
   overflow-y: auto;
   margin: 0;
   padding: var(--lab-space-xs, 0.25rem);
