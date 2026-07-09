@@ -52,6 +52,10 @@ const SMOKE_SPECS = [
   // tooltip сверху). Дешёвый детерминированный smoke → в per-PR критический путь.
   'z-order.spec.ts',
   'materials-flag.spec.ts',
+  // Acrylic v2 (ADR-0009): движок-контракт материала — конвейер держит
+  // поверхность, пиксельный дифференциал зажима, честные деградации. Тот же
+  // класс критического пути, что materials-flag.
+  'acrylic-live.spec.ts',
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',

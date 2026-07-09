@@ -80,6 +80,8 @@ export {
   guaranteeReport,
   cornerCorridor,
   unionCorridor,
+  bandOverCorridor,
+  worstContrastOverBand,
   fillKey,
   verdictKey,
 } from './material-guarantee';

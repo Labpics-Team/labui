@@ -1,0 +1,67 @@
+/*
+ * Acrylic LIVE — фикстура движка v2 (ADR-0009), только хром страницы.
+ *
+ * Материал живёт в @labpics/ui-materials; здесь — измерительный полигон:
+ * два ЭКСТРЕМАЛЬНЫХ поля фона (чистый чёрный / чистый белый — углы коридора
+ * гарантии) и по acrylic-панели над каждым. Панели отступают от границы полей
+ * дальше досягаемости выборки фильтра (регион −25%…150% бокса), поэтому каждая
+ * читает СВОЁ поле без подмеса соседнего.
+ */
+@import "@labpics/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "@labpics/ui-materials/material.css";
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, sans-serif;
+  color: var(--lab-label-primary);
+}
+
+.zone {
+  position: fixed;
+  top: 0;
+  height: 100vh;
+  width: 33.4vw;
+}
+.zone--black {
+  left: 0;
+  background: #000;
+}
+.zone--blue {
+  left: 33.3vw;
+  background: #00f;
+}
+.zone--white {
+  left: 66.6vw;
+  background: #fff;
+}
+
+/* Панель 200×160: при регионе фильтра −25% выборка блюра уходит максимум на
+ * 50px за бокс — центры третей 1280-вьюпорта дают ≥110px до границы полей. */
+.panel {
+  position: fixed;
+  top: 200px;
+  width: 200px;
+  height: 160px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.panel--on-black {
+  left: 113px;
+}
+.panel--on-blue {
+  left: 540px;
+}
+.panel--on-white {
+  left: 967px;
+}
+
+.status {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  font-size: 12px;
+  color: #808080;
+  background: #00000010;
+}
