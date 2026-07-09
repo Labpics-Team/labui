@@ -46,6 +46,10 @@ export function generateCss(tokens: ResolvedTokens): string {
       'State overlays — фракции color-mix к тинту рецепта D (задача 109)',
       tokenLines(tokens.states),
     ),
+    section('Opacity — непрозрачность состояний (unitless доли, задача 13)', [
+      ...tokenLines(tokens.opacity),
+      ...aliasLines(tokens.opacityAliases),
+    ]),
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;

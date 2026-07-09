@@ -36,6 +36,8 @@
   --lab-space-xl: var(--lab-space-8); /* -> 8 */
   --lab-space-2xl: var(--lab-space-12); /* -> 12 */
   --lab-space-3xl: var(--lab-space-16); /* -> 16 */
+  --lab-space-glow-core: var(--lab-space-2); /* -> 2 */
+  --lab-space-glow-halo: var(--lab-space-8); /* -> 8 */
 
   /* Sizes — габариты контрол-бокса оси размера компонента (rem) */
   --lab-size-control-s: 0.75rem;
@@ -177,6 +179,16 @@
   /* State overlays — фракции color-mix к тинту рецепта D (задача 109) */
   --lab-state-hover: 8%; /* Доля тинта рецепта D, подмешиваемая в роль покоя на hover. */
   --lab-state-pressed: 14%; /* Доля тинта рецепта D в нажатом состоянии — глубже hover. */
+
+  /* Opacity — непрозрачность состояний (unitless доли, задача 13) */
+  --lab-opacity-0: 0;
+  --lab-opacity-45: 0.45;
+  --lab-opacity-50: 0.5;
+  --lab-opacity-100: 1;
+  --lab-opacity-none: var(--lab-opacity-0); /* -> 0 */
+  --lab-opacity-disabled: var(--lab-opacity-45); /* -> 45 */
+  --lab-opacity-muted: var(--lab-opacity-50); /* -> 50 */
+  --lab-opacity-full: var(--lab-opacity-100); /* -> 100 */
 }
 
 /* Corner shape — superellipse curvature over any border-radius (opt-in scope). */

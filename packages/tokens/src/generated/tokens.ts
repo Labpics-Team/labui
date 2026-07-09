@@ -38,6 +38,8 @@ export const space = {
   xl: 'var(--lab-space-xl)',
   '2xl': 'var(--lab-space-2xl)',
   '3xl': 'var(--lab-space-3xl)',
+  'glow-core': 'var(--lab-space-glow-core)',
+  'glow-halo': 'var(--lab-space-glow-halo)',
 } as const;
 
 export type SpaceToken = keyof typeof space;
@@ -218,3 +220,16 @@ export const state = {
 } as const;
 
 export type StateToken = keyof typeof state;
+
+export const opacity = {
+  '0': 'var(--lab-opacity-0)',
+  '45': 'var(--lab-opacity-45)',
+  '50': 'var(--lab-opacity-50)',
+  '100': 'var(--lab-opacity-100)',
+  none: 'var(--lab-opacity-none)',
+  disabled: 'var(--lab-opacity-disabled)',
+  muted: 'var(--lab-opacity-muted)',
+  full: 'var(--lab-opacity-full)',
+} as const;
+
+export type OpacityToken = keyof typeof opacity;

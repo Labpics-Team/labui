@@ -1364,5 +1364,23 @@
       "$value": 0.14,
       "$description": "Доля тинта рецепта D в нажатом состоянии — глубже hover."
     }
+  },
+  "opacity": {
+    "0": {
+      "$type": "number",
+      "$value": 0
+    },
+    "45": {
+      "$type": "number",
+      "$value": 0.45
+    },
+    "50": {
+      "$type": "number",
+      "$value": 0.5
+    },
+    "100": {
+      "$type": "number",
+      "$value": 1
+    }
   }
 }

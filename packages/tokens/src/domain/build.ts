@@ -1,5 +1,6 @@
 import type { TokensConfig } from '../config/types.js';
 import { buildBorders } from './borders.js';
+import { buildOpacity } from './opacity.js';
 import { buildRadii } from './radii.js';
 import { buildSizes } from './sizes.js';
 import { buildSpacing } from './spacing.js';
@@ -32,6 +33,9 @@ export interface ResolvedTokens {
   readonly focusRing: readonly ResolvedToken[];
   /** Фракции стейт-оверлеев (#109): hover/pressed, проценты color-mix. */
   readonly states: readonly ResolvedToken[];
+  /** Ось непрозрачности (задача 13): unitless доли + роли disabled/muted. */
+  readonly opacity: readonly ResolvedToken[];
+  readonly opacityAliases: readonly ResolvedAlias[];
 }
 
 /** Resolve a config into the full token set (pure; no I/O). */
@@ -42,6 +46,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
   const zIndex = buildZIndex(config.zIndex);
   const typography = buildTypography(config.typography);
   const borders = buildBorders(config.borders);
+  const opacity = buildOpacity(config.opacity);
 
   return {
     spacing: spacing.tokens,
@@ -60,5 +65,7 @@ export function buildTokens(config: TokensConfig): ResolvedTokens {
     strokes: borders.strokes,
     focusRing: borders.focusRing,
     states: buildStates(config.states),
+    opacity: opacity.tokens,
+    opacityAliases: opacity.aliases,
   };
 }

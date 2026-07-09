@@ -46,6 +46,7 @@ export function generateDtcg(tokens: ResolvedTokens): string {
     stroke: dimensionGroup(tokens.strokes),
     'focus-ring': dimensionGroup(tokens.focusRing),
     state: numberGroup(tokens.states),
+    opacity: numberGroup(tokens.opacity),
   };
   return `${JSON.stringify(doc, null, 2)}\n`;
 }

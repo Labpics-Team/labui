@@ -90,6 +90,33 @@ describe('generator — single source, three outputs, no divergence', () => {
     expect(changed.css).toContain('--lab-stroke-hairline: 0.0625rem;');
   });
 
+  it('emits the opacity axis into all three artifacts, aliases as var() refs (задача 13)', () => {
+    const { css, ts, dtcg } = generate(defaultConfig);
+    // CSS: примитив + роль-алиас через var(), не дублированное значение.
+    expect(css).toContain('--lab-opacity-45: 0.45;');
+    expect(css).toContain('--lab-opacity-disabled: var(--lab-opacity-45);');
+    expect(css).toContain('--lab-opacity-muted: var(--lab-opacity-50);');
+    // TS: роль ссылается на СВОЮ custom property (семантический слой жив).
+    expect(ts).toContain("disabled: 'var(--lab-opacity-disabled)'");
+    expect(ts).not.toContain("disabled: 'var(--lab-opacity-45)'");
+    // DTCG: number-группа.
+    const doc = JSON.parse(dtcg);
+    expect(doc.opacity['45'].$value).toBe(0.45);
+    expect(doc.opacity['45'].$type).toBe('number');
+    // Частичный оверрайд key-merge: ретюн одной ступени не сносит остальные.
+    const changed = generateFromOverride({ opacity: { steps: { '40': 0.4 } } });
+    expect(changed.css).toContain('--lab-opacity-40: 0.4;');
+    expect(changed.css).toContain('--lab-opacity-45: 0.45;');
+  });
+
+  it('emits the glow geometry roles on the spacing scale (задача 13)', () => {
+    const { css, ts } = generate(defaultConfig);
+    // Роли заземлены прототипом glow: ядро = space-2 (8px), ореол = space-8 (32px).
+    expect(css).toContain('--lab-space-glow-core: var(--lab-space-2);');
+    expect(css).toContain('--lab-space-glow-halo: var(--lab-space-8);');
+    expect(ts).toContain("'glow-core': 'var(--lab-space-glow-core)'");
+  });
+
   it('DTCG is well-formed: every leaf has $type and $value', () => {
     const doc = JSON.parse(generate(defaultConfig).dtcg);
     const leaves: Array<Record<string, unknown>> = [];
