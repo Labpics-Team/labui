@@ -130,7 +130,7 @@ describe('material.css deterministic degradations', () => {
   it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
     const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
     expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
-    expect(body).toContain('--_blur: var(--_blur-glass)'); // 48px reused, not a new literal
+    expect(body).toContain('--_blur: var(--_blur-live)'); // одна ступень 48px на все live-материалы (ADR-0009), не новый литерал
     expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused
     expect(body).toContain('--_base-paint: transparent'); // live backdrop reads through
   });

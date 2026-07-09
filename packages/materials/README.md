@@ -147,7 +147,7 @@ Acrylic — это **diffusion** (низкочастотное размытие,
 
 | Слой | Значение | Происхождение |
 |---|---|---|
-| `backdrop-filter: blur()` | `--_blur-glass` (48px) | Figma BG-blur Base, ∈ Fluent 30–60px |
+| `backdrop-filter: blur()` | `--_blur-live` (48px) | одна ступень на все live-материалы (ADR-0009); Figma BG-blur Base, ∈ Fluent 30–60px |
 | `saturate()` | `--_saturate-on` (180%) | переиспользован, не новый токен |
 | tint | `--lab-bg-material-<tier>-01` (straight-alpha) | **ЗАЯВЛЕННЫЙ** компромисс: НЕ Fluent luminosity/exclusion-блендинг — это сломало бы байт-точную гарантию, поэтому tint накладывается straight-alpha, как и любой другой режим |
 | зерно | `--_acrylic-noise` (~2%, baked into alpha) | ADR-0002 §1; ЕДИНСТВЕННОЕ, что отличает acrylic от простого размытия — устраняет полосы на градиенте под размытием |
