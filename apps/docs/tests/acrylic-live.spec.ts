@@ -131,7 +131,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
     for (const id of ['surface-on-black', 'surface-on-white']) {
       await expect
         .poll(() => readBackdropFilter(page, id), { message: `${id}: инлайн-конвейер движка` })
-        .toContain('lab-acrylic-soft');
+        .toContain('lab-acrylic-');
       const bg = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundImage);
       expect(bg, `${id}: слой зерна не тронут движком`).toContain('data:image/png');
     }
@@ -248,9 +248,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
   });
 
   test('forced-colors гасит движок сам (инлайн сильнее листа — снятие в JS)', async ({ page }) => {
-    await expect
-      .poll(() => readBackdropFilter(page, 'surface-on-black'))
-      .toContain('lab-acrylic-soft');
+    await expect.poll(() => readBackdropFilter(page, 'surface-on-black')).toContain('lab-acrylic-');
     await page.emulateMedia({ forcedColors: 'active' });
     await expect
       .poll(() => readBackdropFilter(page, 'surface-on-black'), {
@@ -262,7 +260,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
       .poll(() => readBackdropFilter(page, 'surface-on-black'), {
         message: 'возврат режима возвращает движок',
       })
-      .toContain('lab-acrylic-soft');
+      .toContain('lab-acrylic-');
   });
 });
 

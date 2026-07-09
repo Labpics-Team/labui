@@ -25,7 +25,8 @@
       "measure-bundle-sizes.mjs",
       "tmp-*.mjs",
       "perf-measure-sizes.mjs",
-      "scripts/minify-contract.cjs"
+      "scripts/minify-contract.cjs",
+      "packages/materials/bench/acrylic-region/*.cjs"
     ]
   },
   "formatter": {

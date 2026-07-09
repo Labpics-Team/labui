@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>acrylic filter-region micro-bench</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; overflow: hidden; background: #101014; }
+      /* High-frequency moving backdrop: forces the composite to re-sample the
+         blurred backdrop every frame under every acrylic surface. */
+      #bg {
+        position: fixed; left: 0; top: 0; width: 300vw; height: 100vh;
+        background:
+          repeating-linear-gradient(90deg, #000 0 6px, #fff 6px 12px, #d40045 12px 18px, #0af 18px 24px),
+          repeating-linear-gradient(0deg, rgba(0,0,0,.25) 0 5px, transparent 5px 11px);
+      }
+      .surf {
+        position: fixed;
+        background: rgba(128,128,128,.35);
+      }
+      svg.defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="bg"></div>
+    <svg class="defs" xmlns="http://www.w3.org/2000/svg"><defs id="defs"></defs></svg>
+    <script>
+      const SVGNS = 'http://www.w3.org/2000/svg';
+      const BLUR = 48, SAT = 1.8, LAMBDA = 0.7, FLOOD = '#f0f0f0';
+      const defs = document.getElementById('defs');
+      const bg = document.getElementById('bg');
+      let filterUid = 0;
+
+      // Build one acrylic filter. variant 'pct' = objectBoundingBox -25/150
+      // (the shipped v2 region); 'abs' = userSpaceOnUse box + M px reach on
+      // every side (absolute, isotropic). Same blur→sat→flood→blend pipeline.
+      function makeFilter(variant, w, h, M) {
+        const id = 'f' + ++filterUid;
+        const f = document.createElementNS(SVGNS, 'filter');
+        f.setAttribute('id', id);
+        f.setAttribute('color-interpolation-filters', 'sRGB');
+        if (variant === 'abs') {
+          f.setAttribute('filterUnits', 'userSpaceOnUse');
+          f.setAttribute('x', String(-M));
+          f.setAttribute('y', String(-M));
+          f.setAttribute('width', String(w + 2 * M));
+          f.setAttribute('height', String(h + 2 * M));
+        } else {
+          f.setAttribute('x', '-25%');
+          f.setAttribute('y', '-25%');
+          f.setAttribute('width', '150%');
+          f.setAttribute('height', '150%');
+        }
+        const blur = document.createElementNS(SVGNS, 'feGaussianBlur');
+        blur.setAttribute('stdDeviation', String(BLUR));
+        blur.setAttribute('result', 'b');
+        const sat = document.createElementNS(SVGNS, 'feColorMatrix');
+        sat.setAttribute('in', 'b'); sat.setAttribute('type', 'saturate');
+        sat.setAttribute('values', String(SAT)); sat.setAttribute('result', 's');
+        const flood = document.createElementNS(SVGNS, 'feFlood');
+        flood.setAttribute('flood-color', FLOOD);
+        flood.setAttribute('flood-opacity', String(LAMBDA));
+        flood.setAttribute('result', 'fl');
+        const blend = document.createElementNS(SVGNS, 'feBlend');
+        blend.setAttribute('in', 'fl'); blend.setAttribute('in2', 's');
+        blend.setAttribute('mode', 'luminosity');
+        f.append(blur, sat, flood, blend);
+        defs.appendChild(f);
+        return id;
+      }
+
+      // Lay out N copies of a surface of size (w,h) tiled across the viewport,
+      // each carrying the filter. Returns nothing; mutates the DOM.
+      function layout(variant, sizes, M) {
+        for (const el of document.querySelectorAll('.surf')) el.remove();
+        // keep only the id=defs child
+        while (defs.firstChild) defs.removeChild(defs.firstChild);
+        filterUid = 0;
+        let x = 0, y = 0, rowH = 0;
+        for (const { w, h, n } of sizes) {
+          for (let i = 0; i < n; i++) {
+            if (x + w > window.innerWidth) { x = 0; y += rowH + 8; rowH = 0; }
+            const id = makeFilter(variant, w, h, M);
+            const s = document.createElement('div');
+            s.className = 'surf';
+            s.style.left = x + 'px'; s.style.top = y + 'px';
+            s.style.width = w + 'px'; s.style.height = h + 'px';
+            s.style.backdropFilter = `url(#${id})`;
+            s.style.webkitBackdropFilter = `url(#${id})`;
+            document.body.appendChild(s);
+            x += w + 8; rowH = Math.max(rowH, h);
+          }
+        }
+      }
+
+      let anim = null;
+      function startBg() {
+        if (anim) anim.cancel();
+        anim = bg.animate(
+          [{ transform: 'translateX(0)' }, { transform: 'translateX(-66%)' }],
+          { duration: 1400, iterations: Infinity, easing: 'linear' },
+        );
+      }
+
+      // Median rAF delta over `frames` (first `warm` discarded). Under deep
+      // saturation the delta reflects real composite time (the browser cannot
+      // wait for the next vsync when a frame already overran several periods).
+      function measure(frames, warm) {
+        return new Promise((resolve) => {
+          const d = []; let last = performance.now(), n = 0;
+          const tick = (t) => {
+            d.push(t - last); last = t; n++;
+            if (n < frames) requestAnimationFrame(tick);
+            else {
+              const tail = d.slice(warm).sort((a, b) => a - b);
+              resolve({
+                median: tail[Math.floor(tail.length / 2)],
+                p90: tail[Math.floor(tail.length * 0.9)],
+                mean: tail.reduce((a, b) => a + b, 0) / tail.length,
+              });
+            }
+          };
+          requestAnimationFrame(tick);
+        });
+      }
+
+      // One A/B run for a given surface mix. Warms, measures each variant.
+      window.runBench = async ({ sizes, M, frames = 140, warm = 30 }) => {
+        startBg();
+        const out = {};
+        for (const variant of ['pct', 'abs']) {
+          layout(variant, sizes, M);
+          await new Promise((r) => setTimeout(r, 250)); // settle layers
+          await measure(40, 10); // extra warm after relayout
+          out[variant] = await measure(frames, warm);
+        }
+        // filter-region areas (px²) — the theoretical cost proxy.
+        out.area = { pct: 0, abs: 0 };
+        for (const { w, h, n } of sizes) {
+          out.area.pct += n * (w * 1.5) * (h * 1.5);
+          out.area.abs += n * (w + 2 * M) * (h + 2 * M);
+        }
+        return out;
+      };
+
+      window.__benchReady = true;
+    </script>
+  </body>
+</html>
