@@ -80,10 +80,10 @@ test.describe('acrylic v2 — перф-паритет (Chromium)', () => {
         'background:repeating-linear-gradient(90deg,#000 0 40px,#fff 40px 80px,#d40045 80px 120px)';
       const main = document.querySelector('main');
       document.body.insertBefore(mover, main);
-      mover.animate(
-        [{ transform: 'translateX(0)' }, { transform: 'translateX(-50vw)' }],
-        { duration: 1600, iterations: Number.POSITIVE_INFINITY },
-      );
+      mover.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-50vw)' }], {
+        duration: 1600,
+        iterations: Number.POSITIVE_INFINITY,
+      });
     });
 
     const results: Record<string, number> = {};
@@ -92,20 +92,17 @@ test.describe('acrylic v2 — перф-паритет (Chromium)', () => {
       results[mode] = await medianFrameDelta(page);
     }
 
+    // Числа фазы — в аннотацию прогона (HTML/CI-репорт); baseline —
+    // packages/materials/bench/BASELINE.md.
     testInfo.annotations.push({
       type: 'perf-median-frame-ms',
       description: `solid=${results.solid?.toFixed(2)} glass=${results.glass?.toFixed(2)} acrylic=${results.acrylic?.toFixed(2)}`,
     });
-    console.log(
-      `[acrylic-perf] median frame ms: solid=${results.solid?.toFixed(2)} glass=${results.glass?.toFixed(2)} acrylic=${results.acrylic?.toFixed(2)}`,
-    );
 
     const solid = results.solid ?? Number.NaN;
     const glass = results.glass ?? Number.NaN;
     const acrylic = results.acrylic ?? Number.NaN;
-    expect(Number.isFinite(solid) && Number.isFinite(glass) && Number.isFinite(acrylic)).toBe(
-      true,
-    );
+    expect(Number.isFinite(solid) && Number.isFinite(glass) && Number.isFinite(acrylic)).toBe(true);
 
     // Класс-гейт: acrylic не дороже стекла кратно (JS/лишний проход в кадре
     // дал бы ×2+). Слак 4ms гасит квантование rAF на шумном раннере.

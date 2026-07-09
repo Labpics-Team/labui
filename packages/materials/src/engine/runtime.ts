@@ -107,11 +107,7 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
         for (const el of scope.querySelectorAll(SURFACE)) {
           if (el instanceof HTMLElement && inModeScope(el, ACRYLIC)) want.add(el);
         }
-        if (
-          scope instanceof HTMLElement &&
-          scope.matches(SURFACE) &&
-          inModeScope(scope, ACRYLIC)
-        ) {
+        if (scope instanceof HTMLElement && scope.matches(SURFACE) && inModeScope(scope, ACRYLIC)) {
           want.add(scope);
         }
       }

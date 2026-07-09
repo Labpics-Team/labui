@@ -49,7 +49,10 @@ function readBackdropFilter(page: Page, testId: string): Promise<string> {
 
 /** Средние каналы усреднённого центрального патча РЕАЛЬНЫХ пикселей панели
  *  (24×24: гасит зерно ~2%, обходит рим и текст). */
-async function patchColor(page: Page, panel: Locator): Promise<{ r: number; g: number; b: number }> {
+async function patchColor(
+  page: Page,
+  panel: Locator,
+): Promise<{ r: number; g: number; b: number }> {
   const b64 = (await panel.screenshot()).toString('base64');
   return page.evaluate(async (data) => {
     const img = new Image();
@@ -129,9 +132,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
       await expect
         .poll(() => readBackdropFilter(page, id), { message: `${id}: инлайн-конвейер движка` })
         .toContain('lab-acrylic-soft');
-      const bg = await page
-        .getByTestId(id)
-        .evaluate((el) => getComputedStyle(el).backgroundImage);
+      const bg = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundImage);
       expect(bg, `${id}: слой зерна не тронут движком`).toContain('data:image/png');
     }
   });
@@ -246,9 +247,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
       .not.toBeCloseTo(before, 1);
   });
 
-  test('forced-colors гасит движок сам (инлайн сильнее листа — снятие в JS)', async ({
-    page,
-  }) => {
+  test('forced-colors гасит движок сам (инлайн сильнее листа — снятие в JS)', async ({ page }) => {
     await expect
       .poll(() => readBackdropFilter(page, 'surface-on-black'))
       .toContain('lab-acrylic-soft');

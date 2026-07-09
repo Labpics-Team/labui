@@ -11,11 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { readMaterialCss } from '../scripts/material-css';
 import { ACRYLIC_LUMINOSITY_OPACITY } from '../src/acrylic-corridor';
-import {
-  ACRYLIC_BLUR_PX,
-  ACRYLIC_ENGINE_MEDIA,
-  ACRYLIC_SATURATE,
-} from '../src/engine/acrylic';
+import { ACRYLIC_BLUR_PX, ACRYLIC_ENGINE_MEDIA, ACRYLIC_SATURATE } from '../src/engine/acrylic';
 import { MATERIAL_TIERS } from '../src/material-guarantee';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -37,7 +33,9 @@ describe('конвейер повторяет ступени листа (оди�
   });
 
   it('flood-opacity конвейера — ровно константа вывода коридора', () => {
-    expect(engineSrc).toContain("flood.setAttribute('flood-opacity', String(ACRYLIC_LUMINOSITY_OPACITY))");
+    expect(engineSrc).toContain(
+      "flood.setAttribute('flood-opacity', String(ACRYLIC_LUMINOSITY_OPACITY))",
+    );
     // Значение Λ — замок: смена ручки = осознанная правка здесь + пересчёт
     // голдена гарантированных пар (acrylic-corridor.test.ts).
     expect(ACRYLIC_LUMINOSITY_OPACITY).toBe(0.7);
@@ -90,7 +88,7 @@ describe('гейт и скоуп', () => {
   });
 
   it('рантайм держит acrylic только под ближайшим acrylic-скоупом (закон nearest-scope)', () => {
-    expect(runtimeSrc).toContain("inModeScope(el, ACRYLIC)");
+    expect(runtimeSrc).toContain('inModeScope(el, ACRYLIC)');
     expect(runtimeSrc).toContain("const ACRYLIC = 'acrylic'");
   });
 });

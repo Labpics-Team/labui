@@ -22,6 +22,7 @@
  *   gray ∈ [0,255]   → равномерный дизер яркости: тёмные зёрна видны на светлом
  *                      фоне, светлые — на тёмном (симметрично гасит бандинг).
  */
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -173,11 +174,18 @@ export function materialCssPath(): string {
   return resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'materials', 'acrylic.css');
 }
 
-// Запуск как скрипт (build / check-generated): перезаписать acrylic.css инлайном.
+// Запуск как скрипт (build / check-generated): перезаписать acrylic.css инлайном
+// и прогнать РЕПО-ФОРМАТТЕРОМ — иначе biome пере-переносит длинный image-set и
+// «git diff --exit-code» в check-generated спорил бы с форматом, а не с данными.
+// Формат-канон принадлежит biome; генератор владеет только СОДЕРЖИМЫМ.
 // Кросс-платформенная детекция «запущен напрямую» (Windows `file:///C:` ≠ `file://`).
 const invokedPath = process.argv[1] ? resolve(process.argv[1]).toLowerCase() : '';
 const selfPath = fileURLToPath(import.meta.url).toLowerCase();
 if (invokedPath && invokedPath === selfPath) {
   const cssPath = materialCssPath();
   writeFileSync(cssPath, inlineAcrylicNoise(readFileSync(cssPath, 'utf8')));
+  execSync(`pnpm exec biome format --write "${cssPath}"`, {
+    cwd: resolve(dirname(fileURLToPath(import.meta.url)), '..'),
+    stdio: 'ignore',
+  });
 }

@@ -136,12 +136,16 @@ describe('inline-seal — acrylic.css несёт РОВНО выход гене�
 
   it('image-set: ТОТ ЖЕ ассет на 1x/2x/3x под @supports-гейтом (зерно в 1 физический пиксель)', () => {
     const uri = acrylicNoiseDataUri();
+    // Формат-канон принадлежит biome (генератор прогоняет свой выход через
+    // репо-форматтер) — сверяем СОДЕРЖИМОЕ без чувствительности к переносам:
+    // CSS внутри функциональной нотации whitespace-нейтрален.
+    const flat = css.replace(/\s+/g, ' ');
     // Одна генерация — три плотности: на DPR≥2 интринзик-тайл 24/16 CSS-px,
     // зерно per-device-pixel (как у Fluent), новых ассетов ноль.
-    expect(css).toContain(`image-set(${uri} 1x, ${uri} 2x, ${uri} 3x)`);
+    expect(flat).toContain(`image-set( ${uri} 1x, ${uri} 2x, ${uri} 3x )`);
     // @supports обязателен: невалидное значение уронило бы ВСЮ multi-bg
     // декларацию (включая тинт) на браузерах без image-set.
-    expect(css).toContain(`@supports (background-image: image-set(${uri} 1x))`);
+    expect(flat).toContain(`@supports ( background-image: image-set( ${uri} 1x ) )`);
     // url()-фолбэк объявлен ДО image-set-оверрайда (каскад: поздний выигрывает).
     expect(css.indexOf(`--_acrylic-noise: ${uri};`)).toBeLessThan(css.indexOf('image-set('));
   });
