@@ -122,9 +122,9 @@ describe('acrylic-noise PNG — валидный, детерминированн
   });
 });
 
-describe('inline-seal — material.css несёт РОВНО выход генератора (check-generated в репозитории)', () => {
+describe('inline-seal — acrylic.css несёт РОВНО выход генератора (check-generated в репозитории)', () => {
   const here = dirname(fileURLToPath(import.meta.url));
-  const css = readFileSync(resolve(here, '..', 'src', 'material.css'), 'utf8');
+  const css = readFileSync(resolve(here, '..', 'src', 'materials', 'acrylic.css'), 'utf8');
 
   it('сентинел-регион содержит именно текущий data-URI (ассет не протух)', () => {
     expect(css).toContain(`--_acrylic-noise: ${acrylicNoiseDataUri()};`);
@@ -132,5 +132,17 @@ describe('inline-seal — material.css несёт РОВНО выход гене
 
   it('в CSS нет забытой заглушки `--_acrylic-noise: none` (генератор отработал)', () => {
     expect(css).not.toContain('--_acrylic-noise: none');
+  });
+
+  it('image-set: ТОТ ЖЕ ассет на 1x/2x/3x под @supports-гейтом (зерно в 1 физический пиксель)', () => {
+    const uri = acrylicNoiseDataUri();
+    // Одна генерация — три плотности: на DPR≥2 интринзик-тайл 24/16 CSS-px,
+    // зерно per-device-pixel (как у Fluent), новых ассетов ноль.
+    expect(css).toContain(`image-set(${uri} 1x, ${uri} 2x, ${uri} 3x)`);
+    // @supports обязателен: невалидное значение уронило бы ВСЮ multi-bg
+    // декларацию (включая тинт) на браузерах без image-set.
+    expect(css).toContain(`@supports (background-image: image-set(${uri} 1x))`);
+    // url()-фолбэк объявлен ДО image-set-оверрайда (каскад: поздний выигрывает).
+    expect(css.indexOf(`--_acrylic-noise: ${uri};`)).toBeLessThan(css.indexOf('image-set('));
   });
 });

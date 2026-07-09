@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readMaterialCss } from '../scripts/material-css';
 
 /*
  * Specular rim (Стекло v2, слайс B) — 1px внутренняя градиентная обводка,
@@ -26,9 +24,7 @@ import { describe, expect, it } from 'vitest';
  * Деградации, снимающие рим вместе с прозрачностью, гейтит degradations.test.ts.
  */
 
-const here = dirname(fileURLToPath(import.meta.url));
-const cssPath = resolve(here, '..', 'src', 'material.css');
-const css = readFileSync(cssPath, 'utf8');
+const css = readMaterialCss();
 
 /** Тело первого selector/at-rule блока, чей заголовок матчит `header`. */
 function blockBody(header: RegExp): string {

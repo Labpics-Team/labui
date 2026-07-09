@@ -28,10 +28,11 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readMaterialCss } from '../scripts/material-css';
 import { VEIL_STRIP_CLASS } from '../src/engine/veil';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const css = readFileSync(join(here, '../src/material.css'), 'utf8');
+const css = readMaterialCss();
 const veilSrc = readFileSync(join(here, '../src/engine/veil.ts'), 'utf8');
 const runtimeSrc = readFileSync(join(here, '../src/engine/runtime.ts'), 'utf8');
 const readme = readFileSync(join(here, '../README.md'), 'utf8');

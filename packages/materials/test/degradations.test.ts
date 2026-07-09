@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readMaterialCss } from '../scripts/material-css';
 
 /*
  * Every deterministic degradation must be PRESENT in material.css and must
@@ -10,9 +8,7 @@ import { describe, expect, it } from 'vitest';
  * guards the class: each downgrade path exists and points at solid.
  */
 
-const here = dirname(fileURLToPath(import.meta.url));
-const cssPath = resolve(here, '..', 'src', 'material.css');
-const css = readFileSync(cssPath, 'utf8');
+const css = readMaterialCss();
 
 /** Extract the body of the first at-rule block whose header matches `header`. */
 function atRuleBody(header: RegExp): string {

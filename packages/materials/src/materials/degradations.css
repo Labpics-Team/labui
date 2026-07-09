@@ -1,0 +1,80 @@
+/* ════════════════════════════════════════════════════════════════════════════
+ * DETERMINISTIC DEGRADATIONS — each collapses glass/acrylic to the SOLID canon.
+ * Selector lists mirror the mode blocks (equal specificity) and sit AFTER them,
+ * so at equal specificity source order lets the degradation win. The solid
+ * canon is opaque → label contract always holds, blur cost is zero.
+ * Acrylic-v2-движок дополнительно гасит СЕБЯ под теми же медиа в JS
+ * (ACRYLIC_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
+ * паритет списков закреплён acrylic-engine-contract.test.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+/* 1. No backdrop-filter support → solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="acrylic"] .lab-material,
+  [data-material="acrylic"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    --_noise: none;
+    --_rim: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 2. prefers-reduced-transparency → solid (accessibility over aesthetics). */
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
+@media (prefers-reduced-transparency: reduce) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="acrylic"] .lab-material,
+  [data-material="acrylic"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    --_noise: none;
+    --_rim: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 3. prefers-contrast: more → solid (strengthen: opaque tint, maximum contrast). */
+@media (prefers-contrast: more) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="acrylic"] .lab-material,
+  [data-material="acrylic"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    --_noise: none;
+    --_rim: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* 4. forced-colors: active → system surface, translucency stripped. We DON'T
+ * hardcode system colours (Canvas/CanvasText): we drop the tint GRADIENT and
+ * the blur so only an opaque `background-color` remains, which the UA's default
+ * forced-color-adjust maps to the system surface (and the label to system
+ * text). Idiomatic forced-colors: let the platform own its palette. */
+@media (forced-colors: active) {
+  [data-material="glass"] .lab-material,
+  [data-material="glass"].lab-material,
+  [data-material="acrylic"] .lab-material,
+  [data-material="acrylic"].lab-material,
+  .lab-material {
+    --_base-paint: var(--_base);
+    --_blur: 0px;
+    --_saturate: 100%;
+    --_noise: none;
+    --_rim: none;
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

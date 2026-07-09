@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readMaterialCss } from '../scripts/material-css';
 import {
   LIVE_BLUR_MODES,
   MATERIAL_FILL_FAMILY,
@@ -77,9 +75,7 @@ describe('canNest — запрет вложенного live-блюра', () => 
 });
 
 describe('MATERIAL_FILL_FAMILY — единственное семейство собственной заливки материала', () => {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const cssPath = resolve(here, '..', 'src', 'material.css');
-  const css = readFileSync(cssPath, 'utf8');
+  const css = readMaterialCss();
 
   it('семейство = префикс --lab-bg-material-', () => {
     expect(MATERIAL_FILL_FAMILY).toBe('--lab-bg-material-');

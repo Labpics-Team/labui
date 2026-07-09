@@ -1,0 +1,59 @@
+/* ════════════════════════════════════════════════════════════════════════════
+ * LAB-VEIL — variable-strength backdrop blur along an axis (progressive blur).
+ *
+ * `data-veil` is an EFFECT SURFACE attribute: place it over the area whose
+ * backdrop should blur progressively (a header, a dock, a caption scrim). The
+ * runtime (engine/veil.ts, mounted by mountMaterialRuntime) builds a
+ * CUMULATIVE stack of `.lab-veil__strip` children inside it — a real
+ * variable-radius construction, NEVER the "one blur + opacity mask" fake (it
+ * cross-fades blurred against sharp across the whole surface). This file owns
+ * only the inert base styling and the honest fallbacks.
+ *
+ * Config is 100% custom properties, read by the runtime with JS-side defaults
+ * (declaring them here on [data-veil] would shadow values inherited from an
+ * ancestor — the CSS contract test pins this):
+ *   --lab-veil-strength  blur at the strong end, px            (default 24px)
+ *   --lab-veil-stops     "<at> <blur>px [easing], …" Figma-like — overrides
+ *                        the canonical `0 var(--lab-veil-strength), 1 0px
+ *                        ease-out` profile wholesale
+ *   --lab-veil-from/-to  axis points for data-veil="axis"      (50% 0% / 50% 100%)
+ *   --lab-veil-levels    max strip count                       (default 6)
+ *   --lab-veil-feather   cross-fade width along the axis       (default auto)
+ *
+ * INVARIANT: the host must not form a backdrop root — no filter, opacity < 1,
+ * mask or blend on [data-veil] itself, or the strips would blur the element
+ * instead of the page behind it.
+ * ════════════════════════════════════════════════════════════════════════════ */
+
+[data-veil] {
+  /* Effect overlay: never intercepts input meant for content underneath. */
+  pointer-events: none;
+  /* The strips are absolutely positioned children — the veil surface is their
+   * containing block. Overridable when the host is already positioned. */
+  position: relative;
+}
+
+.lab-veil__strip {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* ── Lab-veil honest degradation — the same ladder as the material modes. ────
+ * Reduced-transparency → no see-through effects at all. The runtime also
+ * honours this (builds no strips), so "no transparency" holds on every path;
+ * this rule is the declarative backstop. */
+/* biome-ignore lint/correctness/noUnknownMediaFeatureName: prefers-reduced-transparency is Media Queries L5 (Baseline 2024); biome 1.9.4's lexicon predates it. */
+@media (prefers-reduced-transparency: reduce) {
+  .lab-veil__strip {
+    display: none;
+  }
+}
+
+/* No backdrop-filter at all → the strips would be inert transparent divs; hide
+ * them so they can never interfere with hit-testing or a11y trees. The content
+ * behind the veil stays untouched — degrade by omission, never by imitation. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .lab-veil__strip {
+    display: none;
+  }
+}
