@@ -56,6 +56,7 @@
  *     the page behind it.
  */
 
+import { trailingRaf } from './mount';
 import { type Point, type Stop, bandBBox, bandify, parseStops } from './veil-math';
 
 /** The strip class material.css binds its base styling and honest fallbacks
@@ -337,17 +338,11 @@ export function attach(el: HTMLElement): VeilHandle {
   };
 
   const update = (): void => render(state);
-  let rafId = 0;
-  const debouncedUpdate = (): void => {
-    if (rafId) return;
-    rafId = requestAnimationFrame(() => {
-      rafId = 0;
-      update();
-    });
-  };
-  const ro = new ResizeObserver(debouncedUpdate);
+  // Trailing-edge rAF — общий примитив (./mount): шторм ресайза → один render.
+  const raf = trailingRaf(update);
+  const ro = new ResizeObserver(raf.schedule);
   ro.observe(el);
-  window.addEventListener('resize', debouncedUpdate);
+  window.addEventListener('resize', raf.schedule);
   const mq =
     typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;
   mq?.addEventListener('change', update);
@@ -360,8 +355,8 @@ export function attach(el: HTMLElement): VeilHandle {
     },
     destroy: (): void => {
       ro.disconnect();
-      if (rafId) cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', debouncedUpdate);
+      raf.cancel();
+      window.removeEventListener('resize', raf.schedule);
       mq?.removeEventListener('change', update);
       for (const s of state.strips) s.remove();
       state.strips = [];

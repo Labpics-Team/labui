@@ -68,6 +68,7 @@
 // engine simply re-imports those exact symbols — the runtime is byte-identical;
 // only the definition site moved.
 import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
+import { ensureHiddenDefs, supportsBackdropFilterUrl } from './mount';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -153,7 +154,10 @@ interface EngineState extends LiquidGlassHandle {
 const SVGNS = 'http://www.w3.org/2000/svg';
 const registry = new WeakMap<Element, EngineState>(); // host element → state (no DOM expando)
 let uid = 0;
-let defs: SVGDefsElement | null = null;
+
+/** Скрытый defs-хост линзы — общий примитив (./mount), делится с acrylic-движком
+ *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
+const ensureDefs = (): SVGDefsElement => ensureHiddenDefs('lab-lg-defs');
 
 /** The package-private state class: while the engine holds a surface,
  *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
@@ -174,50 +178,14 @@ const DEFAULTS = {
   corner: 28, // px   — fallback when border-radius can't be read.
 };
 
-/** Detect whether this engine REFRACTS the backdrop via url() filters. Firefox
- *  and Safari PARSE `backdrop-filter: url(#f)` (so CSS.supports is true) but do
- *  NOT render an SVG filter on a backdrop — only Chromium does. Everyone else
- *  keeps the honest blur fallback. The answer cannot change within a page, so
- *  it is probed once — not re-parsed from the UA on every attach. */
-let refractionProbe: boolean | null = null;
+/** Whether this engine REFRACTS the backdrop. The requirement is the browser's
+ *  ability to render a url()-referenced SVG filter on a backdrop — the shared
+ *  capability probe (./mount), the SAME one acrylic's luminosity chain needs.
+ *  The name stays glass-specific (its public semantics = "does the lens bend the
+ *  backdrop"); the probe underneath is neutral. Everyone else keeps the honest
+ *  blur fallback. */
 export function supportsRefraction(): boolean {
-  if (refractionProbe === null) refractionProbe = probeRefraction();
-  return refractionProbe;
-}
-
-interface UaDataBrand {
-  brand: string;
-}
-
-function probeRefraction(): boolean {
-  if (typeof CSS === 'undefined' || !CSS.supports) return false;
-  if (
-    !CSS.supports('backdrop-filter', 'url(#x)') &&
-    !CSS.supports('-webkit-backdrop-filter', 'url(#x)')
-  ) {
-    return false;
-  }
-  const uaData =
-    typeof navigator !== 'undefined'
-      ? (navigator as Navigator & { userAgentData?: { brands?: UaDataBrand[] } }).userAgentData
-      : null;
-  if (uaData && Array.isArray(uaData.brands)) {
-    return uaData.brands.some((b) => /Chromium/i.test(b.brand));
-  }
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  return /Chrome|Chromium|Edg|OPR/.test(ua) && !/Firefox|FxiOS/.test(ua);
-}
-
-function ensureDefs(): SVGDefsElement {
-  if (defs?.isConnected) return defs;
-  const svg = document.createElementNS(SVGNS, 'svg');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('class', 'lab-lg-defs');
-  svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
-  defs = document.createElementNS(SVGNS, 'defs');
-  svg.appendChild(defs);
-  document.body.appendChild(svg);
-  return defs;
+  return supportsBackdropFilterUrl();
 }
 
 // Reused scratch across builds (grown on demand): the displacement vectors and

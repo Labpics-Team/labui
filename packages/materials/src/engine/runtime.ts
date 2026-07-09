@@ -2,51 +2,90 @@
  * @labpics/ui-materials/engine — the declarative material runtime (ADR-0003 §3).
  *
  * The ONLY public JS entry of the engine layer. The engines (`liquid-glass.ts`,
- * `veil.ts`) stay package-internal; consumers never call attach() per element.
- * Instead: one app-level mount, and
+ * `acrylic.ts`, `veil.ts`) stay package-internal; consumers never call attach()
+ * per element. Instead: one app-level mount, and
  *   · every `.lab-material` surface under a `data-material="glass"` scope is
- *     upgraded to the refraction engine, and
+ *     upgraded to the refraction engine,
+ *   · every `.lab-material` under `data-material="acrylic"` is upgraded to the
+ *     luminosity chain (ADR-0009), and
  *   · every `[data-veil]` surface grows its progressive-blur strip stack
- * automatically — the same zero markup-change promise the material axis
- * already makes.
+ * automatically — the same zero markup-change promise the material axis makes.
  *
- *   · Non-refracting browsers (everything but Chromium today): the GLASS scan
- *     is a NO-OP — the CSS stack in material.css is the truth, nothing is
- *     written. The VEIL scan is gated separately on plain backdrop-filter
- *     support (its only hard requirement); without it the mount writes
- *     nothing and content stays untouched (the honest degradation).
- *   · `data-material` re-binds (glass↔solid↔blur), `data-veil` re-binds
- *     (top↔left↔axis), added/removed surfaces, class changes: one
- *     MutationObserver re-syncs the attached sets; a rAF collapse turns
- *     mutation storms into one sync (same trailing-edge strategy the engines
- *     use for resize storms).
- *   · Unmount (the returned disposer) detaches every engine instance and
- *     restores the pure-CSS stack — SSR/HMR friendly.
+ * ── Один оркестратор на три движка (Clean Arch / DRY / OCP) ──────────────────
+ * Каждый движок — это `EngineBinding` (gate + selector + wants + attach);
+ * `mountEngine` (./mount) исполняет ЕДИНУЮ механику скана/attach/detach. Раньше
+ * — три почти дословных блока здесь. Рантайм не знает про внутренности движков,
+ * только про порт; новый движок = новый binding в массиве ниже, механика не
+ * трогается.
+ *
+ *   · Non-refracting browsers (everything but Chromium): glass/acrylic gates are
+ *     false — их scan вообще не создаётся, CSS-стек material.css остаётся истиной.
+ *     Veil гейтится отдельно на plain backdrop-filter (его единственное железное
+ *     требование); без него mount ничего не пишет.
+ *   · `data-material` / class / `data-veil` re-binds, added/removed surfaces: один
+ *     MutationObserver ре-синкает все движки; rAF-сворачивание превращает шторм
+ *     мутаций в один sync. Смена запрещающих медиа acrylic — тот же ре-синк.
+ *   · Unmount (returned disposer) отцепляет все инстансы и восстанавливает
+ *     чистый CSS-стек — SSR/HMR-friendly.
  */
 
 import {
   ACRYLIC_ENGINE_MEDIA,
-  type AcrylicHandle,
   acrylicMediaBlocked,
   attach as attachAcrylic,
   supportsAcrylicChain,
 } from './acrylic';
-import { type LiquidGlassHandle, attach as attachGlass, supportsRefraction } from './liquid-glass';
-import { type VeilHandle, attach as attachVeil, supportsBackdropBlur } from './veil';
+import { attach as attachGlass, supportsRefraction } from './liquid-glass';
+import { type EngineBinding, mountEngine, trailingRaf } from './mount';
+import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
-const GLASS = 'glass';
-const ACRYLIC = 'acrylic';
 const VEIL = '[data-veil]';
 
-/** An engine holds a surface only when its NEAREST material scope carries the
- *  engine's mode — mirroring the material.css selectors
+/** An engine holds a `.lab-material` only when its NEAREST material scope carries
+ *  the engine's mode — mirroring the material.css selector
  *  `[data-material="<mode>"] .lab-material` (the closest scope wins in CSS
  *  custom-property terms too). */
 function inModeScope(el: Element, mode: string): boolean {
   const scope = el.closest('[data-material]');
   return scope !== null && scope.getAttribute('data-material') === mode;
 }
+
+/** The three engine bindings — the ONLY place the runtime names concrete engines.
+ *  Each пара (mode, engine) — одна строка; порядок несуществен (движки держат
+ *  непересекающиеся множества: glass/acrylic по режиму, veil по атрибуту). */
+const BINDINGS: readonly EngineBinding[] = [
+  // Glass (refraction). refreshHeld:false — сохраняет прежнее поведение: LG
+  // ре-рендерит вне этой петли (свой ResizeObserver), рантайм его не дёргает.
+  {
+    gate: supportsRefraction,
+    selector: SURFACE,
+    wants: (el) => inModeScope(el, 'glass'),
+    refreshHeld: false,
+    attach: attachGlass,
+  },
+  // Acrylic v2 (luminosity chain). Тот же Chromium-гейт; инлайн сильнее листовых
+  // деградаций → blocked() опустошает set под запрещающими медиа, их change
+  // ре-синкает mount. refreshHeld:true — перечитать tier на удержанной.
+  {
+    gate: supportsAcrylicChain,
+    selector: SURFACE,
+    wants: (el) => inModeScope(el, 'acrylic'),
+    blocked: acrylicMediaBlocked,
+    mediaQueries: ACRYLIC_ENGINE_MEDIA,
+    refreshHeld: true,
+    attach: attachAcrylic,
+  },
+  // Veil (progressive blur) — plain backdrop-filter, любой [data-veil].
+  // refreshHeld:true — перечитать декларативный конфиг (top↔left↔axis).
+  {
+    gate: supportsBackdropBlur,
+    selector: VEIL,
+    wants: () => true,
+    refreshHeld: true,
+    attach: attachVeil,
+  },
+];
 
 /**
  * Mount the material runtime over `root` (default: the whole document).
@@ -57,133 +96,18 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   if (typeof document === 'undefined') return () => {};
   const scope = root ?? document;
 
-  const syncs: (() => void)[] = [];
-  const disposers: (() => void)[] = [];
-
-  /* ── Glass (refraction engine) — Chromium-gated. ─────────────────────────── */
-  if (supportsRefraction()) {
-    const handles = new Map<HTMLElement, LiquidGlassHandle>();
-
-    syncs.push((): void => {
-      const want = new Set<HTMLElement>();
-      for (const el of scope.querySelectorAll(SURFACE)) {
-        if (el instanceof HTMLElement && inModeScope(el, GLASS)) want.add(el);
-      }
-      if (scope instanceof HTMLElement && scope.matches(SURFACE) && inModeScope(scope, GLASS)) {
-        want.add(scope);
-      }
-      // Detach surfaces that left the glass set (mode re-bind, class change,
-      // removal); their inline style clears → material.css owns them again.
-      for (const [el, handle] of handles) {
-        if (!want.has(el) || !el.isConnected) {
-          handle.destroy();
-          handles.delete(el);
-        }
-      }
-      // Attach newcomers exactly once (attach() is keyed per element; the
-      // handles map guards re-entry so a sync never re-attaches).
-      for (const el of want) {
-        if (!handles.has(el)) handles.set(el, attachGlass(el));
-      }
-    });
-
-    disposers.push((): void => {
-      for (const handle of handles.values()) handle.destroy();
-      handles.clear();
-    });
-  }
-
-  /* ── Acrylic v2 (luminosity chain, ADR-0009) — тот же Chromium-гейт, что у
-   * рефракции (url()-фильтр обязан РИСОВАТЬ на backdrop). Инлайновый стиль
-   * движка сильнее @media-деградаций листа, поэтому запрещающие режимы
-   * (ACRYLIC_ENGINE_MEDIA) опустошают want-набор здесь, в скане; их change
-   * пере-синкает mount (листенеры ниже). Лист остаётся v1-фолбэком. ────────── */
-  if (supportsAcrylicChain()) {
-    const acrylics = new Map<HTMLElement, AcrylicHandle>();
-
-    syncs.push((): void => {
-      const want = new Set<HTMLElement>();
-      if (!acrylicMediaBlocked()) {
-        for (const el of scope.querySelectorAll(SURFACE)) {
-          if (el instanceof HTMLElement && inModeScope(el, ACRYLIC)) want.add(el);
-        }
-        if (scope instanceof HTMLElement && scope.matches(SURFACE) && inModeScope(scope, ACRYLIC)) {
-          want.add(scope);
-        }
-      }
-      for (const [el, handle] of acrylics) {
-        if (!want.has(el) || !el.isConnected) {
-          handle.destroy();
-          acrylics.delete(el);
-        }
-      }
-      for (const el of want) {
-        const held = acrylics.get(el);
-        // Смена tier-класса на удержанной поверхности — refresh перечитывает
-        // tier и переписывает инлайн только при реальной смене.
-        if (held) held.refresh();
-        else acrylics.set(el, attachAcrylic(el));
-      }
-    });
-
-    disposers.push((): void => {
-      for (const handle of acrylics.values()) handle.destroy();
-      acrylics.clear();
-    });
-  }
-
-  /* ── Veil (progressive blur) — gated on plain backdrop-filter support, the
-   * effect's only hard requirement (reduced-transparency honesty lives inside
-   * the engine's render, plus the material.css backstop). ─────────────────── */
-  if (supportsBackdropBlur()) {
-    const veils = new Map<HTMLElement, VeilHandle>();
-
-    syncs.push((): void => {
-      const want = new Set<HTMLElement>();
-      for (const el of scope.querySelectorAll(VEIL)) {
-        if (el instanceof HTMLElement) want.add(el);
-      }
-      if (scope instanceof HTMLElement && scope.matches(VEIL)) want.add(scope);
-      for (const [el, handle] of veils) {
-        if (!want.has(el) || !el.isConnected) {
-          handle.destroy();
-          veils.delete(el);
-        }
-      }
-      for (const el of want) {
-        const held = veils.get(el);
-        // A held surface may have re-bound its attribute (top→left→axis) —
-        // refresh re-reads the declarative config; the engine's config
-        // signature short-circuits it to a no-op when nothing changed.
-        if (held) held.refresh();
-        else veils.set(el, attachVeil(el));
-      }
-    });
-
-    disposers.push((): void => {
-      for (const handle of veils.values()) handle.destroy();
-      veils.clear();
-    });
-  }
-
-  if (syncs.length === 0) return () => {};
+  const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
+  if (engines.length === 0) return () => {};
 
   const sync = (): void => {
-    for (const s of syncs) s();
+    for (const engine of engines) engine.sync();
   };
   sync();
 
-  // Mutation storms (hydration, list re-render) collapse to ONE sync on the
-  // next frame — the final attached set is identical to an un-debounced run.
-  let rafId = 0;
-  const debouncedSync = (): void => {
-    if (rafId) return;
-    rafId = requestAnimationFrame(() => {
-      rafId = 0;
-      sync();
-    });
-  };
-  const mo = new MutationObserver(debouncedSync);
+  // Mutation storms (hydration, list re-render) collapse to ONE sync on the next
+  // frame — the final attached set is identical to an un-debounced run.
+  const raf = trailingRaf(sync);
+  const mo = new MutationObserver(raf.schedule);
   mo.observe(scope instanceof Document ? scope.documentElement : scope, {
     attributes: true,
     attributeFilter: ['data-material', 'class', 'data-veil'],
@@ -191,22 +115,23 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     subtree: true,
   });
 
-  // Запрещающие медиа-режимы acrylic-движка: смена → пере-синк (инлайн обязан
-  // сняться сам — листовые деградации его не перебивают). Регистрируется только
-  // когда acrylic-скан вообще возможен.
-  const mediaListeners: Array<{ mq: MediaQueryList; handler: () => void }> = [];
-  if (supportsAcrylicChain() && typeof matchMedia !== 'undefined') {
-    for (const query of ACRYLIC_ENGINE_MEDIA) {
+  // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
+  // движка обязан сняться сам, листовые деградации его не перебивают). Собираем
+  // объединение медиа-запросов всех смонтированных движков.
+  const mediaListeners: MediaQueryList[] = [];
+  if (typeof matchMedia !== 'undefined') {
+    const queries = new Set(engines.flatMap((e) => [...e.mediaQueries]));
+    for (const query of queries) {
       const mq = matchMedia(query);
-      mq.addEventListener('change', debouncedSync);
-      mediaListeners.push({ mq, handler: debouncedSync });
+      mq.addEventListener('change', raf.schedule);
+      mediaListeners.push(mq);
     }
   }
 
   return () => {
     mo.disconnect();
-    if (rafId) cancelAnimationFrame(rafId);
-    for (const { mq, handler } of mediaListeners) mq.removeEventListener('change', handler);
-    for (const dispose of disposers) dispose();
+    raf.cancel();
+    for (const mq of mediaListeners) mq.removeEventListener('change', raf.schedule);
+    for (const engine of engines) engine.dispose();
   };
 }
