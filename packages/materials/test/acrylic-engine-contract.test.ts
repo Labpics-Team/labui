@@ -11,13 +11,19 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { readMaterialCss } from '../scripts/material-css';
 import { ACRYLIC_LUMINOSITY_OPACITY } from '../src/acrylic-corridor';
-import { ACRYLIC_BLUR_PX, ACRYLIC_ENGINE_MEDIA, ACRYLIC_SATURATE } from '../src/engine/acrylic';
+import {
+  ACRYLIC_BLUR_PX,
+  ACRYLIC_ENGINE_MEDIA,
+  ACRYLIC_REACH_PX,
+  ACRYLIC_SATURATE,
+} from '../src/engine/acrylic';
 import { MATERIAL_TIERS } from '../src/material-guarantee';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const css = readMaterialCss();
 const engineSrc = readFileSync(join(here, '../src/engine/acrylic.ts'), 'utf8');
 const runtimeSrc = readFileSync(join(here, '../src/engine/runtime.ts'), 'utf8');
+const mountSrc = readFileSync(join(here, '../src/engine/mount.ts'), 'utf8');
 
 describe('конвейер повторяет ступени листа (один рычаг, не две копии значения)', () => {
   it('ACRYLIC_BLUR_PX === --_blur-live из material.css', () => {
@@ -75,20 +81,53 @@ describe('честные деградации: движок гаснет во в
     }
   });
 
-  it('рантайм опустошает want-набор под блокирующими медиа и слушает их change', () => {
-    expect(runtimeSrc).toContain('acrylicMediaBlocked()');
-    expect(runtimeSrc).toContain('ACRYLIC_ENGINE_MEDIA');
-    expect(runtimeSrc).toContain("mq.addEventListener('change', debouncedSync)");
+  it('binding acrylic несёт blocked=acrylicMediaBlocked + mediaQueries, рантайм слушает их change', () => {
+    // Смысл замка (не строка): acrylic-движок гаснет под запрещающими медиа
+    // (blocked опустошает want в mountEngine) И их смена ре-синкает mount.
+    expect(runtimeSrc).toContain('blocked: acrylicMediaBlocked');
+    expect(runtimeSrc).toContain('mediaQueries: ACRYLIC_ENGINE_MEDIA');
+    expect(runtimeSrc).toContain("mq.addEventListener('change', raf.schedule)");
+    // mountEngine — держатель поведения: blocked() опустошает набор до скана.
+    expect(mountSrc).toContain('if (!binding.blocked?.())');
+  });
+});
+
+describe('родной LG-стиль региона (userSpaceOnUse, изотропный охват — ADR-0009 v2.1)', () => {
+  it('фильтр userSpaceOnUse по боксу элемента (как линза liquid-glass), не objectBoundingBox', () => {
+    expect(engineSrc).toContain("filter.setAttribute('filterUnits', 'userSpaceOnUse')");
+  });
+
+  it('охват = 2σ (95% энергии гаусса, компромисс перф/качество), изотропный, из бокса', () => {
+    expect(ACRYLIC_REACH_PX).toBe(2 * ACRYLIC_BLUR_PX);
+    expect(engineSrc).toContain('el.offsetWidth + 2 * m');
+    expect(engineSrc).toContain('el.offsetHeight + 2 * m');
+  });
+
+  it('прежний процентный регион снесён без следа (класс-дефект виньетки короткой оси)', () => {
+    // objectBoundingBox −25%/150% давал РАЗНЫЙ охват по осям → недобор блюра
+    // по короткой оси вытянутых поверхностей. Возврат = осознанная правка.
+    expect(engineSrc).not.toContain("'-25%'");
+    expect(engineSrc).not.toContain("'150%'");
+  });
+
+  it('per-surface фильтр в общем defs-хосте (ensureHiddenDefs), uid — родной registry-стиль', () => {
+    expect(engineSrc).toContain('ensureHiddenDefs(DEFS_CLASS)');
+    expect(engineSrc).toContain('lab-acrylic-${++uid}');
+    expect(engineSrc).toContain('registry.set(el, handle)');
   });
 });
 
 describe('гейт и скоуп', () => {
-  it('гейт делегирует supportsRefraction (одно требование — url()-фильтр на backdrop)', () => {
-    expect(engineSrc).toContain('return supportsRefraction()');
+  it('гейт — общая capability-проба mount, НЕ импорт из glass-модуля (acrylic ⊥ glass)', () => {
+    // Анатомия разная (диффузия+зажим vs рефракция+линза), общего эффекта нет.
+    // Общая только браузерная СПОСОБНОСТЬ рисовать url()-фильтр на backdrop.
+    expect(engineSrc).toContain('return supportsBackdropFilterUrl()');
+    expect(engineSrc).not.toContain("from './liquid-glass'");
   });
 
   it('рантайм держит acrylic только под ближайшим acrylic-скоупом (закон nearest-scope)', () => {
-    expect(runtimeSrc).toContain('inModeScope(el, ACRYLIC)');
-    expect(runtimeSrc).toContain("const ACRYLIC = 'acrylic'");
+    // binding.wants = ближайший [data-material] == 'acrylic' (closest-scope).
+    expect(runtimeSrc).toContain("wants: (el) => inModeScope(el, 'acrylic')");
+    expect(runtimeSrc).toContain("scope.getAttribute('data-material') === mode");
   });
 });

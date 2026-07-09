@@ -131,10 +131,43 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
     for (const id of ['surface-on-black', 'surface-on-white']) {
       await expect
         .poll(() => readBackdropFilter(page, id), { message: `${id}: инлайн-конвейер движка` })
-        .toContain('lab-acrylic-soft');
+        .toContain('lab-acrylic-');
       const bg = await page.getByTestId(id).evaluate((el) => getComputedStyle(el).backgroundImage);
       expect(bg, `${id}: слой зерна не тронут движком`).toContain('data:image/png');
     }
+  });
+
+  test('per-surface фильтр НЕ течёт: счётчик <filter> стабилен через N mode-флипов', async ({
+    page,
+  }) => {
+    // Класс-замок утечки. Прежняя модель (5 статичных tier-фильтров) делала
+    // leak структурно невозможным; per-surface модель полагается на
+    // destroy()→filter.remove(). Если detach пропустит удаление, узлы копятся —
+    // этот тест ловит класс. RED-proof: без filter.remove() в destroy счётчик
+    // растёт с каждым флипом и тест падает.
+    const filterCount = (): Promise<number> =>
+      page.evaluate(() => document.querySelectorAll('svg.lab-acrylic-defs filter').length);
+
+    await expect
+      .poll(() => readBackdropFilter(page, 'surface-on-black'))
+      .toContain('lab-acrylic-');
+    const baseline = await filterCount();
+    expect(baseline, 'по одному фильтру на acrylic-панель фикстуры').toBeGreaterThan(0);
+
+    for (let i = 0; i < 8; i++) {
+      await page.evaluate(() => document.documentElement.setAttribute('data-material', 'solid'));
+      await expect
+        .poll(() => readBackdropFilter(page, 'surface-on-black'))
+        .not.toContain('lab-acrylic');
+      await page.evaluate(() => document.documentElement.setAttribute('data-material', 'acrylic'));
+      await expect
+        .poll(() => readBackdropFilter(page, 'surface-on-black'))
+        .toContain('lab-acrylic-');
+    }
+
+    // detach удалил старые фильтры перед каждым новым attach → счётчик вернулся
+    // к базовому, а не вырос на 8× панелей.
+    expect(await filterCount(), 'узлы <filter> не копятся через флипы').toBe(baseline);
   });
 
   test('дифференциал: пиксели в выведенной полосе; зажим уже фолбэка', async ({ page }) => {
@@ -248,9 +281,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
   });
 
   test('forced-colors гасит движок сам (инлайн сильнее листа — снятие в JS)', async ({ page }) => {
-    await expect
-      .poll(() => readBackdropFilter(page, 'surface-on-black'))
-      .toContain('lab-acrylic-soft');
+    await expect.poll(() => readBackdropFilter(page, 'surface-on-black')).toContain('lab-acrylic-');
     await page.emulateMedia({ forcedColors: 'active' });
     await expect
       .poll(() => readBackdropFilter(page, 'surface-on-black'), {
@@ -262,7 +293,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
       .poll(() => readBackdropFilter(page, 'surface-on-black'), {
         message: 'возврат режима возвращает движок',
       })
-      .toContain('lab-acrylic-soft');
+      .toContain('lab-acrylic-');
   });
 });
 
