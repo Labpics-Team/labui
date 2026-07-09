@@ -408,7 +408,7 @@ export class LabTagsInput extends LabElement {
       /* The text-entry input — the field's control. Reuses the shared field surface roles
          but paints transparently inside the .control frame (which carries the border). */
       .input {
-        flex: 1 1 6rem;
+        flex: 1 1 ${litVar('--lab-space-24', '6rem')};
         min-width: ${litVar('--lab-space-24', '6rem')};
         margin: 0;
         padding: var(--lab-radius-xs, 0.125rem) 0;

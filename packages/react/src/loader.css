@@ -32,7 +32,7 @@
   height: var(--_lab-loader-diameter);
   border: var(--_lab-loader-stroke) solid currentColor;
   border-right-color: transparent;
-  border-radius: 9999px;
+  border-radius: var(--lab-radius-full, 9999px);
   animation: lab-loader-spin 0.7s linear infinite;
 }
 

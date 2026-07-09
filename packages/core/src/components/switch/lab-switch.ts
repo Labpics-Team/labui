@@ -202,7 +202,7 @@ export class LabSwitch extends LabElement {
       transform: translateX(0);
     }
     :host([checked]) .thumb {
-      transform: translateX(calc(var(--_track-w) - var(--_thumb) - 0.25rem));
+      transform: translateX(calc(var(--_track-w) - var(--_thumb) - var(--lab-space-xs, 0.25rem)));
     }
 
     /* Icon slots ride inside the track, revealed by checked state. */

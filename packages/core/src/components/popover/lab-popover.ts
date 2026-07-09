@@ -199,7 +199,7 @@ export class LabPopover extends LabElement {
     /* The floating panel — raised surface with a hairline, lifted and layered. The
        arrow reuses the same surface role so it fuses to the panel edge. */
     .content {
-      --arrow-size: 0.625rem;
+      --arrow-size: ${litVar('--lab-space-2', '0.5rem')};
       --arrow-background: ${litVar('--lab-bg-secondary')};
 
       box-sizing: border-box;
@@ -249,8 +249,8 @@ export class LabPopover extends LabElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1.5rem;
-      height: 1.5rem;
+      width: ${litVar('--lab-space-6', '1.5rem')};
+      height: ${litVar('--lab-space-6', '1.5rem')};
       padding: 0;
       border: 0;
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
