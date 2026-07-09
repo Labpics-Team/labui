@@ -77,8 +77,8 @@ golden byte-identity (21 хеш), memory-cap SDF_CACHE_CAP=4 + idle-release.
 
 # Acrylic v2.1 — регион фильтра: замер, а не гипотеза (ADR-0009)
 
-Изолированный микро-бенч `bench/acrylic-region/` (headed Chromium, GPU,
-движущийся high-freq фон). Полный разбор — `bench/acrylic-region/FINDINGS.md`.
+Замерено изолированно (headed Chromium + GPU, движущийся high-freq фон; замерочные
+скрипты одноразовые — в репо не хранятся, метод и числа зафиксированы здесь).
 
 **Главный факт:** стоимость backdrop-filter НЕ на main-потоке.
 
@@ -87,8 +87,8 @@ golden byte-identity (21 хеш), memory-cap SDF_CACHE_CAP=4 + idle-release.
 | 0 фильтров | 0.10 ms |
 | 24 × 760×520 acrylic | 0.10 ms |
 
-Композиция на GPU/compositor-потоке, невидима main. Более того (`cull-probe.cjs`,
-FPS-throughput): **32 больших фильтра @dpr2 держат 240 FPS** — GPU автора не
+Композиция на GPU/compositor-потоке, невидима main. Более того (FPS-throughput
+под насыщением): **32 больших фильтра @dpr2 держат 240 FPS** — GPU автора не
 насыщается, лаг у юзеров (слабый GPU/телефон) на этом железе не воспроизводим.
 Выигрыш поэтому доказывается детерминированно — площадью региона (числом пикселей
 блюра). При реализованном охвате 2σ=96px площадь abs(userSpaceOnUse) /
