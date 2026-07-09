@@ -148,9 +148,7 @@ test.describe('acrylic v2 — движок (Chromium)', () => {
     const filterCount = (): Promise<number> =>
       page.evaluate(() => document.querySelectorAll('svg.lab-acrylic-defs filter').length);
 
-    await expect
-      .poll(() => readBackdropFilter(page, 'surface-on-black'))
-      .toContain('lab-acrylic-');
+    await expect.poll(() => readBackdropFilter(page, 'surface-on-black')).toContain('lab-acrylic-');
     const baseline = await filterCount();
     expect(baseline, 'по одному фильтру на acrylic-панель фикстуры').toBeGreaterThan(0);
 
