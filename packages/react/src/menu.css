@@ -12,7 +12,7 @@
  */
 
 .lab-menu-trigger {
-  --_lab-menu-h: var(--lab-size-control-h-m, 2.25rem);
+  --_lab-menu-h: 2.25rem;
   --_lab-menu-font: var(--lab-font-size-md, 1rem);
   --_lab-menu-tracking: var(--lab-letter-spacing-md, -0.0083em);
 
@@ -35,12 +35,12 @@
   transition: border-color 120ms ease;
 }
 .lab-menu-trigger[data-size="s"] {
-  --_lab-menu-h: var(--lab-size-control-h-s, 1.875rem);
+  --_lab-menu-h: 1.875rem;
   --_lab-menu-font: var(--lab-font-size-xs, 0.8333rem);
   --_lab-menu-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 .lab-menu-trigger[data-size="l"] {
-  --_lab-menu-h: var(--lab-size-control-h-l, 2.75rem);
+  --_lab-menu-h: 2.75rem;
   --_lab-menu-font: var(--lab-font-size-lg, 1.2rem);
   --_lab-menu-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }
@@ -77,8 +77,8 @@
   --_lab-menu-tracking: var(--lab-letter-spacing-md, -0.0083em);
 
   box-sizing: border-box;
-  min-width: var(--lab-size-overlay-11, 11rem);
-  max-height: var(--lab-size-overlay-20, 20rem);
+  min-width: 11rem;
+  max-height: 20rem;
   overflow-y: auto;
   margin: 0;
   padding: var(--lab-space-xs, 0.25rem);
@@ -134,7 +134,7 @@
 }
 
 .lab-menu-separator {
-  height: var(--lab-stroke-hairline, 0.0625rem);
+  height: 0.0625rem;
   margin: var(--lab-space-xs, 0.25rem) 0;
   background-color: var(--lab-border-soft);
 }

@@ -95,23 +95,14 @@ export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
     'packages/core/src/components/number-input/lab-number-input.ts',
     'packages/react/src/number-input.css',
   ],
-  popover: [
-    'packages/core/src/components/popover/lab-popover.ts',
-    'packages/react/src/popover.css',
-  ],
-  slider: ['packages/core/src/components/slider/lab-slider.ts', 'packages/react/src/slider.css'],
-  menu: ['packages/core/src/components/menu/lab-menu.ts', 'packages/react/src/menu.css'],
-  select: ['packages/core/src/components/select/lab-select.ts', 'packages/react/src/select.css'],
-  pagination: [
-    'packages/core/src/components/pagination/lab-pagination.ts',
-    'packages/react/src/pagination.css',
-  ],
-  // Wave 3+ (PR137 ambitious complete): dialog/... + menu/select/pagination (full 27/27).
-  // MIGRATED = 27/27 (target high e.g. 20+/27 exceeded). All var-fallback = old literal (E1 diff=0 except noise).
-  // Glob no-magic-dimension to materials done; derivations (thumb, dot) added; control-h sizes connected.
-  // Re-generated hardened snapshot baseline (E1: diff=0 except lab-progress noise).
-  // Harness perf: timings + targeted --pages from baselines. Local typecheck after edits: green.
-  // control-h + derivations expressed w/ calc+tokens; materials globbed. Draft only, non-destructive.
+  // НЕ мигрированы (аудит дрейфа shadcn, 2026-07-09): menu / select / pagination /
+  // slider / popover. Их живые размеры дрейфанули от канона шкалы (наследие shadcn):
+  //   control-h: 1.875rem→канон 2rem (s), 2.25rem→2.5rem (m), 2.75rem→3rem (l);
+  //   slider:    border-radius 0.375rem→канон --lab-radius-sm 0.25rem;
+  //   popover:   голые литералы 0.0625/0.625/1.125/1.5/9.0625rem без токенов шкалы.
+  // Обернуть их в канонические токены = молча сдвинуть пиксели в рантайме — запрещено
+  // мандатом байт-идентичности (#137). Нормализация — отдельным видимым PR с дизайн-
+  // санкцией; до тех пор литералы остаются голыми и компоненты не в этом списке.
 };
 
 /** Одна находка; форма зеркалит цветовые гарды — один репортер на всех. */
@@ -318,7 +309,7 @@ export function fallbackSurfaceFiles(): string[] {
     'packages/core/src/**/*.ts',
     // Glob no-magic-dimension to materials (playbook #137 A2): drift global + materials explicitly globbed via globSync for fallback (magic via MIGRATED only; private --_ effects exempt).
     // Derivations (thumb, dot) + control-h sizes + overlay globbed and expressed (calc + var(--lab-size-overlay-*)) .
-    // control-h wired across migrated incl menu/select/pagination; thumb/dot use calc(var - var(--lab-...)) to pass guard.
+    // control-h wired в 5 мигрированных (menu/select/pagination НЕ мигрированы — см. строку 98); thumb/dot use calc(var - var(--lab-...)) to pass guard.
     // Слепая зона закрыта; glob patterns cover packages/materials fully for drift.
     'packages/materials/src/**/*.css',
     'packages/tokens/src/**/*.ts',

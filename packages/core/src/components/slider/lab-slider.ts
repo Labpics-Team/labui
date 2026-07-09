@@ -221,8 +221,8 @@ export class LabSlider extends LabElement {
     :host {
       /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
          fallback so the control is usable before tokens load; colour roles never do. */
-      --_track-thickness: var(--lab-radius-sm, 0.375rem);
-      --_thumb: var(--lab-size-switch-thumb-m, 1.125rem);
+      --_track-thickness: 0.375rem;
+      --_thumb: 1.125rem;
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_label-font: ${litVar('--lab-font-size-xs', '0.8333rem')};
@@ -235,12 +235,12 @@ export class LabSlider extends LabElement {
     }
 
     :host([size='s']) {
-      --_track-thickness: var(--lab-space-xs, 0.25rem);
-      --_thumb: var(--lab-size-switch-thumb-s, 0.875rem);
+      --_track-thickness: 0.25rem;
+      --_thumb: 0.875rem;
     }
     :host([size='l']) {
-      --_track-thickness: var(--lab-space-sm, 0.5rem);
-      --_thumb: var(--lab-size-switch-thumb-l, 1.375rem);
+      --_track-thickness: 0.5rem;
+      --_thumb: 1.375rem;
     }
 
     .field {
@@ -294,7 +294,7 @@ export class LabSlider extends LabElement {
       padding-block: calc(var(--_thumb) / 2);
     }
     :host([orientation='vertical']) .control {
-      height: var(--lab-size-overlay-12, 12rem);
+      height: 12rem;
       padding-block: 0;
       padding-inline: calc(var(--_thumb) / 2);
     }
@@ -374,8 +374,8 @@ export class LabSlider extends LabElement {
     }
     .marker {
       position: absolute;
-      width: 2px;
-      height: 2px;
+      width: 0.125rem;
+      height: 0.125rem;
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-border-strong')};
       transform: translate(-50%, -50%);

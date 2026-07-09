@@ -141,8 +141,8 @@ export class LabPopover extends LabElement {
   static override styles = css`
     :host {
       --_pad: ${litVar('--lab-space-md', '1rem')};
-      --_min-width: var(--lab-size-overlay-14, 14rem);
-      --_max-width: var(--lab-size-overlay-22, 22rem);
+      --_min-width: 14rem;
+      --_max-width: 22rem;
 
       display: inline-flex;
       vertical-align: middle;
@@ -150,13 +150,13 @@ export class LabPopover extends LabElement {
 
     :host([size='s']) {
       --_pad: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min-width: var(--lab-size-overlay-11, 11rem);
-      --_max-width: var(--lab-size-overlay-18, 18rem);
+      --_min-width: 11rem;
+      --_max-width: 18rem;
     }
     :host([size='l']) {
       --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-      --_min-width: var(--lab-size-overlay-18, 18rem);
-      --_max-width: var(--lab-size-overlay-28, 28rem);
+      --_min-width: 18rem;
+      --_max-width: 28rem;
     }
 
     /* The Zag trigger — a real button; the machine spreads aria-haspopup=dialog,
@@ -199,7 +199,7 @@ export class LabPopover extends LabElement {
     /* The floating panel — raised surface with a hairline, lifted and layered. The
        arrow reuses the same surface role so it fuses to the panel edge. */
     .content {
-      --arrow-size: ${litVar('--lab-space-2', '0.5rem')};
+      --arrow-size: 0.625rem;
       --arrow-background: ${litVar('--lab-bg-secondary')};
 
       box-sizing: border-box;
@@ -249,8 +249,8 @@ export class LabPopover extends LabElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: ${litVar('--lab-space-6', '1.5rem')};
-      height: ${litVar('--lab-space-6', '1.5rem')};
+      width: 1.5rem;
+      height: 1.5rem;
       padding: 0;
       border: 0;
       border-radius: ${litVar('--lab-radius-sm', '0.25rem')};

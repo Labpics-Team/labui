@@ -159,9 +159,11 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
   it('scopes to MIGRATED components only (radio-group is the first entry)', () => {
     expect(Object.keys(MIGRATED)).toContain('radio-group');
     const governed = Object.values(MIGRATED).flat();
-    // All 27/27 migrated in #137 ambitious; menu/select/pagination now in (control-h wired, E1 fallbacks). Scope test uses radio as anchor.
-    expect(governed).toContain('packages/core/src/components/menu/lab-menu.ts');
-    expect(governed.length).toBeGreaterThan(50); // 27 entries x ~2 files
+    // Честный скоуп (аудит 2026-07-09): мигрированы 22 компонента;
+    // menu / select / pagination НЕ мигрированы — гард их не трогает.
+    expect(governed).not.toContain('packages/core/src/components/menu/lab-menu.ts');
+    expect(Object.keys(MIGRATED)).toHaveLength(22);
+    expect(governed.length).toBeGreaterThanOrEqual(40); // 45 файлов на 2026-07-09
   });
 
   // ── (6) RED-proof (диверсия): прогон сканера по ДО-миграционному блоку
