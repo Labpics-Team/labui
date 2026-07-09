@@ -9,21 +9,26 @@ const minPath = path.join(__dirname, '..', 'packages', 'colors-stub', 'contract.
 const css = fs.readFileSync(contractPath, 'utf8');
 
 // Ambitious CSS minify (synced to generate-contract minifyContract for build/perf consistency).
-// Strips comments + aggressive safe ws collapse (incl. / alpha, (), ,, ; before }).
+// Strips comments + aggressive safe ws collapse ONLY on root :root declarations (preserves @media forced-colors etc intact for a11y/E2E).
 // Keeps full contract.css for tests/gates (byte-identical discipline).
 // Produces smaller contract.min.css for published consumers (perf:size target).
-const min = css
-  .replace(/\/\*[\s\S]*?\*\//g, '')
-  .replace(/(\s*--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g, '$1:$2;')
-  .replace(/\s*([{}:;])\s*/g, '$1')
-  .replace(/\s+/g, ' ')
-  .replace(/\s*\/\s*/g, '/')
-  .replace(/(\w)\s+\(/g, '$1(')
-  .replace(/\(\s+/g, '(')
-  .replace(/\s+\)/g, ')')
-  .replace(/,\s*/g, ',')
-  .replace(/;(?=})/g, '')
-  .trim();
+let min = css.replace(/\/\*[\s\S]*?\*\//g, '');
+// Extract and min only the main :root block
+const rootMatch = min.match(/:root\s*\{[^}]*\}/);
+if (rootMatch) {
+  let root = rootMatch[0]
+    .replace(/(\s*--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g, '$1:$2;')
+    .replace(/\s*([{}:;])\s*/g, '$1')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*\/\s*/g, '/')
+    .replace(/(\w)\s+\(/g, '$1(')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .replace(/,\s*/g, ',')
+    .replace(/;(?=})/g, '');
+  min = min.replace(/:root\s*\{[^}]*\}/, root);
+}
+min = min.trim();
 
 fs.writeFileSync(minPath, `${min}\n`);
 
