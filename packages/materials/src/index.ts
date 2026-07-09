@@ -57,6 +57,13 @@ export {
 } from './background-policy';
 
 export {
+  ACRYLIC_LUMINOSITY_OPACITY,
+  acrylicCorridor,
+  blendLuma,
+  luminosityBlend,
+} from './acrylic-corridor';
+
+export {
   type MaterialTier,
   type ThemeName,
   type TierFill,
