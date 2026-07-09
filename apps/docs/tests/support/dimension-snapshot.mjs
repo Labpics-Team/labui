@@ -34,7 +34,7 @@
  *
  * Perf baseline ref (use): see labui/perf-baseline-2026-07-09.md for command timings; targeted waves cut full-run 30s→<10s est.
  */
-import { readdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
