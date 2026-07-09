@@ -79,7 +79,8 @@
   border-radius: var(--lab-radius-circle, 9999px);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background-color: transparent;
-  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+    background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 
 /* Checked ring colour per type, driven by the machine's data-state (mirrors the

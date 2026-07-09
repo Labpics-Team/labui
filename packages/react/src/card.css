@@ -56,7 +56,8 @@
 
 [data-lab-card][data-interactive] {
   cursor: pointer;
-  transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+    border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-card][data-interactive]:hover {
   border-color: var(--lab-border-soft);

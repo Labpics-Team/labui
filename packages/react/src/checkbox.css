@@ -56,7 +56,10 @@
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background-color: transparent;
   color: transparent;
-  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: background-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing);
 }
 
 /* Checked OR mixed fills per type and reveals the glyph (mirrors the Lit host). */

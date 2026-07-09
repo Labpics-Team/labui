@@ -43,7 +43,10 @@
   line-height: var(--lab-line-height-md, 1.5);
   font-weight: var(--lab-font-weight-semibold, 600);
   cursor: pointer;
-  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: background-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing);
   /* Base surface; [data-type][data-kind] rules set longhands directly. */
   background-color: transparent;
   color: var(--lab-label-primary);

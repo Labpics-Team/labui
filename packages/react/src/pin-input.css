@@ -104,7 +104,8 @@
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
   outline: none;
-  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+    box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   appearance: none;
 }
 [data-lab-pin-input] .lab-pin-input-segment::placeholder {

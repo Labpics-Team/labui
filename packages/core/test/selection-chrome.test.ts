@@ -26,9 +26,7 @@ describe('selection.css — слой UA-хрома на скоупе [data-theme
   });
 
   it('стилизует скроллбар ролями: thumb=fill-tertiary, track=fill-none + scrollbar-width', () => {
-    expect(live).toMatch(
-      /scrollbar-color:\s*var\(--lab-fill-tertiary\)\s+var\(--lab-fill-none\)/,
-    );
+    expect(live).toMatch(/scrollbar-color:\s*var\(--lab-fill-tertiary\)\s+var\(--lab-fill-none\)/);
     expect(live).toMatch(/\[data-theme\]\s*\{[^}]*scrollbar-width:/);
   });
 

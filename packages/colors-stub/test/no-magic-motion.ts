@@ -27,8 +27,8 @@
  */
 import { globSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { normalizeLit, stripComments } from './no-magic-dimension.js';
 import { repoRoot } from './no-literal-colour-fallback.js';
+import { normalizeLit, stripComments } from './no-magic-dimension.js';
 
 /** Одна находка; форма зеркалит соседние гарды — один репортер на всех. */
 export interface MotionViolation {

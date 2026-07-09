@@ -56,7 +56,10 @@
   font-weight: var(--lab-font-weight-semibold, 600);
   color: var(--lab-label-secondary);
   cursor: pointer;
-  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: background-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing);
 }
 
 .lab-pagination-item:hover:not([data-selected]):not(:disabled),

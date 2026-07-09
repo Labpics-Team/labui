@@ -58,7 +58,8 @@
   padding: 0.125rem;
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-fill-primary);
-  transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: background-color var(--lab-motion-transition-duration)
+    var(--lab-motion-transition-easing);
 }
 
 /* ON track per type — driven by data-checked + data-type, mirroring the Lit host. */

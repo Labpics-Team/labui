@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { repoRoot } from './no-literal-colour-fallback.js';
 import {
   LOOP_ALLOWLIST,
   motionSurfaceFiles,
   scanMotionSource,
   scanMotionSurface,
 } from './no-magic-motion.js';
-import { repoRoot } from './no-literal-colour-fallback.js';
 
 /**
  * CI-гард no-magic-motion (wiring #125). Утверждает чистоту живого дерева И
@@ -64,7 +64,10 @@ describe('no magic motion in component styles (motion contract)', () => {
 
   it('DETECTS a literal fallback on a motion token (reduced-motion resurrection)', () => {
     expect(
-      scanMotionSource('p.css', '.x { transition: opacity var(--lab-motion-transition-duration, 120ms); }'),
+      scanMotionSource(
+        'p.css',
+        '.x { transition: opacity var(--lab-motion-transition-duration, 120ms); }',
+      ),
     ).toMatchObject([{ rule: 'motion-fallback' }]);
   });
 
@@ -100,14 +103,9 @@ describe('no magic motion in component styles (motion contract)', () => {
   // легально, ПОКА generated/motion.css перепривязывает роль transition в ноль
   // под prefers-reduced-motion. Этот якорь красный = блоки должны вернуться.
   it('generated motion.css rebinds the transition role to instant under reduced motion', () => {
-    const css = readFileSync(
-      resolve(repoRoot, 'packages/tokens/src/generated/motion.css'),
-      'utf8',
-    );
+    const css = readFileSync(resolve(repoRoot, 'packages/tokens/src/generated/motion.css'), 'utf8');
     const rm = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'));
-    expect(rm).toContain(
-      '--lab-motion-transition-duration: var(--lab-motion-duration-instant)',
-    );
+    expect(rm).toContain('--lab-motion-transition-duration: var(--lab-motion-duration-instant)');
     expect(css).toContain('--lab-motion-duration-instant: 0ms');
   });
 
