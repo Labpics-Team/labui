@@ -24,19 +24,28 @@
  *     restores the pure-CSS stack — SSR/HMR friendly.
  */
 
+import {
+  ACRYLIC_ENGINE_MEDIA,
+  type AcrylicHandle,
+  acrylicMediaBlocked,
+  attach as attachAcrylic,
+  supportsAcrylicChain,
+} from './acrylic';
 import { type LiquidGlassHandle, attach as attachGlass, supportsRefraction } from './liquid-glass';
 import { type VeilHandle, attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
 const GLASS = 'glass';
+const ACRYLIC = 'acrylic';
 const VEIL = '[data-veil]';
 
-/** A surface refracts only when its NEAREST material scope says `glass` —
- *  mirroring the material.css selector `[data-material="glass"] .lab-material`
- *  (the closest scope wins in CSS custom-property terms too). */
-function inGlassScope(el: Element): boolean {
+/** An engine holds a surface only when its NEAREST material scope carries the
+ *  engine's mode — mirroring the material.css selectors
+ *  `[data-material="<mode>"] .lab-material` (the closest scope wins in CSS
+ *  custom-property terms too). */
+function inModeScope(el: Element, mode: string): boolean {
   const scope = el.closest('[data-material]');
-  return scope !== null && scope.getAttribute('data-material') === GLASS;
+  return scope !== null && scope.getAttribute('data-material') === mode;
 }
 
 /**
@@ -58,9 +67,9 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     syncs.push((): void => {
       const want = new Set<HTMLElement>();
       for (const el of scope.querySelectorAll(SURFACE)) {
-        if (el instanceof HTMLElement && inGlassScope(el)) want.add(el);
+        if (el instanceof HTMLElement && inModeScope(el, GLASS)) want.add(el);
       }
-      if (scope instanceof HTMLElement && scope.matches(SURFACE) && inGlassScope(scope)) {
+      if (scope instanceof HTMLElement && scope.matches(SURFACE) && inModeScope(scope, GLASS)) {
         want.add(scope);
       }
       // Detach surfaces that left the glass set (mode re-bind, class change,
@@ -81,6 +90,49 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     disposers.push((): void => {
       for (const handle of handles.values()) handle.destroy();
       handles.clear();
+    });
+  }
+
+  /* ── Acrylic v2 (luminosity chain, ADR-0009) — тот же Chromium-гейт, что у
+   * рефракции (url()-фильтр обязан РИСОВАТЬ на backdrop). Инлайновый стиль
+   * движка сильнее @media-деградаций листа, поэтому запрещающие режимы
+   * (ACRYLIC_ENGINE_MEDIA) опустошают want-набор здесь, в скане; их change
+   * пере-синкает mount (листенеры ниже). Лист остаётся v1-фолбэком. ────────── */
+  if (supportsAcrylicChain()) {
+    const acrylics = new Map<HTMLElement, AcrylicHandle>();
+
+    syncs.push((): void => {
+      const want = new Set<HTMLElement>();
+      if (!acrylicMediaBlocked()) {
+        for (const el of scope.querySelectorAll(SURFACE)) {
+          if (el instanceof HTMLElement && inModeScope(el, ACRYLIC)) want.add(el);
+        }
+        if (
+          scope instanceof HTMLElement &&
+          scope.matches(SURFACE) &&
+          inModeScope(scope, ACRYLIC)
+        ) {
+          want.add(scope);
+        }
+      }
+      for (const [el, handle] of acrylics) {
+        if (!want.has(el) || !el.isConnected) {
+          handle.destroy();
+          acrylics.delete(el);
+        }
+      }
+      for (const el of want) {
+        const held = acrylics.get(el);
+        // Смена tier-класса на удержанной поверхности — refresh перечитывает
+        // tier и переписывает инлайн только при реальной смене.
+        if (held) held.refresh();
+        else acrylics.set(el, attachAcrylic(el));
+      }
+    });
+
+    disposers.push((): void => {
+      for (const handle of acrylics.values()) handle.destroy();
+      acrylics.clear();
     });
   }
 
@@ -143,9 +195,22 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     subtree: true,
   });
 
+  // Запрещающие медиа-режимы acrylic-движка: смена → пере-синк (инлайн обязан
+  // сняться сам — листовые деградации его не перебивают). Регистрируется только
+  // когда acrylic-скан вообще возможен.
+  const mediaListeners: Array<{ mq: MediaQueryList; handler: () => void }> = [];
+  if (supportsAcrylicChain() && typeof matchMedia !== 'undefined') {
+    for (const query of ACRYLIC_ENGINE_MEDIA) {
+      const mq = matchMedia(query);
+      mq.addEventListener('change', debouncedSync);
+      mediaListeners.push({ mq, handler: debouncedSync });
+    }
+  }
+
   return () => {
     mo.disconnect();
     if (rafId) cancelAnimationFrame(rafId);
+    for (const { mq, handler } of mediaListeners) mq.removeEventListener('change', handler);
     for (const dispose of disposers) dispose();
   };
 }
