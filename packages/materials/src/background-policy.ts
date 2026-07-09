@@ -22,7 +22,7 @@ export type { MaterialMode };
  * реальным содержимым за поверхностью). Ровно дополнение `solid` до полного
  * множества мод — единственная точка истины «что есть live-blur».
  */
-export const LIVE_BLUR_MODES = ['glass', 'blur', 'acrylic'] as const;
+export const LIVE_BLUR_MODES = ['glass', 'acrylic'] as const;
 
 /** Единственное семейство токенов, из которого материал берёт СВОЮ заливку
  * (тинт 01 + база 02). Живой фон-хозяин ПОД стеклом — любая bg-роль (сцена), но

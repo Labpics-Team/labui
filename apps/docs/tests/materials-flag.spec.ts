@@ -3,7 +3,7 @@ import { type Page, expect, test } from '@playwright/test';
 import { normalizeCssColor, relativeLuminance } from './support/color.js';
 
 /**
- * Materials FLAG demo (solid | glass | blur | acrylic) — the owner's exit criterion.
+ * Materials FLAG demo (solid | glass | acrylic) — the owner's exit criterion.
  *
  * Proves, in a real browser across Chromium + WebKit:
  *   1. ONE `data-material` attribute flips the card AND the modal solid→glass→acrylic
@@ -90,12 +90,6 @@ test('one data-material flip turns card AND modal solid→glass', async ({ page 
   expect(hasLiveBlur(cardGlass)).toBe(true);
   expect(cardGlass).toContain('saturate');
   expect(hasLiveBlur(modalGlass)).toBe(true);
-
-  // Blur mode uses a heavier radius than glass on the same surface.
-  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'blur'));
-  const cardBlur = await readBackdropFilter(page, 'surface-card');
-  const radius = (f: string) => Number.parseFloat(f.match(/blur\(([\d.]+)px\)/)?.[1] ?? 'NaN');
-  expect(radius(cardBlur)).toBeGreaterThan(radius(cardGlass));
 });
 
 test('acrylic flip: live blur + saturate + the ~2% grain layer (data-URI over the tint)', async ({
@@ -111,8 +105,8 @@ test('acrylic flip: live blur + saturate + the ~2% grain layer (data-URI over th
   expect(hasLiveBlur(filter)).toBe(true);
   expect(filter).toContain('saturate');
 
-  // …and the grain layer is now on top of the tint gradient — the ONE thing that
-  // distinguishes acrylic from plain blur (ADR-0004 Решение 1 §4).
+  // …и слой зерна теперь поверх тинт-градиента — фирменный признак acrylic
+  // (ADR-0004 Решение 1 §4; отдельный blur-ярус снесён — ADR-0008).
   const bg = await readBackgroundImage(page, 'surface-card');
   expect(bg).toContain('data:image/png');
   expect(bg).toContain('linear-gradient'); // grain sits ABOVE the tint, not instead of it
@@ -273,13 +267,13 @@ test('DIFFERENTIAL byte-exact: compositeOverByte reproduces the canvas pixel (bl
   }
 });
 
-test('placement: no live-blur-on-live-blur nesting on the page (glass/blur/acrylic)', async ({
+test('placement: no live-blur-on-live-blur nesting on the page (glass/acrylic)', async ({
   page,
 }) => {
   // The background policy forbids nesting a live-blur material inside another
   // (double live blur = seam). Assert it across every live mode, not just glass.
   await page.getByTestId('open-modal').click();
-  for (const mode of ['glass', 'blur', 'acrylic'] as const) {
+  for (const mode of ['glass', 'acrylic'] as const) {
     await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
     const nested = await page.evaluate(
       () => document.querySelectorAll('.lab-material .lab-material').length,
@@ -300,7 +294,7 @@ function readRimBackground(page: Page, testId: string): Promise<string> {
 /** A live rim is a gradient painted into the `::before`; `none` means no rim. */
 const hasRim = (bg: string): boolean => bg !== 'none' && /gradient/i.test(bg);
 
-test('specular rim: ON for glass + acrylic, OFF for solid + blur (::before gradient)', async ({
+test('specular rim: ON for glass + acrylic, OFF for solid (::before gradient)', async ({
   page,
 }) => {
   // Solid default paints no rim — the ::before is an empty, pixel-identical layer.
@@ -311,10 +305,6 @@ test('specular rim: ON for glass + acrylic, OFF for solid + blur (::before gradi
     await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
     expect(hasRim(await readRimBackground(page, 'surface-card')), `rim ON for ${mode}`).toBe(true);
   }
-
-  // Blur is heavy frost — diffuse, no sharp edge → no rim.
-  await page.evaluate(() => document.documentElement.setAttribute('data-material', 'blur'));
-  expect(hasRim(await readRimBackground(page, 'surface-card')), 'no rim on blur').toBe(false);
 });
 
 test('specular rim is a 1px EDGE ring, not a fill (browser honours mask-composite at runtime)', async ({

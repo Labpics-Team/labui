@@ -17,7 +17,7 @@
  *                                   glass density (base ≈ dense, subtle ≈ sheer).
  *   `--lab-bg-material-<tier>-02`  opaque base layer that backs the solid canon.
  *   SOLID canon  = 01 painted over 02, opaque (also the universal fallback).
- *   GLASS/BLUR   = 01 alone (translucent) over a live backdrop + backdrop-filter.
+ *   GLASS/ACRYLIC = 01 alone (translucent) over a live backdrop + backdrop-filter.
  *
  * ── Guarantee ─────────────────────────────────────────────────────────────
  *   Legibility of a label on GLASS is proven by the α-boundary math in this
@@ -41,7 +41,6 @@
 
   /* Mechanics constants (effect params, not colour). */
   --_blur-glass: 48px;
-  --_blur-blur: 128px;
   --_saturate-on: 180%;
 
   /* Engine knobs (ADR-0003) — read by the refraction engine
@@ -190,17 +189,6 @@
   -webkit-backdrop-filter: blur(48px) saturate(180%);
 }
 
-/* ── BLUR — frostier tier, heavier backdrop blur (Figma BG-blur 128). ─────── */
-[data-material="blur"] .lab-material,
-[data-material="blur"].lab-material {
-  --_base-paint: transparent;
-  --_blur: var(--_blur-blur);
-  --_saturate: var(--_saturate-on);
-  --_rim: none; /* heavy frost is diffuse — no sharp edge; and resets a stale
-                * --_rim inherited from a glass/acrylic ancestor mode block */
-  -webkit-backdrop-filter: blur(128px) saturate(180%);
-}
-
 /* ── ACRYLIC (ADR-0004 Решение 1) — Fluent-класс: РАССЕЯНИЕ (низкочастотный
  * диффузный блюр), не рефракция-линза стекла. Рецепт переиспользует лестницу
  * (без новых величин): blur = --_blur-glass (48px, Figma BG-blur Base, ∈ Fluent
@@ -208,8 +196,8 @@
  * контракт, что у glass (DECLARED-размен: НЕ Fluent luminosity/exclusion-смесь —
  * иначе рушится байт-точная α-граница-гарантия; та же гарантия и коридор [0,1],
  * что у glass, пока множитель сжатия C не измерен — ADR-0004 Решение 2). Зерно
- * `--_acrylic-noise` — единственное, чем акрил отличается от blur: тайлится над
- * тинтом и снимает бандинг градиентов под блюром. ──────────────────────────── */
+ * `--_acrylic-noise` тайлится над тинтом и снимает бандинг градиентов под
+ * блюром. Бывший ярус `blur(128px)` снесён — ADR-0008 (перцептивный дубль). ── */
 [data-material="acrylic"] .lab-material,
 [data-material="acrylic"].lab-material {
   --_base-paint: transparent;
@@ -237,7 +225,7 @@
 }
 
 /* ── SOLID — explicit manual override. ALWAYS wins: the DS escape hatch and the
- * canon. Placed after glass/blur so at equal specificity it takes precedence
+ * canon. Placed after glass/acrylic so at equal specificity it takes precedence
  * whenever an ancestor is set to solid. ──────────────────────────────────── */
 [data-material="solid"] .lab-material,
 [data-material="solid"].lab-material {
@@ -251,7 +239,7 @@
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
- * DETERMINISTIC DEGRADATIONS — each collapses glass/blur to the SOLID canon.
+ * DETERMINISTIC DEGRADATIONS — each collapses glass/acrylic to the SOLID canon.
  * Selector lists mirror the mode blocks (equal specificity) and sit AFTER them,
  * so at equal specificity source order lets the degradation win. The solid
  * canon is opaque → label contract always holds, blur cost is zero.
@@ -261,8 +249,6 @@
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   [data-material="glass"] .lab-material,
   [data-material="glass"].lab-material,
-  [data-material="blur"] .lab-material,
-  [data-material="blur"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
   .lab-material {
@@ -280,8 +266,6 @@
 @media (prefers-reduced-transparency: reduce) {
   [data-material="glass"] .lab-material,
   [data-material="glass"].lab-material,
-  [data-material="blur"] .lab-material,
-  [data-material="blur"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
   .lab-material {
@@ -298,8 +282,6 @@
 @media (prefers-contrast: more) {
   [data-material="glass"] .lab-material,
   [data-material="glass"].lab-material,
-  [data-material="blur"] .lab-material,
-  [data-material="blur"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
   .lab-material {
@@ -320,8 +302,6 @@
 @media (forced-colors: active) {
   [data-material="glass"] .lab-material,
   [data-material="glass"].lab-material,
-  [data-material="blur"] .lab-material,
-  [data-material="blur"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
   .lab-material {
