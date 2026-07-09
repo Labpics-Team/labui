@@ -6,9 +6,10 @@ import { type Options, defineConfig } from 'tsup';
  * Deterministic, dual-format (ESM + CJS) builds with type declarations.
  * Each package re-exports this with its own entry if it needs to override.
  *
- * Perf note (physical threshold): minify + treeshake enabled to push published
- * JS bundle sizes as low as the tool allows without losing debuggability (sourcemaps on).
- * Consumers' bundlers will still minify further; this reduces install/parse cost.
+ * Perf (extreme): minify + treeshake + esbuild opts (legal none) to push published
+ * JS as small as possible (target 15%+ smaller react entry etc). sideEffects audit
+ * in packages complements (pure JS reexports shakeable).
+ * Consumers' bundlers further minify; this cuts install/parse.
  */
 export function libraryPreset(overrides: Options = {}): Options {
   return {
@@ -20,6 +21,10 @@ export function libraryPreset(overrides: Options = {}): Options {
     treeshake: true,
     minify: true,
     target: 'es2022',
+    esbuildOptions(options) {
+      options.legalComments = 'none';
+      options.treeShaking = true;
+    },
     ...overrides,
   };
 }

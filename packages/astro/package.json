@@ -23,7 +23,7 @@
     "./package.json": "./package.json"
   },
   "files": ["dist", "src/astro"],
-  "sideEffects": ["**/*.astro", "./dist/*.js", "./dist/*.cjs"],
+  "sideEffects": ["**/*.astro", "**/*.css"],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",

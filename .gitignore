@@ -28,6 +28,12 @@ screenshots/
 .env
 .env.*
 !.env.example
+
+# Perf measurement / temp scripts (non-committed, would cause lint red in CI)
+measure-bundle-sizes.mjs
+tmp-*.mjs
+perf-*.log
+*.perf.*
 *.local
 
 # Editor / OS
@@ -55,3 +61,5 @@ coverage/
 # раздувал бы пакет colors, поэтому каталог игнорируется. В CI сам PNG отдаётся
 # как artifact workflow (actions/upload-artifact), провенанс замеров — на лету.
 packages/colors/artifacts/
+
+perf-measure-sizes.mjs

@@ -61,6 +61,8 @@ fails if any allowlisted gap token is missing here.
 
 ### Shadow stack — `packages/shadow/src/generated/shadow.css`
 
+(см. ADR-0007 в PR #134; пакеты shadow реализует elevation + shadow contract).
+
 Generated from `packages/shadow/src/config.ts` (the source-of-truth that holds
 the same provisional anchor). Provisional values are snapshotted, never computed
 in LabUI.

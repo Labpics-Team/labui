@@ -35,6 +35,7 @@
   position: fixed;
   inset: 0;
   background-color: var(--lab-bg-overlay-base);
+  /* scrim migration (playbook #135 / ADR-0007): base for underlay level; ghost/soft/strong remain dead (E4). Law: scrim only for modal-underlay per z-order; see z-order.spec.ts + gap-census. */
   z-index: var(--lab-z-modal-underlay, 1100);
 }
 
