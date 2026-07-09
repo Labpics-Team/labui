@@ -228,7 +228,7 @@ export class LabSelect extends LabElement {
 
   static override styles = css`
     :host {
-      --_h: 2.25rem;
+      --_h: var(--lab-size-control-h-m, 2.25rem);
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
@@ -240,11 +240,11 @@ export class LabSelect extends LabElement {
     }
 
     :host([size='s']) {
-      --_h: 1.875rem;
+      --_h: var(--lab-size-control-h-s, 1.875rem);
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
-      --_h: 2.75rem;
+      --_h: var(--lab-size-control-h-l, 2.75rem);
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 
@@ -268,7 +268,7 @@ export class LabSelect extends LabElement {
       align-items: center;
       justify-content: space-between;
       gap: ${litVar('--lab-space-sm', '0.5rem')};
-      min-width: 12rem;
+      min-width: var(--lab-size-overlay-12, 12rem);
       height: var(--_h);
       margin: 0;
       padding: 0 var(--_pad-x);
@@ -330,8 +330,8 @@ export class LabSelect extends LabElement {
     /* The floating listbox — raised surface with a hairline, lifted and layered. */
     .content {
       box-sizing: border-box;
-      min-width: var(--reference-width, 12rem);
-      max-height: 16rem;
+      min-width: var(--reference-width, var(--lab-size-overlay-12, 12rem));
+      max-height: var(--lab-size-overlay-16, 16rem);
       overflow-y: auto;
       margin: 0;
       padding: ${litVar('--lab-space-xs', '0.25rem')};

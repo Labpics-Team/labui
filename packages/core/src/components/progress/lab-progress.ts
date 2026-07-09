@@ -110,17 +110,17 @@ export class LabProgress extends LabElement {
 
   static override styles = css`
     :host {
-      --_thickness: 0.5rem;
+      --_thickness: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
 
       display: block;
     }
 
     :host([size='s']) {
-      --_thickness: 0.25rem;
+      --_thickness: ${litVar('--lab-space-xs', '0.25rem')};
     }
     :host([size='l']) {
-      --_thickness: 0.75rem;
+      --_thickness: ${litVar('--lab-space-3', '0.75rem')};
     }
 
     .root {

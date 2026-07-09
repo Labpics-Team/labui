@@ -143,7 +143,7 @@ export class LabCheckbox extends LabElement {
   static override styles = css`
     :host {
       /* Size knobs the size axis maps onto. */
-      --_box: 1.25rem;
+      --_box: ${litVar('--lab-size-control-l', '1.25rem')};
       --_radius: ${litVar('--lab-radius-sm', '0.25rem')};
       --_gap: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
@@ -153,15 +153,15 @@ export class LabCheckbox extends LabElement {
     }
 
     :host([size='tiny']) {
-      --_box: 0.875rem;
+      --_box: ${litVar('--lab-size-checkbox-tiny', '0.875rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='s']) {
-      --_box: 1rem;
+      --_box: ${litVar('--lab-size-control-m', '1rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
-      --_box: 1.5rem;
+      --_box: ${litVar('--lab-size-control-xl', '1.5rem')};
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 

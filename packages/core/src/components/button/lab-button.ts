@@ -103,7 +103,7 @@ export class LabButton extends LabElement {
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
       --_gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min: ${litVar('--lab-size-control-h-m', '2.5rem')};
+      --_min: ${litVar('--lab-size-control-h-m', '2.5rem')}; /* connected --lab-size-control-h-* per playbook #137 */
 
       display: inline-flex;
       vertical-align: middle;
@@ -113,7 +113,7 @@ export class LabButton extends LabElement {
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
       --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
       --_pad-y: ${litVar('--lab-space-xs', '0.25rem')};
-      --_min: ${litVar('--lab-size-control-h-s', '2rem')};
+      --_min: ${litVar('--lab-size-control-h-s', '2rem')}; /* connected --lab-size-control-h to button (s) */
     }
     :host([size='l']) {
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};

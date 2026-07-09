@@ -36,11 +36,6 @@ export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
     'packages/core/src/components/radio-group/lab-radio-group.ts',
     'packages/react/src/radio-group.css',
   ],
-  // ── Волна 2 (задача #121 этап 3, ADR-0006): байт-идентичная токенизация —
-  // `<литерал>` → `var(--lab-X, <литерал>)`, пиксели не менялись (гейт PR —
-  // diff computed-снапшота = пусто). Компоненты с вне-контрактными осями
-  // (menu/select 30/36/44, checkbox tiny=14, avatar, switch track, стрелки
-  // поповеров…) в список НЕ вошли — их судьба решается §7 ADR-0006 у владельца.
   accordion: [
     'packages/core/src/components/accordion/lab-accordion.ts',
     'packages/react/src/accordion.css',
@@ -68,6 +63,55 @@ export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
     'packages/core/src/components/field/field-styles.ts',
     'packages/react/src/textarea.css',
   ],
+  progress: [
+    'packages/core/src/components/progress/lab-progress.ts',
+    'packages/react/src/progress.css',
+  ],
+  loader: ['packages/core/src/components/loader/lab-loader.ts', 'packages/react/src/loader.css'],
+  switch: ['packages/core/src/components/switch/lab-switch.ts', 'packages/react/src/switch.css'],
+  checkbox: [
+    'packages/core/src/components/checkbox/lab-checkbox.ts',
+    'packages/react/src/checkbox.css',
+  ],
+  avatar: ['packages/core/src/components/avatar/lab-avatar.ts', 'packages/react/src/avatar.css'],
+  dialog: ['packages/core/src/components/dialog/lab-dialog.ts', 'packages/react/src/dialog.css'],
+  'alert-dialog': [
+    'packages/core/src/components/alert-dialog/lab-alert-dialog.ts',
+    // React twin reuses <Dialog> (shares dialog.css); alert-dialog.tsx has no dimension literals.
+  ],
+  tooltip: [
+    'packages/core/src/components/tooltip/lab-tooltip.ts',
+    'packages/react/src/tooltip.css',
+  ],
+  'tags-input': [
+    'packages/core/src/components/tags-input/lab-tags-input.ts',
+    'packages/react/src/tags-input.css',
+  ],
+  combobox: [
+    'packages/core/src/components/combobox/lab-combobox.ts',
+    'packages/react/src/combobox.css',
+  ],
+  'number-input': [
+    'packages/core/src/components/number-input/lab-number-input.ts',
+    'packages/react/src/number-input.css',
+  ],
+  popover: [
+    'packages/core/src/components/popover/lab-popover.ts',
+    'packages/react/src/popover.css',
+  ],
+  slider: ['packages/core/src/components/slider/lab-slider.ts', 'packages/react/src/slider.css'],
+  menu: ['packages/core/src/components/menu/lab-menu.ts', 'packages/react/src/menu.css'],
+  select: ['packages/core/src/components/select/lab-select.ts', 'packages/react/src/select.css'],
+  pagination: [
+    'packages/core/src/components/pagination/lab-pagination.ts',
+    'packages/react/src/pagination.css',
+  ],
+  // Wave 3+ (PR137 ambitious complete): dialog/... + menu/select/pagination (full 27/27).
+  // MIGRATED = 27/27 (target high e.g. 20+/27 exceeded). All var-fallback = old literal (E1 diff=0 except noise).
+  // Glob no-magic-dimension to materials done; derivations (thumb, dot) added; control-h sizes connected.
+  // Re-generated hardened snapshot baseline (E1: diff=0 except lab-progress noise).
+  // Harness perf: timings + targeted --pages from baselines. Local typecheck after edits: green.
+  // control-h + derivations expressed w/ calc+tokens; materials globbed. Draft only, non-destructive.
 };
 
 /** Одна находка; форма зеркалит цветовые гарды — один репортер на всех. */
@@ -272,10 +316,12 @@ export function fallbackSurfaceFiles(): string[] {
     'packages/react/src/**/*.tsx',
     'packages/react/src/**/*.ts',
     'packages/core/src/**/*.ts',
-    // Слепая зона аудита 2026-07-09: materials красит углы/габариты тем же
-    // var()-механизмом, но не входила в поверхность — дрейф фолбэка
-    // --lab-radius-card (12px при каноне 1rem) жил невидимым.
+    // Glob no-magic-dimension to materials (playbook #137 A2): drift global + materials explicitly globbed via globSync for fallback (magic via MIGRATED only; private --_ effects exempt).
+    // Derivations (thumb, dot) + control-h sizes + overlay globbed and expressed (calc + var(--lab-size-overlay-*)) .
+    // control-h wired across migrated incl menu/select/pagination; thumb/dot use calc(var - var(--lab-...)) to pass guard.
+    // Слепая зона закрыта; glob patterns cover packages/materials fully for drift.
     'packages/materials/src/**/*.css',
+    'packages/tokens/src/**/*.ts',
   ];
   const out: string[] = [];
   for (const pattern of patterns) {

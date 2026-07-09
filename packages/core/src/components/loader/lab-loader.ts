@@ -50,8 +50,8 @@ export class LabLoader extends LabElement {
 
   static override styles = css`
     :host {
-      --_diameter: 1.5rem;
-      --_stroke: 0.1875rem;
+      --_diameter: ${litVar('--lab-size-control-xl', '1.5rem')};
+      --_stroke: ${litVar('--lab-size-loader-stroke-m', '0.1875rem')};
 
       display: inline-flex;
       vertical-align: middle;
@@ -61,12 +61,12 @@ export class LabLoader extends LabElement {
     }
 
     :host([size='s']) {
-      --_diameter: 1rem;
-      --_stroke: 0.125rem;
+      --_diameter: ${litVar('--lab-size-control-m', '1rem')};
+      --_stroke: ${litVar('--lab-size-loader-stroke-s', '0.125rem')};
     }
     :host([size='l']) {
-      --_diameter: 2.5rem;
-      --_stroke: 0.25rem;
+      --_diameter: ${litVar('--lab-size-control-h-m', '2.5rem')};
+      --_stroke: ${litVar('--lab-size-loader-stroke-l', '0.25rem')};
     }
 
     .spinner {

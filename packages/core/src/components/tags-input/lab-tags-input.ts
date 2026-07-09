@@ -282,7 +282,7 @@ export class LabTagsInput extends LabElement {
         align-items: center;
         gap: var(--_field-gap);
         width: 100%;
-        min-height: 2.5rem;
+        min-height: ${litVar('--lab-size-control-h-m', '2.5rem')};
         margin: 0;
         padding: var(--_field-pad-y) var(--_field-pad-x);
         background-color: ${litVar('--lab-bg-primary')};
@@ -336,7 +336,7 @@ export class LabTagsInput extends LabElement {
         align-items: center;
         gap: ${litVar('--lab-space-xs', '0.25rem')};
         max-width: 100%;
-        padding: 0.125rem 0.125rem 0.125rem 0.5rem;
+        padding: var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem) var(--lab-space-sm, 0.5rem);
         font-size: var(--_field-label-font);
         letter-spacing: var(--_field-label-tracking);
         line-height: 1.4;
@@ -380,8 +380,8 @@ export class LabTagsInput extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 1.25rem;
-        height: 1.25rem;
+        width: ${litVar('--lab-size-control-l', '1.25rem')};
+        height: ${litVar('--lab-size-control-l', '1.25rem')};
         padding: 0;
         font: inherit;
         line-height: 1;
@@ -409,9 +409,9 @@ export class LabTagsInput extends LabElement {
          but paints transparently inside the .control frame (which carries the border). */
       .input {
         flex: 1 1 6rem;
-        min-width: 6rem;
+        min-width: ${litVar('--lab-space-24', '6rem')};
         margin: 0;
-        padding: 0.125rem 0;
+        padding: var(--lab-radius-xs, 0.125rem) 0;
         font: inherit;
         font-size: var(--_field-font);
         letter-spacing: var(--_field-tracking);

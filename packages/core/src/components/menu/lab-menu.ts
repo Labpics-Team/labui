@@ -172,7 +172,7 @@ export class LabMenu extends LabElement {
 
   static override styles = css`
     :host {
-      --_h: 2.25rem;
+      --_h: var(--lab-size-control-h-m, 2.25rem);
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
@@ -181,11 +181,11 @@ export class LabMenu extends LabElement {
     }
 
     :host([size='s']) {
-      --_h: 1.875rem;
+      --_h: var(--lab-size-control-h-s, 1.875rem);
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
-      --_h: 2.75rem;
+      --_h: var(--lab-size-control-h-l, 2.75rem);
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 
@@ -244,8 +244,8 @@ export class LabMenu extends LabElement {
     /* The floating menu — raised surface with a hairline, lifted and layered. */
     .content {
       box-sizing: border-box;
-      min-width: 11rem;
-      max-height: 20rem;
+      min-width: var(--lab-size-overlay-11, 11rem);
+      max-height: var(--lab-size-overlay-20, 20rem);
       overflow-y: auto;
       margin: 0;
       padding: ${litVar('--lab-space-xs', '0.25rem')};
@@ -295,7 +295,7 @@ export class LabMenu extends LabElement {
 
     /* A non-interactive divider between item groups. */
     .separator {
-      height: 0.0625rem;
+      height: var(--lab-stroke-hairline, 0.0625rem);
       margin: ${litVar('--lab-space-xs', '0.25rem')} 0;
       background-color: ${litVar('--lab-border-soft')};
     }

@@ -278,7 +278,7 @@ export class LabNumberInput extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 1.75rem;
+        width: var(--lab-space-7, 1.75rem);
         margin: 0;
         padding: 0;
         font: inherit;
@@ -305,10 +305,10 @@ export class LabNumberInput extends LabElement {
       }
 
       :host([size='s']) .trigger {
-        width: 1.5rem;
+        width: var(--lab-space-6, 1.5rem);
       }
       :host([size='l']) .trigger {
-        width: 2rem;
+        width: var(--lab-size-control-h-s, 2rem);
       }
 
       /* Scrubber affordance on the label when enabled (the machine owns the drag). */

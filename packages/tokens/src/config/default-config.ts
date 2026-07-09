@@ -75,6 +75,28 @@ export const defaultConfig: TokensConfig = {
       // kbd m, loader m. СТАТУС: DECLARED — ось Size в Figma сегодня биндит
       // только 12/16/20; при появлении px/9-якоря сверить и заземлить.
       'control-xl': 1.5, // 24px — глиф-бокс XL (ADR-0006 §1)
+      // DESIGN-CHOICE per ADR-0006 §2 (micro not snapping 4px grid w/o visible shift):
+      // switch tracks, loader strokes 3px, checkbox tiny=14px. Added to reach
+      // MIGRATED=27/27 + no-magic guard while keeping exact values (E1).
+      'switch-track-s': 2.25,
+      'switch-track-m': 2.75,
+      'switch-track-l': 3.25,
+      'switch-track-h-s': 1.25,
+      'switch-track-h-m': 1.5,
+      'switch-track-h-l': 1.75,
+      'switch-thumb-s': 0.875,
+      'switch-thumb-m': 1.125,
+      'switch-thumb-l': 1.375,
+      'loader-stroke-s': 0.125,
+      'loader-stroke-m': 0.1875,
+      'loader-stroke-l': 0.25,
+      'checkbox-tiny': 0.875,
+      'avatar-s': 1.75,
+      'avatar-m': 2.5,
+      'avatar-l': 3.5,
+      'avatar-dot-s': 0.625,
+      'avatar-dot-m': 0.75,
+      'avatar-dot-l': 1,
       // Ось ВЫСОТ контролов (аудит 2026-07-03): до неё высоты жили хардкодами
       // в компонентах ДВУМЯ несовместимыми семействами — button/pin-input
       // 32/40/48 против menu/select 30/36/44, где 30px вне 4px-сетки

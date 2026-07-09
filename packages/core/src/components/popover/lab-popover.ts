@@ -141,8 +141,8 @@ export class LabPopover extends LabElement {
   static override styles = css`
     :host {
       --_pad: ${litVar('--lab-space-md', '1rem')};
-      --_min-width: 14rem;
-      --_max-width: 22rem;
+      --_min-width: var(--lab-size-overlay-14, 14rem);
+      --_max-width: var(--lab-size-overlay-22, 22rem);
 
       display: inline-flex;
       vertical-align: middle;
@@ -150,13 +150,13 @@ export class LabPopover extends LabElement {
 
     :host([size='s']) {
       --_pad: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min-width: 11rem;
-      --_max-width: 18rem;
+      --_min-width: var(--lab-size-overlay-11, 11rem);
+      --_max-width: var(--lab-size-overlay-18, 18rem);
     }
     :host([size='l']) {
       --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-      --_min-width: 18rem;
-      --_max-width: 28rem;
+      --_min-width: var(--lab-size-overlay-18, 18rem);
+      --_max-width: var(--lab-size-overlay-28, 28rem);
     }
 
     /* The Zag trigger — a real button; the machine spreads aria-haspopup=dialog,

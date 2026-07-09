@@ -123,7 +123,7 @@ export class LabPagination extends LabElement {
   static override styles = css`
     :host {
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
-      --_size: 2.25rem;
+      --_size: var(--lab-size-control-h-m, 2.25rem);
       --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
@@ -131,11 +131,11 @@ export class LabPagination extends LabElement {
     }
 
     :host([size='s']) {
-      --_size: 1.75rem;
+      --_size: var(--lab-size-control-h-s, 1.75rem);
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
-      --_size: 2.75rem;
+      --_size: var(--lab-size-control-h-l, 2.75rem);
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 

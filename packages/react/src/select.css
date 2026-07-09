@@ -12,7 +12,7 @@
  */
 
 .lab-select-root {
-  --_lab-sel-h: 2.25rem;
+  --_lab-sel-h: var(--lab-size-control-h-m, 2.25rem);
   --_lab-sel-pad-x: var(--lab-space-md, 1rem);
   --_lab-sel-font: var(--lab-font-size-md, 1rem);
   --_lab-sel-tracking: var(--lab-letter-spacing-md, -0.0083em);
@@ -23,12 +23,12 @@
   vertical-align: middle;
 }
 .lab-select-root[data-size="s"] {
-  --_lab-sel-h: 1.875rem;
+  --_lab-sel-h: var(--lab-size-control-h-s, 1.875rem);
   --_lab-sel-font: var(--lab-font-size-xs, 0.8333rem);
   --_lab-sel-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 .lab-select-root[data-size="l"] {
-  --_lab-sel-h: 2.75rem;
+  --_lab-sel-h: var(--lab-size-control-h-l, 2.75rem);
   --_lab-sel-font: var(--lab-font-size-lg, 1.2rem);
   --_lab-sel-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }
@@ -50,7 +50,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--lab-space-sm, 0.5rem);
-  min-width: 12rem;
+  min-width: var(--lab-size-overlay-12, 12rem);
   height: var(--_lab-sel-h);
   margin: 0;
   padding: 0 var(--_lab-sel-pad-x);
@@ -123,8 +123,8 @@
 
 .lab-select-content {
   box-sizing: border-box;
-  min-width: var(--reference-width, 12rem);
-  max-height: 16rem;
+  min-width: var(--reference-width, var(--lab-size-overlay-12, 12rem));
+  max-height: var(--lab-size-overlay-16, 16rem);
   overflow-y: auto;
   margin: 0;
   padding: var(--lab-space-xs, 0.25rem);
