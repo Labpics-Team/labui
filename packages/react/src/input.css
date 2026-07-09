@@ -84,9 +84,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  outline: none;
-  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-    box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   appearance: none;
 }
 
@@ -101,26 +99,30 @@
 
 [data-lab-input] .lab-field-control:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-input][data-type="danger"] .lab-field-control {
   border-color: var(--lab-border-danger);
 }
 [data-lab-input][data-type="danger"] .lab-field-control:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-danger);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-input][data-type="warning"] .lab-field-control {
   border-color: var(--lab-border-warning-strong);
 }
 [data-lab-input][data-type="warning"] .lab-field-control:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-warning-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-input][data-type="success"] .lab-field-control {
   border-color: var(--lab-border-success-strong);
 }
 [data-lab-input][data-type="success"] .lab-field-control:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-success-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-input] .lab-field-control:read-only {

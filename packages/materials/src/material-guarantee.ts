@@ -41,11 +41,13 @@
 import { type Rgba, compositeOver, contrastRatio, relativeLuminance } from './luminance';
 
 /**
- * The material modes — exactly the `data-material` scope values.
- * `acrylic` (ADR-0004 Решение 1) joins the live-blur family beside `glass`/`blur`;
- * `solid` is the opaque canon + universal degradation floor.
+ * Моды материала — ровно значения оси `data-material`. Их ТРИ (ADR-0008):
+ * `solid` — непрозрачный канон и универсальный пол деградаций; `glass` —
+ * рефракция (ADR-0003); `acrylic` — диффузия Fluent-класса (ADR-0004).
+ * Отдельный ярус `blur` снесён решением владельца (2026-07-10): перцептивно
+ * он дублировал acrylic, а два неразличимых режима — ложный выбор в API.
  */
-export type MaterialMode = 'solid' | 'glass' | 'blur' | 'acrylic';
+export type MaterialMode = 'solid' | 'glass' | 'acrylic';
 
 /** The five material tiers, names lifted verbatim from the Figma Materials styles. */
 export const MATERIAL_TIERS = ['base', 'muted', 'soft', 'subtle', 'elevated'] as const;

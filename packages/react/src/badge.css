@@ -28,7 +28,7 @@
   justify-content: center;
   vertical-align: middle;
   gap: var(--_lab-badge-gap);
-  min-height: 1.25rem;
+  min-height: var(--lab-size-control-l, 1.25rem);
   padding: var(--_lab-badge-pad-y) var(--_lab-badge-pad-x);
   border-radius: var(--_lab-badge-radius);
   font: inherit;

@@ -159,7 +159,11 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
   it('scopes to MIGRATED components only (radio-group is the first entry)', () => {
     expect(Object.keys(MIGRATED)).toContain('radio-group');
     const governed = Object.values(MIGRATED).flat();
-    expect(governed).not.toContain('packages/core/src/components/checkbox/lab-checkbox.ts');
+    // Честный скоуп (аудит 2026-07-09): мигрированы 22 компонента;
+    // menu / select / pagination НЕ мигрированы — гард их не трогает.
+    expect(governed).not.toContain('packages/core/src/components/menu/lab-menu.ts');
+    expect(Object.keys(MIGRATED)).toHaveLength(22);
+    expect(governed.length).toBeGreaterThanOrEqual(40); // 45 файлов на 2026-07-09
   });
 
   // ── (6) RED-proof (диверсия): прогон сканера по ДО-миграционному блоку

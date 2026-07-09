@@ -102,8 +102,7 @@ export const fieldStyles: CSSResult = css`
     background-color: ${litVar('--lab-bg-primary')};
     border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     border-radius: var(--_field-radius);
-    outline: none;
-    transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     appearance: none;
   }
 
@@ -119,7 +118,8 @@ export const fieldStyles: CSSResult = css`
   /* Focus-visible ring from the focus role — never a removed outline. */
   .control:focus-visible {
     border-color: ${litVar('--lab-border-focus')};
-    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
 
   /* Sentiment: the type axis re-points border + label. Driven by the reflected
@@ -128,19 +128,22 @@ export const fieldStyles: CSSResult = css`
     border-color: ${litVar('--lab-border-danger')};
   }
   :host([type='danger']) .control:focus-visible {
-    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-danger')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
   :host([type='warning']) .control {
     border-color: ${litVar('--lab-border-warning-strong')};
   }
   :host([type='warning']) .control:focus-visible {
-    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-warning-strong')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
   :host([type='success']) .control {
     border-color: ${litVar('--lab-border-success-strong')};
   }
   :host([type='success']) .control:focus-visible {
-    box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
+    outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-success-strong')};
+    outline-offset: ${litVar('--lab-focus-ring-offset')};
   }
 
   /* Readonly: a flatter, non-editable surface that still reads its value. */

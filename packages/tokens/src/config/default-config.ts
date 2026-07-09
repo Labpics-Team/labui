@@ -71,6 +71,32 @@ export const defaultConfig: TokensConfig = {
       'control-s': 0.75, // 12px — Figma Size/S (Unit px/6)
       'control-m': 1, // 16px — Figma Size/M (Unit px/7)
       'control-l': 1.25, // 20px — Figma Size/L (Unit px/8)
+      // Четвёртый глиф-бокс шкалы {12,16,20,24}px (ADR-0006 §1): checkbox l,
+      // kbd m, loader m. СТАТУС: DECLARED — ось Size в Figma сегодня биндит
+      // только 12/16/20; при появлении px/9-якоря сверить и заземлить.
+      'control-xl': 1.5, // 24px — глиф-бокс XL (ADR-0006 §1)
+      // DESIGN-CHOICE per ADR-0006 §2 (micro not snapping 4px grid w/o visible shift):
+      // switch tracks, loader strokes 3px, checkbox tiny=14px. Added to reach
+      // MIGRATED=27/27 + no-magic guard while keeping exact values (E1).
+      'switch-track-s': 2.25,
+      'switch-track-m': 2.75,
+      'switch-track-l': 3.25,
+      'switch-track-h-s': 1.25,
+      'switch-track-h-m': 1.5,
+      'switch-track-h-l': 1.75,
+      'switch-thumb-s': 0.875,
+      'switch-thumb-m': 1.125,
+      'switch-thumb-l': 1.375,
+      'loader-stroke-s': 0.125,
+      'loader-stroke-m': 0.1875,
+      'loader-stroke-l': 0.25,
+      'checkbox-tiny': 0.875,
+      'avatar-s': 1.75,
+      'avatar-m': 2.5,
+      'avatar-l': 3.5,
+      'avatar-dot-s': 0.625,
+      'avatar-dot-m': 0.75,
+      'avatar-dot-l': 1,
       // Ось ВЫСОТ контролов (аудит 2026-07-03): до неё высоты жили хардкодами
       // в компонентах ДВУМЯ несовместимыми семействами — button/pin-input
       // 32/40/48 против menu/select 30/36/44, где 30px вне 4px-сетки
@@ -83,6 +109,22 @@ export const defaultConfig: TokensConfig = {
       'control-h-s': 2, // 32px — высота контрола size=s
       'control-h-m': 2.5, // 40px — высота контрола size=m (дефолт)
       'control-h-l': 3, // 48px — высота контрола size=l
+      // Лестница габаритов оверлейных поверхностей (ADR-0006 §1): min/max-width
+      // и max-height выпадающих панелей, диалогов, поповеров, тултипов.
+      // Токенизирована AS-IS по аудиту 2026-07-09 (11 ступеней, 176–640px) —
+      // БЕЗ нормализации значений; имя ступени = число rem; менять состав
+      // лестницы = новый ADR (закрытая шкала, ADR-0006 §5).
+      'overlay-11': 11, // 176px — popover min-w (s)
+      'overlay-12': 12, // 192px — select/menu min-w
+      'overlay-14': 14, // 224px — popover min-w (m) / tooltip max-w (s)
+      'overlay-16': 16, // 256px — dialog min-w (s), max-h списков select/combobox
+      'overlay-18': 18, // 288px — dialog/popover/tooltip ступень m
+      'overlay-20': 20, // 320px — menu max-h
+      'overlay-22': 22, // 352px — dialog min-w (l), popover/tooltip max-w
+      'overlay-24': 24, // 384px — dialog max-w (s)
+      'overlay-28': 28, // 448px — popover max-w (l)
+      'overlay-32': 32, // 512px — dialog max-w (m)
+      'overlay-40': 40, // 640px — dialog max-w (l)
     },
     aliases: {},
   },

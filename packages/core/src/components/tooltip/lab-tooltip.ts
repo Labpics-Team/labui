@@ -137,7 +137,7 @@ export class LabTooltip extends LabElement {
       --_pad-block: ${litVar('--lab-space-xs', '0.25rem')};
       --_pad-inline: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_max-width: 18rem;
+      --_max-width: ${litVar('--lab-size-overlay-18', '18rem')};
 
       display: inline-flex;
       vertical-align: middle;
@@ -147,13 +147,13 @@ export class LabTooltip extends LabElement {
       --_pad-block: ${litVar('--lab-space-xs', '0.25rem')};
       --_pad-inline: ${litVar('--lab-space-xs', '0.25rem')};
       --_font: ${litVar('--lab-font-size-xxs', '0.6944rem')};
-      --_max-width: 14rem;
+      --_max-width: ${litVar('--lab-size-overlay-14', '14rem')};
     }
     :host([size='l']) {
       --_pad-block: ${litVar('--lab-space-sm', '0.5rem')};
       --_pad-inline: ${litVar('--lab-space-md', '1rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
-      --_max-width: 22rem;
+      --_max-width: ${litVar('--lab-size-overlay-22', '22rem')};
     }
 
     /* The trigger is the Zag trigger element — a real button so hover, focus and
@@ -187,7 +187,7 @@ export class LabTooltip extends LabElement {
     /* The floating surface — the conventional inverted, high-contrast tooltip. The
        arrow reuses the same surface role so the shape reads as one. */
     .content {
-      --arrow-size: 0.5rem;
+      --arrow-size: ${litVar('--lab-space-sm', '0.5rem')};
       --arrow-background: ${litVar('--lab-bg-inverted')};
 
       box-sizing: border-box;
@@ -209,10 +209,10 @@ export class LabTooltip extends LabElement {
     /* The Zag arrow + tip. The tip inherits --arrow-background, so it is the same
        surface visually fused to the content. */
     .arrow {
-      --arrow-size: 0.5rem;
+      --arrow-size: ${litVar('--lab-space-sm', '0.5rem')};
     }
     .arrow-tip {
-      border-top-left-radius: 0.0625rem;
+      border-top-left-radius: ${litVar('--lab-stroke-hairline', '0.0625rem')};
     }
   `;
 

@@ -80,14 +80,13 @@
   align-items: center;
   gap: var(--_lab-field-gap);
   width: 100%;
-  min-height: 2.5rem;
+  min-height: var(--lab-size-control-h-m, 2.5rem);
   margin: 0;
   padding: var(--_lab-field-pad-y) var(--_lab-field-pad-x);
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-    box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   cursor: text;
 }
 [data-lab-tags-input]:not([data-disabled]):not([data-readonly]) .lab-tags-input-control:hover {
@@ -115,19 +114,23 @@
 /* Focus ring: the control surface lights when the inner input is focus-visible. */
 [data-lab-tags-input] .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-tags-input][data-type="danger"]
   .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-danger);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-tags-input][data-type="warning"]
   .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-warning-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-tags-input][data-type="success"]
   .lab-tags-input-control:has(.lab-tags-input-input:focus-visible) {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-success-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* One tag chip — a pill with the tag text and a delete button. */
@@ -136,7 +139,8 @@
   align-items: center;
   gap: var(--lab-space-xs, 0.25rem);
   max-width: 100%;
-  padding: 0.125rem 0.125rem 0.125rem 0.5rem;
+  padding: var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem)
+    var(--lab-radius-xs, 0.125rem) var(--lab-space-sm, 0.5rem);
   font-size: var(--_lab-field-label-font);
   letter-spacing: var(--_lab-field-label-tracking);
   line-height: 1.4;
@@ -185,8 +189,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.25rem;
-  height: 1.25rem;
+  width: var(--lab-size-control-l, 1.25rem);
+  height: var(--lab-size-control-l, 1.25rem);
   padding: 0;
   font: inherit;
   line-height: 1;
@@ -213,10 +217,10 @@
 
 /* The text-entry input — the field's control, transparent inside the .control frame. */
 [data-lab-tags-input] .lab-tags-input-input {
-  flex: 1 1 6rem;
-  min-width: 6rem;
+  flex: 1 1 var(--lab-space-24, 6rem);
+  min-width: var(--lab-space-24, 6rem);
   margin: 0;
-  padding: 0.125rem 0;
+  padding: var(--lab-radius-xs, 0.125rem) 0;
   font: inherit;
   font-size: var(--_lab-field-font);
   letter-spacing: var(--_lab-field-tracking);

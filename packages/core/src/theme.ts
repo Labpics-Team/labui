@@ -25,14 +25,15 @@ export const THEMES = ['light', 'dark'] as const;
 export type Theme = (typeof THEMES)[number];
 
 /**
- * The material modes a root may declare — the flag model (канон 2026-07-01:
- * материал — флаг Glass/Blur/Solid; Solid ≡ Background). The axis itself is
- * owned by `@labpics/ui-materials` (ADR-0003); this constant only fixes the
- * attribute convention. The former `ambient`/`glassy` stub modes were torn
- * down with the temporary core material (#41) — `solid` is the default and
- * the universal fallback.
+ * The material modes a root may declare — the flag model (канон ADR-0008:
+ * ровно ТРИ материала — Solid/Glass/Acrylic; Solid ≡ Background). The axis
+ * itself is owned by `@labpics/ui-materials` (ADR-0003/0004); this constant
+ * only fixes the attribute convention. The former `ambient`/`glassy` stub
+ * modes were torn down with the temporary core material (#41); отдельный
+ * `blur` снесён как перцептивный дубль acrylic (ADR-0008) — `solid` is the
+ * default and the universal fallback.
  */
-export const MATERIALS = ['solid', 'glass', 'blur'] as const;
+export const MATERIALS = ['solid', 'glass', 'acrylic'] as const;
 export type Material = (typeof MATERIALS)[number];
 
 /**

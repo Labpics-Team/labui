@@ -330,50 +330,6 @@
       }
     },
     {
-      "name": "fx-shadow-minor",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "dark"
-        },
-        "position": "shadow-minor"
-      }
-    },
-    {
-      "name": "fx-shadow-ambient",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "dark"
-        },
-        "position": "shadow-ambient"
-      }
-    },
-    {
-      "name": "fx-shadow-penumbra",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "dark"
-        },
-        "position": "shadow-penumbra"
-      }
-    },
-    {
-      "name": "fx-shadow-major",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "dark"
-        },
-        "position": "shadow-major"
-      }
-    },
-    {
       "name": "none",
       "recipe": {
         "kind": "zero"

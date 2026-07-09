@@ -282,14 +282,14 @@ export class LabTagsInput extends LabElement {
         align-items: center;
         gap: var(--_field-gap);
         width: 100%;
-        min-height: 2.5rem;
+        min-height: ${litVar('--lab-size-control-h-m', '2.5rem')};
         margin: 0;
         padding: var(--_field-pad-y) var(--_field-pad-x);
         background-color: ${litVar('--lab-bg-primary')};
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
-        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
         cursor: text;
       }
       :host(:not([disabled]):not([readonly])) .control:hover {
@@ -317,16 +317,20 @@ export class LabTagsInput extends LabElement {
          input has no border of its own — the .control frame carries it). */
       :host .control:has(.input:focus-visible) {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='danger']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-danger')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='warning']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-warning-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='success']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-success-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
 
       /* One tag chip — a pill with the tag text and a delete button. The machine sets
@@ -336,7 +340,7 @@ export class LabTagsInput extends LabElement {
         align-items: center;
         gap: ${litVar('--lab-space-xs', '0.25rem')};
         max-width: 100%;
-        padding: 0.125rem 0.125rem 0.125rem 0.5rem;
+        padding: var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem) var(--lab-space-sm, 0.5rem);
         font-size: var(--_field-label-font);
         letter-spacing: var(--_field-label-tracking);
         line-height: 1.4;
@@ -380,8 +384,8 @@ export class LabTagsInput extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 1.25rem;
-        height: 1.25rem;
+        width: ${litVar('--lab-size-control-l', '1.25rem')};
+        height: ${litVar('--lab-size-control-l', '1.25rem')};
         padding: 0;
         font: inherit;
         line-height: 1;
@@ -408,10 +412,10 @@ export class LabTagsInput extends LabElement {
       /* The text-entry input — the field's control. Reuses the shared field surface roles
          but paints transparently inside the .control frame (which carries the border). */
       .input {
-        flex: 1 1 6rem;
-        min-width: 6rem;
+        flex: 1 1 ${litVar('--lab-space-24', '6rem')};
+        min-width: ${litVar('--lab-space-24', '6rem')};
         margin: 0;
-        padding: 0.125rem 0;
+        padding: var(--lab-radius-xs, 0.125rem) 0;
         font: inherit;
         font-size: var(--_field-font);
         letter-spacing: var(--_field-tracking);

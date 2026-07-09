@@ -102,15 +102,15 @@ describe('numeric defaults agree (CSS knobs ↔ engine DEFAULTS ↔ var() fallba
 describe('--lensed cascade position (the comment claims, as assertions)', () => {
   const lensedIdx = css.indexOf(`.${LENSED_CLASS}`);
   const glassIdx = css.indexOf('[data-material="glass"] .lab-material');
-  const blurIdx = css.indexOf('[data-material="blur"] .lab-material');
+  const acrylicIdx = css.indexOf('[data-material="acrylic"] .lab-material');
   const firstDegradationIdx = css.indexOf('@supports not');
 
-  it('the lensed block exists and sits after the glass and blur mode blocks', () => {
+  it('the lensed block exists and sits after the glass and acrylic mode blocks', () => {
     expect(lensedIdx).toBeGreaterThan(-1);
     expect(glassIdx).toBeGreaterThan(-1);
-    expect(blurIdx).toBeGreaterThan(-1);
+    expect(acrylicIdx).toBeGreaterThan(-1);
     expect(lensedIdx).toBeGreaterThan(glassIdx);
-    expect(lensedIdx).toBeGreaterThan(blurIdx);
+    expect(lensedIdx).toBeGreaterThan(acrylicIdx);
   });
 
   it('…and before the first degradation, so degradations still win', () => {

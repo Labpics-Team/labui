@@ -86,11 +86,6 @@ describe('specular rim — приватная ручка --_rim', () => {
     expect(body).toContain('--_rim: var(--_rim-active)');
   });
 
-  it('blur ВЫКЛЮЧАЕТ рим (тяжёлый фрост диффузен — без резкой кромки)', () => {
-    const body = blockBody(/\[data-material="blur"\] \.lab-material,/);
-    expect(body).toContain('--_rim: none');
-  });
-
   it('solid ВЫКЛЮЧАЕТ рим (непрозрачный канон — не стекло; перекрывает предка)', () => {
     const body = blockBody(/\[data-material="solid"\] \.lab-material,/);
     expect(body).toContain('--_rim: none');

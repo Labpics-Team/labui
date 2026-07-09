@@ -9,7 +9,7 @@
  */
 
 [data-lab-checkbox] {
-  --_lab-cb-box: 1.25rem;
+  --_lab-cb-box: var(--lab-size-control-l, 1.25rem);
   --_lab-cb-radius: var(--lab-radius-sm, 0.25rem);
   --_lab-cb-gap: var(--lab-space-sm, 0.5rem);
   --_lab-cb-font: var(--lab-font-size-md, 1rem);
@@ -28,17 +28,17 @@
 }
 
 [data-lab-checkbox][data-size="tiny"] {
-  --_lab-cb-box: 0.875rem;
+  --_lab-cb-box: var(--lab-size-checkbox-tiny, 0.875rem);
   --_lab-cb-font: var(--lab-font-size-xs, 0.8333rem);
   --_lab-cb-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 [data-lab-checkbox][data-size="s"] {
-  --_lab-cb-box: 1rem;
+  --_lab-cb-box: var(--lab-size-control-m, 1rem);
   --_lab-cb-font: var(--lab-font-size-xs, 0.8333rem);
   --_lab-cb-tracking: var(--lab-letter-spacing-xs, -0.0009em);
 }
 [data-lab-checkbox][data-size="l"] {
-  --_lab-cb-box: 1.5rem;
+  --_lab-cb-box: var(--lab-size-control-xl, 1.5rem);
   --_lab-cb-font: var(--lab-font-size-lg, 1.2rem);
   --_lab-cb-tracking: var(--lab-letter-spacing-lg, -0.0194em);
 }

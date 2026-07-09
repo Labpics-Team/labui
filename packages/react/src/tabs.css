@@ -79,7 +79,7 @@
   justify-content: flex-start;
   border-bottom: none;
   border-inline-end: var(--lab-stroke-thick) solid transparent;
-  margin-inline-end: -0.0625rem;
+  margin-inline-end: calc(-1 * var(--lab-stroke-hairline, 0.0625rem));
 }
 
 .lab-tabs-trigger:hover:not([data-disabled]) {

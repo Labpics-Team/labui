@@ -12,7 +12,7 @@
 const root = document.documentElement;
 
 const CONTROLS = {
-  'data-material': ['solid', 'glass', 'blur', 'acrylic'],
+  'data-material': ['solid', 'glass', 'acrylic'],
   'data-theme': ['dark', 'light'],
 } as const;
 

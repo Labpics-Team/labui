@@ -12,7 +12,8 @@ import {
 
 /*
  * A. Политика фонов — явный, проверяемый контракт (ADR-0002 §1, ADR-0004 Решение 4):
- *   1. Какие МОДЫ читают живой фон (live-blur): glass / blur / acrylic; solid — нет.
+ *   1. Какие МОДЫ читают живой фон (live-blur): glass / acrylic; solid — нет
+ *      (отдельный blur-ярус снесён — ADR-0008, перцептивный дубль acrylic).
  *   2. Инвариант вложенности: live-blur НЕЛЬЗЯ вкладывать в live-blur (двойной
  *      live-блюр = шов). solid вкладывается во что угодно и принимает что угодно.
  *   3. Какое СЕМЕЙСТВО токенов красит собственную заливку материала: только
@@ -21,12 +22,11 @@ import {
  * Классы: А (unit, RED-provable на известных входах) + скан-инвариант по material.css.
  */
 
-const ALL_MODES: readonly MaterialMode[] = ['solid', 'glass', 'blur', 'acrylic'];
+const ALL_MODES: readonly MaterialMode[] = ['solid', 'glass', 'acrylic'];
 
 describe('isLiveBlur — какие моды читают живой фон', () => {
-  it('glass / blur / acrylic читают живой фон', () => {
+  it('glass / acrylic читают живой фон', () => {
     expect(isLiveBlur('glass')).toBe(true);
-    expect(isLiveBlur('blur')).toBe(true);
     expect(isLiveBlur('acrylic')).toBe(true);
   });
 
@@ -34,8 +34,8 @@ describe('isLiveBlur — какие моды читают живой фон', ()
     expect(isLiveBlur('solid')).toBe(false);
   });
 
-  it('LIVE_BLUR_MODES = ровно {glass, blur, acrylic}', () => {
-    expect([...LIVE_BLUR_MODES].sort()).toEqual(['acrylic', 'blur', 'glass']);
+  it('LIVE_BLUR_MODES = ровно {glass, acrylic} — blur снесён (ADR-0008)', () => {
+    expect([...LIVE_BLUR_MODES].sort()).toEqual(['acrylic', 'glass']);
   });
 
   it('каждый live-blur — не solid, и наоборот (полное разбиение множества мод)', () => {

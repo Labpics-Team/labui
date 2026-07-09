@@ -368,7 +368,7 @@ export class LabCombobox extends LabElement {
          <lab-input>; the trigger button overlaps its right padding. */
       .input.control {
         flex: 1 1 auto;
-        padding-right: 2.25rem;
+        padding-right: var(--lab-size-switch-track-s, 2.25rem);
       }
 
       /* The disclosure trigger — a real <button> the machine wires to toggle the
@@ -381,7 +381,7 @@ export class LabCombobox extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 2.25rem;
+        width: var(--lab-size-switch-track-s, 2.25rem);
         height: 100%;
         margin: 0;
         padding: 0;
@@ -413,8 +413,8 @@ export class LabCombobox extends LabElement {
       /* The floating listbox — raised surface with a hairline, lifted and layered. */
       .content {
         box-sizing: border-box;
-        min-width: var(--reference-width, 12rem);
-        max-height: 16rem;
+        min-width: var(--reference-width, var(--lab-size-overlay-12, 12rem));
+        max-height: var(--lab-size-overlay-16, 16rem);
         overflow-y: auto;
         margin: 0;
         padding: ${litVar('--lab-space-xs', '0.25rem')};

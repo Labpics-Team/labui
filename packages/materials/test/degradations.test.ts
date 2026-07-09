@@ -117,10 +117,12 @@ describe('material.css deterministic degradations', () => {
     expect(dropsRim(body)).toBe(true);
   });
 
-  it('glass, blur and acrylic modes all exist and drop the opaque base', () => {
+  it('glass и acrylic существуют; blur-ярус снесён без следа (ADR-0008)', () => {
     expect(css).toContain('[data-material="glass"] .lab-material');
-    expect(css).toContain('[data-material="blur"] .lab-material');
     expect(css).toContain('[data-material="acrylic"] .lab-material');
+    // Регрессионный замок сноса: ни одного blur-селектора в оси материала —
+    // возврат яруса возможен только осознанной правкой этого закона.
+    expect(css).not.toContain('[data-material="blur"]');
     // Live modes paint the tint over `transparent` so the backdrop reads through.
     expect(css).toContain('--_base-paint: transparent');
   });

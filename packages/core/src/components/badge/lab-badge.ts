@@ -78,7 +78,7 @@ export class LabBadge extends LabElement {
       align-items: center;
       justify-content: center;
       gap: var(--_gap);
-      min-height: 1.25rem;
+      min-height: ${litVar('--lab-size-control-l', '1.25rem')};
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
       font: inherit;

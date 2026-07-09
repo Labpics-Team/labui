@@ -90,8 +90,8 @@
 /* One segment — a real single-character <input>. THIS is the painted field surface. */
 [data-lab-pin-input] .lab-pin-input-segment {
   box-sizing: border-box;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: var(--lab-size-control-h-m, 2.5rem);
+  height: var(--lab-size-control-h-m, 2.5rem);
   margin: 0;
   padding: 0;
   font: inherit;
@@ -103,9 +103,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  outline: none;
-  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-    box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   appearance: none;
 }
 [data-lab-pin-input] .lab-pin-input-segment::placeholder {
@@ -114,12 +112,12 @@
 }
 
 [data-lab-pin-input][data-size="s"] .lab-pin-input-segment {
-  width: 2rem;
-  height: 2rem;
+  width: var(--lab-size-control-h-s, 2rem);
+  height: var(--lab-size-control-h-s, 2rem);
 }
 [data-lab-pin-input][data-size="l"] .lab-pin-input-segment {
-  width: 3rem;
-  height: 3rem;
+  width: var(--lab-size-control-h-l, 3rem);
+  height: var(--lab-size-control-h-l, 3rem);
 }
 
 [data-lab-pin-input]:not([data-disabled]):not([data-readonly]) .lab-pin-input-segment:hover {
@@ -149,16 +147,20 @@
 /* Focus ring from the focus role — never a removed outline. */
 [data-lab-pin-input] .lab-pin-input-segment:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-pin-input][data-type="danger"] .lab-pin-input-segment:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-danger);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-pin-input][data-type="warning"] .lab-pin-input-segment:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-warning-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-pin-input][data-type="success"] .lab-pin-input-segment:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-success-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* The machine's hidden form input is visually hidden via its own inline style; nothing to

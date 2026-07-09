@@ -216,7 +216,7 @@ export class LabNumberInput extends LabElement {
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
-        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       }
       :host(:not([disabled]):not([readonly])) .control:hover {
         border-color: ${litVar('--lab-border-strong')};
@@ -278,7 +278,7 @@ export class LabNumberInput extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 1.75rem;
+        width: var(--lab-space-7, 1.75rem);
         margin: 0;
         padding: 0;
         font: inherit;
@@ -305,10 +305,10 @@ export class LabNumberInput extends LabElement {
       }
 
       :host([size='s']) .trigger {
-        width: 1.5rem;
+        width: var(--lab-space-6, 1.5rem);
       }
       :host([size='l']) .trigger {
-        width: 2rem;
+        width: var(--lab-size-control-h-s, 2rem);
       }
 
       /* Scrubber affordance on the label when enabled (the machine owns the drag). */
@@ -321,16 +321,20 @@ export class LabNumberInput extends LabElement {
          under :host so it beats the :host .control resting border above. */
       :host .control:has(.input:focus-visible) {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='danger']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-danger')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='warning']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-warning-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='success']) .control:has(.input:focus-visible) {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-success-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
     `,
   ];

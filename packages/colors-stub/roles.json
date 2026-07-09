@@ -192,10 +192,6 @@
       "--lab-fx-glow-warning-subtle",
       "--lab-fx-glow-warning-subtle-alpha",
       "--lab-fx-glow-warning-subtle-core",
-      "--lab-fx-shadow-ambient",
-      "--lab-fx-shadow-major",
-      "--lab-fx-shadow-minor",
-      "--lab-fx-shadow-penumbra",
       "--lab-fx-skeleton-highlight"
     ],
     "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],
