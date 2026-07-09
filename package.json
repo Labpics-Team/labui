@@ -21,7 +21,8 @@
     "check": "biome check .",
     "test:e2e": "pnpm --filter @labpics/ui-docs test:e2e",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version",
+    "perf:size": "node -e \"const fs=require('fs'),zlib=require('zlib');function s(p){try{const b=fs.readFileSync(p);const g=zlib.gzipSync(b).length;return {raw:(b.length/1024).toFixed(1),gz:(g/1024).toFixed(1)};}catch(e){return null;}}console.log('=== Perf size baseline (published artifacts) ===');const targets=['packages/colors-stub/contract.css','packages/colors-stub/contract.min.css','packages/shadow/dist/shadow.css','packages/core/dist/index.js','packages/react/dist/index.js','packages/materials/dist/material.css'];let full, min; targets.forEach(p=>{const r=s(p);if(r){console.log(p+': raw '+r.raw+'KB gz '+r.gz+'KB'); if(p.includes('contract.css')&&!p.includes('.min')) full=r; if(p.includes('contract.min.css')) min=r;}}); if(full&&min){const dr=(full.raw-min.raw)/full.raw*100; const dg=(full.gz-min.gz)/full.gz*100; console.log('contract min win: raw -'+dr.toFixed(1)+'% (ambitious target), gz -'+dg.toFixed(1)+'%'); }\""
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

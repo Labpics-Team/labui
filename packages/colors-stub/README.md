@@ -24,6 +24,14 @@
 роль роняет CI. **Точный, всегда актуальный перечень ролей живёт в `roles.json` и
 `contract.css`; проза его не дублирует.**
 
+### Perf: contract.min.css для published / prod consumers
+Для production-бандлов используйте opt-in `./contract.min.css` (экспорт в package.json):
+- `@import "@labpics/colors/contract.min.css";` (или `import '.../contract.min.css'`)
+- Амбициозный таргет редукции: ~52KB full → ~37.7KB min raw (ws/comments/alpha-оптимизации; ~27%+ экономия; gz выигрыш меньше т.к. сжимается хорошо).
+- Полный `contract.css` оставлен для тестов/гейтов/дебага (byte-identical discipline).
+- Реген + min: `pnpm --filter @labpics/colors generate` (или build на стабе).
+- Интегрировано в root `perf:size` и `perf-measure-sizes.mjs` (доказанный win в PR).
+
 ### Правило трёх языков
 
 Компоненты читают **только** семантические роли `--lab-*`. Примитивы (`N0..N12`,

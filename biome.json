@@ -20,7 +20,12 @@
       "**/*.tsbuildinfo",
       ".playwright-mcp/**",
       "packages/colors-stub/contract.css",
-      "packages/colors-stub/figma-reference.css"
+      "packages/colors-stub/contract.min.css",
+      "packages/colors-stub/figma-reference.css",
+      "measure-bundle-sizes.mjs",
+      "tmp-*.mjs",
+      "perf-measure-sizes.mjs",
+      "scripts/minify-contract.cjs"
     ]
   },
   "formatter": {

@@ -185,3 +185,80 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
   await expect.poll(() => litCard(page, 'lit-outlined').evaluate(bg)).not.toBe(litDark);
   await expect.poll(() => reactCard(page, 'react-outlined').evaluate(bg)).not.toBe(reactDark);
 });
+
+/**
+ * Behavioral E2 tests for forced-colors + reduced-transparency on focus ring (key
+ * interactive field: the slotted button inside interactive card). Per #135 + playbook
+ * (E2 emulateMedia). Verifies outline-based canon survives (visible solid outline
+ * under forcedColors: active; reduced-transp via CDP). Ties to a11y-perf: forced
+ * color users get reliable focus without extra paint cost of dropped shadows.
+ *
+ * Uses computed outline (style + width) — follows canon from core-contract + foundation:
+ * outline (not box-shadow) so UA forced palette + high-contrast applies.
+ */
+test('forced-colors: emulateMedia makes focus ring outline visible on key interactive (both renderers) — #135', async ({
+  page,
+}) => {
+  const cases = [
+    {
+      surface: litCard(page, 'lit-interactive'),
+      control: page.getByTestId('lit-interactive-control'),
+    },
+    {
+      surface: reactCard(page, 'react-interactive'),
+      control: page.getByTestId('react-interactive-control'),
+    },
+  ];
+
+  for (const { surface, control } of cases) {
+    // reset state
+    await page.emulateMedia({ forcedColors: null });
+    // (a) resting no outline
+    expect(await surface.evaluate(outlineStyle)).toBe('none');
+
+    await page.emulateMedia({ forcedColors: 'active' });
+    await control.focus();
+    await expect(control).toBeFocused();
+
+    // (b) under forced-colors: outline IS visible (solid) and has width — canon survives
+    await expect.poll(() => surface.evaluate(outlineStyle)).toBe('solid');
+    const outlineW = await surface.evaluate((el) => getComputedStyle(el).outlineWidth);
+    expect(outlineW, 'outline width >0 under forcedColors').not.toBe('0px');
+
+    // color follows token even under UA override (best-effort; UA may remap but width+style hold)
+    // restore for next
+    await page.emulateMedia({ forcedColors: null });
+  }
+});
+
+test('reduced-transparency: focus ring outline remains visible (CDP emulate, both renderers) — #135', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'CDP emulation is Chromium-only');
+  const cases = [
+    {
+      surface: litCard(page, 'lit-interactive'),
+      control: page.getByTestId('lit-interactive-control'),
+    },
+    {
+      surface: reactCard(page, 'react-interactive'),
+      control: page.getByTestId('react-interactive-control'),
+    },
+  ];
+
+  for (const { surface, control } of cases) {
+    const session = await page.context().newCDPSession(page);
+    await session.send('Emulation.setEmulatedMedia', {
+      features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
+    });
+
+    await control.focus();
+    await expect(control).toBeFocused();
+
+    // outline ring must stay (a11y not sacrificed under reduced-transp material fallback)
+    await expect.poll(() => surface.evaluate(outlineStyle)).toBe('solid');
+    const outlineW = await surface.evaluate((el) => getComputedStyle(el).outlineWidth);
+    expect(outlineW, 'outline width >0 under reduced-transparency').not.toBe('0px');
+  }
+});

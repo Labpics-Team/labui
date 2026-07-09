@@ -7,12 +7,13 @@
   "type": "module",
   "exports": {
     "./contract.css": "./contract.css",
+    "./contract.min.css": "./contract.min.css",
     "./roles.json": "./roles.json",
     "./package.json": "./package.json"
   },
-  "files": ["contract.css", "roles.json"],
+  "files": ["contract.css", "contract.min.css", "roles.json"],
   "scripts": {
-    "build": "node -e \"process.stdout.write('stub: no build step\\n')\"",
+    "build": "node ../../scripts/minify-contract.cjs && echo 'contract.min.css generated for perf'",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },

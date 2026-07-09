@@ -20,7 +20,7 @@
     "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": ["**/*.svelte", "**/*.css", "./dist/**/*.js"],
+  "sideEffects": ["**/*.svelte", "**/*.css"],
   "scripts": {
     "build": "svelte-package -i src -o dist",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",

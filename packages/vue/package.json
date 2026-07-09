@@ -27,7 +27,7 @@
     "./package.json": "./package.json"
   },
   "files": ["dist"],
-  "sideEffects": ["**/*.css", "./dist/*.js", "./dist/*.cjs"],
+  "sideEffects": ["**/*.css"],
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",

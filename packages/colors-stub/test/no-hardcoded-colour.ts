@@ -55,6 +55,9 @@ import {
  */
 export const ALLOWLIST: readonly string[] = [
   'packages/colors-stub/contract.css',
+  // The minified contract is the published artifact for perf (byte-identical values, ws/comments stripped).
+  // It legitimately contains the colour literals from the contract; exempt like contract.css itself.
+  'packages/colors-stub/contract.min.css',
   // Замороженный Figma-якорь: он ЕСТЬ сырые замеры (включая material rgb-литералы),
   // против него меряет золотая сверка — не компонентный код, не редактируется.
   'packages/colors-stub/figma-reference.css',

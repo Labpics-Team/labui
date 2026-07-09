@@ -199,3 +199,60 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
   await expect.poll(() => lit.evaluate((el) => getComputedStyle(el).color)).not.toBe(litDark);
   await expect.poll(() => react.evaluate((el) => getComputedStyle(el).color)).not.toBe(reactDark);
 });
+
+/**
+ * FORCED-COLORS skeleton (T4 / E2 per playbook A3 for #135).
+ * emulateMedia + outline check on fields. Covers input here; skeleton for 7:
+ * combobox, input, number-input, pin-input, tags-input, textarea, slider.
+ * Criterion (ADR-0007): outline-based ring survives forced-colors (box-shadow UA-stripped).
+ * Run: pnpm --filter @labpics/ui-docs test:e2e -- --project=chromium
+ */
+test('forced-colors: outline-based focus ring visible on field (survives emulateMedia)', async ({
+  page,
+}) => {
+  await page.emulateMedia({ forcedColors: 'active' });
+
+  // Key fields: both renderers (input fields use box-shadow today — this catches the class)
+  for (const control of [litControl(page, 'lit-neutral'), reactControl(page, 'react-neutral')]) {
+    await control.focus();
+    await expect(control).toBeFocused();
+
+    const outlineInfo = await control.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { style: cs.outlineStyle, width: cs.outlineWidth, color: cs.outlineColor };
+    });
+    // Per canon (#135, foundation-contract, core-CONTRACT §4): outline must be visible (not removed)
+    // Note: current field impls use box-shadow (UA drops under forced) → expect will surface the gap.
+    expect(outlineInfo.style, 'outline style visible under forced-colors for input field').not.toBe(
+      'none',
+    );
+    expect(outlineInfo.width, 'outline has width under forced-colors').not.toBe('0px');
+  }
+
+  // Reset
+  await page.emulateMedia({ forcedColors: null });
+});
+
+test('reduced-transparency: focus ring outline visible on input fields (CDP emulate)', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'CDP emulation is Chromium-only');
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setEmulatedMedia', {
+    features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
+  });
+
+  for (const control of [litControl(page, 'lit-neutral'), reactControl(page, 'react-neutral')]) {
+    await control.focus();
+    await expect(control).toBeFocused();
+
+    const outlineInfo = await control.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { style: cs.outlineStyle, width: cs.outlineWidth };
+    });
+    // a11y ring must remain under reduced-transp (ties to perf: no regression for a11y users)
+    expect(outlineInfo.style, 'outline visible under reduced-transparency').not.toBe('none');
+    expect(outlineInfo.width, 'outline width under reduced-transparency').not.toBe('0px');
+  }
+});

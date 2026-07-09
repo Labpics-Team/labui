@@ -50,17 +50,22 @@ function alphaVarName(slot: ShadowSlotName): string {
  * default angle (0) the size box-shadows are the opora table, ply for ply.
  */
 export function generateShadowCss(): string {
+  // compute-once for perf (elevations are pure; output byte-identical)
+  const elevations = ELEVATION_SHAPES.map((level) => ({
+    name: level.name,
+    value: composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG),
+  }));
   return [
     header(),
     ':root {',
     rootContract(),
-    sizeRoles(),
+    sizeRoles(elevations),
     roleAliases(),
     '}',
     '',
-    sizeClasses(),
+    sizeClasses(elevations),
     '',
-    roleAliasClasses(),
+    roleAliasClasses(elevations),
     '',
     themeBlock('light'),
     '',
@@ -111,14 +116,13 @@ function rootContract(): string {
   return lines.join('\n');
 }
 
-function sizeRoles(): string {
+function sizeRoles(elevations: { name: string; value: string }[]): string {
   const lines = [
     '',
     '  /* Elevation SIZES — the primitive. Each is the owner ladder, four plies. */',
   ];
-  for (const level of ELEVATION_SHAPES) {
-    const value = composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG);
-    lines.push(`  ${sizeVar(level.name)}:\n    ${value};`);
+  for (const e of elevations) {
+    lines.push(`  ${sizeVar(e.name)}:\n    ${e.value};`);
   }
   return lines.join('\n');
 }
@@ -142,23 +146,23 @@ function roleAliases(): string {
  * A surface that sets `--lab-surface-shadow-tint` + raises the tint strength
  * tints its own shadow; the token form carries the neutral anchor.
  */
-function sizeClasses(): string {
+function sizeClasses(elevations: { name: string; value: string }[]): string {
   const lines = [
     '/* Size classes — set box-shadow directly so an opt-in --lab-surface-shadow-tint',
     '   resolves at the element, and ease elevation changes via the motion token. */',
   ];
-  for (const level of ELEVATION_SHAPES) {
-    const value = composeElevation(level, DEFAULT_LIGHT_ANGLE_DEG);
+  for (const e of elevations) {
     lines.push(
-      `.${SIZE_CLASS_PREFIX}-${level.name} {\n  box-shadow:\n    ${value};\n  transition: var(${TRANSITION_VAR});\n}`,
+      `.${SIZE_CLASS_PREFIX}-${e.name} {\n  box-shadow:\n    ${e.value};\n  transition: var(${TRANSITION_VAR});\n}`,
     );
   }
   return lines.join('\n');
 }
 
 /** Role classes alias size classes — same geometry, semantic name. */
-function roleAliasClasses(): string {
+function roleAliasClasses(_elevations: { name: string; value: string }[]): string {
   const lines = ['/* Role classes — semantic alias onto the size class box-shadow. */'];
+  // Note: role aliases still use sizeVar for var() indirection; elevations precomp used for sizes
   for (const role of ELEVATION_ROLES) {
     const size = ROLE_TO_SIZE[role];
     lines.push(

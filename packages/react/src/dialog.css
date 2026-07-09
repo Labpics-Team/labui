@@ -42,6 +42,9 @@
   position: fixed;
   inset: 0;
   background-color: var(--lab-bg-overlay-base);
+  /* scrim migration (playbook #135 / ADR-0007): law "scrim по уровню" — modal-underlay uses base;
+     popovers use base only if needed (currently); ghost/soft/strong dead (0 consumers per gap-census).
+     Migrate future overlays per z: modal-underlay=base, others=none or ghost. Values provisional in contract. */
   z-index: var(--lab-z-modal-underlay, 1100);
   pointer-events: auto;
 }
