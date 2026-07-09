@@ -97,8 +97,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  outline: none;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color 120ms ease;
   appearance: none;
 }
 
@@ -113,26 +112,30 @@
 
 [data-lab-combobox] .lab-combobox-input:focus-visible {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-combobox][data-type="danger"] .lab-combobox-input {
   border-color: var(--lab-border-danger);
 }
 [data-lab-combobox][data-type="danger"] .lab-combobox-input:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-danger);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-combobox][data-type="warning"] .lab-combobox-input {
   border-color: var(--lab-border-warning-strong);
 }
 [data-lab-combobox][data-type="warning"] .lab-combobox-input:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-warning-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-combobox][data-type="success"] .lab-combobox-input {
   border-color: var(--lab-border-success-strong);
 }
 [data-lab-combobox][data-type="success"] .lab-combobox-input:focus-visible {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-success-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 [data-lab-combobox] .lab-combobox-input:read-only {

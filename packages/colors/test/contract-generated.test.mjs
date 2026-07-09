@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { generateContract } from '../generate-contract.mjs';
+import { generateContract, RETIRED_ROLES } from '../generate-contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contractPath = join(here, '..', '..', 'colors-stub', 'contract.css');
@@ -28,7 +28,7 @@ describe('сгенерированный контракт', () => {
     const names = (css) => new Set([...css.matchAll(/(--lab-[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
     const anchor = names(await readFile(referencePath, 'utf8'));
     const contract = names(await readFile(contractPath, 'utf8'));
-    const lost = [...anchor].filter((n) => !contract.has(n));
+    const lost = [...anchor].filter((n) => !contract.has(n) && !RETIRED_ROLES.has(n)); // снятые с контракта роли (ADR-0007) легально отсутствуют
     expect(lost, 'переменные якоря, потерянные генерацией').toEqual([]);
   });
 });

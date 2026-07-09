@@ -84,7 +84,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color 120ms ease;
 }
 
 [data-lab-number-input] .lab-field-control:hover:not([data-disabled]) {
@@ -166,7 +166,8 @@
 /* Focus ring: the control surface lights when the inner input is focus-visible. */
 [data-lab-number-input] .lab-field-control:has(.lab-number-input-input:focus-visible) {
   border-color: var(--lab-border-focus);
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-focus);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* Sentiment: the type re-points the border + focus ring, independent of size. */
@@ -175,21 +176,24 @@
 }
 [data-lab-number-input][data-type="danger"]
   .lab-field-control:has(.lab-number-input-input:focus-visible) {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-danger);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-danger);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-number-input][data-type="warning"] .lab-field-control {
   border-color: var(--lab-border-warning-strong);
 }
 [data-lab-number-input][data-type="warning"]
   .lab-field-control:has(.lab-number-input-input:focus-visible) {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-warning-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-warning-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 [data-lab-number-input][data-type="success"] .lab-field-control {
   border-color: var(--lab-border-success-strong);
 }
 [data-lab-number-input][data-type="success"]
   .lab-field-control:has(.lab-number-input-input:focus-visible) {
-  box-shadow: 0 0 0 var(--lab-focus-ring-width) var(--lab-border-success-strong);
+  outline: var(--lab-focus-ring-width) solid var(--lab-border-success-strong);
+  outline-offset: var(--lab-focus-ring-offset);
 }
 
 /* Readonly / disabled surfaces. */

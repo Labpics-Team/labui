@@ -266,8 +266,7 @@ export class LabPinInput extends LabElement {
         background-color: ${litVar('--lab-bg-primary')};
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
-        outline: none;
-        transition: border-color 120ms ease, box-shadow 120ms ease;
+        transition: border-color 120ms ease;
         appearance: none;
       }
       .segment::placeholder {
@@ -313,16 +312,20 @@ export class LabPinInput extends LabElement {
          own border, so the ring lights on the focused box. */
       .segment:focus-visible {
         border-color: ${litVar('--lab-border-focus')};
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-focus')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='danger']) .segment:focus-visible {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-danger')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-danger')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='warning']) .segment:focus-visible {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-warning-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-warning-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
       :host([type='success']) .segment:focus-visible {
-        box-shadow: 0 0 0 ${litVar('--lab-focus-ring-width')} ${litVar('--lab-border-success-strong')};
+        outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-success-strong')};
+        outline-offset: ${litVar('--lab-focus-ring-offset')};
       }
 
       @media (prefers-reduced-motion: reduce) {
