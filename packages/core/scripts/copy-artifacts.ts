@@ -28,8 +28,9 @@ const shadowPkg = require.resolve('@labpics/ui-shadow/shadow.css');
 function main(): void {
   mkdirSync(dist, { recursive: true });
 
-  // Own source CSS files.
-  const ownFiles = ['theme.css'];
+  // Own source CSS files. selection.css — the UA-chrome binding layer
+  // (selection/caret/accent/scrollbar), axis 10 of the foundations census (task 125).
+  const ownFiles = ['theme.css', 'selection.css'];
   for (const file of ownFiles) {
     copyFileSync(join(src, file), join(dist, file));
   }

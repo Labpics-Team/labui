@@ -102,7 +102,7 @@ export const fieldStyles: CSSResult = css`
     background-color: ${litVar('--lab-bg-primary')};
     border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
     border-radius: var(--_field-radius);
-    transition: border-color 120ms ease;
+    transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     appearance: none;
   }
 
@@ -173,11 +173,5 @@ export const fieldStyles: CSSResult = css`
     letter-spacing: var(--_field-help-tracking);
     line-height: var(--_field-line);
     color: ${litVar('--lab-label-danger')};
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .control {
-      transition: none;
-    }
   }
 `;

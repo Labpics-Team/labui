@@ -315,7 +315,7 @@
     "transition": {
       "$type": "transition",
       "$value": {
-        "duration": "{motion.duration.base}",
+        "duration": "{motion.duration.fast}",
         "delay": {
           "value": 0,
           "unit": "ms"
@@ -326,8 +326,8 @@
       "$extensions": {
         "com.labpics.motion": {
           "provenance": {
-            "class": "b",
-            "source": "M3: standard easing for general in-place change (§1.1)"
+            "class": "e",
+            "source": "design-choice: wiring task 125 retuned base->fast. The shipped culture converged on 120ms micro-feedback (74/74 live transition sites are hover/state changes, none used 200ms); fast = 100ms sits one frame from 120ms (sub-JND) and matches M3 short2/Fluent durationFaster. Easing grounded on M3 standard (§1.1)."
           },
           "reducedMotion": {
             "duration": "{motion.duration.instant}",

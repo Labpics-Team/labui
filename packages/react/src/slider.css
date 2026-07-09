@@ -124,7 +124,7 @@
   box-shadow: var(--lab-elevation-raised);
   cursor: grab;
   transform: translate(-50%, -50%);
-  transition: border-color 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-slider][data-orientation="horizontal"] .lab-slider-thumb {
   top: 50%;
@@ -184,10 +184,4 @@
   letter-spacing: var(--_lab-help-tracking);
   line-height: var(--_lab-line);
   color: var(--lab-label-danger);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-slider] .lab-slider-thumb {
-    transition: none;
-  }
 }

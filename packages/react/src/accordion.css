@@ -74,7 +74,7 @@
   text-align: start;
   color: var(--lab-label-primary);
   cursor: pointer;
-  transition: color 120ms ease;
+  transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 
 .lab-accordion-trigger:hover:not([data-disabled]) {
@@ -98,7 +98,7 @@
   width: 0.75em;
   height: 0.75em;
   color: currentColor;
-  transition: transform 160ms ease;
+  transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 .lab-accordion-indicator svg {
   width: 100%;
@@ -118,11 +118,4 @@
 }
 .lab-accordion-content[hidden] {
   display: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lab-accordion-trigger,
-  .lab-accordion-indicator {
-    transition: none;
-  }
 }

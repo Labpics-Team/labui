@@ -64,6 +64,10 @@ export const SEMANTIC_ROLE_PREFIXES: readonly string[] =
  *     `--lab-light-angle`, `--lab-elevation-*`.
  *   - `--lab-surface-shadow-tint`: per-surface shadow tint read from the core
  *     contract (a single exact name, not a family).
+ *   - `packages/tokens/src/generated/motion.css`: `--lab-motion-*` — the
+ *     motion family (durations/easings/roles). Permanently local and
+ *     non-colour: it never migrates to the colour contract; it is listed here
+ *     so the zero-unclassified colour gate can place it (#125 wiring).
  */
 export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-shadow-', // shadow stack alphas + colour anchor (shadow.css)
@@ -71,6 +75,7 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-shadow-color', // exact: theme shadow-colour anchor (shadow.css)
   '--lab-light-angle', // exact: single global light source (shadow.css)
   '--lab-elevation-', // semantic elevation roles (shadow.css)
+  '--lab-motion-', // motion durations/easings/roles (motion.css — non-colour, permanently local)
 ] as const;
 
 export type Bucket = 'colour-contract' | 'dimension' | 'local-or-gap' | 'unclassified';

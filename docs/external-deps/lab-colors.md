@@ -202,6 +202,17 @@ LabUI ships exactly two colour themes today — `THEMES = ['light', 'dark']`
 | --- | --- | --- | --- |
 | **IC theme calibration** | _no current consumer — anticipated._ No `[data-theme="ic"]` / inclusive / high-contrast selector exists; `theme.css` defines the structural insertion points only and **no colour values** (that would duplicate `semantic.rs`, forbidden). | _(none — LabUI declares no IC values.)_ | The inclusive/contrast theme role calibration, bound under a future `data-theme` value by the engine. LabUI will gain it as a pure role re-binding on an ancestor — zero component edits — never by computing contrast values locally. |
 
+## Non-colour local family in the classifier registry — NOT an engine gap
+
+The `local-or-gap` allowlist (CH-01) doubles as the classification registry for
+the zero-unclassified colour gate: **every** consumed `--lab-*` name must land
+in a bucket, including families that have nothing to do with the colour engine.
+One such family is registered here for that reason alone:
+
+| Family | Declared at | Consumed | Status |
+| --- | --- | --- | --- |
+| **Motion tokens** — `--lab-motion-*` (durations, easings, semantic transition/emphasis/entrance/exit roles) | `packages/tokens/src/generated/motion.css`; source-of-truth `packages/tokens/src/motion/config.ts` (generated — never hand-edited) | transition/animation sites across `packages/core` + `packages/react` (e.g. `packages/core/src/components/accordion/lab-accordion.ts`), wired in task 125 | **Permanently local, non-colour.** Published by `@labui/tokens`, not provisional, not awaiting the engine. It is listed in `LOCAL_OR_GAP_PREFIXES` solely so the classifier can place it; it must NEVER migrate to the colour contract, and the engine-swap invariants below do not apply to it — there is nothing to swap. It is **not** one of the five EXTERNAL-blocker capability classes above. |
+
 ## Invariants (NEVER regress)
 
 - No colour VALUE above is computed in LabUI — every value is a snapshot of the

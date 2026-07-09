@@ -233,8 +233,8 @@ export class LabRadioGroup extends LabElement {
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
       background-color: transparent;
       transition:
-        border-color 120ms ease,
-        background-color 120ms ease;
+        border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
 
     /* Checked ring colour per type, driven by the machine's data-state on the
@@ -257,7 +257,7 @@ export class LabRadioGroup extends LabElement {
       border-radius: ${litVar('--lab-radius-circle', '9999px')};
       background-color: currentColor;
       transform: scale(0);
-      transition: transform 120ms ease;
+      transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     :host([type='accent']) .control[data-state='checked'] .dot {
       color: ${litVar('--lab-fill-accent')};
@@ -296,13 +296,6 @@ export class LabRadioGroup extends LabElement {
       clip-path: inset(50%);
       overflow: hidden;
       white-space: nowrap;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .control,
-      .dot {
-        transition: none;
-      }
     }
   `;
 

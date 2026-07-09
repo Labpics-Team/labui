@@ -79,7 +79,8 @@
   border-radius: var(--lab-radius-circle, 9999px);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   background-color: transparent;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+    background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 
 /* Checked ring colour per type, driven by the machine's data-state (mirrors the
@@ -100,7 +101,7 @@
   border-radius: var(--lab-radius-circle, 9999px);
   background-color: currentColor;
   transform: scale(0);
-  transition: transform 120ms ease;
+  transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-radio-group][data-type="accent"] .lab-radio-control[data-state="checked"] .lab-radio-dot {
   color: var(--lab-fill-accent);
@@ -139,11 +140,4 @@
   clip-path: inset(50%);
   overflow: hidden;
   white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-radio-group] .lab-radio-control,
-  [data-lab-radio-group] .lab-radio-dot {
-    transition: none;
-  }
 }

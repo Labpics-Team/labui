@@ -84,7 +84,7 @@
   background-color: var(--lab-bg-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--_lab-field-radius);
-  transition: border-color 120ms ease;
+  transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   appearance: none;
 }
 
@@ -147,10 +147,4 @@
   letter-spacing: var(--_lab-field-help-tracking);
   line-height: var(--_lab-field-line);
   color: var(--lab-label-danger);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-lab-input] .lab-field-control {
-    transition: none;
-  }
 }

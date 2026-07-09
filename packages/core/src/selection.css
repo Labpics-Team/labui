@@ -1,0 +1,59 @@
+/*
+ * ┌───────────────────────────────────────────────────────────────────────────┐
+ * │  @labpics/ui-core — UA-chrome binding layer (selection / caret / accent /  │
+ * │  scrollbars). Wired in task 125, axis 10 of the foundations gap census.    │
+ * │                                                                            │
+ * │  This file defines NO colour value — it only BINDS existing @labpics/colors │
+ * │  contract roles onto browser chrome that previously sat on UA defaults.    │
+ * │  Both themes come for free: the roles rebind under [data-theme], so one     │
+ * │  layer serves light and dark with zero per-theme blocks.                   │
+ * │                                                                            │
+ * │  Scope law (same as theme.css font block): the DS never paints host DOM     │
+ * │  without opt-in — everything here lives under [data-theme]. The inherited   │
+ * │  properties (caret-color, accent-color, scrollbar-color/width) cascade      │
+ * │  through shadow roots from the scope root; ::selection and the -webkit-     │
+ * │  scrollbar fallback style the light DOM of the scope.                      │
+ * │                                                                            │
+ * │  Choices (owner delegated; provenance):                                    │
+ * │  - ::selection = fill-accent + label-on-accent — the ONLY contract pairing  │
+ * │    with guaranteed tested contrast in both themes (the control pairing);    │
+ * │    an alpha wash (fill-accent-tinted) would composite unpredictably over    │
+ * │    coloured text (danger/secondary labels).                                │
+ * │  - caret/accent = fill-accent — native platform convention (macOS/iOS       │
+ * │    accent caret; accent-color drives native checkbox/radio/range/progress). │
+ * │  - scrollbar thumb = fill-tertiary (neutral translucent, both themes),      │
+ * │    track = fill-none (the contract's "no paint" role — NOT the transparent  │
+ * │    keyword, which the colour guard rightly treats as a hardcoded colour).   │
+ * │  - scrollbar-width: thin — matches the DS minimal chrome; geometry of the   │
+ * │    -webkit- fallback stays NATIVE (colours only, no invented dimensions).   │
+ * └───────────────────────────────────────────────────────────────────────────┘
+ */
+
+[data-theme] {
+  caret-color: var(--lab-fill-accent);
+  accent-color: var(--lab-fill-accent);
+  scrollbar-color: var(--lab-fill-tertiary) var(--lab-fill-none);
+  scrollbar-width: thin;
+}
+
+[data-theme]::selection,
+[data-theme] ::selection {
+  background-color: var(--lab-fill-accent);
+  color: var(--lab-label-on-accent);
+}
+
+/*
+ * WebKit fallback — Safari ignores scrollbar-color; Chromium ignores the
+ * -webkit- pseudos once scrollbar-color is set, so the two paths never fight.
+ * Colours only: width/radius stay native (no magic dimensions).
+ */
+[data-theme]::-webkit-scrollbar-thumb,
+[data-theme] ::-webkit-scrollbar-thumb {
+  background-color: var(--lab-fill-tertiary);
+}
+[data-theme]::-webkit-scrollbar-track,
+[data-theme] ::-webkit-scrollbar-track,
+[data-theme]::-webkit-scrollbar-corner,
+[data-theme] ::-webkit-scrollbar-corner {
+  background-color: var(--lab-fill-none);
+}

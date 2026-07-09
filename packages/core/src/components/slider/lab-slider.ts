@@ -346,7 +346,7 @@ export class LabSlider extends LabElement {
       box-shadow: var(--lab-elevation-raised);
       cursor: grab;
       transform: translate(-50%, -50%);
-      transition: border-color 120ms ease;
+      transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     :host([orientation='horizontal']) .thumb {
       top: 50%;
@@ -408,12 +408,6 @@ export class LabSlider extends LabElement {
       letter-spacing: var(--_help-tracking);
       line-height: var(--_line);
       color: ${litVar('--lab-label-danger')};
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .thumb {
-        transition: none;
-      }
     }
   `;
 

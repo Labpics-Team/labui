@@ -30,10 +30,11 @@ import * as paginationMachine from '@zag-js/pagination';
  * radius (`--lab-radius-control`). The current page reads `--lab-fill-accent` +
  * `--lab-label-on-accent`; idle items read `--lab-label-secondary`; the focus
  * ring reads `--lab-border-focus`. No hex, no primitive, no invented role.
- * Exceptions, by design: the per-size control box (`--_size`: 1.75 / 2.25 /
- * 2.75rem) and the 120ms hover transition are raw literals — the token layer
- * exposes no semantic control-size or motion-duration role to bind, and faking
- * one (or borrowing a `--lab-space-*` primitive) would be a misleading stop-gap.
+ * Exception, by design: the per-size control box (`--_size`: 1.75 / 2.25 /
+ * 2.75rem) is a raw literal — the token layer exposes no semantic control-size
+ * role to bind, and faking one (or borrowing a `--lab-space-*` primitive) would
+ * be a misleading stop-gap. (The hover transition, once the same kind of
+ * exception, now rides `--lab-motion-transition-*` — wiring #125.)
  * This mirrors the sibling controls (avatar, switch), which size the same way.
  */
 import { type TemplateResult, css, html } from 'lit';
@@ -164,7 +165,7 @@ export class LabPagination extends LabElement {
       font-weight: ${litVar('--lab-font-weight-semibold', '600')};
       color: ${litVar('--lab-label-secondary')};
       cursor: pointer;
-      transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+      transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
 
     .item:hover:not([data-selected]):not(:disabled),
@@ -200,13 +201,6 @@ export class LabPagination extends LabElement {
       height: var(--_size);
       color: ${litVar('--lab-label-tertiary')};
       user-select: none;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .item,
-      .trigger {
-        transition: none;
-      }
     }
   `;
 

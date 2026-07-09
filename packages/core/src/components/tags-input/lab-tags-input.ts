@@ -289,7 +289,7 @@ export class LabTagsInput extends LabElement {
         border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
         border-radius: var(--_field-radius);
         box-shadow: none;
-        transition: border-color 120ms ease;
+        transition: border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
         cursor: text;
       }
       :host(:not([disabled]):not([readonly])) .control:hover {
@@ -394,7 +394,7 @@ export class LabTagsInput extends LabElement {
         border: 0;
         border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
         cursor: pointer;
-        transition: color 120ms ease, background-color 120ms ease;
+        transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       }
       .item-delete:hover:not([data-disabled]) {
         color: ${litVar('--lab-label-primary')};
@@ -429,13 +429,6 @@ export class LabTagsInput extends LabElement {
       .input::placeholder {
         color: ${litVar('--lab-label-tertiary')};
         opacity: 1;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .control,
-        .item-delete {
-          transition: none;
-        }
       }
     `,
   ];

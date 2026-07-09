@@ -193,7 +193,7 @@ export class LabTabs extends LabElement {
       color: ${litVar('--lab-label-secondary')};
       white-space: nowrap;
       cursor: pointer;
-      transition: color 120ms ease, border-color 120ms ease;
+      transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     :host([orientation='vertical']) .trigger {
       justify-content: flex-start;
@@ -247,12 +247,6 @@ export class LabTabs extends LabElement {
        belt-and-braces fallback so first paint never flashes every panel. */
     .panel[hidden] {
       display: none;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .trigger {
-        transition: none;
-      }
     }
   `;
 

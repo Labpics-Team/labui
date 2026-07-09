@@ -191,10 +191,14 @@ export const defaultMotionConfig: MotionConfig = {
     },
     {
       name: 'transition',
-      duration: 'base',
+      duration: 'fast',
       easing: 'standard',
       reduced: { duration: 'instant', easing: 'linear' },
-      provenance: { class: 'b', source: 'M3: standard easing for general in-place change (§1.1)' },
+      provenance: {
+        class: 'e',
+        source:
+          'design-choice: wiring task 125 retuned base->fast. The shipped culture converged on 120ms micro-feedback (74/74 live transition sites are hover/state changes, none used 200ms); fast = 100ms sits one frame from 120ms (sub-JND) and matches M3 short2/Fluent durationFaster. Easing grounded on M3 standard (§1.1).',
+      },
       description: 'in-place state change / move — standard easing',
     },
     {
