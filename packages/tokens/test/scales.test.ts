@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultConfig } from '../src/config/default-config.js';
 import { buildTokens } from '../src/domain/build.js';
+import { buildOpacity } from '../src/domain/opacity.js';
 import { buildSpacing } from '../src/domain/spacing.js';
 import { buildZIndex } from '../src/domain/zindex.js';
 
@@ -110,6 +111,40 @@ describe('zero token — present and correct in every dimension scale', () => {
     expect(() => buildSpacing({ baseRem: 0.25, steps: { '1': 1 }, aliases: {} })).toThrow(
       /zero token/,
     );
+  });
+});
+
+describe('opacity scale — unitless доли состояний (задача 13)', () => {
+  it('emits the audited state fractions and both explicit edges', () => {
+    const byName = new Map(tokens.opacity.map((t) => [t.name, t.cssValue]));
+    expect(byName.get('0')).toBe('0'); // явный нулевой токен
+    expect(byName.get('45')).toBe('0.45'); // disabled (25 мест до миграции)
+    expect(byName.get('50')).toBe('0.5'); // muted / placeholder (17 мест)
+    expect(byName.get('100')).toBe('1'); // явный верхний край
+  });
+
+  it('aliases resolve to var() references, never duplicated values', () => {
+    for (const a of tokens.opacityAliases) {
+      expect(a.cssValue).toMatch(/^var\(--lab-opacity-/);
+    }
+    const roles = tokens.opacityAliases.map((a) => a.name);
+    expect(roles).toContain('disabled');
+    expect(roles).toContain('muted');
+  });
+
+  it('a numeric step name must equal its value ×100 (name-value drift guard)', () => {
+    expect(() => buildOpacity({ steps: { '0': 0, '45': 0.5 }, aliases: {} })).toThrow(
+      /percent name/,
+    );
+  });
+
+  it('rejects fractions outside [0, 1] and a missing zero token', () => {
+    expect(() => buildOpacity({ steps: { '0': 0, half: 1.5 }, aliases: {} })).toThrow(/\[0, 1\]/);
+    expect(() => buildOpacity({ steps: { '50': 0.5 }, aliases: {} })).toThrow(/zero token/);
+  });
+
+  it('rejects an alias pointing at a missing step', () => {
+    expect(() => buildOpacity({ steps: { '0': 0 }, aliases: { ghost: '45' } })).toThrow(/ghost/);
   });
 });
 

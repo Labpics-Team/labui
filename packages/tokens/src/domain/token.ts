@@ -21,7 +21,8 @@ export type ScaleKind =
   | 'measure'
   | 'stroke'
   | 'focus-ring'
-  | 'state'; // фракции стейт-оверлеев (#109): --lab-state-hover / --lab-state-pressed, %
+  | 'state' // фракции стейт-оверлеев (#109): --lab-state-hover / --lab-state-pressed, %
+  | 'opacity'; // ось непрозрачности (задача 13): --lab-opacity-*, unitless доли [0..1]
 
 /**
  * A fully resolved token.

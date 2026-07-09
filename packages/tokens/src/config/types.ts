@@ -198,6 +198,20 @@ export interface StatesConfig {
   readonly pressed: number;
 }
 
+/**
+ * Ось непрозрачности (задача 13; AUDIT.md №2/№13): unitless доли [0..1] для
+ * состояний (disabled/muted). До этой оси состояние жило голыми литералами
+ * `opacity: 0.45/0.5` в компонентах. Примитив именуется процентом («45» →
+ * 0.45; числовое имя обязано совпадать со значением ×100 — валидируется
+ * билдером), роли — алиасы поверх ступеней.
+ */
+export interface OpacityConfig {
+  /** Именованные ступени-доли в [0, 1]. `0` MUST be present (нулевой токен). */
+  readonly steps: Readonly<Record<string, number>>;
+  /** Семантические роли: имя роли -> существующая ступень. Компоненты потребляют их. */
+  readonly aliases: Readonly<Record<string, string>>;
+}
+
 /** The complete LabUI token config — the single source of truth. */
 export interface TokensConfig {
   readonly spacing: SpacingConfig;
@@ -207,6 +221,7 @@ export interface TokensConfig {
   readonly typography: TypographyConfig;
   readonly borders: BordersConfig;
   readonly states: StatesConfig;
+  readonly opacity: OpacityConfig;
 }
 
 /** A deep-partial of {@link TokensConfig} for user overrides. */

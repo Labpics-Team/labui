@@ -27,6 +27,7 @@ export function generateTs(tokens: ResolvedTokens): string {
   parts.push(scaleConst('stroke', tokens.strokes));
   parts.push(scaleConst('focusRing', tokens.focusRing));
   parts.push(scaleConst('state', tokens.states));
+  parts.push(scaleConst('opacity', tokens.opacity, tokens.opacityAliases));
 
   return `${parts.join('\n\n')}\n`;
 }

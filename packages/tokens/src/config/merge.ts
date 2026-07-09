@@ -67,5 +67,11 @@ export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig
       ...defaultConfig.states,
       ...override.states,
     },
+    opacity: {
+      ...defaultConfig.opacity,
+      ...override.opacity,
+      steps: { ...defaultConfig.opacity.steps, ...override.opacity?.steps },
+      aliases: { ...defaultConfig.opacity.aliases, ...override.opacity?.aliases },
+    },
   };
 }

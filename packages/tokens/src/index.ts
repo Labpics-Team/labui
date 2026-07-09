@@ -16,6 +16,7 @@
 export { defaultConfig } from './config/default-config.js';
 export { resolveConfig } from './config/merge.js';
 export type {
+  OpacityConfig,
   RadiiConfig,
   SizesConfig,
   SpacingConfig,
