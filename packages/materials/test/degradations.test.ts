@@ -1,7 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readMaterialCss } from '../scripts/material-css';
 
 /*
  * Every deterministic degradation must be PRESENT in material.css and must
@@ -10,9 +8,7 @@ import { describe, expect, it } from 'vitest';
  * guards the class: each downgrade path exists and points at solid.
  */
 
-const here = dirname(fileURLToPath(import.meta.url));
-const cssPath = resolve(here, '..', 'src', 'material.css');
-const css = readFileSync(cssPath, 'utf8');
+const css = readMaterialCss();
 
 /** Extract the body of the first at-rule block whose header matches `header`. */
 function atRuleBody(header: RegExp): string {
@@ -130,7 +126,7 @@ describe('material.css deterministic degradations', () => {
   it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
     const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
     expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
-    expect(body).toContain('--_blur: var(--_blur-glass)'); // 48px reused, not a new literal
+    expect(body).toContain('--_blur: var(--_blur-live)'); // одна ступень 48px на все live-материалы (ADR-0009), не новый литерал
     expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused
     expect(body).toContain('--_base-paint: transparent'); // live backdrop reads through
   });

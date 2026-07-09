@@ -60,6 +60,9 @@ export default defineConfig({
         // Materials FLAG demo: data-material solid|glass|blur over the --lab-*
         // contract (@labpics/ui-materials). One attribute flips card + modal.
         'materials-flag': resolve(__dirname, 'src/materials-flag.html'),
+        // Acrylic v2 LIVE: mountMaterialRuntime + luminosity-конвейер над
+        // экстремальными полями фона — измерительный полигон ADR-0009.
+        'acrylic-live': resolve(__dirname, 'src/acrylic-live.html'),
         shadow: resolve(__dirname, 'src/shadow.html'),
         proof: resolve(__dirname, 'src/proof.html'),
         // The reusable component-doc template (rendered from a ComponentDoc

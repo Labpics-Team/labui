@@ -19,7 +19,8 @@ const CONTROLS = {
     { value: 'dark', label: 'Dark' },
     { value: 'light', label: 'Light' },
   ],
-  // Канон оси материала — packages/materials/src/material.css, ADR-0008:
+  // Канон оси материала — packages/materials/src/materials/*.css (файл на
+  // материал, порядок = order.ts; ADR-0008/0009):
   // `data-material="solid|glass|acrylic"` (ambient/glassy ушли с core-шимами
   // в #41; отдельный blur снесён как перцептивный дубль acrylic).
   'data-material': [

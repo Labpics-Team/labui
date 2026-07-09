@@ -23,11 +23,12 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { readMaterialCss } from '../scripts/material-css';
 import { LENSED_CLASS } from '../src/engine/liquid-glass';
 import { mountMaterialRuntime } from '../src/engine/runtime';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const css = readFileSync(join(here, '../src/material.css'), 'utf8');
+const css = readMaterialCss();
 const engineSrc = readFileSync(join(here, '../src/engine/liquid-glass.ts'), 'utf8');
 
 /** Class-level specificity bucket (the middle number of a-b-c): attribute

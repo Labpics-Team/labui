@@ -22,6 +22,7 @@
  *   gray ∈ [0,255]   → равномерный дизер яркости: тёмные зёрна видны на светлом
  *                      фоне, светлые — на тёмном (симметрично гасит бандинг).
  */
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -125,35 +126,66 @@ export function acrylicNoiseDataUri(): string {
   return `url("data:image/png;base64,${base64}")`;
 }
 
-// ── Инлайн в material.css между сентинелами (идемпотентно) ───────────────────
+// ── Инлайн в acrylic.css между сентинелами (идемпотентно) ────────────────────
 const START =
   '/* >>> ACRYLIC-NOISE:GENERATED (scripts/build-acrylic-noise.ts) — не править руками */';
 const END = '/* <<< ACRYLIC-NOISE:GENERATED */';
 
-/** Заменяет тело сентинел-региона в исходнике material.css на свежий data-URI. */
+/**
+ * Тело региона: ассет ОДНОЙ генерации, объявленный дважды.
+ *   1. `url()` — фолбэк без image-set (тайл 48 CSS-px на любом DPR).
+ *   2. `image-set(тот же URI 1x/2x/3x)` под @supports: на DPR≥2 браузер берёт
+ *      2x/3x-запись → интринзик-тайл 24/16 CSS-px → зерно остаётся В ОДИН
+ *      ФИЗИЧЕСКИЙ ПИКСЕЛЬ (per-device-pixel, как у Fluent) без новых ассетов;
+ *      дубль строки URI гасится gzip. @supports обязателен: невалидное
+ *      значение в `background` уронило бы всю многослойную декларацию
+ *      (включая тинт), а не только слой зерна.
+ */
+export function acrylicNoiseCssBlock(): string {
+  const uri = acrylicNoiseDataUri();
+  return [
+    '.lab-material {',
+    `  --_acrylic-noise: ${uri};`,
+    '}',
+    `@supports (background-image: image-set(${uri} 1x)) {`,
+    '  .lab-material {',
+    `    --_acrylic-noise: image-set(${uri} 1x, ${uri} 2x, ${uri} 3x);`,
+    '  }',
+    '}',
+  ].join('\n');
+}
+
+/** Заменяет тело сентинел-региона в src/materials/acrylic.css на свежий блок. */
 export function inlineAcrylicNoise(css: string): string {
   const startIdx = css.indexOf(START);
   const endIdx = css.indexOf(END);
   if (startIdx < 0 || endIdx < 0 || endIdx < startIdx) {
     throw new Error(
-      'material.css: сентинелы ACRYLIC-NOISE не найдены — регион для инлайна отсутствует',
+      'acrylic.css: сентинелы ACRYLIC-NOISE не найдены — регион для инлайна отсутствует',
     );
   }
   const before = css.slice(0, startIdx + START.length);
   const after = css.slice(endIdx);
-  return `${before}\n  --_acrylic-noise: ${acrylicNoiseDataUri()};\n  ${after}`;
+  return `${before}\n${acrylicNoiseCssBlock()}\n${after}`;
 }
 
-/** Абсолютный путь к material.css рядом с этим скриптом. */
+/** Абсолютный путь к файлу-материалу acrylic.css рядом с этим скриптом. */
 export function materialCssPath(): string {
-  return resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'material.css');
+  return resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'materials', 'acrylic.css');
 }
 
-// Запуск как скрипт (build / check-generated): перезаписать material.css инлайном.
+// Запуск как скрипт (build / check-generated): перезаписать acrylic.css инлайном
+// и прогнать РЕПО-ФОРМАТТЕРОМ — иначе biome пере-переносит длинный image-set и
+// «git diff --exit-code» в check-generated спорил бы с форматом, а не с данными.
+// Формат-канон принадлежит biome; генератор владеет только СОДЕРЖИМЫМ.
 // Кросс-платформенная детекция «запущен напрямую» (Windows `file:///C:` ≠ `file://`).
 const invokedPath = process.argv[1] ? resolve(process.argv[1]).toLowerCase() : '';
 const selfPath = fileURLToPath(import.meta.url).toLowerCase();
 if (invokedPath && invokedPath === selfPath) {
   const cssPath = materialCssPath();
   writeFileSync(cssPath, inlineAcrylicNoise(readFileSync(cssPath, 'utf8')));
+  execSync(`pnpm exec biome format --write "${cssPath}"`, {
+    cwd: resolve(dirname(fileURLToPath(import.meta.url)), '..'),
+    stdio: 'ignore',
+  });
 }

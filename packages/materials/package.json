@@ -24,7 +24,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check-generated": "tsx scripts/build-acrylic-noise.ts && git diff --exit-code src/material.css",
+    "check-generated": "tsx scripts/build-acrylic-noise.ts && git diff --exit-code src/materials/acrylic.css",
     "bench": "tsx bench/field-build.bench.ts"
   },
   "peerDependencies": {

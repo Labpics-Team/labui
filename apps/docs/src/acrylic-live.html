@@ -1,0 +1,50 @@
+<!doctype html>
+<html class="lab-scope" lang="ru" data-material="acrylic" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LabUI — Acrylic live (движок v2, luminosity-конвейер)</title>
+    <link rel="stylesheet" href="./acrylic-live-demo.css" />
+  </head>
+  <body>
+    <!-- Углы коридора гарантии как живые поля фона; синее поле — детектор
+         РЕЖИМА смеси (luminosity сохраняет оттенок фона, normal-подмена — нет). -->
+    <div class="zone zone--black" data-testid="zone-black" aria-hidden="true"></div>
+    <div class="zone zone--blue" data-testid="zone-blue" aria-hidden="true"></div>
+    <div class="zone zone--white" data-testid="zone-white" aria-hidden="true"></div>
+
+    <main>
+      <h1 class="sr-only">Acrylic live — измерительный полигон движка v2</h1>
+
+      <!-- SOFT tier: самый показательный для зажима (прозрачный тинт → широкая
+           полоса на фолбэке, узкая под luminosity-конвейером). -->
+      <section
+        class="lab-material lab-material--soft panel panel--on-black"
+        data-testid="surface-on-black"
+        aria-label="Acrylic surface over the black corridor corner"
+      >
+        <p data-testid="label-on-black">Текст на акриле</p>
+      </section>
+
+      <section
+        class="lab-material lab-material--soft panel panel--on-blue"
+        data-testid="surface-on-blue"
+        aria-label="Acrylic surface over the saturated blue field"
+      >
+        <p data-testid="label-on-blue">Текст на акриле</p>
+      </section>
+
+      <section
+        class="lab-material lab-material--soft panel panel--on-white"
+        data-testid="surface-on-white"
+        aria-label="Acrylic surface over the white corridor corner"
+      >
+        <p data-testid="label-on-white">Текст на акриле</p>
+      </section>
+    </main>
+
+    <output class="status" data-testid="live-status"></output>
+
+    <script type="module" src="./acrylic-live-demo.ts"></script>
+  </body>
+</html>

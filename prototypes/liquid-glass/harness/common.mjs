@@ -1,4 +1,9 @@
 /*
+ * lg-harness/common — shared plumbing: repo paths, the repo-anchored
+ * @playwright/test resolver, MIME map and the static prototype server.
+ * Extracted from the monolithic lg-harness.mjs; the facade re-exports keep
+ * every consumer import stable.
+ *
  * lab-liquid-glass — repo-resident, path-portable test harness.
  *
  * The reference QA scripts (C:/Users/Daniel/lg-cache-test.mjs, lg-memstress.mjs,
@@ -33,12 +38,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-/*
- * lg-harness/common — shared plumbing: repo paths, the repo-anchored
- * @playwright/test resolver, MIME map and the static prototype server.
- * Extracted from the monolithic lg-harness.mjs; the facade re-exports keep
- * every consumer import stable.
- */
 import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
