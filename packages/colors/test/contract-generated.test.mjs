@@ -11,7 +11,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { generateContract, RETIRED_ROLES } from '../generate-contract.mjs';
+import { RETIRED_ROLES, generateContract } from '../generate-contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contractPath = join(here, '..', '..', 'colors-stub', 'contract.css');
