@@ -19,12 +19,13 @@ const CONTROLS = {
     { value: 'dark', label: 'Dark' },
     { value: 'light', label: 'Light' },
   ],
-  // Канон оси материала — packages/materials/src/material.css:
-  // `data-material="solid|glass|blur"` (ambient/solid ушли с core-шимами, #41).
+  // Канон оси материала — packages/materials/src/material.css, ADR-0008:
+  // `data-material="solid|glass|acrylic"` (ambient/glassy ушли с core-шимами
+  // в #41; отдельный blur снесён как перцептивный дубль acrylic).
   'data-material': [
     { value: 'solid', label: 'Solid' },
     { value: 'glass', label: 'Glass' },
-    { value: 'blur', label: 'Blur' },
+    { value: 'acrylic', label: 'Acrylic' },
   ],
 } as const;
 
