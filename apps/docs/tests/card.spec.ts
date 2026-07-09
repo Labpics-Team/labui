@@ -233,7 +233,9 @@ test('forced-colors: emulateMedia makes focus ring outline visible on key intera
 
 test('reduced-transparency: focus ring outline remains visible (CDP emulate, both renderers) — #135', async ({
   page,
+  browserName,
 }) => {
+  test.skip(browserName !== 'chromium', 'CDP emulation is Chromium-only');
   const cases = [
     {
       surface: litCard(page, 'lit-interactive'),

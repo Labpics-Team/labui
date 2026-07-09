@@ -235,7 +235,9 @@ test('forced-colors: outline-based focus ring visible on field (survives emulate
 
 test('reduced-transparency: focus ring outline visible on input fields (CDP emulate)', async ({
   page,
+  browserName,
 }) => {
+  test.skip(browserName !== 'chromium', 'CDP emulation is Chromium-only');
   const session = await page.context().newCDPSession(page);
   await session.send('Emulation.setEmulatedMedia', {
     features: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
