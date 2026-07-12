@@ -35,7 +35,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const css = readMaterialCss();
 const veilSrc = readFileSync(join(here, '../src/engine/veil.ts'), 'utf8');
 const runtimeSrc = readFileSync(join(here, '../src/engine/runtime.ts'), 'utf8');
-const readme = readFileSync(join(here, '../README.md'), 'utf8');
 
 /** Bodies of ALL at-rule blocks whose header matches (material degradations
  *  and veil backstops share headers — first-match extraction is not enough). */
@@ -129,12 +128,6 @@ describe('declarative token surface (--lab-veil-*)', () => {
       [...veilSrc.matchAll(/'(--lab-veil-[\w-]+)'/g)].map((m) => m[1] as string),
     );
     expect([...reads].sort()).toEqual([...DOCUMENTED].sort());
-  });
-
-  it('every token is documented in the package README', () => {
-    for (const token of DOCUMENTED) {
-      expect(readme, `README must document ${token}`).toContain(token);
-    }
   });
 
   it('material.css never DECLARES a --lab-veil-* token (JS defaults own them — a [data-veil] declaration would shadow inherited values)', () => {

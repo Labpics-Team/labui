@@ -8,27 +8,12 @@ const minPath = path.join(__dirname, '..', 'packages', 'colors-stub', 'contract.
 
 const css = fs.readFileSync(contractPath, 'utf8');
 
-// Ambitious CSS minify (synced to generate-contract minifyContract for build/perf consistency).
-// Strips comments + aggressive safe ws collapse ONLY on root :root declarations (preserves @media forced-colors etc intact for a11y/E2E).
-// Keeps full contract.css for tests/gates (byte-identical discipline).
-// Produces smaller contract.min.css for published consumers (perf:size target).
-let min = css.replace(/\/\*[\s\S]*?\*\//g, '');
-// Extract and min only the main :root block
-const rootMatch = min.match(/:root\s*\{[^}]*\}/);
-if (rootMatch) {
-  let root = rootMatch[0]
-    .replace(/(\s*--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g, '$1:$2;')
-    .replace(/\s*([{}:;])\s*/g, '$1')
-    .replace(/\s+/g, ' ')
-    .replace(/\s*\/\s*/g, '/')
-    .replace(/(\w)\s+\(/g, '$1(')
-    .replace(/\(\s+/g, '(')
-    .replace(/\s+\)/g, ')')
-    .replace(/,\s*/g, ',')
-    .replace(/;(?=})/g, '');
-  min = min.replace(/:root\s*\{[^}]*\}/, root);
-}
-min = min.trim();
+// Единственный писатель contract.min.css. Минификация консервативная — только
+// срез комментариев: селекторы и значения не трогаем, чтобы не менять семантику
+// контракта (основной выигрыш к gz даёт именно срез прозы). Прежняя
+// «амбициозная» ветка была мертва: её regex /:root\s*\{/ не матчился на
+// селекторный список ':root,\n[data-theme="light"]' в contract.css.
+const min = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
 
 fs.writeFileSync(minPath, `${min}\n`);
 

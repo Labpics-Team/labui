@@ -320,34 +320,6 @@ function skeletonShimmerEmission(engineVars) {
   ].join('\n');
 }
 
-/**
- * Safe minify for published contract: strip comments + collapse whitespace
- * around --var: val; declarations and general tokens.
- * Keeps full contract.css for tests/gates (byte-identical discipline).
- * Produces contract.min.css for consumers who opt-in (smaller payload).
- * Extreme perf: additional safe inner-value ws collapse (/ , () in colors) for <40KB raw min target (better gz).
- * Numbers: ~51.7KB raw full -> est ~18-21KB min.
- */
-export function minifyContract(css) {
-  return (
-    css
-      // Strip all /* ... */ comments (safe: no /* in values)
-      .replace(/\/\*[\s\S]*?\*\//g, '')
-      // Collapse ws around declarations --lab-*: val;
-      .replace(/(\s*--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g, '$1:$2;')
-      // Collapse around {} : ; and trim newlines/spaces
-      .replace(/\s*([{}:;])\s*/g, '$1')
-      .replace(/\s+/g, ' ')
-      // Extreme: collapse ws inside color values / alpha for smaller raw (modern syntax safe)
-      .replace(/\s*\/\s*/g, '/')
-      .replace(/(\w)\s+\(/g, '$1(')
-      .replace(/\(\s+/g, '(')
-      .replace(/\s+\)/g, ')')
-      .replace(/,\s*/g, ',')
-      .trim()
-  );
-}
-
 /** Сгенерировать полный contract.css из движка и Figma-якоря. */
 export async function generateContract() {
   const require = createRequire(import.meta.url);
@@ -418,12 +390,12 @@ ${darkBody
 `;
 }
 
-// Прямой запуск — записать файл (full for tests) + .min for perf.
+// Прямой запуск — записать полный contract.css. Единственный писатель
+// contract.min.css — scripts/minify-contract.cjs (билд colors-stub): два
+// независимых минификатора давали РАЗНЫЕ байты, и артефакт переворачивался
+// в зависимости от того, что запускали последним.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const css = await generateContract();
-  const minCss = minifyContract(css);
   await writeFile(contractPath, css);
-  const minPath = contractPath.replace(/contract\.css$/, 'contract.min.css');
-  await writeFile(minPath, minCss);
-  console.info(`contract.css сгенерирован (${css.length} байт full; ${minCss.length} байт min)`);
+  console.info(`contract.css сгенерирован (${css.length} байт)`);
 }

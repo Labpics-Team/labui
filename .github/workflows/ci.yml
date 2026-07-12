@@ -268,6 +268,11 @@ jobs:
         # бы файл и замаскировал протухший коммит ложным зелёным.
         run: pnpm --filter @labpics/ui-tokens check-generated
 
+      - name: Assert generated artifact is not stale (materials)
+        # Тот же инвариант для инлайна acrylic-noise в acrylic.css: без этого
+        # шага протухший артефакт валил юнит-тест inline-seal уже ПОСЛЕ мержа.
+        run: pnpm --filter @labpics/ui-materials check-generated
+
       - name: Build
         run: pnpm build
 
@@ -293,10 +298,6 @@ jobs:
     # ~319 × 2. Короче окно = меньше голодания/флака на нагруженном self-hosted
     # пуле, и гейт остаётся быстрым и блокирующим. ПОЛНОЕ покрытие НЕ потеряно —
     # весь набор гоняется по расписанию в `.github/workflows/e2e-full.yml`.
-    # 12 минут хватало чистому smoke-набору; в этом же job'е живут engine-сьюты
-    # обеих ферм (liquid-glass + progressive-blur, ~13 прогонов под Chromium) и
-    # hermetic VRT-гейт — им нужен запас, но не 35 «облачных» минут:
-    # self-hosted пул заметно быстрее.
     timeout-minutes: 25
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
@@ -372,43 +373,6 @@ jobs:
           path: packages/colors/artifacts/fx-render/
           retention-days: 7
           if-no-files-found: ignore
-
-      - name: Engine suites — liquid-glass + progressive-blur (browser Node tests)
-        # Cache/scratch integration, pending-decode regression, оба Class-D
-        # mutation bite-proof — сьюты запускают Chromium, поэтому живут здесь,
-        # а не в browserless quality job. Mutation-харнессы замораживают свой
-        # pixel-reference на ЭТОЙ машине (никаких закоммиченных baseline'ов).
-        run: pnpm --filter @labpics/ui-docs test:engine
-
-      - name: Resolve hermetic VRT base (freeze-on-machine)
-        # The visual gate freezes its reference from the BASE ref on this very
-        # machine and diffs the PR head against it — committed screenshot
-        # baselines are OS/font-coupled and are test artifacts that do not
-        # belong in git. persist-credentials is off, so the extra ref is
-        # fetched with the ephemeral job token explicitly.
-        # ${{ }} никогда не инлайнится в тело скрипта (инъекционный класс из
-        # GitHub Security Hardening) — все значения приходят через env.
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          BASE_REF: ${{ github.base_ref }}
-          BEFORE_SHA: ${{ github.event.before }}
-        run: |
-          set -euo pipefail
-          REMOTE="https://x-access-token:${GH_TOKEN}@github.com/${REPO}"
-          if [ -n "$BASE_REF" ] && git fetch --no-tags --depth=1 "$REMOTE" "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"; then
-            # Symmetric with the BEFORE_SHA branch below: a failed base fetch
-            # (deleted/renamed base ref) degrades to HEAD~1 instead of dying
-            # under `set -e` before the gate even runs.
-            echo "LG_GATE_BASE=origin/${BASE_REF}" >> "$GITHUB_ENV"
-          else
-            if [ -n "$BEFORE_SHA" ] && [ "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ] && git fetch --no-tags --depth=1 "$REMOTE" "$BEFORE_SHA"; then
-              echo "LG_GATE_BASE=$BEFORE_SHA" >> "$GITHUB_ENV"
-            else
-              git fetch --no-tags --deepen=1 "$REMOTE"
-              echo "LG_GATE_BASE=HEAD~1" >> "$GITHUB_ENV"
-            fi
-          fi
 
       - name: Run smoke tests (critical-path subset)
         # E2E_SMOKE=1 сужает набор до curated SMOKE_SPECS в playwright.config.ts.

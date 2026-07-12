@@ -149,7 +149,7 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
       .join('\n');
     expect(
       unclassified,
-      `unclassified consumed --lab-* names — for each: (a) add to the colour contract upstream, (b) confirm it is a dimension token, or (c) document it in docs/external-deps/lab-colors.md and add it to the local-or-gap allowlist:\n${report}`,
+      `unclassified consumed --lab-* names — for each: (a) add to the colour contract upstream, (b) confirm it is a dimension token, or (c) add it to the local-or-gap allowlist:\n${report}`,
     ).toEqual([]);
   });
 

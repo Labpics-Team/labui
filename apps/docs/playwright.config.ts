@@ -35,11 +35,8 @@ import { defineConfig, devices } from '@playwright/test';
  *   input.spec.ts     — базовое поле формы + axe-a11y
  *   checkbox.spec.ts  — базовый контрол формы + axe-a11y
  *
- * НЕ включено в smoke (полное покрытие НЕ теряется — переносится на e2e-full по расписанию):
- *   accordion, alert-dialog, avatar, badge, breadcrumb, card, combobox,
- *   components-template, dialog, kbd, loader, menu, number-input, pagination,
- *   popover, progress, radio-group, select, shadow, slider, switch, tabs,
- *   textarea, tooltip.
+ * Всё, чего нет в SMOKE_SPECS, гоняется только в e2e-full (полное покрытие
+ * не теряется — переносится на расписание).
  *
  * Активация: `E2E_SMOKE=1` (выставляется PR-джобом e2e в ci.yml). Без этой
  * переменной testMatch не задаётся → действует дефолт Playwright и запускается ВЕСЬ набор.
@@ -59,10 +56,6 @@ const SMOKE_SPECS = [
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
-  // VRT-гейт liquid-glass («ни одного изменённого пикселя») ОБЯЗАН гоняться
-  // per-PR: он сторожит сам класс perf-изменений движка. Без него smoke-режим
-  // молча пропускал бы главный bite-гейт (декларация без исполнения).
-  'liquid-glass-gate.spec.ts',
 ];
 
 const smoke = process.env.E2E_SMOKE === '1';

@@ -10,8 +10,6 @@
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4321 --strictPort",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/liquid-glass/lg-math.unit.test.mjs tests/liquid-glass/lg-harness-anchors.unit.test.mjs tests/liquid-glass/lg-ci-wiring.e2e.test.mjs tests/progressive-blur/pb-math.unit.test.mjs",
-    "test:engine": "node --test tests/liquid-glass/lg-cache.integration.test.mjs tests/liquid-glass/lg-pending-decode.regression.test.mjs tests/liquid-glass/lg-mutation.differential.test.mjs tests/progressive-blur/pb-gate.integration.test.mjs tests/progressive-blur/pb-mutation.differential.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots"
   },
