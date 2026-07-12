@@ -259,7 +259,7 @@ export class LabTagsInput extends LabElement {
     try {
       return this.machineCtl.api.value;
     } catch {
-      return this.hasAttribute('value') ? this.value : this.defaultValue;
+      return (this.hasAttribute('value') ? this.value : this.defaultValue) ?? [];
     }
   }
 

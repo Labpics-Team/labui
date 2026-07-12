@@ -329,7 +329,7 @@ export class LabMenu extends LabElement {
     // (filter/reorder) — and the id the machine puts on the item is exactly what the
     // menu's aria-activedescendant points at. Separators carry no behaviour, so they
     // are skipped. `CSS.escape` neutralises any quote/bracket in the value.
-    for (const item of this.items) {
+    for (const item of this.items ?? []) {
       if (item.separator) continue;
       const selector = `.item[data-value="${CSS.escape(item.value)}"]`;
       const itemEl = root.querySelector<HTMLElement>(selector);
@@ -352,7 +352,7 @@ export class LabMenu extends LabElement {
       </button>
       <div class="positioner" part="positioner">
         <ul class="content" part="content" hidden>
-          ${this.items.map((item) =>
+          ${(this.items ?? []).map((item) =>
             item.separator
               ? html`<li class="separator" part="separator" role="separator"></li>`
               : html`
@@ -378,13 +378,13 @@ function parseItems(raw: string | null): LabMenuItem[] {
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (entry): entry is LabMenuItem =>
-        typeof entry === 'object' &&
-        entry !== null &&
-        typeof (entry as LabMenuItem).value === 'string' &&
-        typeof (entry as LabMenuItem).label === 'string',
-    );
+    return parsed.filter((entry): entry is LabMenuItem => {
+      if (typeof entry !== 'object' || entry === null) return false;
+      const item = entry as LabMenuItem;
+      // A separator is defined by `separator: true` alone — it carries no value/label.
+      if (item.separator === true) return true;
+      return typeof item.value === 'string' && typeof item.label === 'string';
+    });
   } catch {
     return [];
   }

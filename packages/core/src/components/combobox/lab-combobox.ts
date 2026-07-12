@@ -322,7 +322,7 @@ export class LabCombobox extends LabElement {
 
   /** Narrow `items` by the query and rebuild the collection from the visible subset. */
   private applyFilter(query: string): void {
-    this.filteredItems = filterComboboxItems(this.items, query);
+    this.filteredItems = filterComboboxItems(this.items ?? [], query);
     this.collection = comboboxMachine.collection<LabComboboxItem>({
       items: this.filteredItems,
       itemToValue: (item) => item.value,

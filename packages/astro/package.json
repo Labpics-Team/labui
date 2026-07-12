@@ -30,7 +30,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@labpics/ui-core": "workspace:*"
+    "@labpics/ui-core": "workspace:*",
+    "@lit-labs/ssr-client": "^1.1.8"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0",

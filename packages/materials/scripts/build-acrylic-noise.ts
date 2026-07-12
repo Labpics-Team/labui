@@ -7,7 +7,10 @@
  * бы каждый кадр; декодированный PNG браузер растеризует один раз и тайлит).
  *
  * Детерминизм = провенанс: сид, размер тайла и запечённая альфа зафиксированы
- * ниже, PNG кодируется чистым node:zlib (без зависимостей и без бинаря в git).
+ * ниже. IDAT пакуется stored-блоками (RFC 1950/1951 без сжатия), НЕ deflateSync:
+ * байты сжатого потока zlib меняются между версиями библиотеки, и один и тот же
+ * генератор давал разные PNG на разных Node — check-generated флакал бы между
+ * локалью и CI. Шум несжимаем, так что stored-блоки почти ничего не стоят.
  * `check-generated` перегенерирует и сверяет инлайн в material.css — протухший
  * ассет краснит CI, а не тихо дрейфит.
  *
@@ -26,7 +29,6 @@ import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { deflateSync } from 'node:zlib';
 
 export const NOISE_SIZE = 48;
 export const NOISE_ALPHA = 5;
@@ -72,6 +74,34 @@ function u32be(value: number): Uint8Array {
   ]);
 }
 
+/** Adler-32 (RFC 1950) — контрольная сумма zlib-обёртки. */
+function adler32(bytes: Uint8Array): number {
+  let a = 1;
+  let b = 0;
+  for (const byte of bytes) {
+    a = (a + byte) % 65_521;
+    b = (b + a) % 65_521;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+/**
+ * zlib-поток из stored-блоков (BTYPE=00, без сжатия): header 0x78 0x01,
+ * затем блоки LEN/NLEN ≤ 65535 байт, затем adler32 сырых данных. Байты
+ * зависят ТОЛЬКО от входа — никакой версии zlib в уравнении.
+ */
+function zlibStored(raw: Uint8Array): Uint8Array {
+  const out: number[] = [0x78, 0x01];
+  for (let off = 0; off < raw.length; off += 65_535) {
+    const len = Math.min(65_535, raw.length - off);
+    const final = off + len >= raw.length ? 1 : 0;
+    out.push(final, len & 0xff, (len >>> 8) & 0xff, ~len & 0xff, (~len >>> 8) & 0xff);
+    for (const byte of raw.subarray(off, off + len)) out.push(byte);
+  }
+  out.push(...u32be(adler32(raw)));
+  return new Uint8Array(out);
+}
+
 /** Один PNG-чанк: length(4) + type(4) + data + crc(4 над type+data). */
 function chunk(type: string, data: Uint8Array): Uint8Array {
   const typeBytes = new Uint8Array([...type].map((ch) => ch.charCodeAt(0)));
@@ -111,7 +141,7 @@ export function acrylicNoisePng(): Uint8Array {
     0, // filter
     0, // interlace
   ]);
-  const idat = new Uint8Array(deflateSync(raw, { level: 9 }));
+  const idat = zlibStored(raw);
   return new Uint8Array([
     ...signature,
     ...chunk('IHDR', ihdr),

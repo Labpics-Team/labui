@@ -426,10 +426,23 @@ export class LabSlider extends LabElement {
     };
   }
 
+  /** The declared value(s) the machine will start from — SSR-shell substitute for
+   * `api.value` (Lit SSR runs render() before hostConnected starts the machine,
+   * so the api getter throws there; the client upgrade re-renders live). */
+  private declaredValue(): number[] {
+    const value = this.value ?? [];
+    return value.length > 0 ? value : (this.defaultValue ?? []);
+  }
+
   /** The number of thumbs the machine is driving this render — one per value entry. */
   private thumbCount(): number {
-    const count = this.machineCtl.api.value.length;
-    return count > 0 ? count : 1;
+    try {
+      const count = this.machineCtl.api.value.length;
+      return count > 0 ? count : 1;
+    } catch {
+      const count = this.declaredValue().length;
+      return count > 0 ? count : 1;
+    }
   }
 
   /** The live value readout text — the machine's current value(s) joined for display.
@@ -437,7 +450,11 @@ export class LabSlider extends LabElement {
    * must write the text; this mirrors the React twin's `api.value.join(' – ')` exactly
    * so the visible readout is identical across renderers (ADR-0001 parity). */
   private valueText(): string {
-    return this.machineCtl.api.value.join(' – ');
+    try {
+      return this.machineCtl.api.value.join(' – ');
+    } catch {
+      return this.declaredValue().join(' – ');
+    }
   }
 
   override updated(_changed: PropertyValues): void {
@@ -531,9 +548,9 @@ export class LabSlider extends LabElement {
           <div class="track" part="track">
             <div class="range" part="range"></div>
             ${
-              this.marks.length
+              (this.marks ?? []).length
                 ? html`<div class="marker-group" part="marker-group">
-                    ${this.marks.map(
+                    ${(this.marks ?? []).map(
                       (markValue) =>
                         html`<span class="marker" part="marker" data-value="${markValue}"></span>`,
                     )}

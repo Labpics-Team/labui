@@ -324,7 +324,7 @@ export class LabAccordion extends LabElement {
     // identity across reorders; here we resolve each node by its own
     // `data-item-value` marker (the SAME identity key) — a reorder can never
     // spread one item's props onto another item's node (round-1 lesson).
-    for (const item of this.items) {
+    for (const item of this.items ?? []) {
       const itemProps = { value: item.value, disabled: item.disabled };
       const selector = `[data-item-value="${CSS.escape(item.value)}"]`;
       const itemEl = this.renderRoot.querySelector<HTMLElement>(`.item${selector}`);
@@ -347,7 +347,7 @@ export class LabAccordion extends LabElement {
     return html`
       <div class="root">
         ${repeat(
-          this.items,
+          this.items ?? [],
           (item) => item.value,
           (item) => html`
             <div class="item" data-item-value=${item.value}>

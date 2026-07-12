@@ -315,7 +315,7 @@ export class LabPopover extends LabElement {
       <button class="trigger" type="button" part="trigger"><slot></slot></button>
       <div class="backdrop" part="backdrop" hidden></div>
       <div class="positioner" part="positioner">
-        <div class="content" part="content">
+        <div class="content" part="content" hidden>
           ${this.heading ? html`<h2 class="heading" part="heading">${this.heading}</h2>` : null}
           ${
             this.description

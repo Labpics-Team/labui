@@ -51,6 +51,8 @@ const COMPONENT_FIXTURES = [
   { path: '/select.html', label: 'Select', hasReactIsland: true },
   { path: '/menu.html', label: 'Menu', hasReactIsland: true },
   { path: '/combobox.html', label: 'Combobox', hasReactIsland: true },
+  { path: '/pin-input.html', label: 'PinInput', hasReactIsland: true },
+  { path: '/tags-input.html', label: 'TagsInput', hasReactIsland: true },
 ] as const;
 
 // ---------------------------------------------------------------------------

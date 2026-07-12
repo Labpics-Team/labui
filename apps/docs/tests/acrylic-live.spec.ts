@@ -7,7 +7,7 @@ import {
   luminosityBlend,
 } from '@labpics/ui-materials';
 import { type Locator, type Page, expect, test } from '@playwright/test';
-import { normalizeCssColor } from './support/color.js';
+import { normalizeCssColor, relativeLuminance } from './support/color.js';
 
 /*
  * Acrylic v2 LIVE — браузерный дифференциал luminosity-зажима (ADR-0009).
@@ -82,16 +82,9 @@ async function patchColor(
   }, b64);
 }
 
-function wcagLuminance(c: { r: number; g: number; b: number }): number {
-  const lin = (ch: number): number => {
-    const s = ch / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
-}
-
 async function patchLuminance(page: Page, panel: Locator): Promise<number> {
-  return wcagLuminance(await patchColor(page, panel));
+  const c = await patchColor(page, panel);
+  return relativeLuminance({ r: c.r, g: c.g, b: c.b, a: 1 });
 }
 
 /** Евклидова дистанция средних каналов, в байтах. */

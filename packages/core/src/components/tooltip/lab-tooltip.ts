@@ -243,7 +243,7 @@ export class LabTooltip extends LabElement {
     return html`
       <button class="trigger" type="button" part="trigger"><slot></slot></button>
       <div class="positioner" part="positioner">
-        <div class="content" part="content">
+        <div class="content" part="content" hidden>
           <slot name="content">${this.content}</slot>
           ${
             this.arrow

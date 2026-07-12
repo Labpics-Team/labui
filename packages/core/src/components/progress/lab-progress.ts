@@ -234,6 +234,20 @@ export class LabProgress extends LabElement {
     return { ...trackProps, 'aria-label': undefined, 'aria-labelledby': labelId };
   }
 
+  /** The machine's formatted percent, or a locally-computed SSR-shell substitute
+   * (Lit SSR runs render() before hostConnected starts the machine, so the api
+   * getter throws there; the client upgrade re-renders with the machine's text). */
+  private percentText(): string {
+    try {
+      return this.machineCtl.api.percentAsString;
+    } catch {
+      const value = this.value ?? this.min;
+      const span = this.max - this.min;
+      const percent = span > 0 ? ((value - this.min) / span) * 100 : 0;
+      return `${Math.round(Math.min(100, Math.max(0, percent)))}%`;
+    }
+  }
+
   override render(): TemplateResult {
     // Structure only; behavior (role=progressbar, aria-value*, percent → width) is
     // spread in `updated()` from the machine. The value text shows the machine's
@@ -247,11 +261,7 @@ export class LabProgress extends LabElement {
             ? html`
               <div class="meta">
                 ${this.label ? html`<span class="label">${this.label}</span>` : nothing}
-                ${
-                  showText
-                    ? html`<span class="value-text">${this.machineCtl.api.percentAsString}</span>`
-                    : nothing
-                }
+                ${showText ? html`<span class="value-text">${this.percentText()}</span>` : nothing}
               </div>
             `
             : nothing

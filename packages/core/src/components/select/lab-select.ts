@@ -218,7 +218,7 @@ export class LabSelect extends LabElement {
     // collection is the machine's only source of value/label/disabled per item.
     if (changed.has('items')) {
       this.collection = selectMachine.collection<LabSelectItem>({
-        items: this.items,
+        items: this.items ?? [],
         itemToValue: (item) => item.value,
         itemToString: (item) => item.label,
         isItemDisabled: (item) => item.disabled ?? false,
@@ -451,7 +451,7 @@ export class LabSelect extends LabElement {
     // (filter/reorder/virtualise) — and the id the machine puts on the option is
     // exactly what the listbox's aria-activedescendant points at. `CSS.escape`
     // neutralises any quote/bracket in the value so the selector can't break.
-    for (const item of this.items) {
+    for (const item of this.items ?? []) {
       const selector = `.item[data-value="${CSS.escape(item.value)}"]`;
       const itemEl = root.querySelector<HTMLElement>(selector);
       if (!itemEl) continue;
@@ -499,7 +499,7 @@ export class LabSelect extends LabElement {
       </div>
       <div class="positioner" part="positioner">
         <ul class="content" part="content" hidden>
-          ${this.items.map(
+          ${(this.items ?? []).map(
             (item) => html`
               <li class="item" part="item" data-value="${item.value}">
                 <span class="item-text" part="item-text">${item.label}</span>
@@ -510,7 +510,7 @@ export class LabSelect extends LabElement {
         </ul>
       </div>
       <select>
-        ${this.items.map(
+        ${(this.items ?? []).map(
           (item) => html`<option value="${item.value}" ?disabled="${item.disabled ?? false}">
             ${item.label}
           </option>`,

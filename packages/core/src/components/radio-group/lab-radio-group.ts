@@ -319,7 +319,7 @@ export class LabRadioGroup extends LabElement {
     // the canon Select/Tabs/Menu/Accordion need this guarantee. `value` rides a
     // `data-value` attribute on each `.item` node; `CSS.escape` neutralises any
     // quote/bracket so the attribute selector can't be broken by item content.
-    for (const item of this.items) {
+    for (const item of this.items ?? []) {
       const selector = `.item[data-value="${CSS.escape(item.value)}"]`;
       const itemEl = this.renderRoot.querySelector<HTMLElement>(selector);
       if (!itemEl) continue;
@@ -344,7 +344,7 @@ export class LabRadioGroup extends LabElement {
     return html`
       <div class="root">
         ${this.label ? html`<span class="group-label">${this.label}</span>` : nothing}
-        ${this.items.map(
+        ${(this.items ?? []).map(
           (item) => html`
             <label class="item" data-value="${item.value}">
               <span class="control"><span class="dot"></span></span>

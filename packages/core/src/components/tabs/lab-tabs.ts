@@ -269,7 +269,7 @@ export class LabTabs extends LabElement {
     // identity across reorders; here we resolve each node by its own
     // `data-value` marker (the SAME identity key) rather than a fragile index —
     // a reorder can never spread one tab's props onto another tab's node.
-    for (const item of this.items) {
+    for (const item of this.items ?? []) {
       const selector = `[data-item-value="${CSS.escape(item.value)}"]`;
       const trigger = this.renderRoot.querySelector<HTMLElement>(`.trigger${selector}`);
       const panel = this.renderRoot.querySelector<HTMLElement>(`.panel${selector}`);
@@ -297,7 +297,7 @@ export class LabTabs extends LabElement {
       <div class="root">
         <div class="list">
           ${repeat(
-            this.items,
+            this.items ?? [],
             (item) => item.value,
             (item) =>
               html`<button class="trigger" type="button" data-item-value=${item.value}>
@@ -306,7 +306,7 @@ export class LabTabs extends LabElement {
           )}
         </div>
         ${repeat(
-          this.items,
+          this.items ?? [],
           (item) => item.value,
           (item) =>
             html`<div class="panel" data-item-value=${item.value}>

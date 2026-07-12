@@ -141,11 +141,12 @@ export class LabBreadcrumb extends LabElement {
   `;
 
   override render(): TemplateResult {
-    const lastIndex = this.items.length - 1;
+    const items = this.items ?? [];
+    const lastIndex = items.length - 1;
     return html`
       <nav aria-label="Breadcrumb" part="nav">
         <ol part="list">
-          ${this.items.map((item, index) => {
+          ${items.map((item, index) => {
             const isCurrent = index === lastIndex;
             const crumb = isCurrent
               ? html`<span class="current" part="current" aria-current="page">${item.label}</span>`

@@ -106,6 +106,9 @@ importers:
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../core
+      '@lit-labs/ssr-client':
+        specifier: ^1.1.8
+        version: 1.1.8
     devDependencies:
       '@lit-labs/ssr':
         specifier: 4.1.0
@@ -242,23 +245,12 @@ importers:
         specifier: 3.2.6
         version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
 
-  packages/icons:
-    devDependencies:
-      '@types/node':
-        specifier: 22.10.5
-        version: 22.10.5
-      typescript:
-        specifier: 5.7.3
-        version: 5.7.3
-      vitest:
-        specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@15.11.7)(tsx@4.19.2)
-
   packages/materials:
-    devDependencies:
+    dependencies:
       '@labpics/colors':
         specifier: workspace:*
         version: link:../colors-stub
+    devDependencies:
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -338,9 +330,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/tooltip':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/types':
         specifier: 1.41.2
         version: 1.41.2
     devDependencies:
