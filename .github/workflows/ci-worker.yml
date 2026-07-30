@@ -1,0 +1,409 @@
+name: CI worker
+
+# Неизменяемый worker для одноразовой gVisor-ячейки DE-02. Runner-group ACL
+# допускает в ячейку только jobs, определённые здесь и закреплённые в caller'е
+# (ci.yml) полным commit SHA: caller выбирает revision для checkout, но не может
+# изменить ни job graph, ни пины экшенов. Своих inputs у worker нет by design.
+
+on:
+  workflow_call:
+
+# Least privilege: read-only by default. No job needs write here.
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  # Trivy scanner image pinned by tag AND digest (supply-chain: digest is the
+  # immutable identity; the tag stays for human readability). Bump both together.
+  TRIVY_IMAGE: "aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e"
+  # busybox используется как ROOT-контейнер для очистки воркспейса и возврата
+  # владения (см. блок «ИНВАРИАНТ root-docker» ниже). Пинится по тегу И дайджесту
+  # (immutable identity), как TRIVY_IMAGE. Бампить оба поля вместе. Дайджест —
+  # OCI-индекс busybox:1.36 (multi-arch).
+  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
+  # Job-локальный docker-конфиг БЕЗ credsStore: унаследованный ~/.docker/config.json
+  # с credsStore зовёт внешний хелпер, которого в слоте нет, и пулл пиненых образов
+  # падает (exit 127). Пустой DOCKER_CONFIG = анонимные пуллы публичных образов без
+  # хелпера — CI не зависит от того, что лежит в домашнем каталоге образа.
+  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
+
+jobs:
+  # ── ИНВАРИАНТ root-docker ───────────────────────────────────────────────────
+  # Слот ячейки одноразовый, поэтому прежний класс «ROOT-owned мусор от прошлого
+  # job'а краснит невиновный PR» закрыт по построению. Инвариант оставлен ЦЕЛИКОМ
+  # и намеренно: docker-as-root шаги (Trivy fs-scan, Playwright) внутри ОДНОГО
+  # job'а всё так же оставляют ROOT-owned файлы, которые непривилегированный
+  # пользователь job'а не удалит (`rm` → Permission denied) и не chown'ит (нет
+  # CAP_CHOWN), а вся защита стоит ровно два вызова busybox.
+  # ЗАЩИТА В ДВА СЛОЯ, оба через ROOT-контейнер busybox (${BUSYBOX_IMAGE}):
+  #   1) clean-шаг КАЖДОГО job'а чистит содержимое воркспейса root-контейнером —
+  #      root снесёт что угодно; clean не зависит от того, кто наоставлял файлов
+  #      и отработал ли chown-back. Это первичная защита.
+  #   2) КАЖДЫЙ root-docker job (sca, e2e) завершается шагом «Вернуть владение
+  #      воркспейса» (if: always()) — тоже root-контейнером busybox.
+  # При добавлении нового root-контейнерного job'а — добавь такой chown-back.
+  sca:
+    name: supply-chain · secrets · misconfig
+    runs-on: { group: labpics-ci-sandbox, labels: [labpics-ci-gvisor-v1] }
+    # Защита от fork-PR: НЕ гоняем недоверенный код форков на своей инфре.
+    # Форк-PR пропускается (job skipped, раннер не выделяется); push в main
+    # и same-repo PR (коллаборатор) — гоняются как прежде.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 10
+    steps:
+      # docker-as-root шаги (Trivy fs-scan, Playwright) оставляют в чекауте
+      # ROOT-owned файлы (apps/docs/dist/*, .git/*), которые непривилегированный
+      # пользователь job'а без passwordless sudo не удалит обычным `rm`
+      # → 'Permission denied'. Поэтому чистим содержимое воркспейса ROOT-контейнером
+      # busybox: root снесёт что угодно, независимо от того, кто наоставлял файлов
+      # и отработал ли chown-back. Заодно возвращаем владение самим каталогом
+      # uid 1000, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
+      # (fetch-depth:1, быстро). Детерминированно и не зависит от состояния слота.
+      - name: Чистый воркспейс (root-контейнер busybox)
+        shell: bash
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ── Why this job is hand-rolled around the pinned Trivy CONTAINER instead
+      #    of aquasecurity/trivy-action ─────────────────────────────────────────
+      # Root cause of the systemic red: any single-step Trivy wrapper conflates
+      # TWO different non-zero exits — (a) infra setup (binary install from GitHub
+      # releases, or vuln-DB pull from GHCR, both anonymously rate-limited) and
+      # (b) a genuine HIGH/CRITICAL finding (`--exit-code 1`). The action fails in
+      # ~2-13s on infra and reds the whole PR, indistinguishable from a finding.
+      #
+      # Fix: run the pinned aquasec/trivy image directly so WE own every exit.
+      #   * DB pull is its own retrying, mirror-fallback step → fail-SOFT on infra.
+      #   * The scan runs ONLY when the DB warmed, with --skip-db-update so a
+      #     registry blip cannot re-fail it, and --exit-code 1 reserved EXCLUSIVELY
+      #     for findings. We branch on Trivy's exit: 0 = clean (pass), 1 = real
+      #     HIGH/CRITICAL (HARD fail), anything else = infra/scan error (fail-SOFT
+      #     with a visible ::warning::). Security gate kept; infra never reds.
+      - name: Cache Trivy DB
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          # Кэш вне чекаута (RUNNER_TEMP): trivy пишется как root из docker, и в
+          # воркспейсе это ломало очистку последующих шагов.
+          path: ${{ runner.temp }}/trivycache
+          # Primary key rotates with the workflow run so the post-job save always
+          # persists the freshly-warmed DB; restore-keys reuses the most recent
+          # prior cache so a healthy run still starts from a warm DB instead of a
+          # cold full download. (A static key would go stale and never re-save.)
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: |
+            trivy-db-
+
+      - name: Warm Trivy DB (fail-soft on infra)
+        id: dbwarm
+        env:
+          # Mirror the vuln/java DBs (GHCR + public.ecr.aws) to dodge anon limits.
+          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2
+          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1
+        run: |
+          set +e
+          mkdir -p "${RUNNER_TEMP}/trivycache"
+          ok=""
+          for attempt in 1 2 3 4 5; do
+            echo "::group::Trivy DB download attempt ${attempt}"
+            docker run --rm \
+              -e TRIVY_DB_REPOSITORY -e TRIVY_JAVA_DB_REPOSITORY \
+              -v "${RUNNER_TEMP}/trivycache:/root/.cache/trivy" \
+              "${TRIVY_IMAGE}" \
+              image --download-db-only --cache-dir /root/.cache/trivy
+            rc=$?
+            echo "::endgroup::"
+            if [ $rc -eq 0 ]; then ok="true"; break; fi
+            echo "DB download attempt ${attempt} failed (rc=${rc}); backing off..."
+            sleep $((attempt * 10))
+          done
+          if [ "${ok}" = "true" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Trivy DB present in cache; scan will run."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Trivy SCA skipped::Trivy DB could not be fetched after 5 attempts (registry/rate-limit). Failing SOFT on infra — NOT a security finding. The gate still hard-fails on a real HIGH/CRITICAL whenever the DB is reachable."
+          fi
+
+      - name: Scan (vuln + secret + misconfig; hard-fail only on findings)
+        if: ${{ steps.dbwarm.outputs.ready == 'true' }}
+        run: |
+          set +e
+          # Write the report to a FRESH out-dir mounted read-write, NOT into the
+          # restored .trivycache — otherwise a current-run scan error could leave
+          # a STALE report from a prior run's cache and we'd upload it as if it
+          # were this run's. Start clean so the artifact always matches this scan.
+          rm -rf "${RUNNER_TEMP}/trivy-out" && mkdir -p "${RUNNER_TEMP}/trivy-out"
+          docker run --rm \
+            -v "${PWD}:/src:ro" \
+            -v "${RUNNER_TEMP}/trivycache:/root/.cache/trivy" \
+            -v "${RUNNER_TEMP}/trivy-out:/out" \
+            "${TRIVY_IMAGE}" \
+            fs /src \
+            --scanners vuln,secret,misconfig \
+            --severity HIGH,CRITICAL \
+            --skip-db-update --skip-java-db-update \
+            --cache-dir /root/.cache/trivy \
+            --no-progress \
+            --exit-code 1 \
+            --format table \
+            --output /out/trivy-report.txt
+          rc=$?
+          cp "${RUNNER_TEMP}/trivy-out/trivy-report.txt" trivy-report.txt 2>/dev/null || true
+          echo "::group::Trivy report"; cat trivy-report.txt 2>/dev/null || echo "(no report file)"; echo "::endgroup::"
+          if [ $rc -eq 0 ]; then
+            echo "Trivy: no HIGH/CRITICAL findings. PASS."
+            exit 0
+          elif [ $rc -eq 1 ]; then
+            echo "::error title=Trivy findings::Trivy reported HIGH/CRITICAL vuln/secret/misconfig findings — see report. HARD failing the gate."
+            exit 1
+          else
+            echo "::warning title=Trivy infra error::Trivy exited ${rc} (scan/engine error, not a findings exit). Failing SOFT — this is NOT a security finding."
+            exit 0
+          fi
+
+      - name: Upload Trivy report
+        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: trivy-report
+          path: trivy-report.txt
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Вернуть владение воркспейса (cleanup после root-контейнеров)
+        # sca запускает docker-контейнеры Trivy как root → root-owned файлы в
+        # GITHUB_WORKSPACE. Непривилегированный пользователь job'а НЕ может chown
+        # чужие файлы (нет CAP_CHOWN, нет passwordless sudo) — `chown` молча падал.
+        # Возвращаем владение uid 1000 через ROOT-контейнер busybox.
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            chown -R 1000:1000 /workspace || true
+
+  quality:
+    name: lint · typecheck · build
+    runs-on: { group: labpics-ci-sandbox, labels: [labpics-ci-gvisor-v1] }
+    # Защита от fork-PR — см. комментарий в job `sca` выше.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 15
+    steps:
+      # docker-as-root шаги (Trivy fs-scan, Playwright) оставляют в чекауте
+      # ROOT-owned файлы (apps/docs/dist/*, .git/*), которые непривилегированный
+      # пользователь job'а без passwordless sudo не удалит обычным `rm`
+      # → 'Permission denied'. Поэтому чистим содержимое воркспейса ROOT-контейнером
+      # busybox: root снесёт что угодно, независимо от того, кто наоставлял файлов
+      # и отработал ли chown-back. Заодно возвращаем владение самим каталогом
+      # uid 1000, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
+      # (fetch-depth:1, быстро). Детерминированно и не зависит от состояния слота.
+      - name: Чистый воркспейс (root-контейнер busybox)
+        shell: bash
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          # per-job dest: runner.temp изолирован и одноразов, поэтому установка pnpm
+          # не зависит ни от домашнего каталога образа, ни от соседних job'ов.
+          dest: ${{ runner.temp }}/setup-pnpm
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Одноразовый слот: GitHub-кэш не нужен. У setup-node вход `cache` — это
+          # перечисление пакетных менеджеров, поэтому кэш выключается ОТСУТСТВИЕМ
+          # `cache` плюс явным гашением автокэша npm (`cache: false` там падает).
+          package-manager-cache: false
+          # GitHub-cache-сервис к тому же флачит/виснет на сетевом эгрессе. Тепло
+          # даёт toolcache образа (node 20/22/24), детерминизм — pnpm-lock.yaml.
+          node-version: 22
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (Biome)
+        run: pnpm lint
+
+      - name: Format check (Biome)
+        run: pnpm run format:check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Assert generated artifact is not stale (shadow)
+        # Re-runs the generator from source, then asserts `git diff --exit-code`
+        # on the committed artifact. If the committed shadow.css diverges from the
+        # source, this step fails BEFORE the Build step can silently overwrite it.
+        # Without this guard the build would regenerate the file, masking a stale
+        # committed artifact as a false green.
+        run: pnpm --filter @labpics/ui-shadow check-generated
+
+      - name: Assert generated artifact is not stale (tokens)
+        # Тот же инвариант для SSOT-размеров (spacing/radii/z-index/typography):
+        # генератор перегоняется из конфига, `git diff --exit-code` на
+        # committed tokens.css/dtcg. Без этого гейта изменение конфига без
+        # регенерации оставило бы СТАРЫЙ канон tokens.css — а именно его читают
+        # drift-гарды (no-magic-dimension) как истину: молчаливо сверяли бы всё
+        # против устаревшей шкалы. Стоит ДО Build, который иначе перегенерировал
+        # бы файл и замаскировал протухший коммит ложным зелёным.
+        run: pnpm --filter @labpics/ui-tokens check-generated
+
+      - name: Assert generated artifact is not stale (materials)
+        # Тот же инвариант для инлайна acrylic-noise в acrylic.css: без этого
+        # шага протухший артефакт валил юнит-тест inline-seal уже ПОСЛЕ мержа.
+        run: pnpm --filter @labpics/ui-materials check-generated
+
+      - name: Build
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test
+
+  e2e:
+    name: playwright smoke (critical path)
+    runs-on: { group: labpics-ci-sandbox, labels: [labpics-ci-gvisor-v1] }
+    # Защита от fork-PR — см. комментарий в job `sca` выше.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    # e2e исполняется в самом слоте, НЕ в отдельном контейнере: системные
+    # библиотеки браузеров запечены в образе ячейки, версия совпадает с
+    # @playwright/test. Так избегаем хрупкого пула 3.4GB-образа Playwright на
+    # «Initialize containers» и root-владения артефактов в воркспейсе.
+    #
+    # ── ЭТО SMOKE-ПОДМНОЖЕСТВО, НЕ ВЕСЬ НАБОР ────────────────────────────────
+    # Per-PR гоняется только критический путь (E2E_SMOKE=1 → curated список в
+    # apps/docs/playwright.config.ts): ~55 тестов × chromium+webkit вместо всех
+    # ~319 × 2. Короче окно = меньше голодания/флака на очереди в ячейку, и гейт
+    # остаётся быстрым и блокирующим. ПОЛНОЕ покрытие НЕ потеряно — весь набор
+    # гоняется по расписанию в `.github/workflows/e2e-full.yml`.
+    timeout-minutes: 25
+    steps:
+      # docker-as-root шаги (Trivy fs-scan, Playwright) оставляют в чекауте
+      # ROOT-owned файлы (apps/docs/dist/*, .git/*), которые непривилегированный
+      # пользователь job'а без passwordless sudo не удалит обычным `rm`
+      # → 'Permission denied'. Поэтому чистим содержимое воркспейса ROOT-контейнером
+      # busybox: root снесёт что угодно, независимо от того, кто наоставлял файлов
+      # и отработал ли chown-back. Заодно возвращаем владение самим каталогом
+      # uid 1000, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
+      # (fetch-depth:1, быстро). Детерминированно и не зависит от состояния слота.
+      - name: Чистый воркспейс (root-контейнер busybox)
+        shell: bash
+        run: |
+          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          # per-job dest: runner.temp изолирован и одноразов, поэтому установка pnpm
+          # не зависит ни от домашнего каталога образа, ни от соседних job'ов.
+          dest: ${{ runner.temp }}/setup-pnpm
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Одноразовый слот: GitHub-кэш не нужен. У setup-node вход `cache` — это
+          # перечисление пакетных менеджеров, поэтому кэш выключается ОТСУТСТВИЕМ
+          # `cache` плюс явным гашением автокэша npm (`cache: false` там падает).
+          package-manager-cache: false
+          # GitHub-cache-сервис к тому же флачит/виснет на сетевом эгрессе. Тепло
+          # даёт toolcache образа (node 20/22/24), детерминизм — pnpm-lock.yaml.
+          node-version: 22
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build packages
+        run: pnpm build
+
+      - name: Install Playwright browsers (Chromium + WebKit)
+        # WebKit added with materials-system: the glass material must read the
+        # same across engines, so the glass smoke runs on Chromium AND WebKit.
+        # Ставим только браузеры в ~/.cache/ms-playwright (в одноразовом слоте это
+        # каталог самого job'а, не кэш между прогонами). Системные библиотеки
+        # браузеров запечены в образе ячейки, поэтому --with-deps НЕ нужен (он
+        # требовал sudo apt без TTY и падал под пользователем job'а).
+        run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
+
+      - name: FX-render гейт (рендер → пиксельная проверка FX-токенов #93)
+        # Гейт эмитированных FX-токенов (glow 6×3 + focus-ring 6): рендерит харнесс
+        # в chromium, замеряет ПИКСЕЛИ скриншота на лету и валит job при нарушении
+        # инвариантов (base-glow non-blank; монотонность subtle<base<bloom;
+        # focus-ring non-blank). Замеры считаются ЗДЕСЬ, а НЕ читаются из
+        # репозитория — в git нет ни PNG, ни measurements (artifacts/ gitignored).
+        # Chromium уже поставлен предыдущим шагом; contract.css — коммит из чекаута.
+        # Быстрый (одна страница) → ставим до дорогих сьютов, чтобы падать рано.
+        run: pnpm --filter @labui/colors fx:render
+
+      - name: Upload FX-render артефакт (PNG для обзора владельцем)
+        # PNG результата — artifact workflow, НЕ репозитория: пишется на лету в
+        # gitignored packages/colors/artifacts/fx-render/ и отдаётся отсюда. Гейт
+        # пишет PNG ДО ассертов, поэтому !cancelled() отдаёт снимок и на RED —
+        # владельцу видно, ЧТО именно сломалось (glow пропал/сплющился).
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fx-render
+          path: packages/colors/artifacts/fx-render/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Run smoke tests (critical-path subset)
+        # E2E_SMOKE=1 сужает набор до curated SMOKE_SPECS в playwright.config.ts.
+        # Полный набор — по расписанию в e2e-full.yml (там переменная не выставлена).
+        # PW_PORT выводится из имени раннера, а не хардкодится: сетевое
+        # пространство слота своё, но правило порт-на-раннер сохранено дословно —
+        # оно и здесь корректно (свой порт = свой слот), поэтому убить
+        # осиротевший preview-сервер на нём безопасно по построению.
+        env:
+          E2E_SMOKE: "1"
+        run: |
+          n="${RUNNER_NAME##*-}"; case "$n" in (*[!0-9]*|'') n=0;; esac
+          export PW_PORT=$((43200 + n))
+          pkill -f -- "--port ${PW_PORT}" 2>/dev/null || true
+          pnpm test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: apps/docs/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Вернуть владение воркспейса (cleanup после root-контейнеров)
+        # e2e собирает пакеты и артефакты в чекауте; если шаг (сейчас или в
+        # будущем, напр. Playwright-контейнер) отработает как root, останутся
+        # root-owned файлы. Непривилегированный пользователь job'а не может их
+        # chown'ить — возвращаем владение uid 1000 через ROOT-контейнер busybox,
+        # чтобы последующие шаги не спотыкались о root-owned файлы.
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            chown -R 1000:1000 /workspace || true
