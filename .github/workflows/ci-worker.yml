@@ -68,7 +68,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?*; test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)"; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
           test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -84,12 +84,12 @@ jobs:
       # ~2-13s on infra and reds the whole PR, indistinguishable from a finding.
       #
       # Fix: run the pinned aquasec/trivy image directly so WE own every exit.
-      #   * DB pull is its own retrying, mirror-fallback step → fail-SOFT on infra.
+      #   * DB pull is its own retrying, mirror-fallback step and fails closed if
+      #     neither registry is reachable: a mandatory gate cannot pass unscanned.
       #   * The scan runs ONLY when the DB warmed, with --skip-db-update so a
-      #     registry blip cannot re-fail it, and --exit-code 1 reserved EXCLUSIVELY
-      #     for findings. We branch on Trivy's exit: 0 = clean (pass), 1 = real
-      #     HIGH/CRITICAL (HARD fail), anything else = infra/scan error (fail-SOFT
-      #     with a visible ::warning::). Security gate kept; infra never reds.
+      #     registry blip cannot re-fail it. Any non-zero scan exit fails the gate;
+      #     exit 1 denotes findings, other codes denote an engine/infrastructure
+      #     failure. Both outcomes are unsafe to merge.
       - name: Cache Trivy DB
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
@@ -104,7 +104,7 @@ jobs:
           restore-keys: |
             trivy-db-
 
-      - name: Warm Trivy DB (fail-soft on infra)
+      - name: Warm Trivy DB (fail-closed)
         id: dbwarm
         env:
           # Mirror the vuln/java DBs (GHCR + public.ecr.aws) to dodge anon limits.
@@ -132,7 +132,8 @@ jobs:
             echo "Trivy DB present in cache; scan will run."
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Trivy SCA skipped::Trivy DB could not be fetched after 5 attempts (registry/rate-limit). Failing SOFT on infra — NOT a security finding. The gate still hard-fails on a real HIGH/CRITICAL whenever the DB is reachable."
+            echo "::error title=Trivy SCA unavailable::Trivy DB could not be fetched after 5 attempts; refusing to pass an unscanned revision."
+            exit 1
           fi
 
       - name: Scan (vuln + secret + misconfig; hard-fail only on findings)
@@ -168,8 +169,8 @@ jobs:
             echo "::error title=Trivy findings::Trivy reported HIGH/CRITICAL vuln/secret/misconfig findings — see report. HARD failing the gate."
             exit 1
           else
-            echo "::warning title=Trivy infra error::Trivy exited ${rc} (scan/engine error, not a findings exit). Failing SOFT — this is NOT a security finding."
-            exit 0
+            echo "::error title=Trivy scan unavailable::Trivy exited ${rc}; refusing to pass without a complete security scan."
+            exit "${rc}"
           fi
 
       - name: Upload Trivy report
@@ -217,7 +218,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?*; test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)"; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
           test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -317,7 +318,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?*; test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)"; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
           test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
