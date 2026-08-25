@@ -68,7 +68,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?*; test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)"; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* && test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)" && chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
           test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -218,7 +218,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?*; test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)"; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* && test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)" && chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
           test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -318,7 +318,7 @@ jobs:
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?*; test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)"; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* && test -z "$(find /workspace -mindepth 1 -maxdepth 1 -print -quit)" && chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
           test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
