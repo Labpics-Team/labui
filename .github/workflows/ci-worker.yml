@@ -60,14 +60,16 @@ jobs:
       # → 'Permission denied'. Поэтому чистим содержимое воркспейса ROOT-контейнером
       # busybox: root снесёт что угодно, независимо от того, кто наоставлял файлов
       # и отработал ли chown-back. Заодно возвращаем владение самим каталогом
-      # uid 1000, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
+      # фактическому uid/gid процесса раннера, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
       # (fetch-depth:1, быстро). Детерминированно и не зависит от состояния слота.
       - name: Чистый воркспейс (root-контейнер busybox)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+          test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -183,12 +185,14 @@ jobs:
         # sca запускает docker-контейнеры Trivy как root → root-owned файлы в
         # GITHUB_WORKSPACE. Непривилегированный пользователь job'а НЕ может chown
         # чужие файлы (нет CAP_CHOWN, нет passwordless sudo) — `chown` молча падал.
-        # Возвращаем владение uid 1000 через ROOT-контейнер busybox.
+        # Возвращаем владение фактическому uid/gid процесса раннера через ROOT-контейнер busybox.
         if: ${{ always() }}
         shell: bash
         run: |
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+            chown -R "${runner_uid}:${runner_gid}" /workspace
+          test -w "${GITHUB_WORKSPACE}"
 
   quality:
     name: lint · typecheck · build
@@ -205,14 +209,16 @@ jobs:
       # → 'Permission denied'. Поэтому чистим содержимое воркспейса ROOT-контейнером
       # busybox: root снесёт что угодно, независимо от того, кто наоставлял файлов
       # и отработал ли chown-back. Заодно возвращаем владение самим каталогом
-      # uid 1000, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
+      # фактическому uid/gid процесса раннера, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
       # (fetch-depth:1, быстро). Детерминированно и не зависит от состояния слота.
       - name: Чистый воркспейс (root-контейнер busybox)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+          test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -303,14 +309,16 @@ jobs:
       # → 'Permission denied'. Поэтому чистим содержимое воркспейса ROOT-контейнером
       # busybox: root снесёт что угодно, независимо от того, кто наоставлял файлов
       # и отработал ли chown-back. Заодно возвращаем владение самим каталогом
-      # uid 1000, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
+      # фактическому uid/gid процесса раннера, чтобы checkout писал в свой каталог. Клон — заново checkout'ом
       # (fetch-depth:1, быстро). Детерминированно и не зависит от состояния слота.
       - name: Чистый воркспейс (root-контейнер busybox)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+          test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -405,5 +413,7 @@ jobs:
         if: ${{ always() }}
         shell: bash
         run: |
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+            chown -R "${runner_uid}:${runner_gid}" /workspace
+          test -w "${GITHUB_WORKSPACE}"

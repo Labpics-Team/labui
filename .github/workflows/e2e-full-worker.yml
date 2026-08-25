@@ -37,13 +37,15 @@ jobs:
       # docker-as-root шаги (Playwright) оставляют root-owned файлы, которые
       # непривилегированный пользователь job'а без passwordless sudo не удалит
       # обычным `rm`. ROOT-контейнер busybox сносит содержимое воркспейса
-      # независимо от состояния слота и возвращает владение uid 1000 для checkout'а.
+      # независимо от состояния слота и возвращает владение фактическому uid/gid процесса раннера.
       - name: Чистый воркспейс (root-контейнер busybox)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "${runner_uid}" "${runner_gid}"
+          test -w "${GITHUB_WORKSPACE}"
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -101,10 +103,12 @@ jobs:
 
       - name: Вернуть владение воркспейса (cleanup после root-контейнеров)
         # Тот же defence-in-depth chown-back, что и в e2e-job ci-worker.yml:
-        # возвращаем владение uid 1000 через ROOT-контейнер busybox, чтобы
-        # последующие шаги не спотыкались о root-owned файлы.
+        # возвращаем владение фактическому uid/gid процесса раннера через ROOT-контейнер,
+        # чтобы последующие шаги не спотыкались о root-owned файлы.
         if: ${{ always() }}
         shell: bash
         run: |
+          runner_uid="$(id -u)"; runner_gid="$(id -g)"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+            chown -R "${runner_uid}:${runner_gid}" /workspace
+          test -w "${GITHUB_WORKSPACE}"
