@@ -204,7 +204,12 @@ export function PinInput({
         {api.items.map((index) => (
           // Keyed by the machine's own index: pin boxes never reorder, so the positional
           // index IS the stable key for getInputProps({ index }).
-          <input key={index} {...api.getInputProps({ index })} className="lab-pin-input-segment" />
+          <input
+            key={index}
+            {...api.getInputProps({ index })}
+            aria-label={`${label}, digit ${index + 1} of ${count}`}
+            className="lab-pin-input-segment"
+          />
         ))}
         <input {...api.getHiddenInputProps()} className="lab-pin-input-hidden" />
       </div>

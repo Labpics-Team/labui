@@ -367,7 +367,13 @@ export class LabPinInput extends LabElement {
     // receives another segment's roving tabindex / value ARIA.
     for (const index of api.items) {
       const inputEl = root.querySelector<HTMLInputElement>(`.segment[data-index="${index}"]`);
-      if (inputEl) this.machineCtl.spread(inputEl, api.getInputProps({ index }));
+      if (inputEl) {
+        this.machineCtl.spread(inputEl, api.getInputProps({ index }));
+        // axe-core's `label` rule checks each native <input> individually; the group's
+        // aria-labelledby does NOT satisfy per-element labelling. Add a positional label
+        // so each segment passes WCAG 2.1 A without weakening the group semantics.
+        inputEl.setAttribute('aria-label', `${this.label || 'Pin input'}, digit ${index + 1} of ${this.count}`);
+      }
     }
 
     // Add the FIELD a11y contract over the machine's spread, on the control GROUP: the
