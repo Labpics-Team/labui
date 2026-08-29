@@ -34,7 +34,7 @@ env:
 jobs:
   e2e-full:
     name: playwright full (chromium + webkit)
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: self-hosted
     # Полный набор длиннее smoke; на нагруженном пуле даём запас, но не бесконечный.
     timeout-minutes: 40
     steps:
