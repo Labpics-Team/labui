@@ -1,9 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Один поток сохраняет порядок отключения команд относительно stdout и stderr workload.
+exec 2>&1
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 image='mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c'
 job="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/labui-browser.XXXXXX")"
+commands_paused=false
+ci_resume_token=''
+
+resume_commands() {
+  if [ "$commands_paused" = true ]; then printf '::%s::\n' "$ci_resume_token"; fi
+}
 
 directory_path() {
   local current="$1" component
@@ -44,6 +52,7 @@ cleanup() {
     container="$(cat "${job}/container.id")"
     if ! docker rm --force "$container" >/dev/null; then
       echo '::error::Container removal failed; artifact export and directory cleanup are unsafe.' >&2
+      resume_commands
       exit 1
     fi
   fi
@@ -54,6 +63,7 @@ cleanup() {
   if [ "$artifacts_safe" = true ] && [ "${#artifact_outputs[@]}" -gt 0 ] && [ -n "${GITHUB_OUTPUT:-}" ]; then
     if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then status=1; fi
   fi
+  if ! resume_commands; then status=1; fi
   exit "$status"
 }
 trap cleanup EXIT
@@ -79,4 +89,9 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     pnpm --filter @labui/colors fx:render
     pnpm test:e2e
   '
+# Вывод workload и ошибки чтения его файлов не могут задавать Actions outputs.
+ci_resume_token="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
+[[ "$ci_resume_token" =~ ^[0-9a-f]{64}$ ]]
+commands_paused=true
+printf '::stop-commands::%s\n' "$ci_resume_token"
 docker start --attach "$(cat "${job}/container.id")"

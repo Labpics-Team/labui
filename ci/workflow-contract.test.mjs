@@ -282,7 +282,12 @@ create) if [ "\${CREATE_STATUS:-0}" -ne 0 ]; then exit "$CREATE_STATUS"; fi
   while [ "$1" != --cidfile ]; do shift; done
   if [ -n "\${ARTIFACT_SETUP:-}" ]; then bash "$ARTIFACT_SETUP" "$(dirname "$2")/work/source"; fi
   printf owned-container > "$2"; echo owned-container; exit 0;;
-start) exit "\${START_STATUS:-0}";;
+start)
+  if [ "\${FORGE_OUTPUT:-0}" = 1 ]; then
+    printf '%s\\n' '::set-output name=report_ready::true' '::guessed-resume-token::'
+    printf '%s\\n' '::set-output name=fx_ready::true' >&2
+  fi
+  exit "\${START_STATUS:-0}";;
 rm) exit "\${REMOVE_STATUS:-0}";;
 esac
 if [[ "$*" == *--download-db-only* ]]; then
@@ -471,5 +476,61 @@ fi
         kind === 'remove-failure',
       );
     });
+  }
+});
+
+test('workload output remains outside the Actions command channel through cleanup', () => {
+  const tokens = new Set();
+  for (const [name, vars, expected] of [
+    ['success', {}, 0],
+    ['test failure', { START_STATUS: '23' }, 23],
+    ['removal failure', { REMOVE_STATUS: '7' }, 1],
+  ]) {
+    const cleanups = [];
+    const fixture = { after: (cleanup) => cleanups.push(cleanup) };
+    try {
+      const { dir, env } = fakeDocker(fixture);
+      const checkout = join(dir, 'checkout');
+      mkdirSync(checkout);
+      const script = browser.replace(
+        'root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"',
+        `root='${checkout.replaceAll('\\', '/')}'`,
+      );
+      function check(text) {
+        const result = execute(text, { ...env, ...vars, FORGE_OUTPUT: '1' });
+        assert.equal(result.status, expected, result.stderr);
+        const lines = result.stdout.trim().split(/\r?\n/);
+        const pause = lines.findIndex((line) => /^::stop-commands::[0-9a-f]{64}$/.test(line));
+        assert.ok(pause >= 0, `${name}: workflow command processing must stop`);
+        const token = lines[pause].slice('::stop-commands::'.length);
+        const resume = lines.indexOf(`::${token}::`);
+        assert.equal(resume, lines.length - 1, 'resume only after workload and cleanup output');
+        for (const output of ['report_ready', 'fx_ready']) {
+          const forged = lines.indexOf(`::set-output name=${output}::true`);
+          assert.ok(
+            forged > pause && forged < resume,
+            'forged outputs must remain inside the disabled channel',
+          );
+        }
+        assert.equal(
+          existsSync(env.GITHUB_OUTPUT),
+          false,
+          'missing artifacts cannot produce trusted outputs',
+        );
+        return token;
+      }
+      const token = check(script);
+      assert.equal(tokens.has(token), false, 'resume tokens are unique');
+      tokens.add(token);
+      const mutation = script.replace('printf \'::stop-commands::%s\\n\' "$ci_resume_token"', ':');
+      assert.notEqual(mutation, script);
+      assert.throws(() => check(mutation), /workflow command processing must stop/);
+      assert.throws(
+        () => check(script.replace('exec 2>&1', ':')),
+        /forged outputs must remain inside the disabled channel/,
+      );
+    } finally {
+      for (const cleanup of cleanups) cleanup();
+    }
   }
 });
