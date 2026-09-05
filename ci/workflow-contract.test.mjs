@@ -168,7 +168,7 @@ test('browser execution preserves both engines, FX and full-suite cadence', () =
   const runFull = full.jobs['e2e-full'].steps.find(
     (step) => step.run === 'bash .github/scripts/browser-check.sh',
   );
-  assert.equal(runFull.env, undefined);
+  assert.deepEqual(runFull.env, { E2E_SMOKE: '0' });
   for (const job of [ci.jobs.e2e, full.jobs['e2e-full']]) {
     assert.equal(
       job.steps.find((step) => step.run === 'bash .github/scripts/browser-check.sh').id,
@@ -212,9 +212,25 @@ test('browser execution preserves both engines, FX and full-suite cadence', () =
   assert.match(browser, /trap 'exit 143' TERM/);
 });
 
-test('Playwright resolves both engines and the complete smoke/full test inventory', () => {
+test('Playwright resolves both engines and the complete smoke/full test inventory', (t) => {
   const docs = join(root, 'apps/docs');
   const cli = join(docs, 'node_modules/@playwright/test/cli.js');
+  const reportDir = mkdtempSync(join(tmpdir(), 'labui-playwright-config-'));
+  t.after(() => rmSync(reportDir, { recursive: true, force: true }));
+  const reporter = join(reportDir, 'config.cjs');
+  const configReport = join(reportDir, 'config.json');
+  writeFileSync(
+    reporter,
+    `const { writeFileSync } = require('node:fs');
+module.exports = class {
+  onBegin(config) {
+    writeFileSync(process.env.LABUI_CONFIG_REPORT, JSON.stringify(
+      config.projects.map(({ name, use }) => ({ name, use }))
+    ));
+  }
+};
+`,
+  );
   const expectedSmoke = [
     'acrylic-live.spec.ts',
     'button.spec.ts',
@@ -231,18 +247,46 @@ test('Playwright resolves both engines and the complete smoke/full test inventor
     .map((path) => path.replaceAll('\\', '/'))
     .sort();
   assert.ok(expectedFull.length > expectedSmoke.length, 'full coverage must extend beyond smoke');
-  for (const smoke of [true, false]) {
+  for (const [smoke, workflow, jobKey] of [
+    [true, ci, 'e2e'],
+    [false, full, 'e2e-full'],
+  ]) {
+    const job = workflow.jobs[jobKey];
+    const step = job.steps.find((entry) => entry.run === 'bash .github/scripts/browser-check.sh');
     const env = {
-      ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'E2E_SMOKE')),
+      ...process.env,
+      E2E_SMOKE: '1',
+      ...workflow.env,
+      ...job.env,
+      ...step.env,
       CI: 'true',
+      LABUI_CONFIG_REPORT: configReport,
     };
-    if (smoke) env.E2E_SMOKE = '1';
     const result = spawnSync(
       process.execPath,
-      [cli, 'test', '--list', '--reporter=json', '--project=chromium', '--project=webkit'],
+      [
+        cli,
+        'test',
+        '--list',
+        `--reporter=json,${reporter}`,
+        '--project=chromium',
+        '--project=webkit',
+      ],
       { cwd: docs, env, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 },
     );
     assert.equal(result.status, 0, result.stderr || result.stdout);
+    const resolved = JSON.parse(readFileSync(configReport, 'utf8'));
+    assert.deepEqual(
+      resolved.map(({ name, use }) => ({
+        name,
+        browser: use.browserName ?? use.defaultBrowserType ?? 'chromium',
+      })),
+      [
+        { name: 'chromium', browser: 'chromium' },
+        { name: 'webkit', browser: 'webkit' },
+      ],
+      'project names must correspond to the actual browser engines',
+    );
     const report = JSON.parse(result.stdout);
     assert.deepEqual(report.errors, []);
     const files = { chromium: new Set(), webkit: new Set() };

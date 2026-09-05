@@ -32,6 +32,8 @@ jobs:
     - name: Verify browser rendering and full suite
       id: browser
       shell: bash
+      env:
+        E2E_SMOKE: '0'
       run: bash .github/scripts/browser-check.sh
     - name: Upload Playwright report
       if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
