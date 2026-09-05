@@ -84,11 +84,6 @@ jobs:
         node-version: 22
     - name: Install
       run: pnpm install --frozen-lockfile
-    - name: Verify CI execution contracts
-      shell: bash
-      run: |
-        npm ci --ignore-scripts --prefix ci
-        node --test ci/workflow-contract.test.mjs
     - name: Lint (Biome)
       run: pnpm lint
     - name: Format check (Biome)
@@ -103,6 +98,11 @@ jobs:
       run: pnpm --filter @labpics/ui-materials check-generated
     - name: Build
       run: pnpm build
+    - name: Verify CI execution contracts
+      shell: bash
+      run: |
+        npm ci --ignore-scripts --prefix ci
+        node --test ci/workflow-contract.test.mjs
     - name: Unit tests
       run: pnpm test
   e2e:
@@ -125,12 +125,13 @@ jobs:
       with:
         persist-credentials: false
     - name: Verify browser rendering and smoke tests
+      id: browser
       shell: bash
       env:
         E2E_SMOKE: '1'
       run: bash .github/scripts/browser-check.sh
     - name: Upload FX-render артефакт (PNG для обзора владельцем)
-      if: ${{ !cancelled() }}
+      if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: fx-render
@@ -138,7 +139,7 @@ jobs:
         retention-days: 7
         if-no-files-found: ignore
     - name: Upload Playwright report
-      if: ${{ !cancelled() }}
+      if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: playwright-report

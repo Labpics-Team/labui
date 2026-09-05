@@ -4,6 +4,7 @@ import {
   constants,
   accessSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
@@ -11,7 +12,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, dirname, join, resolve } from 'node:path';
+import { delimiter, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { parseAllDocuments } from 'yaml';
@@ -112,7 +113,6 @@ test('original quality commands remain ordered and CI tests cannot disappear', (
     .map((step) => step.run.trim());
   assert.deepEqual(commands, [
     'pnpm install --frozen-lockfile',
-    'npm ci --ignore-scripts --prefix ci\nnode --test ci/workflow-contract.test.mjs',
     'pnpm lint',
     'pnpm run format:check',
     'pnpm typecheck',
@@ -120,6 +120,7 @@ test('original quality commands remain ordered and CI tests cannot disappear', (
     'pnpm --filter @labpics/ui-tokens check-generated',
     'pnpm --filter @labpics/ui-materials check-generated',
     'pnpm build',
+    'npm ci --ignore-scripts --prefix ci\nnode --test ci/workflow-contract.test.mjs',
     'pnpm test',
   ]);
   const node = ci.jobs.quality.steps.find((step) => step.name === 'Setup Node');
@@ -168,6 +169,18 @@ test('browser execution preserves both engines, FX and full-suite cadence', () =
     (step) => step.run === 'bash .github/scripts/browser-check.sh',
   );
   assert.equal(runFull.env, undefined);
+  for (const job of [ci.jobs.e2e, full.jobs['e2e-full']]) {
+    assert.equal(
+      job.steps.find((step) => step.run === 'bash .github/scripts/browser-check.sh').id,
+      'browser',
+    );
+    for (const step of job.steps.filter((step) =>
+      step.uses?.startsWith('actions/upload-artifact@'),
+    )) {
+      const output = step.with.path.startsWith('packages/colors/') ? 'fx_ready' : 'report_ready';
+      assert.equal(step.if, `\${{ !cancelled() && steps.browser.outputs.${output} == 'true' }}`);
+    }
+  }
   assert.match(
     browser,
     /playwright:v1\.55\.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c/,
@@ -199,6 +212,62 @@ test('browser execution preserves both engines, FX and full-suite cadence', () =
   assert.match(browser, /trap 'exit 143' TERM/);
 });
 
+test('Playwright resolves both engines and the complete smoke/full test inventory', () => {
+  const docs = join(root, 'apps/docs');
+  const cli = join(docs, 'node_modules/@playwright/test/cli.js');
+  const expectedSmoke = [
+    'acrylic-live.spec.ts',
+    'button.spec.ts',
+    'checkbox.spec.ts',
+    'input.spec.ts',
+    'materials-flag.spec.ts',
+    'proof.spec.ts',
+    'smoke.spec.ts',
+    'tokens.spec.ts',
+    'z-order.spec.ts',
+  ].sort();
+  const expectedFull = readdirSync(join(docs, 'tests'), { recursive: true })
+    .filter((path) => path.endsWith('.spec.ts'))
+    .map((path) => path.replaceAll('\\', '/'))
+    .sort();
+  assert.ok(expectedFull.length > expectedSmoke.length, 'full coverage must extend beyond smoke');
+  for (const smoke of [true, false]) {
+    const env = {
+      ...Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'E2E_SMOKE')),
+      CI: 'true',
+    };
+    if (smoke) env.E2E_SMOKE = '1';
+    const result = spawnSync(
+      process.execPath,
+      [cli, 'test', '--list', '--reporter=json', '--project=chromium', '--project=webkit'],
+      { cwd: docs, env, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 },
+    );
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.deepEqual(report.errors, []);
+    const files = { chromium: new Set(), webkit: new Set() };
+    function visit(suites) {
+      for (const suite of suites) {
+        for (const spec of suite.specs ?? []) {
+          for (const entry of spec.tests) {
+            assert.ok(Object.hasOwn(files, entry.projectName));
+            files[entry.projectName].add(spec.file.replaceAll('\\', '/'));
+          }
+        }
+        visit(suite.suites ?? []);
+      }
+    }
+    visit(report.suites);
+    for (const engine of ['chromium', 'webkit']) {
+      assert.deepEqual(
+        [...files[engine]].sort(),
+        smoke ? expectedSmoke : expectedFull,
+        `${engine}/${smoke ? 'smoke' : 'full'}`,
+      );
+    }
+  }
+});
+
 function fakeDocker(t) {
   const dir = mkdtempSync(join(tmpdir(), 'labui-contract-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
@@ -211,6 +280,7 @@ printf '%s\\n' "$*" >> "$PROBE_LOG"
 case "$1" in
 create) if [ "\${CREATE_STATUS:-0}" -ne 0 ]; then exit "$CREATE_STATUS"; fi
   while [ "$1" != --cidfile ]; do shift; done
+  if [ -n "\${ARTIFACT_SETUP:-}" ]; then bash "$ARTIFACT_SETUP" "$(dirname "$2")/work/source"; fi
   printf owned-container > "$2"; echo owned-container; exit 0;;
 start) exit "\${START_STATUS:-0}";;
 rm) exit "\${REMOVE_STATUS:-0}";;
@@ -238,6 +308,7 @@ exit "\${SCAN_STATUS:-0}"
       PROBE_BIN: posix(dir).replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`),
       PROBE_LOG: posix(join(dir, 'calls')),
       PROBE_COUNT: posix(join(dir, 'count')),
+      GITHUB_OUTPUT: posix(join(dir, 'outputs')),
     },
   };
 }
@@ -307,7 +378,98 @@ test('browser wrapper preserves process errors and removes only its created cont
       assert.equal(calls.includes('rm --force owned-container'), created);
       assert.equal(
         readdirSync(dir).some((name) => name.startsWith('labui-browser.')),
-        false,
+        vars.REMOVE_STATUS !== undefined,
       );
     });
+});
+
+test('artifact export rejects source and destination escapes before enabling upload', async (t) => {
+  for (const kind of [
+    'clean',
+    'test-failure',
+    'remove-failure',
+    'source-link',
+    'parent-link',
+    'report-link',
+    'child-link',
+    'destination-parent',
+    'destination-file',
+    'destination-hardlink',
+    'fifo',
+  ]) {
+    await t.test(kind, (st) => {
+      const { dir, env } = fakeDocker(st);
+      const checkout = join(dir, 'checkout');
+      const foreign = join(dir, 'foreign');
+      mkdirSync(checkout);
+      mkdirSync(join(foreign, 'playwright-report'), { recursive: true });
+      writeFileSync(join(foreign, 'index.html'), 'host-private');
+      writeFileSync(join(foreign, 'playwright-report/index.html'), 'host-private');
+      const setup = join(dir, 'artifact-setup.sh');
+      writeFileSync(
+        setup,
+        `#!/usr/bin/env bash
+set -euo pipefail
+if [ "$ARTIFACT_KIND" = source-link ]; then ln -s "$ARTIFACT_FOREIGN" "$1"; exit 0; fi
+mkdir -p "$1/packages/colors/artifacts/fx-render" "$1/apps"
+printf fresh > "$1/packages/colors/artifacts/fx-render/render.png"
+if [ "$ARTIFACT_KIND" = parent-link ]; then ln -s "$ARTIFACT_FOREIGN" "$1/apps/docs"; exit 0; fi
+mkdir -p "$1/apps/docs"
+report="$1/apps/docs/playwright-report"
+if [ "$ARTIFACT_KIND" = report-link ]; then ln -s "$ARTIFACT_FOREIGN" "$report"; exit 0; fi
+mkdir "$report"
+case "$ARTIFACT_KIND" in
+child-link) ln -s "$ARTIFACT_FOREIGN/index.html" "$report/index.html";;
+fifo) mkfifo "$report/index.html";;
+*) printf fresh > "$report/index.html";;
+esac
+if [ "$ARTIFACT_KIND" = destination-parent ]; then
+  mkdir -p "$ARTIFACT_CHECKOUT/apps"
+  ln -s "$ARTIFACT_FOREIGN" "$ARTIFACT_CHECKOUT/apps/docs"
+fi
+if [[ "$ARTIFACT_KIND" == destination-file || "$ARTIFACT_KIND" == destination-hardlink ]]; then
+  mkdir -p "$ARTIFACT_CHECKOUT/apps/docs/playwright-report"
+  if [ "$ARTIFACT_KIND" = destination-file ]; then
+    ln -s "$ARTIFACT_FOREIGN/index.html" "$ARTIFACT_CHECKOUT/apps/docs/playwright-report/index.html"
+  else
+    ln "$ARTIFACT_FOREIGN/index.html" "$ARTIFACT_CHECKOUT/apps/docs/playwright-report/index.html"
+  fi
+fi
+`,
+      );
+      const script = browser.replace(
+        'root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"',
+        `root='${checkout.replaceAll('\\', '/')}'`,
+      );
+      const result = execute(script, {
+        ...env,
+        ARTIFACT_SETUP: setup,
+        ARTIFACT_KIND: kind,
+        ARTIFACT_FOREIGN: foreign,
+        ARTIFACT_CHECKOUT: checkout,
+        START_STATUS: kind === 'test-failure' ? '23' : '0',
+        REMOVE_STATUS: kind === 'remove-failure' ? '7' : '0',
+      });
+      const safe = kind === 'clean' || kind === 'test-failure';
+      assert.equal(result.status, safe ? (kind === 'clean' ? 0 : 23) : 1, result.stderr);
+      const outputs = existsSync(env.GITHUB_OUTPUT) ? readFileSync(env.GITHUB_OUTPUT, 'utf8') : '';
+      assert.equal(outputs, safe ? 'fx_ready=true\nreport_ready=true\n' : '');
+      assert.equal(readFileSync(join(foreign, 'index.html'), 'utf8'), 'host-private');
+      assert.equal(
+        readFileSync(join(foreign, 'playwright-report/index.html'), 'utf8'),
+        'host-private',
+      );
+      if (safe)
+        assert.equal(
+          readFileSync(join(checkout, 'apps/docs/playwright-report/index.html'), 'utf8'),
+          'fresh',
+        );
+      const calls = readFileSync(env.PROBE_LOG, 'utf8');
+      assert.match(calls, /rm --force owned-container/);
+      assert.equal(
+        readdirSync(dir).some((name) => name.startsWith('labui-browser.')),
+        kind === 'remove-failure',
+      );
+    });
+  }
 });
