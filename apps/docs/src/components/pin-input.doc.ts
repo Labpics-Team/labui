@@ -3,7 +3,7 @@
  * single-character `<input>`s that focus-advance on type, fill across on paste, and
  * optionally mask. It REUSES the shared form-field a11y seam (label / helper / error
  * association), lifted to the control GROUP because a pin input has N boxes and one shared
- * description.
+ * description. Required state belongs to the visible textbox segments, not the group.
  *
  * The matrix and live example render REAL `<lab-pin-input>` elements: focusing any cell
  * genuinely runs the @zag-js/pin-input machine — typing advances the focus to the next
@@ -35,7 +35,7 @@ export const pinInputDoc: ComponentDoc = {
   tag: 'lab-pin-input',
   title: 'Pin Input',
   summary:
-    "A segmented code field — N single-character inputs that focus-advance as you type, fill across on paste, and optionally mask. Runs the @zag-js/pin-input machine through the LabUI seam: the machine owns each box's value, the roving focus that auto-advances on type and steps back on Backspace, the paste-fill that distributes across the boxes, masking (type=password), the roving tabindex + per-box aria-invalid, and the complete/invalid lifecycle. It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — lifted to the control group (role=group + aria-labelledby + describedby), so the ARIA contract is one source of truth across both renderers. The element only paints with semantic --lab-* roles.",
+    "A segmented code field — N single-character inputs that focus-advance as you type, fill across on paste, and optionally mask. Runs the @zag-js/pin-input machine through the LabUI seam: the machine owns each box's value, the roving focus that auto-advances on type and steps back on Backspace, the paste-fill that distributes across the boxes, masking (type=password), the roving tabindex + per-box aria-invalid, and the complete/invalid lifecycle. It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — lifted to the control group (role=group + aria-labelledby + describedby), so the ARIA contract is one source of truth across both renderers. Required state is exposed on each real textbox segment, while the machine keeps native required on the hidden form input. The element only paints with semantic --lab-* roles.",
   status: { kind: 'stable' },
 
   statesMatrix: {
@@ -74,19 +74,19 @@ export const pinInputDoc: ComponentDoc = {
       index: 2,
       name: 'Control (group)',
       description:
-        'The Zag control — a role="group" track of segments. The shared field-a11y helper adds aria-labelledby → label and aria-describedby (helper + error) / aria-invalid / aria-errormessage / aria-required on top, because a pin input is a group of boxes with one shared description.',
+        'The Zag control — a role="group" track of segments. The shared field-a11y helper adds aria-labelledby → label and aria-describedby (helper + error) / aria-invalid / aria-errormessage. aria-required is intentionally absent because role="group" does not support it.',
     },
     {
       index: 3,
       name: 'Segment',
       description:
-        'One single-character <input>, keyed by data-index. The machine spreads the value, the roving tabindex (0 on the active box, -1 on the rest), per-box aria-invalid, inputmode, and type=password when masked. THIS is the painted field surface (border / focus ring / sentiment) — reused from the shared field-styles.',
+        'One single-character <input>, keyed by data-index. The machine spreads the value, the roving tabindex (0 on the active box, -1 on the rest), per-box aria-invalid, inputmode, and type=password when masked. When the field is required, each visible textbox segment carries aria-required=true. THIS is the painted field surface (border / focus ring / sentiment) — reused from the shared field-styles.',
     },
     {
       index: 4,
       name: 'Hidden input',
       description:
-        'A visually-hidden native <input> the machine fills with the joined value (maxLength = the segment count), so the field submits in a form like any input.',
+        'A visually-hidden native <input> the machine fills with the joined value (maxLength = the segment count), so the field submits in a form like any input. When required, the machine keeps native required on this form input.',
     },
     {
       index: 5,
@@ -108,7 +108,7 @@ export const pinInputDoc: ComponentDoc = {
     donts: [
       "Don't use it for free text or a value with no fixed length — that's an Input.",
       "Don't hand-roll focus-advance or paste-distribution with keydown handlers; the machine owns them.",
-      "Don't put the field a11y on a single box — the group is the described unit (one label, N boxes).",
+      "Don't put aria-required on the group — role=group does not support it; required belongs to the textbox segments.",
       "Don't key the boxes by anything but their index — that IS the machine's stable per-box key.",
     ],
   },
@@ -215,7 +215,7 @@ export const pinInputDoc: ComponentDoc = {
         type: 'boolean',
         default: 'false',
         description:
-          'The field states. disabled/readonly gate interaction; required/invalid drive the group field a11y (aria-required / aria-invalid / aria-errormessage) and the sentiment styling.',
+          'The field states. disabled/readonly gate interaction; invalid drives the group error wiring; required sets aria-required on every visible textbox segment and native required on the machine hidden form input.',
       },
       {
         name: 'name',
