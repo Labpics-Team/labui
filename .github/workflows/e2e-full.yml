@@ -3,6 +3,7 @@ name: E2E Full
   schedule:
   - cron: 0 3 * * *
   workflow_dispatch: null
+  pull_request: null
 permissions:
   contents: read
 concurrency:
