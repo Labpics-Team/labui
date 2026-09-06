@@ -145,10 +145,15 @@ test('field-a11y: invalid stays on the group; required lands on textbox segments
   }
 
   for (const control of [litControl(page, 'lit-required'), reactControl(page, 'react-required')]) {
-    expect(await control.getAttribute('aria-required'), 'role=group must not carry aria-required').toBeNull();
+    expect(
+      await control.getAttribute('aria-required'),
+      'role=group must not carry aria-required',
+    ).toBeNull();
   }
 
-  await expect(litHost(page, 'lit-required').locator('.segment[aria-required="true"]')).toHaveCount(4);
+  await expect(litHost(page, 'lit-required').locator('.segment[aria-required="true"]')).toHaveCount(
+    4,
+  );
   await expect(
     reactField(page, 'react-required').locator('.lab-pin-input-segment[aria-required="true"]'),
   ).toHaveCount(4);
