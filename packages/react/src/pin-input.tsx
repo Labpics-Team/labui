@@ -13,9 +13,10 @@
  * REUSES the field a11y seam: the label / helper / error association is the SAME shared
  * `field-a11y` helper from @labpics/ui-core that the Lit element and the other fields use
  * — so the ARIA description contract is ONE source of truth across both renderers. A pin
- * input is a GROUP of boxes, so the field a11y lands on the control GROUP (role=group +
- * aria-labelledby → label + describedby/errormessage/required/invalid); the machine owns
- * each box's value ARIA + roving tabindex + the hidden form input.
+ * input is a GROUP of boxes, so the group owns aria-labelledby + describedby/error/invalid;
+ * `aria-required` is deliberately different because role="group" does not support it.
+ * Required therefore lands on each visible textbox segment, while the machine owns the
+ * native `required` state of the hidden form input.
  *
  * Segments keyed by `index` (the machine's own key): pin boxes never reorder, so the
  * positional index IS the stable key for `getInputProps({ index })`.
@@ -29,7 +30,6 @@
 'use client';
 
 import {
-  type FieldControlAria,
   type LabFieldSize,
   type LabFieldType,
   type MachineModule,
@@ -82,7 +82,7 @@ export interface PinInputProps {
   readOnly?: boolean;
   /** Non-interactive and dimmed. */
   disabled?: boolean;
-  /** Required — sets aria-required on the group and the native hidden input. */
+  /** Required — sets aria-required on visible segments and native required on the hidden input. */
   required?: boolean;
   /** Invalid — drives aria-invalid / aria-errormessage and danger styling. */
   invalid?: boolean;
@@ -92,20 +92,6 @@ export interface PinInputProps {
   onValueChange?: (value: string[], valueAsString: string) => void;
   /** Fires when all segments are filled. */
   onValueComplete?: (value: string[], valueAsString: string) => void;
-}
-
-/** Strip `undefined` ARIA so React omits the attribute instead of rendering "undefined". */
-function ariaProps(
-  aria: Pick<
-    FieldControlAria,
-    'aria-describedby' | 'aria-invalid' | 'aria-errormessage' | 'aria-required'
-  >,
-): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(aria)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
 }
 
 export function PinInput({
@@ -135,17 +121,19 @@ export function PinInput({
   const hasHelper = helper != null && helper !== '';
   const hasError = error != null && error !== '';
   const showError = fieldErrorIsActive({ invalid, hasError });
+  const fieldAria = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
+
   // The machine owns each box's value ARIA + roving tabindex + the hidden input; the field
-  // owns the GROUP's description wiring. Compute it here and spread it OVER the control
-  // group, the same split the Lit element uses (lifted to the group: N boxes, one label).
-  // role="group" + aria-labelledby are part of THIS group association (the machine's
-  // control carries no role), composed into one spread object so the group's a11y is a
-  // single source — exactly the field-a11y the machine does not provide for N segments.
-  const groupAria: Record<string, string> = {
+  // owns the GROUP's shared label / description / error wiring. `aria-required` is NOT a
+  // valid role="group" property, so it is intentionally omitted here and applied to each
+  // visible textbox segment below.
+  const groupAria = {
     role: 'group',
     'aria-labelledby': ids.label,
-    ...ariaProps(fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError })),
-  };
+    'aria-describedby': fieldAria['aria-describedby'],
+    'aria-invalid': fieldAria['aria-invalid'],
+    'aria-errormessage': fieldAria['aria-errormessage'],
+  } as const;
 
   const api = useZag(pinInputModule, {
     id: baseId,
@@ -194,17 +182,19 @@ export function PinInput({
           </span>
         ) : null}
       </label>
-      {/* The control GROUP carries the field a11y the machine does NOT own: role="group" +
-          aria-labelledby (the label) + the field description wiring (describedby / invalid /
-          errormessage / required), composed in `groupAria` and spread OVER the machine's
-          control getter. N segments share ONE label, so the group is the described unit, and
-          a semantic <fieldset> can't take this div's place — getControlProps is spread onto
-          it (the machine's control) and the flex track depends on the box. */}
+      {/* The control GROUP carries only semantics valid for role="group": the shared label,
+          description, invalid state and error reference. N segments share ONE label. */}
       <div {...api.getControlProps()} {...groupAria} className="lab-pin-input-control">
         {api.items.map((index) => (
           // Keyed by the machine's own index: pin boxes never reorder, so the positional
-          // index IS the stable key for getInputProps({ index }).
-          <input key={index} {...api.getInputProps({ index })} className="lab-pin-input-segment" />
+          // index IS the stable key for getInputProps({ index }). Required is applied to
+          // the real textbox the user reaches, not to the unsupported aggregate group.
+          <input
+            key={index}
+            {...api.getInputProps({ index })}
+            aria-required={fieldAria['aria-required']}
+            className="lab-pin-input-segment"
+          />
         ))}
         <input {...api.getHiddenInputProps()} className="lab-pin-input-hidden" />
       </div>
