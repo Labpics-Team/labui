@@ -193,6 +193,7 @@ export function PinInput({
             key={index}
             {...api.getInputProps({ index })}
             aria-required={fieldAria['aria-required']}
+            aria-label={`${label}, digit ${index + 1} of ${count}`}
             className="lab-pin-input-segment"
           />
         ))}

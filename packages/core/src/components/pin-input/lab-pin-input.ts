@@ -369,6 +369,10 @@ export class LabPinInput extends LabElement {
       if (inputEl) {
         this.machineCtl.spread(inputEl, api.getInputProps({ index }));
         setOrRemove(inputEl, 'aria-required', aria['aria-required']);
+        inputEl.setAttribute(
+          'aria-label',
+          `${this.label || 'Pin input'}, digit ${index + 1} of ${this.count}`,
+        );
       }
     }
 
