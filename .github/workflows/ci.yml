@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
 
 # Least privilege: read-only by default. No job needs write here.
 permissions:
@@ -32,6 +33,33 @@ env:
   DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
 
 jobs:
+  workflow-policy:
+    uses: ./.github/workflows/ci-gate.yml
+
+  CI:
+    name: CI
+    if: always()
+    needs: [workflow-policy, sca, quality, e2e]
+    runs-on: self-hosted
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Все обязательные проверки завершились успешно
+        shell: bash
+        env:
+          POLICY_RESULT: ${{ needs.workflow-policy.result }}
+          SCA_RESULT: ${{ needs.sca.result }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+        run: |
+          set -euo pipefail
+          for result in "$POLICY_RESULT" "$SCA_RESULT" "$QUALITY_RESULT" "$E2E_RESULT"; do
+            if [ "$result" != "success" ]; then
+              printf 'Required job did not succeed: %s\n' "$result" >&2
+              exit 1
+            fi
+          done
+
   # ── ИНВАРИАНТ root-docker ───────────────────────────────────────────────────
   # Self-hosted раннеры делят _work между job'ами. docker-as-root job'ы (Trivy
   # fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы, а daniel (uid 1000)
