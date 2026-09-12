@@ -237,6 +237,7 @@ module.exports = class {
     'checkbox.spec.ts',
     'input.spec.ts',
     'materials-flag.spec.ts',
+    'pin-input.spec.ts',
     'proof.spec.ts',
     'smoke.spec.ts',
     'tokens.spec.ts',
