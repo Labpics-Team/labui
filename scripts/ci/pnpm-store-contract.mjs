@@ -12,11 +12,18 @@ const count = (source, needle) => source.split(needle).length - 1;
 
 function violations(subject) {
   const out = [];
-  if (count(subject.ci, host) !== 2) out.push('ci.yml must isolate both pnpm installs in RUNNER_TEMP');
-  if (count(subject.full, host) !== 1) out.push('e2e-full.yml must isolate pnpm install in RUNNER_TEMP');
-  if (count(subject.browser, container) !== 1) out.push('browser-check must isolate pnpm store inside /job');
+  if (count(subject.ci, host) !== 2)
+    out.push('ci.yml must isolate both pnpm installs in RUNNER_TEMP');
+  if (count(subject.full, host) !== 1)
+    out.push('e2e-full.yml must isolate pnpm install in RUNNER_TEMP');
+  if (count(subject.browser, container) !== 1)
+    out.push('browser-check must isolate pnpm store inside /job');
   for (const [name, source] of Object.entries(subject)) {
-    const bare = source.split('\n').filter(line => line.includes('pnpm install --frozen-lockfile') && !line.includes('--store-dir'));
+    const bare = source
+      .split('\n')
+      .filter(
+        (line) => line.includes('pnpm install --frozen-lockfile') && !line.includes('--store-dir'),
+      );
     if (bare.length) out.push(`${name} contains shared/bare pnpm store use: ${bare.join(' | ')}`);
   }
   return out;
@@ -30,6 +37,7 @@ const mutants = [
   { ...files, browser: files.browser.replace(container, 'pnpm install --frozen-lockfile') },
 ];
 for (const [index, mutant] of mutants.entries()) {
-  if (violations(mutant).length === 0) throw new Error(`mutation ${index + 1} escaped pnpm store contract`);
+  if (violations(mutant).length === 0)
+    throw new Error(`mutation ${index + 1} escaped pnpm store contract`);
 }
-console.log('pnpm store contract: PASS (live + 3 sabotage controls)');
+process.stdout.write('pnpm store contract: PASS (live + 3 sabotage controls)\n');
