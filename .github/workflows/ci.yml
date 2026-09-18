@@ -381,3 +381,25 @@ jobs:
         run: |
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
             chown -R 1000:1000 /workspace || true
+
+  ci:
+    name: CI
+    needs:
+      - sca
+      - quality
+      - e2e
+    if: ${{ always() }}
+    runs-on: self-hosted
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Require complete verification
+        shell: bash
+        env:
+          NEEDS_RESULTS: ${{ join(needs.*.result, ',') }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$NEEDS_RESULTS" =~ ^success(,success)*$ ]]; then
+            printf 'Required verification did not succeed: %s\n' "$NEEDS_RESULTS" >&2
+            exit 1
+          fi
