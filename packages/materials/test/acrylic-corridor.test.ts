@@ -100,15 +100,13 @@ describe('luminosityBlend — точная симуляция W3C (класс В
 
   it('каждый канал точной смеси лежит внутри внешнего бокса acrylicCorridor', () => {
     const rng = mulberry32(0xf1a75);
-    let witness:
-      | {
-          trial: number;
-          channel: 'r' | 'g' | 'b';
-          value: number;
-          min: number;
-          max: number;
-        }
-      | null = null;
+    let witness: {
+      trial: number;
+      channel: 'r' | 'g' | 'b';
+      value: number;
+      min: number;
+      max: number;
+    } | null = null;
     for (let i = 0; i < 20_000 && witness === null; i++) {
       const backdrop: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: 1 };
       const flood: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: rng() };

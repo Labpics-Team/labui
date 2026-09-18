@@ -156,9 +156,7 @@ export function deviationForNAtResolution(
   superellipseSamples = DERIVATION_SUPERELLIPSE_SAMPLES,
 ) {
   const figmaPoints =
-    figmaSamples === DERIVATION_FIGMA_SAMPLES
-      ? figma
-      : figmaCornerPoints(R, ZETA, figmaSamples);
+    figmaSamples === DERIVATION_FIGMA_SAMPLES ? figma : figmaCornerPoints(R, ZETA, figmaSamples);
   const se = superellipsePoints(R, n, EDGE_EXTENT, superellipseSamples);
   // Симметричный Хаусдорф: форма-к-форме в обе стороны (односторонняя метрика
   // пропустила бы участки, где суперэллипс отходит от кривой Figma).
