@@ -100,18 +100,32 @@ describe('luminosityBlend — точная симуляция W3C (класс В
 
   it('каждый канал точной смеси лежит внутри внешнего бокса acrylicCorridor', () => {
     const rng = mulberry32(0xf1a75);
+    const eps = 1e-6 * 255;
+    let worstLower = Number.NEGATIVE_INFINITY;
+    let worstUpper = Number.NEGATIVE_INFINITY;
+    let lowerWitness = '';
+    let upperWitness = '';
     for (let i = 0; i < 20_000; i++) {
       const backdrop: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: 1 };
       const flood: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: rng() };
       const opacity = rng();
       const corridor = acrylicCorridor(flood, opacity);
       const out = luminosityBlend(backdrop, flood, opacity);
-      const eps = 1e-6 * 255;
       for (const ch of ['r', 'g', 'b'] as const) {
-        expect(out[ch]).toBeGreaterThanOrEqual(corridor.min[ch] - eps);
-        expect(out[ch]).toBeLessThanOrEqual(corridor.max[ch] + eps);
+        const lowerViolation = corridor.min[ch] - eps - out[ch];
+        const upperViolation = out[ch] - corridor.max[ch] - eps;
+        if (lowerViolation > worstLower) {
+          worstLower = lowerViolation;
+          lowerWitness = `sample=${i} channel=${ch} out=${out[ch]} min=${corridor.min[ch]}`;
+        }
+        if (upperViolation > worstUpper) {
+          worstUpper = upperViolation;
+          upperWitness = `sample=${i} channel=${ch} out=${out[ch]} max=${corridor.max[ch]}`;
+        }
       }
     }
+    expect(worstLower, lowerWitness).toBeLessThanOrEqual(0);
+    expect(worstUpper, upperWitness).toBeLessThanOrEqual(0);
   });
 
   it('WCAG-полоса композита над коридором накрывает точную смесь (уровень гарантии)', () => {
