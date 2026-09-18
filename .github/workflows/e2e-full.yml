@@ -69,7 +69,7 @@ jobs:
           # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
 
       - name: Build packages
         run: pnpm build

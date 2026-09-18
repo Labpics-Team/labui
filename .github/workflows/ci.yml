@@ -240,8 +240,11 @@ jobs:
           # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
           # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
+      - name: Verify pnpm store isolation contract
+        run: node scripts/ci/pnpm-store-contract.mjs
+
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
 
       - name: Lint (Biome)
         run: pnpm lint
@@ -338,8 +341,11 @@ jobs:
           # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
           # на самом раннере между прогонами — быстрее и без сетевой зависимости.
 
+      - name: Verify pnpm store isolation contract
+        run: node scripts/ci/pnpm-store-contract.mjs
+
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
 
       - name: Build packages
         run: pnpm build
