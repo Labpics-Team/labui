@@ -5,6 +5,8 @@
 export declare const R: number;
 export declare const ZETA: number;
 export declare const EDGE_EXTENT: number;
+export declare const DERIVATION_FIGMA_SAMPLES: number;
+export declare const DERIVATION_SUPERELLIPSE_SAMPLES: number;
 export declare function figmaCornerPoints(
   radius: number,
   zeta: number,
@@ -19,6 +21,11 @@ export declare function superellipsePoints(
 export declare function maxDeviation(
   a: Array<[number, number]>,
   b: Array<[number, number]>,
+): number;
+export declare function deviationForNAtResolution(
+  n: number,
+  figmaSamples?: number,
+  superellipseSamples?: number,
 ): number;
 export declare function deviationForN(n: number): number;
 export declare function fitOptimalN(): number;
