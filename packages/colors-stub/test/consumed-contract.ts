@@ -24,7 +24,7 @@
  * glob/exclude style. It only READS roles.json / css.ts constants — it never
  * mutates the contract.
  */
-import { globSync, readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stripComments } from './no-magic-dimension.js';
@@ -111,50 +111,46 @@ function colourContractRoles(): ReadonlySet<string> {
  * the prefix constants / role list — scanning them would pollute the consumed
  * set with prefix fragments; the scanner + its tests hold literal token names).
  */
+let consumerFilesCache: readonly string[] | null = null;
+
 export function consumerFiles(): string[] {
-  const patterns = [
-    'packages/**/*.ts',
-    'packages/**/*.tsx',
-    'packages/**/*.css',
-    'apps/**/*.ts',
-    'apps/**/*.tsx',
-    'apps/**/*.css',
-  ];
-  const seen = new Set<string>();
-  for (const pattern of patterns) {
-    for (const abs of globSync(resolve(repoRoot, pattern))) {
-      const rel = relative(repoRoot, abs).split('\\').join('/');
-      if (rel.includes('/dist/')) continue;
-      if (rel.includes('/node_modules/')) continue;
-      if (rel.includes('/src/generated/')) continue;
-      // Source-of-truth definitions — exclude so prefix fragments / role lists
-      // do not register as "consumed".
-      if (rel.endsWith('packages/core/src/css.ts')) continue;
-      if (rel.endsWith('packages/colors-stub/roles.json')) continue;
-      if (rel.endsWith('test/no-literal-colour-fallback.ts')) continue;
-      if (rel.endsWith('test/no-literal-colour-fallback.test.ts')) continue;
-      if (rel.endsWith('test/consumed-contract.ts')) continue;
-      if (rel.endsWith('test/consumed-contract.test.ts')) continue;
-      if (rel.endsWith('test/no-hardcoded-colour.ts')) continue;
-      if (rel.endsWith('test/no-hardcoded-colour.test.ts')) continue;
-      // Test files hold probe strings, snapshot expectations, and fabricated token
-      // names inside JS string literals — they are NOT consumer source. A raw-text
-      // scan cannot distinguish a probe token inside `expect(…).toBe('var(--lab-x)')`
-      // from an actual `var(--lab-x)` usage, so including test files EITHER poisons
-      // the zero-unclassified gate (probe tokens classified as 'unclassified') OR
-      // phantom-inflates the consumed surface with non-real names.  Skip ALL *.test.ts
-      // files from the consumer surface; the above per-file exclusions keep the
-      // scanner files excluded by exact path.
-      if (rel.endsWith('.test.ts')) continue;
-      // Scratch / probe files: any filename that starts with `_` is a transient
-      // artifact (e.g. `_adv_probe.test.ts`). A stray `--lab-x` token inside such a
-      // file MUST NOT poison the zero-unclassified gate.
-      const basename = rel.split('/').at(-1) ?? '';
-      if (basename.startsWith('_')) continue;
-      seen.add(rel);
+  if (consumerFilesCache) return [...consumerFilesCache];
+  const seen: string[] = [];
+  const roots = ['packages', 'apps'] as const;
+  const ignoredDirs = new Set(['node_modules', 'dist']);
+  const ignoredFiles = new Set([
+    'packages/core/src/css.ts',
+    'packages/colors-stub/roles.json',
+    'packages/colors-stub/test/no-literal-colour-fallback.ts',
+    'packages/colors-stub/test/no-literal-colour-fallback.test.ts',
+    'packages/colors-stub/test/consumed-contract.ts',
+    'packages/colors-stub/test/consumed-contract.test.ts',
+    'packages/colors-stub/test/no-hardcoded-colour.ts',
+    'packages/colors-stub/test/no-hardcoded-colour.test.ts',
+  ]);
+
+  const walk = (relDir: string): void => {
+    const absDir = resolve(repoRoot, relDir);
+    for (const entry of readdirSync(absDir, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) continue;
+      const rel = `${relDir}/${entry.name}`;
+      if (entry.isDirectory()) {
+        if (ignoredDirs.has(entry.name)) continue;
+        if (rel.endsWith('/src/generated')) continue;
+        walk(rel);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+      if (!/\.(?:ts|tsx|css)$/.test(entry.name)) continue;
+      if (ignoredFiles.has(rel)) continue;
+      if (entry.name.endsWith('.test.ts') || entry.name.startsWith('_')) continue;
+      seen.push(rel);
     }
-  }
-  return [...seen].sort((a, b) => a.localeCompare(b));
+  };
+
+  for (const root of roots) walk(root);
+  consumerFilesCache = seen.sort((a, b) => a.localeCompare(b));
+  return [...consumerFilesCache];
 }
 
 /**
@@ -198,7 +194,10 @@ export function consumedNamesInSource(
 }
 
 /** First-seen location of every distinct consumed `--lab-*` name. */
+let consumedSitesCache: ReadonlyMap<string, SeenAt> | null = null;
+
 export function consumedRolesWithSites(): Map<string, SeenAt> {
+  if (consumedSitesCache) return new Map(consumedSitesCache);
   const out = new Map<string, SeenAt>();
   for (const rel of consumerFiles()) {
     const source = readFileSync(resolve(repoRoot, rel), 'utf8');
@@ -206,7 +205,8 @@ export function consumedRolesWithSites(): Map<string, SeenAt> {
       if (!out.has(name)) out.set(name, { file: rel, line });
     }
   }
-  return out;
+  consumedSitesCache = out;
+  return new Map(out);
 }
 
 /** Every distinct consumed `--lab-*` name across the consumer surface, sorted. */
