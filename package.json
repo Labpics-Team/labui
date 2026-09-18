@@ -34,7 +34,9 @@
     "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"],
     "overrides": {
       "tmp@<0.2.6": ">=0.2.6",
-      "esbuild@<0.25.0": ">=0.25.0"
+      "esbuild@<0.25.0": ">=0.25.0",
+      "nanoid@<3.3.18": "3.3.18",
+      "postcss@<8.5.18": "8.5.18"
     }
   }
 }
