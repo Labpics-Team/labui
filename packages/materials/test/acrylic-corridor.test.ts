@@ -100,7 +100,16 @@ describe('luminosityBlend — точная симуляция W3C (класс В
 
   it('каждый канал точной смеси лежит внутри внешнего бокса acrylicCorridor', () => {
     const rng = mulberry32(0xf1a75);
-    for (let i = 0; i < 20_000; i++) {
+    let witness:
+      | {
+          trial: number;
+          channel: 'r' | 'g' | 'b';
+          value: number;
+          min: number;
+          max: number;
+        }
+      | null = null;
+    for (let i = 0; i < 20_000 && witness === null; i++) {
       const backdrop: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: 1 };
       const flood: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: rng() };
       const opacity = rng();
@@ -108,10 +117,15 @@ describe('luminosityBlend — точная симуляция W3C (класс В
       const out = luminosityBlend(backdrop, flood, opacity);
       const eps = 1e-6 * 255;
       for (const ch of ['r', 'g', 'b'] as const) {
-        expect(out[ch]).toBeGreaterThanOrEqual(corridor.min[ch] - eps);
-        expect(out[ch]).toBeLessThanOrEqual(corridor.max[ch] + eps);
+        const min = corridor.min[ch] - eps;
+        const max = corridor.max[ch] + eps;
+        if (out[ch] < min || out[ch] > max) {
+          witness = { trial: i, channel: ch, value: out[ch], min, max };
+          break;
+        }
       }
     }
+    expect(witness, witness === null ? undefined : JSON.stringify(witness)).toBeNull();
   });
 
   it('WCAG-полоса композита над коридором накрывает точную смесь (уровень гарантии)', () => {
@@ -122,13 +136,16 @@ describe('luminosityBlend — точная симуляция W3C (класс В
       tint,
       acrylicCorridor(flood, ACRYLIC_LUMINOSITY_OPACITY),
     );
-    for (let i = 0; i < 20_000; i++) {
+    let witness: { trial: number; luminance: number } | null = null;
+    for (let i = 0; i < 20_000 && witness === null; i++) {
       const backdrop: Rgba = { r: rng() * 255, g: rng() * 255, b: rng() * 255, a: 1 };
       const clamped = luminosityBlend(backdrop, flood, ACRYLIC_LUMINOSITY_OPACITY);
       const y = relativeLuminance(compositeOver(tint, clamped));
-      expect(y).toBeGreaterThanOrEqual(effLow - 1e-6);
-      expect(y).toBeLessThanOrEqual(effHigh + 1e-6);
+      if (y < effLow - 1e-6 || y > effHigh + 1e-6) {
+        witness = { trial: i, luminance: y };
+      }
     }
+    expect(witness, witness === null ? undefined : JSON.stringify(witness)).toBeNull();
   });
 });
 
