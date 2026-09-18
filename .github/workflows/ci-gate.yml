@@ -134,8 +134,40 @@ jobs:
               with urllib.request.urlopen(r) as resp:
                   return json.load(resp)
 
+          def latest_runs(runs):
+              latest = {}
+              for run in runs:
+                  key = (
+                      str(run.get("workflow_id") or ""),
+                      str(run.get("path") or ""),
+                      str(run.get("event") or ""),
+                  )
+                  rank = (int(run.get("id") or 0), int(run.get("run_attempt") or 0))
+                  previous = latest.get(key)
+                  previous_rank = (
+                      int(previous.get("id") or 0),
+                      int(previous.get("run_attempt") or 0),
+                  ) if previous else (-1, -1)
+                  if rank > previous_rank:
+                      latest[key] = run
+              return list(latest.values())
+
+          _fixture = [
+              {"workflow_id": 7, "path": ".github/workflows/ci.yml", "event": "pull_request",
+               "id": 10, "run_attempt": 1, "status": "completed", "conclusion": "failure"},
+              {"workflow_id": 7, "path": ".github/workflows/ci.yml", "event": "pull_request",
+               "id": 11, "run_attempt": 1, "status": "completed", "conclusion": "success"},
+          ]
+          assert latest_runs(_fixture)[0]["conclusion"] == "success"
+          assert latest_runs(list(reversed(_fixture)))[0]["conclusion"] == "success"
+          _fixture.append(
+              {"workflow_id": 7, "path": ".github/workflows/ci.yml", "event": "pull_request",
+               "id": 12, "run_attempt": 1, "status": "completed", "conclusion": "failure"}
+          )
+          assert latest_runs(_fixture)[0]["conclusion"] == "failure"
+
           def workflow_runs():
-              runs = []
+              observed = []
               for event in events:
                   url = (
                       f"{api}/repos/{repo}/actions/runs"
@@ -145,8 +177,8 @@ jobs:
                       path = run.get("path") or ""
                       if path.endswith("ci-gate.yml"):
                           continue
-                      runs.append(run)
-              return runs
+                      observed.append(run)
+              return latest_runs(observed)
 
           ok = {"success", "skipped", "neutral"}
           pending = {"queued", "in_progress", "waiting", "requested", "pending"}

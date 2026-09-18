@@ -175,6 +175,7 @@ jobs:
 
       - name: Upload Trivy report
         if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: trivy-report
@@ -342,31 +343,16 @@ jobs:
       - name: Build packages
         run: pnpm build
 
-      - name: Install Playwright browsers (Chromium + WebKit)
-        # WebKit added with materials-system: the glass material must read the
-        # same across engines, so the glass smoke runs on Chromium AND WebKit.
-        # Ставим только браузеры в ~/.cache/ms-playwright (кэш между прогонами).
-        # Системные библиотеки браузеров установлены на раннере один раз
-        # (provision-as-code), поэтому --with-deps НЕ нужен (он требовал sudo apt
-        # без TTY и падал под пользователем раннера).
-        run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
-
-      - name: FX-render гейт (рендер → пиксельная проверка FX-токенов #93)
-        # Гейт эмитированных FX-токенов (glow 6×3 + focus-ring 6): рендерит харнесс
-        # в chromium, замеряет ПИКСЕЛИ скриншота на лету и валит job при нарушении
-        # инвариантов (base-glow non-blank; монотонность subtle<base<bloom;
-        # focus-ring non-blank). Замеры считаются ЗДЕСЬ, а НЕ читаются из
-        # репозитория — в git нет ни PNG, ни measurements (artifacts/ gitignored).
-        # Chromium уже поставлен предыдущим шагом; contract.css — коммит из чекаута.
-        # Быстрый (одна страница) → ставим до дорогих сьютов, чтобы падать рано.
-        run: pnpm --filter @labui/colors fx:render
+      - name: Verify browser rendering and smoke tests in pinned Playwright runtime
+        id: browser
+        shell: bash
+        env:
+          E2E_SMOKE: "1"
+        run: bash .github/scripts/browser-check.sh
 
       - name: Upload FX-render артефакт (PNG для обзора владельцем)
-        # PNG результата — artifact workflow, НЕ репозитория: пишется на лету в
-        # gitignored packages/colors/artifacts/fx-render/ и отдаётся отсюда. Гейт
-        # пишет PNG ДО ассертов, поэтому !cancelled() отдаёт снимок и на RED —
-        # владельцу видно, ЧТО именно сломалось (glow пропал/сплющился).
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: fx-render
@@ -374,23 +360,9 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Run smoke tests (critical-path subset)
-        # E2E_SMOKE=1 сужает набор до curated SMOKE_SPECS в playwright.config.ts.
-        # Полный набор — по расписанию в e2e-full.yml (там переменная не выставлена).
-        # PW_PORT детерминированно per-runner: 8 раннеров делят один хост (одно
-        # сетевое пространство WSL-дистро), фиксированный 4321 коллидировал между
-        # конкурентными e2e-job'ами. Свой порт = свой раннер, поэтому убить
-        # осиротевший preview-сервер на нём безопасно по построению.
-        env:
-          E2E_SMOKE: "1"
-        run: |
-          n="${RUNNER_NAME##*-}"; case "$n" in (*[!0-9]*|'') n=0;; esac
-          export PW_PORT=$((43200 + n))
-          pkill -f -- "--port ${PW_PORT}" 2>/dev/null || true
-          pnpm test:e2e
-
       - name: Upload Playwright report
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
+        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
