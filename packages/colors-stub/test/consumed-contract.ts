@@ -25,7 +25,7 @@
  * mutates the contract.
  */
 import { readFileSync, readdirSync } from 'node:fs';
-import { dirname, relative, resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { stripComments } from './no-magic-dimension.js';
 
