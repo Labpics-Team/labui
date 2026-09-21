@@ -121,24 +121,126 @@ export function superellipsePoints(radius, n, edgeExtent, samples = 8000) {
   return pts;
 }
 
-/** Максимум расстояния от точек A до полилинии B (одна сторона Хаусдорфа). */
+/** Точный квадрат расстояния от точки до отрезка. */
+function segmentDistance2(ax, ay, x1, y1, x2, y2) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  let t = len2 === 0 ? 0 : ((ax - x1) * dx + (ay - y1) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const ddx = ax - (x1 + t * dx);
+  const ddy = ay - (y1 + t * dy);
+  return ddx * ddx + ddy * ddy;
+}
+
+function buildSegmentGrid(points) {
+  const segmentCount = points.length - 1;
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const [x, y] of points) {
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+  }
+  const width = maxX - minX;
+  const height = maxY - minY;
+  if (!(width > 0) || !(height > 0)) return null;
+  const size = Math.min(128, Math.max(16, Math.ceil(Math.sqrt(segmentCount))));
+  const cellW = width / size;
+  const cellH = height / size;
+  const cells = Array.from({ length: size * size }, () => []);
+  const cellX = (x) => Math.max(0, Math.min(size - 1, Math.floor((x - minX) / cellW)));
+  const cellY = (y) => Math.max(0, Math.min(size - 1, Math.floor((y - minY) / cellH)));
+  for (let index = 0; index < segmentCount; index++) {
+    const [x1, y1] = points[index];
+    const [x2, y2] = points[index + 1];
+    const x0 = cellX(Math.min(x1, x2));
+    const xN = cellX(Math.max(x1, x2));
+    const y0 = cellY(Math.min(y1, y2));
+    const yN = cellY(Math.max(y1, y2));
+    for (let y = y0; y <= yN; y++) {
+      for (let x = x0; x <= xN; x++) cells[y * size + x].push(index);
+    }
+  }
+  return { points, segmentCount, minX, minY, maxX, maxY, width, height, size, cellW, cellH, cells, cellX, cellY };
+}
+
+function nearestGridDistance2(ax, ay, grid) {
+  if (ax < grid.minX || ax > grid.maxX || ay < grid.minY || ay > grid.maxY) {
+    return nearestBruteDistance2(ax, ay, grid.points);
+  }
+  const cx = grid.cellX(ax);
+  const cy = grid.cellY(ay);
+  const seen = new Set();
+  let best = Number.POSITIVE_INFINITY;
+  const visit = (x, y) => {
+    if (x < 0 || y < 0 || x >= grid.size || y >= grid.size) return;
+    for (const index of grid.cells[y * grid.size + x]) {
+      if (seen.has(index)) continue;
+      seen.add(index);
+      const [x1, y1] = grid.points[index];
+      const [x2, y2] = grid.points[index + 1];
+      best = Math.min(best, segmentDistance2(ax, ay, x1, y1, x2, y2));
+    }
+  };
+  for (let radius = 0; radius < grid.size; radius++) {
+    const x0 = cx - radius;
+    const x1 = cx + radius;
+    const y0 = cy - radius;
+    const y1 = cy + radius;
+    for (let x = x0; x <= x1; x++) {
+      visit(x, y0);
+      if (y1 !== y0) visit(x, y1);
+    }
+    for (let y = y0 + 1; y < y1; y++) {
+      visit(x0, y);
+      if (x1 !== x0) visit(x1, y);
+    }
+    if (!Number.isFinite(best)) continue;
+
+    const sx0 = Math.max(0, x0);
+    const sx1 = Math.min(grid.size - 1, x1);
+    const sy0 = Math.max(0, y0);
+    const sy1 = Math.min(grid.size - 1, y1);
+    const bounds = [];
+    if (sx0 > 0) bounds.push(ax - (grid.minX + sx0 * grid.cellW));
+    if (sx1 < grid.size - 1) bounds.push(grid.minX + (sx1 + 1) * grid.cellW - ax);
+    if (sy0 > 0) bounds.push(ay - (grid.minY + sy0 * grid.cellH));
+    if (sy1 < grid.size - 1) bounds.push(grid.minY + (sy1 + 1) * grid.cellH - ay);
+    if (!bounds.length) break;
+    const unseenLowerBound = Math.max(0, Math.min(...bounds));
+    if (unseenLowerBound * unseenLowerBound >= best) break;
+  }
+  return best;
+}
+
+function nearestBruteDistance2(ax, ay, points) {
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 0; i + 1 < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[i + 1];
+    best = Math.min(best, segmentDistance2(ax, ay, x1, y1, x2, y2));
+  }
+  return best;
+}
+
+/**
+ * Максимум расстояния от точек A до полилинии B (одна сторона Хаусдорфа).
+ * Spatial grid индексирует bbox каждого сегмента. Ring search прекращается только
+ * когда расстояние до любой ещё не посещённой клетки не может улучшить best;
+ * вырожденная полилиния сохраняет универсальный brute-force fallback.
+ */
 export function maxDeviation(A, B) {
+  if (B.length < 2) return Number.POSITIVE_INFINITY;
+  const grid = buildSegmentGrid(B);
   let worst = 0;
   for (const [ax, ay] of A) {
-    let best = Number.POSITIVE_INFINITY;
-    for (let i = 0; i + 1 < B.length; i++) {
-      const [x1, y1] = B[i];
-      const [x2, y2] = B[i + 1];
-      const dx = x2 - x1;
-      const dy = y2 - y1;
-      const len2 = dx * dx + dy * dy;
-      let t = len2 === 0 ? 0 : ((ax - x1) * dx + (ay - y1) * dy) / len2;
-      t = Math.max(0, Math.min(1, t));
-      const ddx = ax - (x1 + t * dx);
-      const ddy = ay - (y1 + t * dy);
-      const d2 = ddx * ddx + ddy * ddy;
-      if (d2 < best) best = d2;
-    }
+    const best = grid
+      ? nearestGridDistance2(ax, ay, grid)
+      : nearestBruteDistance2(ax, ay, B);
     if (best > worst) worst = best;
   }
   return Math.sqrt(worst);

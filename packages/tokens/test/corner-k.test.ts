@@ -3,6 +3,7 @@ import {
   deviationForN,
   deviationForNAtResolution,
   fitOptimalN,
+  maxDeviation,
 } from '../scripts/derive-corner-k.mjs';
 import { defaultConfig } from '../src/config/default-config.js';
 
@@ -19,6 +20,35 @@ import { defaultConfig } from '../src/config/default-config.js';
  * круг K=1 → 1.249px; K=1.1 → 2.348px; геометрический оптимум n*≈2.0.
  */
 describe('cornerK — замок деривации против дрейфа', () => {
+  it('spatial-grid oracle byte-for-byte сохраняет brute-force метрику на малом witness', () => {
+    const a: Array<[number, number]> = [[-3, 0], [-2, 0.2], [-1, 0.8], [0, 2]];
+    const b: Array<[number, number]> = [[-3, 0], [-2.4, 0.1], [-1.3, 0.6], [-0.4, 1.4], [0, 2]];
+    const brute = (A: Array<[number, number]>, B: Array<[number, number]>) => {
+      let worst = 0;
+      for (const [ax, ay] of A) {
+        let best = Number.POSITIVE_INFINITY;
+        for (let i = 0; i + 1 < B.length; i++) {
+          const [x1, y1] = B[i];
+          const [x2, y2] = B[i + 1];
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const len2 = dx * dx + dy * dy;
+          let t = len2 === 0 ? 0 : ((ax - x1) * dx + (ay - y1) * dy) / len2;
+          t = Math.max(0, Math.min(1, t));
+          const ddx = ax - (x1 + t * dx);
+          const ddy = ay - (y1 + t * dy);
+          best = Math.min(best, ddx * ddx + ddy * ddy);
+        }
+        worst = Math.max(worst, best);
+      }
+      return Math.sqrt(worst);
+    };
+    expect(maxDeviation(a, b)).toBe(brute(a, b));
+    expect(maxDeviation(b, a)).toBe(brute(b, a));
+    const zigzag: Array<[number, number]> = [[0, 0], [2, 1], [1, 2], [3, 3]];
+    expect(maxDeviation(a, zigzag)).toBe(brute(a, zigzag));
+  });
+
   it('конфиг несёт задокументированное DECLARED-значение', () => {
     expect(defaultConfig.radii.cornerK).toBe(1.1);
   });
