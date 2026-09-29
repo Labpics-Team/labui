@@ -236,15 +236,16 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
-          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
-          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
+          # GitHub cache service не используется: required CI должен быть
+          # независим от внешнего cache API и от store соседнего job/repository.
 
-      - name: Verify pnpm store isolation contract
-        run: node scripts/ci/pnpm-store-contract.mjs
-
-      - name: Install
-        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
+      - name: Install from isolated pnpm store
+        shell: bash
+        run: |
+          set -euo pipefail
+          store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
+          rm -rf -- "$store"
+          pnpm install --frozen-lockfile --store-dir "$store"
 
       - name: Lint (Biome)
         run: pnpm lint
@@ -337,15 +338,16 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
-          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
-          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
+          # GitHub cache service не используется: required CI должен быть
+          # независим от внешнего cache API и от store соседнего job/repository.
 
-      - name: Verify pnpm store isolation contract
-        run: node scripts/ci/pnpm-store-contract.mjs
-
-      - name: Install
-        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
+      - name: Install from isolated pnpm store
+        shell: bash
+        run: |
+          set -euo pipefail
+          store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
+          rm -rf -- "$store"
+          pnpm install --frozen-lockfile --store-dir "$store"
 
       - name: Build packages
         run: pnpm build

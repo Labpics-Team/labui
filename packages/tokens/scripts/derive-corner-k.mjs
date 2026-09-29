@@ -144,23 +144,36 @@ export function maxDeviation(A, B) {
   return Math.sqrt(worst);
 }
 
-const figma = figmaCornerPoints(R, ZETA, 1200);
+export const DERIVATION_FIGMA_SAMPLES = 300;
+export const DERIVATION_SUPERELLIPSE_SAMPLES = 750;
+
+const figma = figmaCornerPoints(R, ZETA, DERIVATION_FIGMA_SAMPLES);
 
 export const EDGE_EXTENT = (1 + ZETA) * R;
-export function deviationForN(n) {
-  const se = superellipsePoints(R, n, EDGE_EXTENT, 3000);
+export function deviationForNAtResolution(
+  n,
+  figmaSamples = DERIVATION_FIGMA_SAMPLES,
+  superellipseSamples = DERIVATION_SUPERELLIPSE_SAMPLES,
+) {
+  const figmaPoints =
+    figmaSamples === DERIVATION_FIGMA_SAMPLES ? figma : figmaCornerPoints(R, ZETA, figmaSamples);
+  const se = superellipsePoints(R, n, EDGE_EXTENT, superellipseSamples);
   // Симметричный Хаусдорф: форма-к-форме в обе стороны (односторонняя метрика
   // пропустила бы участки, где суперэллипс отходит от кривой Figma).
-  return Math.max(maxDeviation(figma, se), maxDeviation(se, figma));
+  return Math.max(maxDeviation(figmaPoints, se), maxDeviation(se, figmaPoints));
+}
+
+export function deviationForN(n) {
+  return deviationForNAtResolution(n);
 }
 
 export function fitOptimalN() {
   // Золотое сечение по n ∈ [2, 4].
-  // 28 итераций: интервал 2·φ^28 ≈ 3e-6 — на шесть порядков точнее допуска
-  // потребителя (тест сравнивает n* с 2.02, зазор 0.02). Прежние 60 итераций
-  // давали ≈2e-13 ценой ~62 вызовов deviationForN (~29 млн сегментных
-  // дистанций каждый): на медленном CI-раннере синхронный блок >60с рвал
-  // RPC vitest-воркера («Timeout calling onTaskUpdate») при зелёных тестах.
+  // 16 итераций: остаточный интервал 2·φ^16 ≈ 9e-4, то есть более чем
+  // на порядок уже допуска потребителя (тест сравнивает n* с 2.02).
+  // Сетка 300/750 отдельно сверяется тестом с удвоенной 600/1500:
+  // ошибка Hausdorff для круга < 0.001px при R=100. Прежние 1200/3000 +
+  // 28 итераций тратили >80с на тот же вывод и блокировали RPC vitest worker.
   let lo = 2.0;
   let hi = 4.0;
   const phi = (Math.sqrt(5) - 1) / 2;
@@ -168,7 +181,7 @@ export function fitOptimalN() {
   let x2 = lo + phi * (hi - lo);
   let f1 = deviationForN(x1);
   let f2 = deviationForN(x2);
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < 16; i++) {
     if (f1 < f2) {
       hi = x2;
       x2 = x1;

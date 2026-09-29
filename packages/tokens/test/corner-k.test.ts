@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { deviationForN, fitOptimalN } from '../scripts/derive-corner-k.mjs';
+import {
+  deviationForN,
+  deviationForNAtResolution,
+  fitOptimalN,
+} from '../scripts/derive-corner-k.mjs';
 import { defaultConfig } from '../src/config/default-config.js';
 
 /**
@@ -32,12 +36,18 @@ describe('cornerK — замок деривации против дрейфа', 
     expect(circle).toBeLessThan(deviationForN(2 ** defaultConfig.radii.cornerK));
   });
 
+  it('bounded derivation grid converges against a 2× denser witness', () => {
+    const bounded = deviationForN(2);
+    const denser = deviationForNAtResolution(2, 600, 1500);
+    expect(Math.abs(bounded - denser)).toBeLessThan(0.001);
+  });
+
   it(
     'геометрический оптимум — у круга (n* ≈ 2), не у конфигового K',
-    // Численный фит по плотной сетке: на медленном CI-раннере (ферма de-02)
-    // занимает ~68с против дефолтных 5с — таймаут явный, чтобы замок деривации
-    // не превращался в инфра-флак.
-    { timeout: 180_000 },
+    // Bounded grid имеет отдельный convergence witness выше; длинный таймаут
+    // больше не нужен, поэтому регрессия к квадратичному многоминутному oracle
+    // снова станет обычным test failure.
+    { timeout: 10_000 },
     () => {
       expect(fitOptimalN()).toBeLessThan(2.02);
     },
