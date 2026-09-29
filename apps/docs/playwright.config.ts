@@ -34,6 +34,7 @@ import { defineConfig, devices } from '@playwright/test';
  *   button.spec.ts    — базовый интерактивный компонент + axe-a11y
  *   input.spec.ts     — базовое поле формы + axe-a11y
  *   checkbox.spec.ts  — базовый контрол формы + axe-a11y
+ *   pin-input.spec.ts — сегментированное поле + required/group a11y parity
  *
  * Всё, чего нет в SMOKE_SPECS, гоняется только в e2e-full (полное покрытие
  * не теряется — переносится на расписание).
@@ -56,6 +57,7 @@ const SMOKE_SPECS = [
   'button.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
+  'pin-input.spec.ts',
 ];
 
 const smoke = process.env.E2E_SMOKE === '1';

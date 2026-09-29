@@ -17,13 +17,11 @@ import * as pinInputMachine from '@zag-js/pin-input';
  * REUSES the field a11y seam (core-CONTRACT §4), it does NOT duplicate it: the
  * label / helper / error ASSOCIATION is the same shared `field-a11y` helper that
  * `<lab-input>` / `<lab-number-input>` use. A pin input is a GROUP of inputs, so the
- * field a11y lands on the control GROUP (not on any single box): the control carries
- * `role="group"` + `aria-labelledby` → the field label, plus the field's
- * `aria-describedby` (helper + error), `aria-errormessage`, `aria-required` and
- * `aria-invalid`. The MACHINE still owns each box's value + roving tabindex + per-box
- * `aria-invalid` + the hidden-input form value; this element only ADDS the group's
- * description wiring over the machine's spread — the same split the other fields use, so
- * neither layer re-implements the other. Visual surface reuses the shared `field-styles`.
+ * group owns `aria-labelledby`, `aria-describedby`, `aria-errormessage` and
+ * `aria-invalid`. `aria-required` is not valid on role="group"; it lands on every
+ * visible textbox segment instead, while the machine owns native `required` on the
+ * hidden form input. Neither layer re-implements the other. Visual surface reuses the
+ * shared `field-styles`.
  *
  * Axes (the form-field model — Type × Size × State, plus the segmented count):
  *   - type:       neutral | danger | warning | success   (sentiment of the field)
@@ -113,7 +111,7 @@ export class LabPinInput extends LabElement {
     readonly: { type: Boolean, reflect: true },
     /** Non-interactive and dimmed. */
     disabled: { type: Boolean, reflect: true },
-    /** Required — sets aria-required on the group and the native hidden input. */
+    /** Required — sets aria-required on visible segments and native required on the hidden input. */
     required: { type: Boolean, reflect: true },
     /** Invalid — drives aria-invalid / aria-errormessage and the danger styling. */
     invalid: { type: Boolean, reflect: true },
@@ -361,30 +359,35 @@ export class LabPinInput extends LabElement {
     if (controlEl) this.machineCtl.spread(controlEl, api.getControlProps());
     if (hiddenEl) this.machineCtl.spread(hiddenEl, api.getHiddenInputProps());
 
+    const aria = fieldControlAria(this.a11yInput());
+
     // Map each segment's getters onto its box by the STABLE key `index`. Pin segments
-    // never reorder (unlike combobox options / tags), so the positional index IS the
-    // machine's own key for `getInputProps({ index })` — honouring it means a box never
-    // receives another segment's roving tabindex / value ARIA.
+    // never reorder, so the positional index is the machine's own key. Required belongs
+    // to these focusable textbox elements: role="group" does not support aria-required.
     for (const index of api.items) {
       const inputEl = root.querySelector<HTMLInputElement>(`.segment[data-index="${index}"]`);
-      if (inputEl) this.machineCtl.spread(inputEl, api.getInputProps({ index }));
+      if (inputEl) {
+        this.machineCtl.spread(inputEl, api.getInputProps({ index }));
+        setOrRemove(inputEl, 'aria-required', aria['aria-required']);
+        inputEl.setAttribute(
+          'aria-label',
+          `${this.label || 'Pin input'}, digit ${index + 1} of ${this.count}`,
+        );
+      }
     }
 
-    // Add the FIELD a11y contract over the machine's spread, on the control GROUP: the
-    // machine owns each box's value ARIA + per-box aria-invalid + the hidden input; the
-    // field owns the GROUP's label/description association (role=group, labelledby →
-    // label, describedby → helper/error, errormessage, required, invalid) — the exact
-    // split the single-input fields use, lifted to the group because a pin input has N
-    // boxes and one shared description. Applied after the spread so the field attrs win.
+    // The aggregate group owns only the field semantics valid for role="group": shared
+    // label/description plus invalid/error association. Applied after the machine spread
+    // so the field's associations remain authoritative without inventing an unsupported
+    // required state on the container.
     if (controlEl) {
       const ids = fieldPartIds(this.fieldId);
-      const aria = fieldControlAria(this.a11yInput());
       controlEl.setAttribute('role', 'group');
       controlEl.setAttribute('aria-labelledby', ids.label);
       setOrRemove(controlEl, 'aria-describedby', aria['aria-describedby']);
       setOrRemove(controlEl, 'aria-invalid', aria['aria-invalid']);
       setOrRemove(controlEl, 'aria-errormessage', aria['aria-errormessage']);
-      setOrRemove(controlEl, 'aria-required', aria['aria-required']);
+      controlEl.removeAttribute('aria-required');
     }
   }
 

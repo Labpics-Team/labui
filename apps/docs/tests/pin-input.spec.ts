@@ -10,7 +10,7 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *   1. Render — the delivered HTML carries the Lit element; React is a client island.
  *   2. Segments — N real single-character inputs, one per `count`, on both renderers.
  *   3. Group a11y — the control is role="group", aria-labelledby → the field label, and
- *      (shared field-a11y) aria-describedby → helper/error, aria-invalid, aria-required.
+ *      shared aria-describedby/error/invalid wiring; required belongs to textbox segments.
  *   4. Focus auto-advance — typing a character moves focus to the NEXT box (machine).
  *   5. Backspace — removes and steps back (the machine owns the reverse focus).
  *   6. Paste-fill — pasting a code distributes it across the boxes.
@@ -124,11 +124,13 @@ test('group a11y: the control is a labelled, described group on both renderers',
 });
 
 /**
- * Invalid/required — the field-a11y contract on the group: aria-invalid="true" +
- * aria-errormessage → the error id (invalid specimen), aria-required="true" (required
- * specimen). The error region is role="alert" and its id is the errormessage idref.
+ * Invalid is aggregate field state, so the group owns the error association. Required is
+ * input state: role="group" does not support aria-required, while each segment is a real
+ * textbox. The machine's hidden form input keeps native `required` for submission.
  */
-test('field-a11y: invalid + required are wired on the group (both renderers)', async ({ page }) => {
+test('field-a11y: invalid stays on the group; required lands on textbox segments', async ({
+  page,
+}) => {
   for (const [host, control] of [
     [litHost(page, 'lit-invalid'), litControl(page, 'lit-invalid')] as const,
     [reactField(page, 'react-invalid'), reactControl(page, 'react-invalid')] as const,
@@ -143,7 +145,26 @@ test('field-a11y: invalid + required are wired on the group (both renderers)', a
   }
 
   for (const control of [litControl(page, 'lit-required'), reactControl(page, 'react-required')]) {
-    await expect(control).toHaveAttribute('aria-required', 'true');
+    expect(
+      await control.getAttribute('aria-required'),
+      'role=group must not carry aria-required',
+    ).toBeNull();
+  }
+
+  await expect(litHost(page, 'lit-required').locator('.segment[aria-required="true"]')).toHaveCount(
+    4,
+  );
+  await expect(
+    reactField(page, 'react-required').locator('.lab-pin-input-segment[aria-required="true"]'),
+  ).toHaveCount(4);
+
+  const litHidden = litHost(page, 'lit-required').locator('.hidden-input');
+  const reactHidden = reactField(page, 'react-required').locator('.lab-pin-input-hidden');
+  for (const hidden of [litHidden, reactHidden]) {
+    expect(
+      await hidden.evaluate((el) => (el as HTMLInputElement).required),
+      'machine hidden input keeps native required for form submission',
+    ).toBe(true);
   }
 });
 
