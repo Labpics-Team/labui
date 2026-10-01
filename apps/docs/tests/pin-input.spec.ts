@@ -174,6 +174,16 @@ test('field-a11y: invalid stays on the group; required lands on textbox segments
   }
 });
 
+test('letter and mixed-code segments have type-neutral accessible names', async ({ page }) => {
+  for (const mode of ['alphabetic', 'alphanumeric'] as const) {
+    for (let index = 0; index < 4; index++) {
+      const name = `Invite code, character ${index + 1} of 4`;
+      await expect(litSegment(page, `lit-${mode}`, index)).toHaveAccessibleName(name);
+      await expect(reactSegment(page, `react-${mode}`, index)).toHaveAccessibleName(name);
+    }
+  }
+});
+
 /**
  * Focus auto-advance — the machine's signature behaviour: typing a character into a box
  * moves focus to the NEXT box. Falsifiable: after typing into box 0, box 1 is focused and

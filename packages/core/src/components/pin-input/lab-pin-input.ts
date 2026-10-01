@@ -364,6 +364,7 @@ export class LabPinInput extends LabElement {
     // Map each segment's getters onto its box by the STABLE key `index`. Pin segments
     // never reorder, so the positional index is the machine's own key. Required belongs
     // to these focusable textbox elements: role="group" does not support aria-required.
+    const segmentNoun = this.valueType === 'numeric' ? 'digit' : 'character';
     for (const index of api.items) {
       const inputEl = root.querySelector<HTMLInputElement>(`.segment[data-index="${index}"]`);
       if (inputEl) {
@@ -371,7 +372,7 @@ export class LabPinInput extends LabElement {
         setOrRemove(inputEl, 'aria-required', aria['aria-required']);
         inputEl.setAttribute(
           'aria-label',
-          `${this.label || 'Pin input'}, digit ${index + 1} of ${this.count}`,
+          `${this.label || 'Pin input'}, ${segmentNoun} ${index + 1} of ${this.count}`,
         );
       }
     }

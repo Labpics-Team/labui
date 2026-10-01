@@ -159,6 +159,7 @@ export function PinInput({
       ? (details) => onValueComplete(details.value, details.valueAsString)
       : undefined,
   });
+  const segmentNoun = valueType === 'numeric' ? 'digit' : 'character';
 
   return (
     <div
@@ -193,7 +194,7 @@ export function PinInput({
             key={index}
             {...api.getInputProps({ index })}
             aria-required={fieldAria['aria-required']}
-            aria-label={`${label}, digit ${index + 1} of ${count}`}
+            aria-label={`${label}, ${segmentNoun} ${index + 1} of ${count}`}
             className="lab-pin-input-segment"
           />
         ))}
