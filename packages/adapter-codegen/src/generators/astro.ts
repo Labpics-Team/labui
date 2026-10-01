@@ -35,8 +35,8 @@ function astroFile(c: ComponentMeta): string {
     .join('\n');
   const slotsArg = slotEntries.length > 0 ? `{\n${slotLines}\n}` : '{}';
 
-  return `${generatedHeader('line')}
----
+  return `---
+${generatedHeader()}
 import { render${c.pascal} } from '@labpics/ui-astro/ssr';
 
 const dsd = render${c.pascal}(Astro.props, ${slotsArg});
