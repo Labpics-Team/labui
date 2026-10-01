@@ -20,7 +20,7 @@ import * as pinInputMachine from '@zag-js/pin-input';
  * group owns `aria-labelledby`, `aria-describedby`, `aria-errormessage` and
  * `aria-invalid`. `aria-required` is not valid on role="group"; it lands on every
  * visible textbox segment instead, while the machine owns native `required` on the
- * hidden form input. Neither layer re-implements the other. Visual surface reuses the
+ * hidden input. Neither layer re-implements the other. Visual surface reuses the
  * shared `field-styles`.
  *
  * Axes (the form-field model — Type × Size × State, plus the segmented count):
@@ -115,7 +115,7 @@ export class LabPinInput extends LabElement {
     required: { type: Boolean, reflect: true },
     /** Invalid — drives aria-invalid / aria-errormessage and the danger styling. */
     invalid: { type: Boolean, reflect: true },
-    /** Native form field name (rides the machine's hidden input). */
+    /** Имя скрытого input машины; Lit-элемент пока не связан с нативной формой. */
     name: {},
   };
 

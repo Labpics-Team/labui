@@ -124,9 +124,9 @@ test('group a11y: the control is a labelled, described group on both renderers',
 });
 
 /**
- * Invalid is aggregate field state, so the group owns the error association. Required is
- * input state: role="group" does not support aria-required, while each segment is a real
- * textbox. The machine's hidden form input keeps native `required` for submission.
+ * Ошибка относится к группе, а required — к реальным сегментам textbox:
+ * role="group" не поддерживает aria-required. Машина сохраняет required на
+ * скрытом input; Lit-элемент пока не связан с нативной формой.
  */
 test('field-a11y: invalid stays on the group; required lands on textbox segments', async ({
   page,
@@ -169,7 +169,7 @@ test('field-a11y: invalid stays on the group; required lands on textbox segments
   for (const hidden of [litHidden, reactHidden]) {
     expect(
       await hidden.evaluate((el) => (el as HTMLInputElement).required),
-      'machine hidden input keeps native required for form submission',
+      'machine hidden input keeps required; form association is separate',
     ).toBe(true);
   }
 });

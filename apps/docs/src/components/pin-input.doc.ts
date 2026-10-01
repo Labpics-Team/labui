@@ -35,7 +35,7 @@ export const pinInputDoc: ComponentDoc = {
   tag: 'lab-pin-input',
   title: 'Pin Input',
   summary:
-    "A segmented code field — N single-character inputs that focus-advance as you type, fill across on paste, and optionally mask. Runs the @zag-js/pin-input machine through the LabUI seam: the machine owns each box's value, the roving focus that auto-advances on type and steps back on Backspace, the paste-fill that distributes across the boxes, masking (type=password), the roving tabindex + per-box aria-invalid, and the complete/invalid lifecycle. It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — lifted to the control group (role=group + aria-labelledby + describedby), so the ARIA contract is one source of truth across both renderers. Required state is exposed on each real textbox segment, while the machine keeps native required on the hidden form input. The element only paints with semantic --lab-* roles.",
+    "A segmented code field — N single-character inputs that focus-advance as you type, fill across on paste, and optionally mask. Runs the @zag-js/pin-input machine through the LabUI seam: the machine owns each box's value, the roving focus that auto-advances on type and steps back on Backspace, the paste-fill that distributes across the boxes, masking (type=password), the roving tabindex + per-box aria-invalid, and the complete/invalid lifecycle. It REUSES the shared field-a11y helper for the label / helper / error association — the same seam as Input — lifted to the control group (role=group + aria-labelledby + describedby), so the ARIA contract is one source of truth across both renderers. The element only paints with semantic --lab-* roles.",
   status: { kind: 'stable' },
 
   statesMatrix: {
@@ -86,7 +86,7 @@ export const pinInputDoc: ComponentDoc = {
       index: 4,
       name: 'Hidden input',
       description:
-        'A visually-hidden native <input> the machine fills with the joined value (maxLength = the segment count), so the field submits in a form like any input. When required, the machine keeps native required on this form input.',
+        'Машина записывает объединённое значение в визуально скрытый input. В React он участвует в отправке и нативной проверке формы. У Lit input находится в shadow DOM, а элемент пока не связан с формой: отправку значения и проверку нужно связать явно.',
     },
     {
       index: 5,
@@ -215,12 +215,13 @@ export const pinInputDoc: ComponentDoc = {
         type: 'boolean',
         default: 'false',
         description:
-          'The field states. disabled/readonly gate interaction; invalid drives the group error wiring; required sets aria-required on every visible textbox segment and native required on the machine hidden form input.',
+          'Состояния поля: disabled/readonly ограничивают взаимодействие, invalid задаёт ошибку группы, required ставит aria-required на каждом видимом сегменте и required на скрытом input машины. Для Lit это не включает нативную проверку формы.',
       },
       {
         name: 'name',
         type: 'string',
-        description: 'Field name (rides the hidden input) for form submission.',
+        description:
+          'Имя скрытого input машины. В React оно попадает в FormData; Lit-элемент пока не связан с нативной формой.',
       },
       {
         name: 'label',
