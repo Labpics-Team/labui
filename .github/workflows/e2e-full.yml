@@ -65,8 +65,8 @@ jobs:
         with:
           node-version: 22
           # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
-          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store и так персистит
-          # на самом раннере между прогонами — быстрее и без сетевой зависимости.
+          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store находится в
+          # RUNNER_TEMP текущего job (см. Install ниже).
 
       - name: Install
         run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
