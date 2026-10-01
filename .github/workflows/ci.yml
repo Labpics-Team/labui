@@ -239,6 +239,9 @@ jobs:
           # GitHub cache service не используется: required CI должен быть
           # независим от внешнего cache API и от store соседнего job/repository.
 
+      - name: Verify pnpm store isolation contract
+        run: node scripts/ci/pnpm-store-contract.mjs
+
       - name: Install from isolated pnpm store
         shell: bash
         run: |

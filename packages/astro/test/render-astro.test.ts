@@ -5,11 +5,19 @@
  */
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
 import { describe, expect, it } from 'vitest';
+import manifest from '../../adapter-codegen/manifest.generated.json';
 import Button from '../src/astro/Button.astro';
 import Dialog from '../src/astro/Dialog.astro';
 import Input from '../src/astro/Input.astro';
 
+const compiled = import.meta.glob('../src/astro/*.astro', { eager: true });
+
 describe('Astro .astro-компоненты (Container API)', () => {
+  it('каждая обёртка из манифеста компилируется Astro', () => {
+    const expected = manifest.components.map((c) => `../src/astro/${c.pascal}.astro`).sort();
+    expect(Object.keys(compiled).sort()).toEqual(expected);
+  });
+
   it('Button.astro: DSD + контент слота + client-скрипт гидрации', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(Button, {

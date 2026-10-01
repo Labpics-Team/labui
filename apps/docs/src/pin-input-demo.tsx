@@ -60,6 +60,12 @@ createRoot(mount).render(
     <span data-testid="react-required">
       <PinInput label="Code" count={4} required />
     </span>
+    <span data-testid="react-alphabetic">
+      <PinInput label="Invite code" count={4} valueType="alphabetic" />
+    </span>
+    <span data-testid="react-alphanumeric">
+      <PinInput label="Invite code" count={4} valueType="alphanumeric" />
+    </span>
     <span data-testid="react-disabled">
       <PinInput label="Locked" count={4} disabled />
     </span>
