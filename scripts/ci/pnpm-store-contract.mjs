@@ -17,13 +17,12 @@ function violations(subject) {
   for (const [name, source] of Object.entries(subject)) {
     const installs = installLines(source);
     if (installs.length !== expected[name])
-      out.push(name + ': unexpected frozen install count ' + installs.length);
+      out.push(`${name}: unexpected frozen install count ${installs.length}`);
     const bare = installs.filter((line) => !line.includes('--store-dir'));
-    if (bare.length) out.push(name + ': shared/bare pnpm store use: ' + bare.join(' | '));
+    if (bare.length) out.push(`${name}: shared/bare pnpm store use: ${bare.join(' | ')}`);
   }
 
-  const jobStore =
-    'store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"';
+  const jobStore = 'store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"';
   if (count(subject.ci, jobStore) !== 2 || count(subject.ci, '--store-dir "$store"') !== 2)
     out.push('ci.yml must bind both installs to the per-job RUNNER_TEMP store');
 
@@ -46,7 +45,7 @@ const mutants = [
 ];
 for (const [index, mutant] of mutants.entries()) {
   if (violations(mutant).length === 0)
-    throw new Error('mutation ' + (index + 1) + ' escaped pnpm store contract');
+    throw new Error(`mutation ${index + 1} escaped pnpm store contract`);
 }
 
 process.stdout.write('pnpm store contract: PASS (live + 3 sabotage controls)\n');
