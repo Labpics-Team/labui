@@ -103,7 +103,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/astro:
     dependencies:
@@ -127,8 +127,8 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
       happy-dom:
-        specifier: 20.8.8
-        version: 20.8.8
+        specifier: 20.8.9
+        version: 20.8.9
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -137,7 +137,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/colors:
     dependencies:
@@ -147,7 +147,7 @@ importers:
     devDependencies:
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/colors-stub:
     devDependencies:
@@ -159,7 +159,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/core:
     dependencies:
@@ -247,13 +247,13 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/fonts:
     devDependencies:
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/materials:
     dependencies:
@@ -275,7 +275,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/react:
     dependencies:
@@ -378,7 +378,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/solid:
     dependencies:
@@ -390,8 +390,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0(@types/node@22.15.3)
       happy-dom:
-        specifier: 20.8.8
-        version: 20.8.8
+        specifier: 20.8.9
+        version: 20.8.9
       solid-js:
         specifier: 1.9.4
         version: 1.9.4
@@ -403,7 +403,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/svelte:
     dependencies:
@@ -421,8 +421,8 @@ importers:
         specifier: 5.0.3
         version: 5.0.3(svelte@5.19.0)(vite@6.4.3(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2))
       happy-dom:
-        specifier: 20.8.8
-        version: 20.8.8
+        specifier: 20.8.9
+        version: 20.8.9
       svelte:
         specifier: 5.19.0
         version: 5.19.0
@@ -437,7 +437,7 @@ importers:
         version: 6.4.3(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2)
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/tokens:
     devDependencies:
@@ -455,7 +455,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/vue:
     dependencies:
@@ -467,8 +467,8 @@ importers:
         specifier: 4.1.0
         version: 4.1.0(@types/node@22.15.3)
       happy-dom:
-        specifier: 20.8.8
-        version: 20.8.8
+        specifier: 20.8.9
+        version: 20.8.9
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -477,7 +477,7 @@ importers:
         version: 5.7.3
       vitest:
         specifier: 3.2.6
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2)
       vue:
         specifier: 3.5.13
         version: 3.5.13(typescript@5.7.3)
@@ -2304,8 +2304,8 @@ packages:
   h3@1.15.11:
     resolution: {integrity: sha512-L3THSe2MPeBwgIZVSH5zLdBBU90TOxarvhK9d04IDY2AmVS8j2Jz2LIWtwsGOU3lu2I5jCN7FNvVfY2+XyF+mg==}
 
-  happy-dom@20.8.8:
-    resolution: {integrity: sha512-5/F8wxkNxYtsN0bXfMwIyNLZ9WYsoOYPbmoluqVJqv8KBUbcyKZawJ7uYK4WTX8IHBLYv+VXIwfeNDPy1oKMwQ==}
+  happy-dom@20.8.9:
+    resolution: {integrity: sha512-Tz23LR9T9jOGVZm2x1EPdXqwA37G/owYMxRwU0E4miurAtFsPMQ1d2Jc2okUaSjZqAFz2oEn3FLXC5a0a+siyA==}
     engines: {node: '>=20.0.0'}
 
   hast-util-to-html@9.0.5:
@@ -5269,7 +5269,7 @@ snapshots:
       ufo: 1.6.4
       uncrypto: 0.1.3
 
-  happy-dom@20.8.8:
+  happy-dom@20.8.9:
     dependencies:
       '@types/node': 22.15.3
       '@types/whatwg-mimetype': 3.0.2
@@ -6223,7 +6223,7 @@ snapshots:
     optionalDependencies:
       vite: 8.3.2(@types/node@22.15.3)(esbuild@0.28.2)(tsx@4.19.2)
 
-  vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2):
+  vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.10.5)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.6
@@ -6251,7 +6251,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.13
       '@types/node': 22.10.5
-      happy-dom: 20.8.8
+      happy-dom: 20.8.9
     transitivePeerDependencies:
       - jiti
       - less
@@ -6266,7 +6266,7 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.8)(lightningcss@1.33.0)(tsx@4.19.2):
+  vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@20.8.9)(lightningcss@1.33.0)(tsx@4.19.2):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.6
@@ -6294,7 +6294,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.13
       '@types/node': 22.15.3
-      happy-dom: 20.8.8
+      happy-dom: 20.8.9
     transitivePeerDependencies:
       - jiti
       - less
