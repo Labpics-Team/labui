@@ -158,6 +158,12 @@ test('field-a11y: invalid stays on the group; required lands on textbox segments
     reactField(page, 'react-required').locator('.lab-pin-input-segment[aria-required="true"]'),
   ).toHaveCount(4);
 
+  for (let index = 0; index < 4; index++) {
+    const name = `Code, digit ${index + 1} of 4`;
+    await expect(litSegment(page, 'lit-required', index)).toHaveAccessibleName(name);
+    await expect(reactSegment(page, 'react-required', index)).toHaveAccessibleName(name);
+  }
+
   const litHidden = litHost(page, 'lit-required').locator('.hidden-input');
   const reactHidden = reactField(page, 'react-required').locator('.lab-pin-input-hidden');
   for (const hidden of [litHidden, reactHidden]) {
@@ -199,14 +205,21 @@ test('focus auto-advance: typing a digit advances to the next box (both renderer
 test('backspace: removes and steps focus back (the machine owns reverse focus)', async ({
   page,
 }) => {
-  await litSegment(page, 'lit-required', 0).focus();
-  await page.keyboard.press('5');
-  await page.keyboard.press('6');
-  // Focus is now on box 2; Backspace clears box 1 (the previous) and moves back.
-  await page.keyboard.press('Backspace');
-  await expect.poll(() => litSegment(page, 'lit-required', 1).inputValue()).toBe('');
-  await page.keyboard.press('Backspace');
-  await expect.poll(() => litSegment(page, 'lit-required', 0).inputValue()).toBe('');
+  for (const segment of [
+    (index: number) => litSegment(page, 'lit-required', index),
+    (index: number) => reactSegment(page, 'react-required', index),
+  ]) {
+    await segment(0).focus();
+    await page.keyboard.press('5');
+    await page.keyboard.press('6');
+    await expect(segment(2)).toBeFocused();
+    await page.keyboard.press('Backspace');
+    await expect(segment(1)).toHaveValue('');
+    await expect(segment(1)).toBeFocused();
+    await page.keyboard.press('Backspace');
+    await expect(segment(0)).toHaveValue('');
+    await expect(segment(0)).toBeFocused();
+  }
 });
 
 /**
