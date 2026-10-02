@@ -1,8 +1,8 @@
 {
-  "name": "@labpics/ui-colors",
+  "name": "@labui/colors",
   "version": "0.0.0",
   "private": true,
-  "description": "Lab UI color boundary: Figma-derived passport, generated semantic CSS contract, and conformance checks over @labpics/colors.",
+  "description": "Lab UI color boundary: Figma-derived reference, generated semantic CSS contract, and conformance checks over @labpics/colors.",
   "license": "UNLICENSED",
   "type": "module",
   "exports": {

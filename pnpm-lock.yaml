@@ -35,9 +35,6 @@ importers:
       '@labpics/colors':
         specifier: 0.6.2
         version: 0.6.2
-      '@labpics/ui-colors':
-        specifier: workspace:*
-        version: link:../../packages/colors
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -56,6 +53,9 @@ importers:
       '@labpics/ui-vue':
         specifier: workspace:*
         version: link:../../packages/vue
+      '@labui/colors':
+        specifier: workspace:*
+        version: link:../../packages/colors
       react:
         specifier: 18.3.1
         version: 18.3.1

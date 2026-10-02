@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 
 // Разделяемый чистый гейт (тот же код кормит standalone `pnpm --filter
-// @labpics/ui-colors fx:render`): харнесс + PNG-декодер + инварианты. Спека даёт
+// @labui/colors fx:render`): харнесс + PNG-декодер + инварианты. Спека даёт
 // CI-воспроизводимость — гейт живёт в e2e-джобе (у `pnpm test` браузеров нет).
 import {
   GLOW_STEPS,

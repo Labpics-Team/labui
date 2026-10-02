@@ -1,13 +1,13 @@
 /*
  * Consume the Lab UI --lab-* colour contract.
  *
- * The @import below pulls the generated contract from @labpics/ui-colors.
+ * The @import below pulls the generated contract from @labui/colors.
  * @labpics/colors remains the computation engine behind generation; consumers
  * never import its runtime merely to paint semantic roles. The smoke test asserts
  * that the heading's computed color equals the --lab-label-primary token resolved from
  * the package — proving the integration point works, not a hardcoded hex.
  */
-@import "@labpics/ui-colors/contract.css";
+@import "@labui/colors/contract.css";
 
 /* LabUI dimension tokens — the --lab-space-* / --lab-font-size-* / --lab-z-*
  * contract from @labpics/ui-tokens. The e2e smoke asserts the fluid font-size
@@ -28,7 +28,7 @@ main {
 }
 
 h1[data-testid="title"] {
-  /* The token under test — comes from @labpics/ui-colors, never a literal hex. */
+  /* The token under test — comes from @labui/colors, never a literal hex. */
   color: var(--lab-label-primary);
   font-size: clamp(2rem, 6vw, 3.5rem);
   margin: 0;

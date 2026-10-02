@@ -7,7 +7,7 @@
  * Each primitive's React twin ships its own scoped stylesheet (imported by the
  * component); this file only provides the page frame + the token context.
  */
-@import "@labpics/ui-colors/contract.css";
+@import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-core/theme.css";
 @import "@labpics/ui-core/selection.css";

@@ -1,9 +1,9 @@
 /*
  * Shadow-stack demo. Consumes the generated contract from @labpics/ui-shadow and
- * the --lab-* color contract from @labpics/ui-colors. The cards apply a size
+ * the --lab-* color contract from @labui/colors. The cards apply a size
  * (.lab-shadow-*) or a role alias (.lab-elevation-*) inline — never raw plies.
  */
-@import "@labpics/ui-colors/contract.css";
+@import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-shadow/shadow.css";
 
