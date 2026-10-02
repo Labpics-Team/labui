@@ -36,7 +36,7 @@ import {
 } from '../oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-export const CONTRACT_PATH = join(here, '..', '..', 'colors-stub', 'contract.css');
+export const CONTRACT_PATH = join(here, '..', 'contract.css');
 export const TOKENS_CSS_PATH = join(here, '..', '..', 'tokens', 'src', 'generated', 'tokens.css');
 export const REACT_BUTTON_CSS_PATH = join(here, '..', '..', 'react', 'src', 'button.css');
 export const LIT_BUTTON_TS_PATH = join(

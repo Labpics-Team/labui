@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const zlib = require('node:zlib');
 const path = require('node:path');
 
-const contractPath = path.join(__dirname, '..', 'packages', 'colors-stub', 'contract.css');
-const minPath = path.join(__dirname, '..', 'packages', 'colors-stub', 'contract.min.css');
+const contractPath = path.join(__dirname, '..', 'packages', 'colors', 'contract.css');
+const minPath = path.join(__dirname, '..', 'packages', 'colors', 'contract.min.css');
 
 const css = fs.readFileSync(contractPath, 'utf8');
 

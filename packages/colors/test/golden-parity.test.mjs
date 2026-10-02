@@ -15,15 +15,15 @@ import passport from '../labui.config.json' with { type: 'json' };
 import { M_LMS_SRGB, M_OKLAB_LMS, gam, mulv } from '../oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const stubCssPath = join(here, '..', '..', 'colors-stub', 'figma-reference.css');
+const referenceCssPath = join(here, '..', 'figma-reference.css');
 
 /**
- * Исключения сверки — роли, где эмиссия движка НАМЕРЕННО расходится со стабом.
+ * Исключения сверки — роли, где эмиссия движка НАМЕРЕННО расходится со Figma-якорем.
  * Каждая запись обязана нести закон-причину; пустеющий список — цель поезда.
  */
 const EXPECTED_DIVERGENCES = new Map([
   // Сентимент-солвер смещает info от синего бренда (закон разведения оттенка);
-  // стаб несёт до-законные Figma-значения.
+  // Figma-якорь несёт до-законные Figma-значения.
   ['--lab-label-info-primary', 'разведение оттенка с брендом'],
   ['--lab-label-info-secondary', 'разведение оттенка с брендом'],
   ['--lab-label-info-tertiary', 'разведение оттенка с брендом'],
@@ -47,8 +47,8 @@ const EXPECTED_DIVERGENCES = new Map([
   // Figma-акцент — тот на светлой теме проваливал 3:1 (warning/success ~2.0).
   // Движок канон-обоснованно прав (доступность по построению); figma-reference
   // несёт до-законный сырой акцент — владелец реконсайлит Figma отдельным
-  // проходом. brand/danger/neutral/warning есть в стабе → исключение с законом;
-  // success/info в стабе отсутствуют (добавлены позже Figma-якорей).
+  // проходом. brand/danger/neutral/warning есть в Figma-якоре → исключение с законом;
+  // success/info в Figma-якоре отсутствуют (добавлены позже Figma-якорей).
   ['--lab-fx-focus-ring-brand', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
   ['--lab-fx-focus-ring-danger', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
   ['--lab-fx-focus-ring-neutral', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
@@ -57,7 +57,7 @@ const EXPECTED_DIVERGENCES = new Map([
   ['--lab-label-info-quaternary', 'разведение оттенка с брендом'],
   ['--lab-fill-info-quaternary', 'разведение оттенка с брендом'],
   // Лейблы и border-strong — СОЛВЕР, не статические чернила: текст обязан
-  // решаться от фактического фона (LPC + WCAG-пол), статика стаба —
+  // решаться от фактического фона (LPC + WCAG-пол), статика Figma-якоря —
   // до-законный язык; солвер-солид ≈ композиту чернил в паре LSB на
   // дефолтном фоне, но адаптивен на любом.
   ['--lab-label-primary', 'лейбл решается солвером от фона'],
@@ -68,7 +68,7 @@ const EXPECTED_DIVERGENCES = new Map([
   // Вагон M1 (закон пары): сентимент-лейблы мигрировали с «акцент+альфа»
   // на text-anchor тинт-лестницу — паспорт декларирует recipe
   // {kind: text-anchor, floor: aa-text}, солвер тянет тинт от чернил к
-  // акценту от фактического фона; стаб несёт до-законную альфа-лестницу.
+  // акценту от фактического фона; Figma-якорь несёт до-законную альфа-лестницу.
   ['--lab-label-brand-primary', 'M1: text-anchor тинт, солвер от фона'],
   ['--lab-label-brand-secondary', 'M1: text-anchor тинт, солвер от фона'],
   ['--lab-label-brand-tertiary', 'M1: text-anchor тинт, солвер от фона'],
@@ -87,11 +87,11 @@ const EXPECTED_DIVERGENCES = new Map([
   ['--lab-label-warning-quaternary', 'M1: text-anchor тинт, солвер от фона'],
   // Та же сильная ступень для сентиментов: recipe {kind: ladder,
   // position: border-strong, floor: aa-ui} — солвер от фона. brand/danger
-  // совпали со стабом побайтно (решение легло в акцент), потому их тут нет.
+  // совпали со Figma-якорем побайтно (решение легло в акцент), потому их тут нет.
   ['--lab-border-success-strong', 'сильная ступень решается солвером от фона'],
   ['--lab-border-warning-strong', 'сильная ступень решается солвером от фона'],
   // Glow-семья теперь recipe {kind: glow, source: sentiment|brand}: эмиссия
-  // солидом от РЕШЁННОГО солвером источника, а не сырой акцент @52 стаба.
+  // солидом от РЕШЁННОГО солвером источника, а не сырой акцент @52 Figma-якоря.
   ['--lab-fx-glow-brand', 'glow от солвер-источника, не сырой акцент @52'],
   ['--lab-fx-glow-danger', 'glow от солвер-источника, не сырой акцент @52'],
   ['--lab-fx-glow-neutral', 'glow от солвер-источника, не сырой акцент @52'],
@@ -100,11 +100,11 @@ const EXPECTED_DIVERGENCES = new Map([
   // к сырому солиду Neutral/4 вместо лежащего рядом 4@52 — движок @52
   // консистентен и прав.
   ['--lab-fx-glow-inverted', 'Figma-недосмотр: солид вместо @52 всей glow-семьи'],
-  // Провизорный литерал стаба без engine-деривации: закрывается задачей
+  // Провизорный литерал Figma-якоря без engine-деривации: закрывается задачей
   // деривации (точка на растяжке по контракту), не подгонкой.
-  ['--lab-fill-neutral', 'PROVISIONAL стаба; деривация — открытая задача'],
+  ['--lab-fill-neutral', 'PROVISIONAL Figma-якоря; деривация — открытая задача'],
   // Zero-токены: «нет цвета» by design — движок честно не эмитит невидимое,
-  // стаб нёс заглушку той же семантики с α=0.
+  // Figma-якорь нёс заглушку той же семантики с α=0.
   ['--lab-fill-none', 'Zero-токен: невидимость эмитится отсутствием'],
   ['--lab-border-none', 'Zero-токен: невидимость эмитится отсутствием'],
   // Компонентная поверхность контрола (light: белая поверхность, dark:
@@ -112,8 +112,8 @@ const EXPECTED_DIVERGENCES = new Map([
   ['--lab-control-bg', 'компонентная поверхность — маппинг поезда'],
 ]);
 
-/** Разобрать значения --lab-* из scope-блока стаба. Селектор ищется
- * multiline-регэкспом по началу строки: шапка-комментарий стаба упоминает те
+/** Разобрать значения --lab-* из scope-блока Figma-якоря. Селектор ищется
+ * multiline-регэкспом по началу строки: шапка-комментарий Figma-якоря упоминает те
  * же селекторы текстом, и поиск подстрокой цеплял комментарий, беря затем
  * «{» чужого блока — сверка dark читала light-значения. */
 function parseScope(css, scopePattern) {
@@ -158,7 +158,7 @@ function normalise(value) {
     const n = Number.parseInt(hex[1], 16);
     return `rgb(${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255})`;
   }
-  // Единая oklch-форма движка (0.4.0+) сводится к rgb-байтам стаба той же
+  // Единая oklch-форма движка (0.4.0+) сводится к rgb-байтам Figma-якоря той же
   // математикой Oklab, что у границы; альфа проходит насквозь как данные.
   if (value.startsWith('oklch(')) {
     const { rgb, alpha } = oklchToRgbParts(value);
@@ -166,22 +166,22 @@ function normalise(value) {
     return alpha === null || alpha === 1 ? `${base})` : `${base} / ${alpha})`;
   }
   // Солидные лестничные позиции граница печатает как rgb(r g b / 1) —
-  // семантически тот же солид, что rgb(r g b) стаба.
+  // семантически тот же солид, что rgb(r g b) Figma-якоря.
   return value
     .replace(/\s*\/\s*1\)$/, ')')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-describe('золотая сверка: живой движок против стаба', () => {
+describe('золотая сверка: живой движок против Figma-якоря', () => {
   /** @type {{colors: any, fingerprint: string}} */
   let engine;
   /** @type {string} */
-  let stubCss;
+  let referenceCss;
 
   beforeAll(async () => {
     engine = await createLabuiEngine();
-    stubCss = await readFile(stubCssPath, 'utf8');
+    referenceCss = await readFile(referenceCssPath, 'utf8');
   });
 
   it('паспорт не дрейфанул: отпечаток равен пину', () => {
@@ -193,21 +193,21 @@ describe('золотая сверка: живой движок против ст
     ['light', /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m, passport.neutral.anchors.light],
     ['dark', /^\[data-theme="dark"\]\s*\{/m, passport.neutral.anchors.dark],
   ]) {
-    // Боевой гейт поезда: каждое значение стаба воспроизведено движком или
+    // Боевой гейт поезда: каждое значение Figma-якоря воспроизведено движком или
     // исключено ЗАКОНОМ (список исключений с причинами выше). Новое
     // расхождение = красный тест, а не строка в списке.
-    it(`${theme}: каждая переменная стаба воспроизведена движком или исключена законом`, () => {
-      const stub = parseScope(stubCss, scope);
+    it(`${theme}: каждая переменная Figma-якоря воспроизведена движком или исключена законом`, () => {
+      const reference = parseScope(referenceCss, scope);
       const resolved = engine.colors.resolveTheme(bg, theme);
       const live = new Map(Object.entries(resolved.vars));
 
       const unexpected = [];
       const stale = [];
-      for (const [name, stubValue] of stub) {
-        if (stubValue.startsWith('var(')) continue; // алиас-ссылки сверяются целью
+      for (const [name, referenceValue] of reference) {
+        if (referenceValue.startsWith('var(')) continue; // алиас-ссылки сверяются целью
         const liveValue = live.get(name);
         if (liveValue === undefined) {
-          // Роль стаба, которую движок не эмитит: легальна только коллапс-зона
+          // Роль Figma-якоря, которую движок не эмитит: легальна только коллапс-зона
           // (bg-*/static/on-*/material — входы и флаги, не роли эмиссии).
           const collapsed =
             name.startsWith('--lab-bg-') ||
@@ -220,14 +220,14 @@ describe('золотая сверка: живой движок против ст
           if (!collapsed && !EXPECTED_DIVERGENCES.has(name)) stale.push(name);
           continue;
         }
-        if (normalise(liveValue) !== normalise(stubValue)) {
+        if (normalise(liveValue) !== normalise(referenceValue)) {
           if (!EXPECTED_DIVERGENCES.has(name)) {
-            unexpected.push(`${name}: стаб ${stubValue} != движок ${liveValue}`);
+            unexpected.push(`${name}: Figma-якорь ${referenceValue} != движок ${liveValue}`);
           }
         }
       }
       expect(unexpected, 'нелегальные расхождения значений').toEqual([]);
-      expect(stale, 'роли стаба без эмиссии и без закона-исключения').toEqual([]);
+      expect(stale, 'роли Figma-якоря без эмиссии и без закона-исключения').toEqual([]);
     });
   }
 });

@@ -14,18 +14,17 @@
     "test:e2e:update": "playwright test --update-snapshots"
   },
   "dependencies": {
-    "@labpics/colors": "workspace:*",
+    "@labpics/colors": "0.6.2",
     "@labpics/ui-core": "workspace:*",
     "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-react": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
     "@labpics/ui-tokens": "workspace:*",
     "@labpics/ui-vue": "workspace:*",
+    "@labui/colors": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "vue": "3.5.13",
-    "labcolors-engine": "npm:@labpics/colors@0.6.2",
-    "@labui/colors": "workspace:*"
+    "vue": "3.5.13"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",

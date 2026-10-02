@@ -26,7 +26,7 @@ import { describe, expect, it } from 'vitest';
 import { M_LMS_SRGB, M_OKLAB_LMS, degam, gam, hexToLin, mulv, wcagY } from '../oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const contractPath = join(here, '..', '..', 'colors-stub', 'contract.css');
+const contractPath = join(here, '..', 'contract.css');
 
 // Пол WCAG 2.1 AA для обычного текста (крупнотекстовых ролей тут нет).
 const AA_TEXT = 4.5;

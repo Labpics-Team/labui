@@ -11,7 +11,7 @@
  * stand-in values of its own — it reads the real contract, so what the docs
  * show IS the design system.
  */
-@import "@labpics/colors/contract.css";
+@import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-core/theme.css";
 @import "@labpics/ui-core/selection.css";

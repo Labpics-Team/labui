@@ -1,17 +1,15 @@
 /*
  * Shadow-stack demo. Consumes the generated contract from @labpics/ui-shadow and
- * the --lab-* color contract from @labpics/colors. The cards apply a size
+ * the --lab-* color contract from @labui/colors. The cards apply a size
  * (.lab-shadow-*) or a role alias (.lab-elevation-*) inline — never raw plies.
  */
-@import "@labpics/colors/contract.css";
+@import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-shadow/shadow.css";
 
-/* Demo surfaces map onto the @labpics/colors --lab-* contract (surface + label
-   roles). The stub carries a single dark-leaning palette today; the real engine
-   resolves these per theme at runtime. The light-theme block below supplies
-   readable page chrome for the owner's eye until the engine themes the contract
-   — these light literals are demo-only chrome, not part of the shadow contract. */
+/* Demo surfaces map onto the generated Lab UI colour roles. The explicit
+   light-theme literals below are demo-only chrome retained for visual-fixture
+   continuity; they are not part of the shadow or colour contracts. */
 :root {
   --demo-bg: var(--lab-bg-primary);
   --demo-card: var(--lab-bg-secondary);
@@ -19,8 +17,7 @@
   --demo-ink-soft: var(--lab-label-secondary);
 }
 
-/* Demo-only light chrome — the stub contract is single-theme, so the demo pins
-   a readable light page until @labpics/colors resolves --lab-* per theme. */
+/* Demo-only light chrome, intentionally outside the product colour contract. */
 [data-theme="light"] {
   --demo-bg: #f4f4f6;
   --demo-card: #ffffff;

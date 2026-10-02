@@ -253,12 +253,10 @@ describe('no hardcoded colour in packages/* (superset guard)', () => {
 
   // ── (3) Allowlist proofs — a colour literal from an allowlisted file is fine.
   it('IGNORES colour literals in allowlisted files (contract / figma-reference / shadow)', () => {
-    expect(scanSource('packages/colors-stub/contract.css', '--lab-bg-primary: #ffffff;')).toEqual(
+    expect(scanSource('packages/colors/contract.css', '--lab-bg-primary: #ffffff;')).toEqual([]);
+    expect(scanSource('packages/colors/figma-reference.css', 'color: rgba(0,0,0,0.04);')).toEqual(
       [],
     );
-    expect(
-      scanSource('packages/colors-stub/figma-reference.css', 'color: rgba(0,0,0,0.04);'),
-    ).toEqual([]);
     expect(
       scanSource('packages/shadow/src/generated/shadow.css', '--lab-shadow-color: #101012;'),
     ).toEqual([]);

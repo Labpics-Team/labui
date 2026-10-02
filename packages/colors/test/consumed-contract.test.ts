@@ -32,7 +32,7 @@ import {
 
 // ── Shared scope helpers (mirror of contract.test.ts, kept local so the two
 // suites stay independent — a change to one cannot silently weaken the other).
-const css = readFileSync(resolve(repoRoot, 'packages/colors-stub/contract.css'), 'utf8');
+const css = readFileSync(resolve(repoRoot, 'packages/colors/contract.css'), 'utf8');
 
 function scopeBody(source: string, selectorPrefix: string): string {
   const start = source.indexOf(selectorPrefix);
@@ -111,7 +111,7 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     const missing = missingColourRoles(consumedRoles(), known);
     expect(
       missing,
-      `consumed names matching a semantic colour-role prefix but ABSENT from roles.json (a dropped/renamed role — add it to the colour contract upstream, do NOT edit the stub to hide it):\n${missing.map((m) => `  ${m}`).join('\n')}`,
+      `consumed names matching a semantic colour-role prefix but ABSENT from roles.json (a dropped/renamed role — add it to the colour contract upstream, do NOT edit the generated contract artifact to hide it):\n${missing.map((m) => `  ${m}`).join('\n')}`,
     ).toEqual([]);
   });
 

@@ -7,7 +7,7 @@
  *
  *   1. `colour-contract` — a semantic colour role owned by @labpics/colors and
  *      mirrored in `roles.json` (any group). THIS is the surface the pin test
- *      asserts against the stub.
+ *      asserts against the generated Lab UI colour contract.
  *   2. `dimension` — owned by @labpics/ui-tokens, generated locally; matches a
  *      prefix in `core/src/css.ts` `DIMENSION_PREFIXES`.
  *   3. `local-or-gap` — provisional tokens labui declares today (shadow stack,
@@ -30,14 +30,14 @@ import { fileURLToPath } from 'node:url';
 import { stripComments } from './no-magic-dimension.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-/** Repo root — from `test/` inside `packages/colors-stub`, three levels up. */
+/** Repo root — from `test/` inside `packages/colors`, three levels up. */
 export const repoRoot = resolve(here, '..', '..', '..');
 
 /**
  * Read a `export const NAME = [ '--lab-x-', ... ] as const;` prefix array out of
  * `packages/core/src/css.ts` as the SINGLE source of truth — no second copy of
  * the boundary rule lives here (DIP). css.ts is build-free TS we parse as text
- * so the colors-stub test does not depend on @labpics/ui-core being built.
+ * so the color-contract test does not depend on @labpics/ui-core being built.
  */
 function readCssTsPrefixConst(constName: string): string[] {
   const src = readFileSync(resolve(repoRoot, 'packages/core/src/css.ts'), 'utf8');
@@ -90,7 +90,7 @@ export interface SeenAt {
 let rolesCache: ReadonlySet<string> | null = null;
 function colourContractRoles(): ReadonlySet<string> {
   if (rolesCache) return rolesCache;
-  const raw = readFileSync(resolve(repoRoot, 'packages/colors-stub/roles.json'), 'utf8');
+  const raw = readFileSync(resolve(repoRoot, 'packages/colors/roles.json'), 'utf8');
   const parsed = JSON.parse(raw) as { groups?: Record<string, string[]>; aliases?: string[] };
   if (parsed?.groups == null || typeof parsed.groups !== 'object') {
     throw new Error('roles.json: missing or malformed "groups" object');
@@ -120,13 +120,13 @@ export function consumerFiles(): string[] {
   const ignoredDirs = new Set(['node_modules', 'dist']);
   const ignoredFiles = new Set([
     'packages/core/src/css.ts',
-    'packages/colors-stub/roles.json',
-    'packages/colors-stub/test/no-literal-colour-fallback.ts',
-    'packages/colors-stub/test/no-literal-colour-fallback.test.ts',
-    'packages/colors-stub/test/consumed-contract.ts',
-    'packages/colors-stub/test/consumed-contract.test.ts',
-    'packages/colors-stub/test/no-hardcoded-colour.ts',
-    'packages/colors-stub/test/no-hardcoded-colour.test.ts',
+    'packages/colors/roles.json',
+    'packages/colors/test/no-literal-colour-fallback.ts',
+    'packages/colors/test/no-literal-colour-fallback.test.ts',
+    'packages/colors/test/consumed-contract.ts',
+    'packages/colors/test/consumed-contract.test.ts',
+    'packages/colors/test/no-hardcoded-colour.ts',
+    'packages/colors/test/no-hardcoded-colour.test.ts',
   ]);
 
   const walk = (relDir: string): void => {

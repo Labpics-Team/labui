@@ -127,7 +127,7 @@ describe('evaluateTier — the α-boundary decision bites', () => {
   });
 });
 
-describe('guarantee over the LIVE contract (parsed from colors-stub/contract.css)', () => {
+describe('guarantee over the LIVE contract (parsed from colors/contract.css)', () => {
   const { fills, labelCandidatesByTheme } = readContractMaterials();
   const report = guaranteeReport(fills, labelCandidatesByTheme);
   const guaranteedKeys = new Set(report.guaranteed.map(verdictKey));

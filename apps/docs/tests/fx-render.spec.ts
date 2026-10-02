@@ -19,7 +19,7 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..');
-const contractPath = join(repoRoot, 'packages', 'colors-stub', 'contract.css');
+const contractPath = join(repoRoot, 'packages', 'colors', 'contract.css');
 
 interface BBox {
   x: number;

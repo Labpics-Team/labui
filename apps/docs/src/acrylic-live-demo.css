@@ -7,7 +7,7 @@
  * дальше досягаемости выборки фильтра (регион −25%…150% бокса), поэтому каждая
  * читает СВОЁ поле без подмеса соседнего.
  */
-@import "@labpics/colors/contract.css";
+@import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-materials/material.css";
 

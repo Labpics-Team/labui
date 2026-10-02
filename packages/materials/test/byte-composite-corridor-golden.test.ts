@@ -17,7 +17,7 @@ import { readContractMaterials } from './contract-values';
  * derived), and when you do: bump GOLDEN_VERSION, add a CHANGELOG line with the
  * reason, and re-capture. Never a silent overwrite.
  *
- * PROVENANCE: captured 2026-07-06 from `packages/colors-stub/contract.css`, whose
+ * PROVENANCE: captured 2026-07-06 from `packages/colors/contract.css`, whose
  * material emissions are still `мост: Figma-якорь` provisional alphas (see the
  * package README "Unguaranteed pairs"). Byte-identical to lab-colors' SSOT
  * quantiser on this domain — proven tie-free by `byte-composite-golden.test.ts`.

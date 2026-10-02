@@ -49,12 +49,12 @@ export const SHADOW_ALLOWLIST: readonly string[] = [
   'packages/shadow/src/generated/shadow.css',
   'packages/shadow/src/config.ts',
   'packages/shadow/src/generate-css.ts',
-  'packages/colors-stub/contract.css',
+  'packages/colors/contract.css',
   // These test files contain box-shadow probe strings inside JS string literals,
   // not actual shadow usage. The scanner reads raw text and cannot distinguish
   // a probe inside a string from a real declaration — allowlist is the correct fix.
-  'packages/colors-stub/test/no-hardcoded-colour.test.ts',
-  'packages/colors-stub/test/no-literal-colour-fallback.test.ts',
+  'packages/colors/test/no-hardcoded-colour.test.ts',
+  'packages/colors/test/no-literal-colour-fallback.test.ts',
 ];
 
 /** A literal CSS length unit — the marker of hardcoded geometry. */

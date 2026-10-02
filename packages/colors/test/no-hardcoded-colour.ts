@@ -44,7 +44,7 @@ import {
  * The ONLY files where a literal colour value is legitimate — the system
  * boundary where colour values are DECLARED, not consumed:
  *   - `contract.css` — the colour contract; it IS the values (the @labpics/colors
- *     stub). Shape pinned by `contract.test.ts`.
+ *     generated contract). Shape pinned by `contract.test.ts`.
  *   - `generated/shadow.css` — provisional shadow anchor + JND alphas (same gap
  *     record). Also covered by `/src/generated/`; listed for an explicit record.
  *   - `shadow/src/config.ts` — the source-of-truth that GENERATES shadow.css; it
@@ -54,13 +54,13 @@ import {
  * by substituting the correct `--lab-*` role upstream.
  */
 export const ALLOWLIST: readonly string[] = [
-  'packages/colors-stub/contract.css',
+  'packages/colors/contract.css',
   // The minified contract is the published artifact for perf (byte-identical values, ws/comments stripped).
   // It legitimately contains the colour literals from the contract; exempt like contract.css itself.
-  'packages/colors-stub/contract.min.css',
+  'packages/colors/contract.min.css',
   // Замороженный Figma-якорь: он ЕСТЬ сырые замеры (включая material rgb-литералы),
   // против него меряет золотая сверка — не компонентный код, не редактируется.
-  'packages/colors-stub/figma-reference.css',
+  'packages/colors/figma-reference.css',
   'packages/shadow/src/generated/shadow.css',
   'packages/shadow/src/config.ts',
 ];

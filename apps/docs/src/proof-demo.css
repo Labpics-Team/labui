@@ -1,19 +1,13 @@
 /*
  * PROOF demo page styles — and DEMO-ONLY role values.
  *
- * The `<lab-proof>` element reads semantic `--lab-*` roles it does not own
- * (Fills/Labels/Border/FX). Those roles are produced by @labpics/colors; the
- * stub in this repo defines only a handful. To make the proof VISIBLE and to let
- * the smoke prove theme-switching re-skins it with zero element edits, this page
- * binds the roles the proof reads to demo stand-in values under [data-theme].
- *
- * These are page-level demo values, NEVER part of the component. They live here,
- * not in the element, which is the whole point: a theme is a binding of roles on
- * an ancestor. When @labpics/colors lands, delete this block — the proof follows
- * the real roles unchanged.
+ * The `<lab-proof>` element reads semantic `--lab-*` roles it does not own.
+ * This fixture deliberately rebinds a small role subset under [data-theme] so the
+ * smoke test proves that the component follows ancestor semantics with zero element
+ * edits. These values are demo-only test inputs, not a fallback colour contract.
  */
 
-@import "@labpics/colors/contract.css";
+@import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-core/theme.css";
 @import "@labpics/ui-core/selection.css";

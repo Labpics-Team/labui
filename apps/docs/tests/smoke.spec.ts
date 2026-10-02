@@ -33,7 +33,7 @@ test('heading applies the --lab-label-primary token from @labpics/colors', async
   const tokenValue = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--lab-label-primary').trim(),
   );
-  // Contract must actually be loaded (stub or real package).
+  // The generated Lab UI colour contract must actually be loaded.
   expect(tokenValue.length).toBeGreaterThan(0);
 
   // The heading's resolved color must equal the token — i.e. it comes from the

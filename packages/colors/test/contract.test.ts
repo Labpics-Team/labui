@@ -7,10 +7,10 @@ import { describe, expect, it } from 'vitest';
  * Drift guard for the static --lab-* color contract.
  *
  * roles.json is the canonical list of semantic role names that components consume.
- * contract.css is the hand-pinned static stub that declares them. This test asserts
+ * contract.css is the generated Lab UI artifact that declares them. This test asserts
  * the CSS exposes exactly the contracted role set in every theme scope, so that:
  *   - dropping or renaming a role (a breaking change for consumers) fails CI, and
- *   - swapping this stub for the published @labpics/colors stays a no-op.
+ *   - consumers depend only on the stable --lab-* role surface, not engine internals.
  *
  * It does NOT assert color values — those are placeholder constants owned by the
  * resolver, calibrated by the design owner, and intentionally out of scope here.
@@ -71,10 +71,10 @@ describe('--lab-* semantic color contract', () => {
   });
 
   it('carries no legacy back-compat aliases — consumers read only canonical roles', () => {
-    // The original 5-var stub aliases (--lab-surface-base/-raised, --lab-accent)
+    // The original 5-var bridge aliases (--lab-surface-base/-raised, --lab-accent)
     // were retired once every consumer moved to the systematic --lab-bg-*/--lab-label-*
     // roles the published @labpics/colors engine emits. Guard against reintroduction so
-    // the swap to the live engine stays a no-op (a stub-only alias would silently vanish).
+    // the generated contract stays compatible (a bridge-only alias would silently vanish).
     expect(roles.aliases, 'roles.json must declare no aliases').toEqual([]);
     const LEGACY = ['--lab-surface-base', '--lab-surface-raised', '--lab-accent'];
     const resurrected = LEGACY.filter((r) => declares(lightBody, r));

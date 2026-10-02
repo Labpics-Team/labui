@@ -73,7 +73,7 @@ import {
 } from '../level-law.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const css = await readFile(join(here, '..', '..', 'colors-stub', 'contract.css'), 'utf8');
+const css = await readFile(join(here, '..', 'contract.css'), 'utf8');
 const S = parseScopes(css);
 const cfg = JSON.parse(await readFile(join(here, '..', 'labui.config.json'), 'utf8'));
 const { colors, fingerprint } = await createLabuiEngine();

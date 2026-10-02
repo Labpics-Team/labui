@@ -218,7 +218,7 @@ describe('FX-семья: skeleton — база ушла в Fill, шиммер о
 // отсутствуют в контракте, монотонность subtle<base<bloom невыразима — alpha
 // ступеней нет). Провенанс значений — живая эмиссия @labpics/colors, не литерал.
 describe('FX-семья: пропагация в опубликованный контракт', () => {
-  const stubDir = join(here, '..', '..', 'colors-stub');
+  const contractDir = join(here, '..');
   /** @type {string} */
   let contractCss;
   /** @type {{ groups: Record<string, string[]> }} */
@@ -227,8 +227,8 @@ describe('FX-семья: пропагация в опубликованный к
   let darkBody;
 
   beforeAll(async () => {
-    contractCss = await readFile(join(stubDir, 'contract.css'), 'utf8');
-    rolesJson = JSON.parse(await readFile(join(stubDir, 'roles.json'), 'utf8'));
+    contractCss = await readFile(join(contractDir, 'contract.css'), 'utf8');
+    rolesJson = JSON.parse(await readFile(join(contractDir, 'roles.json'), 'utf8'));
     darkBody = scopeBody(contractCss, '[data-theme="dark"]');
   });
 

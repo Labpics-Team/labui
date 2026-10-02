@@ -26,7 +26,7 @@ import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-/** Repo root — colors-stub is `packages/colors-stub`, so two levels up. */
+/** Repo root — colors is `packages/colors`, so two levels up. */
 export const repoRoot = resolve(here, '..', '..', '..');
 
 /**

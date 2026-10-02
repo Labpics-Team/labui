@@ -37,7 +37,7 @@ function glowVar(sentiment, step, suffix = '') {
  * чистого фона (референс backdrop-люминанса). Потребляет ЖИВЫЕ custom-props из
  * inline-контракта под [data-theme="dark"].
  *
- * @param {string} contractCss  содержимое colors-stub/contract.css
+ * @param {string} contractCss  содержимое colors/contract.css
  * @param {{flatten?: boolean, dropGlow?: string, dropFocus?: string}} [opts]
  *   flatten   — сплющить ступени (subtle=base=bloom): монотонность РУШИТСЯ (bite).
  *   dropGlow  — убрать glow-токены сентимента (эмуляция «токен не дошёл»): свотч

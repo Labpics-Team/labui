@@ -37,7 +37,7 @@ export const buttonDoc: ComponentDoc = {
     'The primary action control. Three intents (accent / neutral / danger) across four surface kinds (fill / tinted / border / ghost) and three sizes, with icon-only, loading, and disabled states — built only on semantic --lab-* roles, identical on the Lit and native-React renderers.',
   // Beta, honestly: the API and behaviour are production and frozen, but two
   // colour roles it pairs (the SOLID neutral fill + its on-fill label) are
-  // PROVISIONAL in the colour stub, awaiting the owner's visual sign-off. That
+  // PROVISIONAL in the generated colour contract, awaiting the owner's visual sign-off. That
   // is a calibration, not an API risk — hence beta, not stable.
   status: {
     kind: 'beta',

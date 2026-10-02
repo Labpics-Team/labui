@@ -2,11 +2,28 @@
   "name": "@labui/colors",
   "version": "0.0.0",
   "private": true,
-  "description": "labui-СЃС‚РѕСЂРѕРЅР° С†РІРµС‚РѕРІРѕРіРѕ РґРІРёР¶РєР°: РїР°СЃРїРѕСЂС‚ Р±СЂРµРЅРґР° (labui.config.json) + РіРµРЅРµСЂР°С†РёСЏ baseline Рё Р·РѕР»РѕС‚Р°СЏ СЃРІРµСЂРєР° СЃРѕ СЃС‚Р°Р±РѕРј С‡РµСЂРµР· РѕРїСѓР±Р»РёРєРѕРІР°РЅРЅС‹Р№ @labpics/colors.",
-  "type": "module",
+  "description": "Lab UI color boundary: Figma-derived reference, generated semantic CSS contract, and conformance checks over @labpics/colors.",
   "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    "./contract.css": "./contract.css",
+    "./contract.min.css": "./contract.min.css",
+    "./roles.json": "./roles.json",
+    "./labui.config.json": "./labui.config.json",
+    "./prepare-config.mjs": "./prepare-config.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "contract.css",
+    "contract.min.css",
+    "roles.json",
+    "labui.config.json",
+    "prepare-config.mjs"
+  ],
   "scripts": {
     "generate": "node generate-contract.mjs",
+    "build": "node generate-contract.mjs && node ../../scripts/minify-contract.cjs",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "fx:render": "node test/fx-render/render-fx.mjs",
     "measure:overlays": "node test/state-overlay-economy.mjs"
@@ -15,6 +32,8 @@
     "@labpics/colors": "0.6.2"
   },
   "devDependencies": {
+    "@types/node": "22.10.5",
+    "typescript": "5.7.3",
     "vitest": "3.2.6"
   }
 }

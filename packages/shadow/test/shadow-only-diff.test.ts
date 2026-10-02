@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
  * the shadow-package namespace: it declares ONLY `--lab-shadow-*`,
  * `--lab-elevation-*`, and `--lab-light-angle` tokens, and does NOT declare
  * or delete any component colour-contract token (no `--lab-label-*`,
- * `--lab-fill-*`, `--lab-border-*`, etc.) or any colors-stub role.
+ * `--lab-fill-*`, `--lab-border-*`, etc.) or any colors role.
  *
  * This catches the class of accidental cross-contamination where a shadow
  * rebuild inadvertently alters the colour contract namespace.
