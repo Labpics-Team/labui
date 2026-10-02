@@ -17,7 +17,7 @@ function fontSizePx(page: import('@playwright/test').Page, testId: string): Prom
 test('tokens.css contract is loaded (--lab-space-0 defined as the zero token)', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/_fixtures/tokens.html');
   const space0 = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--lab-space-0').trim(),
   );
@@ -28,7 +28,7 @@ test('a fixed spacing token resolves to its expected px (32px = --lab-space-8)',
   page,
 }) => {
   await page.setViewportSize({ width: 1000, height: 800 });
-  await page.goto('/');
+  await page.goto('/_fixtures/tokens.html');
   const width = await page
     .getByTestId('space-probe')
     .evaluate((el) => Number.parseFloat(getComputedStyle(el).width));
@@ -39,7 +39,7 @@ test('a fixed spacing token resolves to its expected px (32px = --lab-space-8)',
 test('fluid display step interpolates: 400px viewport renders SMALLER than 1400px', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/_fixtures/tokens.html');
 
   await page.setViewportSize({ width: 400, height: 900 });
   const displayNarrow = await fontSizePx(page, 'display-step');
@@ -58,7 +58,7 @@ test('fluid display step interpolates: 400px viewport renders SMALLER than 1400p
 });
 
 test('base step is immovable at 16px across viewport widths', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/_fixtures/tokens.html');
 
   await page.setViewportSize({ width: 400, height: 900 });
   const baseNarrow = await fontSizePx(page, 'base-step');
@@ -74,7 +74,7 @@ test('base step is immovable at 16px across viewport widths', async ({ page }) =
 test('display step is continuous: an intermediate width sits strictly between the anchors', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/_fixtures/tokens.html');
 
   await page.setViewportSize({ width: 400, height: 900 });
   const narrow = await fontSizePx(page, 'display-step');

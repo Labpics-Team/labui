@@ -62,7 +62,7 @@ function readBackgroundImage(page: Page, testId: string): Promise<string> {
 const hasLiveBlur = (filter: string): boolean => /blur\((?!0px\))/.test(filter);
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/materials-flag.html');
+  await page.goto('/_fixtures/materials-flag.html');
   // Kill transitions/animations before any measurement (avoids mid-frame reads).
   await page.addStyleTag({
     content: '*,*::before,*::after{transition:none!important;animation:none!important}',

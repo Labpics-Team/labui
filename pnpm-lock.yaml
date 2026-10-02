@@ -32,9 +32,6 @@ importers:
 
   apps/docs:
     dependencies:
-      '@labpics/colors':
-        specifier: 0.6.2
-        version: 0.6.2
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../../packages/core

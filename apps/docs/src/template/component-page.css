@@ -6,7 +6,7 @@
  * material-agnosticism: flipping [data-theme] / [data-material] on the root
  * re-skins everything below with no rule edits.
  *
- * Colour roles come entirely from the imported @labpics/colors contract (the
+ * Colour roles come entirely from the imported @labui/colors contract (the
  * full Light/Dark --lab-* set is already pinned there). The page binds no
  * stand-in values of its own — it reads the real contract, so what the docs
  * show IS the design system.

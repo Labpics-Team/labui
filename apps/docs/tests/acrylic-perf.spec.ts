@@ -67,7 +67,7 @@ test.describe('acrylic v2 — перф-паритет (Chromium)', () => {
 
   test('медианный кадр: acrylic-движок класса стекла, не хуже', async ({ page }, testInfo) => {
     test.setTimeout(120_000);
-    await page.goto('/acrylic-live.html');
+    await page.goto('/_fixtures/acrylic-live.html');
     await expect(page.getByTestId('live-status')).toContainText('runtime: mounted');
 
     // Движущийся контент ПОД панелями: композиторная transform-анимация

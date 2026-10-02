@@ -12,7 +12,7 @@ import { normalizeCssColor, relativeLuminance } from './support/color.js';
 /*
  * Acrylic v2 LIVE — браузерный дифференциал luminosity-зажима (ADR-0009).
  *
- * Полигон (`acrylic-live.html`): два экстремальных поля фона (чистый чёрный /
+ * Полигон (`_fixtures/acrylic-live.html`): два экстремальных поля фона (чистый чёрный /
  * чистый белый — углы коридора гарантии) и SOFT-панель над каждым; рантайм
  * смонтирован. Спек доказывает НА РЕАЛЬНЫХ ПИКСЕЛЯХ композитора:
  *   1. Движок держит поверхность: computed backdrop-filter = url(#lab-acrylic-…).
@@ -107,7 +107,7 @@ async function readSoftTint(page: Page): Promise<{ r: number; g: number; b: numb
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/acrylic-live.html');
+  await page.goto('/_fixtures/acrylic-live.html');
   await page.addStyleTag({
     content: '*,*::before,*::after{transition:none!important;animation:none!important}',
   });

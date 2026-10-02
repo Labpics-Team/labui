@@ -1,0 +1,30 @@
+@import "@labui/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lab-space-md);
+  padding: var(--lab-space-lg);
+}
+
+.display-step {
+  font-size: var(--lab-font-size-6xl);
+  line-height: var(--lab-line-height-6xl);
+}
+
+.base-step {
+  font-size: var(--lab-font-size-md);
+  line-height: var(--lab-line-height-md);
+}
+
+.space-probe {
+  display: block;
+  width: var(--lab-space-8);
+  height: var(--lab-space-8);
+}

@@ -11,10 +11,10 @@
     "preview": "vite preview --host 127.0.0.1 --port 4321 --strictPort",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "test:e2e:update": "playwright test --update-snapshots"
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test": "node --test tests/docs-boundary.test.mjs"
   },
   "dependencies": {
-    "@labpics/colors": "0.6.2",
     "@labpics/ui-core": "workspace:*",
     "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-react": "workspace:*",

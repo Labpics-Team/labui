@@ -1,11 +1,9 @@
 /*
  * Consume the Lab UI --lab-* colour contract.
  *
- * The @import below pulls the generated contract from @labui/colors.
- * @labpics/colors remains the computation engine behind generation; consumers
- * never import its runtime merely to paint semantic roles. The smoke test asserts
- * that the heading's computed color equals the --lab-label-primary token resolved from
- * the package — proving the integration point works, not a hardcoded hex.
+ * @labui/colors is the generated Lab UI colour contract. The computation
+ * engine stays behind the build boundary; docs consume semantic CSS only.
+ * The smoke test mutates --lab-label-primary and verifies the heading follows it.
  */
 @import "@labui/colors/contract.css";
 
@@ -37,34 +35,4 @@ h1[data-testid="title"] {
 p[data-testid="tagline"] {
   color: var(--lab-label-secondary);
   margin: 0;
-}
-
-/* Token fixtures — read by the e2e smoke. */
-[data-testid="tokens-demo"] {
-  display: flex;
-  flex-direction: column;
-  gap: var(--lab-space-md);
-  margin-top: var(--lab-space-lg);
-}
-
-.display-step {
-  /* The largest fluid step — must grow with viewport width (gradient, no steps). */
-  font-size: var(--lab-font-size-6xl);
-  line-height: var(--lab-line-height-6xl);
-  color: var(--lab-label-primary);
-}
-
-.base-step {
-  /* The immovable base — 16px at every width. */
-  font-size: var(--lab-font-size-md);
-  line-height: var(--lab-line-height-md);
-  color: var(--lab-label-secondary);
-}
-
-.space-probe {
-  /* A fixed-token box so the e2e can read a resolved --lab-space-* value. */
-  display: block;
-  width: var(--lab-space-8); /* 2rem = 32px on a 16px root */
-  height: var(--lab-space-8);
-  background: var(--lab-label-secondary);
 }

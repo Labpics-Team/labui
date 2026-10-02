@@ -9,7 +9,7 @@ import { expect, test } from '@playwright/test';
  * Класс-риск, который этот сьют держит: `corner-shape` НЕ наследуется, а слои
  * материала (ободок/зерно) живут на `border-radius: inherit` — расхождение
  * формы панели и её слоёв было бы визуальным дефектом, невидимым юнит-тестам.
- * Поверхность-проба — `surface-card` флаг-демо (`materials-flag.html`); старая
+ * Поверхность-проба — `surface-card` флаг-демо (`_fixtures/materials-flag.html`); старая
  * страница `materials.html` снесена вместе с core-шимами (#41).
  *
  * В браузерах без поддержки (webkit на сегодня) computed-значение пустое —
@@ -36,7 +36,7 @@ async function cornerShape(
 }
 
 test('стекло: панель и её слои несут одну форму угла (light DOM)', async ({ page }) => {
-  await page.goto('/materials-flag.html');
+  await page.goto('/_fixtures/materials-flag.html');
   // Меряем в режиме glass — именно там у поверхности появляются слои.
   await page.evaluate(() => {
     document.documentElement.setAttribute('data-material', 'glass');
@@ -66,7 +66,7 @@ test('shadow DOM: компоненты получают форму через La
 });
 
 test('ручка токена управляет формой (identity-настройка клиента)', async ({ page }) => {
-  await page.goto('/materials-flag.html');
+  await page.goto('/_fixtures/materials-flag.html');
   const before = await cornerShape(page, '[data-testid="surface-card"]');
   test.skip(before === '', 'браузер без corner-shape');
   await page.evaluate(() => {
