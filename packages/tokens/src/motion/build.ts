@@ -124,7 +124,7 @@ function resolveDuration(name: DurationPrimitiveName): ResolvedDuration {
 function resolveEasing(name: EasingPrimitiveName): ResolvedEasing {
   const primitive = easingPrimitive(name);
   requireProvenance(primitive.provenance, `easing "${name}"`);
-  const [x1, y1, x2, y2] = primitive.bezier;
+  const [x1, , x2] = primitive.bezier;
   if (x1 < 0 || x1 > 1 || x2 < 0 || x2 > 1) {
     throw new Error(`Owned easing "${name}" has x control points outside [0,1]`);
   }
