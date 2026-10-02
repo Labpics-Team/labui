@@ -11,8 +11,8 @@
         "$extensions": {
           "com.labpics.motion": {
             "provenance": {
-              "class": "e",
-              "source": "design-choice: explicit zero anchor (repo law — every scale defines its zero) and the reduced-motion snap target"
+              "class": "b",
+              "source": "physical primitive owned by @labpics/motion/tokens (duration.instant); Lab UI only binds semantic roles"
             }
           }
         }
@@ -28,7 +28,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "Fluent durationFaster = 100ms (§2); M3 short2 = 100ms (§1.1)"
+              "source": "physical primitive owned by @labpics/motion/tokens (duration.fast); Lab UI only binds semantic roles"
             }
           }
         }
@@ -44,7 +44,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "Fluent durationNormal = 200ms (§2); M3 short4 = 200ms (§1.1)"
+              "source": "physical primitive owned by @labpics/motion/tokens (duration.base); Lab UI only binds semantic roles"
             }
           }
         }
@@ -60,7 +60,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "M3 medium2 = 300ms (§1.1); Carbon moderate-02 = 240ms neighbour (§3)"
+              "source": "physical primitive owned by @labpics/motion/tokens (duration.slow); Lab UI only binds semantic roles"
             }
           }
         }
@@ -76,7 +76,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "M3 long2 = 500ms (§1.1); Fluent upper duration band ≈ 500ms (§2)"
+              "source": "physical primitive owned by @labpics/motion/tokens (duration.slower); Lab UI only binds semantic roles"
             }
           }
         }
@@ -96,7 +96,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "M3 easing-standard official = cubic-bezier(0.2,0,0,1) (§1.1)"
+              "source": "physical primitive owned by @labpics/motion/tokens (easing.standard); Lab UI only binds semantic roles"
             }
           }
         }
@@ -114,7 +114,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "M3 easing-standard-decelerate official = cubic-bezier(0,0,0,1) (§1.1)"
+              "source": "physical primitive owned by @labpics/motion/tokens (easing.decelerate); Lab UI only binds semantic roles"
             }
           }
         }
@@ -132,7 +132,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "M3 easing-standard-accelerate official = cubic-bezier(0.3,0,1,1) (§1.1)"
+              "source": "physical primitive owned by @labpics/motion/tokens (easing.accelerate); Lab UI only binds semantic roles"
             }
           }
         }
@@ -150,7 +150,7 @@
           "com.labpics.motion": {
             "provenance": {
               "class": "b",
-              "source": "M3 Expressive Spatial default web-fallback = cubic-bezier(0.38,1.21,0.22,1) (§1.2). Caveat: secondary source (CodePen repro of the M3 spec) — verify against m3.material.io before a value bump. y1=1.21 is the single restrained overshoot."
+              "source": "physical primitive owned by @labpics/motion/tokens (easing.emphasized); Lab UI only binds semantic roles"
             }
           }
         }
@@ -194,12 +194,12 @@
             },
             "provenance": {
               "duration": {
-                "class": "e",
-                "source": "design-choice: 0.35s, aligned to the base/slow duration band"
+                "class": "b",
+                "source": "physical primitive owned by @labpics/motion/tokens (spring.smooth); Lab UI only binds semantic roles"
               },
               "bounce": {
                 "class": "b",
-                "source": "bounce 0 = critical damping, no overshoot (§6; matches M3 effects dampingRatio = 1, §1.2)"
+                "source": "physical primitive owned by @labpics/motion/tokens (spring.smooth); Lab UI only binds semantic roles"
               }
             }
           }
@@ -242,12 +242,12 @@
             },
             "provenance": {
               "duration": {
-                "class": "e",
-                "source": "design-choice: 0.5s perceptual duration, aligned to the slower band"
+                "class": "b",
+                "source": "physical primitive owned by @labpics/motion/tokens (spring.expressive); Lab UI only binds semantic roles"
               },
               "bounce": {
-                "class": "e",
-                "source": "design-choice: bounce 0.3 (dampingRatio 0.7) → ~4.6% overshoot, a restrained bounce. Category grounded on M3 Expressive spatial (damping < standard, §1.2); the (duration,bounce) model is grounded (§6 / Stage 0)."
+                "class": "b",
+                "source": "physical primitive owned by @labpics/motion/tokens (spring.expressive); Lab UI only binds semantic roles"
               }
             }
           }

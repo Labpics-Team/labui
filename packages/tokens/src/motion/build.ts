@@ -1,33 +1,32 @@
 import type {
-  DurationSpec,
-  EasingSpec,
   MotionConfig,
   Provenance,
   SemanticSpec,
   SpringCategory,
   SpringSpec,
 } from './model.js';
-import { type SpringPhysics, resolveSpringPhysics, springLinear } from './spring.js';
+import {
+  DURATION_NAMES,
+  EASING_NAMES,
+  durationPrimitive,
+  easingPrimitive,
+  springPrimitive,
+  type DurationPrimitiveName,
+  type EasingPrimitiveName,
+} from './primitives.js';
+import { describeSpringPhysics, type SpringPhysics, springLinear } from './spring.js';
 
 /**
- * Resolve the motion config into the framework-free intermediate every
- * generator (CSS / DTCG / TS) renders from — guaranteeing no divergence, the
- * same contract the dimension pipeline holds.
- *
- * Resolution also VALIDATES the schema: every semantic reference must point at
- * a real physical token, and every (b) provenance must carry a source. A broken
- * reference or a fake-(b) fails the build loudly instead of emitting a silently
- * corrupt artifact.
+ * Resolve Lab UI semantic bindings over physical primitives owned by
+ * @labpics/motion. The resolved intermediate feeds CSS, DTCG and TS generators.
  */
 
 const PREFIX = 'lab';
 const NS = 'motion';
 
-/** `--lab-motion-<segments...>`. The one place motion var names are built. */
 export function motionVar(...segments: string[]): string {
   return `--${PREFIX}-${NS}-${segments.join('-')}`;
 }
-
 export interface ResolvedDuration {
   readonly name: string;
   readonly ms: number;
@@ -39,7 +38,6 @@ export interface ResolvedDuration {
 export interface ResolvedEasing {
   readonly name: string;
   readonly bezier: readonly [number, number, number, number];
-  /** `cubic-bezier(...)` CSS string. */
   readonly css: string;
   readonly cssVar: string;
   readonly provenance: Provenance;
@@ -53,14 +51,10 @@ export interface ResolvedSpring {
   readonly durationMs: number;
   readonly bounce: number;
   readonly physics: SpringPhysics;
-  /** Generated CSS `linear(...)` sample — the faithful web fallback. */
   readonly linear: string;
-  /** Cubic-bezier fallback (the referenced easing's points) for degraded tools. */
   readonly fallbackBezier: readonly [number, number, number, number];
   readonly fallbackEasingName: string;
-  /** `--lab-motion-spring-<name>` (holds the `linear()`). */
   readonly cssVar: string;
-  /** `--lab-motion-spring-<name>-duration` (holds `<ms>ms`, pairs with the linear()). */
   readonly durationCssVar: string;
   readonly provenanceBounce: Provenance;
   readonly provenanceDuration: Provenance;
@@ -72,11 +66,8 @@ export interface ResolvedSemantic {
   readonly durationName: string;
   readonly easingName: string;
   readonly springName?: string;
-  /** `var(--lab-motion-duration-<duration>)`. */
   readonly durationRef: string;
-  /** `var(--lab-motion-easing-<easing>)`. */
   readonly easingRef: string;
-  /** `var(--lab-motion-spring-<spring>)`, when the role has a spring. */
   readonly springRef?: string;
   readonly cssVars: {
     readonly duration: string;
@@ -99,10 +90,9 @@ export interface ResolvedMotion {
   readonly semantics: readonly ResolvedSemantic[];
 }
 
-/** Resolve a motion config into the full token set (pure; no I/O). */
 export function buildMotion(config: MotionConfig): ResolvedMotion {
-  const durations = config.durations.map(resolveDuration);
-  const easings = config.easings.map(resolveEasing);
+  const durations = DURATION_NAMES.map(resolveDuration);
+  const easings = EASING_NAMES.map(resolveEasing);
 
   const durationNames = new Set(durations.map((d) => d.name));
   const easingNames = new Set(easings.map((e) => e.name));
@@ -116,120 +106,116 @@ export function buildMotion(config: MotionConfig): ResolvedMotion {
 
   return { durations, easings, springs, semantics };
 }
-
-function resolveDuration(d: DurationSpec): ResolvedDuration {
-  requireProvenance(d.provenance, `duration "${d.name}"`);
-  if (!Number.isFinite(d.ms) || d.ms < 0) {
-    throw new Error(`Duration "${d.name}" must be a non-negative number, got ${d.ms}`);
+function resolveDuration(name: DurationPrimitiveName): ResolvedDuration {
+  const primitive = durationPrimitive(name);
+  requireProvenance(primitive.provenance, `duration "${name}"`);
+  if (!Number.isFinite(primitive.ms) || primitive.ms < 0) {
+    throw new Error(`Owned duration "${name}" is invalid: ${primitive.ms}`);
   }
   return {
-    name: d.name,
-    ms: d.ms,
-    cssVar: motionVar('duration', d.name),
-    provenance: d.provenance,
-    description: d.description,
+    name,
+    ms: primitive.ms,
+    cssVar: motionVar('duration', name),
+    provenance: primitive.provenance,
+    description: primitive.description,
   };
 }
 
-function resolveEasing(e: EasingSpec): ResolvedEasing {
-  requireProvenance(e.provenance, `easing "${e.name}"`);
-  const [x1, y1, x2, y2] = e.bezier;
+function resolveEasing(name: EasingPrimitiveName): ResolvedEasing {
+  const primitive = easingPrimitive(name);
+  requireProvenance(primitive.provenance, `easing "${name}"`);
+  const [x1, , x2] = primitive.bezier;
   if (x1 < 0 || x1 > 1 || x2 < 0 || x2 > 1) {
-    // DTCG 2025.10: cubicBezier x coordinates are restricted to [0, 1].
-    throw new Error(
-      `Easing "${e.name}" has an x control point outside [0,1] (${x1}, ${x2}) — invalid cubic-bezier`,
-    );
+    throw new Error(`Owned easing "${name}" has x control points outside [0,1]`);
   }
   return {
-    name: e.name,
-    bezier: e.bezier,
-    css: `cubic-bezier(${x1}, ${y1}, ${x2}, ${y2})`,
-    cssVar: motionVar('easing', e.name),
-    provenance: e.provenance,
-    description: e.description,
+    name,
+    bezier: primitive.bezier,
+    css: primitive.css,
+    cssVar: motionVar('easing', name),
+    provenance: primitive.provenance,
+    description: primitive.description,
   };
 }
 
-function resolveSpring(s: SpringSpec, easings: readonly ResolvedEasing[]): ResolvedSpring {
-  requireProvenance(s.provenanceBounce, `spring "${s.name}" bounce`);
-  requireProvenance(s.provenanceDuration, `spring "${s.name}" duration`);
-  const fallback = easings.find((e) => e.name === s.fallbackEasing);
+function resolveSpring(spec: SpringSpec, easings: readonly ResolvedEasing[]): ResolvedSpring {
+  const primitive = springPrimitive(spec.primitive);
+  const physics = describeSpringPhysics(primitive.params);
+  const fallback = easings.find((e) => e.name === spec.fallbackEasing);
   if (!fallback) {
-    throw new Error(`Spring "${s.name}" references unknown fallback easing "${s.fallbackEasing}"`);
-  }
-  if (s.category === 'effects' && s.bounce !== 0) {
-    // Effects springs (opacity/colour) must be critically damped — no overshoot.
     throw new Error(
-      `Spring "${s.name}" is category "effects" but has bounce ${s.bounce}; effects must be 0`,
+      `Spring "${spec.name}" references unknown fallback easing "${spec.fallbackEasing}"`,
     );
   }
-  const physics = resolveSpringPhysics(s.durationS, s.bounce);
+  if (spec.category === 'effects' && Math.abs(physics.bounce) > 1e-12) {
+    throw new Error(`Spring "${spec.name}" is category "effects" but owner primitive overshoots`);
+  }
+
   return {
-    name: s.name,
-    category: s.category,
-    durationS: s.durationS,
-    durationMs: Math.round(s.durationS * 1000),
-    bounce: s.bounce,
+    name: spec.name,
+    category: spec.category,
+    durationS: physics.durationS,
+    durationMs: Math.round(physics.durationS * 1000),
+    bounce: physics.bounce,
     physics,
     linear: springLinear(physics),
     fallbackBezier: fallback.bezier,
     fallbackEasingName: fallback.name,
-    cssVar: motionVar('spring', s.name),
-    durationCssVar: motionVar('spring', s.name, 'duration'),
-    provenanceBounce: s.provenanceBounce,
-    provenanceDuration: s.provenanceDuration,
-    description: s.description,
+    cssVar: motionVar('spring', spec.name),
+    durationCssVar: motionVar('spring', spec.name, 'duration'),
+    provenanceBounce: primitive.provenance,
+    provenanceDuration: primitive.provenance,
+    description: spec.description,
   };
 }
 
 function resolveSemantic(
-  s: SemanticSpec,
+  spec: SemanticSpec,
   durationNames: ReadonlySet<string>,
   easingNames: ReadonlySet<string>,
   springNames: ReadonlySet<string>,
 ): ResolvedSemantic {
-  requireProvenance(s.provenance, `semantic "${s.name}"`);
-  requireRef(durationNames, s.duration, s.name, 'duration');
-  requireRef(easingNames, s.easing, s.name, 'easing');
-  requireRef(durationNames, s.reduced.duration, s.name, 'reduced.duration');
-  if (s.spring !== undefined) {
-    requireRef(springNames, s.spring, s.name, 'spring');
+  requireProvenance(spec.provenance, `semantic "${spec.name}"`);
+  requireRef(durationNames, spec.duration, spec.name, 'duration');
+  requireRef(easingNames, spec.easing, spec.name, 'easing');
+  requireRef(durationNames, spec.reduced.duration, spec.name, 'reduced.duration');
+  if (spec.spring !== undefined) {
+    requireRef(springNames, spec.spring, spec.name, 'spring');
   }
-  if (s.reduced.easing !== 'linear') {
-    // Reduced-motion must strip all overshoot/spring character.
-    throw new Error(
-      `Semantic "${s.name}" reduced easing must be 'linear', got "${s.reduced.easing}"`,
-    );
+  if (spec.reduced.easing !== 'linear') {
+    throw new Error(`Semantic "${spec.name}" reduced easing must be linear`);
   }
+
   return {
-    name: s.name,
-    durationName: s.duration,
-    easingName: s.easing,
-    springName: s.spring,
-    durationRef: `var(${motionVar('duration', s.duration)})`,
-    easingRef: `var(${motionVar('easing', s.easing)})`,
-    springRef: s.spring ? `var(${motionVar('spring', s.spring)})` : undefined,
+    name: spec.name,
+    durationName: spec.duration,
+    easingName: spec.easing,
+    springName: spec.spring,
+    durationRef: `var(${motionVar('duration', spec.duration)})`,
+    easingRef: `var(${motionVar('easing', spec.easing)})`,
+    springRef: spec.spring ? `var(${motionVar('spring', spec.spring)})` : undefined,
     cssVars: {
-      duration: motionVar(s.name, 'duration'),
-      easing: motionVar(s.name, 'easing'),
-      spring: s.spring ? motionVar(s.name, 'spring') : undefined,
+      duration: motionVar(spec.name, 'duration'),
+      easing: motionVar(spec.name, 'easing'),
+      spring: spec.spring ? motionVar(spec.name, 'spring') : undefined,
     },
     reduced: {
-      durationName: s.reduced.duration,
-      durationRef: `var(${motionVar('duration', s.reduced.duration)})`,
-      easing: s.reduced.easing,
+      durationName: spec.reduced.duration,
+      durationRef: `var(${motionVar('duration', spec.reduced.duration)})`,
+      easing: spec.reduced.easing,
     },
-    provenance: s.provenance,
-    description: s.description,
+    provenance: spec.provenance,
+    description: spec.description,
   };
 }
 
-/** A (b) provenance with an empty source is a fake-(b) — reject it at build time. */
-function requireProvenance(p: Provenance, where: string): void {
-  if (p.class === 'b' && p.source.trim() === '') {
-    throw new Error(`Provenance for ${where} is class (b) but has no source — fake-(b) forbidden`);
-  }
-  if (p.source.trim() === '') {
+function requireProvenance(provenance: Provenance, where: string): void {
+  if (provenance.source.trim() === '') {
+    if (provenance.class === 'b') {
+      throw new Error(
+        `Provenance for ${where} is class (b) but has no source — fake-(b) forbidden`,
+      );
+    }
     throw new Error(`Provenance for ${where} has an empty source`);
   }
 }

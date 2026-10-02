@@ -1,14 +1,9 @@
 /**
- * @labpics/ui-tokens — motion tier.
+ * Internal build-time motion token pipeline.
  *
- * A separate token domain from the dimension scales: DTCG `duration` /
- * `cubicBezier` primitives, a spring expressed through `$extensions`, and a
- * first-class reduced-motion contract. One typed config (`defaultMotionConfig`)
- * is the single source of truth; a pure generator turns it into three artifacts
- * with no divergence — `motion.css`, `motion.dtcg.json`, and the typed TS module
- * re-exported from the package root.
+ * The package root exports only committed generated references. These helpers
+ * remain available to package scripts and tests, not runtime consumers.
  */
-
 export { buildMotion, motionVar } from './build.js';
 export type {
   ResolvedDuration,
@@ -26,9 +21,8 @@ export {
   generateMotionTs,
 } from './generate/index.js';
 export type {
-  DurationSpec,
-  EasingSpec,
   MotionConfig,
+  MotionSpringPrimitive,
   Provenance,
   ProvenanceClass,
   SemanticSpec,
@@ -36,7 +30,15 @@ export type {
   SpringSpec,
 } from './model.js';
 export {
-  resolveSpringPhysics,
+  DURATION_NAMES,
+  EASING_NAMES,
+  SPRING_NAMES,
+  type DurationPrimitiveName,
+  type EasingPrimitiveName,
+  type SpringPrimitiveName,
+} from './primitives.js';
+export {
+  describeSpringPhysics,
   type SpringPhysics,
   springLinear,
   springPosition,
