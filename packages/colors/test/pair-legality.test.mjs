@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { M_LMS_SRGB, M_OKLAB_LMS, degam, hexToLin, mulv, wcagY } from '../oklab-math.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const contractPath = join(here, '..', '..', 'colors-stub', 'contract.css');
+const contractPath = join(here, '..', 'contract.css');
 
 // Пары «заливка × лейбл-на-заливке». Семантический паспорт (несущие лейбл
 // поверхности) + бейджи (тот же закон пары) — полный класс.

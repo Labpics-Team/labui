@@ -4,7 +4,7 @@ import { type Page, expect, test } from '@playwright/test';
  * Live engine suite — рантайм-провайдер поверх опубликованного @labpics/colors.
  *
  * Фикстура (`engine-live.html`) поднимает WASM-движок В БРАУЗЕРЕ (npm-алиас
- * `labcolors-engine`), грузит паспорт labui и отдаёт поверхность watchTheme.
+ * `@labpics/colors`), грузит паспорт labui и отдаёт поверхность watchTheme.
  * Это browser-side definition of done канала провайдера:
  *   1. Boot — движок загрузился, переменные легли на поверхность inline
  *      (единая oklch-форма, минуя статический contract.css).

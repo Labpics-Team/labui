@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 
 // Разделяемый чистый гейт (тот же код кормит standalone `pnpm --filter
-// @labui/colors fx:render`): харнесс + PNG-декодер + инварианты. Спека даёт
+// @labpics/ui-colors fx:render`): харнесс + PNG-декодер + инварианты. Спека даёт
 // CI-воспроизводимость — гейт живёт в e2e-джобе (у `pnpm test` браузеров нет).
 import {
   GLOW_STEPS,
@@ -19,7 +19,7 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..');
-const contractPath = join(repoRoot, 'packages', 'colors-stub', 'contract.css');
+const contractPath = join(repoRoot, 'packages', 'colors', 'contract.css');
 
 interface BBox {
   x: number;

@@ -54,7 +54,7 @@ export function litVar(name: LabVar, fallback?: LabVar | (string & {})): CSSResu
  * вложение скругляется, а не становится прямым углом (паттерн концентричности
  * Apple). Это ЕДИНСТВЕННЫЙ способ компонента вывести вложенный радиус;
  * копирование числа «на глаз» — класс дрейфа, который этот хелпер закрывает
- * (под гардом colors-stub/test/no-magic-dimension).
+ * (под гардом colors/test/no-magic-dimension).
  *
  * `outer` / `inset` — CSS-выражения <length>: обычно ссылки `cssVar(...)` или
  * локальные ручки `var(--_x)`, никогда голые литералы.

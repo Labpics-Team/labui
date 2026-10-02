@@ -14,7 +14,7 @@ const STEP_PURPOSE: Readonly<Record<string, string>> = {
  * к тинту рецепта D через `color-mix(in oklab, <роль>, <тинт> <доля>)`
  * (docs/vocabulary.md, раздел «Стейт-оверлеи»). Доли — единственные ручки этой
  * формы, поэтому живут здесь первоклассными токенами; оба CI-гейта
- * (state-overlay-contrast / state-overlay-muddiness в @labui/colors) читают их
+ * (state-overlay-contrast / state-overlay-muddiness в @labpics/ui-colors) читают их
  * из СГЕНЕРИРОВАННОГО tokens.css — никогда из литерала в компоненте.
  */
 export function buildStates(config: StatesConfig): ResolvedToken[] {

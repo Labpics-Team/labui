@@ -277,7 +277,7 @@ export const defaultConfig: TokensConfig = {
   },
   // Стейт-оверлеи (#109, решение владельца — финальное): доли
   // color-mix(in oklab, <роль покоя>, <тинт рецепта D> p%). Единственные
-  // ручки формы состояний; CI-гейты (contrast/muddiness в @labui/colors)
+  // ручки формы состояний; CI-гейты (contrast/muddiness в @labpics/ui-colors)
   // читают их из СГЕНЕРИРОВАННОГО tokens.css, не из литералов компонентов.
   states: {
     hover: 8, //   8% к тинту — заметный, не кричащий сдвиг

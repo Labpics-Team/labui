@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { stripComments } from './no-magic-dimension.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-/** Repo root — из `test/` внутри `packages/colors-stub`, три уровня вверх. */
+/** Repo root — из `test/` внутри `packages/colors`, три уровня вверх. */
 export const repoRoot = resolve(here, '..', '..', '..');
 
 /**

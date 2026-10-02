@@ -21,7 +21,7 @@ import { assertFxRender, renderAndMeasure } from './fx-gate.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..', '..'); // packages/colors/test/fx-render → repo
-const contractPath = join(repoRoot, 'packages', 'colors-stub', 'contract.css');
+const contractPath = join(repoRoot, 'packages', 'colors', 'contract.css');
 // Каталог вывода gitignored (см. .gitignore: packages/colors/artifacts/) — это
 // эфемерное доказательство для владельца, а не исходник. Бинарь-PNG в git
 // недопустим (раздувает пакет colors); в CI этот PNG отдаётся как artifact

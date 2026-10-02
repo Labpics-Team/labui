@@ -18,9 +18,9 @@
       "**/*.svelte",
       "**/*.generated.json",
       "**/*.tsbuildinfo",
-      "packages/colors-stub/contract.css",
-      "packages/colors-stub/contract.min.css",
-      "packages/colors-stub/figma-reference.css",
+      "packages/colors/contract.css",
+      "packages/colors/contract.min.css",
+      "packages/colors/figma-reference.css",
       "scripts/minify-contract.cjs"
     ]
   },

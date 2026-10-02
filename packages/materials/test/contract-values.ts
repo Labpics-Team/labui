@@ -20,7 +20,7 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
-const CONTRACT_PATH = resolve(repoRoot, 'packages/colors-stub/contract.css');
+const CONTRACT_PATH = resolve(repoRoot, 'packages/colors/contract.css');
 
 /** Split the contract into its light and dark theme sections (ignoring the
  * duplicated `@media (prefers-color-scheme)` block). */

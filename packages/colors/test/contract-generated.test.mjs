@@ -14,8 +14,8 @@ import { describe, expect, it } from 'vitest';
 import { RETIRED_ROLES, generateContract } from '../generate-contract.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const contractPath = join(here, '..', '..', 'colors-stub', 'contract.css');
-const referencePath = join(here, '..', '..', 'colors-stub', 'figma-reference.css');
+const contractPath = join(here, '..', 'contract.css');
+const referencePath = join(here, '..', 'figma-reference.css');
 
 describe('сгенерированный контракт', () => {
   it('файл на диске байт-в-байт равен свежей генерации', async () => {

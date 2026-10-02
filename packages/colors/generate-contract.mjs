@@ -3,7 +3,7 @@
 //
 // Замена рукописной эры: contract.css перестаёт быть источником истины и
 // становится АРТЕФАКТОМ движка. Независимый Figma-якорь живёт отдельно
-// (colors-stub/figma-reference.css, не редактируется) — против него меряет
+// (figma-reference.css, не редактируется) — против него меряет
 // золотая сверка; этот файл против движка меряет гейт регенерационной
 // дисциплины (test/contract-generated.test.mjs).
 //
@@ -16,8 +16,8 @@ import { fileURLToPath } from 'node:url';
 import { createLabuiEngine } from './engine.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const referencePath = join(here, '..', 'colors-stub', 'figma-reference.css');
-const contractPath = join(here, '..', 'colors-stub', 'contract.css');
+const referencePath = join(here, 'figma-reference.css');
+const contractPath = join(here, 'contract.css');
 
 /** Вырезать тело scope-блока по началу строки (тот же приём, что в золоте). */
 function scopeBody(css, scopePattern) {
@@ -391,7 +391,7 @@ ${darkBody
 }
 
 // Прямой запуск — записать полный contract.css. Единственный писатель
-// contract.min.css — scripts/minify-contract.cjs (билд colors-stub): два
+// contract.min.css — scripts/minify-contract.cjs (билд этого пакета): два
 // независимых минификатора давали РАЗНЫЕ байты, и артефакт переворачивался
 // в зависимости от того, что запускали последним.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -86,7 +86,7 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     pnpm install --frozen-lockfile --store-dir /job/pnpm-store
     pnpm build
     pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
-    pnpm --filter @labui/colors fx:render
+    pnpm --filter @labpics/ui-colors fx:render
     pnpm test:e2e
   '
 # Вывод workload и ошибки чтения его файлов не могут задавать Actions outputs.

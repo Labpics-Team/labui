@@ -7,19 +7,20 @@
  * конфига на «acme» доказывает канал кастомизации: тот же словарь ролей,
  * чужие якоря бренда — компоненты перекрашиваются без единой правки.
  *
- * `labcolors-engine` — npm-алиас настоящего @labpics/colors (имя в workspace
- * пока занято стаб-пакетом CSS-контракта; алиас умрёт вместе со стабом).
+ * @labpics/colors — вычислительный движок. Статический CSS-контракт Lab UI
+ * живёт отдельно в @labpics/ui-colors, поэтому пакетные границы не маскируют
+ * друг друга.
  */
 import '@labpics/ui-core/badge';
 import '@labpics/ui-core/button';
-// Паспорт labui — тот же JSON, что питает golden-сверку пакета @labui/colors.
-import passport from '@labui/colors/labui.config.json';
+// Паспорт labui — тот же JSON, что питает golden-сверку пакета @labpics/ui-colors.
+import passport from '@labpics/ui-colors/labui.config.json';
 // Разворот паспорта к границе wasm (влив components + флаги) — ТОТ ЖЕ канон,
 // что у node-движка golden-сверки: сырой дисковый паспорт ядро честно
 // отвергает (aliases → badge-fill-* живут в компонентном слое).
-import { prepareEngineConfig } from '@labui/colors/prepare-config.mjs';
-import init, { LabColors, watchTheme } from 'labcolors-engine';
-import wasmUrl from 'labcolors-engine/pkg/labcolors_bg.wasm?url';
+import { prepareEngineConfig } from '@labpics/ui-colors/prepare-config.mjs';
+import init, { LabColors, watchTheme } from '@labpics/colors';
+import wasmUrl from '@labpics/colors/pkg/labcolors_bg.wasm?url';
 
 /** Обязательный узел демо: отсутствие — честная ошибка, не молчаливый null. */
 function mustFind<T extends Element>(selector: string): T {

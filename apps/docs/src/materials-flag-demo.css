@@ -8,7 +8,7 @@
  * Owner criterion (design ch6): flipping ONE `data-material` attribute turns
  * the modal + card solid→glass with no markup change.
  */
-@import "@labpics/colors/contract.css";
+@import "@labpics/ui-colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 
 /* The material under test — imported, never re-defined. */
