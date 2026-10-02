@@ -133,6 +133,12 @@ describe('CSS emission', () => {
   });
 });
 
+describe('ownership boundary', () => {
+  it('default config contains bindings only, never physical numeric tiers', () => {
+    expect(Object.keys(defaultMotionConfig).sort()).toEqual(['semantics', 'springs']);
+  });
+});
+
 describe('build-time validation — the schema fails loudly, never silently', () => {
   it('rejects a semantic referencing an unknown physical token', () => {
     const broken: MotionConfig = {
@@ -150,28 +156,33 @@ describe('build-time validation — the schema fails loudly, never silently', ()
     expect(() => buildMotion(broken)).toThrow(/unknown token/);
   });
 
-  it('rejects an effects spring that overshoots (bounce must be 0)', () => {
+  it('rejects an effects binding to an owner spring that overshoots', () => {
     const broken: MotionConfig = {
       ...defaultMotionConfig,
       springs: [
         {
           name: 'bad',
+          primitive: 'expressive',
           category: 'effects',
-          durationS: 0.3,
-          bounce: 0.2,
           fallbackEasing: 'standard',
-          provenanceBounce: { class: 'e', source: 'test' },
-          provenanceDuration: { class: 'e', source: 'test' },
         },
       ],
     };
     expect(() => buildMotion(broken)).toThrow(/effects/);
   });
 
-  it('rejects a (b) provenance with an empty source (fake-(b))', () => {
+  it('rejects a semantic (b) provenance with an empty source (fake-(b))', () => {
     const broken: MotionConfig = {
       ...defaultMotionConfig,
-      durations: [{ name: 'fast', ms: 100, provenance: { class: 'b', source: '' } }],
+      semantics: [
+        {
+          name: 'entrance',
+          duration: 'base',
+          easing: 'decelerate',
+          reduced: { duration: 'fast', easing: 'linear' },
+          provenance: { class: 'b', source: '' },
+        },
+      ],
     };
     expect(() => buildMotion(broken)).toThrow(/fake-\(b\)/);
   });

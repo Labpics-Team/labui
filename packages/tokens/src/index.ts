@@ -37,19 +37,9 @@ export {
 // Generated typed tokens: `var(--lab-*)` references with literal-union types.
 export * from './generated/tokens.js';
 
-// Motion tier: its own config + generator (DTCG duration/cubicBezier + spring
-// extension + first-class reduced-motion) and its generated typed tokens.
-export {
-  buildMotion,
-  defaultMotionConfig,
-  type GeneratedMotionArtifacts,
-  generateMotion,
-  type MotionConfig,
-  type Provenance,
-  type ProvenanceClass,
-  type ResolvedMotion,
-  type SpringCategory,
-} from './motion/index.js';
+// Motion runtime surface: committed static references only. Physical primitives
+// are consumed from @labpics/motion at build time and never become a runtime
+// dependency of @labpics/ui-tokens.
 export * from './generated/motion.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';
