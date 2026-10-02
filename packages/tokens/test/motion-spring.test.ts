@@ -2,11 +2,7 @@ import { spring as evaluateSpring } from '@labpics/motion';
 import { spring as motionSpring, springFromDurationBounce } from '@labpics/motion/tokens';
 import { describe, expect, it } from 'vitest';
 
-import {
-  describeSpringPhysics,
-  springLinear,
-  springPosition,
-} from '../src/motion/spring.js';
+import { describeSpringPhysics, springLinear, springPosition } from '../src/motion/spring.js';
 
 function points(linear: string): number[] {
   const inner = linear.replace(/^linear\(/, '').replace(/\)$/, '');

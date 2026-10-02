@@ -138,10 +138,7 @@ function resolveEasing(name: EasingPrimitiveName): ResolvedEasing {
   };
 }
 
-function resolveSpring(
-  spec: SpringSpec,
-  easings: readonly ResolvedEasing[],
-): ResolvedSpring {
+function resolveSpring(spec: SpringSpec, easings: readonly ResolvedEasing[]): ResolvedSpring {
   const primitive = springPrimitive(spec.primitive);
   const physics = describeSpringPhysics(primitive.params);
   const fallback = easings.find((e) => e.name === spec.fallbackEasing);
@@ -151,9 +148,7 @@ function resolveSpring(
     );
   }
   if (spec.category === 'effects' && Math.abs(physics.bounce) > 1e-12) {
-    throw new Error(
-      `Spring "${spec.name}" is category "effects" but owner primitive overshoots`,
-    );
+    throw new Error(`Spring "${spec.name}" is category "effects" but owner primitive overshoots`);
   }
 
   return {
@@ -188,9 +183,7 @@ function resolveSemantic(
     requireRef(springNames, spec.spring, spec.name, 'spring');
   }
   if (spec.reduced.easing !== 'linear') {
-    throw new Error(
-      `Semantic "${spec.name}" reduced easing must be linear`,
-    );
+    throw new Error(`Semantic "${spec.name}" reduced easing must be linear`);
   }
 
   return {
@@ -219,21 +212,16 @@ function resolveSemantic(
 function requireProvenance(provenance: Provenance, where: string): void {
   if (provenance.source.trim() === '') {
     if (provenance.class === 'b') {
-      throw new Error(`Provenance for ${where} is class (b) but has no source — fake-(b) forbidden`);
+      throw new Error(
+        `Provenance for ${where} is class (b) but has no source — fake-(b) forbidden`,
+      );
     }
     throw new Error(`Provenance for ${where} has an empty source`);
   }
 }
 
-function requireRef(
-  known: ReadonlySet<string>,
-  ref: string,
-  role: string,
-  field: string,
-): void {
+function requireRef(known: ReadonlySet<string>, ref: string, role: string, field: string): void {
   if (!known.has(ref)) {
-    throw new Error(
-      `Semantic "${role}" ${field} references unknown token "${ref}"`,
-    );
+    throw new Error(`Semantic "${role}" ${field} references unknown token "${ref}"`);
   }
 }

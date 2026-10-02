@@ -7,9 +7,7 @@
  * primitives, and the reduced-motion policy.
  */
 
-export type ProvenanceClass =
-  | 'b'
-  | 'e';
+export type ProvenanceClass = 'b' | 'e';
 
 export interface Provenance {
   readonly class: ProvenanceClass;
@@ -17,9 +15,7 @@ export interface Provenance {
 }
 
 /** Spring category: spatial motion may overshoot; effects motion may not. */
-export type SpringCategory =
-  | 'spatial'
-  | 'effects';
+export type SpringCategory = 'spatial' | 'effects';
 
 export type MotionSpringPrimitive = 'smooth' | 'expressive';
 /**

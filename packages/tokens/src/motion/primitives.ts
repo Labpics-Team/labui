@@ -85,12 +85,7 @@ function parseCubicBezier(css: string): readonly [number, number, number, number
   if (!match) {
     throw new Error(`@labpics/motion easing is not cubic-bezier(): ${css}`);
   }
-  const points = [
-    Number(match[1]),
-    Number(match[2]),
-    Number(match[3]),
-    Number(match[4]),
-  ] as const;
+  const points = [Number(match[1]), Number(match[2]), Number(match[3]), Number(match[4])] as const;
   if (points.some((point) => !Number.isFinite(point))) {
     throw new Error(`@labpics/motion easing has invalid control points: ${css}`);
   }
