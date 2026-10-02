@@ -177,7 +177,7 @@
 [data-lab-combobox] .lab-combobox-trigger:focus-visible {
   outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
   outline-offset: calc(-1 * var(--lab-focus-ring-offset));
-  border-radius: var(--lab-radius-sm, 0.25rem);
+  border-radius: var(--lab-radius-xs, 0.25rem);
 }
 
 [data-lab-combobox] .lab-combobox-helper {
@@ -207,7 +207,7 @@
   margin: 0;
   padding: var(--lab-space-xs, 0.25rem);
   list-style: none;
-  border-radius: var(--lab-radius-md, 0.375rem);
+  border-radius: var(--lab-radius-s, 0.375rem);
   background-color: var(--lab-bg-secondary);
   color: var(--lab-label-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-soft);
@@ -239,7 +239,7 @@
   justify-content: space-between;
   gap: var(--lab-space-sm, 0.5rem);
   padding: var(--lab-space-xs, 0.25rem) var(--lab-space-sm, 0.5rem);
-  border-radius: var(--lab-radius-sm, 0.25rem);
+  border-radius: var(--lab-radius-xs, 0.25rem);
   cursor: pointer;
   user-select: none;
 }

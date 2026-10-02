@@ -139,14 +139,14 @@
   align-items: center;
   gap: var(--lab-space-xs, 0.25rem);
   max-width: 100%;
-  padding: var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem)
-    var(--lab-radius-xs, 0.125rem) var(--lab-space-sm, 0.5rem);
+  padding: var(--lab-radius-xxs, 0.125rem) var(--lab-radius-xxs, 0.125rem)
+    var(--lab-radius-xxs, 0.125rem) var(--lab-space-sm, 0.5rem);
   font-size: var(--_lab-field-label-font);
   letter-spacing: var(--_lab-field-label-tracking);
   line-height: 1.4;
   color: var(--lab-label-primary);
   background-color: var(--lab-fill-primary);
-  border-radius: var(--lab-radius-sm, 0.25rem);
+  border-radius: var(--lab-radius-xs, 0.25rem);
 }
 [data-lab-tags-input] .lab-tags-input-item[data-highlighted] {
   background-color: var(--lab-fill-neutral);
@@ -197,7 +197,7 @@
   color: var(--lab-label-secondary);
   background: transparent;
   border: 0;
-  border-radius: var(--lab-radius-sm, 0.25rem);
+  border-radius: var(--lab-radius-xs, 0.25rem);
   cursor: pointer;
   transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
     background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
@@ -220,7 +220,7 @@
   flex: 1 1 var(--lab-space-24, 6rem);
   min-width: var(--lab-space-24, 6rem);
   margin: 0;
-  padding: var(--lab-radius-xs, 0.125rem) 0;
+  padding: var(--lab-radius-xxs, 0.125rem) 0;
   font: inherit;
   font-size: var(--_lab-field-font);
   letter-spacing: var(--_lab-field-tracking);

@@ -144,7 +144,7 @@ export class LabCheckbox extends LabElement {
     :host {
       /* Size knobs the size axis maps onto. */
       --_box: ${litVar('--lab-size-control-l', '1.25rem')};
-      --_radius: ${litVar('--lab-radius-sm', '0.25rem')};
+      --_radius: ${litVar('--lab-radius-xs', '0.25rem')};
       --_gap: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 

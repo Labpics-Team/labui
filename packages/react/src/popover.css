@@ -27,7 +27,7 @@
 .lab-popover-trigger:focus-visible {
   outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
   outline-offset: var(--lab-focus-ring-offset);
-  border-radius: var(--lab-radius-sm, 0.25rem);
+  border-radius: var(--lab-radius-xs, 0.25rem);
 }
 
 /* Modal scrim — rendered only when modal && open (parity with the Lit backdrop). */
@@ -55,7 +55,7 @@
   min-width: var(--_lab-pop-min-width);
   max-width: var(--_lab-pop-max-width);
   padding: var(--_lab-pop-pad);
-  border-radius: var(--lab-radius-lg, 0.5rem);
+  border-radius: var(--lab-radius-m, 0.5rem);
   background-color: var(--lab-bg-secondary);
   color: var(--lab-label-primary);
   border: var(--lab-stroke-hairline) solid var(--lab-border-soft);
@@ -111,7 +111,7 @@
   height: 1.5rem;
   padding: 0;
   border: 0;
-  border-radius: var(--lab-radius-sm, 0.25rem);
+  border-radius: var(--lab-radius-xs, 0.25rem);
   background: none;
   color: var(--lab-label-secondary);
   font-size: 1.125rem;

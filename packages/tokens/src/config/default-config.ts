@@ -3,9 +3,10 @@ import type { TokensConfig } from './types.js';
 /**
  * The default LabUI token config.
  *
- * Values are calibrated against Daniel's Figma Dimention/Typography/Z-index
- * collections (canonical "100%" mode of the snapshot) but expressed as a
- * controllable rem model — the broken Figma scale is replaced, not copied.
+ * Values are grounded in the final Figma Dimension/Typography design and then
+ * translated to web-native representations. Radius preserves the Figma ladder
+ * exactly; spacing uses a documented rem spine; z-index is a code-owned runtime
+ * ordering where Figma was intentionally not treated as final.
  *
  * Spacing: linear multiplier on a 0.25rem (4px) base, reproducing the clean
  * 4px-grid spine of the Dimention scale (4/8/12/16/20/24/28/32/40/48/64...).
@@ -141,30 +142,32 @@ export const defaultConfig: TokensConfig = {
     // кривой Figma ζ=0.6» (см. RadiiConfig.cornerK; воспроизводимая деривация —
     // scripts/derive-corner-k.mjs: геометрический фит был бы K=1, круг).
     cornerK: 1.1,
-    // Geometric rem progression (Tailwind v4 shape). Step 0 is the zero token.
+    // Figma Radius/* is canonical; web emission only translates px to rem.
+    // Explicit zero remains a generator invariant alongside Figma's None alias.
     steps: {
-      '0': 0, //   0px — explicit zero
-      xs: 0.125, //   2px
-      sm: 0.25, //   4px
-      md: 0.375, //   6px
-      lg: 0.5, //   8px
-      xl: 0.75, //  12px
-      '2xl': 1, //  16px
-      '3xl': 1.5, //  24px
-      '4xl': 2, //  32px
-      '5xl': 3, //  48px
+      '0': 0, //    0px — explicit zero
+      xxs: 0.125, //  2px — Figma Radius/XXS
+      xs: 0.25, //    4px — Figma Radius/XS
+      s: 0.375, //     6px — Figma Radius/S
+      m: 0.5, //       8px — Figma Radius/M
+      l: 0.75, //     12px — Figma Radius/L
+      xl: 1, //       16px — Figma Radius/XL
+      '2xl': 1.25, // 20px — Figma Radius/2XL
+      '3xl': 1.5, //  24px — Figma Radius/3XL
+      '4xl': 1.75, // 28px — Figma Radius/4XL
+      '5xl': 2, //    32px — Figma Radius/5XL
     },
     fullPx: 9999,
     aliases: {
       none: '0',
-      control: 'lg', //  8px — inputs, buttons
-      card: '2xl', // 16px — cards, panels
+      control: 'm', //  8px — inputs, buttons
+      card: 'xl', // 16px — cards, panels
       pill: 'full',
       circle: 'full',
       // Floor of the concentric-radius law: an inner radius derived as
       // `outer - inset` never drops below this (2px), so a deeply nested corner
       // rounds instead of going square. See docs/dimension-contract.md §3.
-      'concentric-min': 'xs',
+      'concentric-min': 'xxs',
     },
   },
 

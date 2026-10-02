@@ -124,7 +124,7 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     expect(
       scanDimensionSource(
         'p.css',
-        '.x { border-radius: var(--lab-radius-control, var(--lab-radius-lg)); }',
+        '.x { border-radius: var(--lab-radius-control, var(--lab-radius-m)); }',
         canon,
       ),
     ).toEqual([]);

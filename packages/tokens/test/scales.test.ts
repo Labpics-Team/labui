@@ -34,7 +34,29 @@ describe('spacing scale — linear rem multiplier', () => {
   });
 });
 
-describe('radii scale — geometric rem + pill', () => {
+describe('radii scale — Figma ladder translated to rem + pill', () => {
+  it('preserves the final Figma Radius/* primitive values', () => {
+    const byName = Object.fromEntries(
+      tokens.radii
+        .filter((token) => token.dtcgType === 'dimension')
+        .map((token) => [token.name, token.numeric]),
+    );
+    expect(byName).toMatchObject({
+      '0': 0,
+      xxs: 2,
+      xs: 4,
+      s: 6,
+      m: 8,
+      l: 12,
+      xl: 16,
+      '2xl': 20,
+      '3xl': 24,
+      '4xl': 28,
+      '5xl': 32,
+      full: 9999,
+    });
+  });
+
   it('is non-decreasing across named steps', () => {
     // Монотонность — закон ДЛИН лестницы: full (семантический пилюль) и
     // unitless-ручки формы (corner-k, dtcgType number) — не ступени длины.

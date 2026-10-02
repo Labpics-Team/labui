@@ -43,7 +43,7 @@ const baseStyle: CSSProperties = {
   gap: 'var(--lab-space-sm, 0.5rem)',
   minHeight: '2.5rem',
   padding: 'var(--lab-space-sm, 0.5rem) var(--lab-space-md, 1rem)',
-  borderRadius: 'var(--lab-radius-control, var(--lab-radius-lg))',
+  borderRadius: 'var(--lab-radius-control, var(--lab-radius-m))',
   border: 'var(--lab-stroke-hairline) solid var(--lab-border-base)',
   font: 'inherit',
   fontSize: 'var(--lab-font-size-md, 1rem)',

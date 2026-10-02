@@ -123,7 +123,7 @@ export class LabSwitch extends LabElement {
       --_track-w: ${litVar('--lab-size-switch-track-m', '2.75rem')};
       --_track-h: ${litVar('--lab-size-switch-track-h-m', '1.5rem')};
       /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem); expressed as token-backed calc using radius-md (no bare literal, no duplicate number) */
-      --_thumb: calc(var(--_track-h) - var(--lab-radius-md, 0.375rem));
+      --_thumb: calc(var(--_track-h) - var(--lab-radius-s, 0.375rem));
       --_gap: ${litVar('--lab-space-sm', '0.5rem')};
       --_font: ${litVar('--lab-font-size-md', '1rem')};
 
@@ -135,14 +135,14 @@ export class LabSwitch extends LabElement {
       --_track-w: ${litVar('--lab-size-switch-track-s', '2.25rem')};
       --_track-h: ${litVar('--lab-size-switch-track-h-s', '1.25rem')};
       /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem) expressed token-backed */
-      --_thumb: calc(var(--_track-h) - var(--lab-radius-md, 0.375rem));
+      --_thumb: calc(var(--_track-h) - var(--lab-radius-s, 0.375rem));
       --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
     }
     :host([size='l']) {
       --_track-w: ${litVar('--lab-size-switch-track-l', '3.25rem')};
       --_track-h: ${litVar('--lab-size-switch-track-h-l', '1.75rem')};
       /* derivation per ADR-0006 §2: thumb = track-h − 6px (0.375rem) expressed token-backed */
-      --_thumb: calc(var(--_track-h) - var(--lab-radius-md, 0.375rem));
+      --_thumb: calc(var(--_track-h) - var(--lab-radius-s, 0.375rem));
       --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
     }
 
@@ -167,7 +167,7 @@ export class LabSwitch extends LabElement {
       align-items: center;
       width: var(--_track-w);
       height: var(--_track-h);
-      padding: var(--lab-radius-xs, 0.125rem);
+      padding: var(--lab-radius-xxs, 0.125rem);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-fill-primary')};
       transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
@@ -222,10 +222,10 @@ export class LabSwitch extends LabElement {
       pointer-events: none;
     }
     .icon-on {
-      left: var(--lab-radius-xs, 0.125rem);
+      left: var(--lab-radius-xxs, 0.125rem);
     }
     .icon-off {
-      right: var(--lab-radius-xs, 0.125rem);
+      right: var(--lab-radius-xxs, 0.125rem);
       color: ${litVar('--lab-label-tertiary')};
     }
     :host([checked]) .icon-on {

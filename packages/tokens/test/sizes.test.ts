@@ -143,13 +143,13 @@ describe('radii — concentric-min alias', () => {
   it('resolves through the xs primitive (2px), never a duplicated value', () => {
     const alias = tokens.radiiAliases.find((a) => a.name === 'concentric-min');
     expect(alias?.target).toBe('xs');
-    expect(alias?.cssValue).toBe('var(--lab-radius-xs)');
+    expect(alias?.cssValue).toBe('var(--lab-radius-xxs)');
     const xs = tokens.radii.find((t) => t.name === 'xs');
     expect(xs?.numeric).toBe(2);
   });
 
   it('emits --lab-radius-concentric-min into the generated CSS', () => {
     const { css } = generate(defaultConfig);
-    expect(css).toContain('--lab-radius-concentric-min: var(--lab-radius-xs);');
+    expect(css).toContain('--lab-radius-concentric-min: var(--lab-radius-xxs);');
   });
 });

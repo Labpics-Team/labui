@@ -340,13 +340,13 @@ export class LabTagsInput extends LabElement {
         align-items: center;
         gap: ${litVar('--lab-space-xs', '0.25rem')};
         max-width: 100%;
-        padding: var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem) var(--lab-radius-xs, 0.125rem) var(--lab-space-sm, 0.5rem);
+        padding: var(--lab-radius-xxs, 0.125rem) var(--lab-radius-xxs, 0.125rem) var(--lab-radius-xxs, 0.125rem) var(--lab-space-sm, 0.5rem);
         font-size: var(--_field-label-font);
         letter-spacing: var(--_field-label-tracking);
         line-height: 1.4;
         color: ${litVar('--lab-label-primary')};
         background-color: ${litVar('--lab-fill-primary')};
-        border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+        border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
       }
       .item[data-highlighted] {
         background-color: ${litVar('--lab-fill-neutral')};
@@ -392,7 +392,7 @@ export class LabTagsInput extends LabElement {
         color: ${litVar('--lab-label-secondary')};
         background: transparent;
         border: 0;
-        border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+        border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
         cursor: pointer;
         transition: color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       }
@@ -415,7 +415,7 @@ export class LabTagsInput extends LabElement {
         flex: 1 1 ${litVar('--lab-space-24', '6rem')};
         min-width: ${litVar('--lab-space-24', '6rem')};
         margin: 0;
-        padding: var(--lab-radius-xs, 0.125rem) 0;
+        padding: var(--lab-radius-xxs, 0.125rem) 0;
         font: inherit;
         font-size: var(--_field-font);
         letter-spacing: var(--_field-tracking);
