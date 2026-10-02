@@ -41,10 +41,7 @@ const easingDescription: Record<EasingPrimitiveName, string> = {
 export function physicalProvenance(token: string): Provenance {
   return {
     class: 'b',
-    source:
-      'physical primitive owned by @labpics/motion/tokens (' +
-      token +
-      '); Lab UI only binds semantic roles',
+    source: `physical primitive owned by @labpics/motion/tokens (${token}); Lab UI only binds semantic roles`,
   };
 }
 export function durationPrimitive(name: DurationPrimitiveName): {
@@ -54,7 +51,7 @@ export function durationPrimitive(name: DurationPrimitiveName): {
 } {
   return {
     ms: motionDuration[name],
-    provenance: physicalProvenance('duration.' + name),
+    provenance: physicalProvenance(`duration.${name}`),
     description: durationDescription[name],
   };
 }
@@ -69,7 +66,7 @@ export function easingPrimitive(name: EasingPrimitiveName): {
   return {
     bezier: parseCubicBezier(css),
     css,
-    provenance: physicalProvenance('easing.' + name),
+    provenance: physicalProvenance(`easing.${name}`),
     description: easingDescription[name],
   };
 }
@@ -79,14 +76,14 @@ export function springPrimitive(name: SpringPrimitiveName): {
 } {
   return {
     params: motionSpring[name],
-    provenance: physicalProvenance('spring.' + name),
+    provenance: physicalProvenance(`spring.${name}`),
   };
 }
 
 function parseCubicBezier(css: string): readonly [number, number, number, number] {
   const match = /^cubic-bezier\(\s*([^,]+),\s*([^,]+),\s*([^,]+),\s*([^)]+)\)$/.exec(css);
   if (!match) {
-    throw new Error('@labpics/motion easing is not cubic-bezier(): ' + css);
+    throw new Error(`@labpics/motion easing is not cubic-bezier(): ${css}`);
   }
   const points = [
     Number(match[1]),
@@ -95,7 +92,7 @@ function parseCubicBezier(css: string): readonly [number, number, number, number
     Number(match[4]),
   ] as const;
   if (points.some((point) => !Number.isFinite(point))) {
-    throw new Error('@labpics/motion easing has invalid control points: ' + css);
+    throw new Error(`@labpics/motion easing has invalid control points: ${css}`);
   }
   return points;
 }

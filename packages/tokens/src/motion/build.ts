@@ -25,7 +25,7 @@ const PREFIX = 'lab';
 const NS = 'motion';
 
 export function motionVar(...segments: string[]): string {
-  return '--' + PREFIX + '-' + NS + '-' + segments.join('-');
+  return `--${PREFIX}-${NS}-${segments.join('-')}`;
 }
 export interface ResolvedDuration {
   readonly name: string;
@@ -108,9 +108,9 @@ export function buildMotion(config: MotionConfig): ResolvedMotion {
 }
 function resolveDuration(name: DurationPrimitiveName): ResolvedDuration {
   const primitive = durationPrimitive(name);
-  requireProvenance(primitive.provenance, 'duration "' + name + '"');
+  requireProvenance(primitive.provenance, `duration "${name}"`);
   if (!Number.isFinite(primitive.ms) || primitive.ms < 0) {
-    throw new Error('Owned duration "' + name + '" is invalid: ' + primitive.ms);
+    throw new Error(`Owned duration "${name}" is invalid: ${primitive.ms}`);
   }
   return {
     name,
@@ -123,10 +123,10 @@ function resolveDuration(name: DurationPrimitiveName): ResolvedDuration {
 
 function resolveEasing(name: EasingPrimitiveName): ResolvedEasing {
   const primitive = easingPrimitive(name);
-  requireProvenance(primitive.provenance, 'easing "' + name + '"');
+  requireProvenance(primitive.provenance, `easing "${name}"`);
   const [x1, y1, x2, y2] = primitive.bezier;
   if (x1 < 0 || x1 > 1 || x2 < 0 || x2 > 1) {
-    throw new Error('Owned easing "' + name + '" has x control points outside [0,1]');
+    throw new Error(`Owned easing "${name}" has x control points outside [0,1]`);
   }
   return {
     name,
@@ -147,12 +147,12 @@ function resolveSpring(
   const fallback = easings.find((e) => e.name === spec.fallbackEasing);
   if (!fallback) {
     throw new Error(
-      'Spring "' + spec.name + '" references unknown fallback easing "' + spec.fallbackEasing + '"',
+      `Spring "${spec.name}" references unknown fallback easing "${spec.fallbackEasing}"`,
     );
   }
   if (spec.category === 'effects' && Math.abs(physics.bounce) > 1e-12) {
     throw new Error(
-      'Spring "' + spec.name + '" is category "effects" but owner primitive overshoots',
+      `Spring "${spec.name}" is category "effects" but owner primitive overshoots`,
     );
   }
 
@@ -180,7 +180,7 @@ function resolveSemantic(
   easingNames: ReadonlySet<string>,
   springNames: ReadonlySet<string>,
 ): ResolvedSemantic {
-  requireProvenance(spec.provenance, 'semantic "' + spec.name + '"');
+  requireProvenance(spec.provenance, `semantic "${spec.name}"`);
   requireRef(durationNames, spec.duration, spec.name, 'duration');
   requireRef(easingNames, spec.easing, spec.name, 'easing');
   requireRef(durationNames, spec.reduced.duration, spec.name, 'reduced.duration');
@@ -189,7 +189,7 @@ function resolveSemantic(
   }
   if (spec.reduced.easing !== 'linear') {
     throw new Error(
-      'Semantic "' + spec.name + '" reduced easing must be linear',
+      `Semantic "${spec.name}" reduced easing must be linear`,
     );
   }
 
@@ -198,9 +198,9 @@ function resolveSemantic(
     durationName: spec.duration,
     easingName: spec.easing,
     springName: spec.spring,
-    durationRef: 'var(' + motionVar('duration', spec.duration) + ')',
-    easingRef: 'var(' + motionVar('easing', spec.easing) + ')',
-    springRef: spec.spring ? 'var(' + motionVar('spring', spec.spring) + ')' : undefined,
+    durationRef: `var(${motionVar('duration', spec.duration)})`,
+    easingRef: `var(${motionVar('easing', spec.easing)})`,
+    springRef: spec.spring ? `var(${motionVar('spring', spec.spring)})` : undefined,
     cssVars: {
       duration: motionVar(spec.name, 'duration'),
       easing: motionVar(spec.name, 'easing'),
@@ -208,7 +208,7 @@ function resolveSemantic(
     },
     reduced: {
       durationName: spec.reduced.duration,
-      durationRef: 'var(' + motionVar('duration', spec.reduced.duration) + ')',
+      durationRef: `var(${motionVar('duration', spec.reduced.duration)})`,
       easing: spec.reduced.easing,
     },
     provenance: spec.provenance,
@@ -219,9 +219,9 @@ function resolveSemantic(
 function requireProvenance(provenance: Provenance, where: string): void {
   if (provenance.source.trim() === '') {
     if (provenance.class === 'b') {
-      throw new Error('Provenance for ' + where + ' is class (b) but has no source — fake-(b) forbidden');
+      throw new Error(`Provenance for ${where} is class (b) but has no source — fake-(b) forbidden`);
     }
-    throw new Error('Provenance for ' + where + ' has an empty source');
+    throw new Error(`Provenance for ${where} has an empty source`);
   }
 }
 
@@ -233,7 +233,7 @@ function requireRef(
 ): void {
   if (!known.has(ref)) {
     throw new Error(
-      'Semantic "' + role + '" ' + field + ' references unknown token "' + ref + '"',
+      `Semantic "${role}" ${field} references unknown token "${ref}"`,
     );
   }
 }

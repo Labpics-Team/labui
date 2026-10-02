@@ -64,7 +64,7 @@ export function springLinear(p: SpringPhysics, steps: number = DEFAULT_STEPS): s
     const t = (i / steps) * p.durationS;
     points.push(round(springPosition(p, t)));
   }
-  return 'linear(' + points.join(', ') + ')';
+  return `linear(${points.join(', ')})`;
 }
 
 function round(value: number): number {
