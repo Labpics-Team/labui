@@ -140,12 +140,12 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
  * The MIN is a semantic alias so the whole system can be retuned at one key.
  */
 describe('radii — concentric-min alias', () => {
-  it('resolves through the xs primitive (2px), never a duplicated value', () => {
+  it('resolves through the xxs primitive (2px), never a duplicated value', () => {
     const alias = tokens.radiiAliases.find((a) => a.name === 'concentric-min');
-    expect(alias?.target).toBe('xs');
+    expect(alias?.target).toBe('xxs');
     expect(alias?.cssValue).toBe('var(--lab-radius-xxs)');
-    const xs = tokens.radii.find((t) => t.name === 'xs');
-    expect(xs?.numeric).toBe(2);
+    const xxs = tokens.radii.find((t) => t.name === 'xxs');
+    expect(xxs?.numeric).toBe(2);
   });
 
   it('emits --lab-radius-concentric-min into the generated CSS', () => {
