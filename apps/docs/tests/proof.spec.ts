@@ -20,7 +20,7 @@ import { expect, test } from '@playwright/test';
 test('SSR: delivered HTML carries declarative shadow DOM with a token', async ({ request }) => {
   // Read the raw HTML the server delivers — NOT the hydrated DOM. The SSR island
   // must already contain the DSD template before any client JS runs.
-  const res = await request.get('/proof.html');
+  const res = await request.get('/_fixtures/proof.html');
   const body = await res.text();
   expect(body).toMatch(/shadowrootmode="open"/i);
   expect(body).toMatch(/<button/i);
@@ -30,7 +30,7 @@ test('SSR: delivered HTML carries declarative shadow DOM with a token', async ({
 test('render + toggle behavior: click flips aria-pressed and the host attribute', async ({
   page,
 }) => {
-  await page.goto('/proof.html');
+  await page.goto('/_fixtures/proof.html');
   const proof = page.getByTestId('proof-client');
   await expect(proof).toBeVisible();
 
@@ -51,7 +51,7 @@ test('render + toggle behavior: click flips aria-pressed and the host attribute'
 });
 
 test('tokens: pressed surface follows the --lab-fill-accent role', async ({ page }) => {
-  await page.goto('/proof.html');
+  await page.goto('/_fixtures/proof.html');
   const proof = page.getByTestId('proof-client');
   const button = proof.locator('button');
   await button.click(); // press → accent fill role
@@ -73,7 +73,7 @@ test('tokens: pressed surface follows the --lab-fill-accent role', async ({ page
 test('theme: flipping [data-theme] re-skins the proof with zero element edits', async ({
   page,
 }) => {
-  await page.goto('/proof.html');
+  await page.goto('/_fixtures/proof.html');
   const proof = page.getByTestId('proof-client');
   const button = proof.locator('button');
 

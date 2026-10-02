@@ -14,7 +14,7 @@ import { normalizeCssColor, relativeLuminance } from './support/color.js';
  * flaky; the side-by-side visual baseline lives in visual-parity-harness.
  */
 
-const SHADOW_URL = '/shadow.html';
+const SHADOW_URL = '/_fixtures/shadow.html';
 
 async function rootVar(page: import('@playwright/test').Page, name: string): Promise<string> {
   return page.evaluate(

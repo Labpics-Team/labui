@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
  *
  * Two guarantees for the bootstrap skeleton:
  *  1. The docs page renders (title visible).
- *  2. The `--lab-*` color contract from `@labpics/colors` is applied — the
+ *  2. The `--lab-*` color contract from `@labui/colors` is applied — the
  *     heading's resolved color equals the `--lab-label-primary` token value,
  *     proving the integration point, not a hardcoded hex.
  *
@@ -24,12 +24,12 @@ test('docs page renders', async ({ page }) => {
   await expect(page.getByTestId('tagline')).toBeVisible();
 });
 
-test('heading applies the --lab-label-primary token from @labpics/colors', async ({ page }) => {
+test('heading applies the --lab-label-primary token from @labui/colors', async ({ page }) => {
   await page.goto('/');
 
   const title = page.getByTestId('title');
 
-  // The token value declared by the @labpics/colors contract, read from :root.
+  // The token value declared by the @labui/colors contract, read from :root.
   const tokenValue = await page.evaluate(() =>
     getComputedStyle(document.documentElement).getPropertyValue('--lab-label-primary').trim(),
   );

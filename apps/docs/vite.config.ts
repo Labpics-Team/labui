@@ -1,22 +1,15 @@
 import { resolve } from 'node:path';
 import { type Plugin, defineConfig } from 'vite';
 
-// The docs site is a static page for now. The framework (Astro Starlight is the
-// reversible default) is decided in the docs research task; Vite serves the
-// smoke fixture today without coupling the harness to that choice.
-//
-// Multi-page: each demo fixture is its own .html entry so every material
-// surface is verified in isolation without touching the token fixtures.
-// `materials-flag.html` is the material demo (data-material solid|glass|blur
-// over the --lab-* contract); the older Ambient/Solid `materials.html` was
-// removed with the core material shims (#41) — the engine owns materials now
-// (`packages/materials`, ADR-0003). `shadow.html`
-// is the shadow-stack demo. `proof.html` is the core-scaffold proof:
-// `<lab-proof>` client-rendered AND server-rendered (declarative shadow DOM).
+// Documentation pages and browser evidence share one Vite build, but their
+// topology is explicit: user-facing docs live at the root; isolated browser
+// oracles live under src/_fixtures and are reachable only by tests. A fixture
+// may prove rendering, SSR, material or shadow behavior without becoming a
+// documentation surface or a second product API.
 
 /**
  * Inject the server-rendered `<lab-proof>` declarative-shadow-DOM string into
- * `proof.html` at build time, via the real `@labpics/ui-core/ssr` shim. This is
+ * `_fixtures/proof.html` at build time, via the real `@labpics/ui-core/ssr` shim. This is
  * the page's SSR proof: the delivered HTML carries styled shadow content with no
  * FOUC, before any client JS runs. The placeholder `<!-- @@SSR_PROOF@@ -->` is
  * replaced; other pages are untouched.
@@ -55,16 +48,13 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'src/index.html'),
-        // Рантайм-провайдер: живой WASM-движок + watchTheme + acme-конфиг.
-        'engine-live': resolve(__dirname, 'src/engine-live.html'),
-        // Materials FLAG demo: data-material solid|glass|blur over the --lab-*
-        // contract (@labpics/ui-materials). One attribute flips card + modal.
-        'materials-flag': resolve(__dirname, 'src/materials-flag.html'),
-        // Acrylic v2 LIVE: mountMaterialRuntime + luminosity-конвейер над
-        // экстремальными полями фона — измерительный полигон ADR-0009.
-        'acrylic-live': resolve(__dirname, 'src/acrylic-live.html'),
-        shadow: resolve(__dirname, 'src/shadow.html'),
-        proof: resolve(__dirname, 'src/proof.html'),
+        // Test-only browser oracles. Keeping them below _fixtures prevents a
+        // measurement harness from masquerading as documentation.
+        'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),
+        'fixture-acrylic-live': resolve(__dirname, 'src/_fixtures/acrylic-live.html'),
+        'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
+        'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
+        'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),
