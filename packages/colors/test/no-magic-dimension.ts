@@ -98,7 +98,7 @@ export const MIGRATED: Readonly<Record<string, readonly string[]>> = {
   // НЕ мигрированы (аудит дрейфа shadcn, 2026-07-09): menu / select / pagination /
   // slider / popover. Их живые размеры дрейфанули от канона шкалы (наследие shadcn):
   //   control-h: 1.875rem→канон 2rem (s), 2.25rem→2.5rem (m), 2.75rem→3rem (l);
-  //   slider:    border-radius 0.375rem→канон --lab-radius-sm 0.25rem;
+  //   slider:    border-radius 0.375rem→канон --lab-radius-xs 0.25rem;
   //   popover:   голые литералы 0.0625/0.625/1.125/1.5/9.0625rem без токенов шкалы.
   // Обернуть их в канонические токены = молча сдвинуть пиксели в рантайме — запрещено
   // мандатом байт-идентичности (#137). Нормализация — отдельным видимым PR с дизайн-

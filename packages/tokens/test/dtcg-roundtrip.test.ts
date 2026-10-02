@@ -7,15 +7,16 @@ import snapshot from './fixtures/figma-snapshot-subset.json' with { type: 'json'
  * DTCG round-trip + intentional-delta documentation against Daniel's Figma
  * snapshot (the "100% mode" canonical values).
  *
- * The Figma dimension scale is deliberately REPLACED by LabUI ("the current
- * Figma scale is broken"), so this is not a byte-for-byte round-trip — it is a
- * documented reconciliation. The test pins:
- *   1. what LabUI PRESERVES from Figma (the values that were already sane), and
- *   2. what LabUI intentionally CHANGES (with the reason), so the delta is an
- *      explicit, reviewed artifact for the future figma-snapshot-export.
+ * Web representation is allowed to translate Figma values (for example px to
+ * rem) but not silently replace a finished design scale. The test pins:
+ *   1. what Lab UI preserves exactly as design intent, including radius names
+ *      and values; and
+ *   2. the few implementation-level deltas that are explicitly owned by code,
+ *      such as the z-index runtime ordering.
  */
 
 const doc = JSON.parse(generate(defaultConfig).dtcg) as {
+  radius: Record<string, { $value: { value: number } }>;
   'z-index': Record<string, { $value: number }>;
   'font-size': Record<string, { $value: { value: number } }>;
 };
@@ -38,6 +39,13 @@ function fontPx(name: string): number {
   return entry.$value.value;
 }
 
+/** Presence-checked radius px lookup from the generated DTCG. */
+function radiusPx(name: string): number {
+  const entry = doc.radius[name];
+  if (!entry) throw new Error(`missing radius token "${name}"`);
+  return entry.$value.value;
+}
+
 describe('DTCG export — self round-trip', () => {
   it('re-parses to an identical structure (stable, valid JSON)', () => {
     const once = generate(defaultConfig).dtcg;
@@ -55,6 +63,28 @@ describe('reconciliation with Figma snapshot — PRESERVED values', () => {
     expect(fontPx('md')).toBe(16);
     expect(fontPx('6xl')).toBeGreaterThan(110);
     expect(fontPx('6xl')).toBeLessThan(114);
+  });
+
+  it('radius primitives preserve the final Figma Radius/* ladder exactly', () => {
+    const map: Record<string, string> = {
+      None: '0',
+      XXS: 'xxs',
+      XS: 'xs',
+      S: 's',
+      M: 'm',
+      L: 'l',
+      XL: 'xl',
+      '2XL': '2xl',
+      '3XL': '3xl',
+      '4XL': '4xl',
+      '5XL': '5xl',
+      Full: 'full',
+    };
+    for (const [figmaName, value] of Object.entries(snapshot.radius)) {
+      const tokenName = map[figmaName];
+      if (!tokenName) throw new Error(`unmapped Figma radius "${figmaName}"`);
+      expect(radiusPx(tokenName), figmaName).toBe(value);
+    }
   });
 
   it('the full set of 15 z-index layer NAMES is preserved (re-expressed semantically)', () => {
@@ -101,17 +131,14 @@ describe('reconciliation with Figma snapshot — INTENTIONAL DELTAS (documented)
     }
   });
 
-  it('DELTA: spacing/radii are rem-relative, replacing the broken Figma px ladder', () => {
-    // Figma px scale jumps 60->64->72->80 (px/18..21): uneven big steps. LabUI
-    // replaces it with a controllable linear rem multiplier. We assert LabUI's
-    // spine is regular (4px) where Figma's was not, as the documented reason.
-    const figmaJump = px('px/21') - px('px/20');
-    expect(figmaJump).toBe(8); // 80 - 72
-    const figmaPrevJump = px('px/20') - px('px/19');
-    expect(figmaPrevJump).toBe(8); // 72 - 64 ... but px/18->19 is 60->64 = 4: irregular
+  it('DELTA: spacing uses a normalized rem spine while radius preserves Figma exactly', () => {
+    // Unit is a general design unit ladder, not the web spacing API. At larger
+    // values it intentionally mixes 4px and 8px jumps. Lab UI exposes spacing
+    // as a regular 4px rem spine, while the separate Radius/* ladder above is
+    // preserved by name and value.
     expect(px('px/19') - px('px/18')).toBe(4);
-    // LabUI's spine is uniformly 4px across its integer steps — the fix.
-    // (verified in scales.test.ts; here we only pin the Figma irregularity.)
+    expect(px('px/20') - px('px/19')).toBe(8);
+    expect(px('px/21') - px('px/20')).toBe(8);
   });
 
   it('DELTA: the pt/0 data gap (no 133.3% mode) is closed — LabUI defines zero everywhere', () => {

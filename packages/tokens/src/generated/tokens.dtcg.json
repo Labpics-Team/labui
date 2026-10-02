@@ -736,7 +736,7 @@
         }
       }
     },
-    "xs": {
+    "xxs": {
       "$type": "dimension",
       "$value": {
         "value": 2,
@@ -748,7 +748,7 @@
         }
       }
     },
-    "sm": {
+    "xs": {
       "$type": "dimension",
       "$value": {
         "value": 4,
@@ -760,7 +760,7 @@
         }
       }
     },
-    "md": {
+    "s": {
       "$type": "dimension",
       "$value": {
         "value": 6,
@@ -772,7 +772,7 @@
         }
       }
     },
-    "lg": {
+    "m": {
       "$type": "dimension",
       "$value": {
         "value": 8,
@@ -784,7 +784,7 @@
         }
       }
     },
-    "xl": {
+    "l": {
       "$type": "dimension",
       "$value": {
         "value": 12,
@@ -796,7 +796,7 @@
         }
       }
     },
-    "2xl": {
+    "xl": {
       "$type": "dimension",
       "$value": {
         "value": 16,
@@ -805,6 +805,18 @@
       "$extensions": {
         "com.labpics.ui-tokens": {
           "css": "1rem"
+        }
+      }
+    },
+    "2xl": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
         }
       }
     },
@@ -823,24 +835,24 @@
     "4xl": {
       "$type": "dimension",
       "$value": {
-        "value": 32,
+        "value": 28,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "2rem"
+          "css": "1.75rem"
         }
       }
     },
     "5xl": {
       "$type": "dimension",
       "$value": {
-        "value": 48,
+        "value": 32,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "3rem"
+          "css": "2rem"
         }
       }
     },

@@ -176,7 +176,7 @@ export class LabPopover extends LabElement {
     .trigger:focus-visible {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
-      border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
     }
 
     /* Modal scrim — toggled in updated() from the machine's open state. */
@@ -207,7 +207,7 @@ export class LabPopover extends LabElement {
       min-width: var(--_min-width);
       max-width: var(--_max-width);
       padding: var(--_pad);
-      border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
+      border-radius: ${litVar('--lab-radius-m', '0.5rem')};
       background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
@@ -253,7 +253,7 @@ export class LabPopover extends LabElement {
       height: 1.5rem;
       padding: 0;
       border: 0;
-      border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
       background: none;
       color: ${litVar('--lab-label-secondary')};
       font-size: 1.125rem;

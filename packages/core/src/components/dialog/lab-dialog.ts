@@ -166,7 +166,7 @@ export const dialogFloatingStyles = css`
     max-height: calc(100vh - 2 * ${litVar('--lab-space-lg', '1.5rem')});
     overflow: auto;
     padding: var(--_pad);
-    border-radius: ${litVar('--lab-radius-lg', '0.5rem')};
+    border-radius: ${litVar('--lab-radius-m', '0.5rem')};
     background-color: ${litVar('--lab-bg-secondary')};
     color: ${litVar('--lab-label-primary')};
     border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
@@ -213,7 +213,7 @@ export const dialogFloatingStyles = css`
     height: ${litVar('--lab-space-7', '1.75rem')};
     padding: 0;
     border: 0;
-    border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+    border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
     background: none;
     color: ${litVar('--lab-label-secondary')};
     font-size: ${litVar('--lab-space-5', '1.25rem')};
@@ -348,7 +348,7 @@ export class LabDialog extends LabElement {
     .trigger:focus-visible {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
-      border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
     }
   `;
 

@@ -88,10 +88,11 @@ export type SizeToken = keyof typeof size;
 
 export const radius = {
   '0': 'var(--lab-radius-0)',
+  xxs: 'var(--lab-radius-xxs)',
   xs: 'var(--lab-radius-xs)',
-  sm: 'var(--lab-radius-sm)',
-  md: 'var(--lab-radius-md)',
-  lg: 'var(--lab-radius-lg)',
+  s: 'var(--lab-radius-s)',
+  m: 'var(--lab-radius-m)',
+  l: 'var(--lab-radius-l)',
   xl: 'var(--lab-radius-xl)',
   '2xl': 'var(--lab-radius-2xl)',
   '3xl': 'var(--lab-radius-3xl)',

@@ -175,7 +175,7 @@ export class LabTooltip extends LabElement {
     .trigger:focus-visible {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
-      border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
     }
 
     /* The Zag positioner — Floating UI writes position via --x/--y and layers it
@@ -193,7 +193,7 @@ export class LabTooltip extends LabElement {
       box-sizing: border-box;
       max-width: var(--_max-width);
       padding: var(--_pad-block) var(--_pad-inline);
-      border-radius: ${litVar('--lab-radius-md', '0.375rem')};
+      border-radius: ${litVar('--lab-radius-s', '0.375rem')};
       background-color: ${litVar('--lab-bg-inverted')};
       color: ${litVar('--lab-label-inverted-primary')};
       font: inherit;

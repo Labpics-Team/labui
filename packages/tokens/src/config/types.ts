@@ -39,7 +39,7 @@ export interface SpacingConfig {
 }
 
 /**
- * Radii scale: a geometric rem progression plus an explicit `full` pill token
+ * Radii scale: the Figma Radius/* ladder translated to rem plus an explicit `full` pill token
  * and an explicit zero. Same rem pattern as spacing, geometric instead of
  * linear so corners feel proportional across sizes.
  */

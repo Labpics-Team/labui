@@ -202,7 +202,7 @@ export class LabMenu extends LabElement {
       margin: 0;
       padding: 0 var(--_pad-x);
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-base')};
-      border-radius: ${litVar('--lab-radius-md', '0.375rem')};
+      border-radius: ${litVar('--lab-radius-s', '0.375rem')};
       background-color: ${litVar('--lab-bg-primary')};
       color: ${litVar('--lab-label-primary')};
       font: inherit;
@@ -250,7 +250,7 @@ export class LabMenu extends LabElement {
       margin: 0;
       padding: ${litVar('--lab-space-xs', '0.25rem')};
       list-style: none;
-      border-radius: ${litVar('--lab-radius-md', '0.375rem')};
+      border-radius: ${litVar('--lab-radius-s', '0.375rem')};
       background-color: ${litVar('--lab-bg-secondary')};
       color: ${litVar('--lab-label-primary')};
       border: ${litVar('--lab-stroke-hairline')} solid ${litVar('--lab-border-soft')};
@@ -273,7 +273,7 @@ export class LabMenu extends LabElement {
       align-items: center;
       gap: ${litVar('--lab-space-sm', '0.5rem')};
       padding: ${litVar('--lab-space-xs', '0.25rem')} ${litVar('--lab-space-sm', '0.5rem')};
-      border-radius: ${litVar('--lab-radius-sm', '0.25rem')};
+      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
       color: ${litVar('--lab-label-primary')};
       cursor: pointer;
       user-select: none;

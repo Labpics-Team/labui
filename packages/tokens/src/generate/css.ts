@@ -19,7 +19,7 @@ export function generateCss(tokens: ResolvedTokens): string {
       ...tokenLines(tokens.sizes),
       ...aliasLines(tokens.sizesAliases),
     ]),
-    section('Radii — geometric rem + full pill', [
+    section('Radii — Figma ladder translated to rem + full pill', [
       ...tokenLines(tokens.radii),
       ...aliasLines(tokens.radiiAliases),
     ]),

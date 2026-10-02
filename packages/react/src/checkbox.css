@@ -10,7 +10,7 @@
 
 [data-lab-checkbox] {
   --_lab-cb-box: var(--lab-size-control-l, 1.25rem);
-  --_lab-cb-radius: var(--lab-radius-sm, 0.25rem);
+  --_lab-cb-radius: var(--lab-radius-xs, 0.25rem);
   --_lab-cb-gap: var(--lab-space-sm, 0.5rem);
   --_lab-cb-font: var(--lab-font-size-md, 1rem);
   --_lab-cb-tracking: var(--lab-letter-spacing-md, -0.0083em);

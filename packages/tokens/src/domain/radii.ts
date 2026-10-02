@@ -7,7 +7,7 @@ import type { ResolvedAlias, ResolvedToken } from './token.js';
 export const RADIUS_FULL = 'full';
 
 /**
- * Build the radii scale: a geometric rem progression plus an explicit `full`
+ * Build the radii scale: the canonical Figma Radius/* ladder translated to rem plus an explicit `full`
  * pill token and an enforced zero token.
  *
  * `full` is a semantic value (Material 3's 9999px pill), not a computed 50% — a

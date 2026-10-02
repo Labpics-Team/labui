@@ -35,7 +35,7 @@ h1 {
   margin-block: var(--lab-space-6, 1.5rem);
   padding: var(--lab-space-4, 1rem);
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
-  border-radius: var(--lab-radius-lg, 0.75rem);
+  border-radius: var(--lab-radius-m, 0.5rem);
 }
 
 .specimens {

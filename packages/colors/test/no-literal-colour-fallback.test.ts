@@ -234,7 +234,7 @@ describe('no colour-role literal-colour fallback (recurrence guard)', () => {
 
   it('ALLOWS a dimension token with a literal dimension fallback', () => {
     expect(scanSource('p.css', 'padding: var(--lab-space-xs, 0.25rem);')).toEqual([]);
-    expect(scanSource('p.ts', "padding: ${litVar('--lab-radius-md', '0.375rem')};")).toEqual([]);
+    expect(scanSource('p.ts', "padding: ${litVar('--lab-radius-s', '0.375rem')};")).toEqual([]);
     expect(scanSource('p.ts', "z-index: ${litVar('--lab-z-dropdown', '900')};")).toEqual([]);
   });
 

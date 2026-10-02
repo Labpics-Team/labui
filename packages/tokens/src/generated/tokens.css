@@ -78,25 +78,26 @@
   --lab-size-overlay-32: 32rem;
   --lab-size-overlay-40: 40rem;
 
-  /* Radii — geometric rem + full pill */
+  /* Radii — Figma ladder translated to rem + full pill */
   --lab-radius-0: 0rem;
-  --lab-radius-xs: 0.125rem;
-  --lab-radius-sm: 0.25rem;
-  --lab-radius-md: 0.375rem;
-  --lab-radius-lg: 0.5rem;
-  --lab-radius-xl: 0.75rem;
-  --lab-radius-2xl: 1rem;
+  --lab-radius-xxs: 0.125rem;
+  --lab-radius-xs: 0.25rem;
+  --lab-radius-s: 0.375rem;
+  --lab-radius-m: 0.5rem;
+  --lab-radius-l: 0.75rem;
+  --lab-radius-xl: 1rem;
+  --lab-radius-2xl: 1.25rem;
   --lab-radius-3xl: 1.5rem;
-  --lab-radius-4xl: 2rem;
-  --lab-radius-5xl: 3rem;
+  --lab-radius-4xl: 1.75rem;
+  --lab-radius-5xl: 2rem;
   --lab-radius-full: 9999px; /* Pill / fully-rounded — a semantic constant, not computed 50%. */
   --lab-radius-corner-k: 1.1; /* Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 "fit" is retracted; see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle. */
   --lab-radius-none: var(--lab-radius-0); /* -> 0 */
-  --lab-radius-control: var(--lab-radius-lg); /* -> lg */
-  --lab-radius-card: var(--lab-radius-2xl); /* -> 2xl */
+  --lab-radius-control: var(--lab-radius-m); /* -> m */
+  --lab-radius-card: var(--lab-radius-xl); /* -> xl */
   --lab-radius-pill: var(--lab-radius-full); /* -> full */
   --lab-radius-circle: var(--lab-radius-full); /* -> full */
-  --lab-radius-concentric-min: var(--lab-radius-xs); /* -> xs */
+  --lab-radius-concentric-min: var(--lab-radius-xxs); /* -> xxs */
 
   /* Z-index — semantic layers, gap-spaced */
   --lab-z-primary: 0; /* Base content plane. */

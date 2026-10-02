@@ -33,7 +33,7 @@ describe('concentricRadius — emitted CSS (class A)', () => {
 
   it('the floor rides the semantic token with a canonical 2px (=0.125rem) fallback', () => {
     // Токен обязан классифицироваться как размерный (компонент вправе его
-    // читать), а литерал фолбэка — равняться канону --lab-radius-xs, на который
+    // читать), а литерал фолбэка — равняться канону --lab-radius-xxs, на который
     // алиасится concentric-min; гард no-magic-dimension держит то же равенство
     // по всем мигрированным компонентам.
     expect(classifyLabVar('--lab-radius-concentric-min')).toBe('dimension');
