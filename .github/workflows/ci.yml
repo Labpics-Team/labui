@@ -174,8 +174,8 @@ jobs:
             exit 0
           fi
 
-      - name: Upload Trivy report
-        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
+      - name: Upload Trivy report after failure
+        if: ${{ failure() && steps.dbwarm.outputs.ready == 'true' }}
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -372,8 +372,8 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-      - name: Upload Playwright report
-        if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
+      - name: Upload Playwright report after failure
+        if: ${{ failure() && steps.browser.outputs.report_ready == 'true' }}
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
