@@ -13,6 +13,14 @@ overrides:
   postcss@<8.5.18: 8.5.18
   devalue@<5.9.3: 5.9.3
 
+patchedDependencies:
+  braces@3.0.3:
+    hash: 4ab30ccf53ccdaa35119e45e65f29c948d87b665c122a665154abb4abea6ecd9
+    path: patches/braces@3.0.3.patch
+  http-cache-semantics@4.2.0:
+    hash: 37c4236e0bcd26d671ae12c350b18e50d510a9d12d7d8d74a5e873726a4d4e05
+    path: patches/http-cache-semantics@4.2.0.patch
+
 importers:
 
   .:
@@ -4851,7 +4859,7 @@ snapshots:
       get-tsconfig: 5.0.0-beta.4
       github-slugger: 2.0.0
       html-escaper: 3.0.3
-      http-cache-semantics: 4.2.0
+      http-cache-semantics: 4.2.0(patch_hash=37c4236e0bcd26d671ae12c350b18e50d510a9d12d7d8d74a5e873726a4d4e05)
       js-yaml: 4.3.2
       jsonc-parser: 3.3.1
       magic-string: 1.4.2
@@ -4927,7 +4935,7 @@ snapshots:
 
   boolbase@1.0.0: {}
 
-  braces@3.0.3:
+  braces@3.0.3(patch_hash=4ab30ccf53ccdaa35119e45e65f29c948d87b665c122a665154abb4abea6ecd9):
     dependencies:
       fill-range: 7.1.1
 
@@ -5329,7 +5337,7 @@ snapshots:
 
   html-void-elements@3.0.0: {}
 
-  http-cache-semantics@4.2.0: {}
+  http-cache-semantics@4.2.0(patch_hash=37c4236e0bcd26d671ae12c350b18e50d510a9d12d7d8d74a5e873726a4d4e05): {}
 
   human-id@1.0.2: {}
 
@@ -5528,7 +5536,7 @@ snapshots:
 
   micromatch@4.0.8:
     dependencies:
-      braces: 3.0.3
+      braces: 3.0.3(patch_hash=4ab30ccf53ccdaa35119e45e65f29c948d87b665c122a665154abb4abea6ecd9)
       picomatch: 2.3.2
 
   mri@1.2.0: {}

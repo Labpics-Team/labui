@@ -1,0 +1,114 @@
+diff --git a/lib/compile.js b/lib/compile.js
+index dce69be..11495e5 100644
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -1,9 +1,12 @@
+ 'use strict';
+ 
++const { validate } = require('./limits');
++
+ const fill = require('fill-range');
+ const utils = require('./utils');
+ 
+ const compile = (ast, options = {}) => {
++  validate(ast);
+   const walk = (node, parent = {}) => {
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+diff --git a/lib/expand.js b/lib/expand.js
+index 35b2c41..e0c3ab8 100644
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -1,5 +1,7 @@
+ 'use strict';
+ 
++const { validate } = require('./limits');
++
+ const fill = require('fill-range');
+ const stringify = require('./stringify');
+ const utils = require('./utils');
+@@ -31,6 +33,7 @@ const append = (queue = '', stash = '', enclose = false) => {
+ };
+ 
+ const expand = (ast, options = {}) => {
++  validate(ast);
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+ 
+   const walk = (node, parent = {}) => {
+diff --git a/lib/limits.js b/lib/limits.js
+new file mode 100644
+index 0000000..9ce79b2
+--- /dev/null
++++ b/lib/limits.js
+@@ -0,0 +1,27 @@
++'use strict';
++
++const MAX_DEPTH = 100;
++const MAX_NODES = 65536;
++
++// Parent links belong to the parser; only the child traversal is recursive.
++const validate = ast => {
++  const stack = [{ node: ast, depth: 0, leave: false }];
++  const ancestors = new Set();
++  let visited = 0;
++  while (stack.length > 0) {
++    const { node, depth, leave } = stack.pop();
++    if (!node || typeof node !== 'object') continue;
++    if (leave) { ancestors.delete(node); continue; }
++    if (depth > MAX_DEPTH && Array.isArray(node.nodes)) throw new RangeError('Brace AST nesting exceeds 100 levels');
++    if (ancestors.has(node)) throw new RangeError('Brace AST contains cyclic nodes');
++    if (++visited > MAX_NODES) throw new RangeError('Brace AST exceeds node budget');
++    ancestors.add(node);
++    stack.push({ node, depth, leave: true });
++    if (Array.isArray(node.nodes)) {
++      if (node.nodes.length > MAX_NODES) throw new RangeError('Brace AST exceeds node budget');
++      for (let i = node.nodes.length - 1; i >= 0; i--) stack.push({ node: node.nodes[i], depth: depth + 1, leave: false });
++    }
++  }
++};
++
++module.exports = Object.freeze({ MAX_DEPTH, validate });
+diff --git a/lib/parse.js b/lib/parse.js
+index 3a6988e..6bd8993 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -1,5 +1,7 @@
+ 'use strict';
+ 
++const { MAX_DEPTH } = require('./limits');
++
+ const stringify = require('./stringify');
+ 
+ /**
+@@ -144,6 +146,7 @@ const parse = (input, options = {}) => {
+ 
+     if (value === CHAR_LEFT_PARENTHESES) {
+       block = push({ type: 'paren', nodes: [] });
++      if (stack.length > MAX_DEPTH) throw new RangeError('Brace pattern nesting exceeds 100 levels');
+       stack.push(block);
+       push({ type: 'text', value });
+       continue;
+@@ -210,6 +213,7 @@ const parse = (input, options = {}) => {
+       };
+ 
+       block = push(brace);
++      if (stack.length > MAX_DEPTH) throw new RangeError('Brace pattern nesting exceeds 100 levels');
+       stack.push(block);
+       push({ type: 'open', value });
+       continue;
+diff --git a/lib/stringify.js b/lib/stringify.js
+index 8bcf872..3ee985b 100644
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -1,8 +1,11 @@
+ 'use strict';
+ 
++const { validate } = require('./limits');
++
+ const utils = require('./utils');
+ 
+ module.exports = (ast, options = {}) => {
++  validate(ast);
+   const stringify = (node, parent = {}) => {
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;

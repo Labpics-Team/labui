@@ -1,0 +1,32 @@
+diff --git a/index.js b/index.js
+--- a/index.js
++++ b/index.js
+@@ -394,6 +394,10 @@ module.exports = class CachePolicy {
+     evaluateRequest(req) {
+         this._assertRequestHasHeaders(req);
+ 
++        if (!this.storable()) {
++            return this._evaluateRequestMissResult(req);
++        }
++
+         // In all circumstances, a cache MUST NOT ignore the must-revalidate directive
+         if (this._rescc['must-revalidate']) {
+             return this._evaluateRequestMissResult(req);
+@@ -423,6 +427,17 @@ module.exports = class CachePolicy {
+         // the stored response is either:
+         // fresh, or allowed to be served stale
+         if (this.stale()) {
++            // Security-zeroed entries must not be revived by client stale directives.
++            if (
++                this._rescc['no-cache'] ||
++                this._resHeaders.vary === '*' ||
++                (this._isShared && (
++                    this._rescc['proxy-revalidate'] ||
++                    (this._resHeaders['set-cookie'] && !this._rescc.public && !this._rescc.immutable)
++                ))
++            ) {
++                return this._evaluateRequestMissResult(req);
++            }
+             // If a value is present, then the client is willing to accept a response that has
+             // exceeded its freshness lifetime by no more than the specified number of seconds
+             const allowsStaleWithoutRevalidation = 'max-stale' in requestCC &&
