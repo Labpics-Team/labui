@@ -175,7 +175,7 @@ jobs:
           fi
 
       - name: Upload Trivy report
-        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
+        if: ${{ failure() && steps.dbwarm.outputs.ready == 'true' }}
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
@@ -241,6 +241,9 @@ jobs:
 
       - name: Verify pnpm store isolation contract
         run: node scripts/ci/pnpm-store-contract.mjs
+
+      - name: Verify CI artifact retention contract
+        run: node scripts/ci/artifact-retention-contract.mjs
 
       - name: Install from isolated pnpm store
         shell: bash
@@ -373,7 +376,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload Playwright report
-        if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
+        if: ${{ failure() && steps.browser.outputs.report_ready == 'true' }}
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
