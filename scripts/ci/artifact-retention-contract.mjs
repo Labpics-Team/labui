@@ -15,7 +15,12 @@ function artifactSteps(source) {
     let j = i + 1;
     while (j < lines.length && !lines[j].startsWith('      - name: ')) block.push(lines[j++]);
     if (!block.some((line) => line.includes('uses: actions/upload-artifact@'))) continue;
-    const condition = block.find((line) => line.trim().startsWith('if:'))?.trim().slice(3).trim() ?? '';
+    const condition =
+      block
+        .find((line) => line.trim().startsWith('if:'))
+        ?.trim()
+        .slice(3)
+        .trim() ?? '';
     steps.push({ name: lines[i].slice('      - name: '.length), condition });
   }
   return steps;
