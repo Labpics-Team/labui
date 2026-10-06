@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
 const workflows = {
   ci: readFileSync('.github/workflows/ci.yml', 'utf8'),
@@ -7,27 +8,18 @@ const workflows = {
 };
 
 function artifactSteps(source) {
-  const lines = source.split('\n');
-  const steps = [];
-  for (let i = 0; i < lines.length; i++) {
-    if (!lines[i].startsWith('      - name: ')) continue;
-    const block = [lines[i]];
-    let j = i + 1;
-    while (j < lines.length && !lines[j].startsWith('      - name: ')) block.push(lines[j++]);
-    if (!block.some((line) => line.includes('uses: actions/upload-artifact@'))) continue;
-    const condition =
-      block
-        .find((line) => line.trim().startsWith('if:'))
-        ?.trim()
-        .slice(3)
-        .trim() ?? '';
-    steps.push({ name: lines[i].slice('      - name: '.length), condition });
+  const { parseAllDocuments } = createRequire(new URL('../../ci/package.json', import.meta.url))('yaml');
+  const documents = parseAllDocuments(source, { uniqueKeys: true, strict: true, version: '1.2' });
+  if (documents.length !== 1 || documents[0].errors.length > 0) {
+    throw new Error('Artifact retention requires one valid workflow document');
   }
-  const uploadCount = (source.match(/actions\/upload-artifact@/g) ?? []).length;
-  if (uploadCount !== steps.length) {
+  const workflow = documents[0].toJS({ maxAliasCount: 100 });
+  const uploads = Object.values(workflow.jobs).flatMap((job) => job.steps ?? [])
+    .filter((step) => step.uses?.startsWith('actions/upload-artifact@'));
+  if (uploads.some((step) => typeof step.name !== 'string')) {
     throw new Error('Every artifact upload must have its own named step and retention contract');
   }
-  return steps;
+  return uploads.map((step) => ({ name: step.name, condition: step.if ?? '' }));
 }
 
 const actual = {
@@ -39,7 +31,7 @@ const expected = {
   ci: [
     {
       name: 'Upload Trivy report',
-      condition: "${{ failure() && steps.dbwarm.outputs.ready == 'true' }}",
+      condition: "${{ failure() }}",
     },
     {
       name: 'Upload FX-render артефакт (PNG для обзора владельцем)',
@@ -53,7 +45,7 @@ const expected = {
   full: [
     {
       name: 'Upload Playwright report',
-      condition: '${{ failure() }}',
+      condition: "${{ failure() && steps.browser.outputs.report_ready == 'true' }}",
     },
   ],
 };
