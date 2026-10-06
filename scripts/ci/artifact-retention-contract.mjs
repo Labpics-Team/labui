@@ -23,6 +23,10 @@ function artifactSteps(source) {
         .trim() ?? '';
     steps.push({ name: lines[i].slice('      - name: '.length), condition });
   }
+  const uploadCount = (source.match(/actions\/upload-artifact@/g) ?? []).length;
+  if (uploadCount !== steps.length) {
+    throw new Error('Every artifact upload must have its own named step and retention contract');
+  }
   return steps;
 }
 
