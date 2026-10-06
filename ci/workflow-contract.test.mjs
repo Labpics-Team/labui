@@ -159,6 +159,42 @@ test('original quality commands remain ordered and CI tests cannot disappear', (
   assert.notEqual(missing.status, 0);
 });
 
+function checkSecurityRuntime(job) {
+  const runtime = job.steps.filter((step) => step.uses?.startsWith('actions/setup-node@'));
+  assert.deepEqual(runtime, [
+    {
+      name: 'Setup Node for security qualification',
+      uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020',
+      with: { 'node-version': 22 },
+    },
+  ]);
+  const checkout = job.steps.findIndex((step) => step.name === 'Checkout');
+  const scan = job.steps.findIndex((step) => step.run === 'bash .github/scripts/scan.sh');
+  const setup = job.steps.indexOf(runtime[0]);
+  assert.ok(checkout >= 0 && checkout < setup && setup < scan);
+}
+
+test('security qualification declares a pinned Node 22 runtime before scanning', () => {
+  checkSecurityRuntime(ci.jobs.sca);
+  const mutate = (change) => {
+    const job = structuredClone(ci.jobs.sca);
+    const index = job.steps.findIndex((step) => step.uses?.startsWith('actions/setup-node@'));
+    change(job, index);
+    assert.throws(() => checkSecurityRuntime(job));
+  };
+  mutate((job, index) => job.steps.splice(index, 1));
+  mutate((job, index) => {
+    job.steps[index].with['node-version'] = 20;
+  });
+  mutate((job, index) => {
+    job.steps[index].uses = 'actions/setup-node@v4';
+  });
+  mutate((job, index) => job.steps.push(job.steps.splice(index, 1)[0]));
+  mutate((job, index) => {
+    job.steps[index].if = '${{ false }}';
+  });
+});
+
 test('native aggregate rejects every non-success and an empty result set', () => {
   const gate = ci.jobs.ci.steps[0].run;
   const check = (script, results) => execute(script, { NEEDS_RESULTS: results }).status === 0;

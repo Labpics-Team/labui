@@ -34,6 +34,10 @@ jobs:
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       with:
         persist-credentials: false
+    - name: Setup Node for security qualification
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: 22
     - name: Cache Trivy DB
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
       with:
