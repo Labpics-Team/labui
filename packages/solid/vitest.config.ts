@@ -7,7 +7,6 @@ export default defineConfig({
     conditions: ['development', 'browser'],
   },
   test: {
-    include: ['test/**/*.test.ts'],
     environment: 'node',
     projects: [
       {

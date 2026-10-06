@@ -14,7 +14,6 @@ export default getViteConfig({
     },
   },
   test: {
-    include: ['test/**/*.test.ts'],
     environment: 'node',
     projects: [
       {
