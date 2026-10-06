@@ -81,10 +81,13 @@ function regularJson(path) {
   if (!info.isFile() || info.isSymbolicLink() || info.size === 0 || info.size > 64 * 1024 * 1024)
     throw new Error('Missing or unqualified scanner evidence');
   const bytes = readFileSync(path);
-  return {
-    value: JSON.parse(bytes.toString('utf8')),
-    digest: createHash('sha256').update(bytes).digest('hex'),
-  };
+  let value;
+  try {
+    value = JSON.parse(bytes.toString('utf8'));
+  } catch {
+    throw new Error('Scanner evidence is malformed JSON');
+  }
+  return { value, digest: createHash('sha256').update(bytes).digest('hex') };
 }
 
 async function main(argv) {

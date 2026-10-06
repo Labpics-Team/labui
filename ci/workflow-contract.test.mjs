@@ -410,9 +410,14 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
     '--include-dev-deps --include-non-failures --list-all-pkgs --show-suppressed',
     '--ignorefile /dev/null',
     'scan-policy.mjs assess',
+    '--offline-scan --parallel 2 --timeout 5m --disable-telemetry --skip-version-check --quiet',
+    '-v "${output}/source:/src:ro"',
+    '-v "${output}/report:/out"',
+    '-v "${output}/config.yaml:/policy/config.yaml:ro"',
     '--skip-db-update --skip-java-db-update',
   ])
     assert.ok(scanner.includes(text));
+  assert.equal(scanner.includes('-v "${output}:/out"'), false);
   for (const [name, vars, expected, scanned] of [
     ['clean', {}, 0, true],
     ['retry', { DB_FAILURES: '2' }, 0, true],

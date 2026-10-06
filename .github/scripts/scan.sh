@@ -7,6 +7,7 @@ cache="${RUNNER_TEMP}/trivycache"
 output="$(mktemp -d "${RUNNER_TEMP}/trivy-output.XXXXXX")"
 trap 'rm -rf -- "$output"' EXIT
 mkdir -p "$cache"
+mkdir "$output/report"
 rm -f -- "${RUNNER_TEMP}/trivy-report.txt"
 node scripts/ci/scan-policy.mjs snapshot "$PWD" "$output/source" > "$output/source.json"
 printf '{}\n' > "$output/config.yaml"
@@ -31,16 +32,18 @@ export SCAN_STARTED_MS="$(node -e 'process.stdout.write(String(Date.now()))')"
 
 status=0
 docker run --rm --user "$(id -u):$(id -g)" \
-  -v "${output}/source:/src:ro" -v "${cache}:/cache" -v "${output}:/out" \
+  -v "${output}/source:/src:ro" -v "${cache}:/cache" -v "${output}/report:/out" \
+  -v "${output}/config.yaml:/policy/config.yaml:ro" \
   "$TRIVY_IMAGE" fs /src \
-  --config /out/config.yaml --secret-config /out/config.yaml --ignorefile /dev/null \
+  --config /policy/config.yaml --secret-config /policy/config.yaml --ignorefile /dev/null \
   --scanners vuln,secret,misconfig,license --severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL \
   --include-dev-deps --include-non-failures --list-all-pkgs --show-suppressed \
   --skip-db-update --skip-java-db-update --skip-check-update --skip-vex-repo-update \
+  --offline-scan --parallel 2 --timeout 5m --disable-telemetry --skip-version-check --quiet \
   --cache-dir /cache --no-progress --exit-code 0 --format json \
   --output /out/trivy-report.json || status=$?
-if [ -f "${output}/trivy-report.json" ]; then
-  cp "${output}/trivy-report.json" "${RUNNER_TEMP}/trivy-report.txt"
+if [ -f "${output}/report/trivy-report.json" ]; then
+  cp "${output}/report/trivy-report.json" "${RUNNER_TEMP}/trivy-report.txt"
 elif [ "$status" -eq 0 ]; then
   echo '::error::Trivy returned success without a report.' >&2
   exit 1
@@ -49,5 +52,5 @@ if [ "$status" -ne 0 ]; then
   printf '::error::Trivy execution incomplete (exit %s).\n' "$status" >&2
   exit "$status"
 fi
-node scripts/ci/scan-policy.mjs assess "$output/trivy-report.json" "$output/source" \
+node scripts/ci/scan-policy.mjs assess "$output/report/trivy-report.json" "$output/source" \
   "$output/source.json" "$cache" "$output/database.json" "$output" "$output/qualification.json"
