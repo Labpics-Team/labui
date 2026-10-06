@@ -8,13 +8,16 @@ const workflows = {
 };
 
 function artifactSteps(source) {
-  const { parseAllDocuments } = createRequire(new URL('../../ci/package.json', import.meta.url))('yaml');
+  const { parseAllDocuments } = createRequire(new URL('../../package.json', import.meta.url))(
+    'yaml',
+  );
   const documents = parseAllDocuments(source, { uniqueKeys: true, strict: true, version: '1.2' });
   if (documents.length !== 1 || documents[0].errors.length > 0) {
     throw new Error('Artifact retention requires one valid workflow document');
   }
   const workflow = documents[0].toJS({ maxAliasCount: 100 });
-  const uploads = Object.values(workflow.jobs).flatMap((job) => job.steps ?? [])
+  const uploads = Object.values(workflow.jobs)
+    .flatMap((job) => job.steps ?? [])
     .filter((step) => step.uses?.startsWith('actions/upload-artifact@'));
   if (uploads.some((step) => typeof step.name !== 'string')) {
     throw new Error('Every artifact upload must have its own named step and retention contract');
@@ -31,7 +34,7 @@ const expected = {
   ci: [
     {
       name: 'Upload Trivy report',
-      condition: "${{ failure() }}",
+      condition: '${{ failure() }}',
     },
     {
       name: 'Upload FX-render артефакт (PNG для обзора владельцем)',

@@ -83,7 +83,8 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     cd /job/source
     export COREPACK_HOME=/job/corepack PATH="/job/bin:$PATH"
     corepack enable --install-directory /job/bin
-    pnpm install --frozen-lockfile --store-dir /job/pnpm-store
+    pnpm install --frozen-lockfile --ignore-scripts --store-dir /job/pnpm-store
+    pnpm rebuild @biomejs/biome esbuild --store-dir /job/pnpm-store
     pnpm build
     pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
     pnpm --filter @labui/colors fx:render

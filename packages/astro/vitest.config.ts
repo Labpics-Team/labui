@@ -16,6 +16,24 @@ export default getViteConfig({
   test: {
     include: ['test/**/*.test.ts'],
     environment: 'node',
-    environmentMatchGlobs: [['**/hydration.test.ts', 'happy-dom']],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          include: ['test/**/*.test.ts'],
+          exclude: ['**/hydration.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          include: ['test/**/hydration.test.ts'],
+          environment: 'happy-dom',
+        },
+      },
+    ],
   },
 });

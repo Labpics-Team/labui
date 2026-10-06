@@ -9,8 +9,9 @@
     "node": ">=22.19.0",
     "pnpm": ">=9"
   },
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@9.15.0",
   "scripts": {
+    "pnpm:devPreinstall": "node scripts/ci/install-policy.mjs",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --if-present test",
@@ -28,10 +29,10 @@
     "@biomejs/biome": "1.9.4",
     "@changesets/cli": "2.27.12",
     "tsup": "8.3.6",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "yaml": "2.9.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["@biomejs/biome", "esbuild"],
     "overrides": {
       "tmp@<0.2.6": ">=0.2.6",
       "esbuild@<0.25.0": ">=0.25.0",
@@ -39,7 +40,9 @@
       "js-yaml@>=4.0.0 <4.3.1": "4.3.2",
       "nanoid@<3.3.18": "3.3.18",
       "postcss@<8.5.18": "8.5.18",
-      "devalue@<5.9.3": "5.9.3"
+      "devalue@<5.9.3": "5.9.3",
+      "seroval@<1.6.3": "1.6.3",
+      "source-map-js@<1.2.2": "1.2.2"
     },
     "patchedDependencies": {
       "braces@3.0.3": "patches/braces@3.0.3.patch",

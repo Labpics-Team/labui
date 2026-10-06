@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   CI: 'true'
-  TRIVY_IMAGE: aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e
+  TRIVY_IMAGE: aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
   BUSYBOX_IMAGE: busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
 jobs:
   sca:
@@ -90,7 +90,8 @@ jobs:
         set -euo pipefail
         store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
         rm -rf -- "$store"
-        pnpm install --frozen-lockfile --store-dir "$store"
+        pnpm install --frozen-lockfile --ignore-scripts --store-dir "$store"
+        pnpm rebuild @biomejs/biome esbuild --store-dir "$store"
     - name: Lint (Biome)
       run: pnpm lint
     - name: Format check (Biome)
@@ -108,9 +109,10 @@ jobs:
     - name: Verify CI execution contracts
       shell: bash
       run: |
-        npm ci --ignore-scripts --prefix ci
         node scripts/ci/artifact-retention-contract.mjs
         node --test ci/workflow-contract.test.mjs
+        node --test scripts/ci/vitest-projects-contract.mjs
+        node --test scripts/ci/scan-policy.test.mjs
     - name: Unit tests
       run: pnpm test
   e2e:

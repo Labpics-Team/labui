@@ -30,6 +30,30 @@ const full = parse(read('.github/workflows/e2e-full.yml'));
 const scanner = read('.github/scripts/scan.sh');
 const browser = read('.github/scripts/browser-check.sh');
 
+test('quality scope retains all product files and only exempts the pinned policy carrier', () => {
+  const config = JSON.parse(read('biome.json'));
+  assert.deepEqual(config.files.ignore, [
+    '**/dist/**',
+    '.github/actions/labpics-sca-policy/**',
+    '**/node_modules/**',
+    '**/playwright-report/**',
+    '**/test-results/**',
+    '**/src/generated/**',
+    '**/src/astro/**',
+    '**/.svelte-kit/**',
+    '**/*.svelte',
+    '**/*.generated.json',
+    '**/*.tsbuildinfo',
+    'packages/colors/contract.css',
+    'packages/colors/contract.min.css',
+    'packages/colors/figma-reference.css',
+    'scripts/minify-contract.cjs',
+  ]);
+  assert.equal(config.linter.enabled, true);
+  assert.equal(config.formatter.enabled, true);
+  assert.equal(config.vcs.enabled, true);
+});
+
 function resolveBash() {
   if (process.platform !== 'win32') return 'bash';
   const dirs = (process.env.PATH ?? process.env.Path ?? '').split(delimiter);
@@ -113,7 +137,7 @@ test('original quality commands remain ordered and CI tests cannot disappear', (
     .map((step) => step.run.trim());
   assert.deepEqual(commands, [
     'node scripts/ci/pnpm-store-contract.mjs',
-    'set -euo pipefail\nstore="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"\nrm -rf -- "$store"\npnpm install --frozen-lockfile --store-dir "$store"',
+    'set -euo pipefail\nstore="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"\nrm -rf -- "$store"\npnpm install --frozen-lockfile --ignore-scripts --store-dir "$store"\npnpm rebuild @biomejs/biome esbuild --store-dir "$store"',
     'pnpm lint',
     'pnpm run format:check',
     'pnpm typecheck',
@@ -121,7 +145,7 @@ test('original quality commands remain ordered and CI tests cannot disappear', (
     'pnpm --filter @labpics/ui-tokens check-generated',
     'pnpm --filter @labpics/ui-materials check-generated',
     'pnpm build',
-    'npm ci --ignore-scripts --prefix ci\nnode scripts/ci/artifact-retention-contract.mjs\nnode --test ci/workflow-contract.test.mjs',
+    'node scripts/ci/artifact-retention-contract.mjs\nnode --test ci/workflow-contract.test.mjs\nnode --test scripts/ci/vitest-projects-contract.mjs\nnode --test scripts/ci/scan-policy.test.mjs',
     'pnpm test',
   ]);
   const node = ci.jobs.quality.steps.find((step) => step.name === 'Setup Node');
@@ -192,7 +216,8 @@ test('browser execution preserves both engines, FX and full-suite cadence', () =
     '1.55.1',
   );
   const ordered = [
-    'pnpm install --frozen-lockfile --store-dir /job/pnpm-store',
+    'pnpm install --frozen-lockfile --ignore-scripts --store-dir /job/pnpm-store',
+    'pnpm rebuild @biomejs/biome esbuild --store-dir /job/pnpm-store',
     'pnpm build',
     'pnpm --filter @labpics/ui-docs exec playwright install chromium webkit',
     'pnpm --filter @labui/colors fx:render',
@@ -341,11 +366,19 @@ if [[ "$*" == *--download-db-only* ]]; then
   count=0; if [ -f "$PROBE_COUNT" ]; then count="$(cat "$PROBE_COUNT")"; fi
   count=$((count + 1)); echo "$count" > "$PROBE_COUNT"
   if [ "$count" -le "\${DB_FAILURES:-0}" ]; then exit 19; fi
+  for argument; do if [[ "$argument" == *:/cache ]]; then cache="\${argument%:/cache}"; fi; done
+  mkdir -p "$cache/db"
+  printf x > "$cache/db/trivy.db"
+  printf '{"Version":2,"UpdatedAt":"%s","NextUpdate":"%s"}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(date -u -d '+2 hours' +%Y-%m-%dT%H:%M:%SZ)" > "$cache/db/metadata.json"
   exit 0
 fi
 out=''
 for argument; do if [[ "$argument" == *:/out ]]; then out="\${argument%:/out}"; fi; done
-if [ "\${REPORT:-yes}" = yes ]; then printf 'fresh report\\n' > "$out/trivy-report.txt"; fi
+if [ "\${REPORT:-yes}" = yes ]; then
+  vulnerabilities='[]'
+  if [ "\${VULN:-no}" = yes ]; then vulnerabilities='[{"VulnerabilityID":"CVE-CONTRACT-BLOCK","PkgName":"contract-fixture","InstalledVersion":"1","Severity":"HIGH"}]'; fi
+  printf '{"SchemaVersion":2,"ArtifactName":"/src","ArtifactType":"filesystem","Trivy":{"Version":"0.74.0"},"CreatedAt":"%s","Results":[{"Target":"pnpm-lock.yaml","Class":"lang-pkgs","Type":"pnpm","Packages":[{"Name":"contract-fixture","Version":"1"}],"Vulnerabilities":%s}]}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$vulnerabilities" > "$out/trivy-report.json"
+fi
 exit "\${SCAN_STATUS:-0}"
 `,
     { mode: 0o755 },
@@ -371,9 +404,12 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
     undefined,
   );
   for (const text of [
-    '--scanners vuln,secret,misconfig',
-    '--severity HIGH,CRITICAL',
-    '--exit-code 1',
+    '--scanners vuln,secret,misconfig,license',
+    '--severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL',
+    '--exit-code 0',
+    '--include-dev-deps --include-non-failures --list-all-pkgs --show-suppressed',
+    '--ignorefile /dev/null',
+    'scan-policy.mjs assess',
     '--skip-db-update --skip-java-db-update',
   ])
     assert.ok(scanner.includes(text));
@@ -381,7 +417,7 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
     ['clean', {}, 0, true],
     ['retry', { DB_FAILURES: '2' }, 0, true],
     ['database unavailable', { DB_FAILURES: '5' }, 1, false],
-    ['findings', { SCAN_STATUS: '1' }, 1, true],
+    ['findings', { VULN: 'yes' }, 1, true],
     ['engine error', { SCAN_STATUS: '2' }, 2, true],
     ['other error', { SCAN_STATUS: '17' }, 17, true],
     ['missing report', { REPORT: 'no' }, 1, true],
@@ -399,7 +435,11 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
       );
       if (!scanned || vars.REPORT === 'no')
         assert.equal(existsSync(join(dir, 'trivy-report.txt')), false);
-      else assert.equal(readFileSync(join(dir, 'trivy-report.txt'), 'utf8'), 'fresh report\n');
+      else
+        assert.equal(
+          JSON.parse(readFileSync(join(dir, 'trivy-report.txt'), 'utf8')).ArtifactName,
+          '/src',
+        );
     });
   await t.test('discarding scanner status is observable', (st) => {
     const { env } = fakeDocker(st);
