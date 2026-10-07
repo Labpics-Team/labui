@@ -295,11 +295,8 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    # e2e исполняется на ХОСТЕ раннера (как daniel), НЕ в контейнере: системные
-    # библиотеки браузеров установлены на раннере один раз (provision-as-code),
-    # версия совпадает с @playwright/test. Так избегаем хрупкого пула 3.4GB-образа
-    # Playwright на «Initialize containers» и root-владения артефактов в общем
-    # воркспейсе (host-job билдит под daniel → следующий job чистит без проблем).
+    # Браузерные проверки получают закреплённый runtime, собственные зависимости
+    # и writable-файлы. Исходный checkout доступен контейнеру только для чтения.
     #
     # ── ЭТО SMOKE-ПОДМНОЖЕСТВО, НЕ ВЕСЬ НАБОР ────────────────────────────────
     # Per-PR гоняется только критический путь (E2E_SMOKE=1 → curated список в
@@ -328,32 +325,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          # per-job dest: дефолт ~/setup-pnpm ОБЩИЙ для 8 раннеров (один /home/daniel)
-          # -> параллельные job'ы гоняются на temp-файлах (ENOENT unlink). runner.temp
-          # изолирован per-job — класс shared-home гонок закрыт для установки pnpm.
-          dest: ${{ runner.temp }}/setup-pnpm
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          # GitHub cache service не используется: required CI должен быть
-          # независим от внешнего cache API и от store соседнего job/repository.
-
-      - name: Install from isolated pnpm store
-        shell: bash
-        run: |
-          set -euo pipefail
-          store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
-          rm -rf -- "$store"
-          pnpm install --frozen-lockfile --store-dir "$store"
-
-      - name: Build packages
-        run: pnpm build
 
       - name: Verify browser rendering and smoke tests in pinned Playwright runtime
         id: browser

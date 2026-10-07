@@ -17,7 +17,7 @@ const installLines = (source) =>
 function violations(subject) {
   const out = [];
   const expected = {
-    ci: { count: 2, command: 'pnpm install --frozen-lockfile --store-dir "$store"' },
+    ci: { count: 1, command: 'pnpm install --frozen-lockfile --store-dir "$store"' },
     full: {
       count: 1,
       command: 'pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"',
@@ -33,8 +33,8 @@ function violations(subject) {
   }
 
   const jobStore = 'store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"';
-  if (subject.ci.split('\n').filter((line) => line.trim() === jobStore).length !== 2)
-    out.push('ci.yml must bind both installs to the per-job RUNNER_TEMP store');
+  if (subject.ci.split('\n').filter((line) => line.trim() === jobStore).length !== 1)
+    out.push('ci.yml must bind the host install to the per-job RUNNER_TEMP store');
 
   return out;
 }
@@ -51,6 +51,20 @@ const mutants = [
     ci: files.ci.replace(
       'pnpm install --frozen-lockfile --store-dir "$store"',
       '# pnpm install --frozen-lockfile --store-dir "$store"',
+    ),
+  },
+  {
+    ...files,
+    browser: files.browser.replace(
+      'pnpm install --frozen-lockfile --store-dir /job/pnpm-store',
+      '# pnpm install --frozen-lockfile --store-dir /job/pnpm-store',
+    ),
+  },
+  {
+    ...files,
+    ci: files.ci.replace(
+      'store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"',
+      'store="$RUNNER_TEMP/pnpm-store"',
     ),
   },
 ];
