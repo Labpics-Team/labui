@@ -11,7 +11,7 @@ import {
   easing as motionEasing,
   spring as motionSpring,
 } from '@labpics/motion/tokens';
-import type { SpringParams } from '@labpics/motion';
+import type { SpringParams } from '@labpics/motion/driver';
 
 import type { Provenance } from './model.js';
 
