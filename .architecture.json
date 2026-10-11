@@ -1,9 +1,219 @@
 {
   "schemaVersion": 1,
   "components": [
-    { "id": "applications", "prefixes": ["apps"] },
-    { "id": "published-packages", "prefixes": ["packages"] },
-    { "id": "repository-tools", "prefixes": ["scripts", "tsup.config.base.ts"] }
+    {
+      "id": "applications",
+      "prefixes": [
+        "apps"
+      ]
+    },
+    {
+      "id": "repository-tools",
+      "prefixes": [
+        "scripts",
+        "tsup.config.base.ts"
+      ]
+    },
+    {
+      "id": "adapter-codegen",
+      "prefixes": [
+        "packages/adapter-codegen"
+      ]
+    },
+    {
+      "id": "astro",
+      "prefixes": [
+        "packages/astro"
+      ]
+    },
+    {
+      "id": "colors",
+      "prefixes": [
+        "packages/colors"
+      ]
+    },
+    {
+      "id": "core",
+      "prefixes": [
+        "packages/core"
+      ]
+    },
+    {
+      "id": "materials",
+      "prefixes": [
+        "packages/materials"
+      ]
+    },
+    {
+      "id": "react",
+      "prefixes": [
+        "packages/react"
+      ]
+    },
+    {
+      "id": "shadow",
+      "prefixes": [
+        "packages/shadow"
+      ]
+    },
+    {
+      "id": "solid",
+      "prefixes": [
+        "packages/solid"
+      ]
+    },
+    {
+      "id": "svelte",
+      "prefixes": [
+        "packages/svelte"
+      ]
+    },
+    {
+      "id": "tokens",
+      "prefixes": [
+        "packages/tokens"
+      ]
+    },
+    {
+      "id": "vue",
+      "prefixes": [
+        "packages/vue"
+      ]
+    }
   ],
-  "rules": []
+  "rules": [
+    {
+      "id": "tokens-no-renderers",
+      "kind": "forbidden-reachability",
+      "from": [
+        "packages/tokens/src/config",
+        "packages/tokens/src/domain",
+        "packages/tokens/src/generate",
+        "packages/tokens/src/motion"
+      ],
+      "to": [
+        "packages/core",
+        "packages/astro",
+        "packages/react",
+        "packages/solid",
+        "packages/svelte",
+        "packages/vue",
+        "packages/adapter-codegen",
+        "apps"
+      ],
+      "rationale": "Имена, значения и проекции токенов не зависят от компонентов, framework-адаптеров или документационного приложения."
+    },
+    {
+      "id": "core-no-framework-wrappers",
+      "kind": "forbidden-reachability",
+      "from": [
+        "packages/core/src"
+      ],
+      "to": [
+        "packages/astro",
+        "packages/react",
+        "packages/solid",
+        "packages/svelte",
+        "packages/vue",
+        "packages/adapter-codegen",
+        "apps"
+      ],
+      "rationale": "Framework-обёртки и генератор адаптируют ядро; Web Components не зависят от их потребителей."
+    },
+    {
+      "id": "style-runtime-no-components",
+      "kind": "forbidden-reachability",
+      "from": [
+        "packages/shadow/src",
+        "packages/materials/src"
+      ],
+      "to": [
+        "packages/core",
+        "packages/astro",
+        "packages/react",
+        "packages/solid",
+        "packages/svelte",
+        "packages/vue",
+        "apps"
+      ],
+      "rationale": "Материалы и стили задают переносимые значения; компоненты и framework-обёртки применяют их снаружи."
+    },
+    {
+      "id": "style-react-private-knowledge",
+      "kind": "confined-knowledge",
+      "owner": "react",
+      "scope": [
+        "packages/tokens/src/domain",
+        "packages/tokens/src/config",
+        "packages/shadow/src/domain",
+        "packages/materials/src"
+      ],
+      "terms": [
+        "React"
+      ],
+      "rationale": "Token, shadow и material values сохраняют формат и смысл независимо от React; framework props и lifecycle принадлежат своему renderer adapter."
+    },
+    {
+      "id": "style-vue-private-knowledge",
+      "kind": "confined-knowledge",
+      "owner": "vue",
+      "scope": [
+        "packages/tokens/src/domain",
+        "packages/tokens/src/config",
+        "packages/shadow/src/domain",
+        "packages/materials/src"
+      ],
+      "terms": [
+        "Vue"
+      ],
+      "rationale": "Token, shadow и material values сохраняют формат и смысл независимо от Vue; framework props и lifecycle принадлежат своему renderer adapter."
+    },
+    {
+      "id": "style-svelte-private-knowledge",
+      "kind": "confined-knowledge",
+      "owner": "svelte",
+      "scope": [
+        "packages/tokens/src/domain",
+        "packages/tokens/src/config",
+        "packages/shadow/src/domain",
+        "packages/materials/src"
+      ],
+      "terms": [
+        "Svelte"
+      ],
+      "rationale": "Token, shadow и material values сохраняют формат и смысл независимо от Svelte; framework props и lifecycle принадлежат своему renderer adapter."
+    },
+    {
+      "id": "style-solid-private-knowledge",
+      "kind": "confined-knowledge",
+      "owner": "solid",
+      "scope": [
+        "packages/tokens/src/domain",
+        "packages/tokens/src/config",
+        "packages/shadow/src/domain",
+        "packages/materials/src"
+      ],
+      "terms": [
+        "SolidJs"
+      ],
+      "rationale": "Token, shadow и material values сохраняют формат и смысл независимо от SolidJs; framework props и lifecycle принадлежат своему renderer adapter."
+    },
+    {
+      "id": "style-renderer-mechanism-private-knowledge",
+      "kind": "confined-knowledge",
+      "owner": "core",
+      "scope": [
+        "packages/tokens/src/domain",
+        "packages/tokens/src/config",
+        "packages/shadow/src/domain",
+        "packages/materials/src"
+      ],
+      "terms": [
+        "LitElement",
+        "ZagController",
+        "VanillaMachine"
+      ],
+      "rationale": "Token и физические shadow/material values не содержат element lifecycle и behavior-machine wrapper; Lit/Zag механизмом владеет core."
+    }
+  ]
 }
