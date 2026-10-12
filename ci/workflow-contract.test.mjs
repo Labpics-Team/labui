@@ -96,7 +96,11 @@ function checkGraph(workflow) {
   for (const [id, job] of Object.entries(jobs)) {
     assert.equal(job['runs-on'], 'self-hosted');
     assert.equal(job['continue-on-error'], undefined);
-    for (const step of job.steps) assert.equal(step['continue-on-error'], undefined);
+    // Публикация артефакта не определяет вердикт; проверочный шаг не продолжает после сбоя.
+    for (const step of job.steps) {
+      const upload = step.uses?.startsWith('actions/upload-artifact@') === true;
+      assert.equal(step['continue-on-error'], upload ? true : undefined);
+    }
     if (id !== 'ci') {
       assert.equal(
         job.if,
@@ -128,6 +132,15 @@ test('required graph covers every native check and all admitted events', () => {
     const ignored = structuredClone(ci);
     ignored.jobs[key]['continue-on-error'] = true;
     assert.throws(() => checkGraph(ignored));
+  }
+  const hidden = structuredClone(ci);
+  hidden.jobs.e2e.steps.find((step) => step.id === 'browser')['continue-on-error'] = true;
+  assert.throws(() => checkGraph(hidden));
+  for (const index of ci.jobs.e2e.steps.keys()) {
+    if (!ci.jobs.e2e.steps[index].uses?.startsWith('actions/upload-artifact@')) continue;
+    const authoritative = structuredClone(ci);
+    authoritative.jobs.e2e.steps[index]['continue-on-error'] = undefined;
+    assert.throws(() => checkGraph(authoritative));
   }
 });
 
@@ -258,6 +271,7 @@ test('browser execution preserves both engines, FX and full-suite cadence', () =
       const output = step.with.path.startsWith('packages/colors/') ? 'fx_ready' : 'report_ready';
       const status = output === 'fx_ready' ? '!cancelled()' : 'failure()';
       assert.equal(step.if, `\${{ ${status} && steps.browser.outputs.${output} == 'true' }}`);
+      assert.equal(step['continue-on-error'], true);
     }
   }
   assert.match(

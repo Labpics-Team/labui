@@ -22,7 +22,11 @@ function artifactSteps(source) {
   if (uploads.some((step) => typeof step.name !== 'string')) {
     throw new Error('Every artifact upload must have its own named step and retention contract');
   }
-  return uploads.map((step) => ({ name: step.name, condition: step.if ?? '' }));
+  return uploads.map((step) => ({
+    name: step.name,
+    condition: step.if ?? '',
+    nonAuthoritative: step['continue-on-error'] === true,
+  }));
 }
 
 const actual = {
@@ -35,16 +39,19 @@ const expected = {
     {
       name: 'Upload FX-render артефакт (PNG для обзора владельцем)',
       condition: "${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}",
+      nonAuthoritative: true,
     },
     {
       name: 'Upload Playwright report',
       condition: "${{ failure() && steps.browser.outputs.report_ready == 'true' }}",
+      nonAuthoritative: true,
     },
   ],
   full: [
     {
       name: 'Upload Playwright report',
       condition: "${{ failure() && steps.browser.outputs.report_ready == 'true' }}",
+      nonAuthoritative: true,
     },
   ],
 };

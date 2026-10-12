@@ -128,6 +128,8 @@ jobs:
       run: bash .github/scripts/browser-check.sh
     - name: Upload FX-render артефакт (PNG для обзора владельцем)
       if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}
+      # Публикация артефакта не входит в вердикт: результат задаёт проверка выше.
+      continue-on-error: true
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: fx-render
@@ -136,6 +138,8 @@ jobs:
         if-no-files-found: ignore
     - name: Upload Playwright report
       if: ${{ failure() && steps.browser.outputs.report_ready == 'true' }}
+      # Публикация артефакта не входит в вердикт: результат задаёт проверка выше.
+      continue-on-error: true
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
       with:
         name: playwright-report
