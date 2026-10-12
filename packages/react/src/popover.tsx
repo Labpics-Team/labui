@@ -22,8 +22,8 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import type { LabPopoverPlacement, LabPopoverSize } from '@labpics/ui-core/popover';
 import * as popoverMachine from '@zag-js/popover';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type ReactNode, useId, useRef } from 'react';
+import { ThemePortal } from './internal/theme-portal.js';
 import { useZag } from './use-zag.js';
 import './popover.css';
 
@@ -75,10 +75,7 @@ export function Popover({
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Overlays are client-only: gate the body portal on mount so SSR/first hydration
-  // emit nothing for the floating layer.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const portalSource = useRef<HTMLButtonElement>(null);
 
   const floating = (
     <>
@@ -122,10 +119,15 @@ export function Popover({
 
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-popover-trigger">
+      <button
+        type="button"
+        {...api.getTriggerProps()}
+        ref={portalSource}
+        className="lab-popover-trigger"
+      >
         {children}
       </button>
-      {mounted && createPortal(floating, document.body)}
+      <ThemePortal source={portalSource}>{floating}</ThemePortal>
     </>
   );
 }

@@ -54,8 +54,8 @@
  * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
  * `--lab-border-soft` hairline and a `--lab-fx-shadow-major` lift, layered at
  * `--lab-z-modal`; the scrim is `--lab-bg-overlay-base` at `--lab-z-modal-underlay`.
- * No hex, no primitive, no invented role. The portal carries the page's
- * `[data-theme]`/`[data-material]` (copied from `document.documentElement`) so the
+ * No hex, no primitive, no invented role. The portal carries the source's
+ * live theme/material scope (bound by the core theme owner) so the
  * portalled panel resolves the SAME role bindings as the rest of the page.
  *
  * SSR (core-CONTRACT §7): a dialog is client-only. The server emits the trigger and
@@ -68,6 +68,7 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { bindPortalScope } from '../../theme.js';
 
 /** Control size — drives panel width band and padding. */
 export type LabDialogSize = 's' | 'm' | 'l';
@@ -276,6 +277,7 @@ export class LabDialog extends LabElement {
   /** The portal element appended to `document.body`; its shadow root holds the
    * floating layer + the relocated dialog body. */
   private portalHost?: HTMLElement;
+  private releasePortalScope?: () => void;
   /** The portal's shadow root — the machine's `getRootNode` for this instance. */
   private portalRoot?: ShadowRoot;
   /** The `.body` mount inside the portal content where the consumer's slotted nodes
@@ -359,6 +361,8 @@ export class LabDialog extends LabElement {
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.releasePortalScope?.();
+    this.releasePortalScope = undefined;
     this.portalHost?.remove();
     this.portalHost = undefined;
     this.portalRoot = undefined;
@@ -366,9 +370,10 @@ export class LabDialog extends LabElement {
     this.bodyRelocated = false;
   }
 
-  /** Create the portal element + shadow root once and append it to `document.body`. */
+  /** Создать портал в документе контрола после появления браузерного body. */
   private ensurePortal(): void {
-    if (this.portalHost || typeof document === 'undefined') return;
+    const document = this.ownerDocument;
+    if (this.portalHost || !document.body) return;
     const host = document.createElement('div');
     host.setAttribute('data-lab-dialog-portal', this.machineId);
     host.setAttribute('data-size', this.size);
@@ -380,12 +385,8 @@ export class LabDialog extends LabElement {
     // document.body, detached from the element in the DOM tree).
     const ownTestId = this.getAttribute('data-testid');
     if (ownTestId) host.setAttribute('data-portal-for', ownTestId);
-    // Mirror the page theme/material so the portalled panel resolves the same roles.
-    const docEl = document.documentElement;
-    const theme = docEl.getAttribute('data-theme');
-    const material = docEl.getAttribute('data-material');
-    if (theme) host.setAttribute('data-theme', theme);
-    if (material) host.setAttribute('data-material', material);
+    // Владелец темы переносит живой скоуп; dialog не воспроизводит его разрешение.
+    this.releasePortalScope = bindPortalScope(this, host);
     const root = host.attachShadow({ mode: 'open' });
     root.adoptedStyleSheets = [dialogFloatingStyles.styleSheet as CSSStyleSheet];
     document.body.append(host);

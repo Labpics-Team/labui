@@ -56,3 +56,85 @@ export function setTheme(root: Element, theme: Theme): void {
 export function setMaterial(root: Element, material: Material): void {
   root.setAttribute(MATERIAL_ATTR, material);
 }
+
+/**
+ * Перенести theme/material скоуп источника на вынесенный DOM-узел.
+ * Имена осей и порядок разрешения принадлежат этому модулю; renderer знает
+ * только источник, приёмник и окончание их общего срока жизни.
+ * При отсутствии явной темы CSS продолжает следовать OS fallback.
+ */
+export function bindPortalScope(source: Element, target: Element): () => void {
+  if (source.ownerDocument !== target.ownerDocument) {
+    throw new Error('Источник и портал должны принадлежать одному документу');
+  }
+  const Observer = source.ownerDocument.defaultView?.MutationObserver;
+  if (!Observer) throw new Error('Для переноса скоупа нужен браузерный документ');
+
+  const axes = [
+    [THEME_ATTR, THEMES],
+    [MATERIAL_ATTR, MATERIALS],
+  ] as const;
+  const previous = axes.map(([attribute]) => target.getAttribute(attribute));
+  let disposed = false;
+  let ancestry: Node[] = [];
+
+  const write = (attribute: string, value: string | null): void => {
+    if (target.getAttribute(attribute) === value) return;
+    if (value === null) target.removeAttribute(attribute);
+    else target.setAttribute(attribute, value);
+  };
+
+  const observer = new Observer(refresh);
+  function refresh(): void {
+    if (disposed) return;
+    const next: Node[] = [];
+    let node: Node | null = source;
+    while (node) {
+      next.push(node);
+      // CSS-наследование следует за assignedSlot и пересекает shadow host.
+      const assigned = node.nodeType === 1 ? (node as Element).assignedSlot : null;
+      node =
+        assigned ??
+        node.parentNode ??
+        (node.nodeType === 11 ? ((node as ShadowRoot).host ?? null) : null);
+    }
+    if (next.includes(target)) throw new Error('Портал должен находиться вне скоупа источника');
+
+    if (next.length !== ancestry.length || next.some((item, index) => item !== ancestry[index])) {
+      observer.disconnect();
+      for (const ancestor of ancestry) ancestor.removeEventListener('slotchange', refresh);
+      ancestry = next;
+      for (const ancestor of ancestry) {
+        observer.observe(ancestor, {
+          attributes: true,
+          attributeFilter: [THEME_ATTR, MATERIAL_ATTR, 'slot', 'name'],
+          childList: true,
+        });
+        if (ancestor.nodeType === 11) ancestor.addEventListener('slotchange', refresh);
+      }
+    }
+
+    for (const [attribute, values] of axes) {
+      let value: string | null = null;
+      for (const ancestor of ancestry) {
+        if (ancestor.nodeType !== 1) continue;
+        const candidate = (ancestor as Element).getAttribute(attribute);
+        if (candidate !== null && (values as readonly string[]).includes(candidate)) {
+          value = candidate;
+          break;
+        }
+      }
+      write(attribute, value);
+    }
+  }
+
+  refresh();
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    observer.disconnect();
+    for (const ancestor of ancestry) ancestor.removeEventListener('slotchange', refresh);
+    ancestry = [];
+    axes.forEach(([attribute], index) => write(attribute, previous[index] ?? null));
+  };
+}

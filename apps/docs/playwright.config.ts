@@ -49,6 +49,7 @@ const SMOKE_SPECS = [
   // z-шкала доезжает до DOM и держит порядок наложения (scrim<panel, dropdown<modal,
   // tooltip сверху). Дешёвый детерминированный smoke → в per-PR критический путь.
   'z-order.spec.ts',
+  'portal-scope.spec.ts',
   'materials-flag.spec.ts',
   // Acrylic v2 (ADR-0009): движок-контракт материала — конвейер держит
   // поверхность, пиксельный дифференциал зажима, честные деградации. Тот же

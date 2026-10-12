@@ -49,8 +49,8 @@ import type {
   LabComboboxType,
 } from '@labpics/ui-core/combobox';
 import * as comboboxMachine from '@zag-js/combobox';
-import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type ReactNode, useId, useMemo, useRef, useState } from 'react';
+import { ThemePortal } from './internal/theme-portal.js';
 import { useZag } from './use-zag.js';
 import './combobox.css';
 
@@ -181,10 +181,7 @@ export function Combobox({
   const a11y = fieldControlAria({ id: baseId, invalid, required, hasHelper, hasError });
   const showError = fieldErrorIsActive({ invalid, hasError });
 
-  // Overlays are client-only: gate the body portal on mount so SSR/first hydration emit
-  // nothing for the floating listbox.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const portalSource = useRef<HTMLButtonElement>(null);
 
   const listbox = (
     <div {...api.getPositionerProps()} className="lab-combobox-positioner">
@@ -249,7 +246,7 @@ export function Combobox({
         {/* The machine's getTriggerProps sets aria-label ("Toggle suggestions"),
             aria-haspopup/expanded/controls and tabIndex=-1, so the caret button is an
             accessible, non-tab-stop toggle — no aria-hidden (it owns a real name). */}
-        <button {...api.getTriggerProps()} className="lab-combobox-trigger">
+        <button {...api.getTriggerProps()} ref={portalSource} className="lab-combobox-trigger">
           ▾
         </button>
       </div>
@@ -263,7 +260,7 @@ export function Combobox({
           {error}
         </span>
       ) : null}
-      {mounted && createPortal(listbox, document.body)}
+      <ThemePortal source={portalSource}>{listbox}</ThemePortal>
     </div>
   );
 }

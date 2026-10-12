@@ -55,6 +55,7 @@ export default defineConfig({
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
+        'fixture-portal-scope': resolve(__dirname, 'src/_fixtures/portal-scope.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),
