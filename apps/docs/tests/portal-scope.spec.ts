@@ -77,9 +77,9 @@ for (const surface of surfaces) {
     await page.evaluate(() => {
       document.querySelector('#scope')?.setAttribute('data-theme', 'dark');
       document.querySelector('#react-root')?.setAttribute('data-material', 'glass');
-      document.querySelectorAll('lab-dialog, lab-alert-dialog').forEach((element) => {
+      for (const element of document.querySelectorAll('lab-dialog, lab-alert-dialog')) {
         element.setAttribute('data-material', 'glass');
-      });
+      }
     });
     await open(page, surface);
     await expectScope(page, surface, 'glass');
@@ -90,9 +90,9 @@ for (const surface of surfaces) {
     await expectScope(page, surface, 'glass');
     await page.evaluate(() => {
       document.querySelector('#react-root')?.removeAttribute('data-material');
-      document.querySelectorAll('lab-dialog, lab-alert-dialog').forEach((element) => {
+      for (const element of document.querySelectorAll('lab-dialog, lab-alert-dialog')) {
         element.removeAttribute('data-material');
-      });
+      }
     });
     await expectScope(page, surface, 'acrylic');
   });

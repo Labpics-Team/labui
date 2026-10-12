@@ -101,8 +101,8 @@ Object.assign(window, {
   },
   unmountPortalScopes() {
     flushSync(() => root.unmount());
-    document
-      .querySelectorAll('lab-dialog, lab-alert-dialog')
-      .forEach((element) => element.remove());
+    for (const element of document.querySelectorAll('lab-dialog, lab-alert-dialog')) {
+      element.remove();
+    }
   },
 });

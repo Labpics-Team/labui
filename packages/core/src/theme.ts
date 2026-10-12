@@ -92,7 +92,8 @@ export function bindPortalScope(source: Element, target: Element): () => void {
     while (node) {
       next.push(node);
       // CSS-наследование следует за assignedSlot и пересекает shadow host.
-      const assigned = node.nodeType === 1 ? (node as Element).assignedSlot : null;
+      const assigned: HTMLSlotElement | null =
+        node.nodeType === 1 ? (node as Element).assignedSlot : null;
       node =
         assigned ??
         node.parentNode ??
