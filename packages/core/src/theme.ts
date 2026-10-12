@@ -77,6 +77,7 @@ export function bindPortalScope(source: Element, target: Element): () => void {
   const previous = axes.map(([attribute]) => target.getAttribute(attribute));
   let disposed = false;
   let ancestry: Node[] = [];
+  let dependencies: Node[] = [];
 
   const write = (attribute: string, value: string | null): void => {
     if (target.getAttribute(attribute) === value) return;
@@ -101,17 +102,30 @@ export function bindPortalScope(source: Element, target: Element): () => void {
     }
     if (next.includes(target)) throw new Error('Портал должен находиться вне скоупа источника');
 
-    if (next.length !== ancestry.length || next.some((item, index) => item !== ancestry[index])) {
+    // Пока light-DOM узел не назначен в slot, root его parent host не входит
+    // в composed ancestry. Он всё равно определяет будущее назначение; slotchange
+    // не пересекает shadow boundary, поэтому слушаем этот root непосредственно.
+    const roots = next.flatMap((ancestor) => {
+      const parent = ancestor.parentNode;
+      const root = parent?.nodeType === 1 ? (parent as Element).shadowRoot : null;
+      return root ? [root] : [];
+    });
+    const nextDependencies = [...new Set([...next, ...roots])];
+    ancestry = next;
+    if (
+      nextDependencies.length !== dependencies.length ||
+      nextDependencies.some((item, index) => item !== dependencies[index])
+    ) {
       observer.disconnect();
-      for (const ancestor of ancestry) ancestor.removeEventListener('slotchange', refresh);
-      ancestry = next;
-      for (const ancestor of ancestry) {
-        observer.observe(ancestor, {
+      for (const dependency of dependencies) dependency.removeEventListener('slotchange', refresh);
+      dependencies = nextDependencies;
+      for (const dependency of dependencies) {
+        observer.observe(dependency, {
           attributes: true,
           attributeFilter: [THEME_ATTR, MATERIAL_ATTR, 'slot', 'name'],
           childList: true,
         });
-        if (ancestor.nodeType === 11) ancestor.addEventListener('slotchange', refresh);
+        if (dependency.nodeType === 11) dependency.addEventListener('slotchange', refresh);
       }
     }
 
@@ -134,7 +148,8 @@ export function bindPortalScope(source: Element, target: Element): () => void {
     if (disposed) return;
     disposed = true;
     observer.disconnect();
-    for (const ancestor of ancestry) ancestor.removeEventListener('slotchange', refresh);
+    for (const dependency of dependencies) dependency.removeEventListener('slotchange', refresh);
+    dependencies = [];
     ancestry = [];
     axes.forEach(([attribute], index) => write(attribute, previous[index] ?? null));
   };

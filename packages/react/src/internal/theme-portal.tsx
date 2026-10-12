@@ -1,6 +1,6 @@
 'use client';
 
-import { bindPortalScope } from '@labpics/ui-core';
+import { bindPortalScope } from '@labpics/ui-core/theme';
 import {
   type ReactNode,
   type RefObject,
