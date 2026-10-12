@@ -1,111 +1,42 @@
 name: E2E Full
-
-# Полный e2e-набор (ВСЕ спеки × chromium+webkit, ~319 × 2 ≈ 638 тестов) — ДОРОГОЙ
-# и склонный к голоданию/флаку на нагруженном self-hosted пуле, поэтому НЕ висит на
-# каждом PR. Здесь он гоняется по расписанию (ночью) и по кнопке (workflow_dispatch).
-# Полное покрытие НЕ потеряно относительно прежнего CI — оно просто перенесено сюда;
-# per-PR остаётся быстрый smoke-подмножество критического пути (см. ci.yml, job e2e).
-on:
+'on':
   schedule:
-    # 03:00 UTC = 06:00 MSK — вне пиковой нагрузки раннеров.
-    - cron: "0 3 * * *"
-  workflow_dispatch:
-
-# Least privilege: read-only, как в ci.yml. Ни один шаг не пишет в репозиторий.
+  - cron: 0 3 * * *
+  workflow_dispatch: null
 permissions:
   contents: read
-
-# Отдельная от ci.yml группа: ночной прогон не конфликтует с PR-ным CI и с ручным
-# dispatch. Долгий полный прогон не отменяем на лету (cancel-in-progress: false).
 concurrency:
   group: e2e-full-${{ github.ref }}
   cancel-in-progress: false
-
-env:
-  # ROOT-контейнер busybox для очистки воркспейса и возврата владения на self-hosted
-  # раннерах — тот же паттерн и тот же пин (тег + дайджест), что в ci.yml. Бампить
-  # ОБА поля вместе и синхронно с ci.yml. Дайджест — OCI-индекс busybox:1.36 (multi-arch).
-  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
-  # Анонимный job-локальный docker-конфиг: credsStore=desktop из ~/.docker ломает
-  # пуллы, когда docker-credential-desktop.exe вне PATH systemd-сервиса (после
-  # рестарта дистро). Синхронно с ci.yml.
-  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
-
 jobs:
   e2e-full:
     name: playwright full (chromium + webkit)
     runs-on: self-hosted
-    # Полный набор длиннее smoke; на нагруженном пуле даём запас, но не бесконечный.
     timeout-minutes: 40
     steps:
-      # Тот же root-контейнерный clean, что и во всех job'ах ci.yml: self-hosted
-      # раннеры делят _work, docker-as-root шаги (Playwright) оставляют root-owned
-      # файлы, а daniel (uid 1000) без passwordless sudo их не удалит обычным `rm`.
-      # ROOT-контейнер busybox сносит содержимое воркспейса независимо от истории
-      # раннера и возвращает владение каталогом раннеру (uid 1000) для checkout'а.
-      - name: Чистый воркспейс (self-hosted)
-        shell: bash
-        run: |
-          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
-      - name: Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          persist-credentials: false
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          # per-job dest: общий ~/setup-pnpm на 8 раннерах гоняется между job'ами
-          dest: ${{ runner.temp }}/setup-pnpm
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          # На self-hosted НЕ используем GitHub-cache-сервис (cache: pnpm): он
-          # флачит/виснет на сетевом эгрессе раннеров. pnpm-store находится в
-          # RUNNER_TEMP текущего job (см. Install ниже).
-
-      - name: Install
-        run: pnpm install --frozen-lockfile --store-dir "$RUNNER_TEMP/pnpm-store"
-
-      - name: Build packages
-        run: pnpm build
-
-      - name: Install Playwright browsers (Chromium + WebKit)
-        # Как в ci.yml: только браузеры в ~/.cache/ms-playwright (кэш между
-        # прогонами). Системные библиотеки установлены на раннере один раз
-        # (provision-as-code), поэтому --with-deps НЕ нужен.
-        run: pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
-
-      - name: Run FULL e2e suite (all specs × chromium + webkit)
-        # E2E_SMOKE НЕ выставлен → playwright.config.ts оставляет дефолтный
-        # testMatch и гоняет ВЕСЬ набор. Это и есть полное покрытие.
-        run: |
-          # PW_PORT per-runner — плановый полный прогон не коллидирует по порту
-          # с PR-джобами на общем хосте (см. ci.yml).
-          n="${RUNNER_NAME##*-}"; case "$n" in (*[!0-9]*|'') n=0;; esac
-          export PW_PORT=$((43200 + n))
-          pkill -f -- "--port ${PW_PORT}" 2>/dev/null || true
-          pnpm test:e2e
-
-      - name: Upload Playwright report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: playwright-report-full
-          path: apps/docs/playwright-report/
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
-        # Тот же defence-in-depth chown-back, что и в e2e-job ci.yml: возвращаем
-        # владение раннеру (uid 1000) через ROOT-контейнер busybox, чтобы clean-шаг
-        # следующего job'а на этом раннере не спотыкался о root-owned файлы.
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+    - name: Prepare Docker config
+      shell: bash
+      run: |
+        set -euo pipefail
+        docker_config="$(mktemp -d "${RUNNER_TEMP:?}/labui-docker.XXXXXX")"
+        printf 'DOCKER_CONFIG=%s\n' "$docker_config" >> "${GITHUB_ENV:?}"
+    - name: Checkout
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        persist-credentials: false
+    - name: Verify browser rendering and full suite
+      id: browser
+      shell: bash
+      env:
+        E2E_SMOKE: '0'
+      run: bash .github/scripts/browser-check.sh
+    - name: Upload Playwright report
+      if: ${{ failure() && steps.browser.outputs.report_ready == 'true' }}
+      # Публикация артефакта не входит в вердикт: результат задаёт проверка выше.
+      continue-on-error: true
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      with:
+        name: playwright-report-full
+        path: apps/docs/playwright-report/
+        retention-days: 7
+        if-no-files-found: ignore
