@@ -142,6 +142,9 @@ test('checkout preparation leaves workspace recovery to the shared runner', () =
     assert.doesNotMatch(prepare.run, /GITHUB_WORKSPACE|docker run|chown|rm -rf|git /);
   }
   assert.equal(ci.env.BUSYBOX_IMAGE, undefined);
+  if (full.env !== undefined) {
+    assert.ok(full.env && typeof full.env === 'object' && !Array.isArray(full.env));
+  }
   assert.equal(full.env?.BUSYBOX_IMAGE, undefined);
 });
 
