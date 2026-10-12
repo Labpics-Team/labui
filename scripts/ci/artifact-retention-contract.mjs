@@ -33,10 +33,6 @@ const actual = {
 const expected = {
   ci: [
     {
-      name: 'Upload Trivy report',
-      condition: '${{ failure() }}',
-    },
-    {
       name: 'Upload FX-render артефакт (PNG для обзора владельцем)',
       condition: "${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}",
     },

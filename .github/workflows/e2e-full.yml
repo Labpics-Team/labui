@@ -9,22 +9,18 @@ concurrency:
   group: e2e-full-${{ github.ref }}
   cancel-in-progress: false
 env:
-  BUSYBOX_IMAGE: busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
 jobs:
   e2e-full:
     name: playwright full (chromium + webkit)
     runs-on: self-hosted
     timeout-minutes: 40
     steps:
-    - name: Prepare workspace ownership
+    - name: Prepare Docker config
       shell: bash
       run: |
         set -euo pipefail
-        export DOCKER_CONFIG="$(mktemp -d "${RUNNER_TEMP:?}/labui-docker.XXXXXX")"
-        printf 'DOCKER_CONFIG=%s\n' "$DOCKER_CONFIG" >> "${GITHUB_ENV:?}"
-        mkdir -p "${GITHUB_WORKSPACE}"
-        docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-          chown -R "$(id -u):$(id -g)" /workspace
+        docker_config="$(mktemp -d "${RUNNER_TEMP:?}/labui-docker.XXXXXX")"
+        printf 'DOCKER_CONFIG=%s\n' "$docker_config" >> "${GITHUB_ENV:?}"
     - name: Checkout
       uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       with:

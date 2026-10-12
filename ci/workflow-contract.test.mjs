@@ -131,9 +131,23 @@ test('required graph covers every native check and all admitted events', () => {
   }
 });
 
+test('checkout preparation leaves workspace recovery to the shared runner', () => {
+  for (const job of [ci.jobs.sca, ci.jobs.quality, ci.jobs.e2e, full.jobs['e2e-full']]) {
+    const checkout = job.steps.findIndex((step) => step.name === 'Checkout');
+    assert.equal(checkout, 1);
+    const prepare = job.steps[0];
+    assert.equal(prepare.name, 'Prepare Docker config');
+    assert.match(prepare.run, /mktemp -d/);
+    assert.match(prepare.run, /GITHUB_ENV/);
+    assert.doesNotMatch(prepare.run, /GITHUB_WORKSPACE|docker run|chown|rm -rf|git /);
+  }
+  assert.equal(ci.env.BUSYBOX_IMAGE, undefined);
+  assert.equal(full.env?.BUSYBOX_IMAGE, undefined);
+});
+
 test('original quality commands remain ordered and CI tests cannot disappear', () => {
   const commands = ci.jobs.quality.steps
-    .filter((step) => step.run && step.name !== 'Prepare workspace ownership')
+    .filter((step) => step.run && step.name !== 'Prepare Docker config')
     .map((step) => step.run.trim());
   assert.deepEqual(commands, [
     'node scripts/ci/pnpm-store-contract.mjs',
@@ -413,7 +427,13 @@ for argument; do if [[ "$argument" == *:/out ]]; then out="\${argument%:/out}"; 
 if [ "\${REPORT:-yes}" = yes ]; then
   vulnerabilities='[]'
   if [ "\${VULN:-no}" = yes ]; then vulnerabilities='[{"VulnerabilityID":"CVE-CONTRACT-BLOCK","PkgName":"contract-fixture","InstalledVersion":"1","Severity":"HIGH"}]'; fi
-  printf '{"SchemaVersion":2,"ArtifactName":"/src","ArtifactType":"filesystem","Trivy":{"Version":"0.74.0"},"CreatedAt":"%s","Results":[{"Target":"pnpm-lock.yaml","Class":"lang-pkgs","Type":"pnpm","Packages":[{"Name":"contract-fixture","Version":"1"}],"Vulnerabilities":%s}]}\\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$vulnerabilities" > "$out/trivy-report.json"
+  secrets='[]'
+  if [ "\${SECRET_CONTEXT:-no}" = yes ]; then secrets='[{"Severity":"LOW","RuleID":"fixture-secret","Match":"proof-secret-match","StartLine":12,"Code":{"Lines":[{"Content":"proof-source-neighbor"}]}}]'; fi
+  printf '{"SchemaVersion":2,"ArtifactName":%s,"ArtifactType":"filesystem","Trivy":{"Version":"0.74.0"},"CreatedAt":"%s","Results":[{"Target":"pnpm-lock.yaml","Class":"lang-pkgs","Type":"pnpm","Packages":[{"Name":"contract-fixture","Version":"1"}],"Vulnerabilities":%s,"Secrets":%s}]}\\n' "$PROBE_ARTIFACT_NAME" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$vulnerabilities" "$secrets" > "$out/trivy-report.json"
+fi
+if [ "\${SCAN_CONSOLE_CONTEXT:-no}" = yes ]; then
+  printf 'proof-secret-stdout\\n'
+  printf 'proof-secret-stderr\\n' >&2
 fi
 exit "\${SCAN_STATUS:-0}"
 `,
@@ -427,6 +447,7 @@ exit "\${SCAN_STATUS:-0}"
       RUNNER_TEMP: posix(dir),
       TRIVY_IMAGE: 'fixture@sha256:0',
       PROBE_BIN: posix(dir).replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`),
+      PROBE_ARTIFACT_NAME: JSON.stringify(resolve('/src')),
       PROBE_LOG: posix(join(dir, 'calls')),
       PROBE_COUNT: posix(join(dir, 'count')),
       GITHUB_OUTPUT: posix(join(dir, 'outputs')),
@@ -454,12 +475,18 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
   ])
     assert.ok(scanner.includes(text));
   assert.equal(scanner.includes('-v "${output}:/out"'), false);
+  assert.equal(
+    ci.jobs.sca.steps.some((step) => step.uses?.startsWith('actions/upload-artifact@')),
+    false,
+    'an earlier step failure must not upload a stale scanner report',
+  );
   for (const [name, vars, expected, scanned] of [
     ['clean', {}, 0, true],
     ['retry', { DB_FAILURES: '2' }, 0, true],
     ['database unavailable', { DB_FAILURES: '5' }, 1, false],
     ['findings', { VULN: 'yes' }, 1, true],
-    ['engine error', { SCAN_STATUS: '2' }, 2, true],
+    ['secret finding', { SECRET_CONTEXT: 'yes' }, 1, true],
+    ['engine error', { SCAN_STATUS: '2', SCAN_CONSOLE_CONTEXT: 'yes' }, 2, true],
     ['other error', { SCAN_STATUS: '17' }, 17, true],
     ['missing report', { REPORT: 'no' }, 1, true],
   ])
@@ -474,13 +501,13 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
         readdirSync(dir).some((name) => name.startsWith('trivy-output.')),
         false,
       );
-      if (!scanned || vars.REPORT === 'no')
-        assert.equal(existsSync(join(dir, 'trivy-report.txt')), false);
-      else
-        assert.equal(
-          JSON.parse(readFileSync(join(dir, 'trivy-report.txt'), 'utf8')).ArtifactName,
-          '/src',
-        );
+      assert.equal(existsSync(join(dir, 'trivy-report.txt')), false);
+      assert.doesNotMatch(result.stdout + result.stderr, /proof-secret-|proof-source-neighbor/);
+      if (vars.SECRET_CONTEXT === 'yes') {
+        const summary = JSON.parse(result.stdout.trim());
+        assert.equal(summary.valid, false);
+        assert.match(JSON.stringify(summary.blocking), /fixture-secret/);
+      }
     });
   await t.test('discarding scanner status is observable', (st) => {
     const { env } = fakeDocker(st);
@@ -489,6 +516,14 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
       0,
     );
     assert.equal(execute(scanner, { ...env, SCAN_STATUS: '17' }).status, 17);
+  });
+  await t.test('publishing scanner console output is observable', (st) => {
+    const { env } = fakeDocker(st);
+    const exposed = scanner.replace(' > "$output/scanner.stdout" 2> "$output/scanner.stderr"', '');
+    assert.notEqual(exposed, scanner);
+    const result = execute(exposed, { ...env, SCAN_STATUS: '17', SCAN_CONSOLE_CONTEXT: 'yes' });
+    assert.equal(result.status, 17);
+    assert.match(result.stdout + result.stderr, /proof-secret-(stdout|stderr)/);
   });
 });
 

@@ -1,15 +1,16 @@
 import assert from 'node:assert/strict';
+import { resolve } from 'node:path';
 import { test } from 'node:test';
-import { decide, reportFindings } from './scan-policy.mjs';
 import {
   BRACES,
   HTTP_CACHE,
 } from '../../.github/actions/labpics-sca-policy/plans/tools/code-admission/reviewed-npm-patches.mjs';
+import { decide, reportFindings } from './scan-policy.mjs';
 
 function report(vulnerabilities = []) {
   return {
     SchemaVersion: 2,
-    ArtifactName: '/src',
+    ArtifactName: resolve('/src'),
     ArtifactType: 'filesystem',
     Trivy: { Version: '0.74.0' },
     CreatedAt: new Date().toISOString(),

@@ -41,16 +41,14 @@ docker run --rm --user "$(id -u):$(id -g)" \
   --skip-db-update --skip-java-db-update --skip-check-update --skip-vex-repo-update \
   --offline-scan --parallel 2 --timeout 5m --disable-telemetry --skip-version-check --quiet \
   --cache-dir /cache --no-progress --exit-code 0 --format json \
-  --output /out/trivy-report.json || status=$?
-if [ -f "${output}/report/trivy-report.json" ]; then
-  cp "${output}/report/trivy-report.json" "${RUNNER_TEMP}/trivy-report.txt"
-elif [ "$status" -eq 0 ]; then
-  echo '::error::Trivy returned success without a report.' >&2
-  exit 1
-fi
+  --output /out/trivy-report.json > "$output/scanner.stdout" 2> "$output/scanner.stderr" || status=$?
 if [ "$status" -ne 0 ]; then
   printf '::error::Trivy execution incomplete (exit %s).\n' "$status" >&2
   exit "$status"
+fi
+if [ ! -f "${output}/report/trivy-report.json" ]; then
+  echo '::error::Trivy returned success without a report.' >&2
+  exit 1
 fi
 node scripts/ci/scan-policy.mjs assess "$output/report/trivy-report.json" "$output/source" \
   "$output/source.json" "$cache" "$output/database.json" "$output" "$output/qualification.json"
