@@ -31,7 +31,7 @@ node scripts/ci/scan-policy.mjs database "$cache" > "$output/database.json"
 export SCAN_STARTED_MS="$(node -e 'process.stdout.write(String(Date.now()))')"
 
 status=0
-docker run --rm --user "$(id -u):$(id -g)" \
+docker run --rm --network none --user "$(id -u):$(id -g)" \
   -v "${output}/source:/src:ro" -v "${cache}:/cache" -v "${output}/report:/out" \
   -v "${output}/config.yaml:/policy/config.yaml:ro" \
   "$TRIVY_IMAGE" fs /src \

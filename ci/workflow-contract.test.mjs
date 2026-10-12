@@ -463,6 +463,18 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
     ci.jobs.sca.steps.find((step) => step.run === 'bash .github/scripts/scan.sh').if,
     undefined,
   );
+  await t.test('database warm keeps network while the source scan has no egress', (st) => {
+    const { dir, env } = fakeDocker(st);
+    const result = execute(scanner, env);
+    assert.equal(result.status, 0, result.stderr);
+    const commands = readFileSync(join(dir, 'calls'), 'utf8').trim().split(/\r?\n/);
+    const warm = commands.filter((command) => command.includes('image --download-db-only'));
+    const scan = commands.filter((command) => command.includes('fs /src'));
+    assert.equal(warm.length, 1);
+    assert.equal(scan.length, 1);
+    assert.doesNotMatch(warm[0], /(?:^|\s)--network none(?:\s|$)/);
+    assert.match(scan[0], /(?:^|\s)--network none(?:\s|$)/);
+  });
   for (const text of [
     '--scanners vuln,secret,misconfig,license',
     '--severity UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL',

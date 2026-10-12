@@ -130,7 +130,8 @@ async function main(argv) {
     reportDigest: report.digest,
     database,
     findings,
-    scope: 'Immutable source and full reported finding population; no runtime image claim',
+    scope:
+      'Неизменяемый снимок исходников; нормализованы записи Trivy об уязвимостях, секретах и ошибках конфигурации. Лицензии и runtime image вне решения; полнота сканеров не доказана.',
   };
   writeFileSync(output, `${JSON.stringify(evidence, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
   console.info(
