@@ -468,6 +468,8 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
     '--ignorefile /dev/null',
     'scan-policy.mjs assess',
     '--offline-scan --parallel 2 --timeout 5m --disable-telemetry --skip-version-check --quiet',
+    'cache="${RUNNER_TEMP}/trivycache"',
+    '-v "${cache}:/cache"',
     '-v "${output}/source:/src:ro"',
     '-v "${output}/report:/out"',
     '-v "${output}/config.yaml:/policy/config.yaml:ro"',
@@ -475,6 +477,8 @@ test('scanner fails on unavailable DB, findings, engine failure and missing repo
   ])
     assert.ok(scanner.includes(text));
   assert.equal(scanner.includes('-v "${output}:/out"'), false);
+  const dbCache = ci.jobs.sca.steps.find((step) => step.name === 'Cache Trivy DB');
+  assert.equal(dbCache.with.path, '${{ runner.temp }}/trivycache/db');
   assert.equal(
     ci.jobs.sca.steps.some((step) => step.uses?.startsWith('actions/upload-artifact@')),
     false,

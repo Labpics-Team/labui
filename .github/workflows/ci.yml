@@ -37,7 +37,7 @@ jobs:
     - name: Cache Trivy DB
       uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684
       with:
-        path: ${{ runner.temp }}/trivycache
+        path: ${{ runner.temp }}/trivycache/db
         key: trivy-db-${{ github.run_id }}-${{ github.run_attempt }}
         restore-keys: |
           trivy-db-
