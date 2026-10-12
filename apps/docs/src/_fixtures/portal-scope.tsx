@@ -7,6 +7,7 @@ import { Menu } from '@labpics/ui-react/menu';
 import { Popover } from '@labpics/ui-react/popover';
 import { Select } from '@labpics/ui-react/select';
 import { Tooltip } from '@labpics/ui-react/tooltip';
+import colourContract from '@labui/colors/contract.css?inline';
 import { StrictMode } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
@@ -68,6 +69,36 @@ root.render(
 
 // Только браузерный стенд владеет этой командой завершения реальных consumers.
 Object.assign(window, {
+  async mountUnassignedDialog() {
+    const origin = document.createElement('div');
+    origin.id = 'slot-origin';
+    const shadow = origin.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = colourContract;
+    shadow.append(style);
+    const dialog = document.createElement('lab-dialog');
+    dialog.dataset.testid = 'slotted-dialog';
+    dialog.setAttribute('heading', 'Slotted dialog');
+    dialog.textContent = 'Open slotted dialog';
+    const input = document.createElement('input');
+    input.slot = 'content';
+    input.dataset.testid = 'slotted-dialog-content';
+    input.setAttribute('aria-label', 'Slotted input');
+    dialog.append(input);
+    origin.append(dialog);
+    document.querySelector('#scope')?.append(origin);
+    await Reflect.get(dialog, 'updateComplete');
+    // Исчерпать первоначальные body insertions до назначения slot: они не должны маскировать gap.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => queueMicrotask(resolve)));
+    Object.assign(window, {
+      slottedScopeNodes: {
+        dialog,
+        trigger: dialog.shadowRoot?.querySelector('.trigger'),
+        input,
+        portal: document.querySelector('[data-portal-for="slotted-dialog"]'),
+      },
+    });
+  },
   unmountPortalScopes() {
     flushSync(() => root.unmount());
     document

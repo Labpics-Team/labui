@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, test } from '@playwright/test';
+import { type Locator, type Page, expect, test } from '@playwright/test';
 
 test.describe.configure({ retries: 0 });
 
@@ -77,7 +77,9 @@ for (const surface of surfaces) {
     await page.evaluate(() => {
       document.querySelector('#scope')?.setAttribute('data-theme', 'dark');
       document.querySelector('#react-root')?.setAttribute('data-material', 'glass');
-      document.querySelector('#scope')?.setAttribute('data-material', 'glass');
+      document.querySelectorAll('lab-dialog, lab-alert-dialog').forEach((element) => {
+        element.setAttribute('data-material', 'glass');
+      });
     });
     await open(page, surface);
     await expectScope(page, surface, 'glass');
@@ -86,6 +88,13 @@ for (const surface of surfaces) {
       document.querySelector('#scope')?.setAttribute('data-theme', 'light');
     });
     await expectScope(page, surface, 'glass');
+    await page.evaluate(() => {
+      document.querySelector('#react-root')?.removeAttribute('data-material');
+      document.querySelectorAll('lab-dialog, lab-alert-dialog').forEach((element) => {
+        element.removeAttribute('data-material');
+      });
+    });
+    await expectScope(page, surface, 'acrylic');
   });
 }
 
@@ -138,4 +147,107 @@ test('удалённые порталы не получают queued или по
   });
   expect(result.remaining).toBe(0);
   expect(result.after).toEqual(result.attributes);
+});
+
+test('назначение нового slot переносит независимые оси без remount', async ({ page }) => {
+  await page.goto('/_fixtures/portal-scope.html');
+  await expect(page.locator('[data-lab-portal-scope], [data-lab-dialog-portal]')).toHaveCount(9);
+  await page.evaluate(async () => {
+    await Reflect.get(window, 'mountUnassignedDialog')();
+  });
+  const dialog = page.getByTestId('slotted-dialog');
+  const control = dialog.locator('.trigger');
+  const input = page.getByTestId('slotted-dialog-content');
+  const portal = page.locator('[data-portal-for="slotted-dialog"]');
+  await expect(portal).toHaveAttribute('data-theme', 'light');
+  expect(await dialog.evaluate((element) => element.assignedSlot)).toBeNull();
+
+  // Меняется только shadow subtree: body/source/root mutation не подменяет slotchange evidence.
+  await page.evaluate(() => {
+    const root = document.querySelector('#slot-origin')?.shadowRoot;
+    if (!root) throw new Error('Missing slot origin');
+    const theme = document.createElement('div');
+    theme.id = 'slot-theme';
+    theme.setAttribute('data-theme', 'dark');
+    const material = document.createElement('div');
+    material.id = 'slot-material';
+    material.setAttribute('data-material', 'glass');
+    material.append(document.createElement('slot'));
+    theme.append(material);
+    root.append(theme);
+  });
+  await expect(portal).toHaveAttribute('data-theme', 'dark');
+  await expect(portal).toHaveAttribute('data-material', 'glass');
+  expect(await colour(control)).not.toBe('');
+  await expect.poll(() => colour(input)).toBe(await colour(control));
+
+  await control.click();
+  await expect(input).toBeVisible();
+  await input.fill('retained input');
+  await page.evaluate(() => {
+    document
+      .querySelector('#slot-origin')
+      ?.shadowRoot?.querySelector('#slot-theme')
+      ?.setAttribute('data-theme', 'light');
+  });
+  await expect(portal).toHaveAttribute('data-theme', 'light');
+  await expect(portal).toHaveAttribute('data-material', 'glass');
+  await page.evaluate(() => {
+    document
+      .querySelector('#slot-origin')
+      ?.shadowRoot?.querySelector('#slot-material')
+      ?.setAttribute('data-material', 'acrylic');
+  });
+  await expect(portal).toHaveAttribute('data-theme', 'light');
+  await expect(portal).toHaveAttribute('data-material', 'acrylic');
+  await page.evaluate(() => {
+    document
+      .querySelector('#slot-origin')
+      ?.shadowRoot?.querySelector('#slot-theme')
+      ?.removeAttribute('data-theme');
+    document
+      .querySelector('#slot-origin')
+      ?.shadowRoot?.querySelector('#slot-material')
+      ?.removeAttribute('data-material');
+  });
+  await expect(portal).toHaveAttribute('data-theme', 'light');
+  await expect(portal).toHaveAttribute('data-material', 'solid');
+  await expect(input).toBeVisible();
+  await expect(input).toHaveValue('retained input');
+  expect(
+    await page.evaluate(() => {
+      const nodes = Reflect.get(window, 'slottedScopeNodes');
+      const dialog = document.querySelector('[data-testid="slotted-dialog"]');
+      return (
+        nodes.dialog === dialog &&
+        nodes.trigger === dialog?.shadowRoot?.querySelector('.trigger') &&
+        nodes.input ===
+          document
+            .querySelector('[data-portal-for="slotted-dialog"]')
+            ?.shadowRoot?.querySelector('[data-testid="slotted-dialog-content"]') &&
+        nodes.portal === document.querySelector('[data-portal-for="slotted-dialog"]')
+      );
+    }),
+  ).toBe(true);
+
+  const disposed = await page.evaluate(async () => {
+    const nodes = Reflect.get(window, 'slottedScopeNodes');
+    const origin = document.querySelector('#slot-origin');
+    const theme = origin?.shadowRoot?.querySelector('#slot-theme');
+    theme?.setAttribute('data-theme', 'dark');
+    origin?.remove();
+    const attributes = [
+      nodes.portal.getAttribute('data-theme'),
+      nodes.portal.getAttribute('data-material'),
+    ];
+    theme?.setAttribute('data-theme', 'light');
+    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    return {
+      connected: nodes.portal.isConnected,
+      attributes,
+      after: [nodes.portal.getAttribute('data-theme'), nodes.portal.getAttribute('data-material')],
+    };
+  });
+  expect(disposed.connected).toBe(false);
+  expect(disposed.after).toEqual(disposed.attributes);
 });
