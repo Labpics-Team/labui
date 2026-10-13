@@ -75,7 +75,9 @@ Object.assign(window, {
     const shadow = origin.attachShadow({ mode: 'open' });
     const style = document.createElement('style');
     style.textContent = colourContract;
-    shadow.append(style);
+    const branch = document.createElement('div');
+    branch.id = 'slot-branch';
+    shadow.append(style, branch);
     const dialog = document.createElement('lab-dialog');
     dialog.dataset.testid = 'slotted-dialog';
     dialog.setAttribute('heading', 'Slotted dialog');

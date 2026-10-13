@@ -174,7 +174,9 @@ test('назначение нового slot переносит независи
     material.setAttribute('data-material', 'glass');
     material.append(document.createElement('slot'));
     theme.append(material);
-    root.append(theme);
+    const branch = root.querySelector('#slot-branch');
+    if (!branch) throw new Error('Missing pre-existing shadow branch');
+    branch.append(theme);
   });
   await expect(portal).toHaveAttribute('data-theme', 'dark');
   await expect(portal).toHaveAttribute('data-material', 'glass');
