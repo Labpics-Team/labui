@@ -3,7 +3,10 @@
   "components": [
     { "id": "applications", "prefixes": ["apps"] },
     { "id": "published-packages", "prefixes": ["packages"] },
-    { "id": "repository-tools", "prefixes": ["scripts", "tsup.config.base.ts"] }
+    {
+      "id": "repository-tools",
+      "prefixes": ["scripts", "tsup.config.base.ts", ".github/actions/labpics-sca-policy"]
+    }
   ],
   "rules": []
 }

@@ -7,11 +7,25 @@ export default defineConfig({
     conditions: ['development', 'browser'],
   },
   test: {
-    include: ['test/**/*.test.ts'],
     environment: 'node',
-    environmentMatchGlobs: [
-      ['**/mount.test.ts', 'happy-dom'],
-      ['**/coverage.test.ts', 'happy-dom'],
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: 'node',
+          include: ['test/**/*.test.ts'],
+          exclude: ['**/mount.test.ts', '**/coverage.test.ts'],
+          environment: 'node',
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'dom',
+          include: ['test/**/mount.test.ts', 'test/**/coverage.test.ts'],
+          environment: 'happy-dom',
+        },
+      },
     ],
   },
 });
