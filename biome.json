@@ -9,6 +9,7 @@
     "ignoreUnknown": true,
     "ignore": [
       "**/dist/**",
+      ".github/actions/labpics-sca-policy/**",
       "**/node_modules/**",
       "**/playwright-report/**",
       "**/test-results/**",

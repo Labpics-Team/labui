@@ -32,8 +32,8 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import type { LabMenuItem, LabMenuPlacement, LabMenuSize } from '@labpics/ui-core/menu';
 import * as menuMachine from '@zag-js/menu';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type ReactNode, useId, useRef } from 'react';
+import { ThemePortal } from './internal/theme-portal.js';
 import { useZag } from './use-zag.js';
 import './menu.css';
 
@@ -80,10 +80,7 @@ export function Menu({
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Overlays are client-only: gate the body portal on mount so SSR/first hydration
-  // emit nothing for the floating menu.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const portalSource = useRef<HTMLButtonElement>(null);
 
   const menu = (
     <div {...api.getPositionerProps()} className="lab-menu-positioner">
@@ -120,6 +117,7 @@ export function Menu({
     <>
       <button
         {...api.getTriggerProps()}
+        ref={portalSource}
         className="lab-menu-trigger"
         data-size={size}
         disabled={disabled}
@@ -129,7 +127,7 @@ export function Menu({
           ▾
         </span>
       </button>
-      {mounted && createPortal(menu, document.body)}
+      <ThemePortal source={portalSource}>{menu}</ThemePortal>
     </>
   );
 }

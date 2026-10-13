@@ -36,8 +36,8 @@
 import type { MachineModule, PropTypes, SchemaOf } from '@labpics/ui-core';
 import type { LabSelectItem, LabSelectPlacement, LabSelectSize } from '@labpics/ui-core/select';
 import * as selectMachine from '@zag-js/select';
-import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type ReactNode, useId, useMemo, useRef } from 'react';
+import { ThemePortal } from './internal/theme-portal.js';
 import { useZag } from './use-zag.js';
 import './select.css';
 
@@ -113,10 +113,7 @@ export function Select({
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Overlays are client-only: gate the body portal on mount so SSR/first hydration
-  // emit nothing for the floating listbox.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const portalSource = useRef<HTMLButtonElement>(null);
 
   const listbox = (
     <div {...api.getPositionerProps()} className="lab-select-positioner">
@@ -151,7 +148,7 @@ export function Select({
         </span>
       )}
       <div {...api.getControlProps()} className="lab-select-control">
-        <button {...api.getTriggerProps()} className="lab-select-trigger">
+        <button {...api.getTriggerProps()} ref={portalSource} className="lab-select-trigger">
           <span {...api.getValueTextProps()} className="lab-select-value-text">
             {api.valueAsString || placeholder}
           </span>
@@ -169,7 +166,7 @@ export function Select({
           </option>
         ))}
       </select>
-      {mounted && createPortal(listbox, document.body)}
+      <ThemePortal source={portalSource}>{listbox}</ThemePortal>
     </div>
   );
 }

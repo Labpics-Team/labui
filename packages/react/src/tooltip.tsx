@@ -29,8 +29,8 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import type { LabTooltipPlacement, LabTooltipSize } from '@labpics/ui-core/tooltip';
 import * as tooltipMachine from '@zag-js/tooltip';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type ReactNode, useId, useRef } from 'react';
+import { ThemePortal } from './internal/theme-portal.js';
 import { useZag } from './use-zag.js';
 import './tooltip.css';
 
@@ -80,10 +80,7 @@ export function Tooltip({
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Overlays are client-only: gate the body portal on mount so SSR/first hydration
-  // emit nothing for the floating layer (no markup to mismatch).
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const portalSource = useRef<HTMLButtonElement>(null);
 
   const floating = (
     <div {...api.getPositionerProps()} className="lab-tooltip-positioner">
@@ -100,10 +97,15 @@ export function Tooltip({
 
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-tooltip-trigger">
+      <button
+        type="button"
+        {...api.getTriggerProps()}
+        ref={portalSource}
+        className="lab-tooltip-trigger"
+      >
         {children}
       </button>
-      {mounted && createPortal(floating, document.body)}
+      <ThemePortal source={portalSource}>{floating}</ThemePortal>
     </>
   );
 }

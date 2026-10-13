@@ -26,8 +26,8 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
 import * as dialogMachine from '@zag-js/dialog';
-import { type ReactNode, useEffect, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { type ReactNode, useId, useRef } from 'react';
+import { ThemePortal } from './internal/theme-portal.js';
 import { useZag } from './use-zag.js';
 import './dialog.css';
 
@@ -82,10 +82,7 @@ export function Dialog({
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Dialogs are client-only: gate the body portal on mount so SSR/first hydration emit
-  // nothing for the floating layer.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const portalSource = useRef<HTMLButtonElement>(null);
 
   const floating = (
     <>
@@ -120,10 +117,15 @@ export function Dialog({
 
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
+      <button
+        type="button"
+        {...api.getTriggerProps()}
+        ref={portalSource}
+        className="lab-dialog-trigger"
+      >
         {children}
       </button>
-      {mounted && createPortal(floating, document.body)}
+      <ThemePortal source={portalSource}>{floating}</ThemePortal>
     </>
   );
 }

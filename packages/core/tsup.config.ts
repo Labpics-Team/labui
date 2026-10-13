@@ -4,6 +4,7 @@ import { discoverComponents } from './scripts/discover-components';
 /**
  * Entries, one per boundary:
  *   - `index`  the renderer-agnostic seam + the Lit base + behaviors.
+ *   - `theme` — чистый контракт скоупа для renderer adapters, без загрузки Lit.
  *   - `ssr`    the `@lit-labs/ssr` shim — isolated so consumers that never
  *              server-render the Lit path don't pull the SSR engine into their
  *              client bundle.
@@ -26,6 +27,12 @@ import { discoverComponents } from './scripts/discover-components';
 const componentEntries = discoverComponents().map(({ entry }) => entry);
 
 export default libraryPreset({
-  entry: ['src/index.ts', 'src/ssr/index.ts', 'src/proof/lab-proof.ts', ...componentEntries],
+  entry: [
+    'src/index.ts',
+    'src/theme.ts',
+    'src/ssr/index.ts',
+    'src/proof/lab-proof.ts',
+    ...componentEntries,
+  ],
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
 });

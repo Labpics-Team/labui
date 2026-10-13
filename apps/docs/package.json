@@ -24,7 +24,7 @@
     "@labui/colors": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "vue": "3.5.13"
+    "vue": "3.5.42"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",

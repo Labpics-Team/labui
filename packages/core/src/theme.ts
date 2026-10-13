@@ -56,3 +56,101 @@ export function setTheme(root: Element, theme: Theme): void {
 export function setMaterial(root: Element, material: Material): void {
   root.setAttribute(MATERIAL_ATTR, material);
 }
+
+/**
+ * Перенести theme/material скоуп источника на вынесенный DOM-узел.
+ * Имена осей и порядок разрешения принадлежат этому модулю; renderer знает
+ * только источник, приёмник и окончание их общего срока жизни.
+ * При отсутствии явной темы CSS продолжает следовать OS fallback.
+ */
+export function bindPortalScope(source: Element, target: Element): () => void {
+  if (source.ownerDocument !== target.ownerDocument) {
+    throw new Error('Источник и портал должны принадлежать одному документу');
+  }
+  const Observer = source.ownerDocument.defaultView?.MutationObserver;
+  if (!Observer) throw new Error('Для переноса скоупа нужен браузерный документ');
+
+  const axes = [
+    [THEME_ATTR, THEMES],
+    [MATERIAL_ATTR, MATERIALS],
+  ] as const;
+  const previous = axes.map(([attribute]) => target.getAttribute(attribute));
+  let disposed = false;
+  let ancestry: Node[] = [];
+  let dependencies: Node[] = [];
+
+  const write = (attribute: string, value: string | null): void => {
+    if (target.getAttribute(attribute) === value) return;
+    if (value === null) target.removeAttribute(attribute);
+    else target.setAttribute(attribute, value);
+  };
+
+  const observer = new Observer(refresh);
+  function refresh(): void {
+    if (disposed) return;
+    const next: Node[] = [];
+    let node: Node | null = source;
+    while (node) {
+      next.push(node);
+      // CSS-наследование следует за assignedSlot и пересекает shadow host.
+      const assigned: HTMLSlotElement | null =
+        node.nodeType === 1 ? (node as Element).assignedSlot : null;
+      node =
+        assigned ??
+        node.parentNode ??
+        (node.nodeType === 11 ? ((node as ShadowRoot).host ?? null) : null);
+    }
+    if (next.includes(target)) throw new Error('Портал должен находиться вне скоупа источника');
+
+    // Пока light-DOM узел не назначен в slot, root его parent host не входит
+    // в composed ancestry. Он всё равно определяет будущее назначение; slotchange
+    // не пересекает shadow boundary, поэтому слушаем этот root непосредственно.
+    const roots = next.flatMap((ancestor) => {
+      const parent = ancestor.parentNode;
+      const root = parent?.nodeType === 1 ? (parent as Element).shadowRoot : null;
+      return root ? [root] : [];
+    });
+    const nextDependencies = [...new Set([...next, ...roots])];
+    ancestry = next;
+    if (
+      nextDependencies.length !== dependencies.length ||
+      nextDependencies.some((item, index) => item !== dependencies[index])
+    ) {
+      observer.disconnect();
+      for (const dependency of dependencies) dependency.removeEventListener('slotchange', refresh);
+      dependencies = nextDependencies;
+      for (const dependency of dependencies) {
+        observer.observe(dependency, {
+          attributes: true,
+          attributeFilter: [THEME_ATTR, MATERIAL_ATTR, 'slot', 'name'],
+          childList: true,
+        });
+        if (dependency.nodeType === 11) dependency.addEventListener('slotchange', refresh);
+      }
+    }
+
+    for (const [attribute, values] of axes) {
+      let value: string | null = null;
+      for (const ancestor of ancestry) {
+        if (ancestor.nodeType !== 1) continue;
+        const candidate = (ancestor as Element).getAttribute(attribute);
+        if (candidate !== null && (values as readonly string[]).includes(candidate)) {
+          value = candidate;
+          break;
+        }
+      }
+      write(attribute, value);
+    }
+  }
+
+  refresh();
+  return () => {
+    if (disposed) return;
+    disposed = true;
+    observer.disconnect();
+    for (const dependency of dependencies) dependency.removeEventListener('slotchange', refresh);
+    dependencies = [];
+    ancestry = [];
+    axes.forEach(([attribute], index) => write(attribute, previous[index] ?? null));
+  };
+}

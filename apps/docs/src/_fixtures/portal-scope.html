@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en" data-theme="light" data-material="solid">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Portal scope fixture</title>
+  </head>
+  <body>
+    <main id="scope">
+      <lab-dialog data-testid="lit-dialog" heading="Lit dialog">
+        Open Lit dialog
+        <button slot="content" type="button" data-testid="lit-dialog-content">Action</button>
+      </lab-dialog>
+      <lab-alert-dialog data-testid="lit-alert" heading="Lit alert">
+        Open Lit alert
+        <button slot="content" type="button" data-testid="lit-alert-content">Confirm</button>
+      </lab-alert-dialog>
+      <div id="react-root"></div>
+    </main>
+    <script type="module" src="./portal-scope.tsx"></script>
+  </body>
+</html>

@@ -37,6 +37,7 @@ export { type Attrs, ZagController } from './lit/zag-controller.js';
 
 // Theming contract (selectors + helpers).
 export {
+  bindPortalScope,
   MATERIAL_ATTR,
   MATERIALS,
   type Material,
