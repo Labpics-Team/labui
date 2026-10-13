@@ -97,7 +97,7 @@ jobs:
         with:
           name: playwright-report-full
           path: apps/docs/playwright-report/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)

@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
   merge_group:
+  workflow_dispatch:
+    inputs:
+      visual_evidence:
+        description: Сохранить изображение для ручного обзора
+        type: boolean
+        default: false
 
 # Least privilege: read-only by default. No job needs write here.
 permissions:
@@ -173,16 +179,6 @@ jobs:
             echo "::warning title=Trivy infra error::Trivy exited ${rc} (scan/engine error, not a findings exit). Failing SOFT — this is NOT a security finding."
             exit 0
           fi
-
-      - name: Upload Trivy report
-        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
-        continue-on-error: true
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: trivy-report
-          path: trivy-report.txt
-          retention-days: 7
-          if-no-files-found: ignore
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
         # sca запускает docker-контейнеры Trivy как root → root-owned файлы в
@@ -363,23 +359,23 @@ jobs:
         run: bash .github/scripts/browser-check.sh
 
       - name: Upload FX-render артефакт (PNG для обзора владельцем)
-        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}
+        if: ${{ (failure() || (github.event_name == 'workflow_dispatch' && inputs.visual_evidence)) && steps.browser.outputs.fx_ready == 'true' }}
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: fx-render
           path: packages/colors/artifacts/fx-render/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Upload Playwright report
-        if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
+        if: ${{ failure() }}
         continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
           path: apps/docs/playwright-report/
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: ignore
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
