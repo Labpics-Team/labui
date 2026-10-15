@@ -11,11 +11,12 @@ Vue, Svelte, Solid и Astro.
 
 ```sh
 pnpm install --frozen-lockfile
+pnpm build
 pnpm --filter @labpics/ui-docs dev
 ```
 
 Команда запускает локальный каталог компонентов из `apps/docs`.
-Для отдельной сборки каталога используйте
+Для отдельной сборки каталога после `pnpm build` используйте
 `pnpm --filter @labpics/ui-docs build`.
 
 ## Где менять компонент
