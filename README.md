@@ -20,22 +20,8 @@ pnpm --filter @labpics/ui-docs dev
 
 ## Где менять компонент
 
-- [Ядро](packages/core/): компоненты, состояния, Web Components и
-  серверный рендеринг.
-- [Адаптеры](packages/react/), [Vue](packages/vue/),
-  [Svelte](packages/svelte/), [Solid](packages/solid/) и
-  [Astro](packages/astro/): привязки платформ.
-- [Токены](packages/tokens/), [цвет](packages/colors/),
-  [тени](packages/shadow/), [материалы](packages/materials/)
-  и [шрифты](packages/fonts/): общие значения оформления.
-- [Генерация адаптеров](packages/adapter-codegen/): исходники
-  повторяющихся платформенных привязок.
-- [Каталог](apps/docs/): примеры, документация интерфейса
-  и браузерные проверки.
-
-Смысл состояния и поведение компонента меняйте у его владельца в ядре.
-Оформление должно использовать существующие токены. Пример в каталоге
-показывает компонент, сохраняя его реальную композицию и состояния.
+[Карта пакетов](docs/README.md) показывает владельцев компонентов,
+токенов, адаптеров и каталога примеров.
 
 ## Проверить изменение
 
@@ -55,7 +41,8 @@ Playwright на своей машине.
 В CI выполняются выбранные smoke-сценарии; полный набор браузерных
 проверок запускается отдельно. Их состав определяют
 [настройка Playwright](apps/docs/playwright.config.ts) и
-[workflow](.github/workflows/ci.yml).
+[smoke-workflow](.github/workflows/ci.yml) и
+[workflow полного прогона](.github/workflows/e2e-full.yml).
 
 Для оформления изменения версии используйте существующий
 [Changesets](.changeset/) и команду `pnpm changeset`, если изменение
