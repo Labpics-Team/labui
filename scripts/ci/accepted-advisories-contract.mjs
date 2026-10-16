@@ -53,8 +53,9 @@ const reviewed = {
   ],
 };
 
-// Строгий разбор формы, в которой записи ведутся здесь: любая другая запись уязвимости (без purls,
-// с paths, в другой форме YAML) не проходит молча, а требует разбора и правки этого контракта.
+// Строгий разбор формы, в которой записи ведутся здесь: любая другая запись (уязвимость без purls,
+// с paths или в другой форме YAML, раздел кроме vulnerabilities) не проходит молча, а требует
+// разбора и правки этого контракта.
 function records(source) {
   const pairs = [];
   const problems = [];
@@ -73,8 +74,10 @@ function records(source) {
     if (top) {
       close();
       section = top[1];
-      if (!['vulnerabilities', 'misconfigurations', 'secrets', 'licenses'].includes(section))
-        problems.push(`line ${index + 1}: unknown section ${section}`);
+      // Другие разделы (misconfigurations, secrets, licenses) здесь не разобраны: принятие в них
+      // требует сначала расширить этот контракт.
+      if (section !== 'vulnerabilities')
+        problems.push(`line ${index + 1}: unreviewed section ${section}`);
       continue;
     }
     if (section !== 'vulnerabilities') {
@@ -153,6 +156,13 @@ const mutants = [
   [record('  - id: CVE-2099-0001\n    purls:\n      - pkg:npm/braces@3.0.3'), trees],
   // Запись без purls.
   [record('  - id: CVE-2099-0002\n    statement: >-\n      Без пути.'), trees],
+  // Принятие в неразобранном разделе.
+  [
+    records(
+      `${source.trimEnd()}\nsecrets:\n  - id: aws-access-key-id\n    paths:\n      - packages/x.test.ts\n`,
+    ),
+    trees,
+  ],
   // Та же запись в другой форме YAML.
   [records(source.replace(/purls:\n {6}- (\S+)/, 'purls: [$1]')), trees],
   // Новый непосредственный потребитель.
