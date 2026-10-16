@@ -41,7 +41,7 @@ jobs:
   #      файлов и отработал ли chown-back. Это первичная защита.
   #   2) КАЖДЫЙ root-docker job (e2e) завершается шагом «Вернуть владение
   #      воркспейса раннеру» (if: always()) — тоже root-контейнером busybox.
-  #      Это defence-in-depth: возвращает uid 1000 сразу после job'а.
+  #      Это defence-in-depth: возвращает владение uid раннера сразу после job'а.
   # При добавлении нового root-контейнерного job'а — добавь такой chown-back.
   security:
     runs-on: self-hosted
@@ -58,8 +58,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+          docker run --rm -e OWNER="$(id -u):$(id -g)" -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$OWNER" /workspace 2>/dev/null || true'
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -99,15 +99,15 @@ jobs:
       # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
       # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
       # что угодно, независимо от того, кто наоставлял файлов и отработал ли
-      # chown-back. Заодно возвращаем владение самим каталогом раннеру (uid 1000),
+      # chown-back. Заодно возвращаем владение самим каталогом раннеру (`id -u`),
       # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
       # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+          docker run --rm -e OWNER="$(id -u):$(id -g)" -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$OWNER" /workspace 2>/dev/null || true'
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -207,15 +207,15 @@ jobs:
       # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
       # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
       # что угодно, независимо от того, кто наоставлял файлов и отработал ли
-      # chown-back. Заодно возвращаем владение самим каталогом раннеру (uid 1000),
+      # chown-back. Заодно возвращаем владение самим каталогом раннеру (`id -u`),
       # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
       # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+          docker run --rm -e OWNER="$(id -u):$(id -g)" -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$OWNER" /workspace 2>/dev/null || true'
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -284,7 +284,7 @@ jobs:
         shell: bash
         run: |
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+            chown -R "$(id -u):$(id -g)" /workspace || true
 
   ci:
     name: CI
