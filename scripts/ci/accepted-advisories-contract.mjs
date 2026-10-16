@@ -76,8 +76,8 @@ function records(source) {
     if (top) {
       close();
       section = top[1];
-      // Другие разделы (misconfigurations, secrets, licenses) здесь не разобраны: принятие в них
-      // требует сначала расширить этот контракт.
+      // Другие разделы здесь не разобраны: misconfigurations и licenses требуют сначала расширить этот
+      // контракт, а секреты не принимаются вовсе — шаг скана не читает для них .trivyignore.yaml.
       if (section !== 'vulnerabilities')
         problems.push(`line ${index + 1}: unreviewed section ${section}`);
       continue;

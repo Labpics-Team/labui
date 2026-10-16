@@ -27,9 +27,10 @@ const canonical = [
   'scan --scanners vuln,misconfig --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps "${accepted[@]}"',
   '# Исправление вышло — принятая раньше уязвимость снова блокирует.',
   'scan --scanners vuln --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps --ignore-unfixed --ignorefile /dev/null',
-  '# Секрет в тестах, примерах и документации — такая же утечка: встроенные исключения trivy для них сняты.',
+  '# Секрет в тестах, примерах и документации — такая же утечка: встроенные исключения trivy для них сняты,',
+  '# а записи .trivyignore.yaml к секретам не применяются.',
   String.raw`printf 'disable-allow-rules:\n  - tests\n  - examples\n  - markdown\n' > "$dir/secret.yaml"`,
-  'scan --scanners secret --secret-config "$dir/secret.yaml" "${accepted[@]}"',
+  'scan --scanners secret --secret-config "$dir/secret.yaml" --ignorefile /dev/null',
 ];
 
 // Job security: защита от fork-PR, чистый воркспейс, checkout кандидата и каноничный шаг.
@@ -191,6 +192,11 @@ const mutants = [
   inSecurity('          set -euo pipefail\n          # trivy читает', '          # trivy читает'),
   inSecurity(/^ +unset "\$\{!TRIVY_@\}"\n/m, ''),
   inSecurity('--ignore-unfixed --ignorefile /dev/null', '--ignore-unfixed "${accepted[@]}"'),
+  // Секреты снова принимаются записями из проверяемого дерева.
+  inSecurity(
+    '--secret-config "$dir/secret.yaml" --ignorefile /dev/null',
+    '--secret-config "$dir/secret.yaml" "${accepted[@]}"',
+  ),
   inSecurity(/^( {10}sum=)[0-9a-f]{64}$/m, (_, key) => key),
   inSecurity(scanStep, `${scanStep}        continue-on-error: true\n`),
   // Шаг пропущен условием после тела: тело при этом совпадает с каноничным.
