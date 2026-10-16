@@ -64,6 +64,8 @@ function records(source) {
   let field = null;
   const close = () => {
     if (entry?.purls.length === 0) problems.push(`${entry.id}: accepted without purls`);
+    // Объяснение, почему риск здесь допустим, — часть записи: без него запись не принята.
+    if (entry && entry.statement === 0) problems.push(`${entry.id}: accepted without a statement`);
     for (const purl of entry?.purls ?? []) pairs.push(`${entry.id} ${purl}`);
     entry = null;
     field = null;
@@ -88,12 +90,12 @@ function records(source) {
     const purl = line.match(/^ {6}- (pkg:npm\/\S+)$/);
     if (id) {
       close();
-      entry = { id: id[1], purls: [] };
+      entry = { id: id[1], purls: [], statement: 0 };
     } else if (entry && line === '    purls:') field = 'purls';
     else if (entry && line === '    statement: >-') field = 'statement';
     else if (entry && field === 'purls' && purl) entry.purls.push(purl[1]);
-    else if (!(entry && field === 'statement' && /^ {6}\S/.test(line)))
-      problems.push(`line ${index + 1}: unsupported vulnerability syntax`);
+    else if (entry && field === 'statement' && /^ {6}\S/.test(line)) entry.statement += 1;
+    else problems.push(`line ${index + 1}: unsupported vulnerability syntax`);
   }
   close();
   return { pairs, problems };
@@ -153,7 +155,15 @@ const extend = (pkg, dependent) => ({
 const record = (text) => records(`${source.trimEnd()}\n${text}\n`);
 const mutants = [
   // Новый CVE на уже принятом пакете.
-  [record('  - id: CVE-2099-0001\n    purls:\n      - pkg:npm/braces@3.0.3'), trees],
+  [
+    record(
+      '  - id: CVE-2099-0001\n    purls:\n      - pkg:npm/braces@3.0.3\n    statement: >-\n      Проба.',
+    ),
+    trees,
+  ],
+  // Принятая запись без объяснения или с пустым объяснением.
+  [records(source.replace(/ {4}statement: >-\n(?: {6}.*\n)+/, '')), trees],
+  [records(source.replace(/( {4}statement: >-\n)(?: {6}.*\n)+/, '$1')), trees],
   // Запись без purls.
   [record('  - id: CVE-2099-0002\n    statement: >-\n      Без пути.'), trees],
   // Принятие в неразобранном разделе.
