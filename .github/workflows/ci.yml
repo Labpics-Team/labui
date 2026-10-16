@@ -16,13 +16,10 @@ concurrency:
 
 env:
   CI: "true"
-  # Trivy scanner image pinned by tag AND digest (supply-chain: digest is the
-  # immutable identity; the tag stays for human readability). Bump both together.
-  TRIVY_IMAGE: "aquasec/trivy:0.66.0@sha256:086971aaf400beebd94e8300fd8ea623774419597169156cec56eec5b00dfb1e"
   # busybox используется как ROOT-контейнер для очистки воркспейса и возврата
   # владения на self-hosted раннерах (см. блок «ИНВАРИАНТ root-docker» ниже).
-  # Пинится по тегу И дайджесту (immutable identity), как TRIVY_IMAGE. Бампить
-  # оба поля вместе. Дайджест — OCI-индекс busybox:1.36 (multi-arch).
+  # Пинится по тегу И дайджесту (immutable identity); бампить оба поля вместе.
+  # Дайджест — OCI-индекс busybox:1.36 (multi-arch).
   BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
   # Job-локальный docker-конфиг БЕЗ credsStore: у Docker Desktop в WSL
   # ~/.docker/config.json указывает credsStore=desktop → docker pull зовёт
@@ -34,20 +31,19 @@ env:
 
 jobs:
   # ── ИНВАРИАНТ root-docker ───────────────────────────────────────────────────
-  # Self-hosted раннеры делят _work между job'ами. docker-as-root job'ы (Trivy
-  # fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы, а daniel (uid 1000)
+  # Self-hosted раннеры делят _work между job'ами. docker-as-root job'ы
+  # (Playwright) оставляют в чекауте ROOT-owned файлы, а daniel (uid 1000)
   # без passwordless sudo не может их ни удалить (`rm` → Permission denied), ни
   # chown'ить (нет CAP_CHOWN). Раньше это краснило невиновные PR.
   # ЗАЩИТА В ДВА СЛОЯ, оба через ROOT-контейнер busybox (${BUSYBOX_IMAGE}):
   #   1) clean-шаг КАЖДОГО job'а чистит содержимое воркспейса root-контейнером —
   #      root снесёт что угодно; clean больше не зависит от того, кто наоставлял
   #      файлов и отработал ли chown-back. Это первичная защита.
-  #   2) КАЖДЫЙ root-docker job (sca, e2e) завершается шагом «Вернуть владение
+  #   2) КАЖДЫЙ root-docker job (e2e) завершается шагом «Вернуть владение
   #      воркспейса раннеру» (if: always()) — тоже root-контейнером busybox.
   #      Это defence-in-depth: возвращает uid 1000 сразу после job'а.
   # При добавлении нового root-контейнерного job'а — добавь такой chown-back.
-  sca:
-    name: supply-chain · secrets · misconfig
+  security:
     runs-on: self-hosted
     # Защита от fork-PR: НЕ гоняем недоверенный код форков на своей инфре.
     # Форк-PR пропускается (job skipped, раннер не выделяется); push в main
@@ -57,15 +53,7 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 10
     steps:
-      # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
-      # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
-      # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
-      # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
-      # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
-      # что угодно, независимо от того, кто наоставлял файлов и отработал ли
-      # chown-back. Заодно возвращаем владение самим каталогом раннеру (uid 1000),
-      # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
-      # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
+      # Тот же clean-шаг, что у каждого job'а (см. «ИНВАРИАНТ root-docker» выше).
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
@@ -77,135 +65,36 @@ jobs:
         with:
           persist-credentials: false
 
-      # ── Why this job is hand-rolled around the pinned Trivy CONTAINER instead
-      #    of aquasecurity/trivy-action ─────────────────────────────────────────
-      # Root cause of the systemic red: any single-step Trivy wrapper conflates
-      # TWO different non-zero exits — (a) infra setup (binary install from GitHub
-      # releases, or vuln-DB pull from GHCR, both anonymously rate-limited) and
-      # (b) a genuine HIGH/CRITICAL finding (`--exit-code 1`). The action fails in
-      # ~2-13s on infra and reds the whole PR, indistinguishable from a finding.
-      #
-      # Fix: run the pinned aquasec/trivy image directly so WE own every exit.
-      #   * DB pull is its own retrying, mirror-fallback step → fail-SOFT on infra.
-      #   * The scan runs ONLY when the DB warmed, with --skip-db-update so a
-      #     registry blip cannot re-fail it, and --exit-code 1 reserved EXCLUSIVELY
-      #     for findings. We branch on Trivy's exit: 0 = clean (pass), 1 = real
-      #     HIGH/CRITICAL (HARD fail), anything else = infra/scan error (fail-SOFT
-      #     with a visible ::warning::). Security gate kept; infra never reds.
-      - name: Cache Trivy DB
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          # Кэш вне чекаута (RUNNER_TEMP): trivy пишется как root из docker, и в
-          # общем воркспейсе self-hosted это ломало очистку следующих job'ов.
-          path: ${{ runner.temp }}/trivycache
-          # Primary key rotates with the workflow run so the post-job save always
-          # persists the freshly-warmed DB; restore-keys reuses the most recent
-          # prior cache so a healthy run still starts from a warm DB instead of a
-          # cold full download. (A static key would go stale and never re-save.)
-          key: trivy-db-${{ github.run_id }}
-          restore-keys: |
-            trivy-db-
-
-      - name: Warm Trivy DB (fail-soft on infra)
-        id: dbwarm
-        env:
-          # Mirror the vuln/java DBs (GHCR + public.ecr.aws) to dodge anon limits.
-          TRIVY_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-db:2,public.ecr.aws/aquasecurity/trivy-db:2
-          TRIVY_JAVA_DB_REPOSITORY: ghcr.io/aquasecurity/trivy-java-db:1,public.ecr.aws/aquasecurity/trivy-java-db:1
+      - name: Scan dependencies, configuration and secrets
         run: |
-          set +e
-          mkdir -p "${RUNNER_TEMP}/trivycache"
-          ok=""
-          for attempt in 1 2 3 4 5; do
-            echo "::group::Trivy DB download attempt ${attempt}"
-            docker run --rm \
-              -e TRIVY_DB_REPOSITORY -e TRIVY_JAVA_DB_REPOSITORY \
-              -v "${RUNNER_TEMP}/trivycache:/root/.cache/trivy" \
-              "${TRIVY_IMAGE}" \
-              image --download-db-only --cache-dir /root/.cache/trivy
-            rc=$?
-            echo "::endgroup::"
-            if [ $rc -eq 0 ]; then ok="true"; break; fi
-            echo "DB download attempt ${attempt} failed (rc=${rc}); backing off..."
-            sleep $((attempt * 10))
-          done
-          if [ "${ok}" = "true" ]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
-            echo "Trivy DB present in cache; scan will run."
-          else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Trivy SCA skipped::Trivy DB could not be fetched after 5 attempts (registry/rate-limit). Failing SOFT on infra — NOT a security finding. The gate still hard-fails on a real HIGH/CRITICAL whenever the DB is reachable."
-          fi
-
-      - name: Scan (vuln + secret + misconfig; hard-fail only on findings)
-        if: ${{ steps.dbwarm.outputs.ready == 'true' }}
-        run: |
-          set +e
-          # Write the report to a FRESH out-dir mounted read-write, NOT into the
-          # restored .trivycache — otherwise a current-run scan error could leave
-          # a STALE report from a prior run's cache and we'd upload it as if it
-          # were this run's. Start clean so the artifact always matches this scan.
-          rm -rf "${RUNNER_TEMP}/trivy-out" && mkdir -p "${RUNNER_TEMP}/trivy-out"
-          docker run --rm \
-            -v "${PWD}:/src:ro" \
-            -v "${RUNNER_TEMP}/trivycache:/root/.cache/trivy" \
-            -v "${RUNNER_TEMP}/trivy-out:/out" \
-            "${TRIVY_IMAGE}" \
-            fs /src \
-            --scanners vuln,secret,misconfig \
-            --severity HIGH,CRITICAL \
-            --skip-db-update --skip-java-db-update \
-            --cache-dir /root/.cache/trivy \
-            --no-progress \
-            --exit-code 1 \
-            --format table \
-            --output /out/trivy-report.txt
-          rc=$?
-          cp "${RUNNER_TEMP}/trivy-out/trivy-report.txt" trivy-report.txt 2>/dev/null || true
-          echo "::group::Trivy report"; cat trivy-report.txt 2>/dev/null || echo "(no report file)"; echo "::endgroup::"
-          if [ $rc -eq 0 ]; then
-            echo "Trivy: no HIGH/CRITICAL findings. PASS."
-            exit 0
-          elif [ $rc -eq 1 ]; then
-            echo "::error title=Trivy findings::Trivy reported HIGH/CRITICAL vuln/secret/misconfig findings — see report. HARD failing the gate."
-            exit 1
-          else
-            echo "::warning title=Trivy infra error::Trivy exited ${rc} (scan/engine error, not a findings exit). Failing SOFT — this is NOT a security finding."
-            exit 0
-          fi
-
-      - name: Upload Trivy report
-        if: ${{ !cancelled() && steps.dbwarm.outputs.ready == 'true' }}
-        continue-on-error: true
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: trivy-report
-          path: trivy-report.txt
-          retention-days: 7
-          if-no-files-found: ignore
-
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
-        # sca запускает docker-контейнеры Trivy как root → root-owned файлы в
-        # GITHUB_WORKSPACE. daniel (uid 1000) НЕ может chown чужие файлы (нет
-        # CAP_CHOWN, нет passwordless sudo) — `chown` от daniel молча падал.
-        # Возвращаем владение раннеру (uid 1000) через ROOT-контейнер busybox.
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+          set -euo pipefail
+          version=0.74.0
+          sum=2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+          dir="$RUNNER_TEMP/trivy"
+          mkdir -p "$dir"
+          curl -fsSL --retry 3 --retry-all-errors -o "$dir/trivy.tgz" \
+            "https://github.com/aquasecurity/trivy/releases/download/v$version/trivy_${version}_Linux-64bit.tar.gz"
+          echo "$sum  $dir/trivy.tgz" | sha256sum -c -
+          tar -xzf "$dir/trivy.tgz" -C "$dir" trivy
+          accepted=(--ignorefile /dev/null)
+          [ -f .trivyignore.yaml ] && accepted=(--ignorefile .trivyignore.yaml)
+          scan() { "$dir/trivy" fs --cache-dir "$dir/cache" --exit-code 1 --no-progress "$@" .; }
+          scan --scanners vuln,misconfig --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps "${accepted[@]}"
+          # Исправление вышло — принятая раньше уязвимость снова блокирует.
+          scan --scanners vuln --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps --ignore-unfixed --ignorefile /dev/null
+          scan --scanners secret "${accepted[@]}"
 
   quality:
     name: lint · typecheck · build
     runs-on: self-hosted
-    # Защита от fork-PR — см. комментарий в job `sca` выше.
+    # Защита от fork-PR — см. комментарий в job `security` выше.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     timeout-minutes: 15
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
-      # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
+      # (Playwright) оставляют в чекауте ROOT-owned файлы
       # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
       # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
       # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
@@ -250,6 +139,9 @@ jobs:
           rm -rf -- "$store"
           pnpm install --frozen-lockfile --store-dir "$store"
 
+      - name: Verify accepted advisories stay on their reviewed paths
+        run: node scripts/ci/accepted-advisories-contract.mjs
+
       - name: Lint (Biome)
         run: pnpm lint
 
@@ -291,7 +183,7 @@ jobs:
   e2e:
     name: playwright smoke (critical path)
     runs-on: self-hosted
-    # Защита от fork-PR — см. комментарий в job `sca` выше.
+    # Защита от fork-PR — см. комментарий в job `security` выше.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -310,7 +202,7 @@ jobs:
     timeout-minutes: 25
     steps:
       # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
-      # (Trivy fs-scan, Playwright) оставляют в чекауте ROOT-owned файлы
+      # (Playwright) оставляют в чекауте ROOT-owned файлы
       # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
       # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
       # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
@@ -397,7 +289,7 @@ jobs:
   ci:
     name: CI
     needs:
-      - sca
+      - security
       - quality
       - e2e
     if: ${{ always() }}

@@ -1,0 +1,17 @@
+vulnerabilities:
+  - id: CVE-2026-93687
+    purls:
+      - pkg:npm/braces@3.0.3
+    statement: >-
+      Приходит только через @changesets/cli — devDependency корня (путь держит
+      scripts/ci/accepted-advisories-contract.mjs в CI), который раскрывает лишь glob-шаблоны из
+      .changeset/config.json и pnpm-workspace.yaml этого репозитория; внешний ввод до braces не
+      доходит.
+  - id: CVE-2026-93748
+    purls:
+      - pkg:npm/http-cache-semantics@4.2.0
+    statement: >-
+      Приходит только через astro — devDependency @labpics/ui-astro (путь держит
+      scripts/ci/accepted-advisories-contract.mjs в CI); astro вызывает пакет лишь в загрузчике
+      удалённых изображений astro build, а здесь astro работает только в тестах через AstroContainer,
+      без общего кэша и чужих запросов.
