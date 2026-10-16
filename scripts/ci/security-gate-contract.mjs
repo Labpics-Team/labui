@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 // Защиту бывшего общего допуска держит job security: каноничный шаг trivy без правок, без подавления
 // отказа и с местом в обязательном итоге CI. Снятая настройка секретов (без неё trivy не смотрит
-// тесты, примеры и *.md), чтение trivy.yaml из проверяемого дерева, мягкий код выхода или выпавший
-// из итога job краснят CI.
+// тесты, примеры и *.md), переменные TRIVY_* или trivy.yaml из проверяемого дерева, мягкий код
+// выхода или выпавший из итога job краснят CI.
 import { readFileSync } from 'node:fs';
 
 const canonical = [
   'set -euo pipefail',
+  '# trivy читает переменные TRIVY_* как флаги: охват проверки задаёт только этот шаг.',
+  'unset "${!TRIVY_@}"',
   'version=0.74.0',
   'sum=2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a',
   'dir="$RUNNER_TEMP/trivy"',
@@ -78,9 +80,10 @@ const mutants = [
   workflow.replace(/^ +printf 'disable-allow-rules:.*\n/m, ''),
   workflow.replace('--exit-code 1', '--exit-code 0'),
   workflow.replace(
-    '          set -euo pipefail\n          version=0.74.0',
-    '          version=0.74.0',
+    '          set -euo pipefail\n          # trivy читает',
+    '          # trivy читает',
   ),
+  workflow.replace(/^ +unset "\$\{!TRIVY_@\}"\n/m, ''),
   workflow.replace('--ignore-unfixed --ignorefile /dev/null', '--ignore-unfixed "${accepted[@]}"'),
   workflow.replace(`${stepName}\n`, `${stepName}\n        continue-on-error: true\n`),
   workflow.replace('    needs:\n      - security\n', '    needs:\n'),
