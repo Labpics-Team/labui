@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Защиту бывшего общего допуска держит job security: каноничный шаг trivy без правок, без подавления
 // отказа и с местом в обязательном итоге CI. Снятая настройка секретов (без неё trivy не смотрит
-// тесты, примеры и *.md), мягкий код выхода или выпавший из итога job краснят CI.
+// тесты, примеры и *.md), чтение trivy.yaml из проверяемого дерева, мягкий код выхода или выпавший
+// из итога job краснят CI.
 import { readFileSync } from 'node:fs';
 
 const canonical = [
@@ -16,7 +17,8 @@ const canonical = [
   'tar -xzf "$dir/trivy.tgz" -C "$dir" trivy',
   'accepted=(--ignorefile /dev/null)',
   '[ -f .trivyignore.yaml ] && accepted=(--ignorefile .trivyignore.yaml)',
-  'scan() { "$dir/trivy" fs --cache-dir "$dir/cache" --exit-code 1 --no-progress "$@" .; }',
+  '# Настройки сканера задаёт шаг: trivy.yaml из проверяемого дерева их не меняет.',
+  'scan() { "$dir/trivy" fs --config /dev/null --cache-dir "$dir/cache" --exit-code 1 --no-progress "$@" .; }',
   'scan --scanners vuln,misconfig --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps "${accepted[@]}"',
   '# Исправление вышло — принятая раньше уязвимость снова блокирует.',
   'scan --scanners vuln --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps --ignore-unfixed --ignorefile /dev/null',
@@ -72,6 +74,7 @@ if (actual.length) throw new Error(actual.join('\n'));
 
 const mutants = [
   workflow.replace(' --secret-config "$dir/secret.yaml"', ''),
+  workflow.replace('fs --config /dev/null --cache-dir', 'fs --cache-dir'),
   workflow.replace(/^ +printf 'disable-allow-rules:.*\n/m, ''),
   workflow.replace('--exit-code 1', '--exit-code 0'),
   workflow.replace(
