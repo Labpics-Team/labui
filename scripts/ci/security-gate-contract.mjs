@@ -1,18 +1,19 @@
 #!/usr/bin/env node
-// Защиту бывшего общего допуска держит job security: каноничный шаг trivy без правок и обязательный
-// итог CI, который краснеет при любом его отказе. Оба job сверяются целиком (кроме комментариев YAML,
-// таймаута и списка needs итога), потому что обойти скан можно и рядом с шагом: условием или рабочим
-// каталогом шага, лишним шагом, другим ref у checkout, пропуском или мягким выходом итога, а на
-// уровне workflow — defaults или BASH_ENV. Поэтому верхний уровень и его env ограничены точным
-// списком строк, и любой иной ключ или иная форма YAML краснят CI.
+// Защиту бывшего общего допуска держит job security: каноничный для всей организации шаг trivy и
+// обязательный итог CI, который краснеет при любом его отказе. Оба job сверяются по тексту, потому что
+// обойти скан можно и рядом с шагом: условием или рабочим каталогом шага, лишним шагом, другим ref у
+// checkout, пропуском или мягким выходом итога, а на уровне workflow — триггерами, defaults, BASH_ENV
+// или подменой образа очистки. Свободно то, что на защиту не влияет: комментарии YAML, таймауты,
+// версия trivy с её контрольной суммой и дополнительные job в итоге.
 import { readFileSync } from 'node:fs';
 
+// Логика скана одинакова во всех репозиториях организации; версия и sha256 trivy живут в workflow.
 const canonical = [
   'set -euo pipefail',
   '# trivy читает переменные TRIVY_* как флаги: охват проверки задаёт только этот шаг.',
   'unset "${!TRIVY_@}"',
-  'version=0.74.0',
-  'sum=2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a',
+  'version=<version>',
+  'sum=<sha256>',
   'dir="$RUNNER_TEMP/trivy"',
   'mkdir -p "$dir"',
   'curl -fsSL --retry 3 --retry-all-errors -o "$dir/trivy.tgz" \\',
@@ -79,8 +80,17 @@ const aggregateJob = [
   '          fi',
 ];
 
+// Итог обязан ждать security и quality: в quality работают контракты принятых записей и этого job.
+const requiredNeeds = ['security', 'quality'];
 const topLevel = ['name: CI', 'on:', 'permissions:', 'concurrency:', 'env:', 'jobs:'];
-const envKeys = ['CI', 'BUSYBOX_IMAGE', 'DOCKER_CONFIG'];
+// Кандидат проверяется в каждом PR и в очереди слияния.
+const triggers = ['  push:', '    branches: [main]', '  pull_request:', '  merge_group:'];
+// Образ очистки работает от root с доступом к воркспейсу: его смена — явная правка этого контракта.
+const env = [
+  '  CI: "true"',
+  '  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"',
+  '  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"',
+];
 const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
 
 // Строки блока от заголовка до следующего ключа того же уровня.
@@ -95,12 +105,26 @@ function block(lines, header) {
   return lines.slice(start, end < 0 ? lines.length : end);
 }
 
-// Комментарии YAML уровня job и шага и таймаут на защиту не влияют; список needs итога разбирается отдельно.
+// Сравнимый вид блока: без комментариев YAML (строки тел `run: |` остаются как есть), без пустых
+// хвостов, с подстановками вместо таймаута, версии и sha256 trivy; список needs разбирается отдельно.
 function normalized(lines) {
   const needs = [];
   const out = [];
+  let body = -1;
   for (const line of lines) {
-    if (/^ {2,8}#/.test(line)) continue;
+    const indent = line.length - line.trimStart().length;
+    if (body >= 0 && (line.trim() === '' || indent > body)) {
+      out.push(
+        line
+          .replace(/^( {10}version=)\d+\.\d+\.\d+$/, '$1<version>')
+          .replace(/^( {10}sum=)[0-9a-f]{64}$/, '$1<sha256>'),
+      );
+      continue;
+    }
+    body = -1;
+    if (line.trimStart().startsWith('#')) continue;
+    const scalar = line.match(/^( *)(- )?[\w-]+: [|>][-+]?$/);
+    if (scalar) body = scalar[1].length + (scalar[2] ? 2 : 0);
     const item = line.match(/^ {6}- (\S+)$/);
     if (item && (out.at(-1) === '    needs:' || out.at(-1) === '      - <jobs>')) {
       needs.push(item[1]);
@@ -116,8 +140,14 @@ function normalized(lines) {
 function differs(actual, expected, name) {
   const index = expected.findIndex((line, at) => actual[at] !== line);
   if (index < 0 && actual.length === expected.length) return [];
-  return [`job ${name} must stay canonical (line ${(index < 0 ? expected.length : index) + 1})`];
+  return [`${name} must stay canonical (line ${(index < 0 ? expected.length : index) + 1})`];
 }
+
+// Содержимое блока верхнего уровня без заголовка, комментариев и пустых строк.
+const content = (lines, header) =>
+  block(lines, header)
+    .slice(1)
+    .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'));
 
 function violations(source) {
   const lines = source.split('\n');
@@ -125,27 +155,25 @@ function violations(source) {
   const roots = lines.filter((line) => /^[^\s#]/.test(line));
   if (roots.join('\n') !== topLevel.join('\n'))
     out.push(`workflow top level must be exactly: ${topLevel.join(', ')}`);
-  const env = block(lines, 'env:')
-    .slice(1)
-    .filter((line) => line.trim() !== '' && !/^ {2}#/.test(line));
-  const keys = env.map((line) => line.match(/^ {2}([A-Z_]+): \S/)?.[1]);
-  if (keys.join(' ') !== envKeys.join(' '))
-    out.push(`workflow env must be exactly ${envKeys.join(', ')} in plain form`);
+  out.push(...differs(content(lines, 'on:'), triggers, 'workflow triggers'));
+  out.push(...differs(content(lines, 'env:'), env, 'workflow env'));
   for (const id of ['security', 'ci']) {
     if (lines.filter((line) => new RegExp(`^ {2}["']?${id}["']?\\s*:`).test(line)).length !== 1)
       out.push(`workflow must define job ${id} exactly once`);
   }
-  out.push(...differs(normalized(block(lines, '  security:')).lines, securityJob, 'security'));
+  out.push(...differs(normalized(block(lines, '  security:')).lines, securityJob, 'job security'));
   const aggregate = normalized(block(lines, '  ci:'));
-  out.push(...differs(aggregate.lines, aggregateJob, 'ci'));
-  if (!aggregate.needs.includes('security')) out.push('the CI aggregate must need job security');
+  out.push(...differs(aggregate.lines, aggregateJob, 'job ci'));
+  for (const id of requiredNeeds) {
+    if (!aggregate.needs.includes(id)) out.push(`the CI aggregate must need job ${id}`);
+  }
   return out;
 }
 
 const actual = violations(workflow);
 if (actual.length) throw new Error(actual.join('\n'));
 
-// Мутации меняют только свой job: перестановка job или правка needs их не обезвреживает.
+// Мутации меняют только свой блок: перестановка job или правка needs их не обезвреживает.
 const lines = workflow.split('\n');
 const securityText = block(lines, '  security:').join('\n');
 const aggregateText = block(lines, '  ci:').join('\n');
@@ -163,6 +191,7 @@ const mutants = [
   inSecurity('          set -euo pipefail\n          # trivy читает', '          # trivy читает'),
   inSecurity(/^ +unset "\$\{!TRIVY_@\}"\n/m, ''),
   inSecurity('--ignore-unfixed --ignorefile /dev/null', '--ignore-unfixed "${accepted[@]}"'),
+  inSecurity(/^( {10}sum=)[0-9a-f]{64}$/m, (_, key) => key),
   inSecurity(scanStep, `${scanStep}        continue-on-error: true\n`),
   // Шаг пропущен условием после тела: тело при этом совпадает с каноничным.
   inSecurity(lastLine, `${lastLine}        if: \${{ false }}\n`),
@@ -176,8 +205,16 @@ const mutants = [
   workflow.replace('\njobs:\n', '\n"defaults":\n  run:\n    working-directory: .github\n\njobs:\n'),
   workflow.replace('\nenv:\n', '\nenv:\n  BASH_ENV: .github/skip-scan.sh\n'),
   workflow.replace('\nenv:\n', '\nenv:\n  "BASH_ENV": .github/skip-scan.sh\n'),
+  workflow.replace(/^( {2}BUSYBOX_IMAGE: ).*$/m, (_, key) => `${key}"busybox:latest"`),
+  workflow.replace(
+    /^( {2}BUSYBOX_IMAGE: "busybox:1\.36@sha256:)[0-9a-f]{64}"$/m,
+    (_, key) => `${key}${'0'.repeat(64)}"`,
+  ),
+  workflow.replace('  pull_request:\n', ''),
+  workflow.replace('  merge_group:\n', ''),
   `${workflow.trimEnd()}\n  "security":\n    runs-on: self-hosted\n    steps:\n      - run: "true"\n`,
   inAggregate(/^ {6}- security\n/m, ''),
+  inAggregate(/^ {6}- quality\n/m, ''),
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
@@ -187,13 +224,22 @@ for (const [index, mutant] of mutants.entries()) {
     throw new Error(`mutation ${index + 1} escaped security gate contract`);
 }
 
-// Допустимые правки: другой таймаут, комментарий, ещё один обязательный job в итоге.
+// Допустимые правки: таймаут, комментарии YAML (и внутри with), новая версия trivy, ещё один job в итоге.
 const allowed = [
   inSecurity(
     /^ {4}timeout-minutes: (\d+)$/m,
     (_, minutes) => `    timeout-minutes: ${Number(minutes) + 5}`,
   ),
   inSecurity(scanStep, `      # Скан кандидата.\n${scanStep}`),
+  inSecurity(
+    '          persist-credentials: false\n',
+    '          # Checkout без сохранения credentials\n          persist-credentials: false\n',
+  ),
+  inSecurity(/^( {10}version=)\d+\.\d+\.\d+$/m, (_, key) => `${key}0.99.0`).replace(
+    /^( {10}sum=)[0-9a-f]{64}$/m,
+    (_, key) => `${key}${'a'.repeat(64)}`,
+  ),
+  workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
 ];
 for (const [index, variant] of allowed.entries()) {
