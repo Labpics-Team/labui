@@ -133,6 +133,9 @@ jobs:
       - name: Verify pnpm store isolation contract
         run: node scripts/ci/pnpm-store-contract.mjs
 
+      - name: Verify the security gate stays canonical
+        run: node scripts/ci/security-gate-contract.mjs
+
       - name: Install from isolated pnpm store
         shell: bash
         run: |
