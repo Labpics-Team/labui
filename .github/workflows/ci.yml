@@ -58,8 +58,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -e OWNER="$(id -u):$(id -g)" -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$OWNER" /workspace 2>/dev/null || true'
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -114,8 +114,8 @@ jobs:
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -e OWNER="$(id -u):$(id -g)" -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$OWNER" /workspace 2>/dev/null || true'
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -225,38 +225,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -e OWNER="$(id -u):$(id -g)" -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$OWNER" /workspace 2>/dev/null || true'
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          # per-job dest: дефолт ~/setup-pnpm ОБЩИЙ для 8 раннеров (один /home/daniel)
-          # -> параллельные job'ы гоняются на temp-файлах (ENOENT unlink). runner.temp
-          # изолирован per-job — класс shared-home гонок закрыт для установки pnpm.
-          dest: ${{ runner.temp }}/setup-pnpm
-
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 22
-          # GitHub cache service не используется: required CI должен быть
-          # независим от внешнего cache API и от store соседнего job/repository.
-
-      - name: Install from isolated pnpm store
-        shell: bash
-        run: |
-          set -euo pipefail
-          store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
-          rm -rf -- "$store"
-          pnpm install --frozen-lockfile --store-dir "$store"
-
-      - name: Build packages
-        run: pnpm build
 
       - name: Verify browser rendering and smoke tests in pinned Playwright runtime
         id: browser
@@ -286,6 +260,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
+        # Это дополнительное восстановление: сбой виден, следующая первичная очистка обязательна.
         # e2e собирает пакеты и артефакты в чекауте; если шаг (сейчас или в
         # будущем, напр. Playwright-контейнер) отработает как root, останутся
         # root-owned файлы. daniel (uid 1000) не может их chown'ить — возвращаем
@@ -294,8 +269,10 @@ jobs:
         if: ${{ always() }}
         shell: bash
         run: |
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R "$(id -u):$(id -g)" /workspace || true
+          if ! docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            chown -R "$(id -u):$(id -g)" /workspace; then
+            printf '::warning::Workspace ownership restore failed; mandatory cleanup runs before the next checkout.\n' >&2
+          fi
 
   ci:
     name: CI
