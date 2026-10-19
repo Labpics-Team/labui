@@ -101,11 +101,14 @@ jobs:
           if-no-files-found: ignore
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
+        # Это дополнительное восстановление: сбой виден, следующая первичная очистка обязательна.
         # Тот же defence-in-depth chown-back, что и в e2e-job ci.yml: возвращаем
         # владение раннеру (`id -u`) через ROOT-контейнер busybox, чтобы clean-шаг
         # следующего job'а на этом раннере не спотыкался о root-owned файлы.
         if: ${{ always() }}
         shell: bash
         run: |
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R "$(id -u):$(id -g)" /workspace
+          if ! docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
+            chown -R "$(id -u):$(id -g)" /workspace; then
+            printf '::warning::Workspace ownership restore failed; mandatory cleanup runs before the next checkout.\n' >&2
+          fi
