@@ -112,9 +112,13 @@ function normalized(lines) {
   const needs = [];
   const out = [];
   let body = -1;
+  let contentIndent = -1;
   for (const line of lines) {
     const indent = line.length - line.trimStart().length;
-    if (body >= 0 && (line.trim() === '' || indent > body)) {
+    if (body >= 0 && contentIndent < 0 && line.trim() !== '' && indent > body) {
+      contentIndent = indent;
+    }
+    if (body >= 0 && (line.trim() === '' || (contentIndent >= 0 && indent >= contentIndent))) {
       out.push(
         line
           .replace(/^( {10}version=)\d+\.\d+\.\d+$/, '$1<version>')
@@ -123,6 +127,7 @@ function normalized(lines) {
       continue;
     }
     body = -1;
+    contentIndent = -1;
     if (line.trimStart().startsWith('#')) continue;
     const scalar = line.match(/^( *)(- )?[\w-]+: [|>][-+]?$/);
     if (scalar) body = scalar[1].length + (scalar[2] ? 2 : 0);
@@ -232,6 +237,10 @@ for (const [index, mutant] of mutants.entries()) {
 
 // Допустимые правки: таймаут, комментарии YAML (и внутри with), новая версия trivy, ещё один job в итоге.
 const allowed = [
+  inSecurity(
+    '      - name: Checkout\n',
+    '         # пояснение после тела run\n      - name: Checkout\n',
+  ),
   inSecurity(
     /^ {4}timeout-minutes: (\d+)$/m,
     (_, minutes) => `    timeout-minutes: ${Number(minutes) + 5}`,
