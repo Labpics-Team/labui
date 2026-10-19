@@ -83,31 +83,61 @@ const { spawnSync } = await import('node:child_process');
 const { default: assert } = await import('node:assert/strict');
 const fixture = mkdtempSync(`${tmpdir()}/labui-owner-`);
 try {
-  writeFileSync(`${fixture}/id`, '#!/bin/sh\ncase "$1" in -u) echo "$TEST_UID";; -g) echo "$TEST_GID";; *) exit 2;; esac\n', { mode: 0o755 });
-  writeFileSync(`${fixture}/docker`, '#!/bin/sh\nprintf "%s\\n" "$@" > "$OWNER_CAPTURE"\nexit "$DOCKER_STATUS"\n', { mode: 0o755 });
+  writeFileSync(
+    `${fixture}/id`,
+    '#!/bin/sh\ncase "$1" in -u) echo "$TEST_UID";; -g) echo "$TEST_GID";; *) exit 2;; esac\n',
+    { mode: 0o755 },
+  );
+  writeFileSync(
+    `${fixture}/docker`,
+    '#!/bin/sh\nprintf "%s\\n" "$@" > "$OWNER_CAPTURE"\nexit "$DOCKER_STATUS"\n',
+    { mode: 0o755 },
+  );
   let count = 0;
   for (const text of [files.ci, files.full]) {
     for (const block of text.matchAll(/run: \|\n((?: {10,}[^\n]*\n)+)/g)) {
       const script = block[1].replace(/^ {10}/gm, '');
       if (!script.includes('chown')) continue;
       count++;
-      for (const [uid, gid] of [['1000','1000'], ['1001','1234']]) {
-        const env = { ...process.env, PATH: `${fixture}:${process.env.PATH}`, TEST_UID: uid, TEST_GID: gid,
-          GITHUB_WORKSPACE: fixture, DOCKER_CONFIG: `${fixture}/docker-config`, BUSYBOX_IMAGE: 'busybox-pinned',
-          OWNER_CAPTURE: `${fixture}/capture`, DOCKER_STATUS: '0' };
-        const result = spawnSync('bash', ['--noprofile','--norc','-e','-o','pipefail','-c',script], { env, encoding: 'utf8' });
+      for (const [uid, gid] of [
+        ['1000', '1000'],
+        ['1001', '1234'],
+      ]) {
+        const env = {
+          ...process.env,
+          PATH: `${fixture}:${process.env.PATH}`,
+          TEST_UID: uid,
+          TEST_GID: gid,
+          GITHUB_WORKSPACE: fixture,
+          DOCKER_CONFIG: `${fixture}/docker-config`,
+          BUSYBOX_IMAGE: 'busybox-pinned',
+          OWNER_CAPTURE: `${fixture}/capture`,
+          DOCKER_STATUS: '0',
+        };
+        const result = spawnSync(
+          'bash',
+          ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
+          { env, encoding: 'utf8' },
+        );
         assert.equal(result.status, 0, result.stderr);
         const args = readFileSync(`${fixture}/capture`, 'utf8').trimEnd().split('\n');
         if (script.includes('rm -rf')) {
-          assert.deepEqual(args.slice(-3), ['sh',uid,gid]);
-          assert.ok(args.some(arg => arg.includes('chown "$1:$2" /workspace')));
+          assert.deepEqual(args.slice(-3), ['sh', uid, gid]);
+          assert.ok(args.some((arg) => arg.includes('chown "$1:$2" /workspace')));
         } else assert.ok(args.includes(`${uid}:${gid}`));
-        const failed = spawnSync('bash', ['--noprofile','--norc','-e','-o','pipefail','-c',script],
-          { env: { ...env, DOCKER_STATUS:'7' }, encoding:'utf8' });
-        assert.notEqual(failed.status,0,'Docker ownership failure must stop the job');
+        const failed = spawnSync(
+          'bash',
+          ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
+          { env: { ...env, DOCKER_STATUS: '7' }, encoding: 'utf8' },
+        );
+        assert.notEqual(failed.status, 0, 'Docker ownership failure must stop the job');
       }
     }
   }
-  assert.equal(count,7,'three CI preparation + two CI cleanup + two full-E2E ownership steps');
-  console.log('workspace owner contract: PASS (7 real shell steps, two identities, fail-closed Docker)');
-} finally { rmSync(fixture, { recursive:true, force:true }); }
+  assert.equal(count, 7, 'three CI preparation + two CI cleanup + two full-E2E ownership steps');
+  console.info(
+    'workspace owner contract: PASS (7 real shell steps, two identities, fail-closed Docker)',
+  );
+} finally {
+  rmSync(fixture, { recursive: true, force: true });
+}
