@@ -30,7 +30,9 @@ const canonical = [
   '# Секрет в тестах, примерах и документации — такая же утечка: встроенные исключения trivy для них сняты,',
   '# а записи .trivyignore.yaml к секретам не применяются.',
   String.raw`printf 'disable-allow-rules:\n  - tests\n  - examples\n  - markdown\n' > "$dir/secret.yaml"`,
-  'scan --scanners secret --secret-config "$dir/secret.yaml" --ignorefile /dev/null',
+  'secret_scan() { scan --scanners secret --secret-config "$dir/secret.yaml" --ignorefile /dev/null "$@"; }',
+  'secret_scan',
+  'source .github/scripts/secret-scan-contract.sh',
 ];
 
 // Job security: защита от fork-PR, чистый воркспейс, checkout кандидата и каноничный шаг.
@@ -190,6 +192,8 @@ const inAggregate = (from, to) =>
 const scanStep = '      - name: Scan dependencies, configuration and secrets\n';
 const lastLine = `          ${canonical.at(-1)}\n`;
 const mutants = [
+  inSecurity('          source .github/scripts/secret-scan-contract.sh\n', ''),
+  inSecurity('          secret_scan\n', ''),
   inSecurity(' --secret-config "$dir/secret.yaml"', ''),
   inSecurity('fs --config /dev/null --cache-dir', 'fs --cache-dir'),
   inSecurity(/^ +printf 'disable-allow-rules:.*\n/m, ''),
