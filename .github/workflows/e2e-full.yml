@@ -40,9 +40,9 @@ jobs:
     steps:
       # Тот же root-контейнерный clean, что и во всех job'ах ci.yml: self-hosted
       # раннеры делят _work, docker-as-root шаги (Playwright) оставляют root-owned
-      # файлы, а пользователь процесса runner без passwordless sudo их не удалит обычным `rm`.
+      # файлы, а daniel (uid 1000) без passwordless sudo их не удалит обычным `rm`.
       # ROOT-контейнер busybox сносит содержимое воркспейса независимо от истории
-      # раннера и возвращает владение каталогом текущему пользователю runner для checkout'а.
+      # раннера и возвращает владение каталогом раннеру (`id -u`) для checkout'а.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
@@ -102,7 +102,7 @@ jobs:
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
         # Тот же defence-in-depth chown-back, что и в e2e-job ci.yml: возвращаем
-        # владение текущему пользователю runner через ROOT-контейнер busybox, чтобы clean-шаг
+        # владение раннеру (`id -u`) через ROOT-контейнер busybox, чтобы clean-шаг
         # следующего job'а на этом раннере не спотыкался о root-owned файлы.
         if: ${{ always() }}
         shell: bash

@@ -134,9 +134,9 @@ try {
       }
     }
   }
-  assert.equal(count, 7, 'three CI preparation + two CI cleanup + two full-E2E ownership steps');
+  assert.equal(count, 6, 'three CI preparation + one CI cleanup + two full-E2E ownership steps');
   console.info(
-    'workspace owner contract: PASS (7 real shell steps, two identities, fail-closed Docker)',
+    'workspace owner contract: PASS (6 real shell steps, two identities, fail-closed Docker)',
   );
 } finally {
   rmSync(fixture, { recursive: true, force: true });
