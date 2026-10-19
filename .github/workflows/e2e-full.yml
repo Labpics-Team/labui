@@ -40,15 +40,15 @@ jobs:
     steps:
       # Тот же root-контейнерный clean, что и во всех job'ах ci.yml: self-hosted
       # раннеры делят _work, docker-as-root шаги (Playwright) оставляют root-owned
-      # файлы, а daniel (uid 1000) без passwordless sudo их не удалит обычным `rm`.
+      # файлы, а пользователь процесса runner без passwordless sudo их не удалит обычным `rm`.
       # ROOT-контейнер busybox сносит содержимое воркспейса независимо от истории
-      # раннера и возвращает владение каталогом раннеру (uid 1000) для checkout'а.
+      # раннера и возвращает владение каталогом текущему пользователю runner для checkout'а.
       - name: Чистый воркспейс (self-hosted)
         shell: bash
         run: |
           mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown 1000:1000 /workspace 2>/dev/null || true'
+            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -102,10 +102,10 @@ jobs:
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
         # Тот же defence-in-depth chown-back, что и в e2e-job ci.yml: возвращаем
-        # владение раннеру (uid 1000) через ROOT-контейнер busybox, чтобы clean-шаг
+        # владение текущему пользователю runner через ROOT-контейнер busybox, чтобы clean-шаг
         # следующего job'а на этом раннере не спотыкался о root-owned файлы.
         if: ${{ always() }}
         shell: bash
         run: |
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R 1000:1000 /workspace || true
+            chown -R "$(id -u):$(id -g)" /workspace
