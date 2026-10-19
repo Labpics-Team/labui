@@ -34,3 +34,4 @@ Web Components и серверный рендеринг. Правила взаи
 Исходные адреса всех пакетов и команды работы задаются
 [манифестом workspace](../pnpm-workspace.yaml) и
 [package.json](../package.json).
+
