@@ -17,7 +17,7 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { fileURLToPath } from 'node:url';
 
-import { assertFxRender, renderAndMeasure } from './fx-gate.mjs';
+import { assertFxRender, renderAndMeasure } from './fx-render.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..', '..'); // packages/colors/test/fx-render → repo

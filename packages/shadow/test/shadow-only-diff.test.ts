@@ -22,7 +22,7 @@ import { describe, expect, it } from 'vitest';
  * test. Proved inline with an injected colour-contract token.
  *
  * The generator call is intentionally avoided here: this test pins the ON-DISK
- * artifact (what ships), not the live generator. The baseline-gate test handles
+ * artifact (what ships), not the live generator. The generated-shadow test handles
  * the coherence between generator and artifact.
  */
 
