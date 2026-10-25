@@ -1,4 +1,4 @@
-// Типы разделяемого FX-render гейта (реализация — fx-gate.mjs). Нужны, чтобы
+// Типы общей проверки FX-рендеринга (реализация — fx-render.mjs). Нужны, чтобы
 // apps/docs playwright-спека (TS, allowJs:false) резолвила импорт под strict.
 
 export const SENTIMENTS: readonly string[];

@@ -1,4 +1,4 @@
-// FX-render gate — ОБЪЕКТИВНАЯ проверка отрендеренных FX-токенов PR #93.
+// Измерение и проверка отрендеренных FX-токенов.
 //
 // Класс А (e2e-рендер на живом браузере) + Д (bite-мутация: flatten/drop → RED).
 // Провенанс интенсивности — ПИКСЕЛИ скриншота (Rec.709 luminance), НЕ CSS-alpha
@@ -351,7 +351,7 @@ export function assertFxRender(m) {
   }
 
   if (problems.length) {
-    throw new Error(`FX-render гейт КРАСНЫЙ:\n  - ${problems.join('\n  - ')}`);
+    throw new Error(`FX-render: нарушены условия проверки:\n  - ${problems.join('\n  - ')}`);
   }
   return { deltas, focus: m.focus, skeleton: m.skeleton };
 }

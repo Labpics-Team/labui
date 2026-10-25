@@ -15,7 +15,7 @@ import {
   buildHarnessHtml,
   decodePng,
   sampleRegion,
-} from '../../../packages/colors/test/fx-render/fx-gate.mjs';
+} from '../../../packages/colors/test/fx-render/fx-render.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..', '..');

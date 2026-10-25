@@ -5,38 +5,13 @@ import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-/**
- * Baseline gate — smoke test.
- *
- * Proves the generated `shadow.css` artifact is coherent with the source:
- *   1. the artifact file exists on disk;
- *   2. it is non-trivial (contains the expected elevation-role declarations);
- *   3. regenerating it from the source produces the SAME bytes (determinism —
- *      no uncommitted edit is hiding in the generator).
- *
- * "After broken edit discarded" in the testPlan title describes the gate's
- * role: if a developer edits the generator without re-running `pnpm generate`,
- * the on-disk file diverges from the source and this test fails. Discarding
- * the broken edit (or re-running generate) restores the green state.
- *
- * How="mutation": tests 1-2 are GREEN at birth (the artifact exists).
- * Test 3 (coherence) is currently RED because the generator is broken
- * (SHADOW_LAYERS not exported from layer.ts — the source tree diverged from
- * what generate-css.ts imports). This is the RIGHT reason: the generator cannot
- * produce output and the on-disk artifact is therefore stale relative to the
- * current source. It turns GREEN once the source tree is made coherent AND
- * `pnpm generate` is re-run.
- *
- * Bite-proof: the mutation-proof test confirms that injecting content into the
- * on-disk file produces a detectable divergence (the equality check works when
- * the generator itself works).
- */
+/** Проверяет согласованность сгенерированного shadow.css с исходниками. */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const GENERATED_CSS = resolve(here, '..', 'src', 'generated', 'shadow.css');
 const GENERATED_CSS_GIT_PATH = 'packages/shadow/src/generated/shadow.css';
 
-describe('baseline gate — generated shadow.css coherence', () => {
+describe('generated shadow.css coherence', () => {
   // ── (1) The artifact exists ─────────────────────────────────────────────────
   it('the generated shadow.css artifact exists on disk', () => {
     let content: string;
@@ -139,7 +114,7 @@ describe('baseline gate — generated shadow.css coherence', () => {
       // Outside a git repo or file is untracked — skip rather than fail.
       // In CI the file is always committed, so this path is never taken there.
       console.warn(
-        '[baseline-gate] Could not read committed artifact via `git show` — skipping committed-bytes check. This is OK outside a git repo.',
+        '[generated-shadow] Could not read committed artifact via `git show` — skipping committed-bytes check. This is OK outside a git repo.',
       );
       return;
     }
