@@ -263,7 +263,7 @@ function violations(source) {
     if (!aggregate.needs.includes(id)) out.push(`the CI aggregate must need job ${id}`);
   }
   // Каноничный e2e job и три защищённых шага фиксируют цепь browser → ready
-  // upload → required CI; произвольные соседние шаги не становятся частью допуска.
+  // upload → required CI; соседние шаги допустимы в простой YAML-форме.
   const e2e = block(lines, '  e2e:');
   const stepsAt = e2e.indexOf('    steps:');
   const header = e2e.slice(0, stepsAt < 0 ? e2e.length : stepsAt + 1);
@@ -279,6 +279,17 @@ function violations(source) {
     out.push('job e2e must not add or repeat job-level fields');
 
   const steps = e2e.join('\n').split(/^ {6}- /m);
+  // Разбиение осмысленно лишь когда каждый YAML-элемент списка имеет тот же
+  // отступ, один пробел после '-' и первый ключ на этой строке. Actionlint
+  // допускает и одиночный '-', и flow map: они иначе скрыли бы новый upload.
+  const itemLines = e2e.slice(stepsAt + 1).filter((line) => /^ {6}-/.test(line));
+  if (
+    itemLines.length !== steps.length - 1 ||
+    itemLines.some(
+      (line) => !line.startsWith('      - ') || field(`        ${line.slice(8)}`, 8)?.key == null,
+    )
+  )
+    out.push('e2e steps must use one canonical sequence-item layout');
   const browserAt = steps.findIndex((step) => /^ {8}id: browser$/m.test(step));
   if (browserAt < 0 || steps.filter((step) => /^ {8}id: browser$/m.test(step)).length !== 1)
     out.push('the browser step must appear exactly once');
@@ -300,7 +311,7 @@ function violations(source) {
   const actions = stepFields
     .filter((entry) => entry?.key === 'uses')
     .map((entry) => scalar(entry.value));
-  if (actions.some((action) => action == null || /^[&*]/.test(action)))
+  if (actions.some((action) => action == null || /^[&*|>!]/.test(action)))
     out.push('e2e uses must use literal scalar action references');
   const uploads = steps.filter((_, index) =>
     fieldsByStep[index].some(
@@ -445,6 +456,34 @@ const mutants = [
           name: playwright-report
           path: apps/docs/playwright-report/
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
+  ),
+  // Actionlint принимает эти формы нового YAML-элемента после cleanup; ни один
+  // не вправе публиковать отчёт успешного smoke вне защищённого шага.
+  ...[
+    `      -
+          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+          with:
+            name: extra-report
+            path: apps/docs/playwright-report/`,
+    `      -  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+         with:
+           name: extra-report
+           path: apps/docs/playwright-report/`,
+    '      - {uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02, with: {name: extra-report, path: apps/docs/playwright-report/}}',
+  ].map((step) => workflow.replace('\n  ci:\n', `\n${step}\n  ci:\n`)),
+  // YAML block scalar для uses actionlint тоже принимает, но текстового ref
+  // на одной строке у guard уже нет: такие формы должны закрываться явно.
+  ...['>-', '|-'].map((style) =>
+    workflow.replace(
+      '\n  ci:\n',
+      `\n      - name: Extra report upload
+        uses: ${style}
+          actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: extra-report
+          path: apps/docs/playwright-report/
+  ci:\n`,
+    ),
   ),
   // Публикация до browser не увидит outputs и станет успешным пропуском.
   workflow.replace(`${browserBlock}${fxBlock}`, () => `${fxBlock}${browserBlock}`),
