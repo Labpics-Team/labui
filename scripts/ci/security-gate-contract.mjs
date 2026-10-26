@@ -189,6 +189,37 @@ function violations(source) {
     out.push('the browser job must retain both ready artifact uploads');
   if (uploads.some((step) => /^ {8}["']?continue-on-error["']?:/m.test(step)))
     out.push('ready artifact upload failures must fail the browser job');
+  // Отчёт smoke нужен после сбоя, но не при успешной проверке. Готовый FX остаётся
+  // обязательным независимо от исхода браузерного шага.
+  const conditions = {
+    'fx-render': "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}",
+    'playwright-report':
+      "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
+  };
+  for (const [name, expected] of Object.entries(conditions)) {
+    const matches = uploads.filter((step) => step.split('\n').includes(`          name: ${name}`));
+    if (matches.length !== 1) {
+      out.push(`${name} upload must appear exactly once`);
+      continue;
+    }
+    const conditionLines = matches[0]
+      .split('\n')
+      .filter((line) => /^ {8}(?:if|"if"|'if'):/.test(line));
+    if (conditionLines.length !== 1 || conditionLines[0] !== expected)
+      out.push(`${name} upload must retain its status and readiness condition`);
+    // ready=true означает экспортированную директорию. Если в ней нет файлов,
+    // upload-artifact не должен превращать отсутствие артефакта в GREEN.
+    const missingFilePolicies = matches[0]
+      .split('\n')
+      .filter((line) =>
+        /^ {10}(?:if-no-files-found|"if-no-files-found"|'if-no-files-found'):/.test(line),
+      );
+    if (
+      missingFilePolicies.length !== 1 ||
+      missingFilePolicies[0] !== '          if-no-files-found: error'
+    )
+      out.push(`${name} upload must fail when ready artifact path contains no files`);
+  }
   return out;
 }
 
@@ -247,10 +278,29 @@ const mutants = [
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
-  ...['fx_ready', 'report_ready'].map((output) => {
-    const condition = `        if: \${{ !cancelled() && steps.browser.outputs.${output} == 'true' }}\n`;
-    return workflow.replace(condition, `${condition}        continue-on-error: true\n`);
-  }),
+  ...[
+    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}\n",
+  ].map((condition) =>
+    workflow.replace(condition, `${condition}        continue-on-error: true\n`),
+  ),
+  // Прежний smoke-отчёт на успешном прогоне и отказ от готовности нарушают новый контракт.
+  workflow.replace(
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
+    "        if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
+  ),
+  workflow.replace(
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
+    '        if: ${{ failure() && !cancelled() }}',
+  ),
+  // Пропуск всех публикаций под видом допустимого пропуска без готового артефакта.
+  ...[
+    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}",
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
+  ].map((condition) => workflow.replace(condition, '        if: ${{ false }}')),
+  // Пустая ready-директория не должна стать успешным upload.
+  workflow.replaceAll('          if-no-files-found: error', '          if-no-files-found: ignore'),
+  workflow.replaceAll('          if-no-files-found: error', '          if-no-files-found: warn'),
 ];
 for (const [index, mutant] of mutants.entries()) {
   if (mutant === workflow || violations(mutant).length === 0)
@@ -278,12 +328,13 @@ const allowed = [
   ),
   workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
-  // Пропуск по готовности не является отказом загрузки и остаётся допустимым.
-  ...['fx_ready', 'report_ready'].map((output) =>
-    workflow.replace(
-      `\${{ !cancelled() && steps.browser.outputs.${output} == 'true' }}`,
-      '${{ false }}',
-    ),
+  // Комментарий рядом с публикацией не меняет её статус и готовность.
+  ...['Upload FX-render артефакт (PNG для обзора владельцем)', 'Upload Playwright report'].map(
+    (name) =>
+      workflow.replace(
+        `      - name: ${name}\n`,
+        `      - name: ${name}\n        # Артефакт публикуется по своему условию.\n`,
+      ),
   ),
 ];
 for (const [index, variant] of allowed.entries()) {
