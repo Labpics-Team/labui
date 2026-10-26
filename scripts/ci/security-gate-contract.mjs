@@ -83,8 +83,8 @@ const aggregateJob = [
   '          fi',
 ];
 
-// Итог обязан ждать security и quality: в quality работают контракты принятых записей и этого job.
-const requiredNeeds = ['security', 'quality'];
+// Итог обязан ждать security, quality и e2e: отказ публикации готового артефакта блокирует CI.
+const requiredNeeds = ['security', 'quality', 'e2e'];
 const topLevel = ['name: CI', 'on:', 'permissions:', 'concurrency:', 'env:', 'jobs:'];
 // Кандидат проверяется в каждом PR и в очереди слияния.
 const triggers = ['  push:', '    branches: [main]', '  pull_request:', '  merge_group:'];
@@ -187,7 +187,13 @@ function violations(source) {
     )
   )
     out.push('the browser job must retain both ready artifact uploads');
-  if (uploads.some((step) => /^ {8}["']?continue-on-error["']?:/m.test(step)))
+  if (
+    uploads.some((step) =>
+      [...step.matchAll(/^ {8}["']?continue-on-error["']?:[ \t]*([^\r\n]*)/gm)].some(
+        ([, value]) => !/^false(?:[ \t]*(?:#.*)?)?$/.test(value),
+      ),
+    )
+  )
     out.push('ready artifact upload failures must fail the browser job');
   return out;
 }
@@ -244,7 +250,8 @@ const mutants = [
   `${workflow.trimEnd()}\n  "security":\n    runs-on: self-hosted\n    steps:\n      - run: "true"\n`,
   inAggregate(/^ {6}- security\n/m, ''),
   inAggregate(/^ {6}- quality\n/m, ''),
-  // Итог пропущен после отказа security или превращает отказ в успех.
+  inAggregate(/^ {6}- e2e\n/m, ''),
+  // Итог пропущен после отказа security, quality, e2e или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
   ...['fx_ready', 'report_ready'].map((output) => {
@@ -278,6 +285,13 @@ const allowed = [
   ),
   workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
+  // Явное false допустимо: оно не подавляет отказ шага; true и expressions недопустимы.
+  ...['fx_ready', 'report_ready'].map((output) =>
+    workflow.replace(
+      new RegExp("^ {8}if: .*steps\\.browser\\.outputs\\." + output + " == 'true'.*$", 'm'),
+      '$&\n        continue-on-error: false',
+    ),
+  ),
   // Пропуск по готовности не является отказом загрузки и остаётся допустимым.
   ...['fx_ready', 'report_ready'].map((output) =>
     workflow.replace(
