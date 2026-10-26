@@ -83,8 +83,8 @@ const aggregateJob = [
   '          fi',
 ];
 
-// Итог обязан ждать security и quality: в quality работают контракты принятых записей и этого job.
-const requiredNeeds = ['security', 'quality'];
+// Итог обязан ждать security, quality и e2e: отказ готовой загрузки в e2e блокирует CI.
+const requiredNeeds = ['security', 'quality', 'e2e'];
 const topLevel = ['name: CI', 'on:', 'permissions:', 'concurrency:', 'env:', 'jobs:'];
 // Кандидат проверяется в каждом PR и в очереди слияния.
 const triggers = ['  push:', '    branches: [main]', '  pull_request:', '  merge_group:'];
@@ -157,6 +157,18 @@ const content = (lines, header) =>
     .slice(1)
     .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'));
 
+// Явное false эквивалентно отсутствию continue-on-error; другие значения не
+// должны превращать отказ загрузки или всего e2e в успешный результат CI.
+function suppressesFailure(source, indent) {
+  const assignment = new RegExp(
+    `^ {${indent}}(?:continue-on-error|"continue-on-error"|'continue-on-error'):\\s*(.*)$`,
+  );
+  return source.split('\n').some((line) => {
+    const match = line.match(assignment);
+    return match && match[1].trim() !== 'false';
+  });
+}
+
 function violations(source) {
   const lines = source.split('\n');
   const out = [];
@@ -177,6 +189,7 @@ function violations(source) {
   }
   // Готовый артефакт может быть пропущен условием, но отказ загрузки не становится успехом CI.
   const browser = block(lines, '  e2e:').join('\n');
+  if (suppressesFailure(browser, 4)) out.push('e2e failures must reach required CI');
   const uploads = browser
     .split(/^ {6}- /m)
     .filter((step) => /^ {8}uses: actions\/upload-artifact@[0-9a-f]{40}\b/m.test(step));
@@ -187,7 +200,7 @@ function violations(source) {
     )
   )
     out.push('the browser job must retain both ready artifact uploads');
-  if (uploads.some((step) => /^ {8}["']?continue-on-error["']?:/m.test(step)))
+  if (uploads.some((step) => suppressesFailure(step, 8)))
     out.push('ready artifact upload failures must fail the browser job');
   // Отчёт smoke нужен после сбоя, но не при успешной проверке. Готовый FX остаётся
   // обязательным независимо от исхода браузерного шага.
@@ -275,6 +288,8 @@ const mutants = [
   `${workflow.trimEnd()}\n  "security":\n    runs-on: self-hosted\n    steps:\n      - run: "true"\n`,
   inAggregate(/^ {6}- security\n/m, ''),
   inAggregate(/^ {6}- quality\n/m, ''),
+  inAggregate(/^ {6}- e2e\n/m, ''),
+  workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error: true\n'),
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
@@ -328,6 +343,7 @@ const allowed = [
   ),
   workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
+  workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error: false\n'),
   // Комментарий рядом с публикацией не меняет её статус и готовность.
   ...['Upload FX-render артефакт (PNG для обзора владельцем)', 'Upload Playwright report'].map(
     (name) =>
@@ -335,6 +351,12 @@ const allowed = [
         `      - name: ${name}\n`,
         `      - name: ${name}\n        # Артефакт публикуется по своему условию.\n`,
       ),
+  ),
+  ...[
+    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}\n",
+  ].map((condition) =>
+    workflow.replace(condition, `${condition}        continue-on-error: false\n`),
   ),
 ];
 for (const [index, variant] of allowed.entries()) {
