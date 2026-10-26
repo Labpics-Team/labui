@@ -161,11 +161,11 @@ const content = (lines, header) =>
 // должны превращать отказ загрузки или всего e2e в успешный результат CI.
 function suppressesFailure(source, indent) {
   const assignment = new RegExp(
-    `^ {${indent}}(?:continue-on-error|"continue-on-error"|'continue-on-error'):\\s*(.*)$`,
+    `^ {${indent}}(?:continue-on-error|"continue-on-error"|'continue-on-error') *: *(.*)$`,
   );
   return source.split('\n').some((line) => {
     const match = line.match(assignment);
-    return match && match[1].trim() !== 'false';
+    return match && !/^false(?: +#.*)?$/.test(match[1].trim());
   });
 }
 
@@ -290,6 +290,7 @@ const mutants = [
   inAggregate(/^ {6}- quality\n/m, ''),
   inAggregate(/^ {6}- e2e\n/m, ''),
   workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error: true\n'),
+  workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error : true\n'),
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
@@ -298,6 +299,12 @@ const mutants = [
     "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}\n",
   ].map((condition) =>
     workflow.replace(condition, `${condition}        continue-on-error: true\n`),
+  ),
+  ...[
+    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}\n",
+  ].map((condition) =>
+    workflow.replace(condition, `${condition}        continue-on-error : true\n`),
   ),
   // Прежний smoke-отчёт на успешном прогоне и отказ от готовности нарушают новый контракт.
   workflow.replace(
@@ -344,6 +351,10 @@ const allowed = [
   workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
   workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error: false\n'),
+  workflow.replace(
+    '  e2e:\n',
+    '  e2e:\n    continue-on-error : false # явный отказ от подавления\n',
+  ),
   // Комментарий рядом с публикацией не меняет её статус и готовность.
   ...['Upload FX-render артефакт (PNG для обзора владельцем)', 'Upload Playwright report'].map(
     (name) =>
@@ -357,6 +368,15 @@ const allowed = [
     "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}\n",
   ].map((condition) =>
     workflow.replace(condition, `${condition}        continue-on-error: false\n`),
+  ),
+  ...[
+    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
+    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}\n",
+  ].map((condition) =>
+    workflow.replace(
+      condition,
+      `${condition}        continue-on-error: false # блокировать отказ\n`,
+    ),
   ),
 ];
 for (const [index, variant] of allowed.entries()) {
