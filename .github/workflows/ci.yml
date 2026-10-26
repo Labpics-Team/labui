@@ -241,7 +241,6 @@ jobs:
 
       - name: Upload FX-render артефакт (PNG для обзора владельцем)
         if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}
-        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: fx-render
@@ -251,7 +250,6 @@ jobs:
 
       - name: Upload Playwright report
         if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}
-        continue-on-error: true
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report

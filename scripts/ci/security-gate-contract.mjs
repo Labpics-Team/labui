@@ -175,6 +175,20 @@ function violations(source) {
   for (const id of requiredNeeds) {
     if (!aggregate.needs.includes(id)) out.push(`the CI aggregate must need job ${id}`);
   }
+  // Готовый артефакт может быть пропущен условием, но отказ загрузки не становится успехом CI.
+  const browser = block(lines, '  e2e:').join('\n');
+  const uploads = browser
+    .split(/^ {6}- /m)
+    .filter((step) => /^ {8}uses: actions\/upload-artifact@[0-9a-f]{40}\b/m.test(step));
+  if (
+    uploads.length !== 2 ||
+    !['fx-render', 'playwright-report'].every((name) =>
+      uploads.some((step) => new RegExp(`^ {10}name: ${name}$`, 'm').test(step)),
+    )
+  )
+    out.push('the browser job must retain both ready artifact uploads');
+  if (uploads.some((step) => /^ {8}["']?continue-on-error["']?:/m.test(step)))
+    out.push('ready artifact upload failures must fail the browser job');
   return out;
 }
 
@@ -233,6 +247,10 @@ const mutants = [
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
+  ...['fx_ready', 'report_ready'].map((output) => {
+    const condition = `        if: \${{ !cancelled() && steps.browser.outputs.${output} == 'true' }}\n`;
+    return workflow.replace(condition, `${condition}        continue-on-error: true\n`);
+  }),
 ];
 for (const [index, mutant] of mutants.entries()) {
   if (mutant === workflow || violations(mutant).length === 0)
@@ -260,6 +278,13 @@ const allowed = [
   ),
   workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
+  // Пропуск по готовности не является отказом загрузки и остаётся допустимым.
+  ...['fx_ready', 'report_ready'].map((output) =>
+    workflow.replace(
+      `\${{ !cancelled() && steps.browser.outputs.${output} == 'true' }}`,
+      '${{ false }}',
+    ),
+  ),
 ];
 for (const [index, variant] of allowed.entries()) {
   if (variant === workflow || violations(variant).length > 0)
