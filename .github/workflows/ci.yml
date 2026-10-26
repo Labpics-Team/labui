@@ -249,7 +249,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Playwright report
-        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}
+        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
