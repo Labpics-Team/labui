@@ -204,12 +204,36 @@ const content = (lines, header) =>
     .slice(1)
     .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'));
 
+// Только скаляры верхнего уровня шага/job: YAML допускает кавычки, Unicode-escape в имени
+// и tab перед ':'. Неизвестное представление не считаем разрешённым false.
+function scalar(value) {
+  const match = value.match(/^ *("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^# \t]+)(?:[ \t]+#.*)?[ \t]*$/);
+  if (!match) return null;
+  const text = match[1];
+  if (text.startsWith('"')) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+  return text.startsWith("'") ? text.slice(1, -1).replaceAll("''", "'") : text;
+}
+
+function field(line, indent) {
+  const prefix = ' '.repeat(indent);
+  if (!line.startsWith(prefix) || /^\s|^#/.test(line.slice(indent))) return null;
+  const match = line
+    .slice(indent)
+    .match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[\w-]+)[ \t]*:[ \t]*(.*)$/);
+  return match ? { key: scalar(match[1]), value: match[2] } : null;
+}
+
 // Сравниваем весь защищённый шаг, а не только несколько ключей: YAML допускает
 // экранированные имена и повторные поля. Явное false не подавляет отказ.
 function explicitNoSuppression(line, indent) {
-  return new RegExp(
-    `^ {${indent}}(?:continue-on-error|"continue-on-error"|'continue-on-error') *: *false(?:[ \\t]+#.*)?[ \\t]*$`,
-  ).test(line);
+  const entry = field(line, indent);
+  return entry?.key === 'continue-on-error' && /^false(?:[ \t]+#.*)?[ \t]*$/.test(entry.value);
 }
 
 function comparableStep(step) {
@@ -260,8 +284,29 @@ function violations(source) {
     out.push('the browser step must appear exactly once');
   else out.push(...differs(comparableStep(steps[browserAt]), browserStep, 'browser step'));
 
-  const uploads = steps.filter((step) =>
-    /^ {8}uses: actions\/upload-artifact@[0-9a-f]{40}\b/m.test(step),
+  // Все e2e uses проверяем по значению скаляра, иначе quoted action или ключ с
+  // escape создают дополнительную публикацию вне двух защищённых шагов.
+  const fieldsByStep = steps.map((step, index) =>
+    step
+      .split('\n')
+      // split убирает `      - `: первый ключ шага теперь начинается с нулевого отступа.
+      .map((line, at) => (index > 0 && at === 0 ? `        ${line}` : line))
+      .filter((line) => /^ {8}\S/.test(line) && !line.trimStart().startsWith('#'))
+      .map((line) => field(line, 8)),
+  );
+  const stepFields = fieldsByStep.flat();
+  if (stepFields.some((entry) => entry?.key == null))
+    out.push('e2e step fields must use supported scalar keys');
+  const actions = stepFields
+    .filter((entry) => entry?.key === 'uses')
+    .map((entry) => scalar(entry.value));
+  if (actions.some((action) => action == null || /^[&*]/.test(action)))
+    out.push('e2e uses must use literal scalar action references');
+  const uploads = steps.filter((_, index) =>
+    fieldsByStep[index].some(
+      (entry) =>
+        entry?.key === 'uses' && /^actions\/upload-artifact@/i.test(scalar(entry.value) ?? ''),
+    ),
   );
   if (uploads.length !== 2) out.push('the browser job must retain both ready artifact uploads');
   const uploadPositions = [];
@@ -344,6 +389,10 @@ const mutants = [
   workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error : true\n'),
   workflow.replace('  e2e:\n', () => `  e2e:\n${String.raw`    "\u0063ontinue-on-error": true`}\n`),
   workflow.replace(
+    '  e2e:\n',
+    () => `  e2e:\n${String.raw`    "\u0063ontinue-on-error"`}\t: true\n`,
+  ),
+  workflow.replace(
     '        id: browser\n',
     '        id: browser\n        continue-on-error: true\n',
   ),
@@ -369,6 +418,33 @@ const mutants = [
   workflow.replace(
     '          path: packages/colors/artifacts/fx-render/',
     '          path: README.md',
+  ),
+  // Вторая загрузка с quoted uses не должна обойти счётчик защищённых uploads.
+  workflow.replace(
+    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+    `      - name: Publish successful smoke report without a failure condition
+        uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        with:
+          name: playwright-report
+          path: apps/docs/playwright-report/
+      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
+  ),
+  // Допустимый короткий YAML-вид первого ключа шага тоже не должен обходить счётчик.
+  workflow.replace(
+    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+    `      - uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        with:
+          name: playwright-report
+          path: apps/docs/playwright-report/
+      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
+  ),
+  workflow.replace(
+    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+    () => `      - ${String.raw`"u\u0073es"`}: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
+        with:
+          name: playwright-report
+          path: apps/docs/playwright-report/
+      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
   ),
   // Публикация до browser не увидит outputs и станет успешным пропуском.
   workflow.replace(`${browserBlock}${fxBlock}`, () => `${fxBlock}${browserBlock}`),
@@ -427,8 +503,22 @@ const allowed = [
     '  e2e:\n    continue-on-error : false # явный отказ от подавления\n',
   ),
   workflow.replace(
+    '  e2e:\n',
+    () =>
+      `  e2e:\n    ${String.raw`"\u0063ontinue-on-error"`}\t: false # явный отказ от подавления\n`,
+  ),
+  workflow.replace(
     '        id: browser\n',
     '        id: browser\n        continue-on-error: false # исходный отказ сохраняется\n',
+  ),
+  workflow.replace(
+    '        id: browser\n',
+    () => `        id: browser\n        ${String.raw`"\u0063ontinue-on-error"`}\t: false\n`,
+  ),
+  // Другой шаг после публикаций допустим: запрет относится к лишней загрузке.
+  workflow.replace(
+    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+    '      - run: echo ready\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
   ),
   workflow.replace(
     '          if-no-files-found: error',
