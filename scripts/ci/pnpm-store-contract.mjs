@@ -38,9 +38,7 @@ const ownerLines = (source) =>
     .map((line) => line.trimEnd())
     .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'));
 const browserOwners = (source) =>
-  source
-    .split(/(?=^ {6}- )/m)
-    .filter((block) => activeLines(block).includes(browserRun));
+  source.split(/(?=^ {6}- )/m).filter((block) => activeLines(block).includes(browserRun));
 
 function fullBrowserProblems(subject) {
   const out = [];
@@ -50,12 +48,14 @@ function fullBrowserProblems(subject) {
     .filter((block) => /^ {2}e2e-full:[ \t]*(?:#.*)?\n/.test(block));
   if (
     jobs.length !== 1 ||
-    jobs[0].split('\n').some(
-      (line) =>
-        /^ {4}if[ \t]*:/.test(line) ||
-        (/^ {4}continue-on-error[ \t]*:/.test(line) &&
-          !/^ {4}continue-on-error[ \t]*:[ \t]*false[ \t]*(?:#.*)?$/.test(line)),
-    )
+    jobs[0]
+      .split('\n')
+      .some(
+        (line) =>
+          /^ {4}if[ \t]*:/.test(line) ||
+          (/^ {4}continue-on-error[ \t]*:/.test(line) &&
+            !/^ {4}continue-on-error[ \t]*:[ \t]*false[ \t]*(?:#.*)?$/.test(line)),
+      )
   )
     out.push('full E2E job must run unconditionally and preserve failures');
 
@@ -76,16 +76,11 @@ function fullBrowserProblems(subject) {
     )
   )
     out.push('full E2E installation and workload belong to the browser runtime');
-  const forwarded =
-    '--env "E2E_SMOKE=${E2E_SMOKE:-}" "$image" bash -euo pipefail -c ' + "'";
-  const modeLines = activeLines(subject.browser).filter((line) =>
-    /--env.*E2E_SMOKE=/.test(line),
-  );
+  const forwarded = '--env "E2E_SMOKE=${E2E_SMOKE:-}" "$image" bash -euo pipefail -c ' + "'";
+  const modeLines = activeLines(subject.browser).filter((line) => /--env.*E2E_SMOKE=/.test(line));
   if (modeLines.length !== 1 || modeLines[0] !== forwarded)
     out.push('browser runtime must forward the caller full/smoke mode');
-  if (
-    activeLines(subject.browser).filter((line) => line === 'pnpm test:e2e').length !== 1
-  )
+  if (activeLines(subject.browser).filter((line) => line === 'pnpm test:e2e').length !== 1)
     out.push('browser runtime must execute the canonical E2E command once');
   return out;
 }
@@ -171,18 +166,12 @@ const browserMutants = [
       full: files.full.replace('    steps:', '    if: false\n    steps:'),
     },
   ],
-  [
-    'condition after steps',
-    { ...files, full: `${files.full}\n    if: false\n` },
-  ],
+  ['condition after steps', { ...files, full: `${files.full}\n    if: false\n` }],
   [
     'ignored job failure',
     {
       ...files,
-      full: files.full.replace(
-        '    steps:',
-        '    continue-on-error: true\n    steps:',
-      ),
+      full: files.full.replace('    steps:', '    continue-on-error: true\n    steps:'),
     },
   ],
   [
@@ -271,10 +260,7 @@ const browserMutants = [
   ],
 ];
 for (const [name, mutant] of browserMutants) {
-  if (
-    JSON.stringify(mutant) === JSON.stringify(files) ||
-    fullBrowserProblems(mutant).length === 0
-  )
+  if (JSON.stringify(mutant) === JSON.stringify(files) || fullBrowserProblems(mutant).length === 0)
     throw new Error(`browser ownership control survived: ${name}`);
 }
 const browserVariants = [
@@ -322,10 +308,7 @@ const browserVariants = [
   [
     'CRLF',
     Object.fromEntries(
-      Object.entries(files).map(([name, value]) => [
-        name,
-        value.replace(/\r?\n/g, '\r\n'),
-      ]),
+      Object.entries(files).map(([name, value]) => [name, value.replace(/\r?\n/g, '\r\n')]),
     ),
   ],
 ];
