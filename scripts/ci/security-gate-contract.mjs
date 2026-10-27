@@ -288,7 +288,7 @@ const allowed = [
   // Явное false допустимо: оно не подавляет отказ шага; true и expressions недопустимы.
   ...['fx_ready', 'report_ready'].map((output) =>
     workflow.replace(
-      new RegExp("^ {8}if: .*steps\\.browser\\.outputs\\." + output + " == 'true'.*$", 'm'),
+      new RegExp(`^ {8}if: .*steps\\.browser\\.outputs\\.${output} == 'true'.*$`, 'm'),
       '$&\n        continue-on-error: false',
     ),
   ),
