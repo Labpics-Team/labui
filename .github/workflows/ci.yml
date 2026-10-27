@@ -198,11 +198,8 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
-    # e2e исполняется на ХОСТЕ раннера (как daniel), НЕ в контейнере: системные
-    # библиотеки браузеров установлены на раннере один раз (provision-as-code),
-    # версия совпадает с @playwright/test. Так избегаем хрупкого пула 3.4GB-образа
-    # Playwright на «Initialize containers» и root-владения артефактов в общем
-    # воркспейсе (host-job билдит под daniel → следующий job чистит без проблем).
+    # Smoke и полный ночной набор используют один закреплённый Playwright runtime.
+    # browser-check.sh владеет отдельными процессами, сетью, файлами и cleanup.
     #
     # ── ЭТО SMOKE-ПОДМНОЖЕСТВО, НЕ ВЕСЬ НАБОР ────────────────────────────────
     # Per-PR гоняется только критический путь (E2E_SMOKE=1 → curated список в
