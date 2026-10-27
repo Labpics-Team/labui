@@ -59,11 +59,12 @@ function fullBrowserProblems(subject) {
   )
     out.push('full E2E job must run unconditionally and preserve failures');
 
-  const owners = browserOwners(subject.full);
+  const owners = browserOwners(jobs.length === 1 ? jobs[0] : '');
   const fields = owners.length === 1 ? ownerLines(owners[0]).slice(1) : [];
   const envIndex = fields.indexOf('        env:');
   if (
     owners.length !== 1 ||
+    browserOwners(subject.full).length !== 1 ||
     fields.slice().sort().join('\n') !== fullOwner.join('\n') ||
     envIndex === -1 ||
     fields[envIndex + 1] !== '          E2E_SMOKE: "0"'
@@ -156,6 +157,13 @@ process.stdout.write(`pnpm store contract: PASS (live + ${mutants.length} sabota
 
 const fullBlock = browserOwners(files.full)[0];
 const browserMutants = [
+  [
+    'owner moved to disabled neighboring job',
+    {
+      ...files,
+      full: `${files.full.replace(fullBlock, '')}\n  displaced:\n    if: false\n    runs-on: self-hosted\n    steps:\n${fullBlock}      - name: Neighbor step\n        run: true\n`,
+    },
+  ],
   [
     'conditional job',
     {
@@ -270,6 +278,13 @@ for (const [name, mutant] of browserMutants) {
     throw new Error(`browser ownership control survived: ${name}`);
 }
 const browserVariants = [
+  [
+    'conditional neighboring job',
+    {
+      ...files,
+      full: `${files.full}\n  unrelated:\n    if: false\n    runs-on: self-hosted\n    steps:\n      - name: Unrelated step\n        run: true\n`,
+    },
+  ],
   [
     'explicit blocking job after steps',
     { ...files, full: `${files.full}\n    continue-on-error: false\n` },
