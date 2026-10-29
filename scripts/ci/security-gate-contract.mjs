@@ -83,8 +83,26 @@ const aggregateJob = [
   '          fi',
 ];
 
-// Итог обязан ждать security и quality: в quality работают контракты принятых записей и этого job.
-const requiredNeeds = ['security', 'quality'];
+// Итог обязан ждать security, quality и e2e: отказ браузера блокирует CI без загрузки файлов.
+const requiredNeeds = ['security', 'quality', 'e2e'];
+const e2eHeader = [
+  '  e2e:',
+  '    name: playwright smoke (critical path)',
+  '    runs-on: self-hosted',
+  '    if: >-',
+  "      github.event_name != 'pull_request' ||",
+  '      github.event.pull_request.head.repo.full_name == github.repository',
+  '    timeout-minutes: <n>',
+  '    steps:',
+];
+const browserStep = [
+  'name: Verify browser rendering and smoke tests in pinned Playwright runtime',
+  '        id: browser',
+  '        shell: bash',
+  '        env:',
+  '          E2E_SMOKE: "1"',
+  '        run: bash .github/scripts/browser-check.sh',
+];
 const topLevel = ['name: CI', 'on:', 'permissions:', 'concurrency:', 'env:', 'jobs:'];
 // Кандидат проверяется в каждом PR и в очереди слияния.
 const triggers = ['  push:', '    branches: [main]', '  pull_request:', '  merge_group:'];
@@ -157,6 +175,46 @@ const content = (lines, header) =>
     .slice(1)
     .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'));
 
+// Только скаляры верхнего уровня шага/job: YAML допускает кавычки, Unicode-escape в имени
+// и tab перед ':'. Неизвестное представление не считаем разрешённым false.
+function scalar(value) {
+  const match = value.match(/^ *("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^# \t]+)(?:[ \t]+#.*)?[ \t]*$/);
+  if (!match) return null;
+  const text = match[1];
+  if (text.startsWith('"')) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+  return text.startsWith("'") ? text.slice(1, -1).replaceAll("''", "'") : text;
+}
+
+function field(line, indent) {
+  const prefix = ' '.repeat(indent);
+  if (!line.startsWith(prefix) || /^\s|^#/.test(line.slice(indent))) return null;
+  const match = line
+    .slice(indent)
+    .match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[\w-]+)[ \t]*:[ \t]*(.*)$/);
+  return match ? { key: scalar(match[1]), value: match[2] } : null;
+}
+
+// Сравниваем весь защищённый шаг, а не только несколько ключей: YAML допускает
+// экранированные имена и повторные поля. Явное false не подавляет отказ.
+function explicitNoSuppression(line, indent) {
+  const entry = field(line, indent);
+  return entry?.key === 'continue-on-error' && /^false(?:[ \t]+#.*)?[ \t]*$/.test(entry.value);
+}
+
+function comparableStep(step) {
+  return step
+    .split('\n')
+    .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'))
+    .filter((line) => !explicitNoSuppression(line, 8))
+    .map((line) => line.replace(/[ \t]+#.*$/, '').trimEnd());
+}
+
 function violations(source) {
   const lines = source.split('\n');
   const out = [];
@@ -165,7 +223,7 @@ function violations(source) {
     out.push(`workflow top level must be exactly: ${topLevel.join(', ')}`);
   out.push(...differs(content(lines, 'on:'), triggers, 'workflow triggers'));
   out.push(...differs(content(lines, 'env:'), env, 'workflow env'));
-  for (const id of ['security', 'ci']) {
+  for (const id of ['security', 'ci', 'e2e']) {
     if (lines.filter((line) => new RegExp(`^ {2}["']?${id}["']?\\s*:`).test(line)).length !== 1)
       out.push(`workflow must define job ${id} exactly once`);
   }
@@ -175,6 +233,61 @@ function violations(source) {
   for (const id of requiredNeeds) {
     if (!aggregate.needs.includes(id)) out.push(`the CI aggregate must need job ${id}`);
   }
+  // Браузер обязателен для итогового CI. Временные отчёты не храним в Actions storage.
+  const e2e = block(lines, '  e2e:');
+  const stepsAt = e2e.indexOf('    steps:');
+  const header = e2e.slice(0, stepsAt < 0 ? e2e.length : stepsAt + 1);
+  out.push(
+    ...differs(
+      normalized(header.filter((line) => !explicitNoSuppression(line, 4))).lines,
+      e2eHeader,
+      'job e2e header',
+    ),
+  );
+  const jobFields = e2e.filter((line) => /^ {4}\S/.test(line) && !line.trimStart().startsWith('#'));
+  if (jobFields.filter((line) => !explicitNoSuppression(line, 4)).length !== 5)
+    out.push('job e2e must not add or repeat job-level fields');
+
+  const steps = e2e.join('\n').split(/^ {6}- /m);
+  // Разбиение осмысленно лишь когда каждый YAML-элемент списка имеет тот же
+  // отступ, один пробел после '-' и первый ключ на этой строке. Actionlint
+  // допускает и одиночный '-', и flow map: они иначе скрыли бы новый upload.
+  const itemLines = e2e.slice(stepsAt + 1).filter((line) => /^ {6}-/.test(line));
+  if (
+    itemLines.length !== steps.length - 1 ||
+    itemLines.some(
+      (line) => !line.startsWith('      - ') || field(`        ${line.slice(8)}`, 8)?.key == null,
+    )
+  )
+    out.push('e2e steps must use one canonical sequence-item layout');
+  const browserAt = steps.findIndex((step) => /^ {8}id: browser$/m.test(step));
+  if (browserAt < 0 || steps.filter((step) => /^ {8}id: browser$/m.test(step)).length !== 1)
+    out.push('the browser step must appear exactly once');
+  else out.push(...differs(comparableStep(steps[browserAt]), browserStep, 'browser step'));
+
+  // Все e2e uses проверяем по значению скаляра, иначе quoted action или ключ с
+  // escape создают дополнительную публикацию вне двух защищённых шагов.
+  const fieldsByStep = steps.map((step, index) =>
+    step
+      .split('\n')
+      // split убирает `      - `: первый ключ шага теперь начинается с нулевого отступа.
+      .map((line, at) => (index > 0 && at === 0 ? `        ${line}` : line))
+      .filter((line) => /^ {8}\S/.test(line) && !line.trimStart().startsWith('#'))
+      .map((line) => field(line, 8)),
+  );
+  const stepFields = fieldsByStep.flat();
+  if (stepFields.some((entry) => entry?.key == null))
+    out.push('e2e step fields must use supported scalar keys');
+  const actions = stepFields
+    .filter((entry) => entry?.key === 'uses')
+    .map((entry) => scalar(entry.value));
+  if (actions.some((action) => action == null || /^[&*|>!]/.test(action)))
+    out.push('e2e uses must use literal scalar action references');
+  // Отказ уже отражён в обязательном browser job. Не допускаем повторного
+  // накопления временных PNG/Playwright reports в Actions artifact storage.
+  // Проверяем весь workflow, включая соседние jobs и иные YAML-формы uses.
+  if (/actions\/upload-artifact@/i.test(source))
+    out.push('ephemeral CI reports must not be uploaded to Actions artifacts');
   return out;
 }
 
@@ -230,9 +343,38 @@ const mutants = [
   `${workflow.trimEnd()}\n  "security":\n    runs-on: self-hosted\n    steps:\n      - run: "true"\n`,
   inAggregate(/^ {6}- security\n/m, ''),
   inAggregate(/^ {6}- quality\n/m, ''),
+  inAggregate(/^ {6}- e2e\n/m, ''),
+  workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error: true\n'),
+  workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error : true\n'),
+  workflow.replace('  e2e:\n', () => `  e2e:\n${String.raw`    "\u0063ontinue-on-error": true`}\n`),
+  workflow.replace(
+    '  e2e:\n',
+    () => `  e2e:\n${String.raw`    "\u0063ontinue-on-error"`}\t: true\n`,
+  ),
+  workflow.replace(
+    '        id: browser\n',
+    '        id: browser\n        continue-on-error: true\n',
+  ),
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
+  // Любая повторная публикация, даже с иным именем, должна нарушать контракт.
+  ...[
+    '      - name: Upload FX\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: fx\n          path: packages/colors/artifacts/fx-render/',
+    '      - uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"',
+    '      - "uses": actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02',
+    '      - {uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02}',
+    '      - name: Upload report\n        uses: >-\n          actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02',
+  ].map((step) =>
+    workflow.replace(
+      '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+      `${step}\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
+    ),
+  ),
+  workflow.replace(
+    '      - name: Verify pnpm store isolation contract',
+    '      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n      - name: Verify pnpm store isolation contract',
+  ),
 ];
 for (const [index, mutant] of mutants.entries()) {
   if (mutant === workflow || violations(mutant).length === 0)
@@ -260,6 +402,29 @@ const allowed = [
   ),
   workflow.replace('  pull_request:\n', '  # Каждый PR.\n  pull_request:\n'),
   inAggregate('\n    needs:\n', '\n    needs:\n      - docs\n'),
+  workflow.replace('  e2e:\n', '  e2e:\n    continue-on-error: false\n'),
+  workflow.replace(
+    '  e2e:\n',
+    '  e2e:\n    continue-on-error : false # явный отказ от подавления\n',
+  ),
+  workflow.replace(
+    '  e2e:\n',
+    () =>
+      `  e2e:\n    ${String.raw`"\u0063ontinue-on-error"`}\t: false # явный отказ от подавления\n`,
+  ),
+  workflow.replace(
+    '        id: browser\n',
+    '        id: browser\n        continue-on-error: false # исходный отказ сохраняется\n',
+  ),
+  workflow.replace(
+    '        id: browser\n',
+    () => `        id: browser\n        ${String.raw`"\u0063ontinue-on-error"`}\t: false\n`,
+  ),
+  // Соседний шаг допустим: запрет касается только ненужной публикации.
+  workflow.replace(
+    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+    '      - run: echo ready\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+  ),
 ];
 for (const [index, variant] of allowed.entries()) {
   if (variant === workflow || violations(variant).length > 0)
