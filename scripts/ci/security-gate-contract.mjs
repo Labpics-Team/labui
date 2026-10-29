@@ -368,7 +368,7 @@ const mutants = [
   ].map((step) =>
     workflow.replace(
       '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-      step + '\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+      `${step}\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
     ),
   ),
   workflow.replace(
