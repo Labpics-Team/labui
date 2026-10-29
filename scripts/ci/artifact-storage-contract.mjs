@@ -22,7 +22,7 @@ test("the browser check remains mandatory without archive storage", () => {
 
 test("ordinary diagnostic uploads cannot return", () => {
   for (const action of ["upload-artifact", "upload-pages-artifact"]) {
-    assert.throws(() => validate("steps:\n  - uses: actions/" + action + "@v4\n"));
+    assert.throws(() => validate(`steps:\n  - uses: actions/${action}@v4\n`));
   }
   assert.throws(() => validate("const client = require('@actions/artifact');"));
   validate("steps:\n  - run: pnpm test:e2e\n");
