@@ -61,15 +61,6 @@ jobs:
           E2E_SMOKE: "0"
         run: bash .github/scripts/browser-check.sh
 
-      - name: Upload Playwright report
-        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: playwright-report-full
-          path: apps/docs/playwright-report/
-          retention-days: 7
-          if-no-files-found: ignore
-
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
         # Это дополнительное восстановление: сбой виден, следующая первичная очистка обязательна.
         # Тот же defence-in-depth chown-back, что и в e2e-job ci.yml: возвращаем
