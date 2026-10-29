@@ -83,7 +83,7 @@ const aggregateJob = [
   '          fi',
 ];
 
-// Итог обязан ждать security, quality и e2e: отказ готовой загрузки в e2e блокирует CI.
+// Итог обязан ждать security, quality и e2e: отказ браузера блокирует CI без загрузки файлов.
 const requiredNeeds = ['security', 'quality', 'e2e'];
 const e2eHeader = [
   '  e2e:',
@@ -103,35 +103,6 @@ const browserStep = [
   '          E2E_SMOKE: "1"',
   '        run: bash .github/scripts/browser-check.sh',
 ];
-const uploadAction =
-  '        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02';
-const uploadConditions = {
-  'fx-render': "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}",
-  'playwright-report':
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}",
-};
-const readyUploads = {
-  'fx-render': [
-    'name: Upload FX-render артефакт (PNG для обзора владельцем)',
-    uploadConditions['fx-render'],
-    uploadAction,
-    '        with:',
-    '          name: fx-render',
-    '          path: packages/colors/artifacts/fx-render/',
-    '          retention-days: 7',
-    '          if-no-files-found: error',
-  ],
-  'playwright-report': [
-    'name: Upload Playwright report',
-    uploadConditions['playwright-report'],
-    uploadAction,
-    '        with:',
-    '          name: playwright-report',
-    '          path: apps/docs/playwright-report/',
-    '          retention-days: 7',
-    '          if-no-files-found: error',
-  ],
-};
 const topLevel = ['name: CI', 'on:', 'permissions:', 'concurrency:', 'env:', 'jobs:'];
 // Кандидат проверяется в каждом PR и в очереди слияния.
 const triggers = ['  push:', '    branches: [main]', '  pull_request:', '  merge_group:'];
@@ -262,8 +233,7 @@ function violations(source) {
   for (const id of requiredNeeds) {
     if (!aggregate.needs.includes(id)) out.push(`the CI aggregate must need job ${id}`);
   }
-  // Каноничный e2e job и три защищённых шага фиксируют цепь browser → ready
-  // upload → required CI; соседние шаги допустимы в простой YAML-форме.
+  // Браузер обязателен для итогового CI. Временные отчёты не храним в Actions storage.
   const e2e = block(lines, '  e2e:');
   const stepsAt = e2e.indexOf('    steps:');
   const header = e2e.slice(0, stepsAt < 0 ? e2e.length : stepsAt + 1);
@@ -313,28 +283,11 @@ function violations(source) {
     .map((entry) => scalar(entry.value));
   if (actions.some((action) => action == null || /^[&*|>!]/.test(action)))
     out.push('e2e uses must use literal scalar action references');
-  const uploads = steps.filter((_, index) =>
-    fieldsByStep[index].some(
-      (entry) =>
-        entry?.key === 'uses' && /^actions\/upload-artifact@/i.test(scalar(entry.value) ?? ''),
-    ),
-  );
-  if (uploads.length !== 2) out.push('the browser job must retain both ready artifact uploads');
-  const uploadPositions = [];
-  for (const [name, expected] of Object.entries(readyUploads)) {
-    const matches = uploads.filter((step) => step.split('\n').includes(`          name: ${name}`));
-    if (matches.length !== 1) {
-      out.push(`${name} upload must appear exactly once`);
-      continue;
-    }
-    out.push(...differs(comparableStep(matches[0]), expected, `${name} ready upload`));
-    uploadPositions.push(steps.indexOf(matches[0]));
-  }
-  if (
-    uploadPositions.length === 2 &&
-    !(browserAt < uploadPositions[0] && uploadPositions[0] < uploadPositions[1])
-  )
-    out.push('ready uploads must follow the browser step in order');
+  // Отказ уже отражён в обязательном browser job. Не допускаем повторного
+  // накопления временных PNG/Playwright reports в Actions artifact storage.
+  // Проверяем весь workflow, включая соседние jobs и иные YAML-формы uses.
+  if (/actions\/upload-artifact@/i.test(source))
+    out.push('ephemeral CI reports must not be uploaded to Actions artifacts');
   return out;
 }
 
@@ -351,11 +304,6 @@ const inAggregate = (from, to) =>
   workflow.replace(aggregateText, () => aggregateText.replace(from, to));
 const scanStep = '      - name: Scan dependencies, configuration and secrets\n';
 const lastLine = `          ${canonical.at(-1)}\n`;
-const browserAt = workflow.indexOf('      - name: Verify browser rendering and smoke tests');
-const fxAt = workflow.indexOf('      - name: Upload FX-render артефакт');
-const reportAt = workflow.indexOf('      - name: Upload Playwright report');
-const browserBlock = workflow.slice(browserAt, fxAt);
-const fxBlock = workflow.slice(fxAt, reportAt);
 const mutants = [
   inSecurity('          source .github/scripts/secret-scan-contract.sh\n', ''),
   inSecurity('          secret_scan\n', ''),
@@ -410,105 +358,23 @@ const mutants = [
   // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
+  // Любая повторная публикация, даже с иным именем, должна нарушать контракт.
   ...[
-    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}\n",
-  ].map((condition) =>
-    workflow.replace(condition, `${condition}        continue-on-error: true\n`),
-  ),
-  ...[
-    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}\n",
-  ].map((condition) =>
-    workflow.replace(condition, `${condition}        continue-on-error : true\n`),
-  ),
-  workflow.replace(
-    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
-    (condition) => `${condition}${String.raw`        "\u0063ontinue-on-error": true`}\n`,
-  ),
-  workflow.replace(
-    '          path: packages/colors/artifacts/fx-render/',
-    '          path: README.md',
-  ),
-  // Вторая загрузка с quoted uses не должна обойти счётчик защищённых uploads.
-  workflow.replace(
-    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-    `      - name: Publish successful smoke report without a failure condition
-        uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
-        with:
-          name: playwright-report
-          path: apps/docs/playwright-report/
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
-  ),
-  // Допустимый короткий YAML-вид первого ключа шага тоже не должен обходить счётчик.
-  workflow.replace(
-    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-    `      - uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
-        with:
-          name: playwright-report
-          path: apps/docs/playwright-report/
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
-  ),
-  workflow.replace(
-    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-    () => `      - ${String.raw`"u\u0073es"`}: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"
-        with:
-          name: playwright-report
-          path: apps/docs/playwright-report/
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
-  ),
-  // Actionlint принимает эти формы нового YAML-элемента после cleanup; ни один
-  // не вправе публиковать отчёт успешного smoke вне защищённого шага.
-  ...[
-    `      -
-          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-          with:
-            name: extra-report
-            path: apps/docs/playwright-report/`,
-    `      -  uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-         with:
-           name: extra-report
-           path: apps/docs/playwright-report/`,
-    '      - {uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02, with: {name: extra-report, path: apps/docs/playwright-report/}}',
-  ].map((step) => workflow.replace('\n  ci:\n', `\n${step}\n  ci:\n`)),
-  // YAML block scalar для uses actionlint тоже принимает, но текстового ref
-  // на одной строке у guard уже нет: такие формы должны закрываться явно.
-  ...['>-', '|-'].map((style) =>
+    '      - name: Upload FX\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: fx\n          path: packages/colors/artifacts/fx-render/',
+    '      - uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"',
+    '      - "uses": actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02',
+    '      - {uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02}',
+    '      - name: Upload report\n        uses: >-\n          actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02',
+  ].map((step) =>
     workflow.replace(
-      '\n  ci:\n',
-      `\n      - name: Extra report upload
-        uses: ${style}
-          actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: extra-report
-          path: apps/docs/playwright-report/
-  ci:\n`,
+      '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+      step + '\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
     ),
   ),
-  // Публикация до browser не увидит outputs и станет успешным пропуском.
-  workflow.replace(`${browserBlock}${fxBlock}`, () => `${fxBlock}${browserBlock}`),
-  // Отказ более ранней загрузки не превращает успешный smoke в повод хранить отчёт.
   workflow.replace(
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}",
-    "        if: ${{ failure() && !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
+    '      - name: Verify pnpm store isolation contract',
+    '      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n      - name: Verify pnpm store isolation contract',
   ),
-  // Прежний smoke-отчёт на успешном прогоне и отказ от готовности нарушают новый контракт.
-  workflow.replace(
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}",
-    "        if: ${{ !cancelled() && steps.browser.outputs.report_ready == 'true' }}",
-  ),
-  workflow.replace(
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}",
-    '        if: ${{ failure() && !cancelled() }}',
-  ),
-  // Пропуск всех публикаций под видом допустимого пропуска без готового артефакта.
-  ...[
-    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}",
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}",
-  ].map((condition) => workflow.replace(condition, '        if: ${{ false }}')),
-  // Пустая ready-директория не должна стать успешным upload.
-  workflow.replaceAll('          if-no-files-found: error', '          if-no-files-found: ignore'),
-  workflow.replaceAll('          if-no-files-found: error', '          if-no-files-found: warn'),
 ];
 for (const [index, mutant] of mutants.entries()) {
   if (mutant === workflow || violations(mutant).length === 0)
@@ -554,37 +420,10 @@ const allowed = [
     '        id: browser\n',
     () => `        id: browser\n        ${String.raw`"\u0063ontinue-on-error"`}\t: false\n`,
   ),
-  // Другой шаг после публикаций допустим: запрет относится к лишней загрузке.
+  // Соседний шаг допустим: запрет касается только ненужной публикации.
   workflow.replace(
     '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
     '      - run: echo ready\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-  ),
-  workflow.replace(
-    '          if-no-files-found: error',
-    '          if-no-files-found: error # путь обязателен',
-  ),
-  // Комментарий рядом с публикацией не меняет её статус и готовность.
-  ...['Upload FX-render артефакт (PNG для обзора владельцем)', 'Upload Playwright report'].map(
-    (name) =>
-      workflow.replace(
-        `      - name: ${name}\n`,
-        `      - name: ${name}\n        # Артефакт публикуется по своему условию.\n`,
-      ),
-  ),
-  ...[
-    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}\n",
-  ].map((condition) =>
-    workflow.replace(condition, `${condition}        continue-on-error: false\n`),
-  ),
-  ...[
-    "        if: ${{ !cancelled() && steps.browser.outputs.fx_ready == 'true' }}\n",
-    "        if: ${{ !cancelled() && steps.browser.outcome == 'failure' && steps.browser.outputs.report_ready == 'true' }}\n",
-  ].map((condition) =>
-    workflow.replace(
-      condition,
-      `${condition}        continue-on-error: false # блокировать отказ\n`,
-    ),
   ),
 ];
 for (const [index, variant] of allowed.entries()) {
