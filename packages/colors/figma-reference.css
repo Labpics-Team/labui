@@ -21,7 +21,7 @@
  * │                                                                          │
  * │  The VALUES below are honest placeholder CONSTANTS — the exact resolved   │
  * │  Light/Dark palette snapshotted from the LabUI Figma Semantic collection  │
- * │  (488-token W3C DTCG export, fileKey LuaiBd4anRi4DMZayKAnY2). They are     │
+ * │  (488-token W3C DTCG export, Lab UI v2.1). They are     │
  * │  NOT computed here: this file does NOT implement the resolver and does     │
  * │  NOT duplicate semantic.rs — that is forbidden. It only DECLARES roles     │
  * │  and pins their snapshot values.                                          │
