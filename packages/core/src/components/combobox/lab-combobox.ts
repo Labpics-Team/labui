@@ -368,7 +368,7 @@ export class LabCombobox extends LabElement {
          <lab-input>; the trigger button overlaps its right padding. */
       .input.control {
         flex: 1 1 auto;
-        padding-right: var(--lab-size-switch-track-s, 2.25rem);
+      padding-right: var(--lab-size-combobox-trigger, 2.25rem);
       }
 
       /* The disclosure trigger — a real <button> the machine wires to toggle the
@@ -381,7 +381,7 @@ export class LabCombobox extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: var(--lab-size-switch-track-s, 2.25rem);
+      width: var(--lab-size-combobox-trigger, 2.25rem);
         height: 100%;
         margin: 0;
         padding: 0;

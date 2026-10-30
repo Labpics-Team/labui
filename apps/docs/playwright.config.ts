@@ -55,6 +55,8 @@ const SMOKE_SPECS = [
   // класс критического пути, что materials-flag.
   'acrylic-live.spec.ts',
   'button.spec.ts',
+  // Геометрия, шрифт и масштаб Switch сверяются с независимым эталоном.
+  'switch-geometry.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
   'pin-input.spec.ts',

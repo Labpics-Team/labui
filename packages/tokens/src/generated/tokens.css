@@ -38,21 +38,24 @@
   --lab-space-3xl: var(--lab-space-16); /* -> 16 */
   --lab-space-glow-core: var(--lab-space-2); /* -> 2 */
   --lab-space-glow-halo: var(--lab-space-8); /* -> 8 */
+  --lab-space-switch-label-gap-l: var(--lab-space-3); /* -> 3 */
 
   /* Sizes — габариты контрол-бокса оси размера компонента (rem) */
   --lab-size-control-s: 0.75rem;
   --lab-size-control-m: 1rem;
   --lab-size-control-l: 1.25rem;
   --lab-size-control-xl: 1.5rem;
-  --lab-size-switch-track-s: 2.25rem;
-  --lab-size-switch-track-m: 2.75rem;
-  --lab-size-switch-track-l: 3.25rem;
-  --lab-size-switch-track-h-s: 1.25rem;
-  --lab-size-switch-track-h-m: 1.5rem;
-  --lab-size-switch-track-h-l: 1.75rem;
-  --lab-size-switch-thumb-s: 0.875rem;
-  --lab-size-switch-thumb-m: 1.125rem;
-  --lab-size-switch-thumb-l: 1.375rem;
+  --lab-size-switch-track-s: 1.75rem;
+  --lab-size-switch-track-m: 2.25rem;
+  --lab-size-switch-track-l: 2.75rem;
+  --lab-size-switch-track-h-s: 1rem;
+  --lab-size-switch-track-h-m: 1.25rem;
+  --lab-size-switch-track-h-l: 1.5rem;
+  --lab-size-switch-thumb-s: 0.75rem;
+  --lab-size-switch-thumb-m: 1rem;
+  --lab-size-switch-thumb-l: 1.25rem;
+  --lab-size-switch-row: 1.5rem;
+  --lab-size-combobox-trigger: 2.25rem;
   --lab-size-loader-stroke-s: 0.125rem;
   --lab-size-loader-stroke-m: 0.1875rem;
   --lab-size-loader-stroke-l: 0.25rem;
@@ -127,6 +130,8 @@
   --lab-font-size-4xl: clamp(2.4883rem, 2.642vw + 1.9599rem, 4.0075rem);
   --lab-font-size-5xl: clamp(2.986rem, 4.0067vw + 2.1846rem, 5.2899rem);
   --lab-font-size-6xl: clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem);
+  --lab-font-size-switch-label: 1rem;
+  --lab-font-size-switch-label-l: 1.25rem;
 
   /* Typography — line-height multipliers */
   --lab-line-height-xxs: 1;
@@ -139,6 +144,8 @@
   --lab-line-height-4xl: 1;
   --lab-line-height-5xl: 0.9761;
   --lab-line-height-6xl: 0.8582;
+  --lab-line-height-switch-label: 1.5;
+  --lab-line-height-switch-label-l: 1;
 
   /* Typography — font-weight scale (unitless) */
   --lab-font-weight-regular: 400;
@@ -157,6 +164,8 @@
   --lab-letter-spacing-4xl: -0.0454em;
   --lab-letter-spacing-5xl: -0.0466em;
   --lab-letter-spacing-6xl: -0.0469em;
+  --lab-letter-spacing-switch-label: -0.015625em;
+  --lab-letter-spacing-switch-label-l: -0.0165em;
 
   /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
   --lab-measure-narrow: 45ch;

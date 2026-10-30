@@ -40,6 +40,7 @@ export const space = {
   '3xl': 'var(--lab-space-3xl)',
   'glow-core': 'var(--lab-space-glow-core)',
   'glow-halo': 'var(--lab-space-glow-halo)',
+  'switch-label-gap-l': 'var(--lab-space-switch-label-gap-l)',
 } as const;
 
 export type SpaceToken = keyof typeof space;
@@ -58,6 +59,8 @@ export const size = {
   'switch-thumb-s': 'var(--lab-size-switch-thumb-s)',
   'switch-thumb-m': 'var(--lab-size-switch-thumb-m)',
   'switch-thumb-l': 'var(--lab-size-switch-thumb-l)',
+  'switch-row': 'var(--lab-size-switch-row)',
+  'combobox-trigger': 'var(--lab-size-combobox-trigger)',
   'loader-stroke-s': 'var(--lab-size-loader-stroke-s)',
   'loader-stroke-m': 'var(--lab-size-loader-stroke-m)',
   'loader-stroke-l': 'var(--lab-size-loader-stroke-l)',
@@ -141,6 +144,8 @@ export const fontSize = {
   '4xl': 'var(--lab-font-size-4xl)',
   '5xl': 'var(--lab-font-size-5xl)',
   '6xl': 'var(--lab-font-size-6xl)',
+  'switch-label': 'var(--lab-font-size-switch-label)',
+  'switch-label-l': 'var(--lab-font-size-switch-label-l)',
 } as const;
 
 export type FontSizeToken = keyof typeof fontSize;
@@ -156,6 +161,8 @@ export const lineHeight = {
   '4xl': 'var(--lab-line-height-4xl)',
   '5xl': 'var(--lab-line-height-5xl)',
   '6xl': 'var(--lab-line-height-6xl)',
+  'switch-label': 'var(--lab-line-height-switch-label)',
+  'switch-label-l': 'var(--lab-line-height-switch-label-l)',
 } as const;
 
 export type LineHeightToken = keyof typeof lineHeight;
@@ -180,6 +187,8 @@ export const letterSpacing = {
   '4xl': 'var(--lab-letter-spacing-4xl)',
   '5xl': 'var(--lab-letter-spacing-5xl)',
   '6xl': 'var(--lab-letter-spacing-6xl)',
+  'switch-label': 'var(--lab-letter-spacing-switch-label)',
+  'switch-label-l': 'var(--lab-letter-spacing-switch-label-l)',
 } as const;
 
 export type LetterSpacingToken = keyof typeof letterSpacing;

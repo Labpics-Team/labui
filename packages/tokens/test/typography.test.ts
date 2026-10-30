@@ -88,9 +88,8 @@ describe('fluid typography — gradient model', () => {
       // Фиксированные шаги (slope 0): суб-базовые — по аудиту 2026-07-03
       // (инвертированный флюид), база — вырожденный clamp вокруг константы.
       // Оба эмитятся чистым rem; живой градиент — только положительные шаги.
-      if (t.fluid !== undefined && t.fluid.slopeVw === 0) {
+      if (t.fluid === undefined || t.fluid.slopeVw === 0) {
         expect(t.cssValue).toMatch(/^[\d.]+rem$/);
-        expect(t.fluid.slopeVw).toBe(0);
         continue;
       }
       expect(t.cssValue.startsWith('clamp(')).toBe(true);

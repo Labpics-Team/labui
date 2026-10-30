@@ -69,7 +69,8 @@ function numberGroup(list: readonly ResolvedToken[]): DtcgGroup {
   for (const t of list) {
     group[t.name] = {
       $type: 'number',
-      $value: round(requireNumeric(t)),
+      // Сохраняет точный em-трекинг фиксированных ролей, например −0.25/16.
+      $value: Number(num(requireNumeric(t), 6)),
       ...(t.description ? { $description: t.description } : {}),
     };
   }

@@ -9,7 +9,8 @@
  *
  * Tokens follow the three-language split: primitives -> semantic aliases ->
  * components consume semantics only. Every scale defines an explicit zero token,
- * and typography is a continuous fluid gradient (clamp, no media queries).
+ * Типографика сочетает плавную шкалу (clamp без media queries) и фиксированные
+ * роли подписей компонентов, сохраняющие rem-масштаб независимо от viewport.
  */
 
 // Config: the single source of truth + override mechanism.
