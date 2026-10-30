@@ -9,6 +9,15 @@
  * value onto an attribute unchecked — craft-frontend P11).
  */
 
+import { mountMaterialRuntime } from '@labpics/ui-materials';
+
+// Отдельный маршрут проверки CSS вместе с публичным runtime; обычный стенд
+// сохраняет CSS-only поведение и проверяет браузерные fallback-рецепты.
+if (new URLSearchParams(location.search).has('runtime')) {
+  const dispose = mountMaterialRuntime();
+  window.addEventListener('pagehide', dispose, { once: true });
+}
+
 const root = document.documentElement;
 
 const CONTROLS = {

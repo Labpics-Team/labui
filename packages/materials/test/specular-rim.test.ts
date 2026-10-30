@@ -6,11 +6,11 @@ import { readMaterialCss } from '../scripts/material-css';
  * имитирующая свет, пойманный кромкой стекла: ярко сверху, гаснет вниз.
  *
  * Инварианты класса, которые гейтит этот файл (а не один частный ввод):
- *   1. Рим — приватная ручка `--_rim` (unset по умолчанию); моды ТОЛЬКО
+ *   1. Рим — приватная ручка `--_rim` (none по умолчанию); моды ТОЛЬКО
  *      пере-биндят её (священное ограничение владельца: моды не трогают
  *      единое paint-правило, лишь приватные custom properties).
  *   2. Рим ВКЛЮЧЁН у glass/acrylic (стеклянные/акриловые кромки ловят свет),
- *      ВЫКЛЮЧЕН у blur (тяжёлый фрост — диффузный, без резкой кромки) и solid
+ *      ВЫКЛЮЧЕН у solid
  *      (непрозрачный канон — не стекло).
  *   3. Цвет рима — из контракта (`--lab-bg-static-light/-dark`), НЕ литерал:
  *      спекуляр ахроматичен (физика отражения белого света), а gard
@@ -66,31 +66,30 @@ describe('specular rim — приватная ручка --_rim', () => {
     expect(body, 'ринг не перехватывает клики').toContain('pointer-events: none');
   });
 
-  it('рим ВЫКЛЮЧЕН по умолчанию (base не задаёт видимый --_rim)', () => {
+  it('рим явно ВЫКЛЮЧЕН в базе и не наследуется из внешней поверхности', () => {
     const body = blockBody(/\.lab-material\s*\{/);
-    // База не биндит --_rim к градиенту — дефолт off через var(--_rim, none).
-    expect(body).not.toMatch(/--_rim:\s*var\(--_rim-active\)/);
+    expect(body).toContain('--_rim: none');
   });
 
   it('glass ВКЛЮЧАЕТ рим (стеклянная кромка ловит свет)', () => {
-    const body = blockBody(/\[data-material="glass"\] \.lab-material,/);
+    const body = blockBody(/@scope \(\[data-material="glass"\]\) to \(\[data-material\]\)/);
     expect(body).toContain('--_rim: var(--_rim-active)');
   });
 
   it('acrylic ВКЛЮЧАЕТ рим (Fluent-кромка несёт люминантный штрих)', () => {
-    const body = blockBody(/\[data-material="acrylic"\] \.lab-material,/);
+    const body = blockBody(/@scope \(\[data-material="acrylic"\]\) to \(\[data-material\]\)/);
     expect(body).toContain('--_rim: var(--_rim-active)');
   });
 
-  it('solid ВЫКЛЮЧАЕТ рим (непрозрачный канон — не стекло; перекрывает предка)', () => {
-    const body = blockBody(/\[data-material="solid"\] \.lab-material,/);
+  it('solid ВЫКЛЮЧАЕТ рим до следующей явной области материала', () => {
+    const body = blockBody(/@scope \(\[data-material="solid"\]\) to \(\[data-material\]\)/);
     expect(body).toContain('--_rim: none');
   });
 
   it('тема ребиндит рим через --_rim-active (светлая дефолт, тёмная оверрайд)', () => {
     const base = blockBody(/\.lab-material\s*\{/);
     expect(base, 'дефолт активного рима = светлый').toContain('--_rim-active: var(--_rim-light)');
-    // Тёмный оверрайд на (0,2,0) — атрибут + класс, как у мод-блоков.
+    // Тёмный оверрайд на (0,2,0) — атрибут + класс.
     expect(css).toContain('[data-theme="dark"] .lab-material');
     const darkBody = blockBody(
       /\[data-theme="dark"\] \.lab-material,\s*\r?\n\s*\[data-theme="dark"\]\.lab-material\s*\{/,

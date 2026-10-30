@@ -2,11 +2,13 @@
  * ступень --_blur-live, Figma BG-blur Base). Этот блок — честная CSS-истина
  * стекла; ЛИНЗУ (настоящее преломление feDisplacementMap) несёт движок
  * engine/liquid-glass.ts на поддерживающих браузерах — см. engine-held.css. */
-[data-material="glass"] .lab-material,
-[data-material="glass"].lab-material {
-  --_base-paint: transparent;
-  --_blur: var(--_blur-live);
-  --_saturate: var(--_saturate-on);
-  --_rim: var(--_rim-active); /* refractive edge catches light → specular rim ON */
-  -webkit-backdrop-filter: blur(48px) saturate(180%);
+@scope ([data-material="glass"]) to ([data-material]) {
+  :where(:scope).lab-material,
+  .lab-material {
+    --_base-paint: transparent;
+    --_blur: var(--_blur-live);
+    --_saturate: var(--_saturate-on);
+    --_rim: var(--_rim-active); /* refractive edge catches light → specular rim ON */
+    -webkit-backdrop-filter: blur(48px) saturate(180%);
+  }
 }
