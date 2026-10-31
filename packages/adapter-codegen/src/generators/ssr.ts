@@ -4,10 +4,10 @@
  * строку через ядро). По одному `src/generated/<subpath>.ssr.ts` на компонент + барель
  * `ssr.ts`. Каждый адаптер даёт вход `@labpics/ui-<fw>/ssr`, реэкспортящий барель.
  *
- * Порядок импортов load-bearing: `@labpics/ui-core/ssr` ставит DOM-шим ПЕРВЫМ, только
- * потом импортится модуль элемента (иначе `LitElement extends HTMLElement` упал бы —
- * в Node нет HTMLElement до шима). Регистрация элемента обязательна: @lit-labs/ssr
- * эмитит shadow root только известных элементов.
+ * `@labpics/ui-core/ssr` владеет DOM-окружением и сохраняет существующий registry.
+ * Регистрация элемента обязательна: @lit-labs/ssr эмитит shadow root только
+ * известных элементов. Обычный static import собранного входа проверяется
+ * в ssr-entry.test.ts без прогрева окружения тестовым раннером.
  */
 import { join } from 'node:path';
 import { adapterSrc } from '../paths.js';
