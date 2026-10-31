@@ -87,4 +87,61 @@ console.log(JSON.stringify({dsd: renderButton({}, {default: 'Button'}).includes(
       ),
     ).toEqual({ dsd: true });
   });
+
+  it('сохраняет native fetch при холодном импорте адаптера', () => {
+    expect(
+      run(
+        'vue',
+        `const originalFetch = globalThis.fetch;
+const { renderButton } = await import('@labpics/ui-vue/ssr');
+const markup = renderButton({}, {default: 'Button'});
+console.log(JSON.stringify({
+  fetch: globalThis.fetch === originalFetch,
+  dsd: markup.includes('shadowrootmode'),
+  native: markup.includes('<button'),
+}));`,
+      ),
+    ).toEqual({ fetch: true, dsd: true, native: true });
+  });
+
+  it('сохраняет host fetch и registry при смешанном ESM → CJS импорте', () => {
+    expect(
+      run(
+        'vue',
+        `import { createRequire } from 'node:module';
+const originalFetch = globalThis.fetch;
+const hostFetch = (...args) => originalFetch(...args);
+globalThis.fetch = hostFetch;
+const { renderButton } = await import('@labpics/ui-vue/ssr');
+const esmFetch = globalThis.fetch === hostFetch;
+const registry = customElements;
+const Button = registry.get('lab-button');
+class ExistingElement extends Button {}
+registry.define('consumer-existing', ExistingElement);
+const esmMarkup = renderButton({}, {default: 'Button'});
+globalThis.fetch = hostFetch;
+const { html, renderToString } = createRequire(import.meta.url)('@labpics/ui-core/ssr');
+const cjsMarkup = renderToString(html\`<lab-button>Button</lab-button>\`);
+console.log(JSON.stringify({
+  esmFetch,
+  cjsFetch: globalThis.fetch === hostFetch,
+  registry: customElements === registry,
+  existing: customElements.get('consumer-existing') === ExistingElement,
+  button: customElements.get('lab-button') === Button,
+  esmDsd: esmMarkup.includes('shadowrootmode'),
+  cjsDsd: cjsMarkup.includes('shadowrootmode'),
+  cjsNative: cjsMarkup.includes('<button'),
+}));`,
+      ),
+    ).toEqual({
+      esmFetch: true,
+      cjsFetch: true,
+      registry: true,
+      existing: true,
+      button: true,
+      esmDsd: true,
+      cjsDsd: true,
+      cjsNative: true,
+    });
+  });
 });

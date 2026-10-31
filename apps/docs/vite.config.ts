@@ -20,8 +20,7 @@ function ssrProofPlugin(): Plugin {
     name: 'labui-ssr-proof',
     async transformIndexHtml(html, ctx) {
       if (!ctx.path.endsWith('proof.html') || !html.includes(PLACEHOLDER)) return html;
-      // Import order is load-bearing: the SSR shim installs the DOM shim, then the
-      // proof element registers against it.
+      // Определение элемента должно попасть в общий registry Lit до рендеринга.
       const { renderToString, html: litHtml } = await import('@labpics/ui-core/ssr');
       await import('@labpics/ui-core/proof');
       const dsd = renderToString(
