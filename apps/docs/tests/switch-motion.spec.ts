@@ -193,23 +193,40 @@ for (const renderer of ['lit', 'react'] as const) {
       const fixture = window.switchMotionFixture;
       const thumb = fixture.thumb(renderer);
       const samples: Array<{ t: number; x: number }> = [];
-      const now = performance.now();
       await fixture.toggle(renderer);
       const checked = fixture.input(renderer).checked;
-      for (;;) {
-        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-        const t = performance.now() - now;
-        samples.push({ t, x: new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41 });
-        if (t >= 650) break;
+      const [animation] = thumb.getAnimations();
+      if (!animation) throw new Error('Switch должен запустить настоящую анимацию');
+      const initialPlayState = animation.playState;
+      await animation.ready;
+      const timing = animation.effect?.getComputedTiming();
+      const activeStart = Math.max(Math.min(Number(timing?.delay), Number(timing?.endTime)), 0);
+      // ready разрешает pending play, но не доказывает начало активного интервала.
+      if (typeof timing?.localTime !== 'number' || !(timing.localTime >= activeStart)) {
+        throw new Error(`Анимация не достигла активного интервала: ${JSON.stringify(timing)}`);
       }
-      return { checked, samples };
+      const start = { localTime: timing.localTime, delay: timing.delay, activeStart };
+      const duration = Number(timing.duration);
+      // Сэмплируем нативную траекторию: доставка rAF не задаёт фазу compositor.
+      animation.pause();
+      for (let t = 0; t < duration; t += 8) {
+        animation.currentTime = t;
+        samples.push({ t, x: new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41 });
+      }
+      // Отдельно проверяем настоящее завершение без finish() или скачка в финал.
+      animation.currentTime = 0;
+      animation.play();
+      await animation.finished;
+      const final = new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41;
+      return { checked, samples, duration, final, initialPlayState, start };
     }, renderer);
     await saveTrace(testInfo, `${renderer}-spring-trace`, result);
+    expect(result.initialPlayState, 'Switch сам запускает движение').toBe('running');
     expect(result.checked).toBe(true);
     const peak = Math.max(...result.samples.map((sample) => sample.x));
     expect(peak, 'Физическая пружина проходит чуть дальше цели').toBeGreaterThan(16.01);
     expect(peak, 'Характер остаётся деликатным: выход меньше 5% хода').toBeLessThan(16.8);
-    expect(result.samples.at(-1)?.x).toBeCloseTo(16, 2);
+    expect(result.final).toBeCloseTo(16, 2);
     await page.evaluate((renderer) => window.switchMotionFixture.toggle(renderer), renderer);
     await expect.poll(() => position(page, renderer)).toBeCloseTo(0, 2);
   });
@@ -222,42 +239,72 @@ for (const renderer of ['lit', 'react'] as const) {
       const fixture = window.switchMotionFixture;
       const thumb = fixture.thumb(renderer);
       const read = () => new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41;
-      const frame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      await fixture.toggle(renderer);
-      const start = performance.now();
-      const samples: Array<{ t: number; x: number }> = [];
-      do {
-        await frame();
-        samples.push({ t: performance.now() - start, x: read() });
-      } while (performance.now() - start < 25);
-      const before = read();
-      await fixture.toggle(renderer);
-      const after = read();
-      const checked = fixture.input(renderer).checked;
-      // Compositor может предъявить начальную позу ещё один кадр. Проверяем
-      // направление первого изменившегося кадра, а не частоту доставки кадров.
-      let next = after;
-      for (let i = 0; i < 3 && Math.abs(next - after) < 0.001; i++) {
-        await frame();
-        next = read();
-      }
-      for (let n = 0; n < 35; n++) {
-        await frame();
-        samples.push({ t: performance.now() - start, x: read() });
-      }
-      return { before, after, next, checked, samples };
+      const activeInterval = async (animation: Animation) => {
+        await animation.ready;
+        const timing = animation.effect?.getComputedTiming();
+        const activeStart = Math.max(Math.min(Number(timing?.delay), Number(timing?.endTime)), 0);
+        // Проверяем native localTime до pause/seek, учитывая границу effect.delay.
+        if (typeof timing?.localTime !== 'number' || !(timing.localTime >= activeStart)) {
+          throw new Error(`Анимация не достигла активного интервала: ${JSON.stringify(timing)}`);
+        }
+        return { localTime: timing.localTime, delay: timing.delay, activeStart };
+      };
+      const reverse = async () => {
+        await fixture.toggle(renderer);
+        const [opening] = thumb.getAnimations();
+        if (!opening) throw new Error('Switch должен запустить настоящую анимацию');
+        const openingStart = await activeInterval(opening);
+        // Фиксируем только исходную фазу: новый retarget движется самостоятельно.
+        opening.pause();
+        opening.currentTime = 32;
+        const before = read();
+        await fixture.toggle(renderer);
+        const after = read();
+        const checked = fixture.input(renderer).checked;
+        const [animation] = thumb.getAnimations();
+        if (!animation) throw new Error('Смена цели должна продолжить анимацию');
+        const start = await activeInterval(animation);
+        return { before, after, checked, animation, openingStart, start };
+      };
+      const { animation: naturalAnimation, ...natural } = await reverse();
+      // Не исправляем паузу или задержку запуска ручным play()/seek().
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(
+          () => reject(new Error('Смена цели не завершилась самостоятельно за 5 с')),
+          5_000,
+        );
+        naturalAnimation.finished.then(
+          () => {
+            clearTimeout(timeout);
+            resolve(undefined);
+          },
+          (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          },
+        );
+      });
+      const final = read();
+      // Скорость измеряем отдельно, не меняя естественное проигрывание выше.
+      const { animation: phaseAnimation, ...phase } = await reverse();
+      phaseAnimation.pause();
+      phaseAnimation.currentTime = 8;
+      return { natural, final, phase, next: read() };
     }, renderer);
     await saveTrace(testInfo, `${renderer}-retarget-trace`, result);
-    expect(result.checked).toBe(false);
-    expect(result.before).toBeGreaterThan(0.2);
-    expect(Math.abs(result.after - result.before), 'Смена цели не переносит бегунок').toBeLessThan(
-      0.3,
-    );
+    for (const sample of [result.natural, result.phase]) {
+      expect(sample.checked).toBe(false);
+      expect(sample.before).toBeGreaterThan(0.2);
+      expect(
+        Math.abs(sample.after - sample.before),
+        'Смена цели не переносит бегунок',
+      ).toBeLessThan(0.3);
+    }
     expect(
-      result.next - result.after,
+      result.next - result.phase.after,
       'Сохранённая скорость сначала продолжает прежнее движение',
     ).toBeGreaterThan(0.02);
-    expect(result.samples.at(-1)?.x).toBeCloseTo(0, 2);
+    expect(result.final).toBeCloseTo(0, 2);
   });
 
   test(`${renderer}: изменение rem и размера сохраняет конечную геометрию`, async ({ page }) => {
