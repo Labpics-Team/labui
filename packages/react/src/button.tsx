@@ -39,12 +39,9 @@ export interface ButtonProps
   /** Control size. */
   size?: LabButtonSize;
   /**
-   * Square, icon-only button (the `icon` slot fills it; no label). An icon-only
-   * button has no visible text, so it MUST be named with an `aria-label` (WCAG
-   * 4.1.2) — that attribute reaches the native `<button>` via the inherited
-   * native-attribute props. The Lit `<lab-button>` forwards its host `aria-label`
-   * onto the inner shadow button for the same case, so ONE prop names an icon-only
-   * button on either renderer (ADR-0001 parity).
+   * Квадратная кнопка без видимой подписи. Имя задаётся через `aria-label` либо
+   * `children`: они визуально скрыты, но доступны скринридеру. Явное `aria-label`
+   * передаётся нативной кнопке и имеет приоритет в обоих рендерерах.
    */
   icon?: boolean;
   /** Shows a spinner and blocks interaction without collapsing layout. */

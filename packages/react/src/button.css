@@ -381,7 +381,15 @@
   gap: var(--lab-space-sm, 0.5rem);
 }
 [data-lab-button][data-icon="true"] .lab-button-label {
-  display: none;
+  /* Подпись не занимает место, но остаётся источником доступного имени. */
+  position: absolute;
+  width: var(--lab-stroke-hairline);
+  height: var(--lab-stroke-hairline);
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 [data-lab-button][data-loading="true"] .lab-button-content {
   /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of

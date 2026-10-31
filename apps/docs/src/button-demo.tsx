@@ -167,3 +167,50 @@ function GeometryButton({
     </Button>
   );
 }
+
+const namesMount = document.querySelector('#button-names');
+if (!namesMount) throw new Error('Missing Button name specimens');
+createRoot(namesMount).render(<ButtonNames />);
+
+function ButtonNames() {
+  const [icon, setIcon] = useState(true);
+  const [loading, setLoading] = useState(false);
+  return (
+    <>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="names-icon"
+          checked={icon}
+          onChange={(event) => setIcon(event.currentTarget.checked)}
+        />
+        Только иконка
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          data-testid="names-loading"
+          checked={loading}
+          onChange={(event) => setLoading(event.currentTarget.checked)}
+        />
+        Загрузка
+      </label>
+      {(['explicit-default', 'default', 'explicit'] as const).map((name) => (
+        <Button
+          key={name}
+          data-testid={`react-name-${name}`}
+          icon={icon}
+          loading={loading}
+          aria-label={name !== 'default' ? 'Add item' : undefined}
+          iconSlot={
+            <svg viewBox="0 0 16 16" width={16} height={16} aria-hidden="true">
+              <path d={iconPath} stroke="currentColor" />
+            </svg>
+          }
+        >
+          {name !== 'explicit' && <span>Add</span>}
+        </Button>
+      ))}
+    </>
+  );
+}

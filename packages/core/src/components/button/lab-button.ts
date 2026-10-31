@@ -59,7 +59,7 @@ export class LabButton extends LabElement {
     disabled: { type: Boolean, reflect: true },
     htmlType: { attribute: 'html-type' },
     /**
-     * Accessible name for the icon-only case (WCAG 4.1.2). A consumer's
+     * Accessible name (WCAG 4.1.2). A consumer's
      * `aria-label` on the host does NOT cross the shadow boundary onto the inner
      * `<button>`, so without this property an icon-only button (empty default
      * slot, decorative icon) would render with NO accessible name. Declaring it
@@ -355,7 +355,15 @@ export class LabButton extends LabElement {
       gap: ${litVar('--lab-space-sm', '0.5rem')};
     }
     :host([icon]) .label {
-      display: none;
+      /* Подпись не занимает место, но остаётся источником доступного имени. */
+      position: absolute;
+      width: ${litVar('--lab-stroke-hairline')};
+      height: ${litVar('--lab-stroke-hairline')};
+      min-height: 0;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
     :host([loading]) .content {
       /* color: transparent — see button.css (React twin) for the full WCAG
@@ -397,16 +405,9 @@ export class LabButton extends LabElement {
     // spinner is always present (CSS hides it) so @lit-labs/ssr never sees a
     // conditional child template.
     const inactive = this.disabled || this.loading;
-    // ACCESSIBLE NAME (WCAG 4.1.2). A button with a visible default-slot label is
-    // named by that text — the platform computes the name from the slotted content,
-    // so no aria-label is wanted (one would silently override the visible label).
-    // An ICON-ONLY button has an empty default slot, so the projected text gives no
-    // name; the consumer's host `aria-label` is the only name source and MUST be
-    // forwarded onto the inner <button>. We forward it only in that icon-only case,
-    // and mark the (decorative) icon slot aria-hidden then so it cannot contribute a
-    // competing name. Mirrors the React twin ⇒ both renderers resolve the SAME name.
-    const iconOnly = !this.hasDefaultSlotContent();
-    const innerAriaLabel = iconOnly && this.ariaLabel ? this.ariaLabel : undefined;
+    // Явное имя имеет native-приоритет, как у React. Без него имя даёт default
+    // slot, в том числе визуально скрытая icon-подпись. SSR не исследует light DOM.
+    const innerAriaLabel = this.ariaLabel || undefined;
     return html`
       <button
         type=${this.htmlType}

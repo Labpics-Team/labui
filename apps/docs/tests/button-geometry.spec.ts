@@ -15,6 +15,67 @@ async function box(element: Locator) {
 }
 
 for (const renderer of ['lit', 'react'] as const) {
+  test(`${renderer}: supplied name survives icon, label and loading transitions`, async ({
+    page,
+  }) => {
+    await page.goto('/button.html');
+    if (renderer === 'lit') {
+      await page.evaluate(async () => {
+        await customElements.whenDefined('lab-button');
+        for (const name of ['explicit-default', 'default', 'explicit']) {
+          const button = document.createElement('lab-button');
+          button.setAttribute('icon', '');
+          button.dataset.testid = `lit-name-${name}`;
+          if (name !== 'default') button.setAttribute('aria-label', 'Add item');
+          button.innerHTML =
+            '<svg slot="icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" /></svg>';
+          if (name !== 'explicit') {
+            const label = document.createElement('span');
+            label.textContent = 'Add';
+            button.append(label);
+          }
+          document.querySelector('#lit-button-names')?.append(button);
+        }
+      });
+    }
+    for (const [icon, loading] of [
+      [true, false],
+      [true, true],
+      [false, true],
+      [false, false],
+      [true, false],
+    ] as const) {
+      if (renderer === 'react') {
+        await page.getByTestId('names-icon').setChecked(icon);
+        await page.getByTestId('names-loading').setChecked(loading);
+      } else {
+        await page.locator('lab-button[data-testid^="lit-name-"]').evaluateAll(
+          (elements, state) => {
+            for (const element of elements) {
+              element.toggleAttribute('icon', state.icon);
+              element.toggleAttribute('loading', state.loading);
+            }
+          },
+          { icon, loading },
+        );
+      }
+      for (const name of ['explicit-default', 'default', 'explicit']) {
+        const specimen = page.getByTestId(`${renderer}-name-${name}`);
+        const button = renderer === 'lit' ? specimen.locator('button') : specimen;
+        await expect
+          .soft(button, `${name}, icon=${icon}, loading=${loading}`)
+          .toHaveAccessibleName(name === 'default' ? 'Add' : 'Add item');
+        if (loading) await expect(button).toBeDisabled();
+        else await expect(button).toBeEnabled();
+        if (icon) {
+          const bounds = await box(button);
+          expect(bounds.width).toBeCloseTo(48, 1);
+          expect(bounds.height).toBeCloseTo(48, 1);
+        }
+      }
+    }
+  });
+
   for (const rootPx of [16, 20]) {
     for (const viewportWidth of [320, 1280]) {
       test(`${renderer}: Button geometry at root ${rootPx}, viewport ${viewportWidth}`, async ({
@@ -239,3 +300,18 @@ for (const renderer of ['lit', 'react'] as const) {
     await testInfo.attach('Button forced colors', { path, contentType: 'image/png' });
   });
 }
+
+test('SSR: supplied Button name exists without JavaScript', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto('/_fixtures/button-names.html');
+    for (const name of ['explicit-default', 'default', 'explicit', 'loading', 'visible']) {
+      const button = page.getByTestId(`ssr-${name}`).locator('button');
+      await expect.soft(button, name).toHaveAccessibleName(name === 'default' ? 'Add' : 'Add item');
+      if (name === 'loading') await expect(button).toBeDisabled();
+    }
+  } finally {
+    await context.close();
+  }
+});
