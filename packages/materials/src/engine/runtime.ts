@@ -42,6 +42,13 @@ import { attach as attachVeil, supportsBackdropBlur } from './veil';
 const SURFACE = '.lab-material';
 const VEIL = '[data-veil]';
 
+/** Glass/Acrylic CSS recipes are inside @scope; an unsupported rule falls
+ * back to opaque Solid. Do not start invisible SVG filters in that case.
+ * Veil has an independent CSS recipe and must keep its own capability gate. */
+function supportsScopedMaterialRecipes(): boolean {
+  return typeof (globalThis as { CSSScopeRule?: unknown }).CSSScopeRule === 'function';
+}
+
 /** An engine holds a `.lab-material` only when its NEAREST material scope carries
  *  the engine's mode — mirroring the material.css selector
  *  `[data-material="<mode>"] .lab-material` (the closest scope wins in CSS
@@ -58,7 +65,7 @@ const BINDINGS: readonly EngineBinding[] = [
   // Glass (refraction). refreshHeld:false — сохраняет прежнее поведение: LG
   // ре-рендерит вне этой петли (свой ResizeObserver), рантайм его не дёргает.
   {
-    gate: supportsRefraction,
+    gate: () => supportsScopedMaterialRecipes() && supportsRefraction(),
     selector: SURFACE,
     wants: (el) => inModeScope(el, 'glass'),
     refreshHeld: false,
@@ -68,7 +75,7 @@ const BINDINGS: readonly EngineBinding[] = [
   // деградаций → blocked() опустошает set под запрещающими медиа, их change
   // ре-синкает mount. refreshHeld:true — перечитать tier на удержанной.
   {
-    gate: supportsAcrylicChain,
+    gate: () => supportsScopedMaterialRecipes() && supportsAcrylicChain(),
     selector: SURFACE,
     wants: (el) => inModeScope(el, 'acrylic'),
     blocked: acrylicMediaBlocked,
