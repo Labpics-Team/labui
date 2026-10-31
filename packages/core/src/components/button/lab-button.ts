@@ -386,6 +386,9 @@ export class LabButton extends LabElement {
     :host([type='danger'][kind='fill']) .description {
       color: ${litVar('--lab-label-static-light-secondary')};
     }
+    :host([icon]) slot[name='end'] {
+      display: none;
+    }
     :host([icon]) .label {
       /* Подпись не занимает место, но остаётся источником доступного имени. */
       position: absolute;

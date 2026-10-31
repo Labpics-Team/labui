@@ -230,7 +230,7 @@ export const buttonDoc: ComponentDoc = {
         name: 'icon',
         type: 'boolean',
         default: 'false',
-        description: 'Square, icon-only mode. The icon slot fills a square sized to the size axis.',
+        description: 'Квадратная кнопка с основной иконкой. Подпись и завершающая иконка скрыты.',
       },
       {
         name: 'loading',
@@ -273,7 +273,7 @@ export const buttonDoc: ComponentDoc = {
       {
         name: 'end / endSlot',
         description:
-          'Завершающая иконка с тем же размерным контрактом. Отсутствующее назначение не занимает места; пустой обычный элемент резервирует область. Пустая обёртка display:contents может схлопнуться.',
+          'Завершающая иконка с тем же размерным контрактом; скрыта в квадратном режиме icon. Отсутствующее назначение не занимает места; пустой обычный элемент резервирует область. Пустая обёртка display:contents может схлопнуться.',
       },
     ],
   },

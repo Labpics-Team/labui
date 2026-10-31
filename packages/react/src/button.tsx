@@ -41,7 +41,8 @@ export interface ButtonProps
   /** Дополнительная подпись в строке после основного текста. */
   description?: string;
   /**
-   * Квадратная кнопка без видимой подписи. Имя задаётся через `aria-label` либо
+   * Квадратная кнопка с основной иконкой, без видимой подписи и endSlot.
+   * Имя задаётся через `aria-label` либо
    * `children`: они визуально скрыты, но доступны скринридеру. Явное `aria-label`
    * передаётся нативной кнопке и имеет приоритет в обоих рендерерах.
    */
@@ -54,7 +55,7 @@ export interface ButtonProps
   htmlType?: LabButtonHtmlType;
   /** Leading icon content (parity with the Lit `icon` slot). */
   iconSlot?: ReactNode;
-  /** Завершающая иконка (slot="end" в Lit). Размер рисунка задаёт потребитель. */
+  /** Завершающая иконка (slot="end" в Lit), скрыта при icon. Размер задаёт потребитель. */
   endSlot?: ReactNode;
   /** Label content (parity with the Lit default slot). */
   children?: ReactNode;

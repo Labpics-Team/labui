@@ -95,6 +95,45 @@ test('Lit: anatomy keeps caller glyph size and renders description and end icon'
 
 for (const renderer of ['lit', 'react', 'vue'] as const) {
   for (const rootPx of [16, 20]) {
+    test(`${renderer}: icon mode centers one glyph and restores end at root ${rootPx}`, async ({
+      page,
+    }, testInfo) => {
+      await page.goto('/_fixtures/button-anatomy.html');
+      await page.evaluate((value) => {
+        document.documentElement.style.fontSize = `${value}px`;
+      }, rootPx);
+      await page.getByTestId(`${renderer}-anatomy-icon`).check();
+      for (const expected of reference) {
+        const host = page.getByTestId(`${renderer}-anatomy-${expected.size}-full`);
+        const button = nativeButton(host, renderer);
+        await expect(region(host, renderer, 'end')).not.toBeVisible();
+        await expect(button).toHaveAccessibleName('Button Description');
+        const square = await bounds(button);
+        const leading = await glyphInRegion(
+          host,
+          renderer,
+          'start',
+          (expected.region * rootPx) / 16,
+        );
+        expect(square.width).toBeCloseTo((expected.height * rootPx) / 16, 1);
+        expect(square.height).toBeCloseTo(square.width, 1);
+        expect(leading.x + leading.width / 2).toBeCloseTo(square.x + square.width / 2, 1);
+        expect(leading.y + leading.height / 2).toBeCloseTo(square.y + square.height / 2, 1);
+      }
+      if (renderer === 'lit' && rootPx === 16) {
+        await page.evaluate(() => document.fonts.ready);
+        const path = testInfo.outputPath('button-anatomy-icon.png');
+        await page.locator('#lit-anatomy').screenshot({ path });
+        await testInfo.attach('Button icon anatomy', { path, contentType: 'image/png' });
+      }
+      await page.getByTestId(`${renderer}-anatomy-icon`).uncheck();
+      for (const expected of reference) {
+        const host = page.getByTestId(`${renderer}-anatomy-${expected.size}-full`);
+        await expect(region(host, renderer, 'end')).toBeVisible();
+        await glyphInRegion(host, renderer, 'end', (expected.region * rootPx) / 16);
+      }
+    });
+
     test(`${renderer}: anatomy dimensions and wrappers at root ${rootPx}`, async ({
       page,
     }, testInfo) => {

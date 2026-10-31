@@ -408,6 +408,9 @@
 [data-lab-button][data-type="danger"][data-kind="fill"] .lab-button-description {
   color: var(--lab-label-static-light-secondary);
 }
+[data-lab-button][data-icon="true"] .lab-button-icon[data-position="end"] {
+  display: none;
+}
 [data-lab-button][data-icon="true"] .lab-button-label {
   /* Подпись не занимает место, но остаётся источником доступного имени. */
   position: absolute;
