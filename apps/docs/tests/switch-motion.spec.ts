@@ -164,23 +164,83 @@ for (const renderer of ['lit', 'react'] as const) {
       const track = thumb.parentElement;
       if (!track) throw new Error('У бегунка должен быть track');
       const readColor = () => getComputedStyle(track).backgroundColor;
-      const before = readColor();
+      const readPosition = () => new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41;
+      const start = async () => {
+        const before = readColor();
+        await fixture.toggle(renderer);
+        const state = {
+          before,
+          checked: fixture.input(renderer).checked,
+          inputType: fixture.input(renderer).type,
+          color: readColor(),
+        };
+        const [animation] = thumb.getAnimations();
+        if (!animation || animation.playState !== 'running') {
+          throw new Error('Switch должен самостоятельно запустить движение');
+        }
+        // toggle завершает commit в microtask: исходная анимация ещё не должна пропустить начало.
+        if (animation.currentTime !== 0) {
+          throw new Error(`Анимация должна начинаться с нуля: ${animation.currentTime}`);
+        }
+        const finished = animation.finished;
+        await animation.ready;
+        const timing = animation.effect?.getComputedTiming();
+        const activeStart = Math.max(Math.min(Number(timing?.delay), Number(timing?.endTime)), 0);
+        if (typeof timing?.localTime !== 'number' || !(timing.localTime >= activeStart)) {
+          throw new Error(`Анимация не достигла активного интервала: ${JSON.stringify(timing)}`);
+        }
+        // Fixture не меняет скорость: native-время должно совпадать со временем воспроизведения.
+        if (animation.playbackRate !== 1) {
+          throw new Error(`Ожидалась обычная скорость native-анимации: ${animation.playbackRate}`);
+        }
+        const clock = {
+          sameTimeline: animation.timeline === document.timeline,
+          delay: timing.delay,
+          endDelay: timing.endDelay,
+          iterationStart: timing.iterationStart,
+          iterations: timing.iterations,
+          direction: timing.direction,
+        };
+        // Настройки default opening не сдвигают и не обрезают native-кривую.
+        if (
+          !clock.sameTimeline ||
+          clock.delay !== 0 ||
+          clock.endDelay !== 0 ||
+          clock.iterationStart !== 0 ||
+          clock.iterations !== 1 ||
+          clock.direction !== 'normal'
+        ) {
+          throw new Error(`Нарушена исходная шкала native-анимации: ${JSON.stringify(clock)}`);
+        }
+        return { animation, finished, state };
+      };
+      const natural = await start();
+      // Сначала движение завершается без вмешательства наблюдателя.
+      await natural.finished;
+      const completed = { ...natural.state, after: readColor(), final: readPosition() };
       await fixture.toggle(renderer);
-      const checked = fixture.input(renderer).checked;
-      const inputType = fixture.input(renderer).type;
-      const color = readColor();
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-      const movingX = new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41;
+      await Promise.all(thumb.getAnimations().map((animation) => animation.finished));
+      const phase = await start();
+      // Число rAF не задаёт фазу compositor: проверяем промежуточную native-позу.
+      phase.animation.pause();
+      phase.animation.currentTime = 32;
+      const movingX = readPosition();
       const during = readColor();
-      await new Promise<void>((resolve) => setTimeout(resolve, 650));
-      return { before, checked, inputType, color, during, after: readColor(), movingX };
+      return {
+        completed,
+        phase: { ...phase.state, during },
+        movingX,
+      };
     }, renderer);
-    expect(result.checked).toBe(true);
-    expect(result.inputType).toBe('checkbox');
-    expect(result.color).not.toBe(result.before);
-    expect(result.during).toBe(result.color);
-    expect(result.after).toBe(result.color);
+    for (const state of [result.completed, result.phase]) {
+      expect(state.checked).toBe(true);
+      expect(state.inputType).toBe('checkbox');
+      expect(state.color).not.toBe(state.before);
+    }
+    expect(result.completed.after).toBe(result.completed.color);
+    expect(result.completed.final).toBeCloseTo(16, 2);
+    expect(result.phase.before).toBe(result.completed.before);
+    expect(result.phase.during).toBe(result.phase.color);
     expect(result.movingX).toBeGreaterThan(0);
     expect(result.movingX).toBeLessThan(15.9);
   });
