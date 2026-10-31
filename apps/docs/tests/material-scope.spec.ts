@@ -176,10 +176,14 @@ test('missing @scope capability skips invisible glass/acrylic engines, not Veil'
 
   for (const mode of ['glass', 'acrylic']) {
     const surface = await tree(page, ['solid', mode]);
-    await expect.poll(() => surface.evaluate((el) => ({
-      filter: (el as HTMLElement).style.backdropFilter,
-      lensed: el.classList.contains('lab-material--lensed'),
-    }))).toEqual({ filter: '', lensed: false });
+    await expect
+      .poll(() =>
+        surface.evaluate((el) => ({
+          filter: (el as HTMLElement).style.backdropFilter,
+          lensed: el.classList.contains('lab-material--lensed'),
+        })),
+      )
+      .toEqual({ filter: '', lensed: false });
   }
   await expect(page.locator('.lab-acrylic-defs filter')).toHaveCount(0);
 
@@ -189,5 +193,7 @@ test('missing @scope capability skips invisible glass/acrylic engines, not Veil'
     veil.style.cssText = 'position:relative;width:320px;height:160px';
     document.querySelector('.stage')?.appendChild(veil);
   });
-  await expect.poll(() => page.locator('[data-veil] .lab-veil__strip').count()).toBeGreaterThan(0);
+  await expect
+    .poll(() => page.locator('[data-veil] .lab-veil__strip').count())
+    .toBeGreaterThan(0);
 });
