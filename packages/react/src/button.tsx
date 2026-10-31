@@ -93,9 +93,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       data-loading={loading || undefined}
     >
       <span className="lab-button-spinner" aria-hidden="true" />
-      <span className="lab-button-label">
+      <span className="lab-button-content">
         {iconSlot}
-        {children}
+        <span className="lab-button-label">{children}</span>
       </span>
     </button>
   );

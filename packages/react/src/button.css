@@ -18,13 +18,14 @@
 [data-lab-button] {
   /* Size knobs the size axis maps onto. Dimension fallbacks keep it usable
      before tokens load; colour roles below never carry a fallback. */
-  --_lab-btn-radius: var(--lab-radius-control, 0.5rem);
-  --_lab-btn-font: var(--lab-font-size-md, 1rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-md, -0.0083em);
-  --_lab-btn-pad-x: var(--lab-space-md, 1rem);
-  --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-min: var(--lab-size-control-h-m, 2.5rem);
+  --_lab-btn-radius: var(--lab-radius-button, 1rem);
+  --_lab-btn-font: var(--lab-font-size-button-label, 1rem);
+  --_lab-btn-line: var(--lab-line-height-button-label, 1.5);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-label, 0em);
+  --_lab-btn-pad-x: var(--lab-space-button-inset, 0.75rem);
+  --_lab-btn-pad-y: var(--lab-space-button-inset, 0.75rem);
+  --_lab-btn-content: var(--lab-size-button-content, 1.5rem);
+  --_lab-btn-min: var(--lab-size-button-h-m, 3rem);
 
   box-sizing: border-box;
   position: relative;
@@ -32,16 +33,15 @@
   align-items: center;
   justify-content: center;
   vertical-align: middle;
-  gap: var(--_lab-btn-gap);
   min-height: var(--_lab-btn-min);
   padding: var(--_lab-btn-pad-y) var(--_lab-btn-pad-x);
   border-radius: var(--_lab-btn-radius);
-  border: var(--lab-stroke-hairline) solid transparent;
+  border: 0 solid transparent;
   font: inherit;
   font-size: var(--_lab-btn-font);
   letter-spacing: var(--_lab-btn-tracking);
-  line-height: var(--lab-line-height-md, 1.5);
-  font-weight: var(--lab-font-weight-semibold, 600);
+  line-height: var(--_lab-btn-line);
+  font-weight: var(--lab-font-weight-medium, 500);
   cursor: pointer;
   transition: background-color var(--lab-motion-transition-duration)
     var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration)
@@ -52,19 +52,31 @@
   color: var(--lab-label-primary);
 }
 
+/* Border округляется браузером до device px. Отдельная обводка сохраняет
+   rem-inset при любом масштабе и наследует цвет настоящего состояния. */
+[data-lab-button]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: var(--lab-stroke-hairline) solid;
+  border-color: inherit;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 [data-lab-button][data-size="s"] {
-  --_lab-btn-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0009em);
-  --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
-  --_lab-btn-min: var(--lab-size-control-h-s, 2rem);
+  --_lab-btn-radius: var(--lab-radius-full, 9999px);
+  --_lab-btn-font: var(--lab-font-size-button-label-s, 0.875rem);
+  --_lab-btn-line: var(--lab-line-height-button-label-s, 0.8571);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-label-s, 0em);
+  --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-btn-content: var(--lab-size-button-content-s, 1.25rem);
+  --_lab-btn-min: var(--lab-size-button-h-s, 2.25rem);
 }
 [data-lab-button][data-size="l"] {
-  --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0194em);
-  --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
+  --_lab-btn-pad-x: var(--lab-space-md, 1rem);
   --_lab-btn-pad-y: var(--lab-space-md, 1rem);
-  --_lab-btn-min: var(--lab-size-control-h-l, 3rem);
+  --_lab-btn-min: var(--lab-size-button-h-l, 3.5rem);
 }
 
 /* Icon-only: square, no text padding asymmetry. */
@@ -351,12 +363,27 @@
 [data-lab-button][data-loading="true"] {
   cursor: progress;
 }
+[data-lab-button] .lab-button-content {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+[data-lab-button] .lab-button-content > :not(.lab-button-label) {
+  flex: none;
+  width: var(--_lab-btn-content);
+  height: var(--_lab-btn-content);
+}
 [data-lab-button] .lab-button-label {
   display: inline-flex;
   align-items: center;
-  gap: var(--_lab-btn-gap);
+  min-height: var(--_lab-btn-content);
+  padding-inline: var(--lab-space-sm, 0.5rem);
+  gap: var(--lab-space-sm, 0.5rem);
 }
-[data-lab-button][data-loading="true"] .lab-button-label {
+[data-lab-button][data-icon="true"] .lab-button-label {
+  display: none;
+}
+[data-lab-button][data-loading="true"] .lab-button-content {
   /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of
      those strip the label from the accessibility tree in at least one engine
      (visibility:hidden everywhere; WebKit ALSO drops opacity:0 from its a11y

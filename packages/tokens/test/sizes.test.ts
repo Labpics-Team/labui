@@ -46,6 +46,12 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'switch-row': 24,
     // Независимая роль сохраняет существующую геометрию Combobox.
     'combobox-trigger': 36,
+    // Button: read-only эталон, docs/reference/design-baseline.md (2026-10-31).
+    'button-h-s': 36,
+    'button-h-m': 48,
+    'button-h-l': 56,
+    'button-content-s': 20,
+    'button-content': 24,
     // Loader: толщина штриха спиннера (DECLARED).
     'loader-stroke-s': 2,
     'loader-stroke-m': 3,
@@ -90,6 +96,7 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     const axes = [
       ['control-s', 'control-m', 'control-l', 'control-xl'],
       ['control-h-s', 'control-h-m', 'control-h-l'],
+      ['button-h-s', 'button-h-m', 'button-h-l'],
       ['switch-track-s', 'switch-track-m', 'switch-track-l'],
       ['switch-track-h-s', 'switch-track-h-m', 'switch-track-h-l'],
       ['switch-thumb-s', 'switch-thumb-m', 'switch-thumb-l'],

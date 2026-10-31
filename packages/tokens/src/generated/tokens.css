@@ -39,6 +39,7 @@
   --lab-space-glow-core: var(--lab-space-2); /* -> 2 */
   --lab-space-glow-halo: var(--lab-space-8); /* -> 8 */
   --lab-space-switch-label-gap-l: var(--lab-space-3); /* -> 3 */
+  --lab-space-button-inset: var(--lab-space-3); /* -> 3 */
 
   /* Sizes — габариты контрол-бокса оси размера компонента (rem) */
   --lab-size-control-s: 0.75rem;
@@ -56,6 +57,11 @@
   --lab-size-switch-thumb-l: 1.25rem;
   --lab-size-switch-row: 1.5rem;
   --lab-size-combobox-trigger: 2.25rem;
+  --lab-size-button-h-s: 2.25rem;
+  --lab-size-button-h-m: 3rem;
+  --lab-size-button-h-l: 3.5rem;
+  --lab-size-button-content-s: 1.25rem;
+  --lab-size-button-content: 1.5rem;
   --lab-size-loader-stroke-s: 0.125rem;
   --lab-size-loader-stroke-m: 0.1875rem;
   --lab-size-loader-stroke-l: 0.25rem;
@@ -97,6 +103,7 @@
   --lab-radius-corner-k: 1.1; /* Corner shape curvature: corner-shape superellipse(K) over any radius. 1 = circle (off), 1.1 = DECLARED trade-off (NOT a geometric fit — the ζ=0.6 "fit" is retracted; see ADR-0002 §6 / config types.ts), ~2.3 = Apple icon squircle. */
   --lab-radius-none: var(--lab-radius-0); /* -> 0 */
   --lab-radius-control: var(--lab-radius-m); /* -> m */
+  --lab-radius-button: var(--lab-radius-xl); /* -> xl */
   --lab-radius-card: var(--lab-radius-xl); /* -> xl */
   --lab-radius-pill: var(--lab-radius-full); /* -> full */
   --lab-radius-circle: var(--lab-radius-full); /* -> full */
@@ -132,6 +139,8 @@
   --lab-font-size-6xl: clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem);
   --lab-font-size-switch-label: 1rem;
   --lab-font-size-switch-label-l: 1.25rem;
+  --lab-font-size-button-label-s: 0.875rem;
+  --lab-font-size-button-label: 1rem;
 
   /* Typography — line-height multipliers */
   --lab-line-height-xxs: 1;
@@ -146,6 +155,8 @@
   --lab-line-height-6xl: 0.8582;
   --lab-line-height-switch-label: 1.5;
   --lab-line-height-switch-label-l: 1;
+  --lab-line-height-button-label-s: 0.8571;
+  --lab-line-height-button-label: 1.5;
 
   /* Typography — font-weight scale (unitless) */
   --lab-font-weight-regular: 400;
@@ -166,6 +177,8 @@
   --lab-letter-spacing-6xl: -0.0469em;
   --lab-letter-spacing-switch-label: -0.015625em;
   --lab-letter-spacing-switch-label-l: -0.0165em;
+  --lab-letter-spacing-button-label-s: 0em;
+  --lab-letter-spacing-button-label: 0em;
 
   /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
   --lab-measure-narrow: 45ch;

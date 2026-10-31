@@ -458,6 +458,66 @@
         }
       }
     },
+    "button-h-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
+        }
+      }
+    },
+    "button-h-m": {
+      "$type": "dimension",
+      "$value": {
+        "value": 48,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3rem"
+        }
+      }
+    },
+    "button-h-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 56,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "3.5rem"
+        }
+      }
+    },
+    "button-content-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "button-content": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
     "loader-stroke-s": {
       "$type": "dimension",
       "$value": {
@@ -1198,6 +1258,30 @@
           "css": "1.25rem"
         }
       }
+    },
+    "button-label-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
+    "button-label": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1248,6 +1332,14 @@
     "switch-label-l": {
       "$type": "number",
       "$value": 1
+    },
+    "button-label-s": {
+      "$type": "number",
+      "$value": 0.857143
+    },
+    "button-label": {
+      "$type": "number",
+      "$value": 1.5
     }
   },
   "font-weight": {
@@ -1316,6 +1408,14 @@
     "switch-label-l": {
       "$type": "number",
       "$value": -0.0165
+    },
+    "button-label-s": {
+      "$type": "number",
+      "$value": 0
+    },
+    "button-label": {
+      "$type": "number",
+      "$value": 0
     }
   },
   "measure": {

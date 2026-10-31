@@ -10,8 +10,9 @@
  * switcher, so the single page carries both renderers under one [data-theme].
  */
 import '@labpics/ui-core/button';
+import '@labpics/fonts/fonts.css';
 import { Button } from '@labpics/ui-react';
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { wireThemeSwitch } from './theme-switch.js';
 
@@ -30,6 +31,9 @@ createRoot(mount).render(
     </Button>
     <Button data-testid="react-danger-border" type="danger" kind="border">
       Delete
+    </Button>
+    <Button data-testid="react-neutral-ghost" type="neutral" kind="ghost">
+      Details
     </Button>
     <Button data-testid="react-loading" type="accent" kind="fill" loading>
       Saving
@@ -60,3 +64,106 @@ createRoot(mount).render(
     </form>
   </StrictMode>,
 );
+
+// Одинаковые входы проходят через публичные API обоих рендереров.
+const geometrySizes = ['s', 'm', 'l'] as const;
+const geometryModes = ['text', 'leading', 'icon'] as const;
+const iconPath = 'M8 3v10M3 8h10';
+const litGeometry = document.querySelector('#geometry-lit');
+const reactGeometry = document.querySelector('#geometry-react');
+if (!litGeometry || !reactGeometry) throw new Error('Missing Button geometry mounts');
+
+for (const size of geometrySizes) {
+  const row = document.createElement('div');
+  row.className = 'geometry-row';
+  for (const mode of geometryModes) {
+    for (const loading of [false, true]) {
+      const button = document.createElement('lab-button');
+      button.size = size;
+      button.icon = mode === 'icon';
+      button.loading = loading;
+      button.addEventListener('click', () => {
+        button.loading = true;
+      });
+      button.dataset.testid = `lit-geometry-${size}-${mode}${loading ? '-loading' : ''}`;
+      if (mode === 'icon') button.setAttribute('aria-label', 'Add item');
+      if (mode !== 'text') {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('slot', 'icon');
+        svg.setAttribute('viewBox', '0 0 16 16');
+        svg.setAttribute('width', '16');
+        svg.setAttribute('height', '16');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', iconPath);
+        path.setAttribute('stroke', 'currentColor');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linecap', 'round');
+        svg.append(path);
+        button.append(svg);
+      }
+      if (mode !== 'icon') {
+        const label = document.createElement('span');
+        label.dataset.fixtureLabel = '';
+        label.textContent = 'Button';
+        button.append(label);
+      }
+      row.append(button);
+    }
+  }
+  litGeometry.append(row);
+}
+
+createRoot(reactGeometry).render(
+  <StrictMode>
+    {geometrySizes.map((size) => (
+      <div key={size} className="geometry-row">
+        {geometryModes.flatMap((mode) =>
+          [false, true].map((loading) => (
+            <GeometryButton
+              key={`${mode}-${loading}`}
+              data-testid={`react-geometry-${size}-${mode}${loading ? '-loading' : ''}`}
+              size={size}
+              mode={mode}
+              initialLoading={loading}
+            />
+          )),
+        )}
+      </div>
+    ))}
+  </StrictMode>,
+);
+
+function GeometryButton({
+  size,
+  mode,
+  initialLoading,
+  ...rest
+}: {
+  size: (typeof geometrySizes)[number];
+  mode: (typeof geometryModes)[number];
+  initialLoading: boolean;
+  'data-testid': string;
+}) {
+  const [loading, setLoading] = useState(initialLoading);
+  return (
+    <Button
+      {...rest}
+      size={size}
+      icon={mode === 'icon'}
+      loading={loading}
+      onClick={() => setLoading(true)}
+      aria-label={mode === 'icon' ? 'Add item' : undefined}
+      iconSlot={
+        mode !== 'text' ? (
+          <svg viewBox="0 0 16 16" width={16} height={16} fill="none" aria-hidden="true">
+            <path d={iconPath} stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+          </svg>
+        ) : undefined
+      }
+    >
+      {mode !== 'icon' && <span data-fixture-label="">Button</span>}
+    </Button>
+  );
+}

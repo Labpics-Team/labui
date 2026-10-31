@@ -98,28 +98,32 @@ export class LabButton extends LabElement {
       /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
          fallback so the control is usable before tokens load (css.ts rule);
          colour roles below never do. */
-      --_radius: ${litVar('--lab-radius-control', '0.5rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-      --_pad-x: ${litVar('--lab-space-md', '1rem')};
-      --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-      --_gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min: ${litVar('--lab-size-control-h-m', '2.5rem')}; /* connected --lab-size-control-h-* per playbook #137 */
+      --_radius: ${litVar('--lab-radius-button', '1rem')};
+      --_font: ${litVar('--lab-font-size-button-label', '1rem')};
+      --_line: ${litVar('--lab-line-height-button-label', '1.5')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-label', '0em')};
+      --_pad-x: ${litVar('--lab-space-button-inset', '0.75rem')};
+      --_pad-y: ${litVar('--lab-space-button-inset', '0.75rem')};
+      --_content: ${litVar('--lab-size-button-content', '1.5rem')};
+      --_min: ${litVar('--lab-size-button-h-m', '3rem')};
 
       display: inline-flex;
       vertical-align: middle;
     }
 
     :host([size='s']) {
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-      --_pad-y: ${litVar('--lab-space-xs', '0.25rem')};
-      --_min: ${litVar('--lab-size-control-h-s', '2rem')}; /* connected --lab-size-control-h to button (s) */
+      --_radius: ${litVar('--lab-radius-full', '9999px')};
+      --_font: ${litVar('--lab-font-size-button-label-s', '0.875rem')};
+      --_line: ${litVar('--lab-line-height-button-label-s', '0.8571')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-label-s', '0em')};
+      --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
+      --_content: ${litVar('--lab-size-button-content-s', '1.25rem')};
+      --_min: ${litVar('--lab-size-button-h-s', '2.25rem')};
     }
     :host([size='l']) {
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-      --_pad-x: ${litVar('--lab-space-lg', '1.5rem')};
+      --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_pad-y: ${litVar('--lab-space-md', '1rem')};
-      --_min: ${litVar('--lab-size-control-h-l', '3rem')};
+      --_min: ${litVar('--lab-size-button-h-l', '3.5rem')};
     }
 
     button {
@@ -128,16 +132,16 @@ export class LabButton extends LabElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: var(--_gap);
       width: 100%;
       min-height: var(--_min);
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
-      border: ${litVar('--lab-stroke-hairline')} solid transparent;
+      border: 0 solid transparent;
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
+      line-height: var(--_line);
+      letter-spacing: var(--_tracking);
+      font-weight: ${litVar('--lab-font-weight-medium', '500')};
       cursor: pointer;
       transition:
         background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
@@ -150,6 +154,18 @@ export class LabButton extends LabElement {
       background-color: transparent;
       color: ${litVar('--lab-label-primary')};
       border-color: transparent;
+    }
+
+    /* Border округляется браузером до device px. Отдельная обводка сохраняет
+       rem-inset при любом масштабе и наследует цвет настоящего состояния. */
+    button::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: ${litVar('--lab-stroke-hairline')} solid;
+      border-color: inherit;
+      border-radius: inherit;
+      pointer-events: none;
     }
 
     /* Icon-only: square, centred, no text padding asymmetry. */
@@ -321,12 +337,27 @@ export class LabButton extends LabElement {
     :host([loading]) button {
       cursor: progress;
     }
+    .content {
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
+    slot[name='icon']::slotted(*) {
+      flex: none;
+      width: var(--_content);
+      height: var(--_content);
+    }
     .label {
       display: inline-flex;
       align-items: center;
-      gap: var(--_gap);
+      min-height: var(--_content);
+      padding-inline: ${litVar('--lab-space-sm', '0.5rem')};
+      gap: ${litVar('--lab-space-sm', '0.5rem')};
     }
-    :host([loading]) .label {
+    :host([icon]) .label {
+      display: none;
+    }
+    :host([loading]) .content {
       /* color: transparent — see button.css (React twin) for the full WCAG
          4.1.2 rationale: neither visibility:hidden NOR opacity:0 is safe here
          (WebKit drops opacity:0 content from its a11y tree too), so only a
@@ -385,9 +416,9 @@ export class LabButton extends LabElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
       >
         <span class="spinner" aria-hidden="true"></span>
-        <span class="label">
+        <span class="content">
           <slot name="icon" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
-          <slot></slot>
+          <span class="label"><slot></slot></span>
         </span>
       </button>
     `;

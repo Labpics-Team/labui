@@ -41,6 +41,7 @@ export const space = {
   'glow-core': 'var(--lab-space-glow-core)',
   'glow-halo': 'var(--lab-space-glow-halo)',
   'switch-label-gap-l': 'var(--lab-space-switch-label-gap-l)',
+  'button-inset': 'var(--lab-space-button-inset)',
 } as const;
 
 export type SpaceToken = keyof typeof space;
@@ -61,6 +62,11 @@ export const size = {
   'switch-thumb-l': 'var(--lab-size-switch-thumb-l)',
   'switch-row': 'var(--lab-size-switch-row)',
   'combobox-trigger': 'var(--lab-size-combobox-trigger)',
+  'button-h-s': 'var(--lab-size-button-h-s)',
+  'button-h-m': 'var(--lab-size-button-h-m)',
+  'button-h-l': 'var(--lab-size-button-h-l)',
+  'button-content-s': 'var(--lab-size-button-content-s)',
+  'button-content': 'var(--lab-size-button-content)',
   'loader-stroke-s': 'var(--lab-size-loader-stroke-s)',
   'loader-stroke-m': 'var(--lab-size-loader-stroke-m)',
   'loader-stroke-l': 'var(--lab-size-loader-stroke-l)',
@@ -105,6 +111,7 @@ export const radius = {
   'corner-k': 'var(--lab-radius-corner-k)',
   none: 'var(--lab-radius-none)',
   control: 'var(--lab-radius-control)',
+  button: 'var(--lab-radius-button)',
   card: 'var(--lab-radius-card)',
   pill: 'var(--lab-radius-pill)',
   circle: 'var(--lab-radius-circle)',
@@ -146,6 +153,8 @@ export const fontSize = {
   '6xl': 'var(--lab-font-size-6xl)',
   'switch-label': 'var(--lab-font-size-switch-label)',
   'switch-label-l': 'var(--lab-font-size-switch-label-l)',
+  'button-label-s': 'var(--lab-font-size-button-label-s)',
+  'button-label': 'var(--lab-font-size-button-label)',
 } as const;
 
 export type FontSizeToken = keyof typeof fontSize;
@@ -163,6 +172,8 @@ export const lineHeight = {
   '6xl': 'var(--lab-line-height-6xl)',
   'switch-label': 'var(--lab-line-height-switch-label)',
   'switch-label-l': 'var(--lab-line-height-switch-label-l)',
+  'button-label-s': 'var(--lab-line-height-button-label-s)',
+  'button-label': 'var(--lab-line-height-button-label)',
 } as const;
 
 export type LineHeightToken = keyof typeof lineHeight;
@@ -189,6 +200,8 @@ export const letterSpacing = {
   '6xl': 'var(--lab-letter-spacing-6xl)',
   'switch-label': 'var(--lab-letter-spacing-switch-label)',
   'switch-label-l': 'var(--lab-letter-spacing-switch-label-l)',
+  'button-label-s': 'var(--lab-letter-spacing-button-label-s)',
+  'button-label': 'var(--lab-letter-spacing-button-label)',
 } as const;
 
 export type LetterSpacingToken = keyof typeof letterSpacing;
