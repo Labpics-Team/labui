@@ -64,6 +64,7 @@ export const defaultConfig: TokensConfig = {
       'glow-core': '2', //  8px — радиус размытия ядра свечения
       'glow-halo': '8', // 32px — радиус размытия ореола свечения
       'switch-label-gap-l': '3', // 12px между треком и подписью Switch L.
+      'button-inset': '3', // 12px внешнего отступа Button S/M.
     },
   },
 
@@ -98,6 +99,12 @@ export const defaultConfig: TokensConfig = {
       'switch-row': 1.5,
       // Сохраняет прежние 36px кнопки Combobox независимо от размеров Switch.
       'combobox-trigger': 2.25,
+      // Button: read-only эталон 2026-10-31, docs/reference/design-baseline.md.
+      'button-h-s': 2.25,
+      'button-h-m': 3,
+      'button-h-l': 3.5,
+      'button-content-s': 1.25,
+      'button-content': 1.5,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,
@@ -163,7 +170,8 @@ export const defaultConfig: TokensConfig = {
     fullPx: 9999,
     aliases: {
       none: '0',
-      control: 'm', //  8px — inputs, buttons
+      control: 'm', //  8px — поля ввода и общие контролы.
+      button: 'xl', // 16px — Button M/L; S использует capsule.
       card: 'xl', // 16px — cards, panels
       pill: 'full',
       circle: 'full',
@@ -232,11 +240,13 @@ export const defaultConfig: TokensConfig = {
       semibold: 600,
       bold: 700,
     },
-    // Проверенные подписи Switch: docs/reference/design-baseline.md.
+    // Проверенные подписи Switch и Button: docs/reference/design-baseline.md.
     // Это роли компонента; viewport не меняет кегль выбранного размера.
     fixedRoles: {
       'switch-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
       'switch-label-l': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
+      'button-label-s': { fontSizeRem: 0.875, lineHeight: 12 / 14, letterSpacingEm: 0 },
+      'button-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: 0 },
     },
     // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
     // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие

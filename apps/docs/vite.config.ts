@@ -32,9 +32,32 @@ function ssrProofPlugin(): Plugin {
   };
 }
 
+// Тот же SSR owner, но отдельный fixture: имя должно существовать до hydration.
+function ssrButtonNamesPlugin(): Plugin {
+  const placeholder = '<!-- @@SSR_BUTTON_NAMES@@ -->';
+  return {
+    name: 'labui-ssr-button-names',
+    async transformIndexHtml(markup, ctx) {
+      if (!ctx.path.endsWith('button-names.html') || !markup.includes(placeholder)) return markup;
+      const { renderToString, html } = await import('@labpics/ui-core/ssr');
+      await import('@labpics/ui-core/button');
+      return markup.replace(
+        placeholder,
+        renderToString(html`
+          <lab-button data-testid="ssr-explicit-default" icon aria-label="Add item"><span>Add</span></lab-button>
+          <lab-button data-testid="ssr-default" icon><span>Add</span></lab-button>
+          <lab-button data-testid="ssr-explicit" icon aria-label="Add item"></lab-button>
+          <lab-button data-testid="ssr-loading" icon loading aria-label="Add item"><span>Add</span></lab-button>
+          <lab-button data-testid="ssr-visible" aria-label="Add item"><span>Add</span></lab-button>
+        `),
+      );
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
-  plugins: [ssrProofPlugin()],
+  plugins: [ssrProofPlugin(), ssrButtonNamesPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.
@@ -54,6 +77,7 @@ export default defineConfig({
         'fixture-acrylic-live': resolve(__dirname, 'src/_fixtures/acrylic-live.html'),
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
+        'fixture-button-names': resolve(__dirname, 'src/_fixtures/button-names.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).

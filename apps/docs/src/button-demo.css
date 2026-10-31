@@ -50,3 +50,20 @@ h1 {
   gap: var(--lab-space-4, 1rem);
   align-items: center;
 }
+
+.geometry {
+  font-family: var(--lab-font-family);
+}
+
+.geometry-grid {
+  display: grid;
+  gap: var(--lab-space-md);
+  justify-items: start;
+}
+
+.geometry-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lab-space-sm);
+  align-items: center;
+}

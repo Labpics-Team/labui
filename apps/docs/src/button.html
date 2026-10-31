@@ -34,6 +34,7 @@
           <lab-button data-testid="lit-accent-fill" type="accent" kind="fill">Save</lab-button>
           <lab-button data-testid="lit-neutral-tinted" type="neutral" kind="tinted">Cancel</lab-button>
           <lab-button data-testid="lit-danger-border" type="danger" kind="border">Delete</lab-button>
+          <lab-button data-testid="lit-neutral-ghost" type="neutral" kind="ghost">Details</lab-button>
           <lab-button data-testid="lit-loading" type="accent" kind="fill" loading>Saving</lab-button>
           <lab-button data-testid="lit-disabled" type="accent" kind="fill" disabled>Off</lab-button>
           <!-- Icon-only: the default slot is empty, so the ONLY name source is the
@@ -63,6 +64,18 @@
       <section class="renderer" aria-label="Vue renderer" data-testid="vue-renderer">
         <h2>Vue</h2>
         <div id="vue-root" class="specimens"></div>
+      </section>
+
+      <section class="renderer geometry" aria-label="Button geometry" data-testid="geometry">
+        <h2>Геометрия Button</h2>
+        <h3>Lit</h3>
+        <div id="geometry-lit" class="geometry-grid"></div>
+        <h3>React</h3>
+        <div id="geometry-react" class="geometry-grid"></div>
+      </section>
+      <section class="renderer" aria-label="Button accessible names">
+        <div id="lit-button-names"></div>
+        <div id="button-names"></div>
       </section>
     </main>
     <script type="module" src="./button-demo.tsx"></script>
