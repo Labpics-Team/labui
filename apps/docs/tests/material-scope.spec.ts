@@ -170,9 +170,9 @@ test('missing @scope capability skips invisible glass/acrylic engines, not Veil'
     Object.defineProperty(globalThis, 'CSSScopeRule', { value: undefined, configurable: true });
   });
   await page.goto('/_fixtures/materials-flag.html?runtime');
-  expect(await page.evaluate(() => typeof (globalThis as { CSSScopeRule?: unknown }).CSSScopeRule)).toBe(
-    'undefined',
-  );
+  expect(
+    await page.evaluate(() => typeof (globalThis as { CSSScopeRule?: unknown }).CSSScopeRule),
+  ).toBe('undefined');
 
   for (const mode of ['glass', 'acrylic']) {
     const surface = await tree(page, ['solid', mode]);
@@ -193,7 +193,5 @@ test('missing @scope capability skips invisible glass/acrylic engines, not Veil'
     veil.style.cssText = 'position:relative;width:320px;height:160px';
     document.querySelector('.stage')?.appendChild(veil);
   });
-  await expect
-    .poll(() => page.locator('[data-veil] .lab-veil__strip').count())
-    .toBeGreaterThan(0);
+  await expect.poll(() => page.locator('[data-veil] .lab-veil__strip').count()).toBeGreaterThan(0);
 });
