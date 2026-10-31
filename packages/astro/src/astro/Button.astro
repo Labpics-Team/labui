@@ -10,6 +10,7 @@ import { renderButton } from '@labpics/ui-astro/ssr';
 
 const dsd = renderButton(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
+  end: Astro.slots.has('end') ? await Astro.slots.render('end') : undefined,
   icon: Astro.slots.has('icon') ? await Astro.slots.render('icon') : undefined,
 });
 ---

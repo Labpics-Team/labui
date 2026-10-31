@@ -221,6 +221,11 @@
           "kind": "string"
         },
         {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
           "name": "icon",
           "attr": "icon",
           "kind": "boolean"
@@ -245,6 +250,7 @@
       "slots": {
         "default": true,
         "named": [
+          "end",
           "icon"
         ],
         "dynamic": false

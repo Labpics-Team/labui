@@ -141,6 +141,7 @@
   --lab-font-size-switch-label-l: 1.25rem;
   --lab-font-size-button-label-s: 0.875rem;
   --lab-font-size-button-label: 1rem;
+  --lab-font-size-button-description: 1rem;
 
   /* Typography — line-height multipliers */
   --lab-line-height-xxs: 1;
@@ -157,6 +158,7 @@
   --lab-line-height-switch-label-l: 1;
   --lab-line-height-button-label-s: 0.8571;
   --lab-line-height-button-label: 1.5;
+  --lab-line-height-button-description: 1.5;
 
   /* Typography — font-weight scale (unitless) */
   --lab-font-weight-regular: 400;
@@ -179,6 +181,7 @@
   --lab-letter-spacing-switch-label-l: -0.0165em;
   --lab-letter-spacing-button-label-s: 0em;
   --lab-letter-spacing-button-label: 0em;
+  --lab-letter-spacing-button-description: -0.015625em;
 
   /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
   --lab-measure-narrow: 45ch;

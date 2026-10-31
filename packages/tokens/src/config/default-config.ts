@@ -247,6 +247,7 @@ export const defaultConfig: TokensConfig = {
       'switch-label-l': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
       'button-label-s': { fontSizeRem: 0.875, lineHeight: 12 / 14, letterSpacingEm: 0 },
       'button-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: 0 },
+      'button-description': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
     },
     // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
     // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие

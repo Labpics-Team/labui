@@ -21,12 +21,16 @@ describe('Astro .astro-компоненты (Container API)', () => {
   it('Button.astro: DSD + контент слота + client-скрипт гидрации', async () => {
     const container = await AstroContainer.create();
     const html = await container.renderToString(Button, {
-      props: { type: 'accent' },
-      slots: { default: 'Сохранить' },
+      props: { type: 'accent', description: 'Изменения' },
+      slots: { default: 'Сохранить', icon: '<i>Слева</i>', end: '<i>Справа</i>' },
     });
     expect(html).toContain('shadowrootmode');
     expect(html).toContain('lab-button');
     expect(html).toContain('Сохранить');
+    expect(html).toContain('Изменения');
+    const markup = html.replace(/<!--[\s\S]*?-->/g, '');
+    expect(markup).toContain('<span slot="icon"><i>Слева</i></span>');
+    expect(markup).toContain('<span slot="end"><i>Справа</i></span>');
     // Клиентский <script type="module"> эмитится (Astro экстернализует его содержимое —
     // hydrate-support + регистрация элемента — в отдельный чанк, поэтому проверяем факт
     // наличия скрипта гидрации, а не его тело).

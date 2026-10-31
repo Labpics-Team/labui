@@ -124,7 +124,22 @@ for (const renderer of ['lit', 'react'] as const) {
             }
 
             if (mode !== 'text') {
-              const icon = await box(specimen.locator('svg'));
+              const icon = await box(
+                specimen.locator(
+                  renderer === 'lit'
+                    ? 'slot[name="icon"]'
+                    : '.lab-button-icon[data-position="start"]',
+                ),
+              );
+              const glyph = await box(specimen.locator('svg'));
+              expect.soft(glyph.width, `${id} caller glyph width`).toBe(16);
+              expect.soft(glyph.height, `${id} caller glyph height`).toBe(16);
+              expect
+                .soft(glyph.x - icon.x, `${id} glyph center x`)
+                .toBeCloseTo((icon.width - glyph.width) / 2, 1);
+              expect
+                .soft(glyph.y - icon.y, `${id} glyph center y`)
+                .toBeCloseTo((icon.height - glyph.height) / 2, 1);
               expect.soft(icon.width, `${id} icon width`).toBeCloseTo(expected.content * scale, 1);
               expect
                 .soft(icon.height, `${id} icon height`)
