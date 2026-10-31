@@ -26,6 +26,12 @@ import { discoverComponents } from './scripts/discover-components';
 const componentEntries = discoverComponents().map(({ entry }) => entry);
 
 export default libraryPreset({
-  entry: ['src/index.ts', 'src/ssr/index.ts', 'src/proof/lab-proof.ts', ...componentEntries],
+  entry: [
+    'src/index.ts',
+    'src/ssr/index.ts',
+    'src/motion/index.ts',
+    'src/proof/lab-proof.ts',
+    ...componentEntries,
+  ],
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
 });

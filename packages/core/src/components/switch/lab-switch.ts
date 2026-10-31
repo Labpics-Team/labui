@@ -34,6 +34,7 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { type SwitchMotion, mountSwitchMotion } from '../../motion/index.js';
 
 /** Semantic intent of the switch's ON state. */
 export type LabSwitchType = 'accent' | 'neutral' | 'danger';
@@ -56,7 +57,7 @@ export class LabSwitch extends LabElement {
     type: { reflect: true },
     size: { reflect: true },
     /** Controlled checked state. When set, the consumer owns the value. */
-    checked: { type: Boolean, reflect: true },
+    checked: { type: Boolean, reflect: true, noAccessor: true },
     /** Uncontrolled initial state — read once by the machine at init. */
     defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
     disabled: { type: Boolean, reflect: true },
@@ -72,27 +73,58 @@ export class LabSwitch extends LabElement {
 
   declare type: LabSwitchType;
   declare size: LabSwitchSize;
-  declare checked: boolean;
   declare defaultChecked: boolean;
   declare disabled: boolean;
   declare ariaLabel: string | null;
   declare name: string | null;
 
   private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
+  private thumbMotion?: SwitchMotion;
+  private checkedValue = false;
+  private checkedInitialized = false;
+
+  get checked(): boolean {
+    return this.checkedValue;
+  }
+
+  set checked(value: boolean) {
+    const previous = this.checkedValue;
+    this.checkedValue = value;
+    this.checkedInitialized = true;
+    this.requestUpdate('checked', previous);
+  }
+
+  override connectedCallback(): void {
+    // OFF — такое же явное значение, как ON. Отсутствие boolean-атрибута
+    // после OFF не должно возвращать Zag в uncontrolled mode со старым true.
+    if (!this.checkedInitialized) {
+      // DSD уже содержит разрешённое сервером состояние, в том числе явный
+      // false при defaultChecked=true. При обычном mount берём defaultChecked.
+      const initialState = this.shadowRoot?.querySelector('.root')?.getAttribute('data-state');
+      this.checked =
+        initialState === 'checked' || (initialState !== 'unchecked' && this.defaultChecked);
+    }
+    super.connectedCallback();
+    // Lit сохраняет shadow nodes при reconnect; updated должен вернуть им scope.
+    this.requestUpdate();
+  }
+
+  override disconnectedCallback(): void {
+    this.thumbMotion?.dispose();
+    this.thumbMotion = undefined;
+    super.disconnectedCallback();
+  }
 
   constructor() {
     super();
     this.type = 'accent';
     this.size = 'm';
-    this.checked = false;
     this.defaultChecked = false;
     this.disabled = false;
     this.ariaLabel = null;
     this.name = null;
-    // Wire the Zag switch behavior. Props read from reflected attributes so the
-    // machine and the element never disagree. `checked` is passed only when the
-    // consumer set it (controlled); otherwise the machine owns it from
-    // `defaultChecked` (uncontrolled) — an honest two-mode contract, not a fake.
+    // checked/defaultChecked разрешаются один раз при подключении, затем
+    // checked передаётся в обе стороны, включая false.
     // `id` is a stable per-instance value (mirrors React's `useId`) so the
     // machine's scoped ids — including the label id the input references — are
     // unique and real, never the colliding `switch:undefined:*`.
@@ -100,7 +132,7 @@ export class LabSwitch extends LabElement {
       id: this.uid,
       name: this.name ?? undefined,
       defaultChecked: this.defaultChecked,
-      checked: this.hasAttribute('checked') ? this.checked : undefined,
+      checked: this.checked,
       disabled: this.disabled,
       onCheckedChange: (details: switchMachine.CheckedChangeDetails) => {
         this.checked = details.checked;
@@ -178,24 +210,22 @@ export class LabSwitch extends LabElement {
       padding: var(--_inset);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-fill-primary')};
-      transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+      /* Цвет назначается сразу: промежуточные пары контраста не квалифицированы. */
     }
 
-    /* ON track surface, per type. Driven by the reflected checked attribute,
-       which is driven by the machine — one source of truth. The longhand is set
-       DIRECTLY (no var()->var() chain across the shadow boundary, which can go
-       stale in Chromium on theme swap — proto-A note). */
-    :host([checked][type='accent']) .control {
+    /* Одна проекция состояния для SSR и Zag управляет всей анатомией.
+       Цветовой longhand читает роль прямо, без дополнительной цепочки var(). */
+    :host([type='accent']) .root[data-state='checked'] .control {
       background-color: ${litVar('--lab-fill-accent')};
     }
-    :host([checked][type='neutral']) .control {
+    :host([type='neutral']) .root[data-state='checked'] .control {
       background-color: ${litVar('--lab-fill-neutral')};
     }
-    :host([checked][type='danger']) .control {
+    :host([type='danger']) .root[data-state='checked'] .control {
       background-color: ${litVar('--lab-fill-danger')};
     }
 
-    /* The thumb — the Zag thumb element. Slides on the checked attribute. */
+    /* Положение бегунка читает ту же проекцию состояния, что дорожка и иконки. */
     .thumb {
       box-sizing: border-box;
       display: inline-flex;
@@ -209,7 +239,7 @@ export class LabSwitch extends LabElement {
       transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       transform: translateX(0);
     }
-    :host([checked]) .thumb {
+    .root[data-state='checked'] .thumb {
       transform: translateX(calc(var(--_track-w) - var(--_thumb) - 2 * var(--_inset)));
     }
 
@@ -226,7 +256,7 @@ export class LabSwitch extends LabElement {
       color: ${litVar('--lab-label-on-accent')};
       transform: translateY(-50%);
       opacity: 0;
-      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+      /* Содержимое не проходит через промежуточную прозрачность. */
       pointer-events: none;
     }
     .icon-on {
@@ -236,10 +266,10 @@ export class LabSwitch extends LabElement {
       right: var(--_inset);
       color: ${litVar('--lab-label-tertiary')};
     }
-    :host([checked]) .icon-on {
+    .root[data-state='checked'] .icon-on {
       opacity: 1;
     }
-    :host(:not([checked])) .icon-off {
+    .root[data-state='unchecked'] .icon-off {
       opacity: 1;
     }
 
@@ -293,6 +323,10 @@ export class LabSwitch extends LabElement {
       this.machineCtl.spread(input, api.getHiddenInputProps());
       this.nameHiddenInput(input);
     }
+    if (control && thumb && this.isConnected) {
+      this.thumbMotion ??= mountSwitchMotion(this.renderRoot, control, thumb, api.checked);
+      this.thumbMotion.update(api.checked);
+    }
   }
 
   /**
@@ -312,19 +346,20 @@ export class LabSwitch extends LabElement {
   }
 
   override render(): TemplateResult {
+    const checked = this.checkedInitialized ? this.checked : this.defaultChecked;
     // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is
     // spread in `updated()` from the machine. SSR emits this real markup so first
     // paint is meaningful before any JS upgrades the element. The hidden input is
     // a SIBLING of the (aria-hidden) control — NOT a descendant — so it stays in
     // the accessibility tree (an aria-hidden ancestor would erase it).
     return html`
-      <label class="root">
+      <label class="root" data-state=${checked ? 'checked' : 'unchecked'}>
         <span class="control">
           <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
           <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
           <span class="thumb"></span>
         </span>
-        <input type="checkbox" />
+        <input type="checkbox" ?checked=${checked} />
         <span class="label"><slot></slot></span>
       </label>
     `;

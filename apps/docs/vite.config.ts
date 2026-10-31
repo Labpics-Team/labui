@@ -1,4 +1,7 @@
 import { resolve } from 'node:path';
+import { Switch } from '@labpics/ui-react/switch';
+import { StrictMode, createElement } from 'react';
+import { renderToString as renderReactToString } from 'react-dom/server';
 import { type Plugin, defineConfig } from 'vite';
 
 // Documentation pages and browser evidence share one Vite build, but their
@@ -19,6 +22,39 @@ function ssrProofPlugin(): Plugin {
   return {
     name: 'labui-ssr-proof',
     async transformIndexHtml(html, ctx) {
+      if (ctx.path.endsWith('switch-motion.html')) {
+        const { renderToString, html: litHtml } = await import('@labpics/ui-core/ssr');
+        await import('@labpics/ui-core/switch');
+        return html
+          .replace(
+            '<!-- @@SSR_SWITCH_DEFAULT@@ -->',
+            renderToString(litHtml`<lab-switch default-checked>Включено по умолчанию</lab-switch>`),
+          )
+          .replace(
+            '<!-- @@SSR_SWITCH_OFF@@ -->',
+            renderToString(litHtml`<lab-switch>Изначально выключено</lab-switch>`),
+          )
+          .replace(
+            '<!-- @@SSR_SWITCH_EXPLICIT_OFF@@ -->',
+            renderToString(
+              litHtml`<lab-switch .defaultChecked=${true} .checked=${false}>Явно выключено</lab-switch>`,
+            ),
+          )
+          .replace(
+            '<!-- @@SSR_SWITCH_MOTION@@ -->',
+            renderToString(litHtml`<lab-switch checked>Изначально включено</lab-switch>`),
+          )
+          .replace(
+            '<!-- @@SSR_REACT_SWITCH_MOTION@@ -->',
+            renderReactToString(
+              createElement(
+                StrictMode,
+                null,
+                createElement(Switch, { checked: true }, 'Изначально включено'),
+              ),
+            ),
+          );
+      }
       if (!ctx.path.endsWith('proof.html') || !html.includes(PLACEHOLDER)) return html;
       // Import order is load-bearing: the SSR shim installs the DOM shim, then the
       // proof element registers against it.
@@ -55,6 +91,7 @@ export default defineConfig({
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
+        'fixture-switch-motion': resolve(__dirname, 'src/_fixtures/switch-motion.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

@@ -3,12 +3,24 @@ import type { MotionConfig } from './model.js';
 /**
  * Lab UI semantic motion contract.
  *
- * Numeric durations, bezier coordinates, spring parameters and spring solving
- * belong to @labpics/motion. This config contains only design-system choices:
- * which owner primitives are exposed and how semantic UI roles bind to them.
+ * LabUI выбирает характер движения. LabMotion исполняет физическую модель;
+ * чужие дизайн-системы не задают нормативный стиль LabUI.
  */
 export const defaultMotionConfig: MotionConfig = {
   springs: [
+    {
+      name: 'toggle',
+      response: 320,
+      bounce: 0.22,
+      category: 'spatial',
+      fallbackEasing: 'standard',
+      provenance: {
+        class: 'e',
+        source:
+          'LabUI: короткий ход Switch 12–20px; быстрый отклик, один деликатный перелёт и сохранение скорости при повторном вводе. Калибровка проверяется на реальных Lit и React Switch.',
+      },
+      description: 'переключение — короткое перемещение с мягким успокоением',
+    },
     {
       name: 'smooth',
       primitive: 'smooth',
@@ -32,8 +44,8 @@ export const defaultMotionConfig: MotionConfig = {
       easing: 'decelerate',
       reduced: { duration: 'fast', easing: 'linear' },
       provenance: {
-        class: 'b',
-        source: 'M3: incoming elements use the decelerate easing (§1.1)',
+        class: 'e',
+        source: 'LabUI: появление замедляется к месту покоя; сохранённый контракт роли.',
       },
       description: 'element appears — decelerate, settles into place',
     },
@@ -43,9 +55,9 @@ export const defaultMotionConfig: MotionConfig = {
       easing: 'accelerate',
       reduced: { duration: 'fast', easing: 'linear' },
       provenance: {
-        class: 'b',
+        class: 'e',
         source:
-          'M3: outgoing elements use the accelerate easing (§1.1); exit faster than entrance is an (e) HIG/Material convention',
+          'LabUI: исчезновение быстрее появления, чтобы завершённое действие освобождало место.',
       },
       description: 'element leaves — accelerate, quicker than entrance',
     },
@@ -57,7 +69,7 @@ export const defaultMotionConfig: MotionConfig = {
       provenance: {
         class: 'e',
         source:
-          'design-choice: wiring task 125 retuned base->fast. The shipped culture converged on 120ms micro-feedback (74/74 live transition sites are hover/state changes, none used 200ms); fast = 100ms sits one frame from 120ms (sub-JND) and matches M3 short2/Fluent durationFaster. Easing grounded on M3 standard (§1.1).',
+          'LabUI: краткая обратная связь состояния. Сохранённая базовая скорость 100ms; runtime Switch использует её как масштаб времени собственной пружины toggle.',
       },
       description: 'in-place state change / move — standard easing',
     },
@@ -69,8 +81,7 @@ export const defaultMotionConfig: MotionConfig = {
       reduced: { duration: 'instant', easing: 'linear' },
       provenance: {
         class: 'e',
-        source:
-          'design-choice: the one attention moment that overshoots. Easing grounded (§1.2); backing spring = expressive.',
+        source: 'LabUI: сохранённая отдельная роль привлечения внимания с выраженным движением.',
       },
       description: 'attention moment — the restrained overshoot lives here',
     },

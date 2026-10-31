@@ -41,6 +41,26 @@ export function generateMotionTs(motion: ResolvedMotion): string {
     ),
   );
   parts.push(semanticConst(motion));
+  parts.push(
+    [
+      '/** Калибровка тех же ролей для LabMotion runtime; не редактировать. */',
+      'export const motionSpringRuntime = {',
+      ...motion.springs.map(
+        (spring) =>
+          `  ${quoteKey(spring.name)}: { response: ${spring.durationS * 1000}, bounce: ${spring.bounce} },`,
+      ),
+      '} as const;',
+      '',
+      '/** База относительной скорости runtime; CSS override сохраняет своё действие. */',
+      'export const motionSemanticRuntime = {',
+      ...motion.semantics.map((semantic) => {
+        const duration = motion.durations.find((item) => item.name === semantic.durationName);
+        if (!duration) throw new Error(`Missing duration for ${semantic.name}`);
+        return `  ${quoteKey(semantic.name)}: { durationMs: ${duration.ms} },`;
+      }),
+      '} as const;',
+    ].join('\n'),
+  );
 
   return `${parts.join('\n\n')}\n`;
 }

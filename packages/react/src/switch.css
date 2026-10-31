@@ -65,8 +65,7 @@
   padding: var(--_lab-sw-inset);
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-fill-primary);
-  transition: background-color var(--lab-motion-transition-duration)
-    var(--lab-motion-transition-easing);
+  /* Цвет назначается сразу: промежуточные пары контраста не квалифицированы. */
 }
 
 /* ON track per type — driven by data-checked + data-type, mirroring the Lit host. */
@@ -111,7 +110,7 @@
   color: var(--lab-label-on-accent);
   transform: translateY(-50%);
   opacity: 0;
-  transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  /* Содержимое не проходит через промежуточную прозрачность. */
   pointer-events: none;
 }
 [data-lab-switch] .lab-switch-icon-on {
