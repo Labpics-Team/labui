@@ -1,0 +1,341 @@
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { validateSubject } from './icons-packed.mjs';
+
+const PIN = new URL('./icons-consumer-source.json', import.meta.url);
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const stableJSON = (value) =>
+  JSON.stringify(value, (_, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.keys(item)
+            .sort()
+            .map((key) => [key, item[key]]),
+        )
+      : item,
+  );
+const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
+const git = (root, args) =>
+  execFileSync('git', ['--no-replace-objects', ...args], { cwd: root, timeout: 20_000 });
+
+export function validateSourcePin(pin) {
+  assert.deepEqual(Object.keys(pin).sort(), [
+    'figma',
+    'repository',
+    'schemaVersion',
+    'sourceCommit',
+  ]);
+  assert.equal(pin.schemaVersion, 1);
+  assert.equal(pin.repository, 'Labpics-Team/lab-icons');
+  assert.match(pin.sourceCommit, /^[a-f0-9]{40}$/);
+  assert.deepEqual(Object.keys(pin.figma).sort(), ['fileKey', 'version']);
+  assert.match(pin.figma.fileKey, /^[A-Za-z0-9]+$/);
+  assert.match(pin.figma.version, /^\d+$/);
+  return pin;
+}
+
+export function assertCheckout(root, expected) {
+  assert.match(expected, /^[a-f0-9]{40}$/);
+  assert.equal(git(root, ['rev-parse', 'HEAD']).toString().trim(), expected);
+  assert.equal(git(root, ['status', '--porcelain', '--untracked-files=no']).toString(), '');
+}
+
+async function sourceFile(root, commit, file) {
+  const bytes = await readFile(join(root, file));
+  assert.deepEqual(bytes, git(root, ['show', `${commit}:${file}`]), `изменён источник: ${file}`);
+  return { file, sha256: hash(bytes), bytes: bytes.length };
+}
+
+function attributes(source, allowed) {
+  const result = {};
+  const pattern = /\s+([A-Za-z][A-Za-z0-9:_-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/gy;
+  let consumed = 0;
+  while (consumed < source.length) {
+    if (source.slice(consumed).trim() === '') break;
+    pattern.lastIndex = consumed;
+    const match = pattern.exec(source);
+    assert.ok(match, 'Oracle: неполный XML-атрибут');
+    const [, name, double, single] = match;
+    const value = double ?? single;
+    assert.ok(allowed.includes(name) && !Object.hasOwn(result, name), `Oracle: атрибут ${name}`);
+    assert.ok(!/[<&]/.test(value), 'Oracle: entities и вложенный XML не поддержаны');
+    result[name] = value;
+    consumed = pattern.lastIndex;
+  }
+  return result;
+}
+
+// Узкий независимый язык этого witness: нейтральные группы и целый cycle path.
+// Неизвестный paint/transform/clip отвергается, а авторский d не переписывается.
+export function readCycleMaster(bytes) {
+  const xml = bytes.toString('utf8');
+  assert.deepEqual(Buffer.from(xml), bytes, 'Oracle: нужен UTF-8 master');
+  const stack = [];
+  const paths = [];
+  let root;
+  let consumed = 0;
+  let closed = false;
+  for (const match of xml.matchAll(/<([^>]*)>/g)) {
+    assert.equal(xml.slice(consumed, match.index).trim(), '', 'Oracle: текст вне XML-тегов');
+    consumed = match.index + match[0].length;
+    const token = match[1];
+    if (token.startsWith('/')) {
+      assert.equal(stack.pop(), token.slice(1).trim(), 'Oracle: несбалансированные группы');
+      if (stack.length === 0) closed = true;
+      continue;
+    }
+    assert.ok(!closed, 'Oracle: несколько корней');
+    const tag = /^([A-Za-z][A-Za-z0-9]*)\b([\s\S]*?)(\/?)$/.exec(token);
+    assert.ok(tag, 'Oracle: неподдержанный XML');
+    const [, name, rest, selfClosing] = tag;
+    if (name === 'svg') {
+      assert.ok(!root && stack.length === 0 && !selfClosing);
+      root = attributes(rest, ['width', 'height', 'viewBox', 'fill', 'xmlns']);
+      assert.equal(root.fill, 'none');
+      assert.equal(root.xmlns, 'http://www.w3.org/2000/svg');
+    } else if (name === 'g') {
+      assert.ok(root && stack.length > 0 && !selfClosing);
+      attributes(rest, ['id', 'data-node-id']);
+    } else if (name === 'path') {
+      assert.ok(root && stack.length > 0 && selfClosing);
+      const path = attributes(rest, ['d', 'fill', 'fill-rule', 'clip-rule', 'id', 'data-node-id']);
+      assert.equal(path.fill, '#101012');
+      const fillRule = path['fill-rule'] ?? 'nonzero';
+      assert.ok(['nonzero', 'evenodd'].includes(fillRule));
+      assert.ok(!path['clip-rule'] || ['nonzero', 'evenodd'].includes(path['clip-rule']));
+      assert.ok(
+        /^M/.test(path.d) && /[Zz]\s*$/.test(path.d) && (path.d.match(/[Mm]/g) ?? []).length === 1,
+        'Oracle: cycle требует один целый замкнутый контур',
+      );
+      paths.push({ d: path.d, fillRule });
+    } else assert.fail(`Oracle: элемент ${name} не поддержан`);
+    if (!selfClosing) stack.push(name);
+  }
+  assert.equal(xml.slice(consumed).trim(), '');
+  assert.ok(root && closed && stack.length === 0 && paths.length === 1);
+  const viewBox = root.viewBox.trim().split(/\s+/).map(Number);
+  assert.ok(
+    viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0,
+  );
+  return { viewBox, paths };
+}
+
+// Expected binding берётся из raw аннотации, поведение — из cycle.clockwise.
+// Producer constructor, его helpers, glyph и effect не могут изменить oracle.
+export async function authorReference(iconsRoot, pin) {
+  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  assert.equal(manifest.source.fileKey, pin.figma.fileKey);
+  assert.equal(manifest.source.version, pin.figma.version);
+  const annotations = JSON.parse(await readFile(join(iconsRoot, 'semantics/author-anatomy.json')));
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(annotations.schemaVersion, 1);
+  assert.deepEqual(annotations.source, { fileKey: pin.figma.fileKey, version: pin.figma.version });
+  const variants = {};
+  for (const variant of ['outline', 'filled']) {
+    const record = manifest.icons.reload[variant];
+    const declaration = annotations.icons.reload[variant];
+    const expectedPath = `masters/figma/${pin.figma.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/reload.svg`;
+    assert.equal(record.master, expectedPath);
+    const bytes = await readFile(join(iconsRoot, expectedPath));
+    assert.equal(bytes.length, record.bytes);
+    assert.equal(hash(bytes), record.sha256);
+    const { viewBox, paths } = readCycleMaster(bytes);
+    const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
+    assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
+    assert.equal(declaration.masterSha256, record.sha256);
+    assert.equal(declaration.pathFingerprintSha256, fingerprint);
+    assert.deepEqual(declaration.gesture, {
+      law: 'cycle.clockwise',
+      partId: declaration.parts[0].id,
+    });
+    assert.equal(declaration.parts.length, 1);
+    const part = declaration.parts[0];
+    assert.equal(part.pathIndex, 0);
+    assert.equal(part.role, 'control');
+    assert.match(part.id, /^[a-z][a-z0-9-]*$/);
+    assert.equal(part.anchorMeaning, 'canvas-center');
+    assert.deepEqual(part.anchor, [0.5, 0.5]);
+    const gesture = {
+      id: 'reload.cycle',
+      kind: 'cycle',
+      meaning:
+        'Один оборот команды обновления по часовой стрелке; промежуточную позу можно развернуть или продолжить.',
+      partIds: [part.id],
+      progress: 'normalized-0-to-1',
+      tracks: [
+        {
+          partId: part.id,
+          kind: 'rotate',
+          anchor: [...part.anchor],
+          from: 0,
+          to: 360,
+          unit: 'degrees',
+          interpolation: 'linear',
+        },
+      ],
+    };
+    const annotationSha256 = hash(
+      stableJSON({
+        schemaVersion: 1,
+        source: annotations.source,
+        icon: 'reload',
+        variant,
+        declaration,
+        gestures: [gesture],
+      }),
+    );
+    variants[variant] = {
+      sourceFile: record.master,
+      author: {
+        kind: 'figma',
+        fileKey: pin.figma.fileKey,
+        version: pin.figma.version,
+        nodeId: record.nodeId,
+        nodeSha256: record.nodeSha256,
+        masterSha256: hash(bytes),
+        normalizedSha256: record.normalizedSource.sha256,
+        pathFingerprintSha256: fingerprint,
+      },
+      anatomy: {
+        version: 1,
+        annotationSha256,
+        masterSha256: hash(bytes),
+        pathFingerprintSha256: fingerprint,
+      },
+      viewBox,
+      paths,
+      parts: [
+        { id: part.id, role: part.role, zIndex: 0, d: paths[0].d, fillRule: paths[0].fillRule },
+      ],
+      gesture,
+    };
+  }
+  return {
+    fileName: manifest.source.name,
+    fileKey: manifest.source.fileKey,
+    version: manifest.source.version,
+    icons: { reload: variants },
+  };
+}
+
+export async function prepareInputs(options) {
+  const pin = validateSourcePin(JSON.parse(await readFile(PIN)));
+  const iconsRoot = await realpath(resolve(options.get('--icons-source')));
+  const uiRoot = await realpath(resolve(options.get('--ui-source')));
+  const uiCommit = options.get('--ui-commit');
+  assertCheckout(iconsRoot, pin.sourceCommit);
+  assertCheckout(uiRoot, uiCommit);
+  const out = resolve(options.get('--out'));
+  const parent = await realpath(dirname(out));
+  for (const root of [iconsRoot, uiRoot]) {
+    assert.ok(outside(relative(root, parent)), 'Inputs должны находиться вне source checkout');
+  }
+  const packages = {};
+  const files = [];
+  for (const [key, option, root, commit, file] of [
+    ['icons', '--icons-tarball', iconsRoot, pin.sourceCommit, 'package.json'],
+    ['uiCore', '--ui-core-tarball', uiRoot, uiCommit, 'packages/core/package.json'],
+    ['uiShadow', '--ui-shadow-tarball', uiRoot, uiCommit, 'packages/shadow/package.json'],
+  ]) {
+    files.push({
+      repository: key === 'icons' ? pin.repository : 'Labpics-Team/labui',
+      ...(await sourceFile(root, commit, file)),
+    });
+    const pkg = JSON.parse(await readFile(join(root, file)));
+    const archive = await readFile(resolve(options.get(option)));
+    packages[key] = {
+      name: pkg.name,
+      version: pkg.version,
+      archiveSha256: hash(archive),
+      archiveBytes: archive.length,
+      sourceCommit: commit,
+    };
+  }
+  const reference = await authorReference(iconsRoot, pin);
+  for (const file of [
+    'semantics/figma-baseline.json',
+    'semantics/author-anatomy.json',
+    ...Object.values(reference.icons.reload).map((item) => item.sourceFile),
+  ]) {
+    files.push({
+      repository: pin.repository,
+      ...(await sourceFile(iconsRoot, pin.sourceCommit, file)),
+    });
+  }
+  const subject = validateSubject({ schemaVersion: 1, packages, authorReference: reference });
+  assertCheckout(iconsRoot, pin.sourceCommit);
+  assertCheckout(uiRoot, uiCommit);
+  await mkdir(out, { recursive: false, mode: 0o700 });
+  const bytes = `${JSON.stringify(subject, null, 2)}\n`;
+  await writeFile(join(out, 'subject.json'), bytes, { flag: 'wx', mode: 0o600 });
+  await writeFile(
+    join(out, 'source-receipt.json'),
+    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files }, null, 2)}\n`,
+    { flag: 'wx', mode: 0o600 },
+  );
+  process.stdout.write(
+    `icons-inputs: ${JSON.stringify({ subjectSha256: hash(bytes), packages })}\n`,
+  );
+}
+
+// Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
+export async function summarize(directory) {
+  const root = await realpath(resolve(directory));
+  const files = [];
+  for (const name of ['inputs', 'result']) {
+    for (const entry of await readdir(join(root, name), { withFileTypes: true })) {
+      if (!entry.isFile() || !/\.(?:json|png)$/.test(entry.name)) continue;
+      const path = `${name}/${entry.name}`;
+      const bytes = await readFile(join(root, path));
+      files.push({ path, sha256: hash(bytes), bytes: bytes.length });
+    }
+  }
+  const receipt = JSON.parse(await readFile(join(root, 'result/receipt.json')));
+  const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
+  process.stdout.write(
+    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
+      schemaVersion: 1,
+      outcome: receipt.outcome,
+      source,
+      harness: receipt.harness,
+      runner: receipt.runner,
+      archives: receipt.archives,
+      observations: receipt.records?.length,
+      failure: receipt.failure ? { phase: receipt.failure.phase } : null,
+      files,
+      diagnosticDirectory: root,
+    })}\n`,
+  );
+  assert.equal(receipt.outcome, 'passed');
+}
+
+async function main() {
+  const args = process.argv.slice(2);
+  if (args.length === 1 && args[0] === '--checkout-ref') {
+    process.stdout.write(`${validateSourcePin(JSON.parse(await readFile(PIN))).sourceCommit}\n`);
+    return;
+  }
+  if (args.length === 2 && args[0] === '--summarize') return summarize(args[1]);
+  const required = [
+    '--icons-source',
+    '--ui-source',
+    '--ui-commit',
+    '--icons-tarball',
+    '--ui-core-tarball',
+    '--ui-shadow-tarball',
+    '--out',
+  ];
+  const options = new Map();
+  assert.equal(args.length, required.length * 2);
+  for (let index = 0; index < args.length; index += 2) {
+    assert.ok(required.includes(args[index]) && args[index + 1] && !options.has(args[index]));
+    options.set(args[index], args[index + 1]);
+  }
+  return prepareInputs(options);
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
