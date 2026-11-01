@@ -387,11 +387,11 @@ for (const renderer of ['lit', 'react', 'vue'] as const) {
 // Действующий закон ordinary primary text: colors/test/pair-legality.test.mjs
 // и state-overlay-contrast.test.mjs. Измерение description/icons не назначает им floor.
 for (const theme of ['light', 'dark'] as const) {
-  test(`production composite primary contrast ${theme}`, async ({ page }, info) => {
-    await setup(page, theme, 16, false);
-    const report = [];
-    try {
-      for (const renderer of ['lit', 'react', 'vue'] as const) {
+  for (const renderer of ['lit', 'react', 'vue'] as const) {
+    test(`production composite primary contrast ${theme} ${renderer}`, async ({ page }, info) => {
+      await setup(page, theme, 16, false);
+      const report = [];
+      try {
         for (const size of ['s', 'm', 'l'] as const) {
           const host = page.getByTestId(`${renderer}-anatomy-${size}-visual`);
           const button = nativeButton(host, renderer);
@@ -416,15 +416,15 @@ for (const theme of ['light', 'dark'] as const) {
               .toBeGreaterThanOrEqual(4.5);
           }
         }
+      } finally {
+        await page.mouse.up();
+        await info.attach('production-report', {
+          body: JSON.stringify(report, null, 2),
+          contentType: 'application/json',
+        });
       }
-    } finally {
-      await page.mouse.up();
-      await info.attach('production-report', {
-        body: JSON.stringify(report, null, 2),
-        contentType: 'application/json',
-      });
-    }
-  });
+    });
+  }
 }
 
 test('effects oracle detects missing layers on the real Button', async ({ page }, info) => {
