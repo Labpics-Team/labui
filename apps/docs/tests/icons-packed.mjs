@@ -838,6 +838,35 @@ function sameMotion(effect, gesture, from, to, duration, reduced, variant) {
   );
 }
 
+export function installViewportPointerBlocker(element) {
+  const document = element.ownerDocument;
+  const blocker = document.createElement('div');
+  blocker.setAttribute('data-icons-packed-overlay', '');
+  Object.assign(blocker.style, {
+    position: 'fixed',
+    inset: '0',
+    pointerEvents: 'auto',
+    zIndex: '2147483647',
+  });
+  document.body.append(blocker);
+  const rectangle = blocker.getBoundingClientRect();
+  const { clientWidth: width, clientHeight: height } = document.documentElement;
+  const witness = {
+    width,
+    height,
+    left: rectangle.left,
+    top: rectangle.top,
+    right: rectangle.right,
+    bottom: rectangle.bottom,
+    centerHit: document.elementFromPoint(width / 2, height / 2) === blocker,
+  };
+  if (
+    width <= 0 || height <= 0 || rectangle.left > 0 || rectangle.top > 0 ||
+    rectangle.right < width || rectangle.bottom < height || !witness.centerHit
+  ) throw new Error(`Pointer blocker не закрывает viewport: ${JSON.stringify(witness)}`);
+  return witness;
+}
+
 async function browserProof(browser, url, reference, out, records, browserErrors) {
   for (const reducedMotion of ['no-preference', 'reduce']) {
     const context = await browser.newContext({
@@ -887,21 +916,9 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.equal(await button.count(), 1, 'native accessible button не найден');
         const other = variant === 'outline' ? 'filled' : 'outline';
         const untouched = await page.evaluate((id) => window.__iconsPacked.read(id), other);
-        await host.evaluate((element) => {
-          const rectangle = element.getBoundingClientRect();
-          const blocker = document.createElement('div');
-          blocker.setAttribute('data-icons-packed-overlay', '');
-          Object.assign(blocker.style, {
-            position: 'fixed',
-            left: `${rectangle.x}px`,
-            top: `${rectangle.y}px`,
-            width: `${rectangle.width}px`,
-            height: `${rectangle.height}px`,
-            zIndex: '2147483647',
-          });
-          document.body.append(blocker);
-        });
         try {
+          // click может прокрутить страницу после установки overlay; target-box устаревает.
+          await host.evaluate(installViewportPointerBlocker);
           await assert.rejects(host.click({ timeout: 750 }), (error) => {
             assert.match(error.message, /intercepts pointer events/);
             assert.match(error.message, /data-icons-packed-overlay/);
@@ -909,7 +926,9 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           });
           assert.equal((await read()).nativeClicks, 0);
         } finally {
-          await page.locator('[data-icons-packed-overlay]').evaluate((element) => element.remove());
+          await page.locator('[data-icons-packed-overlay]').evaluateAll((elements) => {
+            for (const element of elements) element.remove();
+          });
         }
         // Playwright 1.55 обходит light DOM без assignedSlot: upstream #37777.
         // Host получает обычный pointer-click; native button отдельно подтверждает событие.

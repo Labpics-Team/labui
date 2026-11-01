@@ -1,10 +1,65 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { consumerFixture, sameStateOpacity } from './icons-packed.mjs';
+import { consumerFixture, installViewportPointerBlocker, sameStateOpacity } from './icons-packed.mjs';
 
 const stateIds = ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'];
 const statePose = (values) =>
   stateIds.map((id, index) => ({ partId: `state-${id}`, value: values[index] }));
+
+function pointerDocument(width, height, { inset = 0, intercept = true } = {}) {
+  let blocker;
+  const document = {
+    documentElement: { clientWidth: width, clientHeight: height },
+    createElement() {
+      const element = {
+        style: {},
+        setAttribute() {},
+        getBoundingClientRect() {
+          // Подмена моделирует только fixed/inset layout, не browser hit-testing.
+          const viewport = this.style.position === 'fixed' && this.style.inset === '0';
+          return viewport
+            ? { left: inset, top: 0, right: width, bottom: height }
+            : { left: 48, top: 600, right: 96, bottom: 648 };
+        },
+      };
+      return element;
+    },
+    body: { append(element) { blocker = element; } },
+    elementFromPoint() {
+      return intercept && blocker?.style.pointerEvents === 'auto' ? blocker : null;
+    },
+  };
+  return { document, blocker: () => blocker };
+}
+
+test('pointer контроль не зависит от target-box до автоматической прокрутки', () => {
+  // target-box был y=600; click после scroll действует в y=180.
+  const oldRectangle = { left: 48, top: 600, right: 96, bottom: 648 };
+  const action = { x: 72, y: 180 };
+  assert.ok(action.y < oldRectangle.top, 'старый fixed overlay пропускает новый action point');
+  for (const [width, height] of [[640, 360], [320, 240]]) {
+    const fixture = pointerDocument(width, height);
+    const witness = installViewportPointerBlocker({
+      ownerDocument: fixture.document,
+      getBoundingClientRect() { throw new Error('target-box не должен участвовать'); },
+    });
+    assert.ok(action.x >= witness.left && action.x <= witness.right);
+    assert.ok(action.y >= witness.top && action.y <= witness.bottom);
+    assert.equal(witness.centerHit, true);
+    assert.equal(fixture.blocker().style.left, undefined);
+    assert.equal(fixture.blocker().style.top, undefined);
+  }
+});
+
+test('pointer контроль отвергает неполное покрытие и неподтверждённый hit target', () => {
+  for (const options of [{ inset: 1 }, { intercept: false }]) {
+    const fixture = pointerDocument(640, 360, options);
+    assert.throws(
+      () => installViewportPointerBlocker({ ownerDocument: fixture.document }),
+      /Pointer blocker не закрывает viewport/,
+    );
+  }
+});
 
 function changeStateAtAdmission(visible, admitted, { playback = 'running', reset = false } = {}) {
   const fixture = consumerFixture(2);
