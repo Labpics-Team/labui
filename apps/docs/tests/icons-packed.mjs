@@ -509,12 +509,13 @@ function changeState(state, duration = 600) {
     reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
   if (!result.ok) throw new Error(result.reason.code);
   const effect = result.effect;
-  // Снимки сохраняют clock и native keyframes, не меняя ход анимации.
+  // Явный первый кадр сохраняет видимую позу при передаче управления.
   const before = stateOpacityWitness(); const previous = stateControl;
+  const visibleOpacity = new Map(before.opacity.map(item => [item.partId, item.value]));
   const next = sequence(effect.stages.map(stage => {
     const node = stateNodes.get(stage.partId);
     if (!node) throw new Error('Потеряна группа ' + stage.partId);
-    return [node, { opacity: stage.to },
+    return [node, { opacity: [visibleOpacity.get(stage.partId), stage.to] },
       { at: stage.at, duration: stage.duration, ease: effect.options.easing }];
   }), { reducedMotion: effect.options.duration === 0 ? 'always' : 'user' });
   const admitted = { ...stateWitness(), playback: next.state, previousPlayback: previous?.state ?? null };
