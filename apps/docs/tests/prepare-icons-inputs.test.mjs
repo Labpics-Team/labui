@@ -401,13 +401,10 @@ async function stateFixture(t) {
         ]
       : [{ d: CONTENT, fillRule: 'nonzero' }];
     paths.push({ d: SHELL, fillRule: 'evenodd' });
-    const text =
-      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-      '<g id="neutral">' +
-      paths
-        .map((path) => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`)
-        .join('') +
-      '</g></svg>';
+    const content = paths
+      .map((path) => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`)
+      .join('');
+    const text = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="neutral">${content}</g></svg>`;
     const file = `masters/figma/${PIN.figma.version}/Outline/${icon}.svg`;
     const bytes = Buffer.from(text);
     const fingerprint = pathFingerprint(paths);
@@ -508,7 +505,7 @@ test('state coverage, ordering, source and part ID mutations refuse precisely', 
   const { root, document } = await stateFixture(t);
   for (const mutate of [
     (value) => {
-      delete value.groups['status-circle'].states.question;
+      Reflect.deleteProperty(value.groups['status-circle'].states, 'question');
     },
     (value) => {
       value.source.version = '1';
@@ -619,13 +616,13 @@ test('complete measurement remains diagnostic and refuses stale or incomplete so
       value.lockfileSha256 = 'b'.repeat(64);
     },
     (value) => {
-      delete value.artifacts['dist/example.js'];
+      Reflect.deleteProperty(value.artifacts, 'dist/example.js');
     },
     (value) => {
-      delete value.candidatePolicies.package.artifacts['dist/example.js'];
+      Reflect.deleteProperty(value.candidatePolicies.package.artifacts, 'dist/example.js');
     },
     (value) => {
-      delete value.artifacts['dist/example.js'].brotliBytes;
+      Reflect.deleteProperty(value.artifacts['dist/example.js'], 'brotliBytes');
     },
     (value) => {
       value.artifacts['dist/example.js'].sha256 = 'missing';
@@ -637,7 +634,7 @@ test('complete measurement remains diagnostic and refuses stale or incomplete so
       value.candidatePolicies.consumer.scenarios = {};
     },
     (value) => {
-      delete value.policyViolations;
+      Reflect.deleteProperty(value, 'policyViolations');
     },
   ]) {
     const changed = structuredClone(report);

@@ -450,13 +450,12 @@ export function platformMeasurementLog(bytes, sourceSha) {
     compressedBytes: compressed.length,
     chunks: chunks.length,
   };
-  return (
-    [
-      `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN ${JSON.stringify(metadata)}`,
-      ...chunks.map((chunk, index) => `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK ${index} ${chunk}`),
-      `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${metadata.reportSha256}`,
-    ].join('\n') + '\n'
-  );
+  const lines = [
+    `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN ${JSON.stringify(metadata)}`,
+    ...chunks.map((chunk, index) => `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK ${index} ${chunk}`),
+    `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${metadata.reportSha256}`,
+  ].join('\n');
+  return `${lines}\n`;
 }
 
 export async function prepareInputs(options) {
