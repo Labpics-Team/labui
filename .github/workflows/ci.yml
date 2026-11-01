@@ -160,7 +160,54 @@ jobs:
         run: pnpm lint
 
       - name: Format check (Biome)
+        id: formatting
         run: pnpm run format:check
+
+      # Временная диагностика #204: удалить после применения exact formatter patch.
+      # Исходная ошибка остаётся failure; обязательные проверки не продолжаются.
+      - name: Сохранить полный patch форматирования Icons
+        if: ${{ failure() && steps.formatting.outcome == 'failure' }}
+        shell: bash
+        env:
+          FORMAT_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import { execFileSync } from 'node:child_process';
+          import { createHash } from 'node:crypto';
+          import { readFileSync } from 'node:fs';
+          import { gzipSync } from 'node:zlib';
+          const paths = [
+            'apps/docs/tests/icons-public-entrypoints.test.mjs',
+            'apps/docs/tests/prepare-icons-inputs.mjs',
+            'apps/docs/tests/icons-packed.mjs',
+            'apps/docs/tests/prepare-icons-inputs.test.mjs',
+          ];
+          const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+          const maximum = 2 * 1024 * 1024;
+          const git = args => execFileSync('git', ['--no-replace-objects', ...args], { maxBuffer: maximum, timeout: 20_000 });
+          const sourceSha = process.env.FORMAT_SOURCE_SHA;
+          const checkoutSha = git(['rev-parse', 'HEAD']).toString().trim();
+          assert.match(sourceSha, /^[a-f0-9]{40}$/);
+          assert.match(checkoutSha, /^[a-f0-9]{40}$/);
+          const files = paths.map(path => {
+            const beforeSha256 = hash(git(['show', `HEAD:${path}`]));
+            assert.equal(hash(readFileSync(path)), beforeSha256, `${path}: dirty before formatter`);
+            return { path, beforeSha256 };
+          });
+          const formatterVersion = execFileSync('pnpm', ['exec', 'biome', '--version'], { encoding: 'utf8', timeout: 20_000 }).trim();
+          execFileSync('pnpm', ['exec', 'biome', 'format', '--write', ...paths], { stdio: 'inherit', timeout: 60_000 });
+          for (const file of files) file.afterSha256 = hash(readFileSync(file.path));
+          const patch = git(['diff', '--no-ext-diff', '--no-textconv', '--binary', '--', ...paths]);
+          assert.ok(patch.length > 0 && patch.length <= maximum, 'formatter patch absent or unbounded');
+          const compressed = gzipSync(patch, { level: 9 });
+          const chunks = compressed.toString('base64').match(/.{1,4096}/g);
+          const metadata = { schemaVersion: 1, encoding: 'gzip-base64', sourceSha, checkoutSha, formatterVersion,
+            files, patchSha256: hash(patch), bytes: patch.length, compressedBytes: compressed.length, chunks: chunks.length };
+          process.stdout.write(`LABUI_ICONS_FORMAT_PATCH_BEGIN ${JSON.stringify(metadata)}\n`);
+          for (const [index, chunk] of chunks.entries()) process.stdout.write(`LABUI_ICONS_FORMAT_PATCH_CHUNK ${index} ${chunk}\n`);
+          process.stdout.write(`LABUI_ICONS_FORMAT_PATCH_END ${metadata.patchSha256}\n`);
+          NODE
 
       - name: Typecheck
         run: pnpm typecheck
