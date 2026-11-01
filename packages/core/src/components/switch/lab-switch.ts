@@ -245,11 +245,9 @@ export class LabSwitch extends LabElement {
       opacity: 1;
     }
 
-    /* Focus is delegated to the hidden input via the machine; draw the ring on
-       the visible track when that input is focus-visible. The input is now a
-       SIBLING of the control (so it stays in the a11y tree), so match it from
-       the shared root rather than as a descendant of the control. */
-    .root:has(input:focus-visible) .control {
+    /* Прямой соседний селектор обновляет кольцо при focus/blur в Shadow DOM.
+       Input остаётся снаружи aria-hidden control и сохраняет доступность. */
+    input:focus-visible + .control {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
@@ -321,12 +319,12 @@ export class LabSwitch extends LabElement {
     // the accessibility tree (an aria-hidden ancestor would erase it).
     return html`
       <label class="root">
+        <input type="checkbox" />
         <span class="control">
           <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
           <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
           <span class="thumb"></span>
         </span>
-        <input type="checkbox" />
         <span class="label"><slot></slot></span>
       </label>
     `;

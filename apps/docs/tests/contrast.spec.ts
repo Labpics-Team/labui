@@ -436,6 +436,7 @@ for (const renderer of ['lit', 'react'] as const)
       const positions = [];
       for (const value of ['off', 'on']) {
         const host = page.getByTestId(`${renderer}-accent-${value}`);
+        await host.scrollIntoViewIfNeeded();
         const track = host.locator(renderer === 'lit' ? '.control' : '.lab-switch-control');
         const thumb = host.locator(renderer === 'lit' ? '.thumb' : '.lab-switch-thumb');
         const paints = await track.evaluate((e) => {
@@ -469,12 +470,51 @@ for (const renderer of ['lit', 'react'] as const)
         positions.push(k.x - t.x);
         await page.keyboard.press('Tab');
         await host.locator('input').focus();
-        const focus = await track.evaluate((e) => ({
-          color: getComputedStyle(e).outlineColor,
-          style: getComputedStyle(e).outlineStyle,
-        }));
-        expect(focus.style).toBe('solid');
+        const readFocus = () =>
+          track.evaluate((e) => {
+            const style = getComputedStyle(e);
+            return {
+              color: style.outlineColor,
+              style: style.outlineStyle,
+              width: style.outlineWidth,
+              offset: style.outlineOffset,
+            };
+          });
+        // Эталон IC при root16: фокус отделён от постоянной границы 1px.
+        const expectedFocus = {
+          color: theme === 'light' ? 'rgb(0, 64, 221)' : 'rgb(64, 156, 255)',
+          style: 'solid',
+          width: '2px',
+          offset: '2px',
+        };
+        await expect.poll(readFocus).toEqual(expectedFocus);
+        const focus = await readFocus();
         expect(contrast(rgb(focus.color), rgb(paints.bg))).toBeGreaterThanOrEqual(3);
+        const previousStyle = await track.getAttribute('style');
+        await track.evaluate((e) => {
+          const style = (e as HTMLElement).style;
+          style.setProperty('outline', 'var(--_lab-control-outline)', 'important');
+          style.setProperty('outline-offset', '0px', 'important');
+        });
+        const suppressed = await readFocus();
+        // Старый oracle принимал этот mutant: solid и контрастная граница есть.
+        expect(suppressed.style).toBe('solid');
+        expect(contrast(rgb(suppressed.color), rgb(paints.bg))).toBeGreaterThanOrEqual(3);
+        expect(suppressed).not.toEqual(expectedFocus);
+        await track.evaluate((e, style) => {
+          if (style === null) e.removeAttribute('style');
+          else e.setAttribute('style', style);
+        }, previousStyle);
+        await expect.poll(readFocus).toEqual(expectedFocus);
+        await host.locator('input').blur();
+        await expect.poll(readFocus).toEqual({
+          color: paints.outline,
+          style: 'solid',
+          width: paints.width,
+          offset: '0px',
+        });
+        await host.locator('input').focus();
+        await expect.poll(readFocus).toEqual(expectedFocus);
         report.push({ value, paints, knob, focus });
         await host.screenshot({ path: info.outputPath(`${value}.png`) });
       }
