@@ -289,8 +289,7 @@ export async function stateReference(iconsRoot, pin) {
     const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
     assert.equal(fingerprint, member.pathFingerprintSha256);
     assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
-    if (document.schemaVersion === 1)
-      assert.equal(member.enclosurePathIndex, paths.length - 1);
+    if (document.schemaVersion === 1) assert.equal(member.enclosurePathIndex, paths.length - 1);
     else assert.ok(!Object.hasOwn(member, 'enclosurePathIndex'), 'schema2 не содержит path index');
     assert.ok(paths.length >= 2);
     assert.equal(member.contentPartIds.length, paths.length - 1);
