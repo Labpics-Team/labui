@@ -56,6 +56,7 @@ const SMOKE_SPECS = [
   'acrylic-live.spec.ts',
   'button.spec.ts',
   'button-geometry.spec.ts',
+  'button-anatomy.spec.ts',
   // Геометрия, шрифт и масштаб Switch сверяются с независимым эталоном.
   'switch-geometry.spec.ts',
   'input.spec.ts',

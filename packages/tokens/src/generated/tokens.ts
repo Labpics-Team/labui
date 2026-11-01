@@ -155,6 +155,7 @@ export const fontSize = {
   'switch-label-l': 'var(--lab-font-size-switch-label-l)',
   'button-label-s': 'var(--lab-font-size-button-label-s)',
   'button-label': 'var(--lab-font-size-button-label)',
+  'button-description': 'var(--lab-font-size-button-description)',
 } as const;
 
 export type FontSizeToken = keyof typeof fontSize;
@@ -174,6 +175,7 @@ export const lineHeight = {
   'switch-label-l': 'var(--lab-line-height-switch-label-l)',
   'button-label-s': 'var(--lab-line-height-button-label-s)',
   'button-label': 'var(--lab-line-height-button-label)',
+  'button-description': 'var(--lab-line-height-button-description)',
 } as const;
 
 export type LineHeightToken = keyof typeof lineHeight;
@@ -202,6 +204,7 @@ export const letterSpacing = {
   'switch-label-l': 'var(--lab-letter-spacing-switch-label-l)',
   'button-label-s': 'var(--lab-letter-spacing-button-label-s)',
   'button-label': 'var(--lab-letter-spacing-button-label)',
+  'button-description': 'var(--lab-letter-spacing-button-description)',
 } as const;
 
 export type LetterSpacingToken = keyof typeof letterSpacing;

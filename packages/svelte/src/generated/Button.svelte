@@ -14,20 +14,23 @@
     type?: LabButton['type'];
     kind?: LabButton['kind'];
     size?: LabButton['size'];
+    description?: LabButton['description'];
     icon?: LabButton['icon'];
     loading?: LabButton['loading'];
     disabled?: LabButton['disabled'];
     htmlType?: LabButton['htmlType'];
+    end?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { type, kind, size, icon, loading, disabled, htmlType, children, ...rest }: Props = $props();
+  let { type, kind, size, description, icon, loading, disabled, htmlType, children, end, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
     { name: 'kind', attr: 'kind', kind: 'string' },
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'description', attr: 'description', kind: 'string' },
     { name: 'icon', attr: 'icon', kind: 'boolean' },
     { name: 'loading', attr: 'loading', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
@@ -37,11 +40,12 @@
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { type, kind, size, icon, loading, disabled, htmlType });
+    forwardDeclared(el, specs, { type, kind, size, description, icon, loading, disabled, htmlType });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
 <lab-button bind:this={el} {...rest}>
   {@render children?.()}
+  {#if end}<div slot="end" style="display:contents">{@render end()}</div>{/if}
 </lab-button>

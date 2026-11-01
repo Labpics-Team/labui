@@ -14,11 +14,9 @@
  * the React renderer, which SSRs natively) never pulls the SSR engine into its
  * bundle. The React path does not import this file at all.
  *
- * The DOM shim MUST be installed before any custom element module is imported,
- * so element registration works in Node. Import order is load-bearing — keep
- * the shim import first.
+ * Node-вход Lit сам предоставляет минимальный DOM и сохраняет общий registry.
+ * Дополнительный глобальный установщик заменил бы API хоста, включая fetch.
  */
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
 import { render } from '@lit-labs/ssr';
 import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { type TemplateResult, html } from 'lit';
@@ -29,9 +27,8 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
  * Render a Lit template to a declarative-shadow-DOM HTML string.
  *
  * The caller is responsible for having imported the element module(s) the
- * template uses (after this module's shim import has run) so they are
- * registered. Returns a complete HTML string ready to embed via any framework's
- * raw-HTML slot.
+ * template uses so they are registered. Returns a complete HTML string ready
+ * to embed via any framework's raw-HTML slot.
  */
 export function renderToString(template: TemplateResult): string {
   return collectResultSync(render(template));

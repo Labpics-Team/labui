@@ -23,24 +23,18 @@ describe('анализатор ядра → манифест', () => {
     expect(manifest.components.find((c) => c.tag === 'lab-field')).toBeUndefined();
   });
 
-  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+icon', () => {
+  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+icon+end', () => {
     const btn = byTag('lab-button');
-    expect(btn.props.map((p) => p.name)).toEqual([
-      'type',
-      'kind',
-      'size',
-      'icon',
-      'loading',
-      'disabled',
-      'htmlType',
-    ]);
+    expect(btn.props.map((p) => p.name).sort()).toEqual(
+      ['type', 'kind', 'size', 'icon', 'loading', 'disabled', 'htmlType', 'description'].sort(),
+    );
     // ariaLabel исключён (aria-* проходит нативным fall-through).
     expect(btn.props.find((p) => p.name === 'ariaLabel')).toBeUndefined();
     // htmlType маппится на атрибут html-type.
     expect(btn.props.find((p) => p.name === 'htmlType')?.attr).toBe('html-type');
     expect(btn.events).toEqual([]);
     expect(btn.slots.default).toBe(true);
-    expect(btn.slots.named).toEqual(['icon']);
+    expect(btn.slots.named).toEqual(['end', 'icon']);
   });
 
   it('классификация видов: булев / строка / prop (массивы через converter/attribute:false)', () => {

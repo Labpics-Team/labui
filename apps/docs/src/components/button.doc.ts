@@ -14,16 +14,31 @@
  * dressed as a control.
  */
 import '@labpics/ui-core/button';
+import buttonSymbol from '../assets/button-symbol.svg?raw';
 import type { ComponentDoc } from '../template/component-doc.js';
 
 /** Build a real `<lab-button>` with the given attribute map applied. */
-function makeButton(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
+function makeButton(
+  attrs: Readonly<Record<string, string | boolean>>,
+  withIcons = false,
+): HTMLElement {
   const button = document.createElement('lab-button');
   button.textContent = 'Button';
   for (const [key, value] of Object.entries(attrs)) {
     if (value === false) continue;
     if (value === true) button.setAttribute(key, '');
     else button.setAttribute(key, String(value));
+  }
+  if (withIcons) {
+    const template = document.createElement('template');
+    template.innerHTML = buttonSymbol;
+    for (const slot of ['icon', 'end']) {
+      const glyph = template.content.firstElementChild?.cloneNode(true);
+      if (!(glyph instanceof SVGElement)) throw new Error('Missing Button symbol');
+      glyph.setAttribute('slot', slot);
+      glyph.setAttribute('aria-hidden', 'true');
+      button.append(glyph);
+    }
   }
   return button;
 }
@@ -34,14 +49,14 @@ export const buttonDoc: ComponentDoc = {
   tag: 'lab-button',
   title: 'Button',
   summary:
-    'The primary action control. Three intents (accent / neutral / danger) across four surface kinds (fill / tinted / border / ghost) and three sizes, with icon-only, loading, and disabled states — built only on semantic --lab-* roles, identical on the Lit and native-React renderers.',
+    'Кнопка действия с основной надписью, описанием в строке и иконками по краям. Три назначения, четыре вида поверхности, три размера; цвета приходят из семантических ролей LabUI.',
   // Beta, honestly: the API and behaviour are production and frozen, but two
   // colour roles it pairs (the SOLID neutral fill + its on-fill label) are
   // PROVISIONAL in the generated colour contract, awaiting the owner's visual sign-off. That
   // is a calibration, not an API risk — hence beta, not stable.
   status: {
     kind: 'beta',
-    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The solid-neutral fill role it pairs is a PROVISIONAL colour value pending owner sign-off — a visual calibration, not an API change.',
+    note: 'Анатомия доступна в Lit и React. Полное соответствие цветов, материалов и эффектов эталону проходит отдельную приёмку.',
   },
 
   statesMatrix: {
@@ -98,21 +113,27 @@ export const buttonDoc: ComponentDoc = {
     },
     {
       index: 3,
-      name: 'Icon slot',
+      name: 'Области иконок',
       description:
-        'A leading icon (Lit: slot="icon"; React: iconSlot). With the icon attribute set, the button becomes a square icon-only control sized to its size axis.',
+        'Начальная icon/iconSlot и завершающая end/endSlot. Кнопка отводит каждой область 20 px в S и 24 px в M/L при root 16 px. Явный размер рисунка сохраняется; width/height 100% заполняют область и растут вместе с ней. Один slot принимает одну композицию рисунка.',
     },
     {
       index: 4,
       name: 'Spinner',
       description:
-        'Always present in the DOM, shown only while loading. It overlays the centre and the label is hidden via visibility — so the button never changes size when it starts loading (zero layout shift).',
+        'Всегда присутствует в DOM и показывается при loading. Текст становится прозрачным, рисунки обрезаются на уровне paint: размеры и доступное имя сохраняются.',
     },
     {
       index: 5,
       name: 'Focus ring',
       description:
         'A :focus-visible outline drawn from --lab-border-focus. delegatesFocus on the Lit host moves focus to the inner button; the React button is the focus target directly. Keyboard activation (Enter / Space) is the platform default — never re-implemented.',
+    },
+    {
+      index: 6,
+      name: 'Описание',
+      description:
+        'Необязательный description после основной надписи с промежутком 8 px. В S обе надписи используют 500, 14/12 px; в M/L описание использует 400, 16/24 px и tracking −0.25 px. Цвет определяется secondary-ролью выбранной поверхности.',
     },
   ],
 
@@ -138,7 +159,8 @@ export const buttonDoc: ComponentDoc = {
     // so each one genuinely changes the live button (owner's iron rule: no no-op
     // controls). Click states (hover / active / focus) are exercised by actually
     // interacting with the rendered button — they need no synthetic control.
-    make: () => makeButton({ type: 'accent', kind: 'fill', size: 'm' }),
+    make: () =>
+      makeButton({ type: 'accent', kind: 'fill', size: 'm', description: 'Description' }, true),
     controls: [
       {
         kind: 'select',
@@ -198,10 +220,17 @@ export const buttonDoc: ComponentDoc = {
           'Control size. Drives padding, font size, and minimum height from --lab-* tokens.',
       },
       {
+        name: 'description',
+        type: 'string',
+        default: "''",
+        description:
+          'Дополнительный текст в строке после основной надписи. Отсутствующая или пустая строка не занимает места. Без aria-label входит в естественное доступное имя вместе с основной надписью.',
+      },
+      {
         name: 'icon',
         type: 'boolean',
         default: 'false',
-        description: 'Square, icon-only mode. The icon slot fills a square sized to the size axis.',
+        description: 'Квадратная кнопка с основной иконкой. Подпись и завершающая иконка скрыты.',
       },
       {
         name: 'loading',
@@ -238,7 +267,13 @@ export const buttonDoc: ComponentDoc = {
       },
       {
         name: 'icon / iconSlot',
-        description: 'Leading icon content. Lit uses slot="icon"; React uses the iconSlot prop.',
+        description:
+          'Начальная иконка. Потребитель задаёт одну композицию и её размер. Декоративный SVG маркируется aria-hidden="true", img — alt="". При отсутствии явного aria-label смысловое содержимое иконки сохраняется в доступном имени.',
+      },
+      {
+        name: 'end / endSlot',
+        description:
+          'Завершающая иконка с тем же размерным контрактом; скрыта в квадратном режиме icon. Отсутствующее назначение не занимает места; пустой обычный элемент резервирует область. Пустая обёртка display:contents может схлопнуться.',
       },
     ],
   },

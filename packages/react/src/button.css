@@ -368,10 +368,15 @@
   align-items: center;
   min-width: 0;
 }
-[data-lab-button] .lab-button-content > :not(.lab-button-label) {
-  flex: none;
-  width: var(--_lab-btn-content);
-  height: var(--_lab-btn-content);
+[data-lab-button] .lab-button-icon {
+  /* Область принадлежит кнопке; явный размер рисунка остаётся у потребителя. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--_lab-btn-content);
+  grid-auto-rows: var(--_lab-btn-content);
+  place-items: center;
+  flex: 0 0 auto;
+  line-height: 0;
 }
 [data-lab-button] .lab-button-label {
   display: inline-flex;
@@ -379,6 +384,32 @@
   min-height: var(--_lab-btn-content);
   padding-inline: var(--lab-space-sm, 0.5rem);
   gap: var(--lab-space-sm, 0.5rem);
+}
+[data-lab-button] .lab-button-description {
+  font-size: var(--lab-font-size-button-description, 1rem);
+  line-height: var(--lab-line-height-button-description, 1.5);
+  letter-spacing: var(--lab-letter-spacing-button-description, -0.015625em);
+  font-weight: var(--lab-font-weight-regular, 400);
+  color: var(--lab-label-secondary);
+}
+[data-lab-button][data-size="s"] .lab-button-description {
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  font-weight: inherit;
+}
+[data-lab-button][data-type="accent"] .lab-button-description {
+  color: var(--lab-label-brand-secondary);
+}
+[data-lab-button][data-type="danger"] .lab-button-description {
+  color: var(--lab-label-danger-secondary);
+}
+[data-lab-button][data-type="accent"][data-kind="fill"] .lab-button-description,
+[data-lab-button][data-type="danger"][data-kind="fill"] .lab-button-description {
+  color: var(--lab-label-static-light-secondary);
+}
+[data-lab-button][data-icon="true"] .lab-button-icon[data-position="end"] {
+  display: none;
 }
 [data-lab-button][data-icon="true"] .lab-button-label {
   /* Подпись не занимает место, но остаётся источником доступного имени. */
@@ -391,7 +422,8 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-[data-lab-button][data-loading="true"] .lab-button-content {
+[data-lab-button][data-loading="true"] .lab-button-content,
+[data-lab-button][data-loading="true"] .lab-button-content .lab-button-description {
   /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of
      those strip the label from the accessibility tree in at least one engine
      (visibility:hidden everywhere; WebKit ALSO drops opacity:0 from its a11y
@@ -401,6 +433,10 @@
      stays in the a11y tree on every engine, so "Saving…" remains the
      accessible name while the spinner is visually shown. */
   color: transparent;
+}
+[data-lab-button][data-loading="true"] .lab-button-icon {
+  /* Скрываем paint фиксированного SVG/img без потери геометрии и имени. */
+  clip-path: inset(50%);
 }
 [data-lab-button] .lab-button-spinner {
   display: none;

@@ -54,6 +54,7 @@ export class LabButton extends LabElement {
     type: { reflect: true },
     kind: { reflect: true },
     size: { reflect: true },
+    description: {},
     icon: { type: Boolean, reflect: true },
     loading: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
@@ -75,6 +76,7 @@ export class LabButton extends LabElement {
   declare type: LabButtonType;
   declare kind: LabButtonKind;
   declare size: LabButtonSize;
+  declare description: string;
   declare icon: boolean;
   declare loading: boolean;
   declare disabled: boolean;
@@ -86,6 +88,7 @@ export class LabButton extends LabElement {
     this.type = 'accent';
     this.kind = 'fill';
     this.size = 'm';
+    this.description = '';
     this.icon = false;
     this.loading = false;
     this.disabled = false;
@@ -342,10 +345,16 @@ export class LabButton extends LabElement {
       align-items: center;
       min-width: 0;
     }
-    slot[name='icon']::slotted(*) {
-      flex: none;
-      width: var(--_content);
-      height: var(--_content);
+    slot[name='icon'],
+    slot[name='end'] {
+      /* Неявная ячейка появляется вместе с рисунком; пустой slot не занимает место. */
+      display: inline-grid;
+      grid-auto-flow: column;
+      grid-auto-columns: var(--_content);
+      grid-auto-rows: var(--_content);
+      place-items: center;
+      flex: 0 0 auto;
+      line-height: 0;
     }
     .label {
       display: inline-flex;
@@ -353,6 +362,32 @@ export class LabButton extends LabElement {
       min-height: var(--_content);
       padding-inline: ${litVar('--lab-space-sm', '0.5rem')};
       gap: ${litVar('--lab-space-sm', '0.5rem')};
+    }
+    .description {
+      font-size: ${litVar('--lab-font-size-button-description', '1rem')};
+      line-height: ${litVar('--lab-line-height-button-description', '1.5')};
+      letter-spacing: ${litVar('--lab-letter-spacing-button-description', '-0.015625em')};
+      font-weight: ${litVar('--lab-font-weight-regular', '400')};
+      color: ${litVar('--lab-label-secondary')};
+    }
+    :host([size='s']) .description {
+      font-size: inherit;
+      line-height: inherit;
+      letter-spacing: inherit;
+      font-weight: inherit;
+    }
+    :host([type='accent']) .description {
+      color: ${litVar('--lab-label-brand-secondary')};
+    }
+    :host([type='danger']) .description {
+      color: ${litVar('--lab-label-danger-secondary')};
+    }
+    :host([type='accent'][kind='fill']) .description,
+    :host([type='danger'][kind='fill']) .description {
+      color: ${litVar('--lab-label-static-light-secondary')};
+    }
+    :host([icon]) slot[name='end'] {
+      display: none;
     }
     :host([icon]) .label {
       /* Подпись не занимает место, но остаётся источником доступного имени. */
@@ -365,13 +400,19 @@ export class LabButton extends LabElement {
       clip-path: inset(50%);
       white-space: nowrap;
     }
-    :host([loading]) .content {
+    :host([loading]) .content,
+    :host([loading]) .content .description {
       /* color: transparent — see button.css (React twin) for the full WCAG
          4.1.2 rationale: neither visibility:hidden NOR opacity:0 is safe here
          (WebKit drops opacity:0 content from its a11y tree too), so only a
          paint-level change (colour) may be used to visually hide the label
          while keeping it the button's accessible name on every engine. */
       color: transparent;
+    }
+    :host([loading]) slot[name='icon'],
+    :host([loading]) slot[name='end'] {
+      /* Скрываем и фиксированную заливку glyph, сохраняя его размер и имя. */
+      clip-path: inset(50%);
     }
     .spinner {
       display: none;
@@ -402,8 +443,7 @@ export class LabButton extends LabElement {
   override render(): TemplateResult {
     // Loading OR disabled blocks interaction. SSR-safe: ifDefined keeps absent
     // attributes out of the attribute position (no bare `nothing`), and the
-    // spinner is always present (CSS hides it) so @lit-labs/ssr never sees a
-    // conditional child template.
+    // spinner is always present and does not change the content's layout.
     const inactive = this.disabled || this.loading;
     // Явное имя имеет native-приоритет, как у React. Без него имя даёт default
     // slot, в том числе визуально скрытая icon-подпись. SSR не исследует light DOM.
@@ -419,7 +459,8 @@ export class LabButton extends LabElement {
         <span class="spinner" aria-hidden="true"></span>
         <span class="content">
           <slot name="icon" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
-          <span class="label"><slot></slot></span>
+          <span class="label"><slot></slot>${this.description ? html` <span class="description">${this.description}</span>` : null}</span>
+          <slot name="end" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
         </span>
       </button>
     `;

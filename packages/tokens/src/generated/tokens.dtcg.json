@@ -1282,6 +1282,18 @@
           "css": "1rem"
         }
       }
+    },
+    "button-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1338,6 +1350,10 @@
       "$value": 0.857143
     },
     "button-label": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "button-description": {
       "$type": "number",
       "$value": 1.5
     }
@@ -1416,6 +1432,10 @@
     "button-label": {
       "$type": "number",
       "$value": 0
+    },
+    "button-description": {
+      "$type": "number",
+      "$value": -0.015625
     }
   },
   "measure": {

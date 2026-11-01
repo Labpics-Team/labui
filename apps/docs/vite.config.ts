@@ -20,8 +20,7 @@ function ssrProofPlugin(): Plugin {
     name: 'labui-ssr-proof',
     async transformIndexHtml(html, ctx) {
       if (!ctx.path.endsWith('proof.html') || !html.includes(PLACEHOLDER)) return html;
-      // Import order is load-bearing: the SSR shim installs the DOM shim, then the
-      // proof element registers against it.
+      // Определение элемента должно попасть в общий registry Lit до рендеринга.
       const { renderToString, html: litHtml } = await import('@labpics/ui-core/ssr');
       await import('@labpics/ui-core/proof');
       const dsd = renderToString(
@@ -41,6 +40,27 @@ function ssrButtonNamesPlugin(): Plugin {
       if (!ctx.path.endsWith('button-names.html') || !markup.includes(placeholder)) return markup;
       const { renderToString, html } = await import('@labpics/ui-core/ssr');
       await import('@labpics/ui-core/button');
+      const { renderButton } = await import('@labpics/ui-vue/ssr');
+      const glyph =
+        '<svg data-glyph="start" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor"/></svg>';
+      const anatomy = (['s', 'm', 'l'] as const)
+        .map((size) =>
+          (['plain', 'full', 'empty', 'whitespace'] as const)
+            .map((mode) => {
+              const body = renderButton(
+                { size, description: mode === 'full' ? 'Description' : undefined },
+                {
+                  default: '<span data-label>Button</span>',
+                  icon: mode === 'full' ? glyph : mode === 'whitespace' ? ' ' : '',
+                  end:
+                    mode === 'full' ? glyph.replace('data-glyph="start"', 'data-glyph="end"') : '',
+                },
+              );
+              return `<div data-testid="ssr-anatomy-${size}-${mode}">${body}</div>`;
+            })
+            .join(''),
+        )
+        .join('');
       return markup.replace(
         placeholder,
         renderToString(html`
@@ -49,7 +69,7 @@ function ssrButtonNamesPlugin(): Plugin {
           <lab-button data-testid="ssr-explicit" icon aria-label="Add item"></lab-button>
           <lab-button data-testid="ssr-loading" icon loading aria-label="Add item"><span>Add</span></lab-button>
           <lab-button data-testid="ssr-visible" aria-label="Add item"><span>Add</span></lab-button>
-        `),
+        `) + anatomy,
       );
     },
   };
@@ -78,6 +98,7 @@ export default defineConfig({
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-button-names': resolve(__dirname, 'src/_fixtures/button-names.html'),
+        'fixture-button-anatomy': resolve(__dirname, 'src/_fixtures/button-anatomy.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).

@@ -38,8 +38,11 @@ export interface ButtonProps
   kind?: LabButtonKind;
   /** Control size. */
   size?: LabButtonSize;
+  /** Дополнительная подпись в строке после основного текста. */
+  description?: string;
   /**
-   * Квадратная кнопка без видимой подписи. Имя задаётся через `aria-label` либо
+   * Квадратная кнопка с основной иконкой, без видимой подписи и endSlot.
+   * Имя задаётся через `aria-label` либо
    * `children`: они визуально скрыты, но доступны скринридеру. Явное `aria-label`
    * передаётся нативной кнопке и имеет приоритет в обоих рендерерах.
    */
@@ -52,6 +55,8 @@ export interface ButtonProps
   htmlType?: LabButtonHtmlType;
   /** Leading icon content (parity with the Lit `icon` slot). */
   iconSlot?: ReactNode;
+  /** Завершающая иконка (slot="end" в Lit), скрыта при icon. Размер задаёт потребитель. */
+  endSlot?: ReactNode;
   /** Label content (parity with the Lit default slot). */
   children?: ReactNode;
 }
@@ -61,11 +66,13 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     type = 'accent',
     kind = 'fill',
     size = 'm',
+    description,
     icon = false,
     loading = false,
     disabled = false,
     htmlType = 'button',
     iconSlot,
+    endSlot,
     children,
     ...rest
   },
@@ -91,8 +98,29 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     >
       <span className="lab-button-spinner" aria-hidden="true" />
       <span className="lab-button-content">
-        {iconSlot}
-        <span className="lab-button-label">{children}</span>
+        <span
+          className="lab-button-icon"
+          data-position="start"
+          aria-hidden={rest['aria-label'] ? true : undefined}
+        >
+          {iconSlot}
+        </span>
+        <span className="lab-button-label">
+          {children}
+          {description ? (
+            <>
+              {' '}
+              <span className="lab-button-description">{description}</span>
+            </>
+          ) : null}
+        </span>
+        <span
+          className="lab-button-icon"
+          data-position="end"
+          aria-hidden={rest['aria-label'] ? true : undefined}
+        >
+          {endSlot}
+        </span>
       </span>
     </button>
   );
