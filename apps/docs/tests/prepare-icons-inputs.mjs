@@ -328,6 +328,7 @@ export async function stateReference(iconsRoot, pin) {
     variant: 'outline',
     defaultState: group.defaultState,
     enclosurePartId: group.enclosurePartId,
+    ...(document.schemaVersion === 2 ? { sharedPartIds: [group.enclosurePartId] } : {}),
     enclosure,
     states,
     proof: {
@@ -345,6 +346,25 @@ export async function stateReference(iconsRoot, pin) {
       specSha256: hash(
         stableJSON({ schemaVersion: document.schemaVersion, source, name: 'status-circle', group }),
       ),
+      ...(document.schemaVersion === 2
+        ? {
+            sharedPartsSha256: hash(
+              stableJSON({
+                parts: [
+                  {
+                    id: group.enclosurePartId,
+                    role: 'container',
+                    ...enclosure,
+                    paint: { kind: 'fill', fill: 'currentColor' },
+                  },
+                ],
+                viewBox: [0, 0, 24, 24],
+                dimensions: [24, 24],
+                placement: 'after-content',
+              }),
+            ),
+          }
+        : {}),
     },
   };
 }

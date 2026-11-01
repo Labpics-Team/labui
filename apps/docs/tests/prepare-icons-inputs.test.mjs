@@ -16,7 +16,11 @@ import {
   validatePlatformMeasurement,
   validateSourcePin,
 } from './prepare-icons-inputs.mjs';
-import { validateStateReference, validateSubject } from './icons-packed.mjs';
+import {
+  stateCapabilitiesReference,
+  validateStateReference,
+  validateSubject,
+} from './icons-packed.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
@@ -513,7 +517,31 @@ test('author-state schema2 derives the same raw status geometry without a second
   assert.deepEqual(actual.enclosure, previous.enclosure);
   assert.equal(actual.proof.enclosureSha256, previous.proof.enclosureSha256);
   assert.notEqual(actual.proof.specSha256, previous.proof.specSha256);
+  assert.deepEqual(actual.sharedPartIds, ['status-enclosure']);
+  assert.deepEqual(stateCapabilitiesReference(actual), {
+    ...stateCapabilitiesReference(previous),
+    sharedPartIds: ['status-enclosure'],
+    proof: actual.proof,
+  });
   assert.equal(validateStateReference(actual, PIN.figma), actual);
+  for (const mutate of [
+    (value) => {
+      value.sharedPartIds = [];
+    },
+    (value) => {
+      value.proof.sharedPartsSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      Reflect.deleteProperty(value, 'sharedPartIds');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.proof, 'sharedPartsSha256');
+    },
+  ]) {
+    const changed = structuredClone(actual);
+    mutate(changed);
+    assert.throws(() => validateStateReference(changed, PIN.figma));
+  }
 });
 
 test('author-state schema2 refuses incompatible shared anatomy and legacy index fields', async (t) => {

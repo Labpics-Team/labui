@@ -208,6 +208,28 @@ export function validateStateReference(reference, author) {
   assert.equal(reference.proof.law, 'enclosure.replace');
   assert.match(reference.proof.specSha256, HASH);
   assert.match(reference.proof.enclosureSha256, HASH);
+  if (Object.hasOwn(reference, 'sharedPartIds')) {
+    assert.deepEqual(reference.sharedPartIds, [reference.enclosurePartId]);
+    assert.equal(
+      reference.proof.sharedPartsSha256,
+      hash(
+        stableJSON({
+          parts: [
+            {
+              id: reference.enclosurePartId,
+              role: 'container',
+              ...reference.enclosure,
+              paint: { kind: 'fill', fill: 'currentColor' },
+            },
+          ],
+          viewBox: [0, 0, 24, 24],
+          dimensions: [24, 24],
+          placement: 'after-content',
+        }),
+      ),
+      'независимый shared anatomy fingerprint',
+    );
+  } else assert.ok(!Object.hasOwn(reference.proof, 'sharedPartsSha256'));
   assert.deepEqual(
     reference.states.map((state) => state.id),
     ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'],
@@ -913,21 +935,20 @@ function stateEffect(effect, reference, target, duration) {
       at: 0,
       duration,
     })),
-    unchangedPartIds: [reference.enclosurePartId],
+    unchangedPartIds: reference.sharedPartIds ?? [reference.enclosurePartId],
     options: { duration, easing: 'linear', fill: 'both' },
   });
 }
 
-async function stateBrowserProof(page, reference, reducedMotion, records) {
-  const read = () => page.evaluate(() => window.__iconsPacked.readState());
-  const initial = await read();
-  assert.deepEqual(initial.capabilities, {
+export function stateCapabilitiesReference(reference) {
+  return {
     group: reference.group,
     variant: reference.variant,
     defaultState: reference.defaultState,
     transition: 'enclosure-replacement',
     morph: 'unavailable',
     enclosurePartId: reference.enclosurePartId,
+    ...(reference.sharedPartIds ? { sharedPartIds: reference.sharedPartIds } : {}),
     states: reference.states.map(({ id, partId, icon, contentPartIds, author }) => ({
       id,
       partId,
@@ -937,7 +958,13 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     })),
     formats: { static: ['svg'], transition: ['web-effect'] },
     proof: reference.proof,
-  });
+  };
+}
+
+async function stateBrowserProof(page, reference, reducedMotion, records) {
+  const read = () => page.evaluate(() => window.__iconsPacked.readState());
+  const initial = await read();
+  assert.deepEqual(initial.capabilities, stateCapabilitiesReference(reference));
   assert.deepEqual(initial.viewBox, [0, 0, 24, 24]);
   assert.deepEqual(initial.dimensions, [24, 24]);
   const enclosure = {
