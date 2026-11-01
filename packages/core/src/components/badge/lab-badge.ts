@@ -173,9 +173,9 @@ export class LabBadge extends LabElement {
   override render(): TemplateResult {
     return html`
       <span class="badge" part="badge">
-        <slot name="leading" aria-hidden="true"><slot name="dot"></slot></slot>
+        <slot name="leading" data-sizing="fill" aria-hidden="true"><slot name="dot" data-sizing="fill"></slot></slot>
         <slot></slot>
-        <slot name="trailing" aria-hidden="true"></slot>
+        <slot name="trailing" data-sizing="fill" aria-hidden="true"></slot>
       </span>
     `;
   }

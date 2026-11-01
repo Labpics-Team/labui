@@ -27,5 +27,5 @@ export function renderBadge(
       color=${ifDefined(props.color)}
       type=${ifDefined(props.type)}
       ?disabled=${Boolean(props.disabled)}
-    >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${slots.leading ? html`<span slot="leading">${unsafeHTML(slots.leading)}</span>` : ''}${slots.trailing ? html`<span slot="trailing">${unsafeHTML(slots.trailing)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
+    >${slots.dot || slots.leading || slots.trailing ? html`<style slot="_lab-style">:where([data-lab-slot-fill]) > *{inline-size:100%;block-size:100%}[data-lab-slot-fill]:empty{display:none!important}</style>` : ''}${slots.dot ? html`<span slot="dot" data-lab-slot-fill style="display:inline-flex">${unsafeHTML(slots.dot)}</span>` : ''}${slots.leading ? html`<span slot="leading" data-lab-slot-fill style="display:inline-flex">${unsafeHTML(slots.leading)}</span>` : ''}${slots.trailing ? html`<span slot="trailing" data-lab-slot-fill style="display:inline-flex">${unsafeHTML(slots.trailing)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
 }

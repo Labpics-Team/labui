@@ -6,6 +6,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, h } from 'vue';
+import { Badge } from '../src/generated/badge.js';
 import { Button } from '../src/generated/button.js';
 import { Checkbox } from '../src/generated/checkbox.js';
 import { Input } from '../src/generated/input.js';
@@ -23,6 +24,35 @@ afterEach(() => {
 });
 
 describe('Vue mount (проброс на <lab-*>)', () => {
+  it('Badge сохраняет содержимое, события и размерную коробку именованного слота', () => {
+    const clicked = vi.fn();
+    const { host, unmount } = mount(
+      h(
+        Badge,
+        {},
+        {
+          default: () => 'Статус',
+          leading: () =>
+            h('svg', { width: 24, height: 24, onClick: clicked }, [
+              h('path', { d: 'M0 0h24v24H0Z' }),
+            ]),
+        },
+      ),
+    );
+    const wrapper = host.querySelector<HTMLElement>('[slot="leading"]');
+    expect(wrapper?.hasAttribute('data-lab-slot-fill')).toBe(true);
+    expect(wrapper?.style.display).toBe('inline-flex');
+    expect(wrapper?.querySelector('svg')?.getAttribute('width')).toBe('24');
+    wrapper?.querySelector('svg')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(clicked).toHaveBeenCalledOnce();
+    const directText = [...(host.querySelector('lab-badge')?.childNodes ?? [])]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent)
+      .join('');
+    expect(directText).toBe('Статус');
+    unmount();
+    expect(host.childNodes.length).toBe(0);
+  });
   it('button: строковые оси → атрибуты, false-булев снят, слот в light DOM', () => {
     const { host } = mount(
       h(Button, { type: 'accent', size: 'l', disabled: false, loading: true }, () => 'Сохранить'),

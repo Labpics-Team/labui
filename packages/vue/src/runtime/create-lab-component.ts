@@ -24,6 +24,7 @@
  * `@labpics/ui-core/<subpath>`, поэтому обёртка приносит элемент с собой.
  */
 import { type DefineComponent, type VNode, defineComponent, h } from 'vue';
+import { slotFillCss } from './slot-projection.js';
 
 /** Способ проброса одного пропа — зеркалит PropKind манифеста. */
 export type LabPropKind = 'boolean' | 'prop' | 'string';
@@ -44,6 +45,8 @@ export interface LabComponentSpec {
   readonly specs: readonly LabPropSpec[];
   /** Имена кастом-событий (kebab) — для типизации обработчиков. */
   readonly events: readonly string[];
+  /** Слоты, коробку которых задаёт ядро; содержимое заполняет только эту коробку. */
+  readonly fillSlots?: readonly string[];
 }
 
 /** kebab → PascalCase на уровне типов: 'value-change' → 'ValueChange'. */
@@ -98,13 +101,24 @@ export function createLabComponent<Props, Events extends string>(
           }
         }
         // Слоты: default → дети; именованные (в т.ч. динамические content/icon/…)
-        // оборачиваем в display:contents-элемент с slot=<name> (нативное слотирование
-        // требует РЕНДЕРЯЩИЙСЯ узел в light-DOM; <template> не спроецировался бы).
+        // оборачиваем в элемент с slot=<name>. Обычно он display:contents; у
+        // размерного слота сохраняем коробку, которую оформляет ::slotted ядра.
         const children: unknown[] = [];
+        if (spec.fillSlots?.some((name) => slots[name])) {
+          children.push(h('style', { slot: '_lab-style' }, slotFillCss));
+        }
         for (const [name, slotFn] of Object.entries(slots)) {
           if (!slotFn) continue;
           if (name === 'default') children.push(slotFn());
-          else children.push(h('div', { slot: name, style: 'display:contents' }, slotFn()));
+          else if (spec.fillSlots?.includes(name)) {
+            children.push(
+              h(
+                'span',
+                { slot: name, 'data-lab-slot-fill': '', style: 'display:inline-flex' },
+                slotFn(),
+              ),
+            );
+          } else children.push(h('div', { slot: name, style: 'display:contents' }, slotFn()));
         }
         return h(tag, bindings, children as VNode[]);
       };

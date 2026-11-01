@@ -169,7 +169,12 @@
           "leading",
           "trailing"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "fill": [
+          "dot",
+          "leading",
+          "trailing"
+        ]
       }
     },
     {

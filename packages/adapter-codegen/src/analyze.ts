@@ -31,11 +31,12 @@ interface RawSlots {
   default: boolean;
   named: Set<string>;
   dynamic: boolean;
+  fill: Set<string>;
 }
 
 /** Пустые слоты — стартовое значение при слиянии. */
 function emptySlots(): RawSlots {
-  return { default: false, named: new Set<string>(), dynamic: false };
+  return { default: false, named: new Set<string>(), dynamic: false, fill: new Set<string>() };
 }
 
 /** kebab → PascalCase: 'alert-dialog' → 'AlertDialog'. */
@@ -153,14 +154,16 @@ function extractEvents(cls: ts.ClassDeclaration): Set<string> {
  */
 function extractSlots(cls: ts.ClassDeclaration): RawSlots {
   const text = cls.getText();
-  const slots: RawSlots = { default: false, named: new Set<string>(), dynamic: false };
+  const slots = emptySlots();
   const re = /<slot\b([^>]*)>/g;
   let match: RegExpExecArray | null = re.exec(text);
   while (match !== null) {
     const attrs = match[1] ?? '';
     const named = /name\s*=\s*"([^"]+)"/.exec(attrs);
-    if (named?.[1]) slots.named.add(named[1]);
-    else if (/name\s*=\s*\$\{/.test(attrs)) slots.dynamic = true;
+    if (named?.[1]) {
+      slots.named.add(named[1]);
+      if (/data-sizing\s*=\s*"fill"/.test(attrs)) slots.fill.add(named[1]);
+    } else if (/name\s*=\s*\$\{/.test(attrs)) slots.dynamic = true;
     else if (!/name\s*=/.test(attrs)) slots.default = true;
     match = re.exec(text);
   }
@@ -261,6 +264,7 @@ export function analyzeCore(componentsDir: string): Manifest {
         default: base.slots.default || raw.slots.default,
         named: new Set<string>([...base.slots.named, ...raw.slots.named]),
         dynamic: base.slots.dynamic || raw.slots.dynamic,
+        fill: new Set<string>([...base.slots.fill, ...raw.slots.fill]),
       },
     };
     resolved.set(className, merged);
@@ -275,6 +279,7 @@ export function analyzeCore(componentsDir: string): Manifest {
         default: meta.slots.default,
         named: [...meta.slots.named].sort(),
         dynamic: meta.slots.dynamic,
+        ...(meta.slots.fill.size ? { fill: [...meta.slots.fill].sort() } : {}),
       };
       return {
         tag,

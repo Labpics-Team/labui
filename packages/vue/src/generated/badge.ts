@@ -25,4 +25,5 @@ export const Badge: LabComponent<BadgeProps, never> = createLabComponent<
       { name: 'disabled', attr: 'disabled', kind: 'boolean' },
   ],
   events: [],
+  fillSlots: ['dot', 'leading', 'trailing'],
 });

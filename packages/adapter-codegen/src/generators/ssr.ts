@@ -4,15 +4,14 @@
  * строку через ядро). По одному `src/generated/<subpath>.ssr.ts` на компонент + барель
  * `ssr.ts`. Каждый адаптер даёт вход `@labpics/ui-<fw>/ssr`, реэкспортящий барель.
  *
- * Порядок импортов load-bearing: `@labpics/ui-core/ssr` ставит DOM-шим ПЕРВЫМ, только
- * потом импортится модуль элемента (иначе `LitElement extends HTMLElement` упал бы —
- * в Node нет HTMLElement до шима). Регистрация элемента обязательна: @lit-labs/ssr
- * эмитит shadow root только известных элементов.
+ * Node-экспорты Lit устанавливают минимальный DOM и общий customElements registry.
+ * Импорт модуля элемента обязателен: @lit-labs/ssr эмитит shadow root только
+ * зарегистрированных элементов. Отдельный preload от потребителя не требуется.
  */
 import { join } from 'node:path';
 import { adapterSrc } from '../paths.js';
 import type { ComponentMeta, Manifest } from '../types.js';
-import { generatedHeader, writeIfChanged } from './shared.js';
+import { generatedHeader, slotFillMarkup, writeIfChanged } from './shared.js';
 
 /** camelCase имя ключа слота: 'icon-on' → 'iconOn'. */
 function camelSlot(name: string): string {
@@ -48,13 +47,16 @@ function ssrFile(c: ComponentMeta): string {
 
   const hasSlots = slotKeys.length > 0;
   const namedSlotParts = c.slots.named
-    .map(
-      (s) =>
-        `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
+    .map((s) =>
+      c.slots.fill?.includes(s)
+        ? `\${slots.${camelSlot(s)} ? html\`<span slot="${s}" data-lab-slot-fill style="display:inline-flex">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`
+        : `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
     )
     .join('');
   const defaultSlotPart = c.slots.default ? "${unsafeHTML(slots.default ?? '')}" : '';
-  const children = `${namedSlotParts}${defaultSlotPart}`;
+  const fillCondition = c.slots.fill?.map((s) => `slots.${camelSlot(s)}`).join(' || ');
+  const fillStyle = fillCondition ? `\${${fillCondition} ? html\`${slotFillMarkup}\` : ''}` : '';
+  const children = `${fillStyle}${namedSlotParts}${defaultSlotPart}`;
   // Параметр slots — только когда есть слоты (иначе noUnusedParameters).
   const slotsParam = hasSlots ? `\n  slots: ${c.pascal}SsrSlots = {},` : '';
 

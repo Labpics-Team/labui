@@ -8,6 +8,7 @@
   import type { LabBadge } from '@labpics/ui-core/badge';
   import type { Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { slotFillMarkup } from '../runtime/slot-projection.js';
 
   /** Пропы <lab-badge> — типы взяты прямо из класса ядра (LabBadge). */
   interface Props {
@@ -38,8 +39,9 @@
 </script>
 
 <lab-badge bind:this={el} {...rest}>
+  {#if dot || leading || trailing}{@html slotFillMarkup}{/if}
   {@render children?.()}
-  {#if dot}<div slot="dot" style="display:contents">{@render dot()}</div>{/if}
-  {#if leading}<div slot="leading" style="display:contents">{@render leading()}</div>{/if}
-  {#if trailing}<div slot="trailing" style="display:contents">{@render trailing()}</div>{/if}
+  {#if dot}<span slot="dot" data-lab-slot-fill style="display:inline-flex">{@render dot()}</span>{/if}
+  {#if leading}<span slot="leading" data-lab-slot-fill style="display:inline-flex">{@render leading()}</span>{/if}
+  {#if trailing}<span slot="trailing" data-lab-slot-fill style="display:inline-flex">{@render trailing()}</span>{/if}
 </lab-badge>
