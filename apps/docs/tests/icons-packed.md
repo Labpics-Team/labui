@@ -5,6 +5,9 @@ Outline и Filled авторского `reload`. Публичный Lab Motion �
 `reload.cycle`; приложение использует только публичные package entrypoints.
 Schema2 добавляет один button со `status-circle`: шесть авторских Outline знаков
 внутри одной сохраняемой оболочки, select состояния и доступный текст приложения.
+Schema3 добавляет `expression-face`: спокойствие, грусть и улыбку с двумя
+сохраняемыми глазами и оболочкой. Все три выражения показаны в 16, 24 и 48 px.
+Обе группы используют один consumer executor и публичный state effect contract.
 Публичный `sequence` Lab Motion исполняет opacity stages с явным первым кадром
 из видимой позы; новый control создаётся до остановки прежнего. Reload остаётся
 в том же приложении.
@@ -51,9 +54,11 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 2`, `packages`, `authorReference` и
-`stateReference`. Исторический schema1 сохраняет прежний cycle reference и
-исполняемый путь reload; state reference в schema1 запрещён.
+Текущий JSON имеет `schemaVersion: 3`, `packages`, `authorReference` и
+`stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
+Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
+сохраняет cycle reference и исполняемый путь reload без state reference.
+Одновременное присутствие старого и нового state полей получает отказ.
 
 | Поле | Содержимое |
 |---|---|
@@ -64,9 +69,10 @@ Workflow не загружает архивы в Actions storage. Локальн
 | `authorReference` | `fileName`, `fileKey`, `version`, `icons.reload` |
 | `icons.reload` | Ровно `outline` и `filled` |
 | Каждый variant | `sourceFile`, `author`, `anatomy`, `viewBox`, `paths`, `parts`, `gesture` |
-| `stateReference` | `group`, `variant`, `defaultState`, `enclosurePartId`, `enclosure`, `states`, `proof` |
+| Каждый state reference | `group`, `variant`, `defaultState`, `enclosurePartId`, `enclosure`, `states`, `proof` |
+| `expression-face` | Также `sharedPartIds` и упорядоченные `sharedParts` с `id`, `role`, `d`, `fillRule` |
 | Каждый state | `id`, `partId`, `icon`, `contentPartIds`, `sourceFile`, `author`, `viewBox`, `dimensions`, `paths` |
-| `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec |
+| `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
@@ -135,6 +141,8 @@ installed npm lock integrity обязан совпасть. Отсутствие
 обязан разрешаться внутрь этого consumer и содержать реальные button, reload и
 Motion. Импорты чужих публичных symbols и whole IR entrypoints отвергаются.
 Schema2 также требует вклад публичного `@labpics/icons/states/status-circle`.
+Schema3 требует вклад обоих state entries, включая
+`@labpics/icons/states/expression-face`; отсутствие одного не сокращает проверку.
 Проверка не фиксирует частное размещение его implementation; полный retained
 module graph сохраняется для проверки отсутствия catalog/authoring owners.
 Button, reload и Motion разрешаются bundler-ом по публичным entrypoints
@@ -174,7 +182,7 @@ continuity или compositor-only execution.
 `GESTURE_UNSUPPORTED`. Cleanup останавливает controls, удаляет mounted кнопки и
 проверяет отсутствие running native animations.
 
-State consumer сравнивает шесть static SVG endpoints с независимым reference,
+State consumer сравнивает все static SVG endpoints каждой группы с независимым reference,
 точные content paths и countershapes всех mounted групп, один enclosure, размеры
 и stable IDs. `stateCapabilities()` и экспорт `web-effect` сверяются с семантикой
 группы. Отдельный сценарий ставит публичный playback на паузу в видимой смеси,
@@ -189,6 +197,14 @@ status и доступное имя принадлежат приложению.
 при disposal не выдаётся за `finished`. Filled, неизвестное состояние, null request
 и неподдержанные transition formats получают точные отказы.
 
+В expression-face меняется только рот. Оба глаза и оболочка должны присутствовать
+ровно один раз вне state groups, сохранять authored contours, opacity 1,
+transform `none` и исходные DOM nodes во время паузы, reversal и нового намерения.
+Raw oracle отвергает изменённый или переставленный глаз даже после пересчёта
+hashes master и manifest. Все девять static samples сверяются с raw geometry;
+screenshots сохраняются для визуального просмотра. Масштабирование здесь не
+объявляет optical axis или live Figma parity.
+
 ## Результаты и ограничения
 
 Результат сохраняет `receipt.json` с фазой отказа, observations и browser errors;
@@ -199,7 +215,8 @@ SHA harness, checkout SHA, dirty state, Node, browser и идентичност�
 Browser/server закрываются; удаляется только собственный временный consumer.
 
 Размер относится к полному приложению с Lab UI и Motion: schema1 содержит две
-reload кнопки; schema2 также содержит status-circle и select состояния. Этот
+reload кнопки; schema2 также содержит status-circle и select состояния; schema3
+добавляет expression-face с select и девятью static samples. Этот
 маршрут не измеряет baseline speedup, стоимость одиночного статического импорта,
 публикацию npm или оптическую приёмку всего корпуса. Для этих утверждений нужны
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного

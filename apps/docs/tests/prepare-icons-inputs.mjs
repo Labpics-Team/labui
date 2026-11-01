@@ -5,7 +5,7 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { assertSelfHostedRunner, validateSubject } from './icons-packed.mjs';
+import { assertSelfHostedRunner, stateReferenceContract, validateSubject } from './icons-packed.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -244,7 +244,8 @@ export async function authorReference(iconsRoot, pin) {
 
 // Отдельный независимый reference: raw masters и публичная semantic декларация,
 // без compiler/glyph/imports производителя. Interior сохраняет исходный порядок.
-export async function stateReference(iconsRoot, pin) {
+export async function stateReference(iconsRoot, pin, name = 'status-circle') {
+  const contract = stateReferenceContract(name);
   const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
   const document = JSON.parse(
     await readFile(join(iconsRoot, 'semantics/author-state-groups.json')),
@@ -255,23 +256,18 @@ export async function stateReference(iconsRoot, pin) {
   assert.equal(manifest.source.version, source.version);
   assert.ok([1, 2].includes(document.schemaVersion), 'неподдержанная author-state schema');
   assert.deepEqual(document.source, source);
-  const group = document.groups['status-circle'];
+  const group = document.groups[name];
   assert.equal(group.law, 'enclosure.replace');
-  assert.equal(group.defaultState, 'question');
-  assert.equal(group.enclosurePartId, 'status-enclosure');
+  assert.equal(group.defaultState, contract.defaultState);
+  assert.equal(group.enclosurePartId, contract.enclosurePartId);
+  if (name === 'expression-face') assert.equal(document.schemaVersion, 2);
   if (document.schemaVersion === 2)
-    assert.deepEqual(group.sharedParts, [{ id: 'status-enclosure', role: 'container' }]);
-  assert.deepEqual(Object.keys(group.states).sort(), [
-    'attention',
-    'confirmation',
-    'decrease',
-    'dismissal',
-    'increase',
-    'question',
-  ]);
+    assert.deepEqual(group.sharedParts, contract.sharedParts);
+  assert.deepEqual(Object.keys(group.states).sort(), contract.states);
   const states = [];
-  const ids = new Set([group.enclosurePartId]);
+  const ids = new Set(contract.sharedParts.map(part => part.id));
   let enclosure;
+  let sharedParts;
   for (const id of Object.keys(group.states).sort()) {
     const member = group.states[id];
     assert.match(member.icon, /^[a-z][a-z0-9-]*$/);
@@ -293,7 +289,8 @@ export async function stateReference(iconsRoot, pin) {
       assert.equal(member.enclosurePathIndex, paths.length - 1);
     else assert.ok(!Object.hasOwn(member, 'enclosurePathIndex'), 'schema2 не содержит path index');
     assert.ok(paths.length >= 2);
-    assert.equal(member.contentPartIds.length, paths.length - 1);
+    assert.equal(member.contentPartIds.length, paths.length - contract.sharedParts.length);
+    assert.ok(member.contentPartIds.length > 0);
     const partId = `state-${id}`;
     for (const part of [partId, ...member.contentPartIds]) {
       assert.match(part, /^[a-z][a-z0-9-]*$/);
@@ -303,6 +300,10 @@ export async function stateReference(iconsRoot, pin) {
     const shell = paths.at(-1);
     if (enclosure) assert.deepEqual(shell, enclosure, 'author enclosures не совпадают');
     else enclosure = shell;
+    const shared = paths.slice(member.contentPartIds.length)
+      .map((path, index) => ({ ...path, ...contract.sharedParts[index] }));
+    if (sharedParts) assert.deepEqual(shared, sharedParts, 'author shared parts не совпадают');
+    else sharedParts = shared;
     states.push({
       id,
       partId,
@@ -324,11 +325,14 @@ export async function stateReference(iconsRoot, pin) {
     });
   }
   return {
-    group: 'status-circle',
+    group: name,
     variant: 'outline',
     defaultState: group.defaultState,
     enclosurePartId: group.enclosurePartId,
-    ...(document.schemaVersion === 2 ? { sharedPartIds: [group.enclosurePartId] } : {}),
+    ...(document.schemaVersion === 2
+      ? { sharedPartIds: sharedParts.map(part => part.id),
+          ...(name === 'expression-face' ? { sharedParts } : {}) }
+      : {}),
     enclosure,
     states,
     proof: {
@@ -344,20 +348,14 @@ export async function stateReference(iconsRoot, pin) {
         }),
       ),
       specSha256: hash(
-        stableJSON({ schemaVersion: document.schemaVersion, source, name: 'status-circle', group }),
+        stableJSON({ schemaVersion: document.schemaVersion, source, name, group }),
       ),
       ...(document.schemaVersion === 2
         ? {
             sharedPartsSha256: hash(
               stableJSON({
-                parts: [
-                  {
-                    id: group.enclosurePartId,
-                    role: 'container',
-                    ...enclosure,
-                    paint: { kind: 'fill', fill: 'currentColor' },
-                  },
-                ],
+                parts: sharedParts.map(part => ({ ...part,
+                  paint: { kind: 'fill', fill: 'currentColor' } })),
                 viewBox: [0, 0, 24, 24],
                 dimensions: [24, 24],
                 placement: 'after-content',
@@ -519,12 +517,14 @@ export async function prepareInputs(options) {
   }
   const reference = await authorReference(iconsRoot, pin);
   const states = await stateReference(iconsRoot, pin);
+  const expression = await stateReference(iconsRoot, pin, 'expression-face');
   for (const file of [
     'semantics/figma-baseline.json',
     'semantics/author-anatomy.json',
     'semantics/author-state-groups.json',
     ...Object.values(reference.icons.reload).map((item) => item.sourceFile),
     ...states.states.map((item) => item.sourceFile),
+    ...expression.states.map((item) => item.sourceFile),
   ]) {
     files.push({
       repository: pin.repository,
@@ -532,10 +532,10 @@ export async function prepareInputs(options) {
     });
   }
   const subject = validateSubject({
-    schemaVersion: 2,
+    schemaVersion: 3,
     packages,
     authorReference: reference,
-    stateReference: states,
+    stateReferences: { 'status-circle': states, 'expression-face': expression },
   });
   assertCheckout(iconsRoot, pin.sourceCommit);
   assertCheckout(uiRoot, uiCommit);
@@ -595,7 +595,7 @@ export async function summarize(directory) {
   const subject = validateSubject(JSON.parse(subjectBytes));
   assert.equal(hash(subjectBytes), source.subjectSha256);
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
-  if (subject.schemaVersion === 2) {
+  if (subject.schemaVersion >= 2) {
     const measurement = source.measurement;
     assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
     assert.equal(measurement.sourceSha, source.pin.sourceCommit);

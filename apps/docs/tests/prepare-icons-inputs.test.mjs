@@ -17,6 +17,9 @@ import {
   validateSourcePin,
 } from './prepare-icons-inputs.mjs';
 import {
+  assertStateAnatomy,
+  staticStatePathsReference,
+  subjectStateReferences,
   stateCapabilitiesReference,
   validateStateReference,
   validateSubject,
@@ -442,6 +445,146 @@ async function stateFixture(t, schemaVersion = 1) {
   return { root, manifest, document, texts };
 }
 
+const FACE_SHARED = [
+  { id: 'face-left-eye', role: 'content', d: 'M6 8L8 8L8 10L6 10Z', fillRule: 'nonzero' },
+  { id: 'face-right-eye', role: 'content', d: 'M15 8L18 8L18 10L15 10Z', fillRule: 'nonzero' },
+  { id: 'face-enclosure', role: 'container', d: SHELL, fillRule: 'evenodd' },
+];
+async function expressionFixture(t) {
+  const fixture = await stateFixture(t, 2);
+  const { root, manifest, document } = fixture;
+  const group = { law: 'enclosure.replace', defaultState: 'aloof',
+    enclosurePartId: 'face-enclosure',
+    sharedParts: FACE_SHARED.map(({ id, role }) => ({ id, role })), states: {} };
+  document.groups['expression-face'] = group;
+  const texts = {};
+  for (const [index, id] of ['aloof', 'sad', 'smile'].entries()) {
+    const paths = [{ d: `M8 ${14 + index}L16 ${14 + index}L12 18Z`, fillRule: 'nonzero' },
+      ...FACE_SHARED.map(({ d, fillRule }) => ({ d, fillRule }))];
+    const text = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g>${paths.map(path =>
+      `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`).join('')}</g></svg>`;
+    const file = `masters/figma/${PIN.figma.version}/Outline/${id}.svg`;
+    const fingerprint = pathFingerprint(paths);
+    const record = { master: file, sha256: hash(text), bytes: Buffer.byteLength(text),
+      nodeId: `2:${index + 1}`, nodeSha256: hash(`face-${id}`),
+      normalizedSource: { sha256: hash(`face-normalized-${id}`), pathFingerprintSha256: fingerprint } };
+    manifest.icons[id] = { outline: record };
+    group.states[id] = { icon: id, variant: 'outline', masterSha256: record.sha256,
+      pathFingerprintSha256: fingerprint, contentPartIds: [`${id}-mouth`] };
+    await writeFile(join(root, file), text);
+    texts[id] = { text, file, paths };
+  }
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+  return { ...fixture, texts };
+}
+
+async function replaceExpressionPaths(fixture, id, paths) {
+  const { root, manifest, document, texts } = fixture;
+  const text = texts[id].text.replace(/<path[^>]*\/>/g, '').replace('</g>',
+    paths.map(path => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`).join('') + '</g>');
+  const record = manifest.icons[id].outline;
+  record.sha256 = hash(text); record.bytes = Buffer.byteLength(text);
+  record.normalizedSource.pathFingerprintSha256 = pathFingerprint(paths);
+  Object.assign(document.groups['expression-face'].states[id], {
+    masterSha256: record.sha256, pathFingerprintSha256: record.normalizedSource.pathFingerprintSha256,
+  });
+  await writeFile(join(root, texts[id].file), text);
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+}
+
+test('expression raw oracle preserves two ordered eyes and enclosure without producer code', async (t) => {
+  const { root, texts } = await expressionFixture(t);
+  await mkdir(join(root, 'scripts/lib'), { recursive: true });
+  await writeFile(join(root, 'scripts/lib/author-state-groups.js'), 'throw new Error("POISONED_COMPILER");');
+  const reference = await stateReference(root, PIN, 'expression-face');
+  assert.deepEqual(reference.sharedParts, FACE_SHARED);
+  assert.deepEqual(reference.sharedPartIds, FACE_SHARED.map(part => part.id));
+  assert.equal(validateStateReference(reference, PIN.figma, 'expression-face'), reference);
+  for (const state of reference.states) {
+    assert.deepEqual(state.paths, texts[state.id].paths);
+    assert.deepEqual(state.contentPartIds, [`${state.id}-mouth`]);
+    assert.deepEqual(staticStatePathsReference(reference, state), [
+      { ...texts[state.id].paths[0], fill: 'currentColor', partId: `${state.id}-mouth`, role: 'content' },
+      ...FACE_SHARED.map(({ id, ...part }) => ({ ...part, fill: 'currentColor', partId: id })),
+    ]);
+  }
+  for (const mutate of [
+    value => { Reflect.deleteProperty(value, 'sharedPartIds'); },
+    value => { Reflect.deleteProperty(value, 'sharedParts'); },
+    value => { Reflect.deleteProperty(value.proof, 'sharedPartsSha256'); },
+    value => { value.sharedPartIds.reverse(); },
+    value => { value.sharedParts[0].role = 'container'; },
+    value => { value.sharedParts[1].d = value.sharedParts[0].d; },
+  ]) {
+    const changed = structuredClone(reference); mutate(changed);
+    assert.throws(() => validateStateReference(changed, PIN.figma, 'expression-face'));
+  }
+});
+
+test('rehashed expression eye edits, reordering and missing parts refuse while mouth changes remain valid', async (t) => {
+  for (const mutate of [
+    paths => { paths[1].d = paths[1].d.replace('6 8', '5 8'); },
+    paths => { [paths[1], paths[2]] = [paths[2], paths[1]]; },
+    paths => { paths.splice(1, 1); },
+  ]) {
+    const fixture = await expressionFixture(t);
+    const paths = structuredClone(fixture.texts.sad.paths); mutate(paths);
+    await replaceExpressionPaths(fixture, 'sad', paths);
+    await assert.rejects(stateReference(fixture.root, PIN, 'expression-face'));
+  }
+  const healthy = await expressionFixture(t);
+  const paths = structuredClone(healthy.texts.sad.paths);
+  paths[0].d = 'M8 14L16 14L12 17Z';
+  await replaceExpressionPaths(healthy, 'sad', paths);
+  const reference = await stateReference(healthy.root, PIN, 'expression-face');
+  assert.equal(reference.states.find(state => state.id === 'sad').paths[0].d, paths[0].d);
+  assert.deepEqual(reference.sharedParts, FACE_SHARED);
+});
+
+test('expression semantic declaration refuses changed shared order, roles and incomplete coverage', async (t) => {
+  const { root, document } = await expressionFixture(t);
+  for (const mutate of [
+    group => { group.sharedParts.reverse(); },
+    group => { group.sharedParts[0].role = 'container'; },
+    group => { group.sharedParts.pop(); },
+    group => { Reflect.deleteProperty(group.states, 'smile'); },
+    group => { group.states.aloof.contentPartIds.push('another-mouth'); },
+    group => { group.states.aloof.contentPartIds[0] = 'face-left-eye'; },
+  ]) {
+    const changed = structuredClone(document); mutate(changed.groups['expression-face']);
+    await writeJSON(root, 'semantics/author-state-groups.json', changed);
+    await assert.rejects(stateReference(root, PIN, 'expression-face'));
+  }
+});
+
+test('browser anatomy oracle rejects animated, duplicated, reordered or replaced shared face nodes', async (t) => {
+  const { root, texts } = await expressionFixture(t);
+  const reference = await stateReference(root, PIN, 'expression-face');
+  const observation = { viewBox: [0, 0, 24, 24], dimensions: [24, 24], identity: true,
+    groups: reference.states.map(state => ({ id: state.id, partId: `state-${state.id}`, role: 'state',
+      paths: [{ ...texts[state.id].paths[0], fill: 'currentColor', partId: `${state.id}-mouth`, role: 'content' }] })),
+    enclosure: { d: SHELL, fillRule: 'evenodd', fill: 'currentColor', partId: 'face-enclosure', role: 'container' },
+    enclosureCount: 1, enclosureOpacity: 1,
+    sharedParts: FACE_SHARED.map(({ id, ...part }) => ({ ...part, partId: id, fill: 'currentColor',
+      count: 1, opacity: 1, transform: 'none', inStateGroup: false, ancestorsUnchanged: true, identity: true })) };
+  assert.doesNotThrow(() => assertStateAnatomy(observation, reference));
+  for (const mutate of [
+    value => { value.sharedParts[0].opacity = 0.9; },
+    value => { value.sharedParts[0].transform = 'matrix(1, 0, 0, 1, 1, 0)'; },
+    value => { value.sharedParts[0].inStateGroup = true; },
+    value => { value.sharedParts[0].ancestorsUnchanged = false; },
+    value => { value.sharedParts[0].count = 2; },
+    value => { value.sharedParts[0].identity = false; },
+    value => { value.sharedParts.reverse(); },
+    value => { value.groups[0].paths.push(value.sharedParts[0]); },
+  ]) {
+    const changed = structuredClone(observation); mutate(changed);
+    assert.throws(() => assertStateAnatomy(changed, reference));
+  }
+});
+
 test('multi-path author reader preserves countershapes while cycle remains one whole path', () => {
   const source = MASTERS.outline.replace(
     '</g>',
@@ -654,6 +797,34 @@ test('schema2 requires the state reference while historical schema1 cycle inputs
   }
 });
 
+test('schema3 requires both independent state references and dispatches every group', async (t) => {
+  const { root } = await expressionFixture(t);
+  const authorReferenceValue = await authorReference(root, PIN);
+  const status = await stateReference(root, PIN);
+  const expression = await stateReference(root, PIN, 'expression-face');
+  const packages = Object.fromEntries([
+    ['icons', '@labpics/icons'], ['uiCore', '@labpics/ui-core'], ['uiShadow', '@labpics/ui-shadow'],
+  ].map(([key, name]) => [key, { name, version: '0.1.0', archiveSha256: 'a'.repeat(64),
+    archiveBytes: 1, sourceCommit: PIN.sourceCommit }]));
+  const subject = { schemaVersion: 3, packages, authorReference: authorReferenceValue,
+    stateReferences: { 'status-circle': status, 'expression-face': expression } };
+  assert.equal(validateSubject(subject), subject);
+  assert.equal(subjectStateReferences(subject), subject.stateReferences);
+  assert.deepEqual(subjectStateReferences({ schemaVersion: 2, stateReference: status }), { 'status-circle': status });
+  assert.deepEqual(subjectStateReferences({ schemaVersion: 1 }), {});
+  for (const mutate of [
+    value => { Reflect.deleteProperty(value.stateReferences, 'expression-face'); },
+    value => { Reflect.deleteProperty(value.stateReferences, 'status-circle'); },
+    value => { value.stateReference = status; },
+    value => { value.stateReferences.extra = status; },
+    value => { value.stateReferences['expression-face'] = status; },
+    value => { value.schemaVersion = 2; value.stateReference = status; },
+  ]) {
+    const changed = structuredClone(subject); mutate(changed);
+    assert.throws(() => validateSubject(changed));
+  }
+});
+
 function measurementFixture() {
   return {
     sourceSha: PIN.sourceCommit,
@@ -741,7 +912,7 @@ test('log block reconstructs exact report bytes with bounded indexed lines and a
 });
 
 async function summaryFixture(t, schemaVersion) {
-  const { root } = await stateFixture(t);
+  const { root } = schemaVersion === 3 ? await expressionFixture(t) : await stateFixture(t);
   const author = await authorReference(root, PIN);
   const states = await stateReference(root, PIN);
   const packages = Object.fromEntries(
@@ -765,6 +936,8 @@ async function summaryFixture(t, schemaVersion) {
     packages,
     authorReference: author,
     ...(schemaVersion === 2 ? { stateReference: states } : {}),
+    ...(schemaVersion === 3 ? { stateReferences: { 'status-circle': states,
+      'expression-face': await stateReference(root, PIN, 'expression-face') } } : {}),
   };
   const subjectBytes = JSON.stringify(subject);
   const report = measurementFixture();
@@ -787,7 +960,7 @@ async function summaryFixture(t, schemaVersion) {
         bytes: 10,
       },
     ],
-    ...(schemaVersion === 2
+    ...(schemaVersion >= 2
       ? {
           measurement: {
             file: 'platform-measurement.json',
@@ -810,7 +983,7 @@ async function summaryFixture(t, schemaVersion) {
     join(output, 'result/receipt.json'),
     JSON.stringify({ outcome: 'passed', records: [] }),
   );
-  if (schemaVersion === 2)
+  if (schemaVersion >= 2)
     await writeFile(join(output, 'inputs/platform-measurement.json'), reportBytes);
   const invoke = () =>
     execFileSync(
@@ -825,8 +998,8 @@ async function summaryFixture(t, schemaVersion) {
   return { output, source, report, invoke };
 }
 
-test('schema2 summary publishes the authenticated report and rejects missing or wrong-source output', async (t) => {
-  const fixture = await summaryFixture(t, 2);
+for (const schema of [2, 3]) test(`schema${schema} summary publishes the authenticated report and rejects missing or wrong-source output`, async (t) => {
+  const fixture = await summaryFixture(t, schema);
   const stdout = fixture.invoke();
   assert.match(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
   assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
