@@ -105,6 +105,11 @@ installed npm lock integrity обязан совпасть. Отсутствие
 `--ignore-scripts`, без aliases и ссылок на producer source. Rollup module graph
 обязан разрешаться внутрь этого consumer и содержать реальные button, reload и
 Motion. Whole IR/compiler/catalog и другие symbol-модули отвергаются.
+Button, reload и Motion разрешаются bundler-ом по публичным entrypoints
+установленных пакетов. В bundle требуется вклад их import-closure: перенос файлов
+при сохранённых exports и удаление пустого reexport facade не ломают проверку.
+Фактические resolved entries сохраняются в receipt; чужие публичные symbols и
+whole IR entrypoints получают отказ независимо от расположения файлов.
 
 Браузер проверяет оба начертания: точные контуры, fill-rule, порядок и part IDs,
 receipt Figma/anatomy, доступное имя «Обновить», native target 48×48, декоративный

@@ -14,6 +14,43 @@ const ROOT = resolve(HERE, '../../..');
 const HASH = /^[a-f0-9]{64}$/;
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+const REQUIRED_PUBLIC_ENTRIES = [
+  '@labpics/ui-core/button',
+  '@labpics/icons/symbols/reload',
+  '@labpics/motion',
+];
+
+export function assertIconsImport(source) {
+  if (!/^@labpics\/icons(?:\/|$)/.test(source)) return;
+  assert.ok(
+    ['@labpics/icons/symbols/reload', '@labpics/icons/ir/render', '@labpics/icons/motion'].includes(
+      source,
+    ),
+    `consumer импортирует чужой symbol или whole catalog: ${source}`,
+  );
+}
+
+// Resolver выбирает установленный публичный entry; facade может исчезнуть при treeshake.
+// Поэтому требуется реальный вклад его import-closure, а не частный путь производителя.
+export function assertPublicEntryModules(modules, entries, imports) {
+  for (const specifier of REQUIRED_PUBLIC_ENTRIES) {
+    const entry = entries[specifier];
+    assert.ok(typeof entry === 'string' && entry.length > 0, `entry не разрешён: ${specifier}`);
+    const seen = new Set();
+    const pending = [entry];
+    while (pending.length) {
+      const id = pending.pop();
+      if (seen.has(id)) continue;
+      seen.add(id);
+      pending.push(...(imports.get(id) ?? []));
+    }
+    assert.ok(
+      [...seen].some((id) => modules.has(id)),
+      `публичный entry не внёс модулей в bundle: ${specifier}`,
+    );
+  }
+}
 const stableJSON = (value) =>
   JSON.stringify(value, (_, item) =>
     item && typeof item === 'object' && !Array.isArray(item)
@@ -679,6 +716,8 @@ export async function main(args = process.argv.slice(2)) {
     const { chromium } = await import('@playwright/test');
     const modules = new Set();
     const bundles = [];
+    const publicEntries = {};
+    const imports = new Map();
     await build({
       configFile: false,
       root: consumer,
@@ -686,7 +725,23 @@ export async function main(args = process.argv.slice(2)) {
       plugins: [
         {
           name: 'icons-packed-identity',
+          enforce: 'pre',
+          resolveId(source) {
+            assertIconsImport(source);
+            return null;
+          },
+          async buildStart() {
+            for (const specifier of REQUIRED_PUBLIC_ENTRIES) {
+              const entry = await this.resolve(specifier, join(consumer, 'consumer.mjs'));
+              assert.ok(entry && !entry.external, `entry не разрешён в consumer: ${specifier}`);
+              publicEntries[specifier] = entry.id;
+            }
+          },
           generateBundle(_options, output) {
+            for (const id of this.getModuleIds()) {
+              const info = this.getModuleInfo(id);
+              imports.set(id, [...info.importedIds, ...info.dynamicallyImportedIds]);
+            }
             for (const item of Object.values(output)) {
               const bytes = Buffer.from(item.type === 'chunk' ? item.code : item.source);
               bundles.push({
@@ -712,15 +767,7 @@ export async function main(args = process.argv.slice(2)) {
         return relative(consumer, path).replaceAll('\\', '/');
       })
       .sort();
-    assert.ok(
-      moduleGraph.some((id) =>
-        id.endsWith('node_modules/@labpics/ui-core/dist/components/button/index.js'),
-      ),
-    );
-    assert.ok(
-      moduleGraph.some((id) => id.endsWith('node_modules/@labpics/icons/dist/symbols/reload.js')),
-    );
-    assert.ok(moduleGraph.some((id) => id.includes('node_modules/@labpics/motion/')));
+    assertPublicEntryModules(modules, publicEntries, imports);
     assert.ok(
       !moduleGraph.some((id) =>
         /@labpics\/icons\/(?:dist\/ir\/(?:index|compiler)\.js|.*(?:catalog|semantics|authoring))/.test(
@@ -736,6 +783,12 @@ export async function main(args = process.argv.slice(2)) {
     receipt.consumer = {
       fixtureSha256: hash(FIXTURE),
       htmlSha256: hash(HTML),
+      publicEntries: Object.fromEntries(
+        Object.entries(publicEntries).map(([specifier, id]) => [
+          specifier,
+          relative(consumer, id).replaceAll('\\', '/'),
+        ]),
+      ),
       moduleGraph,
       bundles,
       scenario:
