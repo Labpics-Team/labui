@@ -131,6 +131,7 @@ function buildFilter(
   svg: SVGSVGElement;
   filter: SVGFilterElement;
   flood: SVGFEFloodElement;
+  restore(): void;
 } {
   const id = `lab-acrylic-${++uid}`;
   const document = el.ownerDocument;
@@ -160,9 +161,9 @@ function buildFilter(
   blend.setAttribute('mode', 'luminosity');
 
   filter.append(blur, saturate, flood, blend);
-  const { svg, defs } = createHiddenDefs(el, DEFS_CLASS);
+  const { svg, defs, restore } = createHiddenDefs(el, DEFS_CLASS);
   defs.appendChild(filter);
-  return { id, svg, filter, flood };
+  return { id, svg, filter, flood, restore };
 }
 
 /** Регион = бокс элемента (border-box CSS px, без transform-масштаба —
@@ -198,7 +199,7 @@ export function attach(el: HTMLElement): EngineHandle {
   }));
 
   let tier = tierOf(el);
-  const { id, svg, filter, flood } = buildFilter(el, tier);
+  const { id, svg, filter, flood, restore } = buildFilter(el, tier);
   setRegion(filter, el);
   writeBackdrop(el, id);
 
@@ -213,6 +214,9 @@ export function attach(el: HTMLElement): EngineHandle {
   ro.observe(el);
 
   const handle: EngineHandle = {
+    restore(): void {
+      if (!disposed) restore();
+    },
     refresh(): void {
       if (disposed) return;
       const now = tierOf(el);

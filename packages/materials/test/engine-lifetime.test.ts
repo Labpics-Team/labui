@@ -216,4 +216,25 @@ describe('владение эффектом при пересекающихся 
     expect(surface.effect).toBe('');
     expect(binding.attach.mock.results[1]?.value.destroy).toHaveBeenCalledTimes(1);
   });
+
+  it('восстановление DOM не вызывает тяжёлый refresh и не пересоздаёт handle', () => {
+    const surface = new Surface();
+    const restore = vi.fn(() => {
+      surface.effect = 'restored';
+    });
+    const refresh = vi.fn();
+    const attach = vi.fn(() => ({ restore, refresh, destroy: vi.fn() }));
+    const binding: EngineBinding = { ...engine('glass'), refreshHeld: false, attach };
+    const mounted = mountEngine(binding, element(surface));
+    mounted.sync();
+    surface.effect = '';
+    mounted.sync();
+    expect(surface.effect).toBe('restored');
+    expect(attach).toHaveBeenCalledTimes(1);
+    expect(refresh).not.toHaveBeenCalled();
+    mounted.dispose();
+    restore.mockClear();
+    mounted.sync();
+    expect(restore).not.toHaveBeenCalled();
+  });
 });

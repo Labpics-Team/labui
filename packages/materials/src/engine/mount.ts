@@ -59,7 +59,7 @@ function probeBackdropFilterUrl(): boolean {
 export function createHiddenDefs(
   surface: HTMLElement,
   className: string,
-): { svg: SVGSVGElement; defs: SVGDefsElement } {
+): { svg: SVGSVGElement; defs: SVGDefsElement; restore(): void } {
   const document = surface.ownerDocument;
   const svg = document.createElementNS(SVGNS, 'svg');
   svg.setAttribute('aria-hidden', 'true');
@@ -68,7 +68,15 @@ export function createHiddenDefs(
   const defs = document.createElementNS(SVGNS, 'defs');
   svg.appendChild(defs);
   surface.appendChild(svg);
-  return { svg, defs };
+  return {
+    svg,
+    defs,
+    restore(): void {
+      // Замена пользовательского содержимого может удалить хост. Возвращаем
+      // те же узлы: фильтр, его id и подготовленные данные остаются живыми.
+      if (svg.parentNode !== surface) surface.appendChild(svg);
+    },
+  };
 }
 
 /**
@@ -97,6 +105,8 @@ export function trailingRaf(fn: () => void): { schedule(): void; cancel(): void 
 /** Живёт, пока движок держит поверхность. `refresh` опционален — движок без
  *  живого пере-чтения (liquid-glass в рантайме) его не несёт. */
 export interface EngineHandle {
+  /** Вернуть удалённые DOM-ресурсы без пересоздания или перерасчёта эффекта. */
+  restore?(): void;
   refresh?(): void;
   destroy(): void;
 }
@@ -221,6 +231,7 @@ export function mountEngine(binding: EngineBinding, scope: Document | Element): 
       if (!el.isConnected || !binding.wants(el)) continue;
       if (!binding.blocked?.()) {
         if (shared.handle) {
+          shared.handle.restore?.();
           if (binding.refreshHeld) shared.handle.refresh?.();
         } else {
           shared.handle = binding.attach(el);

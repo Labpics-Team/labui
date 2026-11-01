@@ -44,6 +44,12 @@ const hooks = {
     if (!stage || !surface) throw new Error('Нет поверхности');
     container(stage, scope).appendChild(surface);
   },
+  replaceContent(index: number, operation: 'textContent' | 'replaceChildren'): void {
+    const surface = surfaces[index];
+    if (!surface) throw new Error('Нет поверхности');
+    if (operation === 'textContent') surface.textContent = '';
+    else surface.replaceChildren(document.createElement('span'));
+  },
   snapshot(index: number) {
     const surface = surfaces[index];
     if (!surface) throw new Error('Нет поверхности');

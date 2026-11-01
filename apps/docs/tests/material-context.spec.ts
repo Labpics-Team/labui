@@ -105,4 +105,56 @@ for (const mode of ['acrylic', 'glass'] as const) {
     await page.evaluate(() => window.__materialContext.dispose(0));
     expect(difference(await raster(page, 1), neighbor)).toBeLessThan(1);
   });
+
+  for (const operation of ['textContent', 'replaceChildren'] as const) {
+    test(`${mode}: обновление содержимого через ${operation} сохраняет материал`, async ({
+      page,
+    }) => {
+      await load(page, 'closed', mode);
+      const plain = await raster(page, 0);
+      await mount(page);
+      const live = await raster(page, 0);
+      const neighbor = await raster(page, 1);
+      const backdrop = await page.evaluate(() => window.__materialContext.snapshot(0).backdrop);
+      expect(difference(live, plain), 'положительный контроль: материал виден').toBeGreaterThan(2);
+
+      for (let i = 0; i < 2; i++) {
+        await page.evaluate(
+          (operation) => window.__materialContext.replaceContent(0, operation),
+          operation,
+        );
+        await page.evaluate(() => window.__materialContext.settle());
+        expect(
+          difference(await raster(page, 0), live),
+          'содержимое обновилось, эффект сохранился',
+        ).toBeLessThan(1);
+        expect(
+          await page.evaluate(() => window.__materialContext.snapshot(0).backdrop),
+          'фильтр не пересоздаётся',
+        ).toBe(backdrop);
+        expect(
+          difference(await raster(page, 1), neighbor),
+          'соседняя поверхность не затронута',
+        ).toBeLessThan(1);
+      }
+
+      await page.evaluate(() => window.__materialContext.dispose(0));
+      await page.evaluate(
+        (operation) => window.__materialContext.replaceContent(0, operation),
+        operation,
+      );
+      await page.evaluate(() => window.__materialContext.settle());
+      expect(
+        difference(await raster(page, 0), plain),
+        'после release DOM-update не оживляет эффект',
+      ).toBeLessThan(1);
+      expect(await page.evaluate(() => window.__materialContext.snapshot(0))).toMatchObject({
+        backdrop: 'none',
+        ownedSvg: 0,
+      });
+      expect(difference(await raster(page, 1), neighbor)).toBeLessThan(1);
+      await page.evaluate(() => window.__materialContext.dispose(1));
+      expect(await page.evaluate(() => window.__materialContext.snapshot(1).ownedSvg)).toBe(0);
+    });
+  }
 }

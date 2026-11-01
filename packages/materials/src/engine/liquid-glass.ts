@@ -129,6 +129,7 @@ interface RenderParams {
 }
 
 interface EngineState extends LiquidGlassHandle {
+  restore(): void;
   el: HTMLElement;
   id: string;
   filter: SVGFilterElement;
@@ -877,7 +878,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     value: el.style.getPropertyValue(property),
     priority: el.style.getPropertyPriority(property),
   }));
-  const { svg, defs } = createHiddenDefs(el, 'lab-lg-defs');
+  const { svg, defs, restore } = createHiddenDefs(el, 'lab-lg-defs');
   const id = `lab-lg-${++uid}`;
   const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
   filter.id = id;
@@ -892,6 +893,9 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
 
   const { onPerf, ...params } = opts;
   const state: EngineState = {
+    restore: () => {
+      if (!disposed) restore();
+    },
     el,
     id,
     filter,

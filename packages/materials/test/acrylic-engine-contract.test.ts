@@ -18,6 +18,7 @@ import {
   ACRYLIC_SATURATE,
   attach,
 } from '../src/engine/acrylic';
+import { mountEngine } from '../src/engine/mount';
 import { MATERIAL_TIERS } from '../src/material-guarantee';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -70,7 +71,7 @@ describe('конвейер повторяет ступени листа (оди�
 // и наследование вычисленных цветов проверяются реальным браузером.
 class FilterNode {
   children: FilterNode[] = [];
-  parent: FilterNode | null = null;
+  parentNode: FilterNode | null = null;
   attributes = new Map<string, string>();
   values = new Map<string, string>();
   priorities = new Map<string, string>();
@@ -98,7 +99,8 @@ class FilterNode {
   }
 
   appendChild(node: FilterNode): FilterNode {
-    node.parent = this;
+    node.remove();
+    node.parentNode = this;
     this.children.push(node);
     return node;
   }
@@ -108,8 +110,17 @@ class FilterNode {
   }
 
   remove(): void {
-    if (this.parent) this.parent.children = this.parent.children.filter((node) => node !== this);
-    this.parent = null;
+    if (this.parentNode)
+      this.parentNode.children = this.parentNode.children.filter((node) => node !== this);
+    this.parentNode = null;
+  }
+
+  matches(selector: string): boolean {
+    return selector === '.lab-material';
+  }
+
+  querySelectorAll(): FilterNode[] {
+    return [];
   }
 
   find(tag: string): FilterNode | undefined {
@@ -189,6 +200,55 @@ describe('фильтр принадлежит поверхности и её л�
       neighbor.destroy();
     }
     expect(second.children).toHaveLength(0);
+  });
+
+  it('sync после замены контента возвращает тот же фильтр, сохраняя новый контент и handle', () => {
+    const owner = new FilterDocument();
+    vi.stubGlobal('document', owner);
+    vi.stubGlobal('HTMLElement', FilterNode);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const surface = new FilterNode('article', owner);
+    const attachSpy = vi.fn(attach);
+    const mounted = mountEngine(
+      {
+        gate: () => true,
+        selector: '.lab-material',
+        wants: () => true,
+        refreshHeld: true,
+        attach: attachSpy,
+      },
+      surface as unknown as HTMLElement,
+    );
+    mounted.sync();
+    const filter = surface.find('filter');
+    const svg = surface.find('svg');
+    expect(filter).toBeDefined();
+    svg?.remove();
+    const content = new FilterNode('span', owner);
+    surface.appendChild(content);
+    try {
+      mounted.sync();
+      mounted.sync();
+      expect(
+        surface.find('filter') === filter,
+        'тот же фильтр возвращается без нового attach',
+      ).toBe(true);
+      expect(surface.children.length).toBe(2);
+      expect(surface.children[0] === content && surface.children[1] === svg).toBe(true);
+      expect(attachSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      mounted.dispose();
+    }
+    mounted.sync();
+    attachSpy.mock.results[0]?.value.restore?.();
+    expect(surface.children.length).toBe(1);
+    expect(surface.children[0] === content).toBe(true);
   });
 });
 
