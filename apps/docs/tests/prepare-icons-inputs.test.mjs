@@ -9,6 +9,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
   authorReference,
+  notificationReference,
   readAuthorMaster,
   readCycleMaster,
   stateReference,
@@ -973,6 +974,43 @@ test('schema3 requires both independent state references and dispatches every gr
   ]) {
     const changed = structuredClone(subject);
     mutate(changed);
+    assert.throws(() => validateSubject(changed));
+  }
+});
+
+test('schema4 binds six notification raw masters and refuses missing or cross-source reference', async t => {
+  const { root, manifest } = await expressionFixture(t);
+  const notification = JSON.parse(await readFile(new URL('./fixtures/icons-notification-masters.json', import.meta.url)));
+  Object.assign(manifest.icons, notification.manifest.icons);
+  const annotations = JSON.parse(await readFile(join(root, 'semantics/author-anatomy.json')));
+  Object.assign(annotations.icons, notification.annotations.icons);
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-anatomy.json', annotations);
+  for (const [file, bytes] of Object.entries(notification.masters)) {
+    await mkdir(dirname(join(root, file)), { recursive: true });
+    await writeFile(join(root, file), bytes);
+  }
+  const reference = await notificationReference(root, PIN);
+  const packages = Object.fromEntries([['icons', '@labpics/icons'], ['uiCore', '@labpics/ui-core'], ['uiShadow', '@labpics/ui-shadow']]
+    .map(([key, name]) => [key, { name, version: '0.1.0', archiveSha256: 'a'.repeat(64), archiveBytes: 1, sourceCommit: PIN.sourceCommit }]));
+  const subject = { schemaVersion: 4, packages, authorReference: await authorReference(root, PIN),
+    stateReferences: { 'status-circle': await stateReference(root, PIN), 'expression-face': await stateReference(root, PIN, 'expression-face') },
+    notificationReference: reference };
+  assert.equal(validateSubject(subject), subject);
+  assert.equal(subjectStateReferences(subject), subject.stateReferences);
+  const masters = Object.values(reference.icons).flatMap(variants => Object.values(variants));
+  assert.equal(new Set(masters.map(item => item.sourceFile)).size, 6);
+  for (const item of masters)
+    assert.equal(createHash('sha256').update(await readFile(join(root, item.sourceFile))).digest('hex'), item.author.masterSha256);
+  for (const mutate of [
+    value => { Reflect.deleteProperty(value, 'notificationReference'); },
+    value => { value.notificationReference.version = '1'; },
+    value => { Reflect.deleteProperty(value.notificationReference.icons, 'notifications-off'); },
+    value => { value.notificationReference.icons.notifications.outline.amplitude *= 2; },
+    value => { value.schemaVersion = 3; },
+    value => { Reflect.deleteProperty(value.stateReferences, 'expression-face'); },
+  ]) {
+    const changed = structuredClone(subject); mutate(changed);
     assert.throws(() => validateSubject(changed));
   }
 });

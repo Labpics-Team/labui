@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
+import { NOTIFICATION_ICONS, rawNotificationClapperWidth, validateNotificationReference } from './icons-notification-consumer.mjs';
 import {
   assertSelfHostedRunner,
   stateReferenceContract,
@@ -244,6 +245,47 @@ export async function authorReference(iconsRoot, pin) {
     version: manifest.source.version,
     icons: { reload: variants },
   };
+}
+
+export async function notificationReference(iconsRoot, pin) {
+  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  const annotations = JSON.parse(await readFile(join(iconsRoot, 'semantics/author-anatomy.json')));
+  assert.deepEqual(annotations.source, { fileKey: pin.figma.fileKey, version: pin.figma.version });
+  assert.equal(manifest.source.fileKey, pin.figma.fileKey);
+  assert.equal(manifest.source.version, pin.figma.version);
+  const icons = {};
+  for (const icon of [...NOTIFICATION_ICONS, 'notifications-off']) {
+    icons[icon] = {};
+    for (const variant of ['outline', 'filled']) {
+      const record = manifest.icons[icon][variant];
+      const bytes = await readFile(join(iconsRoot, record.master));
+      assert.equal(bytes.length, record.bytes);
+      assert.equal(hash(bytes), record.sha256);
+      const { viewBox, paths } = readAuthorMaster(bytes);
+      const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
+      assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
+      const author = { kind: 'figma', fileKey: pin.figma.fileKey, version: pin.figma.version,
+        nodeId: record.nodeId, nodeSha256: record.nodeSha256, masterSha256: hash(bytes),
+        normalizedSha256: record.normalizedSource.sha256, pathFingerprintSha256: fingerprint };
+      const item = { sourceFile: record.master, author, viewBox, paths };
+      const declaration = annotations.icons[icon]?.[variant];
+      if (icon === 'notifications-off') assert.equal(declaration, undefined);
+      else {
+        assert.ok(declaration);
+        item.declaration = declaration;
+        item.parts = declaration.parts.map(({ pathIndex, id, role }, index) => {
+          assert.equal(pathIndex, index);
+          return { id, role, zIndex: index, ...paths[index] };
+        });
+        const clapper = item.parts.find(part => part.id === 'notification-clapper');
+        assert.ok(clapper);
+        item.amplitude = rawNotificationClapperWidth(clapper.d) / 4;
+        item.unchangedPartIds = item.parts.filter(part => part !== clapper).map(part => part.id);
+      }
+      icons[icon][variant] = item;
+    }
+  }
+  return validateNotificationReference({ fileKey: pin.figma.fileKey, version: pin.figma.version, icons }, pin.figma);
 }
 
 // Отдельный независимый reference: raw masters и публичная semantic декларация,
@@ -589,6 +631,7 @@ export async function prepareInputs(options) {
   const reference = await authorReference(iconsRoot, pin);
   const states = await stateReference(iconsRoot, pin);
   const expression = await stateReference(iconsRoot, pin, 'expression-face');
+  const notifications = await notificationReference(iconsRoot, pin);
   for (const file of [
     'semantics/figma-baseline.json',
     'semantics/author-anatomy.json',
@@ -596,17 +639,21 @@ export async function prepareInputs(options) {
     ...Object.values(reference.icons.reload).map((item) => item.sourceFile),
     ...states.states.map((item) => item.sourceFile),
     ...expression.states.map((item) => item.sourceFile),
+    ...Object.values(notifications.icons).flatMap(variants => Object.values(variants).map(item => item.sourceFile)),
   ]) {
     files.push({
       repository: pin.repository,
       ...(await sourceFile(iconsRoot, pin.sourceCommit, file)),
     });
   }
+  for (const file of ['apps/docs/tests/icons-packed.mjs', 'apps/docs/tests/icons-notification-consumer.mjs'])
+    files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 3,
+    schemaVersion: 4,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
+    notificationReference: notifications,
   });
   assertCheckout(iconsRoot, pin.sourceCommit);
   assertCheckout(uiRoot, uiCommit);

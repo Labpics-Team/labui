@@ -8,6 +8,8 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import { NOTIFICATION_ENTRIES, notificationFixture, validateNotificationReference,
+  assertNotificationAnatomy, assertNotificationEffect, notificationPosition } from './icons-notification-consumer.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -60,16 +62,17 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
   return [
     ...REQUIRED_PUBLIC_ENTRIES,
     ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
-    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : []),
+    ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
+    ...(schemaVersion === 4 ? NOTIFICATION_ENTRIES : []),
   ];
 }
 
 export function subjectStateReferences(subject) {
-  return subject.schemaVersion === 3
+  return subject.schemaVersion >= 3
     ? subject.stateReferences
     : subject.schemaVersion === 2
       ? { 'status-circle': subject.stateReference }
@@ -85,6 +88,7 @@ export function assertIconsImport(source) {
       '@labpics/icons/motion',
       STATE_ENTRY,
       EXPRESSION_ENTRY,
+      ...NOTIFICATION_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -159,7 +163,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -249,7 +253,7 @@ export function validateSubject(subject) {
       );
     }
   }
-  if (subject.schemaVersion === 3) {
+  if (subject.schemaVersion >= 3) {
     assert.equal(subject.stateReference, undefined);
     assert.deepEqual(
       Object.keys(subject.stateReferences ?? {}).sort(),
@@ -262,6 +266,8 @@ export function validateSubject(subject) {
     if (subject.schemaVersion === 2) validateStateReference(subject.stateReference, reference);
     else assert.equal(subject.stateReference, undefined);
   }
+  if (subject.schemaVersion === 4) validateNotificationReference(subject.notificationReference, reference);
+  else assert.equal(subject.notificationReference, undefined);
   return subject;
 }
 
@@ -403,6 +409,9 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .size-samples figure { gap:12px; min-width:48px; }
 .size-sample-row { display:flex; align-items:end; gap:24px; }
 .size-sample-row span { display:grid; justify-items:center; gap:12px; font-size:12px; }
+.notification-sample { display:flex; flex-wrap:wrap; align-items:start; gap:48px; }
+.notification-sample figure { justify-items:start; }
+.notification-sample h3, h3 { font-size:14px; font-weight:500; margin:28px 0 16px; }
 @media (max-width:480px) { body { padding:24px; } .state-sample { flex-wrap:wrap; gap:16px; } }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
@@ -776,11 +785,12 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
-    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '')
+    (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '') +
+    (schemaVersion === 4 ? notificationFixture() : '')
   );
 }
 
@@ -1107,6 +1117,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       }
       for (const stateReference of Object.values(reference.states))
         await stateBrowserProof(page, stateReference, reducedMotion, records);
+      if (reference.notifications)
+        await notificationBrowserProof(page, reference.notifications, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
@@ -1124,6 +1136,16 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         );
         records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
       }
+      if (reference.notifications)
+        for (const icon of ['notifications', 'notifications-unread'])
+          for (const variant of ['outline', 'filled']) {
+            const id = `${icon}/${variant}`;
+            const disposed = await page.evaluate(id => window.__iconsPacked.notificationConsumers[id].disposal(), id);
+            assert.equal(disposed.connected, false);
+            assert.equal(disposed.playback, reducedMotion === 'reduce' ? 'finished' : 'stopped');
+            assert.equal(disposed.completionStatus, reducedMotion === 'reduce' ? 'finished' : 'stopped');
+            records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
+          }
     } catch (error) {
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -1131,6 +1153,126 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       throw error;
     } finally {
       await context.close();
+    }
+  }
+}
+
+export function assertNotificationPose(observation, expected, icon, variant, progress) {
+  assertNotificationAnatomy(observation, expected, icon, variant);
+  assert.deepEqual(observation.pose.map(item => item.partId), expected.parts.map(item => item.id));
+  for (const item of observation.pose) {
+    const x = item.partId === 'notification-clapper' ? notificationPosition(expected.amplitude, progress) : 0;
+    samePose([item.matrix], [[1, 0, 0, 1, x, 0]]);
+  }
+}
+
+async function notificationBrowserProof(page, reference, reducedMotion, records) {
+  const reduced = reducedMotion === 'reduce';
+  for (const [icon, label] of [['notifications', 'Входящее уведомление'],
+    ['notifications-unread', 'Новое непрочитанное уведомление']]) {
+    for (const variant of ['outline', 'filled']) {
+      const id = `${icon}/${variant}`, expected = reference.icons[icon][variant];
+      const evaluate = (operation, ...args) => page.evaluate(({ id, operation, args }) =>
+        window.__iconsPacked.notificationConsumers[id][operation](...args), { id, operation, args });
+      const read = () => evaluate('read');
+      const matrices = observation => observation.pose.map(item => item.matrix);
+      const initial = await read();
+      assertNotificationPose(initial, expected, icon, variant, 0);
+      assert.deepEqual(initial.target, { width: 48, height: 48, name: label, type: 'button',
+        iconHidden: 'true', slotHidden: 'true' });
+      for (const [index, size] of [16, 24, 48].entries())
+        assert.deepEqual(initial.sizeSamples[index], { size, width: size, height: size,
+          viewBox: expected.viewBox, paths: expected.paths });
+      assert.equal(initial.sizeSamples.length, 3);
+      const host = page.locator(`lab-button[data-notification="${id}"]`);
+      const button = host.getByRole('button', { name: label, exact: true });
+      assert.equal(await button.count(), 1);
+      await host.click();
+      if (!reduced)
+        await page.waitForFunction(({ id, amplitude }) => {
+          const current = window.__iconsPacked.notificationConsumers[id].read();
+          const x = current.pose.find(item => item.partId === 'notification-clapper').matrix[4];
+          return current.playback === 'running' && Math.abs(x) > amplitude * 0.05;
+        }, { id, amplitude: expected.amplitude });
+      await button.focus(); await button.press('Enter'); await button.press('Space');
+      const activated = await read();
+      assertNotificationAnatomy(activated, expected, icon, variant);
+      assert.equal(activated.nativeClicks, 3);
+      assert.equal(activated.events.length, 3);
+      for (const event of activated.events) {
+        assert.ok(event.trusted && event.composed && event.native);
+        assertNotificationEffect(event.effect, expected, icon, variant, 0, 1, reduced ? 0 : 1000);
+        if (!reduced) samePose(event.before.map(item => item.matrix), event.after.map(item => item.matrix));
+      }
+      const terminal = await evaluate('settle');
+      assertNotificationPose(terminal, expected, icon, variant, 1);
+      assert.equal(terminal.completionStatus, 'finished');
+      assert.equal(terminal.knownPhase, 1);
+      records.push({ name: `${id}:${reducedMotion}:trusted-occurrences`, events: activated.events,
+        target: initial.target, source: initial.provenance, sizeSamples: initial.sizeSamples });
+      if (!reduced) {
+        const forward = await evaluate('start', { duration: 1000, initialize: true });
+        assertNotificationEffect(forward.effect, expected, icon, variant, 0, 1, 1000);
+        const poses = [];
+        for (const phase of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
+          const observation = await evaluate('pauseAt', phase * 1000);
+          assertNotificationPose(observation, expected, icon, variant, phase);
+          assert.equal(observation.knownPhase, phase);
+          poses.push({ phase, pose: observation.pose });
+        }
+        const routes = [];
+        for (const phase of [0.1, 0.25]) {
+          await evaluate('start', { duration: 1000, initialize: true });
+          const paused = await evaluate('pauseAt', phase * 1000);
+          assertNotificationPose(paused, expected, icon, variant, phase);
+          const reverse = await evaluate('start', { from: paused.knownPhase, to: 0, duration: 500 });
+          assertNotificationEffect(reverse.effect, expected, icon, variant, phase, 0, 500);
+          samePose(matrices(paused), reverse.before.map(item => item.matrix));
+          samePose(reverse.before.map(item => item.matrix), reverse.after.map(item => item.matrix));
+          assert.equal(reverse.previousPlayback, 'stopped');
+          const reversing = await evaluate('pauseAt', 100);
+          assertNotificationPose(reversing, expected, icon, variant, phase * 0.8);
+          routes.push({ from: phase, start: paused.pose, reverse: reverse.effect, intermediate: reversing.pose });
+        }
+        samePose(routes[0].start.map(item => item.matrix), routes[1].start.map(item => item.matrix));
+        const routeX = route => route.intermediate.find(item => item.partId === 'notification-clapper').matrix[4];
+        assert.ok(routeX(routes[0]) < expected.amplitude / 2 && routeX(routes[1]) > expected.amplitude / 2,
+          'Одинаковая координата требует двух разных маршрутов по сохранённой фазе');
+        const beforeNew = await read();
+        const newer = await evaluate('start', { duration: 800 });
+        assertNotificationEffect(newer.effect, expected, icon, variant, 0, 1, 800);
+        samePose(matrices(beforeNew), newer.before.map(item => item.matrix));
+        samePose(newer.before.map(item => item.matrix), newer.after.map(item => item.matrix));
+        const interrupted = await evaluate('pauseAt', 320);
+        assertNotificationPose(interrupted, expected, icon, variant, 0.4);
+        const partial = await evaluate('start', { from: interrupted.knownPhase, to: 0.7, duration: 300 });
+        assertNotificationEffect(partial.effect, expected, icon, variant, 0.4, 0.7, 300);
+        samePose(matrices(interrupted), partial.before.map(item => item.matrix));
+        samePose(partial.before.map(item => item.matrix), partial.after.map(item => item.matrix));
+        assertNotificationPose(await evaluate('pauseAt', 200), expected, icon, variant, 0.6);
+        // Новый частичный интервал заканчивается самостоятельно после прерывания.
+        const partialEnd = await evaluate('start', { from: 0.6, to: 0.7, duration: 100 });
+        assertNotificationEffect(partialEnd.effect, expected, icon, variant, 0.6, 0.7, 100);
+        assertNotificationPose(await evaluate('settle'), expected, icon, variant, 0.7);
+        records.push({ name: `${id}:six-stops-reverse-newer-partial`, poses, routes, newer, partial, partialEnd });
+      } else {
+        const reducedEnd = await evaluate('start', { from: 0.25, to: 0.6, duration: 800 });
+        assertNotificationEffect(reducedEnd.effect, expected, icon, variant, 0.25, 0.6, 0);
+        assertNotificationPose(await evaluate('settle'), expected, icon, variant, 0.6);
+        records.push({ name: `${id}:reduced-terminal-phase`, effect: reducedEnd.effect });
+      }
+      const refusal = await evaluate('refuse');
+      assert.equal(refusal.axis, 'AUTHOR_PARITY_REQUIRED');
+      for (const [key, code] of [['morph', 'GESTURE_UNSUPPORTED'], ['off', 'SEMANTIC_MOTION_UNAVAILABLE']]) {
+        assert.equal(refusal[key].ok, false);
+        assert.equal(refusal[key].reason.code, code);
+      }
+      assert.deepEqual(refusal.offPaths, reference.icons['notifications-off'][variant].paths);
+      records.push({ name: `${id}:${reducedMotion}:refusals`, refusal });
+      const disposing = await evaluate('start', { duration: 1000 });
+      assertNotificationEffect(disposing.effect, expected, icon, variant, 0, 1, reduced ? 0 : 1000);
+      if (!reduced) assertNotificationAnatomy(await evaluate('pauseAt', 200), expected, icon, variant);
+      else assertNotificationPose(await evaluate('settle'), expected, icon, variant, 1);
     }
   }
 }
@@ -1485,11 +1627,15 @@ export async function main(args = process.argv.slice(2)) {
     const source = (args) =>
       execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 20_000 }).trim();
     const harnessBytes = await readFile(fileURLToPath(import.meta.url));
+    const harnessFiles = await Promise.all(['icons-packed.mjs', 'icons-notification-consumer.mjs'].map(async file => ({
+      file: `apps/docs/tests/${file}`, sha256: hash(await readFile(new URL(file, import.meta.url))),
+    })));
     receipt.harness = {
       commit: source(['rev-parse', 'HEAD']),
       sourceSha256: hash(harnessBytes),
       dirty: source(['status', '--porcelain']) !== '',
       diffSha256: hash(execFileSync('git', ['diff', 'HEAD', '--binary'], { cwd: ROOT })),
+      files: harnessFiles,
     };
     receipt.runner = {
       node: process.version,
@@ -1651,7 +1797,7 @@ export async function main(args = process.argv.slice(2)) {
       moduleGraph,
       bundles,
       scenario:
-        'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim',
+        `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -1666,7 +1812,7 @@ export async function main(args = process.argv.slice(2)) {
       browserProof(
         browser,
         `http://127.0.0.1:${server.address().port}`,
-        { ...subject.authorReference, states: subjectStateReferences(subject) },
+        { ...subject.authorReference, states: subjectStateReferences(subject), notifications: subject.notificationReference },
         out,
         records,
         browserErrors,
@@ -1685,6 +1831,8 @@ export async function main(args = process.argv.slice(2)) {
       hash(await readFile(fileURLToPath(import.meta.url))),
       receipt.harness.sourceSha256,
     );
+    for (const file of receipt.harness.files)
+      assert.equal(hash(await readFile(join(ROOT, file.file))), file.sha256, `Изменён source harness: ${file.file}`);
     receipt.outcome = 'passed';
     receipt.qualification =
       'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';

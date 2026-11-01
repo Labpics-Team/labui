@@ -11,6 +11,10 @@ Schema3 добавляет `expression-face`: спокойствие, груст
 Публичный `sequence` Lab Motion исполняет opacity stages с явным первым кадром
 из видимой позы; новый control создаётся до остановки прежнего. Reload остаётся
 в том же приложении.
+Schema4 добавляет `notifications` и `notifications-unread` в обоих начертаниях:
+настоящие кнопки Lab UI и авторские SVG в 16, 24 и 48 px. Закон
+`notification.ring` сдвигает только язычок; корпус и badge сохраняют свои контуры
+и DOM nodes. Общий адаптер переводит публичный translation effect v3 в `sequence`.
 Harness принимает три готовых архива и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
 
@@ -54,8 +58,10 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 3`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 4`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
+Обязательный `notificationReference` содержит обе пары начертаний уведомления и
+два статических `notifications-off` controls. Schema3 сохраняет обе state группы.
 Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
 сохраняет cycle reference и исполняемый путь reload без state reference.
 Одновременное присутствие старого и нового state полей получает отказ.
@@ -73,6 +79,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `expression-face` | Также `sharedPartIds` и упорядоченные `sharedParts` с `id`, `role`, `d`, `fillRule` |
 | Каждый state | `id`, `partId`, `icon`, `contentPartIds`, `sourceFile`, `author`, `viewBox`, `dimensions`, `paths` |
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
+| `notificationReference` | Figma file/version и шесть raw masters: paths, viewBox, author; у четырёх подвижных variants также declaration, parts, amplitude и unchangedPartIds |
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
@@ -107,6 +114,13 @@ transformOrigin и endpoints с этой независимой декларац
 IDs берутся из versioned spec. Reference не импортирует compiler или helpers
 производителя. В Lab UI нет отдельной редактируемой таблицы геометрии. Source
 receipt добавляет hash semantic spec и каждого прочитанного master.
+
+Notification reference читает шесть raw masters и аннотации до импорта producer.
+Ширина язычка вычисляется независимо через экстремумы шести cubic рёбер;
+амплитуда равна четверти этой ширины. Oracle проверяет шесть линейных stops
+`0, A, −A, A/2, −A/2, 0`. Ни producer parser, ни его bbox или sampler не формируют
+expected. Source receipt также связывает bytes основного harness и общего
+notification helper с точным Lab UI commit.
 
 После фиксации raw references и `subject.json` та же prepare-inputs граница
 запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
@@ -143,6 +157,7 @@ Motion. Импорты чужих публичных symbols и whole IR entrypo
 Schema2 также требует вклад публичного `@labpics/icons/states/status-circle`.
 Schema3 требует вклад обоих state entries, включая
 `@labpics/icons/states/expression-face`; отсутствие одного не сокращает проверку.
+Schema4 дополнительно требует три sliced symbol entries уведомлений, включая off.
 Проверка не фиксирует частное размещение его implementation; полный retained
 module graph сохраняется для проверки отсутствия catalog/authoring owners.
 Button, reload и Motion разрешаются bundler-ом по публичным entrypoints
@@ -205,18 +220,30 @@ hashes master и manifest. Все девять static samples сверяются
 screenshots сохраняются для визуального просмотра. Масштабирование здесь не
 объявляет optical axis или live Figma parity.
 
+Notification consumer подтверждает native pointer/Enter/Space, доступное имя и
+реальное движение. Публичные `pause()` и `seek()` проверяют все шесть поз,
+обратный и частичный интервалы. Фаза сохраняется отдельно: одинаковый сдвиг в
+фазах 0.1 и 0.25 требует разных обратных маршрутов. Новое входящее событие
+начинает новую occurrence и подхватывает видимую позу до admission; координата
+не используется как часы. Reduced motion сразу достигает запрошенной фазы.
+Корпус и badge сохраняют единичный transform и исходные nodes на каждой
+проверяемой позе. `notifications-off.ring` получает `SEMANTIC_MOTION_UNAVAILABLE`,
+необъявленный morph — `GESTURE_UNSUPPORTED`; off SVG совпадает с raw master.
+Disposal останавливает ещё действующий прогон и проверяет его `stopped` receipt.
+
 ## Результаты и ограничения
 
 Результат сохраняет `receipt.json` с фазой отказа, observations и browser errors;
 при ошибке — также `failure.json` и screenshot соответствующего режима. Рядом остаются npm log,
 dependency tree, lockfile, module graph, raw/gzip/brotli размеры и SHA каждого
 bundle file, сами browser bundles и screenshots двух режимов. Запись содержит
-SHA harness, checkout SHA, dirty state, Node, browser и идентичность runner.
+SHA обоих исходных файлов harness, checkout SHA, dirty state, Node, browser и идентичность runner.
 Browser/server закрываются; удаляется только собственный временный consumer.
 
 Размер относится к полному приложению с Lab UI и Motion: schema1 содержит две
 reload кнопки; schema2 также содержит status-circle и select состояния; schema3
-добавляет expression-face с select и девятью static samples. Этот
+добавляет expression-face с select и девятью static samples; schema4 также
+содержит четыре кнопки уведомлений и двенадцать static samples. Этот
 маршрут не измеряет baseline speedup, стоимость одиночного статического импорта,
 публикацию npm или оптическую приёмку всего корпуса. Для этих утверждений нужны
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного
