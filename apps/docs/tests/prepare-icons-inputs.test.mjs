@@ -1,11 +1,22 @@
 import assert from 'node:assert/strict';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
-import { pathToFileURL } from 'node:url';
-import { authorReference, readCycleMaster, validateSourcePin } from './prepare-icons-inputs.mjs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gunzipSync } from 'node:zlib';
+import {
+  authorReference,
+  readAuthorMaster,
+  readCycleMaster,
+  stateReference,
+  platformMeasurementLog,
+  validatePlatformMeasurement,
+  validateSourcePin,
+} from './prepare-icons-inputs.mjs';
+import { validateStateReference, validateSubject } from './icons-packed.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
@@ -349,4 +360,606 @@ test('wrong raw annotation roles refuse, rather than changing the expected consu
   annotation.icons.reload.outline.parts[0].role = 'container';
   await writeJSON(root, 'semantics/author-anatomy.json', annotation);
   await assert.rejects(authorReference(root, PIN), /control/);
+});
+
+// Малый synthetic witness проверяет reader и binding; actual Figma masters
+// читаются отдельно штатным prepareInputs из закреплённого checkout.
+const STATE_ICONS = {
+  attention: 'alert-circle',
+  confirmation: 'checkmark-circle',
+  decrease: 'minus-circle',
+  dismissal: 'close-circle',
+  increase: 'plus-circle',
+  question: 'question-circle',
+};
+const SHELL = 'M2 2L22 2L22 22L2 22ZM4 4L4 20L20 20L20 4Z';
+const CONTENT = 'M9 9L15 9L12 15Z';
+const DOT = 'M11 17L13 17L13 19L11 19Z';
+const pathFingerprint = (paths) =>
+  hash(JSON.stringify(paths.map((path, index) => ({ d: path.d, fillRule: path.fillRule, index }))));
+async function stateFixture(t) {
+  const root = await rawFixture(t);
+  const manifest = structuredClone(MANIFEST);
+  const document = {
+    schemaVersion: 1,
+    source: structuredClone(PIN.figma),
+    groups: {
+      'status-circle': {
+        law: 'enclosure.replace',
+        defaultState: 'question',
+        enclosurePartId: 'status-enclosure',
+        states: {},
+      },
+    },
+  };
+  const texts = {};
+  for (const [index, [id, icon]] of Object.entries(STATE_ICONS).entries()) {
+    const paths = ['attention', 'question'].includes(id)
+      ? [
+          { d: DOT, fillRule: 'nonzero' },
+          { d: CONTENT, fillRule: 'nonzero' },
+        ]
+      : [{ d: CONTENT, fillRule: 'nonzero' }];
+    paths.push({ d: SHELL, fillRule: 'evenodd' });
+    const content = paths
+      .map((path) => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`)
+      .join('');
+    const text = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="neutral">${content}</g></svg>`;
+    const file = `masters/figma/${PIN.figma.version}/Outline/${icon}.svg`;
+    const bytes = Buffer.from(text);
+    const fingerprint = pathFingerprint(paths);
+    manifest.icons[icon] = {
+      outline: {
+        master: file,
+        sha256: hash(bytes),
+        bytes: bytes.length,
+        nodeId: `1:${index + 1}`,
+        nodeSha256: hash(`node-${id}`),
+        normalizedSource: { sha256: hash(`normalized-${id}`), pathFingerprintSha256: fingerprint },
+      },
+    };
+    document.groups['status-circle'].states[id] = {
+      icon,
+      variant: 'outline',
+      masterSha256: hash(bytes),
+      pathFingerprintSha256: fingerprint,
+      enclosurePathIndex: paths.length - 1,
+      contentPartIds: paths.slice(0, -1).map((_, part) => `${id}-content-${part}`),
+    };
+    await mkdir(dirname(join(root, file)), { recursive: true });
+    await writeFile(join(root, file), text);
+    texts[id] = { text, paths, file };
+  }
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+  return { root, manifest, document, texts };
+}
+
+test('multi-path author reader preserves countershapes while cycle remains one whole path', () => {
+  const source = MASTERS.outline.replace(
+    '</g>',
+    `<path d="${SHELL}" fill="#101012" fill-rule="evenodd"/></g>`,
+  );
+  const actual = readAuthorMaster(Buffer.from(source));
+  assert.deepEqual(actual.dimensions, [24, 24]);
+  assert.deepEqual(actual.paths, [
+    { d: wholePath('outline'), fillRule: 'nonzero' },
+    { d: SHELL, fillRule: 'evenodd' },
+  ]);
+  assert.throws(() => readCycleMaster(Buffer.from(source)), /cycle/);
+  for (const [name, mutate] of [
+    ['transform', (value) => value.replace('<g ', '<g transform="translate(1 0)" ')],
+    ['opacity', (value) => value.replace('<path ', '<path opacity="0.5" ')],
+    ['paint', (value) => value.replace('#101012', '#ffffff')],
+    ['dimension', (value) => value.replace('width="24"', 'width="24px"')],
+    ['open inner countershape', (value) => value.replace(SHELL, SHELL.slice(0, -1))],
+    ['nonfinite geometry', (value) => value.replace(SHELL, SHELL.replace('22', '1e309'))],
+    ['injection', (value) => value.replace('</g>', '<script>alert(1)</script></g>')],
+  ])
+    assert.throws(() => readAuthorMaster(Buffer.from(mutate(source))), undefined, name);
+});
+
+test('state reference derives six whole authored signs and one enclosure before producer imports', async (t) => {
+  const { root, texts } = await stateFixture(t);
+  await mkdir(join(root, 'scripts/lib'), { recursive: true });
+  await writeFile(
+    join(root, 'scripts/lib/author-state-groups.js'),
+    'throw new Error("POISONED_COMPILER");',
+  );
+  const reference = await stateReference(root, PIN);
+  assert.deepEqual(
+    reference.states.map((state) => state.id),
+    Object.keys(STATE_ICONS),
+  );
+  for (const state of reference.states) {
+    assert.deepEqual(state.paths, texts[state.id].paths);
+    assert.equal(state.author.masterSha256, hash(texts[state.id].text));
+    assert.equal(state.partId, `state-${state.id}`);
+  }
+  assert.deepEqual(reference.enclosure, { d: SHELL, fillRule: 'evenodd' });
+  assert.equal(validateStateReference(reference, PIN.figma), reference);
+});
+
+test('a rehashed legal shell change cannot redefine common-enclosure identity', async (t) => {
+  const { root, manifest, document, texts } = await stateFixture(t);
+  const id = 'confirmation';
+  const fixture = texts[id];
+  const paths = structuredClone(fixture.paths);
+  paths.at(-1).d = SHELL.replace('22', '21');
+  const changed = fixture.text.replace(SHELL, paths.at(-1).d);
+  const record = manifest.icons[STATE_ICONS[id]].outline;
+  record.sha256 = hash(changed);
+  record.bytes = Buffer.byteLength(changed);
+  record.normalizedSource.pathFingerprintSha256 = pathFingerprint(paths);
+  Object.assign(document.groups['status-circle'].states[id], {
+    masterSha256: record.sha256,
+    pathFingerprintSha256: record.normalizedSource.pathFingerprintSha256,
+  });
+  await writeFile(join(root, fixture.file), changed);
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+  await assert.rejects(stateReference(root, PIN), /enclosures/);
+});
+
+test('state coverage, ordering, source and part ID mutations refuse precisely', async (t) => {
+  const { root, document } = await stateFixture(t);
+  for (const mutate of [
+    (value) => {
+      Reflect.deleteProperty(value.groups['status-circle'].states, 'question');
+    },
+    (value) => {
+      value.source.version = '1';
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.enclosurePathIndex = 0;
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.contentPartIds[0] = 'state-question';
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.variant = 'filled';
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.masterSha256 = '0'.repeat(64);
+    },
+  ]) {
+    const changed = structuredClone(document);
+    mutate(changed);
+    await writeJSON(root, 'semantics/author-state-groups.json', changed);
+    await assert.rejects(stateReference(root, PIN));
+  }
+});
+
+test('schema2 requires the state reference while historical schema1 cycle inputs stay valid', async (t) => {
+  const { root } = await stateFixture(t);
+  const author = await authorReference(root, PIN);
+  const states = await stateReference(root, PIN);
+  const packages = Object.fromEntries(
+    [
+      ['icons', '@labpics/icons'],
+      ['uiCore', '@labpics/ui-core'],
+      ['uiShadow', '@labpics/ui-shadow'],
+    ].map(([key, name]) => [
+      key,
+      {
+        name,
+        version: '0.1.0',
+        archiveSha256: 'a'.repeat(64),
+        archiveBytes: 1,
+        sourceCommit: PIN.sourceCommit,
+      },
+    ]),
+  );
+  const old = { schemaVersion: 1, packages, authorReference: author };
+  assert.equal(validateSubject(old), old);
+  const current = { ...old, schemaVersion: 2, stateReference: states };
+  assert.equal(validateSubject(current), current);
+  assert.throws(() => validateSubject({ ...old, schemaVersion: 2 }));
+  assert.throws(() => validateSubject({ ...old, stateReference: states }));
+  for (const mutate of [
+    (value) => {
+      value.states.pop();
+    },
+    (value) => {
+      value.states.reverse();
+    },
+    (value) => {
+      value.states[0].dimensions = [48, 48];
+    },
+    (value) => {
+      value.states[0].paths[0].fillRule = 'evenodd';
+    },
+    (value) => {
+      value.states[0].contentPartIds[0] = 'status-enclosure';
+    },
+    (value) => {
+      value.proof.source.version = '1';
+    },
+  ]) {
+    const changed = structuredClone(states);
+    mutate(changed);
+    assert.throws(() => validateSubject({ ...current, stateReference: changed }));
+  }
+});
+
+function measurementFixture() {
+  return {
+    sourceSha: PIN.sourceCommit,
+    lockfileSha256: 'c'.repeat(64),
+    capturedAt: '2026-11-01T15:00:00Z',
+    environment: { node: 'v24.10.0' },
+    packageMeasurement: 'frozen-package-method',
+    consumerMeasurement: 'frozen-consumer-method',
+    artifacts: {
+      'dist/example.js': { bytes: 100, gzipBytes: 75, brotliBytes: 65, sha256: 'd'.repeat(64) },
+    },
+    consumers: { 'state-control': { bytes: 120, gzipBytes: 80, brotliBytes: 70 } },
+    candidatePolicies: {
+      package: { measurement: 'frozen-package-method', artifacts: { 'dist/example.js': {} } },
+      consumer: { measurement: 'frozen-consumer-method', scenarios: { 'state-control': {} } },
+    },
+    policyViolations: ['dist/example.js: diagnostic budget refusal'],
+  };
+}
+
+test('complete measurement remains diagnostic and refuses stale or incomplete source evidence', () => {
+  const report = measurementFixture();
+  const validate = (value) =>
+    validatePlatformMeasurement(value, PIN.sourceCommit, ['dist/example.js'], 'c'.repeat(64));
+  assert.equal(validate(report), report);
+  assert.equal(report.policyViolations.length, 1, 'a violation cannot disappear from the report');
+  for (const mutate of [
+    (value) => {
+      value.sourceSha = 'b'.repeat(40);
+    },
+    (value) => {
+      value.lockfileSha256 = 'b'.repeat(64);
+    },
+    (value) => {
+      Reflect.deleteProperty(value.artifacts, 'dist/example.js');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.candidatePolicies.package.artifacts, 'dist/example.js');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.artifacts['dist/example.js'], 'brotliBytes');
+    },
+    (value) => {
+      value.artifacts['dist/example.js'].sha256 = 'missing';
+    },
+    (value) => {
+      value.consumerMeasurement = 'different-method';
+    },
+    (value) => {
+      value.candidatePolicies.consumer.scenarios = {};
+    },
+    (value) => {
+      Reflect.deleteProperty(value, 'policyViolations');
+    },
+  ]) {
+    const changed = structuredClone(report);
+    mutate(changed);
+    assert.throws(() => validate(changed));
+  }
+});
+
+test('log block reconstructs exact report bytes with bounded indexed lines and a digest', () => {
+  const bytes = Buffer.concat(
+    Array.from({ length: 256 }, (_, index) =>
+      createHash('sha256').update(`independent-packet-${index}`).digest(),
+    ),
+  );
+  const lines = platformMeasurementLog(bytes, PIN.sourceCommit).trim().split('\n');
+  const metadata = JSON.parse(lines[0].slice('LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN '.length));
+  assert.equal(metadata.sourceSha, PIN.sourceCommit);
+  assert.equal(metadata.reportSha256, hash(bytes));
+  assert.ok(metadata.chunks > 1);
+  assert.equal(lines.at(-1), `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}`);
+  const chunks = lines.slice(1, -1).map((line, index) => {
+    const match = /^LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK (\d+) ([A-Za-z0-9+/=]+)$/.exec(line);
+    assert.equal(Number(match[1]), index);
+    assert.ok(match[2].length <= 4096);
+    return match[2];
+  });
+  assert.equal(chunks.length, metadata.chunks);
+  const compressed = Buffer.from(chunks.join(''), 'base64');
+  assert.equal(compressed.length, metadata.compressedBytes);
+  assert.deepEqual(gunzipSync(compressed), bytes);
+  assert.throws(() => gunzipSync(Buffer.from(chunks.slice(0, -1).join(''), 'base64')));
+});
+
+async function summaryFixture(t, schemaVersion) {
+  const { root } = await stateFixture(t);
+  const author = await authorReference(root, PIN);
+  const states = await stateReference(root, PIN);
+  const packages = Object.fromEntries(
+    [
+      ['icons', '@labpics/icons'],
+      ['uiCore', '@labpics/ui-core'],
+      ['uiShadow', '@labpics/ui-shadow'],
+    ].map(([key, name]) => [
+      key,
+      {
+        name,
+        version: '0.1.0',
+        archiveSha256: 'a'.repeat(64),
+        archiveBytes: 1,
+        sourceCommit: PIN.sourceCommit,
+      },
+    ]),
+  );
+  const subject = {
+    schemaVersion,
+    packages,
+    authorReference: author,
+    ...(schemaVersion === 2 ? { stateReference: states } : {}),
+  };
+  const subjectBytes = JSON.stringify(subject);
+  const report = measurementFixture();
+  const reportBytes = JSON.stringify(report);
+  const program = {
+    file: 'scripts/measure-platform-artifacts.mjs',
+    sha256: 'e'.repeat(64),
+    bytes: 10,
+  };
+  const source = {
+    schemaVersion: 1,
+    pin: PIN,
+    subjectSha256: hash(subjectBytes),
+    files: [
+      { repository: PIN.repository, ...program },
+      {
+        repository: PIN.repository,
+        file: 'pnpm-lock.yaml',
+        sha256: report.lockfileSha256,
+        bytes: 10,
+      },
+    ],
+    ...(schemaVersion === 2
+      ? {
+          measurement: {
+            file: 'platform-measurement.json',
+            sourceSha: PIN.sourceCommit,
+            sha256: hash(reportBytes),
+            bytes: Buffer.byteLength(reportBytes),
+            program,
+            lockfileSha256: report.lockfileSha256,
+            artifactFiles: ['dist/example.js'],
+          },
+        }
+      : {}),
+  };
+  const output = join(root, 'output');
+  await mkdir(join(output, 'inputs'), { recursive: true });
+  await mkdir(join(output, 'result'));
+  await writeFile(join(output, 'inputs/subject.json'), subjectBytes);
+  await writeFile(join(output, 'inputs/source-receipt.json'), JSON.stringify(source));
+  await writeFile(
+    join(output, 'result/receipt.json'),
+    JSON.stringify({ outcome: 'passed', records: [] }),
+  );
+  if (schemaVersion === 2)
+    await writeFile(join(output, 'inputs/platform-measurement.json'), reportBytes);
+  const invoke = () =>
+    execFileSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        output,
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10_000 },
+    );
+  return { output, source, report, invoke };
+}
+
+test('schema2 summary publishes the authenticated report and rejects missing or wrong-source output', async (t) => {
+  const fixture = await summaryFixture(t, 2);
+  const stdout = fixture.invoke();
+  assert.match(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
+  assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
+  const changed = { ...fixture.report, sourceSha: 'b'.repeat(40) };
+  const bytes = JSON.stringify(changed);
+  fixture.source.measurement.sha256 = hash(bytes);
+  fixture.source.measurement.bytes = Buffer.byteLength(bytes);
+  await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), bytes);
+  await writeFile(
+    join(fixture.output, 'inputs/source-receipt.json'),
+    JSON.stringify(fixture.source),
+  );
+  assert.throws(fixture.invoke, /measurement относится к другому source SHA/);
+  await rm(join(fixture.output, 'inputs/platform-measurement.json'));
+  assert.throws(fixture.invoke, /ENOENT/);
+});
+
+test('historical schema1 summary does not need a measurement report', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  const stdout = fixture.invoke();
+  assert.doesNotMatch(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_/);
+  assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
+});
+
+test('failed receipt waits for a complete large report through asynchronous stdout backpressure', async (t) => {
+  const fixture = await summaryFixture(t, 2);
+  fixture.report.diagnosticPadding = Array.from({ length: 4096 }, (_, index) =>
+    createHash('sha256').update(`transport-only-${index}`).digest('hex'),
+  );
+  const bytes = Buffer.from(JSON.stringify(fixture.report));
+  fixture.source.measurement.sha256 = hash(bytes);
+  fixture.source.measurement.bytes = bytes.length;
+  await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), bytes);
+  await writeFile(
+    join(fixture.output, 'inputs/source-receipt.json'),
+    JSON.stringify(fixture.source),
+  );
+  const source = `
+    import { Writable } from 'node:stream';
+    import { summarize } from ${JSON.stringify(new URL('./prepare-icons-inputs.mjs', import.meta.url).href)};
+    const native = process.stdout;
+    // POSIX stdout асинхронен; Windows stdout pipes синхронны.
+    // Обычный Writable сохраняет частичный вывод до callback в обеих средах.
+    const delayed = new Writable({ write(chunk, encoding, callback) {
+      const boundary = Math.min(chunk.length, 65536);
+      native.write(chunk.subarray(0, boundary));
+      setTimeout(() => native.write(chunk.subarray(boundary), callback), 25);
+    } });
+    Object.defineProperty(process, 'stdout', { value: delayed });
+    await summarize(${JSON.stringify(fixture.output)});
+  `;
+  for (const outcome of ['passed', 'failed']) {
+    await writeFile(
+      join(fixture.output, 'result/receipt.json'),
+      JSON.stringify({
+        outcome,
+        records: [],
+        ...(outcome === 'failed' ? { failure: { phase: 'mock-continuity' } } : {}),
+      }),
+    );
+    const result = await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, ['--input-type=module', '-e', source], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      const stdout = [];
+      const stderr = [];
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error('mock stdout timeout'));
+      }, 5000);
+      child.on('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.stdout.on('data', (chunk) => {
+        stdout.push(chunk);
+        child.stdout.pause();
+        setTimeout(() => child.stdout.resume(), 1);
+      });
+      child.stderr.on('data', (chunk) => stderr.push(chunk));
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve({
+          code,
+          stdout: Buffer.concat(stdout).toString(),
+          stderr: Buffer.concat(stderr).toString(),
+        });
+      });
+    });
+    assert.equal(result.code, outcome === 'passed' ? 0 : 1, result.stderr);
+    const header = JSON.parse(
+      result.stdout.split('\n')[0].slice('LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN '.length),
+    );
+    const chunks = [
+      ...result.stdout.matchAll(
+        /LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK (\d+) ([A-Za-z0-9+/=]+)\n/g,
+      ),
+    ];
+    t.diagnostic(
+      `${outcome}: ${Buffer.byteLength(result.stdout)} stdout bytes, ${chunks.length}/${header.chunks} complete chunks`,
+    );
+    assert.equal(chunks.length, header.chunks);
+    assert.deepEqual(
+      chunks.map((chunk) => Number(chunk[1])),
+      Array.from({ length: header.chunks }, (_, index) => index),
+    );
+    assert.deepEqual(
+      gunzipSync(Buffer.from(chunks.map((chunk) => chunk[2]).join(''), 'base64')),
+      bytes,
+    );
+    assert.ok(
+      result.stdout.includes(
+        `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}\nLABUI_ICONS_CONSUMER_RESULT `,
+      ),
+    );
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    assert.equal(summary.outcome, outcome);
+  }
+});
+
+test('stdout write failure keeps its original error and removes the one-shot listener', async (t) => {
+  const fixture = await summaryFixture(t, 2);
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `
+    import { Writable } from 'node:stream';
+    import { summarize } from ${JSON.stringify(new URL('./prepare-icons-inputs.mjs', import.meta.url).href)};
+    const native = process.stdout;
+    const broken = new Writable({ write(chunk, encoding, callback) {
+      callback(Object.assign(new Error('MOCK_STDOUT_WRITE_FAILURE'), { code: 'MOCK_STDOUT_ERROR' }));
+    } });
+    Object.defineProperty(process, 'stdout', { value: broken });
+    try { await summarize(${JSON.stringify(fixture.output)}); }
+    catch (error) {
+      await new Promise(setImmediate);
+      native.write(JSON.stringify({ code: error.code, listeners: broken.listenerCount('error') }));
+      process.exitCode = 1;
+    }
+  `,
+    ],
+    { encoding: 'utf8', timeout: 5000 },
+  );
+  assert.equal(result.status, 1, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), { code: 'MOCK_STDOUT_ERROR', listeners: 0 });
+  assert.doesNotMatch(result.stderr, /Unhandled 'error' event/);
+});
+
+test('failed schema1 and schema2 summaries preserve an optional native continuity witness exactly', async (t) => {
+  // Синтетический transport witness; эти числа не являются измерением продукта.
+  const stateContinuity = {
+    differences: [{ partId: 'state-confirmation', before: 0.375, after: 0, delta: -0.375 }],
+    witness: {
+      before: {
+        readStartedAt: 124.125,
+        readCompletedAt: 124.25,
+        timelineTime: 123.5,
+        opacity: [{ partId: 'state-confirmation', value: 0.375 }],
+        animations: [
+          {
+            partId: 'state-confirmation',
+            currentTime: 75.25,
+            startTime: 48.25,
+            playState: 'running',
+            pending: false,
+            firstKeyframe: { opacity: '0', offset: 0, easing: 'linear' },
+            lastKeyframe: { opacity: '1', offset: 1, easing: 'linear' },
+          },
+        ],
+      },
+      admitted: { timelineTime: 123.5, previousPlayback: 'running', playback: 'running' },
+      after: { timelineTime: 123.5, opacity: [{ partId: 'state-confirmation', value: 0 }] },
+    },
+  };
+  for (const schemaVersion of [1, 2]) {
+    const fixture = await summaryFixture(t, schemaVersion);
+    for (const witness of [undefined, stateContinuity]) {
+      const failure = { phase: 'browser', message: 'private stack', stateContinuity: witness };
+      await writeFile(
+        join(fixture.output, 'result/receipt.json'),
+        JSON.stringify({ outcome: 'failed', records: [], failure }),
+      );
+      const result = spawnSync(
+        process.execPath,
+        [
+          fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+          '--summarize',
+          fixture.output,
+        ],
+        { encoding: 'utf8', timeout: 5000 },
+      );
+      assert.equal(result.status, 1, result.stderr);
+      const line = result.stdout
+        .split('\n')
+        .find((item) => item.startsWith('LABUI_ICONS_CONSUMER_RESULT '));
+      assert.ok(line, 'failed receipt потерял RESULT');
+      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length));
+      assert.equal(summary.outcome, 'failed');
+      assert.equal(summary.schemaVersion, 1);
+      assert.deepEqual(
+        summary.failure,
+        witness === undefined ? { phase: 'browser' } : { phase: 'browser', stateContinuity },
+      );
+    }
+  }
 });

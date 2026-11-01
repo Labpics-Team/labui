@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateSubject } from './icons-packed.mjs';
+import { gzipSync } from 'node:zlib';
+import { assertSelfHostedRunner, validateSubject } from './icons-packed.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -69,9 +70,9 @@ function attributes(source, allowed) {
   return result;
 }
 
-// Узкий независимый язык этого witness: нейтральные группы и целый cycle path.
+// Узкий независимый язык: нейтральные группы и явно замкнутые author paths.
 // Неизвестный paint/transform/clip отвергается, а авторский d не переписывается.
-export function readCycleMaster(bytes) {
+export function readAuthorMaster(bytes) {
   const xml = bytes.toString('utf8');
   assert.deepEqual(Buffer.from(xml), bytes, 'Oracle: нужен UTF-8 master');
   const stack = [];
@@ -108,18 +109,37 @@ export function readCycleMaster(bytes) {
       assert.ok(['nonzero', 'evenodd'].includes(fillRule));
       assert.ok(!path['clip-rule'] || ['nonzero', 'evenodd'].includes(path['clip-rule']));
       assert.ok(
-        /^M/.test(path.d) && /[Zz]\s*$/.test(path.d) && (path.d.match(/[Mm]/g) ?? []).length === 1,
-        'Oracle: cycle требует один целый замкнутый контур',
+        /^M/.test(path.d) &&
+          /^[MmLlHhVvCcSsQqTtAaZz0-9eE+.,\s-]+$/.test(path.d) &&
+          path.d.split(/(?=[Mm])/).every((contour) => /[Zz]\s*$/.test(contour)),
+        'Oracle: нужны явно замкнутые контуры',
+      );
+      const numbers = path.d.match(/[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/g);
+      assert.ok(
+        numbers?.every((value) => Number.isFinite(Number(value))),
+        'Oracle: нечисловая геометрия',
       );
       paths.push({ d: path.d, fillRule });
     } else assert.fail(`Oracle: элемент ${name} не поддержан`);
     if (!selfClosing) stack.push(name);
   }
   assert.equal(xml.slice(consumed).trim(), '');
-  assert.ok(root && closed && stack.length === 0 && paths.length === 1);
+  assert.ok(root && closed && stack.length === 0 && paths.length > 0);
   const viewBox = root.viewBox.trim().split(/\s+/).map(Number);
   assert.ok(
     viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0,
+  );
+  for (const key of ['width', 'height']) assert.match(root[key], /^\d+(?:\.\d+)?$/);
+  const dimensions = [Number(root.width), Number(root.height)];
+  assert.ok(dimensions.every((value) => Number.isFinite(value) && value > 0));
+  return { viewBox, dimensions, paths };
+}
+
+export function readCycleMaster(bytes) {
+  const { viewBox, paths } = readAuthorMaster(bytes);
+  assert.ok(
+    paths.length === 1 && (paths[0].d.match(/[Mm]/g) ?? []).length === 1,
+    'Oracle: cycle требует один целый замкнутый контур',
   );
   return { viewBox, paths };
 }
@@ -222,6 +242,222 @@ export async function authorReference(iconsRoot, pin) {
   };
 }
 
+// Отдельный независимый reference: raw masters и публичная semantic декларация,
+// без compiler/glyph/imports производителя. Interior сохраняет исходный порядок.
+export async function stateReference(iconsRoot, pin) {
+  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  const document = JSON.parse(
+    await readFile(join(iconsRoot, 'semantics/author-state-groups.json')),
+  );
+  const source = { fileKey: pin.figma.fileKey, version: pin.figma.version };
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.source.fileKey, source.fileKey);
+  assert.equal(manifest.source.version, source.version);
+  assert.equal(document.schemaVersion, 1);
+  assert.deepEqual(document.source, source);
+  const group = document.groups['status-circle'];
+  assert.equal(group.law, 'enclosure.replace');
+  assert.equal(group.defaultState, 'question');
+  assert.equal(group.enclosurePartId, 'status-enclosure');
+  assert.deepEqual(Object.keys(group.states).sort(), [
+    'attention',
+    'confirmation',
+    'decrease',
+    'dismissal',
+    'increase',
+    'question',
+  ]);
+  const states = [];
+  const ids = new Set([group.enclosurePartId]);
+  let enclosure;
+  for (const id of Object.keys(group.states).sort()) {
+    const member = group.states[id];
+    assert.match(member.icon, /^[a-z][a-z0-9-]*$/);
+    assert.equal(member.variant, 'outline');
+    const record = manifest.icons[member.icon]?.outline;
+    const sourceFile = `masters/figma/${source.version}/Outline/${member.icon}.svg`;
+    assert.equal(record.master, sourceFile);
+    const bytes = await readFile(join(iconsRoot, sourceFile));
+    assert.equal(bytes.length, record.bytes);
+    assert.equal(hash(bytes), record.sha256);
+    assert.equal(member.masterSha256, record.sha256);
+    const { viewBox, dimensions, paths } = readAuthorMaster(bytes);
+    assert.deepEqual(viewBox, [0, 0, 24, 24]);
+    assert.deepEqual(dimensions, [24, 24]);
+    const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
+    assert.equal(fingerprint, member.pathFingerprintSha256);
+    assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
+    assert.equal(member.enclosurePathIndex, paths.length - 1);
+    assert.ok(paths.length >= 2);
+    assert.equal(member.contentPartIds.length, paths.length - 1);
+    const partId = `state-${id}`;
+    for (const part of [partId, ...member.contentPartIds]) {
+      assert.match(part, /^[a-z][a-z0-9-]*$/);
+      assert.ok(!ids.has(part), 'повторённый semantic part ID');
+      ids.add(part);
+    }
+    const shell = paths.at(-1);
+    if (enclosure) assert.deepEqual(shell, enclosure, 'author enclosures не совпадают');
+    else enclosure = shell;
+    states.push({
+      id,
+      partId,
+      icon: member.icon,
+      contentPartIds: [...member.contentPartIds],
+      sourceFile,
+      viewBox,
+      dimensions,
+      paths,
+      author: {
+        kind: 'figma',
+        ...source,
+        nodeId: record.nodeId,
+        nodeSha256: record.nodeSha256,
+        masterSha256: hash(bytes),
+        normalizedSha256: record.normalizedSource.sha256,
+        pathFingerprintSha256: fingerprint,
+      },
+    });
+  }
+  return {
+    group: 'status-circle',
+    variant: 'outline',
+    defaultState: group.defaultState,
+    enclosurePartId: group.enclosurePartId,
+    enclosure,
+    states,
+    proof: {
+      law: group.law,
+      source,
+      enclosureSha256: hash(
+        stableJSON({
+          ...enclosure,
+          paint: { kind: 'fill', fill: 'currentColor' },
+          viewBox: [0, 0, 24, 24],
+          dimensions: [24, 24],
+          placement: 'after-content',
+        }),
+      ),
+      specSha256: hash(stableJSON({ schemaVersion: 1, source, name: 'status-circle', group })),
+    },
+  };
+}
+
+export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lockfileSha256) {
+  assert.equal(report?.sourceSha, sourceSha, 'measurement относится к другому source SHA');
+  assert.equal(report.lockfileSha256, lockfileSha256, 'measurement lockfile не совпал');
+  assert.ok(Number.isFinite(Date.parse(report.capturedAt)));
+  assert.ok(typeof report.environment?.node === 'string');
+  assert.deepEqual(
+    Object.keys(report.artifacts ?? {}).sort(),
+    [...artifactFiles].sort(),
+    'measurement не покрывает release contract',
+  );
+  assert.deepEqual(
+    Object.keys(report.candidatePolicies?.package?.artifacts ?? {}).sort(),
+    [...artifactFiles].sort(),
+    'candidate policy не покрывает измеренные artifacts',
+  );
+  assert.equal(report.candidatePolicies.package.measurement, report.packageMeasurement);
+  assert.equal(report.candidatePolicies.consumer.measurement, report.consumerMeasurement);
+  assert.ok(typeof report.packageMeasurement === 'string' && report.packageMeasurement.length > 0);
+  assert.ok(
+    typeof report.consumerMeasurement === 'string' && report.consumerMeasurement.length > 0,
+  );
+  assert.ok(Object.keys(report.consumers ?? {}).length > 0);
+  assert.deepEqual(
+    Object.keys(report.consumers).sort(),
+    Object.keys(report.candidatePolicies.consumer.scenarios ?? {}).sort(),
+  );
+  for (const measured of [...Object.values(report.artifacts), ...Object.values(report.consumers)]) {
+    for (const field of ['bytes', 'gzipBytes', 'brotliBytes']) {
+      assert.ok(
+        Number.isSafeInteger(measured[field]) && measured[field] >= 0,
+        `measurement потеряла ${field}`,
+      );
+    }
+  }
+  for (const measured of Object.values(report.artifacts))
+    assert.match(measured.sha256, /^[a-f0-9]{64}$/);
+  assert.ok(
+    Array.isArray(report.policyViolations) &&
+      report.policyViolations.every((item) => typeof item === 'string' && item.length > 0),
+  );
+  return report;
+}
+
+// Это диагностический запуск producer, не принятие candidatePolicies.
+// Guard срабатывает до child process; --update не является допустимым параметром.
+async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
+  assertSelfHostedRunner();
+  const materialFiles = [
+    'scripts/measure-platform-artifacts.mjs',
+    'scripts/check-package-size.js',
+    'scripts/check-consumer-size.js',
+    'release/contract.json',
+    'release/package-size-ratchet.json',
+    'release/consumer-size-ratchet.json',
+    'pnpm-lock.yaml',
+  ];
+  const materials = [];
+  for (const file of materialFiles) {
+    const item = await sourceFile(iconsRoot, sourceSha, file);
+    materials.push(item);
+    files.push({ repository: 'Labpics-Team/lab-icons', ...item });
+  }
+  const artifactFiles = JSON.parse(await readFile(join(iconsRoot, 'release/contract.json'))).files;
+  const program = materials[0];
+  const file = 'platform-measurement.json';
+  execFileSync(process.execPath, [join(iconsRoot, program.file), '--output', join(out, file)], {
+    cwd: iconsRoot,
+    timeout: 600_000,
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
+  assertCheckout(iconsRoot, sourceSha);
+  for (const material of materials)
+    assert.deepEqual(await sourceFile(iconsRoot, sourceSha, material.file), material);
+  const bytes = await readFile(join(out, file));
+  const lockfileSha256 = materials.find((item) => item.file === 'pnpm-lock.yaml').sha256;
+  const report = validatePlatformMeasurement(
+    JSON.parse(bytes),
+    sourceSha,
+    artifactFiles,
+    lockfileSha256,
+  );
+  return {
+    file,
+    sourceSha,
+    sha256: hash(bytes),
+    bytes: bytes.length,
+    program,
+    lockfileSha256,
+    artifactFiles,
+    artifactCount: artifactFiles.length,
+    consumerCount: Object.keys(report.consumers).length,
+    policyViolations: report.policyViolations.length,
+  };
+}
+
+export function platformMeasurementLog(bytes, sourceSha) {
+  const compressed = gzipSync(bytes, { level: 9 });
+  const chunks = compressed.toString('base64').match(/.{1,4096}/g);
+  const metadata = {
+    schemaVersion: 1,
+    encoding: 'gzip-base64',
+    sourceSha,
+    reportSha256: hash(bytes),
+    bytes: bytes.length,
+    compressedBytes: compressed.length,
+    chunks: chunks.length,
+  };
+  const lines = [
+    `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN ${JSON.stringify(metadata)}`,
+    ...chunks.map((chunk, index) => `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK ${index} ${chunk}`),
+    `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${metadata.reportSha256}`,
+  ].join('\n');
+  return `${lines}\n`;
+}
+
 export async function prepareInputs(options) {
   const pin = validateSourcePin(JSON.parse(await readFile(PIN)));
   const iconsRoot = await realpath(resolve(options.get('--icons-source')));
@@ -256,30 +492,63 @@ export async function prepareInputs(options) {
     };
   }
   const reference = await authorReference(iconsRoot, pin);
+  const states = await stateReference(iconsRoot, pin);
   for (const file of [
     'semantics/figma-baseline.json',
     'semantics/author-anatomy.json',
+    'semantics/author-state-groups.json',
     ...Object.values(reference.icons.reload).map((item) => item.sourceFile),
+    ...states.states.map((item) => item.sourceFile),
   ]) {
     files.push({
       repository: pin.repository,
       ...(await sourceFile(iconsRoot, pin.sourceCommit, file)),
     });
   }
-  const subject = validateSubject({ schemaVersion: 1, packages, authorReference: reference });
+  const subject = validateSubject({
+    schemaVersion: 2,
+    packages,
+    authorReference: reference,
+    stateReference: states,
+  });
   assertCheckout(iconsRoot, pin.sourceCommit);
   assertCheckout(uiRoot, uiCommit);
   await mkdir(out, { recursive: false, mode: 0o700 });
   const bytes = `${JSON.stringify(subject, null, 2)}\n`;
   await writeFile(join(out, 'subject.json'), bytes, { flag: 'wx', mode: 0o600 });
+  // Raw references и их source receipts уже зафиксированы до чтения dist artifacts.
+  const measurement = await measurePlatformArtifacts(iconsRoot, pin.sourceCommit, out, files);
+  assertCheckout(uiRoot, uiCommit);
   await writeFile(
     join(out, 'source-receipt.json'),
-    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement }, null, 2)}\n`,
     { flag: 'wx', mode: 0o600 },
   );
   process.stdout.write(
     `icons-inputs: ${JSON.stringify({ subjectSha256: hash(bytes), packages })}\n`,
   );
+}
+
+function writeStdout(bytes) {
+  const output = process.stdout;
+  return new Promise((resolve, reject) => {
+    output.once('error', reject);
+    try {
+      output.write(bytes, (error) => {
+        if (error) {
+          // Writable вызывает callback до события error; once-обработчик остаётся
+          // до него, чтобы ошибка потока не затёрла исходную причину.
+          reject(error);
+          return;
+        }
+        output.removeListener('error', reject);
+        resolve();
+      });
+    } catch (error) {
+      output.removeListener('error', reject);
+      reject(error);
+    }
+  });
 }
 
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
@@ -296,7 +565,36 @@ export async function summarize(directory) {
   }
   const receipt = JSON.parse(await readFile(join(root, 'result/receipt.json')));
   const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
-  process.stdout.write(
+  const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
+  const subject = validateSubject(JSON.parse(subjectBytes));
+  assert.equal(hash(subjectBytes), source.subjectSha256);
+  assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
+  if (subject.schemaVersion === 2) {
+    const measurement = source.measurement;
+    assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
+    assert.equal(measurement.sourceSha, source.pin.sourceCommit);
+    const bytes = await readFile(join(root, 'inputs/platform-measurement.json'));
+    assert.equal(hash(bytes), measurement.sha256, 'measurement bytes изменились');
+    assert.equal(bytes.length, measurement.bytes);
+    const program = source.files.find(
+      (item) => item.file === 'scripts/measure-platform-artifacts.mjs',
+    );
+    assert.deepEqual(measurement.program, {
+      file: program.file,
+      sha256: program.sha256,
+      bytes: program.bytes,
+    });
+    const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
+    assert.equal(lockfile.sha256, measurement.lockfileSha256);
+    validatePlatformMeasurement(
+      JSON.parse(bytes),
+      source.pin.sourceCommit,
+      measurement.artifactFiles,
+      measurement.lockfileSha256,
+    );
+    await writeStdout(platformMeasurementLog(bytes, source.pin.sourceCommit));
+  }
+  await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,
       outcome: receipt.outcome,
@@ -305,7 +603,9 @@ export async function summarize(directory) {
       runner: receipt.runner,
       archives: receipt.archives,
       observations: receipt.records?.length,
-      failure: receipt.failure ? { phase: receipt.failure.phase } : null,
+      failure: receipt.failure
+        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+        : null,
       files,
       diagnosticDirectory: root,
     })}\n`,

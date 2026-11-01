@@ -3,7 +3,12 @@
 `icons-packed.mjs` собирает отдельное приложение с двумя настоящими `lab-button`:
 Outline и Filled авторского `reload`. Публичный Lab Motion исполняет данные жеста
 `reload.cycle`; приложение использует только публичные package entrypoints.
-Harness принимает три готовых архива и независимый авторский reference. Он не
+Schema2 добавляет один button со `status-circle`: шесть авторских Outline знаков
+внутри одной сохраняемой оболочки, select состояния и доступный текст приложения.
+Публичный `sequence` Lab Motion исполняет opacity stages с явным первым кадром
+из видимой позы; новый control создаётся до остановки прежнего. Reload остаётся
+в том же приложении.
+Harness принимает три готовых архива и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
 
 ## Запуск
@@ -46,7 +51,9 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-JSON имеет `schemaVersion: 1`, `packages` и `authorReference`.
+Текущий JSON имеет `schemaVersion: 2`, `packages`, `authorReference` и
+`stateReference`. Исторический schema1 сохраняет прежний cycle reference и
+исполняемый путь reload; state reference в schema1 запрещён.
 
 | Поле | Содержимое |
 |---|---|
@@ -57,6 +64,9 @@ JSON имеет `schemaVersion: 1`, `packages` и `authorReference`.
 | `authorReference` | `fileName`, `fileKey`, `version`, `icons.reload` |
 | `icons.reload` | Ровно `outline` и `filled` |
 | Каждый variant | `sourceFile`, `author`, `anatomy`, `viewBox`, `paths`, `parts`, `gesture` |
+| `stateReference` | `group`, `variant`, `defaultState`, `enclosurePartId`, `enclosure`, `states`, `proof` |
+| Каждый state | `id`, `partId`, `icon`, `contentPartIds`, `sourceFile`, `author`, `viewBox`, `dimensions`, `paths` |
+| `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec |
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
@@ -66,8 +76,9 @@ JSON имеет `schemaVersion: 1`, `packages` и `authorReference`.
 `annotationSha256`, `masterSha256`, `pathFingerprintSha256`.
 
 `viewBox` — четыре конечных числа. `paths` — упорядоченные `{d, fillRule}` из
-raw author master. Независимый reader этого cycle witness принимает один целый
-замкнутый path и нейтральные группы; transform, opacity, clip, неизвестные paint
+raw author master. Независимый reader принимает нейтральные группы и явно
+замкнутые paths, включая контрформы; cycle witness дополнительно требует один
+целый path с одним контуром. Transform, opacity, clip, неизвестные paint
 и неподдержанный XML получают отказ. Авторский `d` не переписывается. `parts` — упорядоченные
 `{id, role, zIndex, fillRule, d}` из авторской аннотации этого master. Harness
 самостоятельно проверяет fingerprint упорядоченных `{index, d, fillRule}` через
@@ -82,6 +93,24 @@ SHA256 JSON с отсортированными ключами и затем с�
 Private producer helpers, generated glyph и `compileSymbolEffect` не участвуют
 в построении expected. Harness сравнивает anchor,
 transformOrigin и endpoints с этой независимой декларацией.
+
+`stateReference` независимо читает `semantics/author-state-groups.json` и шесть
+точных raw masters из того же Figma manifest. Все states имеют viewBox 24 и
+размеры 24; enclosure занимает последнее место в каждом master и совпадает по
+точному `d`, fill-rule, paint и рамке. Interior paths сохраняют исходный порядок;
+IDs берутся из versioned spec. Reference не импортирует compiler или helpers
+производителя. В Lab UI нет отдельной редактируемой таблицы геометрии. Source
+receipt добавляет hash semantic spec и каждого прочитанного master.
+
+После фиксации raw references и `subject.json` та же prepare-inputs граница
+запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
+штатного pack. Запуск разрешён только self-hosted runner. `--update` не передаётся:
+candidate policies и `policyViolations` остаются диагностикой, принятие лимитов
+принадлежит Icons. Отчёт `inputs/platform-measurement.json` содержит полный
+release contract census, raw/gzip/brotli и hashes artifacts, consumer metrics,
+среду, методы и candidate policies. Source receipt связывает его bytes/hash с
+точным Icons SHA, lockfile и программой/её исходными материалами. Отсутствующий,
+изменённый или относящийся к другому SHA report получает отказ.
 
 Готовьте reference из закреплённого Figma manifest/master и проверенной аннотации,
 **до чтения установленного glyph**. Генерация ожидаемого результата из того же
@@ -105,6 +134,9 @@ installed npm lock integrity обязан совпасть. Отсутствие
 `--ignore-scripts`, без aliases и ссылок на producer source. Rollup module graph
 обязан разрешаться внутрь этого consumer и содержать реальные button, reload и
 Motion. Импорты чужих публичных symbols и whole IR entrypoints отвергаются.
+Schema2 также требует вклад публичного `@labpics/icons/states/status-circle`.
+Проверка не фиксирует частное размещение его implementation; полный retained
+module graph сохраняется для проверки отсутствия catalog/authoring owners.
 Button, reload и Motion разрешаются bundler-ом по публичным entrypoints
 установленных пакетов. В bundle требуется вклад их import-closure: перенос файлов
 при сохранённых exports и удаление пустого reexport facade не ломают проверку.
@@ -142,6 +174,21 @@ continuity или compositor-only execution.
 `GESTURE_UNSUPPORTED`. Cleanup останавливает controls, удаляет mounted кнопки и
 проверяет отсутствие running native animations.
 
+State consumer сравнивает шесть static SVG endpoints с независимым reference,
+точные content paths и countershapes всех mounted групп, один enclosure, размеры
+и stable IDs. `stateCapabilities()` и экспорт `web-effect` сверяются с семантикой
+группы. Отдельный сценарий ставит публичный playback на паузу в видимой смеси,
+проверяет отсутствие движения на двух кадрах, продолжение, обратный ход и новое
+намерение. Consumer передаёт Motion публичные пары `[видимая opacity, цель]`,
+сохраняя исходный снимок до admission. Передача сравнивает opacity до/после
+в одном browser task; третье намерение сохраняет три одновременно видимых знака.
+После завершения проверяется
+one-hot конечная поза. Select и native Lab UI button управляют состоянием; текст
+status и доступное имя принадлежат приложению. Reduced motion завершает целевую
+позу с duration 0. Cleanup прерывает ещё активный переход и удаляет DOM; `stopped`
+при disposal не выдаётся за `finished`. Filled, неизвестное состояние, null request
+и неподдержанные transition formats получают точные отказы.
+
 ## Результаты и ограничения
 
 Результат сохраняет `receipt.json` с фазой отказа, observations и browser errors;
@@ -151,11 +198,25 @@ bundle file, сами browser bundles и screenshots двух режимов. З
 SHA harness, checkout SHA, dirty state, Node, browser и идентичность runner.
 Browser/server закрываются; удаляется только собственный временный consumer.
 
-Размер относится к полному двухкнопочному приложению с Lab UI и Motion. Этот
+Размер относится к полному приложению с Lab UI и Motion: schema1 содержит две
+reload кнопки; schema2 также содержит status-circle и select состояния. Этот
 маршрут не измеряет baseline speedup, стоимость одиночного статического импорта,
 публикацию npm или оптическую приёмку всего корпуса. Для этих утверждений нужны
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного
 remote receipt не означает пройденную интеграцию.
+
+`--summarize` также выводит полный report стандартным
+[gzip](https://nodejs.org/api/zlib.html#zlibgzipsyncbuffer-options) и base64 блоком
+в stdout, без нового Actions artifact storage. `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN`
+содержит encoding, source SHA, исходный digest/размер, compressed size и число
+частей. Строки `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK <index> <base64>` имеют
+последовательные индексы и не более 4096 base64 символов. `..._END` повторяет digest.
+Для восстановления из полного job log проверьте наличие всех индексов и END,
+соедините base64, декодируйте и gunzip, затем проверьте исходный размер и SHA256.
+Неполный блок не является report. Schema1 не требует measurement packet.
+`summarize` дожидается завершения записи полного блока и RESULT перед отказом
+по неуспешному receipt. При ошибке stdout возвращается исходная причина согласно
+[контракту Node Writable](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback).
 
 Основание runner guard: [GitHub default variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables).
 Принятый packed-consumer маршрут: Lab UI PR #191, SHA
