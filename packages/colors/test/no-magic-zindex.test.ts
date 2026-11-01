@@ -137,7 +137,13 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
     const consumed = consumedZLevels();
     // Card рисует INSIDE stroke на secondary внутри собственного stacking context.
     expect([...consumed.keys()].sort()).toEqual(
-      ['--lab-z-secondary', '--lab-z-dropdown', '--lab-z-modal', '--lab-z-modal-underlay', '--lab-z-tooltip'].sort(),
+      [
+        '--lab-z-secondary',
+        '--lab-z-dropdown',
+        '--lab-z-modal',
+        '--lab-z-modal-underlay',
+        '--lab-z-tooltip',
+      ].sort(),
     );
     const v = (name: string) => consumed.get(name) as number;
     expect(v('--lab-z-secondary')).toBeLessThan(v('--lab-z-dropdown'));
