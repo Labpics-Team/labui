@@ -134,7 +134,7 @@ describe('CSS emission', () => {
 });
 
 describe('ownership boundary', () => {
-  it('default config contains bindings only, never physical numeric tiers', () => {
+  it('LabUI определяет роли и калибровку, сохраняя прежние уровни duration/easing', () => {
     expect(Object.keys(defaultMotionConfig).sort()).toEqual(['semantics', 'springs']);
   });
 });

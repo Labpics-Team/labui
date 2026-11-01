@@ -31,4 +31,15 @@ describe('SSR: hasDefaultSlotContent не падает под @lit-labs/ssr', ()
     expect(renderToString(html`<lab-checkbox></lab-checkbox>`)).toContain('shadowrootmode');
     expect(renderToString(html`<lab-switch></lab-switch>`)).toContain('shadowrootmode');
   });
+
+  it('Switch сохраняет defaultChecked в SSR, а явный checked=false имеет приоритет', () => {
+    const defaultOn = renderToString(html`<lab-switch default-checked></lab-switch>`);
+    expect(defaultOn).toMatch(/class="root"\s+data-state="checked"/);
+    expect(defaultOn).toMatch(/<input\s+type="checkbox"\s+checked/);
+    const explicitOff = renderToString(
+      html`<lab-switch .defaultChecked=${true} .checked=${false}></lab-switch>`,
+    );
+    expect(explicitOff).toMatch(/class="root"\s+data-state="unchecked"/);
+    expect(explicitOff).not.toMatch(/<input\s+type="checkbox"\s+checked/);
+  });
 });

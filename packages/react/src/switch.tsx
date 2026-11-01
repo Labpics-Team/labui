@@ -19,8 +19,9 @@
 
 import type { LabSwitchSize, LabSwitchType } from '@labpics/ui-core';
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import { type SwitchMotion, mountSwitchMotion } from '@labpics/ui-core/motion';
 import * as switchMachine from '@zag-js/switch';
-import { type ReactNode, useId } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import { useZag } from './use-zag.js';
 import './switch.css';
 
@@ -28,6 +29,9 @@ type SwitchSchema = SchemaOf<switchMachine.Service>;
 type SwitchApi = switchMachine.Api;
 
 const switchModule: MachineModule<SwitchSchema, SwitchApi> = switchMachine;
+
+// Сервер отдаёт CSS-позу. В браузере scope подключается до первого paint.
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface SwitchProps {
   /** Semantic intent of the switch's ON state. */
@@ -79,6 +83,29 @@ export function Switch({
     name,
     onCheckedChange: onCheckedChange ? (details) => onCheckedChange(details.checked) : undefined,
   });
+  const rootRef = useRef<HTMLLabelElement>(null);
+  const trackRef = useRef<HTMLSpanElement>(null);
+  const thumbRef = useRef<HTMLSpanElement>(null);
+  const motionRef = useRef<SwitchMotion>();
+  const checkedRef = useRef(api.checked);
+  checkedRef.current = api.checked;
+
+  useClientLayoutEffect(() => {
+    const root = rootRef.current;
+    const track = trackRef.current;
+    const thumb = thumbRef.current;
+    if (!root || !track || !thumb) return;
+    const motion = mountSwitchMotion(root, track, thumb, checkedRef.current);
+    motionRef.current = motion;
+    return () => {
+      motion.dispose();
+      motionRef.current = undefined;
+    };
+  }, []);
+
+  useClientLayoutEffect(() => {
+    motionRef.current?.update(api.checked);
+  });
 
   // The machine sets `aria-labelledby` on the hidden input pointing at the label
   // part. With a visible label that resolves and names the control; with NO
@@ -93,20 +120,21 @@ export function Switch({
   return (
     <label
       {...api.getRootProps()}
+      ref={rootRef}
       data-lab-switch=""
       data-type={type}
       data-size={size}
       data-checked={api.checked || undefined}
       data-disabled={api.disabled || undefined}
     >
-      <span {...api.getControlProps()} className="lab-switch-control">
+      <span {...api.getControlProps()} ref={trackRef} className="lab-switch-control">
         <span className="lab-switch-icon lab-switch-icon-on" aria-hidden="true">
           {iconOn}
         </span>
         <span className="lab-switch-icon lab-switch-icon-off" aria-hidden="true">
           {iconOff}
         </span>
-        <span {...api.getThumbProps()} className="lab-switch-thumb" />
+        <span {...api.getThumbProps()} ref={thumbRef} className="lab-switch-thumb" />
       </span>
       {/* The hidden input is a SIBLING of the (aria-hidden) control, NOT a
           descendant, so it stays in the accessibility tree. */}
