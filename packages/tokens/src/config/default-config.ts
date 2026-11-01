@@ -63,6 +63,7 @@ export const defaultConfig: TokensConfig = {
       // альфа свечения живут в оси fx-glow контракта @labpics/colors.
       'glow-core': '2', //  8px — радиус размытия ядра свечения
       'glow-halo': '8', // 32px — радиус размытия ореола свечения
+      'switch-label-gap-l': '3', // 12px между треком и подписью Switch L.
     },
   },
 
@@ -83,18 +84,20 @@ export const defaultConfig: TokensConfig = {
       // kbd m, loader m. СТАТУС: DECLARED — ось Size в Figma сегодня биндит
       // только 12/16/20; при появлении px/9-якоря сверить и заземлить.
       'control-xl': 1.5, // 24px — глиф-бокс XL (ADR-0006 §1)
-      // DESIGN-CHOICE per ADR-0006 §2 (micro not snapping 4px grid w/o visible shift):
-      // switch tracks, loader strokes 3px, checkbox tiny=14px. Added to reach
-      // MIGRATED=27/27 + no-magic guard while keeping exact values (E1).
-      'switch-track-s': 2.25,
-      'switch-track-m': 2.75,
-      'switch-track-l': 3.25,
-      'switch-track-h-s': 1.25,
-      'switch-track-h-m': 1.5,
-      'switch-track-h-l': 1.75,
-      'switch-thumb-s': 0.875,
-      'switch-thumb-m': 1.125,
-      'switch-thumb-l': 1.375,
+      // Switch при Unit 100%: docs/reference/design-baseline.md (2026-10-30).
+      // Отступ бегунка выводится из высоты трека и диаметра: (h − d) / 2.
+      'switch-track-s': 1.75,
+      'switch-track-m': 2.25,
+      'switch-track-l': 2.75,
+      'switch-track-h-s': 1,
+      'switch-track-h-m': 1.25,
+      'switch-track-h-l': 1.5,
+      'switch-thumb-s': 0.75,
+      'switch-thumb-m': 1,
+      'switch-thumb-l': 1.25,
+      'switch-row': 1.5,
+      // Сохраняет прежние 36px кнопки Combobox независимо от размеров Switch.
+      'combobox-trigger': 2.25,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,
@@ -228,6 +231,12 @@ export const defaultConfig: TokensConfig = {
       medium: 500,
       semibold: 600,
       bold: 700,
+    },
+    // Проверенные подписи Switch: docs/reference/design-baseline.md.
+    // Это роли компонента; viewport не меняет кегль выбранного размера.
+    fixedRoles: {
+      'switch-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
+      'switch-label-l': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
     },
     // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
     // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие

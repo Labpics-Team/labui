@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LabUI — Switch parity (Lit ↔ React)</title>
-    <link rel="stylesheet" href="./button-demo.css" />
+    <link rel="stylesheet" href="./switch-demo.css" />
   </head>
   <body>
     <main>
@@ -36,6 +36,9 @@
           <lab-switch data-testid="lit-neutral-on" type="neutral" checked>Quiet</lab-switch>
           <lab-switch data-testid="lit-danger-on" type="danger" checked>Airplane</lab-switch>
           <lab-switch data-testid="lit-disabled" type="accent" disabled>Off</lab-switch>
+          <lab-switch data-testid="lit-size-s" type="neutral" size="s">Small</lab-switch>
+          <lab-switch data-testid="lit-size-m" type="neutral" size="m">Medium</lab-switch>
+          <lab-switch data-testid="lit-size-l" type="neutral" size="l">Large</lab-switch>
           <!-- Icon-only specimen: no visible label, named only via aria-label. -->
           <lab-switch data-testid="lit-icon-only" type="accent" aria-label="Mute">
             <span slot="icon-on" aria-hidden="true">🔔</span>

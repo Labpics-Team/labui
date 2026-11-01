@@ -38,6 +38,9 @@ importers:
 
   apps/docs:
     dependencies:
+      '@labpics/fonts':
+        specifier: workspace:*
+        version: link:../../packages/fonts
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -72,6 +75,9 @@ importers:
       '@axe-core/playwright':
         specifier: 4.12.1
         version: 4.12.1(playwright-core@1.55.1)
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
       '@playwright/test':
         specifier: 1.55.1
         version: 1.55.1
@@ -158,9 +164,15 @@ importers:
 
   packages/core:
     dependencies:
+      '@labpics/motion':
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
@@ -433,8 +445,8 @@ importers:
   packages/tokens:
     devDependencies:
       '@labpics/motion':
-        specifier: 0.3.0
-        version: 0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -1292,8 +1304,8 @@ packages:
   '@labpics/colors@0.6.2':
     resolution: {integrity: sha512-zilUt3OHixV7MsLX/FkAaI/umpsxyaRklW8qQvWMnR35SQmwCuSe7eFHdNWDRMuhiv/An6LmPpwSTr+sMRWbUw==}
 
-  '@labpics/motion@0.3.0':
-    resolution: {integrity: sha512-mGgd7tB9bTPBRU0Yj+kJU7P6WktMX4wAQm0005XQH8owtC1vhDWlYi6cGcz7r7qEb9xgnYXywkriKSW6k2ajcw==}
+  '@labpics/motion@0.5.0':
+    resolution: {integrity: sha512-HtZceGmhBc4ldefBRpW6mg0cTLSINsyH1fXGKm9TXn57btjTnA3LPwq41Rdkd+cWWd2dA3qXGulPnJo+EcRFlQ==}
     engines: {node: '>=22'}
     peerDependencies:
       '@angular/core': '>=16.0.0'
@@ -4093,7 +4105,7 @@ snapshots:
 
   '@labpics/colors@0.6.2': {}
 
-  '@labpics/motion@0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
+  '@labpics/motion@0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
     optionalDependencies:
       lit: 3.3.3
       react: 18.3.1

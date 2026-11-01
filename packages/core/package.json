@@ -19,6 +19,16 @@
       "import": "./dist/ssr/index.js",
       "require": "./dist/ssr/index.cjs"
     },
+    "./motion": {
+      "import": {
+        "types": "./dist/motion/index.d.ts",
+        "default": "./dist/motion/index.js"
+      },
+      "require": {
+        "types": "./dist/motion/index.d.cts",
+        "default": "./dist/motion/index.cjs"
+      }
+    },
     "./proof": {
       "types": "./dist/proof/lab-proof.d.ts",
       "import": "./dist/proof/lab-proof.js",
@@ -49,6 +59,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@labpics/motion": "0.5.0",
+    "@labpics/ui-tokens": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
     "@zag-js/accordion": "1.41.2",
     "@zag-js/checkbox": "1.41.2",

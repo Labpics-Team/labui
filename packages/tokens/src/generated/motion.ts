@@ -26,6 +26,7 @@ export const motionEasing = {
 export type MotionEasingToken = keyof typeof motionEasing;
 
 export const motionSpring = {
+  toggle: 'var(--lab-motion-spring-toggle)',
   smooth: 'var(--lab-motion-spring-smooth)',
   expressive: 'var(--lab-motion-spring-expressive)',
 } as const;
@@ -33,6 +34,7 @@ export const motionSpring = {
 export type MotionSpringToken = keyof typeof motionSpring;
 
 export const motionSpringDuration = {
+  toggle: 'var(--lab-motion-spring-toggle-duration)',
   smooth: 'var(--lab-motion-spring-smooth-duration)',
   expressive: 'var(--lab-motion-spring-expressive-duration)',
 } as const;
@@ -47,3 +49,18 @@ export const motionSemantic = {
 } as const;
 
 export type MotionSemanticToken = keyof typeof motionSemantic;
+
+/** Калибровка тех же ролей для LabMotion runtime; не редактировать. */
+export const motionSpringRuntime = {
+  toggle: { response: 320, bounce: 0.22 },
+  smooth: { response: 350, bounce: 0 },
+  expressive: { response: 500, bounce: 0.3 },
+} as const;
+
+/** База относительной скорости runtime; CSS override сохраняет своё действие. */
+export const motionSemanticRuntime = {
+  entrance: { durationMs: 200 },
+  exit: { durationMs: 100 },
+  transition: { durationMs: 100 },
+  emphasis: { durationMs: 300 },
+} as const;

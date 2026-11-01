@@ -329,6 +329,18 @@
     "switch-track-s": {
       "$type": "dimension",
       "$value": {
+        "value": 28,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.75rem"
+        }
+      }
+    },
+    "switch-track-m": {
+      "$type": "dimension",
+      "$value": {
         "value": 36,
         "unit": "px"
       },
@@ -338,7 +350,7 @@
         }
       }
     },
-    "switch-track-m": {
+    "switch-track-l": {
       "$type": "dimension",
       "$value": {
         "value": 44,
@@ -350,19 +362,19 @@
         }
       }
     },
-    "switch-track-l": {
+    "switch-track-h-s": {
       "$type": "dimension",
       "$value": {
-        "value": 52,
+        "value": 16,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "3.25rem"
+          "css": "1rem"
         }
       }
     },
-    "switch-track-h-s": {
+    "switch-track-h-m": {
       "$type": "dimension",
       "$value": {
         "value": 20,
@@ -374,7 +386,7 @@
         }
       }
     },
-    "switch-track-h-m": {
+    "switch-track-h-l": {
       "$type": "dimension",
       "$value": {
         "value": 24,
@@ -386,51 +398,63 @@
         }
       }
     },
-    "switch-track-h-l": {
-      "$type": "dimension",
-      "$value": {
-        "value": 28,
-        "unit": "px"
-      },
-      "$extensions": {
-        "com.labpics.ui-tokens": {
-          "css": "1.75rem"
-        }
-      }
-    },
     "switch-thumb-s": {
       "$type": "dimension",
       "$value": {
-        "value": 14,
+        "value": 12,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "0.875rem"
+          "css": "0.75rem"
         }
       }
     },
     "switch-thumb-m": {
       "$type": "dimension",
       "$value": {
-        "value": 18,
+        "value": 16,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "1.125rem"
+          "css": "1rem"
         }
       }
     },
     "switch-thumb-l": {
       "$type": "dimension",
       "$value": {
-        "value": 22,
+        "value": 20,
         "unit": "px"
       },
       "$extensions": {
         "com.labpics.ui-tokens": {
-          "css": "1.375rem"
+          "css": "1.25rem"
+        }
+      }
+    },
+    "switch-row": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "combobox-trigger": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
         }
       }
     },
@@ -1150,6 +1174,30 @@
           }
         }
       }
+    },
+    "switch-label": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "switch-label-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1192,6 +1240,14 @@
     "6xl": {
       "$type": "number",
       "$value": 0.8582
+    },
+    "switch-label": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "switch-label-l": {
+      "$type": "number",
+      "$value": 1
     }
   },
   "font-weight": {
@@ -1252,6 +1308,14 @@
     "6xl": {
       "$type": "number",
       "$value": -0.0469
+    },
+    "switch-label": {
+      "$type": "number",
+      "$value": -0.015625
+    },
+    "switch-label-l": {
+      "$type": "number",
+      "$value": -0.0165
     }
   },
   "measure": {
