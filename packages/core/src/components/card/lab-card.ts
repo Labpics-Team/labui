@@ -112,7 +112,7 @@ export class LabCard extends LabElement {
         content: '';
         position: absolute;
         inset: 0;
-        z-index: 2;
+        z-index: ${litVar('--lab-z-secondary', '100')};
         box-sizing: border-box;
         border: ${litVar('--lab-stroke-hairline')} solid var(--_border);
         border-radius: inherit;

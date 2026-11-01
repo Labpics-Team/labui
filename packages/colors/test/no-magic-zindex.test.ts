@@ -135,11 +135,12 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   // underlay ПОД modal-панелью, tooltip НАД всем. Детерминированно, без флака.
   it('preserves the intended stacking order of the layers components actually use', () => {
     const consumed = consumedZLevels();
-    // Ровно четыре слоя потребляются сегодня (остальные 11 — headroom шкалы).
+    // Card рисует INSIDE stroke на secondary внутри собственного stacking context.
     expect([...consumed.keys()].sort()).toEqual(
-      ['--lab-z-dropdown', '--lab-z-modal', '--lab-z-modal-underlay', '--lab-z-tooltip'].sort(),
+      ['--lab-z-secondary', '--lab-z-dropdown', '--lab-z-modal', '--lab-z-modal-underlay', '--lab-z-tooltip'].sort(),
     );
     const v = (name: string) => consumed.get(name) as number;
+    expect(v('--lab-z-secondary')).toBeLessThan(v('--lab-z-dropdown'));
     // Порядок «как сейчас»: dropdown (900) ПОД модалом; скрим (underlay 1100) ПОД
     // панелью (modal 1200); tooltip (1400) НАД всем.
     expect(v('--lab-z-dropdown')).toBeLessThan(v('--lab-z-modal-underlay'));
@@ -152,9 +153,8 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   it('each component uses the SAME z-layers on the Lit and React renderers', () => {
     const { core, react } = zLevelsByComponent();
     const shared = [...core.keys()].filter((name) => react.has(name)).sort();
-    // Сегодня z-index кладут dialog, popover, menu, select, combobox, tooltip —
-    // все шесть присутствуют на ОБОИХ рендерерах.
-    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'tooltip']);
+    // Локальный stroke Card и плавающие компоненты используют одинаковые роли.
+    expect(shared).toEqual(['card', 'combobox', 'dialog', 'menu', 'popover', 'select', 'tooltip']);
     for (const name of shared) {
       const coreSet = [...(core.get(name) as Set<string>)].sort();
       const reactSet = [...(react.get(name) as Set<string>)].sort();
