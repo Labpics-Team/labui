@@ -19,6 +19,11 @@ if [ "$#" -ne 0 ]; then
     echo '::error::Icons consumer requires distinct checkouts and a self-hosted Actions identity.' >&2
     exit 1
   fi
+  icons_uid="$(id -u)"
+  if ! [[ "$icons_uid" =~ ^[1-9][0-9]*$ ]]; then
+    echo '::error::Icons consumer requires a non-root host UID.' >&2
+    exit 1
+  fi
   workload=icons-consumer
   source_options+=(--mount "type=bind,source=${icons_root},target=/icons-source,readonly")
   for variable in GITHUB_ACTIONS GITHUB_RUN_ID GITHUB_RUN_ATTEMPT RUNNER_ENVIRONMENT RUNNER_NAME RUNNER_OS UI_SOURCE_COMMIT; do

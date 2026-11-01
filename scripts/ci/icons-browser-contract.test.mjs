@@ -6,6 +6,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -134,7 +135,7 @@ function runFixture(overrides = {}, mode = 'icons') {
     writeFileSync(join(fixture, 'bin/docker'), recorder, { mode: 0o755 });
     writeFileSync(
       join(fixture, 'bin/id'),
-      '#!/bin/sh\ncase "$1" in -u) echo 1001;; -g) echo 1234;; *) exit 2;; esac\n',
+      '#!/bin/sh\ncase "$1" in -u) echo "$TEST_UID";; -g) echo "$TEST_GID";; *) exit 2;; esac\n',
       { mode: 0o755 },
     );
     writeFileSync(join(fixture, 'runner/foreign'), 'preserve');
@@ -157,6 +158,8 @@ function runFixture(overrides = {}, mode = 'icons') {
       RUNNER_NAME: 'fixture',
       RUNNER_OS: 'Linux',
       E2E_SMOKE: '0',
+      TEST_UID: '1001',
+      TEST_GID: '1234',
       CREATE_STATUS: '0',
       START_STATUS: '0',
       REMOVE_STATUS: '0',
@@ -183,6 +186,7 @@ function runFixture(overrides = {}, mode = 'icons') {
       outputs: read(output),
       exported: read(exported),
       foreign: read(join(fixture, 'runner/foreign')),
+      runnerEntries: readdirSync(join(fixture, 'runner')),
       workExists: work
         ? existsSync(process.platform === 'win32' ? work.replace(/^\/([a-z])\//, '$1:/') : work)
         : false,
@@ -248,6 +252,19 @@ test('the Icons workload refuses a non-runner invocation before allocating a con
   assert.equal(result.args, undefined);
   assert.equal(result.exported, null);
   assert.equal(result.foreign, 'preserve');
+});
+
+test('the Icons workload refuses root UID before creating writable job files or a container', () => {
+  for (const gid of ['0', '1234']) {
+    const result = runFixture({ TEST_UID: '0', TEST_GID: gid });
+    assert.notEqual(result.status, 0);
+    assert.equal(result.args, undefined);
+    assert.equal(result.order, undefined);
+    assert.equal(result.outputs, '');
+    assert.equal(result.exported, null);
+    assert.deepEqual(result.runnerEntries, ['foreign']);
+    assert.equal(result.foreign, 'preserve');
+  }
 });
 
 test('the existing full E2E mode forwards its mode and keeps Icons out of that workload', () => {
