@@ -865,10 +865,26 @@ function sameMotion(effect, gesture, from, to, duration, reduced, variant) {
   );
 }
 
-export function installViewportPointerBlocker(element) {
+export function installViewportPointerBlocker(element, point) {
+  if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y))
+    throw new Error('Pointer blocker требует конечную точку ввода');
   const document = element.ownerDocument;
   const blocker = document.createElement('div');
   blocker.setAttribute('data-icons-packed-overlay', '');
+  const events = [];
+  blocker.setAttribute('data-icons-packed-pointer-events', '[]');
+  for (const type of ['pointerdown', 'pointerup', 'click'])
+    blocker.addEventListener(type, (event) => {
+      events.push({
+        type: event.type,
+        trusted: event.isTrusted,
+        target: event.target === blocker,
+        button: event.button,
+        x: event.clientX,
+        y: event.clientY,
+      });
+      blocker.setAttribute('data-icons-packed-pointer-events', JSON.stringify(events));
+    });
   Object.assign(blocker.style, {
     position: 'fixed',
     inset: '0',
@@ -885,19 +901,33 @@ export function installViewportPointerBlocker(element) {
     top: rectangle.top,
     right: rectangle.right,
     bottom: rectangle.bottom,
-    centerHit: document.elementFromPoint(width / 2, height / 2) === blocker,
+    point: { x: point.x, y: point.y },
+    pointHit: document.elementFromPoint(point.x, point.y) === blocker,
   };
   if (
-    width <= 0 ||
-    height <= 0 ||
-    rectangle.left > 0 ||
-    rectangle.top > 0 ||
-    rectangle.right < width ||
-    rectangle.bottom < height ||
-    !witness.centerHit
+    point.x < rectangle.left ||
+    point.y < rectangle.top ||
+    point.x >= rectangle.right ||
+    point.y >= rectangle.bottom ||
+    !witness.pointHit
   )
-    throw new Error(`Pointer blocker не закрывает viewport: ${JSON.stringify(witness)}`);
+    throw new Error(`Pointer blocker не перехватывает заданную точку: ${JSON.stringify(witness)}`);
   return witness;
+}
+
+export function verifyBlockedPointer(events, point) {
+  assert.deepEqual(
+    events,
+    ['pointerdown', 'pointerup', 'click'].map((type) => ({
+      type,
+      trusted: true,
+      target: true,
+      button: 0,
+      x: point.x,
+      y: point.y,
+    })),
+    'Overlay должен получить настоящий press/release/click в action point',
+  );
 }
 
 async function browserProof(browser, url, reference, out, records, browserErrors) {
@@ -949,15 +979,26 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.equal(await button.count(), 1, 'native accessible button не найден');
         const other = variant === 'outline' ? 'filled' : 'outline';
         const untouched = await page.evaluate((id) => window.__iconsPacked.read(id), other);
+        let pointerControl;
         try {
-          // click может прокрутить страницу после установки overlay; target-box устаревает.
-          await host.evaluate(installViewportPointerBlocker);
-          await assert.rejects(host.click({ timeout: 750 }), (error) => {
-            assert.match(error.message, /intercepts pointer events/);
-            assert.match(error.message, /data-icons-packed-overlay/);
-            return true;
-          });
+          // Timeout до hit-test не доказывает перехват. Trial выполняет readiness без клика.
+          await host.click({ trial: true });
+          const rectangle = await host.boundingBox();
+          assert.ok(rectangle && rectangle.width > 0 && rectangle.height > 0);
+          const point = {
+            x: Math.floor(rectangle.x + rectangle.width / 2),
+            y: Math.floor(rectangle.y + rectangle.height / 2),
+          };
+          const coverage = await host.evaluate(installViewportPointerBlocker, point);
+          await page.mouse.click(point.x, point.y);
+          const events = JSON.parse(
+            await page
+              .locator('[data-icons-packed-overlay]')
+              .getAttribute('data-icons-packed-pointer-events'),
+          );
+          verifyBlockedPointer(events, point);
           assert.equal((await read()).nativeClicks, 0);
+          pointerControl = { point, coverage, events };
         } finally {
           await page.locator('[data-icons-packed-overlay]').evaluateAll((elements) => {
             for (const element of elements) element.remove();
@@ -1058,6 +1099,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         records.push({
           name: `${variant}:${reducedMotion}:real-button`,
           target: initial.target,
+          pointerControl,
           events: activated.events,
           provenance: initial.provenance,
           refusal,
