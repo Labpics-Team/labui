@@ -34,7 +34,7 @@
       "@labpics/ui-react": ["./packages/react/src/index.ts"],
       "@labpics/ui-react/*": ["./packages/react/src/*.tsx"],
       "@labpics/ui-vue": ["./packages/vue/src/index.ts"],
-      "@labpics/ui-vue/*": ["./packages/vue/src/*.ts"],
+      "@labpics/ui-vue/*": ["./packages/vue/src/*.ts", "./packages/vue/src/generated/*.ts"],
       "@labpics/ui-materials": ["./packages/materials/src/index.ts"],
       "@labpics/ui-materials/css": ["./packages/materials/src/css.d.ts"]
     }
