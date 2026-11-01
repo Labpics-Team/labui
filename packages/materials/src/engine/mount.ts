@@ -112,7 +112,7 @@ export interface EngineBinding {
   gate(): boolean;
   /** CSS-селектор поверхностей движка (`.lab-material` / `[data-veil]`). */
   readonly selector: string;
-  /** Держать ли эту поверхность (ближайший скоуп мода / всегда для veil). */
+  /** Активировать ли эффект (ближайший скоуп мода / всегда для veil). */
   wants(el: HTMLElement): boolean;
   /** Медиа-режим временно запрещает движок (acrylic под reduced-transparency
    *  и т.п.: инлайн сильнее листовых деградаций, поэтому движок гаснет сам). */
@@ -177,7 +177,8 @@ function release(binding: EngineBinding, el: HTMLElement, shared: SharedHandle):
 /**
  * Единая механика монтирования одного движка над `scope`. Заменяет три
  * дословных блока runtime.ts. `sync` идемпотентна: держит ровно те поверхности,
- * что проходят `wants` (и не под `blocked`), отцепляя ушедшие.
+ * что соответствуют selector, отцепляя ушедшие. Mode/connection/media гейтят
+ * ресурс, а не владение: queued sync отключённого scope сохраняет его leases.
  */
 export function mountEngine(binding: EngineBinding, scope: Document | Element): MountedEngine {
   const held = new Map<HTMLElement, SharedHandle>();
@@ -186,21 +187,14 @@ export function mountEngine(binding: EngineBinding, scope: Document | Element): 
   const sync = (): void => {
     if (disposed) return;
     const want = new Set<HTMLElement>();
-    if (!binding.blocked?.()) {
-      for (const el of scope.querySelectorAll(binding.selector)) {
-        if (el instanceof HTMLElement && el.isConnected && binding.wants(el)) want.add(el);
-      }
-      if (
-        scope instanceof HTMLElement &&
-        scope.isConnected &&
-        scope.matches(binding.selector) &&
-        binding.wants(scope)
-      ) {
-        want.add(scope);
-      }
+    for (const el of scope.querySelectorAll(binding.selector)) {
+      if (el instanceof HTMLElement) want.add(el);
+    }
+    if (scope instanceof HTMLElement && scope.matches(binding.selector)) {
+      want.add(scope);
     }
     for (const el of new Set([...held.keys(), ...want])) reconcileSurface(el);
-    // Отцепить ушедших (смена мода/класса, удаление, попадание под blocked).
+    // Отцепить вышедших из scope или переставших соответствовать selector.
     for (const [el, shared] of held) {
       if (!want.has(el) || surfaces.get(el)?.get(binding) !== shared) {
         release(binding, el, shared);
@@ -226,10 +220,13 @@ export function mountEngine(binding: EngineBinding, scope: Document | Element): 
         }
         held.set(el, shared);
       }
-      if (shared.handle) {
-        if (binding.refreshHeld) shared.handle.refresh?.();
-      } else {
-        shared.handle = binding.attach(el);
+      if (!el.isConnected || !binding.wants(el)) continue;
+      if (!binding.blocked?.()) {
+        if (shared.handle) {
+          if (binding.refreshHeld) shared.handle.refresh?.();
+        } else {
+          shared.handle = binding.attach(el);
+        }
       }
     }
   };

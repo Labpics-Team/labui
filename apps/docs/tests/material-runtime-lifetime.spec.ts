@@ -117,8 +117,13 @@ test('смена material и media не даёт старому mount стере
   expect(await snapshot(page)).toEqual(baseline);
 });
 
-for (const veil of [true, false]) {
-  test(`удалённая поверхность ${veil ? 'с veil' : 'без veil'} освобождается и повторно подключается`, async ({
+for (const { veil, detachedMutation, inheritedMode } of [
+  { veil: true, detachedMutation: false, inheritedMode: false },
+  { veil: false, detachedMutation: false, inheritedMode: false },
+  { veil: false, detachedMutation: true, inheritedMode: false },
+  { veil: false, detachedMutation: true, inheritedMode: true },
+]) {
+  test(`удалённая поверхность ${veil ? 'с veil' : 'без veil'}${detachedMutation ? ', мутация при отключении' : ''}${inheritedMode ? ', унаследованный mode' : ''} освобождается и повторно подключается`, async ({
     page,
     browserName,
   }) => {
@@ -126,13 +131,25 @@ for (const veil of [true, false]) {
     if (!veil) {
       await page.evaluate(() => document.querySelector('#surface')?.removeAttribute('data-veil'));
     }
+    if (inheritedMode) {
+      await page.evaluate(() => {
+        document.querySelector('#container')?.setAttribute('data-material', 'acrylic');
+        document.querySelector('#surface')?.removeAttribute('data-material');
+      });
+    }
     const baseline = await snapshot(page);
+    const surface = await page.locator('#surface').elementHandle();
+    expect(surface).not.toBeNull();
     const app = await mount(page, 'document');
     const local = await mount(page, 'surface');
     await settle(page);
     if (veil) expect((await snapshot(page)).strips.length).toBeGreaterThan(0);
     await page.evaluate(() => window.__materialLifetime.connect(false));
     await settle(page);
+    if (detachedMutation) {
+      await surface?.evaluate((el) => el.classList.add('changed-while-detached'));
+      await settle(page);
+    }
     expect(await snapshot(page)).toEqual(baseline);
     await page.evaluate(() => window.__materialLifetime.connect(true));
     await settle(page);

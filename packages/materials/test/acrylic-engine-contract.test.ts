@@ -83,11 +83,11 @@ describe('честные деградации: движок гаснет во в
 
   it('binding acrylic несёт blocked=acrylicMediaBlocked + mediaQueries, рантайм слушает их change', () => {
     // Смысл замка (не строка): acrylic-движок гаснет под запрещающими медиа
-    // (blocked опустошает want в mountEngine) И их смена ре-синкает mount.
+    // (blocked отзывает ресурс в mountEngine) И их смена ре-синкает mount.
     expect(runtimeSrc).toContain('blocked: acrylicMediaBlocked');
     expect(runtimeSrc).toContain('mediaQueries: ACRYLIC_ENGINE_MEDIA');
     expect(runtimeSrc).toContain("mq.addEventListener('change', schedule)");
-    // mountEngine — держатель поведения: blocked() опустошает набор до скана.
+    // blocked() запрещает attach/refresh; логические leases сохраняются.
     expect(mountSrc).toContain('if (!binding.blocked?.())');
   });
 });

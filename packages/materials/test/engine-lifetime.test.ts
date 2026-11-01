@@ -23,7 +23,8 @@ class Surface {
 const element = (surface: Surface): HTMLElement => surface as unknown as HTMLElement;
 const scope = (...surfaces: Surface[]): Document =>
   ({
-    querySelectorAll: (selector: string) => surfaces.filter((s) => s.matches(selector)),
+    querySelectorAll: (selector: string) =>
+      surfaces.filter((s) => s.isConnected && s.matches(selector)),
   }) as unknown as Document;
 
 function engine(mode: string): EngineBinding & { attach: ReturnType<typeof vi.fn> } {
@@ -166,7 +167,39 @@ describe('владение эффектом при пересекающихся 
     expect(surface.effect).toBe('');
   });
 
-  it('reconnect через app сохраняет live lease локального root без его собственного sync', () => {
+  it.each([
+    [false, false],
+    [true, false],
+    [true, true],
+  ])(
+    'reconnect через app сохраняет live lease (detached sync: %s, отсутствует mode scope: %s)',
+    (detachedSync, missingMode) => {
+      const surface = new Surface();
+      const binding = engine('glass');
+      const app = mountEngine(binding, scope(surface));
+      const child = mountEngine(binding, element(surface));
+      app.sync();
+      child.sync();
+      surface.isConnected = false;
+      app.sync();
+      if (missingMode) surface.material = '';
+      if (detachedSync) {
+        child.sync();
+        child.sync();
+      }
+      expect(binding.attach).toHaveBeenCalledTimes(1);
+      expect(surface.effect).toBe('');
+      surface.isConnected = true;
+      surface.material = 'glass';
+      app.sync();
+      app.dispose();
+      expect(surface.effect).toBe('glass');
+      child.dispose();
+      expect(surface.effect).toBe('');
+    },
+  );
+
+  it('dispose отключённого root окончательно снимает его владение', () => {
     const surface = new Surface();
     const binding = engine('glass');
     const app = mountEngine(binding, scope(surface));
@@ -175,12 +208,12 @@ describe('владение эффектом при пересекающихся 
     child.sync();
     surface.isConnected = false;
     app.sync();
-    expect(surface.effect).toBe('');
+    child.sync();
+    child.dispose();
     surface.isConnected = true;
     app.sync();
     app.dispose();
-    expect(surface.effect).toBe('glass');
-    child.dispose();
     expect(surface.effect).toBe('');
+    expect(binding.attach.mock.results[1]?.value.destroy).toHaveBeenCalledTimes(1);
   });
 });
