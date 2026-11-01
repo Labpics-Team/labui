@@ -1,8 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════════════
  * DETERMINISTIC DEGRADATIONS — each collapses glass/acrylic to the SOLID canon.
- * Selector lists mirror the mode blocks (equal specificity) and sit AFTER them,
- * so at equal specificity source order lets the degradation win. The solid
- * canon is opaque → label contract always holds, blur cost is zero.
+ * Селекторы деградаций имеют вес (0,2,0), выше scoped-рецептов (0,1,0),
+ * поэтому ближайшая область не отменяет настройки доступности.
+ * Непрозрачный Solid сохраняет контраст меток и снимает стоимость блюра.
  * Acrylic-v2-движок дополнительно гасит СЕБЯ под теми же медиа в JS
  * (ACRYLIC_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
  * паритет списков закреплён acrylic-engine-contract.test.

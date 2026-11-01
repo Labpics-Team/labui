@@ -12,7 +12,7 @@
  *     glass.css        — GLASS (рефракция; линзу несёт движок liquid-glass.ts)
  *     acrylic.css      — ACRYLIC (диффузия Fluent; v2-конвейер несёт acrylic.ts)
  *     engine-held.css  — состояния, пока поверхность держит движок
- *     solid.css        — SOLID-оверрайд (канон и escape hatch — всегда бьёт моды)
+ *     solid.css        — непрозрачный SOLID до следующего явного data-material
  *     degradations.css — честные деградации (бьют всё)
  *     veil.css         — lab-veil (прогрессивный блюр, эффект-поверхность)
  *
@@ -73,10 +73,14 @@
   --_base-paint: var(--_base); /* opaque base under the tint */
   --_blur: 0px;
   --_saturate: 100%;
+  /* Каждая поверхность сбрасывает эффекты предка: @scope ограничивает
+   * селекторы, но не наследование custom properties. */
+  --_noise: none;
+  --_rim: none;
 
   /* ── SPECULAR RIM (Стекло v2, слайс B) ────────────────────────────────────
    * 1px внутренняя градиентная обводка: свет, пойманный кромкой стекла — ярко
-   * сверху, гаснет вниз. Приватная ручка `--_rim` (unset по умолчанию, как
+   * сверху, гаснет вниз. Приватная ручка `--_rim` (none по умолчанию, как
    * `--_noise`): моды пере-биндят ЕЁ, единое paint-правило не трогается. Ринг
    * живёт на `::before` (mask-composite) — уважает `border-radius`, ноль
    * изменения разметки.
@@ -108,8 +112,8 @@
   );
   --_rim-active: var(--_rim-light);
 
-  /* ACRYLIC grain: `--_noise` здесь НЕ объявлен — `var(--_noise, none)` в
-   * paint-правиле красит ничего для всех мод, кроме acrylic. Сам ассет зерна
+  /* Зерно выключено в базе через `--_noise: none`; acrylic включает его
+   * через ту же ручку в едином paint-правиле. Сам ассет зерна
    * (`--_acrylic-noise`, генерируемый data-URI + image-set плотностей) живёт
    * в acrylic.css — у материала, которому принадлежит. */
 
@@ -183,7 +187,7 @@
 }
 
 /* ── Theme rebind of the specular rim (asymmetry: light bright / dark subtle) ──
- * (0,2,0) — attribute + class, like the mode blocks — so it beats the base
+ * (0,2,0) — attribute + class — so it beats the base
  * `.lab-material` (0,1,0). Only rebinds the private `--_rim-active` handle. */
 [data-theme="dark"] .lab-material,
 [data-theme="dark"].lab-material {

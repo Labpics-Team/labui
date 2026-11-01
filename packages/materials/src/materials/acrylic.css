@@ -47,12 +47,14 @@
 }
 /* <<< ACRYLIC-NOISE:GENERATED */
 
-[data-material="acrylic"] .lab-material,
-[data-material="acrylic"].lab-material {
-  --_base-paint: transparent;
-  --_blur: var(--_blur-live);
-  --_saturate: var(--_saturate-on);
-  --_noise: var(--_acrylic-noise);
-  --_rim: var(--_rim-active); /* Fluent acrylic carries a luminous edge stroke → rim ON */
-  -webkit-backdrop-filter: blur(48px) saturate(180%);
+@scope ([data-material="acrylic"]) to ([data-material]) {
+  :where(:scope).lab-material,
+  .lab-material {
+    --_base-paint: transparent;
+    --_blur: var(--_blur-live);
+    --_saturate: var(--_saturate-on);
+    --_noise: var(--_acrylic-noise);
+    --_rim: var(--_rim-active); /* Fluent acrylic carries a luminous edge stroke → rim ON */
+    -webkit-backdrop-filter: blur(48px) saturate(180%);
+  }
 }

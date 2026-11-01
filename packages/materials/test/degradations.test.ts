@@ -47,10 +47,8 @@ function dropsRim(body: string): boolean {
   return body.includes('--_rim: none');
 }
 
-/** Every degradation must list the acrylic mode selectors at their (0,2,0)
- * specificity (attribute + class — both count in the middle column) — a bare
- * `.lab-material` (0,1,0) cannot override the acrylic mode block, so acrylic
- * would silently keep its live blur under the degradation. */
+/** Селекторы acrylic в деградациях имеют специфичность 0-2-0, выше рецептов
+ * внутри @scope (0-1-0). Приоритет доступности не зависит от близости области. */
 function coversAcrylic(body: string): boolean {
   return (
     body.includes('[data-material="acrylic"] .lab-material') &&
@@ -59,9 +57,8 @@ function coversAcrylic(body: string): boolean {
 }
 
 describe('material.css deterministic degradations', () => {
-  // Each downgrade path must force the solid canon, drop the acrylic grain, AND
-  // cover the acrylic mode at its own specificity (a bare `.lab-material` cannot
-  // override the acrylic mode block — the grain/blur would silently survive).
+  // Каждый путь снимает прозрачность, зерно и рим. Селекторы деградаций
+  // сильнее scoped-рецептов, поэтому близкая область не сохраняет эффекты.
   const DEGRADATIONS: readonly [string, RegExp][] = [
     ['1. @supports (no backdrop-filter)', /@supports not \(\(backdrop-filter/],
     ['2. prefers-reduced-transparency', /@media \(prefers-reduced-transparency: reduce\)/],
@@ -75,17 +72,14 @@ describe('material.css deterministic degradations', () => {
       expect(forcesSolid(body), 'forces the opaque solid canon').toBe(true);
       expect(dropsNoise(body), 'drops the acrylic grain (--_noise: none)').toBe(true);
       expect(dropsRim(body), 'drops the specular rim (--_rim: none)').toBe(true);
-      expect(coversAcrylic(body), 'covers acrylic at its (0,2,0) specificity').toBe(true);
+      expect(coversAcrylic(body), 'acrylic покрыт деградацией со специфичностью 0-2-0').toBe(true);
     });
   }
 
-  it('2. reduced-transparency ≡ live-verified paths (Playwright cannot emulate it)', () => {
-    // Playwright's emulateMedia has no `prefers-reduced-transparency`, so path 2 —
-    // the accessibility path — has no live browser assert. Compensation: its body
-    // must be IDENTICAL (modulo whitespace) to path 1 (@supports) and path 3
-    // (contrast: more). Path 3 IS live-verified in the e2e (emulateMedia contrast),
-    // and identity transfers that verification to path 2. If the bodies ever fork,
-    // this goes red and path 2 needs its own proof.
+  it('2. reduced-transparency сохраняет тот же набор правил, что no-backdrop и contrast', () => {
+    // Chromium проверяет reduced-transparency через CDP в material-scope.spec.ts.
+    // У WebKit нет такой эмуляции в Playwright: браузерный contrast-тест и
+    // равенство тел подтверждают общий рецепт, но не сам media-триггер WebKit.
     const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
     const noBackdrop = normalize(atRuleBody(/@supports not \(\(backdrop-filter/));
     const reducedTransparency = normalize(
@@ -103,28 +97,28 @@ describe('material.css deterministic degradations', () => {
   });
 
   it('manual override: data-material="solid" restores the opaque canon and drops grain + rim', () => {
-    expect(css).toContain('[data-material="solid"] .lab-material');
-    expect(css).toContain('[data-material="solid"].lab-material');
-    const body = atRuleBody(/\[data-material="solid"\] \.lab-material,/);
+    const body = atRuleBody(/@scope \(\[data-material="solid"\]\) to \(\[data-material\]\)/);
     expect(forcesSolid(body)).toBe(true);
     expect(dropsNoise(body)).toBe(true);
-    // A solid override nested under a glass/acrylic ancestor inherits the
-    // ancestor's --_rim through the cascade; solid must reset it to none.
+    // Solid сбрасывает рим внутри своей области; вложенный явный материал
+    // начинает собственную область и может снова включить эффект.
     expect(dropsRim(body)).toBe(true);
   });
 
   it('glass и acrylic существуют; blur-ярус снесён без следа (ADR-0008)', () => {
-    expect(css).toContain('[data-material="glass"] .lab-material');
-    expect(css).toContain('[data-material="acrylic"] .lab-material');
+    for (const mode of ['glass', 'acrylic']) {
+      const body = atRuleBody(
+        new RegExp(`@scope \\(\\[data-material="${mode}"\\]\\) to \\(\\[data-material\\]\\)`),
+      );
+      expect(body).toContain('--_base-paint: transparent');
+    }
     // Регрессионный замок сноса: ни одного blur-селектора в оси материала —
     // возврат яруса возможен только осознанной правкой этого закона.
     expect(css).not.toContain('[data-material="blur"]');
-    // Live modes paint the tint over `transparent` so the backdrop reads through.
-    expect(css).toContain('--_base-paint: transparent');
   });
 
   it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
-    const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
+    const body = atRuleBody(/@scope \(\[data-material="acrylic"\]\) to \(\[data-material\]\)/);
     expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
     expect(body).toContain('--_blur: var(--_blur-live)'); // одна ступень 48px на все live-материалы (ADR-0009), не новый литерал
     expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused
@@ -136,14 +130,14 @@ describe('material.css deterministic degradations', () => {
     // keeps the tint over the same [0,1] corridor as glass → its α-boundary verdict
     // is IDENTICAL to glass. Re-pointing the tier fill here would silently fork the
     // guarantee, so the acrylic block must touch neither --_tint nor --_base.
-    const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
+    const body = atRuleBody(/@scope \(\[data-material="acrylic"\]\) to \(\[data-material\]\)/);
     expect(body).not.toContain('--_tint:');
     expect(body).not.toContain('--_base:');
   });
 
-  it('the grain is OFF by default (var(--_noise, none) paints nothing for non-acrylic)', () => {
-    // The one paint rule falls back to `none` when --_noise is unset, so solid/
-    // glass/blur are byte-identical to the pre-grain background.
+  it('зерно явно выключено в базе и не наследуется из внешней acrylic-поверхности', () => {
+    const base = atRuleBody(/\.lab-material\s*\{/);
+    expect(base).toContain('--_noise: none');
     expect(css).toContain('var(--_noise, none), linear-gradient(');
   });
 });

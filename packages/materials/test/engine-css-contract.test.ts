@@ -13,10 +13,8 @@
  *      whether getComputedStyle managed to resolve the token);
  *   3. the engine's var() fallbacks for brightness/contrast equal the CSS
  *      defaults, and the blur fallback equals the `--lensed` re-bind radius;
- *   4. LENSED_CLASS exists in CSS, its block sits AFTER the glass/blur mode
- *      blocks (later order wins at equal specificity) and BEFORE the first
- *      degradation (degradations still win), and its selectors carry exactly
- *      the mode blocks' 0-2-0 class-level specificity;
+ *   4. LENSED_CLASS живёт в области glass ПОСЛЕ glass/acrylic и ДО деградаций;
+ *      рецепты и engine-held имеют специфичность 0-1-0, деградации — 0-2-0;
  *   5. the runtime is an inert no-op without a DOM (SSR safety).
  */
 import { readFileSync } from 'node:fs';
@@ -31,13 +29,22 @@ const here = dirname(fileURLToPath(import.meta.url));
 const css = readMaterialCss();
 const engineSrc = readFileSync(join(here, '../src/engine/liquid-glass.ts'), 'utf8');
 
-/** Class-level specificity bucket (the middle number of a-b-c): attribute
- *  selectors and classes both count here; ids/elements are absent by design. */
+/** Средняя колонка специфичности для используемых здесь простых селекторов.
+ * :where(:scope) не добавляет вес; обычный :scope добавил бы единицу. */
 function classLevelSpecificity(selector: string): number {
-  const attrs = selector.match(/\[[^\]]*\]/g)?.length ?? 0;
-  const classes = selector.replace(/\[[^\]]*\]/g, '').match(/\.[\w-]+/g)?.length ?? 0;
-  return attrs + classes;
+  const contributing = selector.replace(/:where\([^()]*\)/g, '');
+  const attrs = contributing.match(/\[[^\]]*\]/g)?.length ?? 0;
+  const withoutAttrs = contributing.replace(/\[[^\]]*\]/g, '');
+  const classes = withoutAttrs.match(/\.[\w-]+/g)?.length ?? 0;
+  const pseudoClasses = withoutAttrs.match(/:[\w-]+/g)?.length ?? 0;
+  return attrs + classes + pseudoClasses;
 }
+
+const lensedBlock = css.match(
+  new RegExp(
+    `@scope \\(\\[data-material="glass"\\]\\) to \\(\\[data-material\\]\\)\\s*\\{\\s*([^{}]*\\.${LENSED_CLASS}[^{}]*)\\{([^{}]*)\\}\\s*\\}`,
+  ),
+);
 
 describe('token references resolve (engine → CSS)', () => {
   const declared = new Set([...css.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
@@ -90,11 +97,8 @@ describe('numeric defaults agree (CSS knobs ↔ engine DEFAULTS ↔ var() fallba
   });
 
   it('blur fallback equals the --lensed re-bind radius (one lens calibration)', () => {
-    const lensedBlock = css.match(
-      new RegExp(`\\[data-material\\][^{]*${LENSED_CLASS}[^{]*\\{([^}]*)\\}`),
-    );
     expect(lensedBlock, 'material.css must carry the --lensed re-bind block').not.toBeNull();
-    const radius = (lensedBlock as RegExpMatchArray)[1]?.match(/--_blur:\s*([^;]+);/)?.[1]?.trim();
+    const radius = (lensedBlock as RegExpMatchArray)[2]?.match(/--_blur:\s*([^;]+);/)?.[1]?.trim();
     expect(radius).toBeTruthy();
     expect(engineSrc).toContain(`blur(var(--_blur, ${radius}))`);
   });
@@ -102,8 +106,8 @@ describe('numeric defaults agree (CSS knobs ↔ engine DEFAULTS ↔ var() fallba
 
 describe('--lensed cascade position (the comment claims, as assertions)', () => {
   const lensedIdx = css.indexOf(`.${LENSED_CLASS}`);
-  const glassIdx = css.indexOf('[data-material="glass"] .lab-material');
-  const acrylicIdx = css.indexOf('[data-material="acrylic"] .lab-material');
+  const glassIdx = css.indexOf('@scope ([data-material="glass"]) to ([data-material])');
+  const acrylicIdx = css.indexOf('@scope ([data-material="acrylic"]) to ([data-material])');
   const firstDegradationIdx = css.indexOf('@supports not');
 
   it('the lensed block exists and sits after the glass and acrylic mode blocks', () => {
@@ -119,13 +123,36 @@ describe('--lensed cascade position (the comment claims, as assertions)', () => 
     expect(lensedIdx).toBeLessThan(firstDegradationIdx);
   });
 
-  it('lensed selectors carry exactly the mode blocks’ 0-2-0 specificity', () => {
-    const lensedSelectors = [`[data-material] .${LENSED_CLASS}`, `[data-material].${LENSED_CLASS}`];
-    for (const sel of lensedSelectors) {
-      expect(css, `expected selector ${sel}`).toContain(sel);
-      expect(classLevelSpecificity(sel)).toBe(
-        classLevelSpecificity('[data-material="glass"] .lab-material'),
+  it('рецепты и lensed имеют специфичность 0-1-0 внутри своих областей', () => {
+    expect(lensedBlock, 'lensed ограничен областью glass').not.toBeNull();
+    const lensedSelectors = lensedBlock?.[1]?.split(',').map((s) => s.trim()) ?? [];
+    expect(lensedSelectors).toEqual([`:where(:scope).${LENSED_CLASS}`, `.${LENSED_CLASS}`]);
+    for (const selector of lensedSelectors) {
+      expect(classLevelSpecificity(selector)).toBe(1);
+    }
+    for (const mode of ['glass', 'acrylic', 'solid']) {
+      const recipe = css.match(
+        new RegExp(
+          `@scope \\(\\[data-material="${mode}"\\]\\) to \\(\\[data-material\\]\\)\\s*\\{\\s*([^{}]*)\\{`,
+        ),
       );
+      expect(recipe, `рецепт ${mode} ограничен ближайшей областью`).not.toBeNull();
+      const selectors = recipe?.[1]?.split(',').map((s) => s.trim()) ?? [];
+      expect(selectors).toEqual([':where(:scope).lab-material', '.lab-material']);
+      for (const selector of selectors) {
+        expect(classLevelSpecificity(selector)).toBe(1);
+      }
+    }
+  });
+
+  it('деградации сохраняют селекторы 0-2-0, сильнее рецептов и lensed', () => {
+    const degradations = css.slice(firstDegradationIdx);
+    for (const mode of ['glass', 'acrylic']) {
+      for (const separator of [' ', '']) {
+        const selector = `[data-material="${mode}"]${separator}.lab-material`;
+        expect(degradations).toContain(selector);
+        expect(classLevelSpecificity(selector)).toBe(2);
+      }
     }
   });
 });
