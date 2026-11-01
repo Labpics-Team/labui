@@ -353,7 +353,7 @@ for (const renderer of ['lit', 'react'] as const) {
     }, renderer);
     await saveTrace(testInfo, `${renderer}-retarget-trace`, result);
     for (const sample of [result.natural, result.phase]) {
-      expect(sample.checked).toBe(false);
+      expect(sample.checked, JSON.stringify({ renderer, sample, result })).toBe(false);
       expect(sample.before).toBeGreaterThan(0.2);
       expect(
         Math.abs(sample.after - sample.before),
