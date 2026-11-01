@@ -512,7 +512,9 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         const activated = await read();
         assert.equal(activated.nativeClicks, 4);
         assert.equal(activated.events.length, 4);
-        assert.ok(activated.events.every((event) => event.trusted && event.composed && event.native));
+        assert.ok(
+          activated.events.every((event) => event.trusted && event.composed && event.native),
+        );
         for (const event of activated.events)
           sameMotion(
             event.effect,
