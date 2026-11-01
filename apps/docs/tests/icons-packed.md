@@ -28,6 +28,22 @@ node apps/docs/tests/icons-packed.mjs \
 По умолчанию используется Chromium Playwright. Тяжёлый запуск не добавлен в CI
 Icons: доступ к приватному Lab UI и проверка его пакетов принадлежат Lab UI.
 
+Штатный workflow Lab UI `icons-consumer.yml` получает точный head Lab UI и
+публичный Icons commit из `icons-consumer-source.json`. Затем вызывает
+`browser-check.sh --icons-consumer <icons-checkout>`. Этот же helper владеет
+Playwright image, host UID/GID, отдельным контейнером, CID и очисткой обычного E2E.
+Фиксированный Icons workload копирует оба checkout с Git metadata в изолированную
+директорию; Corepack читает их собственные `packageManager`, а pnpm stores разделены.
+Icons проходит обычный `pack` с `prepack`; Lab UI собирает и упаковывает core/shadow.
+Исходные mounts доступны только для чтения.
+
+Inputs и результат находятся вне копий исходников. После удаления контейнера
+helper переносит только обычные файлы без ссылок в
+`apps/docs/test-results/icons-consumer`, затем удаляет собственную временную
+директорию. Ошибка удаления контейнера запрещает перенос нестабильной диагностики.
+Workflow не загружает архивы в Actions storage. Локальные тесты oracle и lifecycle
+проверяют вызовы Docker через recorder и не запускают контейнерный workload.
+
 ## Входной reference
 
 JSON имеет `schemaVersion: 1`, `packages` и `authorReference`.
@@ -50,7 +66,9 @@ JSON имеет `schemaVersion: 1`, `packages` и `authorReference`.
 `annotationSha256`, `masterSha256`, `pathFingerprintSha256`.
 
 `viewBox` — четыре конечных числа. `paths` — упорядоченные `{d, fillRule}` из
-проверенного author master после штатного lowering. `parts` — упорядоченные
+raw author master. Независимый reader этого cycle witness принимает один целый
+замкнутый path и нейтральные группы; transform, opacity, clip, неизвестные paint
+и неподдержанный XML получают отказ. Авторский `d` не переписывается. `parts` — упорядоченные
 `{id, role, zIndex, fillRule, d}` из авторской аннотации этого master. Harness
 самостоятельно проверяет fingerprint упорядоченных `{index, d, fillRule}` через
 SHA256 JSON с отсортированными ключами и затем сравнивает эти значения с
@@ -59,8 +77,10 @@ SHA256 JSON с отсортированными ключами и затем с�
 `gesture` — точная принятая декларация `reload.cycle` с `partIds`,
 `progress: "normalized-0-to-1"` и rotation tracks. Track содержит `partId`,
 `kind: "rotate"`, `anchor`, `from`, `to`, `unit: "degrees"`,
-`interpolation: "linear"`. Поле берётся из проверенной source annotation,
-без чтения результата `compileSymbolEffect`. Harness сравнивает anchor,
+`interpolation: "linear"`. Oracle независимо выражает `cycle.clockwise` из raw
+аннотации: один `control` part, canvas-center `[0.5, 0.5]`, оборот `0 → 360`.
+Private producer helpers, generated glyph и `compileSymbolEffect` не участвуют
+в построении expected. Harness сравнивает anchor,
 transformOrigin и endpoints с этой независимой декларацией.
 
 Готовьте reference из закреплённого Figma manifest/master и проверенной аннотации,
