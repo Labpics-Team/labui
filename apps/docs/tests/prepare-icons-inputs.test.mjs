@@ -1330,6 +1330,44 @@ test('delivery summary refuses reported policy failures and numeric overruns whi
   }
 });
 
+test('delivery summary refuses rejected PNG and receipt packets without losing healthy diagnostics', async t => {
+  for (const rejected of ['png', 'receipt', 'png-and-policy']) {
+    const fixture = await summaryFixture(t, 3);
+    const receipt = Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed',
+      ...(rejected === 'receipt' ? {} : { records: [{ name: 'healthy-browser' }] }) }));
+    await writeFile(join(fixture.output, 'result/receipt.json'), receipt);
+    await writeFile(join(fixture.output, 'result/no-preference.png'), rejected === 'receipt' ? PNG_WITNESS : 'not a PNG');
+    if (rejected === 'png-and-policy') {
+      const report = structuredClone(fixture.report);
+      report.policyViolations.push('owner-projected refusal');
+      const reportBytes = Buffer.from(JSON.stringify(report));
+      const source = structuredClone(fixture.source);
+      source.measurement.sha256 = hash(reportBytes); source.measurement.bytes = reportBytes.length;
+      await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), reportBytes);
+      await writeFile(join(fixture.output, 'inputs/source-receipt.json'), JSON.stringify(source));
+    }
+    const result = spawnSync(process.execPath, [fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+      '--summarize', fixture.output], { encoding: 'utf8', timeout: 5000 });
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    assert.equal(summary.outcome, 'failed', 'отказ evidence encoder не может объявлять delivery PASS');
+    assert.equal(summary.browserOutcome, 'passed');
+    assert.equal(summary.failure, null, 'readback не переписывает browser phase');
+    assert.deepEqual(summary.readbackFailure, { code: 'EVIDENCE_REFUSED',
+      file: rejected === 'receipt' ? 'result/receipt.json' : 'result/no-preference.png' });
+    assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
+    if (rejected === 'receipt')
+      assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/no-preference.png').bytes, PNG_WITNESS);
+    else
+      assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_RECEIPT', 'receiptSha256', 'result/receipt.json').bytes, receipt);
+    if (rejected === 'png-and-policy') {
+      assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
+      assert.match(result.stderr, /visual: PNG bytes/);
+      assert.doesNotMatch(result.stderr, /Platform policy отказала/);
+    } else assert.equal(summary.policyFailure, undefined);
+  }
+});
+
 test('summary transmits successful raw observations and PNG authenticated against RESULT files', async (t) => {
   const fixture = await summaryFixture(t, 3);
   const receipt = {
@@ -1343,6 +1381,9 @@ test('summary transmits successful raw observations and PNG authenticated agains
   await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
   const stdout = fixture.invoke();
   const summary = JSON.parse(stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+  assert.equal(summary.outcome, 'passed');
+  assert.equal(summary.browserOutcome, undefined);
+  assert.equal(summary.readbackFailure, undefined);
   for (const [prefix, digestField, file, expected] of [
     ['LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/reduce.png', PNG_WITNESS],
     ['LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/no-preference.png', PNG_WITNESS],

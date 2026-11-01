@@ -784,8 +784,9 @@ export async function summarize(directory) {
   await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,
-      outcome: policyFailure ? 'failed' : receipt.outcome,
-      ...(policyFailure ? { browserOutcome: receipt.outcome, policyFailure } : {}),
+      outcome: policyFailure || readbackFailure ? 'failed' : receipt.outcome,
+      ...(policyFailure || readbackFailure ? { browserOutcome: receipt.outcome } : {}),
+      ...(policyFailure ? { policyFailure } : {}),
       source,
       harness: receipt.harness,
       runner: receipt.runner,
