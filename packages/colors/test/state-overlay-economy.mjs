@@ -5,13 +5,12 @@ import { readFile } from 'node:fs/promises';
 import {
   CONTRACT_PATH,
   REACT_BUTTON_CSS_PATH,
-  THEME_SCOPE,
   TOKENS_CSS_PATH,
   expectedOverlays,
   extractOverlays,
   readStateFractions,
   resolveValue,
-  scopeVars,
+  themeVars,
 } from './state-overlays-shared.mjs';
 
 const [contract, tokens, button] = await Promise.all([
@@ -27,7 +26,7 @@ if (JSON.stringify([...actual.keys()].sort()) !== JSON.stringify([...expected.ke
 }
 const roles = [...new Set([...actual.values()].map((overlay) => overlay.role))].sort();
 for (const theme of ['light', 'dark']) {
-  const vars = scopeVars(contract, THEME_SCOPE[theme]);
+  const vars = themeVars(contract, theme);
   for (const role of roles) resolveValue(role, vars);
 }
 console.info(

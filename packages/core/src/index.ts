@@ -37,10 +37,14 @@ export { type Attrs, ZagController } from './lit/zag-controller.js';
 
 // Theming contract (selectors + helpers).
 export {
+  CONTRAST_ATTR,
+  CONTRASTS,
+  type Contrast,
   MATERIAL_ATTR,
   MATERIALS,
   type Material,
   setMaterial,
+  setContrast,
   setTheme,
   THEME_ATTR,
   THEME_FALLBACK,

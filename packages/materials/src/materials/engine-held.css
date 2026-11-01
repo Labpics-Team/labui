@@ -15,5 +15,5 @@
  * сам под запрещающими медиа — листу нечего ребиндить. */
 [data-material] .lab-material--lensed,
 [data-material].lab-material--lensed {
-  --_blur: 4px;
+  --_blur: var(--_lab-normal, 4px) var(--_lab-more, 0px);
 }

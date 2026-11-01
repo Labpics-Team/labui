@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { themeVars } from './state-overlays-shared.mjs';
 
 /**
  * roles.json задаёт публичные имена, contract.css объявляет их в каждой теме.
@@ -20,32 +21,13 @@ const roles = JSON.parse(readFileSync(resolve(pkgRoot, 'roles.json'), 'utf8')) a
 
 const allRoles = Object.values(roles.groups).flat();
 
-/** Extract the body of a top-level CSS scope by its selector header. */
-function scopeBody(source: string, selectorPrefix: string): string {
-  const start = source.indexOf(selectorPrefix);
-  if (start === -1) throw new Error(`scope not found: ${selectorPrefix}`);
-  const open = source.indexOf('{', start);
-  // Balance braces to capture the full block (handles the nested @media wrapper).
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}') {
-      depth--;
-      if (depth === 0) return source.slice(open + 1, i);
-    }
-  }
-  throw new Error(`unbalanced braces for: ${selectorPrefix}`);
-}
-
-const lightBody = scopeBody(css, ':root,\n[data-theme="light"]');
-const darkBody = scopeBody(css, '[data-theme="dark"]');
-const mediaBody = scopeBody(css, '@media (prefers-color-scheme: dark)');
-
-function declares(body: string, role: string): boolean {
-  // Match `<role>:` at a declaration position (start or after `{`/`;`/whitespace).
-  const re = new RegExp(`(^|[;{\\s])${role.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:`, 'm');
-  return re.test(body);
-}
+// Конечные карты из общего CSS binding; браузерный cascade/no-JS проверяет contrast.spec.ts.
+const lightBody = themeVars(css, 'light');
+const darkBody = themeVars(css, 'dark');
+const mediaBody = darkBody;
+const moreLightBody = themeVars(css, 'light', 'more');
+const moreDarkBody = themeVars(css, 'dark', 'more');
+const declares = (body: Map<string, string>, role: string) => body.has(role);
 
 describe('--lab-* semantic color contract', () => {
   it('declares every contracted role in the light scope (:root)', () => {
@@ -102,6 +84,8 @@ describe('--lab-* semantic color contract', () => {
       ['light', lightBody],
       ['dark', darkBody],
       ['media', mediaBody],
+      ['more-light', moreLightBody],
+      ['more-dark', moreDarkBody],
     ] as const) {
       const missing = derived.filter((r) => !declares(body, r));
       expect(missing, `derived roles missing in ${scopeName} scope: ${missing.join(', ')}`).toEqual(
@@ -115,14 +99,14 @@ describe('--lab-* semantic color contract', () => {
   });
 
   it('resolves every declared --lab-* value to a concrete color or var() reference', () => {
-    // Каждая публичная роль содержит цвет или ссылку на другую роль.
-    const decls = [...css.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)];
+    // После выбора любой из четырёх областей остаётся цвет или alias.
+    const decls = [lightBody, darkBody, moreLightBody, moreDarkBody].flatMap((scope) =>
+      [...scope].map(([name, value]) => ({ name, value })),
+    );
     expect(decls.length).toBeGreaterThan(0);
-    const bad = decls
-      .map((m) => ({ name: m[1] ?? '', value: (m[2] ?? '').trim() }))
-      .filter(
-        ({ value }) => !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value),
-      );
+    const bad = decls.filter(
+      ({ value }) => !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value),
+    );
     expect(bad, `non-color values: ${bad.map((b) => `${b.name}=${b.value}`).join(', ')}`).toEqual(
       [],
     );

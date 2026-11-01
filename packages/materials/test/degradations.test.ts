@@ -65,7 +65,6 @@ describe('material.css deterministic degradations', () => {
   const DEGRADATIONS: readonly [string, RegExp][] = [
     ['1. @supports (no backdrop-filter)', /@supports not \(\(backdrop-filter/],
     ['2. prefers-reduced-transparency', /@media \(prefers-reduced-transparency: reduce\)/],
-    ['3. prefers-contrast: more', /@media \(prefers-contrast: more\)/],
     ['4. forced-colors: active', /@media \(forced-colors: active\)/],
   ];
 
@@ -82,18 +81,34 @@ describe('material.css deterministic degradations', () => {
   it('2. reduced-transparency ≡ live-verified paths (Playwright cannot emulate it)', () => {
     // Playwright's emulateMedia has no `prefers-reduced-transparency`, so path 2 —
     // the accessibility path — has no live browser assert. Compensation: its body
-    // must be IDENTICAL (modulo whitespace) to path 1 (@supports) and path 3
-    // (contrast: more). Path 3 IS live-verified in the e2e (emulateMedia contrast),
-    // and identity transfers that verification to path 2. If the bodies ever fork,
-    // this goes red and path 2 needs its own proof.
+    // must be IDENTICAL (modulo whitespace) to path 1 (@supports).
+    // Контраст теперь разрешается в области; его отдельный путь проверяется ниже.
     const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
     const noBackdrop = normalize(atRuleBody(/@supports not \(\(backdrop-filter/));
     const reducedTransparency = normalize(
       atRuleBody(/@media \(prefers-reduced-transparency: reduce\)/),
     );
-    const contrastMore = normalize(atRuleBody(/@media \(prefers-contrast: more\)/));
-    expect(reducedTransparency, 'path 2 ≡ path 3 (live-verified)').toBe(contrastMore);
     expect(reducedTransparency, 'path 2 ≡ path 1 (@supports)').toBe(noBackdrop);
+  });
+
+  it('more области делает оба живых материала непрозрачными без grain и rim', () => {
+    expect(css).not.toMatch(/@media\s*\(prefers-contrast:\s*more\)/);
+    for (const mode of ['glass', 'acrylic']) {
+      const body = atRuleBody(new RegExp(`\\[data-material="${mode}"\\] \\.lab-material,`));
+      expect(body).toContain(
+        '--_base-paint: var(--_lab-normal, transparent) var(--_lab-more, var(--_base))',
+      );
+      expect(body).toContain(
+        '--_blur: var(--_lab-normal, var(--_blur-live)) var(--_lab-more, 0px)',
+      );
+      expect(body).toContain(
+        '--_rim: var(--_lab-normal, var(--_rim-active)) var(--_lab-more, none)',
+      );
+      if (mode === 'acrylic')
+        expect(body).toContain(
+          '--_noise: var(--_lab-normal, var(--_acrylic-noise)) var(--_lab-more, none)',
+        );
+    }
   });
 
   it('4. forced-colors also strips the tint gradient + blur (UA maps the palette)', () => {
@@ -120,15 +135,15 @@ describe('material.css deterministic degradations', () => {
     // возврат яруса возможен только осознанной правкой этого закона.
     expect(css).not.toContain('[data-material="blur"]');
     // Live modes paint the tint over `transparent` so the backdrop reads through.
-    expect(css).toContain('--_base-paint: transparent');
+    expect(css).toContain('--_base-paint: var(--_lab-normal, transparent)');
   });
 
   it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
     const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
-    expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
-    expect(body).toContain('--_blur: var(--_blur-live)'); // одна ступень 48px на все live-материалы (ADR-0009), не новый литерал
-    expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused
-    expect(body).toContain('--_base-paint: transparent'); // live backdrop reads through
+    expect(body).toContain('--_noise: var(--_lab-normal, var(--_acrylic-noise))'); // grain on
+    expect(body).toContain('--_blur: var(--_lab-normal, var(--_blur-live))');
+    expect(body).toContain('--_saturate: var(--_lab-normal, var(--_saturate-on))');
+    expect(body).toContain('--_base-paint: var(--_lab-normal, transparent)');
   });
 
   it('acrylic inherits the SAME tint as glass (does NOT re-point --_tint/--_base)', () => {

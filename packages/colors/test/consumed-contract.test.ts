@@ -13,6 +13,7 @@ import {
   missingColourRoles,
   repoRoot,
 } from './consumed-contract.js';
+import { themeVars } from './state-overlays-shared.mjs';
 
 /**
  * Contract-pin test — the CONSUMER → contract direction.
@@ -30,33 +31,15 @@ import {
  * naming the role.
  */
 
-// ── Shared scope helpers (mirror of contract.test.ts, kept local so the two
-// suites stay independent — a change to one cannot silently weaken the other).
 const css = readFileSync(resolve(repoRoot, 'packages/colors/contract.css'), 'utf8');
 
-function scopeBody(source: string, selectorPrefix: string): string {
-  const start = source.indexOf(selectorPrefix);
-  if (start === -1) throw new Error(`scope not found: ${selectorPrefix}`);
-  const open = source.indexOf('{', start);
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}') {
-      depth--;
-      if (depth === 0) return source.slice(open + 1, i);
-    }
-  }
-  throw new Error(`unbalanced braces for: ${selectorPrefix}`);
-}
-
-function declares(body: string, role: string): boolean {
-  const re = new RegExp(`(^|[;{\\s])${role.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:`, 'm');
-  return re.test(body);
-}
-
-const lightBody = scopeBody(css, ':root,\n[data-theme="light"]');
-const darkBody = scopeBody(css, '[data-theme="dark"]');
-const mediaBody = scopeBody(css, '@media (prefers-color-scheme: dark)');
+// Конечные карты из общего CSS binding; браузерный cascade/no-JS проверяет contrast.spec.ts.
+const lightBody = themeVars(css, 'light');
+const darkBody = themeVars(css, 'dark');
+const mediaBody = darkBody;
+const moreLightBody = themeVars(css, 'light', 'more');
+const moreDarkBody = themeVars(css, 'dark', 'more');
+const declares = (body: Map<string, string>, role: string) => body.has(role);
 
 describe('consumed --lab-* contract (consumer → contract pin)', () => {
   it('enumerates a substantial consumed surface including known colour roles', () => {
@@ -231,6 +214,8 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
       ['light', lightBody],
       ['dark', darkBody],
       ['media', mediaBody],
+      ['more-light', moreLightBody],
+      ['more-dark', moreDarkBody],
     ] as const) {
       const missing = consumed.filter((r) => !declares(body, r));
       expect(

@@ -33,7 +33,6 @@ import {
   REACT_BUTTON_CSS_PATH,
   REST_ROLES,
   THEME_BG,
-  THEME_SCOPE,
   TOKENS_CSS_PATH,
   expectedOverlays,
   extractFallbackBrightness,
@@ -46,7 +45,7 @@ import {
   parseColor,
   readStateFractions,
   resolveValue,
-  scopeVars,
+  themeVars,
   withoutFallbackBlocks,
 } from './state-overlays-shared.mjs';
 
@@ -69,8 +68,8 @@ function ctx() {
     return {
       fractions: readStateFractions(tokensRaw.replace(/\r\n/g, '\n')),
       vars: {
-        light: scopeVars(contract, THEME_SCOPE.light),
-        dark: scopeVars(contract, THEME_SCOPE.dark),
+        light: themeVars(contract, 'light'),
+        dark: themeVars(contract, 'dark'),
       },
       twins: {
         react: reactRaw.replace(/\r\n/g, '\n'),

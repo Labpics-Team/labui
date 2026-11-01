@@ -203,9 +203,9 @@ export class LabButton extends LabElement {
       content: '';
       position: absolute;
       inset: 0;
-      color: ${litVar('--lab-bg-static-light')};
+      color: var(--_lab-button-sheen-color, ${litVar('--lab-bg-static-light')});
       background-image: linear-gradient(180deg, currentColor, transparent);
-      opacity: ${litVar('--lab-opacity-button-sheen', '0.2')};
+      opacity: var(--_lab-button-sheen-opacity, ${litVar('--lab-opacity-button-sheen', '0.2')});
       transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
         color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
@@ -233,14 +233,14 @@ export class LabButton extends LabElement {
       transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
     :host([type='accent'][kind='fill']) button:hover:not(:disabled) .effects::before {
-      opacity: ${litVar('--lab-opacity-button-sheen-hover', '0.32')};
+      opacity: var(--_lab-button-sheen-hover-opacity, ${litVar('--lab-opacity-button-sheen-hover', '0.32')});
     }
     :host([type='accent'][kind='fill']) button:active:not(:disabled) .effects::before {
       color: ${litVar('--lab-bg-static-dark')};
       opacity: ${litVar('--lab-opacity-button-shade-pressed', '0.12')};
     }
     :host([type='accent'][kind='fill']) button:active:not(:disabled) .effects::after {
-      opacity: calc(${litVar('--lab-opacity-button-glow', '0.32')} * ${litVar('--lab-opacity-button-glow-fill', '0.52')});
+      opacity: var(--_lab-button-glow-pressed-opacity, calc(${litVar('--lab-opacity-button-glow', '0.32')} * ${litVar('--lab-opacity-button-glow-fill', '0.52')}));
     }
     :host([type='accent'][kind='fill']) button:active:not(:disabled)::after {
       box-shadow: ${litVar('--lab-shadow-button-pressed')};
@@ -431,7 +431,7 @@ export class LabButton extends LabElement {
       font-size: inherit;
       line-height: inherit;
       letter-spacing: inherit;
-      font-weight: inherit;
+      font-weight: var(--_lab-button-description-small-weight, inherit);
     }
     :host([type='accent']) .description {
       color: ${litVar('--lab-label-brand-secondary')};

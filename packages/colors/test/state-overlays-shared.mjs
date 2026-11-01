@@ -82,6 +82,43 @@ export function scopeVars(css, scopePattern) {
   return vars;
 }
 
+/** Только выбор CSS-ветки: численные цвета и alias-цепочки здесь не вычисляются. */
+export function themeVars(css, theme, contrast = 'normal') {
+  if (!['light', 'dark'].includes(theme) || !['normal', 'more'].includes(contrast))
+    throw new Error(`Неизвестная область ${theme}/${contrast}`);
+  if (!css.includes('--_lab-normal')) {
+    if (contrast !== 'normal') throw new Error('Контракт не содержит режима more');
+    return scopeVars(css, THEME_SCOPE[theme]);
+  }
+  const vars = scopeVars(css, /:root,\s*\[data-theme\],\s*\[data-contrast\]\s*\{/);
+  const active = new Set([`--_lab-${theme}`, `--_lab-${contrast}`]);
+  const select = (value) => {
+    let result = '';
+    let cursor = 0;
+    while (cursor < value.length) {
+      const start = value.indexOf('var(--_lab-', cursor);
+      if (start < 0) return (result + value.slice(cursor)).trim();
+      result += value.slice(cursor, start);
+      let depth = 1;
+      let end = start + 4;
+      let comma = -1;
+      for (; end < value.length && depth > 0; end++) {
+        if (value[end] === '(') depth++;
+        if (value[end] === ')') depth--;
+        if (value[end] === ',' && depth === 1 && comma < 0) comma = end;
+      }
+      if (depth !== 0 || comma < 0) throw new Error(`Некорректный CSS switch: ${value}`);
+      const name = value.slice(start + 4, comma).trim();
+      if (!/^--_lab-(light|dark|normal|more)$/.test(name))
+        throw new Error(`Неизвестный CSS marker: ${name}`);
+      if (active.has(name)) result += select(value.slice(comma + 1, end - 1));
+      cursor = end;
+    }
+    return result.trim();
+  };
+  return new Map([...vars].map(([name, value]) => [name, select(value)]));
+}
+
 /** Значение цвета → { lin:[r,g,b] линейный sRGB 0..1, alpha }. */
 export function parseColor(value) {
   const v = value.trim();

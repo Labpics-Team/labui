@@ -94,7 +94,9 @@ describe('numeric defaults agree (CSS knobs ↔ engine DEFAULTS ↔ var() fallba
       new RegExp(`\\[data-material\\][^{]*${LENSED_CLASS}[^{]*\\{([^}]*)\\}`),
     );
     expect(lensedBlock, 'material.css must carry the --lensed re-bind block').not.toBeNull();
-    const radius = (lensedBlock as RegExpMatchArray)[1]?.match(/--_blur:\s*([^;]+);/)?.[1]?.trim();
+    const radius = (lensedBlock as RegExpMatchArray)[1]
+      ?.match(/--_blur:\s*var\(--_lab-normal,\s*([^)]*)\)/)?.[1]
+      ?.trim();
     expect(radius).toBeTruthy();
     expect(engineSrc).toContain(`blur(var(--_blur, ${radius}))`);
   });

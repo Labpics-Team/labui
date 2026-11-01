@@ -49,10 +49,12 @@
 
 [data-material="acrylic"] .lab-material,
 [data-material="acrylic"].lab-material {
-  --_base-paint: transparent;
-  --_blur: var(--_blur-live);
-  --_saturate: var(--_saturate-on);
-  --_noise: var(--_acrylic-noise);
-  --_rim: var(--_rim-active); /* Fluent acrylic carries a luminous edge stroke → rim ON */
+  --_base-paint: var(--_lab-normal, transparent) var(--_lab-more, var(--_base));
+  --_blur: var(--_lab-normal, var(--_blur-live)) var(--_lab-more, 0px);
+  --_saturate: var(--_lab-normal, var(--_saturate-on)) var(--_lab-more, 100%);
+  --_noise: var(--_lab-normal, var(--_acrylic-noise)) var(--_lab-more, none);
+  --_rim: var(--_lab-normal, var(--_rim-active)) var(--_lab-more, none);
   -webkit-backdrop-filter: blur(48px) saturate(180%);
+  backdrop-filter: var(--_lab-normal, blur(var(--_blur)) saturate(var(--_saturate)))
+    var(--_lab-more, none);
 }

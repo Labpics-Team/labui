@@ -181,6 +181,19 @@
       }
     }
   },
+  "contrast": {
+    "more": {
+      "staticLabelAlpha": { "secondary": 1 },
+      "sources": {
+        "brand-light": "#0040DD",
+        "brand-dark": "#409CFF",
+        "shade": "#000000"
+      },
+      "assignment": {
+        "maxDelta": 8
+      }
+    }
+  },
   "observation": {
     "adaptingLuminance": 64,
     "backgroundRatio": 0.2,

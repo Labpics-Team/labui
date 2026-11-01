@@ -58,6 +58,7 @@ const SMOKE_SPECS = [
   'button-geometry.spec.ts',
   'button-anatomy.spec.ts',
   'button-effects.spec.ts',
+  'contrast.spec.ts',
   'authored-colors.spec.ts',
   // Геометрия, шрифт и масштаб Switch сверяются с независимым эталоном.
   'switch-geometry.spec.ts',

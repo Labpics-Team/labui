@@ -236,9 +236,9 @@ export class LabCheckbox extends LabElement {
       display: none;
     }
 
-    /* The input is now a SIBLING of the (aria-hidden) control so it stays in the
-       a11y tree; match focus-visible from the shared root, not as a descendant. */
-    .root:has(input:focus-visible) .control {
+    /* Прямой сосед обновляет кольцо при focus/blur и в WebKit Shadow DOM.
+       Input остаётся вне aria-hidden control и сохраняется в a11y tree. */
+    input:focus-visible + .control {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
@@ -312,6 +312,7 @@ export class LabCheckbox extends LabElement {
     // it, removing the checkbox role entirely).
     return html`
       <label class="root">
+        <input type="checkbox" />
         <span class="control">
           ${svg`<svg class="glyph glyph-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3.5 8.5l3 3 6-6.5" stroke="currentColor" stroke-width="2"
@@ -321,7 +322,6 @@ export class LabCheckbox extends LabElement {
             <path d="M3.5 8h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>`}
         </span>
-        <input type="checkbox" />
         <span class="label"><slot></slot></span>
       </label>
     `;

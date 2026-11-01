@@ -10,4 +10,5 @@
   --_rim: none; /* opaque canon — not glass; also resets a --_rim inherited from
                 * a glass/acrylic ancestor when this element is overridden solid */
   -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }

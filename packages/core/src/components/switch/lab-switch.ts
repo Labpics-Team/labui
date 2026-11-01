@@ -178,6 +178,7 @@ export class LabSwitch extends LabElement {
       padding: var(--_inset);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-fill-primary')};
+      outline: var(--_lab-control-outline, none);
       transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
     }
 
@@ -205,6 +206,7 @@ export class LabSwitch extends LabElement {
       height: var(--_thumb);
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-control-bg')};
+      outline: var(--_lab-control-outline, none);
       box-shadow: var(--lab-elevation-raised);
       transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       transform: translateX(0);

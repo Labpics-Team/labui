@@ -111,9 +111,9 @@
   content: "";
   position: absolute;
   inset: 0;
-  color: var(--lab-bg-static-light);
+  color: var(--_lab-button-sheen-color, var(--lab-bg-static-light));
   background-image: linear-gradient(180deg, currentColor, transparent);
-  opacity: var(--lab-opacity-button-sheen, 0.2);
+  opacity: var(--_lab-button-sheen-opacity, var(--lab-opacity-button-sheen, 0.2));
   transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
     color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
@@ -142,7 +142,7 @@
 }
 [data-lab-button][data-type="accent"][data-kind="fill"]:hover:not(:disabled)
   .lab-button-effects::before {
-  opacity: var(--lab-opacity-button-sheen-hover, 0.32);
+  opacity: var(--_lab-button-sheen-hover-opacity, var(--lab-opacity-button-sheen-hover, 0.32));
 }
 [data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled)
   .lab-button-effects::before {
@@ -151,7 +151,10 @@
 }
 [data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled)
   .lab-button-effects::after {
-  opacity: calc(var(--lab-opacity-button-glow, 0.32) * var(--lab-opacity-button-glow-fill, 0.52));
+  opacity: var(
+    --_lab-button-glow-pressed-opacity,
+    calc(var(--lab-opacity-button-glow, 0.32) * var(--lab-opacity-button-glow-fill, 0.52))
+  );
 }
 [data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled)::after {
   box-shadow: var(--lab-shadow-button-pressed);
@@ -452,7 +455,7 @@
   font-size: inherit;
   line-height: inherit;
   letter-spacing: inherit;
-  font-weight: inherit;
+  font-weight: var(--_lab-button-description-small-weight, inherit);
 }
 [data-lab-button][data-type="accent"] .lab-button-description {
   color: var(--lab-label-brand-secondary);

@@ -29,14 +29,10 @@
  *     чистый CSS-стек — SSR/HMR-friendly.
  */
 
-import {
-  ACRYLIC_ENGINE_MEDIA,
-  acrylicMediaBlocked,
-  attach as attachAcrylic,
-  supportsAcrylicChain,
-} from './acrylic';
+import { attach as attachAcrylic, supportsAcrylicChain } from './acrylic';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
 import { type EngineBinding, mountEngine, trailingRaf } from './mount';
+import { MATERIAL_ENGINE_MEDIA, materialMediaBlocked, prefersMoreContrast } from './preferences';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
@@ -60,7 +56,9 @@ const BINDINGS: readonly EngineBinding[] = [
   {
     gate: supportsRefraction,
     selector: SURFACE,
-    wants: (el) => inModeScope(el, 'glass'),
+    wants: (el) => inModeScope(el, 'glass') && !prefersMoreContrast(el),
+    blocked: materialMediaBlocked,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: false,
     attach: attachGlass,
   },
@@ -70,9 +68,9 @@ const BINDINGS: readonly EngineBinding[] = [
   {
     gate: supportsAcrylicChain,
     selector: SURFACE,
-    wants: (el) => inModeScope(el, 'acrylic'),
-    blocked: acrylicMediaBlocked,
-    mediaQueries: ACRYLIC_ENGINE_MEDIA,
+    wants: (el) => inModeScope(el, 'acrylic') && !prefersMoreContrast(el),
+    blocked: materialMediaBlocked,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
     attach: attachAcrylic,
   },
@@ -110,10 +108,20 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   const mo = new MutationObserver(raf.schedule);
   mo.observe(scope instanceof Document ? scope.documentElement : scope, {
     attributes: true,
-    attributeFilter: ['data-material', 'class', 'data-veil'],
+    attributeFilter: ['data-material', 'class', 'data-veil', 'data-contrast'],
     childList: true,
     subtree: true,
   });
+
+  // Узкий mount также наследует контраст предка вне своего поддерева.
+  // Тот же observer слушает только эту ось документа; новых observers нет.
+  if (scope !== document && scope !== document.documentElement) {
+    mo.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-contrast'],
+      subtree: true,
+    });
+  }
 
   // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
   // движка обязан сняться сам, листовые деградации его не перебивают). Собираем

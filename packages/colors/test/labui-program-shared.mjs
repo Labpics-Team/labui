@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { scopeVars } from './state-overlays-shared.mjs';
+import { scopeVars, themeVars } from './state-overlays-shared.mjs';
 
 export const THEMES = ['light', 'dark'];
 
@@ -25,6 +25,8 @@ export function rgba(value) {
 }
 
 export function scopes(css) {
+  if (css.includes('--_lab-normal'))
+    return [themeVars(css, 'light'), themeVars(css, 'dark'), themeVars(css, 'dark')];
   return [
     /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m,
     /^\[data-theme="dark"\]\s*\{/m,

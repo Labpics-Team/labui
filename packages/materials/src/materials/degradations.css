@@ -4,7 +4,7 @@
  * so at equal specificity source order lets the degradation win. The solid
  * canon is opaque → label contract always holds, blur cost is zero.
  * Acrylic-v2-движок дополнительно гасит СЕБЯ под теми же медиа в JS
- * (ACRYLIC_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
+ * (MATERIAL_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
  * паритет списков закреплён acrylic-engine-contract.test.
  * ════════════════════════════════════════════════════════════════════════════ */
 
@@ -41,21 +41,8 @@
   }
 }
 
-/* 3. prefers-contrast: more → solid (strengthen: opaque tint, maximum contrast). */
-@media (prefers-contrast: more) {
-  [data-material="glass"] .lab-material,
-  [data-material="glass"].lab-material,
-  [data-material="acrylic"] .lab-material,
-  [data-material="acrylic"].lab-material,
-  .lab-material {
-    --_base-paint: var(--_base);
-    --_blur: 0px;
-    --_saturate: 100%;
-    --_noise: none;
-    --_rim: none;
-    -webkit-backdrop-filter: none;
-  }
-}
+/* 3. Контраст области разрешён colors/contract.css. Glass и acrylic выбирают
+   solid через его маркеры; OS more не перебивает явный normal у потомка. */
 
 /* 4. forced-colors: active → system surface, translucency stripped. We DON'T
  * hardcode system colours (Canvas/CanvasText): we drop the tint GRADIENT and

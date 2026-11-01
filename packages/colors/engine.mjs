@@ -63,13 +63,15 @@ export function addBackgroundTones(
 }
 
 export function compileTheme(abi, model, selected) {
-  const builder = new abi.ProgramWireBuilderV1().surfaceInputPort(1).inputSurface(2, 1);
+  const Builder = selected.computed.size ? abi.ProgramWireBuilderV3 : abi.ProgramWireBuilderV1;
+  const builder = new Builder().surfaceInputPort(1).inputSurface(2, 1);
   let serial = 10;
   const allocate = () => serial++;
   const targets = new Map();
   const sharedPaints = new Map();
   const sharedAlpha = new Map();
   const roles = new Map();
+  const assignmentTargets = [];
   const paintFor = ({ source, opacity }) => {
     let solid = targets.get(source);
     if (solid === undefined) {
@@ -77,9 +79,14 @@ export function compileTheme(abi, model, selected) {
       solid = allocate();
       const rgb = model.sources[source];
       if (!rgb) throw new Error(`неизвестный источник ${source}`);
-      // Ordinary сохраняет авторский RGB. Подвижные цели относятся к отдельному IC-контракту.
-      const input = allocate();
-      builder.source(input, rgb).fixedTarget(target, input);
+      const computed = selected.computed.get(source);
+      if (computed) {
+        builder.computedTarget(target, computed.domain, rgb, computed.maxDelta);
+        assignmentTargets.push(target);
+      } else {
+        const input = allocate();
+        builder.source(input, rgb).fixedTarget(target, input);
+      }
       builder.solidPaint(solid, target);
       targets.set(source, solid);
     }
@@ -102,6 +109,7 @@ export function compileTheme(abi, model, selected) {
     return paint;
   };
   for (const [name, paint] of selected.paints) roles.set(name, paintFor(paint));
+  if (assignmentTargets.length) builder.assignment(assignmentTargets);
   const resolveAlias = (name) => {
     let target = name;
     while (selected.aliases.has(target)) target = selected.aliases.get(target);
@@ -183,7 +191,7 @@ export function compileTheme(abi, model, selected) {
     const foreground = over(rolePaint(requirement.foreground), surface);
     presentationFor(foreground);
     builder.wcag22VisibleUnary(
-      model.policy.contrast === 'strict',
+      requirement.hard === true || model.policy.contrast === 'strict',
       allocate(),
       foreground,
       requirement.criterion === 'text'
@@ -225,17 +233,21 @@ export function compileTheme(abi, model, selected) {
 
 /** Поднять Program-owner с конкретными входами, не захватывая состояние темы. */
 export async function createLabuiEngine({ config } = {}) {
-  const input = config ?? JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8'));
-  const model = prepareEngineConfig(input);
+  const input = structuredClone(
+    config ?? JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8')),
+  );
+  const models = new Map([['normal', prepareEngineConfig(input)]]);
   const fingerprint = digest(JSON.stringify(input));
   const pkgDir = dirname(require.resolve('@labpics/colors'));
-  const [owner, abi, wasm, packageJson, buildJson] = await Promise.all([
+  const [owner, v1, v3, wasm, packageJson, buildJson] = await Promise.all([
     import('@labpics/colors'),
     import('@labpics/colors/program-wire/abi-v1.js'),
+    import('@labpics/colors/program-wire/abi-v3.js'),
     readFile(join(pkgDir, 'pkg', 'labcolors_bg.wasm')),
     readFile(join(pkgDir, 'package.json'), 'utf8'),
     readFile(join(pkgDir, 'build-metadata.json'), 'utf8'),
   ]);
+  const abi = { ...v1, ...v3 };
   await owner.default({ module_or_path: wasm });
   const metadata = {
     version: JSON.parse(packageJson).version,
@@ -245,7 +257,11 @@ export async function createLabuiEngine({ config } = {}) {
   return {
     fingerprint,
     metadata,
-    resolve(theme) {
+    resolve(theme, contrast = 'normal') {
+      if (!['normal', 'more'].includes(contrast))
+        throw new Error(`неизвестный режим контраста ${contrast}`);
+      if (!models.has(contrast)) models.set(contrast, prepareEngineConfig(input, contrast));
+      const model = models.get(contrast);
       const selected = model.themes[theme];
       if (!selected) throw new Error(`неизвестная тема ${theme}`);
       const diagnostics = {
@@ -269,6 +285,7 @@ export async function createLabuiEngine({ config } = {}) {
         );
         diagnostics.programs.push({
           kind: 'theme',
+          contrast,
           wireSha256: digest(wire),
           state: snapshot.state,
         });

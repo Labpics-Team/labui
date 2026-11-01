@@ -65,6 +65,7 @@
   padding: var(--_lab-sw-inset);
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-fill-primary);
+  outline: var(--_lab-control-outline, none);
   transition: background-color var(--lab-motion-transition-duration)
     var(--lab-motion-transition-easing);
 }
@@ -89,6 +90,7 @@
   height: var(--_lab-sw-thumb);
   border-radius: var(--lab-radius-full, 9999px);
   background-color: var(--lab-control-bg);
+  outline: var(--_lab-control-outline, none);
   box-shadow: var(--lab-elevation-raised);
   transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
   transform: translateX(0);

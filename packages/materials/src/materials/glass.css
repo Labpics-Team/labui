@@ -4,9 +4,11 @@
  * engine/liquid-glass.ts на поддерживающих браузерах — см. engine-held.css. */
 [data-material="glass"] .lab-material,
 [data-material="glass"].lab-material {
-  --_base-paint: transparent;
-  --_blur: var(--_blur-live);
-  --_saturate: var(--_saturate-on);
-  --_rim: var(--_rim-active); /* refractive edge catches light → specular rim ON */
+  --_base-paint: var(--_lab-normal, transparent) var(--_lab-more, var(--_base));
+  --_blur: var(--_lab-normal, var(--_blur-live)) var(--_lab-more, 0px);
+  --_saturate: var(--_lab-normal, var(--_saturate-on)) var(--_lab-more, 100%);
+  --_rim: var(--_lab-normal, var(--_rim-active)) var(--_lab-more, none);
   -webkit-backdrop-filter: blur(48px) saturate(180%);
+  backdrop-filter: var(--_lab-normal, blur(var(--_blur)) saturate(var(--_saturate)))
+    var(--_lab-more, none);
 }

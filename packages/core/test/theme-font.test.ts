@@ -24,8 +24,13 @@ describe('theme.css — гарнитура ДС на скоупе [data-theme]',
   });
 
   it('НЕ красит документ хоста: font-family нет на голом :root (анти-инвазивность)', () => {
-    // Голый `:root { … }` (не `:root:not(...)`) несёт только color-scheme.
-    const bareRootBlocks = themeCss.match(/:root\s*\{[^}]*\}/g) ?? [];
+    // Список селекторов также может применять декларации к голому :root.
+    const css = themeCss.replace(/\/\*[\s\S]*?\*\//g, '');
+    const bareRootBlocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(([, selectors]) =>
+        selectors.split(',').some((selector) => selector.trim() === ':root'),
+      )
+      .map(([, , body]) => body);
     expect(bareRootBlocks.length).toBeGreaterThan(0);
     for (const block of bareRootBlocks) {
       expect(block, 'font-family не должен стоять на голом :root').not.toContain('font-family');

@@ -28,7 +28,9 @@ function sourceRgb(value, path) {
 }
 
 /** Проверить авторские входы и развернуть связи CSS без вычисления цветов. */
-export function prepareEngineConfig(parsed) {
+export function prepareEngineConfig(parsed, contrast = 'normal') {
+  if (!['normal', 'more'].includes(contrast))
+    throw new Error(`contrast: неизвестное значение ${contrast}`);
   const config = record(parsed, 'config');
   if (config.schemaVersion !== 1) throw new Error('config.schemaVersion: поддержана версия 1');
   const authored = record(config.authored, 'authored');
@@ -38,6 +40,29 @@ export function prepareEngineConfig(parsed) {
       sourceRgb(value, `authored.sources.${name}`),
     ]),
   );
+  let assignment;
+  let staticLabelAlpha = authored.labelAlpha;
+  if (contrast === 'more') {
+    const more = record(record(config.contrast, 'contrast').more, 'contrast.more');
+    staticLabelAlpha = {
+      ...record(authored.labelAlpha, 'authored.labelAlpha'),
+      ...record(more.staticLabelAlpha, 'contrast.more.staticLabelAlpha'),
+    };
+    for (const [name, value] of Object.entries(record(more.sources, 'contrast.more.sources'))) {
+      if (!Object.hasOwn(sources, name))
+        throw new Error(`contrast.more.sources.${name}: неизвестный источник`);
+      sources[name] = sourceRgb(value, `contrast.more.sources.${name}`);
+    }
+    assignment = record(more.assignment, 'contrast.more.assignment');
+    if (
+      !Number.isFinite(assignment.maxDelta) ||
+      assignment.maxDelta < 0 ||
+      !Number.isFinite(assignment.maxDelta * assignment.maxDelta)
+    )
+      throw new Error(
+        'contrast.more.assignment.maxDelta: ожидается конечная неотрицательная граница',
+      );
+  }
   const source = (name) => {
     if (!Object.hasOwn(sources, name)) throw new Error(`неизвестный авторский источник ${name}`);
     return name;
@@ -69,6 +94,7 @@ export function prepareEngineConfig(parsed) {
     const composites = new Map();
     const aliases = new Map();
     const constraints = [];
+    const computed = new Map();
     const pending = [];
     const add = (name, selectedSource, alpha = 1) => {
       if (paints.has(name) || composites.has(name) || aliases.has(name))
@@ -80,8 +106,8 @@ export function prepareEngineConfig(parsed) {
         throw new Error(`роль ${name} объявлена дважды`);
       aliases.set(name, target);
     };
-    const floor = (foreground, background, criterion) => {
-      constraints.push({ foreground, background, criterion });
+    const floor = (foreground, background, criterion, hard = false) => {
+      constraints.push({ foreground, background, criterion, ...(hard ? { hard } : {}) });
     };
     const labelFamily = (prefix, primary, muted = primary) => {
       for (const level of LEVELS)
@@ -146,7 +172,7 @@ export function prepareEngineConfig(parsed) {
         add(
           `label-static-${side}-${level}`,
           paintSource,
-          sharedAlpha(authored.labelAlpha, level, 'authored.labelAlpha'),
+          sharedAlpha(staticLabelAlpha, level, 'staticLabelAlpha'),
         );
     }
     fillFamily('fill', 'mid', authored.fillAlpha[theme], `authored.fillAlpha.${theme}`);
@@ -235,6 +261,28 @@ export function prepareEngineConfig(parsed) {
         opacity(authored.glowAlpha, 'authored.glowAlpha'),
       );
     }
+    if (contrast === 'more') {
+      // Подпись/индикатор остаются на авторской опоре. Общая заливка получает
+      // отдельную цель Core, потому что белая надпись задаёт другую связь.
+      const fillSource = `brand-fill-${theme}`;
+      sources[fillSource] = [...sources[`brand-${theme}`]];
+      paints.set('badge-fill-brand', { source: fillSource, opacity: 1 });
+      computed.set(fillSource, {
+        domain: { kind: 'box', lower: [0, 0, 0], upper: [255, 255, 255] },
+        maxDelta: assignment.maxDelta,
+      });
+      // Декоративный border-base в ordinary недостаточен как единственный
+      // признак пустого control. IC использует уже существующий primary.
+      paints.set('border-base', { source: selected.primary, opacity: 1 });
+      for (const level of [1, 2, 3]) {
+        const background = `bg-tone-${level}`;
+        floor('label-accent', background, 'text', true);
+        floor('border-focus', background, 'ui', true);
+        floor('border-base', background, 'ui', true);
+      }
+      floor('label-on-accent', 'fill-accent', 'text', true);
+      floor('label-static-light-secondary', 'fill-accent', 'text', true);
+    }
     if (policy.contrast === 'unresolved')
       pending.push('contrast: не выбрана normal/strict политика');
     for (const name of aliases.keys()) {
@@ -253,6 +301,7 @@ export function prepareEngineConfig(parsed) {
       composites,
       aliases,
       constraints,
+      computed,
       pending,
       background: source(selected.background),
       tone: { source: tone.source, alpha: [...tone.alpha] },

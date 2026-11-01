@@ -18,7 +18,8 @@
     "contract.min.css",
     "roles.json",
     "labui.config.json",
-    "prepare-config.mjs"
+    "prepare-config.mjs",
+    "prepare-config.d.mts"
   ],
   "scripts": {
     "generate": "node generate-contract.mjs",

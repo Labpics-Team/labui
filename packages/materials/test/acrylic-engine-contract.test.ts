@@ -11,12 +11,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { readMaterialCss } from '../scripts/material-css';
 import { ACRYLIC_LUMINOSITY_OPACITY } from '../src/acrylic-corridor';
-import {
-  ACRYLIC_BLUR_PX,
-  ACRYLIC_ENGINE_MEDIA,
-  ACRYLIC_REACH_PX,
-  ACRYLIC_SATURATE,
-} from '../src/engine/acrylic';
+import { ACRYLIC_BLUR_PX, ACRYLIC_REACH_PX, ACRYLIC_SATURATE } from '../src/engine/acrylic';
+import { MATERIAL_ENGINE_MEDIA } from '../src/engine/preferences';
 import { MATERIAL_TIERS } from '../src/material-guarantee';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,26 +62,28 @@ describe('конвейер повторяет ступени листа (оди�
 });
 
 describe('честные деградации: движок гаснет во всех медиа-режимах листа', () => {
-  it('каждый запрещающий @media листа есть в ACRYLIC_ENGINE_MEDIA', () => {
+  it('каждый запрещающий @media листа есть в MATERIAL_ENGINE_MEDIA', () => {
     // Класс: «новая деградация добавлена в лист, движок о ней не знает» —
     // инлайн пережил бы её. Все transparency/contrast/forced-медиа листа
     // обязаны быть перечислены движку.
-    const sheetMedia = [
-      '(prefers-reduced-transparency: reduce)',
-      '(prefers-contrast: more)',
-      '(forced-colors: active)',
-    ];
+    const sheetMedia = ['(prefers-reduced-transparency: reduce)', '(forced-colors: active)'];
     for (const query of sheetMedia) {
       expect(css, `material.css должен нести деградацию ${query}`).toContain(`@media ${query}`);
-      expect(ACRYLIC_ENGINE_MEDIA, `движок должен гаснуть под ${query}`).toContain(query);
+      expect(MATERIAL_ENGINE_MEDIA, `движок должен гаснуть под ${query}`).toContain(query);
     }
+    expect(MATERIAL_ENGINE_MEDIA).toContain('(prefers-contrast: more)');
   });
 
-  it('binding acrylic несёт blocked=acrylicMediaBlocked + mediaQueries, рантайм слушает их change', () => {
+  it('binding сохраняет системные запреты, контраст разрешает per-surface и слушает change', () => {
     // Смысл замка (не строка): acrylic-движок гаснет под запрещающими медиа
     // (blocked опустошает want в mountEngine) И их смена ре-синкает mount.
-    expect(runtimeSrc).toContain('blocked: acrylicMediaBlocked');
-    expect(runtimeSrc).toContain('mediaQueries: ACRYLIC_ENGINE_MEDIA');
+    expect(runtimeSrc).toContain('blocked: materialMediaBlocked');
+    expect(runtimeSrc).toContain('mediaQueries: MATERIAL_ENGINE_MEDIA');
+    expect(runtimeSrc).toContain("inModeScope(el, 'acrylic') && !prefersMoreContrast(el)");
+    expect(runtimeSrc).toContain("inModeScope(el, 'glass') && !prefersMoreContrast(el)");
+    expect(runtimeSrc).toContain(
+      "attributeFilter: ['data-material', 'class', 'data-veil', 'data-contrast']",
+    );
     expect(runtimeSrc).toContain("mq.addEventListener('change', raf.schedule)");
     // mountEngine — держатель поведения: blocked() опустошает набор до скана.
     expect(mountSrc).toContain('if (!binding.blocked?.())');
