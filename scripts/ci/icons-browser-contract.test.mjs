@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   copyFileSync,
   existsSync,
@@ -14,6 +14,12 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { test } from 'node:test';
+import {
+  GIT_DEADLINE_MS,
+  GIT_TRACE_MAX_BYTES,
+  createGitRunner,
+  summarizeGitTrace,
+} from '../../apps/docs/tests/icons-git-diagnostics.mjs';
 
 const helper = new URL('../../.github/scripts/browser-check.sh', import.meta.url);
 const workflow = readFileSync(
@@ -107,6 +113,8 @@ case "$1" in
     work="$(cat "$CAPTURE/work")"
     mkdir -p "$work/output/result"
     printf '{"outcome":"fixture"}\\n' > "$work/output/result/receipt.json"
+    if [ "$RAW_TRACE" = file ]; then printf 'secret-argv-env-config\\n' > "$work/output/.git-trace2.raw"; fi
+    if [ "$RAW_TRACE" = directory ]; then mkdir "$work/output/.git-trace2.raw"; fi
     if [ "$BAD_LINK" = true ]; then ln "$FOREIGN_FILE" "$work/output/result/unsafe"; fi
     printf '::set-output name=icons_ready::forged\\n'
     if [ "$INTERRUPT" = true ]; then kill -TERM "$PPID"; fi
@@ -164,6 +172,7 @@ function runFixture(overrides = {}, mode = 'icons') {
       START_STATUS: '0',
       REMOVE_STATUS: '0',
       BAD_LINK: 'false',
+      RAW_TRACE: 'none',
       INTERRUPT: 'false',
       FOREIGN_FILE: posix(join(fixture, 'runner/foreign')),
       EXPORTED_RECEIPT: posix(exported),
@@ -185,6 +194,7 @@ function runFixture(overrides = {}, mode = 'icons') {
       order: read(join(fixture, 'capture/order'))?.trim().split('\n'),
       outputs: read(output),
       exported: read(exported),
+      rawTrace: read(join(fixture, 'ui/apps/docs/test-results/icons-consumer/.git-trace2.raw')),
       foreign: read(join(fixture, 'runner/foreign')),
       runnerEntries: readdirSync(join(fixture, 'runner')),
       workExists: work
@@ -222,6 +232,245 @@ test('failed workload and cancellation retain failure, diagnostics and bounded c
     assert.equal(result.foreign, 'preserve');
     assert.equal(result.workExists, false);
   }
+});
+
+test('preparation scopes Git diagnostics and preserves failure before the browser', () => {
+  const body = runFixture().args.at(-1);
+  const script = body
+    .split('pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow')[1]
+    .split('    else')[0];
+  const parent = realpathSync(tmpdir());
+  const fixture = mkdtempSync(join(parent, 'labui-icons-git-scope-'));
+  try {
+    writeFileSync(
+      join(fixture, 'node'),
+      `#!/bin/sh
+printf '%s %s\\n' "$1" "\${LABUI_ICONS_GIT_DIAGNOSTICS:-unset}" >> "$CAPTURE"
+case "$*" in *--summarize*) exit 0;; esac
+case "$1" in *prepare-icons-inputs.mjs) exit "$PREPARE_STATUS";; esac
+`,
+      { mode: 0o755 },
+    );
+    for (const status of ['0', '23']) {
+      const capture = join(fixture, 'capture');
+      writeFileSync(capture, '');
+      const result = spawnSync(bash, ['--noprofile', '--norc'], {
+        env: {
+          ...process.env,
+          STUB_BIN: posix(fixture),
+          CAPTURE: posix(capture),
+          PREPARE_STATUS: status,
+          UI_SOURCE_COMMIT: 'a'.repeat(40),
+        },
+        input: `set -euo pipefail\nexport PATH="$STUB_BIN:$PATH"\n${script}`,
+        encoding: 'utf8',
+        timeout: 10_000,
+      });
+      assert.equal(result.status, Number(status), result.stdout + result.stderr);
+      assert.equal(
+        readFileSync(capture, 'utf8'),
+        `apps/docs/tests/prepare-icons-inputs.mjs /job/output\n${
+          status === '0'
+            ? 'apps/docs/tests/icons-packed.mjs unset\napps/docs/tests/prepare-icons-inputs.mjs unset\n'
+            : ''
+        }`,
+      );
+    }
+  } finally {
+    const target = realpathSync(fixture);
+    assert.equal(dirname(target), parent);
+    assert.ok(basename(target).startsWith('labui-icons-git-scope-'));
+    rmSync(target, { recursive: true, force: true });
+  }
+});
+
+const traceLine = (value) => JSON.stringify({ sid: 'secret-process-id', thread: 'main', ...value });
+const trace = (...values) => Buffer.from(`${values.map(traceLine).join('\n')}\n`);
+
+test('Git Trace2 keeps the last open region while discarding argv, env, config and unknown text', () => {
+  const report = summarizeGitTrace(
+    trace(
+      { event: 'version', exe: '2.43.0' },
+      { event: 'start', argv: ['git', 'https://token:secret@remote'] },
+      { event: 'def_param', param: 'http.extraHeader', value: 'secret-header' },
+      { event: 'cmd_name', name: 'status', hierarchy: 'secret-hierarchy' },
+      { event: 'region_enter', category: 'index', label: 'do_read_index', nesting: 1, t_abs: 0.1 },
+      {
+        event: 'region_leave',
+        category: 'index',
+        label: 'do_read_index',
+        nesting: 1,
+        t_abs: 0.2,
+        t_rel: 0.1,
+      },
+      { event: 'region_enter', category: 'index', label: 'refresh', nesting: 1, t_abs: 0.3 },
+      {
+        event: 'data',
+        category: 'index',
+        key: 'refresh/sum_scan',
+        value: '1552',
+        env: 'secret-env',
+      },
+      { event: 'region_enter', category: 'secret-category', label: 'secret-label', nesting: 2 },
+      { event: 'data', category: 'index', key: 'refresh/sum_lstat', value: 'secret-counter' },
+    ),
+  );
+  assert.equal(report.gitVersion, '2.43.0');
+  assert.deepEqual(report.openRegions, [
+    {
+      event: 'region_enter',
+      process: 1,
+      elapsedSeconds: 0.3,
+      category: 'index',
+      label: 'refresh',
+      nesting: 1,
+    },
+  ]);
+  assert.ok(
+    report.events.some((event) => event.counter === 'refresh/sum_scan' && event.value === 1552),
+  );
+  assert.doesNotMatch(JSON.stringify(report), /secret|argv|env|param|hierarchy/);
+});
+
+test('Git Trace2 bounds bytes, event history and unmatched regions and marks incomplete input', () => {
+  const many = trace(
+    ...Array.from({ length: 1000 }, (_, i) => ({
+      event: 'region_enter',
+      category: 'index',
+      label: 'refresh',
+      nesting: i,
+      t_abs: i,
+    })),
+  );
+  const report = summarizeGitTrace(many);
+  assert.equal(report.events.length, 24);
+  assert.equal(report.openRegions.length, 16);
+  assert.equal(report.truncated, true);
+  assert.ok(Buffer.byteLength(JSON.stringify(report)) < 8192);
+  const oversized = summarizeGitTrace(
+    Buffer.concat([
+      Buffer.from(' '.repeat(GIT_TRACE_MAX_BYTES)),
+      trace({ event: 'version', exe: '9.9.9' }),
+    ]),
+  );
+  assert.equal(oversized.truncated, true);
+  assert.equal(oversized.gitVersion, null);
+  assert.equal(oversized.invalidLines, 1);
+  assert.doesNotThrow(() => summarizeGitTrace(Buffer.from('null\n[]\n{broken\n')));
+});
+
+test('Git diagnostics retains the exact deadline, original timeout error and normal untraced call', () => {
+  const parent = realpathSync(tmpdir());
+  const fixture = mkdtempSync(join(parent, 'labui-icons-git-trace-'));
+  const failure = Object.assign(new Error('secret error text'), {
+    code: 'ETIMEDOUT',
+    status: null,
+    signal: 'SIGTERM',
+    spawnargs: ['secret-argv'],
+  });
+  try {
+    const output = [];
+    const observed = [];
+    const run = createGitRunner(
+      fixture,
+      (file, args, options) => {
+        observed.push({ file, args, options });
+        writeFileSync(
+          options.env.GIT_TRACE2_EVENT,
+          trace(
+            { event: 'version', exe: '2.43.0' },
+            { event: 'region_enter', category: 'index', label: 'refresh', nesting: 1, t_abs: 0.1 },
+          ),
+        );
+        throw failure;
+      },
+      (line) => output.push(line),
+    );
+    assert.throws(
+      () => run('/job/icons', ['status', '--porcelain', '--untracked-files=no']),
+      (error) => error === failure,
+    );
+    assert.equal(observed[0].options.timeout, 20_000);
+    assert.equal(GIT_DEADLINE_MS, 20_000);
+    assert.deepEqual(observed[0].args, [
+      '--no-replace-objects',
+      'status',
+      '--porcelain',
+      '--untracked-files=no',
+    ]);
+    assert.equal(observed[0].options.env.GIT_TRACE2_ENV_VARS, '');
+    assert.equal(observed[0].options.env.GIT_TRACE2_CONFIG_PARAMS, '');
+    const report = JSON.parse(readFileSync(join(fixture, 'git-diagnostics.json'), 'utf8'));
+    assert.equal(report.source, 'icons');
+    assert.equal(report.error, 'ETIMEDOUT');
+    assert.equal(report.exitStatus, null);
+    assert.equal(report.signal, 'SIGTERM');
+    assert.equal(report.openRegions.at(-1).label, 'refresh');
+    assert.equal(existsSync(join(fixture, '.git-trace2.raw')), false);
+    assert.doesNotMatch(output.join(''), /secret/);
+    assert.ok(Buffer.byteLength(output.join('')) < 8192);
+    const value = Buffer.from('expected');
+    const plain = createGitRunner(undefined, (file, args, options) => {
+      assert.equal(file, 'git');
+      assert.deepEqual(args, ['--no-replace-objects', 'rev-parse', 'HEAD']);
+      assert.deepEqual(options, { cwd: '/job/source', timeout: 20_000 });
+      return value;
+    });
+    assert.equal(plain('/job/source', ['rev-parse', 'HEAD']), value);
+    const brokenObserver = createGitRunner(
+      fixture,
+      (_file, _args, options) => {
+        rmSync(options.env.GIT_TRACE2_EVENT);
+        throw failure;
+      },
+      () => {
+        throw new Error('closed stderr');
+      },
+    );
+    assert.throws(
+      () => brokenObserver('/job/icons', ['status']),
+      (error) => error === failure,
+    );
+  } finally {
+    const target = realpathSync(fixture);
+    assert.equal(dirname(target), parent);
+    assert.ok(basename(target).startsWith('labui-icons-git-trace-'));
+    rmSync(target, { recursive: true, force: true });
+  }
+});
+
+test('native Git Trace2 supplies the actual binary version and sanitizes its events', () => {
+  const parent = realpathSync(tmpdir());
+  const fixture = mkdtempSync(join(parent, 'labui-icons-git-native-'));
+  try {
+    execFileSync('git', ['init', '-q'], { cwd: fixture, timeout: 5000 });
+    const run = createGitRunner(fixture);
+    assert.equal(run(fixture, ['status', '--porcelain', '--untracked-files=no']).toString(), '');
+    const report = JSON.parse(readFileSync(join(fixture, 'git-diagnostics.json'), 'utf8'));
+    assert.match(report.gitVersion, /^\d+\.\d+\.\d+/);
+    assert.equal(report.outcome, 'passed');
+    assert.ok(report.events.some((event) => event.command === 'status'));
+    assert.equal(report.openRegions.length, 0);
+    assert.equal(report.invalidLines, 0);
+    assert.equal(existsSync(join(fixture, '.git-trace2.raw')), false);
+  } finally {
+    const target = realpathSync(fixture);
+    assert.equal(dirname(target), parent);
+    assert.ok(basename(target).startsWith('labui-icons-git-native-'));
+    rmSync(target, { recursive: true, force: true });
+  }
+});
+
+test('cancellation raw trace is removed before export; an unremovable raw trace forbids export', () => {
+  const safe = runFixture({ RAW_TRACE: 'file', START_STATUS: '7' });
+  assert.equal(safe.status, 7);
+  assert.equal(safe.exported, '{"outcome":"fixture"}\n');
+  assert.equal(safe.rawTrace, null);
+  const unsafe = runFixture({ RAW_TRACE: 'directory' });
+  assert.notEqual(unsafe.status, 0);
+  assert.equal(unsafe.exported, null);
+  assert.equal(unsafe.outputs, '');
+  assert.equal(unsafe.foreign, 'preserve');
 });
 
 test('create failure still removes an assigned CID; removal failure forbids copying unstable output', () => {

@@ -21,6 +21,60 @@ const REQUIRED_PUBLIC_ENTRIES = [
   '@labpics/motion',
 ];
 const STATE_ENTRY = '@labpics/icons/states/status-circle';
+const EXPRESSION_ENTRY = '@labpics/icons/states/expression-face';
+const STATE_GROUPS = {
+  'status-circle': {
+    defaultState: 'question',
+    enclosurePartId: 'status-enclosure',
+    states: ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'],
+    sharedParts: [{ id: 'status-enclosure', role: 'container' }],
+    buttonLabel: 'Сменить знак',
+    selectLabel: 'Состояние знака',
+    labels: {
+      attention: 'Внимание',
+      confirmation: 'Подтверждение',
+      decrease: 'Уменьшение',
+      dismissal: 'Закрытие',
+      increase: 'Увеличение',
+      question: 'Вопрос',
+    },
+  },
+  'expression-face': {
+    defaultState: 'aloof',
+    enclosurePartId: 'face-enclosure',
+    states: ['aloof', 'sad', 'smile'],
+    sharedParts: [
+      { id: 'face-left-eye', role: 'content' },
+      { id: 'face-right-eye', role: 'content' },
+      { id: 'face-enclosure', role: 'container' },
+    ],
+    buttonLabel: 'Сменить выражение',
+    selectLabel: 'Выражение лица',
+    labels: { aloof: 'Спокойствие', sad: 'Грусть', smile: 'Улыбка' },
+  },
+};
+
+export function stateReferenceContract(group) {
+  assert.ok(Object.hasOwn(STATE_GROUPS, group), 'consumer не запрашивал такую state group');
+  return structuredClone(STATE_GROUPS[group]);
+}
+
+export function consumerPublicEntries(schemaVersion) {
+  assert.ok([1, 2, 3].includes(schemaVersion));
+  return [
+    ...REQUIRED_PUBLIC_ENTRIES,
+    ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
+    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : []),
+  ];
+}
+
+export function subjectStateReferences(subject) {
+  return subject.schemaVersion === 3
+    ? subject.stateReferences
+    : subject.schemaVersion === 2
+      ? { 'status-circle': subject.stateReference }
+      : {};
+}
 
 export function assertIconsImport(source) {
   if (!/^@labpics\/icons(?:\/|$)/.test(source)) return;
@@ -30,6 +84,7 @@ export function assertIconsImport(source) {
       '@labpics/icons/ir/render',
       '@labpics/icons/motion',
       STATE_ENTRY,
+      EXPRESSION_ENTRY,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -104,7 +159,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -194,34 +249,53 @@ export function validateSubject(subject) {
       );
     }
   }
-  if (subject.schemaVersion === 2) validateStateReference(subject.stateReference, reference);
-  else assert.equal(subject.stateReference, undefined);
+  if (subject.schemaVersion === 3) {
+    assert.equal(subject.stateReference, undefined);
+    assert.deepEqual(
+      Object.keys(subject.stateReferences ?? {}).sort(),
+      Object.keys(STATE_GROUPS).sort(),
+    );
+    for (const [group, state] of Object.entries(subject.stateReferences))
+      validateStateReference(state, reference, group);
+  } else {
+    assert.equal(subject.stateReferences, undefined);
+    if (subject.schemaVersion === 2) validateStateReference(subject.stateReference, reference);
+    else assert.equal(subject.stateReference, undefined);
+  }
   return subject;
 }
 
-export function validateStateReference(reference, author) {
-  assert.equal(reference?.group, 'status-circle');
+export function validateStateReference(reference, author, group = 'status-circle') {
+  const contract = stateReferenceContract(group);
+  assert.equal(reference?.group, group);
   assert.equal(reference.variant, 'outline');
-  assert.equal(reference.defaultState, 'question');
-  assert.equal(reference.enclosurePartId, 'status-enclosure');
+  assert.equal(reference.defaultState, contract.defaultState);
+  assert.equal(reference.enclosurePartId, contract.enclosurePartId);
   assert.deepEqual(reference.proof?.source, { fileKey: author.fileKey, version: author.version });
   assert.equal(reference.proof.law, 'enclosure.replace');
   assert.match(reference.proof.specSha256, HASH);
   assert.match(reference.proof.enclosureSha256, HASH);
   if (Object.hasOwn(reference, 'sharedPartIds')) {
-    assert.deepEqual(reference.sharedPartIds, [reference.enclosurePartId]);
+    assert.deepEqual(
+      reference.sharedPartIds,
+      contract.sharedParts.map((part) => part.id),
+    );
+    const shared = reference.sharedParts ?? [
+      { ...reference.enclosure, ...contract.sharedParts[0] },
+    ];
+    assert.equal(shared.length, contract.sharedParts.length);
+    for (const [index, part] of shared.entries()) {
+      assert.deepEqual(Object.keys(part).sort(), ['d', 'fillRule', 'id', 'role']);
+      assert.equal(part.id, contract.sharedParts[index].id);
+      assert.equal(part.role, contract.sharedParts[index].role);
+      assert.ok(typeof part.d === 'string' && part.d.length > 0);
+      assert.ok(['evenodd', 'nonzero'].includes(part.fillRule));
+    }
     assert.equal(
       reference.proof.sharedPartsSha256,
       hash(
         stableJSON({
-          parts: [
-            {
-              id: reference.enclosurePartId,
-              role: 'container',
-              ...reference.enclosure,
-              paint: { kind: 'fill', fill: 'currentColor' },
-            },
-          ],
+          parts: shared.map((part) => ({ ...part, paint: { kind: 'fill', fill: 'currentColor' } })),
           viewBox: [0, 0, 24, 24],
           dimensions: [24, 24],
           placement: 'after-content',
@@ -229,12 +303,17 @@ export function validateStateReference(reference, author) {
       ),
       'независимый shared anatomy fingerprint',
     );
-  } else assert.ok(!Object.hasOwn(reference.proof, 'sharedPartsSha256'));
+  } else {
+    assert.equal(group, 'status-circle', 'expression requires shared anatomy proof');
+    assert.ok(!Object.hasOwn(reference.proof, 'sharedPartsSha256'));
+    assert.equal(reference.sharedParts, undefined);
+  }
   assert.deepEqual(
     reference.states.map((state) => state.id),
-    ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'],
+    contract.states,
   );
-  const ids = new Set([reference.enclosurePartId]);
+  const ids = new Set(contract.sharedParts.map((part) => part.id));
+  const sharedCount = reference.sharedPartIds?.length ?? 1;
   for (const state of reference.states) {
     assert.match(state.icon, /^[a-z][a-z0-9-]*$/);
     assert.equal(state.partId, `state-${state.id}`);
@@ -256,13 +335,19 @@ export function validateStateReference(reference, author) {
       hash(stableJSON(state.paths.map((path, index) => ({ index, ...path })))),
       state.author.pathFingerprintSha256,
     );
-    assert.equal(state.contentPartIds.length, state.paths.length - 1);
+    assert.equal(state.contentPartIds.length, state.paths.length - sharedCount);
+    assert.ok(state.contentPartIds.length > 0);
     for (const part of [state.partId, ...state.contentPartIds]) {
       assert.match(part, /^[a-z][a-z0-9-]*$/);
       assert.ok(!ids.has(part));
       ids.add(part);
     }
     assert.deepEqual(state.paths.at(-1), reference.enclosure);
+    if (reference.sharedParts)
+      assert.deepEqual(
+        state.paths.slice(state.contentPartIds.length),
+        reference.sharedParts.map(({ d, fillRule }) => ({ d, fillRule })),
+      );
   }
   assert.equal(
     hash(
@@ -314,6 +399,11 @@ figcaption { font-size:14px; } svg[slot=icon] { width:24px; height:24px; display
 section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:600; }
 .state-sample { display:flex; align-items:center; gap:24px; }
 .state-sample select { min-height:44px; padding:8px 12px; font:inherit; }
+.size-samples { display:flex; flex-wrap:wrap; align-items:end; gap:32px; margin-top:24px; }
+.size-samples figure { gap:12px; min-width:48px; }
+.size-sample-row { display:flex; align-items:end; gap:24px; }
+.size-sample-row span { display:grid; justify-items:center; gap:12px; font-size:12px; }
+@media (max-width:480px) { body { padding:24px; } .state-sample { flex-wrap:wrap; gap:16px; } }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
 
@@ -444,21 +534,23 @@ window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async it
 `;
 
 const STATE_FIXTURE = `
-import { render, renderStateSvg, compileStateEffect, stateCapabilities, exportStateTransition }
-  from '@labpics/icons/states/status-circle';
+import * as statusCircle from '@labpics/icons/states/status-circle';
 import { sequence } from '@labpics/motion';
 
+function mountStateConsumer(api, configuration) {
+const { render, renderStateSvg, compileStateEffect, stateCapabilities, exportStateTransition } = api;
 const stateCapabilitiesValue = stateCapabilities();
-const stateLabels = { attention: 'Внимание', confirmation: 'Подтверждение', decrease: 'Уменьшение',
-  dismissal: 'Закрытие', increase: 'Увеличение', question: 'Вопрос' };
+const stateLabels = configuration.labels;
 const stateSection = document.createElement('section');
-stateSection.setAttribute('aria-labelledby', 'state-heading');
+stateSection.dataset.stateGroup = stateCapabilitiesValue.group;
+stateSection.setAttribute('aria-labelledby', stateCapabilitiesValue.group + '-heading');
 const stateHeading = document.createElement('h2');
-stateHeading.id = 'state-heading'; stateHeading.textContent = 'Сменить знак';
+stateHeading.id = stateCapabilitiesValue.group + '-heading'; stateHeading.textContent = configuration.buttonLabel;
 const stateSample = document.createElement('div'); stateSample.className = 'state-sample';
 const stateButton = document.createElement('lab-button');
 for (const [name, value] of Object.entries({ size: 'l', icon: '', type: 'neutral',
-  'aria-label': 'Сменить знак', 'data-status-circle': '' })) stateButton.setAttribute(name, value);
+  'aria-label': configuration.buttonLabel,
+  'data-state-group': stateCapabilitiesValue.group })) stateButton.setAttribute(name, value);
 const initialState = renderStateSvg(stateCapabilitiesValue.defaultState);
 if (!initialState.ok) throw new Error(initialState.reason.code);
 stateButton.innerHTML = initialState.svg;
@@ -468,9 +560,15 @@ stateSvg.setAttribute('focusable', 'false');
 const stateNodes = new Map([...stateSvg.querySelectorAll('g[data-state][data-part]')]
   .map(node => [node.dataset.part, node]));
 const stateEnclosure = stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]');
+const sharedPartIds = stateCapabilitiesValue.sharedPartIds ?? [stateCapabilitiesValue.enclosurePartId];
+const sharedNodes = new Map(sharedPartIds.map(id => {
+  const node = stateSvg.querySelector('[data-part="' + id + '"]');
+  if (!node) throw new Error('Потеряна общая часть ' + id);
+  return [id, node];
+}));
 const originalStateNodes = [...stateSvg.querySelectorAll('*')];
 const stateSelect = document.createElement('select');
-stateSelect.setAttribute('aria-label', 'Состояние знака');
+stateSelect.setAttribute('aria-label', configuration.selectLabel);
 for (const state of stateCapabilitiesValue.states) {
   const option = document.createElement('option'); option.value = state.id;
   option.textContent = stateLabels[state.id]; stateSelect.append(option);
@@ -481,6 +579,28 @@ const stateStatus = document.createElement('span');
 stateStatus.setAttribute('role', 'status'); stateStatus.textContent = stateLabels[stateSelect.value];
 stateSample.append(stateButton, stateSelect, stateStatus);
 stateSection.append(stateHeading, stateSample); document.body.append(stateSection);
+const sizeSamples = [];
+if (configuration.samples) {
+  const scale = document.createElement('div'); scale.className = 'size-samples';
+  for (const state of stateCapabilitiesValue.states) {
+    const figure = document.createElement('figure');
+    const row = document.createElement('div'); row.className = 'size-sample-row';
+    for (const size of [16, 24, 48]) {
+    const result = render(state.id);
+    if (!result.ok) throw new Error(result.reason.code);
+    const sample = document.createElement('span'); sample.innerHTML = result.svg;
+    const svg = sample.querySelector('svg');
+    svg.dataset.opticalSize = String(size);
+    svg.dataset.sampleState = state.id;
+    svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+    svg.style.width = size + 'px'; svg.style.height = size + 'px';
+    sample.append(document.createTextNode(size + ' px')); row.append(sample); sizeSamples.push(svg);
+    }
+    const caption = document.createElement('figcaption'); caption.textContent = stateLabels[state.id];
+    figure.append(row, caption); scale.append(figure);
+  }
+  stateSection.append(scale);
+}
 let stateControl; let stateCompletion; let stateGeneration = 0;
 let stateTarget = stateSelect.value; let stateNativeClicks = 0;
 const stateEvents = [];
@@ -522,9 +642,20 @@ function stateOpacityWitness() {
   return { readStartedAt, readCompletedAt, partTimes, opacity, ...stateWitness() };
 }
 function statePaths(svg) {
-  return [...svg.querySelectorAll('path')].map(node => ({ d: node.getAttribute('d'),
+  return [...svg.querySelectorAll('path')].map(statePath);
+}
+function statePath(node) {
+  return { d: node.getAttribute('d'),
     fillRule: node.getAttribute('fill-rule') ?? 'nonzero', fill: node.getAttribute('fill'),
-    partId: node.dataset.part, role: node.dataset.role }));
+    partId: node.dataset.part, role: node.dataset.role };
+}
+function sharedAncestorsUnchanged(node) {
+  for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+    const style = getComputedStyle(parent);
+    if (Number(style.opacity) !== 1 || style.transform !== 'none') return false;
+    if (parent === stateSvg) return true;
+  }
+  return false;
 }
 function changeState(state, duration = 600) {
   const result = compileStateEffect(state, { duration,
@@ -554,7 +685,7 @@ function readState() {
   return { capabilities: stateCapabilitiesValue, opacity: stateOpacity(),
     viewBox: stateSvg.getAttribute('viewBox').split(/\\s+/).map(Number),
     dimensions: ['width', 'height'].map(name => Number(stateSvg.getAttribute(name))),
-    groups: [...stateNodes.values()].map(node => ({ id: node.dataset.state,
+    groups: [...stateSvg.querySelectorAll('g[data-state][data-part]')].map(node => ({ id: node.dataset.state,
       partId: node.dataset.part, role: node.dataset.role, paths: statePaths(node) })),
     enclosure: statePaths(stateSvg).at(-1), enclosureCount:
       stateSvg.querySelectorAll('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]').length,
@@ -562,6 +693,13 @@ function readState() {
       originalStateNodes.every((node, index) => node === stateSvg.querySelectorAll('*')[index]) &&
       stateEnclosure === stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]'),
     enclosureOpacity: Number(getComputedStyle(stateEnclosure).opacity),
+    sharedParts: [...stateSvg.querySelectorAll('[data-part]')]
+      .filter(node => sharedNodes.has(node.dataset.part)).map(node => ({ ...statePath(node),
+      count: stateSvg.querySelectorAll('[data-part="' + node.dataset.part + '"]').length,
+      opacity: Number(getComputedStyle(node).opacity), transform: getComputedStyle(node).transform,
+      inStateGroup: node.closest('g[data-state]') !== null,
+      ancestorsUnchanged: sharedAncestorsUnchanged(node),
+      identity: node === sharedNodes.get(node.dataset.part) })),
     connected: stateButton.isConnected, targetState: stateTarget,
     playback: stateControl?.state, events: stateEvents, nativeClicks: stateNativeClicks,
     target: { width: rectangle?.width, height: rectangle?.height,
@@ -589,31 +727,61 @@ function staticState(state) {
     viewBox: svg.getAttribute('viewBox').split(/\\s+/).map(Number),
     dimensions: ['width', 'height'].map(name => Number(svg.getAttribute(name))) };
 }
-const cycleCleanup = window.__iconsPacked.cleanup;
-window.__iconsPacked.cleanup = () => { stateControl?.stop(); stateSection.remove(); return cycleCleanup(); };
-const cycleReady = window.__iconsPacked.ready;
-window.__iconsPacked.ready = Promise.all([cycleReady, stateButton.updateComplete.then(() => {
+return { readState, changeState, settleState, staticState,
+  cleanup: () => { stateControl?.stop(); stateSection.remove(); },
+  ready: stateButton.updateComplete.then(() => {
   stateButton.shadowRoot.querySelector('button').addEventListener('click', () => stateNativeClicks++);
-})]);
-Object.assign(window.__iconsPacked, { readState, changeState, settleState, staticState,
+  }),
+  sizeSamples: () => sizeSamples.map(svg => ({ size: Number(svg.dataset.opticalSize),
+    state: svg.dataset.sampleState,
+    width: svg.getBoundingClientRect().width, height: svg.getBoundingClientRect().height,
+    paths: statePaths(svg), viewBox: svg.getAttribute('viewBox').split(/\\s+/).map(Number) })),
   stateDisposal: async () => ({ connected: stateButton.isConnected,
     completionStatus: (await stateCompletion)?.status, playback: stateControl?.state }),
   pauseState: milliseconds => { stateControl.pause(); if (milliseconds !== undefined) stateControl.seek(milliseconds); return readState(); },
   playState: () => { stateControl.play(); return readState(); },
   stateRefusals: () => ({
-    filled: renderStateSvg('question', { variant: 'filled' }),
-    nullRequest: compileStateEffect('question', null),
+    filled: renderStateSvg(stateCapabilitiesValue.defaultState, { variant: 'filled' }),
+    nullRequest: compileStateEffect(stateCapabilitiesValue.defaultState, null),
     unknown: render('missing'),
     exports: ['lottie', 'dotlottie', 'sf-symbols'].map(format =>
-      exportStateTransition('question', { format, duration: 240 })),
-    web: exportStateTransition('confirmation', { format: 'web-effect', duration: 240 }),
+      exportStateTransition(stateCapabilitiesValue.defaultState, { format, duration: 240 })),
+    web: exportStateTransition(stateCapabilitiesValue.states[1].id, { format: 'web-effect', duration: 240 }),
   }),
-});
+};
+}
+const statusConsumer = mountStateConsumer(statusCircle, ${JSON.stringify({
+  buttonLabel: STATE_GROUPS['status-circle'].buttonLabel,
+  selectLabel: STATE_GROUPS['status-circle'].selectLabel,
+  labels: STATE_GROUPS['status-circle'].labels,
+})});
+const stateConsumers = { 'status-circle': statusConsumer };
+const cycleCleanup = window.__iconsPacked.cleanup;
+window.__iconsPacked.cleanup = () => { for (const consumer of Object.values(stateConsumers)) consumer.cleanup(); return cycleCleanup(); };
+window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, statusConsumer.ready]);
+window.__iconsPacked.stateConsumers = stateConsumers;
+`;
+
+const EXPRESSION_FIXTURE = `
+import * as expressionFace from '@labpics/icons/states/expression-face';
+const expressionConsumer = mountStateConsumer(expressionFace,
+  ${JSON.stringify({
+    buttonLabel: STATE_GROUPS['expression-face'].buttonLabel,
+    selectLabel: STATE_GROUPS['expression-face'].selectLabel,
+    labels: STATE_GROUPS['expression-face'].labels,
+    samples: true,
+  })});
+stateConsumers['expression-face'] = expressionConsumer;
+window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expressionConsumer.ready]);
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2].includes(schemaVersion));
-  return FIXTURE + (schemaVersion === 2 ? STATE_FIXTURE : '');
+  assert.ok([1, 2, 3].includes(schemaVersion));
+  return (
+    FIXTURE +
+    (schemaVersion >= 2 ? STATE_FIXTURE : '') +
+    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '')
+  );
 }
 
 function npm(consumer, args) {
@@ -697,6 +865,71 @@ function sameMotion(effect, gesture, from, to, duration, reduced, variant) {
   );
 }
 
+export function installViewportPointerBlocker(element, point) {
+  if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y))
+    throw new Error('Pointer blocker требует конечную точку ввода');
+  const document = element.ownerDocument;
+  const blocker = document.createElement('div');
+  blocker.setAttribute('data-icons-packed-overlay', '');
+  const events = [];
+  blocker.setAttribute('data-icons-packed-pointer-events', '[]');
+  for (const type of ['pointerdown', 'pointerup', 'click'])
+    blocker.addEventListener(type, (event) => {
+      events.push({
+        type: event.type,
+        trusted: event.isTrusted,
+        target: event.target === blocker,
+        button: event.button,
+        x: event.clientX,
+        y: event.clientY,
+      });
+      blocker.setAttribute('data-icons-packed-pointer-events', JSON.stringify(events));
+    });
+  Object.assign(blocker.style, {
+    position: 'fixed',
+    inset: '0',
+    pointerEvents: 'auto',
+    zIndex: '2147483647',
+  });
+  document.body.append(blocker);
+  const rectangle = blocker.getBoundingClientRect();
+  const { clientWidth: width, clientHeight: height } = document.documentElement;
+  const witness = {
+    width,
+    height,
+    left: rectangle.left,
+    top: rectangle.top,
+    right: rectangle.right,
+    bottom: rectangle.bottom,
+    point: { x: point.x, y: point.y },
+    pointHit: document.elementFromPoint(point.x, point.y) === blocker,
+  };
+  if (
+    point.x < rectangle.left ||
+    point.y < rectangle.top ||
+    point.x >= rectangle.right ||
+    point.y >= rectangle.bottom ||
+    !witness.pointHit
+  )
+    throw new Error(`Pointer blocker не перехватывает заданную точку: ${JSON.stringify(witness)}`);
+  return witness;
+}
+
+export function verifyBlockedPointer(events, point) {
+  assert.deepEqual(
+    events,
+    ['pointerdown', 'pointerup', 'click'].map((type) => ({
+      type,
+      trusted: true,
+      target: true,
+      button: 0,
+      x: point.x,
+      y: point.y,
+    })),
+    'Overlay должен получить настоящий press/release/click в action point',
+  );
+}
+
 async function browserProof(browser, url, reference, out, records, browserErrors) {
   for (const reducedMotion of ['no-preference', 'reduce']) {
     const context = await browser.newContext({
@@ -746,29 +979,30 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.equal(await button.count(), 1, 'native accessible button не найден');
         const other = variant === 'outline' ? 'filled' : 'outline';
         const untouched = await page.evaluate((id) => window.__iconsPacked.read(id), other);
-        await host.evaluate((element) => {
-          const rectangle = element.getBoundingClientRect();
-          const blocker = document.createElement('div');
-          blocker.setAttribute('data-icons-packed-overlay', '');
-          Object.assign(blocker.style, {
-            position: 'fixed',
-            left: `${rectangle.x}px`,
-            top: `${rectangle.y}px`,
-            width: `${rectangle.width}px`,
-            height: `${rectangle.height}px`,
-            zIndex: '2147483647',
-          });
-          document.body.append(blocker);
-        });
+        let pointerControl;
         try {
-          await assert.rejects(host.click({ timeout: 750 }), (error) => {
-            assert.match(error.message, /intercepts pointer events/);
-            assert.match(error.message, /data-icons-packed-overlay/);
-            return true;
-          });
+          // Timeout до hit-test не доказывает перехват. Trial выполняет readiness без клика.
+          await host.click({ trial: true });
+          const rectangle = await host.boundingBox();
+          assert.ok(rectangle && rectangle.width > 0 && rectangle.height > 0);
+          const point = {
+            x: Math.floor(rectangle.x + rectangle.width / 2),
+            y: Math.floor(rectangle.y + rectangle.height / 2),
+          };
+          const coverage = await host.evaluate(installViewportPointerBlocker, point);
+          await page.mouse.click(point.x, point.y);
+          const events = JSON.parse(
+            await page
+              .locator('[data-icons-packed-overlay]')
+              .getAttribute('data-icons-packed-pointer-events'),
+          );
+          verifyBlockedPointer(events, point);
           assert.equal((await read()).nativeClicks, 0);
+          pointerControl = { point, coverage, events };
         } finally {
-          await page.locator('[data-icons-packed-overlay]').evaluate((element) => element.remove());
+          await page.locator('[data-icons-packed-overlay]').evaluateAll((elements) => {
+            for (const element of elements) element.remove();
+          });
         }
         // Playwright 1.55 обходит light DOM без assignedSlot: upstream #37777.
         // Host получает обычный pointer-click; native button отдельно подтверждает событие.
@@ -865,25 +1099,30 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         records.push({
           name: `${variant}:${reducedMotion}:real-button`,
           target: initial.target,
+          pointerControl,
           events: activated.events,
           provenance: initial.provenance,
           refusal,
         });
       }
-      if (reference.states) await stateBrowserProof(page, reference.states, reducedMotion, records);
+      for (const stateReference of Object.values(reference.states))
+        await stateBrowserProof(page, stateReference, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
         runningNativeAnimations: 0,
       });
-      if (reference.states) {
-        const disposed = await page.evaluate(() => window.__iconsPacked.stateDisposal());
+      for (const group of Object.keys(reference.states)) {
+        const disposed = await page.evaluate(
+          (group) => window.__iconsPacked.stateConsumers[group].stateDisposal(),
+          group,
+        );
         assert.equal(disposed.connected, false);
         assert.equal(
           disposed.completionStatus,
           reducedMotion === 'reduce' ? 'finished' : 'stopped',
         );
-        records.push({ name: `status-circle:${reducedMotion}:dispose`, ...disposed });
+        records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
       }
     } catch (error) {
       await page
@@ -961,39 +1200,87 @@ export function stateCapabilitiesReference(reference) {
   };
 }
 
-async function stateBrowserProof(page, reference, reducedMotion, records) {
-  const read = () => page.evaluate(() => window.__iconsPacked.readState());
-  const initial = await read();
-  assert.deepEqual(initial.capabilities, stateCapabilitiesReference(reference));
-  assert.deepEqual(initial.viewBox, [0, 0, 24, 24]);
-  assert.deepEqual(initial.dimensions, [24, 24]);
-  const enclosure = {
-    ...reference.enclosure,
+function sharedStateParts(reference) {
+  return (
+    reference.sharedParts ?? [
+      { ...reference.enclosure, id: reference.enclosurePartId, role: 'container' },
+    ]
+  );
+}
+
+export function staticStatePathsReference(reference, state) {
+  const shared = sharedStateParts(reference);
+  return state.paths.map((path, index) => ({
+    ...path,
     fill: 'currentColor',
-    partId: reference.enclosurePartId,
-    role: 'container',
-  };
-  assert.deepEqual(initial.enclosure, enclosure);
-  assert.equal(initial.enclosureCount, 1);
-  assert.equal(initial.enclosureOpacity, 1);
-  assert.equal(initial.identity, true);
+    partId:
+      index < state.contentPartIds.length
+        ? state.contentPartIds[index]
+        : shared[index - state.contentPartIds.length].id,
+    role:
+      index < state.contentPartIds.length
+        ? 'content'
+        : shared[index - state.contentPartIds.length].role,
+  }));
+}
+
+// Raw author reference определяет части независимо от установленного renderer.
+export function assertStateAnatomy(observation, reference) {
+  assert.deepEqual(observation.viewBox, [0, 0, 24, 24]);
+  assert.deepEqual(observation.dimensions, [24, 24]);
+  assert.equal(observation.identity, true);
   assert.deepEqual(
-    initial.groups,
+    observation.groups,
     reference.states.map((state) => ({
       id: state.id,
       partId: state.partId,
       role: 'state',
-      paths: state.paths.slice(0, -1).map((path, index) => ({
-        ...path,
-        fill: 'currentColor',
-        partId: state.contentPartIds[index],
-        role: 'content',
-      })),
+      paths: staticStatePathsReference(reference, state).slice(0, state.contentPartIds.length),
     })),
   );
+  assert.deepEqual(observation.enclosure, {
+    ...reference.enclosure,
+    fill: 'currentColor',
+    partId: reference.enclosurePartId,
+    role: 'container',
+  });
+  assert.equal(observation.enclosureCount, 1);
+  assert.equal(observation.enclosureOpacity, 1);
+  assert.deepEqual(
+    observation.sharedParts,
+    sharedStateParts(reference).map(({ id, ...part }) => ({
+      ...part,
+      fill: 'currentColor',
+      partId: id,
+      count: 1,
+      opacity: 1,
+      transform: 'none',
+      inStateGroup: false,
+      ancestorsUnchanged: true,
+      identity: true,
+    })),
+  );
+}
+
+async function stateBrowserProof(page, reference, reducedMotion, records) {
+  const evaluate = (operation, ...args) =>
+    page.evaluate(
+      ({ group, operation, args }) =>
+        window.__iconsPacked.stateConsumers[group][operation](...args),
+      { group: reference.group, operation, args },
+    );
+  const read = () => evaluate('readState');
+  const contract = stateReferenceContract(reference.group);
+  const alternatives = reference.states.filter((state) => state.id !== reference.defaultState);
+  const [first, second] = alternatives;
+  const selectedTarget = alternatives.at(-1).id;
+  const initial = await read();
+  assert.deepEqual(initial.capabilities, stateCapabilitiesReference(reference));
+  assertStateAnatomy(initial, reference);
   const oneHot = (observation, target) => {
     assert.equal(observation.targetState, target);
     assert.equal(observation.selected, target);
+    assert.equal(observation.statusText, contract.labels[target]);
     assert.deepEqual(
       observation.opacity,
       reference.states.map((state) => ({
@@ -1001,34 +1288,31 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
         value: state.id === target ? 1 : 0,
       })),
     );
-    assert.equal(observation.identity, true);
-    assert.equal(observation.enclosureCount, 1);
-    assert.equal(observation.enclosureOpacity, 1);
-    assert.deepEqual(observation.enclosure, enclosure);
-    assert.deepEqual(observation.groups, initial.groups);
+    assertStateAnatomy(observation, reference);
   };
   oneHot(initial, reference.defaultState);
   assert.deepEqual(initial.target, {
     width: 48,
     height: 48,
-    name: 'Сменить знак',
+    name: contract.buttonLabel,
     type: 'button',
     iconHidden: 'true',
     slotHidden: 'true',
   });
-  const host = page.locator('lab-button[data-status-circle]');
-  const button = host.getByRole('button', { name: 'Сменить знак', exact: true });
+  const host = page.locator(`lab-button[data-state-group="${reference.group}"]`);
+  const button = host.getByRole('button', { name: contract.buttonLabel, exact: true });
   assert.equal(await button.count(), 1);
   await host.click();
   await button.focus();
   await button.press('Enter');
   await button.press('Space');
   const activated = await read();
+  assertStateAnatomy(activated, reference);
   assert.equal(activated.nativeClicks, 3);
   assert.ok(activated.events.every((event) => event.trusted && event.composed && event.native));
   assert.equal(activated.events.length, 3);
   records.push({
-    name: `status-circle:${reducedMotion}:trusted-activation`,
+    name: `${reference.group}:${reducedMotion}:trusted-activation`,
     events: activated.events,
   });
   for (const [index, event] of activated.events.entries()) {
@@ -1041,75 +1325,70 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     if (reducedMotion === 'no-preference')
       sameStateOpacity(event.before, event.after, { eventIndex: index, ...event });
   }
-  await page.getByRole('combobox', { name: 'Состояние знака' }).selectOption('increase');
-  oneHot(await page.evaluate(() => window.__iconsPacked.settleState()), 'increase');
-  assert.equal((await read()).statusText, 'Увеличение');
+  await page.getByRole('combobox', { name: contract.selectLabel }).selectOption(selectedTarget);
+  oneHot(await evaluate('settleState'), selectedTarget);
   for (const state of reference.states) {
-    const svg = await page.evaluate((id) => window.__iconsPacked.staticState(id), state.id);
+    const svg = await evaluate('staticState', state.id);
     assert.equal(svg.ok, true);
     assert.deepEqual(svg.viewBox, state.viewBox);
     assert.deepEqual(svg.dimensions, state.dimensions);
-    assert.deepEqual(
-      svg.paths,
-      state.paths.map((path, index) => ({
-        ...path,
-        fill: 'currentColor',
-        partId:
-          index === state.paths.length - 1
-            ? reference.enclosurePartId
-            : state.contentPartIds[index],
-        role: index === state.paths.length - 1 ? 'container' : 'content',
-      })),
-    );
-    const result = await page.evaluate((id) => window.__iconsPacked.changeState(id, 160), state.id);
+    assert.deepEqual(svg.paths, staticStatePathsReference(reference, state));
+    const result = await evaluate('changeState', state.id, 160);
     stateEffect(result.effect, reference, state.id, reducedMotion === 'reduce' ? 0 : 160);
-    const terminal = await page.evaluate(() => window.__iconsPacked.settleState());
+    const terminal = await evaluate('settleState');
     assert.equal(terminal.completionStatus, 'finished');
     oneHot(terminal, state.id);
     records.push({
-      name: `status-circle:${state.id}:${reducedMotion}`,
+      name: `${reference.group}:${state.id}:${reducedMotion}`,
       source: state.author,
       effect: result.effect,
       terminal: terminal.opacity,
       identity: terminal.identity,
+      sharedParts: terminal.sharedParts,
     });
   }
   if (reducedMotion === 'no-preference') {
-    await page.evaluate(() => window.__iconsPacked.changeState('question', 0));
-    await page.evaluate(() => window.__iconsPacked.settleState());
-    await page.evaluate(() => window.__iconsPacked.changeState('confirmation', 800));
-    const paused = await page.evaluate(() => window.__iconsPacked.pauseState(280));
+    await evaluate('changeState', reference.defaultState, 0);
+    await evaluate('settleState');
+    await evaluate('changeState', first.id, 800);
+    const paused = await evaluate('pauseState', 280);
+    assertStateAnatomy(paused, reference);
     assert.equal(paused.playback, 'paused');
-    const mark = paused.opacity.find((item) => item.partId === 'state-confirmation').value;
+    const mark = paused.opacity.find((item) => item.partId === first.partId).value;
     assert.ok(mark > 0.15 && mark < 0.6, 'прерывание требует видимой промежуточной позы');
     await page.evaluate(async () => {
       await new Promise(requestAnimationFrame);
       await new Promise(requestAnimationFrame);
     });
     sameStateOpacity(paused.opacity, (await read()).opacity);
-    const resumed = await page.evaluate(() => window.__iconsPacked.playState());
+    const resumed = await evaluate('playState');
+    assertStateAnatomy(resumed, reference);
     assert.equal(resumed.playback, 'running');
-    await page.evaluate(() => window.__iconsPacked.pauseState(280));
-    const reverse = await page.evaluate(() => window.__iconsPacked.changeState('question', 300));
+    await evaluate('pauseState', 280);
+    const reverse = await evaluate('changeState', reference.defaultState, 300);
     sameStateOpacity(paused.opacity, reverse.before);
     sameStateOpacity(reverse.before, reverse.after, reverse.continuity);
-    stateEffect(reverse.effect, reference, 'question', 300);
-    const reversing = await page.evaluate(() => window.__iconsPacked.pauseState(90));
-    const newer = await page.evaluate(() => window.__iconsPacked.changeState('attention', 300));
+    stateEffect(reverse.effect, reference, reference.defaultState, 300);
+    const reversing = await evaluate('pauseState', 90);
+    assertStateAnatomy(reversing, reference);
+    const newer = await evaluate('changeState', second.id, 300);
     sameStateOpacity(reversing.opacity, newer.before);
     sameStateOpacity(newer.before, newer.after, newer.continuity);
-    const mixture = await page.evaluate(() => window.__iconsPacked.pauseState(120));
+    const mixture = await evaluate('pauseState', 120);
+    assertStateAnatomy(mixture, reference);
     assert.equal(
       mixture.opacity.filter((item) => item.value > 0.01).length,
       3,
       'третье намерение должно сохранить всю прежнюю смесь',
     );
-    const latest = await page.evaluate(() => window.__iconsPacked.changeState('increase', 200));
+    const latest = await evaluate('changeState', first.id, 200);
     sameStateOpacity(mixture.opacity, latest.before);
     sameStateOpacity(latest.before, latest.after, latest.continuity);
-    oneHot(await page.evaluate(() => window.__iconsPacked.settleState()), 'increase');
+    stateEffect(newer.effect, reference, second.id, 300);
+    stateEffect(latest.effect, reference, first.id, 200);
+    oneHot(await evaluate('settleState'), first.id);
     records.push({
-      name: 'status-circle:paused-reverse-newer-state',
+      name: `${reference.group}:paused-reverse-newer-state`,
       paused: paused.opacity,
       reverse,
       newer,
@@ -1117,7 +1396,22 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
       latest,
     });
   }
-  const refusal = await page.evaluate(() => window.__iconsPacked.stateRefusals());
+  if (reference.group === 'expression-face') {
+    const samples = await evaluate('sizeSamples');
+    assert.equal(samples.length, reference.states.length * 3);
+    for (const [index, state] of reference.states.entries())
+      for (const [offset, size] of [16, 24, 48].entries())
+        assert.deepEqual(samples[index * 3 + offset], {
+          state: state.id,
+          size,
+          width: size,
+          height: size,
+          viewBox: state.viewBox,
+          paths: staticStatePathsReference(reference, state),
+        });
+    records.push({ name: `${reference.group}:${reducedMotion}:author-size-samples`, samples });
+  }
+  const refusal = await evaluate('stateRefusals');
   for (const [key, code] of [
     ['filled', 'VARIANT_UNSUPPORTED'],
     ['nullRequest', 'INVALID_REQUEST'],
@@ -1131,12 +1425,12 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assert.equal(result.reason.code, 'FORMAT_UNSUPPORTED');
   }
   assert.equal(refusal.web.ok, true);
-  stateEffect(refusal.web.effect, reference, 'confirmation', 240);
-  records.push({ name: `status-circle:${reducedMotion}:public-refusals`, refusal });
-  const disposing = await page.evaluate(() => window.__iconsPacked.changeState('dismissal', 1000));
-  stateEffect(disposing.effect, reference, 'dismissal', reducedMotion === 'reduce' ? 0 : 1000);
+  stateEffect(refusal.web.effect, reference, reference.states[1].id, 240);
+  records.push({ name: `${reference.group}:${reducedMotion}:public-refusals`, refusal });
+  const disposing = await evaluate('changeState', selectedTarget, 1000);
+  stateEffect(disposing.effect, reference, selectedTarget, reducedMotion === 'reduce' ? 0 : 1000);
   if (reducedMotion === 'no-preference')
-    await page.evaluate(() => window.__iconsPacked.pauseState(200));
+    assertStateAnatomy(await evaluate('pauseState', 200), reference);
 }
 
 export async function main(args = process.argv.slice(2)) {
@@ -1185,10 +1479,7 @@ export async function main(args = process.argv.slice(2)) {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
     const subject = validateSubject(JSON.parse(subjectBytes));
     const fixture = consumerFixture(subject.schemaVersion);
-    const requiredEntries = [
-      ...REQUIRED_PUBLIC_ENTRIES,
-      ...(subject.schemaVersion === 2 ? [STATE_ENTRY] : []),
-    ];
+    const requiredEntries = consumerPublicEntries(subject.schemaVersion);
     receipt.subject = subject;
     receipt.subjectSha256 = hash(subjectBytes);
     const source = (args) =>
@@ -1375,7 +1666,7 @@ export async function main(args = process.argv.slice(2)) {
       browserProof(
         browser,
         `http://127.0.0.1:${server.address().port}`,
-        { ...subject.authorReference, states: subject.stateReference },
+        { ...subject.authorReference, states: subjectStateReferences(subject) },
         out,
         records,
         browserErrors,

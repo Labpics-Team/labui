@@ -13,10 +13,15 @@ import {
   readCycleMaster,
   stateReference,
   platformMeasurementLog,
+  consumerVisualLog,
+  consumerReceiptLog,
   validatePlatformMeasurement,
   validateSourcePin,
 } from './prepare-icons-inputs.mjs';
 import {
+  assertStateAnatomy,
+  staticStatePathsReference,
+  subjectStateReferences,
   stateCapabilitiesReference,
   validateStateReference,
   validateSubject,
@@ -442,6 +447,264 @@ async function stateFixture(t, schemaVersion = 1) {
   return { root, manifest, document, texts };
 }
 
+const FACE_SHARED = [
+  { id: 'face-left-eye', role: 'content', d: 'M6 8L8 8L8 10L6 10Z', fillRule: 'nonzero' },
+  { id: 'face-right-eye', role: 'content', d: 'M15 8L18 8L18 10L15 10Z', fillRule: 'nonzero' },
+  { id: 'face-enclosure', role: 'container', d: SHELL, fillRule: 'evenodd' },
+];
+async function expressionFixture(t) {
+  const fixture = await stateFixture(t, 2);
+  const { root, manifest, document } = fixture;
+  const group = {
+    law: 'enclosure.replace',
+    defaultState: 'aloof',
+    enclosurePartId: 'face-enclosure',
+    sharedParts: FACE_SHARED.map(({ id, role }) => ({ id, role })),
+    states: {},
+  };
+  document.groups['expression-face'] = group;
+  const texts = {};
+  for (const [index, id] of ['aloof', 'sad', 'smile'].entries()) {
+    const paths = [
+      { d: `M8 ${14 + index}L16 ${14 + index}L12 18Z`, fillRule: 'nonzero' },
+      ...FACE_SHARED.map(({ d, fillRule }) => ({ d, fillRule })),
+    ];
+    const text = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g>${paths
+      .map((path) => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`)
+      .join('')}</g></svg>`;
+    const file = `masters/figma/${PIN.figma.version}/Outline/${id}.svg`;
+    const fingerprint = pathFingerprint(paths);
+    const record = {
+      master: file,
+      sha256: hash(text),
+      bytes: Buffer.byteLength(text),
+      nodeId: `2:${index + 1}`,
+      nodeSha256: hash(`face-${id}`),
+      normalizedSource: {
+        sha256: hash(`face-normalized-${id}`),
+        pathFingerprintSha256: fingerprint,
+      },
+    };
+    manifest.icons[id] = { outline: record };
+    group.states[id] = {
+      icon: id,
+      variant: 'outline',
+      masterSha256: record.sha256,
+      pathFingerprintSha256: fingerprint,
+      contentPartIds: [`${id}-mouth`],
+    };
+    await writeFile(join(root, file), text);
+    texts[id] = { text, file, paths };
+  }
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+  return { ...fixture, texts };
+}
+
+async function replaceExpressionPaths(fixture, id, paths) {
+  const { root, manifest, document, texts } = fixture;
+  const text = texts[id].text
+    .replace(/<path[^>]*\/>/g, '')
+    .replace(
+      '</g>',
+      `${paths.map((path) => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`).join('')}</g>`,
+    );
+  const record = manifest.icons[id].outline;
+  record.sha256 = hash(text);
+  record.bytes = Buffer.byteLength(text);
+  record.normalizedSource.pathFingerprintSha256 = pathFingerprint(paths);
+  Object.assign(document.groups['expression-face'].states[id], {
+    masterSha256: record.sha256,
+    pathFingerprintSha256: record.normalizedSource.pathFingerprintSha256,
+  });
+  await writeFile(join(root, texts[id].file), text);
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+}
+
+test('expression raw oracle preserves two ordered eyes and enclosure without producer code', async (t) => {
+  const { root, texts } = await expressionFixture(t);
+  await mkdir(join(root, 'scripts/lib'), { recursive: true });
+  await writeFile(
+    join(root, 'scripts/lib/author-state-groups.js'),
+    'throw new Error("POISONED_COMPILER");',
+  );
+  const reference = await stateReference(root, PIN, 'expression-face');
+  assert.deepEqual(reference.sharedParts, FACE_SHARED);
+  assert.deepEqual(
+    reference.sharedPartIds,
+    FACE_SHARED.map((part) => part.id),
+  );
+  assert.equal(validateStateReference(reference, PIN.figma, 'expression-face'), reference);
+  for (const state of reference.states) {
+    assert.deepEqual(state.paths, texts[state.id].paths);
+    assert.deepEqual(state.contentPartIds, [`${state.id}-mouth`]);
+    assert.deepEqual(staticStatePathsReference(reference, state), [
+      {
+        ...texts[state.id].paths[0],
+        fill: 'currentColor',
+        partId: `${state.id}-mouth`,
+        role: 'content',
+      },
+      ...FACE_SHARED.map(({ id, ...part }) => ({ ...part, fill: 'currentColor', partId: id })),
+    ]);
+  }
+  for (const mutate of [
+    (value) => {
+      Reflect.deleteProperty(value, 'sharedPartIds');
+    },
+    (value) => {
+      Reflect.deleteProperty(value, 'sharedParts');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.proof, 'sharedPartsSha256');
+    },
+    (value) => {
+      value.sharedPartIds.reverse();
+    },
+    (value) => {
+      value.sharedParts[0].role = 'container';
+    },
+    (value) => {
+      value.sharedParts[1].d = value.sharedParts[0].d;
+    },
+  ]) {
+    const changed = structuredClone(reference);
+    mutate(changed);
+    assert.throws(() => validateStateReference(changed, PIN.figma, 'expression-face'));
+  }
+});
+
+test('rehashed expression eye edits, reordering and missing parts refuse while mouth changes remain valid', async (t) => {
+  for (const mutate of [
+    (paths) => {
+      paths[1].d = paths[1].d.replace('6 8', '5 8');
+    },
+    (paths) => {
+      [paths[1], paths[2]] = [paths[2], paths[1]];
+    },
+    (paths) => {
+      paths.splice(1, 1);
+    },
+  ]) {
+    const fixture = await expressionFixture(t);
+    const paths = structuredClone(fixture.texts.sad.paths);
+    mutate(paths);
+    await replaceExpressionPaths(fixture, 'sad', paths);
+    await assert.rejects(stateReference(fixture.root, PIN, 'expression-face'));
+  }
+  const healthy = await expressionFixture(t);
+  const paths = structuredClone(healthy.texts.sad.paths);
+  paths[0].d = 'M8 14L16 14L12 17Z';
+  await replaceExpressionPaths(healthy, 'sad', paths);
+  const reference = await stateReference(healthy.root, PIN, 'expression-face');
+  assert.equal(reference.states.find((state) => state.id === 'sad').paths[0].d, paths[0].d);
+  assert.deepEqual(reference.sharedParts, FACE_SHARED);
+});
+
+test('expression semantic declaration refuses changed shared order, roles and incomplete coverage', async (t) => {
+  const { root, document } = await expressionFixture(t);
+  for (const mutate of [
+    (group) => {
+      group.sharedParts.reverse();
+    },
+    (group) => {
+      group.sharedParts[0].role = 'container';
+    },
+    (group) => {
+      group.sharedParts.pop();
+    },
+    (group) => {
+      Reflect.deleteProperty(group.states, 'smile');
+    },
+    (group) => {
+      group.states.aloof.contentPartIds.push('another-mouth');
+    },
+    (group) => {
+      group.states.aloof.contentPartIds[0] = 'face-left-eye';
+    },
+  ]) {
+    const changed = structuredClone(document);
+    mutate(changed.groups['expression-face']);
+    await writeJSON(root, 'semantics/author-state-groups.json', changed);
+    await assert.rejects(stateReference(root, PIN, 'expression-face'));
+  }
+});
+
+test('browser anatomy oracle rejects animated, duplicated, reordered or replaced shared face nodes', async (t) => {
+  const { root, texts } = await expressionFixture(t);
+  const reference = await stateReference(root, PIN, 'expression-face');
+  const observation = {
+    viewBox: [0, 0, 24, 24],
+    dimensions: [24, 24],
+    identity: true,
+    groups: reference.states.map((state) => ({
+      id: state.id,
+      partId: `state-${state.id}`,
+      role: 'state',
+      paths: [
+        {
+          ...texts[state.id].paths[0],
+          fill: 'currentColor',
+          partId: `${state.id}-mouth`,
+          role: 'content',
+        },
+      ],
+    })),
+    enclosure: {
+      d: SHELL,
+      fillRule: 'evenodd',
+      fill: 'currentColor',
+      partId: 'face-enclosure',
+      role: 'container',
+    },
+    enclosureCount: 1,
+    enclosureOpacity: 1,
+    sharedParts: FACE_SHARED.map(({ id, ...part }) => ({
+      ...part,
+      partId: id,
+      fill: 'currentColor',
+      count: 1,
+      opacity: 1,
+      transform: 'none',
+      inStateGroup: false,
+      ancestorsUnchanged: true,
+      identity: true,
+    })),
+  };
+  assert.doesNotThrow(() => assertStateAnatomy(observation, reference));
+  for (const mutate of [
+    (value) => {
+      value.sharedParts[0].opacity = 0.9;
+    },
+    (value) => {
+      value.sharedParts[0].transform = 'matrix(1, 0, 0, 1, 1, 0)';
+    },
+    (value) => {
+      value.sharedParts[0].inStateGroup = true;
+    },
+    (value) => {
+      value.sharedParts[0].ancestorsUnchanged = false;
+    },
+    (value) => {
+      value.sharedParts[0].count = 2;
+    },
+    (value) => {
+      value.sharedParts[0].identity = false;
+    },
+    (value) => {
+      value.sharedParts.reverse();
+    },
+    (value) => {
+      value.groups[0].paths.push(value.sharedParts[0]);
+    },
+  ]) {
+    const changed = structuredClone(observation);
+    mutate(changed);
+    assert.throws(() => assertStateAnatomy(changed, reference));
+  }
+});
+
 test('multi-path author reader preserves countershapes while cycle remains one whole path', () => {
   const source = MASTERS.outline.replace(
     '</g>',
@@ -654,6 +917,66 @@ test('schema2 requires the state reference while historical schema1 cycle inputs
   }
 });
 
+test('schema3 requires both independent state references and dispatches every group', async (t) => {
+  const { root } = await expressionFixture(t);
+  const authorReferenceValue = await authorReference(root, PIN);
+  const status = await stateReference(root, PIN);
+  const expression = await stateReference(root, PIN, 'expression-face');
+  const packages = Object.fromEntries(
+    [
+      ['icons', '@labpics/icons'],
+      ['uiCore', '@labpics/ui-core'],
+      ['uiShadow', '@labpics/ui-shadow'],
+    ].map(([key, name]) => [
+      key,
+      {
+        name,
+        version: '0.1.0',
+        archiveSha256: 'a'.repeat(64),
+        archiveBytes: 1,
+        sourceCommit: PIN.sourceCommit,
+      },
+    ]),
+  );
+  const subject = {
+    schemaVersion: 3,
+    packages,
+    authorReference: authorReferenceValue,
+    stateReferences: { 'status-circle': status, 'expression-face': expression },
+  };
+  assert.equal(validateSubject(subject), subject);
+  assert.equal(subjectStateReferences(subject), subject.stateReferences);
+  assert.deepEqual(subjectStateReferences({ schemaVersion: 2, stateReference: status }), {
+    'status-circle': status,
+  });
+  assert.deepEqual(subjectStateReferences({ schemaVersion: 1 }), {});
+  for (const mutate of [
+    (value) => {
+      Reflect.deleteProperty(value.stateReferences, 'expression-face');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.stateReferences, 'status-circle');
+    },
+    (value) => {
+      value.stateReference = status;
+    },
+    (value) => {
+      value.stateReferences.extra = status;
+    },
+    (value) => {
+      value.stateReferences['expression-face'] = status;
+    },
+    (value) => {
+      value.schemaVersion = 2;
+      value.stateReference = status;
+    },
+  ]) {
+    const changed = structuredClone(subject);
+    mutate(changed);
+    assert.throws(() => validateSubject(changed));
+  }
+});
+
 function measurementFixture() {
   return {
     sourceSha: PIN.sourceCommit,
@@ -740,8 +1063,106 @@ test('log block reconstructs exact report bytes with bounded indexed lines and a
   assert.throws(() => gunzipSync(Buffer.from(chunks.slice(0, -1).join(''), 'base64')));
 });
 
+// Независимый однопиксельный PNG; это transport witness, не render продукта.
+const PNG_WITNESS = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+xuo4AAAAASUVORK5CYII=',
+  'base64',
+);
+
+function decodeConsumerEvidence(stdout, prefix, digestField, file) {
+  const all = stdout.split('\n').filter((line) => line.startsWith(`${prefix}_`));
+  const starts = all.flatMap((line, index) =>
+    line.startsWith(`${prefix}_BEGIN `) &&
+    (file === undefined || JSON.parse(line.slice(`${prefix}_BEGIN `.length)).file === file)
+      ? [index]
+      : [],
+  );
+  assert.equal(starts.length, 1, 'нужен один однозначный evidence block');
+  const end = all.findIndex(
+    (line, index) => index > starts[0] && line.startsWith(`${prefix}_END `),
+  );
+  assert.ok(end > starts[0]);
+  const lines = all.slice(starts[0], end + 1);
+  const metadata = JSON.parse(lines[0].slice(`${prefix}_BEGIN `.length));
+  assert.equal(metadata.encoding, 'gzip-base64');
+  assert.equal(lines.at(-1), `${prefix}_END ${metadata[digestField]}`);
+  const chunks = lines.slice(1, -1).map((line, index) => {
+    const fields = line.split(' ');
+    assert.equal(fields[0], `${prefix}_CHUNK`);
+    assert.equal(Number(fields[1]), index);
+    assert.match(fields[2], /^[A-Za-z0-9+/=]{1,4096}$/);
+    return fields[2];
+  });
+  assert.equal(chunks.length, metadata.chunks);
+  const compressed = Buffer.from(chunks.join(''), 'base64');
+  assert.equal(compressed.length, metadata.compressedBytes);
+  const bytes = gunzipSync(compressed, { maxOutputLength: 4 * 1024 * 1024 });
+  assert.equal(bytes.length, metadata.bytes);
+  assert.equal(hash(bytes), metadata[digestField]);
+  return { metadata, bytes };
+}
+
+test('consumer PNG readback keeps exact bytes, dimensions and both source identities', () => {
+  for (const mode of ['no-preference', 'reduce', 'no-preference-failure', 'reduce-failure']) {
+    const file = `result/${mode}.png`;
+    const uiCommit = 'b'.repeat(40);
+    const block = consumerVisualLog(PNG_WITNESS, file, PIN.sourceCommit, uiCommit);
+    const { metadata, bytes } = decodeConsumerEvidence(
+      block,
+      'LABUI_ICONS_CONSUMER_VISUAL',
+      'pngSha256',
+    );
+    assert.deepEqual(bytes, PNG_WITNESS);
+    assert.deepEqual(
+      [metadata.file, metadata.sourceSha, metadata.uiCommit, metadata.width, metadata.height],
+      [file, PIN.sourceCommit, uiCommit, 1, 1],
+    );
+    assert.throws(() =>
+      decodeConsumerEvidence(
+        block.replace(/_END [a-f0-9]+/, `_END ${'0'.repeat(64)}`),
+        'LABUI_ICONS_CONSUMER_VISUAL',
+        'pngSha256',
+      ),
+    );
+  }
+});
+
+test('consumer readback refuses unrelated files, unbounded PNG and incomplete receipt', () => {
+  const visual = (
+    bytes = PNG_WITNESS,
+    file = 'result/reduce.png',
+    sha = PIN.sourceCommit,
+    ui = PIN.sourceCommit,
+  ) => consumerVisualLog(bytes, file, sha, ui);
+  assert.throws(() => visual(PNG_WITNESS, 'result/secret.png'));
+  assert.throws(() => visual(PNG_WITNESS, '../reduce.png'));
+  assert.throws(() => visual(PNG_WITNESS, 'result/reduce.png', 'main'));
+  assert.throws(() => visual(PNG_WITNESS, 'result/reduce.png', PIN.sourceCommit, 'main'));
+  assert.throws(() => visual(Buffer.alloc(4 * 1024 * 1024 + 1)));
+  assert.throws(() => visual(PNG_WITNESS.subarray(0, -1)));
+  for (const [offset, value] of [
+    [0, 0],
+    [8, 0],
+    [12, 0],
+    [16, 0xffffffff],
+    [20, 0],
+  ]) {
+    const changed = Buffer.from(PNG_WITNESS);
+    changed.writeUInt32BE(value, offset);
+    assert.throws(() => visual(changed));
+  }
+  for (const receipt of [
+    { schemaVersion: 1, outcome: 'running', records: [] },
+    { schemaVersion: 1, outcome: 'failed', records: [] },
+    { schemaVersion: 1, outcome: 'passed' },
+  ])
+    assert.throws(() =>
+      consumerReceiptLog(Buffer.from(JSON.stringify(receipt)), PIN.sourceCommit, PIN.sourceCommit),
+    );
+});
+
 async function summaryFixture(t, schemaVersion) {
-  const { root } = await stateFixture(t);
+  const { root } = schemaVersion === 3 ? await expressionFixture(t) : await stateFixture(t);
   const author = await authorReference(root, PIN);
   const states = await stateReference(root, PIN);
   const packages = Object.fromEntries(
@@ -765,6 +1186,14 @@ async function summaryFixture(t, schemaVersion) {
     packages,
     authorReference: author,
     ...(schemaVersion === 2 ? { stateReference: states } : {}),
+    ...(schemaVersion === 3
+      ? {
+          stateReferences: {
+            'status-circle': states,
+            'expression-face': await stateReference(root, PIN, 'expression-face'),
+          },
+        }
+      : {}),
   };
   const subjectBytes = JSON.stringify(subject);
   const report = measurementFixture();
@@ -776,6 +1205,7 @@ async function summaryFixture(t, schemaVersion) {
   };
   const source = {
     schemaVersion: 1,
+    uiCommit: PIN.sourceCommit,
     pin: PIN,
     subjectSha256: hash(subjectBytes),
     files: [
@@ -787,7 +1217,7 @@ async function summaryFixture(t, schemaVersion) {
         bytes: 10,
       },
     ],
-    ...(schemaVersion === 2
+    ...(schemaVersion >= 2
       ? {
           measurement: {
             file: 'platform-measurement.json',
@@ -808,9 +1238,9 @@ async function summaryFixture(t, schemaVersion) {
   await writeFile(join(output, 'inputs/source-receipt.json'), JSON.stringify(source));
   await writeFile(
     join(output, 'result/receipt.json'),
-    JSON.stringify({ outcome: 'passed', records: [] }),
+    JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [] }),
   );
-  if (schemaVersion === 2)
+  if (schemaVersion >= 2)
     await writeFile(join(output, 'inputs/platform-measurement.json'), reportBytes);
   const invoke = () =>
     execFileSync(
@@ -825,24 +1255,89 @@ async function summaryFixture(t, schemaVersion) {
   return { output, source, report, invoke };
 }
 
-test('schema2 summary publishes the authenticated report and rejects missing or wrong-source output', async (t) => {
-  const fixture = await summaryFixture(t, 2);
+test('summary transmits successful raw observations and PNG authenticated against RESULT files', async (t) => {
+  const fixture = await summaryFixture(t, 3);
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [{ name: 'expression-face:synthetic-witness', opacity: 0.375 }],
+  };
+  const receiptBytes = Buffer.from(JSON.stringify(receipt));
+  await writeFile(join(fixture.output, 'result/receipt.json'), receiptBytes);
+  await writeFile(join(fixture.output, 'result/reduce.png'), PNG_WITNESS);
+  await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
   const stdout = fixture.invoke();
-  assert.match(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
-  assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
-  const changed = { ...fixture.report, sourceSha: 'b'.repeat(40) };
-  const bytes = JSON.stringify(changed);
-  fixture.source.measurement.sha256 = hash(bytes);
-  fixture.source.measurement.bytes = Buffer.byteLength(bytes);
-  await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), bytes);
-  await writeFile(
-    join(fixture.output, 'inputs/source-receipt.json'),
-    JSON.stringify(fixture.source),
-  );
-  assert.throws(fixture.invoke, /measurement относится к другому source SHA/);
-  await rm(join(fixture.output, 'inputs/platform-measurement.json'));
-  assert.throws(fixture.invoke, /ENOENT/);
+  const summary = JSON.parse(stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+  for (const [prefix, digestField, file, expected] of [
+    ['LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/reduce.png', PNG_WITNESS],
+    ['LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/no-preference.png', PNG_WITNESS],
+    ['LABUI_ICONS_CONSUMER_RECEIPT', 'receiptSha256', 'result/receipt.json', receiptBytes],
+  ]) {
+    const { metadata, bytes } = decodeConsumerEvidence(stdout, prefix, digestField, file);
+    const material = summary.files.find((item) => item.path === file);
+    assert.deepEqual(bytes, expected);
+    assert.equal(metadata[digestField], material.sha256);
+    assert.equal(metadata.bytes, material.bytes);
+    assert.equal(metadata.sourceSha, summary.source.pin.sourceCommit);
+    assert.equal(metadata.uiCommit, summary.source.uiCommit);
+  }
 });
+
+test('oversized raw failure and refused PNG keep the limited continuity RESULT', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  const stateContinuity = { differences: [{ partId: 'mouth', before: 0.375, after: 0.25 }] };
+  await writeFile(
+    join(fixture.output, 'result/receipt.json'),
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'failed',
+      records: [],
+      failure: { phase: 'browser', stateContinuity, message: 'x'.repeat(4 * 1024 * 1024) },
+    }),
+  );
+  for (const invalidVisual of [false, true]) {
+    if (invalidVisual) await writeFile(join(fixture.output, 'result/reduce.png'), 'not a PNG');
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        fixture.output,
+      ],
+      { encoding: 'utf8', timeout: 5000 },
+    );
+    assert.equal(result.status, 1);
+    assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    assert.deepEqual(summary.failure, { phase: 'browser', stateContinuity });
+    assert.equal(summary.outcome, 'failed');
+    assert.ok(result.stdout.length < 5000, 'failure.message не передаётся');
+    assert.deepEqual(
+      summary.readbackFailure,
+      invalidVisual ? { code: 'EVIDENCE_REFUSED', file: 'result/reduce.png' } : undefined,
+    );
+  }
+});
+
+for (const schema of [2, 3])
+  test(`schema${schema} summary publishes the authenticated report and rejects missing or wrong-source output`, async (t) => {
+    const fixture = await summaryFixture(t, schema);
+    const stdout = fixture.invoke();
+    assert.match(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
+    assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
+    const changed = { ...fixture.report, sourceSha: 'b'.repeat(40) };
+    const bytes = JSON.stringify(changed);
+    fixture.source.measurement.sha256 = hash(bytes);
+    fixture.source.measurement.bytes = Buffer.byteLength(bytes);
+    await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), bytes);
+    await writeFile(
+      join(fixture.output, 'inputs/source-receipt.json'),
+      JSON.stringify(fixture.source),
+    );
+    assert.throws(fixture.invoke, /measurement относится к другому source SHA/);
+    await rm(join(fixture.output, 'inputs/platform-measurement.json'));
+    assert.throws(fixture.invoke, /ENOENT/);
+  });
 
 test('historical schema1 summary does not need a measurement report', async (t) => {
   const fixture = await summaryFixture(t, 1);
@@ -882,6 +1377,7 @@ test('failed receipt waits for a complete large report through asynchronous stdo
     await writeFile(
       join(fixture.output, 'result/receipt.json'),
       JSON.stringify({
+        schemaVersion: 1,
         outcome,
         records: [],
         ...(outcome === 'failed' ? { failure: { phase: 'mock-continuity' } } : {}),
@@ -938,9 +1434,8 @@ test('failed receipt waits for a complete large report through asynchronous stdo
       bytes,
     );
     assert.ok(
-      result.stdout.includes(
-        `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}\nLABUI_ICONS_CONSUMER_RESULT `,
-      ),
+      result.stdout.indexOf(`LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}\n`) <
+        result.stdout.indexOf('LABUI_ICONS_CONSUMER_RESULT '),
     );
     const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
     assert.equal(summary.outcome, outcome);
@@ -1021,6 +1516,7 @@ test('failed schema1 and schema2 summaries preserve an optional native continuit
         { encoding: 'utf8', timeout: 5000 },
       );
       assert.equal(result.status, 1, result.stderr);
+      assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
       const line = result.stdout
         .split('\n')
         .find((item) => item.startsWith('LABUI_ICONS_CONSUMER_RESULT '));

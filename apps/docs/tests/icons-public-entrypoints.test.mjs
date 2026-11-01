@@ -9,6 +9,8 @@ import {
   assertConsumerModuleGraph,
   assertIconsImport,
   assertPublicEntryModules,
+  consumerFixture,
+  consumerPublicEntries,
 } from './icons-packed.mjs';
 
 async function resolvedFixture(layout) {
@@ -204,6 +206,7 @@ test('wrong public symbols and whole catalogs refuse at the complete graph gate 
     '@labpics/icons/ir/render',
     '@labpics/icons/motion',
     '@labpics/icons/states/status-circle',
+    '@labpics/icons/states/expression-face',
     '@labpics/ui-core/button',
     './shared.mjs',
   ]) {
@@ -246,4 +249,41 @@ test('state consumer requires the resolved group contribution without fixing its
       ),
     /entry не разрешён/,
   );
+});
+
+test('schema3 requires both sliced state imports and one generic state executor', async () => {
+  const { root, entries } = await resolvedFixture({
+    button: 'button.mjs',
+    reload: 'reload.mjs',
+    motion: 'motion.mjs',
+  });
+  const imports = new Map();
+  const modules = new Set(Object.values(entries));
+  for (const group of ['status-circle', 'expression-face']) {
+    const source = `@labpics/icons/states/${group}`;
+    const entry = join(root, `node_modules/@labpics/icons/compiled/${group}.mjs`);
+    entries[source] = entry;
+    imports.set(entry, [`${entry}:implementation`]);
+    modules.add(`${entry}:implementation`);
+  }
+  const required = consumerPublicEntries(3);
+  assert.equal(required.length, 5);
+  assertConsumerModuleGraph(root, modules, entries, imports, required, required);
+  modules.delete(`${entries['@labpics/icons/states/expression-face']}:implementation`);
+  assert.throws(
+    () => assertConsumerModuleGraph(root, modules, entries, imports, required, required),
+    /states\/expression-face/,
+  );
+  assert.deepEqual(consumerPublicEntries(2), required.slice(0, -1));
+  assert.deepEqual(consumerPublicEntries(1), required.slice(0, -2));
+  for (const schema of [2, 3]) {
+    const fixture = consumerFixture(schema);
+    assert.equal(fixture.split('function changeState(').length - 1, 1);
+    assert.equal(fixture.split('function mountStateConsumer(').length - 1, 1);
+    assert.doesNotMatch(fixture, /"sharedParts"|"enclosurePartId"|"defaultState"|"states"/);
+    assert.equal(
+      fixture.includes("import * as expressionFace from '@labpics/icons/states/expression-face'"),
+      schema === 3,
+    );
+  }
 });
