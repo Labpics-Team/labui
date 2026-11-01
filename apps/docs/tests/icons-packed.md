@@ -116,7 +116,15 @@ whole IR entrypoints получают отказ независимо от ра�
 
 Браузер проверяет оба начертания: точные контуры, fill-rule, порядок и part IDs,
 receipt Figma/anatomy, доступное имя «Обновить», native target 48×48, декоративный
-icon slot, pointer/Enter/Space, trusted composed click и отсутствие submit.
+icon slot, pointer по иконке и свободной части target, Enter/Space, trusted composed
+click через native button и отсутствие submit. Посторонний overlay должен блокировать
+pointer action без единого native click.
+
+В закреплённом Playwright 1.55.1 hit-testing не следует `assignedSlot` и ошибочно
+считает декоративный SVG преградой для внутренней кнопки. Обычный pointer-click
+на host сохраняет actionability; доступное имя и клавиатура проверяются на native
+button, а каждый click обязан пройти его обработчик и composed path.
+Исправление observer находится в [Playwright #37777](https://github.com/microsoft/playwright/pull/37777).
 Повторный ввод передаёт движение новому scalar target. Отдельный reversal
 принимается из наблюдаемой промежуточной позы; transform до/после передачи
 сравнивается в одном browser task. Конечная поза проверяется после публичного

@@ -251,11 +251,12 @@ for (const variant of ['outline', 'filled']) {
   caption.textContent = variant === 'outline' ? 'Outline' : 'Filled';
   figure.append(button, caption);
   document.querySelector('form').append(figure);
-  instances.set(variant, { model, capabilities, button, svg, controls: [], events: [], generation: 0, settled: true });
+  instances.set(variant, { model, capabilities, button, svg, controls: [], events: [], nativeClicks: 0, generation: 0, settled: true });
   button.addEventListener('click', event => {
     const initialize = instances.get(variant).settled;
     const transition = start(variant, { from: 0, to: 1, initialize });
     instances.get(variant).events.push({ trusted: event.isTrusted, composed: event.composed,
+      native: event.composedPath().includes(button.shadowRoot.querySelector('button')),
       initialize, before: transition.before, after: transition.after, effect: transition.effect });
   });
 }
@@ -310,7 +311,7 @@ function read(variant) {
     viewBox: item.svg.getAttribute('viewBox').trim().split(/\\s+/).map(Number),
     paths: [...item.svg.querySelectorAll('path')].map(element => ({ d: element.getAttribute('d'),
       fillRule: element.getAttribute('fill-rule') ?? 'nonzero', id: element.dataset.part, role: element.dataset.role })),
-    matrices: matrices(item), svg: item.svg.outerHTML, events: item.events, submissions,
+    matrices: matrices(item), svg: item.svg.outerHTML, events: item.events, nativeClicks: item.nativeClicks, submissions,
     target: { width: rectangle?.width, height: rectangle?.height, name: native?.getAttribute('aria-label'),
       type: native?.type, iconHidden: item.svg.getAttribute('aria-hidden'), slotHidden: native?.querySelector('slot[name=icon]')?.getAttribute('aria-hidden') },
     capabilities: item.capabilities, connected: item.button.isConnected };
@@ -334,7 +335,10 @@ function cleanup() {
   return { connected: [...instances.values()].filter(item => item.button.isConnected).length,
     runningNativeAnimations: document.getAnimations().filter(animation => animation.playState === 'running').length };
 }
-window.__iconsPacked = { ready: Promise.all([...instances.values()].map(item => item.button.updateComplete)),
+window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async item => {
+    await item.button.updateComplete;
+    item.button.shadowRoot.querySelector('button').addEventListener('click', () => item.nativeClicks++);
+  })),
   read, start, settle, cleanup,
   refuse: variant => {
     const item = instances.get(variant);
@@ -469,19 +473,46 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           iconHidden: 'true',
           slotHidden: 'true',
         });
-        const button = page
-          .locator(`lab-button[data-variant="${variant}"]`)
-          .getByRole('button', { name: 'Обновить', exact: true });
+        const host = page.locator(`lab-button[data-variant="${variant}"]`);
+        const button = host.getByRole('button', { name: 'Обновить', exact: true });
         assert.equal(await button.count(), 1, 'native accessible button не найден');
         const other = variant === 'outline' ? 'filled' : 'outline';
         const untouched = await page.evaluate((id) => window.__iconsPacked.read(id), other);
-        await button.click();
+        await host.evaluate((element) => {
+          const rectangle = element.getBoundingClientRect();
+          const blocker = document.createElement('div');
+          blocker.setAttribute('data-icons-packed-overlay', '');
+          Object.assign(blocker.style, {
+            position: 'fixed',
+            left: `${rectangle.x}px`,
+            top: `${rectangle.y}px`,
+            width: `${rectangle.width}px`,
+            height: `${rectangle.height}px`,
+            zIndex: '2147483647',
+          });
+          document.body.append(blocker);
+        });
+        try {
+          await assert.rejects(host.click({ timeout: 750 }), (error) => {
+            assert.match(error.message, /intercepts pointer events/);
+            assert.match(error.message, /data-icons-packed-overlay/);
+            return true;
+          });
+          assert.equal((await read()).nativeClicks, 0);
+        } finally {
+          await page.locator('[data-icons-packed-overlay]').evaluate((element) => element.remove());
+        }
+        // Playwright 1.55 обходит light DOM без assignedSlot: upstream #37777.
+        // Host получает обычный pointer-click; native button отдельно подтверждает событие.
+        await host.click();
+        await host.click({ position: { x: 4, y: initial.target.height / 2 } });
         await button.focus();
         await button.press('Enter');
         await button.press('Space');
         const activated = await read();
-        assert.equal(activated.events.length, 3);
-        assert.ok(activated.events.every((event) => event.trusted && event.composed));
+        assert.equal(activated.nativeClicks, 4);
+        assert.equal(activated.events.length, 4);
+        assert.ok(activated.events.every((event) => event.trusted && event.composed && event.native));
         for (const event of activated.events)
           sameMotion(
             event.effect,
