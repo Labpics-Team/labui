@@ -1235,6 +1235,9 @@ async function summaryFixture(t, schemaVersion) {
   };
   const subjectBytes = JSON.stringify(subject);
   const report = measurementFixture();
+  report.policyViolations = [];
+  report.candidatePolicies.package.artifacts['dist/example.js'] = { maxBytes: 100, maxGzipBytes: 75 };
+  report.candidatePolicies.consumer.scenarios['state-control'] = { maxBytes: 120, maxGzipBytes: 80 };
   const reportBytes = JSON.stringify(report);
   const program = {
     file: 'scripts/measure-platform-artifacts.mjs',
@@ -1292,6 +1295,40 @@ async function summaryFixture(t, schemaVersion) {
     );
   return { output, source, report, invoke };
 }
+
+test('delivery summary refuses reported policy failures and numeric overruns while preserving browser evidence', async t => {
+  const fixture = await summaryFixture(t, 3);
+  const receipt = Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ name: 'browser-control' }] }));
+  await writeFile(join(fixture.output, 'result/receipt.json'), receipt);
+  await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
+  for (const mutate of [
+    value => { value.policyViolations.push('owner-projected marker refusal'); },
+    value => { value.artifacts['dist/example.js'].bytes++; },
+    value => { value.artifacts['dist/example.js'].gzipBytes++; },
+    value => { value.consumers['state-control'].bytes++; },
+    value => { value.consumers['state-control'].gzipBytes++; },
+    value => { Reflect.deleteProperty(value.candidatePolicies.package.artifacts['dist/example.js'], 'maxBytes'); },
+  ]) {
+    const report = structuredClone(fixture.report); mutate(report);
+    const reportBytes = Buffer.from(JSON.stringify(report));
+    const source = structuredClone(fixture.source);
+    source.measurement.sha256 = hash(reportBytes); source.measurement.bytes = reportBytes.length;
+    await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), reportBytes);
+    await writeFile(join(fixture.output, 'inputs/source-receipt.json'), JSON.stringify(source));
+    const result = spawnSync(process.execPath, [fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+      '--summarize', fixture.output], { encoding: 'utf8', timeout: 5000 });
+    assert.equal(result.status, 1, 'policy отказ не может быть delivery PASS');
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    assert.equal(summary.outcome, 'failed');
+    assert.equal(summary.browserOutcome, 'passed');
+    assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
+    assert.ok(summary.policyFailure.violations.length > 0);
+    assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_RECEIPT', 'receiptSha256', 'result/receipt.json').bytes, receipt);
+    assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/no-preference.png').bytes, PNG_WITNESS);
+    assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
+    assert.equal(summary.files.find(item => item.path === 'inputs/platform-measurement.json').sha256, hash(reportBytes));
+  }
+});
 
 test('summary transmits successful raw observations and PNG authenticated against RESULT files', async (t) => {
   const fixture = await summaryFixture(t, 3);

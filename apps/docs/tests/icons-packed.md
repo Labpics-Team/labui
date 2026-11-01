@@ -132,6 +132,14 @@ release contract census, raw/gzip/brotli и hashes artifacts, consumer metrics,
 точным Icons SHA, lockfile и программой/её исходными материалами. Отсутствующий,
 изменённый или относящийся к другому SHA report получает отказ.
 
+Diagnostic reader сохраняет report с нарушениями. Итоговый `--summarize`
+отказывает в delivery PASS при непустом `policyViolations` и независимо сверяет
+измеренные raw/gzip bytes с `maxBytes`/`maxGzipBytes` проекции того же producer.
+Отсутствующий потолок также получает отказ. Consumer не хранит своих порогов
+и не принимает новый ratchet. Report, PNG и успешный browser receipt передаются
+до ненулевого exit; RESULT сохраняет `browserOutcome`, `policyFailure` и
+`outcome: "failed"`, даже если сам браузер прошёл.
+
 Готовьте reference из закреплённого Figma manifest/master и проверенной аннотации,
 **до чтения установленного glyph**. Генерация ожидаемого результата из того же
 пакета уничтожает независимость проверки. Авторская геометрия не хранится второй

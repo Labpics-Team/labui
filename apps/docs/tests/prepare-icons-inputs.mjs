@@ -457,6 +457,26 @@ export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lo
   return report;
 }
 
+// Потолки остаются у producer; consumer проверяет его точную проекцию отказа.
+export function platformPolicyFailure(report) {
+  const violations = new Set(report.policyViolations);
+  for (const [kind, measured, policies] of [
+    ['artifact', report.artifacts, report.candidatePolicies.package.artifacts],
+    ['consumer', report.consumers, report.candidatePolicies.consumer.scenarios],
+  ]) {
+    for (const [name, item] of Object.entries(measured)) {
+      for (const [field, ceiling] of [['bytes', 'maxBytes'], ['gzipBytes', 'maxGzipBytes']]) {
+        const limit = policies[name]?.[ceiling];
+        if (!Number.isSafeInteger(limit) || limit < 0)
+          violations.add(`${kind} ${name}: отсутствует допустимый owner-projected ${ceiling}`);
+        else if (item[field] > limit)
+          violations.add(`${kind} ${name}: ${field} ${item[field]} > ${ceiling} ${limit}`);
+      }
+    }
+  }
+  return violations.size ? { code: 'PLATFORM_POLICY_REFUSED', violations: [...violations] } : undefined;
+}
+
 // Это диагностический запуск producer, не принятие candidatePolicies.
 // Guard срабатывает до child process; --update не является допустимым параметром.
 async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
@@ -716,6 +736,7 @@ export async function summarize(directory) {
   const subject = validateSubject(JSON.parse(subjectBytes));
   assert.equal(hash(subjectBytes), source.subjectSha256);
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
+  let policyFailure;
   if (subject.schemaVersion >= 2) {
     const measurement = source.measurement;
     assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
@@ -733,12 +754,13 @@ export async function summarize(directory) {
     });
     const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
     assert.equal(lockfile.sha256, measurement.lockfileSha256);
-    validatePlatformMeasurement(
+    const report = validatePlatformMeasurement(
       JSON.parse(bytes),
       source.pin.sourceCommit,
       measurement.artifactFiles,
       measurement.lockfileSha256,
     );
+    policyFailure = platformPolicyFailure(report);
     await writeStdout(platformMeasurementLog(bytes, source.pin.sourceCommit));
   }
   const packets = [];
@@ -762,7 +784,8 @@ export async function summarize(directory) {
   await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,
-      outcome: receipt.outcome,
+      outcome: policyFailure ? 'failed' : receipt.outcome,
+      ...(policyFailure ? { browserOutcome: receipt.outcome, policyFailure } : {}),
       source,
       harness: receipt.harness,
       runner: receipt.runner,
@@ -779,6 +802,8 @@ export async function summarize(directory) {
     })}\n`,
   );
   if (readbackFailure) throw readbackFailure.error;
+  if (policyFailure)
+    throw Object.assign(new Error(`Platform policy отказала: ${policyFailure.violations.join('\n')}`), policyFailure);
   assert.equal(receipt.outcome, 'passed');
 }
 
