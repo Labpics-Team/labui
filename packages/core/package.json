@@ -46,11 +46,14 @@
   },
   "files": ["dist"],
   "sideEffects": [
+    "./src/components/**",
     "./dist/theme.css",
     "./dist/selection.css",
     "./dist/shadow.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
+    "./dist/chunk-*.js",
+    "./dist/chunk-*.cjs",
     "./dist/components/**"
   ],
   "scripts": {

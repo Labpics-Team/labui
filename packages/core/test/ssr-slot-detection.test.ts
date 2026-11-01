@@ -6,8 +6,8 @@
  * checkbox / switch), падал бы. Гард возвращает под SSR `true`. Этот тест бетонирует
  * класс: SSR таких элементов НЕ бросает и эмитит declarative shadow DOM.
  *
- * Импорт `../src/ssr/index.js` ставит DOM-шим ПЕРВЫМ, поэтому модули элементов ниже
- * регистрируются корректно (LitElement наследует HTMLElement — до шима его нет).
+ * Node-экспорты Lit дают общий customElements registry; импорты компонентов
+ * регистрируют используемые здесь элементы без отдельного DOM preload.
  */
 import { describe, expect, it } from 'vitest';
 import { html, renderToString } from '../src/ssr/index.js';
