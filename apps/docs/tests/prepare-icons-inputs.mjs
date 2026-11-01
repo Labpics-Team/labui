@@ -603,7 +603,9 @@ export async function summarize(directory) {
       runner: receipt.runner,
       archives: receipt.archives,
       observations: receipt.records?.length,
-      failure: receipt.failure ? { phase: receipt.failure.phase } : null,
+      failure: receipt.failure
+        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+        : null,
       files,
       diagnosticDirectory: root,
     })}\n`,

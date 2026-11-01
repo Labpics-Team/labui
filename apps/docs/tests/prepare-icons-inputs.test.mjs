@@ -904,3 +904,62 @@ test('stdout write failure keeps its original error and removes the one-shot lis
   assert.deepEqual(JSON.parse(result.stdout), { code: 'MOCK_STDOUT_ERROR', listeners: 0 });
   assert.doesNotMatch(result.stderr, /Unhandled 'error' event/);
 });
+
+test('failed schema1 and schema2 summaries preserve an optional native continuity witness exactly', async (t) => {
+  // Синтетический transport witness; эти числа не являются измерением продукта.
+  const stateContinuity = {
+    differences: [{ partId: 'state-confirmation', before: 0.375, after: 0, delta: -0.375 }],
+    witness: {
+      before: {
+        readStartedAt: 124.125,
+        readCompletedAt: 124.25,
+        timelineTime: 123.5,
+        opacity: [{ partId: 'state-confirmation', value: 0.375 }],
+        animations: [
+          {
+            partId: 'state-confirmation',
+            currentTime: 75.25,
+            startTime: 48.25,
+            playState: 'running',
+            pending: false,
+            firstKeyframe: { opacity: '0', offset: 0, easing: 'linear' },
+            lastKeyframe: { opacity: '1', offset: 1, easing: 'linear' },
+          },
+        ],
+      },
+      admitted: { timelineTime: 123.5, previousPlayback: 'running', playback: 'running' },
+      after: { timelineTime: 123.5, opacity: [{ partId: 'state-confirmation', value: 0 }] },
+    },
+  };
+  for (const schemaVersion of [1, 2]) {
+    const fixture = await summaryFixture(t, schemaVersion);
+    for (const witness of [undefined, stateContinuity]) {
+      const failure = { phase: 'browser', message: 'private stack', stateContinuity: witness };
+      await writeFile(
+        join(fixture.output, 'result/receipt.json'),
+        JSON.stringify({ outcome: 'failed', records: [], failure }),
+      );
+      const result = spawnSync(
+        process.execPath,
+        [
+          fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+          '--summarize',
+          fixture.output,
+        ],
+        { encoding: 'utf8', timeout: 5000 },
+      );
+      assert.equal(result.status, 1, result.stderr);
+      const line = result.stdout
+        .split('\n')
+        .find((item) => item.startsWith('LABUI_ICONS_CONSUMER_RESULT '));
+      assert.ok(line, 'failed receipt потерял RESULT');
+      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length));
+      assert.equal(summary.outcome, 'failed');
+      assert.equal(summary.schemaVersion, 1);
+      assert.deepEqual(
+        summary.failure,
+        witness === undefined ? { phase: 'browser' } : { phase: 'browser', stateContinuity },
+      );
+    }
+  }
+});
