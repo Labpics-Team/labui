@@ -242,6 +242,9 @@ importers:
       lit:
         specifier: 3.3.3
         version: 3.3.3
+      parse5:
+        specifier: 7.3.0
+        version: 7.3.0
     devDependencies:
       '@lit-labs/ssr':
         specifier: 4.1.0

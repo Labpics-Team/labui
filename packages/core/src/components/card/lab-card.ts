@@ -8,6 +8,7 @@ import { materialCss } from '@labpics/ui-materials/css';
 import { type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
+import { hasCardText } from './regions.js';
 import '../badge/lab-badge.js';
 
 /** Материал поверхности. */
@@ -49,6 +50,7 @@ export class LabCard extends LabElement {
   declare badge: string;
 
   private disposeMaterialRuntime?: () => void;
+  private regionTextObserver?: MutationObserver;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -57,6 +59,7 @@ export class LabCard extends LabElement {
   }
 
   override disconnectedCallback(): void {
+    this.regionTextObserver?.disconnect();
     this.disposeMaterialRuntime?.();
     this.disposeMaterialRuntime = undefined;
     super.disconnectedCallback();
@@ -168,6 +171,8 @@ export class LabCard extends LabElement {
         padding: var(--_pad);
         border-radius: 0;
       }
+      .region { min-inline-size: 0; }
+      .region[hidden] { display: none; }
       .text-group {
         display: flex;
         flex-direction: column;
@@ -232,6 +237,7 @@ export class LabCard extends LabElement {
   ];
 
   override updated(): void {
+    this.updateRegions();
     if (!this.isConnected || this.variant !== 'elevated') {
       this.disposeMaterialRuntime?.();
       this.disposeMaterialRuntime = undefined;
@@ -241,6 +247,28 @@ export class LabCard extends LabElement {
     const content = this.renderRoot.querySelector<HTMLElement>('.content');
     if (content) this.disposeMaterialRuntime = mountMaterialRuntime(content);
   }
+
+  private updateRegions = (): void => {
+    this.regionTextObserver?.disconnect();
+    if (!this.isConnected) return;
+    const slots = this.renderRoot.querySelectorAll<HTMLSlotElement>('.region > slot');
+    for (const slot of slots) {
+      const assigned = slot.assignedNodes();
+      const nodes = assigned.length ? assigned : [...slot.childNodes];
+      const present = nodes.some(
+        (node) =>
+          node.nodeType === 1 || (node.nodeType === 3 && hasCardText(node.textContent ?? '')),
+      );
+      slot.parentElement?.toggleAttribute('hidden', !present);
+      // Text.data не вызывает slotchange в Chromium. Область наблюдения — только
+      // назначенные Text, без потомков Elements: сам Element уже занимает регион.
+      for (const node of assigned) {
+        if (node.nodeType !== 3) continue;
+        this.regionTextObserver ??= new MutationObserver(this.updateRegions);
+        this.regionTextObserver.observe(node, { characterData: true });
+      }
+    }
+  };
 
   /** Геометрия source component.svg; цвет и размер задаёт общий Badge. */
   private renderBadgeGlyph(slot: 'leading' | 'trailing'): TemplateResult {
@@ -293,7 +321,7 @@ export class LabCard extends LabElement {
           class=${this.variant === 'elevated' ? 'content lab-material lab-material--elevated' : 'content'}
           part="content"
         >
-          <slot name="header">
+          <div class="region header-region"><slot name="header" @slotchange=${this.updateRegions}>
             ${
               hasText
                 ? html`<header class="text-group">
@@ -324,9 +352,9 @@ export class LabCard extends LabElement {
             </header>`
                 : nothing
             }
-          </slot>
-          <slot></slot>
-          <slot name="footer"></slot>
+          </slot></div>
+          <div class="region body-region"><slot @slotchange=${this.updateRegions}></slot></div>
+          <div class="region footer-region"><slot name="footer" @slotchange=${this.updateRegions}></slot></div>
         </div>
       </article>
     `;

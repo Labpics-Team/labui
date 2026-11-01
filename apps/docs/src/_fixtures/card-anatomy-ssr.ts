@@ -1,12 +1,13 @@
 import { renderToString as renderReact } from 'react-dom/server';
 import { cardSpecs } from './card-anatomy-cases';
 import { reactCard } from './card-anatomy-react';
+import { renderCardRegions } from './card-regions-ssr';
 
 export async function renderCardAnatomy(): Promise<string> {
   const { html, renderToString, ifDefined } = await import('@labpics/ui-core/ssr');
   await import('@labpics/ui-core/card');
   await import('@labpics/ui-core/button');
-  return cardSpecs
+  const anatomy = cardSpecs
     .map((spec) => {
       const props = spec.props ?? {};
       const style = `width:${spec.width ?? 400}px;${spec.height === undefined ? '' : `height:${spec.height}px`}`;
@@ -21,4 +22,5 @@ export async function renderCardAnatomy(): Promise<string> {
       return `<section data-case="${spec.id}"><div data-renderer="core">${core}</div><div data-renderer="react" id="react-mount-${spec.id}">${renderReact(reactCard(spec))}</div></section>`;
     })
     .join('');
+  return anatomy + (await renderCardRegions());
 }

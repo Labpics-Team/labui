@@ -2,6 +2,165 @@ import type { LabCard } from '@labpics/ui-core/card';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { cardImage, longDescription, longHeading } from '../src/_fixtures/card-anatomy-cases';
 
+const regionHeights = {
+  empty: 112,
+  raw: 152,
+  spaces: 112,
+  inline: 72,
+  paragraph: 104,
+  nbsp: 72,
+  'explicit-default': 72,
+  'empty-header': 48,
+};
+
+async function regionGeometry(page: Page) {
+  return page.locator('[data-region-case] lab-card').evaluateAll((hosts) =>
+    hosts.map((host) => {
+      const root = host.shadowRoot;
+      if (!root) throw new Error('Нет Card shadow root');
+      const content = root.querySelector<HTMLElement>('[part="content"]');
+      if (!content) throw new Error('Нет Content');
+      const a = host.querySelector('[data-region-probe="a"]');
+      const b = host.querySelector('[data-region-probe="b"]');
+      const paragraph = host.querySelector('[data-region-probe="paragraph"]');
+      return {
+        id: host.closest('[data-region-case]')?.getAttribute('data-region-case') ?? '',
+        height: content.getBoundingClientRect().height,
+        inline: a && b ? a.getBoundingClientRect().y === b.getBoundingClientRect().y : true,
+        paragraphTop: paragraph
+          ? paragraph.getBoundingClientRect().y - content.getBoundingClientRect().y
+          : undefined,
+      };
+    }),
+  );
+}
+
+test('raw/generated Card: первый paint сохраняет flow и gaps назначенных регионов', async ({
+  browser,
+  baseURL,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
+  try {
+    const page = await context.newPage();
+    await open(page);
+    for (const geometry of await regionGeometry(page)) {
+      expect(geometry.height, geometry.id).toBe(
+        regionHeights[geometry.id as keyof typeof regionHeights],
+      );
+      expect(geometry.inline).toBe(true);
+      if (geometry.paragraphTop !== undefined) expect(geometry.paragraphTop).toBe(40);
+    }
+    for (const kind of ['raw', 'generated'])
+      await expect(page.locator(`#region-${kind}-empty-header h2`)).toBeHidden();
+  } finally {
+    await context.close();
+  }
+});
+
+test('регионы сохраняются при hydration, assignment, Text.data и reconnect', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(String(error)));
+  await open(page);
+  await page.waitForFunction(() => !!window.__cardAnatomy);
+  const before = await regionGeometry(page);
+  const identity = await page.locator('[data-region-case] lab-card').evaluateAll((hosts) => {
+    return hosts.map((host) => {
+      const root = host.shadowRoot;
+      if (!root) throw new Error('Нет shadow root');
+      const nodes = [...root.querySelectorAll('*')];
+      const light = [...host.childNodes];
+      // Замыкание хранится на host только внутри браузерной проверки identity.
+      (host as HTMLElement & { sameRegions?: () => boolean }).sameRegions = () =>
+        host.shadowRoot === root &&
+        nodes.every((node, i) => root.querySelectorAll('*')[i] === node) &&
+        light.every((node, i) => host.childNodes[i] === node);
+      return nodes.length;
+    });
+  });
+  expect(identity.every((count) => count > 0)).toBe(true);
+  await page.evaluate(() => window.__cardAnatomy.hydrate());
+  expect(await regionGeometry(page)).toEqual(before);
+  expect(
+    await page
+      .locator('[data-region-case] lab-card')
+      .evaluateAll((hosts) =>
+        hosts.every((host) => (host as HTMLElement & { sameRegions: () => boolean }).sameRegions()),
+      ),
+  ).toBe(true);
+  const stages = await page.evaluate(async () => {
+    const host = document.querySelector<import('@labpics/ui-core/card').LabCard>(
+      '#region-raw-spaces lab-card',
+    );
+    if (!host?.shadowRoot) throw new Error('Нет Card');
+    const body = host.shadowRoot.querySelector<HTMLElement>('.body-region');
+    const text = body
+      ?.querySelector('slot')
+      ?.assignedNodes()
+      .find((node) => node.nodeType === Node.TEXT_NODE) as Text;
+    if (!body || !text) throw new Error('Нет default Text');
+    const state = () => ({
+      hidden: body.hidden,
+      textSame: body.querySelector('slot')?.assignedNodes().includes(text),
+    });
+    const values = [state()];
+    text.data = 'Body';
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    text.data = ' \t ';
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    const child = document.createElement('span');
+    child.textContent = 'Child';
+    host.append(child);
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    child.slot = 'footer';
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    child.remove();
+    const parent = host.parentNode;
+    host.remove();
+    text.data = 'Reconnected';
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    parent?.appendChild(host);
+    await host.updateComplete;
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    text.data = ' ';
+    await window.__cardAnatomy.settle();
+    values.push(state());
+    return values;
+  });
+  expect(stages).toEqual(
+    [true, false, true, false, true, true, false, true].map((hidden) => ({
+      hidden,
+      textSame: true,
+    })),
+  );
+  const native = await page.evaluate(async () => {
+    const host = document.createElement('lab-card');
+    host.style.cssText = 'width:400px;font:16px/24px Geist,sans-serif';
+    const text = document.createTextNode(' ');
+    host.append(text);
+    document.body.append(host);
+    await host.updateComplete;
+    const content = host.shadowRoot?.querySelector('[part="content"]');
+    if (!content) throw new Error('Нет native Content');
+    const heights = [content.getBoundingClientRect().height];
+    text.data = '\u00a0';
+    await window.__cardAnatomy.settle();
+    heights.push(content.getBoundingClientRect().height);
+    host.heading = 'Heading';
+    await host.updateComplete;
+    heights.push(content.getBoundingClientRect().height);
+    host.remove();
+    return heights;
+  });
+  expect(native).toEqual([48, 72, 108]);
+  expect(errors).toEqual([]);
+});
+
 const renderers = ['core', 'react'] as const;
 type Renderer = (typeof renderers)[number];
 const fixture = '/_fixtures/card-anatomy.html';
@@ -343,10 +502,14 @@ test('тесная рамка сохраняет Content и доступный �
     await article.focus();
     await page.keyboard.press('Tab');
     await expect(footer).toBeFocused();
-    const frame = await box(article);
-    const control = await box(footer);
-    expect(control.y).toBeGreaterThanOrEqual(frame.y);
-    expect(control.y + control.height).toBeLessThanOrEqual(frame.y + frame.height + 1);
+    // WebKit может перенести фокус до завершения нативной прокрутки и paint.
+    await expect
+      .poll(async () => {
+        const frame = await box(article);
+        const control = await box(footer);
+        return control.y >= frame.y && control.y + control.height <= frame.y + frame.height + 1;
+      })
+      .toBe(true);
     await page.keyboard.press('Enter');
   }
   expect(await page.evaluate(() => window.__cardAnatomy.activations.length)).toBe(2);

@@ -23,6 +23,7 @@ import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
 import { type TemplateResult, html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { shapeCardRegions } from '../components/card/ssr.js';
 
 /**
  * Render a Lit template to a declarative-shadow-DOM HTML string.
@@ -31,7 +32,7 @@ import { unsafeHTML } from 'lit/directives/unsafe-html.js';
  * в общем Node-registry Lit. Результат можно вставить через raw-HTML API фреймворка.
  */
 export function renderToString(template: TemplateResult): string {
-  return collectResultSync(render(template));
+  return shapeCardRegions(collectResultSync(render(template)));
 }
 
 /**
