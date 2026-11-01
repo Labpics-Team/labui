@@ -9,6 +9,8 @@ type Png = ReturnType<typeof decodePng>;
 type Rgb = [number, number, number];
 type Rgba = [number, number, number, number];
 
+test.use({ deviceScaleFactor: 1 });
+
 // Независимый read-only источник: design-baseline.md, 1 ноября 2026.
 // Paint samples вне glyph: x=center, y=4 и height-2 при root16.
 const reference = {
