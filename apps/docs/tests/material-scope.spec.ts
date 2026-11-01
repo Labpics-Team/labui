@@ -32,13 +32,22 @@ async function tree(page: Page, modes: string[], surfaceScopes: number[] = []) {
 async function paint(surface: Locator) {
   return surface.evaluate((element) => {
     const css = getComputedStyle(element);
+    const backdrop = css.backdropFilter;
+    const filterId = backdrop.match(/url\(["']?[^"')]*#([^"')]+)["']?\)/)?.[1];
+    const filter = filterId ? element.ownerDocument.getElementById(filterId) : null;
+    // CSS-only и Glass вычисляют blur в backdrop-filter; Acrylic применяет
+    // feGaussianBlur из реально подключённого SVG. Сырое --_blur содержит calc().
+    const blur =
+      backdrop.match(/blur\(([\d.]+)px\)/)?.[1] ??
+      filter?.querySelector('feGaussianBlur')?.getAttribute('stdDeviation');
+    const rim = getComputedStyle(element, '::before');
     return {
-      blur: Number.parseFloat(css.getPropertyValue('--_blur')),
-      transparent: css.getPropertyValue('--_base-paint').trim() === 'transparent',
+      blur: backdrop === 'none' ? 0 : Number.parseFloat(blur ?? ''),
+      transparent: css.backgroundColor === 'rgba(0, 0, 0, 0)',
       grain: css.backgroundImage.includes('data:image/png'),
-      rim: getComputedStyle(element, '::before').backgroundImage !== 'none',
-      lensed: element.classList.contains('lab-material--lensed'),
-      acrylic: (element as HTMLElement).style.backdropFilter.includes('lab-acrylic'),
+      rim: Number(rim.opacity) > 0 && rim.backgroundImage !== 'none',
+      lensed: backdrop.includes('lab-lg-'),
+      acrylic: backdrop.includes('lab-acrylic-'),
     };
   });
 }
@@ -50,9 +59,8 @@ function expected(mode: Mode, engine: boolean, degraded = false) {
     transparent: live,
     grain: live && mode === 'acrylic',
     rim: live,
-    // Marker означает подключение движка; reduced-transparency снимает
-    // его inline-фильтр, сохраняя само подключение.
-    lensed: engine && mode === 'glass',
+    // Деградация снимает эффект; проверяем применённый фильтр, а не marker.
+    lensed: engine && mode === 'glass' && !degraded,
     acrylic: engine && mode === 'acrylic' && !degraded,
   };
 }
@@ -158,10 +166,9 @@ for (const runtime of [false, true]) {
   });
 }
 
-// A browser may support backdrop SVG filters but not @scope (Chromium 116).
-// Hiding its CSSOM interface simulates the missing prerequisite without
-// relying on an old browser binary in CI. Veil remains an independent engine.
-test('missing @scope capability skips invisible glass/acrylic engines, not Veil', async ({
+// Материалы работают через наследуемый CSS-контекст. Скрытие CSSScopeRule
+// проверяет, что runtime больше не вводит отсутствующую зависимость от @scope.
+test('missing @scope capability preserves glass/acrylic engines and Veil', async ({
   page,
   browserName,
 }) => {
@@ -174,18 +181,10 @@ test('missing @scope capability skips invisible glass/acrylic engines, not Veil'
     await page.evaluate(() => typeof (globalThis as { CSSScopeRule?: unknown }).CSSScopeRule),
   ).toBe('undefined');
 
-  for (const mode of ['glass', 'acrylic']) {
+  for (const mode of ['glass', 'acrylic'] as const) {
     const surface = await tree(page, ['solid', mode]);
-    await expect
-      .poll(() =>
-        surface.evaluate((el) => ({
-          filter: (el as HTMLElement).style.backdropFilter,
-          lensed: el.classList.contains('lab-material--lensed'),
-        })),
-      )
-      .toEqual({ filter: '', lensed: false });
+    await expect.poll(() => paint(surface)).toEqual(expected(mode, true));
   }
-  await expect(page.locator('.lab-acrylic-defs filter')).toHaveCount(0);
 
   await page.evaluate(() => {
     const veil = document.createElement('div');

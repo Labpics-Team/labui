@@ -10,6 +10,7 @@
  * so the page carries both renderers under one [data-theme].
  */
 import '@labpics/ui-core/card';
+import '@labpics/ui-shadow/shadow.css';
 import { Card } from '@labpics/ui-react/card';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
