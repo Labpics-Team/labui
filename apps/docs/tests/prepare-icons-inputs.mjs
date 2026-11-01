@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateSubject } from './icons-packed.mjs';
+import { gzipSync } from 'node:zlib';
+import { assertSelfHostedRunner, validateSubject } from './icons-packed.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -342,6 +343,122 @@ export async function stateReference(iconsRoot, pin) {
   };
 }
 
+export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lockfileSha256) {
+  assert.equal(report?.sourceSha, sourceSha, 'measurement относится к другому source SHA');
+  assert.equal(report.lockfileSha256, lockfileSha256, 'measurement lockfile не совпал');
+  assert.ok(Number.isFinite(Date.parse(report.capturedAt)));
+  assert.ok(typeof report.environment?.node === 'string');
+  assert.deepEqual(
+    Object.keys(report.artifacts ?? {}).sort(),
+    [...artifactFiles].sort(),
+    'measurement не покрывает release contract',
+  );
+  assert.deepEqual(
+    Object.keys(report.candidatePolicies?.package?.artifacts ?? {}).sort(),
+    [...artifactFiles].sort(),
+    'candidate policy не покрывает измеренные artifacts',
+  );
+  assert.equal(report.candidatePolicies.package.measurement, report.packageMeasurement);
+  assert.equal(report.candidatePolicies.consumer.measurement, report.consumerMeasurement);
+  assert.ok(typeof report.packageMeasurement === 'string' && report.packageMeasurement.length > 0);
+  assert.ok(
+    typeof report.consumerMeasurement === 'string' && report.consumerMeasurement.length > 0,
+  );
+  assert.ok(Object.keys(report.consumers ?? {}).length > 0);
+  assert.deepEqual(
+    Object.keys(report.consumers).sort(),
+    Object.keys(report.candidatePolicies.consumer.scenarios ?? {}).sort(),
+  );
+  for (const measured of [...Object.values(report.artifacts), ...Object.values(report.consumers)]) {
+    for (const field of ['bytes', 'gzipBytes', 'brotliBytes']) {
+      assert.ok(
+        Number.isSafeInteger(measured[field]) && measured[field] >= 0,
+        `measurement потеряла ${field}`,
+      );
+    }
+  }
+  for (const measured of Object.values(report.artifacts))
+    assert.match(measured.sha256, /^[a-f0-9]{64}$/);
+  assert.ok(
+    Array.isArray(report.policyViolations) &&
+      report.policyViolations.every((item) => typeof item === 'string' && item.length > 0),
+  );
+  return report;
+}
+
+// Это диагностический запуск producer, не принятие candidatePolicies.
+// Guard срабатывает до child process; --update не является допустимым параметром.
+async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
+  assertSelfHostedRunner();
+  const materialFiles = [
+    'scripts/measure-platform-artifacts.mjs',
+    'scripts/check-package-size.js',
+    'scripts/check-consumer-size.js',
+    'release/contract.json',
+    'release/package-size-ratchet.json',
+    'release/consumer-size-ratchet.json',
+    'pnpm-lock.yaml',
+  ];
+  const materials = [];
+  for (const file of materialFiles) {
+    const item = await sourceFile(iconsRoot, sourceSha, file);
+    materials.push(item);
+    files.push({ repository: 'Labpics-Team/lab-icons', ...item });
+  }
+  const artifactFiles = JSON.parse(await readFile(join(iconsRoot, 'release/contract.json'))).files;
+  const program = materials[0];
+  const file = 'platform-measurement.json';
+  execFileSync(process.execPath, [join(iconsRoot, program.file), '--output', join(out, file)], {
+    cwd: iconsRoot,
+    timeout: 600_000,
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
+  assertCheckout(iconsRoot, sourceSha);
+  for (const material of materials)
+    assert.deepEqual(await sourceFile(iconsRoot, sourceSha, material.file), material);
+  const bytes = await readFile(join(out, file));
+  const lockfileSha256 = materials.find((item) => item.file === 'pnpm-lock.yaml').sha256;
+  const report = validatePlatformMeasurement(
+    JSON.parse(bytes),
+    sourceSha,
+    artifactFiles,
+    lockfileSha256,
+  );
+  return {
+    file,
+    sourceSha,
+    sha256: hash(bytes),
+    bytes: bytes.length,
+    program,
+    lockfileSha256,
+    artifactFiles,
+    artifactCount: artifactFiles.length,
+    consumerCount: Object.keys(report.consumers).length,
+    policyViolations: report.policyViolations.length,
+  };
+}
+
+export function platformMeasurementLog(bytes, sourceSha) {
+  const compressed = gzipSync(bytes, { level: 9 });
+  const chunks = compressed.toString('base64').match(/.{1,4096}/g);
+  const metadata = {
+    schemaVersion: 1,
+    encoding: 'gzip-base64',
+    sourceSha,
+    reportSha256: hash(bytes),
+    bytes: bytes.length,
+    compressedBytes: compressed.length,
+    chunks: chunks.length,
+  };
+  return (
+    [
+      `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN ${JSON.stringify(metadata)}`,
+      ...chunks.map((chunk, index) => `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK ${index} ${chunk}`),
+      `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${metadata.reportSha256}`,
+    ].join('\n') + '\n'
+  );
+}
+
 export async function prepareInputs(options) {
   const pin = validateSourcePin(JSON.parse(await readFile(PIN)));
   const iconsRoot = await realpath(resolve(options.get('--icons-source')));
@@ -400,9 +517,12 @@ export async function prepareInputs(options) {
   await mkdir(out, { recursive: false, mode: 0o700 });
   const bytes = `${JSON.stringify(subject, null, 2)}\n`;
   await writeFile(join(out, 'subject.json'), bytes, { flag: 'wx', mode: 0o600 });
+  // Raw references и их source receipts уже зафиксированы до чтения dist artifacts.
+  const measurement = await measurePlatformArtifacts(iconsRoot, pin.sourceCommit, out, files);
+  assertCheckout(uiRoot, uiCommit);
   await writeFile(
     join(out, 'source-receipt.json'),
-    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement }, null, 2)}\n`,
     { flag: 'wx', mode: 0o600 },
   );
   process.stdout.write(
@@ -424,6 +544,35 @@ export async function summarize(directory) {
   }
   const receipt = JSON.parse(await readFile(join(root, 'result/receipt.json')));
   const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
+  const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
+  const subject = validateSubject(JSON.parse(subjectBytes));
+  assert.equal(hash(subjectBytes), source.subjectSha256);
+  assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
+  if (subject.schemaVersion === 2) {
+    const measurement = source.measurement;
+    assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
+    assert.equal(measurement.sourceSha, source.pin.sourceCommit);
+    const bytes = await readFile(join(root, 'inputs/platform-measurement.json'));
+    assert.equal(hash(bytes), measurement.sha256, 'measurement bytes изменились');
+    assert.equal(bytes.length, measurement.bytes);
+    const program = source.files.find(
+      (item) => item.file === 'scripts/measure-platform-artifacts.mjs',
+    );
+    assert.deepEqual(measurement.program, {
+      file: program.file,
+      sha256: program.sha256,
+      bytes: program.bytes,
+    });
+    const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
+    assert.equal(lockfile.sha256, measurement.lockfileSha256);
+    validatePlatformMeasurement(
+      JSON.parse(bytes),
+      source.pin.sourceCommit,
+      measurement.artifactFiles,
+      measurement.lockfileSha256,
+    );
+    process.stdout.write(platformMeasurementLog(bytes, source.pin.sourceCommit));
+  }
   process.stdout.write(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,

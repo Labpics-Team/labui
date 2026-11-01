@@ -1,15 +1,19 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 import {
   authorReference,
   readAuthorMaster,
   readCycleMaster,
   stateReference,
+  platformMeasurementLog,
+  validatePlatformMeasurement,
   validateSourcePin,
 } from './prepare-icons-inputs.mjs';
 import { validateStateReference, validateSubject } from './icons-packed.mjs';
@@ -579,4 +583,201 @@ test('schema2 requires the state reference while historical schema1 cycle inputs
     mutate(changed);
     assert.throws(() => validateSubject({ ...current, stateReference: changed }));
   }
+});
+
+function measurementFixture() {
+  return {
+    sourceSha: PIN.sourceCommit,
+    lockfileSha256: 'c'.repeat(64),
+    capturedAt: '2026-11-01T15:00:00Z',
+    environment: { node: 'v24.10.0' },
+    packageMeasurement: 'frozen-package-method',
+    consumerMeasurement: 'frozen-consumer-method',
+    artifacts: {
+      'dist/example.js': { bytes: 100, gzipBytes: 75, brotliBytes: 65, sha256: 'd'.repeat(64) },
+    },
+    consumers: { 'state-control': { bytes: 120, gzipBytes: 80, brotliBytes: 70 } },
+    candidatePolicies: {
+      package: { measurement: 'frozen-package-method', artifacts: { 'dist/example.js': {} } },
+      consumer: { measurement: 'frozen-consumer-method', scenarios: { 'state-control': {} } },
+    },
+    policyViolations: ['dist/example.js: diagnostic budget refusal'],
+  };
+}
+
+test('complete measurement remains diagnostic and refuses stale or incomplete source evidence', () => {
+  const report = measurementFixture();
+  const validate = (value) =>
+    validatePlatformMeasurement(value, PIN.sourceCommit, ['dist/example.js'], 'c'.repeat(64));
+  assert.equal(validate(report), report);
+  assert.equal(report.policyViolations.length, 1, 'a violation cannot disappear from the report');
+  for (const mutate of [
+    (value) => {
+      value.sourceSha = 'b'.repeat(40);
+    },
+    (value) => {
+      value.lockfileSha256 = 'b'.repeat(64);
+    },
+    (value) => {
+      delete value.artifacts['dist/example.js'];
+    },
+    (value) => {
+      delete value.candidatePolicies.package.artifacts['dist/example.js'];
+    },
+    (value) => {
+      delete value.artifacts['dist/example.js'].brotliBytes;
+    },
+    (value) => {
+      value.artifacts['dist/example.js'].sha256 = 'missing';
+    },
+    (value) => {
+      value.consumerMeasurement = 'different-method';
+    },
+    (value) => {
+      value.candidatePolicies.consumer.scenarios = {};
+    },
+    (value) => {
+      delete value.policyViolations;
+    },
+  ]) {
+    const changed = structuredClone(report);
+    mutate(changed);
+    assert.throws(() => validate(changed));
+  }
+});
+
+test('log block reconstructs exact report bytes with bounded indexed lines and a digest', () => {
+  const bytes = Buffer.concat(
+    Array.from({ length: 256 }, (_, index) =>
+      createHash('sha256').update(`independent-packet-${index}`).digest(),
+    ),
+  );
+  const lines = platformMeasurementLog(bytes, PIN.sourceCommit).trim().split('\n');
+  const metadata = JSON.parse(lines[0].slice('LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN '.length));
+  assert.equal(metadata.sourceSha, PIN.sourceCommit);
+  assert.equal(metadata.reportSha256, hash(bytes));
+  assert.ok(metadata.chunks > 1);
+  assert.equal(lines.at(-1), `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}`);
+  const chunks = lines.slice(1, -1).map((line, index) => {
+    const match = /^LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK (\d+) ([A-Za-z0-9+/=]+)$/.exec(line);
+    assert.equal(Number(match[1]), index);
+    assert.ok(match[2].length <= 4096);
+    return match[2];
+  });
+  assert.equal(chunks.length, metadata.chunks);
+  const compressed = Buffer.from(chunks.join(''), 'base64');
+  assert.equal(compressed.length, metadata.compressedBytes);
+  assert.deepEqual(gunzipSync(compressed), bytes);
+  assert.throws(() => gunzipSync(Buffer.from(chunks.slice(0, -1).join(''), 'base64')));
+});
+
+async function summaryFixture(t, schemaVersion) {
+  const { root } = await stateFixture(t);
+  const author = await authorReference(root, PIN);
+  const states = await stateReference(root, PIN);
+  const packages = Object.fromEntries(
+    [
+      ['icons', '@labpics/icons'],
+      ['uiCore', '@labpics/ui-core'],
+      ['uiShadow', '@labpics/ui-shadow'],
+    ].map(([key, name]) => [
+      key,
+      {
+        name,
+        version: '0.1.0',
+        archiveSha256: 'a'.repeat(64),
+        archiveBytes: 1,
+        sourceCommit: PIN.sourceCommit,
+      },
+    ]),
+  );
+  const subject = {
+    schemaVersion,
+    packages,
+    authorReference: author,
+    ...(schemaVersion === 2 ? { stateReference: states } : {}),
+  };
+  const subjectBytes = JSON.stringify(subject);
+  const report = measurementFixture();
+  const reportBytes = JSON.stringify(report);
+  const program = {
+    file: 'scripts/measure-platform-artifacts.mjs',
+    sha256: 'e'.repeat(64),
+    bytes: 10,
+  };
+  const source = {
+    schemaVersion: 1,
+    pin: PIN,
+    subjectSha256: hash(subjectBytes),
+    files: [
+      { repository: PIN.repository, ...program },
+      {
+        repository: PIN.repository,
+        file: 'pnpm-lock.yaml',
+        sha256: report.lockfileSha256,
+        bytes: 10,
+      },
+    ],
+    ...(schemaVersion === 2
+      ? {
+          measurement: {
+            file: 'platform-measurement.json',
+            sourceSha: PIN.sourceCommit,
+            sha256: hash(reportBytes),
+            bytes: Buffer.byteLength(reportBytes),
+            program,
+            lockfileSha256: report.lockfileSha256,
+            artifactFiles: ['dist/example.js'],
+          },
+        }
+      : {}),
+  };
+  const output = join(root, 'output');
+  await mkdir(join(output, 'inputs'), { recursive: true });
+  await mkdir(join(output, 'result'));
+  await writeFile(join(output, 'inputs/subject.json'), subjectBytes);
+  await writeFile(join(output, 'inputs/source-receipt.json'), JSON.stringify(source));
+  await writeFile(
+    join(output, 'result/receipt.json'),
+    JSON.stringify({ outcome: 'passed', records: [] }),
+  );
+  if (schemaVersion === 2)
+    await writeFile(join(output, 'inputs/platform-measurement.json'), reportBytes);
+  const invoke = () =>
+    execFileSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        output,
+      ],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10_000 },
+    );
+  return { output, source, report, invoke };
+}
+
+test('schema2 summary publishes the authenticated report and rejects missing or wrong-source output', async (t) => {
+  const fixture = await summaryFixture(t, 2);
+  const stdout = fixture.invoke();
+  assert.match(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
+  assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
+  const changed = { ...fixture.report, sourceSha: 'b'.repeat(40) };
+  const bytes = JSON.stringify(changed);
+  fixture.source.measurement.sha256 = hash(bytes);
+  fixture.source.measurement.bytes = Buffer.byteLength(bytes);
+  await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), bytes);
+  await writeFile(
+    join(fixture.output, 'inputs/source-receipt.json'),
+    JSON.stringify(fixture.source),
+  );
+  assert.throws(fixture.invoke, /measurement относится к другому source SHA/);
+  await rm(join(fixture.output, 'inputs/platform-measurement.json'));
+  assert.throws(fixture.invoke, /ENOENT/);
+});
+
+test('historical schema1 summary does not need a measurement report', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  const stdout = fixture.invoke();
+  assert.doesNotMatch(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_/);
+  assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
 });

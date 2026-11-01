@@ -101,6 +101,16 @@ IDs берутся из versioned spec. Reference не импортирует co
 производителя. В Lab UI нет отдельной редактируемой таблицы геометрии. Source
 receipt добавляет hash semantic spec и каждого прочитанного master.
 
+После фиксации raw references и `subject.json` та же prepare-inputs граница
+запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
+штатного pack. Запуск разрешён только self-hosted runner. `--update` не передаётся:
+candidate policies и `policyViolations` остаются диагностикой, принятие лимитов
+принадлежит Icons. Отчёт `inputs/platform-measurement.json` содержит полный
+release contract census, raw/gzip/brotli и hashes artifacts, consumer metrics,
+среду, методы и candidate policies. Source receipt связывает его bytes/hash с
+точным Icons SHA, lockfile и программой/её исходными материалами. Отсутствующий,
+изменённый или относящийся к другому SHA report получает отказ.
+
 Готовьте reference из закреплённого Figma manifest/master и проверенной аннотации,
 **до чтения установленного glyph**. Генерация ожидаемого результата из того же
 пакета уничтожает независимость проверки. Авторская геометрия не хранится второй
@@ -191,6 +201,16 @@ reload кнопки; schema2 также содержит status-circle и select
 публикацию npm или оптическую приёмку всего корпуса. Для этих утверждений нужны
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного
 remote receipt не означает пройденную интеграцию.
+
+`--summarize` также выводит полный report стандартным
+[gzip](https://nodejs.org/api/zlib.html#zlibgzipsyncbuffer-options) и base64 блоком
+в stdout, без нового Actions artifact storage. `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN`
+содержит encoding, source SHA, исходный digest/размер, compressed size и число
+частей. Строки `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK <index> <base64>` имеют
+последовательные индексы и не более 4096 base64 символов. `..._END` повторяет digest.
+Для восстановления из полного job log проверьте наличие всех индексов и END,
+соедините base64, декодируйте и gunzip, затем проверьте исходный размер и SHA256.
+Неполный блок не является report. Schema1 не требует measurement packet.
 
 Основание runner guard: [GitHub default variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables).
 Принятый packed-consumer маршрут: Lab UI PR #191, SHA
