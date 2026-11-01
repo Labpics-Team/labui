@@ -955,14 +955,12 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
       id: state.id,
       partId: state.partId,
       role: 'state',
-      paths: state.paths
-        .slice(0, -1)
-        .map((path, index) => ({
-          ...path,
-          fill: 'currentColor',
-          partId: state.contentPartIds[index],
-          role: 'content',
-        })),
+      paths: state.paths.slice(0, -1).map((path, index) => ({
+        ...path,
+        fill: 'currentColor',
+        partId: state.contentPartIds[index],
+        role: 'content',
+      })),
     })),
   );
   const oneHot = (observation, target) => {
@@ -1001,7 +999,10 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   assert.equal(activated.nativeClicks, 3);
   assert.ok(activated.events.every((event) => event.trusted && event.composed && event.native));
   assert.equal(activated.events.length, 3);
-  records.push({ name: `status-circle:${reducedMotion}:trusted-activation`, events: activated.events });
+  records.push({
+    name: `status-circle:${reducedMotion}:trusted-activation`,
+    events: activated.events,
+  });
   for (const [index, event] of activated.events.entries()) {
     stateEffect(
       event.effect,
