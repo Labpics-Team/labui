@@ -37,7 +37,6 @@ jobs:
     timeout-minutes: 45
     env:
       CI: 'true'
-      RUNNER_ENVIRONMENT: ${{ runner.environment }}
       UI_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Проверить среду исполнения
