@@ -182,6 +182,7 @@ jobs:
             'apps/docs/tests/prepare-icons-inputs.mjs',
             'apps/docs/tests/icons-packed.mjs',
             'apps/docs/tests/prepare-icons-inputs.test.mjs',
+            'apps/docs/tests/icons-state-continuity.test.mjs',
           ];
           const hash = bytes => createHash('sha256').update(bytes).digest('hex');
           const maximum = 2 * 1024 * 1024;
