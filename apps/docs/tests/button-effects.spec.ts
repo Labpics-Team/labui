@@ -364,19 +364,11 @@ for (const renderer of ['lit', 'react', 'vue'] as const) {
                   true,
                 );
               }
-              // Сам неизменённый SVG в Chromium отличается от Figma PNG у blur.
-              // Kernel/inset сверяются в одном renderer; PNG остаётся отдельным
-              // неизменным наблюдением, см. design-baseline.md.
+              // SVG сохраняется как исследовательское наблюдение. Даже один
+              // browser не гарантирует эквивалентность SVG и CSS-композиции
+              // (VO-1); эти captures не задают исполняемый pixel oracle.
               if (theme === 'light' && size === 'm' && state !== 'hover') {
-                const source = await sourceSvg(page, state, scale, info);
-                for (const y of [4 * scale, 46 * scale]) {
-                  expectRgb(
-                    pixel(rendered.background, rendered.background.width / 2, y),
-                    pixel(source, source.width / 2, y),
-                    `${state}: CSS/source SVG y${y}`,
-                    true,
-                  );
-                }
+                await sourceSvg(page, state, scale, info);
               }
             }
           }
@@ -442,29 +434,111 @@ test('effects oracle detects missing layers on the real Button', async ({ page }
   await button.evaluate((element) => {
     (element as HTMLElement).style.setProperty('--lab-motion-transition-duration', '0s');
   });
-  await setState(page, button, 'pressed');
-  const healthy = decodePng(await button.screenshot({ path: info.outputPath('healthy.png') }));
-  const centerTop = pixel(healthy, healthy.width / 2, 4);
-  const glow = await page.addStyleTag({
-    content: '[data-lab-button] .lab-button-effects::after{opacity:0!important}',
+  const content = button.locator('.lab-button-content');
+  await content.evaluate((element) => {
+    (element as HTMLElement).style.opacity = '0';
   });
-  const missingGlow = decodePng(
-    await button.screenshot({ path: info.outputPath('missing-glow.png') }),
-  );
-  expect(pixel(missingGlow, missingGlow.width / 2, 4)[0]).toBeLessThan(centerTop[0] - 20);
-  await glow.evaluate((element) => element.parentNode?.removeChild(element));
-  await setState(page, button, 'default');
-  const withInset = decodePng(await button.screenshot());
-  await page.addStyleTag({ content: '[data-lab-button]::after{box-shadow:none!important}' });
-  const missingInset = decodePng(
-    await button.screenshot({ path: info.outputPath('missing-inset.png') }),
-  );
-  const source = await sourceSvg(page, 'default', 1, info);
-  const expected = pixel(source, source.width / 2, 47);
-  expectRgb(pixel(withInset, withInset.width / 2, 47), expected, 'Healthy inset');
-  expect(() =>
-    expectRgb(pixel(missingInset, missingInset.width / 2, 47), expected, 'Missing inset'),
-  ).toThrow();
+  const capture = async (name: string) =>
+    decodePng(await button.screenshot({ path: info.outputPath(`${name}.png`) }));
+  const mutate = async (css: string, name: string) => {
+    const style = await page.addStyleTag({ content: css });
+    try {
+      return await capture(name);
+    } finally {
+      await style.evaluate((element) => element.parentNode?.removeChild(element));
+    }
+  };
+  // Половина полного source-over вклада исходного paint — нижняя граница
+  // заметного присутствия слоя, не допуск соответствия Figma. Сам kernel,
+  // размеры и alpha отдельно закреплены authored geometry assertions выше.
+  const glowFloor = ((255 - 16) * 0.32 * 0.52) / 2;
+  const insetFloor = ((255 - 18) * 0.12) / 2;
+  const glowDelta = (paint: Png, absent: Png) =>
+    pixel(paint, paint.width / 2, 4)[0] - pixel(absent, absent.width / 2, 4)[0];
+  const insetDelta = (paint: Png, absent: Png) =>
+    pixel(absent, absent.width / 2, absent.height - 1)[2] -
+    pixel(paint, paint.width / 2, paint.height - 1)[2];
+  const assertGlow = (paint: Png, absent: Png) =>
+    expect(
+      glowDelta(paint, absent),
+      'Белое центральное свечение имеет заметный вклад',
+    ).toBeGreaterThanOrEqual(glowFloor);
+  const assertInset = (paint: Png, absent: Png) =>
+    expect(insetDelta(paint, absent), 'Default inset затемняет нижний край').toBeGreaterThanOrEqual(
+      insetFloor,
+    );
+  const observations = [];
+  try {
+    await setState(page, button, 'pressed');
+    const healthyGlow = await capture('healthy-glow');
+    const noGlow = await mutate(
+      '[data-lab-button] .lab-button-effects::after{opacity:0!important}',
+      'missing-glow',
+    );
+    assertGlow(healthyGlow, noGlow);
+    expect(() => assertGlow(noGlow, noGlow)).toThrow();
+    observations.push({
+      layer: 'glow',
+      case: 'healthy',
+      delta: glowDelta(healthyGlow, noGlow),
+      floor: glowFloor,
+    });
+    for (const [name, declaration] of [
+      ['attenuated-glow', `opacity:${(0.32 * 0.52) / 4}!important`],
+      ['inverted-glow', 'background-color:rgb(16 16 18)!important'],
+    ] as const) {
+      const changed = await mutate(
+        `[data-lab-button] .lab-button-effects::after{${declaration}}`,
+        name,
+      );
+      expect(() => assertGlow(changed, noGlow)).toThrow();
+      observations.push({
+        layer: 'glow',
+        case: name,
+        delta: glowDelta(changed, noGlow),
+        floor: glowFloor,
+      });
+    }
+    await setState(page, button, 'default');
+    const healthyInset = await capture('healthy-inset');
+    const noInset = await mutate(
+      '[data-lab-button]::after{box-shadow:none!important}',
+      'missing-inset',
+    );
+    assertInset(healthyInset, noInset);
+    expect(() => assertInset(noInset, noInset)).toThrow();
+    observations.push({
+      layer: 'inset',
+      case: 'healthy',
+      delta: insetDelta(healthyInset, noInset),
+      floor: insetFloor,
+    });
+    for (const [name, shadow] of [
+      ['attenuated-inset', 'inset 0 -1px 1px 0 rgb(16 16 18 / 0.03)'],
+      ['inverted-inset', 'inset 0 1px 1px 0 rgb(16 16 18 / 0.12)'],
+    ] as const) {
+      const changed = await mutate(
+        `[data-lab-button]::after{box-shadow:${shadow}!important}`,
+        name,
+      );
+      expect(() => assertInset(changed, noInset)).toThrow();
+      observations.push({
+        layer: 'inset',
+        case: name,
+        delta: insetDelta(changed, noInset),
+        floor: insetFloor,
+      });
+    }
+  } finally {
+    await page.mouse.up();
+    await content.evaluate((element) => {
+      (element as HTMLElement).style.removeProperty('opacity');
+    });
+    await info.attach('layer-controls', {
+      body: JSON.stringify(observations, null, 2),
+      contentType: 'application/json',
+    });
+  }
 });
 
 for (const renderer of ['lit', 'react', 'vue'] as const) {
