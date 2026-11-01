@@ -468,11 +468,36 @@ stateButton.addEventListener('click', event => {
   const result = changeState(next);
   stateEvents.push({ trusted: event.isTrusted, composed: event.composed,
     native: event.composedPath().includes(stateButton.shadowRoot.querySelector('button')),
-    before: result.before, after: result.after, effect: result.effect });
+    before: result.before, after: result.after, effect: result.effect,
+    continuity: result.continuity });
 });
-function stateOpacity() {
-  return [...stateNodes.values()].map(node => ({ partId: node.dataset.part,
-    value: Number(getComputedStyle(node).opacity) }));
+function stateOpacity(partTimes) {
+  return [...stateNodes.values()].map(node => {
+    const readStartedAt = partTimes ? performance.now() : null;
+    const value = Number(getComputedStyle(node).opacity);
+    partTimes?.push({ partId: node.dataset.part, readStartedAt, readCompletedAt: performance.now() });
+    return { partId: node.dataset.part, value };
+  });
+}
+function stateWitness() {
+  return { sampledAt: performance.now(), timelineTime: document.timeline.currentTime,
+    playback: stateControl?.state ?? null,
+    inlineOpacity: [...stateNodes.values()].map(node => ({ partId: node.dataset.part,
+      value: node.style.opacity })),
+    animations: stateSvg.getAnimations({ subtree: true }).map(animation => {
+      const frames = animation.effect.getKeyframes();
+      return { partId: animation.effect.target?.dataset.part ?? null,
+        sampledAt: performance.now(), currentTime: animation.currentTime,
+        startTime: animation.startTime, playState: animation.playState, pending: animation.pending,
+        firstKeyframe: frames[0] ?? null, lastKeyframe: frames.at(-1) ?? null };
+    }) };
+}
+function stateOpacityWitness() {
+  const readStartedAt = performance.now();
+  const partTimes = [];
+  const opacity = stateOpacity(partTimes);
+  const readCompletedAt = performance.now();
+  return { readStartedAt, readCompletedAt, partTimes, opacity, ...stateWitness() };
 }
 function statePaths(svg) {
   return [...svg.querySelectorAll('path')].map(node => ({ d: node.getAttribute('d'),
@@ -484,17 +509,21 @@ function changeState(state, duration = 600) {
     reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
   if (!result.ok) throw new Error(result.reason.code);
   const effect = result.effect;
-  const before = stateOpacity(); const previous = stateControl;
+  // Снимки сохраняют clock и native keyframes, не меняя ход анимации.
+  const before = stateOpacityWitness(); const previous = stateControl;
   const next = sequence(effect.stages.map(stage => {
     const node = stateNodes.get(stage.partId);
     if (!node) throw new Error('Потеряна группа ' + stage.partId);
     return [node, { opacity: stage.to },
       { at: stage.at, duration: stage.duration, ease: effect.options.easing }];
   }), { reducedMotion: effect.options.duration === 0 ? 'always' : 'user' });
+  const admitted = { ...stateWitness(), playback: next.state, previousPlayback: previous?.state ?? null };
   previous?.stop(); stateControl = next; stateCompletion = next.finished;
   stateGeneration++; stateTarget = state; stateSelect.value = state;
   stateStatus.textContent = stateLabels[state];
-  return { effect, before, after: stateOpacity(), generation: stateGeneration };
+  const after = stateOpacityWitness();
+  return { effect, before: before.opacity, after: after.opacity, generation: stateGeneration,
+    continuity: { before, admitted, after } };
 }
 function readState() {
   const native = stateButton.shadowRoot?.querySelector('button');
@@ -844,13 +873,28 @@ async function browserProof(browser, url, reference, out, records, browserErrors
   }
 }
 
-function sameStateOpacity(left, right) {
+export function sameStateOpacity(left, right, witness = null) {
   assert.deepEqual(
     left.map((item) => item.partId),
     right.map((item) => item.partId),
   );
-  for (const [index, item] of left.entries())
-    assert.ok(Math.abs(item.value - right[index].value) <= 0.002, 'видимая opacity скачет');
+  const differences = left.map((item, index) => ({
+    partId: item.partId,
+    before: item.value,
+    after: right[index].value,
+    delta: right[index].value - item.value,
+  }));
+  for (const difference of differences) {
+    try {
+      assert.ok(
+        Math.abs(difference.delta) <= 0.002,
+        `видимая opacity скачет: ${difference.partId}, ${difference.before} -> ${difference.after}, delta=${difference.delta}`,
+      );
+    } catch (error) {
+      error.stateContinuity = { differences, witness };
+      throw error;
+    }
+  }
 }
 
 function stateEffect(effect, reference, target, duration) {
@@ -957,14 +1001,16 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   assert.equal(activated.nativeClicks, 3);
   assert.ok(activated.events.every((event) => event.trusted && event.composed && event.native));
   assert.equal(activated.events.length, 3);
-  for (const event of activated.events) {
+  records.push({ name: `status-circle:${reducedMotion}:trusted-activation`, events: activated.events });
+  for (const [index, event] of activated.events.entries()) {
     stateEffect(
       event.effect,
       reference,
       event.effect.targetState,
       reducedMotion === 'reduce' ? 0 : 600,
     );
-    if (reducedMotion === 'no-preference') sameStateOpacity(event.before, event.after);
+    if (reducedMotion === 'no-preference')
+      sameStateOpacity(event.before, event.after, { eventIndex: index, ...event });
   }
   await page.getByRole('combobox', { name: 'Состояние знака' }).selectOption('increase');
   oneHot(await page.evaluate(() => window.__iconsPacked.settleState()), 'increase');
@@ -1017,12 +1063,12 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     await page.evaluate(() => window.__iconsPacked.pauseState(280));
     const reverse = await page.evaluate(() => window.__iconsPacked.changeState('question', 300));
     sameStateOpacity(paused.opacity, reverse.before);
-    sameStateOpacity(reverse.before, reverse.after);
+    sameStateOpacity(reverse.before, reverse.after, reverse.continuity);
     stateEffect(reverse.effect, reference, 'question', 300);
     const reversing = await page.evaluate(() => window.__iconsPacked.pauseState(90));
     const newer = await page.evaluate(() => window.__iconsPacked.changeState('attention', 300));
     sameStateOpacity(reversing.opacity, newer.before);
-    sameStateOpacity(newer.before, newer.after);
+    sameStateOpacity(newer.before, newer.after, newer.continuity);
     const mixture = await page.evaluate(() => window.__iconsPacked.pauseState(120));
     assert.equal(
       mixture.opacity.filter((item) => item.value > 0.01).length,
@@ -1031,7 +1077,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     );
     const latest = await page.evaluate(() => window.__iconsPacked.changeState('increase', 200));
     sameStateOpacity(mixture.opacity, latest.before);
-    sameStateOpacity(latest.before, latest.after);
+    sameStateOpacity(latest.before, latest.after, latest.continuity);
     oneHot(await page.evaluate(() => window.__iconsPacked.settleState()), 'increase');
     records.push({
       name: 'status-circle:paused-reverse-newer-state',
@@ -1324,7 +1370,12 @@ export async function main(args = process.argv.slice(2)) {
       'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
   } catch (error) {
     receipt.outcome = 'failed';
-    receipt.failure = { phase, browserErrors, message: String(error?.stack ?? error) };
+    receipt.failure = {
+      phase,
+      browserErrors,
+      message: String(error?.stack ?? error),
+      ...(error?.stateContinuity ? { stateContinuity: error.stateContinuity } : {}),
+    };
     failure = error;
   } finally {
     clearTimeout(proofTimer);
