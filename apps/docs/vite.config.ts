@@ -88,6 +88,7 @@ export default defineConfig({
         // measurement harness from masquerading as documentation.
         'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),
         'fixture-acrylic-live': resolve(__dirname, 'src/_fixtures/acrylic-live.html'),
+        'fixture-material-context': resolve(__dirname, 'src/_fixtures/material-context.html'),
         'fixture-material-runtime-lifetime': resolve(
           __dirname,
           'src/_fixtures/material-runtime-lifetime.html',

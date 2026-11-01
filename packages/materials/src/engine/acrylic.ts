@@ -64,7 +64,7 @@ import { ACRYLIC_LUMINOSITY_OPACITY } from '../acrylic-corridor';
 import { MATERIAL_TIERS, type MaterialTier } from '../material-guarantee';
 import {
   type EngineHandle,
-  ensureHiddenDefs,
+  createHiddenDefs,
   supportsBackdropFilterUrl,
   trailingRaf,
 } from './mount';
@@ -120,15 +120,20 @@ function tierOf(el: HTMLElement): MaterialTier {
   return 'base';
 }
 
-/** Собрать per-surface фильтр в общих defs; вернуть его id и живой feFlood
+/** Собрать фильтр в локальных defs; вернуть его id и живой feFlood
  *  (flood-color пере-биндится на смену tier). Регион ставит caller (зависит
  *  от размера). */
-function buildFilter(tier: MaterialTier): {
+function buildFilter(
+  el: HTMLElement,
+  tier: MaterialTier,
+): {
   id: string;
+  svg: SVGSVGElement;
   filter: SVGFilterElement;
   flood: SVGFEFloodElement;
 } {
   const id = `lab-acrylic-${++uid}`;
+  const document = el.ownerDocument;
   const filter = document.createElementNS(SVGNS, 'filter');
   filter.setAttribute('id', id);
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
@@ -155,8 +160,9 @@ function buildFilter(tier: MaterialTier): {
   blend.setAttribute('mode', 'luminosity');
 
   filter.append(blur, saturate, flood, blend);
-  ensureHiddenDefs(DEFS_CLASS).appendChild(filter);
-  return { id, filter, flood };
+  const { svg, defs } = createHiddenDefs(el, DEFS_CLASS);
+  defs.appendChild(filter);
+  return { id, svg, filter, flood };
 }
 
 /** Регион = бокс элемента (border-box CSS px, без transform-масштаба —
@@ -178,7 +184,7 @@ function writeBackdrop(el: HTMLElement, id: string): void {
 /**
  * Прицепить acrylic-конвейер к поверхности. Package-internal: единственный
  * caller — декларативный рантайм (runtime.ts) через binding. Механика per-
- * surface фильтра (общий defs, регион по боксу через ResizeObserver, tier из
+ * surface фильтра (локальные defs, регион по боксу через ResizeObserver, tier из
  * классов) — общая инженерия backdrop-фильтров (./mount), рецепт внутри — свой.
  * Attach решений о гейте/медиа не дублирует — их принимает рантайм.
  */
@@ -192,7 +198,7 @@ export function attach(el: HTMLElement): EngineHandle {
   }));
 
   let tier = tierOf(el);
-  const { id, filter, flood } = buildFilter(tier);
+  const { id, svg, filter, flood } = buildFilter(el, tier);
   setRegion(filter, el);
   writeBackdrop(el, id);
 
@@ -221,7 +227,7 @@ export function attach(el: HTMLElement): EngineHandle {
       disposed = true;
       ro.disconnect();
       raf.cancel();
-      filter.remove();
+      svg.remove();
       for (const { property, value, priority } of baseline) {
         el.style.setProperty(property, value, priority);
       }

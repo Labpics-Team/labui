@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readMaterialCss } from '../scripts/material-css';
 import { ACRYLIC_LUMINOSITY_OPACITY } from '../src/acrylic-corridor';
 import {
@@ -16,6 +16,7 @@ import {
   ACRYLIC_ENGINE_MEDIA,
   ACRYLIC_REACH_PX,
   ACRYLIC_SATURATE,
+  attach,
 } from '../src/engine/acrylic';
 import { MATERIAL_TIERS } from '../src/material-guarantee';
 
@@ -65,6 +66,132 @@ describe('конвейер повторяет ступени листа (оди�
   });
 });
 
+// Модель проверяет владение DOM-узлами и исходным document. Разрешение url()
+// и наследование вычисленных цветов проверяются реальным браузером.
+class FilterNode {
+  children: FilterNode[] = [];
+  parent: FilterNode | null = null;
+  attributes = new Map<string, string>();
+  values = new Map<string, string>();
+  priorities = new Map<string, string>();
+  isConnected = true;
+  offsetWidth = 160;
+  offsetHeight = 80;
+  classList = { contains: () => false };
+  style = {
+    cssText: '',
+    setProperty: (key: string, value: string, priority = '') => {
+      this.values.set(key, value);
+      this.priorities.set(key, priority);
+    },
+    getPropertyValue: (key: string) => this.values.get(key) ?? '',
+    getPropertyPriority: (key: string) => this.priorities.get(key) ?? '',
+  };
+
+  constructor(
+    readonly tag: string,
+    readonly ownerDocument: FilterDocument,
+  ) {}
+
+  setAttribute(key: string, value: string): void {
+    this.attributes.set(key, value);
+  }
+
+  appendChild(node: FilterNode): FilterNode {
+    node.parent = this;
+    this.children.push(node);
+    return node;
+  }
+
+  append(...nodes: FilterNode[]): void {
+    for (const node of nodes) this.appendChild(node);
+  }
+
+  remove(): void {
+    if (this.parent) this.parent.children = this.parent.children.filter((node) => node !== this);
+    this.parent = null;
+  }
+
+  find(tag: string): FilterNode | undefined {
+    if (this.tag === tag) return this;
+    for (const child of this.children) {
+      const found = child.find(tag);
+      if (found) return found;
+    }
+  }
+}
+
+class FilterDocument {
+  body = new FilterNode('body', this);
+  createElementNS(_namespace: string, tag: string): FilterNode {
+    return new FilterNode(tag, this);
+  }
+}
+
+describe('фильтр принадлежит поверхности и её локальному контексту', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('attach размещает всю SVG-цепочку внутри surface в её ownerDocument', () => {
+    const ambient = new FilterDocument();
+    const owner = new FilterDocument();
+    const surface = new FilterNode('article', owner);
+    vi.stubGlobal('document', ambient);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const handle = attach(surface as unknown as HTMLElement);
+    try {
+      const filter = surface.find('filter');
+      expect(
+        filter,
+        'фильтр должен иметь тот же tree scope и CSS-предков, что поверхность',
+      ).toBeDefined();
+      expect(surface.find('feFlood')?.ownerDocument).toBe(owner);
+      expect(ambient.body.children).toHaveLength(0);
+    } finally {
+      handle.destroy();
+    }
+    expect(surface.children).toHaveLength(0);
+  });
+
+  it('destroy удаляет только собственный SVG; повторный attach и сосед не теряются', () => {
+    const owner = new FilterDocument();
+    vi.stubGlobal('document', owner);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const first = new FilterNode('article', owner);
+    const second = new FilterNode('article', owner);
+    first.style.setProperty('backdrop-filter', 'blur(2px)', 'important');
+    const old = attach(first as unknown as HTMLElement);
+    const neighbor = attach(second as unknown as HTMLElement);
+    const current = attach(first as unknown as HTMLElement);
+    try {
+      old.destroy();
+      expect(first.children).toHaveLength(1);
+      expect(second.find('filter')).toBeDefined();
+      current.destroy();
+      current.destroy();
+      expect(first.children).toHaveLength(0);
+      expect(first.style.getPropertyValue('backdrop-filter')).toBe('blur(2px)');
+      expect(first.style.getPropertyPriority('backdrop-filter')).toBe('important');
+      expect(second.find('filter')).toBeDefined();
+    } finally {
+      current.destroy();
+      neighbor.destroy();
+    }
+    expect(second.children).toHaveLength(0);
+  });
+});
+
 describe('честные деградации: движок гаснет во всех медиа-режимах листа', () => {
   it('каждый запрещающий @media листа есть в ACRYLIC_ENGINE_MEDIA', () => {
     // Класс: «новая деградация добавлена в лист, движок о ней не знает» —
@@ -110,8 +237,7 @@ describe('родной LG-стиль региона (userSpaceOnUse, изотр�
     expect(engineSrc).not.toContain("'150%'");
   });
 
-  it('per-surface фильтр в общем defs-хосте (ensureHiddenDefs), uid — родной registry-стиль', () => {
-    expect(engineSrc).toContain('ensureHiddenDefs(DEFS_CLASS)');
+  it('фильтр сохраняет uid и registry поверхности', () => {
     expect(engineSrc).toContain('lab-acrylic-${++uid}');
     expect(engineSrc).toContain('registry.set(el, handle)');
   });

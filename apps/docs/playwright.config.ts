@@ -51,6 +51,7 @@ const SMOKE_SPECS = [
   'z-order.spec.ts',
   'materials-flag.spec.ts',
   'material-scope.spec.ts',
+  'material-context.spec.ts',
   // Acrylic v2 (ADR-0009): движок-контракт материала — конвейер держит
   // поверхность, пиксельный дифференциал зажима, честные деградации. Тот же
   // класс критического пути, что materials-flag.

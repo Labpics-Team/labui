@@ -53,24 +53,22 @@ function probeBackdropFilterUrl(): boolean {
 }
 
 /**
- * Единый скрытый `<svg><defs>` хост для url()-фильтров движков (луминосити-
- * конвейер acrylic, линза liquid-glass). Один на `className` на документ;
- * невидимый, вне hit-теста и a11y-дерева. Раньше — две дословных копии
- * (`ensureDefs` в liquid-glass, `ensureAcrylicDefs` в acrylic).
+ * Хост принадлежит одному handle. Внутри surface SVG сохраняет её tree scope
+ * для url(#id) и наследует локальные CSS-токены. Handle удаляет хост целиком.
  */
-const defsHosts = new Map<string, SVGDefsElement>();
-export function ensureHiddenDefs(className: string): SVGDefsElement {
-  const cached = defsHosts.get(className);
-  if (cached?.isConnected) return cached;
+export function createHiddenDefs(
+  surface: HTMLElement,
+  className: string,
+): { svg: SVGSVGElement; defs: SVGDefsElement } {
+  const document = surface.ownerDocument;
   const svg = document.createElementNS(SVGNS, 'svg');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('class', className);
   svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
   const defs = document.createElementNS(SVGNS, 'defs');
   svg.appendChild(defs);
-  document.body.appendChild(svg);
-  defsHosts.set(className, defs);
-  return defs;
+  surface.appendChild(svg);
+  return { svg, defs };
 }
 
 /**

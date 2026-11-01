@@ -3,7 +3,7 @@ import { trailingRaf } from '../src/engine/mount';
 
 /*
  * Общий движковый примитив (./mount) — юнит trailing-rAF без DOM (mock rAF).
- * ensureHiddenDefs / mountEngine — DOM-механика; их поведение проверяет
+ * createHiddenDefs / mountEngine — DOM-механика; их поведение проверяет
  * реальный браузер (apps/docs/tests/acrylic-live.spec.ts гоняет весь путь
  * runtime → mountEngine → acrylic attach/detach/refresh), а source-контракт —
  * acrylic-engine-contract.test.ts. Здесь — чистая логика сворачивания,

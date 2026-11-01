@@ -68,7 +68,7 @@
 // engine simply re-imports those exact symbols — the runtime is byte-identical;
 // only the definition site moved.
 import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
-import { ensureHiddenDefs, supportsBackdropFilterUrl } from './mount';
+import { createHiddenDefs, supportsBackdropFilterUrl } from './mount';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -154,10 +154,6 @@ interface EngineState extends LiquidGlassHandle {
 const SVGNS = 'http://www.w3.org/2000/svg';
 const registry = new WeakMap<Element, EngineState>(); // host element → state (no DOM expando)
 let uid = 0;
-
-/** Скрытый defs-хост линзы — общий примитив (./mount), делится с acrylic-движком
- *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
-const ensureDefs = (): SVGDefsElement => ensureHiddenDefs('lab-lg-defs');
 
 /** The package-private state class: while the engine holds a surface,
  *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
@@ -881,9 +877,9 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     value: el.style.getPropertyValue(property),
     priority: el.style.getPropertyPriority(property),
   }));
-  ensureDefs();
+  const { svg, defs } = createHiddenDefs(el, 'lab-lg-defs');
   const id = `lab-lg-${++uid}`;
-  const filter = document.createElementNS(SVGNS, 'filter');
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
   // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
@@ -892,7 +888,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // (primitiveUnits is intentionally NOT set: no primitive here carries a
   // primitiveUnits-sensitive length, so it would be a no-op.)
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  ensureDefs().appendChild(filter);
+  defs.appendChild(filter);
 
   const { onPerf, ...params } = opts;
   const state: EngineState = {
@@ -959,7 +955,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
-    filter.remove();
+    svg.remove();
     for (const { property, value, priority } of baseline) {
       el.style.setProperty(property, value, priority);
     }
