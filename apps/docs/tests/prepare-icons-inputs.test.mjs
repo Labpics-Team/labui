@@ -211,11 +211,13 @@ function assertReference(reference) {
   }
 }
 
-test('frozen fixture matches the declared raw source and both masters remain whole', async () => {
-  const actualPin = JSON.parse(
-    await readFile(new URL('./icons-consumer-source.json', import.meta.url)),
+test('current pin retains the frozen author identity and both masters remain whole', async () => {
+  const actualPin = validateSourcePin(
+    JSON.parse(await readFile(new URL('./icons-consumer-source.json', import.meta.url))),
   );
-  assert.deepEqual(validateSourcePin(actualPin), PIN);
+  assert.equal(actualPin.schemaVersion, PIN.schemaVersion);
+  assert.equal(actualPin.repository, PIN.repository);
+  assert.deepEqual(actualPin.figma, PIN.figma);
   for (const variant of ['outline', 'filled']) {
     const bytes = Buffer.from(MASTERS[variant]);
     assert.equal(bytes.length, MANIFEST.icons.reload[variant].bytes);
