@@ -8,7 +8,7 @@ on:
       - '.github/scripts/browser-check.sh'
       - 'scripts/ci/*icons*'
       - 'apps/docs/tests/icons-*'
-      - 'apps/docs/tests/prepare-icons-inputs.mjs'
+      - 'apps/docs/tests/prepare-icons-inputs*.mjs'
       - 'packages/core/**'
       - 'packages/shadow/**'
       - 'apps/docs/package.json'
