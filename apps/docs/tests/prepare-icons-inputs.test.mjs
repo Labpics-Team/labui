@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -777,4 +777,130 @@ test('historical schema1 summary does not need a measurement report', async (t) 
   const stdout = fixture.invoke();
   assert.doesNotMatch(stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_/);
   assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
+});
+
+test('failed receipt waits for a complete large report through asynchronous stdout backpressure', async (t) => {
+  const fixture = await summaryFixture(t, 2);
+  fixture.report.diagnosticPadding = Array.from({ length: 4096 }, (_, index) =>
+    createHash('sha256').update(`transport-only-${index}`).digest('hex'),
+  );
+  const bytes = Buffer.from(JSON.stringify(fixture.report));
+  fixture.source.measurement.sha256 = hash(bytes);
+  fixture.source.measurement.bytes = bytes.length;
+  await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), bytes);
+  await writeFile(
+    join(fixture.output, 'inputs/source-receipt.json'),
+    JSON.stringify(fixture.source),
+  );
+  const source = `
+    import { Writable } from 'node:stream';
+    import { summarize } from ${JSON.stringify(new URL('./prepare-icons-inputs.mjs', import.meta.url).href)};
+    const native = process.stdout;
+    // POSIX stdout асинхронен; Windows stdout pipes синхронны.
+    // Обычный Writable сохраняет частичный вывод до callback в обеих средах.
+    const delayed = new Writable({ write(chunk, encoding, callback) {
+      const boundary = Math.min(chunk.length, 65536);
+      native.write(chunk.subarray(0, boundary));
+      setTimeout(() => native.write(chunk.subarray(boundary), callback), 25);
+    } });
+    Object.defineProperty(process, 'stdout', { value: delayed });
+    await summarize(${JSON.stringify(fixture.output)});
+  `;
+  for (const outcome of ['passed', 'failed']) {
+    await writeFile(
+      join(fixture.output, 'result/receipt.json'),
+      JSON.stringify({
+        outcome,
+        records: [],
+        ...(outcome === 'failed' ? { failure: { phase: 'mock-continuity' } } : {}),
+      }),
+    );
+    const result = await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, ['--input-type=module', '-e', source], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      const stdout = [];
+      const stderr = [];
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error('mock stdout timeout'));
+      }, 5000);
+      child.on('error', (error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+      child.stdout.on('data', (chunk) => {
+        stdout.push(chunk);
+        child.stdout.pause();
+        setTimeout(() => child.stdout.resume(), 1);
+      });
+      child.stderr.on('data', (chunk) => stderr.push(chunk));
+      child.on('close', (code) => {
+        clearTimeout(timer);
+        resolve({
+          code,
+          stdout: Buffer.concat(stdout).toString(),
+          stderr: Buffer.concat(stderr).toString(),
+        });
+      });
+    });
+    assert.equal(result.code, outcome === 'passed' ? 0 : 1, result.stderr);
+    const header = JSON.parse(
+      result.stdout.split('\n')[0].slice('LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN '.length),
+    );
+    const chunks = [
+      ...result.stdout.matchAll(
+        /LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK (\d+) ([A-Za-z0-9+/=]+)\n/g,
+      ),
+    ];
+    t.diagnostic(
+      `${outcome}: ${Buffer.byteLength(result.stdout)} stdout bytes, ${chunks.length}/${header.chunks} complete chunks`,
+    );
+    assert.equal(chunks.length, header.chunks);
+    assert.deepEqual(
+      chunks.map((chunk) => Number(chunk[1])),
+      Array.from({ length: header.chunks }, (_, index) => index),
+    );
+    assert.deepEqual(
+      gunzipSync(Buffer.from(chunks.map((chunk) => chunk[2]).join(''), 'base64')),
+      bytes,
+    );
+    assert.ok(
+      result.stdout.includes(
+        `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}\nLABUI_ICONS_CONSUMER_RESULT `,
+      ),
+    );
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    assert.equal(summary.outcome, outcome);
+  }
+});
+
+test('stdout write failure keeps its original error and removes the one-shot listener', async (t) => {
+  const fixture = await summaryFixture(t, 2);
+  const result = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `
+    import { Writable } from 'node:stream';
+    import { summarize } from ${JSON.stringify(new URL('./prepare-icons-inputs.mjs', import.meta.url).href)};
+    const native = process.stdout;
+    const broken = new Writable({ write(chunk, encoding, callback) {
+      callback(Object.assign(new Error('MOCK_STDOUT_WRITE_FAILURE'), { code: 'MOCK_STDOUT_ERROR' }));
+    } });
+    Object.defineProperty(process, 'stdout', { value: broken });
+    try { await summarize(${JSON.stringify(fixture.output)}); }
+    catch (error) {
+      await new Promise(setImmediate);
+      native.write(JSON.stringify({ code: error.code, listeners: broken.listenerCount('error') }));
+      process.exitCode = 1;
+    }
+  `,
+    ],
+    { encoding: 'utf8', timeout: 5000 },
+  );
+  assert.equal(result.status, 1, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), { code: 'MOCK_STDOUT_ERROR', listeners: 0 });
+  assert.doesNotMatch(result.stderr, /Unhandled 'error' event/);
 });

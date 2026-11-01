@@ -529,6 +529,28 @@ export async function prepareInputs(options) {
   );
 }
 
+function writeStdout(bytes) {
+  const output = process.stdout;
+  return new Promise((resolve, reject) => {
+    output.once('error', reject);
+    try {
+      output.write(bytes, (error) => {
+        if (error) {
+          // Writable вызывает callback до события error; once-обработчик остаётся
+          // до него, чтобы ошибка потока не затёрла исходную причину.
+          reject(error);
+          return;
+        }
+        output.removeListener('error', reject);
+        resolve();
+      });
+    } catch (error) {
+      output.removeListener('error', reject);
+      reject(error);
+    }
+  });
+}
+
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
 export async function summarize(directory) {
   const root = await realpath(resolve(directory));
@@ -570,9 +592,9 @@ export async function summarize(directory) {
       measurement.artifactFiles,
       measurement.lockfileSha256,
     );
-    process.stdout.write(platformMeasurementLog(bytes, source.pin.sourceCommit));
+    await writeStdout(platformMeasurementLog(bytes, source.pin.sourceCommit));
   }
-  process.stdout.write(
+  await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,
       outcome: receipt.outcome,

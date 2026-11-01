@@ -211,6 +211,9 @@ remote receipt не означает пройденную интеграцию.
 Для восстановления из полного job log проверьте наличие всех индексов и END,
 соедините base64, декодируйте и gunzip, затем проверьте исходный размер и SHA256.
 Неполный блок не является report. Schema1 не требует measurement packet.
+`summarize` дожидается завершения записи полного блока и RESULT перед отказом
+по неуспешному receipt. При ошибке stdout возвращается исходная причина согласно
+[контракту Node Writable](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback).
 
 Основание runner guard: [GitHub default variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables).
 Принятый packed-consumer маршрут: Lab UI PR #191, SHA
