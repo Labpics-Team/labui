@@ -30,15 +30,14 @@
  *   - padding:     none | s | m | l               (inner spacing of body region)
  *   - interactive: a hoverable/focusable affordance for whole-card targets (bool)
  *
- * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
- * dimension tokens through `litVar`. The surface reads `--lab-bg-primary` /
- * `--lab-bg-secondary`; borders read `--lab-border-base` / `--lab-border-soft`;
- * elevation reads the `--lab-elevation-*` contract from @labpics/ui-shadow (NOT
- * the flat `--lab-fx-shadow-*` single-colour tokens — those carry no geometry,
- * tint, or motion); the focus ring reads `--lab-border-focus`. No hex, no
- * primitive, no invented role.
+ * Материал elevated принадлежит нижнему Content; изображение остаётся снаружи.
+ * Его CSS и runtime поставляет @labpics/ui-materials. Outlined и filled пока
+ * сохраняют прежнюю статическую заливку: соответствие их материалов Figma ещё
+ * не установлено. Тени, размеры, границы и focus читают семантические --lab-*.
  */
-import { type TemplateResult, css, html } from 'lit';
+import { mountMaterialRuntime } from '@labpics/ui-materials';
+import { materialCss } from '@labpics/ui-materials/css';
+import { type TemplateResult, css, html, unsafeCSS } from 'lit';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 
@@ -46,6 +45,9 @@ import { LabElement } from '../../lit/lab-element.js';
 export type LabCardVariant = 'elevated' | 'outlined' | 'filled';
 /** Inner spacing of the card body region. */
 export type LabCardPadding = 'none' | 's' | 'm' | 'l';
+
+// Один CSSResult для всех Card; Lit использует его и в DSD, и после hydration.
+const materialStyles = unsafeCSS(materialCss);
 
 export class LabCard extends LabElement {
   static override properties = {
@@ -59,6 +61,20 @@ export class LabCard extends LabElement {
   declare padding: LabCardPadding;
   declare interactive: boolean;
 
+  private disposeMaterialRuntime?: () => void;
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // Shadow-узлы сохраняются при reconnect; updated возвращает им runtime.
+    this.requestUpdate();
+  }
+
+  override disconnectedCallback(): void {
+    this.disposeMaterialRuntime?.();
+    this.disposeMaterialRuntime = undefined;
+    super.disconnectedCallback();
+  }
+
   constructor() {
     super();
     this.variant = 'elevated';
@@ -66,7 +82,9 @@ export class LabCard extends LabElement {
     this.interactive = false;
   }
 
-  static override styles = css`
+  static override styles = [
+    materialStyles,
+    css`
     :host {
       --_pad: ${litVar('--lab-space-lg', '1.5rem')};
       --_radius: ${litVar('--lab-radius-card', '1rem')};
@@ -102,7 +120,7 @@ export class LabCard extends LabElement {
 
     /* ── variant=elevated: raised surface + contract elevation token ────────── */
     :host([variant='elevated']) .card {
-      background-color: ${litVar('--lab-bg-secondary')};
+      background-color: transparent;
       box-shadow: var(--lab-elevation-resting);
     }
 
@@ -145,6 +163,14 @@ export class LabCard extends LabElement {
       width: 100%;
     }
 
+    .content {
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      /* Внешняя карточка обрезает общий контур; стык с media остаётся прямым. */
+      border-radius: 0;
+    }
+
     .header {
       padding: var(--_pad) var(--_pad) 0;
     }
@@ -165,7 +191,8 @@ export class LabCard extends LabElement {
     .region[data-empty] {
       display: none;
     }
-  `;
+  `,
+  ];
 
   /**
    * Mark a region empty when its slot has no assigned nodes, so empty header /
@@ -193,6 +220,17 @@ export class LabCard extends LabElement {
     }
   }
 
+  override updated(): void {
+    if (!this.isConnected || this.variant !== 'elevated') {
+      this.disposeMaterialRuntime?.();
+      this.disposeMaterialRuntime = undefined;
+      return;
+    }
+    if (this.disposeMaterialRuntime) return;
+    const content = this.renderRoot.querySelector<HTMLElement>('.content');
+    if (content) this.disposeMaterialRuntime = mountMaterialRuntime(content);
+  }
+
   override render(): TemplateResult {
     // Native semantics: an <article> is the self-contained-composition element in
     // the HTML spec, which a card is by definition. Header/footer project through
@@ -204,13 +242,18 @@ export class LabCard extends LabElement {
         <div class="region media">
           <slot name="media" @slotchange=${this.onSlotChange}></slot>
         </div>
-        <header class="region header">
-          <slot name="header" @slotchange=${this.onSlotChange}></slot>
-        </header>
-        <div class="region body"><slot></slot></div>
-        <footer class="region footer">
-          <slot name="footer" @slotchange=${this.onSlotChange}></slot>
-        </footer>
+        <div
+          class=${this.variant === 'elevated' ? 'content lab-material lab-material--elevated' : 'content'}
+          part="content"
+        >
+          <header class="region header">
+            <slot name="header" @slotchange=${this.onSlotChange}></slot>
+          </header>
+          <div class="region body"><slot></slot></div>
+          <footer class="region footer">
+            <slot name="footer" @slotchange=${this.onSlotChange}></slot>
+          </footer>
+        </div>
       </article>
     `;
   }

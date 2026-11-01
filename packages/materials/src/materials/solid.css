@@ -1,13 +1,10 @@
-/* SOLID изолирует свою область до следующего явного data-material.
- * Вложенная область вправе снова выбрать стекло или acrylic. */
-@scope ([data-material="solid"]) to ([data-material]) {
-  :where(:scope).lab-material,
-  .lab-material {
-    --_base-paint: var(--_base);
-    --_blur: 0px;
-    --_saturate: 100%;
-    --_noise: none;
-    --_rim: none;
-    -webkit-backdrop-filter: none;
-  }
+/* Любой явный data-material останавливает внешний режим. Glass/acrylic имеют
+ * более специфичный селектор; solid, пустое и неизвестное значение остаются
+ * непрозрачными. initial возвращает локальную базу каждой дочерней поверхности. */
+:host(:where([data-material])),
+:where([data-material]) {
+  --_material-mode: solid;
+  --_material-live: 0;
+  --_base-paint: initial;
+  --_noise: none;
 }

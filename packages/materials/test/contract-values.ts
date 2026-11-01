@@ -75,6 +75,11 @@ export function readContractMaterials(): ContractMaterials {
       fills.set(fillKey(theme, tier), {
         tint: readColour(section, `--lab-bg-material-${tier}-01`),
         base: readColour(section, `--lab-bg-material-${tier}-02`),
+        // Published Elevated Solid использует Backgrounds/Neutral/Grouped/Secondary;
+        // live-пара сохраняется отдельно для проверки прозрачного материала.
+        ...(tier === 'elevated'
+          ? { solid: readColour(section, '--lab-bg-grouped-secondary') }
+          : {}),
       });
     }
     // Material panels carry a STATIC (theme-pinned) label; polarity picks white

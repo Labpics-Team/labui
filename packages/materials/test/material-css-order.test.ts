@@ -24,10 +24,10 @@ describe('файлы-материалы: закон порядка склейк�
   it('каскадные вехи идут строго в порядке закона', () => {
     const landmarks = [
       '.lab-material {', // base: переменные + единое paint-правило
-      '@scope ([data-material="glass"]) to ([data-material])', // область glass
-      '@scope ([data-material="acrylic"]) to ([data-material])', // область acrylic
+      '[data-material="glass"] {', // контекст glass
+      '[data-material="acrylic"] {', // контекст acrylic
       '.lab-material--lensed', // engine-held: после мод, до solid
-      '@scope ([data-material="solid"]) to ([data-material])', // область solid
+      ':where([data-material]) {', // сброс любой явной области
       'DETERMINISTIC DEGRADATIONS', // деградации бьют всё материальное
       'LAB-VEIL', // veil — отдельная эффект-поверхность, последним
     ];

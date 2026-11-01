@@ -311,9 +311,9 @@ describe('гейт и скоуп', () => {
     expect(engineSrc).not.toContain("from './liquid-glass'");
   });
 
-  it('рантайм держит acrylic только под ближайшим acrylic-скоупом (закон nearest-scope)', () => {
-    // binding.wants = ближайший [data-material] == 'acrylic' (closest-scope).
+  it('рантайм читает эффективный CSS-режим, включая slot-наследование и деградации', () => {
     expect(runtimeSrc).toContain("wants: (el) => inModeScope(el, 'acrylic')");
-    expect(runtimeSrc).toContain("scope.getAttribute('data-material') === mode");
+    expect(runtimeSrc).toContain("getPropertyValue('--_material-mode')");
+    expect(runtimeSrc).not.toContain("closest('[data-material]')");
   });
 });

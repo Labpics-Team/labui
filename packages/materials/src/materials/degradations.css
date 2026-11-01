@@ -14,7 +14,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;
@@ -31,7 +34,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;
@@ -47,7 +53,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;
@@ -67,7 +76,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;

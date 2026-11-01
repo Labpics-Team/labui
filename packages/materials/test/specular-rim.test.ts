@@ -1,122 +1,74 @@
 import { describe, expect, it } from 'vitest';
 import { readMaterialCss } from '../scripts/material-css';
 
-/*
- * Specular rim (Стекло v2, слайс B) — 1px внутренняя градиентная обводка,
- * имитирующая свет, пойманный кромкой стекла: ярко сверху, гаснет вниз.
- *
- * Инварианты класса, которые гейтит этот файл (а не один частный ввод):
- *   1. Рим — приватная ручка `--_rim` (none по умолчанию); моды ТОЛЬКО
- *      пере-биндят её (священное ограничение владельца: моды не трогают
- *      единое paint-правило, лишь приватные custom properties).
- *   2. Рим ВКЛЮЧЁН у glass/acrylic (стеклянные/акриловые кромки ловят свет),
- *      ВЫКЛЮЧЕН у solid
- *      (непрозрачный канон — не стекло).
- *   3. Цвет рима — из контракта (`--lab-bg-static-light/-dark`), НЕ литерал:
- *      спекуляр ахроматичен (физика отражения белого света), а gard
- *      no-hardcoded-colour запрещает сырой rgb()/hex в material.css.
- *   4. Тема ребиндит рим через custom property (светлая/тёмная), ноль хардкода
- *      темы — система остаётся динамичной.
- *   5. Единое paint-правило НЕ тронуто (байт-идентичность слоёв).
- *   6. Техника ринга — `::before` с mask-composite (уважает border-radius,
- *      ноль изменения разметки), с -webkit-литералом для Safari ≤18.2.
- *
- * Деградации, снимающие рим вместе с прозрачностью, гейтит degradations.test.ts.
- */
-
+// Механические параметры и источники цвета. Рендерное равенство старого и
+// наследуемого контекста отдельно проверяется в Chromium/WebKit по пикселям.
 const css = readMaterialCss();
 
-/** Тело первого selector/at-rule блока, чей заголовок матчит `header`. */
 function blockBody(header: RegExp): string {
   const start = css.search(header);
   expect(start, `блок ${header} присутствует`).toBeGreaterThanOrEqual(0);
-  let i = css.indexOf('{', start);
-  let depth = 0;
-  const bodyStart = i + 1;
-  for (; i < css.length; i++) {
-    if (css[i] === '{') depth++;
-    else if (css[i] === '}') {
-      depth--;
-      if (depth === 0) return css.slice(bodyStart, i);
-    }
-  }
-  throw new Error(`несбалансированные скобки после ${header}`);
+  const open = css.indexOf('{', start);
+  return css.slice(open + 1, css.indexOf('}', open));
 }
 
-describe('specular rim — приватная ручка --_rim', () => {
-  it('единое paint-правило НЕ тронуто римом (байт-идентичность слоёв)', () => {
-    // Священное ограничение: рим НЕ входит в paint-правило (он на ::before).
-    expect(css).toContain(
-      'background: var(--_noise, none), linear-gradient(var(--_tint), var(--_tint)), var(--_base-paint);',
-    );
+const surface = blockBody(/\.lab-material\s*\{/);
+const ring = blockBody(/\.lab-material::before\s*\{/);
+const reset = blockBody(/:where\(\[data-material\]\)\s*\{/);
+
+describe('локальный specular rim и наследуемый физический контекст', () => {
+  it('рим остаётся вне заливки поверхности', () => {
+    const background = surface.match(/background:\s*([^;]+);/)?.[1] ?? '';
+    expect(background).toContain('var(--_noise, none)');
+    expect(background).toContain('linear-gradient(var(--_tint), var(--_tint))');
+    expect(background).toContain('var(--_base-paint, var(--_base))');
+    expect(background).not.toContain('--_rim');
   });
 
-  it('ринг рисуется на ::before (ноль разметки, уважает border-radius)', () => {
-    const body = blockBody(/\.lab-material::before\s*\{/);
-    expect(body, 'ринг питается приватной ручкой рима с фолбэком none').toContain(
-      'var(--_rim, none)',
-    );
-    expect(body, 'ринг наследует скругление поверхности').toContain('border-radius: inherit');
-    expect(body, '1px толщина ринга (padding-box кольцо)').toContain('padding: 1px');
-    // mask-composite вырезает нутро → остаётся только 1px padding-кольцо.
-    expect(body).toContain('mask-composite: exclude');
-    // Safari ≤18.2 — литерал -webkit (как -webkit-backdrop-filter в модах).
-    expect(body).toContain('-webkit-mask');
-    expect(body).toContain('-webkit-mask-composite: xor');
-    expect(body, 'ринг не перехватывает клики').toContain('pointer-events: none');
+  it('ринг сохраняет 1px внутреннюю маску, скругление и отсутствие hit-test', () => {
+    expect(ring).toContain('background: var(--_rim, none)');
+    expect(ring).toContain('border-radius: inherit');
+    expect(ring).toContain('padding: 1px');
+    expect(ring).toContain('mask-composite: exclude');
+    expect(ring).toContain('-webkit-mask-composite: xor');
+    expect(ring).toContain('pointer-events: none');
   });
 
-  it('рим явно ВЫКЛЮЧЕН в базе и не наследуется из внешней поверхности', () => {
-    const body = blockBody(/\.lab-material\s*\{/);
-    expect(body).toContain('--_rim: none');
+  it('без контекста рим невидим, глобальный root-default не требуется', () => {
+    expect(ring).toContain('opacity: var(--_material-live, 0)');
+    expect(css).not.toMatch(/:root\s*\{/);
   });
 
-  it('glass ВКЛЮЧАЕТ рим (стеклянная кромка ловит свет)', () => {
-    const body = blockBody(/@scope \(\[data-material="glass"\]\) to \(\[data-material\]\)/);
-    expect(body).toContain('--_rim: var(--_rim-active)');
+  it.each(['glass', 'acrylic'])('%s включает рим через физическую долю live', (mode) => {
+    const body = blockBody(new RegExp(`\\[data-material="${mode}"\\]\\s*\\{\\s*--_material-mode:`));
+    expect(body).toContain('--_material-live: 1');
+    expect(body).not.toContain('--_rim:');
   });
 
-  it('acrylic ВКЛЮЧАЕТ рим (Fluent-кромка несёт люминантный штрих)', () => {
-    const body = blockBody(/@scope \(\[data-material="acrylic"\]\) to \(\[data-material\]\)/);
-    expect(body).toContain('--_rim: var(--_rim-active)');
+  it('любой новый явный контекст сначала выключает рим, включая unknown/empty', () => {
+    expect(reset).toContain('--_material-live: 0');
+    expect(reset).toContain('--_material-mode: solid');
   });
 
-  it('solid ВЫКЛЮЧАЕТ рим до следующей явной области материала', () => {
-    const body = blockBody(/@scope \(\[data-material="solid"\]\) to \(\[data-material\]\)/);
-    expect(body).toContain('--_rim: none');
+  it('тема наследует доли рима и сбрасывается у ближайшего явного theme', () => {
+    const light = blockBody(/\[data-theme\]\s*\{/);
+    const dark = blockBody(/\[data-theme="dark"\]\s*\{/);
+    expect(light).toContain('--_rim-top: 50%');
+    expect(light).toContain('--_rim-bottom: 5%');
+    expect(light).toContain('--_rim-bottom-dark: 0%');
+    expect(dark).toContain('--_rim-top: 12%');
+    expect(dark).toContain('--_rim-bottom: 4%');
+    expect(dark).toContain('--_rim-bottom-dark: 100%');
+    expect(css).toContain(':host([data-theme])');
+    expect(css).toContain(':host([data-theme="dark"])');
   });
 
-  it('тема ребиндит рим через --_rim-active (светлая дефолт, тёмная оверрайд)', () => {
-    const base = blockBody(/\.lab-material\s*\{/);
-    expect(base, 'дефолт активного рима = светлый').toContain('--_rim-active: var(--_rim-light)');
-    // Тёмный оверрайд на (0,2,0) — атрибут + класс.
-    expect(css).toContain('[data-theme="dark"] .lab-material');
-    const darkBody = blockBody(
-      /\[data-theme="dark"\] \.lab-material,\s*\r?\n\s*\[data-theme="dark"\]\.lab-material\s*\{/,
-    );
-    expect(darkBody).toContain('--_rim-active: var(--_rim-dark)');
-  });
-
-  it('цвет рима — из контракта (achromatic bg-static), НЕ литерал rgb/hex/oklch', () => {
-    const base = blockBody(/\.lab-material\s*\{/);
-    // Полное значение объявления (до `;`), формат-независимо (многострочный
-    // linear-gradient ловится через [^;], включающий переносы строк).
-    const declValue = (name: string): string =>
-      new RegExp(`--_rim-${name}:\\s*([^;]+);`).exec(base)?.[1] ?? '';
-    const lightRim = declValue('light');
-    const darkRim = declValue('dark');
-    expect(lightRim, 'светлый рим определён').not.toBe('');
-    expect(darkRim, 'тёмный рим определён').not.toBe('');
-    // Источник — статик-фоновые токены контракта (белый / почти-чёрный).
-    expect(lightRim).toContain('var(--lab-bg-static-light)');
-    // Тёмный рим несёт едва тёмный низ (bg-static-dark).
-    expect(darkRim).toContain('var(--lab-bg-static-dark)');
-    // Ноль сырых цветовых литералов (спекуляр берётся из контракта color-mix).
-    const rimDecls = `${lightRim}\n${darkRim}`;
-    expect(rimDecls, 'нет сырого rgb()/#hex/oklch — только color-mix над токенами').not.toMatch(
-      /#[0-9a-f]{3,8}\b|(?<![-\w])rgba?\(|oklch\(|hsla?\(/i,
-    );
-    // Именно установленный идиом теней: color-mix(in srgb, transparent, <token> α).
-    expect(lightRim).toContain('color-mix(in srgb, transparent, var(--lab-bg-static-light)');
+  it('цвета рима разрешаются на поверхности из её semantic static-токенов', () => {
+    const rim = surface.match(/--_rim:\s*([^;]+);/)?.[1] ?? '';
+    expect(rim).toContain('var(--lab-bg-static-light)');
+    expect(rim).toContain('var(--lab-bg-static-dark)');
+    expect(rim).toContain('var(--_rim-top, 50%)');
+    expect(rim).toContain('var(--_rim-bottom, 5%)');
+    expect(rim).not.toMatch(/#[0-9a-f]{3,8}\b|(?<![-\w])rgba?\(|oklch\(|hsla?\(/i);
   });
 });

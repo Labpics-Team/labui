@@ -30,7 +30,12 @@ function atRuleBody(header: RegExp): string {
 
 /** A degradation is "solid" if it drops the blur AND restores the opaque base paint. */
 function forcesSolid(body: string): boolean {
-  return body.includes('--_blur: 0px') && body.includes('--_base-paint: var(--_base)');
+  return (
+    body.includes('--_material-mode: solid') &&
+    body.includes('--_material-live: 0') &&
+    body.includes('--_blur: 0px') &&
+    body.includes('--_base-paint: var(--_base)')
+  );
 }
 
 /** A degradation must ALSO drop the acrylic grain (`--_noise: none`) — otherwise a
@@ -96,19 +101,19 @@ describe('material.css deterministic degradations', () => {
     expect(body).toContain('backdrop-filter: none');
   });
 
-  it('manual override: data-material="solid" restores the opaque canon and drops grain + rim', () => {
-    const body = atRuleBody(/@scope \(\[data-material="solid"\]\) to \(\[data-material\]\)/);
-    expect(forcesSolid(body)).toBe(true);
+  it('любой явный data-material сбрасывает внешний live-контекст до выбора известного режима', () => {
+    const body = atRuleBody(/:where\(\[data-material\]\)\s*\{/);
+    expect(body).toContain('--_material-mode: solid');
+    expect(body).toContain('--_material-live: 0');
+    expect(body).toContain('--_base-paint: initial');
     expect(dropsNoise(body)).toBe(true);
-    // Solid сбрасывает рим внутри своей области; вложенный явный материал
-    // начинает собственную область и может снова включить эффект.
-    expect(dropsRim(body)).toBe(true);
+    expect(css).toContain('opacity: var(--_material-live, 0)');
   });
 
   it('glass и acrylic существуют; blur-ярус снесён без следа (ADR-0008)', () => {
     for (const mode of ['glass', 'acrylic']) {
       const body = atRuleBody(
-        new RegExp(`@scope \\(\\[data-material="${mode}"\\]\\) to \\(\\[data-material\\]\\)`),
+        new RegExp(`\\[data-material="${mode}"\\]\\s*\\{\\s*--_material-mode:`),
       );
       expect(body).toContain('--_base-paint: transparent');
     }
@@ -118,10 +123,12 @@ describe('material.css deterministic degradations', () => {
   });
 
   it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
-    const body = atRuleBody(/@scope \(\[data-material="acrylic"\]\) to \(\[data-material\]\)/);
+    const body = atRuleBody(/\[data-material="acrylic"\]\s*\{\s*--_material-mode:/);
     expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
-    expect(body).toContain('--_blur: var(--_blur-live)'); // одна ступень 48px на все live-материалы (ADR-0009), не новый литерал
-    expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused
+    expect(body).toContain('--_material-live: 1');
+    const surface = atRuleBody(/\.lab-material\s*\{/);
+    expect(surface).toContain('var(--_material-live, 0) * var(--_blur-live)');
+    expect(surface).toContain('var(--_material-live, 0) * (var(--_saturate-on) - 100%)');
     expect(body).toContain('--_base-paint: transparent'); // live backdrop reads through
   });
 
@@ -130,13 +137,13 @@ describe('material.css deterministic degradations', () => {
     // keeps the tint over the same [0,1] corridor as glass → its α-boundary verdict
     // is IDENTICAL to glass. Re-pointing the tier fill here would silently fork the
     // guarantee, so the acrylic block must touch neither --_tint nor --_base.
-    const body = atRuleBody(/@scope \(\[data-material="acrylic"\]\) to \(\[data-material\]\)/);
+    const body = atRuleBody(/\[data-material="acrylic"\]\s*\{\s*--_material-mode:/);
     expect(body).not.toContain('--_tint:');
     expect(body).not.toContain('--_base:');
   });
 
-  it('зерно явно выключено в базе и не наследуется из внешней acrylic-поверхности', () => {
-    const base = atRuleBody(/\.lab-material\s*\{/);
+  it('зерно выключено без контекста и под явным Solid', () => {
+    const base = atRuleBody(/:where\(\[data-material\]\)\s*\{/);
     expect(base).toContain('--_noise: none');
     expect(css).toContain('var(--_noise, none), linear-gradient(');
   });

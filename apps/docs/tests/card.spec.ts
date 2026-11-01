@@ -29,6 +29,12 @@ function litCard(page: Page, testid: string): Locator {
 function reactCard(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
+/** Материал Elevated относится к Content; article сохраняет семантику и focus. */
+function elevatedContent(page: Page, renderer: 'lit' | 'react'): Locator {
+  return page
+    .getByTestId(`${renderer}-elevated`)
+    .locator(renderer === 'lit' ? '.content' : '.lab-card-content');
+}
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 const outlineStyle = (el: HTMLElement) => getComputedStyle(el).outlineStyle;
@@ -79,9 +85,8 @@ test('opt-out honesty: the host carries no machine role on the surface', async (
 test('variants: elevated / outlined / filled resolve distinct surfaces (both renderers)', async ({
   page,
 }) => {
-  for (const prefix of ['lit', 'react']) {
-    const elevated =
-      prefix === 'lit' ? litCard(page, 'lit-elevated') : reactCard(page, 'react-elevated');
+  for (const prefix of ['lit', 'react'] as const) {
+    const elevated = elevatedContent(page, prefix);
     const outlined =
       prefix === 'lit' ? litCard(page, 'lit-outlined') : reactCard(page, 'react-outlined');
     const filled = prefix === 'lit' ? litCard(page, 'lit-filled') : reactCard(page, 'react-filled');
@@ -97,17 +102,19 @@ test('variants: elevated / outlined / filled resolve distinct surfaces (both ren
 });
 
 test('visual parity: Lit and React resolve the same elevated surface colour', async ({ page }) => {
-  const litBg = await litCard(page, 'lit-elevated').evaluate(bg);
-  const reactBg = await reactCard(page, 'react-elevated').evaluate(bg);
+  const litBg = await elevatedContent(page, 'lit').evaluate(bg);
+  const reactBg = await elevatedContent(page, 'react').evaluate(bg);
   expect(reactBg).toBe(litBg);
 });
 
-test('tokens: re-pointing --lab-bg-secondary re-skins BOTH elevated cards', async ({ page }) => {
+test('tokens: re-pointing --lab-bg-grouped-secondary re-skins BOTH elevated cards', async ({
+  page,
+}) => {
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-bg-secondary', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-bg-grouped-secondary', 'rgb(1, 2, 3)');
   });
-  await expect.poll(() => litCard(page, 'lit-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
-  await expect.poll(() => reactCard(page, 'react-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
+  await expect.poll(() => elevatedContent(page, 'lit').evaluate(bg)).toBe('rgb(1, 2, 3)');
+  await expect.poll(() => elevatedContent(page, 'react').evaluate(bg)).toBe('rgb(1, 2, 3)');
 });
 
 test('interactive a11y: :focus-within draws the --lab-border-focus ring (both renderers)', async ({

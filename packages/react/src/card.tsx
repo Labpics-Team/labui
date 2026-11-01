@@ -1,31 +1,28 @@
 /**
- * <Card> — the native-React twin of the Lit `<lab-card>` (ADR-0001).
- *
- * Same public axes, same semantic --lab-* roles, same structure (media / header /
- * body / footer regions on a single surface) — so parity with the Lit element is
- * a matter of CSS, not a second implementation. No Lit in this path.
- *
- * Presentational (no interaction state) — it renders as a leaf under a Server
- * Component shell, but it carries no `'use client'` need of its own: it has no
- * state, effects, or handlers. The Lit element opts out of the Zag seam for the
- * same reason (no machine-eligible state); this twin opts out identically — it is
- * a forwardRef'd `<article>`, not a state machine. It is marked a Client Component
- * only so the shared package boundary is consistent and the scoped stylesheet
- * ships with it; a Server Component may also render the Lit element directly.
- *
- * The Lit "slots" become React props: `media` / `header` / `footer` are the named
- * regions and `children` is the body — the idiomatic React shape for the same
- * composition. An empty region simply isn't rendered, so it adds no padding (the
- * parity of the Lit element's `data-empty` collapse).
- *
- * The axis types come from @labpics/ui-core (type-only — no Lit runtime), so the
- * Lit and React APIs share ONE source of truth and cannot drift.
+ * <Card> — React-реализация анатомии `<lab-card>` без Lit runtime (ADR-0001).
+ * Elevated отдаёт нижний Content владельцу @labpics/ui-materials; media остаётся
+ * снаружи. Outlined и filled сохраняют прежние заливки без живых материалов,
+ * пока их соответствие Figma не установлено. Типы вариантов общие с Core.
+ * Article, header и footer сохраняют нативную семантику; действия принадлежат
+ * вложенным контролам. После SSR эффект подключает материал и освобождает его
+ * при смене варианта или unmount, включая повторный mount в Strict Mode.
  */
 'use client';
 
 import type { LabCardPadding, LabCardVariant } from '@labpics/ui-core';
-import { type HTMLAttributes, type ReactNode, forwardRef } from 'react';
+import { mountMaterialRuntime } from '@labpics/ui-materials';
+import {
+  type HTMLAttributes,
+  type ReactNode,
+  forwardRef,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from 'react';
+import '@labpics/ui-materials/material.css';
 import './card.css';
+
+const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface CardProps extends HTMLAttributes<HTMLElement> {
   /** Surface treatment. */
@@ -57,6 +54,12 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
   },
   ref,
 ) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  useClientLayoutEffect(() => {
+    if (variant !== 'elevated' || !contentRef.current) return;
+    return mountMaterialRuntime(contentRef.current);
+  }, [variant]);
+
   return (
     <article
       {...rest}
@@ -67,9 +70,18 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
       data-interactive={interactive || undefined}
     >
       {media != null ? <div className="lab-card-media">{media}</div> : null}
-      {header != null ? <header className="lab-card-header">{header}</header> : null}
-      <div className="lab-card-body">{children}</div>
-      {footer != null ? <footer className="lab-card-footer">{footer}</footer> : null}
+      <div
+        ref={contentRef}
+        className={
+          variant === 'elevated'
+            ? 'lab-card-content lab-material lab-material--elevated'
+            : 'lab-card-content'
+        }
+      >
+        {header != null ? <header className="lab-card-header">{header}</header> : null}
+        <div className="lab-card-body">{children}</div>
+        {footer != null ? <footer className="lab-card-footer">{footer}</footer> : null}
+      </div>
     </article>
   );
 });

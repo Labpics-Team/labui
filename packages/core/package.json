@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@labpics/motion": "0.5.0",
+    "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-tokens": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
     "@zag-js/accordion": "1.41.2",

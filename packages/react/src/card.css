@@ -3,8 +3,8 @@
  *
  * The Lit element scopes CSS in a shadow root via `:host([variant])` and paints a
  * `.card` <article> surface. React is native (ADR-0001) — no shadow DOM — so this
- * sheet mirrors those exact rules against `[data-lab-card]` (the <article> IS the
- * surface here) plus the `data-*` the component sets (`data-variant`,
+ * sheet mirrors those exact rules against `[data-lab-card]` plus the `data-*`
+ * the component sets (`data-variant`,
  * `data-padding`, `data-interactive`). Same roles, same structure, same states ⇒
  * same paint.
  *
@@ -43,7 +43,7 @@
 }
 
 [data-lab-card][data-variant="elevated"] {
-  background-color: var(--lab-bg-secondary);
+  background-color: transparent;
   box-shadow: var(--lab-elevation-resting);
 }
 [data-lab-card][data-variant="outlined"] {
@@ -76,6 +76,14 @@
 .lab-card-media > * {
   display: block;
   width: 100%;
+}
+
+.lab-card-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  /* Контур обрезает article, без дополнительных углов на стыке с media. */
+  border-radius: 0;
 }
 
 .lab-card-header {

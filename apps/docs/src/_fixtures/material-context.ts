@@ -1,25 +1,34 @@
 import { mountMaterialRuntime } from '@labpics/ui-materials';
+import { materialCss } from '@labpics/ui-materials/css';
 
 export type ContextScope = 'light' | 'open' | 'closed';
 const params = new URLSearchParams(location.search);
 const scope = (params.get('scope') ?? 'light') as ContextScope;
 const mode = params.get('mode') === 'glass' ? 'glass' : 'acrylic';
 const stages = [...document.querySelectorAll<HTMLElement>('.stage')];
+const documentStyles = document.createElement('style');
+documentStyles.textContent = materialCss;
+document.head.appendChild(documentStyles);
 
 function container(stage: HTMLElement, scope: ContextScope): HTMLElement | ShadowRoot {
   const host = document.createElement('div');
   host.style.cssText = 'position:absolute;inset:0';
   stage.appendChild(host);
-  return scope === 'light' ? host : host.attachShadow({ mode: scope });
+  if (scope === 'light') return host;
+  const root = host.attachShadow({ mode: scope });
+  const styles = document.createElement('style');
+  styles.textContent = materialCss;
+  root.appendChild(styles);
+  return root;
 }
 
 const surfaces = stages.map((stage, index) => {
   const surface = document.createElement('section');
   surface.className = 'lab-material';
   surface.dataset.material = mode;
-  // Только геометрия стенда: цвет и SVG-эффект назначает настоящий runtime.
-  // Inline геометрия отделяет tree-scope фильтра от доставки material.css в ShadowRoot.
-  surface.style.cssText = `position:absolute;left:40px;top:40px;width:240px;height:160px;border-radius:16px;--lab-bg-material-base-01:rgb(${index ? '30 30 30' : '235 235 235'});--_lg-refraction:1;--_lg-depth:40;--_lg-dispersion:0.4`;
+  // CSS владельца задаёт режим. Декоративный paint и исходный backdrop выключены,
+  // чтобы PNG различал именно SVG-эффект и его локальные цветовые токены.
+  surface.style.cssText = `position:absolute;left:40px;top:40px;width:240px;height:160px;border-radius:16px;background:none;backdrop-filter:none;--lab-bg-material-base-01:rgb(${index ? '30 30 30' : '235 235 235'});--_lg-refraction:1;--_lg-depth:40;--_lg-dispersion:0.4`;
   container(stage, scope).appendChild(surface);
   return surface;
 });

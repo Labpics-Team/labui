@@ -69,6 +69,9 @@ export default libraryPreset({
   // corrected here, so the warning is expected noise, not a failure.
   onSuccess: preserveUseClientDirective,
   external: ['react', 'react-dom', 'react/jsx-runtime', /^@zag-js\//, /^@labpics\//],
+  // CSS материалов входит в существующий injectStyle; package URL внутри
+  // инъекции браузер не разрешит. JS-зависимости по-прежнему внешние.
+  noExternal: ['@labpics/ui-materials/material.css'],
   // Inline the component CSS (`button.css`) into the JS as a runtime-injected
   // <style>, so importing the component brings its styles with it in ANY bundler
   // — no separate stylesheet-import step. Without this, tsup emits a sibling

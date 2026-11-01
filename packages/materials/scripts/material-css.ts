@@ -13,7 +13,7 @@ export function materialsDir(): string {
   return resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'materials');
 }
 
-/** Собранный material.css — ровно то, что уезжает в dist. */
+/** Исходный CSS в каноническом порядке, до упаковочного удаления пробелов. */
 export function readMaterialCss(): string {
   const dir = materialsDir();
   return MATERIAL_CSS_ORDER.map((file) => readFileSync(resolve(dir, file), 'utf8')).join('\n');

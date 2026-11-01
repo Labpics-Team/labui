@@ -126,8 +126,16 @@ describe('inline-seal — acrylic.css несёт РОВНО выход гене�
   const here = dirname(fileURLToPath(import.meta.url));
   const css = readFileSync(resolve(here, '..', 'src', 'materials', 'acrylic.css'), 'utf8');
 
+  it('PNG записан в stylesheet один раз, независимо от числа DPR-вариантов', () => {
+    const copies = css.split(acrylicNoiseDataUri()).length - 1;
+    expect(copies, 'SSR каждого material root не должен повторять полный PNG для image-set').toBe(
+      1,
+    );
+  });
+
   it('сентинел-регион содержит именно текущий data-URI (ассет не протух)', () => {
-    expect(css).toContain(`--_acrylic-noise: ${acrylicNoiseDataUri()};`);
+    expect(css).toContain(`--_acrylic-noise-image: ${acrylicNoiseDataUri()};`);
+    expect(css).toContain('--_acrylic-noise: var(--_acrylic-noise-image);');
   });
 
   it('в CSS нет забытой заглушки `--_acrylic-noise: none` (генератор отработал)', () => {
@@ -135,18 +143,21 @@ describe('inline-seal — acrylic.css несёт РОВНО выход гене�
   });
 
   it('image-set: ТОТ ЖЕ ассет на 1x/2x/3x под @supports-гейтом (зерно в 1 физический пиксель)', () => {
-    const uri = acrylicNoiseDataUri();
     // Формат-канон принадлежит biome (генератор прогоняет свой выход через
     // репо-форматтер) — сверяем СОДЕРЖИМОЕ без чувствительности к переносам:
     // CSS внутри функциональной нотации whitespace-нейтрален.
     const flat = css.replace(/\s+/g, ' ');
     // Одна генерация — три плотности: на DPR≥2 интринзик-тайл 24/16 CSS-px,
-    // зерно per-device-pixel (как у Fluent), новых ассетов ноль.
-    expect(flat).toContain(`image-set( ${uri} 1x, ${uri} 2x, ${uri} 3x )`);
+    // зерно в один физический пиксель, новых ассетов ноль.
+    expect(flat).toContain(
+      'image-set( var(--_acrylic-noise-image) 1x, var(--_acrylic-noise-image) 2x, var(--_acrylic-noise-image) 3x )',
+    );
     // @supports обязателен: невалидное значение уронило бы ВСЮ multi-bg
     // декларацию (включая тинт) на браузерах без image-set.
-    expect(flat).toContain(`@supports ( background-image: image-set( ${uri} 1x ) )`);
+    expect(flat).toContain('@supports (background-image: image-set(url("data:,") 1x))');
     // url()-фолбэк объявлен ДО image-set-оверрайда (каскад: поздний выигрывает).
-    expect(css.indexOf(`--_acrylic-noise: ${uri};`)).toBeLessThan(css.indexOf('image-set('));
+    expect(css.indexOf('--_acrylic-noise: var(--_acrylic-noise-image);')).toBeLessThan(
+      css.indexOf('image-set('),
+    );
   });
 });
