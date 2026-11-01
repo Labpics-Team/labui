@@ -482,7 +482,7 @@ async function expressionFixture(t) {
 async function replaceExpressionPaths(fixture, id, paths) {
   const { root, manifest, document, texts } = fixture;
   const text = texts[id].text.replace(/<path[^>]*\/>/g, '').replace('</g>',
-    paths.map(path => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`).join('') + '</g>');
+    `${paths.map(path => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`).join('')}</g>`);
   const record = manifest.icons[id].outline;
   record.sha256 = hash(text); record.bytes = Buffer.byteLength(text);
   record.normalizedSource.pathFingerprintSha256 = pathFingerprint(paths);
