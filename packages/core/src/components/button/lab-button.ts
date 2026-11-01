@@ -109,6 +109,7 @@ export class LabButton extends LabElement {
       --_pad-y: ${litVar('--lab-space-button-inset', '0.75rem')};
       --_content: ${litVar('--lab-size-button-content', '1.5rem')};
       --_min: ${litVar('--lab-size-button-h-m', '3rem')};
+      --_glow-x: 0rem;
 
       display: inline-flex;
       vertical-align: middle;
@@ -122,11 +123,13 @@ export class LabButton extends LabElement {
       --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
       --_content: ${litVar('--lab-size-button-content-s', '1.25rem')};
       --_min: ${litVar('--lab-size-button-h-s', '2.25rem')};
+      --_glow-x: calc(-1 * ${litVar('--lab-size-button-glow-shift-s', '0.0625rem')});
     }
     :host([size='l']) {
       --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_pad-y: ${litVar('--lab-space-md', '1rem')};
       --_min: ${litVar('--lab-size-button-h-l', '3.5rem')};
+      --_glow-x: ${litVar('--lab-size-button-glow-shift-l', '0.1875rem')};
     }
 
     button {
@@ -183,6 +186,65 @@ export class LabButton extends LabElement {
       background-color: ${litVar('--lab-fill-accent')};
       color: ${litVar('--lab-label-on-accent')};
     }
+
+    /* Отдельный clip ограничивает только эффект, сохраняя glyph и focus. */
+    .effects {
+      display: none;
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    :host([type='accent'][kind='fill']) .effects {
+      display: block;
+    }
+    .effects::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      color: ${litVar('--lab-bg-static-light')};
+      background-image: linear-gradient(180deg, currentColor, transparent);
+      opacity: ${litVar('--lab-opacity-button-sheen', '0.2')};
+      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    }
+    .effects::after {
+      content: '';
+      position: absolute;
+      left: calc(50% + var(--_glow-x));
+      top: 50%;
+      width: ${litVar('--lab-size-button-glow', '6rem')};
+      height: ${litVar('--lab-size-button-glow', '6rem')};
+      transform: translate(-50%, -50%);
+      border-radius: ${litVar('--lab-radius-full', '9999px')};
+      background-color: ${litVar('--lab-bg-static-light')};
+      filter: blur(${litVar('--lab-size-button-glow-blur', '1.125rem')});
+      opacity: 0;
+      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    }
+    :host([type='accent'][kind='fill']) button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow: ${litVar('--lab-shadow-button')};
+      transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    }
+    :host([type='accent'][kind='fill']) button:hover:not(:disabled) .effects::before {
+      opacity: ${litVar('--lab-opacity-button-sheen-hover', '0.32')};
+    }
+    :host([type='accent'][kind='fill']) button:active:not(:disabled) .effects::before {
+      color: ${litVar('--lab-bg-static-dark')};
+      opacity: ${litVar('--lab-opacity-button-shade-pressed', '0.12')};
+    }
+    :host([type='accent'][kind='fill']) button:active:not(:disabled) .effects::after {
+      opacity: calc(${litVar('--lab-opacity-button-glow', '0.32')} * ${litVar('--lab-opacity-button-glow-fill', '0.52')});
+    }
+    :host([type='accent'][kind='fill']) button:active:not(:disabled)::after {
+      box-shadow: ${litVar('--lab-shadow-button-pressed')};
+    }
     :host([type='accent'][kind='tinted']) button {
       background-color: ${litVar('--lab-fill-accent-tinted')};
       color: ${litVar('--lab-label-accent')};
@@ -233,12 +295,6 @@ export class LabButton extends LabElement {
     /* Паттерн стейт-оверлеев #109 — см. button.css (React-близнец): роль
        покоя + color-mix к тинту рецепта D под @supports; fallback ниже. */
     @supports (color: color-mix(in oklab, red, blue)) {
-    :host([type='accent'][kind='fill']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='accent'][kind='fill']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-pressed', '14%')});
-    }
     :host([type='accent'][kind='tinted']) button:hover:not(:disabled) {
       background-color: color-mix(in oklab, ${litVar('--lab-fill-accent-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
     }
@@ -316,10 +372,10 @@ export class LabButton extends LabElement {
        чёрному (вывод — в button.css React-близнеца). Disabled гасится ниже
        каскадом (filter: none). */
     @supports not (color: color-mix(in oklab, red, blue)) {
-      button:hover {
+      :host(:not([type='accent'][kind='fill'])) button:hover {
         filter: brightness(0.7787);
       }
-      button:active {
+      :host(:not([type='accent'][kind='fill'])) button:active {
         filter: brightness(0.6361);
       }
     }
@@ -341,6 +397,7 @@ export class LabButton extends LabElement {
       cursor: progress;
     }
     .content {
+      position: relative;
       display: inline-flex;
       align-items: center;
       min-width: 0;
@@ -456,6 +513,7 @@ export class LabButton extends LabElement {
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
       >
+        <span class="effects" aria-hidden="true"></span>
         <span class="spinner" aria-hidden="true"></span>
         <span class="content">
           <slot name="icon" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>

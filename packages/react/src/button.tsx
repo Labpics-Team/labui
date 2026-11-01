@@ -96,6 +96,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       data-icon={icon || undefined}
       data-loading={loading || undefined}
     >
+      <span className="lab-button-effects" aria-hidden="true" />
       <span className="lab-button-spinner" aria-hidden="true" />
       <span className="lab-button-content">
         <span

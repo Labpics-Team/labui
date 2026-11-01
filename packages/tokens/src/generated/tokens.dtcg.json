@@ -518,6 +518,54 @@
         }
       }
     },
+    "button-glow": {
+      "$type": "dimension",
+      "$value": {
+        "value": 96,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "6rem"
+        }
+      }
+    },
+    "button-glow-blur": {
+      "$type": "dimension",
+      "$value": {
+        "value": 18,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.125rem"
+        }
+      }
+    },
+    "button-glow-shift-s": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
+        }
+      }
+    },
+    "button-glow-shift-l": {
+      "$type": "dimension",
+      "$value": {
+        "value": 3,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.1875rem"
+        }
+      }
+    },
     "loader-stroke-s": {
       "$type": "dimension",
       "$value": {
@@ -1566,6 +1614,18 @@
       "$type": "number",
       "$value": 0
     },
+    "12": {
+      "$type": "number",
+      "$value": 0.12
+    },
+    "20": {
+      "$type": "number",
+      "$value": 0.2
+    },
+    "32": {
+      "$type": "number",
+      "$value": 0.32
+    },
     "45": {
       "$type": "number",
       "$value": 0.45
@@ -1573,6 +1633,10 @@
     "50": {
       "$type": "number",
       "$value": 0.5
+    },
+    "52": {
+      "$type": "number",
+      "$value": 0.52
     },
     "100": {
       "$type": "number",

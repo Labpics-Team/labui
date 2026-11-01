@@ -105,6 +105,11 @@ export const defaultConfig: TokensConfig = {
       'button-h-l': 3.5,
       'button-content-s': 1.25,
       'button-content': 1.5,
+      // Pressed glow: Desktop 96px, Gaussian sigma 18px в экспортном фильтре.
+      'button-glow': 6,
+      'button-glow-blur': 1.125,
+      'button-glow-shift-s': 0.0625,
+      'button-glow-shift-l': 0.1875,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,
@@ -314,12 +319,21 @@ export const defaultConfig: TokensConfig = {
   opacity: {
     steps: {
       '0': 0, //    прозрачно — явный нулевой токен
+      '12': 0.12,
+      '20': 0.2,
+      '32': 0.32,
       '45': 0.45, // disabled-состояние (доминирующий литерал компонентов)
       '50': 0.5, //  muted / placeholder
+      '52': 0.52,
       '100': 1, //   полная непрозрачность — явный верхний край
     },
     aliases: {
       none: '0',
+      'button-sheen': '20',
+      'button-sheen-hover': '32',
+      'button-shade-pressed': '12',
+      'button-glow': '32',
+      'button-glow-fill': '52',
       disabled: '45', // задизейбленный контрол целиком
       muted: '50', //    вторичный/приглушённый текст, плейсхолдеры
       full: '100',

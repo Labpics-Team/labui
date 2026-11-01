@@ -52,6 +52,10 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'button-h-l': 56,
     'button-content-s': 20,
     'button-content': 24,
+    'button-glow': 96,
+    'button-glow-blur': 18,
+    'button-glow-shift-s': 1,
+    'button-glow-shift-l': 3,
     // Loader: толщина штриха спиннера (DECLARED).
     'loader-stroke-s': 2,
     'loader-stroke-m': 3,

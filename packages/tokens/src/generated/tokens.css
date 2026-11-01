@@ -62,6 +62,10 @@
   --lab-size-button-h-l: 3.5rem;
   --lab-size-button-content-s: 1.25rem;
   --lab-size-button-content: 1.5rem;
+  --lab-size-button-glow: 6rem;
+  --lab-size-button-glow-blur: 1.125rem;
+  --lab-size-button-glow-shift-s: 0.0625rem;
+  --lab-size-button-glow-shift-l: 0.1875rem;
   --lab-size-loader-stroke-s: 0.125rem;
   --lab-size-loader-stroke-m: 0.1875rem;
   --lab-size-loader-stroke-l: 0.25rem;
@@ -208,10 +212,19 @@
 
   /* Opacity — непрозрачность состояний (unitless доли, задача 13) */
   --lab-opacity-0: 0;
+  --lab-opacity-12: 0.12;
+  --lab-opacity-20: 0.2;
+  --lab-opacity-32: 0.32;
   --lab-opacity-45: 0.45;
   --lab-opacity-50: 0.5;
+  --lab-opacity-52: 0.52;
   --lab-opacity-100: 1;
   --lab-opacity-none: var(--lab-opacity-0); /* -> 0 */
+  --lab-opacity-button-sheen: var(--lab-opacity-20); /* -> 20 */
+  --lab-opacity-button-sheen-hover: var(--lab-opacity-32); /* -> 32 */
+  --lab-opacity-button-shade-pressed: var(--lab-opacity-12); /* -> 12 */
+  --lab-opacity-button-glow: var(--lab-opacity-32); /* -> 32 */
+  --lab-opacity-button-glow-fill: var(--lab-opacity-52); /* -> 52 */
   --lab-opacity-disabled: var(--lab-opacity-45); /* -> 45 */
   --lab-opacity-muted: var(--lab-opacity-50); /* -> 50 */
   --lab-opacity-full: var(--lab-opacity-100); /* -> 100 */

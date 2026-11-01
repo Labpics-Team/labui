@@ -37,3 +37,10 @@ export const DEFAULT_TINT_STRENGTH = 0;
  */
 export const SHADOW_TRANSITION_DURATION = '160ms';
 export const SHADOW_TRANSITION_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+/** Внутренний край Button: отдельный эффект, не ступень elevation. */
+export const BUTTON_INSET = {
+  offsetPx: 1,
+  blurPx: 1,
+  alpha: { light: 0.12, dark: 0.2 },
+} as const;
