@@ -461,24 +461,69 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   };
 }
 
-export function platformMeasurementLog(bytes, sourceSha) {
+function evidenceLog(bytes, prefix, identity, digestField) {
   const compressed = gzipSync(bytes, { level: 9 });
   const chunks = compressed.toString('base64').match(/.{1,4096}/g);
+  const digest = hash(bytes);
   const metadata = {
     schemaVersion: 1,
     encoding: 'gzip-base64',
-    sourceSha,
-    reportSha256: hash(bytes),
+    ...identity,
+    [digestField]: digest,
     bytes: bytes.length,
     compressedBytes: compressed.length,
     chunks: chunks.length,
   };
   const lines = [
-    `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN ${JSON.stringify(metadata)}`,
-    ...chunks.map((chunk, index) => `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK ${index} ${chunk}`),
-    `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${metadata.reportSha256}`,
+    `${prefix}_BEGIN ${JSON.stringify(metadata)}`,
+    ...chunks.map((chunk, index) => `${prefix}_CHUNK ${index} ${chunk}`),
+    `${prefix}_END ${digest}`,
   ].join('\n');
   return `${lines}\n`;
+}
+
+export function platformMeasurementLog(bytes, sourceSha) {
+  return evidenceLog(bytes, 'LABUI_ICONS_PLATFORM_MEASUREMENT', { sourceSha }, 'reportSha256');
+}
+
+const VISUAL_FILES = new Set([
+  'result/no-preference.png', 'result/reduce.png',
+  'result/no-preference-failure.png', 'result/reduce-failure.png',
+]);
+const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
+const VISUAL_MAX_PIXELS = 16 * 1024 * 1024;
+
+// Только PNG известного consumer; лимиты ограничивают log и последующий decode.
+export function consumerVisualLog(bytes, file, sourceSha, uiCommit) {
+  assert.ok(VISUAL_FILES.has(file), 'visual: неизвестный screenshot');
+  assert.match(sourceSha, /^[a-f0-9]{40}$/);
+  assert.match(uiCommit, /^[a-f0-9]{40}$/);
+  assert.ok(Buffer.isBuffer(bytes) && bytes.length >= 45 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
+    'visual: PNG bytes вне лимита');
+  assert.ok(bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
+    'visual: PNG signature');
+  assert.equal(bytes.readUInt32BE(8), 13, 'visual: IHDR length');
+  assert.equal(bytes.toString('ascii', 12, 16), 'IHDR', 'visual: IHDR');
+  const width = bytes.readUInt32BE(16), height = bytes.readUInt32BE(20);
+  assert.ok(width > 0 && height > 0 && width * height <= VISUAL_MAX_PIXELS,
+    'visual: PNG dimensions вне лимита');
+  assert.ok(bytes.subarray(-12).equals(Buffer.from([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130])),
+    'visual: IEND');
+  return evidenceLog(bytes, 'LABUI_ICONS_CONSUMER_VISUAL',
+    { file, sourceSha, uiCommit, width, height }, 'pngSha256');
+}
+
+export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
+  assert.match(sourceSha, /^[a-f0-9]{40}$/);
+  assert.match(uiCommit, /^[a-f0-9]{40}$/);
+  assert.ok(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
+    'receipt: bytes вне лимита');
+  const receipt = JSON.parse(bytes);
+  assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
+  assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
+  assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
+  return evidenceLog(bytes, 'LABUI_ICONS_CONSUMER_RECEIPT',
+    { file: 'result/receipt.json', sourceSha, uiCommit }, 'receiptSha256');
 }
 
 export async function prepareInputs(options) {
@@ -580,15 +625,18 @@ function writeStdout(bytes) {
 export async function summarize(directory) {
   const root = await realpath(resolve(directory));
   const files = [];
+  const visuals = [];
   for (const name of ['inputs', 'result']) {
     for (const entry of await readdir(join(root, name), { withFileTypes: true })) {
       if (!entry.isFile() || !/\.(?:json|png)$/.test(entry.name)) continue;
       const path = `${name}/${entry.name}`;
       const bytes = await readFile(join(root, path));
       files.push({ path, sha256: hash(bytes), bytes: bytes.length });
+      if (name === 'result' && entry.name.endsWith('.png')) visuals.push({ path, bytes });
     }
   }
-  const receipt = JSON.parse(await readFile(join(root, 'result/receipt.json')));
+  const receiptBytes = await readFile(join(root, 'result/receipt.json'));
+  const receipt = JSON.parse(receiptBytes);
   const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
   const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
   const subject = validateSubject(JSON.parse(subjectBytes));
@@ -619,6 +667,17 @@ export async function summarize(directory) {
     );
     await writeStdout(platformMeasurementLog(bytes, source.pin.sourceCommit));
   }
+  const packets = [];
+  let readbackFailure;
+  const addPacket = (file, encode) => {
+    try { packets.push(encode()); }
+    catch (error) { readbackFailure ??= { file, error }; }
+  };
+  for (const visual of visuals)
+    addPacket(visual.path, () => consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit));
+  if (receipt.outcome === 'passed')
+    addPacket('result/receipt.json', () => consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit));
+  for (const packet of packets) await writeStdout(packet);
   await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,
@@ -633,8 +692,10 @@ export async function summarize(directory) {
         : null,
       files,
       diagnosticDirectory: root,
+      ...(readbackFailure ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } } : {}),
     })}\n`,
   );
+  if (readbackFailure) throw readbackFailure.error;
   assert.equal(receipt.outcome, 'passed');
 }
 

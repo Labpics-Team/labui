@@ -231,6 +231,27 @@ remote receipt не означает пройденную интеграцию.
 Для восстановления из полного job log проверьте наличие всех индексов и END,
 соедините base64, декодируйте и gunzip, затем проверьте исходный размер и SHA256.
 Неполный блок не является report. Schema1 не требует measurement packet.
+
+Тот же код передачи выводит PNG двумя режимами и полный успешный `receipt.json`
+с реальными observations. PNG сохраняет исходные байты; пересэмплирования нет.
+Блоки `LABUI_ICONS_CONSUMER_VISUAL` и `LABUI_ICONS_CONSUMER_RECEIPT` используют
+тот же порядок BEGIN/CHUNK/END и gzip-base64. Metadata добавляет `file`,
+`sourceSha` Icons и `uiCommit`; digest называется `pngSha256` или `receiptSha256`.
+У PNG также есть исходные `width`/`height`. Допускаются только `result/receipt.json`
+и screenshots `no-preference`/`reduce`, включая их `-failure` варианты.
+Каждый передаваемый файл ограничен 4 MiB, PNG — 16 Mi pixels. Эти пределы
+относятся к readback, а не к размеру glyph или optical domain.
+
+После восстановления проверьте оба source SHA по RESULT, затем digest и размер
+по соответствующему элементу `files`. Gunzip должен иметь `maxOutputLength`
+4 MiB; отсутствие части, чужой SHA или несовпадение bytes запрещает использовать
+packet как evidence. PNG signature/IHDR/IEND guards ограничивают вход; реальный
+просмотр decoder остаётся отдельной проверкой изображения. Raw receipt передаётся
+только для `passed`; неуспешный RESULT сохраняет прежний ограниченный failure
+и continuity witness. Отказ отдельному packet сохраняет RESULT с
+`readbackFailure: { code: 'EVIDENCE_REFUSED', file }` и завершает шаг ошибкой.
+Наличие PNG не объявляет live Figma parity.
+
 `summarize` дожидается завершения записи полного блока и RESULT перед отказом
 по неуспешному receipt. При ошибке stdout возвращается исходная причина согласно
 [контракту Node Writable](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback).
