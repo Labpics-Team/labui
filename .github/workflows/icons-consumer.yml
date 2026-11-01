@@ -63,7 +63,10 @@ jobs:
       - name: Прочитать закреплённый Icons SHA
         id: source
         shell: bash
-        run: echo "sha=$(node ui/apps/docs/tests/prepare-icons-inputs.mjs --checkout-ref)" >> "$GITHUB_OUTPUT"
+        run: |
+          set -euo pipefail
+          sha="$(node ui/apps/docs/tests/prepare-icons-inputs.mjs --checkout-ref)"
+          printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
 
       # Публичный producer не требует credential приватного соседнего repo.
       - name: Получить точный источник Icons
