@@ -417,8 +417,14 @@ async function browserProof(browser, url, reference, out, records, browserErrors
             if (!event.initialize) samePose(event.before, event.after);
         assert.equal(activated.submissions, 0);
         if (reducedMotion === 'no-preference') {
+          const forward = await page.evaluate((id) => window.__iconsPacked.settle(id), variant);
+          samePose(forward.matrices, initial.matrices);
+          records.push({
+            name: `${variant}:forward-complete`,
+            terminal: forward.matrices,
+            completionStatuses: forward.completionStatuses,
+          });
           // Прерывание проводится только после наблюдаемого движения, до половины оборота.
-          await page.evaluate((id) => window.__iconsPacked.settle(id), variant);
           await page.evaluate(
             (id) => window.__iconsPacked.start(id, { initialize: true }),
             variant,

@@ -91,6 +91,10 @@ icon slot, pointer/Enter/Space, trusted composed click и отсутствие s
 точный timeout, cancellation не засчитывается завершением. Это не обещание C1
 continuity или compositor-only execution.
 
+Прямой полный оборот отдельно обязан закончиться в авторской позе **до**
+инициализации нового оборота. `status: "finished"` без правильной конечной позы
+не проходит проверку; сброс следующего жеста не может скрыть ошибку исполнителя.
+
 При reduced motion compiler выдаёт нулевую длительность, и конечная поза остаётся
 верной. Движение одного экземпляра не меняет SVG соседа и authored path data.
 Непринятая weight axis получает `AUTHOR_PARITY_REQUIRED`, чужой morph —
