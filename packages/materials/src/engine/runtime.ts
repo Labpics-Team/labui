@@ -25,8 +25,8 @@
  *   · `data-material` / class / `data-veil` re-binds, added/removed surfaces: один
  *     MutationObserver ре-синкает все движки; rAF-сворачивание превращает шторм
  *     мутаций в один sync. Смена запрещающих медиа acrylic — тот же ре-синк.
- *   · Unmount (returned disposer) отцепляет все инстансы и восстанавливает
- *     чистый CSS-стек — SSR/HMR-friendly.
+ *   · Disposer снимает владение своего scope. Пересекающиеся mount сохраняют
+ *     общий эффект до последнего release, который восстанавливает исходные стили.
  */
 
 import {
@@ -58,9 +58,8 @@ function inModeScope(el: Element, mode: string): boolean {
   return scope !== null && scope.getAttribute('data-material') === mode;
 }
 
-/** The three engine bindings — the ONLY place the runtime names concrete engines.
- *  Each пара (mode, engine) — одна строка; порядок несуществен (движки держат
- *  непересекающиеся множества: glass/acrylic по режиму, veil по атрибуту). */
+/** Единственное место выбора конкретных движков. Glass/acrylic исключают друг
+ *  друга по режиму; veil живёт независимо и может держать ту же поверхность. */
 const BINDINGS: readonly EngineBinding[] = [
   // Glass (refraction). refreshHeld:false — сохраняет прежнее поведение: LG
   // ре-рендерит вне этой петли (свой ResizeObserver), рантайм его не дёргает.
@@ -106,7 +105,9 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
   if (engines.length === 0) return () => {};
 
+  let disposed = false;
   const sync = (): void => {
+    if (disposed) return;
     for (const engine of engines) engine.sync();
   };
   sync();
@@ -114,7 +115,10 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   // Mutation storms (hydration, list re-render) collapse to ONE sync on the next
   // frame — the final attached set is identical to an un-debounced run.
   const raf = trailingRaf(sync);
-  const mo = new MutationObserver(raf.schedule);
+  const schedule = (): void => {
+    if (!disposed) raf.schedule();
+  };
+  const mo = new MutationObserver(schedule);
   mo.observe(scope instanceof Document ? scope.documentElement : scope, {
     attributes: true,
     attributeFilter: ['data-material', 'class', 'data-veil'],
@@ -130,15 +134,17 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     const queries = new Set(engines.flatMap((e) => [...e.mediaQueries]));
     for (const query of queries) {
       const mq = matchMedia(query);
-      mq.addEventListener('change', raf.schedule);
+      mq.addEventListener('change', schedule);
       mediaListeners.push(mq);
     }
   }
 
   return () => {
+    if (disposed) return;
+    disposed = true;
     mo.disconnect();
     raf.cancel();
-    for (const mq of mediaListeners) mq.removeEventListener('change', raf.schedule);
+    for (const mq of mediaListeners) mq.removeEventListener('change', schedule);
     for (const engine of engines) engine.dispose();
   };
 }

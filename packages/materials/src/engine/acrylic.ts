@@ -184,6 +184,12 @@ function writeBackdrop(el: HTMLElement, id: string): void {
  */
 export function attach(el: HTMLElement): EngineHandle {
   registry.get(el)?.destroy();
+  let disposed = false;
+  const baseline = ['backdrop-filter', '-webkit-backdrop-filter'].map((property) => ({
+    property,
+    value: el.style.getPropertyValue(property),
+    priority: el.style.getPropertyPriority(property),
+  }));
 
   let tier = tierOf(el);
   const { id, filter, flood } = buildFilter(tier);
@@ -192,12 +198,17 @@ export function attach(el: HTMLElement): EngineHandle {
 
   // Регион зависит от размера — держим его в синхроне с боксом. Trailing-rAF
   // сворачивает шторм ресайза в один пере-расчёт (общий примитив mount.ts).
-  const raf = trailingRaf(() => setRegion(filter, el));
-  const ro = new ResizeObserver(() => raf.schedule());
+  const raf = trailingRaf(() => {
+    if (!disposed) setRegion(filter, el);
+  });
+  const ro = new ResizeObserver(() => {
+    if (!disposed) raf.schedule();
+  });
   ro.observe(el);
 
   const handle: EngineHandle = {
     refresh(): void {
+      if (disposed) return;
       const now = tierOf(el);
       if (now !== tier) {
         tier = now;
@@ -206,11 +217,14 @@ export function attach(el: HTMLElement): EngineHandle {
       }
     },
     destroy(): void {
+      if (disposed) return;
+      disposed = true;
       ro.disconnect();
       raf.cancel();
       filter.remove();
-      el.style.removeProperty('backdrop-filter');
-      el.style.removeProperty('-webkit-backdrop-filter');
+      for (const { property, value, priority } of baseline) {
+        el.style.setProperty(property, value, priority);
+      }
       if (registry.get(el) === handle) registry.delete(el);
     },
   };

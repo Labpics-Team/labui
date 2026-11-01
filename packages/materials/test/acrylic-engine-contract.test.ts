@@ -86,7 +86,7 @@ describe('честные деградации: движок гаснет во в
     // (blocked опустошает want в mountEngine) И их смена ре-синкает mount.
     expect(runtimeSrc).toContain('blocked: acrylicMediaBlocked');
     expect(runtimeSrc).toContain('mediaQueries: ACRYLIC_ENGINE_MEDIA');
-    expect(runtimeSrc).toContain("mq.addEventListener('change', raf.schedule)");
+    expect(runtimeSrc).toContain("mq.addEventListener('change', schedule)");
     // mountEngine — держатель поведения: blocked() опустошает набор до скана.
     expect(mountSrc).toContain('if (!binding.blocked?.())');
   });

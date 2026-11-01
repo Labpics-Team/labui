@@ -134,45 +134,110 @@ export interface MountedEngine {
   readonly mediaQueries: readonly string[];
 }
 
+interface SharedHandle {
+  handle: EngineHandle | undefined;
+  users: number;
+}
+
+// App и локальный mount держат один ресурс на пару (поверхность, binding).
+// Scope хранит владение, а не конкретный engine handle. При временном отзыве
+// ресурса живые владельцы сохраняются: reconnect не требует события внутри root.
+const surfaces = new WeakMap<HTMLElement, Map<EngineBinding, SharedHandle>>();
+
+function reconcileSurface(el: HTMLElement): void {
+  const effects = surfaces.get(el);
+  if (!effects) return;
+  for (const [binding, shared] of effects) {
+    if (
+      !el.isConnected ||
+      !el.matches(binding.selector) ||
+      !binding.wants(el) ||
+      binding.blocked?.()
+    ) {
+      // Сначала отозвать прежний материал, затем разрешить attach следующего.
+      // Veil остаётся, пока его собственный binding применим.
+      const handle = shared.handle;
+      shared.handle = undefined;
+      handle?.destroy();
+    }
+  }
+}
+
+function release(binding: EngineBinding, el: HTMLElement, shared: SharedHandle): void {
+  const effects = surfaces.get(el);
+  if (effects?.get(binding) !== shared) return;
+  if (--shared.users !== 0) return;
+  effects.delete(binding);
+  if (effects.size === 0) surfaces.delete(el);
+  const handle = shared.handle;
+  shared.handle = undefined;
+  handle?.destroy();
+}
+
 /**
  * Единая механика монтирования одного движка над `scope`. Заменяет три
  * дословных блока runtime.ts. `sync` идемпотентна: держит ровно те поверхности,
  * что проходят `wants` (и не под `blocked`), отцепляя ушедшие.
  */
 export function mountEngine(binding: EngineBinding, scope: Document | Element): MountedEngine {
-  const held = new Map<HTMLElement, EngineHandle>();
+  const held = new Map<HTMLElement, SharedHandle>();
+  let disposed = false;
 
   const sync = (): void => {
+    if (disposed) return;
     const want = new Set<HTMLElement>();
     if (!binding.blocked?.()) {
       for (const el of scope.querySelectorAll(binding.selector)) {
-        if (el instanceof HTMLElement && binding.wants(el)) want.add(el);
+        if (el instanceof HTMLElement && el.isConnected && binding.wants(el)) want.add(el);
       }
-      if (scope instanceof HTMLElement && scope.matches(binding.selector) && binding.wants(scope)) {
+      if (
+        scope instanceof HTMLElement &&
+        scope.isConnected &&
+        scope.matches(binding.selector) &&
+        binding.wants(scope)
+      ) {
         want.add(scope);
       }
     }
+    for (const el of new Set([...held.keys(), ...want])) reconcileSurface(el);
     // Отцепить ушедших (смена мода/класса, удаление, попадание под blocked).
-    for (const [el, handle] of held) {
-      if (!want.has(el) || !el.isConnected) {
-        handle.destroy();
+    for (const [el, shared] of held) {
+      if (!want.has(el) || surfaces.get(el)?.get(binding) !== shared) {
+        release(binding, el, shared);
         held.delete(el);
       }
     }
     // Прицепить новичков ровно один раз; удержанных — обновить (если движок так
     // хочет), сохраняя его точное поведение.
     for (const el of want) {
-      const handle = held.get(el);
-      if (handle) {
-        if (binding.refreshHeld) handle.refresh?.();
+      let shared = held.get(el);
+      if (!shared) {
+        let effects = surfaces.get(el);
+        if (!effects) {
+          effects = new Map();
+          surfaces.set(el, effects);
+        }
+        shared = effects.get(binding);
+        if (shared) {
+          shared.users++;
+        } else {
+          shared = { handle: undefined, users: 1 };
+          effects.set(binding, shared);
+        }
+        held.set(el, shared);
+      }
+      if (shared.handle) {
+        if (binding.refreshHeld) shared.handle.refresh?.();
       } else {
-        held.set(el, binding.attach(el));
+        shared.handle = binding.attach(el);
       }
     }
   };
 
   const dispose = (): void => {
-    for (const handle of held.values()) handle.destroy();
+    if (disposed) return;
+    disposed = true;
+    for (const [el, shared] of held) release(binding, el, shared);
     held.clear();
   };
 

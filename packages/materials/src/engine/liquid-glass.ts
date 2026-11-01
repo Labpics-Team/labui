@@ -874,6 +874,13 @@ function render(state: EngineState): void {
  */
 export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHandle {
   registry.get(el)?.destroy();
+  let disposed = false;
+  const wasLensed = el.classList.contains(LENSED_CLASS);
+  const baseline = ['backdrop-filter', '-webkit-backdrop-filter'].map((property) => ({
+    property,
+    value: el.style.getPropertyValue(property),
+    priority: el.style.getPropertyPriority(property),
+  }));
   ensureDefs();
   const id = `lab-lg-${++uid}`;
   const filter = document.createElementNS(SVGNS, 'filter');
@@ -910,7 +917,9 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     destroy: () => {},
   };
 
-  const update = () => render(state);
+  const update = () => {
+    if (!disposed) render(state);
+  };
   // The ResizeObserver / window-resize storm fires many sub-pixel callbacks while
   // a layout settles; a trailing-edge rAF collapses a burst into ONE build at the
   // final size. The final geometry — and thus the rendered map — is identical to
@@ -918,7 +927,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // update()/refresh() stay immediate.
   let rafId = 0;
   const debouncedUpdate = () => {
-    if (rafId) return;
+    if (disposed || rafId) return;
     rafId = requestAnimationFrame(() => {
       rafId = 0;
       update();
@@ -941,15 +950,20 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     update();
   };
   state.destroy = () => {
+    if (disposed) return;
+    disposed = true;
     state.gen++; // supersede any in-flight async stamp so it can't fire post-destroy
     ro.disconnect();
     if (rafId) cancelAnimationFrame(rafId);
+    rafId = 0;
     window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
     filter.remove();
-    setBackdrop(el, '', state);
-    el.classList.remove(LENSED_CLASS);
+    for (const { property, value, priority } of baseline) {
+      el.style.setProperty(property, value, priority);
+    }
+    if (!wasLensed) el.classList.remove(LENSED_CLASS);
     if (registry.get(el) === state) registry.delete(el);
   };
 
