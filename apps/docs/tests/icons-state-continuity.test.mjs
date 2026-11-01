@@ -91,8 +91,7 @@ test('передача сохраняет все компоненты running и
         const visible = statePose(
           mixture.map((_, index) => mixture[(index + shift) % mixture.length]),
         );
-        const admitted =
-          playback === 'paused' ? visible : statePose([0.45, 0.1, 0, 0, 0, 0.45]);
+        const admitted = playback === 'paused' ? visible : statePose([0.45, 0.1, 0, 0, 0, 0.45]);
         const result = changeStateAtAdmission(visible, admitted, { playback });
         assert.deepEqual(result.before, visible);
         sameStateOpacity(visible, result.after, result.continuity);
