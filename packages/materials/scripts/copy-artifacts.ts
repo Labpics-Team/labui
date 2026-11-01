@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { transformSync } from 'esbuild';
@@ -19,6 +19,6 @@ const literal = JSON.stringify(materialCss);
 writeFileSync(resolve(dist, 'material.css'), materialCss);
 writeFileSync(resolve(dist, 'css.js'), `export const materialCss = ${literal};\n`);
 writeFileSync(resolve(dist, 'css.cjs'), `exports.materialCss = ${literal};\n`);
-const declaration = 'export declare const materialCss: string;\n';
+const declaration = readFileSync(resolve(here, '..', 'src', 'css.d.ts'), 'utf8');
 writeFileSync(resolve(dist, 'css.d.ts'), declaration);
 writeFileSync(resolve(dist, 'css.d.cts'), declaration);
