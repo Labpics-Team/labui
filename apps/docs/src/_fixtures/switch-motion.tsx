@@ -59,7 +59,8 @@ function ReactFixture() {
       size={size}
       onCheckedChange={(next) => {
         checked = next;
-        setValue(next);
+        // Zag доставляет событие в microtask: синхронным должен быть сам commit.
+        flushSync(() => setValue(next));
       }}
     >
       Уведомления
@@ -101,7 +102,7 @@ window.switchMotionFixture = {
           if (value === expected) resolve();
         };
       });
-      flushSync(() => select<HTMLInputElement>(renderer, 'input').click());
+      select<HTMLInputElement>(renderer, 'input').click();
       await complete;
       stateCommitted = undefined;
     } else {
