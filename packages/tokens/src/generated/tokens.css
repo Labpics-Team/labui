@@ -132,6 +132,10 @@
   --lab-font-size-6xl: clamp(3.5832rem, 5.912vw + 2.4008rem, 6.9826rem);
   --lab-font-size-switch-label: 1rem;
   --lab-font-size-switch-label-l: 1.25rem;
+  --lab-font-size-card-title: 1.25rem;
+  --lab-font-size-card-description: 1rem;
+  --lab-font-size-card-caption: 0.875rem;
+  --lab-font-size-badge-label: 0.75rem;
 
   /* Typography — line-height multipliers */
   --lab-line-height-xxs: 1;
@@ -146,6 +150,10 @@
   --lab-line-height-6xl: 0.8582;
   --lab-line-height-switch-label: 1.5;
   --lab-line-height-switch-label-l: 1;
+  --lab-line-height-card-title: 1;
+  --lab-line-height-card-description: 1.5;
+  --lab-line-height-card-caption: 0.8571428571428571;
+  --lab-line-height-badge-label: 1;
 
   /* Typography — font-weight scale (unitless) */
   --lab-font-weight-regular: 400;
@@ -166,6 +174,10 @@
   --lab-letter-spacing-6xl: -0.0469em;
   --lab-letter-spacing-switch-label: -0.015625em;
   --lab-letter-spacing-switch-label-l: -0.0165em;
+  --lab-letter-spacing-card-title: -0.0165em;
+  --lab-letter-spacing-card-description: -0.015625em;
+  --lab-letter-spacing-card-caption: 0em;
+  --lab-letter-spacing-badge-label: 0em;
 
   /* Typography — мера строки (Bringhurst 45–75ch, 66 идеал) */
   --lab-measure-narrow: 45ch;

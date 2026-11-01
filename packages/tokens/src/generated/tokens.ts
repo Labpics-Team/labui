@@ -146,6 +146,10 @@ export const fontSize = {
   '6xl': 'var(--lab-font-size-6xl)',
   'switch-label': 'var(--lab-font-size-switch-label)',
   'switch-label-l': 'var(--lab-font-size-switch-label-l)',
+  'card-title': 'var(--lab-font-size-card-title)',
+  'card-description': 'var(--lab-font-size-card-description)',
+  'card-caption': 'var(--lab-font-size-card-caption)',
+  'badge-label': 'var(--lab-font-size-badge-label)',
 } as const;
 
 export type FontSizeToken = keyof typeof fontSize;
@@ -163,6 +167,10 @@ export const lineHeight = {
   '6xl': 'var(--lab-line-height-6xl)',
   'switch-label': 'var(--lab-line-height-switch-label)',
   'switch-label-l': 'var(--lab-line-height-switch-label-l)',
+  'card-title': 'var(--lab-line-height-card-title)',
+  'card-description': 'var(--lab-line-height-card-description)',
+  'card-caption': 'var(--lab-line-height-card-caption)',
+  'badge-label': 'var(--lab-line-height-badge-label)',
 } as const;
 
 export type LineHeightToken = keyof typeof lineHeight;
@@ -189,6 +197,10 @@ export const letterSpacing = {
   '6xl': 'var(--lab-letter-spacing-6xl)',
   'switch-label': 'var(--lab-letter-spacing-switch-label)',
   'switch-label-l': 'var(--lab-letter-spacing-switch-label-l)',
+  'card-title': 'var(--lab-letter-spacing-card-title)',
+  'card-description': 'var(--lab-letter-spacing-card-description)',
+  'card-caption': 'var(--lab-letter-spacing-card-caption)',
+  'badge-label': 'var(--lab-letter-spacing-badge-label)',
 } as const;
 
 export type LetterSpacingToken = keyof typeof letterSpacing;

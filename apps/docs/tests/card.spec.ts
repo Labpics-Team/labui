@@ -59,18 +59,31 @@ test('render: both renderers paint an <article> surface', async ({ page }) => {
   }
 });
 
-test('native semantics: header and footer are real landmark elements', async ({ page }) => {
-  // Lit: header/footer live in the shadow root of the host.
-  const litHeader = page.getByTestId('lit-elevated').locator('header.header, .header');
-  const litFooter = page.getByTestId('lit-elevated').locator('footer.footer, .footer');
-  expect(await litHeader.evaluate((el) => el.tagName.toLowerCase())).toBe('header');
-  expect(await litFooter.evaluate((el) => el.tagName.toLowerCase())).toBe('footer');
-
-  // React: header/footer are native landmarks too.
-  const reactHeader = reactCard(page, 'react-elevated').locator('.lab-card-header');
-  const reactFooter = reactCard(page, 'react-elevated').locator('.lab-card-footer');
-  expect(await reactHeader.evaluate((el) => el.tagName.toLowerCase())).toBe('header');
-  expect(await reactFooter.evaluate((el) => el.tagName.toLowerCase())).toBe('footer');
+test('composition: header и footer сохраняют содержимое и порядок в обоих renderers', async ({
+  page,
+}) => {
+  // Native slots передают семантику caller nodes. Наличие частной wrapper-теги
+  // не является контрактом; header/footer внутри article также не landmarks.
+  for (const renderer of ['lit', 'react'] as const) {
+    const host = page.getByTestId(`${renderer}-elevated`);
+    const header = host.getByText('Elevated', { exact: true });
+    const footer = host.getByText('Footer', { exact: true });
+    await expect(header).toBeVisible();
+    await expect(footer).toBeVisible();
+    // Строковый React prop рисуется через display:contents; измеряем текст,
+    // а не отсутствующий box частного wrapper.
+    const textBox = (element: HTMLElement) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const rect = range.getBoundingClientRect();
+      return { y: rect.y, height: rect.height };
+    };
+    const headerBox = await header.evaluate(textBox);
+    const footerBox = await footer.evaluate(textBox);
+    expect(headerBox.height).toBeGreaterThan(0);
+    expect(footerBox.height).toBeGreaterThan(0);
+    expect(footerBox.y).toBeGreaterThan(headerBox.y + headerBox.height);
+  }
 });
 
 test('opt-out honesty: the host carries no machine role on the surface', async ({ page }) => {
@@ -95,9 +108,20 @@ test('variants: elevated / outlined / filled resolve distinct surfaces (both ren
     const filledBg = await filled.evaluate(bg);
     // Filled is a tinted surface, distinct from the raised elevated surface.
     expect(filledBg).not.toBe(elevatedBg);
-    // Outlined carries a real border (the variant's tell).
-    const outlinedBorder = await outlined.evaluate((el) => getComputedStyle(el).borderTopWidth);
-    expect(outlinedBorder).not.toBe('0px');
+    // Source INSIDE stroke рисуется поверх и не отнимает место у содержимого.
+    const outlinedBorder = await outlined.evaluate((el) => {
+      const paint = getComputedStyle(el, '::after');
+      return {
+        layout: getComputedStyle(el).borderTopWidth,
+        width: paint.borderTopWidth,
+        style: paint.borderTopStyle,
+        color: paint.borderTopColor,
+      };
+    });
+    expect(outlinedBorder.layout).toBe('0px');
+    expect(outlinedBorder.width).not.toBe('0px');
+    expect(outlinedBorder.style).toBe('solid');
+    expect(outlinedBorder.color).not.toBe('rgba(0, 0, 0, 0)');
   }
 });
 

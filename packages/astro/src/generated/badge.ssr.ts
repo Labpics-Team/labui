@@ -12,7 +12,7 @@ import type { LabBadge } from '@labpics/ui-core/badge';
 /** SSR-пропы <lab-badge> (атрибуты/свойства), взяты из класса ядра (LabBadge). */
 export type BadgeSsrProps = Partial<Pick<LabBadge, 'color' | 'type' | 'disabled'>>;
 /** SSR-слоты <lab-badge> — предрендеренные строки контента. */
-export type BadgeSsrSlots = { default?: string; dot?: string };
+export type BadgeSsrSlots = { default?: string; dot?: string; leading?: string; trailing?: string };
 
 /**
  * Рендерит <lab-badge> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
@@ -27,5 +27,5 @@ export function renderBadge(
       color=${ifDefined(props.color)}
       type=${ifDefined(props.type)}
       ?disabled=${Boolean(props.disabled)}
-    >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
+    >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${slots.leading ? html`<span slot="leading">${unsafeHTML(slots.leading)}</span>` : ''}${slots.trailing ? html`<span slot="trailing">${unsafeHTML(slots.trailing)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
 }

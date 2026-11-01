@@ -75,7 +75,11 @@ export type {
   LabAvatarSize,
   LabAvatarStatus,
 } from './components/avatar/lab-avatar.js';
-export type { LabCardPadding, LabCardVariant } from './components/card/lab-card.js';
+export type {
+  LabCardHeadingLevel,
+  LabCardPadding,
+  LabCardVariant,
+} from './components/card/lab-card.js';
 
 // Machine-driven form controls — the first PRODUCTION consumers of the Behaviors
 // seam (they own checked/indeterminate state, so they MUST run a Zag machine,

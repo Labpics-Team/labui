@@ -10,7 +10,7 @@ import type { LabCard } from '@labpics/ui-core/card';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-card>, взятые прямо из класса ядра (LabCard). */
-export type CardProps = Pick<LabCard, 'variant' | 'padding' | 'interactive'>;
+export type CardProps = Pick<LabCard, 'variant' | 'padding' | 'interactive' | 'imageSrc' | 'imageAlt' | 'heading' | 'headingLevel' | 'caption' | 'description' | 'lowerCaption' | 'titleHint' | 'badge'>;
 
 /** <Card> — тонкая Solid-обёртка над <lab-card>. */
 export const Card: LabSolidComponent<CardProps, never> = createLabComponent<
@@ -21,6 +21,15 @@ export const Card: LabSolidComponent<CardProps, never> = createLabComponent<
     { name: 'variant', attr: 'variant', kind: 'string' },
     { name: 'padding', attr: 'padding', kind: 'string' },
     { name: 'interactive', attr: 'interactive', kind: 'boolean' },
+    { name: 'imageSrc', attr: 'image-src', kind: 'string' },
+    { name: 'imageAlt', attr: 'image-alt', kind: 'string' },
+    { name: 'heading', attr: 'heading', kind: 'string' },
+    { name: 'headingLevel', attr: 'heading-level', kind: 'string' },
+    { name: 'caption', attr: 'caption', kind: 'string' },
+    { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'lowerCaption', attr: 'lower-caption', kind: 'string' },
+    { name: 'titleHint', attr: 'title-hint', kind: 'string' },
+    { name: 'badge', attr: 'badge', kind: 'string' },
   ],
   events: [],
 });

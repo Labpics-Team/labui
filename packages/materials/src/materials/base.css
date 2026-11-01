@@ -79,11 +79,12 @@
   --_base: var(--lab-bg-material-subtle-02);
 }
 .lab-material--elevated {
-  /* Elevated Solid — Grouped/Secondary. Режимы выбирают только концы смеси:
-   * live=0 сохраняет непрозрачный Solid, live=1 — исходный прозрачный tint. */
+  /* В Solid цвет полностью задаёт непрозрачная база Grouped/Secondary.
+   * Прозрачный tint исключает повторную растеризацию того же цвета градиентом;
+   * live=1 сохраняет исходный tint стекла и размытия. */
   --_tint: color-mix(
     in srgb,
-    var(--lab-bg-grouped-secondary),
+    transparent,
     var(--lab-bg-material-elevated-01) calc(var(--_material-live, 0) * 100%)
   );
   --_base: var(--lab-bg-grouped-secondary);

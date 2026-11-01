@@ -3,6 +3,7 @@ import { Switch } from '@labpics/ui-react/switch';
 import { StrictMode, createElement } from 'react';
 import { renderToString as renderReactToString } from 'react-dom/server';
 import { type Plugin, defineConfig } from 'vite';
+import { renderCardAnatomy } from './src/_fixtures/card-anatomy-ssr';
 
 // Documentation pages and browser evidence share one Vite build, but their
 // topology is explicit: user-facing docs live at the root; isolated browser
@@ -22,6 +23,9 @@ function ssrProofPlugin(): Plugin {
   return {
     name: 'labui-ssr-proof',
     async transformIndexHtml(html, ctx) {
+      if (ctx.path.endsWith('card-anatomy.html')) {
+        return html.replace('<!-- @@SSR_CARD_ANATOMY@@ -->', await renderCardAnatomy());
+      }
       if (ctx.path.endsWith('card-material-shadow.html')) {
         const { renderToString, html: litHtml, ifDefined } = await import('@labpics/ui-core/ssr');
         const { materialCss } = await import('@labpics/ui-materials/css');
@@ -119,6 +123,7 @@ export default defineConfig({
           __dirname,
           'src/_fixtures/card-material-shadow.html',
         ),
+        'fixture-card-anatomy': resolve(__dirname, 'src/_fixtures/card-anatomy.html'),
         'fixture-material-runtime-lifetime': resolve(
           __dirname,
           'src/_fixtures/material-runtime-lifetime.html',

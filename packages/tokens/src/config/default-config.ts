@@ -232,11 +232,15 @@ export const defaultConfig: TokensConfig = {
       semibold: 600,
       bold: 700,
     },
-    // Проверенные подписи Switch: docs/reference/design-baseline.md.
+    // Проверенные подписи Switch и анатомия Card: docs/reference/design-baseline.md.
     // Это роли компонента; viewport не меняет кегль выбранного размера.
     fixedRoles: {
       'switch-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
       'switch-label-l': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
+      'card-title': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
+      'card-description': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
+      'card-caption': { fontSizeRem: 0.875, lineHeight: 12 / 14, letterSpacingEm: 0 },
+      'badge-label': { fontSizeRem: 0.75, lineHeight: 1, letterSpacingEm: 0 },
     },
     // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
     // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие

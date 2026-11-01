@@ -15,11 +15,13 @@
     type?: LabBadge['type'];
     disabled?: LabBadge['disabled'];
     dot?: Snippet;
+    leading?: Snippet;
+    trailing?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { color, type, disabled, children, dot, ...rest }: Props = $props();
+  let { color, type, disabled, children, dot, leading, trailing, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'color', attr: 'color', kind: 'string' },
@@ -38,4 +40,6 @@
 <lab-badge bind:this={el} {...rest}>
   {@render children?.()}
   {#if dot}<div slot="dot" style="display:contents">{@render dot()}</div>{/if}
+  {#if leading}<div slot="leading" style="display:contents">{@render leading()}</div>{/if}
+  {#if trailing}<div slot="trailing" style="display:contents">{@render trailing()}</div>{/if}
 </lab-badge>
