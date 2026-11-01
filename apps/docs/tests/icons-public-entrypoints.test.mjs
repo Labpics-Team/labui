@@ -252,7 +252,11 @@ test('state consumer requires the resolved group contribution without fixing its
 });
 
 test('schema3 requires both sliced state imports and one generic state executor', async () => {
-  const { root, entries } = await resolvedFixture({ button: 'button.mjs', reload: 'reload.mjs', motion: 'motion.mjs' });
+  const { root, entries } = await resolvedFixture({
+    button: 'button.mjs',
+    reload: 'reload.mjs',
+    motion: 'motion.mjs',
+  });
   const imports = new Map();
   const modules = new Set(Object.values(entries));
   for (const group of ['status-circle', 'expression-face']) {
@@ -266,7 +270,10 @@ test('schema3 requires both sliced state imports and one generic state executor'
   assert.equal(required.length, 5);
   assertConsumerModuleGraph(root, modules, entries, imports, required, required);
   modules.delete(`${entries['@labpics/icons/states/expression-face']}:implementation`);
-  assert.throws(() => assertConsumerModuleGraph(root, modules, entries, imports, required, required), /states\/expression-face/);
+  assert.throws(
+    () => assertConsumerModuleGraph(root, modules, entries, imports, required, required),
+    /states\/expression-face/,
+  );
   assert.deepEqual(consumerPublicEntries(2), required.slice(0, -1));
   assert.deepEqual(consumerPublicEntries(1), required.slice(0, -2));
   for (const schema of [2, 3]) {
@@ -274,6 +281,9 @@ test('schema3 requires both sliced state imports and one generic state executor'
     assert.equal(fixture.split('function changeState(').length - 1, 1);
     assert.equal(fixture.split('function mountStateConsumer(').length - 1, 1);
     assert.doesNotMatch(fixture, /"sharedParts"|"enclosurePartId"|"defaultState"|"states"/);
-    assert.equal(fixture.includes("import * as expressionFace from '@labpics/icons/states/expression-face'"), schema === 3);
+    assert.equal(
+      fixture.includes("import * as expressionFace from '@labpics/icons/states/expression-face'"),
+      schema === 3,
+    );
   }
 });

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { consumerFixture, installViewportPointerBlocker, sameStateOpacity } from './icons-packed.mjs';
+import {
+  consumerFixture,
+  installViewportPointerBlocker,
+  sameStateOpacity,
+} from './icons-packed.mjs';
 
 const stateIds = ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'];
 const statePose = (values) =>
@@ -24,7 +28,11 @@ function pointerDocument(width, height, { inset = 0, intercept = true } = {}) {
       };
       return element;
     },
-    body: { append(element) { blocker = element; } },
+    body: {
+      append(element) {
+        blocker = element;
+      },
+    },
     elementFromPoint() {
       return intercept && blocker?.style.pointerEvents === 'auto' ? blocker : null;
     },
@@ -37,11 +45,16 @@ test('pointer контроль не зависит от target-box до авто
   const oldRectangle = { left: 48, top: 600, right: 96, bottom: 648 };
   const action = { x: 72, y: 180 };
   assert.ok(action.y < oldRectangle.top, 'старый fixed overlay пропускает новый action point');
-  for (const [width, height] of [[640, 360], [320, 240]]) {
+  for (const [width, height] of [
+    [640, 360],
+    [320, 240],
+  ]) {
     const fixture = pointerDocument(width, height);
     const witness = installViewportPointerBlocker({
       ownerDocument: fixture.document,
-      getBoundingClientRect() { throw new Error('target-box не должен участвовать'); },
+      getBoundingClientRect() {
+        throw new Error('target-box не должен участвовать');
+      },
     });
     assert.ok(action.x >= witness.left && action.x <= witness.right);
     assert.ok(action.y >= witness.top && action.y <= witness.bottom);

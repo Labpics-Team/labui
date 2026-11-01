@@ -5,7 +5,11 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { assertSelfHostedRunner, stateReferenceContract, validateSubject } from './icons-packed.mjs';
+import {
+  assertSelfHostedRunner,
+  stateReferenceContract,
+  validateSubject,
+} from './icons-packed.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -261,11 +265,10 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
   assert.equal(group.defaultState, contract.defaultState);
   assert.equal(group.enclosurePartId, contract.enclosurePartId);
   if (name === 'expression-face') assert.equal(document.schemaVersion, 2);
-  if (document.schemaVersion === 2)
-    assert.deepEqual(group.sharedParts, contract.sharedParts);
+  if (document.schemaVersion === 2) assert.deepEqual(group.sharedParts, contract.sharedParts);
   assert.deepEqual(Object.keys(group.states).sort(), contract.states);
   const states = [];
-  const ids = new Set(contract.sharedParts.map(part => part.id));
+  const ids = new Set(contract.sharedParts.map((part) => part.id));
   let enclosure;
   let sharedParts;
   for (const id of Object.keys(group.states).sort()) {
@@ -299,7 +302,8 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
     const shell = paths.at(-1);
     if (enclosure) assert.deepEqual(shell, enclosure, 'author enclosures не совпадают');
     else enclosure = shell;
-    const shared = paths.slice(member.contentPartIds.length)
+    const shared = paths
+      .slice(member.contentPartIds.length)
       .map((path, index) => ({ ...path, ...contract.sharedParts[index] }));
     if (sharedParts) assert.deepEqual(shared, sharedParts, 'author shared parts не совпадают');
     else sharedParts = shared;
@@ -329,8 +333,10 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
     defaultState: group.defaultState,
     enclosurePartId: group.enclosurePartId,
     ...(document.schemaVersion === 2
-      ? { sharedPartIds: sharedParts.map(part => part.id),
-          ...(name === 'expression-face' ? { sharedParts } : {}) }
+      ? {
+          sharedPartIds: sharedParts.map((part) => part.id),
+          ...(name === 'expression-face' ? { sharedParts } : {}),
+        }
       : {}),
     enclosure,
     states,
@@ -346,15 +352,15 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
           placement: 'after-content',
         }),
       ),
-      specSha256: hash(
-        stableJSON({ schemaVersion: document.schemaVersion, source, name, group }),
-      ),
+      specSha256: hash(stableJSON({ schemaVersion: document.schemaVersion, source, name, group })),
       ...(document.schemaVersion === 2
         ? {
             sharedPartsSha256: hash(
               stableJSON({
-                parts: sharedParts.map(part => ({ ...part,
-                  paint: { kind: 'fill', fill: 'currentColor' } })),
+                parts: sharedParts.map((part) => ({
+                  ...part,
+                  paint: { kind: 'fill', fill: 'currentColor' },
+                })),
                 viewBox: [0, 0, 24, 24],
                 dimensions: [24, 24],
                 placement: 'after-content',
@@ -487,8 +493,10 @@ export function platformMeasurementLog(bytes, sourceSha) {
 }
 
 const VISUAL_FILES = new Set([
-  'result/no-preference.png', 'result/reduce.png',
-  'result/no-preference-failure.png', 'result/reduce-failure.png',
+  'result/no-preference.png',
+  'result/reduce.png',
+  'result/no-preference-failure.png',
+  'result/reduce-failure.png',
 ]);
 const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
 const VISUAL_MAX_PIXELS = 16 * 1024 * 1024;
@@ -498,32 +506,51 @@ export function consumerVisualLog(bytes, file, sourceSha, uiCommit) {
   assert.ok(VISUAL_FILES.has(file), 'visual: неизвестный screenshot');
   assert.match(sourceSha, /^[a-f0-9]{40}$/);
   assert.match(uiCommit, /^[a-f0-9]{40}$/);
-  assert.ok(Buffer.isBuffer(bytes) && bytes.length >= 45 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
-    'visual: PNG bytes вне лимита');
-  assert.ok(bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
-    'visual: PNG signature');
+  assert.ok(
+    Buffer.isBuffer(bytes) && bytes.length >= 45 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
+    'visual: PNG bytes вне лимита',
+  );
+  assert.ok(
+    bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
+    'visual: PNG signature',
+  );
   assert.equal(bytes.readUInt32BE(8), 13, 'visual: IHDR length');
   assert.equal(bytes.toString('ascii', 12, 16), 'IHDR', 'visual: IHDR');
-  const width = bytes.readUInt32BE(16), height = bytes.readUInt32BE(20);
-  assert.ok(width > 0 && height > 0 && width * height <= VISUAL_MAX_PIXELS,
-    'visual: PNG dimensions вне лимита');
-  assert.ok(bytes.subarray(-12).equals(Buffer.from([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130])),
-    'visual: IEND');
-  return evidenceLog(bytes, 'LABUI_ICONS_CONSUMER_VISUAL',
-    { file, sourceSha, uiCommit, width, height }, 'pngSha256');
+  const width = bytes.readUInt32BE(16),
+    height = bytes.readUInt32BE(20);
+  assert.ok(
+    width > 0 && height > 0 && width * height <= VISUAL_MAX_PIXELS,
+    'visual: PNG dimensions вне лимита',
+  );
+  assert.ok(
+    bytes.subarray(-12).equals(Buffer.from([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130])),
+    'visual: IEND',
+  );
+  return evidenceLog(
+    bytes,
+    'LABUI_ICONS_CONSUMER_VISUAL',
+    { file, sourceSha, uiCommit, width, height },
+    'pngSha256',
+  );
 }
 
 export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
   assert.match(sourceSha, /^[a-f0-9]{40}$/);
   assert.match(uiCommit, /^[a-f0-9]{40}$/);
-  assert.ok(Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
-    'receipt: bytes вне лимита');
+  assert.ok(
+    Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
+    'receipt: bytes вне лимита',
+  );
   const receipt = JSON.parse(bytes);
   assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
   assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
   assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
-  return evidenceLog(bytes, 'LABUI_ICONS_CONSUMER_RECEIPT',
-    { file: 'result/receipt.json', sourceSha, uiCommit }, 'receiptSha256');
+  return evidenceLog(
+    bytes,
+    'LABUI_ICONS_CONSUMER_RECEIPT',
+    { file: 'result/receipt.json', sourceSha, uiCommit },
+    'receiptSha256',
+  );
 }
 
 export async function prepareInputs(options) {
@@ -670,13 +697,20 @@ export async function summarize(directory) {
   const packets = [];
   let readbackFailure;
   const addPacket = (file, encode) => {
-    try { packets.push(encode()); }
-    catch (error) { readbackFailure ??= { file, error }; }
+    try {
+      packets.push(encode());
+    } catch (error) {
+      readbackFailure ??= { file, error };
+    }
   };
   for (const visual of visuals)
-    addPacket(visual.path, () => consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit));
+    addPacket(visual.path, () =>
+      consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit),
+    );
   if (receipt.outcome === 'passed')
-    addPacket('result/receipt.json', () => consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit));
+    addPacket('result/receipt.json', () =>
+      consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit),
+    );
   for (const packet of packets) await writeStdout(packet);
   await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
@@ -692,7 +726,9 @@ export async function summarize(directory) {
         : null,
       files,
       diagnosticDirectory: root,
-      ...(readbackFailure ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } } : {}),
+      ...(readbackFailure
+        ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
+        : {}),
     })}\n`,
   );
   if (readbackFailure) throw readbackFailure.error;

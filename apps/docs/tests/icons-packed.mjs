@@ -30,8 +30,14 @@ const STATE_GROUPS = {
     sharedParts: [{ id: 'status-enclosure', role: 'container' }],
     buttonLabel: 'Сменить знак',
     selectLabel: 'Состояние знака',
-    labels: { attention: 'Внимание', confirmation: 'Подтверждение', decrease: 'Уменьшение',
-      dismissal: 'Закрытие', increase: 'Увеличение', question: 'Вопрос' },
+    labels: {
+      attention: 'Внимание',
+      confirmation: 'Подтверждение',
+      decrease: 'Уменьшение',
+      dismissal: 'Закрытие',
+      increase: 'Увеличение',
+      question: 'Вопрос',
+    },
   },
   'expression-face': {
     defaultState: 'aloof',
@@ -55,14 +61,19 @@ export function stateReferenceContract(group) {
 
 export function consumerPublicEntries(schemaVersion) {
   assert.ok([1, 2, 3].includes(schemaVersion));
-  return [...REQUIRED_PUBLIC_ENTRIES,
+  return [
+    ...REQUIRED_PUBLIC_ENTRIES,
     ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
-    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : [])];
+    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : []),
+  ];
 }
 
 export function subjectStateReferences(subject) {
-  return subject.schemaVersion === 3 ? subject.stateReferences :
-    subject.schemaVersion === 2 ? { 'status-circle': subject.stateReference } : {};
+  return subject.schemaVersion === 3
+    ? subject.stateReferences
+    : subject.schemaVersion === 2
+      ? { 'status-circle': subject.stateReference }
+      : {};
 }
 
 export function assertIconsImport(source) {
@@ -240,7 +251,10 @@ export function validateSubject(subject) {
   }
   if (subject.schemaVersion === 3) {
     assert.equal(subject.stateReference, undefined);
-    assert.deepEqual(Object.keys(subject.stateReferences ?? {}).sort(), Object.keys(STATE_GROUPS).sort());
+    assert.deepEqual(
+      Object.keys(subject.stateReferences ?? {}).sort(),
+      Object.keys(STATE_GROUPS).sort(),
+    );
     for (const [group, state] of Object.entries(subject.stateReferences))
       validateStateReference(state, reference, group);
   } else {
@@ -262,8 +276,13 @@ export function validateStateReference(reference, author, group = 'status-circle
   assert.match(reference.proof.specSha256, HASH);
   assert.match(reference.proof.enclosureSha256, HASH);
   if (Object.hasOwn(reference, 'sharedPartIds')) {
-    assert.deepEqual(reference.sharedPartIds, contract.sharedParts.map(part => part.id));
-    const shared = reference.sharedParts ?? [{ ...reference.enclosure, ...contract.sharedParts[0] }];
+    assert.deepEqual(
+      reference.sharedPartIds,
+      contract.sharedParts.map((part) => part.id),
+    );
+    const shared = reference.sharedParts ?? [
+      { ...reference.enclosure, ...contract.sharedParts[0] },
+    ];
     assert.equal(shared.length, contract.sharedParts.length);
     for (const [index, part] of shared.entries()) {
       assert.deepEqual(Object.keys(part).sort(), ['d', 'fillRule', 'id', 'role']);
@@ -276,7 +295,7 @@ export function validateStateReference(reference, author, group = 'status-circle
       reference.proof.sharedPartsSha256,
       hash(
         stableJSON({
-          parts: shared.map(part => ({ ...part, paint: { kind: 'fill', fill: 'currentColor' } })),
+          parts: shared.map((part) => ({ ...part, paint: { kind: 'fill', fill: 'currentColor' } })),
           viewBox: [0, 0, 24, 24],
           dimensions: [24, 24],
           placement: 'after-content',
@@ -293,7 +312,7 @@ export function validateStateReference(reference, author, group = 'status-circle
     reference.states.map((state) => state.id),
     contract.states,
   );
-  const ids = new Set(contract.sharedParts.map(part => part.id));
+  const ids = new Set(contract.sharedParts.map((part) => part.id));
   const sharedCount = reference.sharedPartIds?.length ?? 1;
   for (const state of reference.states) {
     assert.match(state.icon, /^[a-z][a-z0-9-]*$/);
@@ -325,8 +344,10 @@ export function validateStateReference(reference, author, group = 'status-circle
     }
     assert.deepEqual(state.paths.at(-1), reference.enclosure);
     if (reference.sharedParts)
-      assert.deepEqual(state.paths.slice(state.contentPartIds.length),
-        reference.sharedParts.map(({ d, fillRule }) => ({ d, fillRule })));
+      assert.deepEqual(
+        state.paths.slice(state.contentPartIds.length),
+        reference.sharedParts.map(({ d, fillRule }) => ({ d, fillRule })),
+      );
   }
   assert.equal(
     hash(
@@ -744,17 +765,23 @@ window.__iconsPacked.stateConsumers = stateConsumers;
 const EXPRESSION_FIXTURE = `
 import * as expressionFace from '@labpics/icons/states/expression-face';
 const expressionConsumer = mountStateConsumer(expressionFace,
-  ${JSON.stringify({ buttonLabel: STATE_GROUPS['expression-face'].buttonLabel,
+  ${JSON.stringify({
+    buttonLabel: STATE_GROUPS['expression-face'].buttonLabel,
     selectLabel: STATE_GROUPS['expression-face'].selectLabel,
-    labels: STATE_GROUPS['expression-face'].labels, samples: true })});
+    labels: STATE_GROUPS['expression-face'].labels,
+    samples: true,
+  })});
 stateConsumers['expression-face'] = expressionConsumer;
 window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expressionConsumer.ready]);
 `;
 
 export function consumerFixture(schemaVersion) {
   assert.ok([1, 2, 3].includes(schemaVersion));
-  return FIXTURE + (schemaVersion >= 2 ? STATE_FIXTURE : '') +
-    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '');
+  return (
+    FIXTURE +
+    (schemaVersion >= 2 ? STATE_FIXTURE : '') +
+    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '')
+  );
 }
 
 function npm(consumer, args) {
@@ -861,9 +888,15 @@ export function installViewportPointerBlocker(element) {
     centerHit: document.elementFromPoint(width / 2, height / 2) === blocker,
   };
   if (
-    width <= 0 || height <= 0 || rectangle.left > 0 || rectangle.top > 0 ||
-    rectangle.right < width || rectangle.bottom < height || !witness.centerHit
-  ) throw new Error(`Pointer blocker не закрывает viewport: ${JSON.stringify(witness)}`);
+    width <= 0 ||
+    height <= 0 ||
+    rectangle.left > 0 ||
+    rectangle.top > 0 ||
+    rectangle.right < width ||
+    rectangle.bottom < height ||
+    !witness.centerHit
+  )
+    throw new Error(`Pointer blocker не закрывает viewport: ${JSON.stringify(witness)}`);
   return witness;
 }
 
@@ -1039,7 +1072,9 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       });
       for (const group of Object.keys(reference.states)) {
         const disposed = await page.evaluate(
-          group => window.__iconsPacked.stateConsumers[group].stateDisposal(), group);
+          (group) => window.__iconsPacked.stateConsumers[group].stateDisposal(),
+          group,
+        );
         assert.equal(disposed.connected, false);
         assert.equal(
           disposed.completionStatus,
@@ -1124,17 +1159,27 @@ export function stateCapabilitiesReference(reference) {
 }
 
 function sharedStateParts(reference) {
-  return reference.sharedParts ?? [{ ...reference.enclosure,
-    id: reference.enclosurePartId, role: 'container' }];
+  return (
+    reference.sharedParts ?? [
+      { ...reference.enclosure, id: reference.enclosurePartId, role: 'container' },
+    ]
+  );
 }
 
 export function staticStatePathsReference(reference, state) {
   const shared = sharedStateParts(reference);
-  return state.paths.map((path, index) => ({ ...path, fill: 'currentColor',
-    partId: index < state.contentPartIds.length ? state.contentPartIds[index] :
-      shared[index - state.contentPartIds.length].id,
-    role: index < state.contentPartIds.length ? 'content' :
-      shared[index - state.contentPartIds.length].role }));
+  return state.paths.map((path, index) => ({
+    ...path,
+    fill: 'currentColor',
+    partId:
+      index < state.contentPartIds.length
+        ? state.contentPartIds[index]
+        : shared[index - state.contentPartIds.length].id,
+    role:
+      index < state.contentPartIds.length
+        ? 'content'
+        : shared[index - state.contentPartIds.length].role,
+  }));
 }
 
 // Raw author reference определяет части независимо от установленного renderer.
@@ -1142,27 +1187,49 @@ export function assertStateAnatomy(observation, reference) {
   assert.deepEqual(observation.viewBox, [0, 0, 24, 24]);
   assert.deepEqual(observation.dimensions, [24, 24]);
   assert.equal(observation.identity, true);
-  assert.deepEqual(observation.groups, reference.states.map(state => ({
-    id: state.id, partId: state.partId, role: 'state',
-    paths: staticStatePathsReference(reference, state).slice(0, state.contentPartIds.length),
-  })));
-  assert.deepEqual(observation.enclosure, { ...reference.enclosure,
-    fill: 'currentColor', partId: reference.enclosurePartId, role: 'container' });
+  assert.deepEqual(
+    observation.groups,
+    reference.states.map((state) => ({
+      id: state.id,
+      partId: state.partId,
+      role: 'state',
+      paths: staticStatePathsReference(reference, state).slice(0, state.contentPartIds.length),
+    })),
+  );
+  assert.deepEqual(observation.enclosure, {
+    ...reference.enclosure,
+    fill: 'currentColor',
+    partId: reference.enclosurePartId,
+    role: 'container',
+  });
   assert.equal(observation.enclosureCount, 1);
   assert.equal(observation.enclosureOpacity, 1);
-  assert.deepEqual(observation.sharedParts, sharedStateParts(reference).map(({ id, ...part }) => ({
-    ...part, fill: 'currentColor', partId: id,
-    count: 1, opacity: 1, transform: 'none', inStateGroup: false, ancestorsUnchanged: true, identity: true,
-  })));
+  assert.deepEqual(
+    observation.sharedParts,
+    sharedStateParts(reference).map(({ id, ...part }) => ({
+      ...part,
+      fill: 'currentColor',
+      partId: id,
+      count: 1,
+      opacity: 1,
+      transform: 'none',
+      inStateGroup: false,
+      ancestorsUnchanged: true,
+      identity: true,
+    })),
+  );
 }
 
 async function stateBrowserProof(page, reference, reducedMotion, records) {
-  const evaluate = (operation, ...args) => page.evaluate(({ group, operation, args }) =>
-    window.__iconsPacked.stateConsumers[group][operation](...args),
-  { group: reference.group, operation, args });
+  const evaluate = (operation, ...args) =>
+    page.evaluate(
+      ({ group, operation, args }) =>
+        window.__iconsPacked.stateConsumers[group][operation](...args),
+      { group: reference.group, operation, args },
+    );
   const read = () => evaluate('readState');
   const contract = stateReferenceContract(reference.group);
-  const alternatives = reference.states.filter(state => state.id !== reference.defaultState);
+  const alternatives = reference.states.filter((state) => state.id !== reference.defaultState);
   const [first, second] = alternatives;
   const selectedTarget = alternatives.at(-1).id;
   const initial = await read();
@@ -1223,10 +1290,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assert.equal(svg.ok, true);
     assert.deepEqual(svg.viewBox, state.viewBox);
     assert.deepEqual(svg.dimensions, state.dimensions);
-    assert.deepEqual(
-      svg.paths,
-      staticStatePathsReference(reference, state),
-    );
+    assert.deepEqual(svg.paths, staticStatePathsReference(reference, state));
     const result = await evaluate('changeState', state.id, 160);
     stateEffect(result.effect, reference, state.id, reducedMotion === 'reduce' ? 0 : 160);
     const terminal = await evaluate('settleState');
@@ -1293,9 +1357,16 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   if (reference.group === 'expression-face') {
     const samples = await evaluate('sizeSamples');
     assert.equal(samples.length, reference.states.length * 3);
-    for (const [index, state] of reference.states.entries()) for (const [offset, size] of [16, 24, 48].entries())
-      assert.deepEqual(samples[index * 3 + offset], { state: state.id, size, width: size, height: size,
-        viewBox: state.viewBox, paths: staticStatePathsReference(reference, state) });
+    for (const [index, state] of reference.states.entries())
+      for (const [offset, size] of [16, 24, 48].entries())
+        assert.deepEqual(samples[index * 3 + offset], {
+          state: state.id,
+          size,
+          width: size,
+          height: size,
+          viewBox: state.viewBox,
+          paths: staticStatePathsReference(reference, state),
+        });
     records.push({ name: `${reference.group}:${reducedMotion}:author-size-samples`, samples });
   }
   const refusal = await evaluate('stateRefusals');
