@@ -491,13 +491,15 @@ for (const renderer of ['lit', 'react'] as const) {
       page,
     }, testInfo) => {
       await openFixture(page);
-      const result = await page.evaluate(
+      const start = await page.evaluate(
         async ({ renderer, priority }) => {
           const fixture = window.switchMotionFixture;
           const thumb = fixture.thumb(renderer);
           const read = () => new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41;
           const frame = () =>
             new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+          // Здесь проверяется CSS override; длинная кривая оставляет окно для живого observer.
+          document.documentElement.style.setProperty('--lab-motion-transition-duration', '2000ms');
           thumb.style.setProperty('transition-property', 'none', priority);
           await fixture.toggle(renderer);
           const disabled: number[] = [];
@@ -506,30 +508,65 @@ for (const renderer of ['lit', 'react'] as const) {
             disabled.push(read());
           }
           // Удаление override возвращает CSS-настройку, а не прежнее сохранённое none.
+          const initial = read();
           thumb.style.removeProperty('transition-property');
           await fixture.toggle(renderer);
-          const resumed: number[] = [];
-          for (let index = 0; index < 6; index++) {
-            await frame();
-            resumed.push(read());
-          }
+          return { disabled, initial, checked: fixture.input(renderer).checked };
+        },
+        { renderer, priority },
+      );
+      for (const value of start.disabled) expect.soft(value).toBeCloseTo(16, 2);
+      expect(start.initial).toBeCloseTo(16, 2);
+      expect(start.checked).toBe(false);
+      let resumed = start.initial;
+      await expect
+        .poll(async () => {
+          resumed = await position(page, renderer);
+          return resumed > 0.01 && resumed < 15.99;
+        })
+        .toBe(true);
+      const first = resumed;
+      await expect
+        .poll(async () => {
+          resumed = await position(page, renderer);
+          return resumed > 0.01 && resumed < first - 0.01;
+        })
+        .toBe(true);
+      const cleanup = await page.evaluate(
+        ({ renderer, priority }) => {
+          const fixture = window.switchMotionFixture;
+          const thumb = fixture.thumb(renderer);
+          const checked = fixture.input(renderer).checked;
+          const activeBeforeDetach = thumb.getAnimations().some((animation) => {
+            const effect = animation.effect;
+            return (
+              animation.playState === 'running' &&
+              effect instanceof KeyframeEffect &&
+              effect.target === thumb &&
+              effect.getKeyframes().some((keyframe) => keyframe.transform !== undefined)
+            );
+          });
           // Последняя запись потребителя должна пережить cleanup даже без новой цели.
           thumb.style.setProperty('transition-property', 'opacity', priority);
           fixture.detach(renderer);
           return {
-            disabled,
-            resumed,
+            checked,
+            activeBeforeDetach,
             restored: thumb.style.getPropertyValue('transition-property'),
             priority: thumb.style.getPropertyPriority('transition-property'),
           };
         },
         { renderer, priority },
       );
-      await saveTrace(testInfo, `${renderer}-inline-override-${priority || 'normal'}`, result);
-      for (const value of result.disabled) expect.soft(value).toBeCloseTo(16, 2);
-      expect(result.resumed.some((value) => value > 0.01 && value < 15.99)).toBe(true);
-      expect(result.restored).toBe('opacity');
-      expect(result.priority).toBe(priority);
+      await saveTrace(testInfo, `${renderer}-inline-override-${priority || 'normal'}`, {
+        start,
+        resumed: { first, second: resumed },
+        cleanup,
+      });
+      expect(cleanup.checked).toBe(false);
+      expect(cleanup.activeBeforeDetach).toBe(true);
+      expect(cleanup.restored).toBe('opacity');
+      expect(cleanup.priority).toBe(priority);
     });
   }
 
