@@ -5,7 +5,14 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
 import { pathToFileURL } from 'node:url';
-import { authorReference, readCycleMaster, validateSourcePin } from './prepare-icons-inputs.mjs';
+import {
+  authorReference,
+  readAuthorMaster,
+  readCycleMaster,
+  stateReference,
+  validateSourcePin,
+} from './prepare-icons-inputs.mjs';
+import { validateStateReference, validateSubject } from './icons-packed.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
@@ -349,4 +356,227 @@ test('wrong raw annotation roles refuse, rather than changing the expected consu
   annotation.icons.reload.outline.parts[0].role = 'container';
   await writeJSON(root, 'semantics/author-anatomy.json', annotation);
   await assert.rejects(authorReference(root, PIN), /control/);
+});
+
+// Малый synthetic witness проверяет reader и binding; actual Figma masters
+// читаются отдельно штатным prepareInputs из закреплённого checkout.
+const STATE_ICONS = {
+  attention: 'alert-circle',
+  confirmation: 'checkmark-circle',
+  decrease: 'minus-circle',
+  dismissal: 'close-circle',
+  increase: 'plus-circle',
+  question: 'question-circle',
+};
+const SHELL = 'M2 2L22 2L22 22L2 22ZM4 4L4 20L20 20L20 4Z';
+const CONTENT = 'M9 9L15 9L12 15Z';
+const DOT = 'M11 17L13 17L13 19L11 19Z';
+const pathFingerprint = (paths) =>
+  hash(JSON.stringify(paths.map((path, index) => ({ d: path.d, fillRule: path.fillRule, index }))));
+async function stateFixture(t) {
+  const root = await rawFixture(t);
+  const manifest = structuredClone(MANIFEST);
+  const document = {
+    schemaVersion: 1,
+    source: structuredClone(PIN.figma),
+    groups: {
+      'status-circle': {
+        law: 'enclosure.replace',
+        defaultState: 'question',
+        enclosurePartId: 'status-enclosure',
+        states: {},
+      },
+    },
+  };
+  const texts = {};
+  for (const [index, [id, icon]] of Object.entries(STATE_ICONS).entries()) {
+    const paths = ['attention', 'question'].includes(id)
+      ? [
+          { d: DOT, fillRule: 'nonzero' },
+          { d: CONTENT, fillRule: 'nonzero' },
+        ]
+      : [{ d: CONTENT, fillRule: 'nonzero' }];
+    paths.push({ d: SHELL, fillRule: 'evenodd' });
+    const text =
+      '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<g id="neutral">' +
+      paths
+        .map((path) => `<path d="${path.d}" fill-rule="${path.fillRule}" fill="#101012"/>`)
+        .join('') +
+      '</g></svg>';
+    const file = `masters/figma/${PIN.figma.version}/Outline/${icon}.svg`;
+    const bytes = Buffer.from(text);
+    const fingerprint = pathFingerprint(paths);
+    manifest.icons[icon] = {
+      outline: {
+        master: file,
+        sha256: hash(bytes),
+        bytes: bytes.length,
+        nodeId: `1:${index + 1}`,
+        nodeSha256: hash(`node-${id}`),
+        normalizedSource: { sha256: hash(`normalized-${id}`), pathFingerprintSha256: fingerprint },
+      },
+    };
+    document.groups['status-circle'].states[id] = {
+      icon,
+      variant: 'outline',
+      masterSha256: hash(bytes),
+      pathFingerprintSha256: fingerprint,
+      enclosurePathIndex: paths.length - 1,
+      contentPartIds: paths.slice(0, -1).map((_, part) => `${id}-content-${part}`),
+    };
+    await mkdir(dirname(join(root, file)), { recursive: true });
+    await writeFile(join(root, file), text);
+    texts[id] = { text, paths, file };
+  }
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+  return { root, manifest, document, texts };
+}
+
+test('multi-path author reader preserves countershapes while cycle remains one whole path', () => {
+  const source = MASTERS.outline.replace(
+    '</g>',
+    `<path d="${SHELL}" fill="#101012" fill-rule="evenodd"/></g>`,
+  );
+  const actual = readAuthorMaster(Buffer.from(source));
+  assert.deepEqual(actual.dimensions, [24, 24]);
+  assert.deepEqual(actual.paths, [
+    { d: wholePath('outline'), fillRule: 'nonzero' },
+    { d: SHELL, fillRule: 'evenodd' },
+  ]);
+  assert.throws(() => readCycleMaster(Buffer.from(source)), /cycle/);
+  for (const [name, mutate] of [
+    ['transform', (value) => value.replace('<g ', '<g transform="translate(1 0)" ')],
+    ['opacity', (value) => value.replace('<path ', '<path opacity="0.5" ')],
+    ['paint', (value) => value.replace('#101012', '#ffffff')],
+    ['dimension', (value) => value.replace('width="24"', 'width="24px"')],
+    ['open inner countershape', (value) => value.replace(SHELL, SHELL.slice(0, -1))],
+    ['nonfinite geometry', (value) => value.replace(SHELL, SHELL.replace('22', '1e309'))],
+    ['injection', (value) => value.replace('</g>', '<script>alert(1)</script></g>')],
+  ])
+    assert.throws(() => readAuthorMaster(Buffer.from(mutate(source))), undefined, name);
+});
+
+test('state reference derives six whole authored signs and one enclosure before producer imports', async (t) => {
+  const { root, texts } = await stateFixture(t);
+  await mkdir(join(root, 'scripts/lib'), { recursive: true });
+  await writeFile(
+    join(root, 'scripts/lib/author-state-groups.js'),
+    'throw new Error("POISONED_COMPILER");',
+  );
+  const reference = await stateReference(root, PIN);
+  assert.deepEqual(
+    reference.states.map((state) => state.id),
+    Object.keys(STATE_ICONS),
+  );
+  for (const state of reference.states) {
+    assert.deepEqual(state.paths, texts[state.id].paths);
+    assert.equal(state.author.masterSha256, hash(texts[state.id].text));
+    assert.equal(state.partId, `state-${state.id}`);
+  }
+  assert.deepEqual(reference.enclosure, { d: SHELL, fillRule: 'evenodd' });
+  assert.equal(validateStateReference(reference, PIN.figma), reference);
+});
+
+test('a rehashed legal shell change cannot redefine common-enclosure identity', async (t) => {
+  const { root, manifest, document, texts } = await stateFixture(t);
+  const id = 'confirmation';
+  const fixture = texts[id];
+  const paths = structuredClone(fixture.paths);
+  paths.at(-1).d = SHELL.replace('22', '21');
+  const changed = fixture.text.replace(SHELL, paths.at(-1).d);
+  const record = manifest.icons[STATE_ICONS[id]].outline;
+  record.sha256 = hash(changed);
+  record.bytes = Buffer.byteLength(changed);
+  record.normalizedSource.pathFingerprintSha256 = pathFingerprint(paths);
+  Object.assign(document.groups['status-circle'].states[id], {
+    masterSha256: record.sha256,
+    pathFingerprintSha256: record.normalizedSource.pathFingerprintSha256,
+  });
+  await writeFile(join(root, fixture.file), changed);
+  await writeJSON(root, 'semantics/figma-baseline.json', manifest);
+  await writeJSON(root, 'semantics/author-state-groups.json', document);
+  await assert.rejects(stateReference(root, PIN), /enclosures/);
+});
+
+test('state coverage, ordering, source and part ID mutations refuse precisely', async (t) => {
+  const { root, document } = await stateFixture(t);
+  for (const mutate of [
+    (value) => {
+      delete value.groups['status-circle'].states.question;
+    },
+    (value) => {
+      value.source.version = '1';
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.enclosurePathIndex = 0;
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.contentPartIds[0] = 'state-question';
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.variant = 'filled';
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.masterSha256 = '0'.repeat(64);
+    },
+  ]) {
+    const changed = structuredClone(document);
+    mutate(changed);
+    await writeJSON(root, 'semantics/author-state-groups.json', changed);
+    await assert.rejects(stateReference(root, PIN));
+  }
+});
+
+test('schema2 requires the state reference while historical schema1 cycle inputs stay valid', async (t) => {
+  const { root } = await stateFixture(t);
+  const author = await authorReference(root, PIN);
+  const states = await stateReference(root, PIN);
+  const packages = Object.fromEntries(
+    [
+      ['icons', '@labpics/icons'],
+      ['uiCore', '@labpics/ui-core'],
+      ['uiShadow', '@labpics/ui-shadow'],
+    ].map(([key, name]) => [
+      key,
+      {
+        name,
+        version: '0.1.0',
+        archiveSha256: 'a'.repeat(64),
+        archiveBytes: 1,
+        sourceCommit: PIN.sourceCommit,
+      },
+    ]),
+  );
+  const old = { schemaVersion: 1, packages, authorReference: author };
+  assert.equal(validateSubject(old), old);
+  const current = { ...old, schemaVersion: 2, stateReference: states };
+  assert.equal(validateSubject(current), current);
+  assert.throws(() => validateSubject({ ...old, schemaVersion: 2 }));
+  assert.throws(() => validateSubject({ ...old, stateReference: states }));
+  for (const mutate of [
+    (value) => {
+      value.states.pop();
+    },
+    (value) => {
+      value.states.reverse();
+    },
+    (value) => {
+      value.states[0].dimensions = [48, 48];
+    },
+    (value) => {
+      value.states[0].paths[0].fillRule = 'evenodd';
+    },
+    (value) => {
+      value.states[0].contentPartIds[0] = 'status-enclosure';
+    },
+    (value) => {
+      value.proof.source.version = '1';
+    },
+  ]) {
+    const changed = structuredClone(states);
+    mutate(changed);
+    assert.throws(() => validateSubject({ ...current, stateReference: changed }));
+  }
 });

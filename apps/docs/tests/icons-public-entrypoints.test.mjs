@@ -190,6 +190,8 @@ test('wrong public symbols and whole catalogs refuse at the complete graph gate 
     '@labpics/icons/ir/recipes',
     '@labpics/icons/ir/candidates',
     '@labpics/icons',
+    '@labpics/icons/authoring',
+    '@labpics/icons/states/other-group',
   ]) {
     assert.throws(() => assertIconsImport(specifier), /чужой symbol или whole catalog/);
     assert.throws(
@@ -201,6 +203,7 @@ test('wrong public symbols and whole catalogs refuse at the complete graph gate 
     '@labpics/icons/symbols/reload',
     '@labpics/icons/ir/render',
     '@labpics/icons/motion',
+    '@labpics/icons/states/status-circle',
     '@labpics/ui-core/button',
     './shared.mjs',
   ]) {
@@ -209,4 +212,38 @@ test('wrong public symbols and whole catalogs refuse at the complete graph gate 
       assertConsumerModuleGraph(root, modules, entries, new Map(), [specifier]),
     );
   }
+});
+
+test('state consumer requires the resolved group contribution without fixing its private layout', async () => {
+  const { root, entries } = await resolvedFixture({
+    button: 'published/button.mjs',
+    reload: 'semantics/reload.mjs',
+    motion: 'runtime/motion.mjs',
+  });
+  const source = '@labpics/icons/states/status-circle';
+  const entry = join(root, 'node_modules/@labpics/icons/compiled/status.mjs');
+  const stateEntries = { ...entries, [source]: entry };
+  const required = [...Object.keys(entries), source];
+  const imports = new Map([[entry, [`${entry}:implementation`]]]);
+  const modules = new Set([...Object.values(entries), `${entry}:implementation`]);
+  assert.doesNotThrow(() =>
+    assertConsumerModuleGraph(root, modules, stateEntries, imports, [source], required),
+  );
+  modules.delete(`${entry}:implementation`);
+  assert.throws(
+    () => assertConsumerModuleGraph(root, modules, stateEntries, imports, [source], required),
+    /states\/status-circle/,
+  );
+  assert.throws(
+    () =>
+      assertConsumerModuleGraph(
+        root,
+        new Set(Object.values(entries)),
+        entries,
+        imports,
+        [source],
+        required,
+      ),
+    /entry не разрешён/,
+  );
 });

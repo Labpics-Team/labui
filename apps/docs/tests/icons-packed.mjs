@@ -20,21 +20,30 @@ const REQUIRED_PUBLIC_ENTRIES = [
   '@labpics/icons/symbols/reload',
   '@labpics/motion',
 ];
+const STATE_ENTRY = '@labpics/icons/states/status-circle';
 
 export function assertIconsImport(source) {
   if (!/^@labpics\/icons(?:\/|$)/.test(source)) return;
   assert.ok(
-    ['@labpics/icons/symbols/reload', '@labpics/icons/ir/render', '@labpics/icons/motion'].includes(
-      source,
-    ),
+    [
+      '@labpics/icons/symbols/reload',
+      '@labpics/icons/ir/render',
+      '@labpics/icons/motion',
+      STATE_ENTRY,
+    ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
 }
 
 // Resolver выбирает установленный публичный entry; facade может исчезнуть при treeshake.
 // Поэтому требуется реальный вклад его import-closure, а не частный путь производителя.
-export function assertPublicEntryModules(modules, entries, imports) {
-  for (const specifier of REQUIRED_PUBLIC_ENTRIES) {
+export function assertPublicEntryModules(
+  modules,
+  entries,
+  imports,
+  required = REQUIRED_PUBLIC_ENTRIES,
+) {
+  for (const specifier of required) {
     const entry = entries[specifier];
     assert.ok(typeof entry === 'string' && entry.length > 0, `entry не разрешён: ${specifier}`);
     const seen = new Set();
@@ -58,6 +67,7 @@ export function assertConsumerModuleGraph(
   publicEntries,
   imports,
   publicImports = [],
+  required = REQUIRED_PUBLIC_ENTRIES,
 ) {
   for (const source of publicImports) assertIconsImport(source);
   const moduleGraph = [...modules]
@@ -68,7 +78,7 @@ export function assertConsumerModuleGraph(
       return relative(consumer, path).replaceAll('\\', '/');
     })
     .sort();
-  assertPublicEntryModules(modules, publicEntries, imports);
+  assertPublicEntryModules(modules, publicEntries, imports, required);
   return moduleGraph;
 }
 const stableJSON = (value) =>
@@ -94,7 +104,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.equal(subject?.schemaVersion, 1);
+  assert.ok([1, 2].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -184,7 +194,67 @@ export function validateSubject(subject) {
       );
     }
   }
+  if (subject.schemaVersion === 2) validateStateReference(subject.stateReference, reference);
+  else assert.equal(subject.stateReference, undefined);
   return subject;
+}
+
+export function validateStateReference(reference, author) {
+  assert.equal(reference?.group, 'status-circle');
+  assert.equal(reference.variant, 'outline');
+  assert.equal(reference.defaultState, 'question');
+  assert.equal(reference.enclosurePartId, 'status-enclosure');
+  assert.deepEqual(reference.proof?.source, { fileKey: author.fileKey, version: author.version });
+  assert.equal(reference.proof.law, 'enclosure.replace');
+  assert.match(reference.proof.specSha256, HASH);
+  assert.match(reference.proof.enclosureSha256, HASH);
+  assert.deepEqual(
+    reference.states.map((state) => state.id),
+    ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'],
+  );
+  const ids = new Set([reference.enclosurePartId]);
+  for (const state of reference.states) {
+    assert.match(state.icon, /^[a-z][a-z0-9-]*$/);
+    assert.equal(state.partId, `state-${state.id}`);
+    assert.equal(state.sourceFile, `masters/figma/${author.version}/Outline/${state.icon}.svg`);
+    assert.deepEqual(state.viewBox, [0, 0, 24, 24]);
+    assert.deepEqual(state.dimensions, [24, 24]);
+    assert.equal(state.author.kind, 'figma');
+    assert.equal(state.author.fileKey, author.fileKey);
+    assert.equal(state.author.version, author.version);
+    assert.match(state.author.nodeId, /^\d+:\d+$/);
+    for (const key of ['nodeSha256', 'masterSha256', 'normalizedSha256', 'pathFingerprintSha256'])
+      assert.match(state.author[key], HASH);
+    assert.ok(state.paths.length >= 2);
+    for (const path of state.paths) {
+      assert.ok(typeof path.d === 'string' && path.d.length > 0);
+      assert.ok(['nonzero', 'evenodd'].includes(path.fillRule));
+    }
+    assert.equal(
+      hash(stableJSON(state.paths.map((path, index) => ({ index, ...path })))),
+      state.author.pathFingerprintSha256,
+    );
+    assert.equal(state.contentPartIds.length, state.paths.length - 1);
+    for (const part of [state.partId, ...state.contentPartIds]) {
+      assert.match(part, /^[a-z][a-z0-9-]*$/);
+      assert.ok(!ids.has(part));
+      ids.add(part);
+    }
+    assert.deepEqual(state.paths.at(-1), reference.enclosure);
+  }
+  assert.equal(
+    hash(
+      stableJSON({
+        ...reference.enclosure,
+        paint: { kind: 'fill', fill: 'currentColor' },
+        viewBox: [0, 0, 24, 24],
+        dimensions: [24, 24],
+        placement: 'after-content',
+      }),
+    ),
+    reference.proof.enclosureSha256,
+  );
+  return reference;
 }
 
 // Проверенные bytes переходят в собственный snapshot; input path больше не читается.
@@ -219,6 +289,9 @@ body { margin:0; padding:48px; background:#fff; color:var(--lab-label-primary); 
 h1 { margin:0 0 32px; font-size:24px; font-weight:600; }
 form { display:flex; gap:48px; } figure { margin:0; display:grid; gap:16px; justify-items:center; }
 figcaption { font-size:14px; } svg[slot=icon] { width:24px; height:24px; display:block; }
+section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:600; }
+.state-sample { display:flex; align-items:center; gap:24px; }
+.state-sample select { min-height:44px; padding:8px 12px; font:inherit; }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
 
@@ -347,6 +420,149 @@ window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async it
     return { axis, motion: compileSymbolEffect(item.model, item.capabilities, 'reload.morph', { duration: 600 }) };
   } };
 `;
+
+const STATE_FIXTURE = `
+import { render, renderStateSvg, compileStateEffect, stateCapabilities, exportStateTransition }
+  from '@labpics/icons/states/status-circle';
+import { sequence } from '@labpics/motion';
+
+const stateCapabilitiesValue = stateCapabilities();
+const stateLabels = { attention: 'Внимание', confirmation: 'Подтверждение', decrease: 'Уменьшение',
+  dismissal: 'Закрытие', increase: 'Увеличение', question: 'Вопрос' };
+const stateSection = document.createElement('section');
+stateSection.setAttribute('aria-labelledby', 'state-heading');
+const stateHeading = document.createElement('h2');
+stateHeading.id = 'state-heading'; stateHeading.textContent = 'Сменить знак';
+const stateSample = document.createElement('div'); stateSample.className = 'state-sample';
+const stateButton = document.createElement('lab-button');
+for (const [name, value] of Object.entries({ size: 'l', icon: '', type: 'neutral',
+  'aria-label': 'Сменить знак', 'data-status-circle': '' })) stateButton.setAttribute(name, value);
+const initialState = renderStateSvg(stateCapabilitiesValue.defaultState);
+if (!initialState.ok) throw new Error(initialState.reason.code);
+stateButton.innerHTML = initialState.svg;
+const stateSvg = stateButton.querySelector('svg');
+stateSvg.setAttribute('slot', 'icon'); stateSvg.setAttribute('aria-hidden', 'true');
+stateSvg.setAttribute('focusable', 'false');
+const stateNodes = new Map([...stateSvg.querySelectorAll('g[data-state][data-part]')]
+  .map(node => [node.dataset.part, node]));
+const stateEnclosure = stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]');
+const originalStateNodes = [...stateSvg.querySelectorAll('*')];
+const stateSelect = document.createElement('select');
+stateSelect.setAttribute('aria-label', 'Состояние знака');
+for (const state of stateCapabilitiesValue.states) {
+  const option = document.createElement('option'); option.value = state.id;
+  option.textContent = stateLabels[state.id]; stateSelect.append(option);
+}
+stateSelect.value = stateCapabilitiesValue.defaultState;
+stateSelect.addEventListener('change', () => changeState(stateSelect.value));
+const stateStatus = document.createElement('span');
+stateStatus.setAttribute('role', 'status'); stateStatus.textContent = stateLabels[stateSelect.value];
+stateSample.append(stateButton, stateSelect, stateStatus);
+stateSection.append(stateHeading, stateSample); document.body.append(stateSection);
+let stateControl; let stateCompletion; let stateGeneration = 0;
+let stateTarget = stateSelect.value; let stateNativeClicks = 0;
+const stateEvents = [];
+stateButton.addEventListener('click', event => {
+  const ids = stateCapabilitiesValue.states.map(state => state.id);
+  const next = ids[(ids.indexOf(stateTarget) + 1) % ids.length];
+  const result = changeState(next);
+  stateEvents.push({ trusted: event.isTrusted, composed: event.composed,
+    native: event.composedPath().includes(stateButton.shadowRoot.querySelector('button')),
+    before: result.before, after: result.after, effect: result.effect });
+});
+function stateOpacity() {
+  return [...stateNodes.values()].map(node => ({ partId: node.dataset.part,
+    value: Number(getComputedStyle(node).opacity) }));
+}
+function statePaths(svg) {
+  return [...svg.querySelectorAll('path')].map(node => ({ d: node.getAttribute('d'),
+    fillRule: node.getAttribute('fill-rule') ?? 'nonzero', fill: node.getAttribute('fill'),
+    partId: node.dataset.part, role: node.dataset.role }));
+}
+function changeState(state, duration = 600) {
+  const result = compileStateEffect(state, { duration,
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
+  if (!result.ok) throw new Error(result.reason.code);
+  const effect = result.effect;
+  const before = stateOpacity(); const previous = stateControl;
+  const next = sequence(effect.stages.map(stage => {
+    const node = stateNodes.get(stage.partId);
+    if (!node) throw new Error('Потеряна группа ' + stage.partId);
+    return [node, { opacity: stage.to },
+      { at: stage.at, duration: stage.duration, ease: effect.options.easing }];
+  }), { reducedMotion: effect.options.duration === 0 ? 'always' : 'user' });
+  previous?.stop(); stateControl = next; stateCompletion = next.finished;
+  stateGeneration++; stateTarget = state; stateSelect.value = state;
+  stateStatus.textContent = stateLabels[state];
+  return { effect, before, after: stateOpacity(), generation: stateGeneration };
+}
+function readState() {
+  const native = stateButton.shadowRoot?.querySelector('button');
+  const rectangle = native?.getBoundingClientRect();
+  return { capabilities: stateCapabilitiesValue, opacity: stateOpacity(),
+    viewBox: stateSvg.getAttribute('viewBox').split(/\\s+/).map(Number),
+    dimensions: ['width', 'height'].map(name => Number(stateSvg.getAttribute(name))),
+    groups: [...stateNodes.values()].map(node => ({ id: node.dataset.state,
+      partId: node.dataset.part, role: node.dataset.role, paths: statePaths(node) })),
+    enclosure: statePaths(stateSvg).at(-1), enclosureCount:
+      stateSvg.querySelectorAll('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]').length,
+    identity: originalStateNodes.length === stateSvg.querySelectorAll('*').length &&
+      originalStateNodes.every((node, index) => node === stateSvg.querySelectorAll('*')[index]) &&
+      stateEnclosure === stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]'),
+    enclosureOpacity: Number(getComputedStyle(stateEnclosure).opacity),
+    connected: stateButton.isConnected, targetState: stateTarget,
+    playback: stateControl?.state, events: stateEvents, nativeClicks: stateNativeClicks,
+    target: { width: rectangle?.width, height: rectangle?.height,
+      name: native?.getAttribute('aria-label'), type: native?.type,
+      iconHidden: stateSvg.getAttribute('aria-hidden'),
+      slotHidden: native?.querySelector('slot[name=icon]')?.getAttribute('aria-hidden') },
+    statusText: stateStatus.textContent, selected: stateSelect.value };
+}
+async function settleState() {
+  let timer;
+  try {
+    const completion = await Promise.race([stateCompletion, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error('State completion timeout')), 20000);
+    })]);
+    if (completion?.status !== 'finished') throw new Error('State transition не завершился');
+    await new Promise(requestAnimationFrame);
+    return { ...readState(), completionStatus: completion.status };
+  } finally { clearTimeout(timer); }
+}
+function staticState(state) {
+  const result = render(state);
+  if (!result.ok) return result;
+  const svg = new DOMParser().parseFromString(result.svg, 'image/svg+xml').documentElement;
+  return { ok: true, paths: statePaths(svg),
+    viewBox: svg.getAttribute('viewBox').split(/\\s+/).map(Number),
+    dimensions: ['width', 'height'].map(name => Number(svg.getAttribute(name))) };
+}
+const cycleCleanup = window.__iconsPacked.cleanup;
+window.__iconsPacked.cleanup = () => { stateControl?.stop(); stateSection.remove(); return cycleCleanup(); };
+const cycleReady = window.__iconsPacked.ready;
+window.__iconsPacked.ready = Promise.all([cycleReady, stateButton.updateComplete.then(() => {
+  stateButton.shadowRoot.querySelector('button').addEventListener('click', () => stateNativeClicks++);
+})]);
+Object.assign(window.__iconsPacked, { readState, changeState, settleState, staticState,
+  stateDisposal: async () => ({ connected: stateButton.isConnected,
+    completionStatus: (await stateCompletion)?.status, playback: stateControl?.state }),
+  pauseState: milliseconds => { stateControl.pause(); if (milliseconds !== undefined) stateControl.seek(milliseconds); return readState(); },
+  playState: () => { stateControl.play(); return readState(); },
+  stateRefusals: () => ({
+    filled: renderStateSvg('question', { variant: 'filled' }),
+    nullRequest: compileStateEffect('question', null),
+    unknown: render('missing'),
+    exports: ['lottie', 'dotlottie', 'sf-symbols'].map(format =>
+      exportStateTransition('question', { format, duration: 240 })),
+    web: exportStateTransition('confirmation', { format: 'web-effect', duration: 240 }),
+  }),
+});
+`;
+
+export function consumerFixture(schemaVersion) {
+  assert.ok([1, 2].includes(schemaVersion));
+  return FIXTURE + (schemaVersion === 2 ? STATE_FIXTURE : '');
+}
 
 function npm(consumer, args) {
   const inherited = process.env.npm_execpath;
@@ -602,11 +818,21 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           refusal,
         });
       }
+      if (reference.states) await stateBrowserProof(page, reference.states, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
         runningNativeAnimations: 0,
       });
+      if (reference.states) {
+        const disposed = await page.evaluate(() => window.__iconsPacked.stateDisposal());
+        assert.equal(disposed.connected, false);
+        assert.equal(
+          disposed.completionStatus,
+          reducedMotion === 'reduce' ? 'finished' : 'stopped',
+        );
+        records.push({ name: `status-circle:${reducedMotion}:dispose`, ...disposed });
+      }
     } catch (error) {
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -616,6 +842,226 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       await context.close();
     }
   }
+}
+
+function sameStateOpacity(left, right) {
+  assert.deepEqual(
+    left.map((item) => item.partId),
+    right.map((item) => item.partId),
+  );
+  for (const [index, item] of left.entries())
+    assert.ok(Math.abs(item.value - right[index].value) <= 0.002, 'видимая opacity скачет');
+}
+
+function stateEffect(effect, reference, target, duration) {
+  assert.deepEqual(effect, {
+    contract: 'labpics.symbol-state-effect/1',
+    version: 1,
+    kind: 'enclosure-replacement',
+    group: reference.group,
+    variant: reference.variant,
+    targetState: target,
+    stages: reference.states.map((state) => ({
+      partId: state.partId,
+      property: 'opacity',
+      to: state.id === target ? 1 : 0,
+      at: 0,
+      duration,
+    })),
+    unchangedPartIds: [reference.enclosurePartId],
+    options: { duration, easing: 'linear', fill: 'both' },
+  });
+}
+
+async function stateBrowserProof(page, reference, reducedMotion, records) {
+  const read = () => page.evaluate(() => window.__iconsPacked.readState());
+  const initial = await read();
+  assert.deepEqual(initial.capabilities, {
+    group: reference.group,
+    variant: reference.variant,
+    defaultState: reference.defaultState,
+    transition: 'enclosure-replacement',
+    morph: 'unavailable',
+    enclosurePartId: reference.enclosurePartId,
+    states: reference.states.map(({ id, partId, icon, contentPartIds, author }) => ({
+      id,
+      partId,
+      icon,
+      contentPartIds,
+      author,
+    })),
+    formats: { static: ['svg'], transition: ['web-effect'] },
+    proof: reference.proof,
+  });
+  assert.deepEqual(initial.viewBox, [0, 0, 24, 24]);
+  assert.deepEqual(initial.dimensions, [24, 24]);
+  const enclosure = {
+    ...reference.enclosure,
+    fill: 'currentColor',
+    partId: reference.enclosurePartId,
+    role: 'container',
+  };
+  assert.deepEqual(initial.enclosure, enclosure);
+  assert.equal(initial.enclosureCount, 1);
+  assert.equal(initial.enclosureOpacity, 1);
+  assert.equal(initial.identity, true);
+  assert.deepEqual(
+    initial.groups,
+    reference.states.map((state) => ({
+      id: state.id,
+      partId: state.partId,
+      role: 'state',
+      paths: state.paths
+        .slice(0, -1)
+        .map((path, index) => ({
+          ...path,
+          fill: 'currentColor',
+          partId: state.contentPartIds[index],
+          role: 'content',
+        })),
+    })),
+  );
+  const oneHot = (observation, target) => {
+    assert.equal(observation.targetState, target);
+    assert.equal(observation.selected, target);
+    assert.deepEqual(
+      observation.opacity,
+      reference.states.map((state) => ({
+        partId: state.partId,
+        value: state.id === target ? 1 : 0,
+      })),
+    );
+    assert.equal(observation.identity, true);
+    assert.equal(observation.enclosureCount, 1);
+    assert.equal(observation.enclosureOpacity, 1);
+    assert.deepEqual(observation.enclosure, enclosure);
+    assert.deepEqual(observation.groups, initial.groups);
+  };
+  oneHot(initial, reference.defaultState);
+  assert.deepEqual(initial.target, {
+    width: 48,
+    height: 48,
+    name: 'Сменить знак',
+    type: 'button',
+    iconHidden: 'true',
+    slotHidden: 'true',
+  });
+  const host = page.locator('lab-button[data-status-circle]');
+  const button = host.getByRole('button', { name: 'Сменить знак', exact: true });
+  assert.equal(await button.count(), 1);
+  await host.click();
+  await button.focus();
+  await button.press('Enter');
+  await button.press('Space');
+  const activated = await read();
+  assert.equal(activated.nativeClicks, 3);
+  assert.ok(activated.events.every((event) => event.trusted && event.composed && event.native));
+  assert.equal(activated.events.length, 3);
+  for (const event of activated.events) {
+    stateEffect(
+      event.effect,
+      reference,
+      event.effect.targetState,
+      reducedMotion === 'reduce' ? 0 : 600,
+    );
+    if (reducedMotion === 'no-preference') sameStateOpacity(event.before, event.after);
+  }
+  await page.getByRole('combobox', { name: 'Состояние знака' }).selectOption('increase');
+  oneHot(await page.evaluate(() => window.__iconsPacked.settleState()), 'increase');
+  assert.equal((await read()).statusText, 'Увеличение');
+  for (const state of reference.states) {
+    const svg = await page.evaluate((id) => window.__iconsPacked.staticState(id), state.id);
+    assert.equal(svg.ok, true);
+    assert.deepEqual(svg.viewBox, state.viewBox);
+    assert.deepEqual(svg.dimensions, state.dimensions);
+    assert.deepEqual(
+      svg.paths,
+      state.paths.map((path, index) => ({
+        ...path,
+        fill: 'currentColor',
+        partId:
+          index === state.paths.length - 1
+            ? reference.enclosurePartId
+            : state.contentPartIds[index],
+        role: index === state.paths.length - 1 ? 'container' : 'content',
+      })),
+    );
+    const result = await page.evaluate((id) => window.__iconsPacked.changeState(id, 160), state.id);
+    stateEffect(result.effect, reference, state.id, reducedMotion === 'reduce' ? 0 : 160);
+    const terminal = await page.evaluate(() => window.__iconsPacked.settleState());
+    assert.equal(terminal.completionStatus, 'finished');
+    oneHot(terminal, state.id);
+    records.push({
+      name: `status-circle:${state.id}:${reducedMotion}`,
+      source: state.author,
+      effect: result.effect,
+      terminal: terminal.opacity,
+      identity: terminal.identity,
+    });
+  }
+  if (reducedMotion === 'no-preference') {
+    await page.evaluate(() => window.__iconsPacked.changeState('question', 0));
+    await page.evaluate(() => window.__iconsPacked.settleState());
+    await page.evaluate(() => window.__iconsPacked.changeState('confirmation', 800));
+    const paused = await page.evaluate(() => window.__iconsPacked.pauseState(280));
+    assert.equal(paused.playback, 'paused');
+    const mark = paused.opacity.find((item) => item.partId === 'state-confirmation').value;
+    assert.ok(mark > 0.15 && mark < 0.6, 'прерывание требует видимой промежуточной позы');
+    await page.evaluate(async () => {
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+    });
+    sameStateOpacity(paused.opacity, (await read()).opacity);
+    const resumed = await page.evaluate(() => window.__iconsPacked.playState());
+    assert.equal(resumed.playback, 'running');
+    await page.evaluate(() => window.__iconsPacked.pauseState(280));
+    const reverse = await page.evaluate(() => window.__iconsPacked.changeState('question', 300));
+    sameStateOpacity(paused.opacity, reverse.before);
+    sameStateOpacity(reverse.before, reverse.after);
+    stateEffect(reverse.effect, reference, 'question', 300);
+    const reversing = await page.evaluate(() => window.__iconsPacked.pauseState(90));
+    const newer = await page.evaluate(() => window.__iconsPacked.changeState('attention', 300));
+    sameStateOpacity(reversing.opacity, newer.before);
+    sameStateOpacity(newer.before, newer.after);
+    const mixture = await page.evaluate(() => window.__iconsPacked.pauseState(120));
+    assert.equal(
+      mixture.opacity.filter((item) => item.value > 0.01).length,
+      3,
+      'третье намерение должно сохранить всю прежнюю смесь',
+    );
+    const latest = await page.evaluate(() => window.__iconsPacked.changeState('increase', 200));
+    sameStateOpacity(mixture.opacity, latest.before);
+    sameStateOpacity(latest.before, latest.after);
+    oneHot(await page.evaluate(() => window.__iconsPacked.settleState()), 'increase');
+    records.push({
+      name: 'status-circle:paused-reverse-newer-state',
+      paused: paused.opacity,
+      reverse,
+      newer,
+      mixture: mixture.opacity,
+      latest,
+    });
+  }
+  const refusal = await page.evaluate(() => window.__iconsPacked.stateRefusals());
+  for (const [key, code] of [
+    ['filled', 'VARIANT_UNSUPPORTED'],
+    ['nullRequest', 'INVALID_REQUEST'],
+    ['unknown', 'STATE_UNSUPPORTED'],
+  ]) {
+    assert.equal(refusal[key].ok, false);
+    assert.equal(refusal[key].reason.code, code);
+  }
+  for (const result of refusal.exports) {
+    assert.equal(result.ok, false);
+    assert.equal(result.reason.code, 'FORMAT_UNSUPPORTED');
+  }
+  assert.equal(refusal.web.ok, true);
+  stateEffect(refusal.web.effect, reference, 'confirmation', 240);
+  records.push({ name: `status-circle:${reducedMotion}:public-refusals`, refusal });
+  const disposing = await page.evaluate(() => window.__iconsPacked.changeState('dismissal', 1000));
+  stateEffect(disposing.effect, reference, 'dismissal', reducedMotion === 'reduce' ? 0 : 1000);
+  if (reducedMotion === 'no-preference')
+    await page.evaluate(() => window.__iconsPacked.pauseState(200));
 }
 
 export async function main(args = process.argv.slice(2)) {
@@ -663,6 +1109,11 @@ export async function main(args = process.argv.slice(2)) {
   try {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
     const subject = validateSubject(JSON.parse(subjectBytes));
+    const fixture = consumerFixture(subject.schemaVersion);
+    const requiredEntries = [
+      ...REQUIRED_PUBLIC_ENTRIES,
+      ...(subject.schemaVersion === 2 ? [STATE_ENTRY] : []),
+    ];
     receipt.subject = subject;
     receipt.subjectSha256 = hash(subjectBytes);
     const source = (args) =>
@@ -762,7 +1213,7 @@ export async function main(args = process.argv.slice(2)) {
       });
     }
     await writeFile(join(consumer, 'index.html'), HTML);
-    await writeFile(join(consumer, 'consumer.mjs'), FIXTURE);
+    await writeFile(join(consumer, 'consumer.mjs'), fixture);
     phase = 'build';
     // Зависимости tooling загружаются только после запрета локального heavy run.
     const { build } = await import('vite');
@@ -786,7 +1237,7 @@ export async function main(args = process.argv.slice(2)) {
             return null;
           },
           async buildStart() {
-            for (const specifier of REQUIRED_PUBLIC_ENTRIES) {
+            for (const specifier of requiredEntries) {
               const entry = await this.resolve(specifier, join(consumer, 'consumer.mjs'));
               assert.ok(entry && !entry.external, `entry не разрешён в consumer: ${specifier}`);
               publicEntries[specifier] = entry.id;
@@ -820,9 +1271,10 @@ export async function main(args = process.argv.slice(2)) {
       publicEntries,
       imports,
       publicImports,
+      requiredEntries,
     );
     receipt.consumer = {
-      fixtureSha256: hash(FIXTURE),
+      fixtureSha256: hash(fixture),
       htmlSha256: hash(HTML),
       publicEntries: Object.fromEntries(
         Object.entries(publicEntries).map(([specifier, id]) => [
@@ -833,7 +1285,7 @@ export async function main(args = process.argv.slice(2)) {
       moduleGraph,
       bundles,
       scenario:
-        'два LabUI icon-only button, reload Outline/Filled, публичный Lab Motion; размер полного consumer без baseline speedup claim',
+        'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim',
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -848,7 +1300,7 @@ export async function main(args = process.argv.slice(2)) {
       browserProof(
         browser,
         `http://127.0.0.1:${server.address().port}`,
-        subject.authorReference,
+        { ...subject.authorReference, states: subject.stateReference },
         out,
         records,
         browserErrors,
