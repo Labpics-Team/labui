@@ -4,7 +4,7 @@
 // Запуск:
 //   node test/fx-render/render-fx.mjs                    # зелёный прогон + артефакт
 //   node test/fx-render/render-fx.mjs --flatten          # bite: ступени сплющены → RED
-//   node test/fx-render/render-fx.mjs --drop=success     # bite: glow-токен убран → RED
+//   node test/fx-render/render-fx.mjs --drop=brand       # bite: glow-токен убран → RED
 //   node test/fx-render/render-fx.mjs --drop-focus=success  # bite: focus-ring убран → RED
 //   node test/fx-render/render-fx.mjs --skeleton=flatten    # bite: блик==resting → RED
 //   node test/fx-render/render-fx.mjs --skeleton=invert     # bite: Figma-инверсия → RED
@@ -102,9 +102,9 @@ async function main() {
       Object.entries(measurements.glow).map(([s, g]) => [
         s,
         {
-          subtle: Number((g.subtle.L - measurements.backdropL).toFixed(3)),
-          base: Number((g.base.L - measurements.backdropL).toFixed(3)),
-          bloom: Number((g.bloom.L - measurements.backdropL).toFixed(3)),
+          single: Number((g.single.L - measurements.backdropL).toFixed(3)),
+          double: Number((g.double.L - measurements.backdropL).toFixed(3)),
+          triple: Number((g.triple.L - measurements.backdropL).toFixed(3)),
         },
       ]),
     ),
@@ -136,9 +136,9 @@ async function main() {
   );
 
   console.info(`PNG-артефакт: ${pngPath}`);
-  console.info('Замеры (glow luminance-delta над фоном):');
+  console.info('Замеры (взвешенный сигнал PNG над фоном):');
   for (const [s, d] of Object.entries(summary.glowDeltaFromBackdrop)) {
-    console.info(`  ${s.padEnd(8)} subtle=${d.subtle}  base=${d.base}  bloom=${d.bloom}`);
+    console.info(`  ${s.padEnd(8)} single=${d.single}  double=${d.double}  triple=${d.triple}`);
   }
   console.info(
     `Скелетон (luminance): base=${summary.skeleton.base} highlight=${summary.skeleton.highlight} lift=${summary.skeleton.lift}`,
@@ -151,7 +151,7 @@ async function main() {
       process.exit(2);
     }
     console.info(
-      '\n✅ FX-render гейт ЗЕЛЁНЫЙ: glow 6 сентиментов non-blank+монотонны, focus-ring non-blank.',
+      '\n✅ FX-render: четыре glow-краски видимы и усиливаются накоплением слоёв; шесть focus-ring видимы.',
     );
   } catch (err) {
     if (bite) {

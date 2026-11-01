@@ -1,4 +1,4 @@
-// Общий слой двух CI-гейтов стейт-оверлеев (#109): рецепт D, математика,
+﻿// Общий слой двух CI-гейтов стейт-оверлеев (#109): рецепт D, математика,
 // экстракция паттерна из компонентных источников обоих близнецов.
 //
 // Математика (scopeBody/scopeVars/parseColor/resolveValue/overGamma) поднята
@@ -50,7 +50,6 @@ export const LIT_BUTTON_TS_PATH = join(
   'lab-button.ts',
 );
 
-export const AA_TEXT = 4.5;
 // Фон резолва темы (якоря нейтрали паспорта) — под ним композитятся тинты.
 export const THEME_BG = { light: '#FFFFFF', dark: '#101012' };
 export const THEME_SCOPE = {
@@ -127,7 +126,7 @@ export function overGamma(fg, bgLin) {
 
 // ── дополнение #109: микс, hex-энкод, рецепт, экстракция ────────────────────
 
-/** Линейный sRGB → hex (вход движку: muddiness()/recheckContrast() едят hex). */
+/** Линейный sRGB → конечные байты для точной оценки Core. */
 export function linToHex(lin) {
   return `#${lin
     .map((c) =>
@@ -170,23 +169,6 @@ export const INK_ROLE = '--lab-label-primary';
 
 /** Рецепт D: тинт по имени роли. */
 export const tintFor = (role) => (CLASS_A_FILLS.has(role) ? 'black' : 'ink');
-
-const BLACK = { lin: [0, 0, 0], alpha: 1 };
-
-/**
- * Δmud одной роли при миксе к тинту рецепта D на фракции p (композиты — в гамме).
- * ЕДИНСТВЕННАЯ копия правды Δmud: гейт грязи (state-overlay-muddiness.test.mjs)
- * и замер экономии (state-overlay-economy.mjs) зовут её, а не повторяют шаги —
- * правка порядка композита/обработки альфы меняет обе стороны синхронно.
- */
-export function overlayDelta(colors, vars, themeBgLin, name, p) {
-  const base = parseColor(resolveValue(name, vars));
-  const tint = tintFor(name) === 'black' ? BLACK : parseColor(resolveValue(INK_ROLE, vars));
-  const baseSolid = base.alpha === 1 ? base.lin : overGamma(base, themeBgLin);
-  const mixed = mixOklabPremul(base, tint, p);
-  const mixedSolid = mixed.alpha === 1 ? mixed.lin : overGamma(mixed, themeBgLin);
-  return colors.muddiness(linToHex(mixedSolid)) - colors.muddiness(linToHex(baseSolid));
-}
 
 /** Фракции состояний из СГЕНЕРИРОВАННОГО tokens.css — единственный источник ручек. */
 export function readStateFractions(tokensCss) {

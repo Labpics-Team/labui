@@ -4,16 +4,9 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Drift guard for the static --lab-* color contract.
- *
- * roles.json is the canonical list of semantic role names that components consume.
- * contract.css is the generated Lab UI artifact that declares them. This test asserts
- * the CSS exposes exactly the contracted role set in every theme scope, so that:
- *   - dropping or renaming a role (a breaking change for consumers) fails CI, and
- *   - consumers depend only on the stable --lab-* role surface, not engine internals.
- *
- * It does NOT assert color values — those are placeholder constants owned by the
- * resolver, calibrated by the design owner, and intentionally out of scope here.
+ * roles.json задаёт публичные имена, contract.css объявляет их в каждой теме.
+ * Этот гейт удерживает состав и форму контракта; авторские значения независимо
+ * проверяются в golden-parity.test.mjs.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -93,7 +86,7 @@ describe('--lab-* semantic color contract', () => {
       Labels: 36,
       Fills: 33,
       Border: 26,
-      FX: 62,
+      FX: 12,
       Misc: 3,
       Component: 27,
     });
@@ -122,19 +115,14 @@ describe('--lab-* semantic color contract', () => {
   });
 
   it('resolves every declared --lab-* value to a concrete color or var() reference', () => {
-    // Every `--lab-*: <value>;` must be a concrete color — oklch() (единая форма
-    // эмиссии движка ≥0.4.0), rgb()/rgba()/#hex (мосты Figma-якоря) — или
-    // var(--lab-) ссылка. Никогда не пусто и не token-путь.
+    // Каждая публичная роль содержит цвет или ссылку на другую роль.
     const decls = [...css.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)];
     expect(decls.length).toBeGreaterThan(0);
     const bad = decls
       .map((m) => ({ name: m[1] ?? '', value: (m[2] ?? '').trim() }))
-      .filter(({ name, value }) => {
-        // Ось интенсивности контракта: --lab-*-alpha — юнитлесс-доля [0, 1]
-        // (форма wasm-проекции glow: --lab-<role>-alpha; мост эмитит так же).
-        if (name.endsWith('-alpha')) return !/^(0|1|0?\.[0-9]+)$/.test(value);
-        return !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value);
-      });
+      .filter(
+        ({ value }) => !/^(oklch\(|rgb\(|rgba\(|#[0-9a-fA-F]{3,8}\b|var\(--lab-)/.test(value),
+      );
     expect(bad, `non-color values: ${bad.map((b) => `${b.name}=${b.value}`).join(', ')}`).toEqual(
       [],
     );

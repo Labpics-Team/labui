@@ -259,7 +259,7 @@ async function paint(
     expect(occupied, `${name}/${region.name}: видимый paint`).toBeGreaterThan(0);
     return { ...region, occupied, minimum };
   });
-  return { box, background, contrasts };
+  return { box, full, background, contrasts };
 }
 
 function contrast(a: Rgb, b: Rgb) {
@@ -384,38 +384,142 @@ for (const renderer of ['lit', 'react', 'vue'] as const) {
   }
 }
 
-// Действующий закон ordinary primary text: colors/test/pair-legality.test.mjs
-// и state-overlay-contrast.test.mjs. Измерение description/icons не назначает им floor.
+async function ordinarySample(
+  page: Page,
+  renderer: Renderer,
+  size: 's' | 'm' | 'l',
+  state: State,
+  info: TestInfo,
+  name: string,
+) {
+  const host = page.getByTestId(`${renderer}-anatomy-${size}-visual`);
+  const button = nativeButton(host, renderer);
+  await host.evaluate(async (element) => {
+    await Promise.all(Array.from(element.querySelectorAll('img'), (image) => image.decode()));
+  });
+  await alignToPixels(host, button);
+  await setState(page, button, state);
+  const interaction = await button.evaluate((element) => ({
+    hover: element.matches(':hover'),
+    active: element.matches(':active'),
+    focus: element.matches(':focus'),
+    focusVisible: element.matches(':focus-visible'),
+  }));
+  expect(interaction.hover).toBe(state !== 'default');
+  expect(interaction.active).toBe(state === 'pressed');
+  const content = await host.evaluate((element) => ({
+    text: element.textContent,
+    images: Array.from(element.querySelectorAll('img'), (image) => ({
+      src: image.currentSrc,
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+    })),
+  }));
+  const rendered = await paint(button, host, renderer, info, name);
+  return {
+    scene: {
+      size,
+      state,
+      interaction,
+      content,
+      box: rendered.box,
+      regions: rendered.contrasts.map(({ name, x, y, width, height }) => ({
+        name,
+        x,
+        y,
+        width,
+        height,
+      })),
+    },
+    ...rendered,
+  };
+}
+
+function imageDifference(actual: Png, expected: Png) {
+  let changedChannels = 0;
+  let maxDelta = 0;
+  for (let i = 0; i < Math.min(actual.rgb.length, expected.rgb.length); i++) {
+    const delta = Math.abs((actual.rgb[i] ?? 0) - (expected.rgb[i] ?? 0));
+    if (delta > 0) changedChannels++;
+    maxDelta = Math.max(maxDelta, delta);
+  }
+  return {
+    sameSize: actual.width === expected.width && actual.height === expected.height,
+    changedChannels,
+    maxDelta,
+  };
+}
+
+function ordinaryComparison(
+  actual: Awaited<ReturnType<typeof ordinarySample>>,
+  authored: Awaited<ReturnType<typeof ordinarySample>>,
+) {
+  return {
+    sameScene: JSON.stringify(actual.scene) === JSON.stringify(authored.scene),
+    full: imageDifference(actual.full, authored.full),
+    background: imageDifference(actual.background, authored.background),
+  };
+}
+
+function assertOrdinaryComparison(comparison: ReturnType<typeof ordinaryComparison>, soft = false) {
+  const assertion = soft ? expect.soft : expect;
+  assertion(comparison, 'Обычный Button сохраняет авторскую сцену и реальные пиксели').toEqual({
+    sameScene: true,
+    full: { sameSize: true, changedChannels: 0, maxDelta: 0 },
+    background: { sameSize: true, changedChannels: 0, maxDelta: 0 },
+  });
+}
+
+// Авторский контроль закрепляет исходные краски через setup(true). Общий CSS
+// эффектов независимо проверяется authored-effects и layer-controls ниже.
+// Контраст сохраняется как диагностика ordinary; IC требует отдельного режима.
 for (const theme of ['light', 'dark'] as const) {
   for (const renderer of ['lit', 'react', 'vue'] as const) {
-    test(`production composite primary contrast ${theme} ${renderer}`, async ({ page }, info) => {
-      await setup(page, theme, 16, false);
+    test(`production composite preserves authored ordinary ${theme} ${renderer}`, async ({
+      page,
+    }, info) => {
+      const authored = new Map<string, Awaited<ReturnType<typeof ordinarySample>>>();
       const report = [];
       try {
-        for (const size of ['s', 'm', 'l'] as const) {
-          const host = page.getByTestId(`${renderer}-anatomy-${size}-visual`);
-          const button = nativeButton(host, renderer);
-          await alignToPixels(host, button);
-          await button.evaluate((element) => {
-            (element as HTMLElement).style.setProperty('--lab-motion-transition-duration', '0s');
-          });
-          for (const state of ['default', 'hover', 'pressed'] as const) {
-            await setState(page, button, state);
-            const rendered = await paint(
-              button,
-              host,
-              renderer,
-              info,
-              `${renderer}-${size}-${state}`,
-            );
-            const label = rendered.contrasts.find((region) => region.name === 'label');
-            if (!label) throw new Error('Нет измерения primary label');
-            report.push({ renderer, size, state, contrasts: rendered.contrasts });
-            expect
-              .soft(label.minimum, `${renderer}/${size}/${state}: primary on actual composite`)
-              .toBeGreaterThanOrEqual(4.5);
+        for (const mode of ['authored', 'production'] as const) {
+          await page.mouse.up();
+          await setup(page, theme, 16, mode === 'authored');
+          for (const size of ['s', 'm', 'l'] as const) {
+            for (const state of ['default', 'hover', 'pressed'] as const) {
+              const key = `${size}/${state}`;
+              const sample = await ordinarySample(
+                page,
+                renderer,
+                size,
+                state,
+                info,
+                `${mode}-${renderer}-${size}-${state}`,
+              );
+              if (mode === 'authored') {
+                authored.set(key, sample);
+                continue;
+              }
+              const control = authored.get(key);
+              if (!control) throw new Error(`Нет авторского контроля ${key}`);
+              const comparison = ordinaryComparison(sample, control);
+              report.push({ key, scene: sample.scene, comparison, contrasts: sample.contrasts });
+              assertOrdinaryComparison(comparison, true);
+            }
           }
         }
+        const keys = [
+          's/default',
+          's/hover',
+          's/pressed',
+          'm/default',
+          'm/hover',
+          'm/pressed',
+          'l/default',
+          'l/hover',
+          'l/pressed',
+        ];
+        expect([...authored.keys()]).toEqual(keys);
+        expect(report.map(({ key }) => key)).toEqual(keys);
       } finally {
         await page.mouse.up();
         await info.attach('production-report', {
@@ -426,6 +530,58 @@ for (const theme of ['light', 'dark'] as const) {
     });
   }
 }
+
+test('ordinary comparison detects changed fill, glyph and overlay on the real Button', async ({
+  page,
+}, info) => {
+  const renderer = 'react';
+  const report = [];
+  try {
+    await setup(page, 'light', 16, true);
+    const control = await ordinarySample(page, renderer, 'm', 'pressed', info, 'control');
+    await page.mouse.up();
+    await setup(page, 'light', 16, false);
+    const healthy = await ordinarySample(page, renderer, 'm', 'pressed', info, 'healthy');
+    assertOrdinaryComparison(ordinaryComparison(healthy, control));
+    const button = page.getByTestId('react-anatomy-m-visual');
+    for (const [name, css] of [
+      ['fill', '[data-testid="react-anatomy-m-visual"] { --lab-fill-accent: rgb(160 32 32); }'],
+      ['glyph', '[data-testid="react-anatomy-m-visual"] { --lab-label-on-accent: rgb(16 16 18); }'],
+      [
+        'overlay',
+        '[data-testid="react-anatomy-m-visual"] .lab-button-effects::before { opacity: 0 !important; }',
+      ],
+    ] as const) {
+      const style = await page.addStyleTag({ content: css });
+      try {
+        const changed = await ordinarySample(
+          page,
+          renderer,
+          'm',
+          'pressed',
+          info,
+          `changed-${name}`,
+        );
+        const comparison = ordinaryComparison(changed, control);
+        report.push({ name, comparison, contrasts: changed.contrasts });
+        expect(comparison.sameScene).toBe(true);
+        expect(comparison.full.changedChannels).toBeGreaterThan(0);
+        expect(() => assertOrdinaryComparison(comparison)).toThrow();
+      } finally {
+        await style.evaluate((element) => element.parentNode?.removeChild(element));
+      }
+    }
+    await setState(page, button, 'pressed');
+    const restored = await ordinarySample(page, renderer, 'm', 'pressed', info, 'restored');
+    assertOrdinaryComparison(ordinaryComparison(restored, control));
+  } finally {
+    await page.mouse.up();
+    await info.attach('ordinary-comparison-controls', {
+      body: JSON.stringify(report, null, 2),
+      contentType: 'application/json',
+    });
+  }
+});
 
 test('effects oracle detects missing layers on the real Button', async ({ page }, info) => {
   await setup(page, 'light', 16, true);

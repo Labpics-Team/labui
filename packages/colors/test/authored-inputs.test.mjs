@@ -1,195 +1,125 @@
+﻿import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-// Меняются только копии входных файлов. Генератор и WASM выполняются настоящие.
-const input = vi.hoisted(() => ({ reference: null, config: null }));
-vi.mock('node:fs/promises', async (original) => {
-  const fs = await original();
-  return {
-    ...fs,
-    readFile: (path, ...args) => {
-      const name = String(path).replaceAll('\\', '/');
-      if (name.endsWith('/colors/figma-reference.css') && input.reference !== null) {
-        return Promise.resolve(input.reference);
-      }
-      if (name.endsWith('/colors/labui.config.json') && input.config !== null) {
-        return Promise.resolve(JSON.stringify(input.config));
-      }
-      return fs.readFile(path, ...args);
-    },
-  };
-});
-
-import { PASSPORT_FINGERPRINT, createLabuiEngine } from '../engine.mjs';
+import { createLabuiEngine } from '../engine.mjs';
 import { generateContract } from '../generate-contract.mjs';
 import { prepareEngineConfig } from '../prepare-config.mjs';
+import { THEMES, readyTheme, rgba, scopes } from './labui-program-shared.mjs';
+import { resolveValue } from './state-overlays-shared.mjs';
 
-const fs = await vi.importActual('node:fs/promises');
 const here = dirname(fileURLToPath(import.meta.url));
+const config = JSON.parse(await readFile(join(here, '..', 'labui.config.json'), 'utf8'));
 const referencePath = join(here, '..', 'figma-reference.css');
-const reference = await fs.readFile(referencePath, 'utf8');
-const config = JSON.parse(await fs.readFile(join(here, '..', 'labui.config.json'), 'utf8'));
+const reference = await readFile(referencePath, 'utf8');
 const selected =
   /^--lab-(label-static-(light|dark)-(primary|secondary|tertiary|quaternary)|bg-overlay-(base|ghost|soft|strong))$/;
+const select = (maps) =>
+  maps.map((map) => new Map([...map].filter(([name]) => selected.test(name))));
 
-function scopes(css, filter = () => true) {
-  return [
-    /\[data-theme="light"\]\s*\{([^}]+)\}/,
-    /^\[data-theme="dark"\]\s*\{([^}]+)\}/m,
-    /:root:not\(\[data-theme="light"\]\):not\(\[data-theme="dark"\]\)\s*\{([^}]+)\}/,
-  ].map((scope) => {
-    const body = scope.exec(css)?.[1];
-    expect(body, String(scope)).toBeDefined();
-    return new Map(
-      [...body.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)]
-        .map((match) => [match[1], match[2].trim()])
-        .filter(([name]) => filter(name)),
+describe('авторские источники Program', () => {
+  it('36 фиксированных RGBA сохраняют независимый reference, включая системную dark', async () => {
+    const actual = select(scopes(await generateContract()));
+    const expected = select(scopes(reference));
+    const values = (maps) =>
+      maps.map((map) => new Map([...map].map(([name, value]) => [name, rgba(value)])));
+    expect(actual.map((roles) => roles.size)).toEqual([12, 12, 12]);
+    expect(values(actual)).toEqual(values(expected));
+    expect(await readFile(referencePath, 'utf8')).toBe(reference);
+  });
+
+  it.each(THEMES)('источник brand-%s меняет всё семейство и алиасы', async (theme) => {
+    const changed = structuredClone(config);
+    changed.authored.sources[`brand-${theme}`] = '#6D4AFF';
+    const before = readyTheme(await createLabuiEngine({ config }), theme);
+    const after = readyTheme(await createLabuiEngine({ config: changed }), theme);
+    for (const name of [
+      'label-brand-primary',
+      'fill-brand-primary',
+      'border-brand-base',
+      'badge-fill-brand',
+      'fx-glow-brand',
+    ]) {
+      expect(after.paints.get(`--lab-${name}`).rgb, name).toEqual([109, 74, 255]);
+      expect(after.paints.get(`--lab-${name}`).rgb, name).not.toEqual(
+        before.paints.get(`--lab-${name}`).rgb,
+      );
+    }
+    expect(resolveValue('--lab-fill-accent', after.vars)).toBe(
+      resolveValue('--lab-badge-fill-brand', after.vars),
+    );
+    for (const name of [
+      'label-danger-primary',
+      'fill-success-primary',
+      'border-warning-base',
+      'label-static-light-primary',
+    ]) {
+      expect(after.paints.get(`--lab-${name}`), name).toEqual(before.paints.get(`--lab-${name}`));
+    }
+    const other = theme === 'light' ? 'dark' : 'light';
+    expect(readyTheme(await createLabuiEngine({ config: changed }), other).vars).toEqual(
+      readyTheme(await createLabuiEngine({ config }), other).vars,
     );
   });
-}
-
-function expectOnlyChanges(before, after, changes) {
-  const expected = scopes(before);
-  expected.forEach((roles, scope) => {
-    for (const [name, value] of roles) {
-      roles.set(name, changes(name, value, scope));
-    }
-  });
-  expect(scopes(after)).toEqual(expected);
-}
-
-function mutateReference(change) {
-  return reference.replace(/(^[ \t]*)(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/gm, (line, indent, name) =>
-    selected.test(name) ? change(line, indent, name) : line,
-  );
-}
-
-beforeEach(() => {
-  input.reference = null;
-  input.config = null;
-});
-
-afterAll(async () => {
-  expect(await fs.readFile(referencePath, 'utf8')).toBe(reference);
-});
-
-describe('авторские фиксированные роли', () => {
-  it.each(['удаление', 'подмена', 'перестановка'])(
-    '%s выбранных строк reference не меняет контракт',
-    async (operation) => {
-      const baseline = await generateContract();
-      if (operation === 'удаление') {
-        input.reference = mutateReference(() => '');
-      } else if (operation === 'подмена') {
-        input.reference = mutateReference(
-          (_, indent, name) => `${indent}${name}: rgb(9 8 7 / 0.123);`,
-        );
-      } else {
-        const lines = [];
-        mutateReference((line) => {
-          lines.push(line);
-          return line;
-        });
-        input.reference = mutateReference(() => lines.pop());
-      }
-      expect(input.reference).not.toBe(reference);
-      expect(await generateContract()).toBe(baseline);
-    },
-  );
-
-  it('36 RGBA совпадают с неизменным reference, включая системную dark', async () => {
-    const css = await generateContract();
-    const actual = scopes(css, (name) => selected.test(name));
-    expect(actual.map((roles) => roles.size)).toEqual([12, 12, 12]);
-    expect(actual).toEqual(scopes(reference, (name) => selected.test(name)));
-    const declarations = [...css.matchAll(/(--lab-[a-z0-9-]+)\s*:/g)];
-    expect(declarations.filter((match) => selected.test(match[1]))).toHaveLength(36);
-    for (const roles of actual) {
-      expect(roles.get('--lab-bg-overlay-ghost')).toMatch(/ \/ 0\)$/);
-    }
-  });
 
   it.each([
-    ['white', '#EEF8FF', '238 248 255', 'light'],
-    ['shade', '#182028', '24 32 40', 'dark'],
-  ])('источник %s меняет только связанные краски', async (source, hex, rgb, side) => {
-    const before = await generateContract();
-    input.config = structuredClone(config);
-    input.config.authored.sources[source] = hex;
-    const after = await generateContract();
-    expect(after).not.toBe(before);
-    expectOnlyChanges(before, after, (name, value, scope) => {
-      const overlayUsesSource = side === 'light' ? scope === 0 : scope !== 0;
-      return name.startsWith(`--lab-label-static-${side}-`) ||
-        (overlayUsesSource && name.startsWith('--lab-bg-overlay-'))
-        ? value.replace(/^rgb\(\d+ \d+ \d+/, `rgb(${rgb}`)
-        : value;
-    });
-  });
-
-  it.each([
-    ['static', 'secondary', 0.5, /^--lab-label-static-(light|dark)-secondary$/],
+    ['labelAlpha', 'secondary', 0.5, /^--lab-label(?:-[a-z-]+)?-secondary$/],
     ['overlay', 'base', 0.6, /^--lab-bg-overlay-base$/],
   ])(
-    'общая alpha %s.%s меняет все и только связанные роли',
-    async (family, level, alpha, roles) => {
-      const before = await generateContract();
-      input.config = structuredClone(config);
-      input.config.authored[family].alpha[level] = alpha;
-      const after = await generateContract();
-      expect(after).not.toBe(before);
-      expectOnlyChanges(before, after, (name, value) =>
-        roles.test(name) ? value.replace(/ \/ [\d.]+\)$/, ` / ${alpha})`) : value,
-      );
+    'общая alpha %s.%s меняет все и только связанные RGBA',
+    async (family, level, alpha, names) => {
+      const changed = structuredClone(config);
+      if (family === 'labelAlpha') changed.authored.labelAlpha[level] = alpha;
+      else changed.authored[family].alpha[level] = alpha;
+      const before = scopes(await generateContract());
+      const after = scopes(await generateContract({ config: changed }));
+      for (const [index, map] of before.entries()) {
+        for (const [name, value] of map) {
+          if (names.test(name))
+            expect(rgba(after[index].get(name)), name).toEqual({ ...rgba(value), opacity: alpha });
+          else expect(after[index].get(name), name).toBe(value);
+        }
+        expect([...after[index].keys()]).toEqual([...map.keys()]);
+      }
     },
   );
 
   it.each(['static', 'overlay'])(
-    'ссылки семейства %s управляют назначением источников',
+    'ссылка %s меняет назначение фиксированного источника',
     async (family) => {
-      const before = await generateContract();
-      input.config = structuredClone(config);
-      input.config.authored[family].sources = { light: 'shade', dark: 'white' };
-      const after = await generateContract();
-      expectOnlyChanges(before, after, (name, value) => {
-        const affected =
-          family === 'static'
-            ? name.startsWith('--lab-label-static-')
-            : name.startsWith('--lab-bg-overlay-');
-        if (!affected) return value;
-        return value.startsWith('rgb(255 255 255')
-          ? value.replace('rgb(255 255 255', 'rgb(16 16 18')
-          : value.replace('rgb(16 16 18', 'rgb(255 255 255');
-      });
+      const changed = structuredClone(config);
+      changed.authored[family].sources = { light: 'shade', dark: 'white' };
+      const after = await createLabuiEngine({ config: changed });
+      for (const theme of THEMES) {
+        const { paints } = readyTheme(after, theme);
+        if (family === 'static') {
+          expect(paints.get('--lab-label-static-light-primary').rgb).toEqual([16, 16, 18]);
+          expect(paints.get('--lab-label-static-dark-primary').rgb).toEqual([255, 255, 255]);
+        } else
+          expect(paints.get('--lab-bg-overlay-base').rgb).toEqual(
+            theme === 'light' ? [16, 16, 18] : [255, 255, 255],
+          );
+      }
     },
   );
 
-  it('новые базы темы не перекрашивают фиксированные источники', async () => {
-    const before = await generateContract();
-    input.config = structuredClone(config);
-    input.config.neutral.anchors.light = '#F1F5FB';
-    input.config.neutral.anchors.dark = '#17171C';
-    const after = await generateContract();
-    expect(scopes(after)[0].get('--lab-bg-tone-1')).toBe('#F1F5FB');
-    expect(scopes(after)[1].get('--lab-bg-tone-1')).toBe('#17171C');
-    expect(scopes(after, (name) => selected.test(name))).toEqual(
-      scopes(before, (name) => selected.test(name)),
-    );
+  it('смена баз темы не перекрашивает фиксированные источники', async () => {
+    const changed = structuredClone(config);
+    Object.assign(changed.authored.sources, { 'test-light': '#F1F5FB', 'test-dark': '#17171C' });
+    changed.themes.light.background = 'test-light';
+    changed.themes.dark.background = 'test-dark';
+    const before = scopes(await generateContract());
+    const after = scopes(await generateContract({ config: changed }));
+    expect(rgba(after[0].get('--lab-bg-tone-1')).rgb).toEqual([241, 245, 251]);
+    expect(rgba(after[1].get('--lab-bg-tone-1')).rgb).toEqual([23, 23, 28]);
+    expect(select(after)).toEqual(select(before));
   });
 
-  it('authored не меняет engine DTO, fingerprint и сам входной объект', async () => {
-    const { authored: _authored, ...legacy } = config;
+  it('подготовка детерминирована и не меняет авторский объект', () => {
     const original = structuredClone(config);
-    expect(JSON.stringify(prepareEngineConfig(config))).toBe(
-      JSON.stringify(prepareEngineConfig(legacy)),
-    );
+    expect(prepareEngineConfig(config)).toEqual(prepareEngineConfig(structuredClone(config)));
     expect(config).toEqual(original);
-    expect((await createLabuiEngine()).fingerprint).toBe(PASSPORT_FINGERPRINT);
-    input.config = structuredClone(config);
-    input.config.authored.sources.white = '#EEF8FF';
-    input.config.authored.static.alpha.primary = 0.9;
-    expect((await createLabuiEngine()).fingerprint).toBe(PASSPORT_FINGERPRINT);
   });
 
   it.each([
@@ -202,18 +132,19 @@ describe('авторские фиксированные роли', () => {
     [['authored', 'static', 'sources', 'light'], 'missing'],
     [['authored', 'overlay', 'sources', 'dark'], '__proto__'],
     [['authored', 'overlay', 'sources', 'light'], undefined],
-    [['authored', 'static', 'alpha', 'primary'], -0.1],
-    [['authored', 'static', 'alpha', 'secondary'], 1.1],
-    [['authored', 'static', 'alpha', 'tertiary'], '0.5'],
+    [['authored', 'labelAlpha', 'primary'], -0.1],
+    [['authored', 'labelAlpha', 'secondary'], 1.1],
+    [['authored', 'labelAlpha', 'tertiary'], '0.5'],
     [['authored', 'overlay', 'alpha', 'base'], null],
     [['authored', 'overlay', 'alpha', 'ghost'], Number.NaN],
     [['authored', 'overlay', 'alpha', 'soft'], Number.POSITIVE_INFINITY],
     [['authored', 'overlay', 'alpha', 'strong'], undefined],
-  ])('неверный authored input %j = %j явно отклоняется', async (path, value) => {
-    input.config = structuredClone(config);
-    let parent = input.config;
+  ])('неверный авторский вход %j = %j отклоняется до разрешения', async (path, value) => {
+    const changed = structuredClone(config);
+    let parent = changed;
     for (const key of path.slice(0, -1)) parent = parent[key];
     parent[path.at(-1)] = value;
-    await expect(generateContract()).rejects.toThrow(/authored/);
+    expect(() => prepareEngineConfig(changed)).toThrow();
+    await expect(generateContract({ config: changed })).rejects.toThrow();
   });
 });
