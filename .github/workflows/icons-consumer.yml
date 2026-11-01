@@ -1,0 +1,139 @@
+name: Icons в Lab UI
+
+on:
+  push:
+    branches: [main]
+    paths: &consumer-paths
+      - '.github/workflows/icons-consumer.yml'
+      - 'apps/docs/tests/icons-*'
+      - 'apps/docs/tests/prepare-icons-inputs.mjs'
+      - 'packages/core/**'
+      - 'packages/shadow/**'
+      - 'apps/docs/package.json'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  pull_request:
+    paths: *consumer-paths
+  merge_group:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: icons-consumer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packed:
+    name: Авторский символ в установленном Lab UI
+    runs-on: [self-hosted, Linux, X64]
+    # Штатный Playwright runtime Lab UI; зависимости браузера остаются в image.
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c
+    # Тот же допуск collaborator-кода, что и у основного CI Lab UI.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    timeout-minutes: 45
+    env:
+      CI: 'true'
+      RUNNER_ENVIRONMENT: ${{ runner.environment }}
+      UI_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - name: Проверить среду исполнения
+        shell: bash
+        run: |
+          test "$GITHUB_ACTIONS" = true
+          test "$RUNNER_ENVIRONMENT" = self-hosted
+
+      - name: Получить точный head Lab UI
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ env.UI_SOURCE_COMMIT }}
+          path: ui
+          persist-credentials: false
+
+      - name: Установить Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+
+      - name: Прочитать закреплённый Icons SHA
+        id: source
+        shell: bash
+        run: echo "sha=$(node ui/apps/docs/tests/prepare-icons-inputs.mjs --checkout-ref)" >> "$GITHUB_OUTPUT"
+
+      # Публичный producer не требует credential приватного соседнего repo.
+      - name: Получить точный источник Icons
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: Labpics-Team/lab-icons
+          ref: ${{ steps.source.outputs.sha }}
+          path: icons
+          persist-credentials: false
+
+      - name: Установить pnpm Lab UI
+        id: ui_pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          package_json_file: ui/package.json
+          dest: ${{ runner.temp }}/icons-consumer-ui-pnpm
+
+      - name: Установить pnpm Icons
+        id: icons_pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+        with:
+          package_json_file: icons/package.json
+          dest: ${{ runner.temp }}/icons-consumer-icons-pnpm
+
+      - name: Собрать и упаковать закреплённые исходники
+        shell: bash
+        env:
+          UI_PNPM: ${{ steps.ui_pnpm.outputs.bin_dest }}/pnpm
+          ICONS_PNPM: ${{ steps.icons_pnpm.outputs.bin_dest }}/pnpm
+        run: |
+          set -euo pipefail
+          result="$RUNNER_TEMP/icons-consumer-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          mkdir "$result"
+          mkdir "$result/icons" "$result/ui-core" "$result/ui-shadow"
+          ui_pnpm() { PATH="$(dirname "$UI_PNPM"):$PATH" "$UI_PNPM" "$@"; }
+          icons_pnpm() { PATH="$(dirname "$ICONS_PNPM"):$PATH" "$ICONS_PNPM" "$@"; }
+          ui_pnpm --dir ui install --frozen-lockfile --store-dir "$result/ui-store"
+          icons_pnpm --dir icons install --frozen-lockfile --store-dir "$result/icons-store"
+          ui_pnpm --dir ui --filter @labpics/ui-core... build
+          ui_pnpm --dir ui/packages/core pack --pack-destination "$result/ui-core"
+          ui_pnpm --dir ui/packages/shadow pack --pack-destination "$result/ui-shadow"
+          icons_pnpm --dir icons pack --pack-destination "$result/icons"
+          # Архивы выбраны в новых package-specific каталогах, без latest и старых outputs.
+          node ui/apps/docs/tests/prepare-icons-inputs.mjs \
+            --icons-source icons --ui-source ui --ui-commit "$UI_SOURCE_COMMIT" \
+            --icons-tarball "$result"/icons/*.tgz \
+            --ui-core-tarball "$result"/ui-core/*.tgz \
+            --ui-shadow-tarball "$result"/ui-shadow/*.tgz \
+            --out "$result/inputs"
+
+      - name: Запустить приложение с установленными пакетами
+        shell: bash
+        run: |
+          set -euo pipefail
+          result="$RUNNER_TEMP/icons-consumer-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          node ui/apps/docs/tests/icons-packed.mjs \
+            --icons-tarball "$result"/icons/*.tgz \
+            --ui-core-tarball "$result"/ui-core/*.tgz \
+            --ui-shadow-tarball "$result"/ui-shadow/*.tgz \
+            --subject "$result/inputs/subject.json" --out "$result/result"
+
+      - name: Прочитать результат и локальную диагностику
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          node ui/apps/docs/tests/prepare-icons-inputs.mjs \
+            --summarize "$RUNNER_TEMP/icons-consumer-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+
+      # Root job-container возвращает source-каталоги исходному владельцу mount.
+      - name: Вернуть владение workspace
+        if: ${{ always() }}
+        shell: bash
+        run: chown -R "$(stat -c '%u:%g' "$GITHUB_WORKSPACE")" "$GITHUB_WORKSPACE"
