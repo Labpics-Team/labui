@@ -1,3 +1,4 @@
+import type { LabCard } from '@labpics/ui-core/card';
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { cardImage, longDescription, longHeading } from '../src/_fixtures/card-anatomy-cases';
 
@@ -387,4 +388,120 @@ test('hydration/reconnect и смена imageSrc сохраняют геомет
     await expect(host.locator('.lab-material')).toHaveCount(1);
     expect(await geometry(page, renderer, 'master')).toEqual(before.get(renderer));
   }
+});
+
+test('Core Badge сохраняет оба глифа при hydration, обновлении текста и совместном clear/readd', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await open(page);
+  await page.waitForFunction(() => !!window.__cardAnatomy);
+  const host = card(page, 'core', 'badge');
+  const label = badge(host, 'core');
+  const empty = card(page, 'core', 'empty');
+  const ssrNodes = await host.evaluateHandle((element) => {
+    const root = element.shadowRoot;
+    if (!root) throw new Error('Нет SSR shadow root');
+    return [root, ...root.querySelectorAll('lab-badge, svg')];
+  });
+  const ssrPaint = await label.screenshot();
+  expect(await page.evaluate(() => customElements.get('lab-card') === undefined)).toBe(true);
+
+  async function expectGlyphs(target: Locator, scale = 1) {
+    const glyphs = target.locator('lab-badge svg');
+    await expect(glyphs).toHaveCount(2);
+    const painted = await glyphs.evaluateAll((elements) =>
+      elements.map((element) => {
+        const glyph = element as SVGSVGElement;
+        const rect = glyph.getBoundingClientRect();
+        const ink = glyph.getBBox();
+        return {
+          slot: glyph.slot,
+          width: rect.width,
+          height: rect.height,
+          ink: { x: ink.x, y: ink.y, width: ink.width, height: ink.height },
+        };
+      }),
+    );
+    expect(painted.map((glyph) => glyph.slot)).toEqual(['leading', 'trailing']);
+    for (const glyph of painted) {
+      near(glyph.width, 12 * scale, 'ширина глифа');
+      near(glyph.height, 12 * scale, 'высота глифа');
+      expect(glyph.ink.width).toBeGreaterThan(0);
+      expect(glyph.ink.height).toBeGreaterThan(0);
+    }
+    expect(painted[1]?.ink).toEqual(painted[0]?.ink);
+  }
+
+  async function setBadge(target: Locator, value: string) {
+    await target.evaluate(async (element, next) => {
+      const core = element as LabCard;
+      core.badge = next;
+      await core.updateComplete;
+      await window.__cardAnatomy.settle();
+    }, value);
+  }
+
+  await page.evaluate(() => window.__cardAnatomy.hydrate());
+  expect(await ssrNodes.evaluate((nodes) => nodes.every((node) => node.isConnected))).toBe(true);
+  await expect(label).toHaveCount(1);
+  await expectGlyphs(host);
+  expect(await label.screenshot()).toEqual(ssrPaint);
+  expect(
+    await page.evaluate(() => {
+      const first = document.getElementById('core-badge')?.shadowRoot;
+      const second = document.getElementById('core-wrap')?.shadowRoot;
+      const id = 'lab-card-badge-glyph';
+      const source = first?.getElementById(id);
+      return !!source && source !== second?.getElementById(id) && !document.getElementById(id);
+    }),
+  ).toBe(true);
+
+  await setBadge(host, 'Обновлено');
+  await expect(label).toHaveText('Обновлено');
+  expect(await ssrNodes.evaluate((nodes) => nodes.every((node) => node.isConnected))).toBe(true);
+  await expectGlyphs(host);
+  await expect(badge(empty, 'core')).toHaveCount(0);
+  await setBadge(empty, 'Новый');
+  await expectGlyphs(empty);
+
+  for (const [theme, rootSize] of [
+    ['light', 16],
+    ['dark', 20],
+  ] as const) {
+    await page.evaluate(
+      ([nextTheme, size]) => {
+        document.documentElement.dataset.theme = nextTheme;
+        document.documentElement.style.fontSize = `${size}px`;
+      },
+      [theme, rootSize] as const,
+    );
+    await setBadge(host, 'Badge');
+    await expectGlyphs(host, rootSize / 16);
+    const before = await label.screenshot();
+    await setBadge(host, '');
+    await expect(label).toHaveCount(0);
+    await expect(host.locator('svg')).toHaveCount(0);
+    await expectGlyphs(empty, rootSize / 16);
+    await setBadge(host, 'Badge');
+    await expectGlyphs(host, rootSize / 16);
+    expect(await label.screenshot()).toEqual(before);
+    await host.evaluate(async (element) => {
+      const marker = document.createComment('reconnect');
+      element.before(marker);
+      element.remove();
+      marker.replaceWith(element);
+      await (element as LabCard).updateComplete;
+      await window.__cardAnatomy.settle();
+    });
+    await expectGlyphs(host, rootSize / 16);
+    expect(await label.screenshot()).toEqual(before);
+  }
+  expect(
+    await ssrNodes.evaluate((nodes) => nodes.slice(1).every((node) => !node.isConnected)),
+  ).toBe(true);
+  await ssrNodes.dispose();
+  expect(errors).toEqual([]);
+  expect(await page.evaluate(() => window.__cardAnatomy.errors)).toEqual([]);
 });
