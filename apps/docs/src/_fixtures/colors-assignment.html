@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Назначение цветов LabColors в LabUI</title>
+    <link rel="stylesheet" href="./colors-assignment.css" />
+    <script type="module" src="./colors-assignment.mjs"></script>
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">LabColors → LabUI</p>
+        <h1>Один результат, три цвета</h1>
+        <p class="intro">Существующая кнопка и основной текст получают цвета из одного снимка программы.</p>
+      </header>
+
+      <div class="scopes" data-witness-scopes>
+        <section data-witness-scope="light" data-theme="light" aria-labelledby="light-title">
+          <h2 id="light-title">Светлая область</h2>
+          <p class="scope-note">Исходный акцент и белая надпись</p>
+          <div class="specimen">
+            <div data-current-tuple style="display: none">
+              <lab-button type="accent" kind="fill" size="m">Продолжить</lab-button>
+              <p data-primary>Основной текст интерфейса</p>
+            </div>
+          </div>
+          <p data-status role="status" aria-live="polite">Ожидание наблюдения</p>
+        </section>
+
+        <section data-witness-scope="dark" data-theme="dark" aria-labelledby="dark-title">
+          <h2 id="dark-title">Тёмная область</h2>
+          <p class="scope-note">Историческая декларация цветов LabUI</p>
+          <div class="specimen">
+            <div data-current-tuple style="display: none">
+              <lab-button type="accent" kind="fill" size="m">Продолжить</lab-button>
+              <p data-primary>Основной текст интерфейса</p>
+            </div>
+          </div>
+          <p data-status role="status" aria-live="polite">Ожидание наблюдения</p>
+        </section>
+      </div>
+
+      <footer>
+        <p>Базовый режим сохраняет исходные цвета. Строгий режим требует контраст 4,5:1 при нулевом допуске изменения.</p>
+        <p>Диагностический допуск 0,1 — эксперимент для назначения нового акцента, а не принятый визуальный бюджет. Геометрия и состояния кнопки остаются текущими в LabUI.</p>
+      </footer>
+    </main>
+  </body>
+</html>

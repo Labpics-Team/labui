@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "packageName": "@labpics/colors",
+  "packageVersion": "1.0.3",
+  "sourceCommit": "d586f61006fb8f7a67550c37b70430494aaa7f12",
+  "coreTree": "4cfcba834d9b0a58ed2a64c958a4816260e8833d",
+  "archiveSha256": "eadf73becd591e05eb549e896467e510cd5244ef78f31413ba45ca917ec60bb9",
+  "archiveBytes": 244940,
+  "wasmSha256": "89d36b173dda7b73031606117da00348b36a40a139075d6e76d8660429641447",
+  "wasmBytes": 479282
+}
