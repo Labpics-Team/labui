@@ -6,10 +6,10 @@ import * as checkboxMachine from '@zag-js/checkbox';
  * Axes (the Figma model — Type × Toggle(true/false/MIXED) × Size × State):
  *   - type:  accent | neutral | danger   (semantic intent of the CHECKED box)
  *   - size:  tiny | s | m | l
- *   - checked: machine-owned (reflected for CSS + SSR)
+ *   - checked: текущее состояние элемента, отражённое для CSS и SSR
  *   - indeterminate: the HONEST third machine state (aria-checked="mixed") — NOT
  *     a faked visual; the machine carries `"indeterminate"` as a real value
- *   - defaultChecked: uncontrolled initial state (boolean | "indeterminate")
+ *   - defaultChecked/defaultIndeterminate: начальное состояние до первого render
  *   - disabled: non-interactive
  *
  * Why a machine here, when Button opted out: a checkbox has THREE-state checked
@@ -50,7 +50,7 @@ export class LabCheckbox extends LabElement {
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
-    /** Controlled checked state. When the attribute is present, consumer owns it. */
+    /** Текущее состояние; обновляется вводом и присваиванием свойства. */
     checked: { type: Boolean, reflect: true },
     /**
      * The honest third state. Reflected so `:host([indeterminate])` styling and
@@ -58,9 +58,9 @@ export class LabCheckbox extends LabElement {
      * is `"indeterminate"` (aria-checked="mixed").
      */
     indeterminate: { type: Boolean, reflect: true },
-    /** Uncontrolled initial state — read once by the machine at init. */
+    /** Начальное состояние, если текущие значения ещё не заданы. */
     defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
-    /** Uncontrolled initial indeterminate — read once at init. */
+    /** Начальное смешанное состояние, применяемое до первого render. */
     defaultIndeterminate: {
       type: Boolean,
       attribute: 'default-indeterminate',
@@ -79,8 +79,6 @@ export class LabCheckbox extends LabElement {
 
   declare type: LabCheckboxType;
   declare size: LabCheckboxSize;
-  declare checked: boolean;
-  declare indeterminate: boolean;
   declare defaultChecked: boolean;
   declare defaultIndeterminate: boolean;
   declare disabled: boolean;
@@ -88,30 +86,43 @@ export class LabCheckbox extends LabElement {
   declare name: string | null;
 
   private readonly checkbox: ZagController<CheckboxSchema, CheckboxApi>;
+  private checkedValue: boolean | undefined;
+  private indeterminateValue: boolean | undefined;
+
+  get checked(): boolean {
+    return this.checkedValue ?? false;
+  }
+
+  set checked(value: boolean) {
+    this.checkedValue = value;
+  }
+
+  get indeterminate(): boolean {
+    return this.indeterminateValue ?? false;
+  }
+
+  set indeterminate(value: boolean) {
+    this.indeterminateValue = value;
+  }
 
   constructor() {
     super();
     this.type = 'accent';
     this.size = 'm';
-    this.checked = false;
-    this.indeterminate = false;
     this.defaultChecked = false;
     this.defaultIndeterminate = false;
     this.disabled = false;
     this.ariaLabel = null;
     this.name = null;
-    // Wire the Zag checkbox behavior. The tri-state value is folded into one
-    // `CheckedState`: indeterminate wins, else the boolean. Controlled only when
-    // a `checked`/`indeterminate` attribute is present; otherwise the machine
-    // owns it from the defaults (uncontrolled). Honest two-mode contract.
+    // Текущее значение принадлежит элементу; indeterminate имеет приоритет.
+    // Отражённые атрибуты не переключают машину между разными владельцами.
     // `id` is a stable per-instance value (mirrors React's `useId`) so the
     // machine's scoped ids — including the label id the input references — are
     // unique and real, never the colliding `checkbox:undefined:*`.
     this.checkbox = this.runMachine(checkboxModule, () => ({
       id: this.uid,
       name: this.name ?? undefined,
-      defaultChecked: this.resolveDefault(),
-      checked: this.resolveControlled(),
+      checked: this.indeterminate ? 'indeterminate' : this.checked,
       disabled: this.disabled,
       onCheckedChange: (details: checkboxMachine.CheckedChangeDetails) => {
         this.indeterminate = details.checked === 'indeterminate';
@@ -127,17 +138,14 @@ export class LabCheckbox extends LabElement {
     }));
   }
 
-  /** The uncontrolled initial state, folded into the machine's tri-state value. */
-  private resolveDefault(): LabCheckboxChecked {
-    if (this.defaultIndeterminate) return 'indeterminate';
-    return this.defaultChecked;
-  }
-
-  /** The controlled state, or undefined when this checkbox is uncontrolled. */
-  private resolveControlled(): LabCheckboxChecked | undefined {
-    if (this.hasAttribute('indeterminate') && this.indeterminate) return 'indeterminate';
-    if (this.hasAttribute('checked')) return this.checked;
-    return undefined;
+  protected override willUpdate(): void {
+    // Значения до upgrade уже восстановлены Lit. Любая явно заданная текущая
+    // ось, включая false, имеет приоритет над defaults всей тройки состояний.
+    const useDefaults = this.checkedValue === undefined && this.indeterminateValue === undefined;
+    if (this.checkedValue === undefined) this.checked = useDefaults ? this.defaultChecked : false;
+    if (this.indeterminateValue === undefined) {
+      this.indeterminate = useDefaults ? this.defaultIndeterminate : false;
+    }
   }
 
   static override styles = css`

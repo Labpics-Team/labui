@@ -6,8 +6,8 @@ import * as switchMachine from '@zag-js/switch';
  * Axes (the Figma model — Type × Toggle × Size × State × Icon):
  *   - type:  accent | neutral | danger   (semantic intent of the ON state)
  *   - size:  s | m | l
- *   - checked: machine-owned toggle state (reflected for CSS + SSR)
- *   - defaultChecked: uncontrolled initial state (read once at machine init)
+ *   - checked: текущее состояние элемента, отражённое для CSS и SSR
+ *   - defaultChecked: начальное состояние до первого render
  *   - disabled: non-interactive
  *
  * Why a machine here, when Button opted out: a Switch HAS interaction state a
@@ -15,7 +15,7 @@ import * as switchMachine from '@zag-js/switch';
  * Space/Enter activation, focus management, and a hidden form input. Hand-rolling
  * those is exactly the "machinery the platform/Zag ships" Button declined to
  * rebuild. So this element runs `@zag-js/switch` through `ZagController`: the
- * machine owns checked-state, keyboard, focus and ARIA; the element only paints
+ * машина задаёт переходы, клавиатуру, фокус и ARIA; текущее значение хранит элемент
  * (DIP — it depends on the injected `MachineModule`, never on a hand-written
  * toggle).
  *
@@ -55,9 +55,9 @@ export class LabSwitch extends LabElement {
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
-    /** Controlled checked state. When set, the consumer owns the value. */
+    /** Текущее состояние; обновляется вводом и присваиванием свойства. */
     checked: { type: Boolean, reflect: true },
-    /** Uncontrolled initial state — read once by the machine at init. */
+    /** Начальное состояние, если checked не задан до первого render. */
     defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
     disabled: { type: Boolean, reflect: true },
     /**
@@ -72,35 +72,39 @@ export class LabSwitch extends LabElement {
 
   declare type: LabSwitchType;
   declare size: LabSwitchSize;
-  declare checked: boolean;
   declare defaultChecked: boolean;
   declare disabled: boolean;
   declare ariaLabel: string | null;
   declare name: string | null;
 
   private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
+  private checkedValue: boolean | undefined;
+
+  get checked(): boolean {
+    return this.checkedValue ?? false;
+  }
+
+  set checked(value: boolean) {
+    this.checkedValue = value;
+  }
 
   constructor() {
     super();
     this.type = 'accent';
     this.size = 'm';
-    this.checked = false;
     this.defaultChecked = false;
     this.disabled = false;
     this.ariaLabel = null;
     this.name = null;
-    // Wire the Zag switch behavior. Props read from reflected attributes so the
-    // machine and the element never disagree. `checked` is passed only when the
-    // consumer set it (controlled); otherwise the machine owns it from
-    // `defaultChecked` (uncontrolled) — an honest two-mode contract, not a fake.
+    // Значение всегда принадлежит элементу. Отражённый checked — проекция для
+    // CSS, а не признак смены владельца: false тоже передаётся машине явно.
     // `id` is a stable per-instance value (mirrors React's `useId`) so the
     // machine's scoped ids — including the label id the input references — are
     // unique and real, never the colliding `switch:undefined:*`.
     this.machineCtl = this.runMachine(switchModule, () => ({
       id: this.uid,
       name: this.name ?? undefined,
-      defaultChecked: this.defaultChecked,
-      checked: this.hasAttribute('checked') ? this.checked : undefined,
+      checked: this.checked,
       disabled: this.disabled,
       onCheckedChange: (details: switchMachine.CheckedChangeDetails) => {
         this.checked = details.checked;
@@ -113,6 +117,12 @@ export class LabSwitch extends LabElement {
         );
       },
     }));
+  }
+
+  protected override willUpdate(): void {
+    // Lit уже восстановил свойства, заданные до upgrade. Инициализация идёт
+    // до hostUpdate контроллера и работает также при SSR; явный false сохранён.
+    if (this.checkedValue === undefined) this.checked = this.defaultChecked;
   }
 
   static override styles = css`
