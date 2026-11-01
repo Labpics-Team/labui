@@ -302,42 +302,38 @@ for (const osTheme of ['light', 'dark'] as const)
           }, colorRoles);
           expect(invalid, `${id}: все контрактные краски разрешены`).toEqual([]);
         }
-
-        for (const renderer of ['lit', 'react'] as const)
-          test(`Смена ближайшей области на смонтированной Button ${renderer}`, async ({ page }) => {
-            await setup(page, '/_fixtures/button-anatomy.html', 'dark');
-            const host = page.getByTestId(`${renderer}-anatomy-m-full`);
-            const button = renderer === 'lit' ? host.locator('button') : host;
-            await host.evaluate((e) => {
-              const scope = document.createElement('section');
-              scope.id = 'local-contrast';
-              scope.dataset.contrast = 'normal';
-              e.parentElement?.insertBefore(scope, e);
-              scope.append(e);
-            });
-            await expect(button).toHaveCSS('background-color', 'rgb(74, 143, 255)');
-            await page
-              .locator('#local-contrast')
-              .evaluate((e) => e.setAttribute('data-theme', 'light'));
-            await expect(button).toHaveCSS('background-color', 'rgb(0, 122, 255)');
-            await page
-              .locator('#local-contrast')
-              .evaluate((e) => e.setAttribute('data-contrast', 'more'));
-            await expect(button).toHaveCSS('background-color', 'rgb(0, 64, 221)');
-            await page.locator('#local-contrast').evaluate((e) => e.removeAttribute('data-theme'));
-            const changed = await button.evaluate((e) => getComputedStyle(e).backgroundColor);
-            expect(rgb(changed)).not.toEqual([0, 64, 221]);
-            await expect(button).toHaveCSS('color', 'rgb(255, 255, 255)');
-            await page
-              .locator('#local-contrast')
-              .evaluate((e) => e.setAttribute('data-contrast', 'normal'));
-            await expect(button).toHaveCSS('background-color', 'rgb(74, 143, 255)');
-          });
       } finally {
         await context.close();
       }
     });
   }
+
+for (const renderer of ['lit', 'react'] as const)
+  test(`Смена ближайшей области на смонтированной Button ${renderer}`, async ({ page }) => {
+    await setup(page, '/_fixtures/button-anatomy.html', 'dark');
+    const host = page.getByTestId(`${renderer}-anatomy-m-full`);
+    const button = renderer === 'lit' ? host.locator('button') : host;
+    await host.evaluate((e) => {
+      const scope = document.createElement('section');
+      scope.id = 'local-contrast';
+      scope.dataset.contrast = 'normal';
+      e.parentElement?.insertBefore(scope, e);
+      scope.append(e);
+    });
+    await expect(button).toHaveCSS('background-color', 'rgb(74, 143, 255)');
+    await page.locator('#local-contrast').evaluate((e) => e.setAttribute('data-theme', 'light'));
+    await expect(button).toHaveCSS('background-color', 'rgb(0, 122, 255)');
+    await page.locator('#local-contrast').evaluate((e) => e.setAttribute('data-contrast', 'more'));
+    await expect(button).toHaveCSS('background-color', 'rgb(0, 64, 221)');
+    await page.locator('#local-contrast').evaluate((e) => e.removeAttribute('data-theme'));
+    const changed = await button.evaluate((e) => getComputedStyle(e).backgroundColor);
+    expect(rgb(changed)).not.toEqual([0, 64, 221]);
+    await expect(button).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await page
+      .locator('#local-contrast')
+      .evaluate((e) => e.setAttribute('data-contrast', 'normal'));
+    await expect(button).toHaveCSS('background-color', 'rgb(74, 143, 255)');
+  });
 
 test('forced-colors не подменяет явный выбор normal', async ({ page }, info) => {
   await page.emulateMedia({ forcedColors: 'active', contrast: 'more' });
