@@ -321,7 +321,8 @@ function mountNotificationConsumer(api, icon, variant, label, parent) {
       return { axis,
         morph: compileSymbolEffect(model, capabilities, `${icon}.morph`, { duration: 1000 }),
         off: compileSymbolEffect(off, notificationOff.glyphCapabilities(variant), 'notifications-off.ring', { duration: 1000 }),
-        offPaths: [...new DOMParser().parseFromString(renderGlyphSvg(off), 'image/svg+xml').querySelectorAll('path')]
+        offPaths: [...new DOMParser().parseFromString(renderGlyphSvg(off,
+          { instanceId: `notification-${icon}-${variant}-off` }), 'image/svg+xml').querySelectorAll('path')]
           .map(node => ({ d: node.getAttribute('d'), fillRule: node.getAttribute('fill-rule') ?? 'nonzero' })) };
     },
   };

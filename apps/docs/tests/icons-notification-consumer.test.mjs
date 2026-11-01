@@ -5,11 +5,12 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
-import { notificationReference } from './prepare-icons-inputs.mjs';
+import { notificationReference, readAuthorMaster } from './prepare-icons-inputs.mjs';
 import { consumerFixture, consumerPublicEntries, assertIconsImport, assertNotificationPose } from './icons-packed.mjs';
 import {
   NOTIFICATION_ENTRIES, notificationPosition, rawNotificationClapperWidth,
   translationSequenceSteps, validateNotificationReference, assertNotificationEffect,
+  notificationFixture,
 } from './icons-notification-consumer.mjs';
 
 const snapshot = JSON.parse(await readFile(new URL('./fixtures/icons-notification-masters.json', import.meta.url)));
@@ -132,6 +133,61 @@ test('emitted schema4 consumer is valid module syntax without installing or runn
   const root = await fixture(t), file = join(root, 'consumer.mjs');
   await writeFile(file, consumerFixture(4));
   execFileSync(process.execPath, ['--check', file], { encoding: 'utf8', timeout: 5000 });
+});
+
+export function notificationRefuseWitness(renderGlyph = model => model.svg, emitted = notificationFixture()) {
+  const start = emitted.indexOf('function mountNotificationConsumer(');
+  const end = emitted.indexOf('\nconst notificationSection');
+  assert.ok(start >= 0 && end > start);
+  // Узкий host исполняет mounting/refuse; layout, ввод и motion принадлежат browser proof.
+  const element = () => {
+    const node = { style: {}, setAttribute() {}, addEventListener() {}, append() {},
+      updateComplete: Promise.resolve(), querySelectorAll: () => [],
+      shadowRoot: { querySelector: () => ({ addEventListener() {} }) } };
+    node.querySelector = () => ({ ...element(), parentElement: node });
+    return node;
+  };
+  const document = { createElement: element, createTextNode: text => ({ text }) };
+  const ids = new Set(), offIds = [];
+  const render = (model, options) => {
+    const svg = renderGlyph(model, options);
+    assert.match(options?.instanceId ?? '', /^[A-Za-z][A-Za-z0-9_-]{0,63}$/, 'public renderer requires instanceId');
+    assert.equal(ids.has(options.instanceId), false, 'instanceId collides with another consumer');
+    ids.add(options.instanceId);
+    if (model.icon === 'notifications-off') offIds.push(options.instanceId);
+    return svg;
+  };
+  const models = (icon, variant) => ({ icon, variant, svg: snapshot.masters[snapshot.manifest.icons[icon][variant].master] });
+  const capabilities = (icon, variant) => ({ motion: { gestures: [{ id: `${icon}.ring`, partIds: ['notification-clapper'] }] } });
+  const off = { glyph: ({ variant }) => models('notifications-off', variant), glyphCapabilities: variant => capabilities('notifications-off', variant) };
+  const compile = model => ({ ok: false, reason: { code: model.icon === 'notifications-off' ? 'SEMANTIC_MOTION_UNAVAILABLE' : 'GESTURE_UNSUPPORTED' } });
+  class Parser {
+    parseFromString(svg) {
+      const paths = readAuthorMaster(Buffer.from(svg)).paths;
+      return { querySelectorAll: () => paths.map(path => ({ getAttribute: name => name === 'd' ? path.d : path.fillRule })) };
+    }
+  }
+  const mount = new Function('document', 'renderGlyphSvg', 'compileSymbolEffect', 'notificationOff', 'DOMParser',
+    `${emitted.slice(start, end)}\nreturn mountNotificationConsumer;`)(document, render, compile, off, Parser);
+  for (const icon of ['notifications', 'notifications-unread'])
+    for (const variant of ['outline', 'filled']) {
+      const api = { glyph: ({ axes } = {}) => {
+        if (axes) throw Object.assign(new Error('Unsupported axis'), { code: 'AUTHOR_PARITY_REQUIRED' });
+        return models(icon, variant);
+      }, glyphCapabilities: () => capabilities(icon, variant) };
+      const refusal = mount(api, icon, variant, icon, element()).refuse();
+      assert.equal(refusal.axis, 'AUTHOR_PARITY_REQUIRED');
+      assert.equal(refusal.morph.reason.code, 'GESTURE_UNSUPPORTED');
+      assert.equal(refusal.off.reason.code, 'SEMANTIC_MOTION_UNAVAILABLE');
+      assert.deepEqual(refusal.offPaths, readAuthorMaster(Buffer.from(models('notifications-off', variant).svg)).paths);
+    }
+  assert.equal(offIds.length, 4);
+  assert.equal(new Set(offIds).size, 4);
+  return { consumers: 4, offIds };
+}
+
+test('actual notification refuse callback supplies unique renderer instances for all four consumers', () => {
+  notificationRefuseWitness();
 });
 
 test('notification browser oracle rejects changed contours, fixed transforms, identity and incorrect phase', async t => {
