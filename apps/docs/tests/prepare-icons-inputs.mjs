@@ -516,8 +516,8 @@ export function consumerVisualLog(bytes, file, sourceSha, uiCommit) {
   );
   assert.equal(bytes.readUInt32BE(8), 13, 'visual: IHDR length');
   assert.equal(bytes.toString('ascii', 12, 16), 'IHDR', 'visual: IHDR');
-  const width = bytes.readUInt32BE(16),
-    height = bytes.readUInt32BE(20);
+  const width = bytes.readUInt32BE(16);
+  const height = bytes.readUInt32BE(20);
   assert.ok(
     width > 0 && height > 0 && width * height <= VISUAL_MAX_PIXELS,
     'visual: PNG dimensions вне лимита',

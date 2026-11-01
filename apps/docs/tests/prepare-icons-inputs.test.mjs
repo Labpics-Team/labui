@@ -1104,8 +1104,8 @@ function decodeConsumerEvidence(stdout, prefix, digestField, file) {
 
 test('consumer PNG readback keeps exact bytes, dimensions and both source identities', () => {
   for (const mode of ['no-preference', 'reduce', 'no-preference-failure', 'reduce-failure']) {
-    const file = `result/${mode}.png`,
-      uiCommit = 'b'.repeat(40);
+    const file = `result/${mode}.png`;
+    const uiCommit = 'b'.repeat(40);
     const block = consumerVisualLog(PNG_WITNESS, file, PIN.sourceCommit, uiCommit);
     const { metadata, bytes } = decodeConsumerEvidence(
       block,
