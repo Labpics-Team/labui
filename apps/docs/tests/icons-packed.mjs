@@ -130,6 +130,29 @@ export function validateSubject(subject) {
   return subject;
 }
 
+// Проверенные bytes переходят в собственный snapshot; input path больше не читается.
+export async function snapshotArchive(consumer, key, inputPath, expected) {
+  assert.ok(['icons', 'uiCore', 'uiShadow'].includes(key));
+  const bytes = await readFile(inputPath);
+  assert.equal(hash(bytes), expected.archiveSha256, key);
+  assert.equal(bytes.length, expected.archiveBytes, key);
+  const directory = join(consumer, 'archives');
+  await mkdir(directory, { recursive: true, mode: 0o700 });
+  const path = join(directory, `${key}.tgz`);
+  await writeFile(path, bytes, { flag: 'wx', mode: 0o600 });
+  const snapshot = await readFile(path);
+  assert.equal(hash(snapshot), expected.archiveSha256, `${key}: snapshot SHA256`);
+  assert.equal(snapshot.length, expected.archiveBytes, `${key}: snapshot bytes`);
+  return {
+    key,
+    path,
+    inputName: basename(inputPath),
+    archiveSha256: hash(snapshot),
+    archiveBytes: snapshot.length,
+    integrity: `sha512-${createHash('sha512').update(snapshot).digest('base64')}`,
+  };
+}
+
 const HTML = `<!doctype html><html lang="ru" data-theme="light"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Lab Icons в Lab UI</title>
 <style>
@@ -571,20 +594,23 @@ export async function main(args = process.argv.slice(2)) {
       name: process.env.RUNNER_NAME,
       os: process.env.RUNNER_OS,
     };
+    phase = 'archive snapshots';
+    consumer = await mkdtemp(join(tmpdir(), 'labui-icons-consumer-'));
+    assert.ok(outside(relative(ROOT, await realpath(consumer))));
     const archives = [];
     for (const [key, option] of [
       ['icons', '--icons-tarball'],
       ['uiCore', '--ui-core-tarball'],
       ['uiShadow', '--ui-shadow-tarball'],
     ]) {
-      const path = resolve(options.get(option));
-      const bytes = await readFile(path);
-      assert.equal(hash(bytes), subject.packages[key].archiveSha256, key);
-      assert.equal(bytes.length, subject.packages[key].archiveBytes, key);
-      archives.push({ key, path });
+      archives.push(
+        await snapshotArchive(consumer, key, resolve(options.get(option)), subject.packages[key]),
+      );
     }
-    consumer = await mkdtemp(join(tmpdir(), 'labui-icons-consumer-'));
-    assert.ok(outside(relative(ROOT, await realpath(consumer))));
+    receipt.archives = archives.map(({ path, ...archive }) => ({
+      ...archive,
+      snapshot: relative(consumer, path).replaceAll('\\', '/'),
+    }));
     await writeFile(
       join(consumer, 'package.json'),
       `${JSON.stringify({ private: true, type: 'module' })}\n`,
@@ -602,10 +628,10 @@ export async function main(args = process.argv.slice(2)) {
       ]),
     );
     await writeFile(join(out, 'dependency-tree.json'), npm(consumer, ['ls', '--all', '--json']));
-    await writeFile(
-      join(out, 'package-lock.json'),
-      await readFile(join(consumer, 'package-lock.json')),
-    );
+    const lockBytes = await readFile(join(consumer, 'package-lock.json'));
+    const lock = JSON.parse(lockBytes);
+    await writeFile(join(out, 'package-lock.json'), lockBytes);
+    receipt.lockfileSha256 = hash(lockBytes);
     receipt.installed = [];
     for (const expected of [
       ...Object.values(subject.packages),
@@ -625,10 +651,24 @@ export async function main(args = process.argv.slice(2)) {
           (value) => !value.startsWith('workspace:'),
         ),
       );
+      const locked =
+        lock.packages?.[`node_modules/${expected.name}`] ??
+        lock.dependencies?.[expected.name] ??
+        {};
+      const archive = archives.find((item) => subject.packages[item.key].name === expected.name);
+      if (archive && locked.integrity !== undefined) {
+        assert.ok(
+          typeof locked.integrity === 'string' &&
+            locked.integrity.split(/\s+/).includes(archive.integrity),
+          `${expected.name}: installed lock integrity не совпадает со snapshot`,
+        );
+      }
       receipt.installed.push({
         name: manifest.name,
         version: manifest.version,
         manifestSha256: hash(bytes),
+        lockIntegrity: locked.integrity ?? null,
+        lockResolved: locked.resolved ?? null,
       });
     }
     await writeFile(join(consumer, 'index.html'), HTML);
