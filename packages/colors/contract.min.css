@@ -19,10 +19,6 @@
   --lab-bg-static-dark: rgb(16 16 18); 
   --lab-bg-static-light: rgb(255 255 255); 
   --lab-bg-tertiary: rgb(255 255 255); 
-  --lab-bg-overlay-base: rgb(255 255 255 / 0.478); 
-  --lab-bg-overlay-ghost: rgb(255 255 255 / 0); 
-  --lab-bg-overlay-soft: rgb(255 255 255 / 0.2); 
-  --lab-bg-overlay-strong: rgb(255 255 255 / 0.8); 
   --lab-label-brand-primary: oklch(9.99349% 0.034966 256.638);
   --lab-label-brand-quaternary: oklch(74.89802% 0.130011 257.688);
   --lab-label-brand-secondary: oklch(47.60967% 0.173201 257.595);
@@ -43,14 +39,6 @@
   --lab-label-quaternary: oklch(80.14049% 0.013952 286.081);
   --lab-label-secondary: oklch(55.16643% 0.013808 285.938);
   --lab-label-tertiary: oklch(66.97448% 0.014606 285.999);
-  --lab-label-static-dark-primary: rgb(16 16 18); 
-  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322); 
-  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722); 
-  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522); 
-  --lab-label-static-light-primary: rgb(255 255 255); 
-  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322); 
-  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722); 
-  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522); 
   --lab-label-success-primary: oklch(13.01439% 0.039836 145.937);
   --lab-label-success-quaternary: oklch(75.82232% 0.222679 147.444);
   --lab-label-success-secondary: oklch(51.10679% 0.149761 147.528);
@@ -144,6 +132,19 @@
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
+
+  --lab-label-static-light-primary: rgb(255 255 255);
+  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722);
+  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
+  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
+  --lab-label-static-dark-primary: rgb(16 16 18);
+  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
+  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522);
+  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
+  --lab-bg-overlay-base: rgb(255 255 255 / 0.478);
+  --lab-bg-overlay-ghost: rgb(255 255 255 / 0);
+  --lab-bg-overlay-soft: rgb(255 255 255 / 0.2);
+  --lab-bg-overlay-strong: rgb(255 255 255 / 0.8);
   
   --lab-badge-fill-brand: oklch(57.10674% 0.215668 258.445 / 1);
   --lab-badge-label-on-brand: oklch(99.38517% 0.002854 264.542);
@@ -250,10 +251,6 @@
   --lab-bg-static-dark: rgb(16 16 18); 
   --lab-bg-static-light: rgb(255 255 255); 
   --lab-bg-tertiary: rgb(36 36 38); 
-  --lab-bg-overlay-base: rgb(16 16 18 / 0.478); 
-  --lab-bg-overlay-ghost: rgb(16 16 18 / 0); 
-  --lab-bg-overlay-soft: rgb(16 16 18 / 0.2); 
-  --lab-bg-overlay-strong: rgb(16 16 18 / 0.8); 
   --lab-label-brand-primary: oklch(94.59338% 0.025831 259.045);
   --lab-label-brand-quaternary: oklch(44.76851% 0.178914 259.612);
   --lab-label-brand-secondary: oklch(70.85910% 0.152469 259.803);
@@ -274,14 +271,6 @@
   --lab-label-quaternary: oklch(52.03953% 0.014016 285.903);
   --lab-label-secondary: oklch(76.98233% 0.014096 286.064);
   --lab-label-tertiary: oklch(66.28324% 0.013174 286.035);
-  --lab-label-static-dark-primary: rgb(16 16 18); 
-  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322); 
-  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722); 
-  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522); 
-  --lab-label-static-light-primary: rgb(255 255 255); 
-  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322); 
-  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722); 
-  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522); 
   --lab-label-success-primary: oklch(93.74350% 0.110616 146.789);
   --lab-label-success-quaternary: oklch(48.08938% 0.143248 146.916);
   --lab-label-success-secondary: oklch(72.54180% 0.216047 146.923);
@@ -375,6 +364,19 @@
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
+
+  --lab-label-static-light-primary: rgb(255 255 255);
+  --lab-label-static-light-secondary: rgb(255 255 255 / 0.722);
+  --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
+  --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
+  --lab-label-static-dark-primary: rgb(16 16 18);
+  --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
+  --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522);
+  --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
+  --lab-bg-overlay-base: rgb(16 16 18 / 0.478);
+  --lab-bg-overlay-ghost: rgb(16 16 18 / 0);
+  --lab-bg-overlay-soft: rgb(16 16 18 / 0.2);
+  --lab-bg-overlay-strong: rgb(16 16 18 / 0.8);
   
   --lab-badge-fill-brand: oklch(56.72684% 0.181540 259.780 / 1);
   --lab-badge-label-on-brand: oklch(99.11546% 0.004112 271.371);
@@ -482,10 +484,6 @@
     --lab-bg-static-dark: rgb(16 16 18); 
     --lab-bg-static-light: rgb(255 255 255); 
     --lab-bg-tertiary: rgb(36 36 38); 
-    --lab-bg-overlay-base: rgb(16 16 18 / 0.478); 
-    --lab-bg-overlay-ghost: rgb(16 16 18 / 0); 
-    --lab-bg-overlay-soft: rgb(16 16 18 / 0.2); 
-    --lab-bg-overlay-strong: rgb(16 16 18 / 0.8); 
     --lab-label-brand-primary: oklch(94.59338% 0.025831 259.045);
     --lab-label-brand-quaternary: oklch(44.76851% 0.178914 259.612);
     --lab-label-brand-secondary: oklch(70.85910% 0.152469 259.803);
@@ -506,14 +504,6 @@
     --lab-label-quaternary: oklch(52.03953% 0.014016 285.903);
     --lab-label-secondary: oklch(76.98233% 0.014096 286.064);
     --lab-label-tertiary: oklch(66.28324% 0.013174 286.035);
-    --lab-label-static-dark-primary: rgb(16 16 18); 
-    --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322); 
-    --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722); 
-    --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522); 
-    --lab-label-static-light-primary: rgb(255 255 255); 
-    --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322); 
-    --lab-label-static-light-secondary: rgb(255 255 255 / 0.722); 
-    --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522); 
     --lab-label-success-primary: oklch(93.74350% 0.110616 146.789);
     --lab-label-success-quaternary: oklch(48.08938% 0.143248 146.916);
     --lab-label-success-secondary: oklch(72.54180% 0.216047 146.923);
@@ -607,6 +597,19 @@
     --lab-border-accent: var(--lab-border-brand-strong);
     --lab-border-danger: var(--lab-border-danger-strong);
     --lab-border-focus: var(--lab-fx-focus-ring-brand);
+
+    --lab-label-static-light-primary: rgb(255 255 255);
+    --lab-label-static-light-secondary: rgb(255 255 255 / 0.722);
+    --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
+    --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
+    --lab-label-static-dark-primary: rgb(16 16 18);
+    --lab-label-static-dark-secondary: rgb(16 16 18 / 0.722);
+    --lab-label-static-dark-tertiary: rgb(16 16 18 / 0.522);
+    --lab-label-static-dark-quaternary: rgb(16 16 18 / 0.322);
+    --lab-bg-overlay-base: rgb(16 16 18 / 0.478);
+    --lab-bg-overlay-ghost: rgb(16 16 18 / 0);
+    --lab-bg-overlay-soft: rgb(16 16 18 / 0.2);
+    --lab-bg-overlay-strong: rgb(16 16 18 / 0.8);
     
     --lab-badge-fill-brand: oklch(56.72684% 0.181540 259.780 / 1);
     --lab-badge-label-on-brand: oklch(99.11546% 0.004112 271.371);

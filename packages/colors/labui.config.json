@@ -1,4 +1,18 @@
 {
+  "authored": {
+    "sources": {
+      "white": "#FFFFFF",
+      "shade": "#101012"
+    },
+    "static": {
+      "sources": { "light": "white", "dark": "shade" },
+      "alpha": { "primary": 1, "secondary": 0.722, "tertiary": 0.522, "quaternary": 0.322 }
+    },
+    "overlay": {
+      "sources": { "light": "white", "dark": "shade" },
+      "alpha": { "base": 0.478, "ghost": 0, "soft": 0.2, "strong": 0.8 }
+    }
+  },
   "brand": {
     "light": "#007AFF",
     "dark": "#4A8FFF",

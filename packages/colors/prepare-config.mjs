@@ -14,7 +14,8 @@
  * раздельно; порядок ключей/ролей сохранён → отпечаток паспорта не дрейфует.
  */
 export function prepareEngineConfig(parsed) {
-  const { components, ...config } = parsed;
+  // Прямые авторские краски принадлежат CSS-контракту, старый DTO их не знает.
+  const { components, authored: _authored, ...config } = parsed;
   if (Array.isArray(components)) {
     config.roles = [...config.roles, ...components];
   }

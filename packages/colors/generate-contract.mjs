@@ -1,5 +1,6 @@
 // Генератор живого контракта: движок (опубликованный @labpics/colors +
-// паспорт) эмитит свои роли, остальное — мост из замороженного Figma-якоря.
+// паспорт) эмитит вычисляемые роли, authored — прямые краски и alpha.
+// Остальное пока остаётся мостом из замороженного Figma-якоря.
 //
 // Замена рукописной эры: contract.css перестаёт быть источником истины и
 // становится АРТЕФАКТОМ движка. Независимый Figma-якорь живёт отдельно
@@ -18,6 +19,65 @@ import { createLabuiEngine } from './engine.mjs';
 const here = dirname(fileURLToPath(import.meta.url));
 const referencePath = join(here, 'figma-reference.css');
 const contractPath = join(here, 'contract.css');
+
+function fields(value, names, path) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.keys(value).length !== names.length ||
+    names.some((name) => !Object.hasOwn(value, name))
+  ) {
+    throw new Error(`${path}: ожидаются поля ${names.join(', ')}`);
+  }
+  return value;
+}
+
+/** Прямые краски не зависят от настраиваемой базы темы и не требуют solver. */
+function authoredEmission(authored) {
+  fields(authored, ['sources', 'static', 'overlay'], 'authored');
+  const sources = fields(authored.sources, ['white', 'shade'], 'authored.sources');
+  const rgb = new Map();
+  for (const [name, hex] of Object.entries(sources)) {
+    if (typeof hex !== 'string' || !/^#[0-9a-f]{6}$/i.test(hex)) {
+      throw new Error(`authored.sources.${name}: ожидается #RRGGBB`);
+    }
+    rgb.set(name, [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16)).join(' '));
+  }
+  for (const [family, levels] of [
+    ['static', ['primary', 'secondary', 'tertiary', 'quaternary']],
+    ['overlay', ['base', 'ghost', 'soft', 'strong']],
+  ]) {
+    const table = fields(authored[family], ['sources', 'alpha'], `authored.${family}`);
+    fields(table.sources, ['light', 'dark'], `authored.${family}.sources`);
+    fields(table.alpha, levels, `authored.${family}.alpha`);
+    for (const [side, source] of Object.entries(table.sources)) {
+      if (!rgb.has(source)) {
+        throw new Error(`authored.${family}.sources.${side}: неизвестный источник ${source}`);
+      }
+    }
+    for (const [level, alpha] of Object.entries(table.alpha)) {
+      if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) {
+        throw new Error(`authored.${family}.alpha.${level}: ожидается число в [0, 1]`);
+      }
+    }
+  }
+  const paint = (source, alpha) => `rgb(${rgb.get(source)}${alpha === 1 ? '' : ` / ${alpha}`})`;
+  const result = {};
+  for (const theme of ['light', 'dark']) {
+    const roles = new Map();
+    for (const [side, source] of Object.entries(authored.static.sources)) {
+      for (const [level, alpha] of Object.entries(authored.static.alpha)) {
+        roles.set(`--lab-label-static-${side}-${level}`, paint(source, alpha));
+      }
+    }
+    for (const [level, alpha] of Object.entries(authored.overlay.alpha)) {
+      roles.set(`--lab-bg-overlay-${level}`, paint(authored.overlay.sources[theme], alpha));
+    }
+    result[theme] = roles;
+  }
+  return result;
+}
 
 /** Вырезать тело scope-блока по началу строки (тот же приём, что в золоте). */
 function scopeBody(css, scopePattern) {
@@ -136,11 +196,11 @@ export const RETIRED_ROLES = new Set([
 ]);
 
 /** Отрендерить один scope: движковые роли — живой эмиссией, прочее — мостом. */
-function renderScope(anchorVars, engineVars, overrides) {
+function renderScope(anchorVars, engineVars, overrides, authoredVars) {
   const lines = [];
   for (const [name, anchorValue] of anchorVars) {
-    if (RETIRED_ROLES.has(name)) {
-      continue; // снята с контракта (ADR-0007), якорь не редактируется
+    if (RETIRED_ROLES.has(name) || authoredVars.has(name)) {
+      continue; // Снятые роли и самостоятельные авторские семейства не читают мост.
     }
     if (overrides.has(name)) {
       // Закон пары: несущая лейбл поверхность / её лейбл — деривация движка,
@@ -158,6 +218,10 @@ function renderScope(anchorVars, engineVars, overrides) {
       // дословно из Figma-якоря, переезжают следующими этапами поезда.
       lines.push(`  ${name}: ${anchorValue}; /* мост: Figma-якорь */`);
     }
+  }
+  lines.push('');
+  for (const [name, value] of authoredVars) {
+    lines.push(`  ${name}: ${value};`);
   }
   return lines.join('\n');
 }
@@ -325,8 +389,9 @@ export async function generateContract() {
   const require = createRequire(import.meta.url);
   const enginePkgPath = join(dirname(require.resolve('@labpics/colors')), 'package.json');
   const enginePkg = JSON.parse(await readFile(enginePkgPath, 'utf8'));
-  const { colors, fingerprint } = await createLabuiEngine();
   const passport = JSON.parse(await readFile(join(here, 'labui.config.json'), 'utf8'));
+  const authored = authoredEmission(passport.authored);
+  const { colors, fingerprint } = await createLabuiEngine();
   // Фоны резолва тем — якоря нейтрали ПАСПОРТА, не литералы: клиентский
   // конфиг с другими опорами обязан генерировать против СВОИХ фонов.
   const bgLight = passport.neutral.anchors.light;
@@ -346,13 +411,13 @@ export async function generateContract() {
   const anchorLight = new Set(light.map(([name]) => name));
   const anchorDark = new Set(dark.map(([name]) => name));
   const lightBody =
-    renderScope(light, engineLight, overridesLight) +
+    renderScope(light, engineLight, overridesLight, authored.light) +
     badgePairEmission(colors, 'light', resolvedLight.roles) +
     bgLadderEmission('light', engineLight, bgLight) +
     fxBridgeEmission('light', engineLight, resolvedLight.roles, anchorLight) +
     skeletonShimmerEmission(engineLight);
   const darkBody =
-    renderScope(dark, engineDark, overridesDark) +
+    renderScope(dark, engineDark, overridesDark, authored.dark) +
     badgePairEmission(colors, 'dark', resolvedDark.roles) +
     bgLadderEmission('dark', engineDark, bgDark) +
     fxBridgeEmission('dark', engineDark, resolvedDark.roles, anchorDark) +
@@ -361,7 +426,8 @@ export async function generateContract() {
   return `/*
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@${enginePkg.version} + паспорт labui.config.json
-(отпечаток ${fingerprint}). Движковые роли — живая эмиссия (единая форма
+(отпечаток ${fingerprint}). Авторские краски и alpha берутся из authored.
+Движковые роли — живая эмиссия (единая форма
 oklch); строки «закон пары: деривация движка» — несущие лейбл поверхности и их
 лейблы, выведенные pair-fill (WCAG-легальны по построению); строки «мост:
 Figma-якорь» — входы и компонентные поверхности из замороженного
