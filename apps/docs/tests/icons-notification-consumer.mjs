@@ -19,9 +19,12 @@ export function rawNotificationClapperWidth(d) {
   const xs = [numbers[0], numbers[38]];
   let p0 = numbers[0];
   for (let index = 2; index < 38; index += 6) {
-    const p1 = numbers[index], p2 = numbers[index + 2], p3 = numbers[index + 4];
+    const p1 = numbers[index];
+    const p2 = numbers[index + 2];
+    const p3 = numbers[index + 4];
     const a = -p0 + 3 * p1 - 3 * p2 + p3;
-    const b = 2 * (p0 - 2 * p1 + p2), c = p1 - p0;
+    const b = 2 * (p0 - 2 * p1 + p2);
+    const c = p1 - p0;
     const discriminant = b * b - 4 * a * c;
     const roots = a === 0 ? b === 0 ? [] : [-c / b] : discriminant < 0 ? []
       : [(-b + Math.sqrt(discriminant)) / (2 * a), (-b - Math.sqrt(discriminant)) / (2 * a)];
@@ -37,7 +40,9 @@ export function rawNotificationClapperWidth(d) {
 export function notificationPosition(amplitude, progress) {
   assert.ok(Number.isFinite(amplitude) && amplitude > 0 && progress >= 0 && progress <= 1);
   if (progress === 1) return 0;
-  const position = progress * 5, index = Math.floor(position), fraction = position - index;
+  const position = progress * 5;
+  const index = Math.floor(position);
+  const fraction = position - index;
   return amplitude * (factors[index] * (1 - fraction) + factors[index + 1] * fraction);
 }
 
@@ -173,7 +178,9 @@ export function translationSequenceSteps(effect, byPart, visible) {
   if (effect.version !== 3 || effect.targets.length === 0 || effect.stages.length === 0 ||
       !Number.isFinite(effect.options.duration) || effect.options.duration < 0)
     throw new Error('Нужен непустой translation effect v3');
-  const targets = new Map(), ends = new Map(), finalValues = new Map();
+  const targets = new Map();
+  const ends = new Map();
+  const finalValues = new Map();
   for (const target of effect.targets) {
     const key = `${target.partId}:${target.property}`;
     if (!['x', 'y'].includes(target.property) || target.unit !== 'viewBox' || !byPart.has(target.partId) ||
@@ -201,7 +208,8 @@ export function translationSequenceSteps(effect, byPart, visible) {
 }
 
 function mountNotificationConsumer(api, icon, variant, label, parent) {
-  const model = api.glyph({ variant }), capabilities = api.glyphCapabilities(variant);
+  const model = api.glyph({ variant });
+  const capabilities = api.glyphCapabilities(variant);
   const figure = document.createElement('figure');
   const button = document.createElement('lab-button');
   const id = `${icon}/${variant}`;
@@ -218,8 +226,14 @@ function mountNotificationConsumer(api, icon, variant, label, parent) {
   const fixedNodes = new Map([...byPart].filter(([partId]) => !movable.has(partId)));
   const caption = document.createElement('figcaption'); caption.textContent = variant === 'outline' ? 'Outline' : 'Filled';
   figure.append(button, caption); parent.append(figure);
-  let control, completion, effect, generation = 0, knownPhase = 0, nativeClicks = 0;
-  const events = [], samples = [];
+  let control;
+  let completion;
+  let effect;
+  let generation = 0;
+  let knownPhase = 0;
+  let nativeClicks = 0;
+  const events = [];
+  const samples = [];
   const matrix = node => {
     const transform = getComputedStyle(node).transform;
     const value = transform === 'none' ? new DOMMatrix() : new DOMMatrix(transform);
@@ -238,7 +252,9 @@ function mountNotificationConsumer(api, icon, variant, label, parent) {
     const result = compileSymbolEffect(model, capabilities, `${icon}.ring`, { from, to, duration,
       reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches });
     if (!result.ok) throw new Error(result.reason.code);
-    const nextEffect = result.effect, before = pose(), visible = new Map();
+    const nextEffect = result.effect;
+    const before = pose();
+    const visible = new Map();
     for (const target of nextEffect.targets) {
       const node = byPart.get(target.partId);
       if (!node) throw new Error('Потеряна часть уведомления');
@@ -262,7 +278,8 @@ function mountNotificationConsumer(api, icon, variant, label, parent) {
       native: event.composedPath().includes(button.shadowRoot.querySelector('button')), ...transition });
   });
   function read() {
-    const native = button.shadowRoot?.querySelector('button'), rectangle = native?.getBoundingClientRect();
+    const native = button.shadowRoot?.querySelector('button');
+    const rectangle = native?.getBoundingClientRect();
     return { icon: model.icon, variant: model.variant, provenance: model.provenance, capabilities,
       composition: model.composition.kind,
       parts: model.parts.map(({ id, role, zIndex, fillRule, d }) => ({ id, role, zIndex, fillRule, d })),

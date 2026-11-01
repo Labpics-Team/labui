@@ -16,7 +16,8 @@ import {
 const snapshot = JSON.parse(await readFile(new URL('./fixtures/icons-notification-masters.json', import.meta.url)));
 const pin = { sourceCommit: snapshot.sourceCommit, figma: snapshot.annotations.source };
 async function fixture(t, change = () => {}) {
-  const parent = await realpath(tmpdir()), root = await mkdtemp(join(parent, 'labui-notification-'));
+  const parent = await realpath(tmpdir());
+  const root = await mkdtemp(join(parent, 'labui-notification-'));
   t.after(async () => {
     const target = await realpath(root);
     assert.equal(dirname(target), parent);
@@ -76,7 +77,8 @@ test('equal visible coordinates retain distinct reverse phase routes', () => {
 });
 
 test('generic translation stages read the explicit visible start once and retain subsequent targets', () => {
-  const element = {}, target = { partId: 'clapper', property: 'x', unit: 'viewBox', from: 0, to: 0 };
+  const element = {};
+  const target = { partId: 'clapper', property: 'x', unit: 'viewBox', from: 0, to: 0 };
   const effect = { version: 3, targets: [target], unchangedPartIds: ['bell'], options: { duration: 600, easing: 'linear' },
     stages: [1, -1, 0].map((to, index) => ({ ...target, to, at: index * 200, duration: 200 })) };
   const steps = translationSequenceSteps(effect, new Map([['clapper', element]]), new Map([['clapper:x', 0.37]]));
@@ -130,12 +132,13 @@ test('schema4 fixture mounts notifications through shared public translation exe
 });
 
 test('emitted schema4 consumer is valid module syntax without installing or running it', async t => {
-  const root = await fixture(t), file = join(root, 'consumer.mjs');
+  const root = await fixture(t);
+  const file = join(root, 'consumer.mjs');
   await writeFile(file, consumerFixture(4));
   execFileSync(process.execPath, ['--check', file], { encoding: 'utf8', timeout: 5000 });
 });
 
-export function notificationRefuseWitness(renderGlyph = model => model.svg, emitted = notificationFixture()) {
+function notificationRefuseWitness(renderGlyph = model => model.svg, emitted = notificationFixture()) {
   const start = emitted.indexOf('function mountNotificationConsumer(');
   const end = emitted.indexOf('\nconst notificationSection');
   assert.ok(start >= 0 && end > start);
@@ -148,7 +151,8 @@ export function notificationRefuseWitness(renderGlyph = model => model.svg, emit
     return node;
   };
   const document = { createElement: element, createTextNode: text => ({ text }) };
-  const ids = new Set(), offIds = [];
+  const ids = new Set();
+  const offIds = [];
   const render = (model, options) => {
     const svg = renderGlyph(model, options);
     assert.match(options?.instanceId ?? '', /^[A-Za-z][A-Za-z0-9_-]{0,63}$/, 'public renderer requires instanceId');

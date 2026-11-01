@@ -1171,7 +1171,8 @@ async function notificationBrowserProof(page, reference, reducedMotion, records)
   for (const [icon, label] of [['notifications', 'Входящее уведомление'],
     ['notifications-unread', 'Новое непрочитанное уведомление']]) {
     for (const variant of ['outline', 'filled']) {
-      const id = `${icon}/${variant}`, expected = reference.icons[icon][variant];
+      const id = `${icon}/${variant}`;
+      const expected = reference.icons[icon][variant];
       const evaluate = (operation, ...args) => page.evaluate(({ id, operation, args }) =>
         window.__iconsPacked.notificationConsumers[id][operation](...args), { id, operation, args });
       const read = () => evaluate('read');
