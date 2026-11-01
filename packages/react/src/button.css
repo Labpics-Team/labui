@@ -26,7 +26,7 @@
   --_lab-btn-pad-y: var(--lab-space-button-inset, 0.75rem);
   --_lab-btn-content: var(--lab-size-button-content, 1.5rem);
   --_lab-btn-min: var(--lab-size-button-h-m, 3rem);
-  --_lab-btn-glow-x: 0rem;
+  --_lab-btn-glow-x: var(--lab-space-none, 0rem);
 
   box-sizing: border-box;
   position: relative;

@@ -84,6 +84,112 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
   });
 
+  it('классифицирует все объявленные opacity-токены, включая шкалу и алиасы', () => {
+    const tokens = readFileSync(
+      resolve(repoRoot, 'packages/tokens/src/generated/tokens.css'),
+      'utf8',
+    );
+    const names = [...tokens.matchAll(/^\s*(--lab-opacity-[a-z0-9-]+)\s*:/gm)].map(
+      (match) => match[1] as string,
+    );
+    expect(names).toContain('--lab-opacity-50');
+    expect(names).toContain('--lab-opacity-disabled');
+    expect(names).toContain('--lab-opacity-button-sheen');
+    for (const name of names) {
+      expect(classify(name), name).toBe('dimension');
+    }
+  });
+
+  it.each(['--lab-opacity-missing', '--lab-opacity-101', '--lab-opacity-button-sheen-ghost'])(
+    'не пропускает необъявленный opacity-токен %s по одному префиксу',
+    (name) => {
+      expect(classify(name)).toBe('unclassified');
+    },
+  );
+
+  it.each(['--lab-opacity-50', '--lab-opacity-button-sheen'])(
+    'сохраняет полное CSS-имя с неизвестным суффиксом после %s',
+    (base) => {
+      for (const suffix of ['-', '_ghost', 'éghost', String.raw`\_ghost`, String.raw`\67 host`]) {
+        const name = `${base}${suffix}`;
+        const source = `.x { opacity: var(${name}, 0.5); }`;
+        expect(
+          consumedNamesInSource('p.css', source).map(({ name }) => ({
+            name,
+            bucket: classify(name),
+          })),
+          source,
+        ).toEqual([{ name, bucket: 'unclassified' }]);
+      }
+    },
+  );
+
+  it.each(['litVar', 'cssVar'])(
+    'сохраняет полное имя первого строкового аргумента %s',
+    (helper) => {
+      for (const base of ['--lab-opacity-50', '--lab-opacity-button-sheen']) {
+        for (const suffix of [
+          '-',
+          '_ghost',
+          'éghost',
+          String.raw`\u005fghost`,
+          String.raw`\\_ghost`,
+        ]) {
+          const name = `${base}${suffix}`;
+          for (const quote of ["'", '"', '`']) {
+            const source = `const value = ${helper}(${quote}${name}${quote}, '0.5');`;
+            expect(
+              consumedNamesInSource('p.ts', source).map(({ name }) => ({
+                name,
+                bucket: classify(name),
+              })),
+              source,
+            ).toEqual([{ name, bucket: 'unclassified' }]);
+          }
+        }
+      }
+    },
+  );
+
+  it('извлекает объявленные имена с пробелами и fallback во всех формах', () => {
+    const cssSource =
+      '.x { opacity: var(\n --lab-opacity-50 \t, var(--lab-opacity-button-sheen, 0.5)); }';
+    expect(
+      consumedNamesInSource('p.css', cssSource).map(({ name }) => ({
+        name,
+        bucket: classify(name),
+      })),
+    ).toEqual([
+      { name: '--lab-opacity-50', bucket: 'dimension' },
+      { name: '--lab-opacity-button-sheen', bucket: 'dimension' },
+    ]);
+    for (const helper of ['litVar', 'cssVar']) {
+      for (const quote of ["'", '"', '`']) {
+        const source = `const value = ${helper}(\n ${quote}--lab-opacity-50${quote} , '0.5');`;
+        expect(
+          consumedNamesInSource('p.ts', source).map(({ name }) => ({
+            name,
+            bucket: classify(name),
+          })),
+          source,
+        ).toEqual([{ name: '--lab-opacity-50', bucket: 'dimension' }]);
+      }
+    }
+  });
+
+  it('не принимает динамический фрагмент template за полное статическое имя', () => {
+    const source = [
+      "flood.style.setProperty('flood-color', `var(--lab-bg-material-${tier}-01)`);",
+      "const opacity = cssVar('--lab-opacity-50');",
+    ].join('\n');
+    expect(consumedNamesInSource('p.ts', source)).toEqual([{ name: '--lab-opacity-50', line: 2 }]);
+    expect(
+      consumedNamesInSource('p.css', '.x { color: var(--lab-bg-material-${tier}-01); }').map(
+        ({ name }) => ({ name, bucket: classify(name) }),
+      ),
+    ).toEqual([{ name: '--lab-bg-material-${tier}-01', bucket: 'unclassified' }]);
+  });
+
   // ── (0) Provenance guard — test files and `_`-prefixed scratch files must NEVER
   // appear in the consumer surface. A raw-text scan cannot distinguish a probe token
   // inside a JS string literal from a real `var(--lab-x)` usage; including test files

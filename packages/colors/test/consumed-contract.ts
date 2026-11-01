@@ -27,7 +27,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stripComments } from './no-magic-dimension.js';
+import { canonicalTokens, stripComments } from './no-magic-dimension.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** Repo root — from `test/` inside `packages/colors`, three levels up. */
@@ -52,6 +52,8 @@ export const DIMENSION_PREFIXES: readonly string[] = readCssTsPrefixConst('DIMEN
 /** css.ts `SEMANTIC_ROLE_PREFIXES` — the "looks like a colour role" boundary. */
 export const SEMANTIC_ROLE_PREFIXES: readonly string[] =
   readCssTsPrefixConst('SEMANTIC_ROLE_PREFIXES');
+
+const declaredTokens = canonicalTokens();
 
 /**
  * Locally-provided / engine-gap token prefixes (bucket 3). Provisional values
@@ -154,24 +156,23 @@ export function consumerFiles(): string[] {
 }
 
 /**
- * Match a consumed `--lab-*` name in the three authored forms:
- *   CSS: `var(--lab-<name>...)`
- *   TS : `litVar('--lab-<name>'...)` / `cssVar('--lab-<name>'...)`
- * The trailing char class stops at the first non-name character, so a fallback
- * or close-paren does not bleed into the captured name. A trailing hyphen would
- * be a prefix fragment (e.g. `--lab-fill-`); we drop those (only css.ts holds
- * them and css.ts is excluded, but guard anyway).
+ * Полное имя в CSS var и первом строковом аргументе litVar/cssVar.
+ * Границы — разделитель CSS или парная кавычка; неизвестный суффикс
+ * нельзя обрезать до объявленного токена. Escape-последовательности сохраняем
+ * как написаны, включая пробел после шестнадцатеричного CSS escape.
  */
-const VAR_RE = /var\(\s*(--lab-[a-z0-9-]+)/gi;
-const LITCSS_RE = /(?:lit|css)Var\(\s*['"`](--lab-[a-z0-9-]+)['"`]/gi;
+const VAR_RE =
+  /var\(\s*(?<name>--lab-(?:\\(?:[0-9a-f]{1,6}[ \t\n\r\f]?|[^\n\r\f])|[^ \t\n\r\f,)\\])+)/gi;
+const LITCSS_RE = /(?:lit|css)Var\(\s*(['"`])(?<name>--lab-(?:\\[\s\S]|(?!\1)[^\\])+)\1/gi;
 
-function* scanNames(source: string): Generator<{ name: string; line: number }> {
+function* scanNames(source: string, isTs: boolean): Generator<{ name: string; line: number }> {
   const lineAt = (index: number): number => source.slice(0, index).split('\n').length;
   for (const re of [VAR_RE, LITCSS_RE]) {
     re.lastIndex = 0;
     for (let m = re.exec(source); m !== null; m = re.exec(source)) {
-      const name = m[1] ?? '';
-      if (name.endsWith('-')) continue; // prefix fragment, not a real role
+      const name = m.groups?.name ?? '';
+      // acrylic.ts вычисляет --lab-bg-material-${tier}-01: статический скан не исполняет TS.
+      if (isTs && name.includes('${')) continue;
       yield { name, line: lineAt(m.index) };
     }
   }
@@ -190,7 +191,7 @@ export function consumedNamesInSource(
   source: string,
 ): { name: string; line: number }[] {
   const isTs = relPath.endsWith('.ts') || relPath.endsWith('.tsx');
-  return [...scanNames(stripComments(source, isTs))];
+  return [...scanNames(stripComments(source, isTs), isTs)];
 }
 
 /** First-seen location of every distinct consumed `--lab-*` name. */
@@ -222,7 +223,11 @@ export function consumedRoles(): string[] {
  */
 export function classify(name: string): Bucket {
   if (colourContractRoles().has(name)) return 'colour-contract';
-  if (DIMENSION_PREFIXES.some((p) => name.startsWith(p))) return 'dimension';
+  if (DIMENSION_PREFIXES.some((p) => name.startsWith(p))) {
+    // Семейство opacity допустимо, но опечатка не становится объявленным токеном.
+    if (name.startsWith('--lab-opacity-') && !declaredTokens.has(name)) return 'unclassified';
+    return 'dimension';
+  }
   if (LOCAL_OR_GAP_PREFIXES.some((p) => (p.endsWith('-') ? name.startsWith(p) : name === p))) {
     return 'local-or-gap';
   }

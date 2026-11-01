@@ -109,7 +109,7 @@ export class LabButton extends LabElement {
       --_pad-y: ${litVar('--lab-space-button-inset', '0.75rem')};
       --_content: ${litVar('--lab-size-button-content', '1.5rem')};
       --_min: ${litVar('--lab-size-button-h-m', '3rem')};
-      --_glow-x: 0rem;
+      --_glow-x: ${litVar('--lab-space-none', '0rem')};
 
       display: inline-flex;
       vertical-align: middle;
