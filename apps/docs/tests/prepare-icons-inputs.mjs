@@ -5,6 +5,7 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { createGitRunner } from './icons-git-diagnostics.mjs';
 import {
   assertSelfHostedRunner,
   stateReferenceContract,
@@ -24,8 +25,7 @@ const stableJSON = (value) =>
       : item,
   );
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
-const git = (root, args) =>
-  execFileSync('git', ['--no-replace-objects', ...args], { cwd: root, timeout: 20_000 });
+const git = createGitRunner(process.env.LABUI_ICONS_GIT_DIAGNOSTICS);
 
 export function validateSourcePin(pin) {
   assert.deepEqual(Object.keys(pin).sort(), [

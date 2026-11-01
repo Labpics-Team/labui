@@ -84,7 +84,12 @@ cleanup() {
   fi
   # После удаления контейнера содержимое стабильно; ссылки не переносятся на хост.
   if [ "$workload" = icons-consumer ]; then
-    if ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output; then status=1; artifacts_safe=false; fi
+    # Прерванная подготовка может оставить raw Trace2; argv и config не экспортируются.
+    if ! rm -f -- "${job}/work/output/.git-trace2.raw"; then
+      status=1; artifacts_safe=false
+    elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output; then
+      status=1; artifacts_safe=false
+    fi
   else
     if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then status=1; artifacts_safe=false; fi
     if ! copy_artifact apps/docs/playwright-report report_ready; then status=1; artifacts_safe=false; fi
@@ -130,7 +135,7 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
       pnpm --filter @labpics/ui-core... build
       pnpm --dir packages/core pack --pack-destination /job/output/ui-core
       pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow
-      node apps/docs/tests/prepare-icons-inputs.mjs \
+      LABUI_ICONS_GIT_DIAGNOSTICS=/job/output node apps/docs/tests/prepare-icons-inputs.mjs \
         --icons-source /job/icons --ui-source /job/source --ui-commit "$UI_SOURCE_COMMIT" \
         --icons-tarball /job/output/icons/*.tgz \
         --ui-core-tarball /job/output/ui-core/*.tgz \
