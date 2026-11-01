@@ -253,12 +253,14 @@ export async function stateReference(iconsRoot, pin) {
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(manifest.source.fileKey, source.fileKey);
   assert.equal(manifest.source.version, source.version);
-  assert.equal(document.schemaVersion, 1);
+  assert.ok([1, 2].includes(document.schemaVersion), 'неподдержанная author-state schema');
   assert.deepEqual(document.source, source);
   const group = document.groups['status-circle'];
   assert.equal(group.law, 'enclosure.replace');
   assert.equal(group.defaultState, 'question');
   assert.equal(group.enclosurePartId, 'status-enclosure');
+  if (document.schemaVersion === 2)
+    assert.deepEqual(group.sharedParts, [{ id: 'status-enclosure', role: 'container' }]);
   assert.deepEqual(Object.keys(group.states).sort(), [
     'attention',
     'confirmation',
@@ -287,7 +289,8 @@ export async function stateReference(iconsRoot, pin) {
     const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
     assert.equal(fingerprint, member.pathFingerprintSha256);
     assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
-    assert.equal(member.enclosurePathIndex, paths.length - 1);
+    if (document.schemaVersion === 1) assert.equal(member.enclosurePathIndex, paths.length - 1);
+    else assert.ok(!Object.hasOwn(member, 'enclosurePathIndex'), 'schema2 не содержит path index');
     assert.ok(paths.length >= 2);
     assert.equal(member.contentPartIds.length, paths.length - 1);
     const partId = `state-${id}`;
@@ -324,6 +327,7 @@ export async function stateReference(iconsRoot, pin) {
     variant: 'outline',
     defaultState: group.defaultState,
     enclosurePartId: group.enclosurePartId,
+    ...(document.schemaVersion === 2 ? { sharedPartIds: [group.enclosurePartId] } : {}),
     enclosure,
     states,
     proof: {
@@ -338,7 +342,28 @@ export async function stateReference(iconsRoot, pin) {
           placement: 'after-content',
         }),
       ),
-      specSha256: hash(stableJSON({ schemaVersion: 1, source, name: 'status-circle', group })),
+      specSha256: hash(
+        stableJSON({ schemaVersion: document.schemaVersion, source, name: 'status-circle', group }),
+      ),
+      ...(document.schemaVersion === 2
+        ? {
+            sharedPartsSha256: hash(
+              stableJSON({
+                parts: [
+                  {
+                    id: group.enclosurePartId,
+                    role: 'container',
+                    ...enclosure,
+                    paint: { kind: 'fill', fill: 'currentColor' },
+                  },
+                ],
+                viewBox: [0, 0, 24, 24],
+                dimensions: [24, 24],
+                placement: 'after-content',
+              }),
+            ),
+          }
+        : {}),
     },
   };
 }

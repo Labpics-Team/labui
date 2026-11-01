@@ -16,7 +16,11 @@ import {
   validatePlatformMeasurement,
   validateSourcePin,
 } from './prepare-icons-inputs.mjs';
-import { validateStateReference, validateSubject } from './icons-packed.mjs';
+import {
+  stateCapabilitiesReference,
+  validateStateReference,
+  validateSubject,
+} from './icons-packed.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
@@ -377,17 +381,20 @@ const CONTENT = 'M9 9L15 9L12 15Z';
 const DOT = 'M11 17L13 17L13 19L11 19Z';
 const pathFingerprint = (paths) =>
   hash(JSON.stringify(paths.map((path, index) => ({ d: path.d, fillRule: path.fillRule, index }))));
-async function stateFixture(t) {
+async function stateFixture(t, schemaVersion = 1) {
   const root = await rawFixture(t);
   const manifest = structuredClone(MANIFEST);
   const document = {
-    schemaVersion: 1,
+    schemaVersion,
     source: structuredClone(PIN.figma),
     groups: {
       'status-circle': {
         law: 'enclosure.replace',
         defaultState: 'question',
         enclosurePartId: 'status-enclosure',
+        ...(schemaVersion === 2
+          ? { sharedParts: [{ id: 'status-enclosure', role: 'container' }] }
+          : {}),
         states: {},
       },
     },
@@ -423,7 +430,7 @@ async function stateFixture(t) {
       variant: 'outline',
       masterSha256: hash(bytes),
       pathFingerprintSha256: fingerprint,
-      enclosurePathIndex: paths.length - 1,
+      ...(schemaVersion === 1 ? { enclosurePathIndex: paths.length - 1 } : {}),
       contentPartIds: paths.slice(0, -1).map((_, part) => `${id}-content-${part}`),
     };
     await mkdir(dirname(join(root, file)), { recursive: true });
@@ -499,6 +506,71 @@ test('a rehashed legal shell change cannot redefine common-enclosure identity', 
   await writeJSON(root, 'semantics/figma-baseline.json', manifest);
   await writeJSON(root, 'semantics/author-state-groups.json', document);
   await assert.rejects(stateReference(root, PIN), /enclosures/);
+});
+
+test('author-state schema2 derives the same raw status geometry without a second path index', async (t) => {
+  const old = await stateFixture(t, 1);
+  const current = await stateFixture(t, 2);
+  const previous = await stateReference(old.root, PIN);
+  const actual = await stateReference(current.root, PIN);
+  assert.deepEqual(actual.states, previous.states);
+  assert.deepEqual(actual.enclosure, previous.enclosure);
+  assert.equal(actual.proof.enclosureSha256, previous.proof.enclosureSha256);
+  assert.notEqual(actual.proof.specSha256, previous.proof.specSha256);
+  assert.deepEqual(actual.sharedPartIds, ['status-enclosure']);
+  assert.deepEqual(stateCapabilitiesReference(actual), {
+    ...stateCapabilitiesReference(previous),
+    sharedPartIds: ['status-enclosure'],
+    proof: actual.proof,
+  });
+  assert.equal(validateStateReference(actual, PIN.figma), actual);
+  for (const mutate of [
+    (value) => {
+      value.sharedPartIds = [];
+    },
+    (value) => {
+      value.proof.sharedPartsSha256 = '0'.repeat(64);
+    },
+    (value) => {
+      Reflect.deleteProperty(value, 'sharedPartIds');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.proof, 'sharedPartsSha256');
+    },
+  ]) {
+    const changed = structuredClone(actual);
+    mutate(changed);
+    assert.throws(() => validateStateReference(changed, PIN.figma));
+  }
+});
+
+test('author-state schema2 refuses incompatible shared anatomy and legacy index fields', async (t) => {
+  const { root, document } = await stateFixture(t, 2);
+  for (const mutate of [
+    (value) => {
+      value.schemaVersion = 3;
+    },
+    (value) => {
+      value.groups['status-circle'].sharedParts = [];
+    },
+    (value) => {
+      value.groups['status-circle'].sharedParts[0].role = 'content';
+    },
+    (value) => {
+      value.groups['status-circle'].sharedParts[0].id = 'another-enclosure';
+    },
+    (value) => {
+      value.groups['status-circle'].sharedParts.push({ id: 'extra', role: 'content' });
+    },
+    (value) => {
+      value.groups['status-circle'].states.question.enclosurePathIndex = 2;
+    },
+  ]) {
+    const changed = structuredClone(document);
+    mutate(changed);
+    await writeJSON(root, 'semantics/author-state-groups.json', changed);
+    await assert.rejects(stateReference(root, PIN));
+  }
 });
 
 test('state coverage, ordering, source and part ID mutations refuse precisely', async (t) => {
