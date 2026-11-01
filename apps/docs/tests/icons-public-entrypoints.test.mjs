@@ -5,7 +5,11 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { assertIconsImport, assertPublicEntryModules } from './icons-packed.mjs';
+import {
+  assertConsumerModuleGraph,
+  assertIconsImport,
+  assertPublicEntryModules,
+} from './icons-packed.mjs';
 
 async function resolvedFixture(layout) {
   const parent = await realpath(tmpdir());
@@ -49,6 +53,7 @@ async function resolvedFixture(layout) {
     );
     assert.deepEqual(entries, expected);
     return {
+      root,
       entries,
       relativeEntries: Object.values(entries).map((id) => relative(root, id).replaceAll('\\', '/')),
     };
@@ -93,17 +98,62 @@ test('installed public exports qualify after a lawful package-layout relocation'
   );
 });
 
-test('tree-shaken public facades qualify through retained dependency modules', async () => {
-  const { entries } = await resolvedFixture({
+test('the complete production graph gate permits nested, module and renamed public implementations', async () => {
+  for (const reload of [
+    'dist/symbols/reload/index.js',
+    'dist/symbols/reload.mjs',
+    'semantics/reload.mjs',
+  ]) {
+    const { root, entries } = await resolvedFixture({
+      button: 'published/button.mjs',
+      reload,
+      motion: 'runtime/native.mjs',
+    });
+    const graph = assertConsumerModuleGraph(
+      root,
+      new Set(Object.values(entries)),
+      entries,
+      new Map(),
+    );
+    assert.equal(graph.length, 3);
+    assert.ok(graph.some((id) => id.endsWith(reload)));
+  }
+});
+
+test('the complete production graph gate retains entry contribution and consumer containment refusals', async () => {
+  const { root, entries } = await resolvedFixture({
+    button: 'button.mjs',
+    reload: 'reload.mjs',
+    motion: 'motion.mjs',
+  });
+  const modules = new Set(Object.values(entries));
+  modules.delete(entries['@labpics/icons/symbols/reload']);
+  assert.throws(
+    () => assertConsumerModuleGraph(root, modules, entries, new Map()),
+    /symbols\/reload/,
+  );
+  modules.add(entries['@labpics/icons/symbols/reload']);
+  modules.add(join(dirname(root), 'producer/private.mjs'));
+  assert.throws(
+    () => assertConsumerModuleGraph(root, modules, entries, new Map()),
+    /consumer импортирует producer/,
+  );
+});
+
+test('tree-shaken public facades qualify through the complete graph gate and retained dependencies', async () => {
+  const { root, entries } = await resolvedFixture({
     button: 'button.mjs',
     reload: 'reload.mjs',
     motion: 'motion.mjs',
   });
   const imports = new Map(Object.values(entries).map((id) => [id, [`${id}:implementation`]]));
   const modules = new Set([...imports.values()].flat());
-  assertPublicEntryModules(modules, entries, imports);
+  assertConsumerModuleGraph(root, modules, entries, imports);
   modules.delete(`${entries['@labpics/icons/symbols/reload']}:implementation`);
-  assert.throws(() => assertPublicEntryModules(modules, entries, imports), /symbols\/reload/);
+  assert.throws(
+    () => assertConsumerModuleGraph(root, modules, entries, imports),
+    /symbols\/reload/,
+  );
 });
 
 test('a missing or noncontributing desired entry cannot be replaced by a wrong symbol', async () => {
@@ -127,21 +177,36 @@ test('a missing or noncontributing desired entry cannot be replaced by a wrong s
   );
 });
 
-test('wrong public symbols and whole catalogs refuse independently of private placement', () => {
+test('wrong public symbols and whole catalogs refuse at the complete graph gate independently of placement', async () => {
+  const { root, entries } = await resolvedFixture({
+    button: 'button.mjs',
+    reload: 'reload.mjs',
+    motion: 'motion.mjs',
+  });
+  const modules = new Set(Object.values(entries));
   for (const specifier of [
     '@labpics/icons/symbols/arrow',
     '@labpics/icons/ir',
     '@labpics/icons/ir/recipes',
     '@labpics/icons/ir/candidates',
     '@labpics/icons',
-  ])
+  ]) {
     assert.throws(() => assertIconsImport(specifier), /чужой symbol или whole catalog/);
+    assert.throws(
+      () => assertConsumerModuleGraph(root, modules, entries, new Map(), [specifier]),
+      /чужой symbol или whole catalog/,
+    );
+  }
   for (const specifier of [
     '@labpics/icons/symbols/reload',
     '@labpics/icons/ir/render',
     '@labpics/icons/motion',
     '@labpics/ui-core/button',
     './shared.mjs',
-  ])
+  ]) {
     assert.doesNotThrow(() => assertIconsImport(specifier));
+    assert.doesNotThrow(() =>
+      assertConsumerModuleGraph(root, modules, entries, new Map(), [specifier]),
+    );
+  }
 });

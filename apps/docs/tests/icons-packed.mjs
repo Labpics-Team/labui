@@ -51,6 +51,26 @@ export function assertPublicEntryModules(modules, entries, imports) {
     );
   }
 }
+
+export function assertConsumerModuleGraph(
+  consumer,
+  modules,
+  publicEntries,
+  imports,
+  publicImports = [],
+) {
+  for (const source of publicImports) assertIconsImport(source);
+  const moduleGraph = [...modules]
+    .filter((id) => !id.startsWith('\0'))
+    .map((id) => {
+      const path = id.split('?')[0];
+      assert.ok(!outside(relative(consumer, path)), `consumer импортирует producer: ${path}`);
+      return relative(consumer, path).replaceAll('\\', '/');
+    })
+    .sort();
+  assertPublicEntryModules(modules, publicEntries, imports);
+  return moduleGraph;
+}
 const stableJSON = (value) =>
   JSON.stringify(value, (_, item) =>
     item && typeof item === 'object' && !Array.isArray(item)
@@ -718,6 +738,7 @@ export async function main(args = process.argv.slice(2)) {
     const bundles = [];
     const publicEntries = {};
     const imports = new Map();
+    const publicImports = new Set();
     await build({
       configFile: false,
       root: consumer,
@@ -727,6 +748,7 @@ export async function main(args = process.argv.slice(2)) {
           name: 'icons-packed-identity',
           enforce: 'pre',
           resolveId(source) {
+            publicImports.add(source);
             assertIconsImport(source);
             return null;
           },
@@ -759,26 +781,12 @@ export async function main(args = process.argv.slice(2)) {
       ],
       build: { outDir: join(out, 'bundle'), emptyOutDir: false },
     });
-    const moduleGraph = [...modules]
-      .filter((id) => !id.startsWith('\0'))
-      .map((id) => {
-        const path = id.split('?')[0];
-        assert.ok(!outside(relative(consumer, path)), `consumer импортирует producer: ${path}`);
-        return relative(consumer, path).replaceAll('\\', '/');
-      })
-      .sort();
-    assertPublicEntryModules(modules, publicEntries, imports);
-    assert.ok(
-      !moduleGraph.some((id) =>
-        /@labpics\/icons\/(?:dist\/ir\/(?:index|compiler)\.js|.*(?:catalog|semantics|authoring))/.test(
-          id,
-        ),
-      ),
-      'reload импортирует весь IR/authoring catalog',
-    );
-    assert.ok(
-      !moduleGraph.some((id) => /@labpics\/icons\/dist\/symbols\/(?!reload\.js$)/.test(id)),
-      'загружен чужой symbol',
+    const moduleGraph = assertConsumerModuleGraph(
+      consumer,
+      modules,
+      publicEntries,
+      imports,
+      publicImports,
     );
     receipt.consumer = {
       fixtureSha256: hash(FIXTURE),
