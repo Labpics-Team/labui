@@ -3,11 +3,21 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { validateSubject } from './icons-packed.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const stableJSON = (value) =>
+  JSON.stringify(value, (_, item) =>
+    item && typeof item === 'object' && !Array.isArray(item)
+      ? Object.fromEntries(
+          Object.keys(item)
+            .sort()
+            .map((key) => [key, item[key]]),
+        )
+      : item,
+  );
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const git = (root, args) =>
   execFileSync('git', ['--no-replace-objects', ...args], { cwd: root, timeout: 20_000 });
@@ -40,55 +50,168 @@ async function sourceFile(root, commit, file) {
   return { file, sha256: hash(bytes), bytes: bytes.length };
 }
 
-// Проверяется raw master и owner-аннотация. Packed glyph/effect не читаются.
+function attributes(source, allowed) {
+  const result = {};
+  const pattern = /\s+([A-Za-z][A-Za-z0-9:_-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/gy;
+  let consumed = 0;
+  while (consumed < source.length) {
+    if (source.slice(consumed).trim() === '') break;
+    pattern.lastIndex = consumed;
+    const match = pattern.exec(source);
+    assert.ok(match, 'Oracle: неполный XML-атрибут');
+    const [, name, double, single] = match;
+    const value = double ?? single;
+    assert.ok(allowed.includes(name) && !Object.hasOwn(result, name), `Oracle: атрибут ${name}`);
+    assert.ok(!/[<&]/.test(value), 'Oracle: entities и вложенный XML не поддержаны');
+    result[name] = value;
+    consumed = pattern.lastIndex;
+  }
+  return result;
+}
+
+// Узкий независимый язык этого witness: нейтральные группы и целый cycle path.
+// Неизвестный paint/transform/clip отвергается, а авторский d не переписывается.
+export function readCycleMaster(bytes) {
+  const xml = bytes.toString('utf8');
+  assert.deepEqual(Buffer.from(xml), bytes, 'Oracle: нужен UTF-8 master');
+  const stack = [];
+  const paths = [];
+  let root;
+  let consumed = 0;
+  let closed = false;
+  for (const match of xml.matchAll(/<([^>]*)>/g)) {
+    assert.equal(xml.slice(consumed, match.index).trim(), '', 'Oracle: текст вне XML-тегов');
+    consumed = match.index + match[0].length;
+    const token = match[1];
+    if (token.startsWith('/')) {
+      assert.equal(stack.pop(), token.slice(1).trim(), 'Oracle: несбалансированные группы');
+      if (stack.length === 0) closed = true;
+      continue;
+    }
+    assert.ok(!closed, 'Oracle: несколько корней');
+    const tag = /^([A-Za-z][A-Za-z0-9]*)\b([\s\S]*?)(\/?)$/.exec(token);
+    assert.ok(tag, 'Oracle: неподдержанный XML');
+    const [, name, rest, selfClosing] = tag;
+    if (name === 'svg') {
+      assert.ok(!root && stack.length === 0 && !selfClosing);
+      root = attributes(rest, ['width', 'height', 'viewBox', 'fill', 'xmlns']);
+      assert.equal(root.fill, 'none');
+      assert.equal(root.xmlns, 'http://www.w3.org/2000/svg');
+    } else if (name === 'g') {
+      assert.ok(root && stack.length > 0 && !selfClosing);
+      attributes(rest, ['id', 'data-node-id']);
+    } else if (name === 'path') {
+      assert.ok(root && stack.length > 0 && selfClosing);
+      const path = attributes(rest, ['d', 'fill', 'fill-rule', 'clip-rule', 'id', 'data-node-id']);
+      assert.equal(path.fill, '#101012');
+      const fillRule = path['fill-rule'] ?? 'nonzero';
+      assert.ok(['nonzero', 'evenodd'].includes(fillRule));
+      assert.ok(!path['clip-rule'] || ['nonzero', 'evenodd'].includes(path['clip-rule']));
+      assert.ok(
+        /^M/.test(path.d) && /[Zz]\s*$/.test(path.d) && (path.d.match(/[Mm]/g) ?? []).length === 1,
+        'Oracle: cycle требует один целый замкнутый контур',
+      );
+      paths.push({ d: path.d, fillRule });
+    } else assert.fail(`Oracle: элемент ${name} не поддержан`);
+    if (!selfClosing) stack.push(name);
+  }
+  assert.equal(xml.slice(consumed).trim(), '');
+  assert.ok(root && closed && stack.length === 0 && paths.length === 1);
+  const viewBox = root.viewBox.trim().split(/\s+/).map(Number);
+  assert.ok(
+    viewBox.length === 4 && viewBox.every(Number.isFinite) && viewBox[2] > 0 && viewBox[3] > 0,
+  );
+  return { viewBox, paths };
+}
+
+// Expected binding берётся из raw аннотации, поведение — из cycle.clockwise.
+// Producer constructor, его helpers, glyph и effect не могут изменить oracle.
 export async function authorReference(iconsRoot, pin) {
   const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
   assert.equal(manifest.source.fileKey, pin.figma.fileKey);
   assert.equal(manifest.source.version, pin.figma.version);
   const annotations = JSON.parse(await readFile(join(iconsRoot, 'semantics/author-anatomy.json')));
-  const { loadAuthorBaseline } = await import(
-    pathToFileURL(join(iconsRoot, 'scripts/lib/author-baseline.js'))
-  );
-  const { compileAuthorAnatomy } = await import(
-    pathToFileURL(join(iconsRoot, 'scripts/lib/author-anatomy.js'))
-  );
-  const { authorPathEntries } = await import(
-    pathToFileURL(join(iconsRoot, 'src/core/icon-geometry.js'))
-  );
-  const baseline = loadAuthorBaseline(iconsRoot, {
-    manifest: {
-      ...manifest,
-      counts: { families: 1, variants: 2 },
-      icons: { reload: manifest.icons.reload },
-    },
-  });
-  const anatomy = compileAuthorAnatomy(baseline, {
-    ...annotations,
-    icons: { reload: annotations.icons.reload },
-  });
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(annotations.schemaVersion, 1);
+  assert.deepEqual(annotations.source, { fileKey: pin.figma.fileKey, version: pin.figma.version });
   const variants = {};
   for (const variant of ['outline', 'filled']) {
-    const record = baseline.icons.reload[variant];
-    const contract = anatomy[`reload/${variant}`];
-    const paths = authorPathEntries(record.normalizedSvg);
+    const record = manifest.icons.reload[variant];
+    const declaration = annotations.icons.reload[variant];
+    const expectedPath = `masters/figma/${pin.figma.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/reload.svg`;
+    assert.equal(record.master, expectedPath);
+    const bytes = await readFile(join(iconsRoot, expectedPath));
+    assert.equal(bytes.length, record.bytes);
+    assert.equal(hash(bytes), record.sha256);
+    const { viewBox, paths } = readCycleMaster(bytes);
+    const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
+    assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
+    assert.equal(declaration.masterSha256, record.sha256);
+    assert.equal(declaration.pathFingerprintSha256, fingerprint);
+    assert.deepEqual(declaration.gesture, {
+      law: 'cycle.clockwise',
+      partId: declaration.parts[0].id,
+    });
+    assert.equal(declaration.parts.length, 1);
+    const part = declaration.parts[0];
+    assert.equal(part.pathIndex, 0);
+    assert.equal(part.role, 'control');
+    assert.match(part.id, /^[a-z][a-z0-9-]*$/);
+    assert.equal(part.anchorMeaning, 'canvas-center');
+    assert.deepEqual(part.anchor, [0.5, 0.5]);
+    const gesture = {
+      id: 'reload.cycle',
+      kind: 'cycle',
+      meaning:
+        'Один оборот команды обновления по часовой стрелке; промежуточную позу можно развернуть или продолжить.',
+      partIds: [part.id],
+      progress: 'normalized-0-to-1',
+      tracks: [
+        {
+          partId: part.id,
+          kind: 'rotate',
+          anchor: [...part.anchor],
+          from: 0,
+          to: 360,
+          unit: 'degrees',
+          interpolation: 'linear',
+        },
+      ],
+    };
+    const annotationSha256 = hash(
+      stableJSON({
+        schemaVersion: 1,
+        source: annotations.source,
+        icon: 'reload',
+        variant,
+        declaration,
+        gestures: [gesture],
+      }),
+    );
     variants[variant] = {
       sourceFile: record.master,
-      author: record.author,
-      anatomy: contract.anatomy,
-      viewBox: record.normalizedSvg
-        .match(/\bviewBox="([^"]+)"/)[1]
-        .trim()
-        .split(/\s+/)
-        .map(Number),
-      paths: paths.map(({ d, fillRule }) => ({ d, fillRule })),
-      parts: contract.parts.map((part, index) => ({
-        id: part.id,
-        role: part.role,
-        zIndex: part.zIndex,
-        d: paths[index].d,
-        fillRule: paths[index].fillRule,
-      })),
-      gesture: contract.gestures.find((gesture) => gesture.id === 'reload.cycle'),
+      author: {
+        kind: 'figma',
+        fileKey: pin.figma.fileKey,
+        version: pin.figma.version,
+        nodeId: record.nodeId,
+        nodeSha256: record.nodeSha256,
+        masterSha256: hash(bytes),
+        normalizedSha256: record.normalizedSource.sha256,
+        pathFingerprintSha256: fingerprint,
+      },
+      anatomy: {
+        version: 1,
+        annotationSha256,
+        masterSha256: hash(bytes),
+        pathFingerprintSha256: fingerprint,
+      },
+      viewBox,
+      paths,
+      parts: [
+        { id: part.id, role: part.role, zIndex: 0, d: paths[0].d, fillRule: paths[0].fillRule },
+      ],
+      gesture,
     };
   }
   return {
