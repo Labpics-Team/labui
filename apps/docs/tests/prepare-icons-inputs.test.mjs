@@ -1391,6 +1391,11 @@ test('delivery summary refuses reported policy failures and numeric overruns whi
       { encoding: 'utf8', timeout: 5000 },
     );
     assert.equal(result.status, 1, 'policy отказ не может быть delivery PASS');
+    assert.equal(
+      result.stderr,
+      '',
+      'Ожидаемый policy отказ не должен разрывать stdout packets вторым потоком',
+    );
     const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
     assert.equal(summary.outcome, 'failed');
     assert.equal(summary.browserOutcome, 'passed');

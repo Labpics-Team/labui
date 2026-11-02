@@ -924,7 +924,16 @@ async function main() {
     process.stdout.write(`${validateSourcePin(JSON.parse(await readFile(PIN))).sourceCommit}\n`);
     return;
   }
-  if (args.length === 2 && args[0] === '--summarize') return summarize(args[1]);
+  if (args.length === 2 && args[0] === '--summarize') {
+    try {
+      return await summarize(args[1]);
+    } catch (error) {
+      if (error?.code !== 'PLATFORM_POLICY_REFUSED') throw error;
+      // Отказ уже записан в RESULT; второй поток не разрывает evidence packets.
+      process.exitCode = 1;
+      return;
+    }
+  }
   const required = [
     '--icons-source',
     '--ui-source',
