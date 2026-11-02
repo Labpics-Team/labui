@@ -813,6 +813,13 @@ function statePath(node) {
     fillRule: node.getAttribute('fill-rule') ?? 'nonzero', fill: node.getAttribute('fill'),
     partId: node.dataset.part, role: node.dataset.role };
 }
+function stateTree() {
+  const nodes = [...stateSvg.querySelectorAll('*')];
+  const indices = new Map(nodes.map((node, index) => [node, index]));
+  return nodes.map(node => ({ tag: node.localName, parent: node.parentElement === stateSvg ? -1 : indices.get(node.parentElement),
+    partId: node.dataset.part ?? null, role: node.dataset.role ?? null, state: node.dataset.state ?? null,
+    path: node.localName === 'path' ? statePath(node) : null }));
+}
 function sharedAncestorsUnchanged(node) {
   for (let parent = node.parentElement; parent; parent = parent.parentElement) {
     const style = getComputedStyle(parent);
@@ -848,6 +855,7 @@ function readState() {
   const native = stateButton.shadowRoot?.querySelector('button');
   const rectangle = native?.getBoundingClientRect();
   return { capabilities: stateCapabilitiesValue, opacity: stateOpacity(),
+    tree: stateTree(),
     viewBox: stateSvg.getAttribute('viewBox').split(/\\s+/).map(Number),
     dimensions: ['width', 'height'].map(name => Number(stateSvg.getAttribute(name))),
     groups: [...stateSvg.querySelectorAll('g[data-state][data-part]')].map(node => ({ id: node.dataset.state,
@@ -1692,6 +1700,16 @@ export function assertStateAnatomy(observation, reference) {
   assert.deepEqual(observation.viewBox, [0, 0, 24, 24]);
   assert.deepEqual(observation.dimensions, [24, 24]);
   assert.equal(observation.identity, true);
+  if (reference.proof.law === 'source.replace') {
+    const tree = [];
+    for (const state of reference.states) {
+      const parent = tree.length;
+      tree.push({ tag: 'g', parent: -1, partId: state.partId, role: 'state', state: state.id, path: null });
+      for (const path of staticStatePathsReference(reference, state))
+        tree.push({ tag: 'path', parent, partId: path.partId, role: path.role, state: null, path });
+    }
+    assert.deepEqual(observation.tree, tree, 'source state SVG содержит необъявленную геометрию или структуру');
+  }
   assert.deepEqual(
     observation.groups,
     reference.states.map((state) => ({

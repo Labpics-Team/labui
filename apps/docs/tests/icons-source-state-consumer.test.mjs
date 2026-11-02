@@ -24,6 +24,25 @@ async function fixture(t) {
   return { root, references };
 }
 
+// Исполняет точный сборщик из browser fixture на DOM-узлах; expected берётся из raw masters.
+function collectedStateTree(reference, injected = null) {
+  const source = consumerFixture(10);
+  const start = source.indexOf('function stateTree()');
+  const end = source.indexOf('\nfunction sharedAncestorsUnchanged(', start);
+  assert.ok(start >= 0 && end > start);
+  const svg = {};
+  const nodes = [];
+  for (const state of reference.states) {
+    const group = { localName: 'g', parentElement: svg, dataset: { part: state.partId, role: 'state', state: state.id } };
+    nodes.push(group);
+    for (const path of staticStatePathsReference(reference, state))
+      nodes.push({ localName: 'path', parentElement: group, dataset: { part: path.partId, role: path.role }, path });
+  }
+  if (injected) nodes.push({ localName: injected.tag, parentElement: svg, dataset: { part: 'invented-overlay', role: 'content' }, path: injected.path ?? null });
+  svg.querySelectorAll = selector => { assert.equal(selector, '*'); return nodes; };
+  return new Function('stateSvg', 'statePath', `${source.slice(start, end)}\nreturn stateTree();`)(svg, node => node.path);
+}
+
 test('eight raw endpoint masters retain all ordered paths without an invented enclosure', async (t) => {
   const { references } = await fixture(t);
   for (const [group, reference] of Object.entries(references)) {
@@ -38,6 +57,7 @@ test('eight raw endpoint masters retain all ordered paths without an invented en
       viewBox: [0, 0, 24, 24], dimensions: [24, 24], identity: true,
       groups: reference.states.map(state => ({ id: state.id, partId: state.partId, role: 'state', paths: staticStatePathsReference(reference, state) })),
       enclosure: null, enclosureCount: 0, enclosureOpacity: null, sharedParts: [],
+      tree: collectedStateTree(reference),
     };
     assertStateAnatomy(observation, reference);
     const missing = structuredClone(observation);
@@ -47,6 +67,13 @@ test('eight raw endpoint masters retain all ordered paths without an invented en
     fake.enclosure = fake.groups[0].paths.at(-1);
     fake.enclosureCount = 1;
     assert.throws(() => assertStateAnatomy(fake, reference));
+    for (const injected of [
+      { tag: 'path', path: { d: 'M0 0H24V24H0Z', fillRule: 'nonzero', fill: 'currentColor', partId: 'invented-overlay', role: 'content' } },
+      { tag: 'rect' }, { tag: 'circle' }, { tag: 'use' }, { tag: 'text' },
+    ]) {
+      const extra = { ...observation, tree: collectedStateTree(reference, injected) };
+      assert.throws(() => assertStateAnatomy(extra, reference), /необъявленную геометрию/);
+    }
   }
   assert.equal(references['visibility-filled'].states.find(state => state.id === 'visible').paths.length, 1);
   assert.equal(references.microphone.states.find(state => state.id === 'muted').paths.length, 5);
