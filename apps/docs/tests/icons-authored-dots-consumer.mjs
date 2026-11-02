@@ -773,19 +773,43 @@ horizontal({ variation: { center: [12, 12] } });
 `;
 }
 
+const nativeDownloadRequests = new WeakMap();
+
 export async function downloadedSvg(page, button) {
-  const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
-  const stream = await download.createReadStream();
-  assert.ok(stream, 'SVG download не предоставил файл');
-  const chunks = [];
-  let bytes = 0;
-  for await (const chunk of stream) {
-    bytes += chunk.length;
-    assert.ok(bytes <= 64 * 1024, 'SVG download вышел за пределы одного символа');
-    chunks.push(chunk);
+  let state = nativeDownloadRequests.get(page);
+  if (!state) {
+    state = { count: 0, startedAt: 0, pending: Promise.resolve() };
+    nativeDownloadRequests.set(page, state);
   }
-  assert.equal(await download.failure(), null);
-  return Buffer.concat(chunks).toString('utf8');
+  const result = state.pending.then(async () => {
+    const now = performance.now();
+    if (state.count === 0) state.startedAt = now;
+    else if (state.count === 10) {
+      // Chromium140 пропускает 10 запросов; reset требует строго больше секунды.
+      // https://github.com/chromium/chromium/blob/140.0.7339.186/third_party/blink/renderer/core/frame/local_frame.cc#L3864-L3879
+      const delay = Math.ceil(1000 - (now - state.startedAt) + 1);
+      if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay));
+      state.count = 0;
+      state.startedAt = performance.now();
+    }
+    state.count++;
+    const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
+    // Native download event следует за первым запросом; click может ждать actionability.
+    if (state.count === 1) state.startedAt = performance.now();
+    const stream = await download.createReadStream();
+    assert.ok(stream, 'SVG download не предоставил файл');
+    const chunks = [];
+    let bytes = 0;
+    for await (const chunk of stream) {
+      bytes += chunk.length;
+      assert.ok(bytes <= 64 * 1024, 'SVG download вышел за пределы одного символа');
+      chunks.push(chunk);
+    }
+    assert.equal(await download.failure(), null);
+    return Buffer.concat(chunks).toString('utf8');
+  });
+  state.pending = result.catch(() => {});
+  return result;
 }
 
 export async function authoredDotsBrowserProof(page, reference, reducedMotion, records) {

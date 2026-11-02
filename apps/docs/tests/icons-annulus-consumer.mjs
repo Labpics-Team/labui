@@ -334,10 +334,6 @@ export function annulusRenderKey(model) {
   ]);
 }
 
-export function annulusDownloadHref(svg) {
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-}
-
 export function visibleAnnulusSvg(svg, partIds) {
   if (partIds.length === 0) return svg.outerHTML;
   const clone = svg.cloneNode(true);
@@ -543,19 +539,21 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
   download.textContent = 'Скачать SVG';
   download.addEventListener('click', (event) => {
     let link;
+    let url;
     const receipt = {
       trusted: event.isTrusted,
       userActivation: navigator.userActivation?.isActive ?? null,
       requestedAt: performance.now(),
-      scheme: 'data',
+      scheme: 'blob',
       filename: `${icon}-${variant}.svg`,
     };
     try {
       requireActive();
       const text = visibleAnnulusSvg(bindings[1].svg, presence?.partIds ?? []);
       receipt.bytes = new TextEncoder().encode(text).length;
+      url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
       link = document.createElement('a');
-      link.href = annulusDownloadHref(text);
+      link.href = url;
       link.download = receipt.filename;
       document.body.append(link);
       link.addEventListener('click', () => {
@@ -569,6 +567,7 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       throw error;
     } finally {
       link?.remove();
+      if (url) URL.revokeObjectURL(url);
       downloadEvents.push(receipt);
     }
   });
@@ -791,7 +790,6 @@ export function annulusFixture() {
 ${ANNULUS_ICONS.map((icon, index) => `import * as annulus${index} from '@labpics/icons/variations/${icon}';\nimport * as annulusSource${index} from '@labpics/icons/symbols/${icon}';`).join('\n')}
 ${annulusPresenceGesture.toString()}
 ${annulusRenderKey.toString()}
-${annulusDownloadHref.toString()}
 ${visibleAnnulusSvg.toString()}
 ${mountAnnulusConsumer.toString()}
 const annulusSection = document.createElement('section'); annulusSection.className = 'authored-annulus';
@@ -1076,7 +1074,7 @@ export async function annulusConfirmationProof(
   const event = current.downloadEvents.at(-1);
   assert.equal(event.trusted, true);
   assert.equal(event.userActivation, true);
-  assert.equal(event.scheme, 'data');
+  assert.equal(event.scheme, 'blob');
   assert.equal(event.activated, true);
   assert.equal(event.ok, true);
   assert.equal(event.bytes, Buffer.byteLength(exported));

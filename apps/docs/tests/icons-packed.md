@@ -17,7 +17,7 @@ Schema4 добавляет `notifications` и `notifications-unread` в обои
 и DOM nodes. Общий адаптер переводит публичный translation effect v3 в `sequence`.
 Harness принимает три готовых архива и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
-Schema6 добавляет `plus-circle` и `minus-circle`: параметр толщины меняет только
+Schema6 добавляет восемь circle-семейств: параметр толщины меняет только
 внутренний просвет Outline. Авторский наружный контур и знак сохраняются; Filled
 остаётся независимым исходным мастером. Обе формы показаны в 16, 24 и 48 px.
 
@@ -43,6 +43,13 @@ node apps/docs/tests/icons-packed.mjs \
 По умолчанию используется Chromium Playwright. Тяжёлый запуск не добавлен в CI
 Icons: доступ к приватному Lab UI и проверка его пакетов принадлежат Lab UI.
 
+Общий `downloadedSvg` регистрирует ожидание native download до клика и читает
+реальный файл. Запросы одной страницы выполняются последовательно. После десяти
+запросов помощник выдерживает интервал больше секунды от первого подтверждённого
+download: [Chromium140 ограничивает короткие серии](https://github.com/chromium/chromium/blob/140.0.7339.186/third_party/blink/renderer/core/frame/local_frame.cc#L3864-L3879).
+Этот темп относится к Node-оркестрации экспорта; длительности жестов и reduced motion
+задаёт production compiler. Проверки байтов, ошибок загрузки и всех начертаний сохраняются.
+
 Штатный workflow Lab UI `icons-consumer.yml` получает точный head Lab UI и
 публичный Icons commit из `icons-consumer-source.json`. Затем вызывает
 `browser-check.sh --icons-consumer <icons-checkout>`. Этот же helper владеет
@@ -66,7 +73,7 @@ Workflow не загружает архивы в Actions storage. Локальн
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
 четыре мастера многоточия, их анатомию, state declarations и grid.
-`annulusReference` связывает четыре мастера plus/minus и принятые Outline
+`annulusReference` связывает шестнадцать мастеров circle-семейств и принятые Outline
 декларации обрамления. Schema5 сохраняет многоточия без annulus reference. Schema4
 сохраняет уведомления без dot reference. Schema3 сохраняет обе state группы.
 Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
@@ -88,7 +95,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
 | `notificationReference` | Figma file/version и шесть raw masters: paths, viewBox, author; у четырёх подвижных variants также declaration, parts, amplitude и unchangedPartIds |
 | `authoredDotsReference` | Figma file/version, semantic/grid hashes, четыре raw masters с declaration/parts и две группы orientation |
-| `annulusReference` | Figma file/version, semantic hash, четыре raw masters plus/minus с paths/receipts; у Outline также declaration `annulus.counter-scale` и IDs частей |
+| `annulusReference` | Figma file/version, semantic hash, шестнадцать raw masters с paths/receipts; у Outline также declaration `annulus.counter-scale` и IDs частей |
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
@@ -161,8 +168,8 @@ variation пока не допускается в orientation transition: её �
 StyleProfile. Эти границы сохраняются в receipt, вместе с reverse/newer target,
 reduced motion, экспортом текущей видимой формы и освобождением MotionValue.
 
-В schema6 потребитель импортирует `symbols/plus-circle`, `symbols/minus-circle`
-и их отдельные `variations` entrypoints. Числовой control передаёт только
+В schema6 потребитель импортирует отдельные `symbols` и `variations` entrypoints
+для alert, checkmark, close, minus, pause, play, plus и question circle. Числовой control передаёт только
 `enclosureEmphasis`; координаты обрамления остаются в Icons. Параметр 1 и
 `source-only` сохраняют общий frozen default. Oracle выводит центр, внешний и
 внутренний радиусы из raw master и проверяет изменение только внутреннего
@@ -171,9 +178,13 @@ reduced motion, экспортом текущей видимой формы и �
 
 Недопустимый ввод сохраняет последнюю принятую форму и её SVG export, а control
 показывает ошибку с `aria-invalid`. Filled отказывает даже запросу variation с
-параметром 1 или пустым объектом. У обрамления не объявлен жест: попытка анимации
-получает `SEMANTIC_MOTION_UNAVAILABLE`. Групповые переходы сохраняют авторские
-default формы. TypeScript consumer проверяет четыре annulus entrypoints и
+параметром 1 или пустым объектом. `checkmark-circle.presence` меняет видимость
+отметки через публичный opacity effect и Lab Motion `sequence`. Реверс и новая
+цель начинают с видимой позы; изменение толщины сохраняет SVG-узлы и активный
+control. Reduced motion сразу даёт конечную позу. SVG export сохраняет текущую
+видимость отметки; cleanup останавливает незавершённый переход.
+Отдельный жест `annulus.pulse` получает точный публичный отказ владельца.
+Групповые переходы сохраняют авторские default формы. TypeScript consumer проверяет annulus entrypoints и
 четыре отрицательных случая, включая Filled variation и скрытые координаты.
 Этот срез требует отдельного self-hosted browser receipt; синтаксическая и
 oracle проверки сами по себе его не подтверждают.

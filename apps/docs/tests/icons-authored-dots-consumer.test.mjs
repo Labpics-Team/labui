@@ -183,6 +183,125 @@ test('download helper exists at module scope and consumes a real stream protocol
   assert.equal(clicked, true);
 });
 
+test('native download helper paces the eleventh request without losing UTF8 file observations', async (t) => {
+  let clock = 0;
+  const waits = [];
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.method(globalThis, 'setTimeout', (callback, milliseconds) => {
+    waits.push(milliseconds);
+    clock += milliseconds;
+    queueMicrotask(callback);
+  });
+  const requests = [];
+  let start = 0;
+  let burst = 0;
+  let complete;
+  const text = '<svg xmlns="http://www.w3.org/2000/svg"><title>Знак №1 😀 &amp; 50%</title></svg>';
+  const file = {
+    createReadStream: async () =>
+      (async function* () {
+        yield Buffer.from(text);
+      })(),
+    failure: async () => null,
+  };
+  const page = {
+    waitForEvent: (name) => {
+      assert.equal(name, 'download');
+      return new Promise((resolve, reject) => {
+        complete = { resolve, reject };
+      });
+    },
+  };
+  const button = {
+    click: async () => {
+      // Модель ровно Chromium140 LocalFrame::ShouldThrottleDownload, не native oracle.
+      if (requests.length === 0) clock += 120;
+      requests.push(clock);
+      if (burst === 0) start = clock;
+      else if (burst >= 10) {
+        if (clock - start <= 1000) {
+          complete.reject(new Error('DOWNLOAD_BURST_THROTTLED'));
+          return;
+        }
+        burst = 0;
+        start = clock;
+      }
+      burst++;
+      complete.resolve(file);
+    },
+  };
+  for (let index = 0; index < 21; index++)
+    assert.equal(await dotsConsumer.downloadedSvg(page, button), text);
+  assert.equal(requests.length, 21);
+  assert.deepEqual(requests.slice(0, 10), Array(10).fill(120));
+  assert.ok(requests[10] - requests[0] > 1000 && requests[20] - requests[10] > 1000);
+  assert.equal(waits.length, 2);
+});
+
+test('native download helper keeps pages independent and adds no wait after a naturally slow burst', async (t) => {
+  let clock = 0;
+  const waits = [];
+  t.mock.method(performance, 'now', () => clock);
+  t.mock.method(globalThis, 'setTimeout', (callback, milliseconds) => {
+    waits.push(milliseconds);
+    clock += milliseconds;
+    queueMicrotask(callback);
+  });
+  const text = '<svg/>';
+  const file = {
+    createReadStream: async () =>
+      (async function* () {
+        yield Buffer.from(text);
+      })(),
+    failure: async () => null,
+  };
+  const page = { waitForEvent: async () => file };
+  const other = { waitForEvent: async () => file };
+  const button = { click: async () => {} };
+  for (let index = 0; index < 10; index++) await dotsConsumer.downloadedSvg(page, button);
+  assert.equal(await dotsConsumer.downloadedSvg(other, button), text);
+  clock = 2000;
+  assert.equal(await dotsConsumer.downloadedSvg(page, button), text);
+  assert.deepEqual(waits, []);
+});
+
+test('native download helper serializes event ownership and retains a failed caller outcome', async () => {
+  const events = [];
+  const failure = new Error('native stream failed');
+  let complete;
+  let ordinal = 0;
+  const page = {
+    waitForEvent: (name) => {
+      assert.equal(name, 'download');
+      events.push('listen');
+      return new Promise((resolve) => {
+        complete = resolve;
+      });
+    },
+  };
+  const button = {
+    click: async () => {
+      const occurrence = ++ordinal;
+      events.push(`click:${occurrence}`);
+      complete({
+        createReadStream: async () => {
+          events.push(`stream:${occurrence}`);
+          if (occurrence === 1) throw failure;
+          return (async function* () {
+            yield Buffer.from('<svg/>');
+          })();
+        },
+        failure: async () => null,
+      });
+    },
+  };
+  const first = dotsConsumer.downloadedSvg(page, button);
+  const second = dotsConsumer.downloadedSvg(page, button);
+  await assert.rejects(first, (error) => error === failure);
+  assert.equal(await second, '<svg/>');
+  assert.deepEqual(events, ['listen', 'click:1', 'stream:1', 'listen', 'click:2', 'stream:2']);
+});
+
 test('four independent masters carry exact Figma, semantic and grid receipts', async (t) => {
   const root = await fixture(t);
   const reference = await authoredDotsReference(root, pin);

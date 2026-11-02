@@ -10,7 +10,6 @@ import {
   ANNULUS_ENTRIES,
   ANNULUS_ICONS,
   annulusBrowserProof,
-  annulusDownloadHref,
   annulusDownloadedSvg,
   annulusFixture,
   annulusPresenceGesture,
@@ -34,6 +33,8 @@ const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 function mountedAnnulus({ mutateRendered } = {}) {
   let renders = 0;
   const downloads = [];
+  const urls = new Map();
+  const revoked = [];
   class Node {
     constructor(tag) {
       this.tag = tag;
@@ -164,7 +165,14 @@ function mountedAnnulus({ mutateRendered } = {}) {
     encodeURIComponent,
     TextEncoder,
     Blob,
-    URL: { createObjectURL: () => 'blob:previous', revokeObjectURL() {} },
+    URL: {
+      createObjectURL: (blob) => {
+        const url = `blob:annulus-${urls.size}`;
+        urls.set(url, blob);
+        return url;
+      },
+      revokeObjectURL: (url) => revoked.push(url),
+    },
     compileSymbolEffect(model, capability, id, request) {
       requests.push({ model, capability, id, request });
       if (id !== gesture.id) return { ok: false, reason: { code: 'GESTURE_UNSUPPORTED' } };
@@ -305,6 +313,8 @@ function mountedAnnulus({ mutateRendered } = {}) {
     context,
     body,
     downloads,
+    urls,
+    revoked,
     requests,
     controls,
     renders: () => renders,
@@ -331,7 +341,7 @@ test('accepted enclosure changes preserve mounted paths rather than replacing th
   );
 });
 
-test('annulus native download uses a lifetime-free encoded SVG URL with exact bytes', () => {
+test('annulus native download captures the visible SVG in a Blob and releases its URL', async () => {
   const mounted = mountedAnnulus();
   const figure = mounted.body
     .querySelectorAll('figure')
@@ -341,22 +351,43 @@ test('annulus native download uses a lifetime-free encoded SVG URL with exact by
     .find((node) => node.textContent === 'Скачать SVG');
   button.listeners.get('click')({ isTrusted: true });
   const [download] = mounted.downloads;
-  assert.ok(download.href.startsWith('data:image/svg+xml;charset=utf-8,'));
-  assert.equal(
-    decodeURIComponent(download.href.slice(download.href.indexOf(',') + 1)),
-    mounted.item.read().exportSvg,
-  );
+  assert.ok(download.href.startsWith('blob:'));
+  assert.equal(await mounted.urls.get(download.href).text(), mounted.item.read().exportSvg);
+  assert.equal(mounted.urls.get(download.href).type, 'image/svg+xml');
+  assert.deepEqual(mounted.revoked, [download.href]);
   assert.equal(download.name, 'checkmark-circle-outline.svg');
   assert.equal(download.connected, true);
 });
 
-test('SVG download URL roundtrips UTF8 and URL-reserved characters', () => {
-  const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg"><title>Знак №1 😀</title><path fill="#000" data-note="50% ? &amp; +"/></svg>';
-  const href = annulusDownloadHref(svg);
-  assert.equal(decodeURIComponent(href.slice(href.indexOf(',') + 1)), svg);
-  assert.ok(href.includes('%23') && href.includes('%25') && href.includes('%3F'));
-  assert.ok(!/\s/.test(href));
+test('failed annulus download activation releases the Blob URL and preserves the drawing', () => {
+  const mounted = mountedAnnulus();
+  const before = mounted.item.read().exportSvg;
+  const figure = mounted.body
+    .querySelectorAll('figure')
+    .find((node) => node.dataset.annulus === 'checkmark-circle/outline');
+  const button = figure
+    .querySelectorAll('button')
+    .find((node) => node.textContent === 'Скачать SVG');
+  const error = new Error('native activation failed');
+  const create = mounted.context.document.createElement;
+  mounted.context.document.createElement = (tag) => {
+    const node = create(tag);
+    if (tag === 'a')
+      node.click = () => {
+        throw error;
+      };
+    return node;
+  };
+  assert.throws(
+    () => button.listeners.get('click')({ isTrusted: true }),
+    (observed) => observed === error,
+  );
+  assert.equal(mounted.revoked.length, 1);
+  assert.equal(mounted.body.querySelectorAll('a').length, 0);
+  const after = mounted.item.read();
+  assert.equal(after.exportSvg, before);
+  assert.equal(after.downloadEvents.at(-1).ok, false);
+  assert.equal(after.downloadEvents.at(-1).error, error.message);
 });
 
 test('presence gesture selection requires unique invertible declared opacity progress', () => {
