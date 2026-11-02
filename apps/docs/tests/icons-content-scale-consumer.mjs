@@ -7,7 +7,7 @@ export const CONTENT_SCALE_ENTRIES = ANNULUS_ICONS.map(
 );
 
 // Независимый oracle читает абсолютные команды raw master до импорта producer.
-export function rawContentCoordinates(d) {
+export function rawContentPath(d) {
   const tokens = d.match(/[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/g) ?? [];
   assert.equal(d.replace(/[A-Za-z]|[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?|[\s,]/g, ''), '');
   const counts = { M: 2, L: 2, H: 1, V: 1, C: 6, Q: 4, Z: 0 };
@@ -17,6 +17,7 @@ export function rawContentCoordinates(d) {
   let x = 0;
   let y = 0;
   let first;
+  let open = false;
   while (index < tokens.length) {
     if (/^[A-Za-z]$/.test(tokens[index])) command = tokens[index++];
     assert.ok(Object.hasOwn(counts, command), `Неподдержанная raw команда ${command}`);
@@ -26,28 +27,48 @@ export function rawContentCoordinates(d) {
     assert.ok(values.every(Number.isFinite));
     index += count;
     if (command === 'Z') {
+      assert.ok(open, 'Oracle: закрытие вне контура');
+      result.push({ command: 'Z', points: [] });
       [x, y] = first;
+      open = false;
       command = undefined;
       continue;
     }
+    assert.ok(command === 'M' ? !open : open, 'Oracle: незамкнутый или отсутствующий контур');
+    let points;
+    let normalized = command;
     if (command === 'H') {
       x = values[0];
-      result.push([x, y]);
+      normalized = 'L';
+      points = [[x, y]];
     } else if (command === 'V') {
       y = values[0];
-      result.push([x, y]);
+      normalized = 'L';
+      points = [[x, y]];
     } else {
+      points = [];
       for (let operand = 0; operand < values.length; operand += 2)
-        result.push([values[operand], values[operand + 1]]);
+        points.push([values[operand], values[operand + 1]]);
       [x, y] = values.slice(-2);
       if (command === 'M') {
         first = [x, y];
+        open = true;
         command = 'L';
       }
     }
+    result.push({ command: normalized, points });
   }
-  assert.ok(result.length > 0);
+  assert.ok(result.length > 0 && !open, 'Oracle: нужен полный замкнутый path');
   return result;
+}
+
+export function rawContentCoordinates(d) {
+  return rawContentPath(d).flatMap((segment) => segment.points);
+}
+
+function assertSamePathStructure(actual, source) {
+  const structure = (d) => rawContentPath(d).map(({ command, points }) => [command, points.length]);
+  assert.deepEqual(structure(actual), structure(source), 'Oracle: команды или контуры изменены');
 }
 
 export function assertContentScalePaths(actual, reference, parameters) {
@@ -60,6 +81,7 @@ export function assertContentScalePaths(actual, reference, parameters) {
       assert.equal(actual[index].d, reference.paths[index].d, 'scale 1 сохраняет исходный content');
       continue;
     }
+    assertSamePathStructure(actual[index].d, reference.paths[index].d);
     const source = rawContentCoordinates(reference.paths[index].d);
     const output = rawContentCoordinates(actual[index].d);
     assert.equal(output.length, source.length);
@@ -76,10 +98,12 @@ export function assertContentScalePaths(actual, reference, parameters) {
   }
   assert.equal(actual.at(-1).fillRule, reference.paths.at(-1).fillRule);
   const contours = actual.at(-1).d.split(/(?=M)/).filter(Boolean);
+  assert.equal(contours.length, 2, 'Oracle: обрамление должно сохранять оба контура');
   assert.equal(contours[0], ring.outerD, 'outer сохраняется при обоих параметрах');
   if (enclosureEmphasis === 1) {
     assert.equal(actual.at(-1).d, reference.paths.at(-1).d);
   } else {
+    assertSamePathStructure(contours[1], ring.innerD);
     const output = rawContentCoordinates(contours[1]);
     const source = rawContentCoordinates(ring.innerD);
     const scale =
