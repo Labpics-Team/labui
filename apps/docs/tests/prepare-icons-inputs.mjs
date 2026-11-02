@@ -743,6 +743,7 @@ export async function prepareInputs(options) {
   const notifications = await notificationReference(iconsRoot, pin);
   const dots = await authoredDotsReference(iconsRoot, pin);
   const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
+  const playback = await stateReference(iconsRoot, pin, 'playback-circle');
   for (const file of [
     'semantics/figma-baseline.json',
     'semantics/author-anatomy.json',
@@ -771,16 +772,22 @@ export async function prepareInputs(options) {
     'apps/docs/tests/icons-notification-consumer.mjs',
     'apps/docs/tests/icons-authored-dots-consumer.mjs',
     'apps/docs/tests/icons-annulus-consumer.mjs',
+    'apps/docs/tests/icons-state-annulus-consumer.mjs',
   ])
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 6,
+    schemaVersion: 7,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
     notificationReference: notifications,
     authoredDotsReference: dots,
     annulusReference: annulus,
+    stateAnnulusReference: {
+      fileKey: pin.figma.fileKey,
+      version: pin.figma.version,
+      groups: { 'status-circle': states, 'playback-circle': playback },
+    },
   });
   assertCheckout(iconsRoot, pin.sourceCommit);
   assertCheckout(uiRoot, uiCommit);

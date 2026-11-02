@@ -30,6 +30,14 @@ import {
   notificationPosition,
   validateNotificationReference,
 } from './icons-notification-consumer.mjs';
+import {
+  STATE_ANNULUS_ENTRIES,
+  stateAnnulusBrowserProof,
+  stateAnnulusFixture,
+  stateAnnulusReferenceContract,
+  stateAnnulusTypeFixture,
+  validateStateAnnulusReference,
+} from './icons-state-annulus-consumer.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -77,19 +85,23 @@ const STATE_GROUPS = {
 };
 
 export function stateReferenceContract(group) {
+  if (!Object.hasOwn(STATE_GROUPS, group)) return stateAnnulusReferenceContract(group);
   assert.ok(Object.hasOwn(STATE_GROUPS, group), 'consumer не запрашивал такую state group');
   return structuredClone(STATE_GROUPS[group]);
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7].includes(schemaVersion));
   return [
-    ...REQUIRED_PUBLIC_ENTRIES,
-    ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
-    ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
-    ...(schemaVersion >= 4 ? NOTIFICATION_ENTRIES : []),
-    ...(schemaVersion >= 5 ? AUTHORED_DOT_ENTRIES : []),
-    ...(schemaVersion >= 6 ? ANNULUS_ENTRIES : []),
+    ...new Set([
+      ...REQUIRED_PUBLIC_ENTRIES,
+      ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
+      ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
+      ...(schemaVersion >= 4 ? NOTIFICATION_ENTRIES : []),
+      ...(schemaVersion >= 5 ? AUTHORED_DOT_ENTRIES : []),
+      ...(schemaVersion >= 6 ? ANNULUS_ENTRIES : []),
+      ...(schemaVersion >= 7 ? STATE_ANNULUS_ENTRIES : []),
+    ]),
   ];
 }
 
@@ -113,6 +125,7 @@ export function assertIconsImport(source) {
       ...NOTIFICATION_ENTRIES,
       ...AUTHORED_DOT_ENTRIES,
       ...ANNULUS_ENTRIES,
+      ...STATE_ANNULUS_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -187,7 +200,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -298,6 +311,14 @@ export function validateSubject(subject) {
   else assert.equal(subject.authoredDotsReference, undefined);
   if (subject.schemaVersion >= 6) validateAnnulusReference(subject.annulusReference, reference);
   else assert.equal(subject.annulusReference, undefined);
+  if (subject.schemaVersion >= 7)
+    validateStateAnnulusReference(
+      subject.stateAnnulusReference,
+      reference,
+      subject.annulusReference,
+      validateStateReference,
+    );
+  else assert.equal(subject.stateAnnulusReference, undefined);
   return subject;
 }
 
@@ -454,6 +475,11 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .annulus-parameter { display:grid; gap:8px; width:100%; font-size:14px; }
 .annulus-parameter input, .authored-annulus button { min-height:44px; padding:8px 12px; font:inherit; }
 .annulus-sample output { max-width:240px; font-size:12px; line-height:1.5; }
+.state-enclosure-controls { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-top:20px; }
+.state-enclosure-controls label { display:grid; gap:8px; font-size:14px; }
+.state-enclosure-controls input, .state-enclosure-controls button { min-height:44px; padding:8px 12px; font:inherit; }
+.state-enclosure-controls input { width:112px; box-sizing:border-box; }
+.state-enclosure-controls output { flex-basis:100%; font-size:14px; line-height:1.5; }
 @media (max-width:480px) { body { padding:24px; } .state-sample { flex-wrap:wrap; gap:16px; } }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
@@ -592,16 +618,17 @@ function mountStateConsumer(api, configuration) {
 const { render, renderStateSvg, compileStateEffect, stateCapabilities, exportStateTransition } = api;
 const stateCapabilitiesValue = stateCapabilities();
 const stateLabels = configuration.labels;
+const presentationKey = configuration.presentationKey ?? stateCapabilitiesValue.group;
 const stateSection = document.createElement('section');
-stateSection.dataset.stateGroup = stateCapabilitiesValue.group;
-stateSection.setAttribute('aria-labelledby', stateCapabilitiesValue.group + '-heading');
+stateSection.dataset.stateGroup = presentationKey;
+stateSection.setAttribute('aria-labelledby', presentationKey + '-heading');
 const stateHeading = document.createElement('h2');
-stateHeading.id = stateCapabilitiesValue.group + '-heading'; stateHeading.textContent = configuration.buttonLabel;
+stateHeading.id = presentationKey + '-heading'; stateHeading.textContent = configuration.heading ?? configuration.buttonLabel;
 const stateSample = document.createElement('div'); stateSample.className = 'state-sample';
 const stateButton = document.createElement('lab-button');
 for (const [name, value] of Object.entries({ size: 'l', icon: '', type: 'neutral',
   'aria-label': configuration.buttonLabel,
-  'data-state-group': stateCapabilitiesValue.group })) stateButton.setAttribute(name, value);
+  'data-state-group': presentationKey })) stateButton.setAttribute(name, value);
 const initialState = renderStateSvg(stateCapabilitiesValue.defaultState);
 if (!initialState.ok) throw new Error(initialState.reason.code);
 stateButton.innerHTML = initialState.svg;
@@ -655,6 +682,11 @@ if (configuration.samples) {
 let stateControl; let stateCompletion; let stateGeneration = 0;
 let stateTarget = stateSelect.value; let stateNativeClicks = 0;
 const stateEvents = [];
+const enclosurePresentation = configuration.enclosureVariation
+  ? mountStateAnnulusPresentation(api, stateSvg, stateCapabilitiesValue, stateSection, {
+      pose: () => stateOpacityWitness(),
+      execution: () => ({ generation: stateGeneration, playback: stateControl?.state ?? null }),
+    }) : null;
 stateButton.addEventListener('click', event => {
   const ids = stateCapabilitiesValue.states.map(state => state.id);
   const next = ids[(ids.indexOf(stateTarget) + 1) % ids.length];
@@ -757,7 +789,8 @@ function readState() {
       name: native?.getAttribute('aria-label'), type: native?.type,
       iconHidden: stateSvg.getAttribute('aria-hidden'),
       slotHidden: native?.querySelector('slot[name=icon]')?.getAttribute('aria-hidden') },
-    statusText: stateStatus.textContent, selected: stateSelect.value };
+    statusText: stateStatus.textContent, selected: stateSelect.value,
+    ...(enclosurePresentation ? { enclosurePresentation: enclosurePresentation.read() } : {}) };
 }
 async function settleState() {
   let timer;
@@ -779,7 +812,8 @@ function staticState(state) {
     dimensions: ['width', 'height'].map(name => Number(svg.getAttribute(name))) };
 }
 return { readState, changeState, settleState, staticState,
-  cleanup: () => { stateControl?.stop(); stateSection.remove(); },
+  ...(enclosurePresentation ? { updateEnclosure: enclosurePresentation.update } : {}),
+  cleanup: () => { stateControl?.stop(); enclosurePresentation?.cleanup(); stateSection.remove(); },
   ready: stateButton.updateComplete.then(() => {
   stateButton.shadowRoot.querySelector('button').addEventListener('click', () => stateNativeClicks++);
   }),
@@ -827,14 +861,15 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
     (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '') +
     (schemaVersion >= 4 ? notificationFixture() : '') +
     (schemaVersion >= 5 ? authoredDotsFixture() : '') +
-    (schemaVersion >= 6 ? annulusFixture() : '')
+    (schemaVersion >= 6 ? annulusFixture() : '') +
+    (schemaVersion >= 7 ? stateAnnulusFixture() : '')
   );
 }
 
@@ -1167,6 +1202,15 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         await authoredDotsBrowserProof(page, reference.authoredDots, reducedMotion, records);
       if (reference.annulus)
         await annulusBrowserProof(page, reference.annulus, reducedMotion, records);
+      if (reference.stateAnnulus)
+        await stateAnnulusBrowserProof(
+          page,
+          reference.stateAnnulus,
+          reference.annulus,
+          reducedMotion,
+          records,
+          sameStateOpacity,
+        );
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
@@ -1183,6 +1227,18 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           reducedMotion === 'reduce' ? 'finished' : 'stopped',
         );
         records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
+      }
+      for (const group of Object.keys(reference.stateAnnulus?.groups ?? {})) {
+        const disposed = await page.evaluate(
+          (group) => window.__iconsPacked.stateAnnulusConsumers[group].stateDisposal(),
+          group,
+        );
+        assert.equal(disposed.connected, false);
+        assert.equal(
+          disposed.completionStatus,
+          reducedMotion === 'reduce' ? 'finished' : 'stopped',
+        );
+        records.push({ name: `${group}:${reducedMotion}:state-enclosure-dispose`, ...disposed });
       }
       if (reference.notifications)
         for (const icon of ['notifications', 'notifications-unread'])
@@ -1903,7 +1959,9 @@ export async function main(args = process.argv.slice(2)) {
     if (subject.schemaVersion >= 5) {
       phase = 'public types';
       const typeFixture =
-        authoredDotsTypeFixture() + (subject.schemaVersion >= 6 ? annulusTypeFixture() : '');
+        authoredDotsTypeFixture() +
+        (subject.schemaVersion >= 6 ? annulusTypeFixture() : '') +
+        (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
       await writeFile(
         join(consumer, 'tsconfig.json'),
@@ -2035,6 +2093,7 @@ export async function main(args = process.argv.slice(2)) {
           notifications: subject.notificationReference,
           authoredDots: subject.authoredDotsReference,
           annulus: subject.annulusReference,
+          stateAnnulus: subject.stateAnnulusReference,
         },
         out,
         records,
