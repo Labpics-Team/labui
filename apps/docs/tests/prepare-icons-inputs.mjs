@@ -878,33 +878,40 @@ export async function summarize(directory) {
   const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
   const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
   const subject = validateSubject(JSON.parse(subjectBytes));
-  assert.equal(hash(subjectBytes), source.subjectSha256);
-  assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
   let sourceIdentityError;
-  if (receipt.outcome === 'passed') {
-    try {
+  try {
+    assert.equal(hash(subjectBytes), source.subjectSha256, 'source: изменён subject SHA');
+    assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
+    if (receipt.outcome === 'passed')
       assertConsumerSourceIdentity(source, receipt, subject, subjectBytes);
-    } catch (error) {
-      sourceIdentityError = Object.assign(error, { code: 'CONSUMER_SOURCE_IDENTITY_REFUSED' });
-    }
+  } catch (error) {
+    sourceIdentityError = Object.assign(error, { code: 'CONSUMER_SOURCE_IDENTITY_REFUSED' });
   }
+  const sourceFiles = Array.isArray(source.files) ? source.files : [];
+  const program = sourceFiles.find(
+    (item) => item?.file === 'scripts/measure-platform-artifacts.mjs',
+  );
+  const lockfile = sourceFiles.find((item) => item?.file === 'pnpm-lock.yaml');
+  if (subject.schemaVersion >= 2 && (!program || !lockfile))
+    sourceIdentityError ??= Object.assign(
+      new Error('source: отсутствует receipt программы или lockfile measurement'),
+      {
+        code: 'CONSUMER_SOURCE_IDENTITY_REFUSED',
+      },
+    );
   let policyFailure;
-  if (subject.schemaVersion >= 2) {
+  if (subject.schemaVersion >= 2 && program && lockfile) {
     const measurement = source.measurement;
     assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
     assert.equal(measurement.sourceSha, source.pin.sourceCommit);
     const bytes = await readFile(join(root, 'inputs/platform-measurement.json'));
     assert.equal(hash(bytes), measurement.sha256, 'measurement bytes изменились');
     assert.equal(bytes.length, measurement.bytes);
-    const program = source.files.find(
-      (item) => item.file === 'scripts/measure-platform-artifacts.mjs',
-    );
     assert.deepEqual(measurement.program, {
       file: program.file,
       sha256: program.sha256,
       bytes: program.bytes,
     });
-    const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
     assert.equal(lockfile.sha256, measurement.lockfileSha256);
     const report = validatePlatformMeasurement(
       JSON.parse(bytes),

@@ -1459,6 +1459,93 @@ test('summary refuses preparation-to-launch identity drift and preserves the fai
   }
 });
 
+test('malformed preparation identity retains RESULT and authenticatable policy checks', async (t) => {
+  for (const [name, mutate, measurementAvailable] of [
+    [
+      'отсутствует source.files',
+      (source) => {
+        source.files = undefined;
+      },
+      false,
+    ],
+    [
+      'source.files равен null',
+      (source) => {
+        source.files = null;
+      },
+      false,
+    ],
+    [
+      'source.files пуст',
+      (source) => {
+        source.files = [];
+      },
+      false,
+    ],
+    [
+      'source.subjectSha256 изменён',
+      (source) => {
+        source.subjectSha256 = 'c'.repeat(64);
+      },
+      true,
+    ],
+  ]) {
+    await t.test(name, async (t) => {
+      const fixture = await summaryFixture(t, 2);
+      assert.match(fixture.invoke(), /"outcome":"passed"/);
+      const source = structuredClone(fixture.source);
+      mutate(source);
+      if (measurementAvailable) {
+        const report = structuredClone(fixture.report);
+        report.policyViolations.push('independent policy refusal');
+        const reportBytes = JSON.stringify(report);
+        source.measurement.sha256 = hash(reportBytes);
+        source.measurement.bytes = Buffer.byteLength(reportBytes);
+        await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), reportBytes);
+      }
+      const sourceBytes = JSON.stringify(source);
+      const receiptBytes = await readFile(join(fixture.output, 'result/receipt.json'));
+      await writeFile(join(fixture.output, 'inputs/source-receipt.json'), sourceBytes);
+      const result = spawnSync(
+        process.execPath,
+        [
+          fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+          '--summarize',
+          fixture.output,
+        ],
+        { encoding: 'utf8', timeout: 5000 },
+      );
+      assert.equal(result.status, 1, result.stderr);
+      const line = result.stdout
+        .split('\n')
+        .find((item) => item.startsWith('LABUI_ICONS_CONSUMER_RESULT '));
+      assert.ok(line, 'Отказ identity потерял RESULT');
+      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length));
+      assert.equal(summary.outcome, 'failed');
+      assert.equal(summary.browserOutcome, 'passed');
+      assert.equal(summary.sourceIdentityFailure.code, 'CONSUMER_SOURCE_IDENTITY_REFUSED');
+      assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_(?:RECEIPT|VISUAL)_BEGIN/);
+      if (measurementAvailable) {
+        assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_END/);
+        assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
+      } else assert.doesNotMatch(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
+      assert.equal(
+        summary.files.find((item) => item.path === 'inputs/source-receipt.json').sha256,
+        hash(sourceBytes),
+      );
+      assert.equal(
+        summary.files.find((item) => item.path === 'result/receipt.json').sha256,
+        hash(receiptBytes),
+      );
+      assert.equal(
+        await readFile(join(fixture.output, 'inputs/source-receipt.json'), 'utf8'),
+        sourceBytes,
+      );
+      assert.deepEqual(await readFile(join(fixture.output, 'result/receipt.json')), receiptBytes);
+    });
+  }
+});
+
 test('historical subject schemas without native identity cannot claim exact-source success', async (t) => {
   for (const schema of [1, 2, 3]) {
     await t.test(`schema${schema}`, async (t) => {
