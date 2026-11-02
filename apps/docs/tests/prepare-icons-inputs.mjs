@@ -13,6 +13,7 @@ import {
 } from './icons-authored-dots-consumer.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
+import { SOURCE_STATE_GROUPS } from './icons-source-state-consumer.mjs';
 import {
   NOTIFICATION_ICONS,
   rawNotificationClapperWidth,
@@ -378,6 +379,8 @@ export async function authoredDotsReference(iconsRoot, pin) {
 // без compiler/glyph/imports производителя. Interior сохраняет исходный порядок.
 export async function stateReference(iconsRoot, pin, name = 'status-circle') {
   const contract = stateReferenceContract(name);
+  const sourceReplacement = contract.law === 'source.replace';
+  const variant = contract.variant ?? 'outline';
   const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
   const document = JSON.parse(
     await readFile(join(iconsRoot, 'semantics/author-state-groups.json')),
@@ -389,22 +392,23 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
   assert.ok([1, 2].includes(document.schemaVersion), 'неподдержанная author-state schema');
   assert.deepEqual(document.source, source);
   const group = document.groups[name];
-  assert.equal(group.law, 'enclosure.replace');
+  assert.equal(group.law, sourceReplacement ? 'source.replace' : 'enclosure.replace');
   assert.equal(group.defaultState, contract.defaultState);
-  assert.equal(group.enclosurePartId, contract.enclosurePartId);
+  assert.equal(group.enclosurePartId ?? null, contract.enclosurePartId);
   if (name === 'expression-face') assert.equal(document.schemaVersion, 2);
   if (document.schemaVersion === 2) assert.deepEqual(group.sharedParts, contract.sharedParts);
   assert.deepEqual(Object.keys(group.states).sort(), contract.states);
   const states = [];
   const ids = new Set(contract.sharedParts.map((part) => part.id));
-  let enclosure;
-  let sharedParts;
+  let enclosure = sourceReplacement ? null : undefined;
+  let sharedParts = sourceReplacement ? [] : undefined;
   for (const id of Object.keys(group.states).sort()) {
     const member = group.states[id];
     assert.match(member.icon, /^[a-z][a-z0-9-]*$/);
-    assert.equal(member.variant, 'outline');
-    const record = manifest.icons[member.icon]?.outline;
-    const sourceFile = `masters/figma/${source.version}/Outline/${member.icon}.svg`;
+    assert.equal(member.variant, variant);
+    if (sourceReplacement) assert.equal(member.icon, contract.icons[id]);
+    const record = manifest.icons[member.icon]?.[variant];
+    const sourceFile = `masters/figma/${source.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/${member.icon}.svg`;
     assert.equal(record.master, sourceFile);
     const bytes = await readFile(join(iconsRoot, sourceFile));
     assert.equal(bytes.length, record.bytes);
@@ -418,7 +422,7 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
     assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
     if (document.schemaVersion === 1) assert.equal(member.enclosurePathIndex, paths.length - 1);
     else assert.ok(!Object.hasOwn(member, 'enclosurePathIndex'), 'schema2 не содержит path index');
-    assert.ok(paths.length >= 2);
+    assert.ok(paths.length >= (sourceReplacement ? 1 : 2));
     assert.equal(member.contentPartIds.length, paths.length - contract.sharedParts.length);
     assert.ok(member.contentPartIds.length > 0);
     const partId = `state-${id}`;
@@ -427,9 +431,11 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
       assert.ok(!ids.has(part), 'повторённый semantic part ID');
       ids.add(part);
     }
-    const shell = paths.at(-1);
-    if (enclosure) assert.deepEqual(shell, enclosure, 'author enclosures не совпадают');
-    else enclosure = shell;
+    if (!sourceReplacement) {
+      const shell = paths.at(-1);
+      if (enclosure) assert.deepEqual(shell, enclosure, 'author enclosures не совпадают');
+      else enclosure = shell;
+    }
     const shared = paths
       .slice(member.contentPartIds.length)
       .map((path, index) => ({ ...path, ...contract.sharedParts[index] }));
@@ -457,13 +463,13 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
   }
   return {
     group: name,
-    variant: 'outline',
+    variant,
     defaultState: group.defaultState,
-    enclosurePartId: group.enclosurePartId,
+    enclosurePartId: sourceReplacement ? null : group.enclosurePartId,
     ...(document.schemaVersion === 2
       ? {
           sharedPartIds: sharedParts.map((part) => part.id),
-          ...(name === 'expression-face' ? { sharedParts } : {}),
+          ...(name === 'expression-face' || sourceReplacement ? { sharedParts } : {}),
         }
       : {}),
     enclosure,
@@ -471,7 +477,7 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
     proof: {
       law: group.law,
       source,
-      enclosureSha256: hash(
+      enclosureSha256: sourceReplacement ? null : hash(
         stableJSON({
           ...enclosure,
           paint: { kind: 'fill', fill: 'currentColor' },
@@ -747,6 +753,8 @@ export async function prepareInputs(options) {
   const dots = await authoredDotsReference(iconsRoot, pin);
   const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
   const microphones = await microphoneReference(iconsRoot, pin, readAuthorMaster);
+  const sourceStates = Object.fromEntries(await Promise.all(Object.keys(SOURCE_STATE_GROUPS)
+    .map(async (group) => [group, await stateReference(iconsRoot, pin, group)])));
   const playback = await stateReference(iconsRoot, pin, 'playback-circle');
   for (const file of [
     'semantics/figma-baseline.json',
@@ -768,6 +776,7 @@ export async function prepareInputs(options) {
     ...Object.values(microphones.icons).flatMap((variants) =>
       Object.values(variants).map((item) => item.sourceFile),
     ),
+    ...Object.values(sourceStates).flatMap((group) => group.states.map((item) => item.sourceFile)),
   ]) {
     files.push({
       repository: pin.repository,
@@ -777,7 +786,7 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -785,6 +794,7 @@ export async function prepareInputs(options) {
     authoredDotsReference: dots,
     annulusReference: annulus,
     microphoneReference: microphones,
+    sourceStateReferences: sourceStates,
     stateAnnulusReference: {
       fileKey: pin.figma.fileKey,
       version: pin.figma.version,
