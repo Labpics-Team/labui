@@ -272,7 +272,7 @@ export function assertAnnulusObservation(observation, reference, icon, variant, 
     assert.equal(capability.domain.evaluated, 'actual-binary64-scale');
     assert.deepEqual(capability.targets, {
       svg: 'supported',
-      webEffect: 'not-declared',
+      webEffect: 'existing-part-gestures',
       lottie: 'not-exported',
       sfSymbols: 'not-exported',
     });
@@ -290,6 +290,68 @@ export function assertAnnulusObservation(observation, reference, icon, variant, 
   }
 }
 
+export function annulusPresenceGesture(capability) {
+  if (capability.motion?.state !== 'gesture-ready') return null;
+  const candidates = capability.motion.gestures.filter(
+    (gesture) =>
+      gesture.kind === 'state' &&
+      gesture.progress === 'normalized-0-to-1' &&
+      gesture.restProgress === 1 &&
+      gesture.partIds.length === 1 &&
+      gesture.tracks.length === 1 &&
+      gesture.tracks[0].partId === gesture.partIds[0] &&
+      gesture.tracks[0].kind === 'opacity' &&
+      gesture.tracks[0].unit === 'fraction' &&
+      gesture.tracks[0].interpolation === 'linear' &&
+      gesture.tracks[0].stops.length === 2 &&
+      gesture.tracks[0].stops[0].at === 0 &&
+      gesture.tracks[0].stops[0].value === 0 &&
+      gesture.tracks[0].stops[1].at === 1 &&
+      gesture.tracks[0].stops[1].value === 1,
+  );
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
+/** Layout и paint проверяются до изменения DOM; d принадлежит compiler. */
+export function annulusRenderKey(model) {
+  return JSON.stringify([
+    model.icon,
+    model.variant,
+    model.viewBox,
+    model.composition,
+    model.parts.map((part) => [
+      part.id,
+      part.role,
+      part.zIndex,
+      part.fillRule,
+      part.paint.kind,
+      part.paint.fill,
+      part.paint.stroke,
+      part.paint.strokeWidth,
+      part.paint.linecap,
+      part.paint.linejoin,
+    ]),
+  ]);
+}
+
+export function annulusDownloadHref(svg) {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+export function visibleAnnulusSvg(svg, partIds) {
+  if (partIds.length === 0) return svg.outerHTML;
+  const clone = svg.cloneNode(true);
+  const originals = [...svg.querySelectorAll('path[data-part]')];
+  const copies = [...clone.querySelectorAll('path[data-part]')];
+  for (const partId of partIds) {
+    const index = originals.findIndex((node) => node.dataset.part === partId);
+    if (index < 0 || originals.filter((node) => node.dataset.part === partId).length !== 1)
+      throw new Error('Потеряна самостоятельная часть SVG');
+    copies[index].style.opacity = getComputedStyle(originals[index]).opacity;
+  }
+  return clone.outerHTML;
+}
+
 function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
   const original = sourceApi.glyph({ variant });
   const sourceDefaultIdentity = api.glyph({ variant }) === original;
@@ -299,6 +361,8 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       ? api.glyph({ variant, variation: { enclosureEmphasis: 1 } }) === original
       : null;
   const capability = api.glyphCapabilities(variant);
+  const presence = annulusPresenceGesture(capability);
+  const layout = annulusRenderKey(original);
   const figure = document.createElement('figure');
   figure.className = 'annulus-sample';
   figure.dataset.annulus = `${icon}/${variant}`;
@@ -315,14 +379,82 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
   status.id = `annulus-status-${icon}-${variant}`;
   status.setAttribute('aria-live', 'polite');
   const events = [];
+  const downloadEvents = [];
+  const confirmationEvents = [];
   let model = original;
   let emphasis = 1;
   let refusal = null;
   let input;
+  let bindings;
+  let disposed = false;
+  let confirmationControl;
+  let confirmationEffect;
+  let confirmationCompletion;
+  let confirmationStatus = null;
+  let confirmationTarget = 1;
+  let confirmationGeneration = 0;
+  const confirmationButtons = [];
+  function requireActive() {
+    if (disposed) throw new Error('Consumer уже освобождён');
+  }
+  function assertBinding({ svg, size, nodes, all }, accepted) {
+    const mismatch = (message) =>
+      Object.assign(new Error(message), { code: 'RENDER_CORRESPONDENCE_MISMATCH' });
+    const current = [svg, ...svg.querySelectorAll('*')];
+    if (current.length !== all.length || current.some((node, index) => node !== all[index]))
+      throw mismatch('DOM символа заменён');
+    if (
+      svg.getAttribute('viewBox') !== accepted.viewBox.join(' ') ||
+      svg.getAttribute('width') !== String(size) ||
+      svg.getAttribute('height') !== String(size)
+    )
+      throw mismatch('Рамка символа изменилась');
+    if (accepted.composition.kind !== 'layers') return;
+    if (
+      nodes.length !== accepted.parts.length ||
+      all.length !== nodes.length + 1 ||
+      nodes.some((node, index) => {
+        const part = accepted.parts[index];
+        return (
+          node.dataset.part !== part.id ||
+          node.dataset.role !== part.role ||
+          node.getAttribute('d') !== part.d ||
+          (node.getAttribute('fill-rule') ?? 'nonzero') !== part.fillRule ||
+          node.getAttribute('fill') !== part.paint.fill ||
+          node.getAttribute('stroke') !==
+            (part.paint.kind === 'stroke' ? part.paint.stroke : null) ||
+          node.getAttribute('stroke-width') !==
+            (part.paint.kind === 'stroke' ? String(part.paint.strokeWidth) : null) ||
+          node.getAttribute('stroke-linecap') !==
+            (part.paint.kind === 'stroke' ? part.paint.linecap : null) ||
+          node.getAttribute('stroke-linejoin') !==
+            (part.paint.kind === 'stroke' ? part.paint.linejoin : null)
+        );
+      })
+    )
+      throw mismatch('DOM не соответствует принятой форме');
+  }
   function update(variation) {
+    requireActive();
     let generated;
     try {
       generated = api.glyph({ variant, variation });
+      if (
+        annulusRenderKey(generated) !== layout ||
+        generated.parts.some(
+          (part, index) => part.role === 'content' && part.d !== original.parts[index].d,
+        )
+      )
+        throw Object.assign(new Error('Layout авторского символа изменился'), {
+          code: 'RENDER_CORRESPONDENCE_MISMATCH',
+        });
+      if (bindings) {
+        if (generated.composition.kind !== 'layers' && generated !== model)
+          throw Object.assign(new Error('Композиция не имеет отдельных DOM-целей'), {
+            code: 'RENDER_CORRESPONDENCE_MISMATCH',
+          });
+        for (const binding of bindings) assertBinding(binding, model);
+      }
     } catch (error) {
       refusal = error.code;
       status.textContent = `${error.code}: это изменение обрамления недоступно.`;
@@ -330,26 +462,57 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       input?.setAttribute('aria-invalid', 'true');
       return { ok: false, code: error.code };
     }
+    const before = bindings && presence ? opacityPose() : null;
+    if (!bindings) {
+      bindings = cells.map(({ cell, size }) => {
+        cell.innerHTML = renderGlyphSvg(generated, {
+          instanceId: `annulus-${icon}-${variant}-${size}`,
+        });
+        const svg = cell.querySelector('svg');
+        svg.setAttribute('width', String(size));
+        svg.setAttribute('height', String(size));
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        cell.append(`${size} px`);
+        return {
+          svg,
+          size,
+          nodes: [...svg.querySelectorAll('path[data-part]')],
+          all: [svg, ...svg.querySelectorAll('*')],
+        };
+      });
+      try {
+        for (const binding of bindings) assertBinding(binding, generated);
+      } catch (error) {
+        figure.remove();
+        throw error;
+      }
+    } else if (generated.composition.kind === 'layers') {
+      for (const { nodes } of bindings)
+        for (const [index, part] of generated.parts.entries())
+          if (nodes[index].getAttribute('d') !== part.d) nodes[index].setAttribute('d', part.d);
+    }
     model = generated;
     emphasis = variation?.enclosureEmphasis ?? 1;
     refusal = null;
     input?.setCustomValidity('');
     input?.removeAttribute('aria-invalid');
     if (input) input.value = String(emphasis);
-    for (const { cell, size } of cells) {
-      cell.innerHTML = renderGlyphSvg(model, { instanceId: `annulus-${icon}-${variant}-${size}` });
-      const svg = cell.querySelector('svg');
-      svg.setAttribute('width', String(size));
-      svg.setAttribute('height', String(size));
-      svg.setAttribute('aria-hidden', 'true');
-      svg.setAttribute('focusable', 'false');
-      cell.append(`${size} px`);
-    }
     status.textContent =
       variant === 'outline'
         ? `Обрамление ×${emphasis}. Наружный контур и знак сохраняются.`
         : 'Точное авторское начертание. Изменение обрамления не поддерживается.';
-    return { ok: true };
+    return {
+      ok: true,
+      ...(before && {
+        continuity: {
+          before,
+          after: opacityPose(),
+          generation: confirmationGeneration,
+          playback: confirmationControl?.state ?? null,
+        },
+      }),
+    };
   }
   figure.append(caption, samples);
   if (capability.variation?.law === 'annulus.counter-scale') {
@@ -378,18 +541,131 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
   const download = document.createElement('button');
   download.type = 'button';
   download.textContent = 'Скачать SVG';
-  download.addEventListener('click', () => {
-    const text = cells[1].cell.querySelector('svg').outerHTML;
-    const url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${icon}-${variant}.svg`;
-    link.click();
-    URL.revokeObjectURL(url);
+  download.addEventListener('click', (event) => {
+    let link;
+    const receipt = {
+      trusted: event.isTrusted,
+      userActivation: navigator.userActivation?.isActive ?? null,
+      requestedAt: performance.now(),
+      scheme: 'data',
+      filename: `${icon}-${variant}.svg`,
+    };
+    try {
+      requireActive();
+      const text = visibleAnnulusSvg(bindings[1].svg, presence?.partIds ?? []);
+      receipt.bytes = new TextEncoder().encode(text).length;
+      link = document.createElement('a');
+      link.href = annulusDownloadHref(text);
+      link.download = receipt.filename;
+      document.body.append(link);
+      link.addEventListener('click', () => {
+        receipt.activated = true;
+      });
+      link.click();
+      receipt.ok = true;
+    } catch (error) {
+      receipt.ok = false;
+      receipt.error = error.message;
+      throw error;
+    } finally {
+      link?.remove();
+      downloadEvents.push(receipt);
+    }
   });
   figure.append(status, download);
   parent.append(figure);
   update(undefined);
+  function opacityPose() {
+    if (!presence) return [];
+    return bindings.flatMap(({ nodes, size }) =>
+      presence.partIds.map((partId) => {
+        const node = nodes.find((node) => node.dataset.part === partId);
+        if (!node) throw new Error('Потеряна самостоятельная отметка');
+        return {
+          size,
+          partId,
+          d: node.getAttribute('d'),
+          value: Number(getComputedStyle(node).opacity),
+        };
+      }),
+    );
+  }
+  function changeConfirmation(to, duration = 600) {
+    requireActive();
+    if (!presence || ![0, 1].includes(to) || !Number.isFinite(duration) || duration < 0)
+      throw new Error('Нужна поддержанная цель видимости отметки');
+    const before = opacityPose();
+    const from = before.find((item) => item.size === 24).value;
+    const result = compileSymbolEffect(model, capability, presence.id, {
+      from,
+      to,
+      duration,
+      reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    });
+    if (!result.ok) throw new Error(result.reason.code);
+    const effect = JSON.parse(JSON.stringify(result.effect));
+    if (effect.version !== 2) throw new Error('Подтверждение требует opacity effect');
+    const byPart = new Map(
+      presence.partIds.map((partId) => [
+        partId,
+        bindings.map(({ nodes }) => nodes.find((node) => node.dataset.part === partId)),
+      ]),
+    );
+    const visible = new Map(
+      bindings.flatMap(({ nodes, size }) =>
+        presence.partIds.map((partId) => [
+          nodes.find((node) => node.dataset.part === partId),
+          before.find((item) => item.size === size && item.partId === partId).value,
+        ]),
+      ),
+    );
+    const previous = confirmationControl;
+    const next = sequence(scalarSequenceSteps(effect, byPart, visible), {
+      reducedMotion: effect.options.duration === 0 ? 'always' : 'user',
+    });
+    confirmationControl = next;
+    confirmationEffect = effect;
+    confirmationCompletion = next.finished;
+    confirmationTarget = to;
+    confirmationStatus = null;
+    const current = ++confirmationGeneration;
+    for (const { button, target } of confirmationButtons)
+      button.setAttribute('aria-pressed', String(target === to));
+    previous?.stop();
+    next.finished.then((result) => {
+      if (current === confirmationGeneration) confirmationStatus = result.status;
+    });
+    return {
+      effect,
+      before,
+      after: opacityPose(),
+      generation: current,
+      previousPlayback: previous?.state ?? null,
+    };
+  }
+  if (presence) {
+    for (const [target, text] of [
+      [0, 'Скрыть знак'],
+      [1, 'Показать знак'],
+    ]) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = text;
+      button.setAttribute('aria-label', `${text}: ${caption.textContent}`);
+      button.setAttribute('aria-pressed', String(target === confirmationTarget));
+      button.style.minHeight = '44px';
+      button.style.minWidth = '44px';
+      button.addEventListener('click', (event) =>
+        confirmationEvents.push({
+          trusted: event.isTrusted,
+          target,
+          ...changeConfirmation(target),
+        }),
+      );
+      confirmationButtons.push({ button, target });
+      figure.append(button);
+    }
+  }
   const paths = (svg) =>
     [...svg.querySelectorAll('path')].map((path) => ({
       partId: path.dataset.part,
@@ -403,6 +679,29 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       emphasis,
       refusal,
       events,
+      downloadEvents,
+      domIdentity: bindings.every(({ svg, all }) => {
+        const current = [svg, ...svg.querySelectorAll('*')];
+        return current.length === all.length && current.every((node, index) => node === all[index]);
+      }),
+      confirmation: {
+        available: Boolean(presence),
+        gesture: presence?.id ?? null,
+        target: confirmationTarget,
+        generation: confirmationGeneration,
+        effect: confirmationEffect ?? null,
+        playback: confirmationControl?.state ?? null,
+        completion: confirmationStatus,
+        events: confirmationEvents,
+        opacity: opacityPose(),
+        controls: confirmationButtons.map(({ button }) => ({
+          name: button.getAttribute('aria-label'),
+          type: button.type,
+          pressed: button.getAttribute('aria-pressed'),
+          width: button.getBoundingClientRect().width,
+          height: button.getBoundingClientRect().height,
+        })),
+      },
       provenance: model.provenance,
       author: model.provenance.author,
       capability,
@@ -426,7 +725,7 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
           svg: svg.outerHTML,
         };
       }),
-      exportSvg: cells[1].cell.querySelector('svg').outerHTML,
+      exportSvg: visibleAnnulusSvg(bindings[1].svg, presence?.partIds ?? []),
     };
   }
   const attempt = (query) => {
@@ -440,6 +739,20 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
   return {
     read,
     update,
+    changeConfirmation,
+    confirmationPhase: () =>
+      presence ? opacityPose().find((item) => item.size === 24).value : null,
+    pauseConfirmationAt: (milliseconds) => {
+      requireActive();
+      confirmationControl.pause();
+      confirmationControl.seek(milliseconds);
+      return read();
+    },
+    settleConfirmation: async () => {
+      const result = await confirmationCompletion;
+      if (result?.status !== 'finished') throw new Error('Подтверждение не завершилось');
+      return { ...read(), completionStatus: result.status };
+    },
     refuse: () => ({
       zero: attempt({ variant, variation: { enclosureEmphasis: 0 } }),
       nan: attempt({ variant, variation: { enclosureEmphasis: Number.NaN } }),
@@ -458,14 +771,28 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       filledEmpty: attempt({ variant: 'filled', variation: {} }),
       motion: compileSymbolEffect(model, capability, 'annulus.pulse', { duration: 300 }),
     }),
-    cleanup: () => figure.remove(),
-    disposal: () => ({ connected: figure.isConnected }),
+    cleanup: () => {
+      if (disposed) return;
+      disposed = true;
+      confirmationGeneration++;
+      confirmationControl?.stop();
+      figure.remove();
+    },
+    disposal: async () => ({
+      connected: figure.isConnected,
+      playback: confirmationControl?.state ?? null,
+      completionStatus: (await confirmationCompletion)?.status ?? null,
+    }),
   };
 }
 
 export function annulusFixture() {
   return `
 ${ANNULUS_ICONS.map((icon, index) => `import * as annulus${index} from '@labpics/icons/variations/${icon}';\nimport * as annulusSource${index} from '@labpics/icons/symbols/${icon}';`).join('\n')}
+${annulusPresenceGesture.toString()}
+${annulusRenderKey.toString()}
+${annulusDownloadHref.toString()}
+${visibleAnnulusSvg.toString()}
 ${mountAnnulusConsumer.toString()}
 const annulusSection = document.createElement('section'); annulusSection.className = 'authored-annulus';
 annulusSection.setAttribute('aria-labelledby', 'annulus-heading');
@@ -543,6 +870,8 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
           author: initial.author,
           refused,
         });
+        if (initial.confirmation.available)
+          await annulusConfirmationProof(page, figure, id, reference, reducedMotion, records);
         continue;
       }
       const input = figure.getByRole('spinbutton', { name: /Толщина обрамления/ });
@@ -552,10 +881,7 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
       assert.equal(varied.events.length, 1);
       assert.equal(varied.events[0].trusted, true, 'числовой ввод не получил native input');
       assert.equal(varied.events[0].result.ok, true);
-      const exported = await downloadedSvg(
-        page,
-        figure.getByRole('button', { name: 'Скачать SVG', exact: true }),
-      );
+      const exported = await annulusDownloadedSvg(page, figure, id, reducedMotion);
       assert.equal(exported, varied.exportSvg, 'загрузка SVG должна сохранять текущую форму');
       await input.fill(String(Number.MIN_VALUE));
       const rejected = await read();
@@ -563,7 +889,7 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
       assert.deepEqual(rejected.paths, varied.paths, 'отказ не заменяет последнюю принятую форму');
       assert.equal(await input.getAttribute('aria-invalid'), 'true');
       assert.equal(
-        await downloadedSvg(page, figure.getByRole('button', { name: 'Скачать SVG', exact: true })),
+        await annulusDownloadedSvg(page, figure, id, reducedMotion),
         exported,
         'после отказа экспорт обязан сохранить последнюю принятую форму',
       );
@@ -585,7 +911,12 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
         },
       );
       assert.equal(refused.motion.ok, false);
-      assert.equal(refused.motion.reason.code, 'SEMANTIC_MOTION_UNAVAILABLE');
+      assert.equal(
+        refused.motion.reason.code,
+        varied.capability.motion?.state === 'gesture-ready'
+          ? 'GESTURE_UNSUPPORTED'
+          : 'SEMANTIC_MOTION_UNAVAILABLE',
+      );
       await input.fill('0.8');
       const thinner = await read();
       assertAnnulusObservation(thinner, reference, icon, variant, 0.8);
@@ -604,5 +935,179 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
         exported,
         refused,
       });
+      if (varied.confirmation.available)
+        await annulusConfirmationProof(page, figure, id, reference, reducedMotion, records);
     }
+}
+
+export async function annulusDownloadedSvg(page, figure, id, reducedMotion) {
+  try {
+    return await downloadedSvg(
+      page,
+      figure.getByRole('button', { name: 'Скачать SVG', exact: true }),
+    );
+  } catch (error) {
+    try {
+      const events = await page.evaluate(
+        (id) => window.__iconsPacked.annulusConsumers[id].read().downloadEvents.slice(-4),
+        id,
+      );
+      const diagnostic = `annulus-download ${JSON.stringify({ id, reducedMotion, events }).slice(0, 4096)}`;
+      error.message += `\n${diagnostic}`;
+      if (typeof error.stack === 'string') error.stack += `\n${diagnostic}`;
+    } catch {}
+    throw error;
+  }
+}
+
+export async function annulusConfirmationProof(
+  page,
+  figure,
+  id,
+  reference,
+  reducedMotion,
+  records,
+) {
+  const [icon, variant] = id.split('/');
+  const evaluate = (method, ...args) =>
+    page.evaluate(
+      ({ id, method, args }) => window.__iconsPacked.annulusConsumers[id][method](...args),
+      { id, method, args },
+    );
+  const read = () => evaluate('read');
+  const initial = await read();
+  assert.equal(initial.confirmation.gesture, `${icon}.presence`);
+  for (const control of initial.confirmation.controls) {
+    assert.equal(control.type, 'button');
+    assert.ok(
+      control.width >= 44 && control.height >= 44,
+      'confirmation control lost its hit target',
+    );
+  }
+  const hide = figure.getByRole('button', { name: /^Скрыть знак:/ });
+  const show = figure.getByRole('button', { name: /^Показать знак:/ });
+  await hide.focus();
+  await hide.press('Enter');
+  const hidden = await evaluate('settleConfirmation');
+  assert.ok(hidden.confirmation.opacity.every((item) => item.value === 0));
+  await show.focus();
+  await show.press('Space');
+  const shown = await evaluate('settleConfirmation');
+  assert.ok(shown.confirmation.opacity.every((item) => item.value === 1));
+  assert.ok(shown.confirmation.events.slice(-2).every((event) => event.trusted));
+  assert.deepEqual(hidden.paths, initial.paths);
+  assert.deepEqual(shown.paths, initial.paths);
+  const interrupted = await evaluate('changeConfirmation', 0, 1200);
+  if (reducedMotion === 'no-preference') {
+    const paused = await evaluate('pauseConfirmationAt', 300);
+    assert.ok(paused.confirmation.opacity.every((item) => item.value === 0.75));
+    if (variant === 'outline') {
+      await figure.getByRole('spinbutton', { name: /Толщина обрамления/ }).fill('0.8');
+      const changed = await read();
+      assertAnnulusObservation(changed, reference, icon, variant, 0.8);
+      assert.deepEqual(changed.confirmation.opacity, paused.confirmation.opacity);
+      assert.equal(changed.confirmation.generation, paused.confirmation.generation);
+      assert.equal(changed.confirmation.playback, 'paused');
+      assert.equal(changed.domIdentity, true);
+    }
+    const reversed = await evaluate('changeConfirmation', 1, 600);
+    assert.equal(reversed.effect.from, 0.75);
+    assert.deepEqual(reversed.after, reversed.before, 'reverse lost the visible confirmation pose');
+    assert.equal(reversed.previousPlayback, 'stopped');
+    const middle = await evaluate('pauseConfirmationAt', 200);
+    assert.ok(middle.confirmation.opacity.every((item) => item.value > 0.75 && item.value < 1));
+    const newest = await evaluate('changeConfirmation', 0, 300);
+    assert.deepEqual(
+      newest.after,
+      newest.before,
+      'new confirmation target lost visible continuity',
+    );
+    const terminal = await evaluate('settleConfirmation');
+    assert.ok(terminal.confirmation.opacity.every((item) => item.value === 0));
+    await evaluate('changeConfirmation', 1, 1200);
+    await page.waitForFunction((id) => {
+      const phase = window.__iconsPacked.annulusConsumers[id].confirmationPhase();
+      return phase > 0.1 && phase < 0.4;
+    }, id);
+    if (variant === 'outline') {
+      await figure.getByRole('spinbutton', { name: /Толщина обрамления/ }).fill('1.2');
+      const running = await read();
+      const continuity = running.events.at(-1).result.continuity;
+      assert.deepEqual(
+        continuity.after,
+        continuity.before,
+        'enclosure input interrupted content motion',
+      );
+      assert.equal(continuity.playback, 'running');
+      assert.equal(running.domIdentity, true);
+      assertAnnulusObservation(running, reference, icon, variant, 1.2);
+    }
+    const completed = await evaluate('settleConfirmation');
+    assert.ok(completed.confirmation.opacity.every((item) => item.value === 1));
+    records.push({
+      name: `${id}:annulus-confirmation-interrupt-reverse-newer-state`,
+      interrupted,
+      paused: paused.confirmation.opacity,
+      reversed,
+      newest,
+      terminal: terminal.confirmation.opacity,
+    });
+  } else {
+    assert.equal(interrupted.effect.options.duration, 0);
+    const immediate = await evaluate('settleConfirmation');
+    assert.ok(immediate.confirmation.opacity.every((item) => item.value === 0));
+    if (variant === 'outline') {
+      await figure.getByRole('spinbutton', { name: /Толщина обрамления/ }).fill('0.8');
+      const changed = await read();
+      assert.ok(changed.confirmation.opacity.every((item) => item.value === 0));
+      await figure.getByRole('spinbutton', { name: /Толщина обрамления/ }).fill('1.2');
+    }
+    await show.press('Enter');
+    await evaluate('settleConfirmation');
+    records.push({
+      name: `${id}:annulus-confirmation-reduced-motion`,
+      effect: interrupted.effect,
+      terminal: immediate.confirmation.opacity,
+    });
+  }
+  const exported = await annulusDownloadedSvg(page, figure, id, reducedMotion);
+  const current = await read();
+  assert.equal(exported, current.exportSvg);
+  const event = current.downloadEvents.at(-1);
+  assert.equal(event.trusted, true);
+  assert.equal(event.userActivation, true);
+  assert.equal(event.scheme, 'data');
+  assert.equal(event.activated, true);
+  assert.equal(event.ok, true);
+  assert.equal(event.bytes, Buffer.byteLength(exported));
+  const snapshot = await page.evaluate(
+    (text) =>
+      [
+        ...new DOMParser()
+          .parseFromString(text, 'image/svg+xml')
+          .querySelectorAll('path[data-part]'),
+      ].map((node) => ({
+        partId: node.dataset.part,
+        d: node.getAttribute('d'),
+        opacity: node.style.opacity,
+      })),
+    exported,
+  );
+  const animated = new Set(current.confirmation.opacity.map((item) => item.partId));
+  for (const part of snapshot) {
+    assert.equal(part.d, current.paths.find((item) => item.partId === part.partId).d);
+    assert.equal(part.opacity, animated.has(part.partId) ? '1' : '');
+  }
+  if (reducedMotion === 'no-preference') {
+    await evaluate('changeConfirmation', 0, 1200);
+    await evaluate('pauseConfirmationAt', 0);
+  }
+  records.push({
+    name: `${id}:${reducedMotion}:annulus-confirmation-native`,
+    initial: initial.paths,
+    hidden: hidden.confirmation.opacity,
+    shown: shown.confirmation.opacity,
+    exported,
+    download: event,
+  });
 }

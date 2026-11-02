@@ -10,7 +10,10 @@ import {
   ANNULUS_ENTRIES,
   ANNULUS_ICONS,
   annulusBrowserProof,
+  annulusDownloadHref,
+  annulusDownloadedSvg,
   annulusFixture,
+  annulusPresenceGesture,
   annulusReference,
   annulusTypeFixture,
   assertAnnulusObservation,
@@ -26,6 +29,614 @@ const snapshot = JSON.parse(
 );
 const pin = { sourceCommit: snapshot.sourceCommit, figma: snapshot.annotations.source };
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+// Адаптер наблюдает DOM identity и protocol calls; SVG-геометрия остаётся у raw oracle/browser.
+function mountedAnnulus({ mutateRendered } = {}) {
+  let renders = 0;
+  const downloads = [];
+  class Node {
+    constructor(tag) {
+      this.tag = tag;
+      this.attributes = new Map();
+      this.dataset = {};
+      this.style = {};
+      this.children = [];
+      this.listeners = new Map();
+    }
+    setAttribute(name, value) {
+      this.attributes.set(name, String(value));
+      if (name.startsWith('data-')) this.dataset[name.slice(5)] = String(value);
+    }
+    getAttribute(name) {
+      return this.attributes.get(name) ?? null;
+    }
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    }
+    setCustomValidity(value) {
+      this.validity = value;
+    }
+    addEventListener(name, listener) {
+      this.listeners.set(name, listener);
+    }
+    append(...nodes) {
+      for (const node of nodes)
+        if (node instanceof Node) {
+          node.parentElement = this;
+          this.children.push(node);
+        }
+    }
+    remove() {
+      if (this.parentElement)
+        this.parentElement.children = this.parentElement.children.filter((node) => node !== this);
+      this.parentElement = null;
+    }
+    get isConnected() {
+      return this === body || Boolean(this.parentElement?.isConnected);
+    }
+    querySelectorAll(selector) {
+      const all = this.children.flatMap((node) => [node, ...node.querySelectorAll('*')]);
+      return all.filter(
+        (node) =>
+          selector === '*' ||
+          selector === node.tag ||
+          (selector === 'path[data-part]' &&
+            node.tag === 'path' &&
+            node.dataset.part !== undefined),
+      );
+    }
+    querySelector(selector) {
+      return this.querySelectorAll(selector)[0] ?? null;
+    }
+    set innerHTML(model) {
+      this.children = [];
+      const svg = new Node('svg');
+      svg.setAttribute('viewBox', model.viewBox.join(' '));
+      for (const part of model.parts) {
+        const path = new Node('path');
+        for (const [name, value] of Object.entries({
+          'data-part': part.id,
+          'data-role': part.role,
+          d: part.d,
+          'fill-rule': part.fillRule,
+          fill: part.paint.fill,
+        }))
+          path.setAttribute(name, value);
+        svg.append(path);
+      }
+      this.append(svg);
+      mutateRendered?.(svg, model);
+    }
+    get outerHTML() {
+      const attrs = [...this.attributes].map(([name, value]) => `${name}="${value}"`);
+      if (this.style.opacity !== undefined) attrs.push(`style="opacity: ${this.style.opacity};"`);
+      return `<${this.tag}${attrs.length ? ` ${attrs.join(' ')}` : ''}>${this.children.map((node) => node.outerHTML).join('')}</${this.tag}>`;
+    }
+    cloneNode(deep) {
+      const clone = new Node(this.tag);
+      for (const [key, value] of this.attributes) clone.setAttribute(key, value);
+      clone.style = { ...this.style };
+      if (deep) clone.append(...this.children.map((node) => node.cloneNode(true)));
+      return clone;
+    }
+    getBoundingClientRect() {
+      return { width: 48, height: 44 };
+    }
+    click() {
+      this.listeners.get('click')?.({ isTrusted: false });
+      if (this.tag === 'a')
+        downloads.push({ href: this.href, name: this.download, connected: this.isConnected });
+    }
+  }
+  const body = new Node('body');
+  const requests = [];
+  const controls = [];
+  const gesture = {
+    id: 'checkmark-circle.presence',
+    kind: 'state',
+    progress: 'normalized-0-to-1',
+    restProgress: 1,
+    partIds: ['confirmation-mark'],
+    tracks: [
+      {
+        partId: 'confirmation-mark',
+        kind: 'opacity',
+        unit: 'fraction',
+        interpolation: 'linear',
+        stops: [
+          { at: 0, value: 0 },
+          { at: 1, value: 1 },
+        ],
+      },
+    ],
+  };
+  const context = {
+    document: { createElement: (tag) => new Node(tag), body },
+    window: { __iconsPacked: { cleanup() {} } },
+    renderGlyphSvg: (model) => {
+      renders++;
+      return model;
+    },
+    getComputedStyle: (node) => ({ opacity: node.style.opacity ?? '1' }),
+    navigator: { userActivation: { isActive: true } },
+    performance: { now: () => 100 },
+    matchMedia: () => ({ matches: false }),
+    encodeURIComponent,
+    TextEncoder,
+    Blob,
+    URL: { createObjectURL: () => 'blob:previous', revokeObjectURL() {} },
+    compileSymbolEffect(model, capability, id, request) {
+      requests.push({ model, capability, id, request });
+      if (id !== gesture.id) return { ok: false, reason: { code: 'GESTURE_UNSUPPORTED' } };
+      return {
+        ok: true,
+        effect: {
+          version: 2,
+          icon: model.icon,
+          variant: model.variant,
+          gesture: id,
+          from: request.from,
+          to: request.to,
+          targets: [
+            { partId: gesture.partIds[0], property: 'opacity', from: request.from, to: request.to },
+          ],
+          unchangedPartIds: [model.parts.at(-1).id],
+          stages: [
+            {
+              partId: gesture.partIds[0],
+              property: 'opacity',
+              to: request.to,
+              at: 0,
+              duration: request.reducedMotion ? 0 : request.duration,
+            },
+          ],
+          options: {
+            duration: request.reducedMotion ? 0 : request.duration,
+            easing: 'linear',
+            fill: 'both',
+          },
+        },
+      };
+    },
+    sequence(steps, options) {
+      let resolve;
+      const control = {
+        state: 'running',
+        duration: Math.max(...steps.map((step) => step[2].duration)),
+        finished: new Promise((done) => {
+          resolve = done;
+        }),
+        pause() {
+          this.state = 'paused';
+        },
+        seek(time) {
+          for (const [node, { opacity }, timing] of steps) {
+            const [from, to] = Array.isArray(opacity)
+              ? opacity
+              : [Number(node.style.opacity), opacity];
+            node.style.opacity = String(
+              timing.duration === 0 ? to : from + ((to - from) * time) / timing.duration,
+            );
+          }
+        },
+        stop() {
+          this.state = 'stopped';
+          resolve({ status: 'stopped' });
+        },
+        finish() {
+          this.seek(this.duration);
+          this.state = 'finished';
+          resolve({ status: 'finished' });
+        },
+      };
+      for (const [node, { opacity }] of steps)
+        node.style.opacity = String(Array.isArray(opacity) ? opacity[0] : opacity);
+      controls.push(control);
+      if (options.reducedMotion === 'always') control.finish();
+      return control;
+    },
+    scalarSequenceSteps(effect, byPart, visible) {
+      return effect.stages.flatMap((stage) =>
+        byPart
+          .get(stage.partId)
+          .map((node) => [
+            node,
+            { opacity: [visible.get(node), stage.to] },
+            { at: stage.at, duration: stage.duration, ease: 'linear' },
+          ]),
+      );
+    },
+  };
+  for (const [index, icon] of ANNULUS_ICONS.entries()) {
+    const parts = snapshot.annotations.icons[icon].outline.parts.map(({ id, role }, zIndex) => ({
+      id,
+      role,
+      zIndex,
+      d: `M${zIndex} 0L1 1Z`,
+      fillRule: role === 'container' ? 'evenodd' : 'nonzero',
+      paint: { kind: 'fill', fill: 'currentColor' },
+    }));
+    const sources = Object.fromEntries(
+      ['outline', 'filled'].map((variant) => [
+        variant,
+        {
+          icon,
+          variant,
+          viewBox: [0, 0, 24, 24],
+          parts,
+          composition: { kind: 'layers' },
+          provenance: { kind: 'source', author: { icon, variant } },
+        },
+      ]),
+    );
+    context[`annulusSource${index}`] = { glyph: ({ variant }) => sources[variant] };
+    context[`annulus${index}`] = {
+      glyph(query = {}) {
+        const variant = query.variant ?? 'outline';
+        const source = sources[variant];
+        if (!query.variation || query.variation.enclosureEmphasis === 1) return source;
+        const emphasis = query.variation.enclosureEmphasis;
+        if (!Number.isFinite(emphasis) || emphasis <= 0)
+          throw Object.assign(new Error('input'), { code: 'INVALID_VARIATION' });
+        return {
+          ...source,
+          parts: source.parts.map((part) =>
+            part.role === 'container' ? { ...part, d: `M${emphasis} 0L1 1Z` } : part,
+          ),
+          provenance: { ...source.provenance, kind: 'authored-variation' },
+        };
+      },
+      glyphCapabilities: (variant) => ({
+        motion: {
+          state: icon === 'checkmark-circle' ? 'gesture-ready' : 'source-only',
+          gestures: icon === 'checkmark-circle' ? [gesture] : [],
+        },
+        ...(variant === 'outline' && {
+          variation: {
+            law: 'annulus.counter-scale',
+            targets: { webEffect: 'existing-part-gestures' },
+          },
+        }),
+      }),
+    };
+  }
+  runInNewContext(annulusFixture().replace(/^import[^\n]*\n/gm, ''), context);
+  return {
+    context,
+    body,
+    downloads,
+    requests,
+    controls,
+    renders: () => renders,
+    item: context.window.__iconsPacked.annulusConsumers['checkmark-circle/outline'],
+  };
+}
+
+test('accepted enclosure changes preserve mounted paths rather than replacing the content DOM', () => {
+  const mounted = mountedAnnulus();
+  const before = mounted.body.querySelectorAll('svg');
+  const nodes = before.flatMap((svg) => svg.querySelectorAll('*'));
+  const renders = mounted.renders();
+  assert.equal(mounted.item.update({ enclosureEmphasis: 1.2 }).ok, true);
+  assert.ok(mounted.body.querySelectorAll('svg').every((node, index) => node === before[index]));
+  assert.ok(
+    before
+      .flatMap((svg) => svg.querySelectorAll('*'))
+      .every((node, index) => node === nodes[index]),
+  );
+  assert.equal(
+    mounted.renders(),
+    renders,
+    'existing geometry update must not render replacement markup',
+  );
+});
+
+test('annulus native download uses a lifetime-free encoded SVG URL with exact bytes', () => {
+  const mounted = mountedAnnulus();
+  const figure = mounted.body
+    .querySelectorAll('figure')
+    .find((node) => node.dataset.annulus === 'checkmark-circle/outline');
+  const button = figure
+    .querySelectorAll('button')
+    .find((node) => node.textContent === 'Скачать SVG');
+  button.listeners.get('click')({ isTrusted: true });
+  const [download] = mounted.downloads;
+  assert.ok(download.href.startsWith('data:image/svg+xml;charset=utf-8,'));
+  assert.equal(
+    decodeURIComponent(download.href.slice(download.href.indexOf(',') + 1)),
+    mounted.item.read().exportSvg,
+  );
+  assert.equal(download.name, 'checkmark-circle-outline.svg');
+  assert.equal(download.connected, true);
+});
+
+test('SVG download URL roundtrips UTF8 and URL-reserved characters', () => {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg"><title>Знак №1 😀</title><path fill="#000" data-note="50% ? &amp; +"/></svg>';
+  const href = annulusDownloadHref(svg);
+  assert.equal(decodeURIComponent(href.slice(href.indexOf(',') + 1)), svg);
+  assert.ok(href.includes('%23') && href.includes('%25') && href.includes('%3F'));
+  assert.ok(!/\s/.test(href));
+});
+
+test('presence gesture selection requires unique invertible declared opacity progress', () => {
+  const gesture = mountedAnnulus().context.annulus1.glyphCapabilities('outline').motion.gestures[0];
+  const capability = (gestures) => ({ motion: { state: 'gesture-ready', gestures } });
+  assert.equal(annulusPresenceGesture(capability([gesture])), gesture);
+  assert.equal(annulusPresenceGesture(capability([gesture, structuredClone(gesture)])), null);
+  assert.equal(
+    annulusPresenceGesture({ motion: { state: 'anchored', gestures: [gesture] } }),
+    null,
+  );
+  for (const mutate of [
+    (value) => {
+      value.restProgress = 0;
+    },
+    (value) => {
+      value.kind = 'cycle';
+    },
+    (value) => {
+      value.partIds.push('other');
+    },
+    (value) => {
+      value.tracks.push(structuredClone(value.tracks[0]));
+    },
+    (value) => {
+      value.tracks[0].partId = 'other';
+    },
+    (value) => {
+      value.tracks[0].kind = 'rotate';
+    },
+    (value) => {
+      value.tracks[0].unit = 'degrees';
+    },
+    (value) => {
+      value.tracks[0].interpolation = 'cubic';
+    },
+    (value) => {
+      value.tracks[0].stops[0].value = 0.1;
+    },
+    (value) => {
+      value.tracks[0].stops.splice(1, 0, { at: 0.5, value: 0.9 });
+    },
+  ]) {
+    const changed = structuredClone(gesture);
+    mutate(changed);
+    assert.equal(annulusPresenceGesture(capability([changed])), null);
+  }
+});
+
+test('visible SVG snapshot copies only declared part opacity and preserves the mounted drawing', () => {
+  const mounted = mountedAnnulus();
+  mounted.item.changeConfirmation(0, 1200);
+  mounted.item.pauseConfirmationAt(300);
+  const figure = mounted.body
+    .querySelectorAll('figure')
+    .find((node) => node.dataset.annulus === 'checkmark-circle/outline');
+  const svg = figure.querySelectorAll('svg')[1];
+  const before = svg.outerHTML;
+  const exported = mounted.item.read().exportSvg;
+  assert.ok(
+    exported.includes('data-part="confirmation-mark"') && exported.includes('opacity: 0.75;'),
+  );
+  assert.ok(
+    !exported.slice(exported.indexOf('data-part="confirmation-enclosure"')).includes('style='),
+  );
+  assert.equal(svg.outerHTML, before);
+  assert.throws(() => mounted.context.visibleAnnulusSvg(svg, ['missing']), /самостоятельная часть/);
+});
+
+test('reverse and newer confirmation targets start from the captured visible pose', async () => {
+  const mounted = mountedAnnulus();
+  mounted.item.changeConfirmation(0, 1200);
+  mounted.item.pauseConfirmationAt(300);
+  const reversed = mounted.item.changeConfirmation(1, 600);
+  assert.equal(reversed.effect.from, 0.75);
+  assert.deepEqual(reversed.after, reversed.before);
+  assert.equal(mounted.controls[0].state, 'stopped');
+  mounted.item.pauseConfirmationAt(200);
+  const newer = mounted.item.changeConfirmation(0, 300);
+  assert.ok(newer.effect.from > 0.75 && newer.effect.from < 1);
+  assert.deepEqual(newer.after, newer.before);
+  await Promise.resolve();
+  assert.equal(mounted.item.read().confirmation.completion, null);
+  mounted.controls.at(-1).finish();
+  const terminal = await mounted.item.settleConfirmation();
+  assert.equal(terminal.completionStatus, 'finished');
+  assert.ok(terminal.confirmation.opacity.every((part) => part.value === 0));
+});
+
+test('an older completed occurrence cannot mark a newer confirmation finished', async () => {
+  const mounted = mountedAnnulus();
+  mounted.item.changeConfirmation(0, 300);
+  mounted.controls[0].finish();
+  mounted.item.changeConfirmation(1, 600);
+  await Promise.resolve();
+  assert.equal(mounted.item.read().confirmation.completion, null);
+  assert.equal(mounted.item.read().confirmation.playback, 'running');
+  mounted.controls[1].finish();
+  assert.equal((await mounted.item.settleConfirmation()).confirmation.completion, 'finished');
+});
+
+test('active enclosure changes retain motion control, visible pose and content node identity', () => {
+  const mounted = mountedAnnulus();
+  const figure = mounted.body
+    .querySelectorAll('figure')
+    .find((node) => node.dataset.annulus === 'checkmark-circle/outline');
+  const nodes = figure.querySelectorAll('path');
+  mounted.item.changeConfirmation(0, 1200);
+  mounted.controls[0].seek(300);
+  const before = mounted.item.read();
+  const changed = mounted.item.update({ enclosureEmphasis: 1.2 });
+  assert.equal(changed.ok, true);
+  assert.deepEqual(changed.continuity.after, changed.continuity.before);
+  assert.equal(changed.continuity.playback, 'running');
+  assert.equal(changed.continuity.generation, before.confirmation.generation);
+  assert.equal(mounted.controls.length, 1);
+  assert.ok(figure.querySelectorAll('path').every((node, index) => node === nodes[index]));
+  assert.deepEqual(mounted.item.read().confirmation.opacity, before.confirmation.opacity);
+});
+
+test('owner layout, paint and content drift refuse without committing an unaccepted model', () => {
+  for (const mutate of [
+    (model) => {
+      model.viewBox[2] = 48;
+    },
+    (model) => {
+      model.composition.kind = 'compound';
+    },
+    (model) => {
+      model.parts[0].d += 'M9 9Z';
+    },
+    (model) => {
+      model.parts[0].id = 'other';
+    },
+    (model) => {
+      model.parts[0].role = 'container';
+    },
+    (model) => {
+      model.parts[0].zIndex = 5;
+    },
+    (model) => {
+      model.parts[0].fillRule = 'evenodd';
+    },
+    (model) => {
+      model.parts[0].paint.fill = 'red';
+    },
+    (model) => {
+      model.parts[0].paint.kind = 'stroke';
+    },
+  ]) {
+    const mounted = mountedAnnulus();
+    assert.equal(mounted.item.update({ enclosureEmphasis: 1.2 }).ok, true);
+    const before = mounted.item.read();
+    const glyph = mounted.context.annulus1.glyph;
+    mounted.context.annulus1.glyph = (query) => {
+      const model = structuredClone(glyph(query));
+      mutate(model);
+      return model;
+    };
+    const changed = mounted.item.update({ enclosureEmphasis: 0.8 });
+    assert.equal(changed.ok, false);
+    assert.equal(changed.code, 'RENDER_CORRESPONDENCE_MISMATCH');
+    const after = mounted.item.read();
+    assert.equal(after.emphasis, before.emphasis);
+    assert.equal(after.provenance, before.provenance);
+    assert.deepEqual(after.paths, before.paths);
+    assert.equal(after.exportSvg, before.exportSvg);
+  }
+});
+
+test('mounted viewport, paint, path or node drift refuse before a geometry change', () => {
+  for (const mutate of [
+    (svg) => {
+      svg.setAttribute('viewBox', '0 0 48 48');
+    },
+    (svg) => {
+      svg.setAttribute('width', '99');
+    },
+    (svg) => {
+      svg.querySelector('path').setAttribute('fill', 'red');
+    },
+    (svg) => {
+      svg.querySelector('path').setAttribute('stroke', 'red');
+    },
+    (svg) => {
+      svg.querySelector('path').setAttribute('d', 'M0 0Z');
+    },
+    (svg) => {
+      svg.append(svg.querySelector('path').cloneNode(true));
+    },
+    (svg) => {
+      const node = svg.querySelector('path');
+      const copy = node.cloneNode(true);
+      node.remove();
+      svg.append(copy);
+    },
+  ]) {
+    const mounted = mountedAnnulus();
+    const figure = mounted.body
+      .querySelectorAll('figure')
+      .find((node) => node.dataset.annulus === 'checkmark-circle/outline');
+    const before = mounted.item.read();
+    const svg = figure.querySelectorAll('svg')[1];
+    const children = [...svg.children];
+    const attributes = new Map(svg.attributes);
+    const pathAttributes = children.map((node) => new Map(node.attributes));
+    mutate(svg);
+    const mutatedDrawing = svg.outerHTML;
+    const changed = mounted.item.update({ enclosureEmphasis: 1.2 });
+    assert.equal(changed.ok, false);
+    assert.equal(changed.code, 'RENDER_CORRESPONDENCE_MISMATCH');
+    assert.equal(svg.outerHTML, mutatedDrawing, 'refusal must not partly write the new geometry');
+    svg.attributes = attributes;
+    svg.children = children;
+    for (const [index, node] of children.entries()) {
+      node.attributes = pathAttributes[index];
+      node.parentElement = svg;
+    }
+    assert.equal(mounted.item.read().emphasis, 1);
+    assert.deepEqual(mounted.item.read().paths, before.paths);
+  }
+});
+
+test('initial layer binding rejects mismatched markup and removes the unmounted figure', () => {
+  let figure;
+  assert.throws(
+    () =>
+      mountedAnnulus({
+        mutateRendered: (svg) => {
+          figure = svg.parentElement.parentElement.parentElement;
+          svg.querySelector('path').setAttribute('data-part', 'other');
+        },
+      }),
+    (error) => error.code === 'RENDER_CORRESPONDENCE_MISMATCH',
+  );
+  assert.equal(figure.isConnected, false);
+});
+
+test('active cleanup stops motion once and rejects further actions', async () => {
+  const mounted = mountedAnnulus();
+  mounted.item.changeConfirmation(0, 1200);
+  mounted.item.cleanup();
+  mounted.item.cleanup();
+  assert.equal(mounted.controls[0].state, 'stopped');
+  const disposed = await mounted.item.disposal();
+  assert.equal(disposed.connected, false);
+  assert.equal(disposed.completionStatus, 'stopped');
+  assert.throws(() => mounted.item.update({ enclosureEmphasis: 1.2 }), /освобождён/);
+  assert.throws(() => mounted.item.changeConfirmation(1), /освобождён/);
+  assert.throws(() => mounted.item.pauseConfirmationAt(0), /освобождён/);
+  await assert.rejects(mounted.item.settleConfirmation(), /не завершилось/);
+});
+
+test('download diagnostics retain the original failure even if live diagnostics also fail', async () => {
+  for (const diagnosticsFail of [false, true]) {
+    const error = new Error('native download timeout');
+    const stack = error.stack;
+    const page = {
+      waitForEvent: async () => {
+        throw error;
+      },
+      evaluate: async () => {
+        if (diagnosticsFail) throw new Error('page closed');
+        return [{ trusted: true, activated: true, scheme: 'data' }];
+      },
+    };
+    const figure = { getByRole: () => ({ click: async () => {} }) };
+    await assert.rejects(
+      annulusDownloadedSvg(page, figure, 'checkmark-circle/outline', 'reduce'),
+      (observed) => {
+        assert.equal(observed, error);
+        assert.ok(observed.message.startsWith('native download timeout'));
+        assert.ok(observed.stack.startsWith(stack));
+        assert.equal(observed.message.includes('annulus-download'), !diagnosticsFail);
+        if (!diagnosticsFail) assert.ok(observed.message.includes('"activated":true'));
+        return true;
+      },
+    );
+  }
+});
 
 async function fixture(t, change = () => {}) {
   const parent = await realpath(tmpdir());
@@ -189,6 +800,8 @@ function observation(reference, icon, variant) {
     sourceOnlyDefaultIdentity: true,
     explicitDefaultIdentity: variant === 'outline' ? true : null,
     contentIdentity: true,
+    domIdentity: true,
+    confirmation: { available: false },
     roles: item.declaration?.parts.map(({ id, role }, zIndex) => ({ id, role, zIndex })),
     provenance: { kind: 'source' },
     capability:
@@ -206,7 +819,7 @@ function observation(reference, icon, variant) {
               },
               targets: {
                 svg: 'supported',
-                webEffect: 'not-declared',
+                webEffect: 'existing-part-gestures',
                 lottie: 'not-exported',
                 sfSymbols: 'not-exported',
               },
@@ -225,7 +838,15 @@ test('generated refusal requests reach the owner without private certificate fie
     removeAttribute() {},
     addEventListener() {},
     setCustomValidity() {},
-    querySelector: () => ({ setAttribute() {} }),
+    querySelector: () => {
+      const attributes = new Map([['viewBox', '0 0 24 24']]);
+      return {
+        setAttribute: (name, value) => attributes.set(name, value),
+        getAttribute: (name) => attributes.get(name) ?? null,
+        querySelectorAll: () => [],
+      };
+    },
+    querySelectorAll: () => [],
   });
   const context = {
     document: { createElement: element, body: element() },
@@ -234,7 +855,18 @@ test('generated refusal requests reach the owner without private certificate fie
     compileSymbolEffect: () => ({ ok: false }),
   };
   for (const [index] of ANNULUS_ICONS.entries()) {
-    const sources = { outline: {}, filled: {} };
+    const sources = Object.fromEntries(
+      ['outline', 'filled'].map((variant) => [
+        variant,
+        {
+          icon: ANNULUS_ICONS[index],
+          variant,
+          viewBox: [0, 0, 24, 24],
+          parts: [],
+          composition: { kind: 'compound' },
+        },
+      ]),
+    );
     const capability = {
       variation: {
         law: 'annulus.counter-scale',
@@ -327,7 +959,10 @@ test('browser proof constructs the positive domain-refusal input from the public
     }),
   };
   // Остановимся на доставке второго input: native parsing проверяет self-hosted browser.
-  await assert.rejects(annulusBrowserProof(page, reference, false, []), (error) => error === captured);
+  await assert.rejects(
+    annulusBrowserProof(page, reference, false, []),
+    (error) => error === captured,
+  );
   assert.equal(inputs[0], '1.2');
   const domain = Number(inputs[1]);
   assert.ok(Number.isFinite(domain) && domain > 0 && domain < 1);
