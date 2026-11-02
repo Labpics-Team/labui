@@ -771,7 +771,7 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 7,
+    schemaVersion: 8,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },

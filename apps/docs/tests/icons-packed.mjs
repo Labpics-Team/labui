@@ -8,7 +8,6 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
-import { assertHarnessFilesUnchanged, snapshotHarnessFiles } from './icons-harness.mjs';
 import {
   ANNULUS_ENTRIES,
   annulusBrowserProof,
@@ -23,6 +22,13 @@ import {
   authoredDotsTypeFixture,
   validateAuthoredDotsReference,
 } from './icons-authored-dots-consumer.mjs';
+import {
+  CONTENT_SCALE_ENTRIES,
+  contentScaleBrowserProof,
+  contentScaleFixture,
+  contentScaleTypeFixture,
+} from './icons-content-scale-consumer.mjs';
+import { assertHarnessFilesUnchanged, snapshotHarnessFiles } from './icons-harness.mjs';
 import {
   NOTIFICATION_ENTRIES,
   assertNotificationAnatomy,
@@ -92,7 +98,7 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8].includes(schemaVersion));
   return [
     ...new Set([
       ...REQUIRED_PUBLIC_ENTRIES,
@@ -102,6 +108,7 @@ export function consumerPublicEntries(schemaVersion) {
       ...(schemaVersion >= 5 ? AUTHORED_DOT_ENTRIES : []),
       ...(schemaVersion >= 6 ? ANNULUS_ENTRIES : []),
       ...(schemaVersion >= 7 ? STATE_ANNULUS_ENTRIES : []),
+      ...(schemaVersion >= 8 ? CONTENT_SCALE_ENTRIES : []),
     ]),
   ];
 }
@@ -127,6 +134,7 @@ export function assertIconsImport(source) {
       ...AUTHORED_DOT_ENTRIES,
       ...ANNULUS_ENTRIES,
       ...STATE_ANNULUS_ENTRIES,
+      ...CONTENT_SCALE_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -201,7 +209,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -320,6 +328,13 @@ export function validateSubject(subject) {
       validateStateReference,
     );
   else assert.equal(subject.stateAnnulusReference, undefined);
+  if (subject.schemaVersion >= 8)
+    for (const variants of Object.values(subject.annulusReference.icons))
+      assert.deepEqual(variants.outline.declaration.contentVariation, {
+        law: 'annulus.content-counter-scale',
+        parameters: ['contentScale', 'enclosureEmphasis'],
+        enclosurePartId: variants.outline.declaration.variation.enclosurePartId,
+      });
   return subject;
 }
 
@@ -476,6 +491,13 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .annulus-parameter { display:grid; gap:8px; width:100%; font-size:14px; }
 .annulus-parameter input, .authored-annulus button { min-height:44px; padding:8px 12px; font:inherit; }
 .annulus-sample output { max-width:240px; font-size:12px; line-height:1.5; }
+.content-scale-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:24px; }
+.content-scale-row span { font-size:12px; }
+.content-scale-controls { display:flex; flex-wrap:wrap; gap:16px; align-items:end; }
+.content-scale-controls label { display:grid; gap:8px; font-size:14px; }
+.content-scale-controls input, .content-scale-controls button { min-height:44px; padding:8px 12px; font:inherit; box-sizing:border-box; }
+.content-scale-controls input { width:112px; }
+.content-scale-controls output { flex-basis:100%; font-size:14px; }
 .state-enclosure-controls { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-top:20px; }
 .state-enclosure-controls label { display:grid; gap:8px; font-size:14px; }
 .state-enclosure-controls input, .state-enclosure-controls button { min-height:44px; padding:8px 12px; font:inherit; }
@@ -862,7 +884,7 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
@@ -870,7 +892,8 @@ export function consumerFixture(schemaVersion) {
     (schemaVersion >= 4 ? notificationFixture() : '') +
     (schemaVersion >= 5 ? authoredDotsFixture() : '') +
     (schemaVersion >= 6 ? annulusFixture() : '') +
-    (schemaVersion >= 7 ? stateAnnulusFixture() : '')
+    (schemaVersion >= 7 ? stateAnnulusFixture() : '') +
+    (schemaVersion >= 8 ? contentScaleFixture() : '')
   );
 }
 
@@ -1212,6 +1235,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           records,
           sameStateOpacity,
         );
+      if (reference.contentScale)
+        await contentScaleBrowserProof(page, reference.contentScale, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
@@ -1952,7 +1977,8 @@ export async function main(args = process.argv.slice(2)) {
       const typeFixture =
         authoredDotsTypeFixture() +
         (subject.schemaVersion >= 6 ? annulusTypeFixture() : '') +
-        (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '');
+        (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '') +
+        (subject.schemaVersion >= 8 ? contentScaleTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
       await writeFile(
         join(consumer, 'tsconfig.json'),
@@ -2085,6 +2111,7 @@ export async function main(args = process.argv.slice(2)) {
           authoredDots: subject.authoredDotsReference,
           annulus: subject.annulusReference,
           stateAnnulus: subject.stateAnnulusReference,
+          contentScale: subject.schemaVersion >= 8 ? subject.annulusReference : undefined,
         },
         out,
         records,

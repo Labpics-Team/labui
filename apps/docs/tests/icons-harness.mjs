@@ -9,6 +9,7 @@ export const ICONS_HARNESS_FILES = Object.freeze([
   'apps/docs/tests/icons-authored-dots-consumer.mjs',
   'apps/docs/tests/icons-annulus-consumer.mjs',
   'apps/docs/tests/icons-state-annulus-consumer.mjs',
+  'apps/docs/tests/icons-content-scale-consumer.mjs',
 ]);
 
 export async function snapshotHarnessFiles(readRepositoryFile) {
