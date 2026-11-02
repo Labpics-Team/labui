@@ -25,6 +25,17 @@ Schema7 добавляет `status-circle` и `playback-circle` с изменя�
 приостановленного перехода; исходные nodes, видимая смесь и исполнение сохраняются.
 Проверяются новое состояние, обратный ход, reset, reduced motion, точный отказ
 Filled и экспорт видимой позы. Прежний state consumer остаётся контролем.
+Schema9 добавляет `mic` и `mic-circle` в независимых Outline/Filled: настоящие
+кнопки в 16, 24 и 48 px и одну настройку ширины корпуса. Публичный
+`variations/<имя>` меняет готовую модель; consumer сохраняет высоту, стойку,
+обрамление и paint composition. Filled `mic-circle` остаётся одним `evenodd`
+path с двумя отрицательными контурами. Native выбор определяет скачиваемый SVG;
+reset возвращает тот же source-объект. Отказы вне диапазона, invalid input,
+source-only variation и необъявленное движение сохраняют принятую форму.
+Точные saved Figma masters служат oracle до импорта producer. Основания для
+доступных кнопок и compound SVG: [WAI Button Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/button/)
+и [SVG 2 fill-rule](https://www.w3.org/TR/SVG2/painting.html#FillRuleProperty),
+прочитаны 2026-11-02. Новый renderer или отдельный interaction framework не нужны.
 
 ## Запуск
 
@@ -73,14 +84,17 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 7`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 9`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
 четыре мастера многоточия, их анатомию, state declarations и grid.
 `annulusReference` связывает шестнадцать мастеров circle-семейств и принятые Outline
 декларации обрамления. `stateAnnulusReference` связывает обе группы состояний,
-их настоящие masters и принятую анатомию общего обрамления. Schema6 сохраняет
+их настоящие masters и принятую анатомию общего обрамления.
+`microphoneReference` связывает четыре мастера микрофона, их независимые декларации
+и source fingerprints. Schema8 сохраняет предыдущий content-scale consumer
+без microphone reference. Schema6 сохраняет
 круговые семейства без state variation reference. Schema5 сохраняет многоточия
 без annulus reference. Schema4
 сохраняет уведомления без dot reference. Schema3 сохраняет обе state группы.
@@ -330,7 +344,7 @@ Lab UI commit, SHA и содержимое исполненного subject, sou
 между preparation и запуском получает `CONSUMER_SOURCE_IDENTITY_REFUSED`.
 RESULT сохраняет `sourceIdentityFailure`, исходный browser outcome и hashes
 диагностических файлов; consumer packets с неверной привязкой не передаются.
-Schema1–7 сохраняют свои subject contracts. Receipt без обязательной идентичности
+Schema1–8 сохраняют свои subject contracts. Receipt без обязательной идентичности
 остаётся диагностикой и не получает успешную привязку к текущим исходникам.
 Browser/server закрываются; удаляется только собственный временный consumer.
 

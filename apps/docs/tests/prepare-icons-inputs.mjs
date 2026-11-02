@@ -6,6 +6,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { annulusReference } from './icons-annulus-consumer.mjs';
+import { microphoneReference } from './icons-microphone-consumer.mjs';
 import {
   AUTHORED_DOT_ICONS,
   validateAuthoredDotsReference,
@@ -744,6 +745,7 @@ export async function prepareInputs(options) {
   const notifications = await notificationReference(iconsRoot, pin);
   const dots = await authoredDotsReference(iconsRoot, pin);
   const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
+  const microphones = await microphoneReference(iconsRoot, pin, readAuthorMaster);
   const playback = await stateReference(iconsRoot, pin, 'playback-circle');
   for (const file of [
     'semantics/figma-baseline.json',
@@ -762,6 +764,9 @@ export async function prepareInputs(options) {
     ...Object.values(annulus.icons).flatMap((variants) =>
       Object.values(variants).map((item) => item.sourceFile),
     ),
+    ...Object.values(microphones.icons).flatMap((variants) =>
+      Object.values(variants).map((item) => item.sourceFile),
+    ),
   ]) {
     files.push({
       repository: pin.repository,
@@ -771,13 +776,14 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 8,
+    schemaVersion: 9,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
     notificationReference: notifications,
     authoredDotsReference: dots,
     annulusReference: annulus,
+    microphoneReference: microphones,
     stateAnnulusReference: {
       fileKey: pin.figma.fileKey,
       version: pin.figma.version,

@@ -30,6 +30,13 @@ import {
 } from './icons-content-scale-consumer.mjs';
 import { assertHarnessFilesUnchanged, snapshotHarnessFiles } from './icons-harness.mjs';
 import {
+  MICROPHONE_ENTRIES,
+  microphoneBrowserProof,
+  microphoneFixture,
+  microphoneTypeFixture,
+  validateMicrophoneReference,
+} from './icons-microphone-consumer.mjs';
+import {
   NOTIFICATION_ENTRIES,
   assertNotificationAnatomy,
   assertNotificationEffect,
@@ -98,7 +105,7 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9].includes(schemaVersion));
   return [
     ...new Set([
       ...REQUIRED_PUBLIC_ENTRIES,
@@ -109,6 +116,7 @@ export function consumerPublicEntries(schemaVersion) {
       ...(schemaVersion >= 6 ? ANNULUS_ENTRIES : []),
       ...(schemaVersion >= 7 ? STATE_ANNULUS_ENTRIES : []),
       ...(schemaVersion >= 8 ? CONTENT_SCALE_ENTRIES : []),
+      ...(schemaVersion >= 9 ? MICROPHONE_ENTRIES : []),
     ]),
   ];
 }
@@ -135,6 +143,7 @@ export function assertIconsImport(source) {
       ...ANNULUS_ENTRIES,
       ...STATE_ANNULUS_ENTRIES,
       ...CONTENT_SCALE_ENTRIES,
+      ...MICROPHONE_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -209,7 +218,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -335,6 +344,8 @@ export function validateSubject(subject) {
         parameters: ['contentScale', 'enclosureEmphasis'],
         enclosurePartId: variants.outline.declaration.variation.enclosurePartId,
       });
+  if (subject.schemaVersion >= 9) validateMicrophoneReference(subject.microphoneReference, reference);
+  else assert.equal(subject.microphoneReference, undefined);
   return subject;
 }
 
@@ -498,6 +509,13 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .content-scale-controls input, .content-scale-controls button { min-height:44px; padding:8px 12px; font:inherit; box-sizing:border-box; }
 .content-scale-controls input { width:112px; }
 .content-scale-controls output { flex-basis:100%; font-size:14px; }
+.microphone-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:24px; }
+.microphone-row span { font-size:12px; }
+.microphone-controls { display:flex; flex-wrap:wrap; gap:16px; align-items:end; }
+.microphone-controls label { display:grid; gap:8px; font-size:14px; }
+.microphone-controls input, .microphone-controls button { min-height:44px; padding:8px 12px; font:inherit; box-sizing:border-box; }
+.microphone-controls input { width:112px; }
+.microphone-controls output { flex-basis:100%; font-size:14px; }
 .state-enclosure-controls { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-top:20px; }
 .state-enclosure-controls label { display:grid; gap:8px; font-size:14px; }
 .state-enclosure-controls input, .state-enclosure-controls button { min-height:44px; padding:8px 12px; font:inherit; }
@@ -884,7 +902,7 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
@@ -893,7 +911,8 @@ export function consumerFixture(schemaVersion) {
     (schemaVersion >= 5 ? authoredDotsFixture() : '') +
     (schemaVersion >= 6 ? annulusFixture() : '') +
     (schemaVersion >= 7 ? stateAnnulusFixture() : '') +
-    (schemaVersion >= 8 ? contentScaleFixture() : '')
+    (schemaVersion >= 8 ? contentScaleFixture() : '') +
+    (schemaVersion >= 9 ? microphoneFixture() : '')
   );
 }
 
@@ -1237,6 +1256,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         );
       if (reference.contentScale)
         await contentScaleBrowserProof(page, reference.contentScale, reducedMotion, records);
+      if (reference.microphones)
+        await microphoneBrowserProof(page, reference.microphones, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
@@ -1978,7 +1999,8 @@ export async function main(args = process.argv.slice(2)) {
         authoredDotsTypeFixture() +
         (subject.schemaVersion >= 6 ? annulusTypeFixture() : '') +
         (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '') +
-        (subject.schemaVersion >= 8 ? contentScaleTypeFixture() : '');
+        (subject.schemaVersion >= 8 ? contentScaleTypeFixture() : '') +
+        (subject.schemaVersion >= 9 ? microphoneTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
       await writeFile(
         join(consumer, 'tsconfig.json'),
@@ -2089,7 +2111,7 @@ export async function main(args = process.argv.slice(2)) {
       ),
       moduleGraph,
       bundles,
-      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
+      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}${subject.schemaVersion >= 9 ? ', mic/mic-circle: ширина корпуса независимых Outline/Filled, native выбор и SVG export' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -2112,6 +2134,7 @@ export async function main(args = process.argv.slice(2)) {
           annulus: subject.annulusReference,
           stateAnnulus: subject.stateAnnulusReference,
           contentScale: subject.schemaVersion >= 8 ? subject.annulusReference : undefined,
+          microphones: subject.microphoneReference,
         },
         out,
         records,
