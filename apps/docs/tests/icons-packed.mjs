@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import { assertHarnessFilesUnchanged, snapshotHarnessFiles } from './icons-harness.mjs';
 import {
   ANNULUS_ENTRIES,
   annulusBrowserProof,
@@ -468,7 +469,7 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .dots-orientation select, .authored-dots button { min-height:44px; padding:8px 12px; font:inherit; }
 .dots-parameters { display:grid; gap:12px; width:100%; }
 .dots-parameters label { display:grid; gap:8px; font-size:14px; }
-.dots-parameters input { width:100%; min-height:24px; accent-color:#007aff; }
+.dots-parameters input { width:100%; min-height:24px; accent-color:var(--lab-border-focus); }
 .dots-variation output { max-width:240px; font-size:12px; line-height:1.5; }
 .annulus-row { display:flex; flex-wrap:wrap; gap:40px; align-items:start; }
 .annulus-sample { justify-items:start; min-width:224px; }
@@ -1849,17 +1850,7 @@ export async function main(args = process.argv.slice(2)) {
     const source = (args) =>
       execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 20_000 }).trim();
     const harnessBytes = await readFile(fileURLToPath(import.meta.url));
-    const harnessFiles = await Promise.all(
-      [
-        'icons-packed.mjs',
-        'icons-notification-consumer.mjs',
-        'icons-authored-dots-consumer.mjs',
-        'icons-annulus-consumer.mjs',
-      ].map(async (file) => ({
-        file: `apps/docs/tests/${file}`,
-        sha256: hash(await readFile(new URL(file, import.meta.url))),
-      })),
-    );
+    const harnessFiles = await snapshotHarnessFiles((file) => readFile(join(ROOT, file)));
     receipt.harness = {
       commit: source(['rev-parse', 'HEAD']),
       sourceSha256: hash(harnessBytes),
@@ -2113,12 +2104,7 @@ export async function main(args = process.argv.slice(2)) {
       hash(await readFile(fileURLToPath(import.meta.url))),
       receipt.harness.sourceSha256,
     );
-    for (const file of receipt.harness.files)
-      assert.equal(
-        hash(await readFile(join(ROOT, file.file))),
-        file.sha256,
-        `Изменён source harness: ${file.file}`,
-      );
+    await assertHarnessFilesUnchanged(receipt.harness.files, (file) => readFile(join(ROOT, file)));
     receipt.outcome = 'passed';
     receipt.qualification =
       'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';

@@ -320,7 +320,10 @@ Disposal останавливает ещё действующий прогон �
 при ошибке — также `failure.json` и screenshot соответствующего режима. Рядом остаются npm log,
 dependency tree, lockfile, module graph, raw/gzip/brotli размеры и SHA каждого
 bundle file, сами browser bundles и screenshots двух режимов. Запись содержит
-SHA обоих исходных файлов harness, checkout SHA, dirty state, Node, browser и идентичность runner.
+SHA полного набора исходников harness, checkout SHA, dirty state, Node, browser и идентичность runner.
+`icons-harness.mjs` задаёт единый набор исполняемых исходников для preparation,
+receipt и финальной проверки неизменности, включая сам owner и state-annulus
+модуль. Неполный или изменённый набор и изменение любого файла дают отказ.
 Browser/server закрываются; удаляется только собственный временный consumer.
 
 Размер относится к полному приложению с Lab UI и Motion: schema1 содержит две
