@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 1,
-  "repository": "Labpics-Team/lab-icons",
-  "sourceCommit": "201ea24ee5472dbf4c51929b353d204d57138ed7",
-  "figma": {
-    "fileKey": "LuaiBd4anRi4DMZayKAnY2",
-    "version": "2416636003859748575"
-  }
+    "schemaVersion":  1,
+    "repository":  "Labpics-Team/lab-icons",
+    "sourceCommit":  "61111d12f58642cc6d6f6c45e17166765bd2ca8f",
+    "figma":  {
+                  "fileKey":  "LuaiBd4anRi4DMZayKAnY2",
+                  "version":  "2416636003859748575"
+              }
 }
