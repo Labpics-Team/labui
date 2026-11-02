@@ -22,6 +22,7 @@ import {
   authoredDotsTypeFixture,
   validateAuthoredDotsReference,
 } from './icons-authored-dots-consumer.mjs';
+import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 import {
   CONTENT_SCALE_ENTRIES,
   contentScaleBrowserProof,
@@ -32,6 +33,7 @@ import { assertHarnessFilesUnchanged, snapshotHarnessFiles } from './icons-harne
 import {
   MICROPHONE_ENTRIES,
   microphoneBrowserProof,
+  microphoneComparisonBrowserProof,
   microphoneFixture,
   microphoneTypeFixture,
   validateMicrophoneReference,
@@ -45,6 +47,13 @@ import {
   validateNotificationReference,
 } from './icons-notification-consumer.mjs';
 import {
+  SOURCE_STATE_ENTRIES,
+  SOURCE_STATE_GROUPS,
+  sourceStateFixture,
+  sourceStateReferenceContract,
+  sourceStateTypeFixture,
+} from './icons-source-state-consumer.mjs';
+import {
   STATE_ANNULUS_ENTRIES,
   stateAnnulusBrowserProof,
   stateAnnulusFixture,
@@ -52,14 +61,6 @@ import {
   stateAnnulusTypeFixture,
   validateStateAnnulusReference,
 } from './icons-state-annulus-consumer.mjs';
-import {
-  SOURCE_STATE_ENTRIES,
-  SOURCE_STATE_GROUPS,
-  sourceStateFixture,
-  sourceStateReferenceContract,
-  sourceStateTypeFixture,
-} from './icons-source-state-consumer.mjs';
-import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -1393,8 +1394,17 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         );
       if (reference.contentScale)
         await contentScaleBrowserProof(page, reference.contentScale, reducedMotion, records);
-      if (reference.microphones)
+      if (reference.microphones) {
         await microphoneBrowserProof(page, reference.microphones, reducedMotion, records, out);
+        await microphoneComparisonBrowserProof(
+          page,
+          reference.microphones,
+          reference.annulus,
+          reducedMotion,
+          records,
+          out,
+        );
+      }
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,

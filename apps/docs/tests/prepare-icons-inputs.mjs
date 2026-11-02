@@ -6,14 +6,19 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { annulusReference } from './icons-annulus-consumer.mjs';
-import { assertMicrophoneVisualEvidence, MICROPHONE_VISUAL_FILES, microphoneReference } from './icons-microphone-consumer.mjs';
 import {
   AUTHORED_DOT_ICONS,
   validateAuthoredDotsReference,
 } from './icons-authored-dots-consumer.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
-import { SOURCE_STATE_GROUPS } from './icons-source-state-consumer.mjs';
+import {
+  MICROPHONE_COMPARISON_VISUAL_FILES,
+  MICROPHONE_VISUAL_FILES,
+  assertMicrophoneComparisonEvidence,
+  assertMicrophoneVisualEvidence,
+  microphoneReference,
+} from './icons-microphone-consumer.mjs';
 import {
   NOTIFICATION_ICONS,
   rawNotificationClapperWidth,
@@ -24,6 +29,7 @@ import {
   stateReferenceContract,
   validateSubject,
 } from './icons-packed.mjs';
+import { SOURCE_STATE_GROUPS } from './icons-source-state-consumer.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -477,15 +483,17 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
     proof: {
       law: group.law,
       source,
-      enclosureSha256: sourceReplacement ? null : hash(
-        stableJSON({
-          ...enclosure,
-          paint: { kind: 'fill', fill: 'currentColor' },
-          viewBox: [0, 0, 24, 24],
-          dimensions: [24, 24],
-          placement: 'after-content',
-        }),
-      ),
+      enclosureSha256: sourceReplacement
+        ? null
+        : hash(
+            stableJSON({
+              ...enclosure,
+              paint: { kind: 'fill', fill: 'currentColor' },
+              viewBox: [0, 0, 24, 24],
+              dimensions: [24, 24],
+              placement: 'after-content',
+            }),
+          ),
       specSha256: hash(stableJSON({ schemaVersion: document.schemaVersion, source, name, group })),
       ...(document.schemaVersion === 2
         ? {
@@ -657,6 +665,7 @@ const VISUAL_FILES = new Set([
   'result/no-preference-failure.png',
   'result/reduce-failure.png',
   ...MICROPHONE_VISUAL_FILES,
+  ...MICROPHONE_COMPARISON_VISUAL_FILES,
 ]);
 const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
 const VISUAL_MAX_PIXELS = 16 * 1024 * 1024;
@@ -753,8 +762,14 @@ export async function prepareInputs(options) {
   const dots = await authoredDotsReference(iconsRoot, pin);
   const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
   const microphones = await microphoneReference(iconsRoot, pin, readAuthorMaster);
-  const sourceStates = Object.fromEntries(await Promise.all(Object.keys(SOURCE_STATE_GROUPS)
-    .map(async (group) => [group, await stateReference(iconsRoot, pin, group)])));
+  const sourceStates = Object.fromEntries(
+    await Promise.all(
+      Object.keys(SOURCE_STATE_GROUPS).map(async (group) => [
+        group,
+        await stateReference(iconsRoot, pin, group),
+      ]),
+    ),
+  );
   const playback = await stateReference(iconsRoot, pin, 'playback-circle');
   for (const file of [
     'semantics/figma-baseline.json',
@@ -950,8 +965,12 @@ export async function summarize(directory) {
   };
   if (!sourceIdentityError) {
     if (subject.schemaVersion >= 9 && receipt.outcome === 'passed') {
-      try { assertMicrophoneVisualEvidence(visuals, receipt.records); }
-      catch (error) { readbackFailure ??= { file: 'result/microphone-optical-evidence', error }; }
+      try {
+        assertMicrophoneVisualEvidence(visuals, receipt.records);
+        assertMicrophoneComparisonEvidence(visuals, receipt.records);
+      } catch (error) {
+        readbackFailure ??= { file: 'result/microphone-optical-evidence', error };
+      }
     }
     for (const visual of visuals)
       addPacket(visual.path, () =>

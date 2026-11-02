@@ -8,7 +8,10 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
-import { MICROPHONE_VISUAL_FILES } from './icons-microphone-consumer.mjs';
+import {
+  MICROPHONE_COMPARISON_VISUAL_FILES,
+  MICROPHONE_VISUAL_FILES,
+} from './icons-microphone-consumer.mjs';
 import {
   assertStateAnatomy,
   stateCapabilitiesReference,
@@ -1185,9 +1188,12 @@ function decodeConsumerEvidence(stdout, prefix, digestField, file) {
 
 test('consumer PNG readback keeps exact bytes, dimensions and both source identities', () => {
   for (const file of [
-    'result/no-preference.png', 'result/reduce.png',
-    'result/no-preference-failure.png', 'result/reduce-failure.png',
+    'result/no-preference.png',
+    'result/reduce.png',
+    'result/no-preference-failure.png',
+    'result/reduce-failure.png',
     ...MICROPHONE_VISUAL_FILES,
+    ...MICROPHONE_COMPARISON_VISUAL_FILES,
   ]) {
     const uiCommit = 'b'.repeat(40);
     const block = consumerVisualLog(PNG_WITNESS, file, PIN.sourceCommit, uiCommit);
