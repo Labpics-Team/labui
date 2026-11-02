@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import {
-  MICROPHONE_ENTRIES, MICROPHONE_ICONS, assertMicrophonePaths, microphoneFixture,
+  MICROPHONE_ENTRIES, MICROPHONE_ICONS, MICROPHONE_VISUAL_FILES, assertMicrophonePaths,
+  assertMicrophoneVisualEvidence, microphoneFixture, microphoneVisualFile,
   microphoneReference, microphoneTypeFixture, rawMicrophoneParts, validateMicrophoneReference,
 } from './icons-microphone-consumer.mjs';
 import { rawContentPath } from './icons-content-scale-consumer.mjs';
@@ -131,4 +133,40 @@ test('schema9 adds public microphones and preserves earlier packed fixtures', ()
   const types = microphoneTypeFixture();
   assert.ok(types.includes("variant:'filled',variation:{bodyWidth:.8}"));
   assert.equal((types.match(/@ts-expect-error/g) ?? []).length, 2);
+});
+
+test('optical evidence requires four width and motion-mode PNGs linked to their observations', () => {
+  assert.deepEqual(MICROPHONE_VISUAL_FILES, [
+    'result/no-preference-microphone-width-0.9.png',
+    'result/no-preference-microphone-width-0.8.png',
+    'result/reduce-microphone-width-0.9.png',
+    'result/reduce-microphone-width-0.8.png',
+  ]);
+  const visuals = MICROPHONE_VISUAL_FILES.map((path) => ({ path, bytes: Buffer.from(`capture:${path}`) }));
+  const records = ['no-preference', 'reduce'].flatMap((mode) => [.9, .8].map((width) => {
+    const file = microphoneVisualFile(mode, width);
+    return {
+      name: `${mode}:microphone-width-${width}:optical`, result: 'PASS', file, bodyWidth: width,
+      pngSha256: createHash('sha256').update(visuals.find((visual) => visual.path === file).bytes).digest('hex'),
+      variants: ['mic/outline', 'mic/filled', 'mic-circle/outline', 'mic-circle/filled'],
+      sizes: [16, 24, 48], samples: 12,
+    };
+  }));
+  assertMicrophoneVisualEvidence(visuals, records);
+  assert.throws(() => assertMicrophoneVisualEvidence(visuals.slice(1), records), /отсутствует/);
+  assert.throws(() => assertMicrophoneVisualEvidence(visuals, records.slice(1)), /receipt/);
+  const changed = structuredClone(visuals);
+  changed[0].bytes = Buffer.from('different capture');
+  assert.throws(() => assertMicrophoneVisualEvidence(changed, records), /PNG не совпал/);
+  for (const update of [
+    (record) => { record.bodyWidth = 1; },
+    (record) => { record.variants.pop(); },
+    (record) => { record.sizes = [24]; },
+  ]) {
+    const altered = structuredClone(records);
+    update(altered[0]);
+    assert.throws(() => assertMicrophoneVisualEvidence(visuals, altered));
+  }
+  assert.throws(() => microphoneVisualFile('reduce', .79));
+  assert.throws(() => microphoneVisualFile('failure', .8));
 });

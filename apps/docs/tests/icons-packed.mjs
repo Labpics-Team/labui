@@ -1257,7 +1257,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       if (reference.contentScale)
         await contentScaleBrowserProof(page, reference.contentScale, reducedMotion, records);
       if (reference.microphones)
-        await microphoneBrowserProof(page, reference.microphones, reducedMotion, records);
+        await microphoneBrowserProof(page, reference.microphones, reducedMotion, records, out);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,

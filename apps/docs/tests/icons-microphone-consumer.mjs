@@ -11,10 +11,39 @@ export const MICROPHONE_ENTRIES = MICROPHONE_ICONS.flatMap((icon) => [
   `@labpics/icons/symbols/${icon}`,
   `@labpics/icons/variations/${icon}`,
 ]);
+export const MICROPHONE_VISUAL_WIDTHS = Object.freeze([.9, .8]);
+export function microphoneVisualFile(mode, width) {
+  assert.ok(['no-preference', 'reduce'].includes(mode), 'microphone visual: неизвестный режим');
+  assert.ok(MICROPHONE_VISUAL_WIDTHS.includes(width), 'microphone visual: ширина вне снимков');
+  return `result/${mode}-microphone-width-${width}.png`;
+}
+export const MICROPHONE_VISUAL_FILES = Object.freeze(
+  ['no-preference', 'reduce'].flatMap((mode) => MICROPHONE_VISUAL_WIDTHS.map((width) => microphoneVisualFile(mode, width))),
+);
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const stableJSON = (value) => JSON.stringify(value, (_, item) =>
   item && typeof item === 'object' && !Array.isArray(item)
     ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]])) : item);
+
+/** Снимок связывается с проверенной шириной, а не только с именем файла. */
+export function assertMicrophoneVisualEvidence(visuals, records) {
+  for (const mode of ['no-preference', 'reduce'])
+    for (const width of MICROPHONE_VISUAL_WIDTHS) {
+      const file = microphoneVisualFile(mode, width);
+      const matches = visuals.filter((visual) => visual.path === file);
+      assert.equal(matches.length, 1, `microphone visual: отсутствует или повторён ${file}`);
+      const observations = records.filter((record) => record.name === `${mode}:microphone-width-${width}:optical`);
+      assert.equal(observations.length, 1, `microphone visual: отсутствует или повторён receipt ${file}`);
+      const observed = observations[0];
+      assert.equal(observed.result, 'PASS');
+      assert.equal(observed.file, file);
+      assert.equal(observed.bodyWidth, width);
+      assert.equal(observed.pngSha256, digest(matches[0].bytes), `microphone visual: PNG не совпал с receipt ${file}`);
+      assert.deepEqual(observed.variants, MICROPHONE_ICONS.flatMap((icon) => ['outline', 'filled'].map((variant) => `${icon}/${variant}`)));
+      assert.deepEqual(observed.sizes, [16, 24, 48]);
+      assert.equal(observed.samples, 12);
+    }
+}
 
 // Только oracle разбирает raw master. Браузер получает готовую публичную модель.
 export function rawMicrophoneParts(reference) {
@@ -361,7 +390,7 @@ microphoneCircleGlyph({variation:{center:[12,12]}});
 `;
 }
 
-export async function microphoneBrowserProof(page, reference, reducedMotion, records) {
+export async function microphoneBrowserProof(page, reference, reducedMotion, records, out) {
   const read = () => page.evaluate(() => window.__iconsPacked.microphoneConsumer.read());
   const call = (method, ...args) => page.evaluate(({ method, args }) => window.__iconsPacked.microphoneConsumer[method](...args), { method, args });
   const section = page.locator('section.microphone-set');
@@ -398,13 +427,29 @@ export async function microphoneBrowserProof(page, reference, reducedMotion, rec
     }
     return observation;
   };
+  const capture = async (width, observation) => {
+    const file = microphoneVisualFile(reducedMotion, width);
+    const scroll = await page.evaluate(() => [window.scrollX, window.scrollY]);
+    let png;
+    try { png = await section.screenshot({ path: join(out, file.slice('result/'.length)) }); }
+    finally { await page.evaluate(([x, y]) => window.scrollTo(x, y), scroll); }
+    await check(width);
+    records.push({
+      name: `${reducedMotion}:microphone-width-${width}:optical`, result: 'PASS',
+      file, bodyWidth: observation.bodyWidth, pngSha256: digest(png),
+      variants: observation.models.map(({ icon, variant }) => `${icon}/${variant}`),
+      sizes: [...new Set(observation.samples.map(({ size }) => size))], samples: observation.samples.length,
+    });
+  };
   await check(1);
   const field = section.getByRole('spinbutton', { name: 'Ширина корпуса', exact: true });
   await field.fill('0.9');
   const middle = await check(.9);
   assert.ok(middle.events.some((event) => event.trusted && event.result.ok));
+  await capture(.9, middle);
   await field.fill('0.8');
   const minimum = await check(.8);
+  await capture(.8, minimum);
   const prior = minimum.samples.map((sample) => sample.paths);
   for (const [value, code] of [[.79, 'VARIATION_OUTSIDE_DOMAIN'], [1.01, 'VARIATION_OUTSIDE_DOMAIN'], [0, 'INVALID_VARIATION']]) {
     await field.fill(String(value));

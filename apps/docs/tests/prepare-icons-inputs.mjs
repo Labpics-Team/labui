@@ -6,7 +6,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { annulusReference } from './icons-annulus-consumer.mjs';
-import { microphoneReference } from './icons-microphone-consumer.mjs';
+import { assertMicrophoneVisualEvidence, MICROPHONE_VISUAL_FILES, microphoneReference } from './icons-microphone-consumer.mjs';
 import {
   AUTHORED_DOT_ICONS,
   validateAuthoredDotsReference,
@@ -650,6 +650,7 @@ const VISUAL_FILES = new Set([
   'result/reduce.png',
   'result/no-preference-failure.png',
   'result/reduce-failure.png',
+  ...MICROPHONE_VISUAL_FILES,
 ]);
 const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
 const VISUAL_MAX_PIXELS = 16 * 1024 * 1024;
@@ -938,6 +939,10 @@ export async function summarize(directory) {
     }
   };
   if (!sourceIdentityError) {
+    if (subject.schemaVersion >= 9 && receipt.outcome === 'passed') {
+      try { assertMicrophoneVisualEvidence(visuals, receipt.records); }
+      catch (error) { readbackFailure ??= { file: 'result/microphone-optical-evidence', error }; }
+    }
     for (const visual of visuals)
       addPacket(visual.path, () =>
         consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit),
