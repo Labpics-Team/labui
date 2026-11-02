@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { type Locator, type Page, type TestInfo, expect, test } from '@playwright/test';
 import { decodePng } from '../../../packages/colors/test/fx-render/fx-render.mjs';
+import { normalizeCssColor } from './support/color.js';
 
 type Rgb = [number, number, number];
 type Renderer = 'lit' | 'react';
@@ -550,6 +551,7 @@ test('порча secondary обнаруживается реальным цве�
 async function materialPaint(panel: Locator) {
   return panel.evaluate((e) => {
     const style = getComputedStyle(e);
+    const rim = getComputedStyle(e, '::before');
     const prefixed = style as CSSStyleDeclaration & { webkitBackdropFilter?: string };
     const inline = (e as HTMLElement).style;
     return {
@@ -560,10 +562,13 @@ async function materialPaint(panel: Locator) {
       inline:
         inline.getPropertyValue('backdrop-filter') ||
         inline.getPropertyValue('-webkit-backdrop-filter'),
-      base: style.getPropertyValue('--_base').trim(),
-      paint: style.getPropertyValue('--_base-paint').trim(),
-      noise: style.getPropertyValue('--_noise').trim(),
-      rim: style.getPropertyValue('--_rim').trim(),
+      // Фикстура использует SOFT: проверяем публичный цвет и физическую краску,
+      // а не наличие неактивного рецепта в custom property.
+      base: style.getPropertyValue('--lab-bg-material-soft-02').trim(),
+      paint: style.backgroundColor,
+      opacity: Number(style.opacity),
+      rimImage: rim.backgroundImage,
+      rimOpacity: Number(rim.opacity),
       image: style.backgroundImage,
     };
   });
@@ -583,20 +588,30 @@ for (const runtime of [false, true])
     await expect.poll(async () => (await materialPaint(panel)).filter).not.toBe('none');
     await expect.poll(async () => (await materialPaint(inherited)).filter).toBe('none');
     const normal = await materialPaint(panel);
-    expect(normal.noise).not.toBe('none');
-    expect(normal.rim).not.toBe('none');
+    expect(normal.image).toContain('data:image/png');
+    expect(normal.rimImage).not.toBe('none');
+    expect(normal.rimOpacity).toBe(1);
     await panel.evaluate((e) => e.setAttribute('data-contrast', 'more'));
     await expect.poll(async () => (await materialPaint(panel)).filter).toBe('none');
     const more = await materialPaint(panel);
     expect(more.inline).toBe('');
-    expect(more.paint).toBe(more.base);
-    expect(more.noise).toBe('none');
-    expect(more.rim).toBe('none');
+    const base = await normalizeCssColor(page, more.base);
+    const paint = await normalizeCssColor(page, more.paint);
+    expect(base, 'публичный SOFT base разрешён').not.toBeNull();
+    expect(paint?.a, 'more сохраняет непрозрачную основу').toBe(1);
+    expect(paint, 'more рисует публичный SOFT base').toEqual(base);
+    expect(more.opacity, 'основа не ослаблена opacity поверхности').toBe(1);
+    expect(more.image, 'зерно не участвует в краске more').not.toMatch(/(?:url|image-set)\(/);
+    expect(more.rimOpacity, 'рим не участвует в краске more').toBe(0);
     await page.emulateMedia({ contrast: 'no-preference' });
     await expect.poll(async () => (await materialPaint(inherited)).filter).not.toBe('none');
     await expect.poll(async () => (await materialPaint(panel)).filter).toBe('none');
     await panel.evaluate((e) => e.setAttribute('data-contrast', 'normal'));
     await expect.poll(async () => (await materialPaint(panel)).filter).not.toBe('none');
+    const restored = await materialPaint(panel);
+    for (const key of ['paint', 'opacity', 'image', 'rimImage', 'rimOpacity'] as const) {
+      expect(restored[key], `normal восстанавливает ${key}`).toEqual(normal[key]);
+    }
     await page.emulateMedia({ forcedColors: 'active' });
     const forcedSupported = await page.evaluate(
       () => matchMedia('(forced-colors: active)').matches,
@@ -606,10 +621,11 @@ for (const runtime of [false, true])
       const forced = await materialPaint(panel);
       expect(forced.inline).toBe('');
       expect(forced.image).toBe('none');
+      expect(forced.rimOpacity).toBe(0);
     }
     await info.attach('material-scopes', {
       body: JSON.stringify(
-        { normal, more, forcedSupported, forced: await materialPaint(panel) },
+        { normal, more, restored, forcedSupported, forced: await materialPaint(panel) },
         null,
         2,
       ),

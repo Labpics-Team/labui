@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru" class="lab-scope" data-theme="light" data-material="acrylic" data-contrast="normal">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Card: пространственное размытие внешнего фона</title>
+    <style>
+      @import "@labpics/fonts/fonts.css";
+      @import "@labui/colors/contract.css";
+      @import "@labpics/ui-tokens/tokens.css";
+      @import "@labpics/ui-core/theme.css";
+      @import "@labpics/ui-shadow/shadow.css";
+      @import "@labpics/ui-materials/material.css";
+      html, body { margin: 0; }
+      body {
+        min-height: 100vh;
+        /* Измерительный сигнал принадлежит приложению, цвета материала не переопределены. */
+        background: repeating-linear-gradient(90deg, rgb(216 40 100) 0 8px, rgb(24 180 212) 8px 16px);
+      }
+      main { display: flex; gap: 64px; padding: 96px; }
+      lab-card, [data-lab-card] { width: 384px; }
+      .sample { height: 192px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <lab-card id="core-card" variant="elevated" aria-label="Core Card">
+        <div class="sample" aria-hidden="true"></div>
+      </lab-card>
+      <div id="react-mount"></div>
+    </main>
+    <script type="module" src="./card-backdrop.ts"></script>
+  </body>
+</html>

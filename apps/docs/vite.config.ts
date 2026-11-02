@@ -249,6 +249,7 @@ export default defineConfig({
           'src/_fixtures/card-material-shadow.html',
         ),
         'fixture-card-anatomy': resolve(__dirname, 'src/_fixtures/card-anatomy.html'),
+        'fixture-card-backdrop': resolve(__dirname, 'src/_fixtures/card-backdrop.html'),
         'fixture-material-runtime-lifetime': resolve(
           __dirname,
           'src/_fixtures/material-runtime-lifetime.html',

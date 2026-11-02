@@ -4,7 +4,7 @@ set -euo pipefail
 exec 2>&1
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-image='mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c'
+image='mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f'
 job="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/labui-browser.XXXXXX")"
 commands_paused=false
 ci_resume_token=''
@@ -82,6 +82,8 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
     cd /job/source
     export COREPACK_HOME=/job/corepack PATH="/job/bin:$PATH"
+    # Node.js 25+ не содержит Corepack; bootstrap остаётся в каталоге задания.
+    npm install --global --prefix /job --cache /job/npm-cache --ignore-scripts --no-audit --no-fund corepack@0.36.0
     corepack enable --install-directory /job/bin
     pnpm install --frozen-lockfile --store-dir /job/pnpm-store
     pnpm --filter "@labpics/ui-docs^..." build
