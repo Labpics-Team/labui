@@ -808,7 +808,8 @@ export async function downloadedSvg(page, button) {
     assert.equal(await download.failure(), null);
     return Buffer.concat(chunks).toString('utf8');
   });
-  state.pending = result.catch(() => {});
+  // После отказа native счётчик и незавершённый клик требуют новой страницы.
+  state.pending = result;
   return result;
 }
 

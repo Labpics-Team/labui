@@ -265,7 +265,43 @@ test('native download helper keeps pages independent and adds no wait after a na
   assert.deepEqual(waits, []);
 });
 
-test('native download helper serializes event ownership and retains a failed caller outcome', async () => {
+test('native download helper serializes simultaneous successful requests with exact file ownership', async () => {
+  const events = [];
+  let complete;
+  let ordinal = 0;
+  const page = {
+    waitForEvent: () => {
+      events.push('listen');
+      return new Promise((resolve) => {
+        complete = resolve;
+      });
+    },
+  };
+  const button = {
+    click: async () => {
+      const current = ++ordinal;
+      events.push(`click:${current}`);
+      complete({
+        createReadStream: async () =>
+          (async function* () {
+            events.push(`stream:${current}`);
+            yield Buffer.from(`<svg data-n="${current}"/>`);
+          })(),
+        failure: async () => null,
+      });
+    },
+  };
+  assert.deepEqual(
+    await Promise.all([
+      dotsConsumer.downloadedSvg(page, button),
+      dotsConsumer.downloadedSvg(page, button),
+    ]),
+    ['<svg data-n="1"/>', '<svg data-n="2"/>'],
+  );
+  assert.deepEqual(events, ['listen', 'click:1', 'stream:1', 'listen', 'click:2', 'stream:2']);
+});
+
+test('native download helper fences the page queue after a stream failure', async () => {
   const events = [];
   const failure = new Error('native stream failed');
   let complete;
@@ -298,8 +334,81 @@ test('native download helper serializes event ownership and retains a failed cal
   const first = dotsConsumer.downloadedSvg(page, button);
   const second = dotsConsumer.downloadedSvg(page, button);
   await assert.rejects(first, (error) => error === failure);
-  assert.equal(await second, '<svg/>');
-  assert.deepEqual(events, ['listen', 'click:1', 'stream:1', 'listen', 'click:2', 'stream:2']);
+  await assert.rejects(second, (error) => error === failure);
+  assert.deepEqual(events, ['listen', 'click:1', 'stream:1']);
+});
+
+test('native download helper cannot transfer a late click event after its wait failed', async () => {
+  const failure = new Error('native event wait failed');
+  const file = {
+    createReadStream: async () =>
+      (async function* () {
+        yield Buffer.from('<svg/>');
+      })(),
+    failure: async () => null,
+  };
+  let waits = 0;
+  let clicks = 0;
+  let finishClick;
+  let lateDownload;
+  const page = {
+    waitForEvent: () => {
+      if (++waits === 1) return Promise.reject(failure);
+      return new Promise((resolve) => {
+        lateDownload = resolve;
+      });
+    },
+  };
+  const button = {
+    click: () => {
+      if (++clicks > 1) return Promise.resolve();
+      return new Promise((resolve) => {
+        finishClick = () => {
+          lateDownload?.(file);
+          resolve();
+        };
+      });
+    },
+  };
+  const first = dotsConsumer.downloadedSvg(page, button);
+  const second = dotsConsumer.downloadedSvg(page, button);
+  await assert.rejects(first, (error) => error === failure);
+  await Promise.resolve();
+  await Promise.resolve();
+  finishClick();
+  await assert.rejects(second, (error) => error === failure);
+  assert.equal(waits, 1);
+  assert.equal(clicks, 1);
+});
+
+test('native download helper rejects activation recovery on the same page and accepts a fresh page', async (t) => {
+  let clock = 0;
+  t.mock.method(performance, 'now', () => clock);
+  const failure = new Error('native click failed before dispatch');
+  const file = {
+    createReadStream: async () =>
+      (async function* () {
+        yield Buffer.from('<svg/>');
+      })(),
+    failure: async () => null,
+  };
+  const page = { waitForEvent: async () => file };
+  let clicks = 0;
+  const button = {
+    click: async () => {
+      if (++clicks === 1) throw failure;
+    },
+  };
+  await assert.rejects(dotsConsumer.downloadedSvg(page, button), (error) => error === failure);
+  clock = 20_000;
+  for (let index = 0; index < 12; index++)
+    await assert.rejects(dotsConsumer.downloadedSvg(page, button), (error) => error === failure);
+  assert.equal(clicks, 1);
+  assert.equal(
+    await dotsConsumer.downloadedSvg({ waitForEvent: async () => file }, button),
+    '<svg/>',
+  );
+  assert.equal(clicks, 2);
 });
 
 test('four independent masters carry exact Figma, semantic and grid receipts', async (t) => {
