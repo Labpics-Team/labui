@@ -1219,6 +1219,11 @@ async function browserProof(browser, url, reference, out, records, browserErrors
               id,
             );
             assert.equal(disposed.connected, false);
+            if (icon === 'checkmark-circle' && variant === 'outline') {
+              const terminal = reducedMotion === 'reduce' ? 'finished' : 'stopped';
+              assert.equal(disposed.playback, terminal);
+              assert.equal(disposed.completionStatus, terminal);
+            }
             records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
           }
     } catch (error) {
