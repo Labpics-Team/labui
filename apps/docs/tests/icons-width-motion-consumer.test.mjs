@@ -12,6 +12,7 @@ import {
   WIDTH_MOTION_VISUAL_FILES,
   assertWidthMotionVisualEvidence,
   createBodyWidthController,
+  mountWidthMotionConsumer,
   mountWidthWorkload,
   validateWidthMotionReference,
   widthMotionFixture,
@@ -419,6 +420,163 @@ test('mounted width cleanup removes its nodes even after a rejected Motion compl
   } finally {
     if (previousMedia) Object.defineProperty(globalThis, 'matchMedia', previousMedia);
     else Reflect.deleteProperty(globalThis, 'matchMedia');
+  }
+});
+
+function deferredWidthMount() {
+  const elements = [];
+  const updates = [];
+  class Element {
+    constructor(tag) {
+      this.tag = tag;
+      this.children = [];
+      this.attributes = new Map();
+      this.listeners = new Map();
+      this.dataset = {};
+      this.style = {};
+      elements.push(this);
+      if (tag === 'lab-button') {
+        const native = new Element('button');
+        this.shadowRoot = { querySelector: () => native };
+        this.updateComplete = new Promise((resolve) => updates.push(resolve));
+      }
+    }
+    get isConnected() {
+      return this.tag === 'body' || Boolean(this.parent?.isConnected);
+    }
+    setAttribute(name, value) {
+      this.attributes.set(name, value);
+    }
+    getAttribute(name) {
+      return this.attributes.get(name) ?? null;
+    }
+    append(...children) {
+      for (const child of children) {
+        child.parent = this;
+        this.children.push(child);
+      }
+    }
+    remove() {
+      this.parent.children = this.parent.children.filter((child) => child !== this);
+      this.parent = null;
+    }
+    set innerHTML(_svg) {
+      const svg = new Element('svg');
+      const path = new Element('path');
+      path.setAttribute('d', 'width:1');
+      svg.append(path);
+      this.append(svg);
+    }
+    querySelectorAll(selector) {
+      const descendants = this.children.flatMap((child) => [child, ...child.querySelectorAll('*')]);
+      return selector === '*' ? descendants : descendants.filter((child) => child.tag === selector);
+    }
+    querySelector(selector) {
+      return this.querySelectorAll(selector)[0];
+    }
+    addEventListener(event, handler) {
+      const handlers = this.listeners.get(event) ?? new Set();
+      handlers.add(handler);
+      this.listeners.set(event, handlers);
+    }
+    removeEventListener(event, handler) {
+      this.listeners.get(event)?.delete(handler);
+    }
+    dispatchEvent(event) {
+      for (const handler of this.listeners.get(event.type) ?? []) handler(event);
+    }
+  }
+  const body = new Element('body');
+  const mediaListeners = new Set();
+  const media = {
+    matches: false,
+    addEventListener: (_event, handler) => mediaListeners.add(handler),
+    removeEventListener: (_event, handler) => mediaListeners.delete(handler),
+  };
+  const saved = ['document', 'matchMedia', 'MouseEvent'].map((name) => [
+    name,
+    Object.getOwnPropertyDescriptor(globalThis, name),
+  ]);
+  const globals = {
+    document: { body, createElement: (tag) => new Element(tag) },
+    matchMedia: () => media,
+    MouseEvent: class {
+      constructor(type) {
+        this.type = type;
+      }
+    },
+  };
+  for (const [name, value] of Object.entries(globals))
+    Object.defineProperty(globalThis, name, { configurable: true, value });
+  const apis = ['mic', 'mic-circle'].map((icon) => ({
+    prepareBodyWidth: () => ({
+      ok: true,
+      prepared: {
+        icon,
+        svg: '<svg><path /></svg>',
+        renderTarget: { selector: 'path' },
+        sample: () => ({ ok: true, d: 'width:1' }),
+      },
+    }),
+    motionCapabilities: () => ({ ok: true, capabilities: {} }),
+  }));
+  const consumer = mountWidthMotionConsumer(apis, [], [], () => {
+    throw new Error('Readiness проверка не запускает анимацию');
+  });
+  return {
+    consumer,
+    mediaListeners,
+    updates,
+    nativeButtons: elements
+      .filter((element) => element.tag === 'lab-button')
+      .map((element) => element.shadowRoot.querySelector('button')),
+    listenerCount: () =>
+      elements.reduce(
+        (count, element) =>
+          count + [...element.listeners.values()].reduce((sum, handlers) => sum + handlers.size, 0),
+        0,
+      ),
+    restore: () => {
+      for (const [name, descriptor] of saved)
+        if (descriptor) Object.defineProperty(globalThis, name, descriptor);
+        else Reflect.deleteProperty(globalThis, name);
+    },
+  };
+}
+
+test('mounted readiness owns native listeners until cleanup and cannot revive them afterward', async () => {
+  for (const order of ['ready-first', 'cleanup-first', 'partially-ready', 'cleanup-pending']) {
+    const mounted = deferredWidthMount();
+    try {
+      assert.equal(mounted.nativeButtons.length, 12);
+      if (order === 'ready-first') {
+        for (const update of mounted.updates) update();
+        await mounted.consumer.ready;
+        assert.ok(
+          mounted.nativeButtons.every((button) => button.listeners.get('click').size === 1),
+        );
+      } else if (order === 'partially-ready') {
+        for (const update of mounted.updates.slice(0, 6)) update();
+        await Promise.resolve();
+        assert.equal(
+          mounted.nativeButtons.filter((button) => button.listeners.get('click')?.size === 1)
+            .length,
+          6,
+        );
+      }
+      const cleanup = mounted.consumer.cleanup();
+      if (order === 'cleanup-pending') for (const update of mounted.updates) update();
+      const disposal = await cleanup;
+      assert.equal(disposal.connected, false);
+      assert.equal(disposal.listenersRemoved, true);
+      assert.equal(mounted.listenerCount(), 0);
+      for (const update of mounted.updates) update();
+      await mounted.consumer.ready;
+      assert.equal(mounted.listenerCount(), 0, order);
+      assert.equal(mounted.mediaListeners.size, 0);
+    } finally {
+      mounted.restore();
+    }
   }
 });
 

@@ -313,7 +313,13 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
   const entries = [];
   const events = [];
   const listeners = [];
+  let disposed = false;
   let disposal;
+  const listen = (element, event, handler) => {
+    if (disposed) return;
+    element.addEventListener(event, handler);
+    listeners.push({ element, event, handler });
+  };
   for (const [iconIndex, api] of apis.entries())
     for (const variant of ['outline', 'filled']) {
       const result = api.prepareBodyWidth(variant);
@@ -420,10 +426,6 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
       const status = document.createElement('output');
       status.setAttribute('aria-live', 'polite');
       status.textContent = 'Авторская ширина';
-      const listen = (element, event, handler) => {
-        element.addEventListener(event, handler);
-        listeners.push({ element, event, handler });
-      };
       for (const [width, label] of [
         [1, 'Авторская ширина'],
         [0.8, 'Узкий корпус'],
@@ -513,10 +515,10 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
     entries.flatMap((entry) =>
       entry.samples.map(async (sample) => {
         await sample.button.updateComplete;
+        if (disposed) return;
         const element = sample.button.shadowRoot.querySelector('button');
         const handler = () => sample.nativeClicks++;
-        element.addEventListener('click', handler);
-        listeners.push({ element, event: 'click', handler });
+        listen(element, 'click', handler);
       }),
     ),
   );
@@ -576,6 +578,7 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
         sample: api.prepareBodyWidth().prepared.sample(Number.NaN),
       })),
     cleanup: async () => {
+      disposed = true;
       for (const item of listeners) item.element.removeEventListener(item.event, item.handler);
       const receipts = await Promise.all(entries.map((entry) => entry.controller.cleanup()));
       section.remove();
