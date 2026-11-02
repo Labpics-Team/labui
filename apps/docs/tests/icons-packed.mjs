@@ -671,6 +671,18 @@ window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async it
   } };
 `;
 
+// SVG presentation-атрибуты уступают CSS cascade: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+// Нейтральные свойства не добавляют paint, преобразование или отсечение raw paths.
+const SOURCE_STATE_NEUTRAL_PRESENTATION = Object.freeze({
+  stroke: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none',
+  filter: 'none', 'clip-path': 'none', 'mask-image': 'none', 'offset-path': 'none', clip: 'auto',
+  'marker-start': 'none', 'marker-mid': 'none', 'marker-end': 'none',
+  visibility: 'visible', 'mix-blend-mode': 'normal',
+  'background-color': 'rgba(0, 0, 0, 0)', 'background-image': 'none', 'box-shadow': 'none',
+  'outline-style': 'none', 'border-top-style': 'none', 'border-right-style': 'none',
+  'border-bottom-style': 'none', 'border-left-style': 'none',
+});
+
 const STATE_FIXTURE = `
 import * as statusCircle from '@labpics/icons/states/status-circle';
 import { sequence } from '@labpics/motion';
@@ -820,6 +832,22 @@ function stateTree() {
     partId: node.dataset.part ?? null, role: node.dataset.role ?? null, state: node.dataset.state ?? null,
     path: node.localName === 'path' ? statePath(node) : null }));
 }
+function statePresentation() {
+  const properties = ${JSON.stringify([...Object.keys(SOURCE_STATE_NEUTRAL_PRESENTATION),
+    'color', 'fill', 'fill-opacity', 'fill-rule', 'opacity', 'display', 'width', 'height', 'd'])};
+  return { color: getComputedStyle(stateButton).color,
+    nodes: [stateSvg, ...stateSvg.querySelectorAll('*')].map(node => {
+      const style = getComputedStyle(node);
+      // CSSOM сериализует оба path значения одинаково; raw d отдельно сверяется с master.
+      const sourcePath = node.localName === 'path' ? document.createElementNS('http://www.w3.org/2000/svg', 'path') : null;
+      sourcePath?.style.setProperty('d', 'path("' + node.getAttribute('d') + '")');
+      return { tag: node.localName,
+        attributes: Object.fromEntries(node.getAttributeNames().sort().map(name => [name, node.getAttribute(name)])),
+        inline: Object.fromEntries([...node.style].map(name => [name, node.style.getPropertyValue(name)])),
+        computed: Object.fromEntries(properties.map(name => [name, style.getPropertyValue(name)])),
+        sourceD: sourcePath?.style.getPropertyValue('d') ?? null };
+    }) };
+}
 function sharedAncestorsUnchanged(node) {
   for (let parent = node.parentElement; parent; parent = parent.parentElement) {
     const style = getComputedStyle(parent);
@@ -856,6 +884,7 @@ function readState() {
   const rectangle = native?.getBoundingClientRect();
   return { capabilities: stateCapabilitiesValue, opacity: stateOpacity(),
     tree: stateTree(),
+    ...(configuration.law === 'source.replace' ? { presentation: statePresentation() } : {}),
     viewBox: stateSvg.getAttribute('viewBox').split(/\\s+/).map(Number),
     dimensions: ['width', 'height'].map(name => Number(stateSvg.getAttribute(name))),
     groups: [...stateSvg.querySelectorAll('g[data-state][data-part]')].map(node => ({ id: node.dataset.state,
@@ -1709,6 +1738,45 @@ export function assertStateAnatomy(observation, reference) {
         tree.push({ tag: 'path', parent, partId: path.partId, role: path.role, state: null, path });
     }
     assert.deepEqual(observation.tree, tree, 'source state SVG содержит необъявленную геометрию или структуру');
+    const presentation = observation.presentation;
+    const validOpacity = value => typeof value === 'string' && value.trim() !== '' &&
+      Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 1;
+    assert.deepEqual(presentation?.nodes.map(node => node.tag), ['svg', ...tree.map(node => node.tag)], 'source presentation содержит не все узлы');
+    for (const [index, node] of presentation.nodes.entries()) {
+      const part = tree[index - 1];
+      const group = node.tag === 'g';
+      const expected = index === 0 ? {
+        viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg', width: '24', height: '24',
+        fill: 'currentColor', slot: 'icon', 'aria-hidden': 'true', focusable: 'false',
+      } : group ? { 'data-part': part.partId, 'data-role': 'state', 'data-state': part.state }
+        : { 'data-part': part.partId, 'data-role': part.role, d: part.path.d,
+          fill: 'currentColor', 'fill-rule': part.path.fillRule };
+      const allowed = [...Object.keys(expected), 'style', ...(group ? ['opacity'] : [])];
+      for (const name of Object.keys(node.attributes))
+        assert.ok(allowed.includes(name), `source presentation: атрибут ${name}`);
+      for (const [name, value] of Object.entries(expected))
+        assert.equal(node.attributes[name], value, `source presentation: атрибут ${name}`);
+      for (const [name, value] of Object.entries(node.inline)) {
+        assert.equal(group && name === 'opacity', true, `source presentation: style ${name}`);
+        assert.ok(validOpacity(value), 'source presentation: opacity');
+      }
+      if (group) assert.ok(validOpacity(node.attributes.opacity), 'source presentation: атрибут opacity');
+      for (const [name, value] of Object.entries(SOURCE_STATE_NEUTRAL_PRESENTATION))
+        assert.equal(node.computed[name], value, `source presentation: paint/геометрия ${name}`);
+      assert.equal(node.computed.color, presentation.color, 'source presentation: наследуемый color');
+      assert.equal(node.computed.fill, presentation.color, 'source presentation: заливка currentColor');
+      assert.equal(Number(node.computed['fill-opacity']), 1, 'source presentation: fill opacity');
+      assert.equal(node.computed['fill-rule'], part?.path?.fillRule ?? 'nonzero', 'source presentation: fill rule');
+      assert.equal(node.computed.display, index === 0 ? 'block' : 'inline', 'source presentation: display');
+      assert.ok(group ? validOpacity(node.computed.opacity) : node.computed.opacity === '1', 'source presentation: opacity вне state group');
+      if (index === 0) {
+        assert.equal(node.computed.width, '24px', 'source presentation: ширина SVG');
+        assert.equal(node.computed.height, '24px', 'source presentation: высота SVG');
+      } else if (node.tag === 'path') {
+        assert.ok(typeof node.sourceD === 'string' && node.sourceD.length > 0, 'source presentation: CSS path не разобран');
+        assert.equal(node.computed.d, node.sourceD, 'source presentation: CSS изменил raw геометрию');
+      }
+    }
   }
   assert.deepEqual(
     observation.groups,
