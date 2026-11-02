@@ -336,6 +336,33 @@ test('domain отказ сохраняет форму, mixture и ранее п�
   assert.deepEqual(item.presentation.read().execution, before.execution);
 });
 
+test('кнопка reset возвращает точный авторский d и сохраняет приостановленный переход', (t) => {
+  const item = mounted(t);
+  item.presentation.update({ variation: { enclosureEmphasis: 1.25 } });
+  const before = item.presentation.read();
+  const nodes = [item.svg, ...item.svg.querySelectorAll('*')];
+  const reset = item.section.querySelectorAll('*').find(
+    (node) => node.tagName === 'BUTTON' && node.textContent === 'Авторское обрамление',
+  );
+  assert.ok(reset);
+  reset.listeners.get('click')({ isTrusted: true });
+  const after = item.presentation.read();
+  assert.equal(after.d, before.originalD);
+  assert.equal(after.emphasis, 1);
+  assert.equal(after.inputValue, '1');
+  assert.equal(after.refusal, null);
+  assert.deepEqual([item.svg, ...item.svg.querySelectorAll('*')], nodes);
+  assert.equal(item.from.getAttribute('opacity'), '0.7');
+  assert.equal(item.to.getAttribute('opacity'), '0.3');
+  assert.deepEqual(after.execution, before.execution);
+  const event = after.events.at(-1);
+  assert.equal(event.action, 'reset');
+  assert.equal(event.trusted, true);
+  assert.equal(event.result.ok, true);
+  assert.deepEqual(event.result.continuity.before, event.result.continuity.after);
+  assert.deepEqual(event.result.continuity.execution, event.result.continuity.afterExecution);
+});
+
 test('внешний remount обнаруживается до записи нового patch', (t) => {
   const item = mounted(t);
   const replacement = item.enclosure.cloneNode();

@@ -223,7 +223,14 @@ export function mountStateAnnulusPresentation(api, svg, capability, section, lif
   const reset = document.createElement('button');
   reset.type = 'button';
   reset.textContent = 'Авторское обрамление';
-  reset.addEventListener('click', () => update({ variation: { enclosureEmphasis: 1 } }));
+  reset.addEventListener('click', (event) => {
+    events.push({
+      action: 'reset',
+      trusted: event.isTrusted,
+      value: 1,
+      result: update({ variation: { enclosureEmphasis: 1 } }),
+    });
+  });
   const download = document.createElement('button');
   download.type = 'button';
   download.textContent = 'Скачать видимый SVG';
@@ -479,6 +486,22 @@ export async function stateAnnulusBrowserProof(
       event.result.continuity.after.opacity,
       event.result.continuity,
     );
+    await section.getByRole('button', { name: 'Авторское обрамление', exact: true }).click();
+    const reset = await read();
+    assertStateAnnulusObservation(reset, expected, annulus, 1);
+    assert.equal(reset.enclosure.d, initial.enclosure.d, 'Reset обязан вернуть точный авторский d');
+    assert.deepEqual(reset.opacity, changed.opacity, 'Reset сбросил видимую state смесь');
+    assert.deepEqual(reset.enclosurePresentation.execution, changed.enclosurePresentation.execution);
+    const resetEvent = reset.enclosurePresentation.events.at(-1);
+    assert.equal(resetEvent.action, 'reset');
+    assert.equal(resetEvent.trusted, true);
+    assert.equal(resetEvent.result.ok, true);
+    assert.deepEqual(resetEvent.result.continuity.execution, resetEvent.result.continuity.afterExecution);
+    sameOpacity(
+      resetEvent.result.continuity.before.opacity,
+      resetEvent.result.continuity.after.opacity,
+      resetEvent.result.continuity,
+    );
     const interrupted = await call('changeState', first.id, 420);
     if (!reduced) sameOpacity(interrupted.before, interrupted.after, interrupted.continuity);
     if (!reduced) await call('pauseState', 130);
@@ -593,6 +616,7 @@ export async function stateAnnulusBrowserProof(
       target: initial.target,
       activations: activated.events,
       geometryEvent: event,
+      reset: resetEvent,
       interruption: interrupted.continuity,
       laterGeometry: runningPatch.continuity,
       domains,
