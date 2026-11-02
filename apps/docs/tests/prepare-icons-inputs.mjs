@@ -20,6 +20,11 @@ import {
   microphoneReference,
 } from './icons-microphone-consumer.mjs';
 import {
+  MOTION_PROJECTION_VISUAL_FILES,
+  assertTimerPoseEvidence,
+  motionProjectionReference,
+} from './icons-motion-projection-consumer.mjs';
+import {
   NOTIFICATION_ICONS,
   rawNotificationClapperWidth,
   validateNotificationReference,
@@ -666,6 +671,7 @@ const VISUAL_FILES = new Set([
   'result/reduce-failure.png',
   ...MICROPHONE_VISUAL_FILES,
   ...MICROPHONE_COMPARISON_VISUAL_FILES,
+  ...MOTION_PROJECTION_VISUAL_FILES,
 ]);
 const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
 const VISUAL_MAX_PIXELS = 16 * 1024 * 1024;
@@ -762,6 +768,7 @@ export async function prepareInputs(options) {
   const dots = await authoredDotsReference(iconsRoot, pin);
   const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
   const microphones = await microphoneReference(iconsRoot, pin, readAuthorMaster);
+  const motionProjection = await motionProjectionReference(iconsRoot, pin, readAuthorMaster);
   const sourceStates = Object.fromEntries(
     await Promise.all(
       Object.keys(SOURCE_STATE_GROUPS).map(async (group) => [
@@ -791,6 +798,9 @@ export async function prepareInputs(options) {
     ...Object.values(microphones.icons).flatMap((variants) =>
       Object.values(variants).map((item) => item.sourceFile),
     ),
+    ...Object.values(motionProjection.icons).flatMap((variants) =>
+      Object.values(variants).map((item) => item.sourceFile),
+    ),
     ...Object.values(sourceStates).flatMap((group) => group.states.map((item) => item.sourceFile)),
   ]) {
     files.push({
@@ -801,7 +811,7 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -809,6 +819,7 @@ export async function prepareInputs(options) {
     authoredDotsReference: dots,
     annulusReference: annulus,
     microphoneReference: microphones,
+    motionProjectionReference: motionProjection,
     sourceStateReferences: sourceStates,
     stateAnnulusReference: {
       fileKey: pin.figma.fileKey,
@@ -970,6 +981,13 @@ export async function summarize(directory) {
         assertMicrophoneComparisonEvidence(visuals, receipt.records);
       } catch (error) {
         readbackFailure ??= { file: 'result/microphone-optical-evidence', error };
+      }
+    }
+    if (subject.schemaVersion >= 11 && receipt.outcome === 'passed') {
+      try {
+        assertTimerPoseEvidence(visuals, receipt.records, subject.motionProjectionReference);
+      } catch (error) {
+        readbackFailure ??= { file: 'result/timer-pose-evidence', error };
       }
     }
     for (const visual of visuals)

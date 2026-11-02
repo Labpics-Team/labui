@@ -83,6 +83,7 @@ jobs:
           node --test ui/apps/docs/tests/icons-content-scale-consumer.test.mjs
           node --test ui/apps/docs/tests/icons-microphone-consumer.test.mjs
           node --test ui/apps/docs/tests/icons-source-state-consumer.test.mjs
+          node --test ui/apps/docs/tests/icons-motion-projection-consumer.test.mjs
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser

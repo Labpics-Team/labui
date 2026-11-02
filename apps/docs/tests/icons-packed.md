@@ -328,6 +328,26 @@ Notification consumer подтверждает native pointer/Enter/Space, до�
 необъявленный morph — `GESTURE_UNSUPPORTED`; off SVG совпадает с raw master.
 Disposal останавливает ещё действующий прогон и проверяет его `stopped` receipt.
 
+Schema11 добавляет установленные `@labpics/icons/gestures/reload`, `refresh` и
+`timer`. SVG, parts и rotation operands уже подготовлены Lab Icons; публичный
+Lab Motion исполняет числовой rotate. Пять доступных начертаний показываются
+на native Lab UI кнопках при 16, 24 и 48 px. Контуры, part IDs, author/anatomy
+receipt и неподвижные части сверяются с raw Figma masters независимо от producer.
+Полный оборот, частичный интервал, reversal и новое намерение проверяют конечные
+матрицы и C0 continuity при передаче в одном browser task. Reduced motion сохраняет
+целевую позу с duration 0. Filled timer, неизвестный жест и недопустимая фаза
+получают точные отказы; disposal проверяет stopped активного playback, снятие
+listeners и удаление mounted nodes.
+
+Восемь отдельных PNG сохраняют timer Outline в фазах 0, 0.125, 0.875 и 0.5
+при обоих motion preferences. Receipt связывает фазу, размеры, имя файла и SHA PNG.
+Успех capture проверяет происхождение снимка; оптическая оценка pivot и пересечения
+стрелки с фиксированной меткой требует просмотра этих изображений. SVG download
+содержит исходный master таймера, независимо от текущей анимированной позы.
+Размеры тонких SVG/effect/combined imports измеряет отдельный producer benchmark;
+для timer motion прежний default runtime не выполнял ту же полезную работу,
+поэтому speedup относительно отказа не заявляется.
+
 ## Результаты и ограничения
 
 Результат сохраняет `receipt.json` с фазой отказа, observations и browser errors;
@@ -344,7 +364,7 @@ Lab UI commit, SHA и содержимое исполненного subject, sou
 между preparation и запуском получает `CONSUMER_SOURCE_IDENTITY_REFUSED`.
 RESULT сохраняет `sourceIdentityFailure`, исходный browser outcome и hashes
 диагностических файлов; consumer packets с неверной привязкой не передаются.
-Schema1–8 сохраняют свои subject contracts. Receipt без обязательной идентичности
+Schema1–10 сохраняют свои subject contracts. Receipt без обязательной идентичности
 остаётся диагностикой и не получает успешную привязку к текущим исходникам.
 Browser/server закрываются; удаляется только собственный временный consumer.
 

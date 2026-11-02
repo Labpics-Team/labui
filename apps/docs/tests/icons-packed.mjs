@@ -39,6 +39,15 @@ import {
   validateMicrophoneReference,
 } from './icons-microphone-consumer.mjs';
 import {
+  MOTION_PROJECTION_ENTRIES,
+  motionProjectionArmDisposal,
+  motionProjectionBrowserProof,
+  motionProjectionDisposalProof,
+  motionProjectionFixture,
+  motionProjectionTypeFixture,
+  validateMotionProjectionReference,
+} from './icons-motion-projection-consumer.mjs';
+import {
   NOTIFICATION_ENTRIES,
   assertNotificationAnatomy,
   assertNotificationEffect,
@@ -115,7 +124,7 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(schemaVersion));
   return [
     ...new Set([
       ...REQUIRED_PUBLIC_ENTRIES,
@@ -128,6 +137,7 @@ export function consumerPublicEntries(schemaVersion) {
       ...(schemaVersion >= 8 ? CONTENT_SCALE_ENTRIES : []),
       ...(schemaVersion >= 9 ? MICROPHONE_ENTRIES : []),
       ...(schemaVersion >= 10 ? SOURCE_STATE_ENTRIES : []),
+      ...(schemaVersion >= 11 ? MOTION_PROJECTION_ENTRIES : []),
     ]),
   ];
 }
@@ -158,6 +168,7 @@ export function assertIconsImport(source) {
       ...CONTENT_SCALE_ENTRIES,
       ...MICROPHONE_ENTRIES,
       ...SOURCE_STATE_ENTRIES,
+      ...MOTION_PROJECTION_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -232,7 +243,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -369,6 +380,9 @@ export function validateSubject(subject) {
     for (const [group, state] of Object.entries(subject.sourceStateReferences))
       validateStateReference(state, reference, group);
   } else assert.equal(subject.sourceStateReferences, undefined);
+  if (subject.schemaVersion >= 11)
+    validateMotionProjectionReference(subject.motionProjectionReference, reference);
+  else assert.equal(subject.motionProjectionReference, undefined);
   return subject;
 }
 
@@ -553,6 +567,12 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .microphone-controls input, .microphone-controls button { min-height:44px; padding:8px 12px; font:inherit; box-sizing:border-box; }
 .microphone-controls input { width:112px; }
 .microphone-controls output { flex-basis:100%; font-size:14px; }
+.motion-projection-row { display:flex; flex-wrap:wrap; align-items:center; gap:24px; margin-bottom:24px; }
+.motion-projection-row h3 { width:184px; margin:0; }
+.motion-projection-row figure { gap:8px; }
+.motion-projection-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.motion-projection-controls button { min-height:44px; padding:8px 12px; font:inherit; }
+.motion-projection-controls output { flex-basis:100%; font-size:14px; }
 .state-enclosure-controls { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-top:20px; }
 .state-enclosure-controls label { display:grid; gap:8px; font-size:14px; }
 .state-enclosure-controls input, .state-enclosure-controls button { min-height:44px; padding:8px 12px; font:inherit; }
@@ -1039,7 +1059,7 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
@@ -1050,7 +1070,8 @@ export function consumerFixture(schemaVersion) {
     (schemaVersion >= 7 ? stateAnnulusFixture() : '') +
     (schemaVersion >= 8 ? contentScaleFixture() : '') +
     (schemaVersion >= 9 ? microphoneFixture() : '') +
-    (schemaVersion >= 10 ? sourceStateFixture() : '')
+    (schemaVersion >= 10 ? sourceStateFixture() : '') +
+    (schemaVersion >= 11 ? motionProjectionFixture() : '')
   );
 }
 
@@ -1405,11 +1426,22 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           out,
         );
       }
+      if (reference.motionProjection)
+        await motionProjectionBrowserProof(
+          page,
+          reference.motionProjection,
+          reducedMotion,
+          records,
+          out,
+        );
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
+      if (reference.motionProjection) await motionProjectionArmDisposal(page);
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
         runningNativeAnimations: 0,
       });
+      if (reference.motionProjection)
+        await motionProjectionDisposalProof(page, reducedMotion, records);
       for (const group of Object.keys(reference.states)) {
         const disposed = await page.evaluate(
           (group) => window.__iconsPacked.stateConsumers[group].stateDisposal(),
@@ -2343,7 +2375,8 @@ export async function main(args = process.argv.slice(2)) {
         (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '') +
         (subject.schemaVersion >= 8 ? contentScaleTypeFixture() : '') +
         (subject.schemaVersion >= 9 ? microphoneTypeFixture() : '') +
-        (subject.schemaVersion >= 10 ? sourceStateTypeFixture() : '');
+        (subject.schemaVersion >= 10 ? sourceStateTypeFixture() : '') +
+        (subject.schemaVersion >= 11 ? motionProjectionTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
       await writeFile(
         join(consumer, 'tsconfig.json'),
@@ -2454,7 +2487,7 @@ export async function main(args = process.argv.slice(2)) {
       ),
       moduleGraph,
       bundles,
-      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}${subject.schemaVersion >= 9 ? ', mic/mic-circle: ширина корпуса независимых Outline/Filled, native выбор и SVG export' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
+      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}${subject.schemaVersion >= 9 ? ', mic/mic-circle: ширина корпуса независимых Outline/Filled, native выбор и SVG export' : ''}${subject.schemaVersion >= 11 ? ', подготовленные rotation targets reload/refresh/timer с native вводом и SVG export' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -2478,6 +2511,7 @@ export async function main(args = process.argv.slice(2)) {
           stateAnnulus: subject.stateAnnulusReference,
           contentScale: subject.schemaVersion >= 8 ? subject.annulusReference : undefined,
           microphones: subject.microphoneReference,
+          motionProjection: subject.motionProjectionReference,
         },
         out,
         records,
