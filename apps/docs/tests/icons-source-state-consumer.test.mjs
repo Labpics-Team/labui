@@ -4,108 +4,264 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
-import { SOURCE_STATE_ENTRIES, SOURCE_STATE_GROUPS, sourceStateFixture, sourceStateTypeFixture } from './icons-source-state-consumer.mjs';
-import { assertIconsImport, assertStateAnatomy, consumerFixture, consumerPublicEntries, stateCapabilitiesReference, staticStatePathsReference, subjectStateReferences, validateStateReference } from './icons-packed.mjs';
+import {
+  SOURCE_STATE_ENTRIES,
+  SOURCE_STATE_GROUPS,
+  sourceStateFixture,
+  sourceStateTypeFixture,
+} from './icons-source-state-consumer.mjs';
+import {
+  assertIconsImport,
+  assertStateAnatomy,
+  consumerFixture,
+  consumerPublicEntries,
+  stateCapabilitiesReference,
+  staticStatePathsReference,
+  subjectStateReferences,
+  validateStateReference,
+} from './icons-packed.mjs';
 import { stateReference } from './prepare-icons-inputs.mjs';
 
-const snapshot = JSON.parse(await readFile(new URL('./fixtures/icons-source-state-masters.json', import.meta.url)));
-const pin = { figma: { fileKey: snapshot.manifest.source.fileKey, version: snapshot.manifest.source.version } };
+const snapshot = JSON.parse(
+  await readFile(new URL('./fixtures/icons-source-state-masters.json', import.meta.url)),
+);
+const pin = {
+  figma: { fileKey: snapshot.manifest.source.fileKey, version: snapshot.manifest.source.version },
+};
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), 'labui-source-state-oracle-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'semantics'), { recursive: true });
   await writeFile(join(root, 'semantics/figma-baseline.json'), JSON.stringify(snapshot.manifest));
-  await writeFile(join(root, 'semantics/author-state-groups.json'), JSON.stringify(snapshot.semantic));
+  await writeFile(
+    join(root, 'semantics/author-state-groups.json'),
+    JSON.stringify(snapshot.semantic),
+  );
   for (const [file, bytes] of Object.entries(snapshot.masters)) {
     await mkdir(dirname(join(root, file)), { recursive: true });
     await writeFile(join(root, file), bytes);
   }
-  const references = Object.fromEntries(await Promise.all(Object.keys(SOURCE_STATE_GROUPS).map(async group => [group, await stateReference(root, pin, group)])));
+  const references = Object.fromEntries(
+    await Promise.all(
+      Object.keys(SOURCE_STATE_GROUPS).map(async (group) => [
+        group,
+        await stateReference(root, pin, group),
+      ]),
+    ),
+  );
   return { root, references };
 }
 
 // Исполняет точный browser observer; DOM/CSSOM double задаёт только входные значения.
-function collectedState(reference, { injected = null, mutate = () => {}, color = 'rgb(22, 24, 28)', opacity, origin = [137.25, 98.5] } = {}) {
+function collectedState(
+  reference,
+  {
+    injected = null,
+    mutate = () => {},
+    color = 'rgb(22, 24, 28)',
+    opacity,
+    origin = [137.25, 98.5],
+  } = {},
+) {
   const source = consumerFixture(10);
   const start = source.indexOf('function statePaths(');
   const end = source.indexOf('\nfunction sharedAncestorsUnchanged(', start);
   const readStart = source.indexOf('function readState()');
   const readEnd = source.indexOf('\nasync function settleState(', readStart);
   assert.ok(start >= 0 && end > start && readStart >= 0 && readEnd > readStart);
-  const declaration = values => ({
-    get length() { return Object.keys(values).length; },
-    item: index => Object.keys(values)[index],
-    [Symbol.iterator]: function* () { yield* Object.keys(values); },
-    getPropertyValue: name => values[name] ?? '',
+  const declaration = (values) => ({
+    get length() {
+      return Object.keys(values).length;
+    },
+    item: (index) => Object.keys(values)[index],
+    [Symbol.iterator]: function* () {
+      yield* Object.keys(values);
+    },
+    getPropertyValue: (name) => values[name] ?? '',
     getPropertyPriority: () => '',
-    setProperty: (name, value) => { values[name] = value; },
+    setProperty: (name, value) => {
+      values[name] = value;
+    },
   });
   const style = {
-    color, fill: color, 'fill-opacity': '1', 'fill-rule': 'nonzero', stroke: 'none',
-    opacity: '1', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', zoom: '1',
-    filter: 'none', 'clip-path': 'none', 'mask-image': 'none', 'offset-path': 'none', clip: 'auto',
-    'marker-start': 'none', 'marker-mid': 'none', 'marker-end': 'none',
-    visibility: 'visible', display: 'inline', 'mix-blend-mode': 'normal',
-    'background-color': 'rgba(0, 0, 0, 0)', 'background-image': 'none',
-    'box-shadow': 'none', 'outline-style': 'none', 'border-top-style': 'none',
-    'border-right-style': 'none', 'border-bottom-style': 'none', 'border-left-style': 'none',
+    color,
+    fill: color,
+    'fill-opacity': '1',
+    'fill-rule': 'nonzero',
+    stroke: 'none',
+    opacity: '1',
+    transform: 'none',
+    translate: 'none',
+    rotate: 'none',
+    scale: 'none',
+    zoom: '1',
+    filter: 'none',
+    'clip-path': 'none',
+    'mask-image': 'none',
+    'offset-path': 'none',
+    clip: 'auto',
+    'marker-start': 'none',
+    'marker-mid': 'none',
+    'marker-end': 'none',
+    visibility: 'visible',
+    display: 'inline',
+    'mix-blend-mode': 'normal',
+    'background-color': 'rgba(0, 0, 0, 0)',
+    'background-image': 'none',
+    'box-shadow': 'none',
+    'outline-style': 'none',
+    'border-top-style': 'none',
+    'border-right-style': 'none',
+    'border-bottom-style': 'none',
+    'border-left-style': 'none',
   };
   function node(tag, parent, attributes, computed = {}) {
-    const item = { localName: tag, parentElement: parent, attributes, computed: { ...style, ...computed } };
+    const item = {
+      localName: tag,
+      parentElement: parent,
+      attributes,
+      computed: { ...style, ...computed },
+    };
     item.screenCtm = [1, 0, 0, 1, ...origin];
-    item.getScreenCTM = () => item.screenCtm === null ? null
-      : Object.fromEntries(['a', 'b', 'c', 'd', 'e', 'f'].map((name, index) => [name, item.screenCtm[index]]));
-    item.dataset = Object.fromEntries(Object.entries(attributes).filter(([name]) => name.startsWith('data-'))
-      .map(([name, value]) => [name.slice(5), value]));
-    item.getAttribute = name => item.attributes[name] ?? null;
+    item.getScreenCTM = () =>
+      item.screenCtm === null
+        ? null
+        : Object.fromEntries(
+            ['a', 'b', 'c', 'd', 'e', 'f'].map((name, index) => [name, item.screenCtm[index]]),
+          );
+    item.dataset = Object.fromEntries(
+      Object.entries(attributes)
+        .filter(([name]) => name.startsWith('data-'))
+        .map(([name, value]) => [name.slice(5), value]),
+    );
+    item.getAttribute = (name) => item.attributes[name] ?? null;
     item.getAttributeNames = () => Object.keys(item.attributes);
-    Object.defineProperty(item, 'style', { get: () => declaration(Object.fromEntries(
-      (item.attributes.style ?? '').split(';').filter(value => value.trim()).map(value => {
-        const [name, ...rest] = value.split(':'); return [name.trim(), rest.join(':').trim()];
-      }))) });
+    Object.defineProperty(item, 'style', {
+      get: () =>
+        declaration(
+          Object.fromEntries(
+            (item.attributes.style ?? '')
+              .split(';')
+              .filter((value) => value.trim())
+              .map((value) => {
+                const [name, ...rest] = value.split(':');
+                return [name.trim(), rest.join(':').trim()];
+              }),
+          ),
+        ),
+    });
     return item;
   }
-  const svg = node('svg', null, { viewBox: '0 0 24 24', width: '24', height: '24',
-    xmlns: 'http://www.w3.org/2000/svg', fill: 'currentColor', slot: 'icon',
-    'aria-hidden': 'true', focusable: 'false' }, { display: 'block', width: '24px', height: '24px' });
+  const svg = node(
+    'svg',
+    null,
+    {
+      viewBox: '0 0 24 24',
+      width: '24',
+      height: '24',
+      xmlns: 'http://www.w3.org/2000/svg',
+      fill: 'currentColor',
+      slot: 'icon',
+      'aria-hidden': 'true',
+      focusable: 'false',
+    },
+    { display: 'block', width: '24px', height: '24px' },
+  );
   svg.viewport = { left: origin[0], top: origin[1], width: 24, height: 24 };
   svg.getBoundingClientRect = () => ({ ...svg.viewport });
   const nodes = [];
   for (const state of reference.states) {
-    const group = node('g', svg, { 'data-part': state.partId, 'data-role': 'state', 'data-state': state.id,
-      opacity: state.id === reference.defaultState ? '1' : '0' },
-    { opacity: String(opacity?.[state.id] ?? (state.id === reference.defaultState ? 1 : 0)) });
+    const group = node(
+      'g',
+      svg,
+      {
+        'data-part': state.partId,
+        'data-role': 'state',
+        'data-state': state.id,
+        opacity: state.id === reference.defaultState ? '1' : '0',
+      },
+      { opacity: String(opacity?.[state.id] ?? (state.id === reference.defaultState ? 1 : 0)) },
+    );
     nodes.push(group);
     for (const path of staticStatePathsReference(reference, state))
-      nodes.push(node('path', group, { 'data-part': path.partId, 'data-role': path.role,
-        d: path.d, fill: path.fill, 'fill-rule': path.fillRule },
-      { 'fill-rule': path.fillRule, d: `path("${path.d}")` }));
-    group.querySelectorAll = selector => {
-      assert.equal(selector, 'path'); return nodes.filter(item => item.parentElement === group && item.localName === 'path');
+      nodes.push(
+        node(
+          'path',
+          group,
+          {
+            'data-part': path.partId,
+            'data-role': path.role,
+            d: path.d,
+            fill: path.fill,
+            'fill-rule': path.fillRule,
+          },
+          { 'fill-rule': path.fillRule, d: `path("${path.d}")` },
+        ),
+      );
+    group.querySelectorAll = (selector) => {
+      assert.equal(selector, 'path');
+      return nodes.filter((item) => item.parentElement === group && item.localName === 'path');
     };
   }
-  if (injected) nodes.push(node(injected.tag, svg, { 'data-part': 'invented-overlay', 'data-role': 'content',
-    ...(injected.path ? { d: injected.path.d, fill: injected.path.fill, 'fill-rule': injected.path.fillRule } : {}) }));
-  mutate({ svg, groups: nodes.filter(item => item.localName === 'g'), paths: nodes.filter(item => item.localName === 'path') });
-  svg.querySelectorAll = selector => {
+  if (injected)
+    nodes.push(
+      node(injected.tag, svg, {
+        'data-part': 'invented-overlay',
+        'data-role': 'content',
+        ...(injected.path
+          ? { d: injected.path.d, fill: injected.path.fill, 'fill-rule': injected.path.fillRule }
+          : {}),
+      }),
+    );
+  mutate({
+    svg,
+    groups: nodes.filter((item) => item.localName === 'g'),
+    paths: nodes.filter((item) => item.localName === 'path'),
+  });
+  svg.querySelectorAll = (selector) => {
     if (selector === '*' || selector === '[data-part]') return nodes;
-    if (selector === 'g[data-state][data-part]') return nodes.filter(item => item.localName === 'g');
-    assert.equal(selector, '[data-part="null"]'); return [];
+    if (selector === 'g[data-state][data-part]')
+      return nodes.filter((item) => item.localName === 'g');
+    assert.equal(selector, '[data-part="null"]');
+    return [];
   };
-  svg.querySelector = selector => { assert.equal(selector, '[data-part="null"]'); return null; };
-  const native = { getBoundingClientRect: () => ({ width: 48, height: 48 }), type: 'button',
-    getAttribute: () => 'action', querySelector: () => ({ getAttribute: () => 'true' }) };
+  svg.querySelector = (selector) => {
+    assert.equal(selector, '[data-part="null"]');
+    return null;
+  };
+  const native = {
+    getBoundingClientRect: () => ({ width: 48, height: 48 }),
+    type: 'button',
+    getAttribute: () => 'action',
+    querySelector: () => ({ getAttribute: () => 'true' }),
+  };
   const scope = {
-    stateSvg: svg, stateButton: { shadowRoot: { querySelector: () => native }, isConnected: true, computed: style },
-    stateCapabilitiesValue: stateCapabilitiesReference(reference), stateOpacity: () => [], stateEnclosure: null,
-    originalStateNodes: [...nodes], sharedNodes: new Map(), stateTarget: reference.defaultState,
-    stateControl: null, stateEvents: [], stateNativeClicks: 0, stateStatus: { textContent: '' },
-    stateSelect: { value: reference.defaultState }, enclosurePresentation: null,
+    stateSvg: svg,
+    stateButton: {
+      shadowRoot: { querySelector: () => native },
+      isConnected: true,
+      computed: style,
+    },
+    stateCapabilitiesValue: stateCapabilitiesReference(reference),
+    stateOpacity: () => [],
+    stateEnclosure: null,
+    originalStateNodes: [...nodes],
+    sharedNodes: new Map(),
+    stateTarget: reference.defaultState,
+    stateControl: null,
+    stateEvents: [],
+    stateNativeClicks: 0,
+    stateStatus: { textContent: '' },
+    stateSelect: { value: reference.defaultState },
+    enclosurePresentation: null,
     configuration: SOURCE_STATE_GROUPS[reference.group],
-    getComputedStyle: item => ({ ...item.computed, ...declaration(item.computed) }),
+    getComputedStyle: (item) => ({ ...item.computed, ...declaration(item.computed) }),
     document: { createElementNS: () => ({ style: declaration({}) }) },
   };
-  return new Function(...Object.keys(scope), `${source.slice(start, end)}\n${source.slice(readStart, readEnd)}\nreturn readState();`)(...Object.values(scope));
+  return new Function(
+    ...Object.keys(scope),
+    `${source.slice(start, end)}\n${source.slice(readStart, readEnd)}\nreturn readState();`,
+  )(...Object.values(scope));
 }
 
 test('eight raw endpoint masters retain all ordered paths without an invented enclosure', async (t) => {
@@ -128,68 +284,157 @@ test('eight raw endpoint masters retain all ordered paths without an invented en
     fake.enclosureCount = 1;
     assert.throws(() => assertStateAnatomy(fake, reference));
     for (const injected of [
-      { tag: 'path', path: { d: 'M0 0H24V24H0Z', fillRule: 'nonzero', fill: 'currentColor', partId: 'invented-overlay', role: 'content' } },
-      { tag: 'rect' }, { tag: 'circle' }, { tag: 'use' }, { tag: 'text' },
+      {
+        tag: 'path',
+        path: {
+          d: 'M0 0H24V24H0Z',
+          fillRule: 'nonzero',
+          fill: 'currentColor',
+          partId: 'invented-overlay',
+          role: 'content',
+        },
+      },
+      { tag: 'rect' },
+      { tag: 'circle' },
+      { tag: 'use' },
+      { tag: 'text' },
     ]) {
       const extra = collectedState(reference, { injected });
       assert.throws(() => assertStateAnatomy(extra, reference), /необъявленную геометрию/);
     }
   }
-  assert.equal(references['visibility-filled'].states.find(state => state.id === 'visible').paths.length, 1);
-  assert.equal(references.microphone.states.find(state => state.id === 'muted').paths.length, 5);
-  assert.notDeepEqual(references.microphone.states[0].paths, references['microphone-filled'].states[0].paths);
+  assert.equal(
+    references['visibility-filled'].states.find((state) => state.id === 'visible').paths.length,
+    1,
+  );
+  assert.equal(references.microphone.states.find((state) => state.id === 'muted').paths.length, 5);
+  assert.notDeepEqual(
+    references.microphone.states[0].paths,
+    references['microphone-filled'].states[0].paths,
+  );
 });
 
 test('source anatomy refuses root, state and path presentation changes while preserving inherited color and state opacity', async (t) => {
   const { references } = await fixture(t);
   for (const reference of Object.values(references)) {
-    assertStateAnatomy(collectedState(reference, { color: 'rgb(71, 110, 145)',
-      opacity: Object.fromEntries(reference.states.map(state => [state.id, .5])),
-      mutate: ({ groups }) => { for (const group of groups) group.attributes.style = 'opacity: 0.5'; },
-    }), reference);
+    assertStateAnatomy(
+      collectedState(reference, {
+        color: 'rgb(71, 110, 145)',
+        opacity: Object.fromEntries(reference.states.map((state) => [state.id, 0.5])),
+        mutate: ({ groups }) => {
+          for (const group of groups) group.attributes.style = 'opacity: 0.5';
+        },
+      }),
+      reference,
+    );
     for (const target of ['svg', 'groups', 'paths']) {
       const mutations = [
-        item => { item.attributes.stroke = 'currentColor'; item.attributes['stroke-width'] = '6'; },
-        item => { item.attributes.transform = 'translate(8 0)'; },
-        item => { item.attributes.style = 'fill: transparent'; },
-        item => { item.computed.stroke = 'rgb(71, 110, 145)'; },
-        item => { item.computed.transform = 'matrix(1, 0, 0, 1, 8, 0)'; },
-        item => { item.computed.fill = 'rgba(0, 0, 0, 0)'; },
+        (item) => {
+          item.attributes.stroke = 'currentColor';
+          item.attributes['stroke-width'] = '6';
+        },
+        (item) => {
+          item.attributes.transform = 'translate(8 0)';
+        },
+        (item) => {
+          item.attributes.style = 'fill: transparent';
+        },
+        (item) => {
+          item.computed.stroke = 'rgb(71, 110, 145)';
+        },
+        (item) => {
+          item.computed.transform = 'matrix(1, 0, 0, 1, 8, 0)';
+        },
+        (item) => {
+          item.computed.fill = 'rgba(0, 0, 0, 0)';
+        },
       ];
       for (const mutate of mutations) {
-        const changed = collectedState(reference, { mutate: tree => mutate(target === 'svg' ? tree.svg : tree[target][0]) });
+        const changed = collectedState(reference, {
+          mutate: (tree) => mutate(target === 'svg' ? tree.svg : tree[target][0]),
+        });
         assert.equal(changed.identity, true);
-        assert.throws(() => assertStateAnatomy(changed, reference), /presentation|paint|геометри|атрибут|style|заливк/);
+        assert.throws(
+          () => assertStateAnatomy(changed, reference),
+          /presentation|paint|геометри|атрибут|style|заливк/,
+        );
       }
     }
     for (const mutate of [
-      ({ paths }) => { paths[0].computed.d = 'path("M0 0H24V24H0Z")'; },
-      ({ paths }) => { paths[0].computed['fill-rule'] = paths[0].computed['fill-rule'] === 'nonzero' ? 'evenodd' : 'nonzero'; },
-      ({ svg }) => { svg.computed.opacity = '0.5'; },
-      ({ paths }) => { paths[0].computed.opacity = '0.5'; },
-      ({ groups }) => { groups[0].computed.opacity = ''; },
-      ({ svg }) => { svg.computed['background-color'] = 'rgb(71, 110, 145)'; },
-      ({ paths }) => { paths[0].computed['clip-path'] = 'inset(50%)'; },
-      ({ paths }) => { paths[0].computed['offset-path'] = 'path("M0 0L8 0")'; },
-    ]) assert.throws(() => assertStateAnatomy(collectedState(reference, { mutate }), reference), /source presentation/);
+      ({ paths }) => {
+        paths[0].computed.d = 'path("M0 0H24V24H0Z")';
+      },
+      ({ paths }) => {
+        paths[0].computed['fill-rule'] =
+          paths[0].computed['fill-rule'] === 'nonzero' ? 'evenodd' : 'nonzero';
+      },
+      ({ svg }) => {
+        svg.computed.opacity = '0.5';
+      },
+      ({ paths }) => {
+        paths[0].computed.opacity = '0.5';
+      },
+      ({ groups }) => {
+        groups[0].computed.opacity = '';
+      },
+      ({ svg }) => {
+        svg.computed['background-color'] = 'rgb(71, 110, 145)';
+      },
+      ({ paths }) => {
+        paths[0].computed['clip-path'] = 'inset(50%)';
+      },
+      ({ paths }) => {
+        paths[0].computed['offset-path'] = 'path("M0 0L8 0")';
+      },
+    ])
+      assert.throws(
+        () => assertStateAnatomy(collectedState(reference, { mutate }), reference),
+        /source presentation/,
+      );
   }
 });
 
 test('source anatomy observes the physical viewport and every source CTM independently of unscaled CSS dimensions', async (t) => {
   const { references } = await fixture(t);
   for (const reference of Object.values(references)) {
-    assertStateAnatomy(collectedState(reference, { origin: [233.375, 456.0625], color: 'rgb(71, 110, 145)',
-      opacity: Object.fromEntries(reference.states.map(state => [state.id, .5])),
-    }), reference);
+    assertStateAnatomy(
+      collectedState(reference, {
+        origin: [233.375, 456.0625],
+        color: 'rgb(71, 110, 145)',
+        opacity: Object.fromEntries(reference.states.map((state) => [state.id, 0.5])),
+      }),
+      reference,
+    );
     for (const mutate of [
-      ({ svg }) => { svg.computed.zoom = '.5'; svg.viewport.width = 12; svg.viewport.height = 12; },
-      ({ svg }) => { svg.viewport.width = 12; svg.viewport.height = 12; },
-      ({ svg }) => { svg.screenCtm[0] = .5; svg.screenCtm[3] = .5; },
-      ({ groups }) => { groups[0].computed.zoom = '.5'; },
-      ({ groups }) => { groups[0].screenCtm[0] = .5; groups[0].screenCtm[3] = .5; },
-      ({ paths }) => { paths[0].computed.zoom = '.5'; },
-      ({ paths }) => { paths[0].screenCtm[4] += 8; },
-      ({ paths }) => { paths[0].screenCtm = null; },
+      ({ svg }) => {
+        svg.computed.zoom = '.5';
+        svg.viewport.width = 12;
+        svg.viewport.height = 12;
+      },
+      ({ svg }) => {
+        svg.viewport.width = 12;
+        svg.viewport.height = 12;
+      },
+      ({ svg }) => {
+        svg.screenCtm[0] = 0.5;
+        svg.screenCtm[3] = 0.5;
+      },
+      ({ groups }) => {
+        groups[0].computed.zoom = '.5';
+      },
+      ({ groups }) => {
+        groups[0].screenCtm[0] = 0.5;
+        groups[0].screenCtm[3] = 0.5;
+      },
+      ({ paths }) => {
+        paths[0].computed.zoom = '.5';
+      },
+      ({ paths }) => {
+        paths[0].screenCtm[4] += 8;
+      },
+      ({ paths }) => {
+        paths[0].screenCtm = null;
+      },
     ]) {
       const changed = collectedState(reference, { mutate });
       assert.equal(changed.presentation.nodes[0].computed.width, '24px');
@@ -216,11 +461,16 @@ test('raw master and semantic drift refuse before importing the producer', async
 
 test('schema10 adds four public source states through the existing mount and motion executor', () => {
   assert.deepEqual(SOURCE_STATE_ENTRIES, [
-    '@labpics/icons/states/microphone', '@labpics/icons/states/microphone-filled',
-    '@labpics/icons/states/visibility', '@labpics/icons/states/visibility-filled',
+    '@labpics/icons/states/microphone',
+    '@labpics/icons/states/microphone-filled',
+    '@labpics/icons/states/visibility',
+    '@labpics/icons/states/visibility-filled',
   ]);
   const old = consumerPublicEntries(9);
-  assert.deepEqual(consumerPublicEntries(10).filter(entry => !old.includes(entry)), SOURCE_STATE_ENTRIES);
+  assert.deepEqual(
+    consumerPublicEntries(10).filter((entry) => !old.includes(entry)),
+    SOURCE_STATE_ENTRIES,
+  );
   for (const entry of SOURCE_STATE_ENTRIES) assertIconsImport(entry);
   assert.throws(() => assertIconsImport('@labpics/icons/states/microphone-circle'));
   assert.throws(() => assertIconsImport('@labpics/icons/ir/state-runtime'));
@@ -231,5 +481,12 @@ test('schema10 adds four public source states through the existing mount and mot
   const types = sourceStateTypeFixture();
   assert.equal((types.match(/@ts-expect-error/g) ?? []).length, 12);
   assert.equal((types.match(/source-replacement/g) ?? []).length, 4);
-  assert.deepEqual(subjectStateReferences({ schemaVersion: 10, stateReferences: { a: 1 }, sourceStateReferences: { b: 2 } }), { a: 1, b: 2 });
+  assert.deepEqual(
+    subjectStateReferences({
+      schemaVersion: 10,
+      stateReferences: { a: 1 },
+      sourceStateReferences: { b: 2 },
+    }),
+    { a: 1, b: 2 },
+  );
 });

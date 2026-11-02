@@ -52,7 +52,13 @@ import {
   stateAnnulusTypeFixture,
   validateStateAnnulusReference,
 } from './icons-state-annulus-consumer.mjs';
-import { SOURCE_STATE_ENTRIES, SOURCE_STATE_GROUPS, sourceStateFixture, sourceStateReferenceContract, sourceStateTypeFixture } from './icons-source-state-consumer.mjs';
+import {
+  SOURCE_STATE_ENTRIES,
+  SOURCE_STATE_GROUPS,
+  sourceStateFixture,
+  sourceStateReferenceContract,
+  sourceStateTypeFixture,
+} from './icons-source-state-consumer.mjs';
 import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -126,7 +132,8 @@ export function consumerPublicEntries(schemaVersion) {
 }
 
 export function subjectStateReferences(subject) {
-  if (subject.schemaVersion >= 10) return { ...subject.stateReferences, ...subject.sourceStateReferences };
+  if (subject.schemaVersion >= 10)
+    return { ...subject.stateReferences, ...subject.sourceStateReferences };
   return subject.schemaVersion >= 3
     ? subject.stateReferences
     : subject.schemaVersion === 2
@@ -350,11 +357,16 @@ export function validateSubject(subject) {
         parameters: ['contentScale', 'enclosureEmphasis'],
         enclosurePartId: variants.outline.declaration.variation.enclosurePartId,
       });
-  if (subject.schemaVersion >= 9) validateMicrophoneReference(subject.microphoneReference, reference);
+  if (subject.schemaVersion >= 9)
+    validateMicrophoneReference(subject.microphoneReference, reference);
   else assert.equal(subject.microphoneReference, undefined);
   if (subject.schemaVersion >= 10) {
-    assert.deepEqual(Object.keys(subject.sourceStateReferences ?? {}).sort(), Object.keys(SOURCE_STATE_GROUPS).sort());
-    for (const [group, state] of Object.entries(subject.sourceStateReferences)) validateStateReference(state, reference, group);
+    assert.deepEqual(
+      Object.keys(subject.sourceStateReferences ?? {}).sort(),
+      Object.keys(SOURCE_STATE_GROUPS).sort(),
+    );
+    for (const [group, state] of Object.entries(subject.sourceStateReferences))
+      validateStateReference(state, reference, group);
   } else assert.equal(subject.sourceStateReferences, undefined);
   return subject;
 }
@@ -419,7 +431,10 @@ export function validateStateReference(reference, author, group = 'status-circle
     assert.match(state.icon, /^[a-z][a-z0-9-]*$/);
     if (sourceReplacement) assert.equal(state.icon, contract.icons[state.id]);
     assert.equal(state.partId, `state-${state.id}`);
-    assert.equal(state.sourceFile, `masters/figma/${author.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/${state.icon}.svg`);
+    assert.equal(
+      state.sourceFile,
+      `masters/figma/${author.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/${state.icon}.svg`,
+    );
     assert.deepEqual(state.viewBox, [0, 0, 24, 24]);
     assert.deepEqual(state.dimensions, [24, 24]);
     assert.equal(state.author.kind, 'figma');
@@ -451,18 +466,19 @@ export function validateStateReference(reference, author, group = 'status-circle
         reference.sharedParts.map(({ d, fillRule }) => ({ d, fillRule })),
       );
   }
-  if (!sourceReplacement) assert.equal(
-    hash(
-      stableJSON({
-        ...reference.enclosure,
-        paint: { kind: 'fill', fill: 'currentColor' },
-        viewBox: [0, 0, 24, 24],
-        dimensions: [24, 24],
-        placement: 'after-content',
-      }),
-    ),
-    reference.proof.enclosureSha256,
-  );
+  if (!sourceReplacement)
+    assert.equal(
+      hash(
+        stableJSON({
+          ...reference.enclosure,
+          paint: { kind: 'fill', fill: 'currentColor' },
+          viewBox: [0, 0, 24, 24],
+          dimensions: [24, 24],
+          placement: 'after-content',
+        }),
+      ),
+      reference.proof.enclosureSha256,
+    );
   return reference;
 }
 
@@ -674,13 +690,30 @@ window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async it
 // SVG presentation-атрибуты уступают CSS cascade: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
 // Нейтральные свойства не добавляют paint, преобразование или отсечение raw paths.
 const SOURCE_STATE_NEUTRAL_PRESENTATION = Object.freeze({
-  stroke: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', zoom: '1',
-  filter: 'none', 'clip-path': 'none', 'mask-image': 'none', 'offset-path': 'none', clip: 'auto',
-  'marker-start': 'none', 'marker-mid': 'none', 'marker-end': 'none',
-  visibility: 'visible', 'mix-blend-mode': 'normal',
-  'background-color': 'rgba(0, 0, 0, 0)', 'background-image': 'none', 'box-shadow': 'none',
-  'outline-style': 'none', 'border-top-style': 'none', 'border-right-style': 'none',
-  'border-bottom-style': 'none', 'border-left-style': 'none',
+  stroke: 'none',
+  transform: 'none',
+  translate: 'none',
+  rotate: 'none',
+  scale: 'none',
+  zoom: '1',
+  filter: 'none',
+  'clip-path': 'none',
+  'mask-image': 'none',
+  'offset-path': 'none',
+  clip: 'auto',
+  'marker-start': 'none',
+  'marker-mid': 'none',
+  'marker-end': 'none',
+  visibility: 'visible',
+  'mix-blend-mode': 'normal',
+  'background-color': 'rgba(0, 0, 0, 0)',
+  'background-image': 'none',
+  'box-shadow': 'none',
+  'outline-style': 'none',
+  'border-top-style': 'none',
+  'border-right-style': 'none',
+  'border-bottom-style': 'none',
+  'border-left-style': 'none',
 });
 
 const STATE_FIXTURE = `
@@ -833,8 +866,18 @@ function stateTree() {
     path: node.localName === 'path' ? statePath(node) : null }));
 }
 function statePresentation() {
-  const properties = ${JSON.stringify([...Object.keys(SOURCE_STATE_NEUTRAL_PRESENTATION),
-    'color', 'fill', 'fill-opacity', 'fill-rule', 'opacity', 'display', 'width', 'height', 'd'])};
+  const properties = ${JSON.stringify([
+    ...Object.keys(SOURCE_STATE_NEUTRAL_PRESENTATION),
+    'color',
+    'fill',
+    'fill-opacity',
+    'fill-rule',
+    'opacity',
+    'display',
+    'width',
+    'height',
+    'd',
+  ])};
   // CSS lengths не включают effective zoom; client rect включает: https://drafts.csswg.org/css-viewport/#cssom
   const viewport = stateSvg.getBoundingClientRect();
   return { color: getComputedStyle(stateButton).color,
@@ -1689,7 +1732,8 @@ export function stateCapabilitiesReference(reference) {
     group: reference.group,
     variant: reference.variant,
     defaultState: reference.defaultState,
-    transition: reference.proof.law === 'source.replace' ? 'source-replacement' : 'enclosure-replacement',
+    transition:
+      reference.proof.law === 'source.replace' ? 'source-replacement' : 'enclosure-replacement',
     morph: 'unavailable',
     enclosurePartId: reference.enclosurePartId,
     ...(reference.sharedPartIds ? { sharedPartIds: reference.sharedPartIds } : {}),
@@ -1738,28 +1782,76 @@ export function assertStateAnatomy(observation, reference) {
     const tree = [];
     for (const state of reference.states) {
       const parent = tree.length;
-      tree.push({ tag: 'g', parent: -1, partId: state.partId, role: 'state', state: state.id, path: null });
+      tree.push({
+        tag: 'g',
+        parent: -1,
+        partId: state.partId,
+        role: 'state',
+        state: state.id,
+        path: null,
+      });
       for (const path of staticStatePathsReference(reference, state))
         tree.push({ tag: 'path', parent, partId: path.partId, role: path.role, state: null, path });
     }
-    assert.deepEqual(observation.tree, tree, 'source state SVG содержит необъявленную геометрию или структуру');
+    assert.deepEqual(
+      observation.tree,
+      tree,
+      'source state SVG содержит необъявленную геометрию или структуру',
+    );
     const presentation = observation.presentation;
-    const validOpacity = value => typeof value === 'string' && value.trim() !== '' &&
-      Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 1;
-    assert.deepEqual(presentation?.nodes.map(node => node.tag), ['svg', ...tree.map(node => node.tag)], 'source presentation содержит не все узлы');
-    assert.ok(presentation.viewport && ['left', 'top', 'width', 'height'].every(name => Number.isFinite(presentation.viewport[name])), 'source presentation: viewport не измерен');
-    assert.deepEqual([presentation.viewport.width, presentation.viewport.height], [24, 24], 'source presentation: физический viewport SVG');
+    const validOpacity = (value) =>
+      typeof value === 'string' &&
+      value.trim() !== '' &&
+      Number.isFinite(Number(value)) &&
+      Number(value) >= 0 &&
+      Number(value) <= 1;
+    assert.deepEqual(
+      presentation?.nodes.map((node) => node.tag),
+      ['svg', ...tree.map((node) => node.tag)],
+      'source presentation содержит не все узлы',
+    );
+    assert.ok(
+      presentation.viewport &&
+        ['left', 'top', 'width', 'height'].every((name) =>
+          Number.isFinite(presentation.viewport[name]),
+        ),
+      'source presentation: viewport не измерен',
+    );
+    assert.deepEqual(
+      [presentation.viewport.width, presentation.viewport.height],
+      [24, 24],
+      'source presentation: физический viewport SVG',
+    );
     const screenCtm = [1, 0, 0, 1, presentation.viewport.left, presentation.viewport.top];
     for (const [index, node] of presentation.nodes.entries()) {
-      assert.deepEqual(node.screenCtm, screenCtm, 'source presentation: экранная геометрия raw parts');
+      assert.deepEqual(
+        node.screenCtm,
+        screenCtm,
+        'source presentation: экранная геометрия raw parts',
+      );
       const part = tree[index - 1];
       const group = node.tag === 'g';
-      const expected = index === 0 ? {
-        viewBox: '0 0 24 24', xmlns: 'http://www.w3.org/2000/svg', width: '24', height: '24',
-        fill: 'currentColor', slot: 'icon', 'aria-hidden': 'true', focusable: 'false',
-      } : group ? { 'data-part': part.partId, 'data-role': 'state', 'data-state': part.state }
-        : { 'data-part': part.partId, 'data-role': part.role, d: part.path.d,
-          fill: 'currentColor', 'fill-rule': part.path.fillRule };
+      const expected =
+        index === 0
+          ? {
+              viewBox: '0 0 24 24',
+              xmlns: 'http://www.w3.org/2000/svg',
+              width: '24',
+              height: '24',
+              fill: 'currentColor',
+              slot: 'icon',
+              'aria-hidden': 'true',
+              focusable: 'false',
+            }
+          : group
+            ? { 'data-part': part.partId, 'data-role': 'state', 'data-state': part.state }
+            : {
+                'data-part': part.partId,
+                'data-role': part.role,
+                d: part.path.d,
+                fill: 'currentColor',
+                'fill-rule': part.path.fillRule,
+              };
       const allowed = [...Object.keys(expected), 'style', ...(group ? ['opacity'] : [])];
       for (const name of Object.keys(node.attributes))
         assert.ok(allowed.includes(name), `source presentation: атрибут ${name}`);
@@ -1769,21 +1861,48 @@ export function assertStateAnatomy(observation, reference) {
         assert.equal(group && name === 'opacity', true, `source presentation: style ${name}`);
         assert.ok(validOpacity(value), 'source presentation: opacity');
       }
-      if (group) assert.ok(validOpacity(node.attributes.opacity), 'source presentation: атрибут opacity');
+      if (group)
+        assert.ok(validOpacity(node.attributes.opacity), 'source presentation: атрибут opacity');
       for (const [name, value] of Object.entries(SOURCE_STATE_NEUTRAL_PRESENTATION))
         assert.equal(node.computed[name], value, `source presentation: paint/геометрия ${name}`);
-      assert.equal(node.computed.color, presentation.color, 'source presentation: наследуемый color');
-      assert.equal(node.computed.fill, presentation.color, 'source presentation: заливка currentColor');
+      assert.equal(
+        node.computed.color,
+        presentation.color,
+        'source presentation: наследуемый color',
+      );
+      assert.equal(
+        node.computed.fill,
+        presentation.color,
+        'source presentation: заливка currentColor',
+      );
       assert.equal(Number(node.computed['fill-opacity']), 1, 'source presentation: fill opacity');
-      assert.equal(node.computed['fill-rule'], part?.path?.fillRule ?? 'nonzero', 'source presentation: fill rule');
-      assert.equal(node.computed.display, index === 0 ? 'block' : 'inline', 'source presentation: display');
-      assert.ok(group ? validOpacity(node.computed.opacity) : node.computed.opacity === '1', 'source presentation: opacity вне state group');
+      assert.equal(
+        node.computed['fill-rule'],
+        part?.path?.fillRule ?? 'nonzero',
+        'source presentation: fill rule',
+      );
+      assert.equal(
+        node.computed.display,
+        index === 0 ? 'block' : 'inline',
+        'source presentation: display',
+      );
+      assert.ok(
+        group ? validOpacity(node.computed.opacity) : node.computed.opacity === '1',
+        'source presentation: opacity вне state group',
+      );
       if (index === 0) {
         assert.equal(node.computed.width, '24px', 'source presentation: ширина SVG');
         assert.equal(node.computed.height, '24px', 'source presentation: высота SVG');
       } else if (node.tag === 'path') {
-        assert.ok(typeof node.sourceD === 'string' && node.sourceD.length > 0, 'source presentation: CSS path не разобран');
-        assert.equal(node.computed.d, node.sourceD, 'source presentation: CSS изменил raw геометрию');
+        assert.ok(
+          typeof node.sourceD === 'string' && node.sourceD.length > 0,
+          'source presentation: CSS path не разобран',
+        );
+        assert.equal(
+          node.computed.d,
+          node.sourceD,
+          'source presentation: CSS изменил raw геометрию',
+        );
       }
     }
   }
@@ -1796,12 +1915,17 @@ export function assertStateAnatomy(observation, reference) {
       paths: staticStatePathsReference(reference, state).slice(0, state.contentPartIds.length),
     })),
   );
-  assert.deepEqual(observation.enclosure, reference.enclosurePartId === null ? null : {
-    ...reference.enclosure,
-    fill: 'currentColor',
-    partId: reference.enclosurePartId,
-    role: 'container',
-  });
+  assert.deepEqual(
+    observation.enclosure,
+    reference.enclosurePartId === null
+      ? null
+      : {
+          ...reference.enclosure,
+          fill: 'currentColor',
+          partId: reference.enclosurePartId,
+          role: 'container',
+        },
+  );
   assert.equal(observation.enclosureCount, reference.enclosurePartId === null ? 0 : 1);
   assert.equal(observation.enclosureOpacity, reference.enclosurePartId === null ? null : 1);
   assert.deepEqual(
@@ -1900,16 +2024,36 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assert.equal(terminal.completionStatus, 'finished');
     oneHot(terminal, state.id);
     if (contract.exportControls) {
-      const svgText = await downloadedSvg(page, section.getByRole('button', { name: 'Скачать SVG', exact: true }));
-      const paths = await page.evaluate((text) => [...new DOMParser().parseFromString(text, 'image/svg+xml').querySelectorAll('path')]
-        .map((node) => ({ d: node.getAttribute('d'), fillRule: node.getAttribute('fill-rule') ?? 'nonzero',
-          fill: node.getAttribute('fill'), partId: node.dataset.part, role: node.dataset.role })), svgText);
+      const svgText = await downloadedSvg(
+        page,
+        section.getByRole('button', { name: 'Скачать SVG', exact: true }),
+      );
+      const paths = await page.evaluate(
+        (text) =>
+          [...new DOMParser().parseFromString(text, 'image/svg+xml').querySelectorAll('path')].map(
+            (node) => ({
+              d: node.getAttribute('d'),
+              fillRule: node.getAttribute('fill-rule') ?? 'nonzero',
+              fill: node.getAttribute('fill'),
+              partId: node.dataset.part,
+              role: node.dataset.role,
+            }),
+          ),
+        svgText,
+      );
       assert.deepEqual(paths, staticStatePathsReference(reference, state));
-      const effectText = await downloadedSvg(page, section.getByRole('button', { name: 'Скачать переход', exact: true }));
+      const effectText = await downloadedSvg(
+        page,
+        section.getByRole('button', { name: 'Скачать переход', exact: true }),
+      );
       stateEffect(JSON.parse(effectText), reference, state.id, 240);
       oneHot(await read(), state.id);
-      records.push({ name: `${reference.group}:${state.id}:${reducedMotion}:native-exports`,
-        svgSha256: hash(svgText), webEffectSha256: hash(effectText), paths });
+      records.push({
+        name: `${reference.group}:${state.id}:${reducedMotion}:native-exports`,
+        svgSha256: hash(svgText),
+        webEffectSha256: hash(effectText),
+        paths,
+      });
     }
     records.push({
       name: `${reference.group}:${state.id}:${reducedMotion}`,
@@ -1963,7 +2107,11 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
       assert.equal(refused.invalidVariation.reason.code, 'INVALID_REQUEST');
       sameStateOpacity(mixture.opacity, (await read()).opacity);
       assertStateAnatomy(await read(), reference);
-      records.push({ name: `${reference.group}:${reducedMotion}:variation-refused-midflight`, refusal: refused, pose: mixture.opacity });
+      records.push({
+        name: `${reference.group}:${reducedMotion}:variation-refused-midflight`,
+        refusal: refused,
+        pose: mixture.opacity,
+      });
     }
     const latest = await evaluate('changeState', first.id, 200);
     sameStateOpacity(mixture.opacity, latest.before);
