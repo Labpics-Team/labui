@@ -346,12 +346,12 @@ export class LabSwitch extends LabElement {
     // the accessibility tree (an aria-hidden ancestor would erase it).
     return html`
       <label class="root" data-state=${checked ? 'checked' : 'unchecked'}>
+        <input type="checkbox" ?checked=${checked} />
         <span class="control">
           <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
           <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
           <span class="thumb"></span>
         </span>
-        <input type="checkbox" ?checked=${checked} />
         <span class="label"><slot></slot></span>
       </label>
     `;
