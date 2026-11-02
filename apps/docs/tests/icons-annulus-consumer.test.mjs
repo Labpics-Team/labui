@@ -5,9 +5,11 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
+import { runInNewContext } from 'node:vm';
 import {
   ANNULUS_ENTRIES,
   ANNULUS_ICONS,
+  annulusBrowserProof,
   annulusFixture,
   annulusReference,
   annulusTypeFixture,
@@ -213,6 +215,123 @@ function observation(reference, icon, variant) {
     samples: [16, 24, 48].map((size) => ({ size, width: size, height: size, paths })),
   };
 }
+
+test('generated refusal requests reach the owner without private certificate fields', () => {
+  const requests = [];
+  const element = () => ({
+    dataset: {},
+    append() {},
+    setAttribute() {},
+    removeAttribute() {},
+    addEventListener() {},
+    setCustomValidity() {},
+    querySelector: () => ({ setAttribute() {} }),
+  });
+  const context = {
+    document: { createElement: element, body: element() },
+    window: { __iconsPacked: { cleanup() {} } },
+    renderGlyphSvg: () => '<svg/>',
+    compileSymbolEffect: () => ({ ok: false }),
+  };
+  for (const [index] of ANNULUS_ICONS.entries()) {
+    const sources = { outline: {}, filled: {} };
+    const capability = {
+      variation: {
+        law: 'annulus.counter-scale',
+        domain: {
+          kind: 'radial-bernstein',
+          parameter: 'enclosureEmphasis',
+          evaluated: 'actual-binary64-scale',
+          scale: { minimum: 0.6, minimumInclusive: true, maximum: 1.2, maximumInclusive: false },
+        },
+      },
+    };
+    context[`annulusSource${index}`] = {
+      glyph: ({ variant }) => sources[variant],
+    };
+    context[`annulus${index}`] = {
+      glyph(query) {
+        const variant = query?.variant ?? 'outline';
+        if (
+          query?.variation === undefined ||
+          (variant === 'outline' && query.variation.enclosureEmphasis === 1)
+        )
+          return sources[variant];
+        requests.push(query);
+        throw Object.assign(new Error('owner observed request'), { code: 'OWNER_REFUSED' });
+      },
+      glyphCapabilities: (variant) => (variant === 'outline' ? capability : {}),
+    };
+  }
+  // DOM/renderer здесь обеспечивают только mount. Это проверка запросов, не browser render.
+  runInNewContext(annulusFixture().replace(/^import[^\n]*\n/gm, ''), context);
+  for (const consumer of Object.values(context.window.__iconsPacked.annulusConsumers)) {
+    requests.length = 0;
+    const refused = consumer.refuse();
+    assert.equal(refused.domain, 'OWNER_REFUSED');
+    assert.equal(requests.length, 8);
+    const domain = requests[3].variation.enclosureEmphasis;
+    assert.ok(Number.isFinite(domain) && domain > 0 && domain < 1);
+    assert.equal(requests[0].variation.enclosureEmphasis, 0);
+    assert.ok(Number.isNaN(requests[1].variation.enclosureEmphasis));
+  }
+});
+
+test('browser proof constructs the positive domain-refusal input from the public contract', async (t) => {
+  const reference = await fixture(t);
+  const icon = ANNULUS_ICONS[0];
+  const initial = observation(reference, icon, 'outline');
+  const varied = structuredClone(initial);
+  varied.defaultIdentity = false;
+  varied.paths = variedPaths(reference.icons[icon].outline, 1.2).map((path, index) => ({
+    ...path,
+    partId: initial.paths[index].partId,
+  }));
+  varied.samples = [16, 24, 48].map((size) => ({
+    size,
+    width: size,
+    height: size,
+    paths: varied.paths,
+  }));
+  varied.provenance = {
+    kind: 'authored-variation',
+    variation: {
+      version: 1,
+      law: 'annulus.counter-scale',
+      geometrySha256: 'a'.repeat(64),
+      parameters: { enclosureEmphasis: 1.2 },
+    },
+  };
+  varied.events = [{ trusted: true, result: { ok: true } }];
+  varied.exportSvg = '<svg xmlns="http://www.w3.org/2000/svg"/>';
+  const inputs = [];
+  const captured = new Error('domain input captured');
+  let reads = 0;
+  const input = {
+    fill: async (text) => {
+      inputs.push(text);
+      if (inputs.length === 2) throw captured;
+    },
+  };
+  const page = {
+    evaluate: async () => (reads++ === 0 ? initial : varied),
+    locator: () => ({
+      getByRole: (role) => (role === 'spinbutton' ? input : { click: async () => {} }),
+    }),
+    waitForEvent: async () => ({
+      failure: async () => null,
+      createReadStream: async () =>
+        (async function* () {
+          yield Buffer.from(varied.exportSvg);
+        })(),
+    }),
+  };
+  // Остановимся на доставке второго input: native parsing проверяет self-hosted browser.
+  await assert.rejects(annulusBrowserProof(page, reference, false, []), (error) => error === captured);
+  assert.equal(inputs[0], '1.2');
+  const domain = Number(inputs[1]);
+  assert.ok(Number.isFinite(domain) && domain > 0 && domain < 1);
+});
 
 test('browser observation oracle catches lost source identity, shifted sample or invented Filled capability', async (t) => {
   const reference = await fixture(t);

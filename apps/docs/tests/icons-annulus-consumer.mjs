@@ -446,7 +446,7 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       unknown: attempt({ variant, variation: { dotScale: 1 } }),
       domain: attempt({
         variant,
-        variation: { enclosureEmphasis: capability.variation?.domain.emphasisBounds.minimum / 2 },
+        variation: { enclosureEmphasis: Number.MIN_VALUE },
       }),
       collapse: attempt({ variant, variation: { enclosureEmphasis: 100 } }),
       sourceOnly: attempt({
@@ -557,7 +557,7 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
         figure.getByRole('button', { name: 'Скачать SVG', exact: true }),
       );
       assert.equal(exported, varied.exportSvg, 'загрузка SVG должна сохранять текущую форму');
-      await input.fill(String(varied.capability.variation.domain.emphasisBounds.minimum / 2));
+      await input.fill(String(Number.MIN_VALUE));
       const rejected = await read();
       assert.equal(rejected.refusal, 'VARIATION_OUTSIDE_DOMAIN');
       assert.deepEqual(rejected.paths, varied.paths, 'отказ не заменяет последнюю принятую форму');
