@@ -14,7 +14,7 @@ import {
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const packedUrl = new URL('./icons-packed.mjs', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 const readRepositoryFile = (file) => readFile(join(ROOT, file));
 
 async function actualInitialSnapshot(root = ROOT) {

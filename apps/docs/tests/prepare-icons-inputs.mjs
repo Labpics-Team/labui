@@ -5,13 +5,13 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
-import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
 import { annulusReference } from './icons-annulus-consumer.mjs';
 import {
   AUTHORED_DOT_ICONS,
   validateAuthoredDotsReference,
 } from './icons-authored-dots-consumer.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
+import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
 import {
   NOTIFICATION_ICONS,
   rawNotificationClapperWidth,
@@ -824,6 +824,41 @@ function writeStdout(bytes) {
   });
 }
 
+// Preparation и browser receipt должны описывать один исполненный consumer.
+function assertConsumerSourceIdentity(source, receipt, subject, subjectBytes) {
+  assert.match(source.uiCommit, /^[a-f0-9]{40}$/, 'source: отсутствует Lab UI commit');
+  assert.equal(receipt.harness?.commit, source.uiCommit, 'consumer: изменён Lab UI HEAD');
+  assert.equal(receipt.subjectSha256, hash(subjectBytes), 'consumer: изменён subject SHA');
+  assert.deepEqual(receipt.subject, subject, 'consumer: изменён исполненный subject');
+  for (const key of ['uiCore', 'uiShadow'])
+    assert.equal(
+      subject.packages[key].sourceCommit,
+      source.uiCommit,
+      `consumer: ${key} относится к другому Lab UI commit`,
+    );
+  assert.ok(Array.isArray(source.files), 'source: отсутствует список исходников');
+  const expected = source.files.filter(
+    (item) => item.repository === 'Labpics-Team/labui' && ICONS_HARNESS_FILES.includes(item.file),
+  );
+  assert.deepEqual(
+    expected.map((item) => item.file),
+    ICONS_HARNESS_FILES,
+    'source: неполный или изменённый набор исходников harness',
+  );
+  for (const item of expected)
+    assert.match(item.sha256, /^[a-f0-9]{64}$/, `source: неверный SHA ${item.file}`);
+  assert.deepEqual(
+    receipt.harness.files,
+    expected.map(({ file, sha256 }) => ({ file, sha256 })),
+    'consumer: исходники harness отличаются от preparation',
+  );
+  assert.equal(
+    receipt.harness.sourceSha256,
+    expected.find((item) => item.file === 'apps/docs/tests/icons-packed.mjs').sha256,
+    'consumer: изменён entrypoint SHA',
+  );
+}
+
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
 export async function summarize(directory) {
   const root = await realpath(resolve(directory));
@@ -845,6 +880,14 @@ export async function summarize(directory) {
   const subject = validateSubject(JSON.parse(subjectBytes));
   assert.equal(hash(subjectBytes), source.subjectSha256);
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
+  let sourceIdentityError;
+  if (receipt.outcome === 'passed') {
+    try {
+      assertConsumerSourceIdentity(source, receipt, subject, subjectBytes);
+    } catch (error) {
+      sourceIdentityError = Object.assign(error, { code: 'CONSUMER_SOURCE_IDENTITY_REFUSED' });
+    }
+  }
   let policyFailure;
   if (subject.schemaVersion >= 2) {
     const measurement = source.measurement;
@@ -881,21 +924,33 @@ export async function summarize(directory) {
       readbackFailure ??= { file, error };
     }
   };
-  for (const visual of visuals)
-    addPacket(visual.path, () =>
-      consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit),
-    );
-  if (receipt.outcome === 'passed')
-    addPacket('result/receipt.json', () =>
-      consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit),
-    );
+  if (!sourceIdentityError) {
+    for (const visual of visuals)
+      addPacket(visual.path, () =>
+        consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit),
+      );
+    if (receipt.outcome === 'passed')
+      addPacket('result/receipt.json', () =>
+        consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit),
+      );
+  }
   for (const packet of packets) await writeStdout(packet);
   await writeStdout(
     `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
       schemaVersion: 1,
-      outcome: policyFailure || readbackFailure ? 'failed' : receipt.outcome,
-      ...(policyFailure || readbackFailure ? { browserOutcome: receipt.outcome } : {}),
+      outcome: policyFailure || sourceIdentityError || readbackFailure ? 'failed' : receipt.outcome,
+      ...(policyFailure || sourceIdentityError || readbackFailure
+        ? { browserOutcome: receipt.outcome }
+        : {}),
       ...(policyFailure ? { policyFailure } : {}),
+      ...(sourceIdentityError
+        ? {
+            sourceIdentityFailure: {
+              code: sourceIdentityError.code,
+              reason: sourceIdentityError.message.split('\n')[0],
+            },
+          }
+        : {}),
       source,
       harness: receipt.harness,
       runner: receipt.runner,
@@ -912,6 +967,7 @@ export async function summarize(directory) {
     })}\n`,
   );
   if (readbackFailure) throw readbackFailure.error;
+  if (sourceIdentityError) throw sourceIdentityError;
   if (policyFailure)
     throw Object.assign(
       new Error(`Platform policy отказала: ${policyFailure.violations.join('\n')}`),

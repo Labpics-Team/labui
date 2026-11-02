@@ -324,6 +324,14 @@ SHA полного набора исходников harness, checkout SHA, dirt
 `icons-harness.mjs` задаёт единый набор исполняемых исходников для preparation,
 receipt и финальной проверки неизменности, включая сам owner и state-annulus
 модуль. Неполный или изменённый набор и изменение любого файла дают отказ.
+Перед успешной сводкой `summarize` сопоставляет preparation и native receipt:
+Lab UI commit, SHA и содержимое исполненного subject, sourceCommit UI packages
+и SHA всего набора harness, включая entrypoint. Изменение исходников или HEAD
+между preparation и запуском получает `CONSUMER_SOURCE_IDENTITY_REFUSED`.
+RESULT сохраняет `sourceIdentityFailure`, исходный browser outcome и hashes
+диагностических файлов; consumer packets с неверной привязкой не передаются.
+Schema1–7 сохраняют свои subject contracts. Receipt без обязательной идентичности
+остаётся диагностикой и не получает успешную привязку к текущим исходникам.
 Browser/server закрываются; удаляется только собственный временный consumer.
 
 Размер относится к полному приложению с Lab UI и Motion: schema1 содержит две

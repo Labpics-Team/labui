@@ -7,6 +7,7 @@ import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
 import {
   assertStateAnatomy,
   stateCapabilitiesReference,
@@ -1275,6 +1276,21 @@ async function summaryFixture(t, schemaVersion) {
       : {}),
   };
   const subjectBytes = JSON.stringify(subject);
+  // Синтетические байты проверяют только согласованность передаваемых receipts.
+  const harnessFiles = ICONS_HARNESS_FILES.map((file) => ({ file, sha256: hash(file) }));
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [],
+    subject,
+    subjectSha256: hash(subjectBytes),
+    harness: {
+      commit: PIN.sourceCommit,
+      sourceSha256: harnessFiles.find((item) => item.file.endsWith('/icons-packed.mjs')).sha256,
+      dirty: false,
+      files: harnessFiles,
+    },
+  };
   const report = measurementFixture();
   report.policyViolations = [];
   report.candidatePolicies.package.artifacts['dist/example.js'] = {
@@ -1304,6 +1320,7 @@ async function summaryFixture(t, schemaVersion) {
         sha256: report.lockfileSha256,
         bytes: 10,
       },
+      ...harnessFiles.map((item) => ({ repository: 'Labpics-Team/labui', ...item })),
     ],
     ...(schemaVersion >= 2
       ? {
@@ -1324,10 +1341,7 @@ async function summaryFixture(t, schemaVersion) {
   await mkdir(join(output, 'result'));
   await writeFile(join(output, 'inputs/subject.json'), subjectBytes);
   await writeFile(join(output, 'inputs/source-receipt.json'), JSON.stringify(source));
-  await writeFile(
-    join(output, 'result/receipt.json'),
-    JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [] }),
-  );
+  await writeFile(join(output, 'result/receipt.json'), JSON.stringify(receipt));
   if (schemaVersion >= 2)
     await writeFile(join(output, 'inputs/platform-measurement.json'), reportBytes);
   const invoke = () =>
@@ -1340,13 +1354,141 @@ async function summaryFixture(t, schemaVersion) {
       ],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10_000 },
     );
-  return { output, source, report, invoke };
+  return { output, source, report, receipt, invoke };
 }
+
+test('summary refuses preparation-to-launch identity drift and preserves the failed readback', async (t) => {
+  const cases = [
+    [
+      'чистый HEAD изменён после preparation',
+      (_source, receipt) => {
+        receipt.harness.commit = 'c'.repeat(40);
+        receipt.harness.dirty = false;
+      },
+      /изменён Lab UI HEAD/,
+    ],
+    [
+      'state-annulus изменён до начального snapshot',
+      (_source, receipt) => {
+        receipt.harness.files.find((item) =>
+          item.file.endsWith('/icons-state-annulus-consumer.mjs'),
+        ).sha256 = hash('changed before launch');
+        receipt.harness.dirty = true;
+      },
+      /исходники harness отличаются от preparation/,
+    ],
+    [
+      'пропущен исходник preparation',
+      (source) => {
+        source.files = source.files.filter(
+          (item) => !item.file.endsWith('/icons-state-annulus-consumer.mjs'),
+        );
+      },
+      /неполный или изменённый набор исходников harness/,
+    ],
+    [
+      'исходник preparation повторён',
+      (source) => source.files.push(source.files.at(-1)),
+      /неполный или изменённый набор исходников harness/,
+    ],
+    [
+      'пропущен исходник native receipt',
+      (_source, receipt) => receipt.harness.files.pop(),
+      /исходники harness отличаются от preparation/,
+    ],
+    [
+      'subject SHA относится к другому запуску',
+      (_source, receipt) => {
+        receipt.subjectSha256 = 'c'.repeat(64);
+      },
+      /изменён subject SHA/,
+    ],
+    [
+      'native subject изменён при прежнем SHA',
+      (_source, receipt) => {
+        receipt.subject.authorReference.fileName = 'another source';
+      },
+      /изменён исполненный subject/,
+    ],
+    [
+      'одинаковый новый HEAD не удостоверяет прежние UI packages',
+      (source, receipt) => {
+        source.uiCommit = 'c'.repeat(40);
+        receipt.harness.commit = source.uiCommit;
+      },
+      /uiCore относится к другому Lab UI commit/,
+    ],
+  ];
+  for (const [name, mutate, expectedReason] of cases) {
+    await t.test(name, async (t) => {
+      const fixture = await summaryFixture(t, 2);
+      assert.match(fixture.invoke(), /"outcome":"passed"/);
+      const source = structuredClone(fixture.source);
+      const receipt = structuredClone(fixture.receipt);
+      mutate(source, receipt);
+      const receiptBytes = JSON.stringify(receipt);
+      await writeFile(join(fixture.output, 'inputs/source-receipt.json'), JSON.stringify(source));
+      await writeFile(join(fixture.output, 'result/receipt.json'), receiptBytes);
+      await writeFile(join(fixture.output, 'result/reduce.png'), PNG_WITNESS);
+      const result = spawnSync(
+        process.execPath,
+        [
+          fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+          '--summarize',
+          fixture.output,
+        ],
+        { encoding: 'utf8', timeout: 5000 },
+      );
+      assert.equal(result.status, 1, result.stderr);
+      assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_END/);
+      assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_(?:RECEIPT|VISUAL)_BEGIN/);
+      const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+      assert.equal(summary.outcome, 'failed');
+      assert.equal(summary.browserOutcome, 'passed');
+      assert.equal(summary.sourceIdentityFailure.code, 'CONSUMER_SOURCE_IDENTITY_REFUSED');
+      assert.match(summary.sourceIdentityFailure.reason, expectedReason);
+      assert.equal(
+        summary.files.find((item) => item.path === 'result/receipt.json').sha256,
+        hash(receiptBytes),
+      );
+      assert.equal(
+        await readFile(join(fixture.output, 'result/receipt.json'), 'utf8'),
+        receiptBytes,
+      );
+    });
+  }
+});
+
+test('historical subject schemas without native identity cannot claim exact-source success', async (t) => {
+  for (const schema of [1, 2, 3]) {
+    await t.test(`schema${schema}`, async (t) => {
+      const fixture = await summaryFixture(t, schema);
+      assert.match(fixture.invoke(), /"outcome":"passed"/);
+      const receipt = { schemaVersion: 1, outcome: 'passed', records: [] };
+      await writeFile(join(fixture.output, 'result/receipt.json'), JSON.stringify(receipt));
+      const result = spawnSync(
+        process.execPath,
+        [
+          fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+          '--summarize',
+          fixture.output,
+        ],
+        { encoding: 'utf8', timeout: 5000 },
+      );
+      assert.equal(result.status, 1, result.stderr);
+      const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+      assert.equal(summary.outcome, 'failed');
+      assert.equal(summary.browserOutcome, 'passed');
+      assert.equal(summary.sourceIdentityFailure.code, 'CONSUMER_SOURCE_IDENTITY_REFUSED');
+      assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
+    });
+  }
+});
 
 test('delivery summary refuses reported policy failures and numeric overruns while preserving browser evidence', async (t) => {
   const fixture = await summaryFixture(t, 3);
   const receipt = Buffer.from(
-    JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ name: 'browser-control' }] }),
+    JSON.stringify({ ...fixture.receipt, records: [{ name: 'browser-control' }] }),
   );
   await writeFile(join(fixture.output, 'result/receipt.json'), receipt);
   await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
@@ -1430,13 +1572,9 @@ test('delivery summary refuses reported policy failures and numeric overruns whi
 test('delivery summary refuses rejected PNG and receipt packets without losing healthy diagnostics', async (t) => {
   for (const rejected of ['png', 'receipt', 'png-and-policy']) {
     const fixture = await summaryFixture(t, 3);
-    const receipt = Buffer.from(
-      JSON.stringify({
-        schemaVersion: 1,
-        outcome: 'passed',
-        ...(rejected === 'receipt' ? {} : { records: [{ name: 'healthy-browser' }] }),
-      }),
-    );
+    const native = { ...fixture.receipt, records: [{ name: 'healthy-browser' }] };
+    if (rejected === 'receipt') native.records = undefined;
+    const receipt = Buffer.from(JSON.stringify(native));
     await writeFile(join(fixture.output, 'result/receipt.json'), receipt);
     await writeFile(
       join(fixture.output, 'result/no-preference.png'),
@@ -1506,8 +1644,7 @@ test('delivery summary refuses rejected PNG and receipt packets without losing h
 test('summary transmits successful raw observations and PNG authenticated against RESULT files', async (t) => {
   const fixture = await summaryFixture(t, 3);
   const receipt = {
-    schemaVersion: 1,
-    outcome: 'passed',
+    ...fixture.receipt,
     records: [{ name: 'expression-face:synthetic-witness', opacity: 0.375 }],
   };
   const receiptBytes = Buffer.from(JSON.stringify(receipt));
@@ -1628,6 +1765,7 @@ test('failed receipt waits for a complete large report through asynchronous stdo
     await writeFile(
       join(fixture.output, 'result/receipt.json'),
       JSON.stringify({
+        ...fixture.receipt,
         schemaVersion: 1,
         outcome,
         records: [],
