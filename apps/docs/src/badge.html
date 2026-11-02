@@ -12,9 +12,8 @@
         Badge parity — <code>&lt;lab-badge&gt;</code> (Lit) ↔ <code>&lt;Badge&gt;</code> (React)
       </h1>
       <p>
-        Two renderers, one design system. Same colour families, same
-        <code>--lab-*</code> roles, same fill/tinted surfaces. This page mounts both so the
-        Playwright suite can assert visual parity and semantics on each.
+        Общий Badge в Lit, React и Vue: цветовые роли, материалы и размер иконок
+        сохраняются при смене рендерера.
       </p>
 
       <div class="row">
@@ -41,6 +40,10 @@
       <section class="renderer" aria-label="React renderer" data-testid="react-renderer">
         <h2>React</h2>
         <div id="react-root" class="specimens"></div>
+      </section>
+      <section class="renderer" aria-label="Vue renderer">
+        <h2>Vue</h2>
+        <div id="vue-root" class="specimens"></div>
       </section>
     </main>
     <script type="module" src="./badge-demo.tsx"></script>

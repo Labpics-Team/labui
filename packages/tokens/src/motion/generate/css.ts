@@ -12,7 +12,7 @@ import type { ResolvedMotion } from '../build.js';
  */
 export function generateMotionCss(motion: ResolvedMotion): string {
   const root = [
-    section('Durations — ms scale (grounded on M3/Fluent/Carbon grids)', durationLines(motion)),
+    section('Durations — сохранённая шкала скорости', durationLines(motion)),
     section(
       'Easings — cubic-bezier primitives (overshoot only in `emphasized`)',
       easingLines(motion),

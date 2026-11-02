@@ -25,8 +25,8 @@
  *   · `data-material` / class / `data-veil` re-binds, added/removed surfaces: один
  *     MutationObserver ре-синкает все движки; rAF-сворачивание превращает шторм
  *     мутаций в один sync. Смена запрещающих медиа acrylic — тот же ре-синк.
- *   · Unmount (returned disposer) отцепляет все инстансы и восстанавливает
- *     чистый CSS-стек — SSR/HMR-friendly.
+ *   · Disposer снимает владение своего scope. Пересекающиеся mount сохраняют
+ *     общий эффект до последнего release, который восстанавливает исходные стили.
  */
 
 import { attach as attachAcrylic, supportsAcrylicChain } from './acrylic';
@@ -38,18 +38,19 @@ import { attach as attachVeil, supportsBackdropBlur } from './veil';
 const SURFACE = '.lab-material';
 const VEIL = '[data-veil]';
 
-/** An engine holds a `.lab-material` only when its NEAREST material scope carries
- *  the engine's mode — mirroring the material.css selector
- *  `[data-material="<mode>"] .lab-material` (the closest scope wins in CSS
- *  custom-property terms too). */
+/** CSS — владелец эффективного режима, включая slot-наследование и медиа.
+ * Без material CSS свойство отсутствует: поверхность остаётся без live-движка. */
 function inModeScope(el: Element, mode: string): boolean {
-  const scope = el.closest('[data-material]');
-  return scope !== null && scope.getAttribute('data-material') === mode;
+  return (
+    el.ownerDocument.defaultView
+      ?.getComputedStyle(el)
+      .getPropertyValue('--_material-mode')
+      .trim() === mode
+  );
 }
 
-/** The three engine bindings — the ONLY place the runtime names concrete engines.
- *  Each пара (mode, engine) — одна строка; порядок несуществен (движки держат
- *  непересекающиеся множества: glass/acrylic по режиму, veil по атрибуту). */
+/** Единственное место выбора конкретных движков. Glass/acrylic исключают друг
+ *  друга по режиму; veil живёт независимо и может держать ту же поверхность. */
 const BINDINGS: readonly EngineBinding[] = [
   // Glass (refraction). refreshHeld:false — сохраняет прежнее поведение: LG
   // ре-рендерит вне этой петли (свой ResizeObserver), рантайм его не дёргает.
@@ -97,31 +98,79 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
   if (engines.length === 0) return () => {};
 
+  let disposed = false;
   const sync = (): void => {
+    if (disposed) return;
+    observeContext();
     for (const engine of engines) engine.sync();
   };
-  sync();
 
   // Mutation storms (hydration, list re-render) collapse to ONE sync on the next
   // frame — the final attached set is identical to an un-debounced run.
   const raf = trailingRaf(sync);
-  const mo = new MutationObserver(raf.schedule);
-  mo.observe(scope instanceof Document ? scope.documentElement : scope, {
-    attributes: true,
-    attributeFilter: ['data-material', 'class', 'data-veil', 'data-contrast'],
-    childList: true,
-    subtree: true,
-  });
+  const schedule = (): void => {
+    if (!disposed) raf.schedule();
+  };
+  const mo = new MutationObserver(schedule);
+  let observed = new Set<Node>();
+  let slotRoots = new Set<ShadowRoot>();
 
-  // Узкий mount также наследует контраст предка вне своего поддерева.
-  // Тот же observer слушает только эту ось документа; новых observers нет.
-  if (scope !== document && scope !== document.documentElement) {
-    mo.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-contrast'],
-      subtree: true,
-    });
+  function observeContext(): void {
+    const root = scope instanceof Document ? scope.documentElement : scope;
+    const ancestors = new Set<Node>();
+    const roots = new Set<ShadowRoot>();
+    const visited = new Set<Node>();
+    // App-level mount также видит slotted light-DOM поверхности. Их CSS-контекст
+    // может проходить через доступный shadow slot вне наблюдаемого DOM-поддерева.
+    for (const start of [root, ...scope.querySelectorAll(SURFACE)]) {
+      let node: Node | null = start;
+      while (node && !visited.has(node)) {
+        visited.add(node);
+        if (!root.contains(node)) ancestors.add(node);
+        if (node instanceof Element && node.shadowRoot) roots.add(node.shadowRoot);
+        // assignedSlot закрытого чужого root недоступен. Его скрытые wrappers
+        // требуют участия владельца; этот runtime не наблюдает их по догадке.
+        if (node instanceof Element && node.assignedSlot) {
+          node = node.assignedSlot;
+        } else if (node.parentNode) {
+          node = node.parentNode;
+        } else if (node instanceof ShadowRoot) {
+          roots.add(node);
+          node = node.host;
+        } else {
+          node = null;
+        }
+      }
+    }
+    const next = new Set<Node>([root, ...ancestors]);
+    if (next.size !== observed.size || [...next].some((node) => !observed.has(node))) {
+      mo.disconnect();
+      const options = {
+        attributes: true,
+        attributeFilter: [
+          'data-material',
+          'data-theme',
+          'class',
+          'data-veil',
+          'data-contrast',
+          'slot',
+          'name',
+        ],
+        childList: true,
+      };
+      mo.observe(root, { ...options, subtree: true });
+      for (const node of ancestors) mo.observe(node, options);
+      observed = next;
+    }
+    for (const previous of slotRoots) {
+      if (!roots.has(previous)) previous.removeEventListener('slotchange', schedule);
+    }
+    for (const current of roots) {
+      if (!slotRoots.has(current)) current.addEventListener('slotchange', schedule);
+    }
+    slotRoots = roots;
   }
+  sync();
 
   // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
   // движка обязан сняться сам, листовые деградации его не перебивают). Собираем
@@ -131,15 +180,19 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     const queries = new Set(engines.flatMap((e) => [...e.mediaQueries]));
     for (const query of queries) {
       const mq = matchMedia(query);
-      mq.addEventListener('change', raf.schedule);
+      mq.addEventListener('change', schedule);
       mediaListeners.push(mq);
     }
   }
 
   return () => {
+    if (disposed) return;
+    disposed = true;
     mo.disconnect();
+    for (const root of slotRoots) root.removeEventListener('slotchange', schedule);
+    slotRoots.clear();
     raf.cancel();
-    for (const mq of mediaListeners) mq.removeEventListener('change', raf.schedule);
+    for (const mq of mediaListeners) mq.removeEventListener('change', schedule);
     for (const engine of engines) engine.dispose();
   };
 }

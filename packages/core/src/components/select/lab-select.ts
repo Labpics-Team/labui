@@ -560,8 +560,3 @@ declare global {
     'lab-select': LabSelect;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-select')) {
-  customElements.define('lab-select', LabSelect);
-}

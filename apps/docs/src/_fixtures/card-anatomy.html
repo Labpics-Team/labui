@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru" class="lab-scope" data-theme="light" data-material="solid">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Card: анатомия и первый SSR paint</title>
+    <style>
+      @import "@labpics/fonts/fonts.css";
+      @import "@labui/colors/contract.css";
+      @import "@labpics/ui-tokens/tokens.css";
+      @import "@labpics/ui-core/theme.css";
+      @import "@labpics/ui-shadow/shadow.css";
+      @import "@labpics/ui-materials/material.css";
+      @import "../../../../packages/react/src/card.css";
+      @import "../../../../packages/react/src/badge.css";
+      @import "../../../../packages/react/src/button.css";
+      html, body { margin: 0; }
+      body { background: var(--lab-bg-primary); color: var(--lab-label-primary); font-family: Geist, sans-serif; }
+      main { display: grid; gap: 32px; padding: 24px; }
+      section { display: flex; gap: 32px; align-items: start; }
+      [data-renderer] { flex: none; }
+      [data-probe="header"], [data-probe="media"], [data-probe="body"] { margin: 0; font: 400 16px/24px Geist, sans-serif; }
+      [data-probe="media"] { height: 80px; background: var(--lab-bg-secondary); }
+    </style>
+  </head>
+  <body>
+    <button id="keyboard-start" type="button">Начало</button>
+    <main><!-- @@SSR_CARD_ANATOMY@@ --></main>
+    <script type="module" src="./card-anatomy.ts"></script>
+  </body>
+</html>

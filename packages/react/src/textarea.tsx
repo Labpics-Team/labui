@@ -24,7 +24,7 @@ import {
   fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
-} from '@labpics/ui-core';
+} from '@labpics/ui-core/shared';
 import {
   type ChangeEvent,
   type ReactNode,

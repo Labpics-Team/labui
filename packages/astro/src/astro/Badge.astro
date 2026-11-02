@@ -15,6 +15,8 @@ if (!import.meta.env.LABUI_HYDRATE) {
 const dsd = renderBadge(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
   dot: Astro.slots.has('dot') ? await Astro.slots.render('dot') : undefined,
+  leading: Astro.slots.has('leading') ? await Astro.slots.render('leading') : undefined,
+  trailing: Astro.slots.has('trailing') ? await Astro.slots.render('trailing') : undefined,
 });
 ---
 <Fragment set:html={dsd} />

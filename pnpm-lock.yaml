@@ -164,9 +164,18 @@ importers:
 
   packages/core:
     dependencies:
+      '@labpics/motion':
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+      '@labpics/ui-materials':
+        specifier: workspace:*
+        version: link:../materials
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
@@ -236,6 +245,9 @@ importers:
       magic-string:
         specifier: 0.30.21
         version: 0.30.21
+      parse5:
+        specifier: 7.3.0
+        version: 7.3.0
     devDependencies:
       '@lit-labs/ssr':
         specifier: 4.1.0
@@ -243,6 +255,12 @@ importers:
       '@lit-labs/ssr-client':
         specifier: 1.1.8
         version: 1.1.8
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
+      happy-dom:
+        specifier: 21.0.4
+        version: 21.0.4
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -270,6 +288,9 @@ importers:
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -288,6 +309,9 @@ importers:
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../core
+      '@labpics/ui-materials':
+        specifier: workspace:*
+        version: link:../materials
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
@@ -448,8 +472,8 @@ importers:
   packages/tokens:
     devDependencies:
       '@labpics/motion':
-        specifier: 0.3.0
-        version: 0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -1307,8 +1331,8 @@ packages:
   '@labpics/colors@0.6.2':
     resolution: {integrity: sha512-zilUt3OHixV7MsLX/FkAaI/umpsxyaRklW8qQvWMnR35SQmwCuSe7eFHdNWDRMuhiv/An6LmPpwSTr+sMRWbUw==}
 
-  '@labpics/motion@0.3.0':
-    resolution: {integrity: sha512-mGgd7tB9bTPBRU0Yj+kJU7P6WktMX4wAQm0005XQH8owtC1vhDWlYi6cGcz7r7qEb9xgnYXywkriKSW6k2ajcw==}
+  '@labpics/motion@0.5.0':
+    resolution: {integrity: sha512-HtZceGmhBc4ldefBRpW6mg0cTLSINsyH1fXGKm9TXn57btjTnA3LPwq41Rdkd+cWWd2dA3qXGulPnJo+EcRFlQ==}
     engines: {node: '>=22'}
     peerDependencies:
       '@angular/core': '>=16.0.0'
@@ -4108,7 +4132,7 @@ snapshots:
 
   '@labpics/colors@0.6.2': {}
 
-  '@labpics/motion@0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
+  '@labpics/motion@0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
     optionalDependencies:
       lit: 3.3.3
       react: 18.3.1

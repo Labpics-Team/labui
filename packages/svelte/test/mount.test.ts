@@ -6,8 +6,14 @@
  */
 import { flushSync, mount, unmount } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import Harness from './fixtures/Harness.svelte';
 import BooleanHarness from './fixtures/BooleanHarness.svelte';
+import Harness from './fixtures/Harness.svelte';
+
+// happy-dom не вычисляет относительный CSS transform. Здесь проверяем Boolean,
+// слоты и события; реальный Motion проверяется в браузерных consumer fixtures.
+vi.mock('../../core/node_modules/@labpics/motion', () => ({
+  scope: () => ({ animate: vi.fn(), on: vi.fn(), dispose: vi.fn() }),
+}));
 
 type CheckedElement = HTMLElement & {
   checked: boolean;

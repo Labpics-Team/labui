@@ -78,6 +78,12 @@ describe('анализатор ядра → манифест', () => {
     expect(byTag('lab-switch').slots.named).toEqual(['icon-off', 'icon-on']);
   });
 
+  it('размерное заполнение выводится из явного контракта слота, а не его имени', () => {
+    expect(byTag('lab-badge').slots.fill).toEqual(['dot', 'leading', 'trailing']);
+    expect(byTag('lab-button').slots.fill).toBeUndefined();
+    expect(byTag('lab-card').slots.fill).toBeUndefined();
+  });
+
   it('pascal/subpath выведены из тега', () => {
     const alert = byTag('lab-alert-dialog');
     expect(alert.subpath).toBe('alert-dialog');

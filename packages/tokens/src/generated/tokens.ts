@@ -160,6 +160,10 @@ export const fontSize = {
   'button-label-s': 'var(--lab-font-size-button-label-s)',
   'button-label': 'var(--lab-font-size-button-label)',
   'button-description': 'var(--lab-font-size-button-description)',
+  'card-title': 'var(--lab-font-size-card-title)',
+  'card-description': 'var(--lab-font-size-card-description)',
+  'card-caption': 'var(--lab-font-size-card-caption)',
+  'badge-label': 'var(--lab-font-size-badge-label)',
 } as const;
 
 export type FontSizeToken = keyof typeof fontSize;
@@ -180,6 +184,10 @@ export const lineHeight = {
   'button-label-s': 'var(--lab-line-height-button-label-s)',
   'button-label': 'var(--lab-line-height-button-label)',
   'button-description': 'var(--lab-line-height-button-description)',
+  'card-title': 'var(--lab-line-height-card-title)',
+  'card-description': 'var(--lab-line-height-card-description)',
+  'card-caption': 'var(--lab-line-height-card-caption)',
+  'badge-label': 'var(--lab-line-height-badge-label)',
 } as const;
 
 export type LineHeightToken = keyof typeof lineHeight;
@@ -209,6 +217,10 @@ export const letterSpacing = {
   'button-label-s': 'var(--lab-letter-spacing-button-label-s)',
   'button-label': 'var(--lab-letter-spacing-button-label)',
   'button-description': 'var(--lab-letter-spacing-button-description)',
+  'card-title': 'var(--lab-letter-spacing-card-title)',
+  'card-description': 'var(--lab-letter-spacing-card-description)',
+  'card-caption': 'var(--lab-letter-spacing-card-caption)',
+  'badge-label': 'var(--lab-letter-spacing-badge-label)',
 } as const;
 
 export type LetterSpacingToken = keyof typeof letterSpacing;

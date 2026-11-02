@@ -12,6 +12,12 @@ import { Checkbox } from '../src/generated/checkbox.js';
 import { Input } from '../src/generated/input.js';
 import { Switch } from '../src/generated/switch.js';
 
+// happy-dom не вычисляет относительный CSS transform. Здесь проверяем Boolean,
+// слоты и события; реальный Motion проверяется в браузерных consumer fixtures.
+vi.mock('../../core/node_modules/@labpics/motion', () => ({
+  scope: () => ({ animate: vi.fn(), on: vi.fn(), dispose: vi.fn() }),
+}));
+
 type CheckedElement = HTMLElement & {
   checked: boolean;
   indeterminate?: boolean;

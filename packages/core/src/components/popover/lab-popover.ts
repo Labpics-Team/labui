@@ -344,8 +344,3 @@ declare global {
     'lab-popover': LabPopover;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-popover')) {
-  customElements.define('lab-popover', LabPopover);
-}

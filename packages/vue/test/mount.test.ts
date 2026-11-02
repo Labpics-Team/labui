@@ -6,10 +6,17 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, h, nextTick, ref } from 'vue';
+import { Badge } from '../src/generated/badge.js';
 import { Button } from '../src/generated/button.js';
 import { Checkbox } from '../src/generated/checkbox.js';
 import { Input } from '../src/generated/input.js';
 import { Switch } from '../src/generated/switch.js';
+
+// happy-dom не вычисляет относительный CSS transform. Здесь проверяем Boolean,
+// слоты и события; реальный Motion проверяется в браузерных consumer fixtures.
+vi.mock('../../core/node_modules/@labpics/motion', () => ({
+  scope: () => ({ animate: vi.fn(), on: vi.fn(), dispose: vi.fn() }),
+}));
 
 type CheckedElement = HTMLElement & {
   checked: boolean;
@@ -43,6 +50,35 @@ afterEach(() => {
 });
 
 describe('Vue mount (проброс на <lab-*>)', () => {
+  it('Badge сохраняет содержимое, события и размерную коробку именованного слота', () => {
+    const clicked = vi.fn();
+    const { host, unmount } = mount(
+      h(
+        Badge,
+        {},
+        {
+          default: () => 'Статус',
+          leading: () =>
+            h('svg', { width: 24, height: 24, onClick: clicked }, [
+              h('path', { d: 'M0 0h24v24H0Z' }),
+            ]),
+        },
+      ),
+    );
+    const wrapper = host.querySelector<HTMLElement>('[slot="leading"]');
+    expect(wrapper?.hasAttribute('data-lab-slot-fill')).toBe(true);
+    expect(wrapper?.style.display).toBe('inline-flex');
+    expect(wrapper?.querySelector('svg')?.getAttribute('width')).toBe('24');
+    wrapper?.querySelector('svg')?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect(clicked).toHaveBeenCalledOnce();
+    const directText = [...(host.querySelector('lab-badge')?.childNodes ?? [])]
+      .filter((node) => node.nodeType === Node.TEXT_NODE)
+      .map((node) => node.textContent)
+      .join('');
+    expect(directText).toBe('Статус');
+    unmount();
+    expect(host.childNodes.length).toBe(0);
+  });
   it('boolean: пропущенный checked использует default, явный false сохраняется', async () => {
     const { host, unmount } = mount(
       h('div', [

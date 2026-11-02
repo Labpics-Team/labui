@@ -50,6 +50,9 @@ const SMOKE_SPECS = [
   // tooltip сверху). Дешёвый детерминированный smoke → в per-PR критический путь.
   'z-order.spec.ts',
   'materials-flag.spec.ts',
+  'material-scope.spec.ts',
+  'material-context.spec.ts',
+  'card-material-shadow.spec.ts',
   // Acrylic v2 (ADR-0009): движок-контракт материала — конвейер держит
   // поверхность, пиксельный дифференциал зажима, честные деградации. Тот же
   // класс критического пути, что materials-flag.
@@ -62,6 +65,8 @@ const SMOKE_SPECS = [
   'authored-colors.spec.ts',
   // Геометрия, шрифт и масштаб Switch сверяются с независимым эталоном.
   'switch-geometry.spec.ts',
+  // Runtime Switch: прерывание, reduced motion и освобождение ресурсов.
+  'switch-motion.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
   'pin-input.spec.ts',

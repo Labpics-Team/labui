@@ -74,18 +74,22 @@ describe('canNest — запрет вложенного live-блюра', () => 
   });
 });
 
-describe('MATERIAL_FILL_FAMILY — единственное семейство собственной заливки материала', () => {
+describe('семейство live-заливок и авторская роль Elevated Solid', () => {
   const css = readMaterialCss();
 
   it('семейство = префикс --lab-bg-material-', () => {
     expect(MATERIAL_FILL_FAMILY).toBe('--lab-bg-material-');
   });
 
-  it('каждый --_tint / --_base ссылается ТОЛЬКО на var(--lab-bg-material-*) (не на произвольную bg-роль)', () => {
-    // Собственную заливку материала (тинт 01 + база 02) красят ТОЛЬКО токены
-    // семейства материала. Живой фон ПОД стеклом — любая bg-роль (сцена), но это
-    // фон-хозяин, а не заливка поверхности. Гвард держит границу.
-    const fillDecls = [...css.matchAll(/--_(?:tint|base):\s*([^;]+);/g)].map((m) =>
+  it('неизменённые tiers сохраняют material tint-pair, Elevated Solid использует Grouped/Secondary', () => {
+    // Source-fidelity oracle: опубликованный Elevated Solid связан с
+    // Backgrounds/Neutral/Grouped/Secondary; live-пара остаётся прежней.
+    const elevated = css.match(/\.lab-material--elevated\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(elevated).toContain('--_base: var(--lab-bg-grouped-secondary)');
+    expect(elevated).toContain('var(--lab-bg-material-elevated-01)');
+    expect(elevated).toContain('var(--_material-active, 0) * 100%');
+    const withoutElevated = css.replace(/\.lab-material--elevated\s*\{[^}]+\}/, '');
+    const fillDecls = [...withoutElevated.matchAll(/--_(?:tint|base):\s*([^;]+);/g)].map((m) =>
       (m[1] as string).trim(),
     );
     expect(fillDecls.length).toBeGreaterThan(0);

@@ -261,8 +261,3 @@ declare global {
     'lab-tooltip': LabTooltip;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-tooltip')) {
-  customElements.define('lab-tooltip', LabTooltip);
-}

@@ -29,6 +29,12 @@ function litCard(page: Page, testid: string): Locator {
 function reactCard(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
+/** Материал Elevated относится к Content; article сохраняет семантику и focus. */
+function elevatedContent(page: Page, renderer: 'lit' | 'react'): Locator {
+  return page
+    .getByTestId(`${renderer}-elevated`)
+    .locator(renderer === 'lit' ? '.content' : '.lab-card-content');
+}
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 const outlineStyle = (el: HTMLElement) => getComputedStyle(el).outlineStyle;
@@ -53,18 +59,31 @@ test('render: both renderers paint an <article> surface', async ({ page }) => {
   }
 });
 
-test('native semantics: header and footer are real landmark elements', async ({ page }) => {
-  // Lit: header/footer live in the shadow root of the host.
-  const litHeader = page.getByTestId('lit-elevated').locator('header.header, .header');
-  const litFooter = page.getByTestId('lit-elevated').locator('footer.footer, .footer');
-  expect(await litHeader.evaluate((el) => el.tagName.toLowerCase())).toBe('header');
-  expect(await litFooter.evaluate((el) => el.tagName.toLowerCase())).toBe('footer');
-
-  // React: header/footer are native landmarks too.
-  const reactHeader = reactCard(page, 'react-elevated').locator('.lab-card-header');
-  const reactFooter = reactCard(page, 'react-elevated').locator('.lab-card-footer');
-  expect(await reactHeader.evaluate((el) => el.tagName.toLowerCase())).toBe('header');
-  expect(await reactFooter.evaluate((el) => el.tagName.toLowerCase())).toBe('footer');
+test('composition: header и footer сохраняют содержимое и порядок в обоих renderers', async ({
+  page,
+}) => {
+  // Native slots передают семантику caller nodes. Наличие частной wrapper-теги
+  // не является контрактом; header/footer внутри article также не landmarks.
+  for (const renderer of ['lit', 'react'] as const) {
+    const host = page.getByTestId(`${renderer}-elevated`);
+    const header = host.getByText('Elevated', { exact: true });
+    const footer = host.getByText('Footer', { exact: true });
+    await expect(header).toBeVisible();
+    await expect(footer).toBeVisible();
+    // Строковый React prop рисуется через display:contents; измеряем текст,
+    // а не отсутствующий box частного wrapper.
+    const textBox = (element: HTMLElement) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const rect = range.getBoundingClientRect();
+      return { y: rect.y, height: rect.height };
+    };
+    const headerBox = await header.evaluate(textBox);
+    const footerBox = await footer.evaluate(textBox);
+    expect(headerBox.height).toBeGreaterThan(0);
+    expect(footerBox.height).toBeGreaterThan(0);
+    expect(footerBox.y).toBeGreaterThan(headerBox.y + headerBox.height);
+  }
 });
 
 test('opt-out honesty: the host carries no machine role on the surface', async ({ page }) => {
@@ -79,9 +98,8 @@ test('opt-out honesty: the host carries no machine role on the surface', async (
 test('variants: elevated / outlined / filled resolve distinct surfaces (both renderers)', async ({
   page,
 }) => {
-  for (const prefix of ['lit', 'react']) {
-    const elevated =
-      prefix === 'lit' ? litCard(page, 'lit-elevated') : reactCard(page, 'react-elevated');
+  for (const prefix of ['lit', 'react'] as const) {
+    const elevated = elevatedContent(page, prefix);
     const outlined =
       prefix === 'lit' ? litCard(page, 'lit-outlined') : reactCard(page, 'react-outlined');
     const filled = prefix === 'lit' ? litCard(page, 'lit-filled') : reactCard(page, 'react-filled');
@@ -90,24 +108,37 @@ test('variants: elevated / outlined / filled resolve distinct surfaces (both ren
     const filledBg = await filled.evaluate(bg);
     // Filled is a tinted surface, distinct from the raised elevated surface.
     expect(filledBg).not.toBe(elevatedBg);
-    // Outlined carries a real border (the variant's tell).
-    const outlinedBorder = await outlined.evaluate((el) => getComputedStyle(el).borderTopWidth);
-    expect(outlinedBorder).not.toBe('0px');
+    // Source INSIDE stroke рисуется поверх и не отнимает место у содержимого.
+    const outlinedBorder = await outlined.evaluate((el) => {
+      const paint = getComputedStyle(el, '::after');
+      return {
+        layout: getComputedStyle(el).borderTopWidth,
+        width: paint.borderTopWidth,
+        style: paint.borderTopStyle,
+        color: paint.borderTopColor,
+      };
+    });
+    expect(outlinedBorder.layout).toBe('0px');
+    expect(outlinedBorder.width).not.toBe('0px');
+    expect(outlinedBorder.style).toBe('solid');
+    expect(outlinedBorder.color).not.toBe('rgba(0, 0, 0, 0)');
   }
 });
 
 test('visual parity: Lit and React resolve the same elevated surface colour', async ({ page }) => {
-  const litBg = await litCard(page, 'lit-elevated').evaluate(bg);
-  const reactBg = await reactCard(page, 'react-elevated').evaluate(bg);
+  const litBg = await elevatedContent(page, 'lit').evaluate(bg);
+  const reactBg = await elevatedContent(page, 'react').evaluate(bg);
   expect(reactBg).toBe(litBg);
 });
 
-test('tokens: re-pointing --lab-bg-secondary re-skins BOTH elevated cards', async ({ page }) => {
+test('tokens: re-pointing --lab-bg-grouped-secondary re-skins BOTH elevated cards', async ({
+  page,
+}) => {
   await page.evaluate(() => {
-    document.documentElement.style.setProperty('--lab-bg-secondary', 'rgb(1, 2, 3)');
+    document.documentElement.style.setProperty('--lab-bg-grouped-secondary', 'rgb(1, 2, 3)');
   });
-  await expect.poll(() => litCard(page, 'lit-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
-  await expect.poll(() => reactCard(page, 'react-elevated').evaluate(bg)).toBe('rgb(1, 2, 3)');
+  await expect.poll(() => elevatedContent(page, 'lit').evaluate(bg)).toBe('rgb(1, 2, 3)');
+  await expect.poll(() => elevatedContent(page, 'react').evaluate(bg)).toBe('rgb(1, 2, 3)');
 });
 
 test('interactive a11y: :focus-within draws the --lab-border-focus ring (both renderers)', async ({

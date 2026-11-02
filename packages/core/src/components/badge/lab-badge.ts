@@ -1,35 +1,14 @@
 /**
- * `<lab-badge>` — a small pill that labels or counts, carrying a sentiment.
- *
- * Axes (the Figma Badge model — 30 variants: Color × Type × Disabled):
- *   - color: neutral | brand | danger | warning | success | info
- *            | static-dark | static-light   (the sentiment / accent role family)
- *   - type:  fill | tinted                  (opaque sentiment surface vs. low-alpha tint)
- *   - disabled: dimmed, non-interactive presentation (boolean)
- *
- * Badge is PRESENTATIONAL — it has no interaction state a machine would own (no
- * open/value/pressed/roving/typeahead). It is a static label, so per
- * core-CONTRACT §1 it legitimately opts out of the Zag seam and extends
- * `LabElement` only for the shared base conventions. (craft-arch: no onion for a
- * pill.)
- *
- * Semantics: a badge that merely labels is decorative text; the default slot
- * carries its content and the host adds no role. When a badge conveys status
- * that is not otherwise in the text, the consumer supplies an accessible name
- * (aria-label / visually-hidden text) — the element never fakes one.
- *
- * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
- * dimension tokens through `litVar`. Fill surfaces read the opaque sentiment
- * primitive (via the `-strong` border role, the only opaque sentiment surface in
- * the contract) paired with the Badge contrast-label roles; tinted surfaces read
- * the `--lab-fill-{family}-primary` @12 tint paired with the matching
- * `--lab-label-{family}-primary`. No hex, no primitive, no colour fallback.
+ * `<lab-badge>` — неинтерактивная метка с семантическим цветом.
+ * Default slot содержит текст; leading/trailing — декоративные иконки.
+ * Прежний dot остаётся fallback для leading. Нейтральный Fill использует
+ * инвертированные фон и текст исходника, остальные пары принадлежат Colors.
  */
 import { type TemplateResult, css, html } from 'lit';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 
-/** Sentiment / accent colour family the badge paints from. */
+/** Семейство семантического цвета. */
 export type LabBadgeColor =
   | 'neutral'
   | 'brand'
@@ -39,7 +18,7 @@ export type LabBadgeColor =
   | 'info'
   | 'static-dark'
   | 'static-light';
-/** Surface treatment: opaque fill vs. low-alpha tint. */
+/** Непрозрачная или полупрозрачная поверхность. */
 export type LabBadgeType = 'fill' | 'tinted';
 
 export class LabBadge extends LabElement {
@@ -63,7 +42,8 @@ export class LabBadge extends LabElement {
   static override styles = css`
     :host {
       --_radius: ${litVar('--lab-radius-full', '9999px')};
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
+      --_font: ${litVar('--lab-font-size-badge-label', '0.75rem')};
+      --_icon-size: ${litVar('--lab-size-control-s', '0.75rem')};
       --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
       --_pad-y: ${litVar('--lab-space-xs', '0.25rem')};
       --_gap: ${litVar('--lab-space-xs', '0.25rem')};
@@ -83,8 +63,9 @@ export class LabBadge extends LabElement {
       border-radius: var(--_radius);
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
+      line-height: ${litVar('--lab-line-height-badge-label', '1')};
+      letter-spacing: ${litVar('--lab-letter-spacing-badge-label', '0em')};
+      font-weight: ${litVar('--lab-font-weight-medium', '500')};
       white-space: nowrap;
       /* Base surface; the [color][type] rules set the longhands directly (the
          proto-A var()->var() shadow-boundary note — no intermediate --_bg). */
@@ -92,7 +73,17 @@ export class LabBadge extends LabElement {
       color: ${litVar('--lab-label-primary')};
     }
 
-    /* The dot/icon slot: a small indicator that inherits the label colour. */
+    /* Пустые слоты не создают flex-items и промежутки до hydration. */
+    slot { display: contents; }
+    ::slotted([slot='leading']),
+    ::slotted([slot='trailing']) {
+      display: block;
+      inline-size: var(--_icon-size);
+      block-size: var(--_icon-size);
+      flex: none;
+      color: inherit;
+    }
+    /* Прежний dot сохраняет размер и фон индикатора. */
     ::slotted([slot='dot']) {
       display: inline-block;
       width: 0.5em;
@@ -103,12 +94,9 @@ export class LabBadge extends LabElement {
     }
 
     /* ── type=fill: opaque sentiment surface + contrast label ──────────────── */
-    /* The opaque sentiment surface is the -strong border primitive (the only
-       full-opacity sentiment colour the role contract exposes). The on-fill
-       label is the Badge contrast-label pairing role. */
     :host([type='fill'][color='neutral']) .badge {
-      background-color: ${litVar('--lab-fill-neutral')};
-      color: ${litVar('--lab-label-on-neutral')};
+      background-color: ${litVar('--lab-bg-inverted')};
+      color: ${litVar('--lab-label-inverted-primary')};
     }
     :host([type='fill'][color='brand']) .badge {
       background-color: ${litVar('--lab-badge-fill-brand')};
@@ -185,8 +173,9 @@ export class LabBadge extends LabElement {
   override render(): TemplateResult {
     return html`
       <span class="badge" part="badge">
-        <slot name="dot"></slot>
+        <slot name="leading" data-sizing="fill" aria-hidden="true"><slot name="dot" data-sizing="fill"></slot></slot>
         <slot></slot>
+        <slot name="trailing" data-sizing="fill" aria-hidden="true"></slot>
       </span>
     `;
   }
@@ -196,10 +185,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-badge': LabBadge;
   }
-}
-
-// Idempotent registration (core-CONTRACT §7) — safe to import across module
-// instances on both the SSR and client paths.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-badge')) {
-  customElements.define('lab-badge', LabBadge);
 }

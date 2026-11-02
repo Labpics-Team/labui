@@ -1342,6 +1342,54 @@
           "css": "1rem"
         }
       }
+    },
+    "card-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "card-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "card-caption": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
+    "badge-label": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
     }
   },
   "line-height": {
@@ -1395,7 +1443,7 @@
     },
     "button-label-s": {
       "$type": "number",
-      "$value": 0.857143
+      "$value": 0.8571428571428571
     },
     "button-label": {
       "$type": "number",
@@ -1404,6 +1452,22 @@
     "button-description": {
       "$type": "number",
       "$value": 1.5
+    },
+    "card-title": {
+      "$type": "number",
+      "$value": 1
+    },
+    "card-description": {
+      "$type": "number",
+      "$value": 1.5
+    },
+    "card-caption": {
+      "$type": "number",
+      "$value": 0.8571428571428571
+    },
+    "badge-label": {
+      "$type": "number",
+      "$value": 1
     }
   },
   "font-weight": {
@@ -1484,6 +1548,22 @@
     "button-description": {
       "$type": "number",
       "$value": -0.015625
+    },
+    "card-title": {
+      "$type": "number",
+      "$value": -0.0165
+    },
+    "card-description": {
+      "$type": "number",
+      "$value": -0.015625
+    },
+    "card-caption": {
+      "$type": "number",
+      "$value": 0
+    },
+    "badge-label": {
+      "$type": "number",
+      "$value": 0
     }
   },
   "measure": {

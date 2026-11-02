@@ -381,8 +381,3 @@ declare global {
     'lab-radio-group': LabRadioGroup;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-radio-group')) {
-  customElements.define('lab-radio-group', LabRadioGroup);
-}

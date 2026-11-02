@@ -157,6 +157,54 @@
       }
     },
     "spring": {
+      "toggle": {
+        "$type": "cubicBezier",
+        "$value": [
+          0.2,
+          0,
+          0,
+          1
+        ],
+        "$description": "переключение — короткое перемещение с мягким успокоением",
+        "$extensions": {
+          "com.labpics.motion": {
+            "type": "spring",
+            "model": "duration-bounce",
+            "category": "spatial",
+            "duration": {
+              "value": 0.32,
+              "unit": "s"
+            },
+            "bounce": 0.22,
+            "dampingRatio": 0.78,
+            "stiffness": 385.5314,
+            "mass": 1,
+            "web": {
+              "linear": "linear(0, 0.0299, 0.104, 0.2034, 0.3141, 0.426, 0.5325, 0.6295, 0.7146, 0.7872, 0.8474, 0.8959, 0.934, 0.963, 0.9843, 0.9994, 1.0094, 1.0156, 1.0188, 1.0199, 1.0195, 1.0182, 1.0162, 1.0141, 1)",
+              "cubicBezier": [
+                0.2,
+                0,
+                0,
+                1
+              ],
+              "duration": {
+                "value": 320,
+                "unit": "ms"
+              }
+            },
+            "provenance": {
+              "duration": {
+                "class": "e",
+                "source": "LabUI: короткий ход Switch 12–20px; быстрый отклик, один деликатный перелёт и сохранение скорости при повторном вводе. Калибровка проверяется на реальных Lit и React Switch."
+              },
+              "bounce": {
+                "class": "e",
+                "source": "LabUI: короткий ход Switch 12–20px; быстрый отклик, один деликатный перелёт и сохранение скорости при повторном вводе. Калибровка проверяется на реальных Lit и React Switch."
+              }
+            }
+          }
+        }
+      },
       "smooth": {
         "$type": "cubicBezier",
         "$value": [
@@ -268,8 +316,8 @@
       "$extensions": {
         "com.labpics.motion": {
           "provenance": {
-            "class": "b",
-            "source": "M3: incoming elements use the decelerate easing (§1.1)"
+            "class": "e",
+            "source": "LabUI: появление замедляется к месту покоя; сохранённый контракт роли."
           },
           "reducedMotion": {
             "duration": "{motion.duration.fast}",
@@ -297,8 +345,8 @@
       "$extensions": {
         "com.labpics.motion": {
           "provenance": {
-            "class": "b",
-            "source": "M3: outgoing elements use the accelerate easing (§1.1); exit faster than entrance is an (e) HIG/Material convention"
+            "class": "e",
+            "source": "LabUI: исчезновение быстрее появления, чтобы завершённое действие освобождало место."
           },
           "reducedMotion": {
             "duration": "{motion.duration.fast}",
@@ -327,7 +375,7 @@
         "com.labpics.motion": {
           "provenance": {
             "class": "e",
-            "source": "design-choice: wiring task 125 retuned base->fast. The shipped culture converged on 120ms micro-feedback (74/74 live transition sites are hover/state changes, none used 200ms); fast = 100ms sits one frame from 120ms (sub-JND) and matches M3 short2/Fluent durationFaster. Easing grounded on M3 standard (§1.1)."
+            "source": "LabUI: краткая обратная связь состояния. Сохранённая базовая скорость 100ms; runtime Switch использует её как масштаб времени собственной пружины toggle."
           },
           "reducedMotion": {
             "duration": "{motion.duration.instant}",
@@ -356,7 +404,7 @@
         "com.labpics.motion": {
           "provenance": {
             "class": "e",
-            "source": "design-choice: the one attention moment that overshoots. Easing grounded (§1.2); backing spring = expressive."
+            "source": "LabUI: сохранённая отдельная роль привлечения внимания с выраженным движением."
           },
           "reducedMotion": {
             "duration": "{motion.duration.instant}",

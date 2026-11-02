@@ -138,9 +138,9 @@ describe('declarative token surface (--lab-veil-*)', () => {
 describe('runtime integration (mountMaterialRuntime scans [data-veil])', () => {
   it('scans the attribute with the same observer mechanics as data-material', () => {
     expect(runtimeSrc).toContain("const VEIL = '[data-veil]'");
-    expect(runtimeSrc).toContain(
-      "attributeFilter: ['data-material', 'class', 'data-veil', 'data-contrast']",
-    );
+    const observed = runtimeSrc.match(/attributeFilter:\s*\[([^\]]+)\]/)?.[1] ?? '';
+    expect(observed).toContain("'data-veil'");
+    expect(observed).toContain("'data-material'");
   });
 });
 

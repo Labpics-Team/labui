@@ -530,10 +530,3 @@ declare global {
     'lab-button': LabButton;
   }
 }
-
-// Idempotent registration: Lit SSR and client bundles can import this module
-// across module-instance boundaries; an unguarded define then throws. The guard
-// makes the side-effect import safe to repeat (core-CONTRACT §7).
-if (typeof customElements !== 'undefined' && !customElements.get('lab-button')) {
-  customElements.define('lab-button', LabButton);
-}

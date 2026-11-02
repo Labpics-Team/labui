@@ -26,15 +26,19 @@
 
     "paths": {
       "@labpics/ui-core": ["./packages/core/src/index.ts"],
+      "@labpics/ui-core/shared": ["./packages/core/src/shared.ts"],
       "@labpics/ui-core/ssr": ["./packages/core/src/ssr/index.ts"],
       "@labpics/ui-core/hydrate": ["./packages/core/src/hydrate/index.ts"],
+      "@labpics/ui-core/motion": ["./packages/core/src/motion/index.ts"],
       "@labpics/ui-core/proof": ["./packages/core/src/proof/lab-proof.ts"],
       "@labpics/ui-core/*": ["./packages/core/src/components/*/index.ts"],
+      "@labpics/ui-tokens/motion": ["./packages/tokens/src/generated/motion.ts"],
       "@labpics/ui-react": ["./packages/react/src/index.ts"],
       "@labpics/ui-react/*": ["./packages/react/src/*.tsx"],
       "@labpics/ui-vue": ["./packages/vue/src/index.ts"],
-      "@labpics/ui-vue/*": ["./packages/vue/src/*.ts"],
-      "@labpics/ui-materials": ["./packages/materials/src/index.ts"]
+      "@labpics/ui-vue/*": ["./packages/vue/src/*.ts", "./packages/vue/src/generated/*.ts"],
+      "@labpics/ui-materials": ["./packages/materials/src/index.ts"],
+      "@labpics/ui-materials/css": ["./packages/materials/src/css.d.ts"]
     }
   }
 }

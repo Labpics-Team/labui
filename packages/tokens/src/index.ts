@@ -38,9 +38,7 @@ export {
 // Generated typed tokens: `var(--lab-*)` references with literal-union types.
 export * from './generated/tokens.js';
 
-// Motion runtime surface: committed static references only. Physical primitives
-// are consumed from @labpics/motion at build time and never become a runtime
-// dependency of @labpics/ui-tokens.
+// Статические CSS-ссылки и runtime-проекция калибровки; токены не загружают движок.
 export * from './generated/motion.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';

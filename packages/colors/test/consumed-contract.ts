@@ -9,7 +9,7 @@
  *      mirrored in `roles.json` (any group). THIS is the surface the pin test
  *      asserts against the generated Lab UI colour contract.
  *   2. `dimension` — owned by @labpics/ui-tokens, generated locally; matches a
- *      prefix in `core/src/css.ts` `DIMENSION_PREFIXES`.
+ *      prefix in the Core shared `DIMENSION_PREFIXES`.
  *   3. `local-or-gap` — provisional tokens labui declares today (shadow stack,
  *      materials) that SHOULD eventually be resolved by the external engine.
  *      The allowlist below is the single source CH-03's external-deps doc must
@@ -21,37 +21,22 @@
  *
  * Framework-free (plain string scanning over file text), mirroring the sibling
  * `no-literal-colour-fallback.ts` scanner: same repoRoot resolution, same
- * glob/exclude style. It only READS roles.json / css.ts constants — it never
+ * glob/exclude style. It only READS roles.json / Core constants — it never
  * mutates the contract.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DIMENSION_PREFIXES, SEMANTIC_ROLE_PREFIXES } from '../../core/src/shared.js';
 import { canonicalTokens, stripComments } from './no-magic-dimension.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 /** Repo root — from `test/` inside `packages/colors`, three levels up. */
 export const repoRoot = resolve(here, '..', '..', '..');
 
-/**
- * Read a `export const NAME = [ '--lab-x-', ... ] as const;` prefix array out of
- * `packages/core/src/css.ts` as the SINGLE source of truth — no second copy of
- * the boundary rule lives here (DIP). css.ts is build-free TS we parse as text
- * so the color-contract test does not depend on @labpics/ui-core being built.
- */
-function readCssTsPrefixConst(constName: string): string[] {
-  const src = readFileSync(resolve(repoRoot, 'packages/core/src/css.ts'), 'utf8');
-  const re = new RegExp(`export const ${constName}\\s*=\\s*\\[([\\s\\S]*?)\\]`, 'm');
-  const body = re.exec(src)?.[1];
-  if (body == null) throw new Error(`css.ts: could not read ${constName}`);
-  return [...body.matchAll(/['"`](--lab-[a-z0-9-]+)['"`]/g)].map((m) => m[1] as string);
-}
-
-/** css.ts `DIMENSION_PREFIXES` — the dimension-bucket boundary (read at load). */
-export const DIMENSION_PREFIXES: readonly string[] = readCssTsPrefixConst('DIMENSION_PREFIXES');
-/** css.ts `SEMANTIC_ROLE_PREFIXES` — the "looks like a colour role" boundary. */
-export const SEMANTIC_ROLE_PREFIXES: readonly string[] =
-  readCssTsPrefixConst('SEMANTIC_ROLE_PREFIXES');
+// Чистый вход Core доступен без сборки и Lit. Проверка читает экспортируемые
+// массивы, поэтому реэкспорт не меняет её результат.
+export { DIMENSION_PREFIXES, SEMANTIC_ROLE_PREFIXES };
 
 const declaredTokens = canonicalTokens();
 
@@ -109,7 +94,7 @@ function colourContractRoles(): ReadonlySet<string> {
 /**
  * The files scanned as CONSUMERS. `packages/**` and `apps/**` `.ts/.tsx/.css`,
  * excluding build output, deps, generated CSS (it DECLARES, does not consume),
- * and the source-of-truth/scanner files themselves (css.ts and roles.json hold
+ * and the source-of-truth/scanner files themselves (css-values.ts and roles.json hold
  * the prefix constants / role list — scanning them would pollute the consumed
  * set with prefix fragments; the scanner + its tests hold literal token names).
  */
@@ -122,6 +107,7 @@ export function consumerFiles(): string[] {
   const ignoredDirs = new Set(['node_modules', 'dist']);
   const ignoredFiles = new Set([
     'packages/core/src/css.ts',
+    'packages/core/src/css-values.ts',
     'packages/colors/roles.json',
     'packages/colors/test/no-literal-colour-fallback.ts',
     'packages/colors/test/no-literal-colour-fallback.test.ts',

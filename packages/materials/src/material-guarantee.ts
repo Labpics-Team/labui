@@ -60,13 +60,14 @@ export const WCAG_AA_NORMAL = 4.5;
 export const WCAG_AA_LARGE = 3.0;
 
 /**
- * A tier's two-layer fill from the contract: `tint` is the translucent `01`
- * layer (its alpha is the glass density), `base` is the opaque `02` layer that
- * backs the solid canon.
+ * Пара live-материала: tint — полупрозрачный слой, base — его непрозрачная база.
+ * Если Solid имеет собственную семантическую заливку, потребитель передаёт её
+ * отдельно. Без неё сохраняется прежний расчёт tint поверх base.
  */
 export interface TierFill {
   readonly tint: Rgba;
   readonly base: Rgba;
+  readonly solid?: Rgba;
 }
 
 /** A candidate label colour the surface could commit to (opaque foreground). */
@@ -79,7 +80,7 @@ export interface LabelCandidate {
 export interface TierVerdict {
   readonly tier: MaterialTier;
   readonly theme: ThemeName;
-  /** Luminance of the opaque solid canon (01 over 02). */
+  /** Яркость явного Solid либо непрозрачной композиции tint поверх base. */
   readonly solidLuminance: number;
   /** The label the surface commits to (highest-contrast candidate on the solid canon). */
   readonly label: string;
@@ -280,7 +281,20 @@ export function evaluateTier(
   const floor = options.floor ?? WCAG_AA_NORMAL;
   const backdrop = options.backdrop ?? FULL_BACKDROP;
 
-  const solid = compositeOver(fill.tint, fill.base);
+  if (
+    fill.solid !== undefined &&
+    (fill.solid === null ||
+      typeof fill.solid !== 'object' ||
+      fill.solid.a !== 1 ||
+      [fill.solid.r, fill.solid.g, fill.solid.b].some(
+        (channel) => !Number.isFinite(channel) || channel < 0 || channel > 255,
+      ))
+  ) {
+    throw new RangeError(
+      'evaluateTier: solid должен быть непрозрачным цветом с конечными sRGB-каналами 0…255',
+    );
+  }
+  const solid = fill.solid ?? compositeOver(fill.tint, fill.base);
   const solidLuminance = relativeLuminance(solid);
   const label = commitLabel(solidLuminance, labelCandidates);
   const labelLuminance = relativeLuminance(label.colour);

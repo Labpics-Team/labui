@@ -113,7 +113,8 @@ export function buildTypography(config: TypographyConfig): {
     lineHeights.push({
       kind: 'line-height',
       name,
-      cssValue: num(role.lineHeight),
+      // Округление 12/14 до 0.8571 уменьшает реальную строку ниже 12px.
+      cssValue: String(role.lineHeight),
       numeric: role.lineHeight,
       dtcgType: 'number',
     });

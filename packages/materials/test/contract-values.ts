@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { themeVars } from '../../colors/test/state-overlays-shared.mjs';
+import { resolveValue, themeVars } from '../../colors/test/state-overlays-shared.mjs';
 import { type Rgba, parseRgb } from '../src/luminance';
 import {
   type LabelCandidate,
@@ -23,17 +23,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
 const CONTRACT_PATH = resolve(repoRoot, 'packages/colors/contract.css');
 
-/** Читает готовую краску выбранной CSS-ветки; цветовую математику не повторяет. */
-function readDecl(section: ReadonlyMap<string, string>, name: string): string {
-  const value = section.get(name);
-  if (value === undefined) {
-    throw new Error(`contract.css: declaration ${name} not found`);
-  }
-  return value.trim();
-}
-
 function readColour(section: ReadonlyMap<string, string>, name: string): Rgba {
-  const raw = readDecl(section, name);
+  // Общий reader разрешает semantic aliases выбранной ветки; цвета не пересчитываются.
+  const raw = resolveValue(name, section);
   const rgba = parseRgb(raw);
   if (rgba === null) {
     throw new Error(
@@ -61,6 +53,11 @@ export function readContractMaterials(): ContractMaterials {
       fills.set(fillKey(theme, tier), {
         tint: readColour(section, `--lab-bg-material-${tier}-01`),
         base: readColour(section, `--lab-bg-material-${tier}-02`),
+        // Published Elevated Solid использует Backgrounds/Neutral/Grouped/Secondary;
+        // live-пара сохраняется отдельно для проверки прозрачного материала.
+        ...(tier === 'elevated'
+          ? { solid: readColour(section, '--lab-bg-grouped-secondary') }
+          : {}),
       });
     }
     // Material panels carry a STATIC (theme-pinned) label; polarity picks white

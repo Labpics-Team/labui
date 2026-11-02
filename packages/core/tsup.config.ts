@@ -1,27 +1,16 @@
+import { fileURLToPath } from 'node:url';
 import { libraryPreset } from '../../tsup.config.base';
 import { discoverComponents } from './scripts/discover-components';
 
 /**
- * Entries, one per boundary:
- *   - `index`  the renderer-agnostic seam + the Lit base + behaviors.
- *   - `ssr`    the `@lit-labs/ssr` shim — isolated so consumers that never
- *              server-render the Lit path don't pull the SSR engine into their
- *              client bundle.
- *   - `proof`  the `lab-proof` custom element (side-effectful: it self-registers).
- *   - every component under `src/components/<name>/lab-<name>.ts` — each its own
- *              side-effectful entry so a consumer pulls only the component it
- *              imports.
+ * Регистрацией владеет публичный src/components/<name>/index.ts. Его side effect
+ * защищён в исходниках и dist. Вложенный компонент подключает зависимость через
+ * @labpics/ui-core/<name>; external сохраняет этот вход отдельной границей сборки.
+ * Относительный импорт соседнего index снова позволит перенести эффект в chunk.
+ * Проверка packed consumer охватывает входы и вложенные зависимости.
  *
- * Components are AUTO-DISCOVERED (see `discoverComponents`): a new component
- * needs no edit here. Each is built from its public barrel and keeps its `src`
- * path in `dist`, emitting to `dist/components/<name>/index.{js,cjs,d.ts}`. That
- * nested, single-name layout lets the package's `exports` and `sideEffects`
- * target them with a single `*`/`components/**` wildcard — the only form
- * TypeScript and esbuild both resolve — so neither this file NOR `package.json`
- * grows per component.
- *
- * Zag and Lit stay external: they are real dependencies, deduped by the consumer,
- * not inlined into every build.
+ * Корень, SSR и hydration остаются отдельными входами. Zag и Lit внешние, поэтому
+ * потребитель дедуплицирует их. Новые компоненты обнаруживаются без списка здесь.
  */
 const componentEntries = discoverComponents().map(({ entry }) => entry);
 const configureEsbuild = libraryPreset().esbuildOptions;
@@ -29,11 +18,17 @@ const configureEsbuild = libraryPreset().esbuildOptions;
 export default libraryPreset({
   entry: [
     'src/index.ts',
+    'src/shared.ts',
     'src/ssr/index.ts',
     'src/hydrate/index.ts',
+    'src/motion/index.ts',
     'src/proof/lab-proof.ts',
     ...componentEntries,
   ],
+  // tsup 8.3.6 теряет основание унаследованных paths при подготовке DTS options.
+  dts: {
+    compilerOptions: { baseUrl: fileURLToPath(new URL('../../', import.meta.url)) },
+  },
   esbuildOptions(options, context) {
     configureEsbuild?.(options, context);
     // В CJS доступен штатный __filename. URL из неэкранированного пути ломает # и %.
@@ -41,5 +36,5 @@ export default libraryPreset({
       options.define = { ...options.define, 'import.meta.url': 'undefined' };
     }
   },
-  external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
+  external: ['@labpics/ui-core', /^@zag-js\//, /^@lit-labs\//, 'lit'],
 });

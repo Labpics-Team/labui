@@ -34,6 +34,7 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import { type SwitchMotion, mountSwitchMotion } from '../../motion/index.js';
 
 /** Semantic intent of the switch's ON state. */
 export type LabSwitchType = 'accent' | 'neutral' | 'danger';
@@ -78,6 +79,7 @@ export class LabSwitch extends LabElement {
   declare name: string | null;
 
   private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
+  private thumbMotion?: SwitchMotion;
   private checkedValue: boolean | undefined;
 
   get checked(): boolean {
@@ -86,6 +88,18 @@ export class LabSwitch extends LabElement {
 
   set checked(value: boolean) {
     this.checkedValue = value;
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    // При reconnect Lit сохраняет shadow nodes; updated возвращает им motion scope.
+    this.requestUpdate();
+  }
+
+  override disconnectedCallback(): void {
+    this.thumbMotion?.dispose();
+    this.thumbMotion = undefined;
+    super.disconnectedCallback();
   }
 
   constructor() {
@@ -189,24 +203,22 @@ export class LabSwitch extends LabElement {
       border-radius: ${litVar('--lab-radius-full', '9999px')};
       background-color: ${litVar('--lab-fill-primary')};
       outline: var(--_lab-control-outline, none);
-      transition: background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+      /* Цвет назначается сразу: промежуточные пары контраста не квалифицированы. */
     }
 
-    /* ON track surface, per type. Driven by the reflected checked attribute,
-       which is driven by the machine — one source of truth. The longhand is set
-       DIRECTLY (no var()->var() chain across the shadow boundary, which can go
-       stale in Chromium on theme swap — proto-A note). */
-    :host([checked][type='accent']) .control {
+    /* Одна проекция состояния для SSR и Zag управляет всей анатомией.
+       Цветовой longhand читает роль прямо, без дополнительной цепочки var(). */
+    :host([type='accent']) .root[data-state='checked'] .control {
       background-color: ${litVar('--lab-fill-accent')};
     }
-    :host([checked][type='neutral']) .control {
+    :host([type='neutral']) .root[data-state='checked'] .control {
       background-color: ${litVar('--lab-fill-neutral')};
     }
-    :host([checked][type='danger']) .control {
+    :host([type='danger']) .root[data-state='checked'] .control {
       background-color: ${litVar('--lab-fill-danger')};
     }
 
-    /* The thumb — the Zag thumb element. Slides on the checked attribute. */
+    /* Положение бегунка читает ту же проекцию состояния, что дорожка и иконки. */
     .thumb {
       box-sizing: border-box;
       display: inline-flex;
@@ -221,7 +233,7 @@ export class LabSwitch extends LabElement {
       transition: transform var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
       transform: translateX(0);
     }
-    :host([checked]) .thumb {
+    .root[data-state='checked'] .thumb {
       transform: translateX(calc(var(--_track-w) - var(--_thumb) - 2 * var(--_inset)));
     }
 
@@ -238,7 +250,7 @@ export class LabSwitch extends LabElement {
       color: ${litVar('--lab-label-on-accent')};
       transform: translateY(-50%);
       opacity: 0;
-      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+      /* Содержимое не проходит через промежуточную прозрачность. */
       pointer-events: none;
     }
     .icon-on {
@@ -248,10 +260,10 @@ export class LabSwitch extends LabElement {
       right: var(--_inset);
       color: ${litVar('--lab-label-tertiary')};
     }
-    :host([checked]) .icon-on {
+    .root[data-state='checked'] .icon-on {
       opacity: 1;
     }
-    :host(:not([checked])) .icon-off {
+    .root[data-state='unchecked'] .icon-off {
       opacity: 1;
     }
 
@@ -303,6 +315,10 @@ export class LabSwitch extends LabElement {
       this.machineCtl.spread(input, api.getHiddenInputProps());
       this.nameHiddenInput(input);
     }
+    if (control && thumb && this.isConnected) {
+      this.thumbMotion ??= mountSwitchMotion(this.renderRoot, control, thumb, api.checked);
+      this.thumbMotion.update(api.checked);
+    }
   }
 
   /**
@@ -322,19 +338,20 @@ export class LabSwitch extends LabElement {
   }
 
   override render(): TemplateResult {
+    const checked = this.checked;
     // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is
     // spread in `updated()` from the machine. SSR emits this real markup so first
     // paint is meaningful before any JS upgrades the element. The hidden input is
     // a SIBLING of the (aria-hidden) control — NOT a descendant — so it stays in
     // the accessibility tree (an aria-hidden ancestor would erase it).
     return html`
-      <label class="root">
-        <input type="checkbox" />
+      <label class="root" data-state=${checked ? 'checked' : 'unchecked'}>
         <span class="control">
           <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
           <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
           <span class="thumb"></span>
         </span>
+        <input type="checkbox" ?checked=${checked} />
         <span class="label"><slot></slot></span>
       </label>
     `;
@@ -345,9 +362,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-switch': LabSwitch;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-switch')) {
-  customElements.define('lab-switch', LabSwitch);
 }

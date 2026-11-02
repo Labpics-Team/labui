@@ -129,11 +129,12 @@ for (const renderer of ['lit', 'react'] as const) {
 
         await track.click();
         await expect(row.locator('input')).toBeChecked();
-        // Ждём конечной геометрии настоящего перехода, не меняя checked вручную.
-        await expect
-          .poll(async () => (await geometry(row, track, thumb)).rightInset)
-          .toBeCloseTo(2 * scale, 1);
+        // Первое попадание в цель ещё не финал: пружина проходит её и возвращается.
+        await thumb.evaluate(async (element) => {
+          await Promise.all(element.getAnimations().map((animation) => animation.finished));
+        });
         const on = await geometry(row, track, thumb);
+        expect(on.rightInset).toBeCloseTo(2 * scale, 1);
         expect(on.leftInset - off.leftInset, `${size} checked travel`).toBeCloseTo(
           (width - diameter - 4) * scale,
           1,
