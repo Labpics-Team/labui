@@ -491,12 +491,18 @@ export async function stateAnnulusBrowserProof(
     assertStateAnnulusObservation(reset, expected, annulus, 1);
     assert.equal(reset.enclosure.d, initial.enclosure.d, 'Reset обязан вернуть точный авторский d');
     assert.deepEqual(reset.opacity, changed.opacity, 'Reset сбросил видимую state смесь');
-    assert.deepEqual(reset.enclosurePresentation.execution, changed.enclosurePresentation.execution);
+    assert.deepEqual(
+      reset.enclosurePresentation.execution,
+      changed.enclosurePresentation.execution,
+    );
     const resetEvent = reset.enclosurePresentation.events.at(-1);
     assert.equal(resetEvent.action, 'reset');
     assert.equal(resetEvent.trusted, true);
     assert.equal(resetEvent.result.ok, true);
-    assert.deepEqual(resetEvent.result.continuity.execution, resetEvent.result.continuity.afterExecution);
+    assert.deepEqual(
+      resetEvent.result.continuity.execution,
+      resetEvent.result.continuity.afterExecution,
+    );
     sameOpacity(
       resetEvent.result.continuity.before.opacity,
       resetEvent.result.continuity.after.opacity,

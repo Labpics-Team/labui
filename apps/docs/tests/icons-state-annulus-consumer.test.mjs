@@ -341,9 +341,9 @@ test('кнопка reset возвращает точный авторский d 
   item.presentation.update({ variation: { enclosureEmphasis: 1.25 } });
   const before = item.presentation.read();
   const nodes = [item.svg, ...item.svg.querySelectorAll('*')];
-  const reset = item.section.querySelectorAll('*').find(
-    (node) => node.tagName === 'BUTTON' && node.textContent === 'Авторское обрамление',
-  );
+  const reset = item.section
+    .querySelectorAll('*')
+    .find((node) => node.tagName === 'BUTTON' && node.textContent === 'Авторское обрамление');
   assert.ok(reset);
   reset.listeners.get('click')({ isTrusted: true });
   const after = item.presentation.read();
