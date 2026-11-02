@@ -26,6 +26,7 @@
 
     "paths": {
       "@labpics/ui-core": ["./packages/core/src/index.ts"],
+      "@labpics/ui-core/shared": ["./packages/core/src/shared.ts"],
       "@labpics/ui-core/ssr": ["./packages/core/src/ssr/index.ts"],
       "@labpics/ui-core/hydrate": ["./packages/core/src/hydrate/index.ts"],
       "@labpics/ui-core/proof": ["./packages/core/src/proof/lab-proof.ts"],

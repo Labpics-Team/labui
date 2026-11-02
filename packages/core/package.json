@@ -10,14 +10,34 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./shared": {
+      "import": {
+        "types": "./dist/shared.d.ts",
+        "default": "./dist/shared.js"
+      },
+      "require": {
+        "types": "./dist/shared.d.cts",
+        "default": "./dist/shared.cjs"
+      }
     },
     "./ssr": {
-      "types": "./dist/ssr/index.d.ts",
-      "import": "./dist/ssr/index.js",
-      "require": "./dist/ssr/index.cjs"
+      "import": {
+        "types": "./dist/ssr/index.d.ts",
+        "default": "./dist/ssr/index.js"
+      },
+      "require": {
+        "types": "./dist/ssr/index.d.cts",
+        "default": "./dist/ssr/index.cjs"
+      }
     },
     "./hydrate": {
       "import": {
@@ -30,14 +50,24 @@
       }
     },
     "./proof": {
-      "types": "./dist/proof/lab-proof.d.ts",
-      "import": "./dist/proof/lab-proof.js",
-      "require": "./dist/proof/lab-proof.cjs"
+      "import": {
+        "types": "./dist/proof/lab-proof.d.ts",
+        "default": "./dist/proof/lab-proof.js"
+      },
+      "require": {
+        "types": "./dist/proof/lab-proof.d.cts",
+        "default": "./dist/proof/lab-proof.cjs"
+      }
     },
     "./*": {
-      "types": "./dist/components/*/index.d.ts",
-      "import": "./dist/components/*/index.js",
-      "require": "./dist/components/*/index.cjs"
+      "import": {
+        "types": "./dist/components/*/index.d.ts",
+        "default": "./dist/components/*/index.js"
+      },
+      "require": {
+        "types": "./dist/components/*/index.d.cts",
+        "default": "./dist/components/*/index.cjs"
+      }
     },
     "./theme.css": "./dist/theme.css",
     "./selection.css": "./dist/selection.css",
@@ -46,6 +76,7 @@
   },
   "files": ["dist", "types"],
   "sideEffects": [
+    "./src/components/*/index.ts",
     "./dist/theme.css",
     "./dist/selection.css",
     "./dist/shadow.css",
@@ -103,6 +134,8 @@
   "devDependencies": {
     "@lit-labs/ssr": "4.1.0",
     "@lit-labs/ssr-client": "1.1.8",
+    "esbuild": "0.28.2",
+    "happy-dom": "21.0.4",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
     "typescript": "5.7.3",

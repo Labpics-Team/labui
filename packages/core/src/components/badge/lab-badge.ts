@@ -197,9 +197,3 @@ declare global {
     'lab-badge': LabBadge;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7) — safe to import across module
-// instances on both the SSR and client paths.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-badge')) {
-  customElements.define('lab-badge', LabBadge);
-}

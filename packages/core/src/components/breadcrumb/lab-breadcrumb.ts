@@ -177,8 +177,3 @@ declare global {
     'lab-breadcrumb': LabBreadcrumb;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7) — safe across SSR and client paths.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-breadcrumb')) {
-  customElements.define('lab-breadcrumb', LabBreadcrumb);
-}

@@ -50,7 +50,7 @@ export {
   THEME_FALLBACK,
   THEMES,
   type Theme,
-} from './theme.js';
+} from '@labpics/ui-core/shared';
 
 // Token-consumption convention.
 export {
@@ -58,9 +58,9 @@ export {
   DIMENSION_PREFIXES,
   FORBIDDEN_PRIMITIVE_PREFIXES,
   type LabVar,
-  litVar,
   SEMANTIC_ROLE_PREFIXES,
-} from './css.js';
+} from '@labpics/ui-core/shared';
+export { litVar } from './css.js';
 
 // Component axis types — the SINGLE source of truth for the public API shape, so
 // the Lit element and the native React renderer never drift (core-CONTRACT §3).
@@ -120,7 +120,7 @@ export {
   fieldPartIds,
   type LabFieldSize,
   type LabFieldType,
-} from './components/field/field-a11y.js';
+} from '@labpics/ui-core/shared';
 
 // Disclosure — the compound `<lab-accordion>` (a GROUP machine, the Radio/Tabs
 // canon) and the single-machine `<lab-progress>`. Type-only: no Lit runtime
@@ -161,7 +161,7 @@ export type {
   LabComboboxSize,
   LabComboboxType,
 } from './components/combobox/lab-combobox.js';
-export { filterComboboxItems } from './components/combobox/lab-combobox.js';
+export { filterComboboxItems } from '@labpics/ui-core/shared';
 
 // Advanced form inputs — both machine-driven, both REUSE the SHARED `field-a11y` helper
 // for the label / helper / error association (not a second implementation):
@@ -184,6 +184,6 @@ export type {
   LabTagsInputSize,
   LabTagsInputType,
 } from './components/tags-input/lab-tags-input.js';
-export { tagsInputTranslations } from './components/tags-input/lab-tags-input.js';
+export { tagsInputTranslations } from '@labpics/ui-core/shared';
 
 export const PACKAGE_NAME = '@labpics/ui-core';

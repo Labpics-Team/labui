@@ -395,8 +395,3 @@ declare global {
     'lab-menu': LabMenu;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-menu')) {
-  customElements.define('lab-menu', LabMenu);
-}

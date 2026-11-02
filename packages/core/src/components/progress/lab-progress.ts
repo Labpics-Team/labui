@@ -286,8 +286,3 @@ declare global {
     'lab-progress': LabProgress;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-progress')) {
-  customElements.define('lab-progress', LabProgress);
-}

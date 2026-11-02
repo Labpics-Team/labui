@@ -221,9 +221,3 @@ declare global {
     'lab-card': LabCard;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7) — safe to import across module
-// instances on both the SSR and client paths.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-card')) {
-  customElements.define('lab-card', LabCard);
-}

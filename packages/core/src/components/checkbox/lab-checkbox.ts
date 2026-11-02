@@ -340,8 +340,3 @@ declare global {
     'lab-checkbox': LabCheckbox;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-checkbox')) {
-  customElements.define('lab-checkbox', LabCheckbox);
-}

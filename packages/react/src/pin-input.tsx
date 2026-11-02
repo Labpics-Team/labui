@@ -29,6 +29,7 @@
  */
 'use client';
 
+import type { LabPinInputValueType } from '@labpics/ui-core/pin-input';
 import {
   type LabFieldSize,
   type LabFieldType,
@@ -37,8 +38,7 @@ import {
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
-} from '@labpics/ui-core';
-import type { LabPinInputValueType } from '@labpics/ui-core/pin-input';
+} from '@labpics/ui-core/shared';
 import * as pinInputMachine from '@zag-js/pin-input';
 import { type ReactNode, useId } from 'react';
 import { useZag } from './use-zag.js';

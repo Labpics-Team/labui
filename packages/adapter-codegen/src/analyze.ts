@@ -1,7 +1,7 @@
 /**
  * Анализатор ядра — выводит {@link Manifest} из исходников @labpics/ui-core.
  *
- * Читает каждый `packages/core/src/components/*​/lab-*.ts` через TypeScript AST
+ * Читает публичные `index.ts` и файлы классов через TypeScript AST
  * (не regex — Lit-декларации нерегулярны для строкового разбора) и извлекает:
  *   - тег и класс      — из `customElements.define('lab-x', LabX)` (в т.ч. внутри
  *     register-функции, как у dialog/alert-dialog);
@@ -12,7 +12,7 @@
  * `field` намеренно не элемент (shared a11y-хелпер, нет `customElements.define`),
  * поэтому в манифест не попадает — как и в родном React-рендерере.
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import ts from 'typescript';
 import type { ComponentMeta, Manifest, PropKind, PropMeta, SlotMeta } from './types.js';
@@ -20,7 +20,7 @@ import type { ComponentMeta, Manifest, PropKind, PropMeta, SlotMeta } from './ty
 /** Сырые данные одного класса до разрешения наследования. */
 interface RawClass {
   readonly name: string;
-  readonly extendsName: string | undefined;
+  readonly extendsSymbol: ts.Symbol | undefined;
   readonly props: PropMeta[];
   readonly events: Set<string>;
   readonly slots: RawSlots;
@@ -167,29 +167,36 @@ function extractSlots(cls: ts.ClassDeclaration): RawSlots {
   return slots;
 }
 
-/** Имя базового класса из `extends X`. */
-function extractExtends(cls: ts.ClassDeclaration): string | undefined {
+/** TypeScript разрешает alias; имя из строки не заменяет неизвестный symbol. */
+function targetSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): ts.Symbol {
+  return symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+}
+
+/** Symbol базового класса сохраняет импортное переименование. */
+function extractExtends(cls: ts.ClassDeclaration, checker: ts.TypeChecker): ts.Symbol | undefined {
   for (const clause of cls.heritageClauses ?? []) {
     if (clause.token !== ts.SyntaxKind.ExtendsKeyword) continue;
     const type = clause.types[0];
-    if (type && ts.isIdentifier(type.expression)) return type.expression.text;
+    const symbol = type && checker.getSymbolAtLocation(type.expression);
+    if (symbol) return targetSymbol(symbol, checker);
   }
   return undefined;
 }
 
 /** Разбирает один файл элемента: классы + вызовы define('tag', Class). */
 function parseFile(
-  source: string,
-  fileName: string,
-): { classes: RawClass[]; defines: Array<{ tag: string; className: string }> } {
-  const sf = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-  const classes: RawClass[] = [];
-  const defines: Array<{ tag: string; className: string }> = [];
+  sf: ts.SourceFile,
+  checker: ts.TypeChecker,
+): { classes: Map<ts.Symbol, RawClass>; defines: Array<{ tag: string; classSymbol: ts.Symbol }> } {
+  const classes = new Map<ts.Symbol, RawClass>();
+  const defines: Array<{ tag: string; classSymbol: ts.Symbol }> = [];
   const visit = (node: ts.Node): void => {
     if (ts.isClassDeclaration(node) && node.name) {
-      classes.push({
+      const symbol = checker.getSymbolAtLocation(node.name);
+      if (!symbol) throw new Error(`Не найден symbol класса ${node.name.text} в ${sf.fileName}`);
+      classes.set(symbol, {
         name: node.name.text,
-        extendsName: extractExtends(node),
+        extendsSymbol: extractExtends(node, checker),
         props: extractProps(node),
         events: extractEvents(node),
         slots: extractSlots(node),
@@ -204,9 +211,15 @@ function parseFile(
     ) {
       const tagArg = node.arguments[0];
       const classArg = node.arguments[1];
-      if (tagArg && classArg && ts.isStringLiteral(tagArg) && ts.isIdentifier(classArg)) {
-        defines.push({ tag: tagArg.text, className: classArg.text });
+      if (!tagArg || !ts.isStringLiteral(tagArg)) {
+        throw new Error(`Регистрация в ${sf.fileName} требует строковый тег`);
       }
+      if (!classArg || !ts.isIdentifier(classArg)) {
+        throw new Error(`Регистрация ${tagArg.text} требует именованный класс`);
+      }
+      const symbol = checker.getSymbolAtLocation(classArg);
+      if (!symbol) throw new Error(`Не найден конструктор регистрации ${tagArg.text}`);
+      defines.push({ tag: tagArg.text, classSymbol: targetSymbol(symbol, checker) });
     }
     ts.forEachChild(node, visit);
   };
@@ -214,23 +227,72 @@ function parseFile(
   return { classes, defines };
 }
 
+/** Импорт адаптера использует публичное имя конструктора, а не локальный alias. */
+function publicClassName(
+  entry: ts.SourceFile,
+  classSymbol: ts.Symbol,
+  checker: ts.TypeChecker,
+  tag: string,
+): string {
+  const module = checker.getSymbolAtLocation(entry);
+  const names = (module ? checker.getExportsOfModule(module) : [])
+    .filter((symbol) => {
+      if (symbol.name === 'default' || targetSymbol(symbol, checker) !== classSymbol) return false;
+      return !(symbol.declarations ?? []).some((declaration) => {
+        if (ts.isTypeOnlyImportOrExportDeclaration(declaration)) return true;
+        if (!ts.isExportSpecifier(declaration)) return false;
+        const local = checker.getExportSpecifierLocalTargetSymbol(declaration);
+        return local?.declarations?.some(ts.isTypeOnlyImportOrExportDeclaration) ?? false;
+      });
+    })
+    .map((symbol) => symbol.name);
+  if (names.includes(classSymbol.name)) return classSymbol.name;
+  if (names.length === 1 && names[0]) return names[0];
+  throw new Error(`Регистрация ${tag}: нет однозначного публичного экспорта конструктора`);
+}
+
 /**
  * Анализирует каталог `packages/core/src/components` и строит манифест.
  * @param componentsDir абсолютный путь к каталогу компонентов ядра.
  */
 export function analyzeCore(componentsDir: string): Manifest {
-  const classMap = new Map<string, RawClass>();
-  const defines: Array<{ tag: string; className: string }> = [];
+  const classMap = new Map<ts.Symbol, RawClass>();
+  const files: Array<{ path: string; entry: string | undefined }> = [];
 
   for (const dirent of readdirSync(componentsDir, { withFileTypes: true })) {
     if (!dirent.isDirectory()) continue;
     const dir = join(componentsDir, dirent.name);
+    const entryPath = join(dir, 'index.ts');
+    const entry = existsSync(entryPath) ? entryPath : undefined;
     for (const file of readdirSync(dir)) {
-      // Только файлы элементов lab-*.ts (не index.ts / field-a11y.ts / field-styles.ts).
-      if (!file.startsWith('lab-') || !file.endsWith('.ts')) continue;
-      const parsed = parseFile(readFileSync(join(dir, file), 'utf8'), join(dir, file));
-      for (const cls of parsed.classes) classMap.set(cls.name, cls);
-      defines.push(...parsed.defines);
+      if (file.endsWith('.ts')) files.push({ path: join(dir, file), entry });
+    }
+  }
+  // Один Program связывает импорты/реэкспорты всех входов без второго resolver.
+  const program = ts.createProgram(
+    files.map((file) => file.path),
+    {
+      target: ts.ScriptTarget.ESNext,
+      module: ts.ModuleKind.ESNext,
+      moduleResolution: ts.ModuleResolutionKind.Bundler,
+    },
+  );
+  const checker = program.getTypeChecker();
+  const defines = new Map<string, { classSymbol: ts.Symbol; entry: ts.SourceFile }>();
+  for (const file of files) {
+    const source = program.getSourceFile(file.path);
+    if (!source) throw new Error(`Не найден исходник ${file.path}`);
+    const parsed = parseFile(source, checker);
+    for (const [symbol, raw] of parsed.classes) classMap.set(symbol, raw);
+    if (!file.entry) continue;
+    const entry = program.getSourceFile(file.entry);
+    if (!entry) throw new Error(`Не найден публичный вход ${file.entry}`);
+    for (const definition of parsed.defines) {
+      const previous = defines.get(definition.tag);
+      if (previous && previous.classSymbol !== definition.classSymbol) {
+        throw new Error(`Регистрация ${definition.tag} указывает на разные конструкторы`);
+      }
+      defines.set(definition.tag, { classSymbol: definition.classSymbol, entry });
     }
   }
 
@@ -240,15 +302,15 @@ export function analyzeCore(componentsDir: string): Manifest {
     events: Set<string>;
     slots: RawSlots;
   }
-  const resolved = new Map<string, Resolved>();
-  const resolve = (className: string): Resolved => {
-    const cached = resolved.get(className);
+  const resolved = new Map<ts.Symbol, Resolved>();
+  const resolve = (classSymbol: ts.Symbol): Resolved => {
+    const cached = resolved.get(classSymbol);
     if (cached) return cached;
-    const raw = classMap.get(className);
-    if (!raw) return { props: [], events: new Set(), slots: emptySlots() };
+    const raw = classMap.get(classSymbol);
+    if (!raw) throw new Error(`Не найден исходный класс ${classSymbol.name}`);
     const base =
-      raw.extendsName && classMap.has(raw.extendsName)
-        ? resolve(raw.extendsName)
+      raw.extendsSymbol && classMap.has(raw.extendsSymbol)
+        ? resolve(raw.extendsSymbol)
         : { props: [] as PropMeta[], events: new Set<string>(), slots: emptySlots() };
     // База сначала, затем собственные (одноимённый проп переопределяет базовый).
     const byName = new Map<string, PropMeta>();
@@ -263,14 +325,17 @@ export function analyzeCore(componentsDir: string): Manifest {
         dynamic: base.slots.dynamic || raw.slots.dynamic,
       },
     };
-    resolved.set(className, merged);
+    resolved.set(classSymbol, merged);
     return merged;
   };
 
-  const components: ComponentMeta[] = defines
-    .map(({ tag, className }): ComponentMeta => {
+  const components: ComponentMeta[] = [...defines]
+    .map(([tag, { classSymbol, entry }]): ComponentMeta => {
+      if (!classMap.has(classSymbol))
+        throw new Error(`Не найден исходный класс регистрации ${tag}`);
+      const className = publicClassName(entry, classSymbol, checker, tag);
       const subpath = tag.replace(/^lab-/, '');
-      const meta = resolve(className);
+      const meta = resolve(classSymbol);
       const slots: SlotMeta = {
         default: meta.slots.default,
         named: [...meta.slots.named].sort(),

@@ -1,8 +1,8 @@
-/**
- * `@labpics/ui-core/pin-input` — the segmented code-field element.
- *
- * Self-registers `<lab-pin-input>` on import (side-effect) and re-exports the class +
- * axis types so the React twin can share ONE public-API source of truth (the axis
- * unions and the value-type union come from here — no drift between renderers).
- */
+/** Импорт регистрирует <lab-pin-input>; этот entrypoint защищён от tree shaking. */
+import { LabPinInput } from './lab-pin-input.js';
+
 export * from './lab-pin-input.js';
+
+if (typeof customElements !== 'undefined' && !customElements.get('lab-pin-input')) {
+  customElements.define('lab-pin-input', LabPinInput);
+}

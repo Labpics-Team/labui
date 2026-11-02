@@ -346,8 +346,3 @@ declare global {
     'lab-switch': LabSwitch;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-switch')) {
-  customElements.define('lab-switch', LabSwitch);
-}
