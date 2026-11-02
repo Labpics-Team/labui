@@ -10,12 +10,68 @@ import {
   assertHarnessFilesUnchanged,
   snapshotHarnessFiles,
 } from './icons-harness.mjs';
+import { browserProofTimeout } from './icons-packed.mjs';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const packedUrl = new URL('./icons-packed.mjs', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 const readRepositoryFile = (file) => readFile(join(ROOT, file));
+
+test('общий browser deadline сохраняет текущую фазу и последний завершённый шаг', async () => {
+  const source = await readFile(packedUrl, 'utf8');
+  const start = source.indexOf('proofTimer = setTimeout(');
+  const end = source.indexOf(';', start);
+  assert.ok(start >= 0 && end > start);
+  const records = [{ name: 'status-circle:reduce:state-enclosure-continuity' }];
+  const frontier = {
+    mode: 'reduce',
+    stage: 'state-annulus',
+    member: null,
+    startedAt: 0,
+    stageStartedAt: 118000,
+  };
+  let failure;
+  new Function(
+    'setTimeout',
+    'reject',
+    'browserProofTimeout',
+    'browserFrontier',
+    'records',
+    `let proofTimer; ${source.slice(start, end + 1)}`,
+  )(
+    (callback, delay) => {
+      assert.equal(delay, 120_000, 'диагностика не увеличивает deadline');
+      callback();
+    },
+    (error) => {
+      failure = error;
+    },
+    (current, completed) => browserProofTimeout(current, completed, 120000),
+    frontier,
+    records,
+  );
+  assert.deepEqual(failure.browserFrontier, {
+    mode: 'reduce',
+    stage: 'state-annulus',
+    member: null,
+    elapsedMs: 120000,
+    stageElapsedMs: 2000,
+    completedRecords: 1,
+    lastCompletedRecord: 'status-circle:reduce:state-enclosure-continuity',
+  });
+  frontier.stage = 'context-close';
+  records.push({ name: 'later-record' });
+  assert.equal(failure.browserFrontier.stage, 'state-annulus', 'cleanup не заменяет место отказа');
+  assert.equal(failure.browserFrontier.completedRecords, 1);
+  assert.ok(failure.message.includes('status-circle:reduce:state-enclosure-continuity'));
+  const empty = browserProofTimeout(
+    { ...frontier, mode: null, stage: 'start', stageStartedAt: 0 },
+    [],
+    0,
+  );
+  assert.equal(empty.browserFrontier.lastCompletedRecord, null);
+});
 
 async function actualInitialSnapshot(root = ROOT) {
   const source = await readFile(packedUrl, 'utf8');

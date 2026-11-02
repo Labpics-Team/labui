@@ -1221,8 +1221,31 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
-async function browserProof(browser, url, reference, out, records, browserErrors) {
+export function browserProofTimeout(frontier, records, now = performance.now()) {
+  const diagnostic = {
+    mode: frontier.mode,
+    stage: frontier.stage,
+    member: frontier.member,
+    elapsedMs: Math.round(now - frontier.startedAt),
+    stageElapsedMs: Math.round(now - frontier.stageStartedAt),
+    completedRecords: records.length,
+    lastCompletedRecord: records.at(-1)?.name ?? null,
+  };
+  return Object.assign(
+    new Error(`icons-packed browser proof timeout: ${JSON.stringify(diagnostic)}`),
+    { browserFrontier: diagnostic },
+  );
+}
+
+async function browserProof(browser, url, reference, out, records, browserErrors, frontier) {
   for (const reducedMotion of ['no-preference', 'reduce']) {
+    const mark = (stage, member = null) => {
+      frontier.mode = reducedMotion;
+      frontier.stage = stage;
+      frontier.member = member;
+      frontier.stageStartedAt = performance.now();
+    };
+    mark('context');
     const context = await browser.newContext({
       viewport: { width: 640, height: 360 },
       reducedMotion,
@@ -1231,10 +1254,13 @@ async function browserProof(browser, url, reference, out, records, browserErrors
     page.setDefaultTimeout(20_000);
     page.on('pageerror', (error) => browserErrors.push(error.message));
     try {
+      mark('navigation');
       await page.goto(url, { waitUntil: 'networkidle' });
+      mark('ready');
       await page.waitForFunction(() => window.__iconsPacked !== undefined);
       await page.evaluate(() => window.__iconsPacked.ready);
       for (const variant of ['outline', 'filled']) {
+        mark('authored-cycle', variant);
         const expected = reference.icons.reload[variant];
         const read = () => page.evaluate((id) => window.__iconsPacked.read(id), variant);
         const initial = await read();
@@ -1396,15 +1422,24 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           refusal,
         });
       }
-      for (const stateReference of Object.values(reference.states))
+      for (const stateReference of Object.values(reference.states)) {
+        mark('state', stateReference.group);
         await stateBrowserProof(page, stateReference, reducedMotion, records);
-      if (reference.notifications)
+      }
+      if (reference.notifications) {
+        mark('notifications');
         await notificationBrowserProof(page, reference.notifications, reducedMotion, records);
-      if (reference.authoredDots)
+      }
+      if (reference.authoredDots) {
+        mark('authored-dots');
         await authoredDotsBrowserProof(page, reference.authoredDots, reducedMotion, records);
-      if (reference.annulus)
+      }
+      if (reference.annulus) {
+        mark('annulus');
         await annulusBrowserProof(page, reference.annulus, reducedMotion, records);
-      if (reference.stateAnnulus)
+      }
+      if (reference.stateAnnulus) {
+        mark('state-annulus');
         await stateAnnulusBrowserProof(
           page,
           reference.stateAnnulus,
@@ -1413,10 +1448,15 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           records,
           sameStateOpacity,
         );
-      if (reference.contentScale)
+      }
+      if (reference.contentScale) {
+        mark('content-scale');
         await contentScaleBrowserProof(page, reference.contentScale, reducedMotion, records);
+      }
       if (reference.microphones) {
+        mark('microphone-width');
         await microphoneBrowserProof(page, reference.microphones, reducedMotion, records, out);
+        mark('microphone-adjacent');
         await microphoneComparisonBrowserProof(
           page,
           reference.microphones,
@@ -1426,7 +1466,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           out,
         );
       }
-      if (reference.motionProjection)
+      if (reference.motionProjection) {
+        mark('motion-projection');
         await motionProjectionBrowserProof(
           page,
           reference.motionProjection,
@@ -1434,15 +1475,24 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           records,
           out,
         );
+      }
+      mark('full-page-capture');
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
-      if (reference.motionProjection) await motionProjectionArmDisposal(page);
+      if (reference.motionProjection) {
+        mark('motion-projection-arm-disposal');
+        await motionProjectionArmDisposal(page);
+      }
+      mark('cleanup');
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
         runningNativeAnimations: 0,
       });
-      if (reference.motionProjection)
+      if (reference.motionProjection) {
+        mark('motion-projection-disposal');
         await motionProjectionDisposalProof(page, reducedMotion, records);
+      }
       for (const group of Object.keys(reference.states)) {
+        mark('state-disposal', group);
         const disposed = await page.evaluate(
           (group) => window.__iconsPacked.stateConsumers[group].stateDisposal(),
           group,
@@ -1455,6 +1505,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
       }
       for (const group of Object.keys(reference.stateAnnulus?.groups ?? {})) {
+        mark('state-annulus-disposal', group);
         const disposed = await page.evaluate(
           (group) => window.__iconsPacked.stateAnnulusConsumers[group].stateDisposal(),
           group,
@@ -1470,6 +1521,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         for (const icon of ['notifications', 'notifications-unread'])
           for (const variant of ['outline', 'filled']) {
             const id = `${icon}/${variant}`;
+            mark('notification-disposal', id);
             const disposed = await page.evaluate(
               (id) => window.__iconsPacked.notificationConsumers[id].disposal(),
               id,
@@ -1484,6 +1536,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           }
       if (reference.authoredDots)
         for (const variant of ['outline', 'filled']) {
+          mark('authored-dots-disposal', variant);
           const disposed = await page.evaluate(
             (variant) => window.__iconsPacked.contourConsumers[variant].disposal(),
             variant,
@@ -1496,6 +1549,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         for (const icon of Object.keys(reference.annulus.icons))
           for (const variant of ['outline', 'filled']) {
             const id = `${icon}/${variant}`;
+            mark('annulus-disposal', id);
             const disposed = await page.evaluate(
               (id) => window.__iconsPacked.annulusConsumers[id].disposal(),
               id,
@@ -1509,11 +1563,13 @@ async function browserProof(browser, url, reference, out, records, browserErrors
             records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
           }
     } catch (error) {
+      mark('failure-capture', frontier.stage);
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
         .catch(() => {});
       throw error;
     } finally {
+      mark('context-close');
       await context.close();
     }
   }
@@ -2498,6 +2554,13 @@ export async function main(args = process.argv.slice(2)) {
       ...(options.has('--browser-channel') ? { channel: options.get('--browser-channel') } : {}),
     });
     receipt.runner.browser = browser.version();
+    const browserFrontier = {
+      mode: null,
+      stage: 'start',
+      member: null,
+      startedAt: performance.now(),
+      stageStartedAt: performance.now(),
+    };
     await Promise.race([
       browserProof(
         browser,
@@ -2516,10 +2579,11 @@ export async function main(args = process.argv.slice(2)) {
         out,
         records,
         browserErrors,
+        browserFrontier,
       ),
       new Promise((_, reject) => {
         proofTimer = setTimeout(
-          () => reject(new Error('icons-packed browser proof timeout')),
+          () => reject(browserProofTimeout(browserFrontier, records)),
           120_000,
         );
       }),
@@ -2542,6 +2606,7 @@ export async function main(args = process.argv.slice(2)) {
       browserErrors,
       message: String(error?.stack ?? error),
       ...(error?.stateContinuity ? { stateContinuity: error.stateContinuity } : {}),
+      ...(error?.browserFrontier ? { browserFrontier: error.browserFrontier } : {}),
     };
     failure = error;
   } finally {
