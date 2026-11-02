@@ -26,7 +26,9 @@ function camelSlot(name: string): string {
 /** Привязка одного пропа в Lit-шаблоне по его виду. */
 function bindingLine(name: string, attr: string, kind: string): string {
   if (kind === 'prop') return `      .${name}=\${props.${name}}`;
-  if (kind === 'boolean') return `      ?${attr}=\${Boolean(props.${name})}`;
+  if (kind === 'boolean') {
+    return `      .${name}=\${props.${name} === undefined ? noChange : Boolean(props.${name})}`;
+  }
   return `      ${attr}=\${ifDefined(props.${name})}`;
 }
 
@@ -61,11 +63,13 @@ function ssrFile(c: ComponentMeta): string {
   // Условные импорты из единой SSR-поверхности ядра (адаптер зависит только от core,
   // не от lit напрямую). Базовый tsconfig включает noUnusedLocals — берём лишь нужное.
   const usesIfDefined = c.props.some((p) => p.kind === 'string');
+  const usesNoChange = c.props.some((p) => p.kind === 'boolean');
   const usesUnsafeHtml = c.slots.default || c.slots.named.length > 0;
   const coreImports = [
     'html',
     'renderToString',
     usesIfDefined ? 'ifDefined' : '',
+    usesNoChange ? 'noChange' : '',
     usesUnsafeHtml ? 'unsafeHTML' : '',
   ].filter(Boolean);
 
@@ -80,9 +84,9 @@ export type ${c.pascal}SsrProps = ${propsType};
 export type ${c.pascal}SsrSlots = ${slotsType};
 
 /**
- * Рендерит <${c.tag}> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <${c.tag}> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function render${c.pascal}(
   props: ${c.pascal}SsrProps = {},${slotsParam}

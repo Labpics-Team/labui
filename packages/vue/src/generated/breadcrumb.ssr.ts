@@ -15,9 +15,9 @@ export type BreadcrumbSsrProps = Partial<Pick<LabBreadcrumb, 'size' | 'separator
 export type BreadcrumbSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-breadcrumb> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-breadcrumb> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderBreadcrumb(
   props: BreadcrumbSsrProps = {},

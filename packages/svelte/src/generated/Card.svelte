@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/card';
   import type { LabCard } from '@labpics/ui-core/card';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-card> — типы взяты прямо из класса ядра (LabCard). */
   interface Props {
@@ -31,13 +31,21 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { variant, padding, interactive })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { variant, padding, interactive });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-card bind:this={el} {...rest}>
+<lab-card bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if footer}<div slot="footer" style="display:contents">{@render footer()}</div>{/if}
   {#if header}<div slot="header" style="display:contents">{@render header()}</div>{/if}

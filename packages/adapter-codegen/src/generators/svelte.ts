@@ -3,7 +3,8 @@
  * + барель-`index.ts` (реэкспорт). Svelte-библиотека распространяется исходными
  * `.svelte` (компилирует потребитель через svelte-package).
  *
- * Проброс: объявленные пропы → forwardDeclared (по спекам, camelCase→нужный атрибут),
+ * Проброс: начальные Boolean-пропы до вставки узла, обновления → forwardDeclared
+ * (по тем же спекам, camelCase→нужный атрибут),
  * события → forwardEvents (on:-директивы избегаем — deprecated в Svelte 5; вешаем
  * addEventListener в $effect), статические именованные слоты → snippet-пропы,
  * контент по умолчанию → {@render children}. Нативные атрибуты → {...rest}.
@@ -59,6 +60,17 @@ function componentFile(c: ComponentMeta): string {
   const valuesObj = propNames.join(', ');
   const eventsObj = c.events.map((e) => `'${e}': ${handlerName(e)}`).join(', ');
   const specs = c.props.map(specLiteral).join('\n');
+  const hasBooleans = c.props.some((p) => p.kind === 'boolean');
+  const initialBooleans = hasBooleans
+    ? `
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { ${valuesObj} })));
+  });
+`
+    : '';
 
   const namedSlotMarkup = namedSlots
     .map(
@@ -77,8 +89,8 @@ function componentFile(c: ComponentMeta): string {
 <script lang="ts">
   import '@labpics/ui-core/${c.subpath}';
   import type { ${c.className} } from '@labpics/ui-core/${c.subpath}';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet${hasBooleans ? ', untrack' : ''} } from 'svelte';
+  import { type LabPropSpec, ${hasBooleans ? 'initialBooleanProps, ' : ''}forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <${c.tag}> — типы взяты прямо из класса ядра (${c.className}). */
   interface Props {
@@ -93,6 +105,7 @@ ${specs}
   ];
 
   let el: HTMLElement | undefined = $state();
+${initialBooleans}
 
   $effect(() => {
     forwardDeclared(el, specs, { ${valuesObj} });
@@ -100,7 +113,7 @@ ${specs}
   $effect(() => forwardEvents(el, { ${eventsObj} }));
 </script>
 
-<${c.tag} bind:this={el} {...rest}>${childrenMarkup}${namedSlotMarkup ? `\n${namedSlotMarkup}` : ''}
+<${c.tag} bind:this={el} {...rest}${hasBooleans ? ' {...initialBooleans}' : ''}>${childrenMarkup}${namedSlotMarkup ? `\n${namedSlotMarkup}` : ''}
 </${c.tag}>
 `;
 }

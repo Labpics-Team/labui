@@ -12,9 +12,9 @@
  *   - 'string'  → ключ `^attr`: Vue форсирует АТРИБУТ (иначе для upgraded-элемента
  *     сработало бы `key in el` и значение ушло бы свойством — незаметный дрейф
  *     между SSR и клиентом). Атрибут SSR-безопасен и до upgrade.
- *   - 'boolean' → `^attr` со значением `value || undefined`: голый `false` дал бы
- *     `attr="false"`, а Lit-конвертер читает присутствие атрибута как true;
- *     `undefined` убирает атрибут на любом пути.
+ *   - 'boolean' → JS-свойство перед вставкой и обновлением VNode. Явный false
+ *     доходит до элемента; undefined ничего не присваивает и не сбрасывает
+ *     текущее состояние при удалении пропа из родительского render.
  *   - 'prop'    → ключ `.name`: Vue форсирует JS-СВОЙСТВО. Единственный корректный
  *     путь для массивов/объектов (items, value-списки): атрибут из массива стал бы
  *     "[object Object]".
@@ -23,7 +23,15 @@
  * Регистрация: генерируемый файл делает side-effect импорт
  * `@labpics/ui-core/<subpath>`, поэтому обёртка приносит элемент с собой.
  */
-import { type DefineComponent, type VNode, defineComponent, h } from 'vue';
+import {
+  type DefineComponent,
+  type VNode,
+  defineComponent,
+  h,
+  inject,
+  mergeProps,
+  ssrContextKey,
+} from 'vue';
 
 /** Способ проброса одного пропа — зеркалит PropKind манифеста. */
 export type LabPropKind = 'boolean' | 'prop' | 'string';
@@ -32,7 +40,7 @@ export type LabPropKind = 'boolean' | 'prop' | 'string';
 export interface LabPropSpec {
   /** Имя свойства (camelCase). */
   readonly name: string;
-  /** Имя атрибута на хосте (для 'string'/'boolean'). */
+  /** Имя входного атрибута на хосте. */
   readonly attr: string;
   /** Способ проброса. */
   readonly kind: LabPropKind;
@@ -75,6 +83,7 @@ export function createLabComponent<Props, Events extends string>(
 ): LabComponent<Props, Events> {
   // Имена объявленных пропов — из спек (одна точка правды, без дубля в манифесте).
   const propNames = spec.specs.map((s) => s.name);
+  const booleanSpecs = spec.specs.filter((s) => s.kind === 'boolean');
   const component = defineComponent({
     name: `Lab_${tag}`,
     // Натив (aria-label, id, class, data-*, слушатели событий) пробрасываем вручную
@@ -82,19 +91,37 @@ export function createLabComponent<Props, Events extends string>(
     inheritAttrs: false,
     props: propNames,
     setup(props: Record<string, unknown>, { slots, attrs }) {
+      const serverRendering = inject(ssrContextKey, null) !== null;
+      const applyBooleans = (vnode: VNode): void => {
+        if (!vnode.el) return;
+        for (const s of booleanSpecs) {
+          const value = props[s.name];
+          if (value !== undefined) {
+            vnode.el[s.name] = Boolean(value);
+          }
+        }
+      };
       return () => {
         // Натив и слушатели событий (onValueChange → 'value-change') — сначала,
         // объявленные пропы форсируем ниже своими ключами (пересечений нет: Vue
         // изымает объявленные пропы из attrs).
-        const bindings: Record<string, unknown> = { ...attrs };
+        const bindings: Record<string, unknown> =
+          booleanSpecs.length && !serverRendering
+            ? mergeProps(
+                { onVnodeBeforeMount: applyBooleans, onVnodeBeforeUpdate: applyBooleans },
+                attrs,
+              )
+            : { ...attrs };
         for (const s of spec.specs) {
           const value = props[s.name];
           if (s.kind === 'prop') {
             if (value !== undefined) bindings[`.${s.name}`] = value;
-          } else if (s.kind === 'boolean') {
-            bindings[`^${s.attr}`] = value || undefined;
-          } else {
+          } else if (s.kind === 'string') {
             bindings[`^${s.attr}`] = value;
+          } else if (serverRendering) {
+            // Vue native SSR не вызывает DOM hooks. Сохраняем его прежнюю
+            // presence-семантику; deep SSR принадлежит отдельному /ssr entry.
+            bindings[s.attr] = value ? '' : undefined;
           }
         }
         // Слоты: default → дети; именованные (в т.ч. динамические content/icon/…)

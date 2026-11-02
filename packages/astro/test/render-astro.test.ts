@@ -9,10 +9,37 @@ import manifest from '../../adapter-codegen/manifest.generated.json';
 import Button from '../src/astro/Button.astro';
 import Dialog from '../src/astro/Dialog.astro';
 import Input from '../src/astro/Input.astro';
+import Checkbox from '@labpics/ui-astro/Checkbox.astro';
+import Switch from '@labpics/ui-astro/Switch.astro';
+import { renderCheckbox, renderSwitch } from '@labpics/ui-astro/ssr';
 
 const compiled = import.meta.glob('../src/astro/*.astro', { eager: true });
 
 describe('Astro .astro-компоненты (Container API)', () => {
+  it('boolean: публичные .astro сохраняют тот же SSR-фрагмент для current=false и defaults', async () => {
+    const container = await AstroContainer.create();
+    for (const [component, render, props] of [
+      [Switch, renderSwitch, { defaultChecked: true }],
+      [Switch, renderSwitch, { defaultChecked: true, checked: false }],
+      [Checkbox, renderCheckbox, { defaultIndeterminate: true }],
+      [Checkbox, renderCheckbox, { defaultIndeterminate: true, indeterminate: false }],
+    ] as const) {
+      const markup = await container.renderToString(component, { props });
+      // Публичный Astro-мост должен сохранить именно фрагмент общего SSR-входа.
+      expect(markup).toContain(render(props));
+      expect(markup).toMatch(/<script[^>]*type="module"/);
+      const host = markup.match(/<lab-(?:switch|checkbox)\b[^>]*>/)?.[0];
+      expect(host).toBeDefined();
+      const explicitFalse = 'checked' in props || 'indeterminate' in props;
+      expect(/\schecked(?:[\s=>])/.test(host ?? '')).toBe(
+        !explicitFalse && 'defaultChecked' in props,
+      );
+      expect(/\sindeterminate(?:[\s=>])/.test(host ?? '')).toBe(
+        !explicitFalse && 'defaultIndeterminate' in props,
+      );
+    }
+  });
+
   it('каждая обёртка из манифеста компилируется Astro', () => {
     const expected = manifest.components.map((c) => `../src/astro/${c.pascal}.astro`).sort();
     expect(Object.keys(compiled).sort()).toEqual(expected);

@@ -58,13 +58,12 @@ export class LabCheckbox extends LabElement {
      * is `"indeterminate"` (aria-checked="mixed").
      */
     indeterminate: { type: Boolean, reflect: true },
-    /** Начальное состояние, если текущие значения ещё не заданы. */
-    defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
+    /** Начальные входы; обычные атрибуты отражают только текущее состояние. */
+    defaultChecked: { type: Boolean, attribute: 'default-checked' },
     /** Начальное смешанное состояние, применяемое до первого render. */
     defaultIndeterminate: {
       type: Boolean,
       attribute: 'default-indeterminate',
-      reflect: true,
     },
     disabled: { type: Boolean, reflect: true },
     /**

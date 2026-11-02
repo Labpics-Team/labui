@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/popover';
   import type { LabPopover } from '@labpics/ui-core/popover';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-popover> — типы взяты прямо из класса ядра (LabPopover). */
   interface Props {
@@ -38,13 +38,21 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { placement, size, modal, closable, arrow, heading, description })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { placement, size, modal, closable, arrow, heading, description });
   });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-popover bind:this={el} {...rest}>
+<lab-popover bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if content}<div slot="content" style="display:contents">{@render content()}</div>{/if}
 </lab-popover>

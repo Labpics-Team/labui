@@ -15,9 +15,9 @@ export type LoaderSsrProps = Partial<Pick<LabLoader, 'size' | 'label'>>;
 export type LoaderSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-loader> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-loader> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderLoader(
   props: LoaderSsrProps = {},

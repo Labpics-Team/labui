@@ -1,5 +1,23 @@
 import { resolve } from 'node:path';
-import { type Plugin, defineConfig } from 'vite';
+import hydrate from '@labpics/ui-core/hydrate';
+import { type Plugin, defineConfig, transformWithEsbuild } from 'vite';
+import { registerBooleanExtensions } from '../../packages/core/test/fixtures/boolean-extensions';
+
+function booleanExtensionFixture(): Plugin {
+  const fixture = resolve(
+    __dirname,
+    '../../packages/core/test/fixtures/boolean-extensions.ts',
+  ).replaceAll('\\', '/');
+  return {
+    name: 'labui-boolean-extension-fixture',
+    enforce: 'pre',
+    transform(code, id) {
+      if (id.split('?')[0] !== fixture) return;
+      // Standard decorators компилируются как в приложении потребителя.
+      return transformWithEsbuild(code, id, { loader: 'ts', target: 'es2022' });
+    },
+  };
+}
 
 // Documentation pages and browser evidence share one Vite build, but their
 // topology is explicit: user-facing docs live at the root; isolated browser
@@ -75,9 +93,73 @@ function ssrButtonNamesPlugin(): Plugin {
   };
 }
 
+function ssrCheckedPlugin(): Plugin {
+  const placeholder = '<!-- @@SSR_CHECKED@@ -->';
+  return {
+    name: 'labui-ssr-checked',
+    async transformIndexHtml(markup, ctx) {
+      if (!ctx.path.endsWith('boolean-ssr.html') || !markup.includes(placeholder)) return markup;
+      const { renderSwitch, renderCheckbox, renderProgress, renderNumberInput, renderTooltip } =
+        await import('@labpics/ui-vue/ssr');
+      const { renderToString, html } = await import('@labpics/ui-core/ssr');
+      registerBooleanExtensions();
+      const specimens = [
+        [
+          'extension-decorated',
+          renderToString(html`<lab-boolean-decorated .flag=${false}></lab-boolean-decorated>`),
+        ],
+        [
+          'extension-manual',
+          renderToString(html`<lab-boolean-manual .flag=${false}></lab-boolean-manual>`),
+        ],
+        [
+          'extension-data',
+          renderToString(html`<lab-boolean-data .flag=${false}></lab-boolean-data>`),
+        ],
+        [
+          'extension-coercing',
+          renderToString(html`<lab-boolean-coercing .flag=${false}></lab-boolean-coercing>`),
+        ],
+        ['progress-value', renderProgress({ value: 40, showValueText: true })],
+        ['number-wheel', renderNumberInput({ allowMouseWheel: true })],
+        ['tooltip-no-arrow', renderTooltip({ arrow: false }, { default: 'Help' })],
+        ['switch-empty', renderSwitch({}, { default: 'Empty' })],
+        ['switch-default', renderSwitch({ defaultChecked: true }, { default: 'Default' })],
+        [
+          'switch-false',
+          renderSwitch({ checked: false, defaultChecked: true }, { default: 'False' }),
+        ],
+        ['checkbox-default', renderCheckbox({ defaultChecked: true }, { default: 'Default' })],
+        ['checkbox-mixed', renderCheckbox({ defaultIndeterminate: true }, { default: 'Mixed' })],
+        [
+          'checkbox-false',
+          renderCheckbox({ checked: false, defaultChecked: true }, { default: 'False' }),
+        ],
+        [
+          'checkbox-not-mixed',
+          renderCheckbox(
+            { indeterminate: false, defaultIndeterminate: true },
+            { default: 'Not mixed' },
+          ),
+        ],
+      ];
+      return markup.replace(
+        placeholder,
+        specimens.map(([id, html]) => `<section data-testid="${id}">${html}</section>`).join('\n'),
+      );
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
-  plugins: [ssrProofPlugin(), ssrButtonNamesPlugin()],
+  plugins: [
+    hydrate(),
+    booleanExtensionFixture(),
+    ssrProofPlugin(),
+    ssrButtonNamesPlugin(),
+    ssrCheckedPlugin(),
+  ],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.
@@ -97,6 +179,7 @@ export default defineConfig({
         'fixture-acrylic-live': resolve(__dirname, 'src/_fixtures/acrylic-live.html'),
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
+        'fixture-boolean-ssr': resolve(__dirname, 'src/_fixtures/boolean-ssr.html'),
         'fixture-button-names': resolve(__dirname, 'src/_fixtures/button-names.html'),
         'fixture-button-anatomy': resolve(__dirname, 'src/_fixtures/button-anatomy.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),

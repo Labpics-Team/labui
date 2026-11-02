@@ -31,6 +31,31 @@ function run(consumer: string, source: string) {
 
 describe('собранные SSR-входы: регистрация без предварительных импортов', () => {
   for (const adapter of ['vue', 'solid', 'svelte', 'astro']) {
+    it(`${adapter}: boolean SSR отличает пропущенный current от явного false`, () => {
+      const result = run(
+        adapter,
+        `import { renderSwitch, renderCheckbox } from '@labpics/ui-${adapter}/ssr';
+const state = (markup, tag) => {
+  const start = markup.indexOf('<' + tag);
+  const host = start < 0 ? undefined : markup.slice(start, markup.indexOf('>', start) + 1);
+  if (!host || !markup.includes('shadowrootmode')) throw new Error('Missing SSR host or shadow root');
+  return { checked: /\\schecked(?:[\\s=>])/.test(host), mixed: /\\sindeterminate(?:[\\s=>])/.test(host) };
+};
+console.log(JSON.stringify([
+  state(renderSwitch({defaultChecked: true}), 'lab-switch'),
+  state(renderSwitch({defaultChecked: true, checked: false}), 'lab-switch'),
+  state(renderCheckbox({defaultIndeterminate: true}), 'lab-checkbox'),
+  state(renderCheckbox({defaultIndeterminate: true, indeterminate: false}), 'lab-checkbox'),
+]));`,
+      );
+      expect(result).toEqual([
+        { checked: true, mixed: false },
+        { checked: false, mixed: false },
+        { checked: false, mixed: true },
+        { checked: false, mixed: false },
+      ]);
+    });
+
     it(`${adapter}: cold static import создаёт настоящий Shadow DOM`, () => {
       const result = run(
         adapter,

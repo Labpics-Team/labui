@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/badge';
   import type { LabBadge } from '@labpics/ui-core/badge';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-badge> — типы взяты прямо из класса ядра (LabBadge). */
   interface Props {
@@ -29,13 +29,21 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { color, type, disabled })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { color, type, disabled });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-badge bind:this={el} {...rest}>
+<lab-badge bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if dot}<div slot="dot" style="display:contents">{@render dot()}</div>{/if}
 </lab-badge>

@@ -6,7 +6,7 @@
 <script lang="ts">
   import '@labpics/ui-core/avatar';
   import type { LabAvatar } from '@labpics/ui-core/avatar';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-avatar> — типы взяты прямо из класса ядра (LabAvatar). */
@@ -31,6 +31,7 @@
   ];
 
   let el: HTMLElement | undefined = $state();
+
 
   $effect(() => {
     forwardDeclared(el, specs, { size, color, status, src, name });

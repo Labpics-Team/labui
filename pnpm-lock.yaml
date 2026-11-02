@@ -75,6 +75,9 @@ importers:
       '@axe-core/playwright':
         specifier: 4.12.1
         version: 4.12.1(playwright-core@1.55.1)
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
       '@playwright/test':
         specifier: 1.55.1
         version: 1.55.1
@@ -230,10 +233,16 @@ importers:
       lit:
         specifier: 3.3.3
         version: 3.3.3
+      magic-string:
+        specifier: 0.30.21
+        version: 0.30.21
     devDependencies:
       '@lit-labs/ssr':
         specifier: 4.1.0
         version: 4.1.0(@types/node@22.15.3)
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -246,6 +255,9 @@ importers:
       vitest:
         specifier: 3.2.6
         version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@21.0.4)(lightningcss@1.33.0)(tsx@4.19.2)
+      vite:
+        specifier: 6.4.4
+        version: 6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2)
 
   packages/fonts:
     devDependencies:

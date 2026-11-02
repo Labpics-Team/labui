@@ -1,12 +1,25 @@
-/**
+﻿/**
  * SSR-смоук: `renderX` из `@labpics/ui-vue/ssr` рендерит <lab-*> в declarative
  * shadow DOM (строка содержит `shadowrootmode`), пригодный для внедрения через
  * v-html. 3 репрезентативных компонента (button, dialog, input).
  */
 import { describe, expect, it } from 'vitest';
+import { createSSRApp, h } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import { Button } from '../src/generated/button.js';
 import { renderButton, renderDialog, renderInput } from '../src/ssr.js';
 
 describe('Vue SSR (declarative shadow DOM)', () => {
+  it('native Vue SSR сохраняет Boolean-атрибуты true и опускает false', async () => {
+    const render = (disabled: boolean) =>
+      renderToString(
+        createSSRApp({
+          render: () => h(Button, { disabled }, () => 'Submit'),
+        }),
+      );
+    expect(await render(true)).toMatch(/<lab-button\b[^>]*\sdisabled(?:[\s=>])/);
+    expect(await render(false)).not.toMatch(/<lab-button\b[^>]*\sdisabled(?:[\s=>])/);
+  });
   it('button рендерится в DSD-строку с shadowrootmode + контент слота', () => {
     const out = renderButton(
       { type: 'accent', description: 'Изменения' },

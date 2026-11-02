@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/badge';
 import type { LabBadge } from '@labpics/ui-core/badge';
 
@@ -15,9 +15,9 @@ export type BadgeSsrProps = Partial<Pick<LabBadge, 'color' | 'type' | 'disabled'
 export type BadgeSsrSlots = { default?: string; dot?: string };
 
 /**
- * Рендерит <lab-badge> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-badge> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderBadge(
   props: BadgeSsrProps = {},
@@ -26,6 +26,6 @@ export function renderBadge(
   return renderToString(html`<lab-badge
       color=${ifDefined(props.color)}
       type=${ifDefined(props.type)}
-      ?disabled=${Boolean(props.disabled)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
     >${slots.dot ? html`<span slot="dot">${unsafeHTML(slots.dot)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-badge>`);
 }

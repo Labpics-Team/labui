@@ -24,8 +24,22 @@ import { discoverComponents } from './scripts/discover-components';
  * not inlined into every build.
  */
 const componentEntries = discoverComponents().map(({ entry }) => entry);
+const configureEsbuild = libraryPreset().esbuildOptions;
 
 export default libraryPreset({
-  entry: ['src/index.ts', 'src/ssr/index.ts', 'src/proof/lab-proof.ts', ...componentEntries],
+  entry: [
+    'src/index.ts',
+    'src/ssr/index.ts',
+    'src/hydrate/index.ts',
+    'src/proof/lab-proof.ts',
+    ...componentEntries,
+  ],
+  esbuildOptions(options, context) {
+    configureEsbuild?.(options, context);
+    // В CJS доступен штатный __filename. URL из неэкранированного пути ломает # и %.
+    if (context.format === 'cjs') {
+      options.define = { ...options.define, 'import.meta.url': 'undefined' };
+    }
+  },
   external: [/^@zag-js\//, /^@lit-labs\//, 'lit'],
 });

@@ -190,14 +190,14 @@ export const checkboxDoc: ComponentDoc = {
         type: 'boolean',
         default: 'false',
         description:
-          'Начальное значение перед первым render, если ни checked, ни indeterminate ещё не заданы. Явный false также отменяет defaults. Последующие изменения и переподключение не сбрасывают текущее состояние.',
+          'Начальное значение перед первым render, если ни checked, ни indeterminate ещё не заданы. Явный false также отменяет defaults. Последующие изменения и переподключение не сбрасывают текущее состояние. Свойство не отражается в атрибут; SSR-адаптеры сохраняют вычисленное состояние.',
       },
       {
         name: 'default-indeterminate',
         type: 'boolean',
         default: 'false',
         description:
-          'Начальное смешанное состояние; применяется вместе с default-checked один раз, только если текущие checked/indeterminate ещё не заданы.',
+          'Начальное смешанное состояние; применяется вместе с default-checked один раз, только если текущие checked/indeterminate ещё не заданы. Свойство не отражается в атрибут.',
       },
       {
         name: 'disabled',

@@ -27,6 +27,7 @@
     "paths": {
       "@labpics/ui-core": ["./packages/core/src/index.ts"],
       "@labpics/ui-core/ssr": ["./packages/core/src/ssr/index.ts"],
+      "@labpics/ui-core/hydrate": ["./packages/core/src/hydrate/index.ts"],
       "@labpics/ui-core/proof": ["./packages/core/src/proof/lab-proof.ts"],
       "@labpics/ui-core/*": ["./packages/core/src/components/*/index.ts"],
       "@labpics/ui-react": ["./packages/react/src/index.ts"],

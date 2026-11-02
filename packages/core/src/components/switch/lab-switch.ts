@@ -57,8 +57,8 @@ export class LabSwitch extends LabElement {
     size: { reflect: true },
     /** Текущее состояние; обновляется вводом и присваиванием свойства. */
     checked: { type: Boolean, reflect: true },
-    /** Начальное состояние, если checked не задан до первого render. */
-    defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
+    /** Начальный вход; обычный атрибут отражает только разрешённый checked. */
+    defaultChecked: { type: Boolean, attribute: 'default-checked' },
     disabled: { type: Boolean, reflect: true },
     /**
      * Accessible name for the no-visible-label case (e.g. an icon-only switch).

@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/tooltip';
   import type { LabTooltip } from '@labpics/ui-core/tooltip';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tooltip> — типы взяты прямо из класса ядра (LabTooltip). */
   interface Props {
@@ -37,12 +37,20 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { placement, size, content, openDelay, closeDelay, disabled, arrow })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { placement, size, content, openDelay, closeDelay, disabled, arrow });
   });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>
 
-<lab-tooltip bind:this={el} {...rest}>
+<lab-tooltip bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
 </lab-tooltip>

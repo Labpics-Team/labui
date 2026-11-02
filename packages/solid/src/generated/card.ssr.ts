@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/card';
 import type { LabCard } from '@labpics/ui-core/card';
 
@@ -15,9 +15,9 @@ export type CardSsrProps = Partial<Pick<LabCard, 'variant' | 'padding' | 'intera
 export type CardSsrSlots = { default?: string; footer?: string; header?: string; media?: string };
 
 /**
- * Рендерит <lab-card> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-card> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderCard(
   props: CardSsrProps = {},
@@ -26,6 +26,6 @@ export function renderCard(
   return renderToString(html`<lab-card
       variant=${ifDefined(props.variant)}
       padding=${ifDefined(props.padding)}
-      ?interactive=${Boolean(props.interactive)}
+      .interactive=${props.interactive === undefined ? noChange : Boolean(props.interactive)}
     >${slots.footer ? html`<span slot="footer">${unsafeHTML(slots.footer)}</span>` : ''}${slots.header ? html`<span slot="header">${unsafeHTML(slots.header)}</span>` : ''}${slots.media ? html`<span slot="media">${unsafeHTML(slots.media)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-card>`);
 }

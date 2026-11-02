@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/input';
 import type { LabInput } from '@labpics/ui-core/input';
 
@@ -15,9 +15,9 @@ export type InputSsrProps = Partial<Pick<LabInput, 'type' | 'size' | 'label' | '
 export type InputSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-input> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-input> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderInput(
   props: InputSsrProps = {},
@@ -26,17 +26,17 @@ export function renderInput(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       value=${ifDefined(props.value)}
       placeholder=${ifDefined(props.placeholder)}
       input-type=${ifDefined(props.inputType)}
       autocomplete=${ifDefined(props.autocomplete)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .readonly=${props.readonly === undefined ? noChange : Boolean(props.readonly)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
+      .required=${props.required === undefined ? noChange : Boolean(props.required)}
+      .invalid=${props.invalid === undefined ? noChange : Boolean(props.invalid)}
       name=${ifDefined(props.name)}
     ></lab-input>`);
 }

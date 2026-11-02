@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/button';
   import type { LabButton } from '@labpics/ui-core/button';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-button> — типы взяты прямо из класса ядра (LabButton). */
   interface Props {
@@ -39,13 +39,21 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, kind, size, description, icon, loading, disabled, htmlType })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, kind, size, description, icon, loading, disabled, htmlType });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-button bind:this={el} {...rest}>
+<lab-button bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if end}<div slot="end" style="display:contents">{@render end()}</div>{/if}
 </lab-button>
