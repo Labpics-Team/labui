@@ -348,6 +348,35 @@ listeners и удаление mounted nodes.
 для timer motion прежний default runtime не выполнял ту же полезную работу,
 поэтому speedup относительно отказа не заявляется.
 
+Schema12 добавляет подготовленную анимацию ширины `mic` и `mic-circle` во всех
+четырёх авторских начертаниях. Подготовленная функция из `@labpics/icons/gestures/...` возвращает
+полный физический `d`, включая отрицательный compound path Filled. Публичный
+`@labpics/motion@0.5.0 value()` исполняет числовую ширину с явными duration и
+линейным easing. Consumer сохраняет успешную запись как исходную точку следующего
+намерения; в кадре не создаются glyph, IR и provenance hashes. Цель и DOM binding
+проверяются до остановки предыдущего playback. Отписка и поколение защищают от
+устаревшего callback; история завершений ограничена двумя promises.
+
+Native кнопки показывают 16/24/48 px, рядом с `mic-circle` стоят авторские
+`question-circle` и `play-circle`. Проверяются участок 35%, reversal, новое
+намерение, pause/seek/stop/finish и rapid latest-wins, C0 continuity и точные
+refusals. Reduced admission записывает цель синхронно; live MediaQueryList.change
+завершает текущую цель. Teardown останавливает playback, снимает подписки и listener,
+сохраняет доступный readback и не допускает поздних DOM writes. SVG download
+содержит реальную текущую форму. Шесть PNG привязаны к width 1, 0.92 и 0.8 в обоих
+режимах, всем четырём начертаниям и трём размерам; capture не назначает оптический
+вердикт. Raw oracle проверяет постоянную высоту, контрпространство и неизменные
+стойку и обрамление, независимо от совпадения двух producer implementations.
+
+Четыре самостоятельных измерительных consumer сравнивают prepared width и полный
+`glyph()` для двух семейств на одинаковом числовом executor и mounted path. Vite
+собирает полную closure с реально используемым публичным Motion, после чего браузер
+импортирует каждый bundle и исполняет те же endpoints обоих начертаний. Receipt
+содержит raw/gzip/brotli, code и fixture hashes, module graph и точные Icons/UI SHA,
+Motion version. Первый такой report является измерением; допустимые бюджеты и
+speedup принимаются после его чтения. Старые ceilings не увеличиваются. Browser,
+визуальная оценка и скорость никогда не выводятся из одних source tests.
+
 ## Результаты и ограничения
 
 Результат сохраняет `receipt.json` с фазой отказа, observations и browser errors;
@@ -364,7 +393,7 @@ Lab UI commit, SHA и содержимое исполненного subject, sou
 между preparation и запуском получает `CONSUMER_SOURCE_IDENTITY_REFUSED`.
 RESULT сохраняет `sourceIdentityFailure`, исходный browser outcome и hashes
 диагностических файлов; consumer packets с неверной привязкой не передаются.
-Schema1–10 сохраняют свои subject contracts. Receipt без обязательной идентичности
+Schema1–11 сохраняют свои subject contracts. Receipt без обязательной идентичности
 остаётся диагностикой и не получает успешную привязку к текущим исходникам.
 Browser/server закрываются; удаляется только собственный временный consumer.
 

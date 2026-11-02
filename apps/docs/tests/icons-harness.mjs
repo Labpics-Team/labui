@@ -13,6 +13,7 @@ export const ICONS_HARNESS_FILES = Object.freeze([
   'apps/docs/tests/icons-microphone-consumer.mjs',
   'apps/docs/tests/icons-motion-projection-consumer.mjs',
   'apps/docs/tests/icons-source-state-consumer.mjs',
+  'apps/docs/tests/icons-width-motion-consumer.mjs',
 ]);
 
 export async function snapshotHarnessFiles(readRepositoryFile) {
