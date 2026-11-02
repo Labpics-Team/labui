@@ -137,6 +137,7 @@ export function mountContentScaleConsumer(apis) {
   heading.textContent = 'Знак и обрамление';
   section.append(heading);
   const bindings = [];
+  const activations = [];
   let selectedIndex = 6;
   for (const size of [16, 20, 24, 32, 48]) {
     const row = document.createElement('div');
@@ -150,7 +151,14 @@ export function mountContentScaleConsumer(apis) {
       button.setAttribute('type', 'neutral');
       button.setAttribute('aria-label', labels[index]);
       button.setAttribute('title', labels[index]);
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (event) => {
+        activations.push({
+          icon: model.icon,
+          size,
+          trusted: event.isTrusted,
+          composed: event.composed,
+          native: event.composedPath().includes(button.shadowRoot.querySelector('button')),
+        });
         selectedIndex = index;
         download.textContent = `Скачать SVG: ${labels[index]}`;
       });
@@ -353,6 +361,7 @@ export function mountContentScaleConsumer(apis) {
     parameters,
     refusal,
     events,
+    activations,
     selectedIcon: apis[selectedIndex].glyph().icon,
     confirmation: {
       phase: phase(),
@@ -577,11 +586,28 @@ export async function contentScaleBrowserProof(page, reference, reducedMotion, r
   await call('changeConfirmation', 0, 1000);
   if (reducedMotion !== 'reduce') await call('pauseConfirmationAt', 200);
   assert.equal((await call('update', { contentScale: 0.9, enclosureEmphasis: 1.1 })).ok, true);
-  await section
+  const confirmationHost = section
     .locator('.content-scale-row')
     .nth(2)
-    .getByRole('button', { name: 'Подтвердить', exact: true })
-    .click();
+    .locator('lab-button[aria-label="Подтвердить"]');
+  assert.equal(
+    await confirmationHost.getByRole('button', { name: 'Подтвердить', exact: true }).count(),
+    1,
+    'native accessible button не найден',
+  );
+  const beforeSelection = await read();
+  // Тот же обычный host click, что в packed consumer: Playwright 1.55.1 / #37777.
+  await confirmationHost.click();
+  const selected = await read();
+  assert.equal(selected.selectedIcon, 'checkmark-circle');
+  assert.equal(selected.activations.length, beforeSelection.activations.length + 1);
+  assert.deepEqual(selected.activations.at(-1), {
+    icon: 'checkmark-circle',
+    size: 24,
+    trusted: true,
+    composed: true,
+    native: true,
+  });
   const exported = await downloadedSvg(page, section.locator('button.content-scale-download'));
   assert.equal(exported, await call('exportSvg'));
   assert.equal((await read()).selectedIcon, 'checkmark-circle');
@@ -611,5 +637,6 @@ export async function contentScaleBrowserProof(page, reference, reducedMotion, r
     name: `${reducedMotion}:content-scale-motion-continuity-visible-export`,
     result: 'PASS',
     observations: reset.confirmation,
+    activation: selected.activations.at(-1),
   });
 }

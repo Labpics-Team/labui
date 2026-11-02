@@ -6,6 +6,7 @@ import {
   CONTENT_SCALE_ENTRIES,
   assertContentMotionTransfer,
   assertContentScalePaths,
+  contentScaleBrowserProof,
   contentScaleFixture,
   contentScaleTypeFixture,
   rawContentCoordinates,
@@ -297,4 +298,63 @@ test('reduced motion reaches target while normal interruption preserves the visi
   assert.throws(() =>
     assertContentMotionTransfer({ ...instantaneous, after: [0, 0] }, 'reduce', 1),
   );
+});
+
+async function selectContentConfirmation({ blocked = false, trusted = true, native = true } = {}) {
+  const source = contentScaleBrowserProof.toString();
+  const marker =
+    "assert.equal((await call('update', { contentScale: 0.9, enclosureEmphasis: 1.1 })).ok, true);";
+  const start = source.indexOf(marker) + marker.length;
+  const end = source.indexOf('\n  const exported', start);
+  assert.ok(
+    start >= marker.length && end > start,
+    'Отсутствует consumer selection перед экспортом',
+  );
+  const observed = { selectedIcon: 'plus-circle', activations: [] };
+  // Подмена моделирует только квалифицированную границу Playwright 1.55.1:
+  // inner click отвергает slotted SVG; host click сохраняет browser hit-testing.
+  const accessible = {
+    count: async () => 1,
+    click: async () => {
+      throw new Error('slotted SVG intercepts pointer events');
+    },
+  };
+  const host = {
+    getByRole: () => accessible,
+    click: async () => {
+      if (blocked) throw new Error('overlay intercepts pointer events');
+      observed.selectedIcon = 'checkmark-circle';
+      observed.activations.push({
+        icon: 'checkmark-circle',
+        size: 24,
+        trusted,
+        composed: true,
+        native,
+      });
+    },
+  };
+  const row = { getByRole: () => accessible, locator: () => host };
+  const section = { locator: () => ({ nth: () => row }) };
+  const run = new Function(
+    'section',
+    'read',
+    'assert',
+    `return (async () => {${source.slice(start, end)}})();`,
+  );
+  await run(section, async () => structuredClone(observed), assert);
+  return observed;
+}
+
+test('content selection activates the accessible native button through its host', async () => {
+  const result = await selectContentConfirmation();
+  assert.equal(result.selectedIcon, 'checkmark-circle');
+  assert.deepEqual(result.activations, [
+    { icon: 'checkmark-circle', size: 24, trusted: true, composed: true, native: true },
+  ]);
+});
+
+test('content selection rejects real occlusion and synthetic or non-native activation', async () => {
+  await assert.rejects(selectContentConfirmation({ blocked: true }), /overlay intercepts/);
+  await assert.rejects(selectContentConfirmation({ trusted: false }));
+  await assert.rejects(selectContentConfirmation({ native: false }));
 });
