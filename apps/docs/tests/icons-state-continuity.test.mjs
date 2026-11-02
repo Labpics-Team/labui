@@ -118,7 +118,7 @@ test('pointer witness требует настоящий полный ввод н
     assert.throws(() => verifyBlockedPointer(invalid, point));
 });
 
-function changeStateAtAdmission(visible, admitted, { playback = 'running', reset = false } = {}) {
+function changeStateAtAdmission(visible, admitted, { playback = 'running', reset = false, actionLabel } = {}) {
   const fixture = consumerFixture(2);
   const start = fixture.indexOf('function changeState(');
   const end = fixture.indexOf('\nfunction readState()', start);
@@ -162,6 +162,9 @@ function changeStateAtAdmission(visible, admitted, { playback = 'running', reset
       options: { duration, easing: 'linear' },
     },
   });
+  const labelChanges = {};
+  const stateButton = { setAttribute(name, value) { labelChanges[name] = value; } };
+  const configuration = actionLabel === undefined ? {} : { actionLabels: { confirmation: actionLabel } };
   const change = new Function(
     'compileStateEffect',
     'matchMedia',
@@ -170,6 +173,8 @@ function changeStateAtAdmission(visible, admitted, { playback = 'running', reset
     'stateOpacityWitness',
     'stateWitness',
     'stateControl',
+    'configuration',
+    'stateButton',
     `let stateCompletion; let stateGeneration = 0; let stateTarget;
      const stateLabels = { confirmation: 'Подтверждение' };
      const stateSelect = {}; const stateStatus = {};
@@ -183,9 +188,20 @@ function changeStateAtAdmission(visible, admitted, { playback = 'running', reset
     snapshot,
     snapshot,
     previous,
+    configuration,
+    stateButton,
   );
-  return change('confirmation', 600);
+  return { ...change('confirmation', 600), labelChanges };
 }
+
+test('action label связывается с конфигурацией кнопки без изменения видимой смеси', () => {
+  const visible = statePose([0.2, 0.3, 0, 0, 0, 0.5]);
+  const old = changeStateAtAdmission(visible, visible);
+  assert.deepEqual(old.labelChanges, {});
+  const named = changeStateAtAdmission(visible, visible, { actionLabel: 'Вернуться к вопросу' });
+  assert.deepEqual(named.labelChanges, { 'aria-label': 'Вернуться к вопросу' });
+  sameStateOpacity(visible, named.after, named.continuity);
+});
 
 test('новое намерение сохраняет последнюю видимую смесь при более позднем admission', () => {
   const visible = statePose([0.005, 0, 0, 0, 0, 0.995]);
