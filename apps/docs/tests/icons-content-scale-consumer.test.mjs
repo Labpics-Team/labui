@@ -77,11 +77,9 @@ function coordinateProjection(d) {
 }
 
 function polyline(d) {
-  return (
-    rawContentCoordinates(d)
-      .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.join(' ')}`)
-      .join('') + 'Z'
-  );
+  return `${rawContentCoordinates(d)
+    .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.join(' ')}`)
+    .join('')}Z`;
 }
 
 test('raw coordinate oracle normalizes H/V coordinates and implicit lines', () => {

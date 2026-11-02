@@ -84,7 +84,7 @@ test('oracle catches silent fallback, altered height, missing counter and jagged
       const jagged = structuredClone(healthy);
       jagged[bodyPath].d = jagged[bodyPath].d.replace(/C([^A-Za-z]*)/g, (_, operands) => {
         const points = operands.trim().split(/[\s,]+/);
-        return [0, 2, 4].map((index) => 'L' + points.slice(index, index + 2).join(' ')).join('');
+        return [0, 2, 4].map((index) => `L${points.slice(index, index + 2).join(' ')}`).join('');
       });
       assert.throws(() => assertMicrophonePaths(jagged, source, .8));
       const height = structuredClone(healthy);
