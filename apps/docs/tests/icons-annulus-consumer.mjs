@@ -4,7 +4,29 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { downloadedSvg, rawDotOperands } from './icons-authored-dots-consumer.mjs';
 
-export const ANNULUS_ICONS = ['minus-circle', 'plus-circle'];
+const symbols = {
+  'alert-circle': {
+    label: 'Внимание',
+    parts: ['attention-dot', 'attention-stem', 'status-enclosure'],
+  },
+  'checkmark-circle': {
+    label: 'Подтвердить',
+    parts: ['confirmation-mark', 'confirmation-enclosure'],
+  },
+  'close-circle': { label: 'Закрыть', parts: ['dismissal-mark', 'status-enclosure'] },
+  'minus-circle': { label: 'Убрать', parts: ['decrease-mark', 'status-enclosure'] },
+  'pause-circle': {
+    label: 'Пауза',
+    parts: ['pause-first-bar', 'pause-second-bar', 'playback-enclosure'],
+  },
+  'play-circle': { label: 'Воспроизвести', parts: ['play-mark', 'playback-enclosure'] },
+  'plus-circle': { label: 'Добавить', parts: ['increase-mark', 'status-enclosure'] },
+  'question-circle': {
+    label: 'Вопрос',
+    parts: ['question-dot', 'question-stem', 'status-enclosure'],
+  },
+};
+export const ANNULUS_ICONS = Object.keys(symbols);
 export const ANNULUS_ENTRIES = ANNULUS_ICONS.flatMap((icon) => [
   `@labpics/icons/symbols/${icon}`,
   `@labpics/icons/variations/${icon}`,
@@ -21,15 +43,14 @@ const stableJSON = (value) =>
         )
       : item,
   );
-const ids = { 'plus-circle': 'increase-mark', 'minus-circle': 'decrease-mark' };
 
 // Oracle читает авторский compound path. Координаты и радиусы не приходят из producer.
 export function rawAnnulusReference(paths, viewBox) {
   assert.deepEqual(viewBox, [0, 0, 24, 24]);
-  assert.equal(paths.length, 2);
-  assert.equal(paths[0].fillRule, 'nonzero');
-  assert.equal(paths[1].fillRule, 'evenodd');
-  const contours = paths[1].d.split(/(?=M)/).filter(Boolean);
+  assert.ok(paths.length >= 2);
+  assert.ok(paths.slice(0, -1).every((part) => part.fillRule === 'nonzero'));
+  assert.equal(paths.at(-1).fillRule, 'evenodd');
+  const contours = paths.at(-1).d.split(/(?=M)/).filter(Boolean);
   assert.equal(contours.length, 2);
   const [outer, inner] = contours.map(rawDotOperands);
   const center = [viewBox[0] + viewBox[2] / 2, viewBox[1] + viewBox[3] / 2];
@@ -56,14 +77,18 @@ export function rawAnnulusReference(paths, viewBox) {
 
 export function assertAnnulusPaths(paths, reference, emphasis) {
   assert.equal(paths.length, reference.paths.length);
-  assert.deepEqual(paths[0], reference.paths[0], 'content обязан сохраняться буквально');
-  assert.equal(paths[1].fillRule, reference.paths[1].fillRule);
+  assert.deepEqual(
+    paths.slice(0, -1),
+    reference.paths.slice(0, -1),
+    'все части content обязаны сохраняться буквально',
+  );
+  assert.equal(paths.at(-1).fillRule, reference.paths.at(-1).fillRule);
   if (emphasis === 1) {
     assert.deepEqual(paths, reference.paths, 'default обязан сохранить весь master');
     return;
   }
   const raw = rawAnnulusReference(reference.paths, reference.viewBox);
-  const contours = paths[1].d.split(/(?=M)/).filter(Boolean);
+  const contours = paths.at(-1).d.split(/(?=M)/).filter(Boolean);
   assert.equal(contours.length, 2);
   assert.equal(contours[0], raw.outerD, 'outer обязан сохраняться буквально');
   const actual = rawDotOperands(contours[1]);
@@ -120,16 +145,25 @@ export function validateAnnulusReference(reference, figma) {
       }
       assert.equal(item.declaration.masterSha256, item.author.masterSha256);
       assert.equal(item.declaration.pathFingerprintSha256, item.author.pathFingerprintSha256);
-      assert.equal(item.declaration.gesture, null);
+      assert.deepEqual(
+        item.declaration.gesture,
+        icon === 'checkmark-circle'
+          ? { law: 'confirmation.presence', purpose: 'confirmation', partId: 'confirmation-mark' }
+          : null,
+      );
       assert.deepEqual(item.declaration.variation, {
         law: 'annulus.counter-scale',
         parameter: 'enclosureEmphasis',
-        enclosurePartId: 'status-enclosure',
+        enclosurePartId: symbols[icon].parts.at(-1),
       });
-      assert.deepEqual(item.declaration.parts, [
-        { pathIndex: 0, id: ids[icon], role: 'content' },
-        { pathIndex: 1, id: 'status-enclosure', role: 'container' },
-      ]);
+      assert.deepEqual(
+        item.declaration.parts,
+        symbols[icon].parts.map((id, pathIndex, all) => ({
+          pathIndex,
+          id,
+          role: pathIndex === all.length - 1 ? 'container' : 'content',
+        })),
+      );
       rawAnnulusReference(item.paths, item.viewBox);
     }
   }
@@ -256,7 +290,7 @@ export function assertAnnulusObservation(observation, reference, icon, variant, 
   }
 }
 
-function mountAnnulusConsumer(api, sourceApi, icon, variant, parent) {
+function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
   const original = sourceApi.glyph({ variant });
   const sourceDefaultIdentity = api.glyph({ variant }) === original;
   const sourceOnlyDefaultIdentity = api.glyph({ variant, modelMode: 'source-only' }) === original;
@@ -269,7 +303,7 @@ function mountAnnulusConsumer(api, sourceApi, icon, variant, parent) {
   figure.className = 'annulus-sample';
   figure.dataset.annulus = `${icon}/${variant}`;
   const caption = document.createElement('figcaption');
-  caption.textContent = `${icon === 'plus-circle' ? 'Добавить' : 'Убрать'}, ${variant === 'outline' ? 'контурное' : 'заливка'}`;
+  caption.textContent = `${label}, ${variant === 'outline' ? 'контурное' : 'заливка'}`;
   const samples = document.createElement('div');
   samples.className = 'size-sample-row';
   const cells = [16, 24, 48].map((size) => {
@@ -376,7 +410,9 @@ function mountAnnulusConsumer(api, sourceApi, icon, variant, parent) {
       sourceOnlyDefaultIdentity,
       explicitDefaultIdentity,
       defaultIdentity: model === original,
-      contentIdentity: model.parts[0] === original.parts[0],
+      contentIdentity: model.parts
+        .slice(0, -1)
+        .every((part, index) => part === original.parts[index]),
       roles: model.parts.map(({ id, role, zIndex }) => ({ id, role, zIndex })),
       viewBox: [...model.viewBox],
       paths: paths(cells[1].cell.querySelector('svg')),
@@ -408,7 +444,10 @@ function mountAnnulusConsumer(api, sourceApi, icon, variant, parent) {
       zero: attempt({ variant, variation: { enclosureEmphasis: 0 } }),
       nan: attempt({ variant, variation: { enclosureEmphasis: Number.NaN } }),
       unknown: attempt({ variant, variation: { dotScale: 1 } }),
-      clearance: attempt({ variant, variation: { enclosureEmphasis: 2.6 } }),
+      domain: attempt({
+        variant,
+        variation: { enclosureEmphasis: capability.variation?.domain.emphasisBounds.minimum / 2 },
+      }),
       collapse: attempt({ variant, variation: { enclosureEmphasis: 100 } }),
       sourceOnly: attempt({
         variant,
@@ -426,10 +465,7 @@ function mountAnnulusConsumer(api, sourceApi, icon, variant, parent) {
 
 export function annulusFixture() {
   return `
-import * as annulusPlus from '@labpics/icons/variations/plus-circle';
-import * as annulusMinus from '@labpics/icons/variations/minus-circle';
-import * as sourcePlus from '@labpics/icons/symbols/plus-circle';
-import * as sourceMinus from '@labpics/icons/symbols/minus-circle';
+${ANNULUS_ICONS.map((icon, index) => `import * as annulus${index} from '@labpics/icons/variations/${icon}';\nimport * as annulusSource${index} from '@labpics/icons/symbols/${icon}';`).join('\n')}
 ${mountAnnulusConsumer.toString()}
 const annulusSection = document.createElement('section'); annulusSection.className = 'authored-annulus';
 annulusSection.setAttribute('aria-labelledby', 'annulus-heading');
@@ -437,8 +473,8 @@ const annulusHeading = document.createElement('h2'); annulusHeading.id = 'annulu
 const annulusRow = document.createElement('div'); annulusRow.className = 'annulus-row';
 annulusSection.append(annulusHeading, annulusRow); document.body.append(annulusSection);
 const annulusConsumers = {};
-for (const [api, sourceApi, icon] of [[annulusPlus, sourcePlus, 'plus-circle'], [annulusMinus, sourceMinus, 'minus-circle']])
-  for (const variant of ['outline', 'filled']) annulusConsumers[icon + '/' + variant] = mountAnnulusConsumer(api, sourceApi, icon, variant, annulusRow);
+for (const [api, sourceApi, icon, label] of [${ANNULUS_ICONS.map((icon, index) => `[annulus${index}, annulusSource${index}, ${JSON.stringify(icon)}, ${JSON.stringify(symbols[icon].label)}]`).join(',')}])
+  for (const variant of ['outline', 'filled']) annulusConsumers[icon + '/' + variant] = mountAnnulusConsumer(api, sourceApi, icon, label, variant, annulusRow);
 window.__iconsPacked.annulusConsumers = annulusConsumers;
 const annulusPreviousCleanup = window.__iconsPacked.cleanup;
 window.__iconsPacked.cleanup = () => { for (const item of Object.values(annulusConsumers)) item.cleanup(); annulusSection.remove(); return annulusPreviousCleanup(); };
@@ -446,7 +482,13 @@ window.__iconsPacked.cleanup = () => { for (const item of Object.values(annulusC
 }
 
 export function annulusTypeFixture() {
-  return `import { glyph as plusAnnulus, glyphCapabilities as plusAnnulusCapabilities } from '@labpics/icons/variations/plus-circle';
+  return `${ANNULUS_ICONS.filter((icon) => !['plus-circle', 'minus-circle'].includes(icon))
+    .map(
+      (icon, index) =>
+        `import { glyph as otherAnnulus${index} } from '@labpics/icons/variations/${icon}';\nimport { glyph as otherSourceAnnulus${index} } from '@labpics/icons/symbols/${icon}';\notherAnnulus${index}({ variant: 'outline', variation: { enclosureEmphasis: 1.2 } });\notherAnnulus${index}({ variant: 'filled' });\notherSourceAnnulus${index}({ variant: 'outline', modelMode: 'source-only' });`,
+    )
+    .join('\n')}
+import { glyph as plusAnnulus, glyphCapabilities as plusAnnulusCapabilities } from '@labpics/icons/variations/plus-circle';
 import { glyph as minusAnnulus } from '@labpics/icons/variations/minus-circle';
 import { glyph as sourcePlusAnnulus } from '@labpics/icons/symbols/plus-circle';
 import { glyph as sourceMinusAnnulus } from '@labpics/icons/symbols/minus-circle';
@@ -489,7 +531,12 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
         for (const [key, code] of Object.entries(refused))
           if (key !== 'motion') assert.equal(code, 'AUTHOR_VARIATION_UNSUPPORTED');
         assert.equal(refused.motion.ok, false);
-        assert.equal(refused.motion.reason.code, 'SEMANTIC_MOTION_UNAVAILABLE');
+        assert.equal(
+          refused.motion.reason.code,
+          initial.capability.motion?.state === 'gesture-ready'
+            ? 'GESTURE_UNSUPPORTED'
+            : 'SEMANTIC_MOTION_UNAVAILABLE',
+        );
         records.push({
           name: `${id}:${reducedMotion}:annulus-source`,
           paths: initial.paths,
@@ -510,7 +557,7 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
         figure.getByRole('button', { name: 'Скачать SVG', exact: true }),
       );
       assert.equal(exported, varied.exportSvg, 'загрузка SVG должна сохранять текущую форму');
-      await input.fill('2.6');
+      await input.fill(String(varied.capability.variation.domain.emphasisBounds.minimum / 2));
       const rejected = await read();
       assert.equal(rejected.refusal, 'VARIATION_OUTSIDE_DOMAIN');
       assert.deepEqual(rejected.paths, varied.paths, 'отказ не заменяет последнюю принятую форму');
@@ -530,7 +577,7 @@ export async function annulusBrowserProof(page, reference, reducedMotion, record
           zero: 'INVALID_VARIATION',
           nan: 'INVALID_VARIATION',
           unknown: 'INVALID_VARIATION',
-          clearance: 'VARIATION_OUTSIDE_DOMAIN',
+          domain: 'VARIATION_OUTSIDE_DOMAIN',
           collapse: 'VARIATION_UNREPRESENTABLE',
           sourceOnly: 'AUTHOR_PARITY_REQUIRED',
           filledDefault: 'AUTHOR_VARIATION_UNSUPPORTED',

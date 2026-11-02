@@ -79,7 +79,13 @@ test('raw Figma sources retain independent Outline and Filled receipts before pr
       const item = reference.icons[icon][variant];
       assert.equal(item.author.masterSha256, hash(snapshot.masters[item.sourceFile]));
       if (variant === 'filled') assert.equal(item.declaration, null);
-      else assert.equal(item.declaration.gesture, null);
+      else
+        assert.deepEqual(
+          item.declaration.gesture,
+          icon === 'checkmark-circle'
+            ? { law: 'confirmation.presence', purpose: 'confirmation', partId: 'confirmation-mark' }
+            : null,
+        );
     }
   assert.equal(
     rawAnnulusReference(reference.icons['plus-circle'].outline.paths, [0, 0, 24, 24]).outerD,
@@ -117,7 +123,10 @@ function variedPaths(reference, emphasis) {
     (value, index) => scale * value + (1 - scale) * raw.center[index % 2],
   );
   const inner = `M${numbers.slice(0, 2).join(' ')}${[0, 1, 2, 3].map((i) => `C${numbers.slice(2 + i * 6, 8 + i * 6).join(' ')}`).join('')}Z`;
-  return [reference.paths[0], { d: raw.outerD + inner, fillRule: reference.paths[1].fillRule }];
+  return [
+    ...reference.paths.slice(0, -1),
+    { d: raw.outerD + inner, fillRule: reference.paths.at(-1).fillRule },
+  ];
 }
 
 test('countershape oracle admits useful deformation and rejects whole-glyph scaling or silent default', async (t) => {
@@ -128,15 +137,17 @@ test('countershape oracle admits useful deformation and rejects whole-glyph scal
     for (const emphasis of [0.8, 1.2]) {
       const paths = variedPaths(original, emphasis);
       assertAnnulusPaths(paths, original, emphasis);
-      assert.notEqual(paths[1].d, original.paths[1].d);
+      assert.notEqual(paths.at(-1).d, original.paths.at(-1).d);
       assert.throws(() => assertAnnulusPaths(original.paths, original, emphasis));
       const scaledExterior = structuredClone(paths);
-      scaledExterior[1].d = scaledExterior[1].d.replace('M12 1.5', 'M12 1.6');
-      assert.notEqual(scaledExterior[1].d, paths[1].d);
+      scaledExterior.at(-1).d = scaledExterior.at(-1).d.replace('M12 1.5', 'M12 1.6');
+      assert.notEqual(scaledExterior.at(-1).d, paths.at(-1).d);
       assert.throws(() => assertAnnulusPaths(scaledExterior, original, emphasis));
-      const alteredContent = structuredClone(paths);
-      alteredContent[0].d += 'M0 0Z';
-      assert.throws(() => assertAnnulusPaths(alteredContent, original, emphasis));
+      for (let index = 0; index < paths.length - 1; index++) {
+        const alteredContent = structuredClone(paths);
+        alteredContent[index].d += 'M0 0Z';
+        assert.throws(() => assertAnnulusPaths(alteredContent, original, emphasis));
+      }
       const wrongEmphasis = variedPaths(original, 1.1);
       assert.throws(() => assertAnnulusPaths(wrongEmphasis, original, emphasis));
     }
@@ -149,10 +160,11 @@ test('countershape oracle refuses invalid SVG syntax even when every operand is 
     const original = reference.icons[icon].outline;
     const paths = variedPaths(original, 1.2);
     assertAnnulusPaths(paths, original, 1.2);
-    const innerStart = paths[1].d.lastIndexOf('M') + 1;
+    const innerStart = paths.at(-1).d.lastIndexOf('M') + 1;
     for (const punctuation of ['?', ';', '/', ',', ',,']) {
       const malformed = structuredClone(paths);
-      malformed[1].d = paths[1].d.slice(0, innerStart) + punctuation + paths[1].d.slice(innerStart);
+      malformed.at(-1).d =
+        paths.at(-1).d.slice(0, innerStart) + punctuation + paths.at(-1).d.slice(innerStart);
       assert.throws(() => assertAnnulusPaths(malformed, original, 1.2), punctuation);
     }
   }
