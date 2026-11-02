@@ -6,6 +6,8 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
+import { pathToFileURL } from 'node:url';
+import { runInNewContext } from 'node:vm';
 import * as dotsConsumer from './icons-authored-dots-consumer.mjs';
 import {
   AUTHORED_DOT_ENTRIES,
@@ -246,6 +248,276 @@ test('contour endpoint oracle preserves raw strings and catches node replacement
 
 const pathFromNumbers = (values) =>
   `M${values.slice(0, 2).join(' ')}${[0, 1, 2, 3].map((quarter) => `C${values.slice(2 + quarter * 6, 8 + quarter * 6).join(' ')}`).join('')}Z`;
+const close = (actual, expected, message) =>
+  assert.ok(Number.isFinite(actual) && Math.abs(actual - expected) <= 4 * Number.EPSILON, message);
+
+async function installedMotion() {
+  const require = createRequire(import.meta.url);
+  let root = dirname(require.resolve('@labpics/motion'));
+  for (;;) {
+    try {
+      const metadata = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+      if (metadata.name === '@labpics/motion') {
+        assert.equal(metadata.version, '0.5.0');
+        return import(pathToFileURL(join(root, metadata.exports['.'].import.default)).href);
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    assert.notEqual(dirname(root), root, 'не найден package owner установленного Motion');
+    root = dirname(root);
+  }
+}
+
+// Реальный Motion и исходный consumer; DOM seam записывает атрибуты без браузера.
+// Числа sampler получены независимо из raw masters. Packed compiler проверяет remote journey.
+function contourHarness(reference, variant, value) {
+  const source = reference.icons['ellipsis-horizontal'][variant];
+  const writes = [];
+  const observers = new Set();
+  class Element {
+    constructor(tag) {
+      this.tagName = tag;
+      this.dataset = {};
+      this.attributes = new Map();
+      this.children = [];
+      this.isConnected = true;
+      if (tag === 'lab-button') {
+        this.updateComplete = Promise.resolve();
+        const native = new Element('button');
+        native.setAttribute('aria-label', 'Сменить ориентацию многоточия');
+        this.shadowRoot = { querySelector: () => native };
+      }
+    }
+    setAttribute(name, value) {
+      this.attributes.set(name, value);
+      if (name === 'd')
+        writes.push({ time: performance.now(), partId: this.dataset.part, d: value });
+      for (const observer of observers)
+        if (observer.node === this) observer.records.push({ attributeName: name });
+    }
+    getAttribute(name) {
+      return this.attributes.get(name) ?? null;
+    }
+    removeAttribute(name) {
+      this.attributes.delete(name);
+    }
+    set innerHTML(_) {
+      const svg = new Element('svg');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.children = source.parts.map((part) => {
+        const node = new Element('path');
+        node.dataset.part = part.id;
+        node.setAttribute('d', part.d);
+        node.setAttribute('fill-rule', part.fillRule);
+        return node;
+      });
+      this.children = [svg];
+    }
+    querySelector(selector) {
+      return selector === 'svg' ? this.children[0] : null;
+    }
+    querySelectorAll() {
+      return this.children;
+    }
+    append(...children) {
+      this.children.push(...children);
+    }
+    addEventListener() {}
+    getBoundingClientRect() {
+      return { width: 48, height: 48 };
+    }
+    cloneNode() {
+      return this;
+    }
+    get outerHTML() {
+      return '<svg/>';
+    }
+    remove() {
+      this.isConnected = false;
+    }
+  }
+  class Observer {
+    records = [];
+    observe(node) {
+      this.node = node;
+      observers.add(this);
+    }
+    takeRecords() {
+      return this.records.splice(0);
+    }
+    disconnect() {
+      observers.delete(this);
+    }
+  }
+  const sample = (progress) => ({
+    ok: true,
+    parts: [0, 2].map((index) => {
+      const a = reference.icons['ellipsis-horizontal'][variant].paths[index].d;
+      const b = reference.icons['ellipsis-vertical'][variant].paths[index].d;
+      return {
+        partId: source.parts[index].id,
+        d:
+          progress === 0
+            ? a
+            : progress === 1
+              ? b
+              : pathFromNumbers(
+                  rawDotOperands(a).map(
+                    (number, operand) =>
+                      number * (1 - progress) + rawDotOperands(b)[operand] * progress,
+                  ),
+                ),
+      };
+    }),
+  });
+  const plays = [];
+  let rejectedPose = false;
+  let reduced = false;
+  const fixtureSource = authoredDotsFixture();
+  const start = fixtureSource.indexOf('function mountContourConsumer(');
+  const end = fixtureSource.indexOf('\nfunction scalarSequenceSteps(', start);
+  assert.ok(start >= 0 && end > start);
+  const mount = runInNewContext(`(${fixtureSource.slice(start, end)})`, {
+    document: { createElement: (tag) => new Element(tag) },
+    MutationObserver: Observer,
+    matchMedia: () => ({ matches: reduced }),
+    contourValue: (initial) => {
+      const scalar = value(initial);
+      const animate = scalar.animate;
+      scalar.animate = (...args) => {
+        const play = animate(...args);
+        plays.push(play);
+        return play;
+      };
+      return scalar;
+    },
+    prepareContourStateEffect: () => ({
+      ok: true,
+      sample: (progress) =>
+        rejectedPose ? { ok: false, reason: { code: 'POSE_UNREPRESENTABLE' } } : sample(progress),
+    }),
+  });
+  const consumer = mount(
+    {
+      stateCapabilities: () => ({}),
+      renderStateSvg: () => ({ ok: true, svg: '<svg/>' }),
+      compileStateEffect: (state, request) =>
+        state === 'unknown'
+          ? { ok: false, reason: { code: 'STATE_UNSUPPORTED' } }
+          : {
+              ok: true,
+              effect: {
+                from: request.from,
+                to: state === 'vertical' ? 1 : 0,
+                options: {
+                  duration: request.reducedMotion ? 0 : request.duration,
+                  easing: 'linear',
+                },
+              },
+            },
+    },
+    variant,
+    new Element('section'),
+  );
+  const read = () => JSON.parse(JSON.stringify(consumer.read()));
+  return {
+    consumer,
+    read,
+    plays,
+    writes,
+    rejectPose: () => {
+      rejectedPose = true;
+    },
+    reduce: () => {
+      reduced = true;
+    },
+  };
+}
+
+test('real Motion successor starts the last materialized authored pose in both directions', async (t) => {
+  const { value } = await installedMotion();
+  const reference = await authoredDotsReference(await fixture(t), pin);
+  const original = Object.getOwnPropertyDescriptor(performance, 'now');
+  let now = 100;
+  Object.defineProperty(performance, 'now', { configurable: true, value: () => now });
+  try {
+    for (const variant of ['outline', 'filled']) {
+      const harness = contourHarness(reference, variant, value);
+      const { consumer, read, plays } = harness;
+      try {
+        consumer.change('vertical', 1200);
+        plays.at(-1).seek(240);
+        assert.equal(read().renderedProgress, 0.2);
+        now += 5;
+        const interrupted = consumer.change('horizontal', 600);
+        assert.deepEqual(interrupted.after, interrupted.before, 'reverse admission');
+        assert.equal(interrupted.from, 0.2);
+        assert.equal(interrupted.effect.from, read().progress);
+        assert.equal(interrupted.previousPlayback, 'stopped');
+        const reversed = consumer.pauseAt(200);
+        const expectedReverse = 0.2 * (1 - 200 / 600);
+        close(reversed.renderedProgress, expectedReverse, 'actual reverse trajectory');
+        assertContourPose(read(), reference, variant, expectedReverse);
+        plays.at(-1).play();
+        now += 5;
+        const newest = consumer.change('vertical', 300);
+        assert.deepEqual(newest.after, newest.before, 'newer target admission');
+        assert.equal(newest.effect.from, read().progress);
+        const staleCount = read().notifications;
+        plays[0].finish();
+        plays[1].finish();
+        assert.equal(read().notifications, staleCount, 'retired channels must not write');
+        const forward = consumer.pauseAt(150);
+        const expectedForward = expectedReverse + (1 - expectedReverse) * 0.5;
+        close(forward.renderedProgress, expectedForward, 'actual forward trajectory');
+        assertContourPose(read(), reference, variant, expectedForward);
+        plays.at(-1).finish();
+        await consumer.settle();
+        assertContourPose(read(), reference, variant, 1);
+      } finally {
+        consumer.cleanup();
+      }
+    }
+  } finally {
+    if (original) Object.defineProperty(performance, 'now', original);
+    else Reflect.deleteProperty(performance, 'now');
+  }
+});
+
+test('refused prepared pose preserves the current public playback and reduced motion finishes once', async (t) => {
+  const { value } = await installedMotion();
+  const reference = await authoredDotsReference(await fixture(t), pin);
+  const harness = contourHarness(reference, 'outline', value);
+  const { consumer, read, plays } = harness;
+  try {
+    consumer.change('vertical', 1200);
+    plays.at(-1).seek(240);
+    const before = read();
+    harness.rejectPose();
+    assert.throws(() => consumer.change('horizontal', 600), /POSE_UNREPRESENTABLE/);
+    assert.deepEqual(read().paths, before.paths);
+    assert.equal(plays.at(-1).state, 'running');
+    assert.equal(read().targetState, 'vertical');
+  } finally {
+    consumer.cleanup();
+  }
+  const reduced = contourHarness(reference, 'filled', value);
+  try {
+    reduced.reduce();
+    const before = reduced.read().notifications;
+    reduced.consumer.change('vertical', 600);
+    await reduced.consumer.settle();
+    assertContourPose(reduced.read(), reference, 'filled', 1);
+    assert.ok(reduced.read().notifications - before <= 1);
+    reduced.consumer.cleanup();
+    const notifications = reduced.read().notifications;
+    reduced.plays.at(-1).finish();
+    assert.equal(reduced.read().notifications, notifications);
+  } finally {
+    reduced.consumer.cleanup();
+  }
+});
 
 test('raw correspondence oracle catches an incorrect interior pose despite correct endpoints', async (t) => {
   const reference = await authoredDotsReference(await fixture(t), pin);

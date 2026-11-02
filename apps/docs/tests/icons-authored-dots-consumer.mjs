@@ -246,7 +246,7 @@ function mountContourConsumer(api, variant, parent) {
   }
   figure.append(button, caption, select, exportButton, samples);
   parent.append(figure);
-  const progress = contourValue(0);
+  let progress = contourValue(0);
   let prepared;
   let control;
   let effect;
@@ -289,11 +289,9 @@ function mountContourConsumer(api, variant, parent) {
     svg.dataset.progress = String(p);
     notifications++;
   };
-  const unsubscribe = progress.subscribe((p) => {
-    if (prepared) apply(p);
-  });
+  let unsubscribe = () => {};
   function change(state, duration = 600) {
-    const from = progress.get();
+    const from = renderedProgress();
     const result = api.compileStateEffect(state, {
       from,
       duration,
@@ -304,19 +302,30 @@ function mountContourConsumer(api, variant, parent) {
     const nextEffect = JSON.parse(JSON.stringify(result.effect));
     const next = prepareContourStateEffect(nextEffect);
     if (!next.ok) throw new Error(next.reason.code);
+    const admission = next.sample(from);
+    if (!admission.ok) throw new Error(admission.reason.code);
+    if (admission.parts.some((part) => visiblePaths.get(part.partId) !== part.d))
+      throw new Error('Начало перехода не совпадает с видимой позой');
     const before = pose();
+    const previous = control;
+    // Старый канал может снять более позднюю позу при admission новой цели.
+    // Отписка сохраняет DOM, новый public value начинает с записанного кадра.
+    unsubscribe();
+    progress.dispose();
+    progress = contourValue(from);
     prepared = next;
     effect = nextEffect;
     targetState = state;
     select.value = state;
     const current = ++generation;
-    const previous = control;
+    lastCompletion = null;
+    unsubscribe = progress.subscribe(apply);
     control = progress.animate(effect.to, {
       duration: effect.options.duration,
       ease: effect.options.easing,
       reducedMotion: effect.options.duration === 0 ? 'always' : 'user',
     });
-    // MotionValue сам принимает новую цель и останавливает прошлый playback.
+    // Завершение прежнего occurrence не меняет статус нового перехода.
     control.finished.then((result) => {
       if (generation === current) lastCompletion = result.status;
     });
