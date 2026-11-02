@@ -108,7 +108,7 @@ export function createBodyWidthController(prepared, binding, value, media) {
   }
   function terminate(method) {
     active();
-    if (!playback) return;
+    if (!playback || !['running', 'paused'].includes(playback.state)) return;
     if (method === 'finish') {
       const admitted = prepared.sample(targetWidth);
       if (!admitted.ok || !binding.valid(lastD)) throw new Error('RENDER_CORRESPONDENCE_MISMATCH');

@@ -104,7 +104,7 @@ function fixture() {
             }
           },
           finish() {
-            if (this.state !== 'finished') {
+            if (!['stopped', 'finished'].includes(this.state)) {
               instance.emit(target);
               this.state = 'finished';
               resolve({ status: 'finished' });
@@ -267,6 +267,36 @@ test('pause seek stop and teardown conserve visible geometry without claiming st
   const writes = f.writes;
   previous.stale(0.84);
   assert.equal(f.writes, writes);
+});
+
+test('terminal playback cannot publish an endpoint through finish or a later reduced preference', async () => {
+  const f = fixture();
+  f.controller.request(0.8, 800);
+  f.controller.pause();
+  f.controller.seek(280);
+  f.controller.stop();
+  await assert.rejects(f.controller.settle(), /WIDTH_MOTION_STOPPED/);
+  const stopped = f.controller.read();
+  for (const action of [
+    () => f.media.change(true),
+    () => f.controller.finish(),
+    () => f.media.change(false),
+    () => f.media.change(true),
+    () => f.controller.stop(),
+  ]) {
+    action();
+    assert.deepEqual(f.controller.read(), stopped);
+  }
+  assert.equal(f.factory.instances[0].control.state, 'stopped');
+  const newer = f.controller.request(1, 800);
+  assert.equal(newer.before.width, stopped.lastWrittenWidth);
+  await f.controller.settle();
+  assert.equal(f.d, 'width:1');
+  const finished = f.controller.read();
+  f.media.change(true);
+  f.controller.finish();
+  assert.deepEqual(f.controller.read(), finished);
+  await f.controller.cleanup();
 });
 
 test('finish closes the old writer so a queued intermediate callback cannot replace the endpoint', async () => {
