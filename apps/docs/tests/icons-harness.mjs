@@ -17,7 +17,9 @@ export async function snapshotHarnessFiles(readRepositoryFile) {
       ICONS_HARNESS_FILES.map(async (file) =>
         Object.freeze({
           file,
-          sha256: createHash('sha256').update(await readRepositoryFile(file)).digest('hex'),
+          sha256: createHash('sha256')
+            .update(await readRepositoryFile(file))
+            .digest('hex'),
         }),
       ),
     ),
@@ -36,7 +38,9 @@ export async function assertHarnessFilesUnchanged(snapshot, readRepositoryFile) 
     assert.deepEqual(Object.keys(item).sort(), ['file', 'sha256']);
     assert.match(item.sha256, /^[a-f0-9]{64}$/);
     assert.equal(
-      createHash('sha256').update(await readRepositoryFile(item.file)).digest('hex'),
+      createHash('sha256')
+        .update(await readRepositoryFile(item.file))
+        .digest('hex'),
       item.sha256,
       `Изменён source harness: ${item.file}`,
     );
