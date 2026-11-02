@@ -88,8 +88,8 @@ test('type fixture remains consumer code and compiles strict NodeNext without No
       name: '@labpics/icons',
       type: 'module',
       exports: {
-        './symbols/ellipsis-horizontal': { types: './symbol.d.ts' },
-        './symbols/ellipsis-vertical': { types: './symbol.d.ts' },
+        './variations/ellipsis-horizontal': { types: './symbol.d.ts' },
+        './variations/ellipsis-vertical': { types: './symbol.d.ts' },
         './states/ellipsis-orientation-outline': { types: './state.d.ts' },
         './states/ellipsis-orientation-filled': { types: './state.d.ts' },
         './motion': { types: './motion.d.ts' },

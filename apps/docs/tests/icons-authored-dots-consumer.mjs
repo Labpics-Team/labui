@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 
 export const AUTHORED_DOT_ICONS = ['ellipsis-horizontal', 'ellipsis-vertical'];
 export const AUTHORED_DOT_ENTRIES = [
-  ...AUTHORED_DOT_ICONS.map((icon) => `@labpics/icons/symbols/${icon}`),
+  ...AUTHORED_DOT_ICONS.map((icon) => `@labpics/icons/variations/${icon}`),
   ...['outline', 'filled'].map(
     (variant) => `@labpics/icons/states/ellipsis-orientation-${variant}`,
   ),
@@ -695,8 +695,8 @@ function mountDotVariationConsumer(api, icon, variant, parent) {
 
 export function authoredDotsFixture() {
   return `
-import * as dotsHorizontal from '@labpics/icons/symbols/ellipsis-horizontal';
-import * as dotsVertical from '@labpics/icons/symbols/ellipsis-vertical';
+import * as dotsHorizontal from '@labpics/icons/variations/ellipsis-horizontal';
+import * as dotsVertical from '@labpics/icons/variations/ellipsis-vertical';
 import * as dotsOutlineState from '@labpics/icons/states/ellipsis-orientation-outline';
 import * as dotsFilledState from '@labpics/icons/states/ellipsis-orientation-filled';
 import { prepareContourStateEffect } from '@labpics/icons/motion';
@@ -724,8 +724,8 @@ window.__iconsPacked.cleanup = () => { for (const item of [...Object.values(cont
 }
 
 export function authoredDotsTypeFixture() {
-  return `import { glyph as horizontal } from '@labpics/icons/symbols/ellipsis-horizontal';
-import { glyph as vertical } from '@labpics/icons/symbols/ellipsis-vertical';
+  return `import { glyph as horizontal } from '@labpics/icons/variations/ellipsis-horizontal';
+import { glyph as vertical } from '@labpics/icons/variations/ellipsis-vertical';
 import { compileStateEffect as outline } from '@labpics/icons/states/ellipsis-orientation-outline';
 import { compileStateEffect as filled } from '@labpics/icons/states/ellipsis-orientation-filled';
 import { prepareContourStateEffect } from '@labpics/icons/motion';
