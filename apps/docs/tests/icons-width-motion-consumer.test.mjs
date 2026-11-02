@@ -12,6 +12,7 @@ import {
   WIDTH_MOTION_VISUAL_FILES,
   assertWidthMotionVisualEvidence,
   createBodyWidthController,
+  mountWidthWorkload,
   validateWidthMotionReference,
   widthMotionFixture,
   widthMotionMeasurementFixtures,
@@ -68,7 +69,12 @@ function fixture() {
       get: () => current,
       emit: (next) => {
         current = next;
-        listener?.(next);
+        try {
+          listener?.(next);
+        } catch (error) {
+          control?.fail(error);
+          throw error;
+        }
       },
       stale: (next) => captured?.(next),
       subscribe(next) {
@@ -82,12 +88,18 @@ function fixture() {
         assert.equal(options.ease, 'linear');
         assert.ok(Number.isFinite(options.duration));
         let resolve;
+        let reject;
         const start = current;
         control = {
           state: 'running',
-          finished: new Promise((done) => {
+          finished: new Promise((done, fail) => {
             resolve = done;
+            reject = fail;
           }),
+          fail(error) {
+            this.state = 'failed';
+            reject(error);
+          },
           pause() {
             this.state = 'paused';
           },
@@ -98,19 +110,20 @@ function fixture() {
             instance.emit(start + ((target - start) * milliseconds) / options.duration);
           },
           stop() {
-            if (!['stopped', 'finished'].includes(this.state)) {
+            if (['running', 'paused'].includes(this.state)) {
               this.state = 'stopped';
               resolve({ status: 'stopped' });
             }
           },
           finish() {
-            if (!['stopped', 'finished'].includes(this.state)) {
+            if (['running', 'paused'].includes(this.state)) {
               instance.emit(target);
               this.state = 'finished';
               resolve({ status: 'finished' });
             }
           },
         };
+        void control.finished.catch(() => {});
         if (options.duration === 0) control.finish();
         return control;
       },
@@ -132,6 +145,8 @@ function fixture() {
   const controller = createBodyWidthController(prepared, binding, value, media);
   return {
     controller,
+    prepared,
+    value,
     factory,
     media,
     binding,
@@ -310,6 +325,101 @@ test('finish closes the old writer so a queued intermediate callback cannot repl
   assert.equal(f.d, 'width:0.8');
   assert.equal(f.controller.read().lastWrittenWidth, 0.8);
   await f.controller.cleanup();
+});
+
+test('rejected playback stays observable while cleanup owns every completion rejection', async () => {
+  const f = fixture();
+  const unhandled = [];
+  const onUnhandled = (error) => unhandled.push(error);
+  process.on('unhandledRejection', onUnhandled);
+  try {
+    f.controller.request(0.8, 800);
+    f.controller.seek(280);
+    const before = f.controller.read();
+    f.rejectWrite = true;
+    assert.throws(() => f.controller.seek(400), /WRITE_REJECTED/);
+    await assert.rejects(f.controller.settle(), /WRITE_REJECTED/);
+    const failed = f.controller.read();
+    assert.equal(failed.lastCompletion, 'failed');
+    assert.equal(failed.lastError, 'WRITE_REJECTED');
+    assert.equal(failed.lastWrittenWidth, before.lastWrittenWidth);
+    assert.equal(failed.d, before.d);
+    f.media.change(true);
+    assert.deepEqual(f.controller.read(), failed);
+    const disposal = await f.controller.cleanup();
+    assert.deepEqual(disposal.statuses, ['failed']);
+    assert.deepEqual(disposal.failures, ['WRITE_REJECTED']);
+    assert.equal(disposal.disposed, true);
+    assert.equal(f.media.listeners.size, 0);
+    assert.equal(f.factory.instances[0].disposed, true);
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(unhandled, []);
+  } finally {
+    process.removeListener('unhandledRejection', onUnhandled);
+    await f.controller.cleanup();
+  }
+});
+
+test('cleanup preserves a retired failure while a newer request keeps its own completion state', async () => {
+  const f = fixture();
+  f.controller.request(0.8, 800);
+  f.rejectWrite = true;
+  assert.throws(() => f.controller.seek(280), /WRITE_REJECTED/);
+  await assert.rejects(f.controller.settle(), /WRITE_REJECTED/);
+  f.rejectWrite = false;
+  const newer = f.controller.request(0.92, 800);
+  assert.equal(newer.from, 1);
+  assert.equal(f.controller.read().lastCompletion, null);
+  assert.equal(f.controller.read().lastError, null);
+  const disposal = await f.controller.cleanup();
+  assert.deepEqual(disposal.statuses, ['failed', 'stopped']);
+  assert.deepEqual(disposal.failures, ['WRITE_REJECTED']);
+  assert.equal(f.media.listeners.size, 0);
+});
+
+test('mounted width cleanup removes its nodes even after a rejected Motion completion', async () => {
+  const f = fixture();
+  const target = {
+    isConnected: true,
+    getAttribute: () => f.binding.read(),
+    setAttribute: (_name, d) => f.binding.write(d),
+  };
+  const svg = { querySelectorAll: () => [target] };
+  const host = {
+    innerHTML: '',
+    querySelector: () => svg,
+    replaceChildren() {
+      target.isConnected = false;
+    },
+  };
+  const previousMedia = Object.getOwnPropertyDescriptor(globalThis, 'matchMedia');
+  Object.defineProperty(globalThis, 'matchMedia', { configurable: true, value: () => f.media });
+  try {
+    const workload = mountWidthWorkload(
+      host,
+      () => ({
+        ok: true,
+        prepared: {
+          ...f.prepared,
+          svg: '<svg><path /></svg>',
+          renderTarget: { selector: 'path', attribute: 'd' },
+        },
+      }),
+      f.value,
+    );
+    workload.controller.request(0.8, 800);
+    f.rejectWrite = true;
+    assert.throws(() => workload.controller.seek(280), /WRITE_REJECTED/);
+    await assert.rejects(workload.controller.settle(), /WRITE_REJECTED/);
+    const disposal = await workload.cleanup();
+    assert.deepEqual(disposal.failures, ['WRITE_REJECTED']);
+    assert.equal(target.isConnected, false);
+    await f.controller.cleanup();
+    assert.equal(f.media.listeners.size, 0);
+  } finally {
+    if (previousMedia) Object.defineProperty(globalThis, 'matchMedia', previousMedia);
+    else Reflect.deleteProperty(globalThis, 'matchMedia');
+  }
 });
 
 test('schema12 reuses the bound raw oracle, retains old consumers and publishes no fake effect adapter', async () => {

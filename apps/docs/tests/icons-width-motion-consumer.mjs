@@ -53,8 +53,10 @@ export function createBodyWidthController(prepared, binding, value, media) {
   let notifications = 0;
   let stale = 0;
   let lastCompletion = null;
+  let lastError = null;
   let retiredCompletion;
   const refusal = (code) => ({ ok: false, reason: { code } });
+  const errorText = (error) => (error instanceof Error ? error.message : String(error));
   const active = () => {
     if (disposed) throw new Error('WIDTH_MOTION_DISPOSED');
   };
@@ -73,6 +75,19 @@ export function createBodyWidthController(prepared, binding, value, media) {
     lastWrittenWidth = width;
     writes++;
   }
+  function observeCompletion(current) {
+    void playback.finished.then(
+      (result) => {
+        if (current === generation && !disposed) lastCompletion = result.status;
+      },
+      (error) => {
+        if (current === generation && !disposed) {
+          lastCompletion = 'failed';
+          lastError = errorText(error);
+        }
+      },
+    );
+  }
   function request(width, duration = 500) {
     active();
     const admitted = prepared.sample(width);
@@ -87,6 +102,7 @@ export function createBodyWidthController(prepared, binding, value, media) {
     scalar = value(lastWrittenWidth);
     targetWidth = width;
     lastCompletion = null;
+    lastError = null;
     unsubscribe = scalar.subscribe((next) => commit(next, current));
     if (media.matches || duration === 0) commit(width, current, admitted);
     playback = scalar.animate(width, {
@@ -94,9 +110,7 @@ export function createBodyWidthController(prepared, binding, value, media) {
       ease: 'linear',
       reducedMotion: media.matches ? 'always' : 'user',
     });
-    playback.finished.then((result) => {
-      if (current === generation && !disposed) lastCompletion = result.status;
-    });
+    observeCompletion(current);
     return {
       ok: true,
       from: before.width,
@@ -120,9 +134,7 @@ export function createBodyWidthController(prepared, binding, value, media) {
     unsubscribe();
     if (method === 'stop') playback.stop();
     scalar?.dispose();
-    playback.finished.then((result) => {
-      if (current === generation && !disposed) lastCompletion = result.status;
-    });
+    observeCompletion(current);
   }
   const preferenceChange = (event) => {
     if (event.matches && !disposed && playback) terminate('finish');
@@ -138,6 +150,7 @@ export function createBodyWidthController(prepared, binding, value, media) {
       notifications,
       stale,
       lastCompletion,
+      lastError,
       playback: playback?.state ?? null,
       d: lastD,
     }),
@@ -181,13 +194,20 @@ export function createBodyWidthController(prepared, binding, value, media) {
         scalar?.dispose();
       }
       const completions = [retiredCompletion, playback?.finished].filter(Boolean);
+      // Ошибка остаётся в receipt, но не прерывает освобождение mounted DOM.
+      const results = await Promise.allSettled(completions);
       return {
         disposed,
         lastWrittenWidth,
         writes,
         notifications,
         stale,
-        statuses: (await Promise.all(completions)).map((result) => result.status),
+        statuses: results.map((result) =>
+          result.status === 'fulfilled' ? result.value.status : 'failed',
+        ),
+        failures: results
+          .filter((result) => result.status === 'rejected')
+          .map((result) => errorText(result.reason)),
       };
     },
   };
