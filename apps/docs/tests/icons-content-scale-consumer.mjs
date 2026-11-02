@@ -196,7 +196,10 @@ export function mountContentScaleConsumer(apis) {
       }
     } catch (error) {
       refusal = error.code ?? 'RENDER_CORRESPONDENCE_MISMATCH';
-      status.textContent = 'Для этого сочетания недостаточно просвета. Сохранена предыдущая форма.';
+      status.textContent =
+        refusal === 'INVALID_VARIATION'
+          ? 'Введите положительные числа. Сохранена предыдущая форма.'
+          : 'Это сочетание недоступно. Сохранена предыдущая форма.';
       for (const input of Object.values(inputs)) {
         input.setCustomValidity(status.textContent);
         input.setAttribute('aria-invalid', 'true');
@@ -239,7 +242,9 @@ export function mountContentScaleConsumer(apis) {
     input.setAttribute('aria-describedby', status.id);
     inputs[name] = input;
     input.addEventListener('input', (event) => {
-      const next = { ...parameters, [name]: input.valueAsNumber };
+      const next = Object.fromEntries(
+        Object.entries(inputs).map(([key, field]) => [key, field.valueAsNumber]),
+      );
       const result = update(next);
       events.push({ trusted: event.isTrusted, parameters: next, result });
     });
@@ -433,6 +438,19 @@ contentGlyph({variation:{weight:1}});
 `;
 }
 
+export function assertContentMotionTransfer(observation, reducedMotion, target) {
+  if (reducedMotion === 'reduce') {
+    assert.equal(observation.effect.options.duration, 0);
+    assert.ok(observation.after.every((value) => value === target));
+  } else {
+    assert.ok(
+      observation.before.every(
+        (value, index) => Math.abs(value - observation.after[index]) < 0.000001,
+      ),
+    );
+  }
+}
+
 export async function contentScaleBrowserProof(page, reference, reducedMotion, records) {
   const read = () => page.evaluate(() => window.__iconsPacked.contentScaleConsumer.read());
   const check = async (parameters) => {
@@ -518,16 +536,23 @@ export async function contentScaleBrowserProof(page, reference, reducedMotion, r
     await call('pauseConfirmationAt', 400);
   }
   const phaseBefore = (await read()).confirmation;
-  const variedDuringMotion = await call('update', { contentScale: 0.9, enclosureEmphasis: 1.1 });
+  if (reducedMotion !== 'reduce')
+    assert.ok(phaseBefore.phase.every((value) => value > 0 && value < 1));
+  const pathsBeforeMotionUpdate = (await read()).samples.map((item) => item.paths);
+  const variedDuringMotion = await call('update', { contentScale: 1, enclosureEmphasis: 1 });
   assert.equal(variedDuringMotion.ok, true);
   assert.deepEqual(variedDuringMotion.continuity.before, variedDuringMotion.continuity.after);
   assert.equal(variedDuringMotion.continuity.generation, phaseBefore.generation);
-  const reverse = await call('changeConfirmation', 1, 1000);
-  assert.ok(
-    reverse.before.every((value, index) => Math.abs(value - reverse.after[index]) < 0.000001),
+  assert.notDeepEqual(
+    (await read()).samples.map((item) => item.paths),
+    pathsBeforeMotionUpdate,
   );
+  await check({ contentScale: 1, enclosureEmphasis: 1 });
+  const reverse = await call('changeConfirmation', 1, 1000);
+  assertContentMotionTransfer(reverse, reducedMotion, 1);
   await call('changeConfirmation', 0, 1000);
   if (reducedMotion !== 'reduce') await call('pauseConfirmationAt', 200);
+  assert.equal((await call('update', { contentScale: 0.9, enclosureEmphasis: 1.1 })).ok, true);
   await section
     .locator('.content-scale-row')
     .nth(2)

@@ -4,6 +4,7 @@ import test from 'node:test';
 import { ANNULUS_ICONS } from './icons-annulus-consumer.mjs';
 import {
   CONTENT_SCALE_ENTRIES,
+  assertContentMotionTransfer,
   assertContentScalePaths,
   contentScaleFixture,
   contentScaleTypeFixture,
@@ -97,4 +98,20 @@ test('new type consumer has positive joint requests and exact independent Filled
   assert.ok(fixture.includes('contentScale:.9,enclosureEmphasis:1.1'));
   assert.ok(fixture.includes("variant:'filled'"));
   assert.equal((fixture.match(/@ts-expect-error/g) ?? []).length, 2);
+});
+
+test('reduced motion reaches target while normal interruption preserves the visible pose', () => {
+  const instantaneous = { before: [0, 0], after: [1, 1], effect: { options: { duration: 0 } } };
+  assertContentMotionTransfer(instantaneous, 'reduce', 1);
+  assert.throws(() => assertContentMotionTransfer(instantaneous, 'no-preference', 1));
+  const continued = {
+    before: [0.4, 0.4],
+    after: [0.4, 0.4],
+    effect: { options: { duration: 1000 } },
+  };
+  assertContentMotionTransfer(continued, 'no-preference', 1);
+  assert.throws(() => assertContentMotionTransfer(continued, 'reduce', 1));
+  assert.throws(() =>
+    assertContentMotionTransfer({ ...instantaneous, after: [0, 0] }, 'reduce', 1),
+  );
 });
