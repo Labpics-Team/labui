@@ -8,7 +8,7 @@ on:
       - '.github/scripts/browser-check.sh'
       - 'scripts/ci/*icons*'
       - 'apps/docs/tests/icons-*'
-      - 'apps/docs/tests/fixtures/icons-notification-masters.json'
+      - 'apps/docs/tests/fixtures/icons-*-masters.json'
       - 'apps/docs/tests/prepare-icons-inputs*.mjs'
       - 'packages/core/**'
       - 'packages/shadow/**'
@@ -77,7 +77,7 @@ jobs:
 
       - name: Проверить независимый oracle и владение browser lifecycle
         shell: bash
-        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/apps/docs/tests/icons-notification-consumer.test.mjs ui/scripts/ci/icons-browser-contract.test.mjs
+        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/apps/docs/tests/icons-notification-consumer.test.mjs ui/apps/docs/tests/icons-annulus-consumer.test.mjs ui/scripts/ci/icons-browser-contract.test.mjs
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser

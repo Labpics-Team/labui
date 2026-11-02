@@ -9,6 +9,13 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } 
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 import {
+  ANNULUS_ENTRIES,
+  annulusBrowserProof,
+  annulusFixture,
+  annulusTypeFixture,
+  validateAnnulusReference,
+} from './icons-annulus-consumer.mjs';
+import {
   AUTHORED_DOT_ENTRIES,
   authoredDotsBrowserProof,
   authoredDotsFixture,
@@ -75,13 +82,14 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6].includes(schemaVersion));
   return [
     ...REQUIRED_PUBLIC_ENTRIES,
     ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
     ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
     ...(schemaVersion >= 4 ? NOTIFICATION_ENTRIES : []),
     ...(schemaVersion >= 5 ? AUTHORED_DOT_ENTRIES : []),
+    ...(schemaVersion >= 6 ? ANNULUS_ENTRIES : []),
   ];
 }
 
@@ -104,6 +112,7 @@ export function assertIconsImport(source) {
       EXPRESSION_ENTRY,
       ...NOTIFICATION_ENTRIES,
       ...AUTHORED_DOT_ENTRIES,
+      ...ANNULUS_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -178,7 +187,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -287,6 +296,8 @@ export function validateSubject(subject) {
   if (subject.schemaVersion >= 5)
     validateAuthoredDotsReference(subject.authoredDotsReference, reference);
   else assert.equal(subject.authoredDotsReference, undefined);
+  if (subject.schemaVersion >= 6) validateAnnulusReference(subject.annulusReference, reference);
+  else assert.equal(subject.annulusReference, undefined);
   return subject;
 }
 
@@ -438,6 +449,11 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .dots-parameters label { display:grid; gap:8px; font-size:14px; }
 .dots-parameters input { width:100%; min-height:24px; accent-color:#007aff; }
 .dots-variation output { max-width:240px; font-size:12px; line-height:1.5; }
+.annulus-row { display:flex; flex-wrap:wrap; gap:40px; align-items:start; }
+.annulus-sample { justify-items:start; min-width:224px; }
+.annulus-parameter { display:grid; gap:8px; width:100%; font-size:14px; }
+.annulus-parameter input, .authored-annulus button { min-height:44px; padding:8px 12px; font:inherit; }
+.annulus-sample output { max-width:240px; font-size:12px; line-height:1.5; }
 @media (max-width:480px) { body { padding:24px; } .state-sample { flex-wrap:wrap; gap:16px; } }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
@@ -811,13 +827,14 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
     (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '') +
     (schemaVersion >= 4 ? notificationFixture() : '') +
-    (schemaVersion >= 5 ? authoredDotsFixture() : '')
+    (schemaVersion >= 5 ? authoredDotsFixture() : '') +
+    (schemaVersion >= 6 ? annulusFixture() : '')
   );
 }
 
@@ -1148,6 +1165,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         await notificationBrowserProof(page, reference.notifications, reducedMotion, records);
       if (reference.authoredDots)
         await authoredDotsBrowserProof(page, reference.authoredDots, reducedMotion, records);
+      if (reference.annulus)
+        await annulusBrowserProof(page, reference.annulus, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
@@ -1191,6 +1210,17 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           assert.equal(disposed.playback, reducedMotion === 'reduce' ? 'finished' : 'stopped');
           records.push({ name: `ellipsis/${variant}:${reducedMotion}:dispose`, ...disposed });
         }
+      if (reference.annulus)
+        for (const icon of Object.keys(reference.annulus.icons))
+          for (const variant of ['outline', 'filled']) {
+            const id = `${icon}/${variant}`;
+            const disposed = await page.evaluate(
+              (id) => window.__iconsPacked.annulusConsumers[id].disposal(),
+              id,
+            );
+            assert.equal(disposed.connected, false);
+            records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
+          }
     } catch (error) {
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -1763,6 +1793,7 @@ export async function main(args = process.argv.slice(2)) {
         'icons-packed.mjs',
         'icons-notification-consumer.mjs',
         'icons-authored-dots-consumer.mjs',
+        'icons-annulus-consumer.mjs',
       ].map(async (file) => ({
         file: `apps/docs/tests/${file}`,
         sha256: hash(await readFile(new URL(file, import.meta.url))),
@@ -1866,7 +1897,8 @@ export async function main(args = process.argv.slice(2)) {
     await writeFile(join(consumer, 'consumer.mjs'), fixture);
     if (subject.schemaVersion >= 5) {
       phase = 'public types';
-      const typeFixture = authoredDotsTypeFixture();
+      const typeFixture =
+        authoredDotsTypeFixture() + (subject.schemaVersion >= 6 ? annulusTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
       await writeFile(
         join(consumer, 'tsconfig.json'),
@@ -1904,7 +1936,7 @@ export async function main(args = process.argv.slice(2)) {
         compilerVersion: require('typescript/package.json').version,
         fixtureSha256: hash(typeFixture),
         resolution: 'NodeNext',
-        negativeControls: 3,
+        negativeControls: (typeFixture.match(/@ts-expect-error/g) ?? []).length,
       };
     }
     phase = 'build';
@@ -1977,7 +2009,7 @@ export async function main(args = process.argv.slice(2)) {
       ),
       moduleGraph,
       bundles,
-      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
+      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', plus/minus Outline обрамление и независимые Filled masters' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -1997,6 +2029,7 @@ export async function main(args = process.argv.slice(2)) {
           states: subjectStateReferences(subject),
           notifications: subject.notificationReference,
           authoredDots: subject.authoredDotsReference,
+          annulus: subject.annulusReference,
         },
         out,
         records,

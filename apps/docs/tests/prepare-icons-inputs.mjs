@@ -5,6 +5,7 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import { annulusReference } from './icons-annulus-consumer.mjs';
 import {
   AUTHORED_DOT_ICONS,
   validateAuthoredDotsReference,
@@ -741,6 +742,7 @@ export async function prepareInputs(options) {
   const expression = await stateReference(iconsRoot, pin, 'expression-face');
   const notifications = await notificationReference(iconsRoot, pin);
   const dots = await authoredDotsReference(iconsRoot, pin);
+  const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
   for (const file of [
     'semantics/figma-baseline.json',
     'semantics/author-anatomy.json',
@@ -755,6 +757,9 @@ export async function prepareInputs(options) {
     ...Object.values(dots.icons).flatMap((variants) =>
       Object.values(variants).map((item) => item.sourceFile),
     ),
+    ...Object.values(annulus.icons).flatMap((variants) =>
+      Object.values(variants).map((item) => item.sourceFile),
+    ),
   ]) {
     files.push({
       repository: pin.repository,
@@ -765,15 +770,17 @@ export async function prepareInputs(options) {
     'apps/docs/tests/icons-packed.mjs',
     'apps/docs/tests/icons-notification-consumer.mjs',
     'apps/docs/tests/icons-authored-dots-consumer.mjs',
+    'apps/docs/tests/icons-annulus-consumer.mjs',
   ])
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 5,
+    schemaVersion: 6,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
     notificationReference: notifications,
     authoredDotsReference: dots,
+    annulusReference: annulus,
   });
   assertCheckout(iconsRoot, pin.sourceCommit);
   assertCheckout(uiRoot, uiCommit);

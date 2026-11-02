@@ -17,6 +17,9 @@ Schema4 добавляет `notifications` и `notifications-unread` в обои
 и DOM nodes. Общий адаптер переводит публичный translation effect v3 в `sequence`.
 Harness принимает три готовых архива и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
+Schema6 добавляет `plus-circle` и `minus-circle`: параметр толщины меняет только
+внутренний просвет Outline. Авторский наружный контур и знак сохраняются; Filled
+остаётся независимым исходным мастером. Обе формы показаны в 16, 24 и 48 px.
 
 ## Запуск
 
@@ -58,11 +61,13 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 5`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 6`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
-четыре мастера многоточия, их анатомию, state declarations и grid. Schema4
+четыре мастера многоточия, их анатомию, state declarations и grid.
+`annulusReference` связывает четыре мастера plus/minus и принятые Outline
+декларации обрамления. Schema5 сохраняет многоточия без annulus reference. Schema4
 сохраняет уведомления без dot reference. Schema3 сохраняет обе state группы.
 Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
 сохраняет cycle reference и исполняемый путь reload без state reference.
@@ -83,6 +88,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
 | `notificationReference` | Figma file/version и шесть raw masters: paths, viewBox, author; у четырёх подвижных variants также declaration, parts, amplitude и unchangedPartIds |
 | `authoredDotsReference` | Figma file/version, semantic/grid hashes, четыре raw masters с declaration/parts и две группы orientation |
+| `annulusReference` | Figma file/version, semantic hash, четыре raw masters plus/minus с paths/receipts; у Outline также declaration `annulus.counter-scale` и IDs частей |
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
@@ -154,6 +160,23 @@ variation пока не допускается в orientation transition: её �
 получают `FORMAT_UNSUPPORTED`. Variation не объявлена optical sizing или
 StyleProfile. Эти границы сохраняются в receipt, вместе с reverse/newer target,
 reduced motion, экспортом текущей видимой формы и освобождением MotionValue.
+
+В schema6 потребитель импортирует `symbols/plus-circle`, `symbols/minus-circle`
+и их отдельные `variations` entrypoints. Числовой control передаёт только
+`enclosureEmphasis`; координаты обрамления остаются в Icons. Параметр 1 и
+`source-only` сохраняют общий frozen default. Oracle выводит центр, внешний и
+внутренний радиусы из raw master и проверяет изменение только внутреннего
+контура. Для значений 0.8 и 1.2 сравниваются реальные SVG; подмена наружного
+контура, знака или возврат исходной формы вместо деформации получают отказ.
+
+Недопустимый ввод сохраняет последнюю принятую форму и её SVG export, а control
+показывает ошибку с `aria-invalid`. Filled отказывает даже запросу variation с
+параметром 1 или пустым объектом. У обрамления не объявлен жест: попытка анимации
+получает `SEMANTIC_MOTION_UNAVAILABLE`. Групповые переходы сохраняют авторские
+default формы. TypeScript consumer проверяет четыре annulus entrypoints и
+четыре отрицательных случая, включая Filled variation и скрытые координаты.
+Этот срез требует отдельного self-hosted browser receipt; синтаксическая и
+oracle проверки сами по себе его не подтверждают.
 
 После фиксации raw references и `subject.json` та же prepare-inputs граница
 запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
