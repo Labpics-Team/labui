@@ -143,6 +143,21 @@ test('countershape oracle admits useful deformation and rejects whole-glyph scal
   }
 });
 
+test('countershape oracle refuses invalid SVG syntax even when every operand is unchanged', async (t) => {
+  const reference = await fixture(t);
+  for (const icon of ANNULUS_ICONS) {
+    const original = reference.icons[icon].outline;
+    const paths = variedPaths(original, 1.2);
+    assertAnnulusPaths(paths, original, 1.2);
+    const innerStart = paths[1].d.lastIndexOf('M') + 1;
+    for (const punctuation of ['?', ';', '/', ',', ',,']) {
+      const malformed = structuredClone(paths);
+      malformed[1].d = paths[1].d.slice(0, innerStart) + punctuation + paths[1].d.slice(innerStart);
+      assert.throws(() => assertAnnulusPaths(malformed, original, 1.2), punctuation);
+    }
+  }
+});
+
 function observation(reference, icon, variant) {
   const item = reference.icons[icon][variant];
   const paths = item.paths.map((path, index) => ({

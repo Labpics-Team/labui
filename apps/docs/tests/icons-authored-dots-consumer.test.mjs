@@ -19,6 +19,21 @@ import {
   scalarSequenceSteps,
   validateAuthoredDotsReference,
 } from './icons-authored-dots-consumer.mjs';
+
+test('raw contour grammar preserves legal SVG separators and refuses misplaced cubic operands', () => {
+  const cubic = 'C1 1 1 1 1 1';
+  const canonical = `M1 1${cubic.repeat(4)}Z`;
+  assert.deepEqual(rawDotOperands(canonical), Array(26).fill(1));
+  const separated = ` \tM+1e0,1.\r\n${'C+1e0,1.,1e+0,1,1,1'.repeat(4)}Z\n`;
+  assert.deepEqual(rawDotOperands(separated), rawDotOperands(canonical));
+  for (const malformed of [
+    `M1 1C1 1 1 1 1C1 1 1 1 1 1 1${cubic.repeat(2)}Z`,
+    canonical.replace('C1 1', 'C1,,1'),
+    `${canonical},`,
+    `${canonical}\u00a0`,
+  ])
+    assert.throws(() => rawDotOperands(malformed));
+});
 import { assertIconsImport, consumerFixture, consumerPublicEntries } from './icons-packed.mjs';
 import { authoredDotsReference } from './prepare-icons-inputs.mjs';
 

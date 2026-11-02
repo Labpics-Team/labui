@@ -24,9 +24,27 @@ const hash = (value) => createHash('sha256').update(value).digest('hex');
 
 // Ожидание читается из raw master, отдельно от compiled packet и его sampler.
 export function rawDotOperands(d) {
-  assert.equal(d.replace(/[eE][+-]?\d+/g, '').replace(/[^A-Za-z]/g, ''), 'MCCCCZ');
-  const values = d.match(/[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/g)?.map(Number);
-  assert.equal(values?.length, 26);
+  assert.equal(typeof d, 'string');
+  const tokens = [...d.matchAll(/[MCZ]|[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/g)];
+  const command = (token) => /^[MCZ]$/.test(token);
+  let end = 0;
+  for (const [index, token] of tokens.entries()) {
+    const gap = d.slice(end, token.index);
+    assert.match(gap, /^[ \t\r\n]*(?:,[ \t\r\n]*)?$/, 'Oracle: недопустимый SVG token');
+    if (gap.includes(',')) {
+      assert.ok(
+        index > 0 && !command(token[0]) && !command(tokens[index - 1][0]),
+        'Oracle: запятая нужна между operands',
+      );
+    }
+    end = token.index + token[0].length;
+  }
+  assert.match(d.slice(end), /^[ \t\r\n]*$/, 'Oracle: данные после контура');
+  assert.equal(
+    tokens.map(([token]) => (command(token) ? token : 'n')).join(''),
+    `Mnn${'Cnnnnnn'.repeat(4)}Z`,
+  );
+  const values = tokens.filter(([token]) => !command(token)).map(([token]) => Number(token));
   assert.ok(values.every(Number.isFinite));
   assert.equal(values[0], values[24]);
   assert.equal(values[1], values[25]);
