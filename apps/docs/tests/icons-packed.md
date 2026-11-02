@@ -20,6 +20,11 @@ Harness принимает три готовых архива и независ�
 Schema6 добавляет восемь circle-семейств: параметр толщины меняет только
 внутренний просвет Outline. Авторский наружный контур и знак сохраняются; Filled
 остаётся независимым исходным мастером. Обе формы показаны в 16, 24 и 48 px.
+Schema7 добавляет `status-circle` и `playback-circle` с изменяемым общим
+обрамлением. Geometry patch меняет только `d` неподвижной общей части во время
+приостановленного перехода; исходные nodes, видимая смесь и исполнение сохраняются.
+Проверяются новое состояние, обратный ход, reset, reduced motion, точный отказ
+Filled и экспорт видимой позы. Прежний state consumer остаётся контролем.
 
 ## Запуск
 
@@ -68,13 +73,16 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 6`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 7`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
 четыре мастера многоточия, их анатомию, state declarations и grid.
 `annulusReference` связывает шестнадцать мастеров circle-семейств и принятые Outline
-декларации обрамления. Schema5 сохраняет многоточия без annulus reference. Schema4
+декларации обрамления. `stateAnnulusReference` связывает обе группы состояний,
+их настоящие masters и принятую анатомию общего обрамления. Schema6 сохраняет
+круговые семейства без state variation reference. Schema5 сохраняет многоточия
+без annulus reference. Schema4
 сохраняет уведомления без dot reference. Schema3 сохраняет обе state группы.
 Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
 сохраняет cycle reference и исполняемый путь reload без state reference.
