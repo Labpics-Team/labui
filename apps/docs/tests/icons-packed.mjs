@@ -674,7 +674,7 @@ window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async it
 // SVG presentation-атрибуты уступают CSS cascade: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
 // Нейтральные свойства не добавляют paint, преобразование или отсечение raw paths.
 const SOURCE_STATE_NEUTRAL_PRESENTATION = Object.freeze({
-  stroke: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none',
+  stroke: 'none', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', zoom: '1',
   filter: 'none', 'clip-path': 'none', 'mask-image': 'none', 'offset-path': 'none', clip: 'auto',
   'marker-start': 'none', 'marker-mid': 'none', 'marker-end': 'none',
   visibility: 'visible', 'mix-blend-mode': 'normal',
@@ -835,9 +835,13 @@ function stateTree() {
 function statePresentation() {
   const properties = ${JSON.stringify([...Object.keys(SOURCE_STATE_NEUTRAL_PRESENTATION),
     'color', 'fill', 'fill-opacity', 'fill-rule', 'opacity', 'display', 'width', 'height', 'd'])};
+  // CSS lengths не включают effective zoom; client rect включает: https://drafts.csswg.org/css-viewport/#cssom
+  const viewport = stateSvg.getBoundingClientRect();
   return { color: getComputedStyle(stateButton).color,
+    viewport: { left: viewport.left, top: viewport.top, width: viewport.width, height: viewport.height },
     nodes: [stateSvg, ...stateSvg.querySelectorAll('*')].map(node => {
       const style = getComputedStyle(node);
+      const screenCtm = node.getScreenCTM?.();
       // CSSOM сериализует оба path значения одинаково; raw d отдельно сверяется с master.
       const sourcePath = node.localName === 'path' ? document.createElementNS('http://www.w3.org/2000/svg', 'path') : null;
       sourcePath?.style.setProperty('d', 'path("' + node.getAttribute('d') + '")');
@@ -845,6 +849,7 @@ function statePresentation() {
         attributes: Object.fromEntries(node.getAttributeNames().sort().map(name => [name, node.getAttribute(name)])),
         inline: Object.fromEntries([...node.style].map(name => [name, node.style.getPropertyValue(name)])),
         computed: Object.fromEntries(properties.map(name => [name, style.getPropertyValue(name)])),
+        screenCtm: screenCtm ? ['a', 'b', 'c', 'd', 'e', 'f'].map(name => screenCtm[name]) : null,
         sourceD: sourcePath?.style.getPropertyValue('d') ?? null };
     }) };
 }
@@ -1742,7 +1747,11 @@ export function assertStateAnatomy(observation, reference) {
     const validOpacity = value => typeof value === 'string' && value.trim() !== '' &&
       Number.isFinite(Number(value)) && Number(value) >= 0 && Number(value) <= 1;
     assert.deepEqual(presentation?.nodes.map(node => node.tag), ['svg', ...tree.map(node => node.tag)], 'source presentation содержит не все узлы');
+    assert.ok(presentation.viewport && ['left', 'top', 'width', 'height'].every(name => Number.isFinite(presentation.viewport[name])), 'source presentation: viewport не измерен');
+    assert.deepEqual([presentation.viewport.width, presentation.viewport.height], [24, 24], 'source presentation: физический viewport SVG');
+    const screenCtm = [1, 0, 0, 1, presentation.viewport.left, presentation.viewport.top];
     for (const [index, node] of presentation.nodes.entries()) {
+      assert.deepEqual(node.screenCtm, screenCtm, 'source presentation: экранная геометрия raw parts');
       const part = tree[index - 1];
       const group = node.tag === 'g';
       const expected = index === 0 ? {

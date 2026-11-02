@@ -25,7 +25,7 @@ async function fixture(t) {
 }
 
 // Исполняет точный browser observer; DOM/CSSOM double задаёт только входные значения.
-function collectedState(reference, { injected = null, mutate = () => {}, color = 'rgb(22, 24, 28)', opacity } = {}) {
+function collectedState(reference, { injected = null, mutate = () => {}, color = 'rgb(22, 24, 28)', opacity, origin = [137.25, 98.5] } = {}) {
   const source = consumerFixture(10);
   const start = source.indexOf('function statePaths(');
   const end = source.indexOf('\nfunction sharedAncestorsUnchanged(', start);
@@ -42,7 +42,7 @@ function collectedState(reference, { injected = null, mutate = () => {}, color =
   });
   const style = {
     color, fill: color, 'fill-opacity': '1', 'fill-rule': 'nonzero', stroke: 'none',
-    opacity: '1', transform: 'none', translate: 'none', rotate: 'none', scale: 'none',
+    opacity: '1', transform: 'none', translate: 'none', rotate: 'none', scale: 'none', zoom: '1',
     filter: 'none', 'clip-path': 'none', 'mask-image': 'none', 'offset-path': 'none', clip: 'auto',
     'marker-start': 'none', 'marker-mid': 'none', 'marker-end': 'none',
     visibility: 'visible', display: 'inline', 'mix-blend-mode': 'normal',
@@ -52,6 +52,9 @@ function collectedState(reference, { injected = null, mutate = () => {}, color =
   };
   function node(tag, parent, attributes, computed = {}) {
     const item = { localName: tag, parentElement: parent, attributes, computed: { ...style, ...computed } };
+    item.screenCtm = [1, 0, 0, 1, ...origin];
+    item.getScreenCTM = () => item.screenCtm === null ? null
+      : Object.fromEntries(['a', 'b', 'c', 'd', 'e', 'f'].map((name, index) => [name, item.screenCtm[index]]));
     item.dataset = Object.fromEntries(Object.entries(attributes).filter(([name]) => name.startsWith('data-'))
       .map(([name, value]) => [name.slice(5), value]));
     item.getAttribute = name => item.attributes[name] ?? null;
@@ -65,6 +68,8 @@ function collectedState(reference, { injected = null, mutate = () => {}, color =
   const svg = node('svg', null, { viewBox: '0 0 24 24', width: '24', height: '24',
     xmlns: 'http://www.w3.org/2000/svg', fill: 'currentColor', slot: 'icon',
     'aria-hidden': 'true', focusable: 'false' }, { display: 'block', width: '24px', height: '24px' });
+  svg.viewport = { left: origin[0], top: origin[1], width: 24, height: 24 };
+  svg.getBoundingClientRect = () => ({ ...svg.viewport });
   const nodes = [];
   for (const state of reference.states) {
     const group = node('g', svg, { 'data-part': state.partId, 'data-role': 'state', 'data-state': state.id,
@@ -167,6 +172,31 @@ test('source anatomy refuses root, state and path presentation changes while pre
       ({ paths }) => { paths[0].computed['clip-path'] = 'inset(50%)'; },
       ({ paths }) => { paths[0].computed['offset-path'] = 'path("M0 0L8 0")'; },
     ]) assert.throws(() => assertStateAnatomy(collectedState(reference, { mutate }), reference), /source presentation/);
+  }
+});
+
+test('source anatomy observes the physical viewport and every source CTM independently of unscaled CSS dimensions', async (t) => {
+  const { references } = await fixture(t);
+  for (const reference of Object.values(references)) {
+    assertStateAnatomy(collectedState(reference, { origin: [233.375, 456.0625], color: 'rgb(71, 110, 145)',
+      opacity: Object.fromEntries(reference.states.map(state => [state.id, .5])),
+    }), reference);
+    for (const mutate of [
+      ({ svg }) => { svg.computed.zoom = '.5'; svg.viewport.width = 12; svg.viewport.height = 12; },
+      ({ svg }) => { svg.viewport.width = 12; svg.viewport.height = 12; },
+      ({ svg }) => { svg.screenCtm[0] = .5; svg.screenCtm[3] = .5; },
+      ({ groups }) => { groups[0].computed.zoom = '.5'; },
+      ({ groups }) => { groups[0].screenCtm[0] = .5; groups[0].screenCtm[3] = .5; },
+      ({ paths }) => { paths[0].computed.zoom = '.5'; },
+      ({ paths }) => { paths[0].screenCtm[4] += 8; },
+      ({ paths }) => { paths[0].screenCtm = null; },
+    ]) {
+      const changed = collectedState(reference, { mutate });
+      assert.equal(changed.presentation.nodes[0].computed.width, '24px');
+      assert.equal(changed.presentation.nodes[0].computed.height, '24px');
+      assert.equal(changed.identity, true);
+      assert.throws(() => assertStateAnatomy(changed, reference), /source presentation/);
+    }
   }
 });
 
