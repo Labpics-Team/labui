@@ -748,7 +748,20 @@ function mountAnnulusConsumer(api, sourceApi, icon, label, variant, parent) {
       return read();
     },
     settleConfirmation: async () => {
-      const result = await confirmationCompletion;
+      requireActive();
+      const generation = confirmationGeneration;
+      const control = confirmationControl;
+      const completion = confirmationCompletion;
+      const result = await completion;
+      requireActive();
+      if (
+        generation !== confirmationGeneration ||
+        control !== confirmationControl ||
+        completion !== confirmationCompletion
+      )
+        throw Object.assign(new Error('Подтверждение заменено новым состоянием'), {
+          code: 'CONFIRMATION_OCCURRENCE_CHANGED',
+        });
       if (result?.status !== 'finished') throw new Error('Подтверждение не завершилось');
       return { ...read(), completionStatus: result.status };
     },

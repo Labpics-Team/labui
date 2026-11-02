@@ -489,6 +489,40 @@ test('an older completed occurrence cannot mark a newer confirmation finished', 
   assert.equal((await mounted.item.settleConfirmation()).confirmation.completion, 'finished');
 });
 
+test('a confirmation waiter cannot qualify the pose of a newer occurrence', async () => {
+  const mounted = mountedAnnulus();
+  mounted.item.changeConfirmation(0, 300);
+  mounted.controls[0].finish();
+  const previous = mounted.item.settleConfirmation();
+  mounted.item.changeConfirmation(1, 1200);
+  await assert.rejects(previous, (error) => error.code === 'CONFIRMATION_OCCURRENCE_CHANGED');
+  const current = mounted.item.read();
+  assert.equal(current.confirmation.generation, 2);
+  assert.equal(current.confirmation.playback, 'running');
+  assert.equal(current.confirmation.completion, null);
+  mounted.controls[1].finish();
+  assert.equal((await mounted.item.settleConfirmation()).completionStatus, 'finished');
+});
+
+test('a confirmation waiter refuses disposal and accepts a geometry update of its current occurrence', async () => {
+  const disposed = mountedAnnulus();
+  disposed.item.changeConfirmation(0, 300);
+  disposed.controls[0].finish();
+  const stale = disposed.item.settleConfirmation();
+  disposed.item.cleanup();
+  await assert.rejects(stale, /освобождён/);
+  const mounted = mountedAnnulus();
+  mounted.item.changeConfirmation(0, 300);
+  const current = mounted.item.settleConfirmation();
+  assert.equal(mounted.item.update({ enclosureEmphasis: 1.2 }).ok, true);
+  mounted.controls[0].finish();
+  const terminal = await current;
+  assert.equal(terminal.completionStatus, 'finished');
+  assert.equal(terminal.confirmation.generation, 1);
+  assert.equal(terminal.emphasis, 1.2);
+  assert.ok(terminal.confirmation.opacity.every((part) => part.value === 0));
+});
+
 test('active enclosure changes retain motion control, visible pose and content node identity', () => {
   const mounted = mountedAnnulus();
   const figure = mounted.body
@@ -638,7 +672,7 @@ test('active cleanup stops motion once and rejects further actions', async () =>
   assert.throws(() => mounted.item.update({ enclosureEmphasis: 1.2 }), /освобождён/);
   assert.throws(() => mounted.item.changeConfirmation(1), /освобождён/);
   assert.throws(() => mounted.item.pauseConfirmationAt(0), /освобождён/);
-  await assert.rejects(mounted.item.settleConfirmation(), /не завершилось/);
+  await assert.rejects(mounted.item.settleConfirmation(), /освобождён/);
 });
 
 test('download diagnostics retain the original failure even if live diagnostics also fail', async () => {
