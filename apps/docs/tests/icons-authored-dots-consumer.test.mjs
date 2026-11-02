@@ -275,12 +275,16 @@ function contourHarness(reference, variant, value) {
   const source = reference.icons['ellipsis-horizontal'][variant];
   const writes = [];
   const observers = new Set();
+  const elements = [];
+  const calls = { compile: 0, prepare: 0, sample: 0, value: 0 };
   class Element {
     constructor(tag) {
+      elements.push(this);
       this.tagName = tag;
       this.dataset = {};
       this.attributes = new Map();
       this.children = [];
+      this.listeners = new Map();
       this.isConnected = true;
       if (tag === 'lab-button') {
         this.updateComplete = Promise.resolve();
@@ -323,7 +327,14 @@ function contourHarness(reference, variant, value) {
     append(...children) {
       this.children.push(...children);
     }
-    addEventListener() {}
+    addEventListener(name, callback) {
+      const listeners = this.listeners.get(name) ?? [];
+      listeners.push(callback);
+      this.listeners.set(name, listeners);
+    }
+    dispatch(name) {
+      for (const listener of this.listeners.get(name) ?? []) listener({});
+    }
     getBoundingClientRect() {
       return { width: 48, height: 48 };
     }
@@ -383,6 +394,7 @@ function contourHarness(reference, variant, value) {
     MutationObserver: Observer,
     matchMedia: () => ({ matches: reduced }),
     contourValue: (initial) => {
+      calls.value++;
       const scalar = value(initial);
       const animate = scalar.animate;
       scalar.animate = (...args) => {
@@ -392,18 +404,26 @@ function contourHarness(reference, variant, value) {
       };
       return scalar;
     },
-    prepareContourStateEffect: () => ({
-      ok: true,
-      sample: (progress) =>
-        rejectedPose ? { ok: false, reason: { code: 'POSE_UNREPRESENTABLE' } } : sample(progress),
-    }),
+    prepareContourStateEffect: () => {
+      calls.prepare++;
+      return {
+        ok: true,
+        sample: (progress) => {
+          calls.sample++;
+          return rejectedPose
+            ? { ok: false, reason: { code: 'POSE_UNREPRESENTABLE' } }
+            : sample(progress);
+        },
+      };
+    },
   });
   const consumer = mount(
     {
       stateCapabilities: () => ({}),
       renderStateSvg: () => ({ ok: true, svg: '<svg/>' }),
-      compileStateEffect: (state, request) =>
-        state === 'unknown'
+      compileStateEffect: (state, request) => {
+        calls.compile++;
+        return state === 'unknown'
           ? { ok: false, reason: { code: 'STATE_UNSUPPORTED' } }
           : {
               ok: true,
@@ -415,7 +435,8 @@ function contourHarness(reference, variant, value) {
                   easing: 'linear',
                 },
               },
-            },
+            };
+      },
     },
     variant,
     new Element('section'),
@@ -426,6 +447,13 @@ function contourHarness(reference, variant, value) {
     read,
     plays,
     writes,
+    calls,
+    controls: () => {
+      const button = elements.find((element) => element.tagName === 'lab-button');
+      button.dispatch('click');
+      button.shadowRoot.querySelector('button').dispatch('click');
+      elements.find((element) => element.tagName === 'select').dispatch('change');
+    },
     rejectPose: () => {
       rejectedPose = true;
     },
@@ -516,6 +544,54 @@ test('refused prepared pose preserves the current public playback and reduced mo
     assert.equal(reduced.read().notifications, notifications);
   } finally {
     reduced.consumer.cleanup();
+  }
+});
+
+test('disposed contour consumer refuses before compile and cannot recreate a Motion channel', async (t) => {
+  const { value } = await installedMotion();
+  const reference = await authoredDotsReference(await fixture(t), pin);
+  for (const variant of ['outline', 'filled']) {
+    for (const active of [false, true]) {
+      const harness = contourHarness(reference, variant, value);
+      const { consumer, read, plays, calls } = harness;
+      try {
+        if (active) {
+          await consumer.ready;
+          consumer.change('vertical', 1200);
+          plays.at(-1).seek(240);
+        }
+        consumer.cleanup();
+        if (!active) await consumer.ready;
+        const before = JSON.parse(JSON.stringify(consumer.disposal()));
+        const beforeCalls = { ...calls };
+        const beforePaths = read().paths;
+        const nativeClicks = read().nativeClicks;
+        assert.equal(before.connected, false);
+        assert.throws(() => consumer.change('horizontal', 600), /освобожд/);
+        assert.throws(() => consumer.pauseAt(300), /освобожд/);
+        assert.throws(() => consumer.refuse(), /освобожд/);
+        await assert.rejects(consumer.settle(), /освобожд/);
+        assert.deepEqual(
+          calls,
+          beforeCalls,
+          'post-disposal admission reached a producer or allocated Motion',
+        );
+        harness.controls();
+        consumer.cleanup();
+        plays.at(-1)?.finish();
+        await Promise.resolve();
+        assert.deepEqual(calls, beforeCalls);
+        assert.deepEqual(read().paths, beforePaths);
+        assert.equal(read().nativeClicks, nativeClicks);
+        assert.deepEqual(
+          JSON.parse(JSON.stringify(consumer.disposal())),
+          before,
+          'cleanup or a pending completion changed the terminal lifecycle',
+        );
+      } finally {
+        consumer.cleanup();
+      }
+    }
   }
 });
 

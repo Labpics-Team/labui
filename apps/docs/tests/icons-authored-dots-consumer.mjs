@@ -251,6 +251,7 @@ function mountContourConsumer(api, variant, parent) {
   let control;
   let effect;
   let generation = 0;
+  let disposed = false;
   let targetState = 'horizontal';
   let nativeClicks = 0;
   let notifications = 0;
@@ -290,7 +291,11 @@ function mountContourConsumer(api, variant, parent) {
     notifications++;
   };
   let unsubscribe = () => {};
+  function requireActive() {
+    if (disposed) throw new Error('Consumer уже освобождён');
+  }
   function change(state, duration = 600) {
+    requireActive();
     const from = renderedProgress();
     const result = api.compileStateEffect(state, {
       from,
@@ -340,6 +345,7 @@ function mountContourConsumer(api, variant, parent) {
     };
   }
   button.addEventListener('click', (event) => {
+    if (disposed) return;
     const transition = change(targetState === 'horizontal' ? 'vertical' : 'horizontal');
     events.push({
       trusted: event.isTrusted,
@@ -348,7 +354,9 @@ function mountContourConsumer(api, variant, parent) {
       ...transition,
     });
   });
-  select.addEventListener('change', () => change(select.value));
+  select.addEventListener('change', () => {
+    if (!disposed) change(select.value);
+  });
   function exported() {
     const document = svg.cloneNode(true);
     document.removeAttribute('slot');
@@ -357,6 +365,7 @@ function mountContourConsumer(api, variant, parent) {
     return document.outerHTML;
   }
   exportButton.addEventListener('click', () => {
+    if (disposed) return;
     const url = URL.createObjectURL(new Blob([exported()], { type: 'image/svg+xml' }));
     const link = document.createElement('a');
     link.href = url;
@@ -404,38 +413,49 @@ function mountContourConsumer(api, variant, parent) {
     };
   }
   async function settle() {
+    requireActive();
     const result = await control.finished;
     if (result.status !== 'finished') throw new Error('Текущая ориентация не завершена');
     return { ...read(), completionStatus: result.status };
   }
   return {
     ready: button.updateComplete.then(() => {
-      button.shadowRoot.querySelector('button').addEventListener('click', () => nativeClicks++);
+      if (disposed) return;
+      button.shadowRoot.querySelector('button').addEventListener('click', () => {
+        if (!disposed) nativeClicks++;
+      });
     }),
     read,
     phase: renderedProgress,
     change,
     settle,
     pauseAt: (milliseconds) => {
+      requireActive();
       control.pause();
       control.seek(milliseconds);
       return read();
     },
     exportSvg: exported,
-    refuse: () => ({
-      variation: api.compileStateEffect('vertical', {
-        duration: 600,
-        variation: { dotScale: 1.1, spacingScale: 0.9 },
-      }),
-      variant: api.compileStateEffect('vertical', {
-        duration: 600,
-        variant: variant === 'outline' ? 'filled' : 'outline',
-      }),
-      format: api.exportStateTransition('vertical', { duration: 600, format: 'lottie' }),
-      state: api.compileStateEffect('unknown', { duration: 600 }),
-      invalid: prepared?.sample(-1),
-    }),
+    refuse: () => {
+      requireActive();
+      return {
+        variation: api.compileStateEffect('vertical', {
+          duration: 600,
+          variation: { dotScale: 1.1, spacingScale: 0.9 },
+        }),
+        variant: api.compileStateEffect('vertical', {
+          duration: 600,
+          variant: variant === 'outline' ? 'filled' : 'outline',
+        }),
+        format: api.exportStateTransition('vertical', { duration: 600, format: 'lottie' }),
+        state: api.compileStateEffect('unknown', { duration: 600 }),
+        invalid: prepared?.sample(-1),
+      };
+    },
     cleanup: () => {
+      if (disposed) return;
+      disposed = true;
+      generation++;
       unsubscribe();
       progress.dispose();
       mutationObserver.disconnect();
