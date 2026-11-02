@@ -2,9 +2,11 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
+import * as dotsConsumer from './icons-authored-dots-consumer.mjs';
 import {
   AUTHORED_DOT_ENTRIES,
   assertContourPose,
@@ -72,6 +74,96 @@ test('external type consumer uses both variants and meaningful rejected public r
   assert.equal(source.match(/@ts-expect-error/g).length, 3);
   assert.ok(!source.includes('/dist/'));
   assert.ok(!source.includes('/ir/contour-runtime'));
+});
+
+// В 420bfe0 download helper попал внутрь TypeScript literal: TS7006/TS2304/TS2591,
+// а внешний модуль не имел вызываемого downloadedSvg. Эти два наблюдения связаны.
+test('type fixture remains consumer code and compiles strict NodeNext without Node orchestration', async (t) => {
+  const source = authoredDotsTypeFixture();
+  const root = await fixture(t);
+  const modules = {
+    'node_modules/@labpics/icons/package.json': JSON.stringify({
+      name: '@labpics/icons',
+      type: 'module',
+      exports: {
+        './symbols/ellipsis-horizontal': { types: './symbol.d.ts' },
+        './symbols/ellipsis-vertical': { types: './symbol.d.ts' },
+        './states/ellipsis-orientation-outline': { types: './state.d.ts' },
+        './states/ellipsis-orientation-filled': { types: './state.d.ts' },
+        './motion': { types: './motion.d.ts' },
+      },
+    }),
+    'node_modules/@labpics/icons/symbol.d.ts':
+      "export declare function glyph(input?: {variant?: 'outline' | 'filled'; variation?: {dotScale?: number; spacingScale?: number}}): unknown;",
+    'node_modules/@labpics/icons/state.d.ts':
+      "export declare function compileStateEffect(state: 'horizontal' | 'vertical', request: {duration: number; from?: number; reducedMotion?: boolean}): {ok: false} | {ok: true; effect: {from: number; to: number; options: {duration: number}}};",
+    'node_modules/@labpics/icons/motion.d.ts':
+      'export declare function prepareContourStateEffect(effect: unknown): {ok: false} | {ok: true; sample(progress: number): unknown};',
+    'node_modules/@labpics/motion/package.json': JSON.stringify({
+      name: '@labpics/motion',
+      type: 'module',
+      exports: { '.': { types: './index.d.ts' } },
+    }),
+    'node_modules/@labpics/motion/index.d.ts':
+      "export declare function value(initial: number): {subscribe(callback: (progress: number) => unknown): () => void; animate(to: number, options: {duration: number; ease: 'linear'}): unknown; dispose(): void};",
+    'package.json': JSON.stringify({ private: true, type: 'module' }),
+    'consumer.ts': source,
+    'tsconfig.json': JSON.stringify({
+      compilerOptions: {
+        strict: true,
+        noEmit: true,
+        module: 'NodeNext',
+        moduleResolution: 'NodeNext',
+        target: 'ES2022',
+        types: [],
+        lib: ['ES2022', 'DOM'],
+      },
+      files: ['consumer.ts'],
+    }),
+  };
+  for (const [file, contents] of Object.entries(modules)) {
+    await mkdir(dirname(join(root, file)), { recursive: true });
+    await writeFile(join(root, file), contents);
+  }
+  // Минимальные declarations изолируют границу шаблона. Настоящий tarball проверяет heavy harness.
+  const require = createRequire(import.meta.url);
+  const metadata = require.resolve('typescript/package.json');
+  const compiler = join(dirname(metadata), require(metadata).bin.tsc);
+  const result = spawnSync(process.execPath, [compiler, '--project', join(root, 'tsconfig.json')], {
+    cwd: root,
+    encoding: 'utf8',
+    timeout: 10_000,
+  });
+  assert.equal(result.status, 0, `${result.stdout ?? ''}${result.stderr ?? ''}`);
+  assert.ok(!source.includes('downloadedSvg'));
+  assert.ok(!source.includes('Buffer'));
+  assert.ok(!source.includes('waitForEvent'));
+});
+
+test('download helper exists at module scope and consumes a real stream protocol', async () => {
+  assert.equal(typeof dotsConsumer.downloadedSvg, 'function');
+  let clicked = false;
+  const bytes = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>');
+  const download = {
+    createReadStream: async () =>
+      (async function* () {
+        yield bytes;
+      })(),
+    failure: async () => null,
+  };
+  const page = {
+    waitForEvent: async (name) => {
+      assert.equal(name, 'download');
+      return download;
+    },
+  };
+  const button = {
+    click: async () => {
+      clicked = true;
+    },
+  };
+  assert.equal(await dotsConsumer.downloadedSvg(page, button), bytes.toString());
+  assert.equal(clicked, true);
 });
 
 test('four independent masters carry exact Figma, semantic and grid receipts', async (t) => {

@@ -717,7 +717,16 @@ for (const compile of [outline, filled]) {
   }
 }
 
-async function downloadedSvg(page, button) {
+// @ts-expect-error Неизвестное состояние не является частью публичной группы.
+outline('unknown', { duration: 300 });
+// @ts-expect-error Прогресс принадлежит численной шкале.
+filled('vertical', { duration: 300, from: 'half' });
+// @ts-expect-error Потребитель не задаёт внутренние координаты точек.
+horizontal({ variation: { center: [12, 12] } });
+`;
+}
+
+export async function downloadedSvg(page, button) {
   const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
   const stream = await download.createReadStream();
   assert.ok(stream, 'SVG download не предоставил файл');
@@ -730,14 +739,6 @@ async function downloadedSvg(page, button) {
   }
   assert.equal(await download.failure(), null);
   return Buffer.concat(chunks).toString('utf8');
-}
-// @ts-expect-error Неизвестное состояние не является частью публичной группы.
-outline('unknown', { duration: 300 });
-// @ts-expect-error Прогресс принадлежит численной шкале.
-filled('vertical', { duration: 300, from: 'half' });
-// @ts-expect-error Потребитель не задаёт внутренние координаты точек.
-horizontal({ variation: { center: [12, 12] } });
-`;
 }
 
 export async function authoredDotsBrowserProof(page, reference, reducedMotion, records) {
