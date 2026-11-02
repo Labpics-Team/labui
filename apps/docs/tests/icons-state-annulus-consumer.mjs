@@ -395,6 +395,13 @@ export function assertStateAnnulusObservation(observation, reference, annulus, e
   }
 }
 
+/** Запуск и пауза проходят в одной задаче браузера до транспортной задержки. */
+export function prepareStateAnnulusDisposal({ group, state, reduced }) {
+  const consumer = window.__iconsPacked.stateAnnulusConsumers[group];
+  consumer.changeState(state, 1000);
+  return reduced ? consumer.settleState() : consumer.pauseState(200);
+}
+
 export async function stateAnnulusBrowserProof(
   page,
   reference,
@@ -594,6 +601,12 @@ export async function stateAnnulusBrowserProof(
       terminal: settled.opacity,
       exportBytes: Buffer.byteLength(download),
     });
-    await call('changeState', first.id, 600);
+    const disposing = await page.evaluate(prepareStateAnnulusDisposal, {
+      group,
+      state: first.id,
+      reduced,
+    });
+    assertStateAnnulusObservation(disposing, expected, annulus, 0.9);
+    assert.equal(disposing.playback, reduced ? 'finished' : 'paused');
   }
 }

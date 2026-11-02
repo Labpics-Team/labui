@@ -7,6 +7,7 @@ import {
   applyStateEnclosurePatch,
   assertStateAnnulusObservation,
   mountStateAnnulusPresentation,
+  prepareStateAnnulusDisposal,
   stateAnnulusFixture,
   stateAnnulusReferenceContract,
   stateAnnulusTypeFixture,
@@ -355,6 +356,118 @@ test('consumer после освобождения не принимает но�
     /освобождён/,
   );
   assert.deepEqual(item.enclosure.writes, []);
+});
+
+// Модель проверяет только публичный жизненный цикл: время двигает running,
+// пауза сохраняет позицию, а stop не переименовывает уже finished completion.
+function disposalClock() {
+  const controls = new Set();
+  return {
+    controls,
+    advance: (milliseconds) => {
+      for (const control of controls) control.advance(milliseconds);
+    },
+  };
+}
+
+function disposalConsumer(clock, reduced = false) {
+  let playback;
+  let currentTime = 0;
+  let duration;
+  let completion;
+  const read = () => ({ playback, currentTime });
+  const control = {
+    advance(milliseconds) {
+      if (playback !== 'running') return;
+      currentTime = Math.min(duration, currentTime + milliseconds);
+      if (currentTime === duration) {
+        playback = 'finished';
+        completion = 'finished';
+      }
+    },
+    changeState(_state, milliseconds) {
+      duration = reduced ? 0 : milliseconds;
+      currentTime = 0;
+      completion = reduced ? 'finished' : undefined;
+      playback = reduced ? 'finished' : 'running';
+      return read();
+    },
+    pauseState(milliseconds) {
+      if (playback === 'running') playback = 'paused';
+      if (milliseconds !== undefined) currentTime = milliseconds;
+      return read();
+    },
+    settleState() {
+      if (playback !== 'finished') throw new Error('Control ещё не завершился');
+      return read();
+    },
+    cleanup() {
+      if (!completion) {
+        playback = 'stopped';
+        completion = 'stopped';
+      }
+      return completion;
+    },
+    read,
+  };
+  clock.controls.add(control);
+  return control;
+}
+
+function exposeDisposalConsumers(t, consumers) {
+  const previous = globalThis.window;
+  globalThis.window = { __iconsPacked: { stateAnnulusConsumers: consumers } };
+  t.after(() => {
+    globalThis.window = previous;
+  });
+}
+
+test('disposal preparation сохраняет active ownership после задержки соседнего proof и screenshot', async (t) => {
+  const clock = disposalClock();
+  const status = disposalConsumer(clock);
+  const playback = disposalConsumer(clock);
+  exposeDisposalConsumers(t, { 'status-circle': status, 'playback-circle': playback });
+  await prepareStateAnnulusDisposal({ group: 'status-circle', state: 'attention', reduced: false });
+  clock.advance(10_000);
+  await prepareStateAnnulusDisposal({ group: 'playback-circle', state: 'pause', reduced: false });
+  clock.advance(10_000);
+  assert.deepEqual(status.read(), { playback: 'paused', currentTime: 200 });
+  assert.deepEqual(playback.read(), { playback: 'paused', currentTime: 200 });
+  assert.equal(status.cleanup(), 'stopped');
+  assert.equal(playback.cleanup(), 'stopped');
+});
+
+test('disposal counterexample: законченный за время задержки control остаётся finished после stop', async () => {
+  const clock = disposalClock();
+  const consumer = disposalConsumer(clock);
+  consumer.changeState('attention', 600);
+  clock.advance(10_000);
+  assert.equal(consumer.cleanup(), 'finished');
+});
+
+test('disposal preparation не отдаёт event loop между start и pause', async (t) => {
+  const clock = disposalClock();
+  const consumer = disposalConsumer(clock);
+  const changeState = consumer.changeState;
+  consumer.changeState = (...args) => {
+    const result = changeState(...args);
+    queueMicrotask(() => clock.advance(10_000));
+    return result;
+  };
+  exposeDisposalConsumers(t, { 'status-circle': consumer });
+  await prepareStateAnnulusDisposal({ group: 'status-circle', state: 'attention', reduced: false });
+  assert.deepEqual(consumer.read(), { playback: 'paused', currentTime: 200 });
+  assert.equal(consumer.cleanup(), 'stopped');
+});
+
+test('reduced-motion disposal подтверждает finished, не пытаясь удержать активное движение', async (t) => {
+  const clock = disposalClock();
+  const consumer = disposalConsumer(clock, true);
+  exposeDisposalConsumers(t, { 'status-circle': consumer });
+  await prepareStateAnnulusDisposal({ group: 'status-circle', state: 'attention', reduced: true });
+  clock.advance(10_000);
+  assert.deepEqual(consumer.read(), { playback: 'finished', currentTime: 0 });
+  assert.equal(consumer.cleanup(), 'finished');
 });
 
 test('schema7 добавляет только публичные opt-in пути, standard baseline остаётся доступным', () => {
