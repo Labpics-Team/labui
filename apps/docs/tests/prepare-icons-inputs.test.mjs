@@ -8,25 +8,25 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
-  authorReference,
-  notificationReference,
-  readAuthorMaster,
-  readCycleMaster,
-  stateReference,
-  platformMeasurementLog,
-  consumerVisualLog,
-  consumerReceiptLog,
-  validatePlatformMeasurement,
-  validateSourcePin,
-} from './prepare-icons-inputs.mjs';
-import {
   assertStateAnatomy,
+  stateCapabilitiesReference,
   staticStatePathsReference,
   subjectStateReferences,
-  stateCapabilitiesReference,
   validateStateReference,
   validateSubject,
 } from './icons-packed.mjs';
+import {
+  authorReference,
+  consumerReceiptLog,
+  consumerVisualLog,
+  notificationReference,
+  platformMeasurementLog,
+  readAuthorMaster,
+  readCycleMaster,
+  stateReference,
+  validatePlatformMeasurement,
+  validateSourcePin,
+} from './prepare-icons-inputs.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
@@ -978,9 +978,11 @@ test('schema3 requires both independent state references and dispatches every gr
   }
 });
 
-test('schema4 binds six notification raw masters and refuses missing or cross-source reference', async t => {
+test('schema4 binds six notification raw masters and refuses missing or cross-source reference', async (t) => {
   const { root, manifest } = await expressionFixture(t);
-  const notification = JSON.parse(await readFile(new URL('./fixtures/icons-notification-masters.json', import.meta.url)));
+  const notification = JSON.parse(
+    await readFile(new URL('./fixtures/icons-notification-masters.json', import.meta.url)),
+  );
   Object.assign(manifest.icons, notification.manifest.icons);
   const annotations = JSON.parse(await readFile(join(root, 'semantics/author-anatomy.json')));
   Object.assign(annotations.icons, notification.annotations.icons);
@@ -991,26 +993,65 @@ test('schema4 binds six notification raw masters and refuses missing or cross-so
     await writeFile(join(root, file), bytes);
   }
   const reference = await notificationReference(root, PIN);
-  const packages = Object.fromEntries([['icons', '@labpics/icons'], ['uiCore', '@labpics/ui-core'], ['uiShadow', '@labpics/ui-shadow']]
-    .map(([key, name]) => [key, { name, version: '0.1.0', archiveSha256: 'a'.repeat(64), archiveBytes: 1, sourceCommit: PIN.sourceCommit }]));
-  const subject = { schemaVersion: 4, packages, authorReference: await authorReference(root, PIN),
-    stateReferences: { 'status-circle': await stateReference(root, PIN), 'expression-face': await stateReference(root, PIN, 'expression-face') },
-    notificationReference: reference };
+  const packages = Object.fromEntries(
+    [
+      ['icons', '@labpics/icons'],
+      ['uiCore', '@labpics/ui-core'],
+      ['uiShadow', '@labpics/ui-shadow'],
+    ].map(([key, name]) => [
+      key,
+      {
+        name,
+        version: '0.1.0',
+        archiveSha256: 'a'.repeat(64),
+        archiveBytes: 1,
+        sourceCommit: PIN.sourceCommit,
+      },
+    ]),
+  );
+  const subject = {
+    schemaVersion: 4,
+    packages,
+    authorReference: await authorReference(root, PIN),
+    stateReferences: {
+      'status-circle': await stateReference(root, PIN),
+      'expression-face': await stateReference(root, PIN, 'expression-face'),
+    },
+    notificationReference: reference,
+  };
   assert.equal(validateSubject(subject), subject);
   assert.equal(subjectStateReferences(subject), subject.stateReferences);
-  const masters = Object.values(reference.icons).flatMap(variants => Object.values(variants));
-  assert.equal(new Set(masters.map(item => item.sourceFile)).size, 6);
+  const masters = Object.values(reference.icons).flatMap((variants) => Object.values(variants));
+  assert.equal(new Set(masters.map((item) => item.sourceFile)).size, 6);
   for (const item of masters)
-    assert.equal(createHash('sha256').update(await readFile(join(root, item.sourceFile))).digest('hex'), item.author.masterSha256);
+    assert.equal(
+      createHash('sha256')
+        .update(await readFile(join(root, item.sourceFile)))
+        .digest('hex'),
+      item.author.masterSha256,
+    );
   for (const mutate of [
-    value => { Reflect.deleteProperty(value, 'notificationReference'); },
-    value => { value.notificationReference.version = '1'; },
-    value => { Reflect.deleteProperty(value.notificationReference.icons, 'notifications-off'); },
-    value => { value.notificationReference.icons.notifications.outline.amplitude *= 2; },
-    value => { value.schemaVersion = 3; },
-    value => { Reflect.deleteProperty(value.stateReferences, 'expression-face'); },
+    (value) => {
+      Reflect.deleteProperty(value, 'notificationReference');
+    },
+    (value) => {
+      value.notificationReference.version = '1';
+    },
+    (value) => {
+      Reflect.deleteProperty(value.notificationReference.icons, 'notifications-off');
+    },
+    (value) => {
+      value.notificationReference.icons.notifications.outline.amplitude *= 2;
+    },
+    (value) => {
+      value.schemaVersion = 3;
+    },
+    (value) => {
+      Reflect.deleteProperty(value.stateReferences, 'expression-face');
+    },
   ]) {
-    const changed = structuredClone(subject); mutate(changed);
+    const changed = structuredClone(subject);
+    mutate(changed);
     assert.throws(() => validateSubject(changed));
   }
 });
@@ -1236,8 +1277,14 @@ async function summaryFixture(t, schemaVersion) {
   const subjectBytes = JSON.stringify(subject);
   const report = measurementFixture();
   report.policyViolations = [];
-  report.candidatePolicies.package.artifacts['dist/example.js'] = { maxBytes: 100, maxGzipBytes: 75 };
-  report.candidatePolicies.consumer.scenarios['state-control'] = { maxBytes: 120, maxGzipBytes: 80 };
+  report.candidatePolicies.package.artifacts['dist/example.js'] = {
+    maxBytes: 100,
+    maxGzipBytes: 75,
+  };
+  report.candidatePolicies.consumer.scenarios['state-control'] = {
+    maxBytes: 120,
+    maxGzipBytes: 80,
+  };
   const reportBytes = JSON.stringify(report);
   const program = {
     file: 'scripts/measure-platform-artifacts.mjs',
@@ -1296,70 +1343,153 @@ async function summaryFixture(t, schemaVersion) {
   return { output, source, report, invoke };
 }
 
-test('delivery summary refuses reported policy failures and numeric overruns while preserving browser evidence', async t => {
+test('delivery summary refuses reported policy failures and numeric overruns while preserving browser evidence', async (t) => {
   const fixture = await summaryFixture(t, 3);
-  const receipt = Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ name: 'browser-control' }] }));
+  const receipt = Buffer.from(
+    JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ name: 'browser-control' }] }),
+  );
   await writeFile(join(fixture.output, 'result/receipt.json'), receipt);
   await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
   for (const mutate of [
-    value => { value.policyViolations.push('owner-projected marker refusal'); },
-    value => { value.artifacts['dist/example.js'].bytes++; },
-    value => { value.artifacts['dist/example.js'].gzipBytes++; },
-    value => { value.consumers['state-control'].bytes++; },
-    value => { value.consumers['state-control'].gzipBytes++; },
-    value => { Reflect.deleteProperty(value.candidatePolicies.package.artifacts['dist/example.js'], 'maxBytes'); },
+    (value) => {
+      value.policyViolations.push('owner-projected marker refusal');
+    },
+    (value) => {
+      value.artifacts['dist/example.js'].bytes++;
+    },
+    (value) => {
+      value.artifacts['dist/example.js'].gzipBytes++;
+    },
+    (value) => {
+      value.consumers['state-control'].bytes++;
+    },
+    (value) => {
+      value.consumers['state-control'].gzipBytes++;
+    },
+    (value) => {
+      Reflect.deleteProperty(
+        value.candidatePolicies.package.artifacts['dist/example.js'],
+        'maxBytes',
+      );
+    },
   ]) {
-    const report = structuredClone(fixture.report); mutate(report);
+    const report = structuredClone(fixture.report);
+    mutate(report);
     const reportBytes = Buffer.from(JSON.stringify(report));
     const source = structuredClone(fixture.source);
-    source.measurement.sha256 = hash(reportBytes); source.measurement.bytes = reportBytes.length;
+    source.measurement.sha256 = hash(reportBytes);
+    source.measurement.bytes = reportBytes.length;
     await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), reportBytes);
     await writeFile(join(fixture.output, 'inputs/source-receipt.json'), JSON.stringify(source));
-    const result = spawnSync(process.execPath, [fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
-      '--summarize', fixture.output], { encoding: 'utf8', timeout: 5000 });
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        fixture.output,
+      ],
+      { encoding: 'utf8', timeout: 5000 },
+    );
     assert.equal(result.status, 1, 'policy отказ не может быть delivery PASS');
     const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
     assert.equal(summary.outcome, 'failed');
     assert.equal(summary.browserOutcome, 'passed');
     assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
     assert.ok(summary.policyFailure.violations.length > 0);
-    assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_RECEIPT', 'receiptSha256', 'result/receipt.json').bytes, receipt);
-    assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/no-preference.png').bytes, PNG_WITNESS);
+    assert.deepEqual(
+      decodeConsumerEvidence(
+        result.stdout,
+        'LABUI_ICONS_CONSUMER_RECEIPT',
+        'receiptSha256',
+        'result/receipt.json',
+      ).bytes,
+      receipt,
+    );
+    assert.deepEqual(
+      decodeConsumerEvidence(
+        result.stdout,
+        'LABUI_ICONS_CONSUMER_VISUAL',
+        'pngSha256',
+        'result/no-preference.png',
+      ).bytes,
+      PNG_WITNESS,
+    );
     assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
-    assert.equal(summary.files.find(item => item.path === 'inputs/platform-measurement.json').sha256, hash(reportBytes));
+    assert.equal(
+      summary.files.find((item) => item.path === 'inputs/platform-measurement.json').sha256,
+      hash(reportBytes),
+    );
   }
 });
 
-test('delivery summary refuses rejected PNG and receipt packets without losing healthy diagnostics', async t => {
+test('delivery summary refuses rejected PNG and receipt packets without losing healthy diagnostics', async (t) => {
   for (const rejected of ['png', 'receipt', 'png-and-policy']) {
     const fixture = await summaryFixture(t, 3);
-    const receipt = Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed',
-      ...(rejected === 'receipt' ? {} : { records: [{ name: 'healthy-browser' }] }) }));
+    const receipt = Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        outcome: 'passed',
+        ...(rejected === 'receipt' ? {} : { records: [{ name: 'healthy-browser' }] }),
+      }),
+    );
     await writeFile(join(fixture.output, 'result/receipt.json'), receipt);
-    await writeFile(join(fixture.output, 'result/no-preference.png'), rejected === 'receipt' ? PNG_WITNESS : 'not a PNG');
+    await writeFile(
+      join(fixture.output, 'result/no-preference.png'),
+      rejected === 'receipt' ? PNG_WITNESS : 'not a PNG',
+    );
     if (rejected === 'png-and-policy') {
       const report = structuredClone(fixture.report);
       report.policyViolations.push('owner-projected refusal');
       const reportBytes = Buffer.from(JSON.stringify(report));
       const source = structuredClone(fixture.source);
-      source.measurement.sha256 = hash(reportBytes); source.measurement.bytes = reportBytes.length;
+      source.measurement.sha256 = hash(reportBytes);
+      source.measurement.bytes = reportBytes.length;
       await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), reportBytes);
       await writeFile(join(fixture.output, 'inputs/source-receipt.json'), JSON.stringify(source));
     }
-    const result = spawnSync(process.execPath, [fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
-      '--summarize', fixture.output], { encoding: 'utf8', timeout: 5000 });
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        fixture.output,
+      ],
+      { encoding: 'utf8', timeout: 5000 },
+    );
     assert.equal(result.status, 1);
     const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
-    assert.equal(summary.outcome, 'failed', 'отказ evidence encoder не может объявлять delivery PASS');
+    assert.equal(
+      summary.outcome,
+      'failed',
+      'отказ evidence encoder не может объявлять delivery PASS',
+    );
     assert.equal(summary.browserOutcome, 'passed');
     assert.equal(summary.failure, null, 'readback не переписывает browser phase');
-    assert.deepEqual(summary.readbackFailure, { code: 'EVIDENCE_REFUSED',
-      file: rejected === 'receipt' ? 'result/receipt.json' : 'result/no-preference.png' });
+    assert.deepEqual(summary.readbackFailure, {
+      code: 'EVIDENCE_REFUSED',
+      file: rejected === 'receipt' ? 'result/receipt.json' : 'result/no-preference.png',
+    });
     assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN/);
     if (rejected === 'receipt')
-      assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_VISUAL', 'pngSha256', 'result/no-preference.png').bytes, PNG_WITNESS);
+      assert.deepEqual(
+        decodeConsumerEvidence(
+          result.stdout,
+          'LABUI_ICONS_CONSUMER_VISUAL',
+          'pngSha256',
+          'result/no-preference.png',
+        ).bytes,
+        PNG_WITNESS,
+      );
     else
-      assert.deepEqual(decodeConsumerEvidence(result.stdout, 'LABUI_ICONS_CONSUMER_RECEIPT', 'receiptSha256', 'result/receipt.json').bytes, receipt);
+      assert.deepEqual(
+        decodeConsumerEvidence(
+          result.stdout,
+          'LABUI_ICONS_CONSUMER_RECEIPT',
+          'receiptSha256',
+          'result/receipt.json',
+        ).bytes,
+        receipt,
+      );
     if (rejected === 'png-and-policy') {
       assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
       assert.match(result.stderr, /visual: PNG bytes/);

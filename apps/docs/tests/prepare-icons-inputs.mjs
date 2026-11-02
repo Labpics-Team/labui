@@ -6,7 +6,11 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
-import { NOTIFICATION_ICONS, rawNotificationClapperWidth, validateNotificationReference } from './icons-notification-consumer.mjs';
+import {
+  NOTIFICATION_ICONS,
+  rawNotificationClapperWidth,
+  validateNotificationReference,
+} from './icons-notification-consumer.mjs';
 import {
   assertSelfHostedRunner,
   stateReferenceContract,
@@ -264,9 +268,16 @@ export async function notificationReference(iconsRoot, pin) {
       const { viewBox, paths } = readAuthorMaster(bytes);
       const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
       assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
-      const author = { kind: 'figma', fileKey: pin.figma.fileKey, version: pin.figma.version,
-        nodeId: record.nodeId, nodeSha256: record.nodeSha256, masterSha256: hash(bytes),
-        normalizedSha256: record.normalizedSource.sha256, pathFingerprintSha256: fingerprint };
+      const author = {
+        kind: 'figma',
+        fileKey: pin.figma.fileKey,
+        version: pin.figma.version,
+        nodeId: record.nodeId,
+        nodeSha256: record.nodeSha256,
+        masterSha256: hash(bytes),
+        normalizedSha256: record.normalizedSource.sha256,
+        pathFingerprintSha256: fingerprint,
+      };
       const item = { sourceFile: record.master, author, viewBox, paths };
       const declaration = annotations.icons[icon]?.[variant];
       if (icon === 'notifications-off') assert.equal(declaration, undefined);
@@ -277,15 +288,20 @@ export async function notificationReference(iconsRoot, pin) {
           assert.equal(pathIndex, index);
           return { id, role, zIndex: index, ...paths[index] };
         });
-        const clapper = item.parts.find(part => part.id === 'notification-clapper');
+        const clapper = item.parts.find((part) => part.id === 'notification-clapper');
         assert.ok(clapper);
         item.amplitude = rawNotificationClapperWidth(clapper.d) / 4;
-        item.unchangedPartIds = item.parts.filter(part => part !== clapper).map(part => part.id);
+        item.unchangedPartIds = item.parts
+          .filter((part) => part !== clapper)
+          .map((part) => part.id);
       }
       icons[icon][variant] = item;
     }
   }
-  return validateNotificationReference({ fileKey: pin.figma.fileKey, version: pin.figma.version, icons }, pin.figma);
+  return validateNotificationReference(
+    { fileKey: pin.figma.fileKey, version: pin.figma.version, icons },
+    pin.figma,
+  );
 }
 
 // Отдельный независимый reference: raw masters и публичная semantic декларация,
@@ -465,7 +481,10 @@ export function platformPolicyFailure(report) {
     ['consumer', report.consumers, report.candidatePolicies.consumer.scenarios],
   ]) {
     for (const [name, item] of Object.entries(measured)) {
-      for (const [field, ceiling] of [['bytes', 'maxBytes'], ['gzipBytes', 'maxGzipBytes']]) {
+      for (const [field, ceiling] of [
+        ['bytes', 'maxBytes'],
+        ['gzipBytes', 'maxGzipBytes'],
+      ]) {
         const limit = policies[name]?.[ceiling];
         if (!Number.isSafeInteger(limit) || limit < 0)
           violations.add(`${kind} ${name}: отсутствует допустимый owner-projected ${ceiling}`);
@@ -474,7 +493,9 @@ export function platformPolicyFailure(report) {
       }
     }
   }
-  return violations.size ? { code: 'PLATFORM_POLICY_REFUSED', violations: [...violations] } : undefined;
+  return violations.size
+    ? { code: 'PLATFORM_POLICY_REFUSED', violations: [...violations] }
+    : undefined;
 }
 
 // Это диагностический запуск producer, не принятие candidatePolicies.
@@ -659,14 +680,19 @@ export async function prepareInputs(options) {
     ...Object.values(reference.icons.reload).map((item) => item.sourceFile),
     ...states.states.map((item) => item.sourceFile),
     ...expression.states.map((item) => item.sourceFile),
-    ...Object.values(notifications.icons).flatMap(variants => Object.values(variants).map(item => item.sourceFile)),
+    ...Object.values(notifications.icons).flatMap((variants) =>
+      Object.values(variants).map((item) => item.sourceFile),
+    ),
   ]) {
     files.push({
       repository: pin.repository,
       ...(await sourceFile(iconsRoot, pin.sourceCommit, file)),
     });
   }
-  for (const file of ['apps/docs/tests/icons-packed.mjs', 'apps/docs/tests/icons-notification-consumer.mjs'])
+  for (const file of [
+    'apps/docs/tests/icons-packed.mjs',
+    'apps/docs/tests/icons-notification-consumer.mjs',
+  ])
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
     schemaVersion: 4,
@@ -804,7 +830,10 @@ export async function summarize(directory) {
   );
   if (readbackFailure) throw readbackFailure.error;
   if (policyFailure)
-    throw Object.assign(new Error(`Platform policy отказала: ${policyFailure.violations.join('\n')}`), policyFailure);
+    throw Object.assign(
+      new Error(`Platform policy отказала: ${policyFailure.violations.join('\n')}`),
+      policyFailure,
+    );
   assert.equal(receipt.outcome, 'passed');
 }
 
