@@ -5,6 +5,10 @@ import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises'
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
+import {
+  AUTHORED_DOT_ICONS,
+  validateAuthoredDotsReference,
+} from './icons-authored-dots-consumer.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import {
   NOTIFICATION_ICONS,
@@ -300,6 +304,69 @@ export async function notificationReference(iconsRoot, pin) {
   }
   return validateNotificationReference(
     { fileKey: pin.figma.fileKey, version: pin.figma.version, icons },
+    pin.figma,
+  );
+}
+
+// Никакие generated payloads не формируют этот oracle: только закреплённые raw masters.
+export async function authoredDotsReference(iconsRoot, pin) {
+  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  const annotations = JSON.parse(await readFile(join(iconsRoot, 'semantics/author-anatomy.json')));
+  const semanticBytes = await readFile(join(iconsRoot, 'semantics/author-state-groups.json'));
+  const semantic = JSON.parse(semanticBytes);
+  const gridBytes = await readFile(join(iconsRoot, 'semantics/grid.json'));
+  assert.deepEqual(annotations.source, pin.figma);
+  assert.deepEqual(semantic.source, pin.figma);
+  assert.equal(manifest.source.fileKey, pin.figma.fileKey);
+  assert.equal(manifest.source.version, pin.figma.version);
+  const icons = {};
+  for (const icon of AUTHORED_DOT_ICONS) {
+    icons[icon] = {};
+    for (const variant of ['outline', 'filled']) {
+      const record = manifest.icons[icon][variant];
+      const bytes = await readFile(join(iconsRoot, record.master));
+      assert.equal(bytes.length, record.bytes);
+      assert.equal(hash(bytes), record.sha256);
+      const { viewBox, dimensions, paths } = readAuthorMaster(bytes);
+      const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
+      assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
+      const declaration = annotations.icons[icon][variant];
+      icons[icon][variant] = {
+        sourceFile: record.master,
+        viewBox,
+        dimensions,
+        paths,
+        declaration,
+        parts: declaration.parts.map(({ pathIndex, id, role }, index) => {
+          assert.equal(pathIndex, index);
+          return { id, role, zIndex: index, ...paths[index] };
+        }),
+        author: {
+          kind: 'figma',
+          ...pin.figma,
+          nodeId: record.nodeId,
+          nodeSha256: record.nodeSha256,
+          masterSha256: hash(bytes),
+          normalizedSha256: record.normalizedSource.sha256,
+          pathFingerprintSha256: fingerprint,
+        },
+      };
+    }
+  }
+  const groups = Object.fromEntries(
+    ['outline', 'filled'].map((variant) => {
+      const name = `ellipsis-orientation-${variant}`;
+      return [name, semantic.groups[name]];
+    }),
+  );
+  return validateAuthoredDotsReference(
+    {
+      ...pin.figma,
+      semanticSha256: hash(semanticBytes),
+      gridSha256: hash(gridBytes),
+      icons,
+      groups,
+    },
     pin.figma,
   );
 }
@@ -673,14 +740,19 @@ export async function prepareInputs(options) {
   const states = await stateReference(iconsRoot, pin);
   const expression = await stateReference(iconsRoot, pin, 'expression-face');
   const notifications = await notificationReference(iconsRoot, pin);
+  const dots = await authoredDotsReference(iconsRoot, pin);
   for (const file of [
     'semantics/figma-baseline.json',
     'semantics/author-anatomy.json',
     'semantics/author-state-groups.json',
+    'semantics/grid.json',
     ...Object.values(reference.icons.reload).map((item) => item.sourceFile),
     ...states.states.map((item) => item.sourceFile),
     ...expression.states.map((item) => item.sourceFile),
     ...Object.values(notifications.icons).flatMap((variants) =>
+      Object.values(variants).map((item) => item.sourceFile),
+    ),
+    ...Object.values(dots.icons).flatMap((variants) =>
       Object.values(variants).map((item) => item.sourceFile),
     ),
   ]) {
@@ -692,14 +764,16 @@ export async function prepareInputs(options) {
   for (const file of [
     'apps/docs/tests/icons-packed.mjs',
     'apps/docs/tests/icons-notification-consumer.mjs',
+    'apps/docs/tests/icons-authored-dots-consumer.mjs',
   ])
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 4,
+    schemaVersion: 5,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
     notificationReference: notifications,
+    authoredDotsReference: dots,
   });
   assertCheckout(iconsRoot, pin.sourceCommit);
   assertCheckout(uiRoot, uiCommit);

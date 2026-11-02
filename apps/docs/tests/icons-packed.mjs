@@ -9,6 +9,13 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } 
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 import {
+  AUTHORED_DOT_ENTRIES,
+  authoredDotsBrowserProof,
+  authoredDotsFixture,
+  authoredDotsTypeFixture,
+  validateAuthoredDotsReference,
+} from './icons-authored-dots-consumer.mjs';
+import {
   NOTIFICATION_ENTRIES,
   assertNotificationAnatomy,
   assertNotificationEffect,
@@ -68,12 +75,13 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5].includes(schemaVersion));
   return [
     ...REQUIRED_PUBLIC_ENTRIES,
     ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
     ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
-    ...(schemaVersion === 4 ? NOTIFICATION_ENTRIES : []),
+    ...(schemaVersion >= 4 ? NOTIFICATION_ENTRIES : []),
+    ...(schemaVersion >= 5 ? AUTHORED_DOT_ENTRIES : []),
   ];
 }
 
@@ -95,6 +103,7 @@ export function assertIconsImport(source) {
       STATE_ENTRY,
       EXPRESSION_ENTRY,
       ...NOTIFICATION_ENTRIES,
+      ...AUTHORED_DOT_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -169,7 +178,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
     ['icons', '@labpics/icons'],
@@ -272,9 +281,12 @@ export function validateSubject(subject) {
     if (subject.schemaVersion === 2) validateStateReference(subject.stateReference, reference);
     else assert.equal(subject.stateReference, undefined);
   }
-  if (subject.schemaVersion === 4)
+  if (subject.schemaVersion >= 4)
     validateNotificationReference(subject.notificationReference, reference);
   else assert.equal(subject.notificationReference, undefined);
+  if (subject.schemaVersion >= 5)
+    validateAuthoredDotsReference(subject.authoredDotsReference, reference);
+  else assert.equal(subject.authoredDotsReference, undefined);
   return subject;
 }
 
@@ -419,6 +431,13 @@ section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:6
 .notification-sample { display:flex; flex-wrap:wrap; align-items:start; gap:48px; }
 .notification-sample figure { justify-items:start; }
 .notification-sample h3, h3 { font-size:14px; font-weight:500; margin:28px 0 16px; }
+.dots-row { display:flex; flex-wrap:wrap; gap:40px; align-items:start; }
+.dots-orientation, .dots-variation { justify-items:start; gap:16px; min-width:224px; }
+.dots-orientation select, .authored-dots button { min-height:44px; padding:8px 12px; font:inherit; }
+.dots-parameters { display:grid; gap:12px; width:100%; }
+.dots-parameters label { display:grid; gap:8px; font-size:14px; }
+.dots-parameters input { width:100%; min-height:24px; accent-color:#007aff; }
+.dots-variation output { max-width:240px; font-size:12px; line-height:1.5; }
 @media (max-width:480px) { body { padding:24px; } .state-sample { flex-wrap:wrap; gap:16px; } }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
@@ -792,12 +811,13 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
     (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '') +
-    (schemaVersion === 4 ? notificationFixture() : '')
+    (schemaVersion >= 4 ? notificationFixture() : '') +
+    (schemaVersion >= 5 ? authoredDotsFixture() : '')
   );
 }
 
@@ -1126,6 +1146,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         await stateBrowserProof(page, stateReference, reducedMotion, records);
       if (reference.notifications)
         await notificationBrowserProof(page, reference.notifications, reducedMotion, records);
+      if (reference.authoredDots)
+        await authoredDotsBrowserProof(page, reference.authoredDots, reducedMotion, records);
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
@@ -1159,6 +1181,16 @@ async function browserProof(browser, url, reference, out, records, browserErrors
             );
             records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
           }
+      if (reference.authoredDots)
+        for (const variant of ['outline', 'filled']) {
+          const disposed = await page.evaluate(
+            (variant) => window.__iconsPacked.contourConsumers[variant].disposal(),
+            variant,
+          );
+          assert.equal(disposed.connected, false);
+          assert.equal(disposed.playback, reducedMotion === 'reduce' ? 'finished' : 'stopped');
+          records.push({ name: `ellipsis/${variant}:${reducedMotion}:dispose`, ...disposed });
+        }
     } catch (error) {
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -1727,7 +1759,11 @@ export async function main(args = process.argv.slice(2)) {
       execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 20_000 }).trim();
     const harnessBytes = await readFile(fileURLToPath(import.meta.url));
     const harnessFiles = await Promise.all(
-      ['icons-packed.mjs', 'icons-notification-consumer.mjs'].map(async (file) => ({
+      [
+        'icons-packed.mjs',
+        'icons-notification-consumer.mjs',
+        'icons-authored-dots-consumer.mjs',
+      ].map(async (file) => ({
         file: `apps/docs/tests/${file}`,
         sha256: hash(await readFile(new URL(file, import.meta.url))),
       })),
@@ -1828,6 +1864,49 @@ export async function main(args = process.argv.slice(2)) {
     }
     await writeFile(join(consumer, 'index.html'), HTML);
     await writeFile(join(consumer, 'consumer.mjs'), fixture);
+    if (subject.schemaVersion >= 5) {
+      phase = 'public types';
+      const typeFixture = authoredDotsTypeFixture();
+      await writeFile(join(consumer, 'consumer.ts'), typeFixture);
+      await writeFile(
+        join(consumer, 'tsconfig.json'),
+        JSON.stringify({
+          compilerOptions: {
+            target: 'ES2022',
+            module: 'NodeNext',
+            moduleResolution: 'NodeNext',
+            strict: true,
+            noEmit: true,
+            types: [],
+            lib: ['ES2022', 'DOM'],
+          },
+          files: ['consumer.ts'],
+        }),
+      );
+      const { createRequire } = await import('node:module');
+      const require = createRequire(import.meta.url);
+      const compiler = require.resolve('typescript/lib/tsc.js');
+      let result;
+      try {
+        result = execFileSync(
+          process.execPath,
+          [compiler, '--project', join(consumer, 'tsconfig.json')],
+          { cwd: consumer, encoding: 'utf8', timeout: 20_000 },
+        );
+      } catch (error) {
+        const diagnostics = `${error.stdout ?? ''}${error.stderr ?? ''}`;
+        await writeFile(join(out, 'public-types.log'), diagnostics);
+        throw new Error(`Public NodeNext consumer failed: ${diagnostics}`, { cause: error });
+      }
+      await writeFile(join(out, 'public-types.log'), result);
+      receipt.types = {
+        outcome: 'passed',
+        compilerVersion: require('typescript/package.json').version,
+        fixtureSha256: hash(typeFixture),
+        resolution: 'NodeNext',
+        negativeControls: 3,
+      };
+    }
     phase = 'build';
     // Зависимости tooling загружаются только после запрета локального heavy run.
     const { build } = await import('vite');
@@ -1898,7 +1977,7 @@ export async function main(args = process.argv.slice(2)) {
       ),
       moduleGraph,
       bundles,
-      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
+      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -1917,6 +1996,7 @@ export async function main(args = process.argv.slice(2)) {
           ...subject.authorReference,
           states: subjectStateReferences(subject),
           notifications: subject.notificationReference,
+          authoredDots: subject.authoredDotsReference,
         },
         out,
         records,

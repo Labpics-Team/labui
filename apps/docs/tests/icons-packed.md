@@ -58,10 +58,12 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 4`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 5`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
-два статических `notifications-off` controls. Schema3 сохраняет обе state группы.
+два статических `notifications-off` controls. `authoredDotsReference` связывает
+четыре мастера многоточия, их анатомию, state declarations и grid. Schema4
+сохраняет уведомления без dot reference. Schema3 сохраняет обе state группы.
 Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
 сохраняет cycle reference и исполняемый путь reload без state reference.
 Одновременное присутствие старого и нового state полей получает отказ.
@@ -80,6 +82,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | Каждый state | `id`, `partId`, `icon`, `contentPartIds`, `sourceFile`, `author`, `viewBox`, `dimensions`, `paths` |
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
 | `notificationReference` | Figma file/version и шесть raw masters: paths, viewBox, author; у четырёх подвижных variants также declaration, parts, amplitude и unchangedPartIds |
+| `authoredDotsReference` | Figma file/version, semantic/grid hashes, четыре raw masters с declaration/parts и две группы orientation |
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
@@ -121,6 +124,36 @@ Notification reference читает шесть raw masters и аннотации
 `0, A, −A, A/2, −A/2, 0`. Ни producer parser, ни его bbox или sampler не формируют
 expected. Source receipt также связывает bytes основного harness и общего
 notification helper с точным Lab UI commit.
+
+Schema5 продолжает тот же consumer четырьмя авторскими многоточиями:
+horizontal/vertical в Outline/Filled. Размер точки и расстояние меняются через
+доступные клавиатуре range controls; SVG показывает настоящую изменённую форму
+в 16, 24 и 48 px. Кнопка возвращает точный авторский размер, другая скачивает SVG.
+Состояния `ellipsis-orientation-outline` и `ellipsis-orientation-filled`
+меняют только крайние контуры; средняя точка и все DOM nodes сохраняются.
+Публичный `value` Lab Motion владеет прогрессом и interruption. Icons передаёт
+переносимый JSON effect; `prepareContourStateEffect` проверяет его один раз.
+Потребитель не разбирает paths в кадре и не запускает собственного scheduler.
+Harness проверяет strict NodeNext TypeScript в том же установленном consumer: обе authored
+variation группы и оба contour entrypoints, с тремя отрицательными controls для
+неизвестного состояния, неверной шкалы и скрытых координат.
+Горизонтальная форма также выполняет `activity` на изменённой геометрии через
+публичный `sequence`: новый цикл сохраняет видимую непрозрачность. Вертикальная
+форма не получает жест загрузки только из-за сходства трёх точек.
+
+`authoredDotsReference` в schema5 содержит ровно четыре raw masters, Figma
+receipts, объявления `dots.affine`/`dots.orient`, hash исходных state semantics
+и grid. Reference готовится до чтения установленного пакета. Endpoint oracle
+сравнивает исходный `d` буквально; внутреннюю позу проверяет независимо по
+raw operands. Отдельные controls обнаруживают замену DOM nodes, запись в среднюю
+точку, неправильную промежуточную форму и silent default при variation.
+
+Два contour модуля поддерживают exact default 1/1 и web-effect. Изменённая
+variation пока не допускается в orientation transition: её безопасные конечные
+формы не доказывают весь путь. Lottie, dotLottie и SF Symbols для этого перехода
+получают `FORMAT_UNSUPPORTED`. Variation не объявлена optical sizing или
+StyleProfile. Эти границы сохраняются в receipt, вместе с reverse/newer target,
+reduced motion, экспортом текущей видимой формы и освобождением MotionValue.
 
 После фиксации raw references и `subject.json` та же prepare-inputs граница
 запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
