@@ -210,12 +210,17 @@ $null = [Management.Automation.Language.Parser]::ParseInput($getterText, [ref]$t
 Assert ($errors.Count -eq 0) 'Повреждён синтаксис framework getter.'
 Assert ($source -notmatch '\bSetValue\s*\(|\bset-value\b|\bSet-ItemProperty\b|\bStop-Process\b') 'Read-only experiment получил путь изменения настройки/чужого процесса.'
 
+# Настоящий свежий PS5 getter: служебный progress не должен ломать JSON-ответ.
+# Читается действующее значение OS API; настройка и окна не изменяются.
+$systemScale = Read-SystemTextScale
+Assert ($systemScale.textScaleFactor -ge 1 -and $systemScale.textScaleFactor -le 2.25) 'OS getter не вернул действующий масштаб.'
+
 # Настоящий bounded child, но только echo/exit/sleep: никакого GUI или UIAutomation.
 $shell = Join-Path $PSHOME 'pwsh.exe'
 $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes("[Console]::OutputEncoding = [Text.UTF8Encoding]::new(`$false); 'Размер текста'"))
 $readback = Invoke-TextScaleChild $shell @('-NoProfile', '-NonInteractive', '-EncodedCommand', $encoded)
 Assert ($readback.Trim() -ceq 'Размер текста') 'Дочерний процесс исказил UTF-8.'
-foreach ($command in @('exit 2', 'Start-Sleep -Seconds 30')) {
+foreach ($command in @('exit 2', '[Console]::Error.WriteLine("fixture error")', 'Start-Sleep -Seconds 30')) {
     $failure = $null
     $timer = [Diagnostics.Stopwatch]::StartNew()
     try { Invoke-TextScaleChild $shell @('-NoProfile', '-NonInteractive', '-Command', $command) 1000 | Out-Null } catch { $failure = $_ }

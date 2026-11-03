@@ -138,6 +138,7 @@ function Read-SettingsWindowDiagnostic($Owned) {
 function Read-SystemTextScale {
     $reader = @'
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $null = [Windows.UI.ViewManagement.UISettings, Windows.UI.ViewManagement, ContentType=WindowsRuntime]
@@ -240,6 +241,7 @@ function Read-SettingsRanges($Owned) {
     # квалифицированного CLI getter; он не получает setters или другие UI-команды.
     $reader = @'
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 Add-Type -AssemblyName UIAutomationClient
