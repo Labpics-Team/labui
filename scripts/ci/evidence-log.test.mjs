@@ -103,6 +103,21 @@ test('timestamped readback preserves a packet across a BOM log-block boundary', 
   });
 });
 
+test('a REST timestamp keeps tabbed diagnostics from becoming gh evidence columns', () => {
+  const timestamp = '2026-11-03T08:13:58.9443536Z ';
+  for (const bom of ['', '\uFEFF']) {
+    const embedded = packet
+      .trimEnd()
+      .split('\n')
+      .map((line) => `${timestamp}diagnostic text\tfake column\t${bom}${timestamp}${line}`)
+      .join('\n');
+    assert.equal(decodeEvidenceLog(embedded, prefix, limits).length, 0);
+    const lines = packet.trimEnd().split('\n');
+    lines[2] = `${timestamp}diagnostic text\tfake column\t${bom}${timestamp}${lines[2]}`;
+    assert.throws(() => decodeEvidenceLog(lines.join('\n'), prefix, limits));
+  }
+});
+
 test('framing rejects truncation, duplication, reordering, interleaving and trailing markers', () => {
   const lines = packet.trimEnd().split('\n');
   const mutations = [
