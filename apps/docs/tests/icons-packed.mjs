@@ -66,9 +66,10 @@ import {
   subjectPackagePlan,
 } from './icons-runtime-packages.mjs';
 import {
-  SOURCE_STATE_ENTRIES,
-  SOURCE_STATE_GROUPS,
+  isSourceStateGroup,
+  sourceStateEntries,
   sourceStateFixture,
+  sourceStateGroups,
   sourceStateReferenceContract,
   sourceStateTypeFixture,
 } from './icons-source-state-consumer.mjs';
@@ -138,14 +139,14 @@ const STATE_GROUPS = {
 };
 
 export function stateReferenceContract(group) {
-  if (Object.hasOwn(SOURCE_STATE_GROUPS, group)) return sourceStateReferenceContract(group);
+  if (isSourceStateGroup(group)) return sourceStateReferenceContract(group);
   if (!Object.hasOwn(STATE_GROUPS, group)) return stateAnnulusReferenceContract(group);
   assert.ok(Object.hasOwn(STATE_GROUPS, group), 'consumer не запрашивал такую state group');
   return structuredClone(STATE_GROUPS[group]);
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(schemaVersion));
   return [
     ...new Set([
       ...REQUIRED_PUBLIC_ENTRIES,
@@ -157,7 +158,7 @@ export function consumerPublicEntries(schemaVersion) {
       ...(schemaVersion >= 7 ? STATE_ANNULUS_ENTRIES : []),
       ...(schemaVersion >= 8 ? CONTENT_SCALE_ENTRIES : []),
       ...(schemaVersion >= 9 ? MICROPHONE_ENTRIES : []),
-      ...(schemaVersion >= 10 ? SOURCE_STATE_ENTRIES : []),
+      ...(schemaVersion >= 10 ? sourceStateEntries(schemaVersion) : []),
       ...(schemaVersion >= 11 ? MOTION_PROJECTION_ENTRIES : []),
       ...(schemaVersion >= 12 ? WIDTH_MOTION_ENTRIES : []),
     ]),
@@ -189,7 +190,7 @@ export function assertIconsImport(source) {
       ...STATE_ANNULUS_ENTRIES,
       ...CONTENT_SCALE_ENTRIES,
       ...MICROPHONE_ENTRIES,
-      ...SOURCE_STATE_ENTRIES,
+      ...sourceStateEntries(14),
       ...MOTION_PROJECTION_ENTRIES,
       ...WIDTH_MOTION_ENTRIES,
     ].includes(source),
@@ -266,7 +267,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(subject?.schemaVersion));
   subjectPackagePlan(subject.schemaVersion, subject.packages);
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
@@ -386,7 +387,7 @@ export function validateSubject(subject) {
   if (subject.schemaVersion >= 10) {
     assert.deepEqual(
       Object.keys(subject.sourceStateReferences ?? {}).sort(),
-      Object.keys(SOURCE_STATE_GROUPS).sort(),
+      Object.keys(sourceStateGroups(subject.schemaVersion)).sort(),
     );
     for (const [group, state] of Object.entries(subject.sourceStateReferences))
       validateStateReference(state, reference, group);
@@ -1079,7 +1080,7 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
@@ -1090,7 +1091,7 @@ export function consumerFixture(schemaVersion) {
     (schemaVersion >= 7 ? stateAnnulusFixture() : '') +
     (schemaVersion >= 8 ? contentScaleFixture() : '') +
     (schemaVersion >= 9 ? microphoneFixture() : '') +
-    (schemaVersion >= 10 ? sourceStateFixture() : '') +
+    (schemaVersion >= 10 ? sourceStateFixture(schemaVersion) : '') +
     (schemaVersion >= 11 ? motionProjectionFixture() : '') +
     (schemaVersion >= 12 ? widthMotionFixture() : '')
   );
@@ -2608,7 +2609,7 @@ export async function main(args = process.argv.slice(2)) {
         (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '') +
         (subject.schemaVersion >= 8 ? contentScaleTypeFixture() : '') +
         (subject.schemaVersion >= 9 ? microphoneTypeFixture() : '') +
-        (subject.schemaVersion >= 10 ? sourceStateTypeFixture() : '') +
+        (subject.schemaVersion >= 10 ? sourceStateTypeFixture(subject.schemaVersion) : '') +
         (subject.schemaVersion >= 11 ? motionProjectionTypeFixture() : '') +
         (subject.schemaVersion >= 12 ? widthMotionTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
@@ -2721,7 +2722,7 @@ export async function main(args = process.argv.slice(2)) {
       ),
       moduleGraph,
       bundles,
-      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}${subject.schemaVersion >= 9 ? ', mic/mic-circle: ширина корпуса независимых Outline/Filled, native выбор и SVG export' : ''}${subject.schemaVersion >= 11 ? ', подготовленные rotation targets reload/refresh; статический timer Outline/Filled с точным отказом анимации и SVG export' : ''}${subject.schemaVersion >= 12 ? ', подготовленная ширина mic/mic-circle, независимый числовой executor, прерывание и текущий SVG' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
+      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}${subject.schemaVersion >= 9 ? ', mic/mic-circle: ширина корпуса независимых Outline/Filled, native выбор и SVG export' : ''}${subject.schemaVersion >= 11 ? ', подготовленные rotation targets reload/refresh; статический timer Outline/Filled с точным отказом анимации и SVG export' : ''}${subject.schemaVersion >= 12 ? ', подготовленная ширина mic/mic-circle, независимый числовой executor, прерывание и текущий SVG' : ''}${subject.schemaVersion >= 14 ? ', mic/plus plain→circle Outline/Filled: авторские формы, прерывание, обратный ход и SVG export' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);

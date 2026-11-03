@@ -36,6 +36,14 @@ source-only variation и необъявленное движение сохра�
 доступных кнопок и compound SVG: [WAI Button Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/button/)
 и [SVG 2 fill-rule](https://www.w3.org/TR/SVG2/painting.html#FillRuleProperty),
 прочитаны 2026-11-02. Новый renderer или отдельный interaction framework не нужны.
+Schema14 добавляет выбор `plain` ↔ `circle` для микрофона и плюса в Outline/Filled.
+Статические образцы в 16, 24 и 48 px и настоящие кнопки используют самостоятельные
+авторские masters. Общий state consumer исполняет `source.replace` через Lab Motion:
+новый переход начинается с видимой смеси, поддерживает прерывание, обратный ход,
+reduced motion и экспорт текущего SVG. Filled circle сохраняет compound path
+и отрицательные контуры. Геометрический morph этих endpoints не доказан;
+`bodyWidth` в presentation-переходе и неподдержанные форматы получают точный отказ.
+Отдельная ранее принятая настройка ширины mic/mic-circle сохраняется в своём API.
 
 ## Запуск
 
@@ -85,7 +93,7 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 13`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 14`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
@@ -100,6 +108,11 @@ Outline/Filled on/off masters. С schema11 `motionProjectionReference` связ�
 допущенные rotation targets Reload/Refresh и статические Timer Outline/Filled
 с точным отказом движения. С schema12 `widthMotionReference` связывает
 подготовленную ширину микрофона с теми же raw masters, позами и fingerprints.
+Schema14 добавляет в `sourceStateReferences` четыре группы
+`microphone-presentation`, `microphone-presentation-filled`, `plus-presentation`
+и `plus-presentation-filled`. Каждая связывает самостоятельные авторские формы
+`plain` и `circle`; обрамление и контрпространство входят в точный master состояния.
+Прежние схемы 1–13 сохраняют прежние imports, fixture и type-consumer байты.
 Schema8 сохраняет предыдущий content-scale consumer
 без microphone reference. Schema6 сохраняет
 круговые семейства без state variation reference. Schema5 сохраняет многоточия
@@ -126,7 +139,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
 | `notificationReference` | Figma file/version и шесть raw masters: paths, viewBox, author; у четырёх подвижных variants также declaration, parts, amplitude и unchangedPartIds |
 | `microphoneReference` | Четыре raw masters mic/mic-circle, независимые Outline/Filled декларации и fingerprints; обязателен с schema9 |
-| `sourceStateReferences` | Группы microphone, microphone-filled, visibility, visibility-filled с независимыми masters и доказательством `source.replace`; обязательны с schema10 |
+| `sourceStateReferences` | Четыре группы microphone/visibility с schema10; с schema14 также четыре presentation-группы microphone/plus Outline/Filled. Независимые masters и доказательство `source.replace` |
 | `motionProjectionReference` | Raw masters Reload/Refresh/Timer, допуски rotation и точный отказ Timer; обязателен с schema11 |
 | `widthMotionReference` | Привязка подготовленного `capsule.width` к `microphoneReference` и проверяемые позы; обязателен с schema12 |
 | `authoredDotsReference` | Figma file/version, semantic/grid hashes, четыре raw masters с declaration/parts и две группы orientation |
@@ -392,7 +405,7 @@ Motion version. Первый такой report является измерени
 speedup принимаются после его чтения. Старые ceilings не увеличиваются. Browser,
 визуальная оценка и скорость никогда не выводятся из одних source tests.
 
-## Runtime-пакеты с schema13
+## Runtime-пакеты с schema13–14
 
 Семантика и публичные symbol imports schema13 совпадают со schema12. Меняется
 состав архивов: `icons-runtime-packages.mjs` начинает с Icons и UI Core и проходит
@@ -521,6 +534,12 @@ Manifest записывается во временный файл того же
 `summarize` дожидается завершения записи полного блока и RESULT перед отказом
 по неуспешному receipt. При ошибке stdout возвращается исходная причина согласно
 [контракту Node Writable](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback).
+
+Полный RESULT передаётся существующим gzip/base64 codec с ограниченными chunks
+и `resultSha256`. Для чтения используйте `decodeJsonEvidenceLog` из
+`scripts/ci/evidence-log.mjs`: он сохраняет прежний JSON-формат и отвергает
+неполный, повреждённый, дублированный или смешанный результат. Отказ передаётся
+до PNG; успешный RESULT завершает передачу остальных evidence packets.
 
 Основание runner guard: [GitHub default variables](https://docs.github.com/en/actions/reference/workflows-and-actions/variables).
 Принятый packed-consumer маршрут: Lab UI PR #191, SHA

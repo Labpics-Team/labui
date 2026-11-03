@@ -249,25 +249,28 @@ test('unsupported workspace alias, path and explicit ranges receive a precise re
   }
 });
 
-test('schema13 accepts exactly the actual three or five archive closure', () => {
-  assert.deepEqual(keys(subjectPackagePlan(13, expectedPackages())), [
-    'icons',
-    'uiCore',
-    'uiShadow',
-  ]);
-  assert.deepEqual(keys(subjectPackagePlan(13, expectedPackages(true))), [
-    'icons',
-    'uiCore',
-    'uiMaterials',
-    'uiTokens',
-    'uiShadow',
-  ]);
-  const excess = expectedPackages();
-  excess.uiMaterials = expectedPackages(true).uiMaterials;
-  assert.throws(() => subjectPackagePlan(13, excess), /closure/);
-  const missing = expectedPackages(true);
-  Reflect.deleteProperty(missing, 'uiTokens');
-  assert.throws(() => subjectPackagePlan(13, missing), /ui-tokens|архивов/);
+test('schema13–14 accept exactly the actual three or five archive closure', () => {
+  for (const schema of [13, 14]) {
+    assert.deepEqual(keys(subjectPackagePlan(schema, expectedPackages())), [
+      'icons',
+      'uiCore',
+      'uiShadow',
+    ]);
+    assert.deepEqual(keys(subjectPackagePlan(schema, expectedPackages(true))), [
+      'icons',
+      'uiCore',
+      'uiMaterials',
+      'uiTokens',
+      'uiShadow',
+    ]);
+    const excess = expectedPackages();
+    excess.uiMaterials = expectedPackages(true).uiMaterials;
+    assert.throws(() => subjectPackagePlan(schema, excess), /closure/);
+    const missing = expectedPackages(true);
+    Reflect.deleteProperty(missing, 'uiTokens');
+    assert.throws(() => subjectPackagePlan(schema, missing), /ui-tokens|архивов/);
+  }
+  assert.throws(() => subjectPackagePlan(15, expectedPackages()));
 });
 
 test('all legacy schema1–12 retain the three-package contract', () => {
@@ -279,24 +282,26 @@ test('all legacy schema1–12 retain the three-package contract', () => {
   }
 });
 
-test('schema13 refuses incomplete, unresolved or malformed runtime contract metadata', () => {
-  for (const mutate of [
-    (item) => {
-      Reflect.deleteProperty(item.runtimeDependencies, 'peerDependencies');
-    },
-    (item) => {
-      item.runtimeDependencies.dependencies['@labpics/ui-shadow'] = 'workspace:*';
-    },
-    (item) => {
-      item.runtimeDependencies.optionalDependencies = [];
-    },
-    (item) => {
-      item.runtimeDependencies.peerDependencies.external = 1;
-    },
-  ]) {
-    const packages = expectedPackages();
-    mutate(packages.uiCore);
-    assert.throws(() => subjectPackagePlan(13, packages));
+test('schema13–14 refuse incomplete, unresolved or malformed runtime contract metadata', () => {
+  for (const schema of [13, 14]) {
+    for (const mutate of [
+      (item) => {
+        Reflect.deleteProperty(item.runtimeDependencies, 'peerDependencies');
+      },
+      (item) => {
+        item.runtimeDependencies.dependencies['@labpics/ui-shadow'] = 'workspace:*';
+      },
+      (item) => {
+        item.runtimeDependencies.optionalDependencies = [];
+      },
+      (item) => {
+        item.runtimeDependencies.peerDependencies.external = 1;
+      },
+    ]) {
+      const packages = expectedPackages();
+      mutate(packages.uiCore);
+      assert.throws(() => subjectPackagePlan(schema, packages));
+    }
   }
 });
 

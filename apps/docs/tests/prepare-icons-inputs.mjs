@@ -60,7 +60,7 @@ import {
   runtimeDependencyContracts,
   subjectPackagePlan,
 } from './icons-runtime-packages.mjs';
-import { SOURCE_STATE_GROUPS } from './icons-source-state-consumer.mjs';
+import { sourceStateGroups } from './icons-source-state-consumer.mjs';
 import {
   WIDTH_MOTION_VISUAL_FILES,
   assertWidthMotionVisualEvidence,
@@ -763,6 +763,25 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit, privateLocations)
   );
 }
 
+export function consumerResultLog(bytes, privateLocations) {
+  assert.ok(
+    Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
+    'result: bytes вне лимита',
+  );
+  const projected = projectJsonBytes(bytes, privateLocations);
+  assert.ok(projected.length <= CONSUMER_MAX_EVIDENCE_BYTES, 'result: projection вне лимита');
+  return evidenceLog(
+    projected,
+    'LABUI_ICONS_CONSUMER_RESULT',
+    {
+      projectionVersion: 1,
+      originalBytesSha256: hash(bytes),
+      originalBytes: bytes.length,
+    },
+    'resultSha256',
+  );
+}
+
 export async function prepareInputs(options) {
   const sourcePin = validateSourcePin(JSON.parse(await readFile(PIN)));
   const iconsRoot = await realpath(resolve(options.get('--icons-source')));
@@ -812,7 +831,7 @@ export async function prepareInputs(options) {
   const motionProjection = await motionProjectionReference(iconsRoot, pin, readAuthorMaster);
   const sourceStates = Object.fromEntries(
     await Promise.all(
-      Object.keys(SOURCE_STATE_GROUPS).map(async (group) => [
+      Object.keys(sourceStateGroups(14)).map(async (group) => [
         group,
         await stateReference(iconsRoot, pin, group),
       ]),
@@ -852,7 +871,7 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 13,
+    schemaVersion: 14,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -1228,7 +1247,6 @@ export async function summarize(directory) {
         ),
       );
   }
-  for (const packet of packets) await writeStdout(packet);
   const summary = JSON.parse(
     JSON.stringify({
       schemaVersion: 1,
@@ -1265,10 +1283,11 @@ export async function summarize(directory) {
   );
   const summaryBytes = Buffer.from(`${JSON.stringify(summary)}\n`);
   publicDocuments.set('consumer-result.json', summaryBytes);
-  // Даже отказ сохраняет ограниченную фазу/continuity в публичном RESULT.
-  await writeStdout(
-    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify(JSON.parse(projectJsonBytes(summaryBytes, privateLocations)))}\n`,
-  );
+  const resultPacket = consumerResultLog(summaryBytes, privateLocations);
+  // Отказ передаёт frontier до PNG; успешный RESULT по-прежнему завершает все packets.
+  if (summary.outcome === 'failed') await writeStdout(resultPacket);
+  for (const packet of packets) await writeStdout(packet);
+  if (summary.outcome !== 'failed') await writeStdout(resultPacket);
   if (!sourceIdentityError && !readbackFailure)
     await exportPublicEvidence(root, { jsonFiles: publicDocuments, visuals, privateLocations });
   if (readbackFailure) throw readbackFailure.error;

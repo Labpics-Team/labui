@@ -1,64 +1,108 @@
 import assert from 'node:assert/strict';
 
 // Consumer задаёт смысл действия; координаты и переход принадлежат Lab Icons.
-export const SOURCE_STATE_GROUPS = Object.freeze(
-  Object.fromEntries(
-    [
-      {
-        name: 'microphone',
-        defaultState: 'unmuted',
-        states: ['muted', 'unmuted'],
-        icons: { muted: 'mic-off', unmuted: 'mic' },
-        heading: 'Микрофон',
-        labels: { muted: 'Выключен', unmuted: 'Включён' },
-        selectLabel: 'Состояние микрофона',
-        actionLabels: { muted: 'Включить микрофон', unmuted: 'Отключить микрофон' },
-      },
-      {
-        name: 'visibility',
-        defaultState: 'visible',
-        states: ['hidden', 'visible'],
-        icons: { hidden: 'eye-off', visible: 'eye' },
-        heading: 'Видимость',
-        labels: { hidden: 'Скрыто', visible: 'Показано' },
-        selectLabel: 'Видимость содержимого',
-        actionLabels: { hidden: 'Показать содержимое', visible: 'Скрыть содержимое' },
-      },
-    ].flatMap(({ name, ...configuration }) =>
-      ['outline', 'filled'].map((variant) => {
-        const group = variant === 'outline' ? name : `${name}-filled`;
-        return [
-          group,
-          Object.freeze({
-            ...configuration,
-            variant,
-            law: 'source.replace',
-            enclosurePartId: null,
-            sharedParts: [],
-            samples: true,
-            exportControls: true,
-            heading: `${configuration.heading}, ${variant === 'outline' ? 'контурный' : 'залитый'}`,
-            buttonLabel: configuration.actionLabels[configuration.defaultState],
-          }),
-        ];
-      }),
+function groupProjection(configurations) {
+  return Object.freeze(
+    Object.fromEntries(
+      configurations.flatMap(({ name, ...configuration }) =>
+        ['outline', 'filled'].map((variant) => {
+          const group = variant === 'outline' ? name : `${name}-filled`;
+          return [
+            group,
+            Object.freeze({
+              ...configuration,
+              variant,
+              law: 'source.replace',
+              enclosurePartId: null,
+              sharedParts: [],
+              samples: true,
+              exportControls: true,
+              heading: `${configuration.heading}, ${variant === 'outline' ? 'контурный' : 'залитый'}`,
+              buttonLabel: configuration.actionLabels[configuration.defaultState],
+            }),
+          ];
+        }),
+      ),
     ),
-  ),
-);
+  );
+}
+
+export const SOURCE_STATE_GROUPS = groupProjection([
+  {
+    name: 'microphone',
+    defaultState: 'unmuted',
+    states: ['muted', 'unmuted'],
+    icons: { muted: 'mic-off', unmuted: 'mic' },
+    heading: 'Микрофон',
+    labels: { muted: 'Выключен', unmuted: 'Включён' },
+    selectLabel: 'Состояние микрофона',
+    actionLabels: { muted: 'Включить микрофон', unmuted: 'Отключить микрофон' },
+  },
+  {
+    name: 'visibility',
+    defaultState: 'visible',
+    states: ['hidden', 'visible'],
+    icons: { hidden: 'eye-off', visible: 'eye' },
+    heading: 'Видимость',
+    labels: { hidden: 'Скрыто', visible: 'Показано' },
+    selectLabel: 'Видимость содержимого',
+    actionLabels: { hidden: 'Показать содержимое', visible: 'Скрыть содержимое' },
+  },
+]);
+const PRESENTATION_STATE_GROUPS = groupProjection([
+  {
+    name: 'microphone-presentation',
+    defaultState: 'plain',
+    states: ['circle', 'plain'],
+    icons: { circle: 'mic-circle', plain: 'mic' },
+    heading: 'Обрамление микрофона',
+    labels: { circle: 'В круге', plain: 'Без круга' },
+    selectLabel: 'Обрамление микрофона',
+    actionLabels: { circle: 'Убрать круг у микрофона', plain: 'Добавить круг к микрофону' },
+  },
+  {
+    name: 'plus-presentation',
+    defaultState: 'plain',
+    states: ['circle', 'plain'],
+    icons: { circle: 'plus-circle', plain: 'plus' },
+    heading: 'Обрамление плюса',
+    labels: { circle: 'В круге', plain: 'Без круга' },
+    selectLabel: 'Обрамление плюса',
+    actionLabels: { circle: 'Убрать круг у плюса', plain: 'Добавить круг к плюсу' },
+  },
+]);
+const ALL_SOURCE_STATE_GROUPS = Object.freeze({
+  ...SOURCE_STATE_GROUPS,
+  ...PRESENTATION_STATE_GROUPS,
+});
 export const SOURCE_STATE_ENTRIES = Object.freeze(
   Object.keys(SOURCE_STATE_GROUPS).map((group) => `@labpics/icons/states/${group}`),
 );
 
-export function sourceStateReferenceContract(group) {
-  assert.ok(
-    Object.hasOwn(SOURCE_STATE_GROUPS, group),
-    'consumer не запрашивал такую source state group',
-  );
-  return structuredClone(SOURCE_STATE_GROUPS[group]);
+// Новая приёмка расширяет сценарий; прежние схемы не получают новых imports/DOM.
+export function sourceStateGroups(schemaVersion = 13) {
+  assert.ok(Number.isInteger(schemaVersion) && schemaVersion >= 1 && schemaVersion <= 14);
+  return schemaVersion >= 14 ? ALL_SOURCE_STATE_GROUPS : SOURCE_STATE_GROUPS;
 }
 
-export function sourceStateFixture() {
-  return Object.entries(SOURCE_STATE_GROUPS)
+export function sourceStateEntries(schemaVersion = 13) {
+  const groups = sourceStateGroups(schemaVersion);
+  return groups === SOURCE_STATE_GROUPS
+    ? SOURCE_STATE_ENTRIES
+    : Object.freeze(Object.keys(groups).map((group) => `@labpics/icons/states/${group}`));
+}
+
+export function isSourceStateGroup(group) {
+  return Object.hasOwn(ALL_SOURCE_STATE_GROUPS, group);
+}
+
+export function sourceStateReferenceContract(group) {
+  assert.ok(isSourceStateGroup(group), 'consumer не запрашивал такую source state group');
+  return structuredClone(ALL_SOURCE_STATE_GROUPS[group]);
+}
+
+export function sourceStateFixture(schemaVersion = 13) {
+  return Object.entries(sourceStateGroups(schemaVersion))
     .map(
       ([group, configuration], index) => `
 import * as sourceState${index} from '@labpics/icons/states/${group}';
@@ -71,8 +115,8 @@ window.__iconsPacked.ready = Promise.all([sourceReady${index}, sourceConsumer${i
     .join('');
 }
 
-export function sourceStateTypeFixture() {
-  return Object.entries(SOURCE_STATE_GROUPS)
+export function sourceStateTypeFixture(schemaVersion = 13) {
+  return Object.entries(sourceStateGroups(schemaVersion))
     .map(
       ([group, configuration], index) => `
 import { render as sourceRender${index}, renderStateSvg as sourceStateSvg${index}, compileStateEffect as sourceEffect${index}, exportStateTransition as sourceExport${index}, stateCapabilities as sourceCapabilities${index} } from '@labpics/icons/states/${group}';

@@ -160,7 +160,7 @@ export async function loadRuntimePackagePlan(iconsRoot, uiRoot) {
 
 /** Schema13 хранит точный runtime closure; прежние schema сохраняют свой контракт. */
 export function subjectPackagePlan(schemaVersion, packages) {
-  assert.ok(Number.isInteger(schemaVersion) && schemaVersion >= 1 && schemaVersion <= 13);
+  assert.ok(Number.isInteger(schemaVersion) && schemaVersion >= 1 && schemaVersion <= 14);
   let plan;
   if (schemaVersion < 13) {
     assert.deepEqual(Object.keys(packages ?? {}).sort(), [...LEGACY_KEYS].sort());

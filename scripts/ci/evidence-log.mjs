@@ -125,3 +125,17 @@ export function decodeEvidenceLog(
   assert.equal(current, undefined, 'evidence: потерян END');
   return packets;
 }
+
+// Новый producer передаёт ограниченные chunks. Reader сохраняет старые JSON-журналы,
+// но частичный новый пакет, дубль или смесь двух форматов не становятся результатом.
+export function decodeJsonEvidenceLog(log, prefix, { digestField, maxBytes }) {
+  const packets = decodeEvidenceLog(log, prefix, { digestField, maxBytes, maxPackets: 1 });
+  const legacy = log
+    .split(/\r?\n/)
+    .map((line) => line.replace(LOG_PREFIX, ''))
+    .filter((line) => line.startsWith(`${prefix} `));
+  assert.equal(packets.length + legacy.length, 1, 'evidence: нужен один полный JSON result');
+  const bytes = packets[0]?.bytes ?? Buffer.from(legacy[0].slice(`${prefix} `.length));
+  assert.ok(bytes.length > 0 && bytes.length <= maxBytes, 'evidence: JSON bytes вне лимита');
+  return JSON.parse(bytes);
+}
