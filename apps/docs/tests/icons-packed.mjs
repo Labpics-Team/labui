@@ -1055,8 +1055,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.deepEqual(initial.capabilities.motion.gestures, [expected.gesture]);
         assert.deepEqual(initial.capabilities.supportedAxes, []);
         assert.deepEqual(initial.target, {
-          width: 48,
-          height: 48,
+          width: 56,
+          height: 56,
           name: 'Обновить',
           type: 'button',
           iconHidden: 'true',
