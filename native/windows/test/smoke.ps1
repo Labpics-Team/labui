@@ -174,7 +174,7 @@ function Assert-Capture([string]$Name, $Record, $Window) {
     }
     # Часы harness стартуют до recorder: это консервативная верхняя граница конца ввода.
     if ($Window.firstFrameReceivedMs -le $Window.recordStartedMs -or
-        ($Window.gestures.name -join ',') -ne 'hover,pressed,rapid-space,pointer-out' -or
+        ($Window.gestures.name -join ',') -ne 'hover,pressed,rapid-space,cancel-drag,pointer-out' -or
         $Window.gestures[0].startedMs -lt $Window.firstFrameReceivedMs) {
         throw "Не подтверждён первый кадр до ввода $Name."
     }
@@ -229,6 +229,7 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
             @{ name = 'hover'; arguments = @('hover', 'LabButtonMedium', '--dwell-time', '1000') },
             @{ name = 'pressed'; arguments = @('drag', 'LabButtonMedium', 'LabButtonMedium', '--hold-ms', '1000') },
             @{ name = 'rapid-space'; arguments = @('send-keys', 'space space space', '--target', 'LabButtonMedium', '--via', 'send-input') },
+            @{ name = 'cancel-drag'; arguments = @('drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50') },
             @{ name = 'pointer-out'; arguments = @('hover', 'LabActionResult', '--dwell-time', '800') }
         )
         foreach ($step in $steps) {
@@ -241,7 +242,7 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
                 Ui "$name-hover-image" @('screenshot', 'LabButtonMedium', '--output', (Join-Path $output "$name-hover.png")) | Out-Null
             }
             if ($step.name -eq 'pressed') { Assert-Count ($Count + 1) }
-            if ($step.name -eq 'rapid-space') { Assert-Count ($Count + 4) }
+            if ($step.name -in @('rapid-space', 'cancel-drag', 'pointer-out')) { Assert-Count ($Count + 4) }
             if ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -ge $inputBudgetMs) {
                 throw "Ввод $name вышел за бюджет записи."
             }
@@ -346,7 +347,8 @@ try {
     $captures = @{}
     $captures.Light = Capture-Interaction 'Light' 3
     $captures.Dark = Capture-Interaction 'Dark' 7
-    @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input capture';
+    @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input/cancelled-press capture';
+       gesturePattern = 'cancel-drag'; retarget = 'not-qualified';
        captures = $captures; visualReview = 'pending'; motionLifetime = 'not-qualified';
        smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' } |
         ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'result.json')

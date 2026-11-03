@@ -140,7 +140,16 @@ function frameIndex(bytes) {
 }
 
 function validateInteractions(files, records, dimensions) {
-  const captures = records.get('result.json').captures;
+  const result = records.get('result.json');
+  const captures = result.captures;
+  assert.ok(
+    result.gesturePattern === undefined || result.gesturePattern === 'cancel-drag',
+    'native: gesture pattern',
+  );
+  const gestures =
+    result.gesturePattern === 'cancel-drag'
+      ? ['hover', 'pressed', 'rapid-space', 'cancel-drag', 'pointer-out']
+      : ['hover', 'pressed', 'rapid-space', 'pointer-out'];
   assert.deepEqual(
     Object.keys(captures ?? {}).sort(),
     THEMES.toSorted(),
@@ -173,9 +182,16 @@ function validateInteractions(files, records, dimensions) {
     assert.equal(window.clock, 'harness-stopwatch-ms', 'native: timing clock');
     assert.deepEqual(
       window.gestures.map(({ name: gesture }) => gesture),
-      ['hover', 'pressed', 'rapid-space', 'pointer-out'],
+      gestures,
       'native: gestures',
     );
+    if (result.gesturePattern === 'cancel-drag') {
+      assert.deepEqual(
+        window.gestures[3].arguments,
+        ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50'],
+        'native: cancel-drag arguments',
+      );
+    }
     assert.ok(
       Number.isFinite(window.recordStartedMs) &&
         window.recordStartedMs >= 0 &&

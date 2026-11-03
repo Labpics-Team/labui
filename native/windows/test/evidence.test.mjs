@@ -130,6 +130,129 @@ function editJSON(files, file, change) {
   files.set(file, json(value));
 }
 
+function cancelDragFixture() {
+  const files = interactionFixture();
+  editJSON(files, 'result.json', (value) => {
+    value.gesturePattern = 'cancel-drag';
+  });
+  for (const theme of ['Light', 'Dark']) {
+    editJSON(files, `interaction-${theme}-window.json`, (value) => {
+      value.gestures.splice(3, 0, {
+        name: 'cancel-drag',
+        arguments: ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50'],
+        startedMs: 310,
+        completedMs: 320,
+      });
+      value.gestures[4].startedMs = 410;
+      value.gestures[4].completedMs = 420;
+    });
+  }
+  return files;
+}
+
+test('cancel-drag and legacy captures retain every byte under their explicit gesture contract', () => {
+  for (const files of [interactionFixture(), cancelDragFixture()]) {
+    assert.deepEqual(
+      decodeNativeEvidence(
+        encodeNativeEvidence(files, SOURCE, 'interaction'),
+        SOURCE,
+        'interaction',
+      ),
+      files,
+    );
+    assert.deepEqual(decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'), files);
+  }
+});
+
+test('cancel-drag cannot be missing, reordered, mixed with legacy or silently downgraded', () => {
+  const rejects = (files, reason = 'invalid cancel-drag contract') => {
+    assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'), reason);
+    assert.throws(
+      () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
+      reason,
+    );
+  };
+  const declaredButAbsent = interactionFixture();
+  editJSON(declaredButAbsent, 'result.json', (value) => {
+    value.gesturePattern = 'cancel-drag';
+  });
+  rejects(declaredButAbsent, 'declared current pattern cannot omit cancel-drag');
+  for (const pattern of [null, '', 'future', 'CANCEL-DRAG', false, 1]) {
+    const files = interactionFixture();
+    editJSON(files, 'result.json', (value) => {
+      value.gesturePattern = pattern;
+    });
+    rejects(files);
+  }
+  const unmarked = cancelDragFixture();
+  editJSON(unmarked, 'result.json', (value) => {
+    value.gesturePattern = undefined;
+  });
+  rejects(unmarked);
+  for (const theme of ['Light', 'Dark']) {
+    const file = `interaction-${theme}-window.json`;
+    for (let index = 0; index < 5; index++) {
+      const missing = cancelDragFixture();
+      editJSON(missing, file, (value) => value.gestures.splice(index, 1));
+      rejects(missing);
+      if (index < 4) {
+        const swapped = cancelDragFixture();
+        editJSON(swapped, file, (value) => {
+          const names = value.gestures.map((gesture) => gesture.name);
+          value.gestures[index].name = names[index + 1];
+          value.gestures[index + 1].name = names[index];
+        });
+        rejects(swapped);
+      }
+    }
+    const extra = cancelDragFixture();
+    editJSON(extra, file, (value) => value.gestures.push({ ...value.gestures[4] }));
+    rejects(extra);
+  }
+});
+
+test('cancel-drag validates its command and complete monotonic capture window on both boundaries', () => {
+  const argumentsToReject = [
+    undefined,
+    [],
+    ['drag', 'LabButtonMedium', 'LabButtonMedium', '--hold-ms', '50'],
+    ['drag', 'LabActionResult', 'LabButtonMedium', '--hold-ms', '50'],
+    ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '1000'],
+    ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', 50],
+    ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50', '--other'],
+  ];
+  for (const theme of ['Light', 'Dark']) {
+    for (const mutate of [
+      ...argumentsToReject.map((args) => (value) => {
+        value.gestures[3].arguments = args;
+      }),
+      (value) => {
+        value.gestures[3].startedMs = 219;
+      },
+      (value) => {
+        value.gestures[3].completedMs = value.gestures[3].startedMs;
+      },
+      (value) => {
+        value.gestures[3].completedMs = 411;
+      },
+      (value) => {
+        value.gestures[4].completedMs = 901;
+      },
+      (value) => {
+        value.gestures[3].startedMs = null;
+      },
+      (value) => {
+        value.firstFrameReceivedMs = 11;
+      },
+    ]) {
+      const files = cancelDragFixture();
+      editJSON(files, `interaction-${theme}-window.json`, mutate);
+      assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'));
+      assert.throws(() => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'));
+    }
+  }
+});
+
 test('interaction mode preserves both full clips and every indexed JPEG without an idle downgrade', () => {
   const files = interactionFixture();
   const log = encodeNativeEvidence(files, SOURCE, 'interaction');

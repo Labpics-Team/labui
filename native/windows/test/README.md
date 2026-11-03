@@ -55,6 +55,27 @@ LabMotion. Только после
 объявляющий interaction captures: незаметно отбросить запись нельзя. API также
 проверяет режим каждого нового log packet; прежние packets читаются только в `idle`.
 
+Новые записи объявляют `result.json.gesturePattern: "cancel-drag"` и содержат
+ровно пять жестов в каждой теме: `hover`, `pressed`, `rapid-space`, `cancel-drag`,
+`pointer-out`. Для прежних записей без этой метки decoder требует исходные четыре
+жеста без `cancel-drag`. Неизвестная метка, пропуск или перестановка жеста,
+неверные аргументы отмены и непокрытый записью ввод отвергаются.
+
+`cancel-drag` выполняет штатную команду WinApp CLI 0.7.1:
+`ui drag LabButtonMedium LabActionResult --hold-ms 50`. Она удерживает кнопку
+мыши при движении от проверяемой кнопки к тексту результата и отпускает её снаружи.
+Harness проверяет, что отмена не добавила активацию, и повторяет проверку после
+финального `pointer-out`. Длинное нажатие и три Space сохраняют свои четыре
+активации. Аргумент `50` не задаёт полную длительность нажатия: CLI добавляет
+собственные паузы и шаги движения. Контракт команды закреплён в
+[исходнике 0.7.1](https://github.com/microsoft/winappCli/blob/e3cd0b94f3e7b776ac51ba0564f4908094e979b5/src/winapp-CLI/WinApp.UIAutomation/Input/MouseInput.cs#L121).
+
+Ранний разворот подтверждает просмотр области кнопки: различимые кадры движения
+к pressed, затем возврата до достижения установившегося pressed-вида из длинного
+нажатия в той же теме. Если таких кадров нет, результат по этому свойству остаётся
+INCOMPLETE. Номинальные паузы CLI, `changed` всего окна и неизменный счётчик этого
+не доказывают; `result.json.retarget` остаётся `not-qualified` до отдельной приёмки.
+
 Перед выводом первого packet измеряются и читаются все файлы. Лимиты: 4 MiB на PNG
 или MP4, 1 MiB на JPEG или индекс, 16 Mi pixels, 2048 samples на запись,
 256 KiB на JSON, 16 MiB всего payload и 64 MiB на полный читаемый журнал.
@@ -74,4 +95,5 @@ capture, а воспроизведение и визуальную приёмк�
 ```powershell
 node --test scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
 pwsh -NoProfile -File native/windows/test/animation.test.ps1
+pwsh -NoProfile -File native/windows/test/retarget.test.ps1
 ```

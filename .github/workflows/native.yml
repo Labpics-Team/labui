@@ -47,6 +47,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File native/windows/test/animation.test.ps1
 
+      - name: Native pointer-cancel contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/retarget.test.ps1
+
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
