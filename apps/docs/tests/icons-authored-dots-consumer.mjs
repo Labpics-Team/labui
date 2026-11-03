@@ -813,6 +813,33 @@ export async function downloadedSvg(page, button) {
   return result;
 }
 
+export async function clickedActivityCheckpoint(button, id, milliseconds) {
+  await button.evaluate(
+    (element, { id, milliseconds }) => {
+      element.__iconsActivityCheckpoint = null;
+      // Обработчик fixture уже создал Motion control; возврат Playwright может прийти после конца цикла.
+      element.addEventListener(
+        'click',
+        (event) => {
+          element.__iconsActivityCheckpoint = {
+            trusted: event.isTrusted,
+            pose: window.__iconsPacked.dotVariationConsumers[id].pauseActivity(milliseconds),
+          };
+        },
+        { once: true },
+      );
+    },
+    { id, milliseconds },
+  );
+  await button.click();
+  return button.evaluate((element) => {
+    const checkpoint = element.__iconsActivityCheckpoint;
+    delete element.__iconsActivityCheckpoint;
+    if (!checkpoint?.trusted) throw new Error('Loading checkpoint требует доверенный click event');
+    return checkpoint.pose;
+  });
+}
+
 export async function authoredDotsBrowserProof(page, reference, reducedMotion, records) {
   const evaluate = (variant, method, ...args) =>
     page.evaluate(
@@ -983,7 +1010,14 @@ export async function authoredDotsBrowserProof(page, reference, reducedMotion, r
           varied.capability.motion.gestures.map((gesture) => gesture.id),
           ['ellipsis-horizontal.activity', 'ellipsis-horizontal.idle'],
         );
-        await figure.getByRole('button', { name: 'Один цикл загрузки', exact: true }).click();
+        const activityButton = figure.getByRole('button', {
+          name: 'Один цикл загрузки',
+          exact: true,
+        });
+        let paused;
+        if (reducedMotion === 'no-preference')
+          paused = await clickedActivityCheckpoint(activityButton, id, 180);
+        else await activityButton.click();
         const activated = await read();
         assert.equal(activated.activityEvents[0].trusted, true);
         assert.equal(activated.activityEffect.version, 2);
@@ -994,14 +1028,11 @@ export async function authoredDotsBrowserProof(page, reference, reducedMotion, r
           PART_IDS,
         );
         if (reducedMotion === 'no-preference') {
-          const paused = await page.evaluate(
-            (id) => window.__iconsPacked.dotVariationConsumers[id].pauseActivity(180),
-            id,
-          );
           assertDotVariation(paused, reference, icon, variant, parameters);
           assert.ok(
             paused.opacity.some((part) => part.value < 0.5) &&
               paused.opacity.some((part) => part.value > 0.5),
+            `Loading checkpoint не сохранил промежуточную opacity: ${JSON.stringify(paused.opacity)}`,
           );
           const newer = await page.evaluate(
             (id) => window.__iconsPacked.dotVariationConsumers[id].activity(),
@@ -1023,6 +1054,7 @@ export async function authoredDotsBrowserProof(page, reference, reducedMotion, r
         records.push({
           name: `${id}:${reducedMotion}:varied-loading-cycle`,
           effect: activated.activityEffect,
+          pausedOpacity: paused?.opacity,
           geometry: terminal.paths,
           completionStatus: terminal.completionStatus,
         });

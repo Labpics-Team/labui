@@ -932,3 +932,232 @@ test('scalar stages read visible starts once and preserve subsequent public targ
   );
   assert.throws(() => scalarSequenceSteps(effect, new Map(), visible));
 });
+
+// DOM seam сохраняет порядок listeners и CSS-записи; isTrusted здесь моделируется.
+// Настоящий trusted click и packed compiler остаются частью remote browser journey.
+function loadingHarness(
+  reference,
+  variant,
+  sequence,
+  { trusted = true, activated = true, opacity = true } = {},
+) {
+  const source = reference.icons['ellipsis-horizontal'][variant];
+  const model = { ...source, provenance: { author: source.author } };
+  const elements = [];
+  const plays = [];
+  const listenerErrors = [];
+  class Element {
+    constructor(tag) {
+      this.tagName = tag;
+      this.dataset = {};
+      this.attributes = new Map();
+      this.children = [];
+      this.listeners = new Map();
+      this.style = {
+        opacity: '1',
+        getPropertyValue(key) {
+          return this[key] ?? '';
+        },
+        setProperty(key, value) {
+          this[key] = value;
+        },
+        removeProperty(key) {
+          delete this[key];
+        },
+      };
+      elements.push(this);
+    }
+    setAttribute(key, value) {
+      this.attributes.set(key, value);
+    }
+    getAttribute(key) {
+      return this.attributes.get(key) ?? null;
+    }
+    append(...children) {
+      this.children.push(...children);
+    }
+    set innerHTML(_) {
+      const svg = new Element('svg');
+      svg.children = source.parts.map((part) => {
+        const path = new Element('path');
+        path.dataset.part = part.id;
+        path.setAttribute('d', part.d);
+        path.setAttribute('fill-rule', part.fillRule);
+        return path;
+      });
+      this.children = [svg];
+    }
+    querySelector(selector) {
+      return selector === 'svg' ? this.children[0] : null;
+    }
+    querySelectorAll() {
+      return this.children.flatMap((child) =>
+        typeof child === 'string'
+          ? []
+          : child.tagName === 'path'
+            ? [child]
+            : child.querySelectorAll(),
+      );
+    }
+    addEventListener(name, listener, options) {
+      const listeners = this.listeners.get(name) ?? [];
+      listeners.push({ listener, once: options?.once });
+      this.listeners.set(name, listeners);
+    }
+    removeEventListener(name, listener) {
+      this.listeners.set(
+        name,
+        (this.listeners.get(name) ?? []).filter((entry) => entry.listener !== listener),
+      );
+    }
+    dispatch() {
+      for (const entry of [...(this.listeners.get('click') ?? [])]) {
+        if (entry.once) this.removeEventListener('click', entry.listener);
+        try {
+          entry.listener({ isTrusted: trusted });
+        } catch (error) {
+          listenerErrors.push(error);
+        }
+      }
+    }
+    remove() {}
+    get outerHTML() {
+      return '<svg/>';
+    }
+  }
+  const context = {
+    document: { createElement: (tag) => new Element(tag) },
+    getComputedStyle: (node) => node.style,
+    matchMedia: () => ({ matches: false }),
+    renderGlyphSvg: () => '<svg/>',
+    scalarSequenceSteps,
+    compileSymbolEffect: (_, __, ___, request) => ({
+      ok: true,
+      effect: {
+        version: 2,
+        options: { duration: request.duration, easing: 'linear' },
+        stages: source.parts.flatMap((part, index) => [
+          {
+            partId: part.id,
+            property: 'opacity',
+            to: opacity ? 0.35 : 1,
+            at: index * 60,
+            duration: 120,
+          },
+          { partId: part.id, property: 'opacity', to: 1, at: index * 60 + 120, duration: 120 },
+        ]),
+      },
+    }),
+    sequence: (...args) => {
+      const play = sequence(...args);
+      plays.push(play);
+      return play;
+    },
+  };
+  const fixtureSource = authoredDotsFixture();
+  const start = fixtureSource.indexOf('function mountDotVariationConsumer(');
+  const end = fixtureSource.indexOf('\nconst dotsSection', start);
+  assert.ok(start >= 0 && end > start);
+  const mount = runInNewContext(`(${fixtureSource.slice(start, end)})`, context);
+  const consumer = mount(
+    { glyph: () => model, glyphCapabilities: () => ({}) },
+    'ellipsis-horizontal',
+    variant,
+    new Element('section'),
+  );
+  const button = elements.find((node) => node.textContent === 'Один цикл загрузки');
+  if (!activated) button.listeners.set('click', []);
+  context.window = {
+    __iconsPacked: { dotVariationConsumers: { [`ellipsis-horizontal/${variant}`]: consumer } },
+  };
+  return {
+    consumer,
+    plays,
+    listenerErrors,
+    read: () => JSON.parse(JSON.stringify(consumer.read())),
+    button: {
+      evaluate: async (callback, argument) =>
+        runInNewContext(`(${callback.toString()})(target, argument)`, {
+          ...context,
+          target: button,
+          argument,
+        }),
+      click: async () => {
+        button.dispatch();
+        // Допустимый поздний RPC: running успел завершиться, paused не продвинулся.
+        for (const play of plays) if (play.state === 'running') play.finish();
+        await Promise.resolve();
+      },
+    },
+  };
+}
+
+const assertLoadingOpacity = (pose) =>
+  assert.ok(
+    pose.opacity.some((part) => part.value < 0.5) && pose.opacity.some((part) => part.value > 0.5),
+    'loading checkpoint должен сохранить промежуточную непрозрачность',
+  );
+
+test('real Motion loading checkpoint survives terminal transport delay for both authored variants', async (t) => {
+  const { sequence } = await installedMotion();
+  const reference = await authoredDotsReference(await fixture(t), pin);
+  for (const variant of ['outline', 'filled']) {
+    const late = loadingHarness(reference, variant, sequence);
+    t.after(() => late.consumer.cleanup());
+    await late.button.click();
+    assert.equal(late.plays[0].state, 'finished');
+    const missed = late.consumer.pauseActivity(180);
+    assert.ok(missed.opacity.every((part) => part.value === 1));
+    assert.throws(() => assertLoadingOpacity(missed), /промежуточную/);
+
+    const checkpoint = loadingHarness(reference, variant, sequence);
+    t.after(() => checkpoint.consumer.cleanup());
+    const before = checkpoint.read();
+    const paused = await dotsConsumer.clickedActivityCheckpoint(
+      checkpoint.button,
+      `ellipsis-horizontal/${variant}`,
+      180,
+    );
+    assertLoadingOpacity(paused);
+    assert.equal(checkpoint.listenerErrors.length, 0);
+    assert.equal(checkpoint.plays[0].state, 'paused');
+    assert.equal(paused.activityEvents[0].trusted, true);
+    assert.deepEqual(JSON.parse(JSON.stringify(paused.paths)), before.paths);
+    assert.deepEqual(
+      Array.from(
+        paused.opacity.filter((part) => part.size === 24),
+        (part) => part.value,
+      ),
+      [0.675, 0.35, 0.675],
+    );
+    const successor = checkpoint.consumer.activity();
+    assert.deepEqual(successor.after, successor.before);
+    assert.equal(successor.previousPlayback, 'stopped');
+    checkpoint.plays.at(-1).finish();
+    const terminal = await checkpoint.consumer.settleActivity();
+    assert.ok(terminal.opacity.every((part) => part.value === 1));
+    assert.deepEqual(JSON.parse(JSON.stringify(terminal.paths)), before.paths);
+  }
+});
+
+test('real Motion loading checkpoint refuses untrusted or missing activation and detects lost opacity', async (t) => {
+  const { sequence } = await installedMotion();
+  const reference = await authoredDotsReference(await fixture(t), pin);
+  for (const options of [{ trusted: false }, { activated: false }]) {
+    const rejected = loadingHarness(reference, 'outline', sequence, options);
+    t.after(() => rejected.consumer.cleanup());
+    await assert.rejects(
+      dotsConsumer.clickedActivityCheckpoint(rejected.button, 'ellipsis-horizontal/outline', 180),
+      /доверенный click event/,
+    );
+    assert.equal(rejected.listenerErrors.length, options.activated === false ? 1 : 0);
+  }
+  const broken = loadingHarness(reference, 'outline', sequence, { opacity: false });
+  t.after(() => broken.consumer.cleanup());
+  const unchanged = await dotsConsumer.clickedActivityCheckpoint(
+    broken.button,
+    'ellipsis-horizontal/outline',
+    180,
+  );
+  assert.throws(() => assertLoadingOpacity(unchanged), /промежуточную/);
+});
