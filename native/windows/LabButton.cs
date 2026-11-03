@@ -172,13 +172,16 @@ public sealed class LabButton : Button
         label.FontSize = value.FontSize;
         label.FontWeight = new FontWeight { Weight = Geometry.FontWeightMedium };
         label.LineHeight = value.LineHeight;
-        label.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+        // BlockLineHeight сжимает baseline вместе со строкой ниже кегля, но не сами глифы.
+        label.LineStackingStrategy = value.LineHeight < value.FontSize
+            ? LineStackingStrategy.MaxHeight : LineStackingStrategy.BlockLineHeight;
         // DTCG хранит em; WinUI принимает целое число тысячных em.
         label.CharacterSpacing = (int)Math.Round(value.Tracking * 1000);
         description.FontSize = value.DescriptionFontSize;
         description.FontWeight = new FontWeight { Weight = value.DescriptionWeight };
         description.LineHeight = value.DescriptionLineHeight;
-        description.LineStackingStrategy = LineStackingStrategy.BlockLineHeight;
+        description.LineStackingStrategy = value.DescriptionLineHeight < value.DescriptionFontSize
+            ? LineStackingStrategy.MaxHeight : LineStackingStrategy.BlockLineHeight;
         description.CharacterSpacing = (int)Math.Round(value.DescriptionTracking * 1000);
         description.Visibility = string.IsNullOrEmpty(Description) ? Visibility.Collapsed : Visibility.Visible;
         leading.Width = trailing.Width = value.ContentSize;
