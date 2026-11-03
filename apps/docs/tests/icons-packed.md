@@ -15,7 +15,7 @@ Schema4 добавляет `notifications` и `notifications-unread` в обои
 настоящие кнопки Lab UI и авторские SVG в 16, 24 и 48 px. Закон
 `notification.ring` сдвигает только язычок; корпус и badge сохраняют свои контуры
 и DOM nodes. Общий адаптер переводит публичный translation effect v3 в `sequence`.
-Harness принимает три готовых архива и независимые авторские references. Он не
+Harness принимает точный набор runtime-архивов и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
 Schema6 добавляет восемь circle-семейств: параметр толщины меняет только
 внутренний просвет Outline. Авторский наружный контур и знак сохраняются; Filled
@@ -72,7 +72,8 @@ download: [Chromium140 ограничивает короткие серии](htt
 Playwright image, host UID/GID, отдельным контейнером, CID и очисткой обычного E2E.
 Фиксированный Icons workload копирует оба checkout с Git metadata в изолированную
 директорию; Corepack читает их собственные `packageManager`, а pnpm stores разделены.
-Icons проходит обычный `pack` с `prepack`; Lab UI собирает и упаковывает core/shadow.
+Icons проходит обычный `pack` с `prepack`; Lab UI собирает runtime-зависимости core
+и упаковывает выбранные по их manifests пакеты.
 Исходные mounts доступны только для чтения.
 
 Inputs и результат находятся вне копий исходников. После удаления контейнера
@@ -84,7 +85,7 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 12`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 13`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
@@ -113,7 +114,9 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `packages.icons` | Архив `@labpics/icons` |
 | `packages.uiCore` | Архив `@labpics/ui-core` |
 | `packages.uiShadow` | Архив `@labpics/ui-shadow` |
+| `packages.uiMaterials`, `packages.uiTokens` | Архивы соответствующих runtime-зависимостей, когда их требует core |
 | Каждый пакет | `name`, `version`, `archiveSha256`, `archiveBytes`, `sourceCommit` |
+| Каждый пакет с schema13 | Также `runtimeDependencies`: материализованные `dependencies`, `optionalDependencies`, `peerDependencies` |
 | `authorReference` | `fileName`, `fileKey`, `version`, `icons.reload` |
 | `icons.reload` | Ровно `outline` и `filled` |
 | Каждый variant | `sourceFile`, `author`, `anatomy`, `viewBox`, `paths`, `parts`, `gesture` |
@@ -247,9 +250,9 @@ Diagnostic reader сохраняет report с нарушениями. Итог�
 После проверки SHA256 и размера архивные bytes записываются через `wx` в новый
 собственный snapshot consumer. Snapshot повторно проверяется; npm получает
 только эти пути. Последующее изменение исходного архива не меняет вход установки.
-Receipt сохраняет SHA256, размер и SHA512 integrity snapshot; присутствующий
-installed npm lock integrity обязан совпасть. Отсутствие lock integrity явно
-сохраняется как `null`, а не считается независимым подтверждением npm.
+Receipt сохраняет SHA256, размер и SHA512 integrity snapshot. Для каждого архива
+installed npm lock обязан содержать тот же SHA512; отсутствие или несовпадение
+получает отказ.
 `sourceCommit` сохраняется как утверждение producer; доказательство того, что архив собран из этого SHA,
 должно поступить из build/release evidence producer. Версия в `package.json`
 сама этого не доказывает. Motion устанавливается как точный публичный
@@ -389,6 +392,30 @@ Motion version. Первый такой report является измерени
 speedup принимаются после его чтения. Старые ceilings не увеличиваются. Browser,
 визуальная оценка и скорость никогда не выводятся из одних source tests.
 
+## Runtime-пакеты с schema13
+
+Семантика и публичные symbol imports schema13 совпадают со schema12. Меняется
+состав архивов: `icons-runtime-packages.mjs` начинает с Icons и UI Core и проходит
+их `dependencies`, `optionalDependencies` и `peerDependencies`. Dev-зависимости
+не добавляют архивов. Core с зависимостью только от Shadow требует три
+архива; Core → Materials → Tokens → Shadow требует пять. Неиспользуемые пакеты
+не требуют исходников или архивов. Schema1–12 сохраняют свой набор из трёх архивов.
+
+Перед `npm install` harness сопоставляет source manifests с manifests
+архивных snapshots. После единственной установки consumer проверяет manifests
+и lock integrity каждого выбранного пакета. Отсутствующая workspace-зависимость,
+лишний архив, несовпавший runtime manifest или неподдержанный локальный диапазон
+версий получают отказ до установки. Поддержанные workspace shorthand `*`, `^`,
+`~` материализуются по версиям выбранных исходников; aliases и relative paths
+требуют отдельного подтверждённого binding. Основание преобразования —
+[pnpm workspace protocol](https://pnpm.io/workspaces#workspace-protocol-workspace).
+
+Штатный shell получает рецепт через `--pack-plan <icons-source> <ui-source>`
+того же owner. Для ручного запуска с пятиархивным subject добавьте к команде выше
+`--ui-materials-tarball <архив>` и `--ui-tokens-tarball <архив>`; набор флагов
+должен совпасть с `packages`. Бюджеты, optical/state/width references и проверенная
+публичная проекция предыдущих схем сохраняются.
+
 ## Результаты и ограничения
 
 Результат сохраняет `receipt.json` с фазой отказа, observations и browser errors;
@@ -405,9 +432,22 @@ Lab UI commit, SHA и содержимое исполненного subject, sou
 между preparation и запуском получает `CONSUMER_SOURCE_IDENTITY_REFUSED`.
 RESULT сохраняет `sourceIdentityFailure`, исходный browser outcome и hashes
 диагностических файлов; consumer packets с неверной привязкой не передаются.
-Schema1–11 сохраняют свои subject contracts. Receipt без обязательной идентичности
+Schema1–12 сохраняют свои subject contracts. Receipt без обязательной идентичности
 остаётся диагностикой и не получает успешную привязку к текущим исходникам.
 Browser/server закрываются; удаляется только собственный временный consumer.
+
+После начала browser proof отказ сохраняет `failure.browserFrontier`: режим,
+этап, текущий символ, длительности и число завершённых наблюдений. Каждый режим
+сохраняет снимок до failure capture и закрытия context. Общий снимок выбирается
+при первом отказе, переданном в `Promise.all`, вместе с его исходной ошибкой;
+поздние callbacks его не меняют. Если ошибка уже содержит снимок deadline,
+сохраняется именно он. Публичный RESULT и JSON-артефакты используют одну проекцию
+проверенных полей frontier и сведений по обоим
+режимам, когда они присутствуют. Свободное имя последней записи становится
+`lastCompletedRecordSha256`. Неизвестные поля, неподдержанные labels и некорректные
+счётчики дают `EVIDENCE_REFUSED`; raw message, stack и source locators остаются
+в runner. Наличие frontier показывает место отказа, а причину устанавливают
+по связанным observations и отдельной проверке.
 
 Размер относится к полному приложению с Lab UI и Motion: schema1 содержит две
 reload кнопки; schema2 также содержит status-circle и select состояния; schema3

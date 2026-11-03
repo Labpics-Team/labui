@@ -134,7 +134,7 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     mkdir -p /job/source /job/bin /job/home
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
       tar -C /source --exclude=node_modules -cf - . | tar -C /job/source -xf -
-      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-shadow
+      mkdir /job/icons /job/output
       tar -C /icons-source --exclude=node_modules -cf - . | tar -C /job/icons -xf -
     else
       tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
@@ -147,21 +147,33 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
       # Corepack выбирает packageManager каждого checkout; stores не пересекаются.
       cd /job/icons
       pnpm install --frozen-lockfile --store-dir /job/icons-pnpm-store
-      pnpm pack --pack-destination /job/output/icons
       cd /job/source
       pnpm --filter @labpics/ui-core... build
-      pnpm --dir packages/core pack --pack-destination /job/output/ui-core
-      pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow
+      # Manifest owner выбирает closure и архивные флаги; shell не ведёт второй список.
+      node apps/docs/tests/icons-runtime-packages.mjs --pack-plan /job/icons /job/source > /job/runtime-packages.txt
+      archive_options=()
+      while read -r package_key package_directory archive_option; do
+        mkdir "/job/output/$package_key"
+        if [ "$package_key" = icons ]; then
+          cd /job/icons
+          pnpm pack --pack-destination "/job/output/$package_key"
+          cd /job/source
+        else
+          pnpm --dir "$package_directory" pack --pack-destination "/job/output/$package_key"
+        fi
+        tarballs=("/job/output/$package_key"/*.tgz)
+        if [ "${#tarballs[@]}" -ne 1 ] || [ ! -f "${tarballs[0]}" ]; then
+          echo "Runtime package $package_key requires exactly one archive." >&2
+          exit 1
+        fi
+        archive_options+=("$archive_option" "${tarballs[0]}")
+      done < /job/runtime-packages.txt
       LABUI_ICONS_GIT_DIAGNOSTICS=/job/output node apps/docs/tests/prepare-icons-inputs.mjs \
         --icons-source /job/icons --ui-source /job/source --ui-commit "$UI_SOURCE_COMMIT" \
-        --icons-tarball /job/output/icons/*.tgz \
-        --ui-core-tarball /job/output/ui-core/*.tgz \
-        --ui-shadow-tarball /job/output/ui-shadow/*.tgz --out /job/output/inputs
+        "${archive_options[@]}" --out /job/output/inputs
       status=0
       node apps/docs/tests/icons-packed.mjs \
-        --icons-tarball /job/output/icons/*.tgz \
-        --ui-core-tarball /job/output/ui-core/*.tgz \
-        --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
+        "${archive_options[@]}" \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
       node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || { if [ "$status" -eq 0 ]; then status=1; fi; }
       exit "$status"

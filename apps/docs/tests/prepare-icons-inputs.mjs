@@ -20,6 +20,7 @@ import {
   assertSourceIdentity,
   collectPrivateLocations,
   projectPublicEvidence,
+  publicBrowserFrontier,
   publicError,
 } from '../../../scripts/ci/icons-public-provenance.mjs';
 import { assertPublicScreenshot } from '../../../scripts/ci/icons-screenshot-profile.mjs';
@@ -52,6 +53,13 @@ import {
   stateReferenceContract,
   validateSubject,
 } from './icons-packed.mjs';
+import {
+  ARCHIVE_OPTIONS,
+  assertArchiveOptions,
+  loadRuntimePackagePlan,
+  runtimeDependencyContracts,
+  subjectPackagePlan,
+} from './icons-runtime-packages.mjs';
 import { SOURCE_STATE_GROUPS } from './icons-source-state-consumer.mjs';
 import {
   WIDTH_MOTION_VISUAL_FILES,
@@ -770,16 +778,20 @@ export async function prepareInputs(options) {
   }
   const packages = {};
   const files = [];
-  for (const [key, option, root, commit, file] of [
-    ['icons', '--icons-tarball', iconsRoot, pin.sourceCommit, 'package.json'],
-    ['uiCore', '--ui-core-tarball', uiRoot, uiCommit, 'packages/core/package.json'],
-    ['uiShadow', '--ui-shadow-tarball', uiRoot, uiCommit, 'packages/shadow/package.json'],
-  ]) {
+  const { manifests, plan } = await loadRuntimePackagePlan(iconsRoot, uiRoot);
+  assertArchiveOptions(options, plan);
+  const contracts = runtimeDependencyContracts(
+    Object.fromEntries(plan.map(({ key }) => [key, manifests[key]])),
+  );
+  for (const { key, option, source, directory } of plan) {
+    const root = source === 'icons' ? iconsRoot : uiRoot;
+    const commit = source === 'icons' ? pin.sourceCommit : uiCommit;
+    const file = directory === '.' ? 'package.json' : `${directory}/package.json`;
     files.push({
       repository: key === 'icons' ? pin.repository : 'Labpics-Team/labui',
       ...(await sourceFile(root, commit, file)),
     });
-    const pkg = JSON.parse(await readFile(join(root, file)));
+    const pkg = manifests[key];
     const archive = await readFile(resolve(options.get(option)));
     packages[key] = {
       name: pkg.name,
@@ -787,6 +799,7 @@ export async function prepareInputs(options) {
       archiveSha256: hash(archive),
       archiveBytes: archive.length,
       sourceCommit: commit,
+      runtimeDependencies: contracts[key],
     };
   }
   const reference = await authorReference(iconsRoot, pin);
@@ -839,7 +852,7 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 12,
+    schemaVersion: 13,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -880,7 +893,9 @@ function assertConsumerSourceIdentity(source, receipt, subject, subjectBytes) {
   assert.equal(receipt.harness?.commit, source.uiCommit, 'consumer: изменён Lab UI HEAD');
   assert.equal(receipt.subjectSha256, hash(subjectBytes), 'consumer: изменён subject SHA');
   assert.deepEqual(receipt.subject, subject, 'consumer: изменён исполненный subject');
-  for (const key of ['uiCore', 'uiShadow'])
+  for (const { key } of subjectPackagePlan(subject.schemaVersion, subject.packages).filter(
+    (item) => item.source === 'ui',
+  ))
     assert.equal(
       subject.packages[key].sourceCommit,
       source.uiCommit,
@@ -1155,6 +1170,14 @@ export async function summarize(directory) {
   }
   const packets = [];
   let readbackFailure;
+  let browserFrontier;
+  if (receipt.failure?.browserFrontier !== undefined) {
+    try {
+      browserFrontier = publicBrowserFrontier(receipt.failure.browserFrontier, privateLocations);
+    } catch (error) {
+      readbackFailure = { file: 'result/browser-frontier-evidence', error };
+    }
+  }
   const addPacket = (file, encode) => {
     try {
       packets.push(encode());
@@ -1228,7 +1251,11 @@ export async function summarize(directory) {
       archives: receipt.archives,
       observations: receipt.records?.length,
       failure: receipt.failure
-        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+        ? {
+            phase: receipt.failure.phase,
+            stateContinuity: receipt.failure.stateContinuity,
+            ...(browserFrontier ? { browserFrontier } : {}),
+          }
         : null,
       files,
       ...(readbackFailure
@@ -1280,15 +1307,19 @@ async function main() {
     '--ui-commit',
     '--icons-tarball',
     '--ui-core-tarball',
-    '--ui-shadow-tarball',
     '--out',
   ];
   const options = new Map();
-  assert.equal(args.length, required.length * 2);
+  const allowed = [...new Set([...required, ...ARCHIVE_OPTIONS])];
+  assert.equal(args.length % 2, 0);
   for (let index = 0; index < args.length; index += 2) {
-    assert.ok(required.includes(args[index]) && args[index + 1] && !options.has(args[index]));
+    assert.ok(allowed.includes(args[index]) && args[index + 1] && !options.has(args[index]));
     options.set(args[index], args[index + 1]);
   }
+  assert.ok(
+    required.every((key) => options.has(key)),
+    'Неполные source/archive inputs',
+  );
   return prepareInputs(options);
 }
 

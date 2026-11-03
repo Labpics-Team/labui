@@ -7,6 +7,7 @@ import {
   assertSourceIdentity,
   collectPrivateLocations,
   projectPublicEvidence,
+  publicBrowserFrontier,
   publicError,
   sourceIdentitySha256,
 } from './icons-public-provenance.mjs';
@@ -481,4 +482,75 @@ test('safe public control and prototype-like geometry keys survive canonical pro
   assert.equal(Object.getPrototypeOf(projection.evidence.geometry), Object.prototype);
   assert.equal({}.x, undefined);
   assert.doesNotThrow(() => assertPublicEvidence({ url: PUBLIC_ICONS_DESIGN_REFERENCE }));
+});
+
+test('browser frontier commits free records in every projection and refuses public raw records', () => {
+  const raw = {
+    mode: 'no-preference',
+    stage: 'width-motion',
+    member: 'mic-circle/outline',
+    elapsedMs: 300,
+    completedRecords: 2,
+    stageElapsedMs: 100,
+    stageCompletedRecords: 1,
+    lastCompletedRecord: 'controlled token=private-observation',
+    lastCompletedAtMs: 290,
+    sinceLastCompletedMs: 10,
+    completedStages: [],
+  };
+  const expected = structuredClone(raw);
+  Reflect.deleteProperty(expected, 'lastCompletedRecord');
+  expected.lastCompletedRecordSha256 = hash(raw.lastCompletedRecord);
+  const projection = projectPublicEvidence({ failure: { browserFrontier: raw } });
+  assert.deepEqual(projection.evidence.failure.browserFrontier, expected);
+  assert.equal(projection.originalSha256, canonicalHash({ failure: { browserFrontier: raw } }));
+  assert.deepEqual(publicBrowserFrontier(expected), expected, 'проекция повторно безопасна');
+  assert.doesNotThrow(() => assertPublicEvidence(projection));
+  for (const encode of [
+    (value) => value,
+    JSON.stringify,
+    (value) => Buffer.from(JSON.stringify(value)),
+  ])
+    assert.throws(
+      () => assertPublicEvidence(encode({ failure: { browserFrontier: raw } })),
+      refused,
+    );
+  for (const invalid of [
+    null,
+    [],
+    { ...expected, lastCompletedRecord: raw.lastCompletedRecord },
+    { ...expected, lastCompletedRecordSha256: 'unverified' },
+    { ...raw, stageCompletedRecords: -1 },
+    {
+      ...raw,
+      completedStages: [
+        {
+          mode: null,
+          stage: 'start',
+          member: null,
+          elapsedMs: 0,
+          completedRecords: 0,
+          stack: 'raw',
+        },
+      ],
+    },
+  ])
+    assert.throws(() => publicBrowserFrontier(invalid), refused);
+  let calls = 0;
+  const accessor = Object.defineProperty({ ...raw }, 'lastCompletedRecord', {
+    enumerable: true,
+    get() {
+      calls++;
+      return 'private';
+    },
+  });
+  const proxy = new Proxy(raw, {
+    getPrototypeOf() {
+      calls++;
+      return Object.prototype;
+    },
+  });
+  assert.throws(() => publicBrowserFrontier(accessor), refused);
+  assert.throws(() => publicBrowserFrontier(proxy), refused);
+  assert.equal(calls, 0);
 });

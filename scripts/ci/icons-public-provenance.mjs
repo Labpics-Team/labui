@@ -224,6 +224,7 @@ function childContext(key, metadata, context) {
   return {
     metadata: metadataFields.has(key),
     mapKind: metadata ? mapFields.get(key) : undefined,
+    browserFrontier: key === 'browserFrontier',
     diagnostic:
       key === 'browserErrors' ||
       key === 'cleanupErrors' ||
@@ -305,6 +306,97 @@ function containsPrivate(value, locations) {
   );
 }
 
+// Один публичный контракт применяется к stdout и ко всем JSON-артефактам.
+function browserFrontierValue(frontier, publicForm) {
+  const requireValue = (condition) => {
+    if (!condition) refuse();
+  };
+  const keys = (value, required, optional = []) => {
+    requireValue(value && typeof value === 'object' && !Array.isArray(value));
+    const names = entries(value).map(([key]) => key);
+    requireValue(required.every((key) => names.includes(key)));
+    requireValue(names.every((key) => [...required, ...optional].includes(key)));
+  };
+  const label = (value, member = false) => {
+    if (member && value === null) return;
+    requireValue(typeof value === 'string' && value.length <= (member ? 96 : 64));
+    requireValue(
+      (member ? /^[a-z][a-z0-9-]*(?:\/(?:outline|filled))?$/ : /^[a-z][a-z0-9-]*$/).test(value),
+    );
+  };
+  const count = (value, nullable = false) => {
+    requireValue((nullable && value === null) || (Number.isSafeInteger(value) && value >= 0));
+  };
+  const stageFields = ['mode', 'stage', 'member', 'elapsedMs', 'completedRecords'];
+  const stage = (value, fields) => {
+    keys(value, fields);
+    requireValue([null, 'no-preference', 'reduce'].includes(value.mode));
+    label(value.stage);
+    label(value.member, true);
+    count(value.elapsedMs);
+    count(value.completedRecords);
+    return Object.fromEntries(entries(value));
+  };
+  const recordField = publicForm ? 'lastCompletedRecordSha256' : 'lastCompletedRecord';
+  const fields = [
+    ...stageFields,
+    'stageElapsedMs',
+    'stageCompletedRecords',
+    recordField,
+    'lastCompletedAtMs',
+    'sinceLastCompletedMs',
+    'completedStages',
+  ];
+  const copy = (value, nested = false) => {
+    keys(value, fields, nested ? [] : ['modes']);
+    stage(
+      value,
+      entries(value).map(([key]) => key),
+    );
+    for (const field of ['stageElapsedMs', 'stageCompletedRecords', 'sinceLastCompletedMs'])
+      count(value[field]);
+    count(value.lastCompletedAtMs, true);
+    const record = value[recordField];
+    requireValue(
+      record === null ||
+        (typeof record === 'string' && (!publicForm || /^[a-f0-9]{64}$/.test(record))),
+    );
+    requireValue(Array.isArray(value.completedStages));
+    const result = Object.fromEntries(
+      fields
+        .filter((field) => ![recordField, 'completedStages'].includes(field))
+        .map((field) => [field, value[field]]),
+    );
+    result.lastCompletedRecordSha256 =
+      record === null || publicForm ? record : createHash('sha256').update(record).digest('hex');
+    result.completedStages = entries(value.completedStages).map(([, item]) =>
+      stage(item, stageFields),
+    );
+    if (Object.hasOwn(value, 'modes')) {
+      keys(value.modes, ['no-preference', 'reduce']);
+      result.modes = Object.fromEntries(
+        entries(value.modes).map(([mode, entry]) => {
+          const projected = copy(entry, true);
+          requireValue(projected.mode === mode);
+          return [mode, projected];
+        }),
+      );
+    }
+    return result;
+  };
+  return copy(frontier);
+}
+
+export function publicBrowserFrontier(frontier, privateLocations = []) {
+  const bytes = canonicalJSON(frontier);
+  if (Buffer.byteLength(bytes) > 4 * 1024 * 1024) refuse();
+  if (!frontier || typeof frontier !== 'object' || Array.isArray(frontier)) refuse();
+  const publicForm = !Object.hasOwn(frontier, 'lastCompletedRecord');
+  const result = browserFrontierValue(frontier, publicForm);
+  assertPublicEvidence(result, { privateLocations });
+  return result;
+}
+
 export function projectPublicEvidence(
   value,
   { privateLocations = collectPrivateLocations(value) } = {},
@@ -312,6 +404,7 @@ export function projectPublicEvidence(
   const originalSha256 = canonicalHash(value);
   const locations = normalizeLocations(privateLocations);
   function project(item, context = {}) {
+    if (context.browserFrontier) return publicBrowserFrontier(item, locations.records);
     if (context.diagnostic && !Array.isArray(item)) return commitment(item);
     if (typeof item === 'string') {
       if (context.mapKind && containsPrivate(item, locations)) return locatorCommitment(item);
@@ -367,6 +460,7 @@ export function assertPublicEvidence(value, { privateLocations = [] } = {}) {
   if (types.isProxy(value)) refuse();
   const locations = normalizeLocations(privateLocations);
   function scan(item, context = {}) {
+    if (context.browserFrontier) browserFrontierValue(item, true);
     if (typeof item === 'string') {
       if (containsPrivate(item, locations)) refuse();
       return;
@@ -379,6 +473,7 @@ export function assertPublicEvidence(value, { privateLocations = [] } = {}) {
     const metadata = isMetadata(item, context);
     for (const [key, child] of entries(item)) {
       if (
+        key === 'lastCompletedRecord' ||
         containsPrivate(key, locations) ||
         structuralKind(key, child, item, metadata) ||
         isPrivateIdentityField(key, item)

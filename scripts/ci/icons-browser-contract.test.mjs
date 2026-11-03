@@ -334,9 +334,7 @@ test('inner workload and cancellation status survive a later summary refusal', (
 
 test('preparation scopes Git diagnostics and preserves failure before the browser', () => {
   const body = runFixture().args.at(-1);
-  const script = body
-    .split('pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow')[1]
-    .split('    else')[0];
+  const script = body.split('      done < /job/runtime-packages.txt')[1].split('    else')[0];
   const parent = realpathSync(tmpdir());
   const fixture = mkdtempSync(join(parent, 'labui-icons-git-scope-'));
   try {

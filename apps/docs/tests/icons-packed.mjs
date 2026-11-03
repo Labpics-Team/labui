@@ -57,6 +57,15 @@ import {
   validateNotificationReference,
 } from './icons-notification-consumer.mjs';
 import {
+  ARCHIVE_OPTIONS,
+  PACKAGE_SOURCES,
+  assertArchiveOptions,
+  assertInstalledPackage,
+  readArchiveManifest,
+  runtimeFields,
+  subjectPackagePlan,
+} from './icons-runtime-packages.mjs';
+import {
   SOURCE_STATE_ENTRIES,
   SOURCE_STATE_GROUPS,
   sourceStateFixture,
@@ -136,7 +145,7 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(schemaVersion));
   return [
     ...new Set([
       ...REQUIRED_PUBLIC_ENTRIES,
@@ -257,20 +266,8 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(subject?.schemaVersion));
-  assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
-  for (const [key, name] of [
-    ['icons', '@labpics/icons'],
-    ['uiCore', '@labpics/ui-core'],
-    ['uiShadow', '@labpics/ui-shadow'],
-  ]) {
-    const item = subject.packages?.[key];
-    assert.equal(item?.name, name);
-    assert.ok(typeof item.version === 'string' && item.version.length > 0);
-    assert.match(item.archiveSha256, HASH);
-    assert.ok(Number.isSafeInteger(item.archiveBytes) && item.archiveBytes > 0);
-    assert.match(item.sourceCommit, /^[a-f0-9]{40}$/);
-  }
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(subject?.schemaVersion));
+  subjectPackagePlan(subject.schemaVersion, subject.packages);
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
   assert.match(reference.fileKey, /^[A-Za-z0-9]+$/);
@@ -516,7 +513,7 @@ export function validateStateReference(reference, author, group = 'status-circle
 
 // Проверенные bytes переходят в собственный snapshot; input path больше не читается.
 export async function snapshotArchive(consumer, key, inputPath, expected) {
-  assert.ok(['icons', 'uiCore', 'uiShadow'].includes(key));
+  assert.ok(PACKAGE_SOURCES.some((item) => item.key === key));
   const bytes = await readFile(inputPath);
   assert.equal(hash(bytes), expected.archiveSha256, key);
   assert.equal(bytes.length, expected.archiveBytes, key);
@@ -1082,7 +1079,7 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
@@ -1264,7 +1261,17 @@ export function browserProofRecords(
   });
 }
 
-export function browserProofTimeout(frontier, records, now = performance.now()) {
+function freezeBrowserDiagnostic(diagnostic) {
+  for (const stage of diagnostic.completedStages) Object.freeze(stage);
+  Object.freeze(diagnostic.completedStages);
+  if (diagnostic.modes) {
+    for (const mode of Object.values(diagnostic.modes)) freezeBrowserDiagnostic(mode);
+    Object.freeze(diagnostic.modes);
+  }
+  return Object.freeze(diagnostic);
+}
+
+export function snapshotBrowserFrontier(frontier, records, now = performance.now()) {
   const diagnostic = {
     mode: frontier.mode,
     stage: frontier.stage,
@@ -1285,12 +1292,23 @@ export function browserProofTimeout(frontier, records, now = performance.now()) 
           modes: Object.fromEntries(
             Object.entries(frontier.modes).map(([mode, entry]) => [
               mode,
-              browserProofTimeout(entry.frontier, entry.records, now).browserFrontier,
+              snapshotBrowserFrontier(entry.frontier, entry.records, now),
             ]),
           ),
         }
       : {}),
   };
+  return freezeBrowserDiagnostic(diagnostic);
+}
+
+export function browserFailureFrontier(error, frontier, records, now = performance.now()) {
+  const snapshot = error?.browserFrontier ?? frontier?.failureSnapshot;
+  if (snapshot) return freezeBrowserDiagnostic(structuredClone(snapshot));
+  return frontier ? snapshotBrowserFrontier(frontier, records, now) : undefined;
+}
+
+export function browserProofTimeout(frontier, records, now = performance.now()) {
+  const diagnostic = snapshotBrowserFrontier(frontier, records, now);
   return Object.assign(
     new Error(`icons-packed browser proof timeout: ${JSON.stringify(diagnostic)}`),
     { browserFrontier: diagnostic },
@@ -1315,7 +1333,15 @@ export function browserProofModes(run, records, frontier, now = () => performanc
     const completed = [];
     frontier.modes[mode] = { frontier: local, records: completed };
     const observed = browserProofRecords(completed, local, now, (items) => records.push(...items));
-    return Promise.resolve().then(() => run(mode, observed, local));
+    return Promise.resolve()
+      .then(() => run(mode, observed, local))
+      .catch((error) => {
+        // Общий snapshot выбирает тот же rejection, что и Promise.all.
+        frontier.failureSnapshot ??=
+          local.failureSnapshot ??
+          snapshotBrowserFrontier({ ...local, modes: frontier.modes }, completed, now());
+        throw error;
+      });
   });
   return { result: Promise.all(tasks), settled: Promise.allSettled(tasks) };
 }
@@ -1362,6 +1388,7 @@ function browserProof(
   frontier,
   cleanupErrors,
 ) {
+  const commonFrontier = frontier;
   const runMode = async (reducedMotion, records, frontier) => {
     const mark = (stage, member = null) => {
       const now = performance.now();
@@ -1719,6 +1746,11 @@ function browserProof(
             records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
           }
     } catch (error) {
+      // Локальное место отказа сохраняется до screenshot/close; общий исход выбирает rejection.
+      frontier.failureSnapshot = snapshotBrowserFrontier(
+        { ...frontier, modes: commonFrontier.modes },
+        records,
+      );
       mark('failure-capture', frontier.stage);
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -2442,24 +2474,15 @@ export async function main(args = process.argv.slice(2)) {
   const options = new Map();
   for (let index = 0; index < args.length; index += 2) {
     assert.ok(
-      [
-        '--icons-tarball',
-        '--ui-core-tarball',
-        '--ui-shadow-tarball',
-        '--subject',
-        '--out',
-        '--browser-channel',
-      ].includes(args[index]),
+      [...ARCHIVE_OPTIONS, '--subject', '--out', '--browser-channel'].includes(args[index]),
       args[index],
     );
     assert.ok(args[index + 1] && !options.has(args[index]), `missing or duplicate ${args[index]}`);
     options.set(args[index], args[index + 1]);
   }
   assert.ok(
-    ['--icons-tarball', '--ui-core-tarball', '--ui-shadow-tarball', '--subject', '--out'].every(
-      (key) => options.has(key),
-    ),
-    'Нужны три tarball, --subject и новый --out',
+    ['--icons-tarball', '--ui-core-tarball', '--subject', '--out'].every((key) => options.has(key)),
+    'Нужны runtime tarballs, --subject и новый --out',
   );
   const out = resolve(options.get('--out'));
   assert.ok(outside(relative(ROOT, out)), 'Отчёт должен находиться вне checkout');
@@ -2477,12 +2500,15 @@ export async function main(args = process.argv.slice(2)) {
   let server;
   let proofTimer;
   let proofWork;
+  let browserFrontier;
   let failure;
   const cleanupErrors = [];
   let phase = 'subject';
   try {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
     const subject = validateSubject(JSON.parse(subjectBytes));
+    const packagePlan = subjectPackagePlan(subject.schemaVersion, subject.packages);
+    assertArchiveOptions(options, packagePlan);
     const fixture = consumerFixture(subject.schemaVersion);
     const requiredEntries = consumerPublicEntries(subject.schemaVersion);
     receipt.subject = subject;
@@ -2512,15 +2538,14 @@ export async function main(args = process.argv.slice(2)) {
     consumer = await mkdtemp(join(tmpdir(), 'labui-icons-consumer-'));
     assert.ok(outside(relative(ROOT, await realpath(consumer))));
     const archives = [];
-    for (const [key, option] of [
-      ['icons', '--icons-tarball'],
-      ['uiCore', '--ui-core-tarball'],
-      ['uiShadow', '--ui-shadow-tarball'],
-    ]) {
+    for (const { key, option } of packagePlan) {
       archives.push(
         await snapshotArchive(consumer, key, resolve(options.get(option)), subject.packages[key]),
       );
     }
+    // Непроверенный runtime contract не получает возможность registry/install effects.
+    for (const archive of archives)
+      readArchiveManifest(archive.path, subject.packages[archive.key]);
     receipt.archives = archives.map(({ path, ...archive }) => ({
       ...archive,
       snapshot: relative(consumer, path).replaceAll('\\', '/'),
@@ -2558,29 +2583,17 @@ export async function main(args = process.argv.slice(2)) {
       );
       const bytes = await readFile(path);
       const manifest = JSON.parse(bytes);
-      assert.equal(manifest.name, expected.name);
-      assert.equal(manifest.version, expected.version);
-      assert.ok(
-        Object.values(manifest.dependencies ?? {}).every(
-          (value) => !value.startsWith('workspace:'),
-        ),
-      );
       const locked =
         lock.packages?.[`node_modules/${expected.name}`] ??
         lock.dependencies?.[expected.name] ??
         {};
       const archive = archives.find((item) => subject.packages[item.key].name === expected.name);
-      if (archive && locked.integrity !== undefined) {
-        assert.ok(
-          typeof locked.integrity === 'string' &&
-            locked.integrity.split(/\s+/).includes(archive.integrity),
-          `${expected.name}: installed lock integrity не совпадает со snapshot`,
-        );
-      }
+      assertInstalledPackage(manifest, expected, locked, archive);
       receipt.installed.push({
         name: manifest.name,
         version: manifest.version,
         manifestSha256: hash(bytes),
+        ...(expected.runtimeDependencies ? { runtimeDependencies: runtimeFields(manifest) } : {}),
         lockIntegrity: locked.integrity ?? null,
         lockResolved: locked.resolved ?? null,
       });
@@ -2733,7 +2746,7 @@ export async function main(args = process.argv.slice(2)) {
       ...(options.has('--browser-channel') ? { channel: options.get('--browser-channel') } : {}),
     });
     receipt.runner.browser = browser.version();
-    const browserFrontier = {
+    browserFrontier = {
       mode: null,
       stage: 'start',
       member: null,
@@ -2783,16 +2796,16 @@ export async function main(args = process.argv.slice(2)) {
     );
     await assertHarnessFilesUnchanged(receipt.harness.files, (file) => readFile(join(ROOT, file)));
     receipt.outcome = 'passed';
-    receipt.qualification =
-      'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
+    receipt.qualification = `${packagePlan.length} заданных архивов и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.`;
   } catch (error) {
     receipt.outcome = 'failed';
+    const frontierSnapshot = browserFailureFrontier(error, browserFrontier, records);
     receipt.failure = {
       phase,
       browserErrors,
       message: String(error?.stack ?? error),
       ...(error?.stateContinuity ? { stateContinuity: error.stateContinuity } : {}),
-      ...(error?.browserFrontier ? { browserFrontier: error.browserFrontier } : {}),
+      ...(frontierSnapshot ? { browserFrontier: frontierSnapshot } : {}),
     };
     failure = error;
   } finally {

@@ -12,6 +12,8 @@ on:
       - 'apps/docs/tests/fixtures/icons-*-masters.json'
       - 'apps/docs/tests/prepare-icons-inputs*.mjs'
       - 'packages/core/**'
+      - 'packages/materials/**'
+      - 'packages/tokens/**'
       - 'packages/shadow/**'
       - 'apps/docs/package.json'
       - 'package.json'
@@ -88,6 +90,7 @@ jobs:
           node --test ui/apps/docs/tests/icons-width-motion-consumer.test.mjs
           node --test ui/scripts/ci/evidence-log.test.mjs ui/scripts/ci/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-cli-privacy.test.mjs
           node --test ui/scripts/ci/icons-screenshot-profile.test.mjs
+          node --test ui/apps/docs/tests/icons-runtime-packages.test.mjs
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser

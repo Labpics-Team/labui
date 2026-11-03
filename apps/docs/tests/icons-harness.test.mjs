@@ -12,10 +12,12 @@ import {
   snapshotHarnessFiles,
 } from './icons-harness.mjs';
 import {
+  browserFailureFrontier,
   browserProofModes,
   browserProofRecords,
   browserProofTimeout,
   closeBrowserProof,
+  snapshotBrowserFrontier,
 } from './icons-packed.mjs';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
@@ -37,6 +39,139 @@ function initialFrontier() {
   };
 }
 
+async function actualCallerCatch() {
+  const source = await readFile(packedUrl, 'utf8');
+  const main = source.indexOf('export async function main(');
+  const start = source.indexOf("  } catch (error) {\n    receipt.outcome = 'failed';", main);
+  const end = source.indexOf('\n  } finally {\n    clearTimeout(proofTimer);', start);
+  assert.ok(main >= 0 && start > main && end > start);
+  return new Function(
+    'receipt',
+    'error',
+    'phase',
+    'browserErrors',
+    'browserFrontier',
+    'records',
+    'browserFailureFrontier',
+    `let failure;\n${source.slice(start + '  } catch (error) {'.length, end)}\nreturn failure;`,
+  );
+}
+
+test('caller catch сохраняет обычный browser failure и immutable frontier после позднего progress', async () => {
+  const capture = await actualCallerCatch();
+  const records = [{ name: 'accepted' }];
+  const frontier = {
+    ...initialFrontier(),
+    mode: 'reduce',
+    stage: 'annulus',
+    member: 'mic-circle/outline',
+  };
+  const original = Object.assign(new Error('controlled browser error'), {
+    stateContinuity: { differences: [{ partId: 'mic-body', delta: 0.01 }] },
+  });
+  const receipt = {};
+  const primary = capture(
+    receipt,
+    original,
+    'browser',
+    [],
+    frontier,
+    records,
+    (error, current, completed) => browserFailureFrontier(error, current, completed, 1000),
+  );
+  assert.equal(primary, original);
+  assert.equal(receipt.failure.phase, 'browser');
+  assert.equal(receipt.failure.message, original.stack);
+  assert.equal(receipt.failure.stateContinuity, original.stateContinuity);
+  assert.equal(receipt.failure.browserFrontier?.stage, 'annulus');
+  assert.equal(receipt.failure.browserFrontier.member, 'mic-circle/outline');
+  assert.equal(receipt.failure.browserFrontier.elapsedMs, 1000);
+  assert.ok(Object.isFrozen(receipt.failure.browserFrontier));
+  frontier.stage = 'context-close';
+  frontier.completedStages.push({
+    mode: 'reduce',
+    stage: 'late',
+    member: null,
+    elapsedMs: 1,
+    completedRecords: 0,
+  });
+  records.push({ name: 'late' });
+  assert.equal(receipt.failure.browserFrontier.stage, 'annulus');
+  assert.equal(receipt.failure.browserFrontier.completedRecords, 1);
+  assert.deepEqual(receipt.failure.browserFrontier.completedStages, []);
+});
+
+test('caller catch предпочитает supplied timeout snapshot и не удерживает mutable alias', async () => {
+  const capture = await actualCallerCatch();
+  const diagnostic = structuredClone(
+    browserProofTimeout(
+      { ...initialFrontier(), mode: 'reduce', stage: 'annulus', member: 'mic-circle/filled' },
+      [],
+      500,
+    ).browserFrontier,
+  );
+  const original = Object.assign(new Error('controlled supplied failure'), {
+    browserFrontier: diagnostic,
+  });
+  const receipt = {};
+  assert.equal(
+    capture(
+      receipt,
+      original,
+      'browser',
+      [],
+      { ...initialFrontier(), stage: 'context-close' },
+      [],
+      (error, current, completed) => browserFailureFrontier(error, current, completed, 1000),
+    ),
+    original,
+  );
+  assert.deepEqual(receipt.failure.browserFrontier, diagnostic);
+  assert.notEqual(receipt.failure.browserFrontier, diagnostic);
+  diagnostic.stage = 'late';
+  diagnostic.completedStages.push({
+    mode: 'reduce',
+    stage: 'late',
+    member: null,
+    elapsedMs: 1,
+    completedRecords: 0,
+  });
+  assert.equal(receipt.failure.browserFrontier.stage, 'annulus');
+  assert.deepEqual(receipt.failure.browserFrontier.completedStages, []);
+});
+
+test('caller catch не выдумывает browser frontier до начала browser и сохраняет primary error', async () => {
+  const capture = await actualCallerCatch();
+  const original = new Error('controlled install failure');
+  const receipt = {};
+  assert.equal(
+    capture(receipt, original, 'install', [], undefined, [], (error, current, completed) =>
+      browserFailureFrontier(error, current, completed, 1000),
+    ),
+    original,
+  );
+  assert.equal(receipt.failure.phase, 'install');
+  assert.equal(Object.hasOwn(receipt.failure, 'browserFrontier'), false);
+});
+
+test('caller frontier находится в catch scope и qualification считает фактический archive plan', async () => {
+  const source = await readFile(packedUrl, 'utf8');
+  const main = source.indexOf('export async function main(');
+  const scope = source.slice(
+    source.indexOf('  let consumer;', main),
+    source.indexOf('  try {', main),
+  );
+  assert.match(scope, /let browserFrontier;/);
+  const start = source.indexOf('    receipt.qualification =', main);
+  const end = source.indexOf('\n  } catch (error)', start);
+  const qualify = new Function('receipt', 'packagePlan', source.slice(start, end));
+  for (const count of [3, 5]) {
+    const receipt = {};
+    qualify(receipt, Array.from({ length: count }));
+    assert.ok(receipt.qualification.includes(String(count)));
+  }
+});
+
 async function actualBrowserProof() {
   const source = await readFile(packedUrl, 'utf8');
   const start = source.indexOf('function browserProof(');
@@ -46,8 +181,9 @@ async function actualBrowserProof() {
     'browserProofModes',
     'performance',
     'join',
+    'snapshotBrowserFrontier',
     `${source.slice(start, end)}\nreturn browserProof;`,
-  )(browserProofModes, performance, join);
+  )(browserProofModes, performance, join, snapshotBrowserFrontier);
 }
 
 for (const closeFails of [false, true]) {
@@ -81,22 +217,39 @@ for (const closeFails of [false, true]) {
       },
     };
     const run = await actualBrowserProof();
-    const work = run(
-      browser,
-      'http://controlled',
-      {},
-      'out',
-      [],
-      [],
-      initialFrontier(),
-      cleanupErrors,
-    );
+    const frontier = initialFrontier();
+    const records = [];
+    const work = run(browser, 'http://controlled', {}, 'out', records, [], frontier, cleanupErrors);
     await assert.rejects(work.result, (error) => error === original);
     const results = await work.settled;
     assert.ok(
       results.every((result) => result.status === 'rejected' && result.reason === original),
     );
     assert.deepEqual(closing, ['no-preference', 'reduce']);
+    const early = frontier.failureSnapshot;
+    assert.equal(early.mode, 'no-preference');
+    assert.equal(early.stage, 'navigation');
+    assert.equal(early.member, null);
+    assert.equal(early.completedRecords, 0);
+    assert.equal(early.modes['no-preference'].stage, 'navigation');
+    assert.ok(Object.isFrozen(early));
+    assert.ok(Object.isFrozen(early.modes));
+    assert.ok(Object.isFrozen(early.modes['no-preference'].completedStages));
+    assert.ok(Object.isFrozen(early.modes['no-preference'].completedStages[0]));
+    assert.equal(frontier.modes['no-preference'].frontier.stage, 'context-close');
+    assert.equal(frontier.modes.reduce.frontier.stage, 'context-close');
+    assert.equal(Object.hasOwn(original, 'browserFrontier'), false);
+    const capture = await actualCallerCatch();
+    const receipt = {};
+    assert.equal(
+      capture(receipt, original, 'browser', [], frontier, records, browserFailureFrontier),
+      original,
+    );
+    assert.deepEqual(receipt.failure.browserFrontier, early);
+    assert.notEqual(receipt.failure.browserFrontier, early);
+    frontier.modes.reduce.frontier.member = 'late';
+    frontier.failureSnapshot = snapshotBrowserFrontier(frontier, records);
+    assert.deepEqual(receipt.failure.browserFrontier, early);
     assert.deepEqual(
       cleanupErrors,
       closeFails
@@ -106,6 +259,105 @@ for (const closeFails of [false, true]) {
           ]
         : [],
     );
+  });
+}
+
+for (const sharedError of [false, true]) {
+  test(`frontier совпадает с mode, чей отказ дошёл первым, при sharedError=${sharedError}`, async () => {
+    const first = Object.assign(new Error('controlled first navigation failure'), {
+      stateContinuity: { member: 'first' },
+    });
+    const second = sharedError
+      ? first
+      : Object.assign(new Error('controlled second navigation failure'), {
+          stateContinuity: { member: 'second' },
+        });
+    const deferred = () => {
+      let resolve;
+      const promise = new Promise((complete) => {
+        resolve = complete;
+      });
+      return { promise, resolve };
+    };
+    const firstCapturing = deferred();
+    const finishFirstCapture = deferred();
+    const failSecondNavigation = deferred();
+    const captures = [];
+    const closing = [];
+    const browser = {
+      async newContext({ reducedMotion }) {
+        return {
+          async newPage() {
+            return {
+              setDefaultTimeout() {},
+              on() {},
+              async goto() {
+                if (reducedMotion === 'reduce') await failSecondNavigation.promise;
+                throw reducedMotion === 'reduce' ? second : first;
+              },
+              async screenshot() {
+                captures.push(reducedMotion);
+                if (reducedMotion === 'no-preference') {
+                  firstCapturing.resolve();
+                  await finishFirstCapture.promise;
+                }
+              },
+            };
+          },
+          async close() {
+            closing.push(reducedMotion);
+          },
+        };
+      },
+    };
+    const run = await actualBrowserProof();
+    const frontier = initialFrontier();
+    const records = [];
+    const work = run(browser, 'http://controlled', {}, 'out', records, [], frontier, []);
+    const rejection = work.result.catch((error) => error);
+    await firstCapturing.promise;
+    const prematureCommonSnapshot = frontier.failureSnapshot;
+    failSecondNavigation.resolve();
+    const caught = await rejection;
+    const winningSnapshot = frontier.failureSnapshot;
+    const capture = await actualCallerCatch();
+    const receipt = {};
+    const primary = capture(
+      receipt,
+      caught,
+      'browser',
+      [],
+      frontier,
+      records,
+      browserFailureFrontier,
+    );
+    finishFirstCapture.resolve();
+    const settled = await work.settled;
+    assert.equal(prematureCommonSnapshot, undefined, 'capture не выбирает общий primary failure');
+    assert.equal(caught, second);
+    assert.equal(primary, second);
+    assert.equal(receipt.failure.stateContinuity, second.stateContinuity);
+    assert.equal(receipt.failure.browserFrontier.mode, 'reduce');
+    assert.equal(receipt.failure.browserFrontier.stage, 'navigation');
+    assert.equal(receipt.failure.browserFrontier.member, null);
+    assert.equal(receipt.failure.browserFrontier.completedRecords, 0);
+    assert.equal(receipt.failure.browserFrontier.modes.reduce.stage, 'navigation');
+    assert.equal(receipt.failure.browserFrontier.modes['no-preference'].stage, 'failure-capture');
+    assert.ok(Object.isFrozen(winningSnapshot));
+    assert.ok(Object.isFrozen(winningSnapshot.modes.reduce));
+    assert.deepEqual(captures, ['no-preference', 'reduce']);
+    assert.deepEqual(closing, ['reduce', 'no-preference']);
+    assert.equal(settled[0].reason, first);
+    assert.equal(settled[1].reason, second);
+    assert.equal(
+      frontier.failureSnapshot,
+      winningSnapshot,
+      'late sibling не заменяет winning snapshot',
+    );
+    assert.deepEqual(receipt.failure.browserFrontier, winningSnapshot);
+    assert.notEqual(receipt.failure.browserFrontier, winningSnapshot);
+    assert.equal(Object.hasOwn(first, 'browserFrontier'), false);
+    assert.equal(Object.hasOwn(second, 'browserFrontier'), false);
   });
 }
 

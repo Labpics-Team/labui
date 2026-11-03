@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 export const ICONS_HARNESS_FILES = Object.freeze([
   'apps/docs/tests/icons-harness.mjs',
   'apps/docs/tests/icons-packed.mjs',
+  'apps/docs/tests/icons-runtime-packages.mjs',
   'apps/docs/tests/icons-notification-consumer.mjs',
   'apps/docs/tests/icons-authored-dots-consumer.mjs',
   'apps/docs/tests/icons-annulus-consumer.mjs',

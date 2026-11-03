@@ -21,6 +21,7 @@ import {
 } from './icons-microphone-consumer.mjs';
 import {
   assertStateAnatomy,
+  browserProofTimeout,
   stateCapabilitiesReference,
   staticStatePathsReference,
   subjectStateReferences,
@@ -1655,6 +1656,170 @@ async function summaryFixture(t, schemaVersion) {
     );
   return { output, source, report, receipt, invoke };
 }
+
+function timeoutFrontier() {
+  const stage = {
+    mode: 'no-preference',
+    stage: 'annulus',
+    member: 'question-circle/outline',
+    startedAt: 1000,
+    stageStartedAt: 1120,
+    stageStartedRecord: 1,
+    lastCompletedAt: 1200,
+    completedStages: [
+      { mode: null, stage: 'start', member: null, elapsedMs: 10, completedRecords: 0 },
+      {
+        mode: 'no-preference',
+        stage: 'state',
+        member: 'expression-face',
+        elapsedMs: 110,
+        completedRecords: 1,
+      },
+    ],
+  };
+  const records = [{ name: 'outline:no-preference:phase-0.35' }];
+  return browserProofTimeout(
+    {
+      ...stage,
+      mode: null,
+      stage: 'parallel-modes',
+      member: null,
+      modes: {
+        'no-preference': { frontier: stage, records },
+        reduce: {
+          frontier: { ...stage, mode: 'reduce', stage: 'width-motion', member: 'mic/filled' },
+          records: [{ name: 'reduce:mic/filled:width-motion-0.92' }],
+        },
+      },
+    },
+    records,
+    1240,
+  ).browserFrontier;
+}
+
+test('failed summary retains safe browser frontier through the real caller without raw diagnostics', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  const browserFrontier = structuredClone(timeoutFrontier());
+  const marker = 'controlled-private-observation token=controlled-secret';
+  browserFrontier.lastCompletedRecord = marker;
+  browserFrontier.modes.reduce.lastCompletedRecord = marker;
+  const expected = structuredClone(browserFrontier);
+  for (const item of [expected, ...Object.values(expected.modes)]) {
+    item.lastCompletedRecordSha256 = hash(item.lastCompletedRecord);
+    Reflect.deleteProperty(item, 'lastCompletedRecord');
+  }
+  await writeFile(
+    join(fixture.output, 'result/receipt.json'),
+    JSON.stringify({
+      ...fixture.receipt,
+      outcome: 'failed',
+      failure: { phase: 'browser', browserFrontier, message: `private stack ${PIN.figma.fileKey}` },
+    }),
+  );
+  const result = spawnSync(
+    process.execPath,
+    [
+      fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+      '--summarize',
+      fixture.output,
+    ],
+    { encoding: 'utf8', timeout: 10_000 },
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 1);
+  const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
+  assert.deepEqual(summary.failure, { phase: 'browser', browserFrontier: expected });
+  assert.equal(summary.readbackFailure, undefined);
+  assert.equal(result.stdout.includes('outline:no-preference:phase-0.35'), false);
+  assert.equal(result.stdout.includes('reduce:mic/filled:width-motion-0.92'), false);
+  assert.equal(result.stdout.includes('private stack'), false);
+  assert.equal(result.stdout.includes(PIN.figma.fileKey), false);
+  assert.equal(result.stdout.includes(marker), false);
+  const manifest = await verifyPublicExport(join(fixture.output, 'public'));
+  const raw = await readFile(join(fixture.output, 'result/receipt.json'));
+  for (const file of ['failure.json', 'receipt.json']) {
+    assert.ok(manifest.files.some((item) => item.file === file));
+    const bytes = await readFile(join(fixture.output, 'public', file));
+    assert.equal(bytes.includes(marker), false, `${file}: свободная запись приватна`);
+    const document = JSON.parse(bytes);
+    assert.deepEqual(document.evidence.failure.browserFrontier, expected);
+    assert.equal(document.originalBytesSha256, hash(raw));
+    assert.equal(document.originalBytes, raw.length);
+    assert.equal(document.originalSha256, JSON.parse(projectJsonBytes(raw)).originalSha256);
+    assert.equal(document.evidence.failure.message.kind, 'diagnostic-commitment');
+  }
+  const failureFile = join(fixture.output, 'public/failure.json');
+  const changed = JSON.parse(await readFile(failureFile));
+  changed.evidence.failure.browserFrontier.lastCompletedRecord = marker;
+  const changedBytes = Buffer.from(JSON.stringify(changed));
+  await writeFile(failureFile, changedBytes);
+  const entry = manifest.files.find((item) => item.file === 'failure.json');
+  entry.bytes = changedBytes.length;
+  entry.sha256 = hash(changedBytes);
+  await writeFile(join(fixture.output, 'public/manifest.json'), JSON.stringify(manifest));
+  await assert.rejects(verifyPublicExport(join(fixture.output, 'public')), {
+    code: 'PUBLIC_EVIDENCE_REFUSED',
+  });
+});
+
+test('failed summary refuses sensitive and malformed frontier without losing its browser phase', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  for (const mutate of [
+    (value) => {
+      value.member = PIN.figma.fileKey;
+    },
+    (value) => {
+      value.stack = 'private stack';
+    },
+    (value) => {
+      value.stageElapsedMs = -1;
+    },
+    (value) => {
+      value.stageCompletedRecords = Number.NaN;
+    },
+    (value) => {
+      value.completedStages[0].sourceFile = 'private source';
+    },
+    (value) => {
+      value.modes.reduce.modes = {};
+    },
+    (value) => {
+      value.modes.reduce.mode = 'no-preference';
+    },
+    (value, receipt) => {
+      value.member = 'privatekey';
+      receipt.metadata = { fileKey: 'privatekey' };
+    },
+  ]) {
+    const browserFrontier = structuredClone(timeoutFrontier());
+    const receipt = {
+      ...fixture.receipt,
+      outcome: 'failed',
+      failure: { phase: 'browser', browserFrontier },
+    };
+    mutate(browserFrontier, receipt);
+    await writeFile(join(fixture.output, 'result/receipt.json'), JSON.stringify(receipt));
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        fixture.output,
+      ],
+      { encoding: 'utf8', timeout: 10_000 },
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
+    assert.deepEqual(summary.failure, { phase: 'browser' });
+    assert.deepEqual(summary.readbackFailure, {
+      code: 'EVIDENCE_REFUSED',
+      file: 'result/browser-frontier-evidence',
+    });
+    assert.equal(result.stdout.includes(PIN.figma.fileKey), false);
+    await rm(join(fixture.output, 'public'), { recursive: true, force: true });
+  }
+});
 
 test('summary refuses preparation-to-launch identity drift and preserves the failed readback', async (t) => {
   const cases = [
