@@ -29,7 +29,12 @@ if (process.argv.includes('--without-catch')) {
   // Mutation возвращает исходный дефект: lost exception покидает границу.
   render = `private void Render(bool recreate = false) {${block(render, render.indexOf('try')).body}}`;
 }
-const methods = [render, method('private void DeviceLost('), method('private void QueueRedraw()'), method('private void ReleaseGraphics()')].join('\n');
+const methods = [
+  render,
+  method('private void DeviceLost('),
+  method('private void QueueRedraw()'),
+  method('private void ReleaseGraphics()'),
+].join('\n');
 const program = `
 using System.Runtime.InteropServices;
 
@@ -173,9 +178,16 @@ sealed class ThrowsOnDispose(Exception error) : IDisposable { public void Dispos
 const temporaryRoot = await realpath(tmpdir());
 const directory = await mkdtemp(path.join(temporaryRoot, 'labui-device-loss-'));
 try {
-  await writeFile(path.join(directory, 'Boundary.csproj'), '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>');
+  await writeFile(
+    path.join(directory, 'Boundary.csproj'),
+    '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>',
+  );
   await writeFile(path.join(directory, 'Program.cs'), program);
-  const result = spawnSync(process.env.DOTNET_HOST_PATH || 'dotnet', ['run', '--project', path.join(directory, 'Boundary.csproj'), '--verbosity', 'quiet'], { encoding: 'utf8', windowsHide: true });
+  const result = spawnSync(
+    process.env.DOTNET_HOST_PATH || 'dotnet',
+    ['run', '--project', path.join(directory, 'Boundary.csproj'), '--verbosity', 'quiet'],
+    { encoding: 'utf8', windowsHide: true },
+  );
   process.stdout.write(result.stdout || '');
   process.stderr.write(result.stderr || '');
   if (result.error) throw result.error;
@@ -183,8 +195,14 @@ try {
 } finally {
   const resolved = await realpath(directory);
   const relative = path.relative(temporaryRoot, resolved);
-  assert.ok(relative && !path.isAbsolute(relative) && relative !== '..'
-    && !relative.startsWith(`..${path.sep}`) && !relative.includes(path.sep)
-    && path.basename(resolved).startsWith('labui-device-loss-'), `Unsafe cleanup target: ${resolved}`);
+  assert.ok(
+    relative &&
+      !path.isAbsolute(relative) &&
+      relative !== '..' &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !relative.includes(path.sep) &&
+      path.basename(resolved).startsWith('labui-device-loss-'),
+    `Unsafe cleanup target: ${resolved}`,
+  );
   await rm(resolved, { recursive: true, force: true });
 }
