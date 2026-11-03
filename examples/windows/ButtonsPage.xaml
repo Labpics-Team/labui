@@ -19,6 +19,7 @@
         <lab:LabButton AutomationProperties.AutomationId="LabButtonLarge" Content="Button" Size="Large" Click="Activate" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="20">
+        <lab:LabButton AutomationProperties.AutomationId="LabButtonSmallDescription" Content="Button" Description="Description" Size="Small" Click="Activate" VerticalAlignment="Center" />
         <lab:LabButton AutomationProperties.AutomationId="LabButtonDescription" Content="Добавить" Description="файл" Click="Activate">
           <lab:LabButton.LeadingIcon>
             <PathIconSource Data="M 11,4 H 13 V 11 H 20 V 13 H 13 V 20 H 11 V 13 H 4 V 11 H 11 Z" />
