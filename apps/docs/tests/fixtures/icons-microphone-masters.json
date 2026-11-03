@@ -277,25 +277,19 @@
           "parts": [
             {
               "pathIndex": 0,
-              "contourIndices": [
-                0
-              ],
+              "contourIndices": [0],
               "id": "microphone-enclosure",
               "role": "container"
             },
             {
               "pathIndex": 0,
-              "contourIndices": [
-                1
-              ],
+              "contourIndices": [1],
               "id": "microphone-support",
               "role": "counter"
             },
             {
               "pathIndex": 0,
-              "contourIndices": [
-                2
-              ],
+              "contourIndices": [2],
               "id": "microphone-body",
               "role": "counter"
             }

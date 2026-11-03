@@ -118,7 +118,11 @@ test('pointer witness требует настоящий полный ввод н
     assert.throws(() => verifyBlockedPointer(invalid, point));
 });
 
-function changeStateAtAdmission(visible, admitted, { playback = 'running', reset = false, actionLabel } = {}) {
+function changeStateAtAdmission(
+  visible,
+  admitted,
+  { playback = 'running', reset = false, actionLabel } = {},
+) {
   const fixture = consumerFixture(2);
   const start = fixture.indexOf('function changeState(');
   const end = fixture.indexOf('\nfunction readState()', start);
@@ -163,8 +167,13 @@ function changeStateAtAdmission(visible, admitted, { playback = 'running', reset
     },
   });
   const labelChanges = {};
-  const stateButton = { setAttribute(name, value) { labelChanges[name] = value; } };
-  const configuration = actionLabel === undefined ? {} : { actionLabels: { confirmation: actionLabel } };
+  const stateButton = {
+    setAttribute(name, value) {
+      labelChanges[name] = value;
+    },
+  };
+  const configuration =
+    actionLabel === undefined ? {} : { actionLabels: { confirmation: actionLabel } };
   const change = new Function(
     'compileStateEffect',
     'matchMedia',
