@@ -1,5 +1,45 @@
 # Native evidence из GitHub runner
 
+`text-scale.ps1` — конечный read-only эксперимент доступности штатной страницы
+Settings → Text size на `windows-2025`. Он запускается после успешного native smoke
+только в normal job и использует уже скачанный WinApp CLI 0.7.1. До любых эффектов
+проверяется GitHub-hosted Windows. URI `ms-settings:easeofaccess-display` не выдаёт
+подтверждение создания нового PID, поэтому существующий SystemSettings в текущей
+сессии означает `unavailable` без запуска и закрытия. После одного URI launch
+нужны единственный новый процесс, его время старта, штатный путь и собственный
+HWND. Это корреляция на одноразовом runner; параллельный запуск Settings извне
+не покрывается. Неоднозначность не разрешает закрыть прежнее окно.
+
+Inspect ограничен этим HWND. В отдельный
+`RUNNER_TEMP/labui-native/text-scale-capability.json` и строку
+`LABUI_TEXT_SCALE_CAPABILITY_JSON` попадают только Text size/Make text bigger,
+Slider и Apply: наблюдённые labels, selectors, AutomationIds и типы. Остальные
+окна рабочего стола и тексты навигации не публикуются. `available` требует
+видимую страницу, единственный доступный Slider с label Text size/Make text bigger, соответствующий ему настоящий
+RangeValue с конечными minimum/maximum/value, `isReadOnly=false` и кнопку Apply.
+Ничего не устанавливается и не применяется; `available` не подтверждает 225%,
+политику системного текста или читаемость шрифта Button. Другой язык Settings
+или неподходящий SKU могут дать `unavailable` с конкретной причиной. Неожиданная
+ошибка и отказ cleanup завершают шаг ошибкой, сохраняя диагностический JSON.
+
+В [точном исходнике CLI 0.7.1](https://github.com/microsoft/winappCli/blob/e3cd0b94f3e7b776ac51ba0564f4908094e979b5/src/winapp-CLI/WinApp.UIAutomation/Services/UiAutomationService.cs)
+`GetPropertiesAsync` читает ValuePattern, но не RangeValue. Поэтому только
+range-read выполняет отдельный Windows PowerShell 5 child со штатной
+UIAutomationClient.dll: [FromHandle](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.fromhandle?view=netframework-4.8.1)
+и [RangeValuePattern.Current](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.rangevaluepattern.current?view=netframework-4.8.1).
+Он проверяет HWND/PID/start time, читает Slider descendants и возвращает UTF-8;
+его команда передаётся как UTF-16 EncodedCommand. Новых пакетов и другого UI
+driver нет. Reader удаляется, когда квалифицированный CLI предоставит эти getter.
+
+Процессы CLI/reader/launcher имеют общий deadline для exit и stdout/stderr.
+По истечении срока чтения отменяются штатным CancellationToken; cleanup проверяет
+завершение обеих задач и освобождает свои readers/process handles. Settings закрывается штатным CloseMainWindow только при прежних
+PID/start time/path/session/HWND; принудительного убийства Settings нет.
+`text-scale.test.ps1` проверяет guard, подменённую границу cleanup и ложный
+`available`, не открывая Settings. После hosted результата этот discovery
+заменяется установкой/readback/restore в том же harness. Существующий native
+payload, SDK и продуктовый код эта проверка не меняет.
+
 `smoke.ps1` запускает собственное приложение и ввод только на одноразовом hosted
 runner. После успешной проверки `evidence.mjs export` передаёт исходные снимки,
 две полные MP4-записи, временные метки и все уникальные JPEG из индекса через полный

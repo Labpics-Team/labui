@@ -65,6 +65,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File native/windows/test/lifetime.test.ps1
 
+      - name: Settings text-size capability contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/text-scale.test.ps1
+
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -104,3 +108,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
           node native/windows/test/evidence.mjs export "$env:RUNNER_TEMP/labui-native/evidence" $source interaction
           if ($LASTEXITCODE -ne 0) { throw 'Native evidence export failed.' }
+
+      - name: Discover Settings text-size capability
+        if: matrix.animationsEnabled
+        shell: pwsh
+        timeout-minutes: 2
+        run: |
+          & ./native/windows/test/text-scale.ps1 -OutputPath "$env:RUNNER_TEMP/labui-native/text-scale-capability.json"
