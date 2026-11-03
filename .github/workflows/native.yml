@@ -24,8 +24,10 @@ jobs:
         include:
           - name: Windows Button
             animationsEnabled: true
+            lifetime: true
           - name: Windows Button · reduced motion
             animationsEnabled: false
+            lifetime: false
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
@@ -59,6 +61,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File native/windows/test/retarget.test.ps1
 
+      - name: Native lifetime contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/lifetime.test.ps1
+
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -66,6 +72,9 @@ jobs:
 
       - name: Device-loss boundary
         run: node native/windows/test/device-loss.test.mjs
+
+      - name: Lifetime observation boundary
+        run: node native/windows/test/lifetime-probe.test.mjs
 
       - name: Build native consumer
         shell: pwsh
@@ -81,11 +90,12 @@ jobs:
         shell: pwsh
         run: |
           $animationsEnabled = [bool]::Parse('${{ matrix.animationsEnabled }}')
+          $lifetime = [bool]::Parse('${{ matrix.lifetime }}')
           & ./native/windows/test/smoke.ps1 `
             -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
             -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence" `
             -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
-            -AnimationsEnabled $animationsEnabled
+            -AnimationsEnabled $animationsEnabled -Lifetime:$lifetime
 
       - name: Export native evidence to job log
         shell: pwsh

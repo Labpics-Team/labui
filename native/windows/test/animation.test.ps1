@@ -73,7 +73,10 @@ foreach ($expected in @($true, $false)) {
                 $animationBefore = $null
                 $animationReadback = $null
                 $animationObservationPath = 'unused-observation.json'
-                $saved = @{ LABUI_ANIMATION_OBSERVATION = $env:LABUI_ANIMATION_OBSERVATION }
+                $Lifetime = $false
+                $lifetimeObservationPath = 'unused-lifetime.json'
+                $saved = @{ LABUI_ANIMATION_OBSERVATION = $env:LABUI_ANIMATION_OBSERVATION;
+                    LABUI_LIFETIME_OBSERVATION = $env:LABUI_LIFETIME_OBSERVATION }
                 $process = $null
                 $close = @{}
                 $commands = @()

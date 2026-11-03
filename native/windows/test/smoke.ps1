@@ -2,7 +2,8 @@ param(
     [Parameter(Mandatory)][string]$ApplicationDirectory,
     [Parameter(Mandatory)][string]$OutputDirectory,
     [Parameter(Mandatory)][string]$AnimationSettingsPath,
-    [bool]$AnimationsEnabled = $true
+    [bool]$AnimationsEnabled = $true,
+    [switch]$Lifetime
 )
 
 $ErrorActionPreference = 'Stop'
@@ -10,6 +11,7 @@ Set-StrictMode -Version Latest
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hosted') {
     throw 'Ввод и захват окна разрешены этой проверке только на одноразовом GitHub hosted runner.'
 }
+if ($Lifetime -and !$AnimationsEnabled) { throw 'Lifetime требует normal-анимацию для наблюдения удаления внутри перехода.' }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $output) { throw 'Каталог результата уже существует.' }
 New-Item -ItemType Directory -Path $output | Out-Null
@@ -20,10 +22,11 @@ $process = $null
 $animationBefore = $null
 $animationReadback = $null
 $animationObservationPath = Join-Path $output 'animation-observation.json'
+$lifetimeObservationPath = Join-Path $output 'lifetime-observation.json'
 $close = @{}
 $saved = @{}
 foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK',
-    'LABUI_ANIMATION_OBSERVATION')) {
+    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 
@@ -57,6 +60,175 @@ function Assert-AnimationObservation($Observation, $Process, [bool]$ExpectedAnim
         $Observation.animationsEnabled -ne $ExpectedAnimationsEnabled) {
         throw 'UISettings внутри приложения не подтвердил ожидаемый режим анимации.'
     }
+}
+
+function Test-LifetimeNumber($Value) {
+    return ($Value -is [int] -or $Value -is [long] -or $Value -is [double]) -and [double]::IsFinite($Value)
+}
+
+function Test-LifetimeInteger($Value) {
+    return $Value -is [int] -or $Value -is [long]
+}
+
+function Assert-LifetimeObservation($Observation, $Process, [string]$ExpectedStatus) {
+    if ($null -eq $Observation -or !(Test-LifetimeInteger $Observation.schemaVersion) -or $Observation.schemaVersion -ne 1 -or
+        !(Test-LifetimeInteger $Observation.pid) -or $Observation.pid -ne $Process.Id -or
+        !(Test-LifetimeInteger $Observation.observedAtUnixMs)) {
+        throw 'Lifetime observation не связан с форматом и запущенным процессом.'
+    }
+    $start = ([DateTimeOffset]$Process.StartTime.ToUniversalTime()).ToUnixTimeMilliseconds()
+    if ($Observation.observedAtUnixMs -lt $start -or
+        $Observation.observedAtUnixMs -gt [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() -or
+        !(Test-LifetimeNumber $Observation.elapsedMs) -or $Observation.elapsedMs -lt 0) {
+        throw 'Lifetime observation вне времени текущего запуска.'
+    }
+    if ($Observation.status -cnotin @('ready', 'armed', 'removing', 'removed', 'restoring', 'restored', 'completing', 'passed') -or
+        $null -ne $Observation.failure -or ($ExpectedStatus -and $Observation.status -cne $ExpectedStatus)) {
+        throw "Lifetime probe не подтвердил ожидаемый статус $ExpectedStatus."
+    }
+    if ($Observation.events -isnot [array] -or $Observation.events.Count -gt 64 -or
+        $Observation.observations -isnot [array] -or $Observation.observations.Count -gt 512) {
+        throw 'Lifetime observation не содержит полные ограниченные массивы.'
+    }
+    foreach ($field in @('countBefore', 'countNow', 'restoredClicks', 'lateObservations')) {
+        if (!(Test-LifetimeInteger $Observation.$field) -or $Observation.$field -lt 0) {
+            throw "Lifetime counter $field не является целым неотрицательным значением."
+        }
+    }
+    $previous = -1
+    foreach ($event in $Observation.events) {
+        if (!(Test-LifetimeNumber $event.elapsedMs) -or $event.elapsedMs -lt $previous -or
+            $event.elapsedMs -gt $Observation.elapsedMs -or $event.elapsedMs -lt 0 -or
+            !(Test-LifetimeInteger $event.unixMs) -or
+            $event.unixMs -lt $start -or $event.unixMs -gt $Observation.observedAtUnixMs -or
+            $event.kind -isnot [string] -or $null -eq $event.data) {
+            throw 'Повреждена последовательность lifetime events.'
+        }
+        $previous = $event.elapsedMs
+    }
+    $previous = -1
+    foreach ($sample in $Observation.observations) {
+        if (!(Test-LifetimeNumber $sample.elapsedMs) -or $sample.elapsedMs -lt $previous -or
+            $sample.elapsedMs -gt $Observation.elapsedMs -or $sample.elapsedMs -lt 0 -or
+            $sample.generation -notin @('old', 'new') -or $sample.channel -notin @('hover', 'pressed') -or
+            !(Test-LifetimeNumber $sample.motion.readbackPosition)) {
+            throw 'Повреждён полный lifetime trace.'
+        }
+        $previous = $sample.elapsedMs
+    }
+}
+
+function Assert-LifetimeCompletion($Observation, $Process, [int]$Count) {
+    Assert-LifetimeObservation $Observation $Process 'passed'
+    if (($Observation.events.kind -join ',') -cne 'armed,removing,unloaded,detached,restoring,loaded,restored,activated,completed' -or
+        $Observation.countBefore -ne $Count -or $Observation.countNow -ne $Count + 1 -or
+        $Observation.restoredClicks -ne 1 -or $Observation.lateObservations -ne 0) {
+        throw 'Lifetime не сохранил полный сценарий и число активаций.'
+    }
+    $events = @{}
+    foreach ($event in $Observation.events) { $events[$event.kind] = $event }
+    foreach ($entry in @(
+        @{ name = 'removing'; fields = @('isLoaded', 'isPressed') },
+        @{ name = 'detached'; fields = @('containerAbsent', 'hoverRejected', 'pressedRejected') },
+        @{ name = 'restored'; fields = @('isLoaded', 'freshHover', 'freshPressed', 'containerPresent', 'freshContainerReference') }
+    )) {
+        foreach ($field in $entry.fields) {
+            $value = $events[$entry.name].data.$field
+            if ($value -isnot [bool] -or !$value) { throw "Не подтверждён lifetime readback $($entry.name).$field." }
+        }
+    }
+    if ($events.detached.data.isLoaded -isnot [bool] -or $events.detached.data.isLoaded -or
+        $events.restored.data.containerIdentityScope -cne 'managed-reference' -or
+        !(Test-LifetimeNumber $events.removing.data.pressed) -or
+        $events.removing.data.pressed -le 0 -or $events.removing.data.pressed -ge 1) {
+        throw 'Удаление не произошло внутри перехода либо потеряна область identity.'
+    }
+    foreach ($name in @('removing', 'detached', 'restoring', 'restored')) {
+        if (!(Test-LifetimeInteger $events[$name].data.count) -or $events[$name].data.count -ne $Count) {
+            throw "Lifetime stage $name изменил счётчик."
+        }
+    }
+    $end = $events.completed.data
+    if (!(Test-LifetimeInteger $events.activated.data.restoredClicks) -or $events.activated.data.restoredClicks -ne 1 -or
+        !(Test-LifetimeInteger $events.activated.data.count) -or $events.activated.data.count -ne $Count + 1 -or
+        !(Test-LifetimeInteger $end.countBefore) -or $end.countBefore -ne $Count -or
+        !(Test-LifetimeInteger $end.countAfter) -or $end.countAfter -ne $Count + 1 -or
+        !(Test-LifetimeInteger $end.lateObservations) -or $end.lateObservations -ne 0) {
+        throw 'Повторное подключение не сохранило ровно одну активацию.'
+    }
+    foreach ($field in @('oldObservationWindowStartMs', 'oldObservationWindowEndMs', 'quietFromMs', 'quietUntilMs')) {
+        if (!(Test-LifetimeNumber $end.$field)) { throw 'Нет численной границы lifetime observation.' }
+    }
+    foreach ($name in @('unloaded', 'loaded')) {
+        $event = $events[$name]
+        $earliest = if ($name -eq 'unloaded') { $events.removing.data.removeStartedMs } else { $events.restoring.elapsedMs }
+        if (!(Test-LifetimeNumber $event.data.eventAtMs) -or $event.data.eventAtMs -gt $event.elapsedMs -or
+            $event.data.eventAtMs -lt $earliest) {
+            throw 'Время фактического Loaded/Unloaded не связано со сценарием.'
+        }
+    }
+    $removing = $events.removing.data
+    foreach ($field in @('positionReadAtMs', 'removeStartedMs', 'removeCompletedMs')) {
+        if (!(Test-LifetimeNumber $removing.$field)) { throw 'Нет границ readback и удаления.' }
+    }
+    if ($removing.positionReadAtMs -lt $events.armed.elapsedMs -or $removing.positionReadAtMs -gt $removing.removeStartedMs -or
+        $removing.removeStartedMs -gt $removing.removeCompletedMs -or $removing.removeCompletedMs -gt $events.removing.elapsedMs) {
+        throw 'Readback и фактическое удаление не связаны последовательностью времени.'
+    }
+    if ($end.oldObservationWindowStartMs -ne $events.unloaded.data.eventAtMs -or
+        $end.oldObservationWindowEndMs -lt $end.quietUntilMs -or $end.quietFromMs -lt $events.activated.elapsedMs -or
+        $end.quietUntilMs - $end.quietFromMs -lt 120 -or $end.oldObservationWindowEndMs -gt $events.completed.elapsedMs) {
+        throw 'Lifetime не содержит замкнутое окно наблюдения после удаления и новой активации.'
+    }
+    if (!(Test-LifetimeNumber $end.releasedPosition) -or !(Test-LifetimeNumber $end.releaseTolerance) -or
+        $end.releaseTolerance -ne 0.001 -or [Math]::Abs($end.releasedPosition) -gt 0.001) {
+        throw 'Конечный pressed readback не подтвердил отпускание с допуском закреплённого Motion.'
+    }
+    $old = @($Observation.observations | Where-Object { $_.generation -eq 'old' })
+    $newPressed = @($Observation.observations | Where-Object { $_.generation -eq 'new' -and $_.channel -eq 'pressed' })
+    $oldInterior = @($old | Where-Object { $_.channel -eq 'pressed' -and $_.motion.origin -eq 'Animation' -and
+        $_.motion.phase -eq 'value' -and $_.motion.readbackPosition -gt 0 -and $_.motion.readbackPosition -lt 1 -and
+        $_.elapsedMs -le $removing.positionReadAtMs })
+    $newInterior = @($newPressed | Where-Object { $_.motion.origin -eq 'Animation' -and $_.motion.phase -eq 'value' -and
+        $_.motion.readbackPosition -gt 0 -and $_.motion.readbackPosition -lt 1 -and $_.elapsedMs -ge $events.restored.elapsedMs })
+    if ($oldInterior.Count -eq 0 -or $newInterior.Count -eq 0 -or $newPressed[-1].motion.phase -ne 'idle' -or
+        [Math]::Abs($newPressed[-1].motion.readbackPosition) -gt 0.001 -or
+        @($old | Where-Object { $_.elapsedMs -gt $end.oldObservationWindowStartMs }).Count -ne 0) {
+        throw 'Raw trace не подтвердил движение, покой нового канала либо тишину старого.'
+    }
+}
+
+function Read-LifetimeObservation([string]$Path, $Process, [string]$ExpectedStatus) {
+    $deadline = [DateTime]::UtcNow.AddSeconds(16)
+    do {
+        $Process.Refresh()
+        if ($Process.HasExited) { throw 'Приложение завершилось до lifetime readback.' }
+        if (Test-Path -LiteralPath $Path) {
+            if ((Get-Item -LiteralPath $Path).Length -gt 256 * 1024) { throw 'Lifetime JSON превысил лимит.' }
+            $value = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+            Assert-LifetimeObservation $value $Process ''
+            if ($value.status -ceq $ExpectedStatus) { return $value }
+        }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "Lifetime не достиг $ExpectedStatus за ограниченное время."
+}
+
+function Invoke-Lifetime([string]$Path, $Process, [int]$Count) {
+    Ui 'lifetime-arm' @('invoke', 'LabLifetimeArm') | Out-Null
+    $null = Read-LifetimeObservation $Path $Process 'armed'
+    Ui 'lifetime-remove' @('drag', 'LabButtonMedium', 'LabButtonMedium', '--hold-ms', '1000') | Out-Null
+    $null = Read-LifetimeObservation $Path $Process 'removed'
+    Assert-Count $Count
+    # Возвращаем экземпляр только после завершения команды, отпустившей указатель.
+    Ui 'lifetime-restore' @('invoke', 'LabLifetimeRestore') | Out-Null
+    $null = Read-LifetimeObservation $Path $Process 'restored'
+    Ui 'lifetime-activate' @('drag', 'LabButtonMedium', 'LabButtonMedium', '--hold-ms', '1000') | Out-Null
+    Ui 'lifetime-complete' @('invoke', 'LabLifetimeComplete') | Out-Null
+    $value = Read-LifetimeObservation $Path $Process 'passed'
+    Assert-LifetimeCompletion $value $Process $Count
+    Assert-Count ($Count + 1)
+    return $value
 }
 
 function Start-Tool([string]$Name, [string[]]$Arguments, [switch]$Recording) {
@@ -274,6 +446,7 @@ try {
     $animationReadback = [ClientAreaAnimation]::Read()
     if ($animationReadback -ne $AnimationsEnabled) { throw 'Настройка анимации hosted runner не подтвердилась.' }
     $env:LABUI_ANIMATION_OBSERVATION = $animationObservationPath
+    $env:LABUI_LIFETIME_OBSERVATION = if ($Lifetime) { $lifetimeObservationPath } else { $null }
     $process = Start-Process -FilePath $app -WorkingDirectory $ApplicationDirectory -WindowStyle Hidden -PassThru
     $started = $process.StartTime
     $deadline = [DateTime]::UtcNow.AddSeconds(20)
@@ -349,11 +522,17 @@ try {
     $captures = @{}
     $captures.Light = Capture-Interaction 'Light' 3
     $captures.Dark = Capture-Interaction 'Dark' 7
-    @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input/cancelled-press capture';
+    $result = @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input/cancelled-press capture';
        gesturePattern = 'cancel-drag'; retarget = 'not-qualified';
        captures = $captures; visualReview = 'pending'; motionLifetime = 'not-qualified';
-       smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' } |
-        ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
+       smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' }
+    if ($Lifetime) {
+        $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 11
+        $result.motionLifetime = 'bounded-disposal-reuse'
+    }
+    $resultJson = $result | ConvertTo-Json -Depth 12
+    if ([Text.Encoding]::UTF8.GetByteCount($resultJson + [Environment]::NewLine) -gt 256 * 1024) { throw 'Полный result.json превысил лимит evidence.' }
+    $resultJson | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
 } catch {
     $_ | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
     throw

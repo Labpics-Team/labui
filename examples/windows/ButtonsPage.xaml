@@ -13,9 +13,9 @@
         <TextBlock Text="LabUI" FontSize="32" FontWeight="SemiBold" />
         <TextBlock Text="Нативные кнопки" FontSize="20" />
       </StackPanel>
-      <StackPanel Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
+      <StackPanel x:Name="ButtonsRow" Orientation="Horizontal" Spacing="20" VerticalAlignment="Center">
         <lab:LabButton AutomationProperties.AutomationId="LabButtonSmall" Content="Button" Size="Small" Click="Activate" VerticalAlignment="Center" />
-        <lab:LabButton AutomationProperties.AutomationId="LabButtonMedium" Content="Button" Size="Medium" Click="Activate" VerticalAlignment="Center" />
+        <lab:LabButton x:Name="LifetimeTarget" AutomationProperties.AutomationId="LabButtonMedium" Content="Button" Size="Medium" Click="Activate" VerticalAlignment="Center" />
         <lab:LabButton AutomationProperties.AutomationId="LabButtonLarge" Content="Button" Size="Large" Click="Activate" VerticalAlignment="Center" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" Spacing="20">
@@ -37,6 +37,15 @@
         <lab:LabButton AutomationProperties.AutomationId="LabThemeLight" Content="Светлая тема" Size="Small" Click="LightTheme" />
         <lab:LabButton AutomationProperties.AutomationId="LabThemeDark" Content="Тёмная тема" Size="Small" Click="DarkTheme" />
         <lab:LabButton AutomationProperties.AutomationId="LabToggleEnabled" Content="Включить кнопку" Size="Small" Click="ToggleEnabled" />
+      </StackPanel>
+      <StackPanel x:Name="LifetimeCommands" x:Load="False" Spacing="8">
+        <TextBlock Text="Проверка удаления кнопки" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <lab:LabButton AutomationProperties.AutomationId="LabLifetimeArm" Content="Подготовить" Size="Small" Click="ArmLifetime" />
+          <lab:LabButton AutomationProperties.AutomationId="LabLifetimeRestore" Content="Вернуть кнопку" Size="Small" Click="RestoreLifetime" />
+          <lab:LabButton AutomationProperties.AutomationId="LabLifetimeComplete" Content="Завершить" Size="Small" Click="CompleteLifetime" />
+        </StackPanel>
+        <TextBlock x:Name="LifetimeStatus" AutomationProperties.AutomationId="LabLifetimeStatus" Text="ready" />
       </StackPanel>
     </StackPanel>
   </ScrollViewer>

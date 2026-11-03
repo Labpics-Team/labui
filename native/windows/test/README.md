@@ -102,6 +102,52 @@ capture, а воспроизведение и визуальную приёмк�
 запись доступна для просмотра, но сама доставка не подтверждает плавность,
 производительность, real GPU loss, lifetime или reduced motion.
 
+Normal job также передаёт `-Lifetime`. Этот switch по умолчанию выключен и
+отвергается вместе с `-AnimationsEnabled $false`: удаление внутри перехода
+требует наблюдённого движения. Harness задаёт новый `LABUI_LIFETIME_OBSERVATION`
+перед запуском; без switch очищает возможное унаследованное значение. Исходное
+значение переменной восстанавливается в существующем `finally`.
+
+После двух записей и проверки 11 активаций lifetime-сценарий подготавливает
+`LabButtonMedium`, начинает настоящее удержание и удаляет его при промежуточном
+native pressed readback. Только после завершения команды указателя и
+подтверждённого `Unloaded` harness возвращает тот же экземпляр, проверяет
+`Loaded`, выполняет ещё одно удержание на 1000 ms с отпусканием внутри кнопки
+и завершает probe. Счётчик
+остаётся 11 при удалении и становится ровно 12 после возврата.
+
+Пример создаёт служебные команды только при заданной переменной окружения;
+в обычном запуске их группа остаётся незагруженной через штатный `x:Load`.
+Доступ к двум private полям закреплённого LabButton используется исключительно
+этим qualification consumer; публичный SDK не получает нового API. После
+удаления старые каналы должны бросать `ObjectDisposedException` при чтении
+`Position`, а hand-in visual должен отсутствовать. После возврата сравниваются
+managed references каналов и container; это не проверка native COM identity.
+
+Полный JSON процесса с PID, временем, счётчиками, Loaded/Unloaded events и
+старым/новым motion trace включается в `result.json.lifetime`. Harness проверяет
+типизированные значения, привязку к этому запуску, последовательность событий,
+движение до удаления и после возврата, покой нового канала и записанное окно без
+старых observations. Только тогда `motionLifetime` получает
+`bounded-disposal-reuse`. Ошибка, пропущенные данные, переполнение, чужой PID или
+таймаут не дают PASS. Прежний codec передаёт этот JSON без нового имени файла.
+
+Последний readback и вызов удаления выполняются без промежуточной публикации
+evidence. В JSON остаются отдельные monotonic границы чтения и удаления;
+асинхронный Composition readback не называется атомарным состоянием в момент
+отключения. После повторного подключения pressed должен вернуться к нулю;
+idle callback, актуальный Position и повторная проверка после окна наблюдения
+используют допуск 0.001 из [квалификации normalized Progress закреплённого Motion](https://github.com/Labpics-Team/lab-motion/blob/7a8bfbba3ead9f57743c0cbc6c3d2fe52d370121/native/windows/README.md#точность-прогресса).
+`lifetime-probe.test.mjs` исполняет настоящие тела этой границы с подменой
+публикации и каналов: задержанная запись, idle(1), дрейф во время окна и законный
+возврат к нулю. Это проверка oracle; она не подменяет hosted WinUI запуск.
+
+Такой результат ограничен данной историей удаления и повторного подключения.
+Он не доказывает отсутствие managed/native/GPU leaks, освобождение каждой
+COM-ссылки, исход скрытых async-ожиданий или отсутствие любых будущих callbacks.
+Существующие кадры относятся к предшествующим взаимодействиям: визуальная съёмка
+самого удаления этой проверкой не объявляется выполненной.
+
 Для начального false проверяйте `identity.json.animation.expected: false`, SPI readback
 и `process.animationsEnabled: false`, затем native кадры и функциональные результаты
 того же запуска. Это не сценарий системного `true→false` во время движения:
@@ -112,4 +158,6 @@ capture, а воспроизведение и визуальную приёмк�
 node --test scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
 pwsh -NoProfile -File native/windows/test/animation.test.ps1
 pwsh -NoProfile -File native/windows/test/retarget.test.ps1
+pwsh -NoProfile -File native/windows/test/lifetime.test.ps1
+node native/windows/test/lifetime-probe.test.mjs
 ```
