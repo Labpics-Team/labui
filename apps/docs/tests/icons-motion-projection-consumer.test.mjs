@@ -287,7 +287,9 @@ test('schema11 adds only opt-in roots and keeps prior consumers free of them', (
     assertIconsImport(entry);
     assert.ok(consumerFixture(11).includes(entry));
   }
-  assert.throws(() => assertIconsImport('@labpics/icons/gestures/mic'));
+  assert.ok(!consumerPublicEntries(11).includes('@labpics/icons/gestures/mic'));
+  assert.ok(!consumerFixture(11).includes('@labpics/icons/gestures/mic'));
+  assert.throws(() => assertIconsImport('@labpics/icons/ir/capsule-motion-runtime'));
   assert.ok(ICONS_HARNESS_FILES.includes('apps/docs/tests/icons-motion-projection-consumer.mjs'));
   assert.equal((motionProjectionTypeFixture().match(/@ts-expect-error/g) ?? []).length, 3);
   const source = consumerFixture(11).replace(/^import .*?;\s*$/gm, '');
