@@ -1,5 +1,17 @@
 # Native evidence из GitHub runner
 
+`smoke.ps1` получает начальную геометрию семи кнопок примера до ввода. Полный
+снимок хранится в `result.json.initialLayout`: PID и время процесса, фактические
+`UISettings.TextScaleFactor`, `XamlRoot.RasterizationScale`, тема, границы страницы,
+кнопок и видимых текстовых частей. Пример записывает его один раз после загрузки
+и layout только при `LABUI_LAYOUT_OBSERVATION`; harness восстанавливает env.
+Границы и исходные `FontSize`/`LineHeight` выражены в DIP. Масштаб системного текста
+нелинеен; читаемость и обрезка глифов проверяются отдельно по нативным снимкам.
+Параметр `-ExpectedTextScale` при передаче требует точного значения OS API от 1 до
+2.25; без него читается действующая настройка. Текущий smoke масштаб не меняет.
+`layout.test.ps1` проверяет admission и полный readback без GUI; существующий
+log-кодек сохраняет снимок внутри `result.json`.
+
 `text-scale.ps1` — конечный read-only эксперимент доступности штатной страницы
 Settings → Text size на `windows-2025`. Он запускается после успешного native smoke
 только в normal job и использует уже скачанный WinApp CLI 0.7.1. До любых эффектов

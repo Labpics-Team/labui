@@ -485,6 +485,56 @@ test('native allowlist round-trip preserves all 14 exact files and source identi
   assert.throws(() => encodeNativeEvidence(files, 'b'.repeat(40)), /identity source/);
 });
 
+test('initial layout survives in result.json through the existing evidence bundle', () => {
+  const initialLayout = {
+    schemaVersion: 1,
+    pid: 3187,
+    observedAtUnixMs: 1793692800000,
+    textScaleFactor: 2.25,
+    rasterizationScale: 1.5,
+    theme: 'Light',
+    page: { x: 0, y: 0, width: 1280, height: 800 },
+    buttons: [
+      ['LabButtonSmall', 'Small', 'Button'],
+      ['LabButtonMedium', 'Medium', 'Button'],
+      ['LabButtonLarge', 'Large', 'Button'],
+      ['LabButtonSmallDescription', 'Small', 'Button', 'Description'],
+      ['LabButtonDescription', 'Medium', 'Добавить', 'файл'],
+      ['LabButtonTrailingIcon', 'Medium', 'Открыть'],
+      ['LabButtonDisabled', 'Medium', 'Недоступно'],
+    ].map(([automationId, size, label, description]) => ({
+      automationId,
+      size,
+      isEnabled: automationId !== 'LabButtonDisabled',
+      bounds: { x: 40, y: 144, width: 200, height: 56 },
+      texts: [
+        ['PART_Label', label],
+        ...(description ? [['PART_Description', description]] : []),
+      ].map(([part, text]) => ({
+        part,
+        text,
+        bounds: { x: 52, y: 160, width: 70, height: 24 },
+        desiredWidth: 70,
+        desiredHeight: 24,
+        fontSize: 24,
+        lineHeight: 20,
+        lineStackingStrategy: 'MaxHeight',
+        isTextScaleFactorEnabled: true,
+      })),
+    })),
+  };
+  for (const mode of ['idle', 'interaction']) {
+    const files = mode === 'idle' ? fixture() : interactionFixture();
+    editJSON(files, 'result.json', (value) => {
+      value.initialLayout = initialLayout;
+    });
+    const restored = decodeNativeEvidence(encodeNativeEvidence(files, SOURCE, mode), SOURCE, mode);
+    assert.deepEqual(JSON.parse(restored.get('result.json')).initialLayout, initialLayout);
+    assert.deepEqual([...restored.keys()].sort(), [...files.keys()].sort());
+    assert.equal(restored.has('layout-observation.json'), false);
+  }
+});
+
 test('missing, repeated and unauthorized files fail with intact valid neighbours', () => {
   for (const file of EVIDENCE_FILES) {
     const files = fixture();
@@ -590,9 +640,10 @@ test('workflow requires successful export and includes transport contracts', asy
     'utf8',
   );
   const validate = (workflow) => {
-    const step = workflow.slice(
-      workflow.indexOf('      - name: Export native evidence to job log'),
-    );
+    const start = workflow.indexOf('      - name: Export native evidence to job log');
+    assert.notEqual(start, -1, 'Export step is required');
+    const end = workflow.indexOf('\n      - ', start + 1);
+    const step = workflow.slice(start, end === -1 ? undefined : end);
     assert.match(step, /node native\/windows\/test\/evidence\.mjs export/);
     assert.match(step, /\$source interaction/);
     assert.match(step, /if \(\$LASTEXITCODE -ne 0\) \{ throw 'Native evidence export failed\.'/);
@@ -603,6 +654,23 @@ test('workflow requires successful export and includes transport contracts', asy
     );
   };
   validate(text);
+  assert.doesNotThrow(() =>
+    validate(`${text}\n      - name: Conditional successor\n        if: always()\n        run: echo successor\n`),
+  );
+  assert.throws(() =>
+    validate(
+      text.replace(
+        '      - name: Export native evidence to job log',
+        '      - name: Export native evidence to job log\n        if: always()',
+      ),
+    ),
+  );
+  assert.throws(() =>
+    validate(
+      text.replace('      - name: Export native evidence to job log', '      - name: Missing export'),
+    ),
+    /Export step is required/,
+  );
   assert.throws(() =>
     validate(text.replace('node native/windows/test/evidence.mjs export', 'echo omitted')),
   );

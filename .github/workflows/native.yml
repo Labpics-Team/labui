@@ -65,6 +65,10 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File native/windows/test/lifetime.test.ps1
 
+      - name: Initial native layout contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/layout.test.ps1
+
       - name: Settings text-size capability contract
         shell: pwsh
         run: pwsh -NoProfile -File native/windows/test/text-scale.test.ps1

@@ -3,6 +3,7 @@ param(
     [Parameter(Mandatory)][string]$OutputDirectory,
     [Parameter(Mandatory)][string]$AnimationSettingsPath,
     [bool]$AnimationsEnabled = $true,
+    [ValidateRange(1.0, 2.25)][Nullable[double]]$ExpectedTextScale = $null,
     [switch]$Lifetime
 )
 
@@ -23,11 +24,107 @@ $animationBefore = $null
 $animationReadback = $null
 $animationObservationPath = Join-Path $output 'animation-observation.json'
 $lifetimeObservationPath = Join-Path $output 'lifetime-observation.json'
+$layoutObservationPath = Join-Path $output 'layout-observation.json'
 $close = @{}
 $saved = @{}
 foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK',
-    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION')) {
+    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION', 'LABUI_LAYOUT_OBSERVATION')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
+}
+
+function Test-LayoutNumber($Value) {
+    return ($Value -is [int] -or $Value -is [long] -or $Value -is [double]) -and [double]::IsFinite($Value)
+}
+
+function Assert-LayoutBounds($Bounds) {
+    foreach ($field in @('x', 'y', 'width', 'height')) {
+        if (!(Test-LayoutNumber $Bounds.$field) -or ($field -in @('width', 'height') -and $Bounds.$field -le 0)) {
+            throw "Начальная геометрия не содержит конечное допустимое значение $field."
+        }
+    }
+}
+
+function Assert-LayoutObservation($Observation, $Process, [Nullable[double]]$ExpectedTextScale = $null) {
+    if ($null -eq $Observation -or
+        ($Observation.schemaVersion -isnot [int] -and $Observation.schemaVersion -isnot [long]) -or $Observation.schemaVersion -ne 1 -or
+        ($Observation.pid -isnot [int] -and $Observation.pid -isnot [long]) -or $Observation.pid -ne $Process.Id -or
+        ($Observation.observedAtUnixMs -isnot [int] -and $Observation.observedAtUnixMs -isnot [long])) {
+        throw 'Начальная геометрия не связана с форматом и запущенным процессом.'
+    }
+    $start = ([DateTimeOffset]$Process.StartTime.ToUniversalTime()).ToUnixTimeMilliseconds()
+    if ($Observation.observedAtUnixMs -lt $start -or $Observation.observedAtUnixMs -gt [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()) {
+        throw 'Время наблюдения начальной геометрии вне текущего запуска.'
+    }
+    foreach ($field in @('textScaleFactor', 'rasterizationScale')) {
+        if (!(Test-LayoutNumber $Observation.$field) -or $Observation.$field -le 0) {
+            throw "Не прочитан фактический масштаб $field."
+        }
+    }
+    if ($null -ne $ExpectedTextScale -and $Observation.textScaleFactor -ne $ExpectedTextScale) {
+        throw 'UISettings внутри приложения не подтвердил ожидаемый масштаб текста.'
+    }
+    if ($Observation.theme -cnotin @('Light', 'Dark')) { throw 'Не прочитана фактическая тема страницы.' }
+    Assert-LayoutBounds $Observation.page
+    $expected = @(
+        @{ id = 'LabButtonSmall'; size = 'Small'; label = 'Button' },
+        @{ id = 'LabButtonMedium'; size = 'Medium'; label = 'Button' },
+        @{ id = 'LabButtonLarge'; size = 'Large'; label = 'Button' },
+        @{ id = 'LabButtonSmallDescription'; size = 'Small'; label = 'Button'; description = 'Description' },
+        @{ id = 'LabButtonDescription'; size = 'Medium'; label = 'Добавить'; description = 'файл' },
+        @{ id = 'LabButtonTrailingIcon'; size = 'Medium'; label = 'Открыть' },
+        @{ id = 'LabButtonDisabled'; size = 'Medium'; label = 'Недоступно' }
+    )
+    if ($Observation.buttons -isnot [array] -or $Observation.buttons.Count -ne $expected.Count) {
+        throw 'Начальная геометрия не содержит ровно семь кнопок примера.'
+    }
+    foreach ($target in $expected) {
+        $matches = @($Observation.buttons | Where-Object { $_.automationId -ceq $target.id })
+        if ($matches.Count -ne 1) { throw "Нет единственной начальной кнопки $($target.id)." }
+        $button = $matches[0]
+        if ($button.size -cne $target.size -or $button.isEnabled -isnot [bool] -or
+            $button.isEnabled -ne ($target.id -cne 'LabButtonDisabled')) {
+            throw "Изменено начальное состояние кнопки $($target.id)."
+        }
+        Assert-LayoutBounds $button.bounds
+        $parts = @{ PART_Label = $target.label }
+        if ($target.ContainsKey('description')) { $parts.PART_Description = $target.description }
+        if ($button.texts -isnot [array] -or $button.texts.Count -ne $parts.Count) {
+            throw "Не прочитаны все видимые текстовые части $($target.id)."
+        }
+        foreach ($part in $parts.Keys) {
+            $texts = @($button.texts | Where-Object { $_.part -ceq $part })
+            if ($texts.Count -ne 1 -or $texts[0].text -cne $parts[$part]) {
+                throw "Повреждена текстовая часть $($target.id).$part."
+            }
+            $text = $texts[0]
+            Assert-LayoutBounds $text.bounds
+            foreach ($field in @('desiredWidth', 'desiredHeight', 'fontSize', 'lineHeight')) {
+                if (!(Test-LayoutNumber $text.$field) -or $text.$field -le 0) {
+                    throw "Не прочитана положительная текстовая метрика $($target.id).$part.$field."
+                }
+            }
+            if ($text.lineStackingStrategy -cnotin @('MaxHeight', 'BlockLineHeight', 'BaselineToBaseline') -or
+                $text.isTextScaleFactorEnabled -isnot [bool] -or !$text.isTextScaleFactorEnabled) {
+                throw "Не подтверждена настройка масштабирования текстовой части $($target.id).$part."
+            }
+        }
+    }
+}
+
+function Read-LayoutObservation([string]$Path, $Process, [Nullable[double]]$ExpectedTextScale = $null) {
+    $deadline = [DateTime]::UtcNow.AddSeconds(10)
+    do {
+        $Process.Refresh()
+        if ($Process.HasExited) { throw 'Приложение завершилось до наблюдения начальной геометрии.' }
+        if (Test-Path -LiteralPath $Path) {
+            if ((Get-Item -LiteralPath $Path).Length -gt 64 * 1024) { throw 'Layout JSON превысил лимит.' }
+            $value = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+            Assert-LayoutObservation $value $Process $ExpectedTextScale
+            return $value
+        }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw 'Приложение не записало начальную геометрию за ограниченное время.'
 }
 
 function Read-AnimationObservation([string]$Path, $Process) {
@@ -441,6 +538,7 @@ try {
     if ($executables.Count -ne 1) { throw 'Ожидался один winapp.exe.' }
     $script:cli = $executables[0].FullName
     Add-Type -Path $AnimationSettingsPath
+    $env:LABUI_LAYOUT_OBSERVATION = $layoutObservationPath
     $animationBefore = [ClientAreaAnimation]::Read()
     [ClientAreaAnimation]::Write($AnimationsEnabled)
     $animationReadback = [ClientAreaAnimation]::Read()
@@ -458,6 +556,7 @@ try {
     } while ([DateTime]::UtcNow -lt $deadline)
     if ($process.MainWindowHandle -eq 0) { throw 'Не найдено окно собственного процесса.' }
     $script:window = $process.MainWindowHandle.ToInt64().ToString()
+    $initialLayout = Read-LayoutObservation $layoutObservationPath $process $ExpectedTextScale
     $animationObservation = Read-AnimationObservation $animationObservationPath $process
     @{ pid = $process.Id; startedAtUnixMs = ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds();
        window = $window; source = (git -C $PSScriptRoot rev-parse HEAD);
@@ -524,7 +623,7 @@ try {
     $captures.Dark = Capture-Interaction 'Dark' 7
     $result = @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input/cancelled-press capture';
        gesturePattern = 'cancel-drag'; retarget = 'not-qualified';
-       captures = $captures; visualReview = 'pending'; motionLifetime = 'not-qualified';
+       captures = $captures; initialLayout = $initialLayout; visualReview = 'pending'; motionLifetime = 'not-qualified';
        smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' }
     if ($Lifetime) {
         $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 11

@@ -12,6 +12,17 @@ public sealed partial class ButtonsPage : Page
     public ButtonsPage()
     {
         InitializeComponent();
+        if (Environment.GetEnvironmentVariable("LABUI_LAYOUT_OBSERVATION") is { } layoutPath)
+        {
+            void ObserveLayout(object sender, RoutedEventArgs args)
+            {
+                Loaded -= ObserveLayout;
+                if (!DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                    () => LayoutObservation.Write(this, layoutPath)))
+                    throw new InvalidOperationException("Не удалось запланировать снимок геометрии.");
+            }
+            Loaded += ObserveLayout;
+        }
         if (Environment.GetEnvironmentVariable("LABUI_LIFETIME_OBSERVATION") is { } lifetimePath)
         {
             _ = FindName(nameof(LifetimeCommands))
