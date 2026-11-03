@@ -88,6 +88,7 @@ jobs:
           node --test ui/apps/docs/tests/icons-source-state-consumer.test.mjs
           node --test ui/apps/docs/tests/icons-motion-projection-consumer.test.mjs
           node --test ui/apps/docs/tests/icons-width-motion-consumer.test.mjs
+          node --test ui/apps/docs/tests/icons-clock-motion-consumer.test.mjs
           node --test ui/scripts/ci/evidence-log.test.mjs ui/scripts/ci/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-cli-privacy.test.mjs
           node --test ui/scripts/ci/icons-screenshot-profile.test.mjs
           node --test ui/apps/docs/tests/icons-runtime-packages.test.mjs

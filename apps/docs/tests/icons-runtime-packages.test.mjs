@@ -249,8 +249,8 @@ test('unsupported workspace alias, path and explicit ranges receive a precise re
   }
 });
 
-test('schema13–14 accept exactly the actual three or five archive closure', () => {
-  for (const schema of [13, 14]) {
+test('schema13–15 accept exactly the actual three or five archive closure', () => {
+  for (const schema of [13, 14, 15]) {
     assert.deepEqual(keys(subjectPackagePlan(schema, expectedPackages())), [
       'icons',
       'uiCore',
@@ -270,7 +270,7 @@ test('schema13–14 accept exactly the actual three or five archive closure', ()
     Reflect.deleteProperty(missing, 'uiTokens');
     assert.throws(() => subjectPackagePlan(schema, missing), /ui-tokens|архивов/);
   }
-  assert.throws(() => subjectPackagePlan(15, expectedPackages()));
+  assert.throws(() => subjectPackagePlan(16, expectedPackages()));
 });
 
 test('all legacy schema1–12 retain the three-package contract', () => {
@@ -282,8 +282,8 @@ test('all legacy schema1–12 retain the three-package contract', () => {
   }
 });
 
-test('schema13–14 refuse incomplete, unresolved or malformed runtime contract metadata', () => {
-  for (const schema of [13, 14]) {
+test('schema13–15 refuse incomplete, unresolved or malformed runtime contract metadata', () => {
+  for (const schema of [13, 14, 15]) {
     for (const mutate of [
       (item) => {
         Reflect.deleteProperty(item.runtimeDependencies, 'peerDependencies');

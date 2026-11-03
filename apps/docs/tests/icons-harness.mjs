@@ -15,6 +15,8 @@ export const ICONS_HARNESS_FILES = Object.freeze([
   'apps/docs/tests/icons-motion-projection-consumer.mjs',
   'apps/docs/tests/icons-source-state-consumer.mjs',
   'apps/docs/tests/icons-width-motion-consumer.mjs',
+  'apps/docs/tests/icons-clock-motion-consumer.mjs',
+  'apps/docs/tests/fixtures/icons-width-motion-v14.json',
   'scripts/ci/evidence-log.mjs',
   'scripts/ci/icons-public-provenance.mjs',
   'scripts/ci/icons-screenshot-profile.mjs',

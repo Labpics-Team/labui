@@ -607,13 +607,15 @@ test('schema14 adds four presentation imports to the same state consumer and exe
   assert.deepEqual(sourceStateEntries(14), [...SOURCE_STATE_ENTRIES, ...PRESENTATION_ENTRIES]);
   for (const entry of PRESENTATION_ENTRIES) assertIconsImport(entry);
   const source = consumerFixture(14);
+  assert.equal(hash(source), '5eb08f888edb01a3cf315e394d6e4de82e4f9d9a0b4a4835ce5ca3e1f1797c07');
+  assert.equal(hash(JSON.stringify(entries)), '678ab542b583c2b2a14b3608ca267bf8c3507a87dca5bd6c84b50f6fc9229ea1');
   assert.ok(source.includes(sourceStateFixture(14)));
   assert.equal((source.match(/function mountStateConsumer\(/g) ?? []).length, 1);
   assert.equal((source.match(/const sourceConsumer\d = mountStateConsumer/g) ?? []).length, 8);
   const types = sourceStateTypeFixture(14);
   assert.equal((types.match(/@ts-expect-error/g) ?? []).length, 24);
   assert.equal((types.match(/source-replacement/g) ?? []).length, 8);
-  for (const schema of [0, 15, 13.5, '14']) {
+  for (const schema of [0, 16, 13.5, '14']) {
     assert.throws(() => sourceStateGroups(schema));
     assert.throws(() => consumerFixture(schema));
     assert.throws(() => consumerPublicEntries(schema));

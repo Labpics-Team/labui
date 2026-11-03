@@ -26,6 +26,9 @@ import {
 import { assertPublicScreenshot } from '../../../scripts/ci/icons-screenshot-profile.mjs';
 import { annulusReference } from './icons-annulus-consumer.mjs';
 import {
+  CLOCK_MOTION_VISUAL_FILES, assertClockMotionVisualEvidence, clockMotionReference,
+} from './icons-clock-motion-consumer.mjs';
+import {
   AUTHORED_DOT_ICONS,
   validateAuthoredDotsReference,
 } from './icons-authored-dots-consumer.mjs';
@@ -719,6 +722,7 @@ const VISUAL_FILES = new Set([
   ...MICROPHONE_COMPARISON_VISUAL_FILES,
   ...MOTION_PROJECTION_VISUAL_FILES,
   ...WIDTH_MOTION_VISUAL_FILES,
+  ...CLOCK_MOTION_VISUAL_FILES,
 ]);
 const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
 
@@ -829,6 +833,7 @@ export async function prepareInputs(options) {
   const annulus = await annulusReference(iconsRoot, pin, readAuthorMaster);
   const microphones = await microphoneReference(iconsRoot, pin, readAuthorMaster);
   const motionProjection = await motionProjectionReference(iconsRoot, pin, readAuthorMaster);
+  const clockMotion = await clockMotionReference(iconsRoot, pin, readAuthorMaster);
   const sourceStates = Object.fromEntries(
     await Promise.all(
       Object.keys(sourceStateGroups(14)).map(async (group) => [
@@ -871,7 +876,7 @@ export async function prepareInputs(options) {
   for (const file of ICONS_HARNESS_FILES)
     files.push({ repository: 'Labpics-Team/labui', ...(await sourceFile(uiRoot, uiCommit, file)) });
   const subject = validateSubject({
-    schemaVersion: 14,
+    schemaVersion: 15,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -881,6 +886,7 @@ export async function prepareInputs(options) {
     microphoneReference: microphones,
     motionProjectionReference: motionProjection,
     widthMotionReference: widthMotionReference(microphones),
+    clockMotionReference: clockMotion,
     sourceStateReferences: sourceStates,
     stateAnnulusReference: {
       fileKey: pin.figma.fileKey,
@@ -1225,6 +1231,13 @@ export async function summarize(directory) {
         assertWidthMotionVisualEvidence(visuals, receipt.records, subject.microphoneReference);
       } catch (error) {
         readbackFailure ??= { file: 'result/width-motion-visual-evidence', error };
+      }
+    }
+    if (subject.schemaVersion >= 15 && receipt.outcome === 'passed') {
+      try {
+        assertClockMotionVisualEvidence(visuals, receipt.records, subject.clockMotionReference);
+      } catch (error) {
+        readbackFailure ??= { file: 'result/clock-motion-visual-evidence', error };
       }
     }
     for (const visual of visuals)

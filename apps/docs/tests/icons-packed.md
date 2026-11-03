@@ -44,6 +44,20 @@ reduced motion и экспорт текущего SVG. Filled circle сохра�
 и отрицательные контуры. Геометрический morph этих endpoints не доказан;
 `bodyWidth` в presentation-переходе и неподдержанные форматы получают точный отказ.
 Отдельная ранее принятая настройка ширины mic/mic-circle сохраняется в своём API.
+Schema15 добавляет Time и History: `prepareClockHands()` из публичных
+`gestures/<имя>` принимает ход времени от авторской позы. Один scalar executor
+для ширины и стрелок использует Lab Motion `value()`; последняя записанная поза
+становится началом нового запроса. Проверяются pause, seek, обратный ход,
+прерывание, reduced motion, cleanup и скачивание видимого SVG. Перед записью
+проверяется соответствие всех представлений; наблюдаемая потеря соответствия
+отзывает прежнего writer. Неверный параметр сохраняет прежнее исполнение.
+Time Filled остаётся статическим master с `COMPOSITION_UNSUPPORTED`.
+Raw oracle независимо проверяет rest, неподвижную оболочку, опору и скорости
+стрелок; снимки 16/24/48 показывают разошедшиеся, совпадающие и прерванные позы.
+Историческая width fixture schema12–14 сохранена как неизменяемые данные из
+`a5cc910`, без обновления прежних golden hashes. Новый executor применяется
+в schema15. Проверки исходников и подготовка снимков не подтверждают их
+фактическое выполнение в браузере.
 
 ## Запуск
 
@@ -93,7 +107,7 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 14`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 15`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
@@ -108,6 +122,8 @@ Outline/Filled on/off masters. С schema11 `motionProjectionReference` связ�
 допущенные rotation targets Reload/Refresh и статические Timer Outline/Filled
 с точным отказом движения. С schema12 `widthMotionReference` связывает
 подготовленную ширину микрофона с теми же raw masters, позами и fingerprints.
+С schema15 `clockMotionReference` связывает четыре Time/History masters и
+их clock-аннотации с независимым ожидаемым движением.
 Schema14 добавляет в `sourceStateReferences` четыре группы
 `microphone-presentation`, `microphone-presentation-filled`, `plus-presentation`
 и `plus-presentation-filled`. Каждая связывает самостоятельные авторские формы
@@ -142,6 +158,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `sourceStateReferences` | Четыре группы microphone/visibility с schema10; с schema14 также четыре presentation-группы microphone/plus Outline/Filled. Независимые masters и доказательство `source.replace` |
 | `motionProjectionReference` | Raw masters Reload/Refresh/Timer, допуски rotation и точный отказ Timer; обязателен с schema11 |
 | `widthMotionReference` | Привязка подготовленного `capsule.width` к `microphoneReference` и проверяемые позы; обязателен с schema12 |
+| `clockMotionReference` | Четыре raw Time/History masters, author receipts и hash аннотаций; обязателен с schema15 |
 | `authoredDotsReference` | Figma file/version, semantic/grid hashes, четыре raw masters с declaration/parts и две группы orientation |
 | `annulusReference` | Figma file/version, semantic hash, шестнадцать raw masters с paths/receipts; у Outline также declaration `annulus.counter-scale` и IDs частей |
 

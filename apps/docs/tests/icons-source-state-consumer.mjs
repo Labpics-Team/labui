@@ -81,7 +81,7 @@ export const SOURCE_STATE_ENTRIES = Object.freeze(
 
 // Новая приёмка расширяет сценарий; прежние схемы не получают новых imports/DOM.
 export function sourceStateGroups(schemaVersion = 13) {
-  assert.ok(Number.isInteger(schemaVersion) && schemaVersion >= 1 && schemaVersion <= 14);
+  assert.ok(Number.isInteger(schemaVersion) && schemaVersion >= 1 && schemaVersion <= 15);
   return schemaVersion >= 14 ? ALL_SOURCE_STATE_GROUPS : SOURCE_STATE_GROUPS;
 }
 

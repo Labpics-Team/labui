@@ -25,6 +25,11 @@ import {
 } from './icons-authored-dots-consumer.mjs';
 import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 import {
+  CLOCK_MOTION_ENTRIES, clockMotionArmDisposal, clockMotionBrowserProof,
+  clockMotionDisposalProof, clockMotionFixture, clockMotionTypeFixture,
+  validateClockMotionReference,
+} from './icons-clock-motion-consumer.mjs';
+import {
   CONTENT_SCALE_ENTRIES,
   contentScaleBrowserProof,
   contentScaleFixture,
@@ -146,7 +151,7 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(schemaVersion));
   return [
     ...new Set([
       ...REQUIRED_PUBLIC_ENTRIES,
@@ -161,6 +166,7 @@ export function consumerPublicEntries(schemaVersion) {
       ...(schemaVersion >= 10 ? sourceStateEntries(schemaVersion) : []),
       ...(schemaVersion >= 11 ? MOTION_PROJECTION_ENTRIES : []),
       ...(schemaVersion >= 12 ? WIDTH_MOTION_ENTRIES : []),
+      ...(schemaVersion >= 15 ? CLOCK_MOTION_ENTRIES : []),
     ]),
   ];
 }
@@ -193,6 +199,7 @@ export function assertIconsImport(source) {
       ...sourceStateEntries(14),
       ...MOTION_PROJECTION_ENTRIES,
       ...WIDTH_MOTION_ENTRIES,
+      ...CLOCK_MOTION_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -267,7 +274,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(subject?.schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(subject?.schemaVersion));
   subjectPackagePlan(subject.schemaVersion, subject.packages);
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
@@ -398,6 +405,9 @@ export function validateSubject(subject) {
   if (subject.schemaVersion >= 12)
     validateWidthMotionReference(subject.widthMotionReference, subject.microphoneReference);
   else assert.equal(subject.widthMotionReference, undefined);
+  if (subject.schemaVersion >= 15)
+    validateClockMotionReference(subject.clockMotionReference, reference);
+  else assert.equal(subject.clockMotionReference, undefined);
   return subject;
 }
 
@@ -1080,7 +1090,7 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
@@ -1093,7 +1103,8 @@ export function consumerFixture(schemaVersion) {
     (schemaVersion >= 9 ? microphoneFixture() : '') +
     (schemaVersion >= 10 ? sourceStateFixture(schemaVersion) : '') +
     (schemaVersion >= 11 ? motionProjectionFixture() : '') +
-    (schemaVersion >= 12 ? widthMotionFixture() : '')
+    (schemaVersion >= 12 ? widthMotionFixture(schemaVersion) : '') +
+    (schemaVersion >= 15 ? clockMotionFixture() : '')
   );
 }
 
@@ -1652,6 +1663,10 @@ function browserProof(
           records,
         );
       }
+      if (reference.clockMotion) {
+        mark('clock-motion');
+        await clockMotionBrowserProof(page, reference.clockMotion, reducedMotion, records, out);
+      }
       mark('full-page-capture');
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
       if (reference.motionProjection) {
@@ -1661,6 +1676,10 @@ function browserProof(
       if (reference.widthMotion) {
         mark('width-motion-arm-disposal');
         await widthMotionArmDisposal(page);
+      }
+      if (reference.clockMotion) {
+        mark('clock-motion-arm-disposal');
+        await clockMotionArmDisposal(page);
       }
       mark('cleanup');
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
@@ -1674,6 +1693,10 @@ function browserProof(
       if (reference.widthMotion) {
         mark('width-motion-disposal');
         await widthMotionDisposalProof(page, reducedMotion, records);
+      }
+      if (reference.clockMotion) {
+        mark('clock-motion-disposal');
+        await clockMotionDisposalProof(page, reducedMotion, records);
       }
       for (const group of Object.keys(reference.states)) {
         mark('state-disposal', group);
@@ -2611,7 +2634,8 @@ export async function main(args = process.argv.slice(2)) {
         (subject.schemaVersion >= 9 ? microphoneTypeFixture() : '') +
         (subject.schemaVersion >= 10 ? sourceStateTypeFixture(subject.schemaVersion) : '') +
         (subject.schemaVersion >= 11 ? motionProjectionTypeFixture() : '') +
-        (subject.schemaVersion >= 12 ? widthMotionTypeFixture() : '');
+        (subject.schemaVersion >= 12 ? widthMotionTypeFixture() : '') +
+        (subject.schemaVersion >= 15 ? clockMotionTypeFixture() : '');
       await writeFile(join(consumer, 'consumer.ts'), typeFixture);
       await writeFile(
         join(consumer, 'tsconfig.json'),
@@ -2772,6 +2796,7 @@ export async function main(args = process.argv.slice(2)) {
         motionProjection: subject.motionProjectionReference,
         widthMotion: subject.widthMotionReference,
         widthMotionMeasurements: receipt.widthMotionMeasurements,
+        clockMotion: subject.clockMotionReference,
       },
       out,
       browserProofRecords(records, browserFrontier),

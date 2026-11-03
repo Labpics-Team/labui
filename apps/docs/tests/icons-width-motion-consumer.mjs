@@ -5,12 +5,16 @@ import { join, relative } from 'node:path';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 import { MICROPHONE_ICONS, assertMicrophonePaths } from './icons-microphone-consumer.mjs';
+import legacyWidthMotionFixture from './fixtures/icons-width-motion-v14.json' with { type: 'json' };
 
 export const WIDTH_MOTION_ENTRIES = Object.freeze(
   MICROPHONE_ICONS.map((icon) => `@labpics/icons/gestures/${icon}`),
 );
 export const WIDTH_MOTION_POSES = Object.freeze([1, 0.92, 0.8]);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+assert.equal(legacyWidthMotionFixture.sourceCommit, 'a5cc910cb1e0402dec634dc12e51aa4c2e94e440');
+assert.equal(legacyWidthMotionFixture.sha256, '8b88a52f0a7bf094889ea5cd5c5a9543af71212806e6b60312a5d6eb797ca7cd');
+assert.equal(hash(legacyWidthMotionFixture.fixture), legacyWidthMotionFixture.sha256);
 const stableJSON = (value) =>
   JSON.stringify(value, (_, item) =>
     item && typeof item === 'object' && !Array.isArray(item)
@@ -39,11 +43,16 @@ export const WIDTH_MOTION_VISUAL_FILES = Object.freeze(
   ),
 );
 
-/** Один writer хранит только успешно записанную ширину. Часы принадлежат Motion. */
-export function createBodyWidthController(prepared, binding, value, media) {
-  let lastWrittenWidth = 1;
-  let lastD = prepared.sample(1).d;
-  let targetWidth = 1;
+/** Один writer хранит только успешно записанный параметр. Часы принадлежат Motion. */
+export function createPreparedScalarController(prepared, binding, value, media, {
+  initial = 1, channel = 'width', last = 'lastWrittenWidth', target = 'targetWidth',
+  prefix = 'WIDTH_MOTION',
+} = {}) {
+  let lastWrittenWidth = initial;
+  const rest = prepared.sample(initial);
+  if (!rest.ok) throw new Error(rest.reason.code);
+  let lastD = rest.d;
+  let targetWidth = initial;
   let generation = 0;
   let scalar;
   let playback;
@@ -55,11 +64,24 @@ export function createBodyWidthController(prepared, binding, value, media) {
   let lastCompletion = null;
   let lastError = null;
   let retiredCompletion;
+  let writerFailure = { cause: null };
+  let retiredWriterFailure = null;
   const refusal = (code) => ({ ok: false, reason: { code } });
   const errorText = (error) => (error instanceof Error ? error.message : String(error));
   const active = () => {
-    if (disposed) throw new Error('WIDTH_MOTION_DISPOSED');
+    if (disposed) throw new Error(`${prefix}_DISPOSED`);
   };
+  function rejectCorrespondence(raise = true) {
+    // Отказ отзывает канал до эффекта; остановка Motion не стирает ошибку writer.
+    generation++;
+    unsubscribe();
+    writerFailure.cause = 'RENDER_CORRESPONDENCE_MISMATCH';
+    lastCompletion = 'failed';
+    lastError = writerFailure.cause;
+    scalar?.dispose();
+    if (raise) throw new Error(writerFailure.cause);
+    return refusal(writerFailure.cause);
+  }
   function commit(width, current, admitted) {
     if (disposed || current !== generation) {
       stale++;
@@ -68,7 +90,7 @@ export function createBodyWidthController(prepared, binding, value, media) {
     notifications++;
     const pose = admitted ?? prepared.sample(width);
     if (!pose.ok) throw new Error(pose.reason.code);
-    if (binding.read() !== lastD) throw new Error('RENDER_CORRESPONDENCE_MISMATCH');
+    if (!binding.valid(lastD)) return rejectCorrespondence();
     if (Object.is(width, lastWrittenWidth) && pose.d === lastD) return;
     binding.write(pose.d);
     lastD = pose.d;
@@ -93,11 +115,15 @@ export function createBodyWidthController(prepared, binding, value, media) {
     const admitted = prepared.sample(width);
     if (!admitted.ok) return admitted;
     if (!Number.isFinite(duration) || duration < 0) return refusal('INVALID_REQUEST');
-    if (!binding.valid(lastD)) return refusal('RENDER_CORRESPONDENCE_MISMATCH');
-    const before = { width: lastWrittenWidth, d: lastD };
+    if (!binding.valid(lastD)) return rejectCorrespondence(false);
+    const before = { [channel]: lastWrittenWidth, d: lastD };
     const current = ++generation;
     unsubscribe();
-    if (playback) retiredCompletion = playback.finished;
+    if (playback) {
+      retiredCompletion = playback.finished;
+    }
+    if (writerFailure.cause) retiredWriterFailure = writerFailure.cause;
+    writerFailure = { cause: null };
     scalar?.dispose();
     scalar = value(lastWrittenWidth);
     targetWidth = width;
@@ -113,19 +139,19 @@ export function createBodyWidthController(prepared, binding, value, media) {
     observeCompletion(current);
     return {
       ok: true,
-      from: before.width,
+      from: before[channel],
       to: width,
       generation,
       before,
-      after: { width: lastWrittenWidth, d: lastD },
+      after: { [channel]: lastWrittenWidth, d: lastD },
     };
   }
-  function terminate(method) {
+  function terminate(method, raise = true) {
     active();
     if (!playback || !['running', 'paused'].includes(playback.state)) return;
     if (method === 'finish') {
       const admitted = prepared.sample(targetWidth);
-      if (!admitted.ok || !binding.valid(lastD)) throw new Error('RENDER_CORRESPONDENCE_MISMATCH');
+      if (!admitted.ok || !binding.valid(lastD)) return rejectCorrespondence(raise);
       playback.finish();
       commit(targetWidth, generation, admitted);
     }
@@ -137,14 +163,14 @@ export function createBodyWidthController(prepared, binding, value, media) {
     observeCompletion(current);
   }
   const preferenceChange = (event) => {
-    if (event.matches && !disposed && playback) terminate('finish');
+    if (event.matches && !disposed && playback) terminate('finish', false);
   };
   media.addEventListener('change', preferenceChange);
   return {
     request,
     read: () => ({
-      lastWrittenWidth,
-      targetWidth,
+      [last]: lastWrittenWidth,
+      [target]: targetWidth,
       generation,
       writes,
       notifications,
@@ -170,16 +196,20 @@ export function createBodyWidthController(prepared, binding, value, media) {
     finish: () => terminate('finish'),
     settle: async () => {
       active();
+      // Waiter сохраняет исход своего исполнения, даже если уже принят successor.
+      const failure = writerFailure;
+      if (failure.cause) throw new Error(failure.cause);
       let timer;
       try {
         const result = await Promise.race([
           playback.finished,
           new Promise((_, reject) => {
-            timer = setTimeout(() => reject(new Error('WIDTH_MOTION_TIMEOUT')), 10000);
+            timer = setTimeout(() => reject(new Error(`${prefix}_TIMEOUT`)), 10000);
           }),
         ]);
+        if (failure.cause) throw new Error(failure.cause);
         if (result.status !== 'finished')
-          throw new Error(`WIDTH_MOTION_${result.status.toUpperCase()}`);
+          throw new Error(`${prefix}_${result.status.toUpperCase()}`);
         return result;
       } finally {
         clearTimeout(timer);
@@ -198,19 +228,23 @@ export function createBodyWidthController(prepared, binding, value, media) {
       const results = await Promise.allSettled(completions);
       return {
         disposed,
-        lastWrittenWidth,
+        [last]: lastWrittenWidth,
         writes,
         notifications,
         stale,
         statuses: results.map((result) =>
           result.status === 'fulfilled' ? result.value.status : 'failed',
         ),
-        failures: results
+        failures: [retiredWriterFailure, writerFailure.cause].filter(Boolean).concat(results
           .filter((result) => result.status === 'rejected')
-          .map((result) => errorText(result.reason)),
+          .map((result) => errorText(result.reason))),
       };
     },
   };
+}
+
+export function createBodyWidthController(prepared, binding, value, media) {
+  return createPreparedScalarController(prepared, binding, value, media);
 }
 
 /** Baseline выполняет тот же width-закон полным публичным glyph() на каждом кадре. */
@@ -598,11 +632,14 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
   };
 }
 
-export function widthMotionFixture() {
+export function widthMotionFixture(schemaVersion = 15) {
+  // Записанные schemas сохраняют literal fixture; новый consumer использует текущий executor.
+  if (schemaVersion < 15) return legacyWidthMotionFixture.fixture;
   return `
 import * as widthMotionMic from '@labpics/icons/gestures/mic';
 import * as widthMotionCircle from '@labpics/icons/gestures/mic-circle';
 import { value as widthMotionValue } from '@labpics/motion';
+${createPreparedScalarController.toString()}
 ${createBodyWidthController.toString()}
 const widthMotionConsumer=(${mountWidthMotionConsumer.toString()})([widthMotionMic,widthMotionCircle],[microphone0,microphone1],[microphoneQuestionSource,microphonePlaybackSource],widthMotionValue);
 window.__iconsPacked.widthMotionConsumer=widthMotionConsumer;
@@ -928,7 +965,7 @@ export function widthMotionMeasurementFixtures() {
     ['prepared', 'full-glyph'].map((kind) => ({
       key: `width-${icon}-${kind}`,
       entry: `@labpics/icons/${kind === 'prepared' ? 'gestures' : 'variations'}/${icon}`,
-      source: `import * as api from '@labpics/icons/${kind === 'prepared' ? 'gestures' : 'variations'}/${icon}';\nimport {value} from '@labpics/motion';\n${createBodyWidthController.toString()}\n${kind === 'full-glyph' ? prepareFullGlyphWidth.toString() : ''}\n${mountWidthWorkload.toString()}\nexport const mount=(host,variant) => mountWidthWorkload(host,${kind === 'prepared' ? 'api.prepareBodyWidth' : '(variant) => prepareFullGlyphWidth(api,variant)'},value,variant);\n`,
+      source: `import * as api from '@labpics/icons/${kind === 'prepared' ? 'gestures' : 'variations'}/${icon}';\nimport {value} from '@labpics/motion';\n${createPreparedScalarController.toString()}\n${createBodyWidthController.toString()}\n${kind === 'full-glyph' ? prepareFullGlyphWidth.toString() : ''}\n${mountWidthWorkload.toString()}\nexport const mount=(host,variant) => mountWidthWorkload(host,${kind === 'prepared' ? 'api.prepareBodyWidth' : '(variant) => prepareFullGlyphWidth(api,variant)'},value,variant);\n`,
     })),
   );
 }

@@ -186,7 +186,7 @@ test('successful-write frontier survives failed writes and never picks up unpubl
   await f.controller.cleanup();
 });
 
-test('refusals validate target and binding before stopping the current valid playback', async () => {
+test('invalid target refusals preserve playback while a lost binding revokes its writer', async () => {
   const f = fixture();
   f.controller.request(0.8, 800);
   f.controller.pause();
@@ -201,13 +201,20 @@ test('refusals validate target and binding before stopping the current valid pla
   }
   f.valid = false;
   assert.equal(f.controller.request(0.9, 300).reason.code, 'RENDER_CORRESPONDENCE_MISMATCH');
-  assert.equal(old.control.state, 'paused');
+  assert.equal(old.control.state, 'stopped');
+  assert.equal(old.disposed, true);
+  assert.equal(f.controller.read().lastError, 'RENDER_CORRESPONDENCE_MISMATCH');
   assert.equal(f.factory.instances.length, 1);
   f.valid = true;
-  f.controller.play();
+  old.stale(0.8);
+  assert.equal(f.controller.read().d, before.d);
+  await assert.rejects(f.controller.settle(), /RENDER_CORRESPONDENCE_MISMATCH/);
+  const successor = f.controller.request(0.92, 500);
+  assert.equal(successor.from, before.lastWrittenWidth);
   f.controller.finish();
   await f.controller.settle();
-  await f.controller.cleanup();
+  const cleanup = await f.controller.cleanup();
+  assert.deepEqual(cleanup.failures, ['RENDER_CORRESPONDENCE_MISMATCH']);
 });
 
 test('single writer rejects stale callbacks across reverse, newer target and rapid latest-wins', async () => {
