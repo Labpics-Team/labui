@@ -270,6 +270,7 @@ foreach ($expected in @($true, $false)) {
             $animationReadback = $expected
             $output = [IO.Path]::GetTempPath()
             $digest = 'f' * 64
+            $WinApp = @{ version = 'fixture-cli' }
             $probe = @{ input = 0; identity = $null }
             function Read-AnimationObservation {
                 return New-Observation $enabled
