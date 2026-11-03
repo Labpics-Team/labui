@@ -73,5 +73,5 @@ jobs:
         run: |
           $source = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
-          node native/windows/test/evidence.mjs export "$env:RUNNER_TEMP/labui-native/evidence" $source
+          node native/windows/test/evidence.mjs export "$env:RUNNER_TEMP/labui-native/evidence" $source interaction
           if ($LASTEXITCODE -ne 0) { throw 'Native evidence export failed.' }

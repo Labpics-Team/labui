@@ -13,37 +13,71 @@ if (Test-Path -LiteralPath $output) { throw 'Каталог результата
 New-Item -ItemType Directory -Path $output | Out-Null
 $app = Join-Path ([IO.Path]::GetFullPath($ApplicationDirectory)) 'Buttons.exe'
 $commands = [Collections.Generic.List[object]]::new()
+$clock = [Diagnostics.Stopwatch]::StartNew()
 $process = $null
 $saved = @{}
 foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 
-function Ui([string]$Name, [string[]]$Arguments) {
+function Start-Tool([string]$Name, [string[]]$Arguments, [switch]$Recording) {
     $info = [Diagnostics.ProcessStartInfo]::new($script:cli)
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
     $info.RedirectStandardOutput = $true
     $info.RedirectStandardError = $true
-    foreach ($argument in (@('ui') + $Arguments + @('-w', $script:window, '--json'))) {
-        $info.ArgumentList.Add($argument)
-    }
+    foreach ($argument in $Arguments) { $info.ArgumentList.Add($argument) }
+    $startedMs = $clock.Elapsed.TotalMilliseconds
     $child = [Diagnostics.Process]::Start($info)
-    $stdout = $child.StandardOutput.ReadToEndAsync()
-    $stderr = $child.StandardError.ReadToEndAsync()
     try {
-        if (!$child.WaitForExit(30000)) {
-            $child.Kill($true)
-            $child.WaitForExit()
-            throw "Таймаут winapp: $Name"
+        $stdout = $child.StandardOutput.ReadToEndAsync()
+        $stderr = if ($Recording) { $null } else { $child.StandardError.ReadToEndAsync() }
+        return @{ process = $child; stdout = $stdout; stderr = $stderr; prefix = ''; lineTask = $null;
+            ended = $false; name = $Name; arguments = $Arguments; startedMs = $startedMs }
+    } catch {
+        try {
+            if (!$child.HasExited) { $child.Kill($true); $null = $child.WaitForExit(5000) }
+        } finally { $child.Dispose() }
+        throw
+    }
+}
+
+function Close-Tool($Tool) {
+    if ($Tool.ended) { return }
+    try {
+        if (!$Tool.process.HasExited) {
+            $Tool.process.Kill($true)
+            if (!$Tool.process.WaitForExit(5000)) { throw "Не завершился собственный winapp: $($Tool.name)" }
         }
-        $text = $stdout.GetAwaiter().GetResult()
-        [IO.File]::WriteAllText((Join-Path $output "$Name.json"), $text)
-        [IO.File]::WriteAllText((Join-Path $output "$Name.stderr.log"), $stderr.GetAwaiter().GetResult())
-        $commands.Add(@{ name = $Name; arguments = $Arguments; exitCode = $child.ExitCode })
-        if ($child.ExitCode -ne 0) { throw "winapp $Name завершился с кодом $($child.ExitCode)" }
+        if (!$Tool.stderr) {
+            if ($Tool.lineTask) { $Tool.prefix += "$($Tool.lineTask.GetAwaiter().GetResult())`n" }
+            $Tool.stderr = $Tool.process.StandardError.ReadToEndAsync()
+        }
+        [IO.File]::WriteAllText((Join-Path $output "$($Tool.name).stderr.log"),
+            $Tool.prefix + $Tool.stderr.GetAwaiter().GetResult())
+    } finally { $Tool.ended = $true; $Tool.process.Dispose() }
+}
+
+function Finish-Tool($Tool, [int]$Timeout = 30000) {
+    try {
+        $timedOut = !$Tool.process.WaitForExit($Timeout)
+        if ($timedOut) {
+            $Tool.process.Kill($true)
+            if (!$Tool.process.WaitForExit(5000)) { throw "Не завершился собственный winapp: $($Tool.name)" }
+        }
+        $text = $Tool.stdout.GetAwaiter().GetResult()
+        [IO.File]::WriteAllText((Join-Path $output "$($Tool.name).json"), $text)
+        $commands.Add(@{ name = $Tool.name; arguments = $Tool.arguments; exitCode = $Tool.process.ExitCode;
+            startedMs = $Tool.startedMs; completedMs = $clock.Elapsed.TotalMilliseconds; timedOut = $timedOut })
+        if ($timedOut) { throw "Таймаут winapp: $($Tool.name)" }
+        if ($Tool.process.ExitCode -ne 0) { throw "winapp $($Tool.name) завершился с кодом $($Tool.process.ExitCode)" }
         return $text | ConvertFrom-Json
-    } finally { $child.Dispose() }
+    } finally { Close-Tool $Tool }
+}
+
+function Ui([string]$Name, [string[]]$Arguments) {
+    $tool = Start-Tool $Name (@('ui') + $Arguments + @('-w', $script:window, '--json'))
+    return Finish-Tool $tool
 }
 
 function Assert-Count([int]$Expected) {
@@ -68,6 +102,116 @@ function Read-Fill([string]$File) {
         }
         return @{ width = $bitmap.Width; height = $bitmap.Height; medianRgb = @($rgb) }
     } finally { $bitmap.Dispose() }
+}
+
+function Assert-Capture([string]$Name, $Record, $Window) {
+    $directory = Join-Path $output "$Name.frames"
+    $manifest = Get-Content -LiteralPath (Join-Path $directory 'manifest.json') -Raw | ConvertFrom-Json
+    $frames = @(Get-Content -LiteralPath (Join-Path $directory 'frames.ndjson') | ForEach-Object { $_ | ConvertFrom-Json })
+    $video = Get-Item -LiteralPath (Join-Path $output "$Name.mp4")
+    if ($Record.mode -ne 'wgc' -or $Record.frames -lt 10 -or $video.Length -le 16 -or
+        $video.Length -ne $Record.fileSize -or $manifest.status -ne 'complete' -or
+        $manifest.video.status -ne 'complete' -or $manifest.frames.truncated -or
+        $frames.Count -lt 10 -or $frames.Count -ne $manifest.timing.sampleCount) {
+        throw "Неполная WGC-запись $Name."
+    }
+    $images = [Collections.Generic.HashSet[string]]::new()
+    $previous = $null
+    foreach ($frame in $frames) {
+        if (!$frame.PSObject.Properties['sampleIndex'] -or !$frame.PSObject.Properties['elapsedMs'] -or
+            ![double]::IsFinite($frame.elapsedMs) -or $frame.elapsedMs -lt 0 -or
+            $frame.sampleIndex -lt 0 -or $frame.sampleIndex -ne [Math]::Floor($frame.sampleIndex) -or
+            ($previous -and ($frame.sampleIndex -le $previous.sampleIndex -or $frame.elapsedMs -lt $previous.elapsedMs))) {
+            throw "Повреждён индекс кадров $Name."
+        }
+        if ($frame.file -notmatch '^frames[/\\][^/\\]+\.jpe?g$' -or $frame.file.Contains('..')) {
+            throw "Кадр $Name не является относительным JPEG."
+        }
+        if ($images.Add($frame.file)) {
+            $bitmap = [Drawing.Bitmap]::new((Join-Path $directory $frame.file))
+            try {
+                if ($bitmap.Width -le 0 -or $bitmap.Height -le 0) { throw "Пустой кадр $Name." }
+            } finally { $bitmap.Dispose() }
+        }
+        $previous = $frame
+    }
+    # Часы harness стартуют до recorder: это консервативная верхняя граница конца ввода.
+    if ($Window.firstFrameReceivedMs -le $Window.recordStartedMs -or
+        ($Window.gestures.name -join ',') -ne 'hover,pressed,rapid-space,pointer-out' -or
+        $Window.gestures[0].startedMs -lt $Window.firstFrameReceivedMs) {
+        throw "Не подтверждён первый кадр до ввода $Name."
+    }
+    foreach ($gesture in $Window.gestures) {
+        if (![double]::IsFinite($gesture.startedMs) -or ![double]::IsFinite($gesture.completedMs) -or
+            $gesture.completedMs -le $gesture.startedMs -or
+            $gesture.completedMs - $Window.recordStartedMs -ge $frames[-1].elapsedMs) {
+            throw "Запись $Name не охватила полный ввод $($gesture.name)."
+        }
+    }
+    return @{ mode = $Record.mode; samples = $frames.Count; images = $images.Count;
+        visualReview = 'pending'; gestureTiming = "$Name-window.json" }
+}
+
+function Capture-Interaction([string]$Theme, [int]$Count) {
+    $name = "interaction-$Theme"
+    Ui "$name-theme" @('invoke', "LabTheme$Theme") | Out-Null
+    Ui "$name-before" @('hover', 'LabActionResult', '--dwell-time', '800') | Out-Null
+    Ui "$name-target" @('get-property', 'LabButtonMedium') | Out-Null
+    $gestures = [Collections.Generic.List[object]]::new()
+    $recording = $null
+    # Бюджет включает запуск recorder и все команды; последний кадр проверяется отдельно.
+    $inputBudgetMs = 60000
+    $durationSec = [int]($inputBudgetMs / 1000) + 1
+    try {
+        $recording = Start-Tool "$name-record" @('ui', 'record', '-w', $window, '--frames',
+            '--duration-sec', "$durationSec", '--fps', '30', '--max-edge', '1000',
+            '--output', (Join-Path $output "$name.mp4"), '--json') -Recording
+        $ready = $false
+        $recording.lineTask = $recording.process.StandardError.ReadLineAsync()
+        while ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -lt 15000) {
+            if ($recording.process.HasExited) { throw 'Запись завершилась до первого кадра.' }
+            if (!$recording.lineTask.Wait(100)) { continue }
+            $line = $recording.lineTask.GetAwaiter().GetResult()
+            $recording.lineTask = $null
+            if ($null -eq $line) { throw 'Поток записи закрыт до первого кадра.' }
+            $recording.prefix += "$line`n"
+            try { $event = $line | ConvertFrom-Json } catch { $event = $null }
+            if ($event -and $event.PSObject.Properties['event'] -and $event.event -eq 'recording-started') {
+                $ready = $true
+                break
+            }
+            $recording.lineTask = $recording.process.StandardError.ReadLineAsync()
+        }
+        if (!$ready -or $clock.Elapsed.TotalMilliseconds - $recording.startedMs -ge 15000) {
+            throw 'Нет подтверждения первого кадра за 15 секунд.'
+        }
+        $recording.stderr = $recording.process.StandardError.ReadToEndAsync()
+        $captureWindow = @{ recordStartedMs = $recording.startedMs; firstFrameReceivedMs = $clock.Elapsed.TotalMilliseconds;
+            clock = 'harness-stopwatch-ms'; gestures = $gestures }
+        $steps = @(
+            @{ name = 'hover'; arguments = @('hover', 'LabButtonMedium', '--dwell-time', '1000') },
+            @{ name = 'pressed'; arguments = @('drag', 'LabButtonMedium', 'LabButtonMedium', '--hold-ms', '1000') },
+            @{ name = 'rapid-space'; arguments = @('send-keys', 'space space space', '--target', 'LabButtonMedium', '--via', 'send-input') },
+            @{ name = 'pointer-out'; arguments = @('hover', 'LabActionResult', '--dwell-time', '800') }
+        )
+        foreach ($step in $steps) {
+            $startedMs = $clock.Elapsed.TotalMilliseconds
+            Ui "$name-$($step.name)" $step.arguments | Out-Null
+            $gestures.Add(@{ name = $step.name; arguments = $step.arguments;
+                startedMs = $startedMs; completedMs = $clock.Elapsed.TotalMilliseconds })
+            $captureWindow | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output "$name-window.json")
+            if ($step.name -eq 'hover') {
+                Ui "$name-hover-image" @('screenshot', 'LabButtonMedium', '--output', (Join-Path $output "$name-hover.png")) | Out-Null
+            }
+            if ($step.name -eq 'pressed') { Assert-Count ($Count + 1) }
+            if ($step.name -eq 'rapid-space') { Assert-Count ($Count + 4) }
+            if ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -ge $inputBudgetMs) {
+                throw "Ввод $name вышел за бюджет записи."
+            }
+        }
+        $recordResult = Finish-Tool $recording -Timeout ($durationSec * 1000 + 30000)
+        return Assert-Capture $name $recordResult $captureWindow
+    } finally { if ($recording) { Close-Tool $recording } }
 }
 
 try {
@@ -150,9 +294,13 @@ try {
     if ($enabled.element.isEnabled -ne $true) { throw 'Кнопка не стала доступна.' }
     Ui 'enabled-click' @('click', 'LabButtonDisabled') | Out-Null
     Assert-Count 3
-    @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled';
-       visualReview = 'pending'; motionLifetime = 'not-qualified' } |
-        ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
+    $captures = @{}
+    $captures.Light = Capture-Interaction 'Light' 3
+    $captures.Dark = Capture-Interaction 'Dark' 7
+    @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input capture';
+       captures = $captures; visualReview = 'pending'; motionLifetime = 'not-qualified';
+       smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' } |
+        ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
 } catch {
     $_ | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
     throw
