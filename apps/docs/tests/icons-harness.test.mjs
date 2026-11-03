@@ -5,18 +5,129 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { annulusBrowserProof } from './icons-annulus-consumer.mjs';
 import {
   ICONS_HARNESS_FILES,
   assertHarnessFilesUnchanged,
   snapshotHarnessFiles,
 } from './icons-harness.mjs';
-import { browserProofTimeout } from './icons-packed.mjs';
+import { browserProofRecords, browserProofTimeout } from './icons-packed.mjs';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const packedUrl = new URL('./icons-packed.mjs', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 const readRepositoryFile = (file) => readFile(join(ROOT, file));
+
+test('progress отличает свежую завершённую запись от остановки при том же общем elapsed', () => {
+  const frontier = {
+    mode: 'reduce',
+    stage: 'annulus',
+    member: 'question-circle/outline',
+    startedAt: 0,
+    stageStartedAt: 90000,
+    stageStartedRecord: 250,
+    lastCompletedAt: 90000,
+    completedStages: [],
+  };
+  const records = Array.from({ length: 265 }, (_, index) => ({ name: `previous-${index}` }));
+  const observed = browserProofRecords(records, frontier, () => 119990);
+  assert.equal(Array.isArray(observed), true);
+  assert.equal(observed.push({ name: 'plus-circle/filled:reduce:annulus-source' }), 266);
+  assert.equal(records.length, 266);
+  assert.deepEqual(
+    observed.filter((item) => item.name.startsWith('plus')),
+    [records.at(-1)],
+  );
+  assert.equal(JSON.stringify(observed), JSON.stringify(records));
+  assert.equal(observed.push(), 266);
+  assert.equal(frontier.lastCompletedAt, 119990);
+  const progressing = browserProofTimeout(frontier, records, 120002);
+  const stalled = browserProofTimeout({ ...frontier, lastCompletedAt: 90000 }, records, 120002);
+  assert.equal(progressing.browserFrontier.elapsedMs, stalled.browserFrontier.elapsedMs);
+  assert.equal(
+    progressing.browserFrontier.completedRecords,
+    stalled.browserFrontier.completedRecords,
+  );
+  assert.equal(progressing.browserFrontier.lastCompletedAtMs, 119990);
+  assert.equal(progressing.browserFrontier.sinceLastCompletedMs, 12);
+  assert.equal(stalled.browserFrontier.sinceLastCompletedMs, 30002);
+  assert.equal(progressing.browserFrontier.stageCompletedRecords, 16);
+  assert.equal(progressing.browserFrontier.member, 'question-circle/outline');
+  observed.push({ name: 'cleanup' });
+  assert.equal(progressing.browserFrontier.completedRecords, 266);
+  assert.equal(
+    progressing.browserFrontier.lastCompletedRecord,
+    'plus-circle/filled:reduce:annulus-source',
+  );
+});
+
+test('завершённые stages сохраняют elapsed и собственные records без сброса общего начала', async () => {
+  const source = await readFile(packedUrl, 'utf8');
+  const start = source.indexOf('const mark = (stage, member = null) => {');
+  const end = source.indexOf('\n    };', start);
+  assert.ok(start >= 0 && end > start);
+  const frontier = {
+    mode: 'no-preference',
+    stage: 'width-motion',
+    member: 'mic/outline',
+    startedAt: 0,
+    stageStartedAt: 90000,
+    stageStartedRecord: 0,
+    lastCompletedAt: 90000,
+    completedStages: [],
+  };
+  const records = [{ name: 'width-completed' }];
+  const mark = new Function(
+    'frontier',
+    'records',
+    'reducedMotion',
+    'performance',
+    `${source.slice(start, end + 7)}\nreturn mark;`,
+  )(frontier, records, 'reduce', { now: () => 112758 });
+  mark('annulus');
+  assert.equal(frontier.startedAt, 0);
+  assert.equal(frontier.stageStartedAt, 112758);
+  assert.equal(frontier.stageStartedRecord, 1);
+  const failed = browserProofTimeout(frontier, records, 120002);
+  assert.deepEqual(failed.browserFrontier.completedStages, [
+    {
+      mode: 'no-preference',
+      stage: 'width-motion',
+      member: 'mic/outline',
+      elapsedMs: 22758,
+      completedRecords: 1,
+    },
+  ]);
+  assert.equal(failed.browserFrontier.stageElapsedMs, 7244);
+  assert.equal(failed.browserFrontier.stageCompletedRecords, 0);
+  frontier.completedStages[0].stage = 'changed';
+  mark('context-close');
+  assert.equal(failed.browserFrontier.completedStages.length, 1);
+  assert.equal(failed.browserFrontier.completedStages[0].stage, 'width-motion');
+});
+
+test('annulus сообщает текущий member до первой browser операции', async () => {
+  const failure = new Error('controlled browser boundary');
+  let member;
+  await assert.rejects(
+    annulusBrowserProof(
+      {
+        locator() {
+          throw failure;
+        },
+      },
+      {},
+      'reduce',
+      [],
+      (current) => {
+        member = current;
+      },
+    ),
+    (error) => error === failure,
+  );
+  assert.equal(member, 'alert-circle/outline');
+});
 
 test('общий browser deadline сохраняет текущую фазу и последний завершённый шаг', async () => {
   const source = await readFile(packedUrl, 'utf8');
@@ -30,6 +141,9 @@ test('общий browser deadline сохраняет текущую фазу и 
     member: null,
     startedAt: 0,
     stageStartedAt: 118000,
+    stageStartedRecord: 0,
+    lastCompletedAt: 119500,
+    completedStages: [],
   };
   let failure;
   new Function(
@@ -57,8 +171,12 @@ test('общий browser deadline сохраняет текущую фазу и 
     member: null,
     elapsedMs: 120000,
     stageElapsedMs: 2000,
+    stageCompletedRecords: 1,
     completedRecords: 1,
     lastCompletedRecord: 'status-circle:reduce:state-enclosure-continuity',
+    lastCompletedAtMs: 119500,
+    sinceLastCompletedMs: 500,
+    completedStages: [],
   });
   frontier.stage = 'context-close';
   records.push({ name: 'later-record' });
@@ -66,11 +184,12 @@ test('общий browser deadline сохраняет текущую фазу и 
   assert.equal(failure.browserFrontier.completedRecords, 1);
   assert.ok(failure.message.includes('status-circle:reduce:state-enclosure-continuity'));
   const empty = browserProofTimeout(
-    { ...frontier, mode: null, stage: 'start', stageStartedAt: 0 },
+    { ...frontier, mode: null, stage: 'start', stageStartedAt: 0, lastCompletedAt: null },
     [],
     0,
   );
   assert.equal(empty.browserFrontier.lastCompletedRecord, null);
+  assert.equal(empty.browserFrontier.lastCompletedAtMs, null);
 });
 
 async function actualInitialSnapshot(root = ROOT) {

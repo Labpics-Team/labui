@@ -851,10 +851,17 @@ plusAnnulusCapabilities('filled').variation;
 `;
 }
 
-export async function annulusBrowserProof(page, reference, reducedMotion, records) {
+export async function annulusBrowserProof(
+  page,
+  reference,
+  reducedMotion,
+  records,
+  onMember = () => {},
+) {
   for (const icon of ANNULUS_ICONS)
     for (const variant of ['outline', 'filled']) {
       const id = `${icon}/${variant}`;
+      onMember(id);
       const read = () =>
         page.evaluate((id) => window.__iconsPacked.annulusConsumers[id].read(), id);
       const figure = page.locator(`figure[data-annulus="${id}"]`);

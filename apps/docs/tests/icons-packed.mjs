@@ -1244,6 +1244,19 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
+export function browserProofRecords(records, frontier, now = () => performance.now()) {
+  const append = (...items) => {
+    const length = records.push(...items);
+    if (items.length) frontier.lastCompletedAt = now();
+    return length;
+  };
+  return new Proxy(records, {
+    get(target, key, receiver) {
+      return key === 'push' ? append : Reflect.get(target, key, receiver);
+    },
+  });
+}
+
 export function browserProofTimeout(frontier, records, now = performance.now()) {
   const diagnostic = {
     mode: frontier.mode,
@@ -1251,8 +1264,15 @@ export function browserProofTimeout(frontier, records, now = performance.now()) 
     member: frontier.member,
     elapsedMs: Math.round(now - frontier.startedAt),
     stageElapsedMs: Math.round(now - frontier.stageStartedAt),
+    stageCompletedRecords: records.length - frontier.stageStartedRecord,
     completedRecords: records.length,
     lastCompletedRecord: records.at(-1)?.name ?? null,
+    lastCompletedAtMs:
+      frontier.lastCompletedAt === null
+        ? null
+        : Math.round(frontier.lastCompletedAt - frontier.startedAt),
+    sinceLastCompletedMs: Math.round(now - (frontier.lastCompletedAt ?? frontier.startedAt)),
+    completedStages: frontier.completedStages.map((stage) => ({ ...stage })),
   };
   return Object.assign(
     new Error(`icons-packed browser proof timeout: ${JSON.stringify(diagnostic)}`),
@@ -1263,10 +1283,19 @@ export function browserProofTimeout(frontier, records, now = performance.now()) 
 async function browserProof(browser, url, reference, out, records, browserErrors, frontier) {
   for (const reducedMotion of ['no-preference', 'reduce']) {
     const mark = (stage, member = null) => {
+      const now = performance.now();
+      frontier.completedStages.push({
+        mode: frontier.mode,
+        stage: frontier.stage,
+        member: frontier.member,
+        elapsedMs: Math.round(now - frontier.stageStartedAt),
+        completedRecords: records.length - frontier.stageStartedRecord,
+      });
       frontier.mode = reducedMotion;
       frontier.stage = stage;
       frontier.member = member;
-      frontier.stageStartedAt = performance.now();
+      frontier.stageStartedAt = now;
+      frontier.stageStartedRecord = records.length;
     };
     mark('context');
     const context = await browser.newContext({
@@ -1459,7 +1488,9 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       }
       if (reference.annulus) {
         mark('annulus');
-        await annulusBrowserProof(page, reference.annulus, reducedMotion, records);
+        await annulusBrowserProof(page, reference.annulus, reducedMotion, records, (member) => {
+          frontier.member = member;
+        });
       }
       if (reference.stateAnnulus) {
         mark('state-annulus');
@@ -2618,6 +2649,9 @@ export async function main(args = process.argv.slice(2)) {
       member: null,
       startedAt: performance.now(),
       stageStartedAt: performance.now(),
+      stageStartedRecord: 0,
+      lastCompletedAt: null,
+      completedStages: [],
     };
     await Promise.race([
       browserProof(
@@ -2637,7 +2671,7 @@ export async function main(args = process.argv.slice(2)) {
           widthMotionMeasurements: receipt.widthMotionMeasurements,
         },
         out,
-        records,
+        browserProofRecords(records, browserFrontier),
         browserErrors,
         browserFrontier,
       ),
