@@ -834,7 +834,7 @@ export async function clickedActivityCheckpoint(button, id, milliseconds) {
   await button.click();
   return button.evaluate((element) => {
     const checkpoint = element.__iconsActivityCheckpoint;
-    delete element.__iconsActivityCheckpoint;
+    element.__iconsActivityCheckpoint = undefined;
     if (!checkpoint?.trusted) throw new Error('Loading checkpoint требует доверенный click event');
     return checkpoint.pose;
   });
