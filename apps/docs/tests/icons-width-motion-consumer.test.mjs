@@ -599,20 +599,29 @@ test('width capture owns its section when another consumer shares the layout cla
     let selector;
     const captured = new Error('LOCATOR_CAPTURED');
     await assert.rejects(
-      widthMotionBrowserProof({
-        locator(query) {
-          selector = query;
-          throw captured;
+      widthMotionBrowserProof(
+        {
+          locator(query) {
+            selector = query;
+            throw captured;
+          },
         },
-      }, undefined, 'reduce', [], ''),
+        undefined,
+        'reduce',
+        [],
+        '',
+      ),
       (error) => error === captured,
     );
     const match = selector.match(/^section(?:\.([\w-]+))?(?:\[aria-labelledby="([^"]+)"\])?$/);
     assert.ok(match, 'section selector is supported by the boundary witness');
-    const selected = document.body.querySelectorAll('section').filter((section) =>
-      (!match[1] || section.className.split(/\s+/).includes(match[1])) &&
-      (!match[2] || section.getAttribute('aria-labelledby') === match[2]),
-    );
+    const selected = document.body
+      .querySelectorAll('section')
+      .filter(
+        (section) =>
+          (!match[1] || section.className.split(/\s+/).includes(match[1])) &&
+          (!match[2] || section.getAttribute('aria-labelledby') === match[2]),
+      );
     assert.equal(selected.length, 1, 'capture selects exactly its owned section');
     assert.equal(selected[0], widthSection);
   } finally {

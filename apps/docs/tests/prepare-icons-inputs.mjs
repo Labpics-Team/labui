@@ -26,7 +26,9 @@ import {
 import { assertPublicScreenshot } from '../../../scripts/ci/icons-screenshot-profile.mjs';
 import { annulusReference } from './icons-annulus-consumer.mjs';
 import {
-  CLOCK_MOTION_VISUAL_FILES, assertClockMotionVisualEvidence, clockMotionReference,
+  CLOCK_MOTION_VISUAL_FILES,
+  assertClockMotionVisualEvidence,
+  clockMotionReference,
 } from './icons-clock-motion-consumer.mjs';
 import {
   AUTHORED_DOT_ICONS,

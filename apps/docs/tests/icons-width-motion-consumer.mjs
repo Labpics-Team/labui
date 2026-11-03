@@ -13,7 +13,10 @@ export const WIDTH_MOTION_ENTRIES = Object.freeze(
 export const WIDTH_MOTION_POSES = Object.freeze([1, 0.92, 0.8]);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 assert.equal(legacyWidthMotionFixture.sourceCommit, 'a5cc910cb1e0402dec634dc12e51aa4c2e94e440');
-assert.equal(legacyWidthMotionFixture.sha256, '8b88a52f0a7bf094889ea5cd5c5a9543af71212806e6b60312a5d6eb797ca7cd');
+assert.equal(
+  legacyWidthMotionFixture.sha256,
+  '8b88a52f0a7bf094889ea5cd5c5a9543af71212806e6b60312a5d6eb797ca7cd',
+);
 assert.equal(hash(legacyWidthMotionFixture.fixture), legacyWidthMotionFixture.sha256);
 const stableJSON = (value) =>
   JSON.stringify(value, (_, item) =>
@@ -44,10 +47,19 @@ export const WIDTH_MOTION_VISUAL_FILES = Object.freeze(
 );
 
 /** Один writer хранит только успешно записанный параметр. Часы принадлежат Motion. */
-export function createPreparedScalarController(prepared, binding, value, media, {
-  initial = 1, channel = 'width', last = 'lastWrittenWidth', target = 'targetWidth',
-  prefix = 'WIDTH_MOTION',
-} = {}) {
+export function createPreparedScalarController(
+  prepared,
+  binding,
+  value,
+  media,
+  {
+    initial = 1,
+    channel = 'width',
+    last = 'lastWrittenWidth',
+    target = 'targetWidth',
+    prefix = 'WIDTH_MOTION',
+  } = {},
+) {
   let lastWrittenWidth = initial;
   const rest = prepared.sample(initial);
   if (!rest.ok) throw new Error(rest.reason.code);
@@ -235,9 +247,13 @@ export function createPreparedScalarController(prepared, binding, value, media, 
         statuses: results.map((result) =>
           result.status === 'fulfilled' ? result.value.status : 'failed',
         ),
-        failures: [retiredWriterFailure, writerFailure.cause].filter(Boolean).concat(results
-          .filter((result) => result.status === 'rejected')
-          .map((result) => errorText(result.reason))),
+        failures: [retiredWriterFailure, writerFailure.cause]
+          .filter(Boolean)
+          .concat(
+            results
+              .filter((result) => result.status === 'rejected')
+              .map((result) => errorText(result.reason)),
+          ),
       };
     },
   };

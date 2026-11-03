@@ -25,8 +25,12 @@ import {
 } from './icons-authored-dots-consumer.mjs';
 import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 import {
-  CLOCK_MOTION_ENTRIES, clockMotionArmDisposal, clockMotionBrowserProof,
-  clockMotionDisposalProof, clockMotionFixture, clockMotionTypeFixture,
+  CLOCK_MOTION_ENTRIES,
+  clockMotionArmDisposal,
+  clockMotionBrowserProof,
+  clockMotionDisposalProof,
+  clockMotionFixture,
+  clockMotionTypeFixture,
   validateClockMotionReference,
 } from './icons-clock-motion-consumer.mjs';
 import {
