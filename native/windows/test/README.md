@@ -7,6 +7,31 @@ runner. После успешной проверки `evidence.mjs export` пе�
 `scripts/ci/evidence-log.mjs`; allowlist и проверка native-файлов принадлежат этому
 harness. Actions artifact storage не используется.
 
+Перед запуском приложения harness сохраняет client-area animation, временно
+включает её и проверяет readback. Параметр `-AnimationSettingsPath` указывает на
+`test/windows/animation-settings.cs` из закреплённого в workflow LabMotion checkout.
+Этот helper использует `SystemParametersInfoW` с `SPIF_SENDCHANGE`, без записи
+в профиль. Guard GitHub-hosted выполняется до загрузки helper и изменения настройки.
+В `finally`, после попытки закрыть собственное приложение, harness восстанавливает
+исходное значение даже при ошибке capture или записи evidence. Ошибка закрытия
+приложения не превращается в PASS. Подтверждение восстановления находится
+в `close.json.animation`.
+
+Пример читает `UISettings.AnimationsEnabled` после создания окна только при заданном
+`LABUI_ANIMATION_OBSERVATION`. Harness передаёт новый путь для этого запуска;
+пример атомарно публикует JSON с PID, временем Unix в миллисекундах и boolean.
+Наблюдение включается в `identity.json.animation.process`. До первого ввода harness
+требует совпадение PID, время внутри текущего запуска и `animationsEnabled: true`.
+В identity также остаются исходная настройка, readback и SHA-256 helper.
+
+Это наблюдение отдельного `UISettings` в процессе примера при запуске. Оно не
+доказывает значение private cache конкретного `LabButton`, выбор ветки Animate/Snap
+или неизменность настройки на протяжении записи. Проверка анимаций здесь не меняет
+политику reduced motion библиотеки. Официальные контракты:
+[UISettings.AnimationsEnabled](https://learn.microsoft.com/en-us/uwp/api/windows.ui.viewmanagement.uisettings.animationsenabled?view=winrt-26100),
+[client-area animation](https://learn.microsoft.com/en-us/windows/win32/winauto/client-area-animation),
+[SystemParametersInfoW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-systemparametersinfow).
+
 Получите полный журнал завершённого **Windows Button** job и SHA checkout из run:
 
 ```powershell
@@ -48,4 +73,5 @@ capture, а воспроизведение и визуальную приёмк�
 
 ```powershell
 node --test scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
+pwsh -NoProfile -File native/windows/test/animation.test.ps1
 ```

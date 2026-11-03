@@ -43,6 +43,10 @@ jobs:
       - name: Native projection contract
         run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
 
+      - name: Native animation capture contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/animation.test.ps1
+
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
@@ -66,7 +70,8 @@ jobs:
         run: |
           pwsh -File native/windows/test/smoke.ps1 `
             -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
-            -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence"
+            -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence" `
+            -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs"
 
       - name: Export native evidence to job log
         shell: pwsh

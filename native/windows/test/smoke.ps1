@@ -1,6 +1,7 @@
 param(
     [Parameter(Mandatory)][string]$ApplicationDirectory,
-    [Parameter(Mandatory)][string]$OutputDirectory
+    [Parameter(Mandatory)][string]$OutputDirectory,
+    [Parameter(Mandatory)][string]$AnimationSettingsPath
 )
 
 $ErrorActionPreference = 'Stop'
@@ -15,9 +16,45 @@ $app = Join-Path ([IO.Path]::GetFullPath($ApplicationDirectory)) 'Buttons.exe'
 $commands = [Collections.Generic.List[object]]::new()
 $clock = [Diagnostics.Stopwatch]::StartNew()
 $process = $null
+$animationBefore = $null
+$animationReadback = $null
+$animationObservationPath = Join-Path $output 'animation-observation.json'
+$close = @{}
 $saved = @{}
-foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK')) {
+foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK',
+    'LABUI_ANIMATION_OBSERVATION')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
+}
+
+function Read-AnimationObservation([string]$Path, $Process) {
+    $deadline = [DateTime]::UtcNow.AddSeconds(10)
+    do {
+        $Process.Refresh()
+        if ($Process.HasExited) { throw 'Приложение завершилось до наблюдения настройки анимации.' }
+        if (Test-Path -LiteralPath $Path) {
+            return Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+        }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw 'Приложение не записало наблюдение настройки анимации.'
+}
+
+function Assert-AnimationObservation($Observation, $Process) {
+    if ($null -eq $Observation -or !$Observation.PSObject.Properties['pid'] -or
+        ($Observation.pid -isnot [int] -and $Observation.pid -isnot [long]) -or
+        $Observation.pid -ne $Process.Id -or !$Observation.PSObject.Properties['observedAtUnixMs'] -or
+        ($Observation.observedAtUnixMs -isnot [int] -and $Observation.observedAtUnixMs -isnot [long])) {
+        throw 'Наблюдение настройки анимации не связано с запущенным процессом.'
+    }
+    $startedAtUnixMs = ([DateTimeOffset]$Process.StartTime.ToUniversalTime()).ToUnixTimeMilliseconds()
+    if ($Observation.observedAtUnixMs -lt $startedAtUnixMs -or
+        $Observation.observedAtUnixMs -gt [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()) {
+        throw 'Время наблюдения настройки анимации вне текущего запуска.'
+    }
+    if (!$Observation.PSObject.Properties['animationsEnabled'] -or
+        $Observation.animationsEnabled -isnot [bool] -or !$Observation.animationsEnabled) {
+        throw 'Анимации не подтверждены UISettings внутри приложения.'
+    }
 }
 
 function Start-Tool([string]$Name, [string[]]$Arguments, [switch]$Recording) {
@@ -228,6 +265,12 @@ try {
     $executables = @(Get-ChildItem -LiteralPath (Join-Path $output 'tool') -Filter winapp.exe -Recurse -File)
     if ($executables.Count -ne 1) { throw 'Ожидался один winapp.exe.' }
     $script:cli = $executables[0].FullName
+    Add-Type -Path $AnimationSettingsPath
+    $animationBefore = [ClientAreaAnimation]::Read()
+    [ClientAreaAnimation]::Write($true)
+    $animationReadback = [ClientAreaAnimation]::Read()
+    if (!$animationReadback) { throw 'Настройка анимации hosted runner не подтвердилась.' }
+    $env:LABUI_ANIMATION_OBSERVATION = $animationObservationPath
     $process = Start-Process -FilePath $app -WorkingDirectory $ApplicationDirectory -WindowStyle Hidden -PassThru
     $started = $process.StartTime
     $deadline = [DateTime]::UtcNow.AddSeconds(20)
@@ -239,13 +282,19 @@ try {
     } while ([DateTime]::UtcNow -lt $deadline)
     if ($process.MainWindowHandle -eq 0) { throw 'Не найдено окно собственного процесса.' }
     $script:window = $process.MainWindowHandle.ToInt64().ToString()
-    @{ pid = $process.Id; window = $window; source = (git -C $PSScriptRoot rev-parse HEAD);
+    $animationObservation = Read-AnimationObservation $animationObservationPath $process
+    @{ pid = $process.Id; startedAtUnixMs = ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds();
+       window = $window; source = (git -C $PSScriptRoot rev-parse HEAD);
        os = [Environment]::OSVersion.VersionString; appSha256 = (Get-FileHash -LiteralPath $app).Hash;
        consumerSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'Buttons.dll')).Hash;
        uiSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabUI.WinUI.dll')).Hash;
        motionSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabMotion.WinUI.dll')).Hash;
-       cliVersion = '0.7.1'; cliZipSha256 = $digest } |
-        ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $output 'identity.json')
+       cliVersion = '0.7.1'; cliZipSha256 = $digest;
+       animation = @{ clientAreaBefore = $animationBefore; clientAreaReadback = $animationReadback;
+           helperSha256 = (Get-FileHash -LiteralPath $AnimationSettingsPath).Hash;
+           process = $animationObservation } } |
+        ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $output 'identity.json')
+    Assert-AnimationObservation $animationObservation $process
 
     Ui 'ready' @('wait-for', 'LabButtonMedium', '--timeout', '10000') | Out-Null
     Add-Type -AssemblyName System.Drawing
@@ -305,23 +354,39 @@ try {
     $_ | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
     throw
 } finally {
-    if ($process) {
-        try {
-            $process.Refresh()
-            if (!$process.HasExited) {
-                $process.CloseMainWindow() | Out-Null
-                if (!$process.WaitForExit(5000)) {
-                    $current = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
-                    if ($current -and $current.Path -eq $app -and $current.StartTime -eq $started) {
-                        Stop-Process -Id $current.Id -Force
-                        $process.WaitForExit()
+    try {
+        if ($process) {
+            try {
+                $process.Refresh()
+                if (!$process.HasExited) {
+                    $process.CloseMainWindow() | Out-Null
+                    if (!$process.WaitForExit(5000)) {
+                        $current = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
+                        if ($current -and $current.Path -eq $app -and $current.StartTime -eq $started) {
+                            Stop-Process -Id $current.Id -Force
+                            $process.WaitForExit()
+                        }
                     }
                 }
+                $close.exited = $process.HasExited
+                $close.exitCode = $process.ExitCode
+            } finally { $process.Dispose() }
+        }
+        $commands | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'commands.json')
+    } finally {
+        try {
+            foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
+        } finally {
+            try {
+                if ($null -ne $animationBefore) {
+                    [ClientAreaAnimation]::Write($animationBefore)
+                    $restored = [ClientAreaAnimation]::Read()
+                    $close.animation = @{ expected = $animationBefore; actual = $restored }
+                    if ($restored -ne $animationBefore) { throw 'Исходная настройка анимации не восстановлена.' }
+                }
+            } finally {
+                $close | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $output 'close.json')
             }
-            @{ exited = $process.HasExited; exitCode = $process.ExitCode } |
-                ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $output 'close.json')
-        } finally { $process.Dispose() }
+        }
     }
-    $commands | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'commands.json')
-    foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
 }
