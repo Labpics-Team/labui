@@ -84,7 +84,7 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 9`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 12`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
 Обязательный `notificationReference` содержит обе пары начертаний уведомления и
 два статических `notifications-off` controls. `authoredDotsReference` связывает
@@ -92,8 +92,14 @@ Workflow не загружает архивы в Actions storage. Локальн
 `annulusReference` связывает шестнадцать мастеров circle-семейств и принятые Outline
 декларации обрамления. `stateAnnulusReference` связывает обе группы состояний,
 их настоящие masters и принятую анатомию общего обрамления.
-`microphoneReference` связывает четыре мастера микрофона, их независимые декларации
-и source fingerprints. Schema8 сохраняет предыдущий content-scale consumer
+`microphoneReference` обязателен с schema9: он связывает четыре мастера микрофона,
+их независимые декларации и source fingerprints. С schema10 обязательны
+`sourceStateReferences`: четыре группы microphone/visibility с самостоятельными
+Outline/Filled on/off masters. С schema11 `motionProjectionReference` связывает
+допущенные rotation targets Reload/Refresh и статические Timer Outline/Filled
+с точным отказом движения. С schema12 `widthMotionReference` связывает
+подготовленную ширину микрофона с теми же raw masters, позами и fingerprints.
+Schema8 сохраняет предыдущий content-scale consumer
 без microphone reference. Schema6 сохраняет
 круговые семейства без state variation reference. Schema5 сохраняет многоточия
 без annulus reference. Schema4
@@ -116,6 +122,10 @@ Schema2 сохраняет прежний `stateReference` только для s
 | Каждый state | `id`, `partId`, `icon`, `contentPartIds`, `sourceFile`, `author`, `viewBox`, `dimensions`, `paths` |
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
 | `notificationReference` | Figma file/version и шесть raw masters: paths, viewBox, author; у четырёх подвижных variants также declaration, parts, amplitude и unchangedPartIds |
+| `microphoneReference` | Четыре raw masters mic/mic-circle, независимые Outline/Filled декларации и fingerprints; обязателен с schema9 |
+| `sourceStateReferences` | Группы microphone, microphone-filled, visibility, visibility-filled с независимыми masters и доказательством `source.replace`; обязательны с schema10 |
+| `motionProjectionReference` | Raw masters Reload/Refresh/Timer, допуски rotation и точный отказ Timer; обязателен с schema11 |
+| `widthMotionReference` | Привязка подготовленного `capsule.width` к `microphoneReference` и проверяемые позы; обязателен с schema12 |
 | `authoredDotsReference` | Figma file/version, semantic/grid hashes, четыре raw masters с declaration/parts и две группы orientation |
 | `annulusReference` | Figma file/version, semantic hash, шестнадцать raw masters с paths/receipts; у Outline также declaration `annulus.counter-scale` и IDs частей |
 
