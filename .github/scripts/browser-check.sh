@@ -5,6 +5,31 @@ exec 2>&1
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 image='mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f'
+workload=e2e
+source_options=()
+if [ "$#" -ne 0 ]; then
+  if [ "$#" -ne 2 ] || [ "$1" != --icons-consumer ]; then
+    echo '::error::Expected no arguments or --icons-consumer <checkout>.' >&2
+    exit 2
+  fi
+  icons_root="$(cd -- "$2" && pwd -P)"
+  if ! { [ "$icons_root" != "$root" ] && [ -d "$icons_root/.git" ] && [ -d "$root/.git" ] &&
+    [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_ENVIRONMENT:-}" = self-hosted ] &&
+    [[ "${GITHUB_RUN_ID:-}" =~ ^[0-9]+$ ]] && [[ "${UI_SOURCE_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; }; then
+    echo '::error::Icons consumer requires distinct checkouts and a self-hosted Actions identity.' >&2
+    exit 1
+  fi
+  icons_uid="$(id -u)"
+  if ! [[ "$icons_uid" =~ ^[1-9][0-9]*$ ]]; then
+    echo '::error::Icons consumer requires a non-root host UID.' >&2
+    exit 1
+  fi
+  workload=icons-consumer
+  source_options+=(--mount "type=bind,source=${icons_root},target=/icons-source,readonly")
+  for variable in GITHUB_ACTIONS GITHUB_RUN_ID GITHUB_RUN_ATTEMPT RUNNER_ENVIRONMENT RUNNER_NAME RUNNER_OS UI_SOURCE_COMMIT; do
+    source_options+=(--env "$variable")
+  done
+fi
 job="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/labui-browser.XXXXXX")"
 commands_paused=false
 ci_resume_token=''
@@ -27,8 +52,9 @@ directory_path() {
 }
 
 copy_artifact() {
-  local source="${job}/work/source/$1" destination="${root}/$1" tree invalid
-  directory_path "${job}/work" "source/$1" || return 1
+  local source_path="${3:-source/$1}" destination="${root}/$1" tree invalid source
+  source="${job}/work/${source_path}"
+  directory_path "${job}/work" "$source_path" || return 1
   directory_path "$root" "$1" || return 1
   [ -d "$source" ] || return 0
   for tree in "$source" "$destination"; do
@@ -57,8 +83,17 @@ cleanup() {
     fi
   fi
   # После удаления контейнера содержимое стабильно; ссылки не переносятся на хост.
-  if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then status=1; artifacts_safe=false; fi
-  if ! copy_artifact apps/docs/playwright-report report_ready; then status=1; artifacts_safe=false; fi
+  if [ "$workload" = icons-consumer ]; then
+    # Прерванная подготовка может оставить raw Trace2; argv и config не экспортируются.
+    if ! rm -f -- "${job}/work/output/.git-trace2.raw"; then
+      status=1; artifacts_safe=false
+    elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output; then
+      status=1; artifacts_safe=false
+    fi
+  else
+    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then status=1; artifacts_safe=false; fi
+    if ! copy_artifact apps/docs/playwright-report report_ready; then status=1; artifacts_safe=false; fi
+  fi
   if ! rm -rf -- "$job"; then status=1; artifacts_safe=false; fi
   if [ "$artifacts_safe" = true ] && [ "${#artifact_outputs[@]}" -gt 0 ] && [ -n "${GITHUB_OUTPUT:-}" ]; then
     if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then status=1; fi
@@ -77,19 +112,50 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
   --mount "type=bind,source=${root},target=/source,readonly" \
   --mount "type=bind,source=${job}/work,target=/job" \
   --workdir /job --env CI=true --env HOME=/job/home \
+  --env "LABUI_BROWSER_WORKLOAD=$workload" "${source_options[@]}" \
   --env "E2E_SMOKE=${E2E_SMOKE:-}" "$image" bash -euo pipefail -c '
     mkdir -p /job/source /job/bin /job/home
-    tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
+    if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
+      tar -C /source --exclude=node_modules -cf - . | tar -C /job/source -xf -
+      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-shadow
+      tar -C /icons-source --exclude=node_modules -cf - . | tar -C /job/icons -xf -
+    else
+      tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
+    fi
     cd /job/source
     export COREPACK_HOME=/job/corepack PATH="/job/bin:$PATH"
     # Node.js 25+ не содержит Corepack; bootstrap остаётся в каталоге задания.
     npm install --global --prefix /job --cache /job/npm-cache --ignore-scripts --no-audit --no-fund corepack@0.36.0
     corepack enable --install-directory /job/bin
     pnpm install --frozen-lockfile --store-dir /job/pnpm-store
-    pnpm --filter "@labpics/ui-docs^..." build
-    pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
-    pnpm --filter @labui/colors fx:render
-    pnpm test:e2e
+    if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
+      # Corepack выбирает packageManager каждого checkout; stores не пересекаются.
+      cd /job/icons
+      pnpm install --frozen-lockfile --store-dir /job/icons-pnpm-store
+      pnpm pack --pack-destination /job/output/icons
+      cd /job/source
+      pnpm --filter @labpics/ui-core... build
+      pnpm --dir packages/core pack --pack-destination /job/output/ui-core
+      pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow
+      LABUI_ICONS_GIT_DIAGNOSTICS=/job/output node apps/docs/tests/prepare-icons-inputs.mjs \
+        --icons-source /job/icons --ui-source /job/source --ui-commit "$UI_SOURCE_COMMIT" \
+        --icons-tarball /job/output/icons/*.tgz \
+        --ui-core-tarball /job/output/ui-core/*.tgz \
+        --ui-shadow-tarball /job/output/ui-shadow/*.tgz --out /job/output/inputs
+      status=0
+      node apps/docs/tests/icons-packed.mjs \
+        --icons-tarball /job/output/icons/*.tgz \
+        --ui-core-tarball /job/output/ui-core/*.tgz \
+        --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
+        --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
+      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
+      exit "$status"
+    else
+      pnpm --filter "@labpics/ui-docs^..." build
+      pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
+      pnpm --filter @labui/colors fx:render
+      pnpm test:e2e
+    fi
   '
 # Вывод workload и ошибки чтения его файлов не могут задавать Actions outputs.
 ci_resume_token="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"

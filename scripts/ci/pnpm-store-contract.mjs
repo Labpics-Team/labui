@@ -90,13 +90,25 @@ function violations(subject) {
   const expected = {
     ci: { count: 1, command: 'pnpm install --frozen-lockfile --store-dir "$store"' },
     full: { count: 0, command: '' },
-    browser: { count: 1, command: 'pnpm install --frozen-lockfile --store-dir /job/pnpm-store' },
+    browser: {
+      count: 2,
+      commands: [
+        'pnpm install --frozen-lockfile --store-dir /job/pnpm-store',
+        'pnpm install --frozen-lockfile --store-dir /job/icons-pnpm-store',
+      ],
+    },
   };
   for (const [name, source] of Object.entries(subject)) {
     const installs = installLines(source);
     if (installs.length !== expected[name].count)
       out.push(`${name}: unexpected frozen install count ${installs.length}`);
-    if (installs.some((line) => line !== expected[name].command))
+    if (
+      installs.slice().sort().join('\n') !==
+      (expected[name].commands ?? Array(expected[name].count).fill(expected[name].command))
+        .slice()
+        .sort()
+        .join('\n')
+    )
       out.push(`${name}: frozen installs must use the isolated pnpm store`);
   }
 
@@ -121,6 +133,14 @@ const mutants = [
     ),
   },
   { ...files, browser: files.browser.replace('--store-dir /job/pnpm-store', '') },
+  { ...files, browser: files.browser.replace('--store-dir /job/icons-pnpm-store', '') },
+  {
+    ...files,
+    browser: files.browser.replace(
+      '--store-dir /job/icons-pnpm-store',
+      '--store-dir /job/pnpm-store',
+    ),
+  },
   {
     ...files,
     ci: files.ci.replace(
@@ -325,11 +345,14 @@ console.info(
 
 // Workspace ownership follows the host runner identity, including non-1000 users.
 // Execute the real workflow shell with a Docker argument recorder, not a privileged daemon.
-const { mkdtempSync, writeFileSync, rmSync } = await import('node:fs');
+const { mkdtempSync, writeFileSync, realpathSync, rmSync } = await import('node:fs');
 const { tmpdir } = await import('node:os');
+const { basename, delimiter, dirname } = await import('node:path');
 const { spawnSync } = await import('node:child_process');
 const { default: assert } = await import('node:assert/strict');
-const fixture = mkdtempSync(`${tmpdir()}/labui-owner-`);
+const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' : 'bash';
+const fixtureParent = realpathSync(tmpdir());
+const fixture = mkdtempSync(`${fixtureParent}/labui-owner-`);
 try {
   writeFileSync(
     `${fixture}/id`,
@@ -355,31 +378,34 @@ try {
       ]) {
         const env = {
           ...process.env,
-          PATH: `${fixture}:${process.env.PATH}`,
+          PATH: `${fixture}${delimiter}${process.env.PATH}`,
           TEST_UID: uid,
           TEST_GID: gid,
           GITHUB_WORKSPACE: fixture,
           DOCKER_CONFIG: `${fixture}/docker-config`,
           BUSYBOX_IMAGE: 'busybox-pinned',
           OWNER_CAPTURE: `${fixture}/capture`,
+          OWNER_BIN: fixture
+            .replaceAll('\\', '/')
+            .replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`),
           DOCKER_STATUS: '0',
         };
-        const result = spawnSync(
-          'bash',
-          ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
-          { env, encoding: 'utf8' },
-        );
+        const result = spawnSync(bash, ['--noprofile', '--norc', '-e', '-o', 'pipefail'], {
+          env,
+          input: `export PATH="$OWNER_BIN:$PATH"\n${script}`,
+          encoding: 'utf8',
+        });
         assert.equal(result.status, 0, result.stderr);
         const args = readFileSync(`${fixture}/capture`, 'utf8').trimEnd().split('\n');
         if (script.includes('rm -rf')) {
           assert.deepEqual(args.slice(-3), ['sh', uid, gid]);
           assert.ok(args.some((arg) => arg.includes('chown "$1:$2" /workspace')));
         } else assert.ok(args.includes(`${uid}:${gid}`));
-        const failed = spawnSync(
-          'bash',
-          ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', script],
-          { env: { ...env, DOCKER_STATUS: '7' }, encoding: 'utf8' },
-        );
+        const failed = spawnSync(bash, ['--noprofile', '--norc', '-e', '-o', 'pipefail'], {
+          env: { ...env, DOCKER_STATUS: '7' },
+          input: `export PATH="$OWNER_BIN:$PATH"\n${script}`,
+          encoding: 'utf8',
+        });
         if (script.includes('rm -rf')) {
           assert.notEqual(failed.status, 0, 'primary cleanup failure must stop checkout');
         } else {
@@ -403,5 +429,8 @@ try {
     'workspace owner contract: PASS (6 real shell steps, two identities, mandatory preparation, visible best-effort cleanup)',
   );
 } finally {
-  rmSync(fixture, { recursive: true, force: true });
+  const target = realpathSync(fixture);
+  assert.equal(dirname(target), fixtureParent);
+  assert.ok(basename(target).startsWith('labui-owner-'));
+  rmSync(target, { recursive: true, force: true });
 }
