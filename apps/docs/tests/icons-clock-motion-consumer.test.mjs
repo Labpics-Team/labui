@@ -429,3 +429,49 @@ test('unsupported Filled Time requires literal source geometry and no fabricated
   changed.samples[0].paths[0].fillRule = 'nonzero';
   assert.throws(() => assertClockEntry(changed, raw));
 });
+
+test('clock caption names the admitted target while the visible pose may still be at rest', () => {
+  const reference = raw.icons.time.outline;
+  const entry = {
+    icon: 'time',
+    variant: 'outline',
+    supported: true,
+    refusal: null,
+    capability: {
+      law: 'joint.authored-elbow',
+      reference: 'authored-pose',
+      parameter: 'elapsed-hours',
+      formats: ['svg', 'prepared-clock-hands'],
+      author: reference.author,
+      geometrySha256: '0'.repeat(64),
+    },
+    renderTarget: {
+      attribute: 'd',
+      selector: '[data-part="clock-hands"]',
+      partIds: ['clock-minute', 'clock-hour'],
+      unchangedPartIds: ['clock-enclosure'],
+    },
+    lastWrittenHours: 0,
+    targetHours: 3,
+    targetLabel: 'Цель: 3 ч от авторской позы',
+    samples: [16, 24, 48].map((size) => ({
+      size,
+      width: size,
+      height: size,
+      viewBox: reference.viewBox,
+      identity: true,
+      paths: reference.paths,
+      hidden: 'true',
+      focusable: 'false',
+      slot: 'icon',
+      name: 'Время',
+      target: { width: 44, height: 44 },
+    })),
+  };
+  assertClockEntry(entry, raw);
+  assert.throws(() =>
+    assertClockEntry({ ...entry, targetLabel: 'От авторской позы прошло 3 ч' }, raw),
+  );
+  assert.throws(() => assertClockEntry({ ...entry, targetHours: 0 }, raw));
+  assertClockEntry({ ...entry, targetHours: 0, targetLabel: 'Цель: авторская поза' }, raw);
+});

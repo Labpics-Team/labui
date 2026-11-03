@@ -357,8 +357,15 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
       const status = document.createElement('output');
       status.setAttribute('aria-live', 'polite');
       status.textContent = result.ok
-        ? 'Авторская поза'
+        ? 'Цель: авторская поза'
         : 'Статическая авторская форма. Движение стрелок пока недоступно.';
+      const request = (hours, duration) => {
+        const receipt = controller?.request(hours, duration) ?? result;
+        if (receipt.ok)
+          status.textContent =
+            receipt.to === 0 ? 'Цель: авторская поза' : `Цель: ${receipt.to} ч от авторской позы`;
+        return receipt;
+      };
       if (controller) {
         for (const [hours, text] of [
           [0, 'Авторская поза'],
@@ -371,9 +378,7 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
           button.dataset.hours = String(hours);
           listen(button, 'click', () => {
             const target = hours === 0 ? 0 : controller.read().targetHours + hours;
-            controller.request(target);
-            status.textContent =
-              target === 0 ? 'Авторская поза' : `От авторской позы прошло ${target} ч`;
+            request(target);
           });
           controls.append(button);
         }
@@ -391,8 +396,7 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
         }
         for (const sample of samples)
           listen(sample.button, 'click', (event) => {
-            const request = controller.request(controller.read().targetHours + 1);
-            status.textContent = `От авторской позы прошло ${request.to} ч`;
+            const receipt = request(controller.read().targetHours + 1);
             events.push({
               icon,
               variant,
@@ -401,7 +405,7 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
               native: event
                 .composedPath()
                 .includes(sample.button.shadowRoot.querySelector('button')),
-              request,
+              request: receipt,
             });
           });
       } else for (const sample of samples) sample.button.setAttribute('disabled', '');
@@ -431,7 +435,17 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
       controls.append(download, status);
       group.append(controls);
       section.append(group);
-      entries.push({ icon, variant, result, capability, controller, samples, exportSvg });
+      entries.push({
+        icon,
+        variant,
+        result,
+        capability,
+        controller,
+        samples,
+        exportSvg,
+        request,
+        status,
+      });
     }
   document.body.append(section);
   const find = (icon, variant) =>
@@ -456,6 +470,7 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
     refusal: entry.result.ok ? null : entry.result.reason.code,
     capability: entry.capability.ok ? entry.capability.capabilities : null,
     renderTarget: entry.result.ok ? entry.result.prepared.renderTarget : null,
+    targetLabel: entry.status.textContent,
     ...(entry.controller?.read() ?? { lastWrittenHours: 0 }),
     samples: entry.samples.map((sample) => ({
       size: sample.size,
@@ -482,8 +497,7 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
   return {
     ready,
     read: () => ({ entries: entries.map(readEntry), events }),
-    request: (icon, variant, hours, duration) =>
-      find(icon, variant).controller?.request(hours, duration) ?? find(icon, variant).result,
+    request: (icon, variant, hours, duration) => find(icon, variant).request(hours, duration),
     control: (icon, variant, method, argument) => find(icon, variant).controller[method](argument),
     settle: async (icon, variant) => {
       await find(icon, variant).controller?.settle();
@@ -591,6 +605,12 @@ export function assertClockEntry(entry, raw) {
     assert.deepEqual(entry.renderTarget.partIds, ['clock-minute', 'clock-hour']);
     assert.deepEqual(entry.renderTarget.unchangedPartIds, ['clock-enclosure']);
     assert.ok(Number.isFinite(entry.lastWrittenHours));
+    assert.equal(
+      entry.targetLabel,
+      entry.targetHours === 0
+        ? 'Цель: авторская поза'
+        : `Цель: ${entry.targetHours} ч от авторской позы`,
+    );
   }
   assert.deepEqual(
     entry.samples.map((sample) => sample.size),
