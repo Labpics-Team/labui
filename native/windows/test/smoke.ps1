@@ -1,7 +1,8 @@
 param(
     [Parameter(Mandatory)][string]$ApplicationDirectory,
     [Parameter(Mandatory)][string]$OutputDirectory,
-    [Parameter(Mandatory)][string]$AnimationSettingsPath
+    [Parameter(Mandatory)][string]$AnimationSettingsPath,
+    [bool]$AnimationsEnabled = $true
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,7 +40,7 @@ function Read-AnimationObservation([string]$Path, $Process) {
     throw 'Приложение не записало наблюдение настройки анимации.'
 }
 
-function Assert-AnimationObservation($Observation, $Process) {
+function Assert-AnimationObservation($Observation, $Process, [bool]$ExpectedAnimationsEnabled) {
     if ($null -eq $Observation -or !$Observation.PSObject.Properties['pid'] -or
         ($Observation.pid -isnot [int] -and $Observation.pid -isnot [long]) -or
         $Observation.pid -ne $Process.Id -or !$Observation.PSObject.Properties['observedAtUnixMs'] -or
@@ -52,8 +53,9 @@ function Assert-AnimationObservation($Observation, $Process) {
         throw 'Время наблюдения настройки анимации вне текущего запуска.'
     }
     if (!$Observation.PSObject.Properties['animationsEnabled'] -or
-        $Observation.animationsEnabled -isnot [bool] -or !$Observation.animationsEnabled) {
-        throw 'Анимации не подтверждены UISettings внутри приложения.'
+        $Observation.animationsEnabled -isnot [bool] -or
+        $Observation.animationsEnabled -ne $ExpectedAnimationsEnabled) {
+        throw 'UISettings внутри приложения не подтвердил ожидаемый режим анимации.'
     }
 }
 
@@ -268,9 +270,9 @@ try {
     $script:cli = $executables[0].FullName
     Add-Type -Path $AnimationSettingsPath
     $animationBefore = [ClientAreaAnimation]::Read()
-    [ClientAreaAnimation]::Write($true)
+    [ClientAreaAnimation]::Write($AnimationsEnabled)
     $animationReadback = [ClientAreaAnimation]::Read()
-    if (!$animationReadback) { throw 'Настройка анимации hosted runner не подтвердилась.' }
+    if ($animationReadback -ne $AnimationsEnabled) { throw 'Настройка анимации hosted runner не подтвердилась.' }
     $env:LABUI_ANIMATION_OBSERVATION = $animationObservationPath
     $process = Start-Process -FilePath $app -WorkingDirectory $ApplicationDirectory -WindowStyle Hidden -PassThru
     $started = $process.StartTime
@@ -291,11 +293,11 @@ try {
        uiSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabUI.WinUI.dll')).Hash;
        motionSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabMotion.WinUI.dll')).Hash;
        cliVersion = '0.7.1'; cliZipSha256 = $digest;
-       animation = @{ clientAreaBefore = $animationBefore; clientAreaReadback = $animationReadback;
+       animation = @{ expected = $AnimationsEnabled; clientAreaBefore = $animationBefore; clientAreaReadback = $animationReadback;
            helperSha256 = (Get-FileHash -LiteralPath $AnimationSettingsPath).Hash;
            process = $animationObservation } } |
         ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $output 'identity.json')
-    Assert-AnimationObservation $animationObservation $process
+    Assert-AnimationObservation $animationObservation $process $AnimationsEnabled
 
     Ui 'ready' @('wait-for', 'LabButtonMedium', '--timeout', '10000') | Out-Null
     Add-Type -AssemblyName System.Drawing

@@ -15,9 +15,17 @@ concurrency:
 
 jobs:
   windows:
-    name: Windows Button
+    name: ${{ matrix.name }}
     runs-on: windows-2025
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows Button
+            animationsEnabled: true
+          - name: Windows Button · reduced motion
+            animationsEnabled: false
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       DOTNET_NOLOGO: "1"
@@ -72,10 +80,12 @@ jobs:
       - name: Capture and exercise native Button
         shell: pwsh
         run: |
-          pwsh -File native/windows/test/smoke.ps1 `
+          $animationsEnabled = [bool]::Parse('${{ matrix.animationsEnabled }}')
+          & ./native/windows/test/smoke.ps1 `
             -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
             -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence" `
-            -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs"
+            -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
+            -AnimationsEnabled $animationsEnabled
 
       - name: Export native evidence to job log
         shell: pwsh

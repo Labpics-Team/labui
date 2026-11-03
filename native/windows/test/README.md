@@ -8,7 +8,10 @@ runner. После успешной проверки `evidence.mjs export` пе�
 harness. Actions artifact storage не используется.
 
 Перед запуском приложения harness сохраняет client-area animation, временно
-включает её и проверяет readback. Параметр `-AnimationSettingsPath` указывает на
+устанавливает ожидаемый режим и проверяет readback. `-AnimationsEnabled` принимает
+boolean и по умолчанию равен `$true`; `$false` проверяет запуск с выключенными
+системными анимациями.
+Параметр `-AnimationSettingsPath` указывает на
 `test/windows/animation-settings.cs` из закреплённого в workflow LabMotion checkout.
 Этот helper использует `SystemParametersInfoW` с `SPIF_SENDCHANGE`, без записи
 в профиль. Guard GitHub-hosted выполняется до загрузки helper и изменения настройки.
@@ -21,8 +24,15 @@ harness. Actions artifact storage не используется.
 `LABUI_ANIMATION_OBSERVATION`. Harness передаёт новый путь для этого запуска;
 пример атомарно публикует JSON с PID, временем Unix в миллисекундах и boolean.
 Наблюдение включается в `identity.json.animation.process`. До первого ввода harness
-требует совпадение PID, время внутри текущего запуска и `animationsEnabled: true`.
-В identity также остаются исходная настройка, readback и SHA-256 helper.
+требует совпадение PID, время внутри текущего запуска и логическое значение
+`animationsEnabled`, равный ожидаемому режиму. В identity также остаются
+`animation.expected`, исходная настройка, readback и SHA-256 helper.
+
+CI запускает оба режима в отдельных одноразовых runner: **Windows Button** — normal,
+**Windows Button · reduced motion** — начальный false. Оба выполняют те же сборку,
+проверки отрисовки, ввода и захвата. Матрица передаёт boolean через `[bool]::Parse`,
+чтобы строка `"false"` не превратилась в `$true`. Полный журнал каждого job
+декодируется отдельно: смешивание normal/reduced создаёт повторные имена файлов.
 
 Это наблюдение отдельного `UISettings` в процессе примера при запуске. Оно не
 доказывает значение private cache конкретного `LabButton`, выбор ветки Animate/Snap
@@ -32,7 +42,7 @@ harness. Actions artifact storage не используется.
 [client-area animation](https://learn.microsoft.com/en-us/windows/win32/winauto/client-area-animation),
 [SystemParametersInfoW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-systemparametersinfow).
 
-Получите полный журнал завершённого **Windows Button** job и SHA checkout из run:
+Получите полный журнал завершённого job нужного режима и SHA checkout из run:
 
 ```powershell
 gh api repos/Labpics-Team/labui/actions/jobs/JOB_ID/logs | Set-Content -Encoding utf8 native-job.log
@@ -91,6 +101,12 @@ capture, а воспроизведение и визуальную приёмк�
 относятся к командам harness, а не к точному времени событий приложения. Полная
 запись доступна для просмотра, но сама доставка не подтверждает плавность,
 производительность, real GPU loss, lifetime или reduced motion.
+
+Для начального false проверяйте `identity.json.animation.expected: false`, SPI readback
+и `process.animationsEnabled: false`, затем native кадры и функциональные результаты
+того же запуска. Это не сценарий системного `true→false` во время движения:
+наблюдение при запуске записывается один раз. `result.json.reducedMotion` остаётся
+`not-qualified` до независимой приёмки с явно указанной областью вывода.
 
 ```powershell
 node --test scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
