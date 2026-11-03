@@ -381,7 +381,8 @@ function Wait-ToolRead($Task, [Diagnostics.Stopwatch]$Budget, [int]$Timeout, [st
 function Close-Tool($Tool) {
     if ($Tool.ended) { return }
     $budget = [Diagnostics.Stopwatch]::StartNew()
-    $Tool.cancellation.CancelAfter(5000)
+    # Cleanup получает свой бюджет после запроса отмены, чтобы дождаться read-задач.
+    $Tool.cancellation.Cancel()
     $failure = $null
     $errorText = ''
     try {
@@ -442,9 +443,26 @@ function Finish-Tool($Tool, [int]$Timeout = 30000) {
         $value = $text | ConvertFrom-Json
     } catch { $failure = $_ }
     finally {
+        try {
+            # Доставка вывода относится к бюджету команды, включая stderr после exit.
+            if (!$Tool.stderr) {
+                if ($Tool.lineTask) {
+                    $Tool.prefix += "$(Wait-ToolRead $Tool.lineTask $budget $Timeout $Tool.name)`n"
+                    $Tool.lineTask = $null
+                }
+                $Tool.stderr = $Tool.stderrReader.ReadToEndAsync($Tool.cancellation.Token)
+            }
+            $null = Wait-ToolRead $Tool.stderr $budget $Timeout $Tool.name
+        } catch {
+            if ($failure) { $failure.Exception.Data['winappCleanupError'] = $_.Exception.ToString() }
+            else { $failure = $_ }
+        }
         try { Close-Tool $Tool }
         catch {
-            if ($failure) { $failure.Exception.Data['winappCleanupError'] = $_.Exception.ToString() }
+            if ($failure) {
+                $key = if ($failure.Exception.Data.Contains('winappCleanupError')) { 'readCleanupError' } else { 'winappCleanupError' }
+                $failure.Exception.Data[$key] = $_.Exception.ToString()
+            }
             else { $failure = $_ }
         }
     }

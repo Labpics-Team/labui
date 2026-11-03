@@ -73,7 +73,8 @@ $child.Dispose()
 
 function Invoke-ToolCase([string]$Name, [string]$Code, [bool]$MustFail, [string]$ErrorPattern = '', $Signals = $null,
     [bool]$ExpectAlreadyExited = $true, [int]$CommandTimeout = 5000,
-    [ValidateSet('none', 'line', 'pending')][string]$Recording = 'none', [switch]$ExpectCleanupError) {
+    [ValidateSet('none', 'line', 'pending')][string]$Recording = 'none', [switch]$ExpectCleanupError,
+    [switch]$DeferredCancellation) {
     $script:output = Join-Path $fixtureRoot $Name
     New-Item -ItemType Directory -Path $script:output | Out-Null
     $tool = Start-Tool $Name @('-NoProfile', '-NonInteractive', '-Command', $Code) -Recording:($Recording -ne 'none')
@@ -93,6 +94,11 @@ function Invoke-ToolCase([string]$Name, [string]$Code, [bool]$MustFail, [string]
                 $tool.prefix += "$($tool.lineTask.GetAwaiter().GetResult())`n"
                 $tool.lineTask = $tool.stderrReader.ReadLineAsync($tool.cancellation.Token).AsTask()
                 Assert (!$tool.lineTask.IsCompleted) 'Recorder fixture не удерживает незавершённую строку.'
+            }
+        }
+        if ($DeferredCancellation) {
+            foreach ($stream in @('stdout', 'stderr', 'lineTask')) {
+                if ($null -ne $tool[$stream]) { $tool[$stream] = [ToolReadCompletion]::DeferCancellation($tool[$stream]) }
             }
         }
         $before = @{ exited=$tool.process.HasExited; stdoutDone=$tool.stdout.IsCompleted;
@@ -132,8 +138,9 @@ function Invoke-ToolCase([string]$Name, [string]$Code, [bool]$MustFail, [string]
             if ($Recording -eq 'pending') { Assert ($stderr.Contains('held stderr')) 'Потеряна строка перед незавершённым хвостом recorder.' }
         }
         Assert ($tool.ended -and $handle.IsClosed) 'Собственный process handle не закрыт.'
-        foreach ($task in @($tool.stdout, $tool.stderr, $tool.lineTask) | Where-Object { $null -ne $_ }) {
-            Assert $task.IsCompleted 'После cleanup осталось незавершённое чтение.'
+        foreach ($stream in @('stdout', 'stderr', 'lineTask')) {
+            $task = $tool[$stream]
+            if ($null -ne $task) { Assert $task.IsCompleted "После cleanup осталось незавершённое чтение: $Name / $stream ($($task.Status))." }
         }
         # Короткий command budget плюс отдельная cleanup-фаза 5 с; запас не является новым бюджетом операции.
         Assert ($elapsed.ElapsedMilliseconds -lt ($CommandTimeout + 5000 + 2500)) 'Завершение вышло за command + cleanup budget.'
@@ -156,6 +163,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+public static class ToolReadCompletion {
+    public static async Task<string> DeferCancellation(Task<string> read) {
+        try { return await read.ConfigureAwait(false); }
+        catch (OperationCanceledException) {
+            // Отмена реального pipe уже завершилась; её ACK остаётся асинхронным.
+            await Task.Delay(250).ConfigureAwait(false);
+            throw;
+        }
+    }
+}
 public sealed class ToolReadBoundary : IDisposable {
     public readonly TaskCompletionSource<string> Line = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public readonly TaskCompletionSource<string> Tail = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -278,6 +295,9 @@ function Assert-CaptureFailure([bool]$CleanupFails) {
 
 try {
     Invoke-ToolCase 'healthy' '[Console]::WriteLine(''{"ok":true,"value":"preserved"}''); [Console]::Error.WriteLine(''diagnostic stderr'')' $false
+    Invoke-ToolCase 'healthy-deferred' '[Console]::WriteLine(''{"ok":true,"value":"preserved"}''); [Console]::Error.WriteLine(''diagnostic stderr'')' $false -DeferredCancellation
+    $signals = New-ToolEvents
+    Invoke-ToolCase 'primary-error-deferred' ((New-HeldPipeCode $signals 'stderr') + "`nexit 7") $true 'кодом 7' $signals -CommandTimeout 150 -ExpectCleanupError -DeferredCancellation
     foreach ($channel in @('both', 'stdout', 'stderr')) {
         $signals = New-ToolEvents
         Invoke-ToolCase "inherited-$channel" (New-HeldPipeCode $signals $channel) $true 'Таймаут|timeout|срок ожидания|заверш' $signals $true 150
