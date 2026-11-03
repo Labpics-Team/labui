@@ -12,6 +12,113 @@ foreach ($definition in $ast.EndBlock.Statements | Where-Object {
     $_ -is [Management.Automation.Language.FunctionDefinitionAst]
 }) { . ([scriptblock]::Create($definition.Extent.Text)) }
 
+# Реальное тело child исполняется с инертными владельцами процесса и отмены.
+# Отказы cleanup не теряют primary и не прерывают освобождение других ресурсов.
+& {
+    $definition = @($ast.EndBlock.Statements | Where-Object {
+        $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Invoke-TextScaleChild'
+    })[0].Extent.Text
+    $inert = $definition.Replace('[Diagnostics.ProcessStartInfo]::new($Executable)', '(New-ChildInfoFixture)').
+        Replace('[Diagnostics.Process]::Start($info)', '(Start-ChildFixture)').
+        Replace('[Threading.CancellationTokenSource]::new()', '(New-ChildCancellationFixture)')
+    . ([scriptblock]::Create($inert))
+    function New-ChildInfoFixture {
+        return [pscustomobject]@{ UseShellExecute=$true; CreateNoWindow=$false; RedirectStandardOutput=$false;
+            RedirectStandardError=$false; StandardOutputEncoding=$null; StandardErrorEncoding=$null;
+            Environment=@{}; ArgumentList=[Collections.Generic.List[string]]::new() }
+    }
+    $cases = @(
+        @{ name='success'; primary=$false; faults=@() },
+        @{ name='timeout'; primary=$true; faults=@() }
+    )
+    foreach ($fault in @('kill', 'cancel', 'wait', 'read', 'stdout-dispose', 'stderr-dispose', 'process-dispose', 'cancellation-dispose')) {
+        $cases += @{ name="timeout+$fault"; primary=$true; faults=@($fault) }
+    }
+    foreach ($fault in @('cancel', 'stdout-dispose', 'stderr-dispose', 'process-dispose', 'cancellation-dispose')) {
+        $cases += @{ name="success+$fault"; primary=$false; faults=@($fault) }
+    }
+    $cases += @{ name='timeout+all'; primary=$true; faults=@('kill', 'cancel', 'wait', 'read',
+        'stdout-dispose', 'stderr-dispose', 'process-dispose', 'cancellation-dispose') }
+    $cases += @{ name='timeout+cancelled-read'; primary=$true; faults=@('cancelled-read') }
+    foreach ($case in $cases) {
+        & {
+            param($Case)
+            $readers = foreach ($stream in @('stdout', 'stderr')) {
+                $reader = [pscustomobject]@{ Stream=$stream; Faults=$Case.faults; DisposeCalls=0 }
+                $reader | Add-Member ScriptMethod ReadToEndAsync {
+                    param($Token)
+                    $completion = [Threading.Tasks.TaskCompletionSource[string]]::new()
+                    if ($this.Stream -eq 'stdout' -and 'read' -in $this.Faults) {
+                        $completion.SetException([InvalidOperationException]::new('fixture read'))
+                    } elseif ($this.Stream -eq 'stdout' -and 'cancelled-read' -in $this.Faults) {
+                        $completion.SetCanceled()
+                    } else { $completion.SetResult($(if ($this.Stream -eq 'stdout') { 'fixture output' } else { '' })) }
+                    return $completion.Task
+                }
+                $reader | Add-Member ScriptMethod Dispose {
+                    $this.DisposeCalls++
+                    if (($this.Stream + '-dispose') -in $this.Faults) { throw ('fixture ' + $this.Stream + '-dispose') }
+                }
+                $reader
+            }
+            $fixture = [pscustomobject]@{ HasExited=!$Case.primary; Primary=$Case.primary; Faults=$Case.faults;
+                StandardOutput=$readers[0]; StandardError=$readers[1]; ExitCode=0; KillCalls=0; WaitCalls=0; DisposeCalls=0 }
+            $fixture | Add-Member ScriptMethod WaitForExit {
+                param($Timeout)
+                $this.WaitCalls++
+                if ($this.WaitCalls -eq 1 -and $this.Primary) { return $false }
+                if ('wait' -in $this.Faults) { throw 'fixture wait' }
+                $this.HasExited=$true
+                return $true
+            }
+            $fixture | Add-Member ScriptMethod Kill {
+                $this.KillCalls++
+                if ('kill' -in $this.Faults) { throw 'fixture kill' }
+                $this.HasExited=$true
+            }
+            $fixture | Add-Member ScriptMethod Dispose {
+                $this.DisposeCalls++
+                if ('process-dispose' -in $this.Faults) { throw 'fixture process-dispose' }
+            }
+            $cancellationFixture = [pscustomobject]@{ Token=[Threading.CancellationToken]::None;
+                Faults=$Case.faults; CancelCalls=0; DisposeCalls=0 }
+            $cancellationFixture | Add-Member ScriptMethod CancelAfter { param($Timeout) }
+            $cancellationFixture | Add-Member ScriptMethod Cancel {
+                $this.CancelCalls++
+                if ('cancel' -in $this.Faults) { throw 'fixture cancel' }
+            }
+            $cancellationFixture | Add-Member ScriptMethod Dispose {
+                $this.DisposeCalls++
+                if ('cancellation-dispose' -in $this.Faults) { throw 'fixture cancellation-dispose' }
+            }
+            function Start-ChildFixture { return $fixture }
+            function New-ChildCancellationFixture { return $cancellationFixture }
+            $failure=$null; $output=$null
+            try { $output=Invoke-TextScaleChild 'inert' @() 1000 } catch { $failure=$_ }
+            $message = if ($failure) { $failure.Exception.Message } else { '' }
+            Write-Output ('Child cleanup witness: ' + (@{ case=$Case.name; message=$message;
+                kill=$fixture.KillCalls; wait=$fixture.WaitCalls; stdoutDispose=$readers[0].DisposeCalls;
+                stderrDispose=$readers[1].DisposeCalls; processDispose=$fixture.DisposeCalls;
+                cancel=$cancellationFixture.CancelCalls; cancellationDispose=$cancellationFixture.DisposeCalls } | ConvertTo-Json -Compress))
+            if ($Case.primary) {
+                Assert ($message.Contains('Дочерний процесс превысил срок наблюдения.')) "Cleanup стёр первичный timeout: $($Case.name)."
+                Assert ($fixture.KillCalls -eq 1 -and $fixture.WaitCalls -ge 2) "Cleanup не попытался завершить собственный процесс: $($Case.name)."
+            } elseif (!$Case.faults.Count) {
+                Assert ($null -eq $failure -and $output -ceq 'fixture output') 'Child cleanup нарушил разрешённый успешный ответ.'
+            } else { Assert ($null -ne $failure) "Cleanup error превратился в успех: $($Case.name)." }
+            foreach ($fault in $Case.faults | Where-Object { $_ -ne 'cancelled-read' }) {
+                Assert ($message.Contains("fixture $fault")) "Cleanup потерял конкретный отказ $fault : $($Case.name)."
+            }
+            Assert ($readers[0].DisposeCalls -eq 1 -and $readers[1].DisposeCalls -eq 1 -and
+                $fixture.DisposeCalls -eq 1 -and $cancellationFixture.DisposeCalls -eq 1 -and
+                $cancellationFixture.CancelCalls -eq 1) "Один cleanup отказ прервал остальные attempts: $($Case.name)."
+            if ($Case.name -eq 'timeout+cancelled-read') {
+                Assert ($failure.Exception -isnot [AggregateException]) 'Ожидаемая отмена чтения добавлена как новый cleanup отказ.'
+            }
+        } $case
+    }
+}
+
 # Запускается настоящий script entry; отказ обязан предшествовать любому discovery.
 $saved = @{}
 foreach ($name in @('GITHUB_ACTIONS', 'RUNNER_ENVIRONMENT', 'RUNNER_OS')) {
@@ -81,7 +188,7 @@ foreach ($fault in @('none', 'window-gone', 'pid-reused', 'path-changed', 'sessi
         $result = $null
         $timer = [Diagnostics.Stopwatch]::StartNew()
         try { $result = Close-SettingsWindow $owned } catch { $failure = $_ }
-        $success = $fault -in @('none', 'window-gone')
+        $success = $fault -in @('none', 'window-gone', 'window-gone-before')
         Assert (($null -ne $failure) -eq !$success) "Cleanup потерял отказ: $fault."
         $shouldPost = $fault -in @('none', 'window-gone', 'close-refused', 'close-timeout', 'foreign-after-post', 'read-error-after-post')
         Assert ($calls.post -eq [int]$shouldPost) "Закрыто чужое окно либо повторён close: $fault."
@@ -101,6 +208,7 @@ $finallyBlock = [scriptblock]::Create($finallyBody.Substring(1, $finallyBody.Len
 foreach ($hasPrimary in @($true, $false)) {
     & {
         param($hasPrimary)
+        $Qualify=$false
         $result = [ordered]@{ status = 'available'; reason = $null; error = $null; cleanupError = $null; cleanup = 'not-started' }
         $output = Join-Path ([IO.Path]::GetTempPath()) "labui-settings-error-$([guid]::NewGuid()).json"
         $owned = $null
@@ -371,7 +479,7 @@ foreach ($fault in @('healthy-child', 'foreign-root', 'foreign-node', 'wrong-roo
         Assert (($null -ne $failure) -eq $fails) "Same-root reader boundary lost: $fault."
         Assert ($outside.RangeReads -eq 0) 'Reader прочитал соседний root с теми же labels/AutomationId.'
         if(!$fails) {
-            Assert (!(($observed | ConvertTo-Json -Depth 8) -match 'PRIVATE ACCOUNT')) 'Reader раскрыл посторонний Settings label/AutomationId.'
+            Assert (!((@{elements=$observed.elements;tree=$observed.tree} | ConvertTo-Json -Depth 8) -match 'PRIVATE ACCOUNT')) 'Reader раскрыл посторонний Settings label/AutomationId.'
             $result=@{ status='unavailable'; reason=$null; elements=@($observed.elements); tree=$observed.tree }
             Set-TextScaleCapability $result
             Assert (($result.status -eq 'available') -eq ($fault -eq 'healthy-child')) "Incomplete/private tree became available: $fault."
@@ -386,6 +494,256 @@ foreach ($fault in @('healthy-child', 'foreign-root', 'foreign-node', 'wrong-roo
     } $fault
 }
 Write-Output 'Same-root witness: hosted child accepted; neighboring root unread; range=137 retained; identity/privacy/depth/node/entry limits checked.'
+
+# Настоящий action body с удержанными fake UIA references; эффектов ОС нет.
+$actionTests = {
+    foreach($fault in @('apply','restore','already-original','rounded','partial-set','invoke-failed','apply-disabled',
+        'control-before-set','control-before-invoke','root-before-set','root-before-invoke','deadline-before-set')) {
+        & {
+            param($fault)
+            $settingsPid=3187; $operation=if($fault -in @('restore','already-original')){'Restore'}else{'Apply'}
+            $targetValue=if($operation -eq 'Restore'){137}else{225}
+            $operationTimeoutMs=30000; $operationClock=[pscustomobject]@{ElapsedMilliseconds=0}
+            $expected=@{sliderAutomationId='id-3';applyAutomationId='id-4';originalSliderValue=137}
+            $slider=New-TreeNode 3 'Slider' 'Text size'; $apply=New-TreeNode 4 'Button' 'Apply'
+            $apply.Current.IsEnabled=$false
+            if($fault -eq 'restore'){$slider.Range.Value=225}
+            $range=[pscustomobject]@{Current=$slider.Range;Apply=$apply;Slider=$slider;Fault=$fault;Sets=0}
+            $range | Add-Member ScriptMethod SetValue {
+                param($Value)
+                $this.Sets++; $this.Current.Value=$Value
+                if($this.Fault -eq 'rounded'){$this.Current.Value=$Value-1}
+                if($this.Fault -eq 'partial-set'){throw 'fixture partial effect'}
+                if($this.Fault -eq 'control-before-invoke'){$this.Slider.Current.AutomationId='changed'}
+                if($this.Fault -ne 'apply-disabled'){$this.Apply.Current.IsEnabled=$true}
+            }
+            $invoke=[pscustomobject]@{Calls=0;Fault=$fault}
+            $invoke | Add-Member ScriptMethod Invoke { $this.Calls++; if($this.Fault -eq 'invoke-failed'){throw 'fixture invoke failure'} }
+            $elements=@(
+                @{type='Text';name='Text size';isOffscreen=$false;isEnabled=$true},
+                @{type='Slider';name='Text size';automationId='id-3';runtimeId=@(42,3);isOffscreen=$false;isEnabled=$true;
+                    rangeValue=@{supported=$true;minimum=100;maximum=225;value=$slider.Range.Value;isReadOnly=$false}},
+                @{type='Button';name='Apply';automationId='id-4';runtimeId=@(42,4);isOffscreen=$false;isEnabled=$false;invokeSupported=$true})
+            $content=@{elements=$elements;tree=@{hasMoreChildren=$false};targets=@(
+                @{element=$slider;pattern=$range;observation=$elements[1]},
+                @{element=$apply;pattern=$invoke;observation=$elements[2]})}
+            $calls=@{boundary=0}
+            function Assert-SettingsActionBoundary {
+                param($Process,$Root,$Candidate,$Owner,$Original)
+                $calls.boundary++
+                if(($fault -eq 'root-before-set' -and $calls.boundary -eq 1) -or
+                   ($fault -eq 'root-before-invoke' -and $calls.boundary -eq 2)){throw 'fixture root changed'}
+                if($fault -eq 'deadline-before-set'){$operationClock.ElapsedMilliseconds=30000}
+            }
+            function Start-Sleep { param($Milliseconds) $operationClock.ElapsedMilliseconds+=$Milliseconds }
+            if($fault -eq 'control-before-set'){$slider.Current.ProcessId=9999}
+            $receipt=@{beforeValue=$null;afterValue=$null;setDispatched=$false;invokeDispatched=$false;noChange=$false;stage='admission'}
+            $failure=$null
+            try { Set-SettingsRangeAndApply $null $null $null $null $null $content $receipt } catch { $failure=$_ }
+            $success=$fault -in @('apply','restore','already-original')
+            Assert (($null -eq $failure) -eq $success) "Action accepted/rejected wrong case: $fault."
+            $set=$fault -notin @('already-original','control-before-set','root-before-set','deadline-before-set')
+            $invoked=$fault -in @('apply','restore','invoke-failed')
+            Assert ($range.Sets -eq [int]$set -and $receipt.setDispatched -eq $set) "Set dispatch receipt lost: $fault."
+            Assert ($invoke.Calls -eq [int]$invoked -and $receipt.invokeDispatched -eq $invoked) "Invoke boundary lost: $fault."
+            if($fault -eq 'already-original'){Assert $receipt.noChange 'Unchanged disabled Apply did not return noChange.'}
+            if($fault -eq 'partial-set'){Assert ($range.Current.Value -eq 225) 'Fixture did not exercise an effect before throw.'}
+            if($fault -eq 'apply-disabled'){Assert ($operationClock.ElapsedMilliseconds -eq 30000) 'Apply wait reset/exceeded phase budget.'}
+        } $fault
+    }
+    'Action witness: real SetValue/Invoke bodies checked with inert references, including partial effect and disabled Apply.'
+}
+& $actionTests
+$actionDefinitions=@('Assert','New-TreeNode','Set-TextScaleCapability','Assert-SettingsActionTarget','Set-SettingsRangeAndApply') |
+    ForEach-Object { "function $_ {`n$((Get-Item "Function:$_").Definition)`n}" }
+$actionCommand=($actionDefinitions -join "`n")+"`n& {`n$($actionTests.ToString())`n}"
+$actionReadback=Invoke-TextScaleChild $frameworkShell @('-NoProfile','-NonInteractive','-STA','-Command',$actionCommand)
+Assert ($actionReadback -match '^Action witness:') 'PS5 action body did not execute.'
+Write-Output "PS5 $($actionReadback.Trim())"
+
+# Полный production prefix + reader проходят настоящий PS5 transport/compilation.
+# Выполнение останавливается до Get-Process/FromHandle; ни discovery, ни mutation нет.
+& {
+    $realChild=${function:Invoke-TextScaleChild}
+    $owned=@{pid=3187;startTicks=638900000000000000L;hwnd=42;threadId=5500;sessionId=1;path='C:\Windows\ImmersiveControlPanel\SystemSettings.exe'}
+    $prepared=@{hwnd=43;threadId=5501;ownerHwnd=900;ownerPid=9999;ownerThreadId=9900;
+        sliderAutomationId='s'*256;applyAutomationId='a'*256;originalSliderValue=137}
+    function Assert-SettingsWindow {throw 'Action required original popup.'}
+    function Invoke-TextScaleChild {
+        param($Executable,$Arguments,$TimeoutMs)
+        Assert ($Arguments[-2] -eq '-Command') 'Reader transport changed.'
+        $code=$Arguments[-1]; $end=$code.IndexOf('$process = Get-Process -Id $settingsPid')
+        Assert ($end -gt 0 -and $code.Length -lt 31000) 'Reader exceeded Windows command line budget.'
+        $compiled=$code.Substring(0,$end)+"`n'{`"action`":{`"stage`":`"compiled`"}}'"
+        & $realChild $Executable @('-NoProfile','-NonInteractive','-STA','-Command',$compiled) $TimeoutMs
+    }
+    $observed=Read-SettingsContent $owned 15000 'Restore' $prepared 137
+    Assert ($observed.action.stage -eq 'compiled') 'Full action reader did not compile in PS5.'
+}
+
+# Apply/Restore берут сохранённый content напрямую: исходный popup может уже исчезнуть.
+$selectionBranch=$readerAst.Find({param($node)
+    $node -is [Management.Automation.Language.IfStatementAst] -and
+    $node.Extent.Text -match '(?s)^if \(\$operation -eq ''Observe''\).*\$candidate=Select-ContentWindow'
+},$true)
+Assert ($null -ne $selectionBranch) 'Saved content selection branch missing.'
+$savedSelection=[scriptblock]::Create($selectionBranch.Extent.Text.Replace('[LabUISettingsContentNative]::Read(', '(Read-FixtureWindow '))
+$boundaryDefinition=($readerAst.EndBlock.Statements | Where-Object {
+    $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Assert-SettingsActionBoundary'
+}).Extent.Text
+$fixtureBoundary=[scriptblock]::Create($boundaryDefinition.Replace('[LabUISettingsContentNative]::Read(', '(Read-FixtureWindow '))
+foreach($fault in @('popup-gone','foreign-content','changed-thread','foreign-owner','reparented','expired','root-drift')) {
+    & {
+        param($fault)
+        . $fixtureBoundary
+        $operation='Restore'; $operationTimeoutMs=60000; $operationClock=[pscustomobject]@{ElapsedMilliseconds=0}
+        $settingsPid=3187; $settingsPath='fixture/SystemSettings.exe'; $sessionId=1; $handle=43
+        $started=[DateTime]::UtcNow.AddMinutes(-1); $startTicks=$started.Ticks
+        $process=[pscustomobject]@{StartTime=$started;Path=$settingsPath;SessionId=1;HasExited=$false}
+        $root=New-TreeNode 1; $root.Current.NativeWindowHandle=43
+        $expected=@{hwnd=43;threadId=5501;ownerHwnd=900;ownerPid=9999;ownerThreadId=9900}
+        $candidate=$null; $owner=$null; $original=$null
+        $reads=[Collections.Generic.List[long]]::new()
+        function Read-FixtureWindow {param($Handle)
+            $reads.Add($Handle)
+            if($Handle -eq 42){throw 'Original popup no longer exists.'}
+            if($Handle -eq 43){return @{hwnd=43;nativePid=if($fault -eq 'foreign-content'){9}else{3187};
+                nativeThreadId=if($fault -eq 'changed-thread'){5502}else{5501};parentHwnd=900;rootHwnd=900}}
+            if($Handle -eq 900){return @{hwnd=900;nativePid=if($fault -eq 'foreign-owner'){8}else{9999};nativeThreadId=9900}}
+            throw 'Selection reached unknown HWND.'
+        }
+        function Test-ContentDescendant {param($OwnerHandle,$ContentHandle) return $fault -ne 'reparented'}
+        $failure=$null
+        try {
+            . $savedSelection
+            if($fault -eq 'expired'){$operationClock.ElapsedMilliseconds=60000}
+            if($fault -eq 'root-drift'){$root.Current.NativeWindowHandle=44}
+            Assert-SettingsActionBoundary $process $root $candidate $owner $original
+        } catch {$failure=$_}
+        Assert (($null -eq $failure) -eq ($fault -eq 'popup-gone')) "Saved content boundary lost: $fault."
+        Assert (!$reads.Contains(42) -and @($reads | Where-Object {$_ -notin @(43,900)}).Count -eq 0) 'Action discovered/replaced a root or required old popup.'
+    } $fault
+}
+
+# Публикуется projection, а не приватные AutomationElement/Pattern references.
+$projection=@($readerAst.FindAll({param($node)
+    $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -like '$observation*'
+},$true) | ForEach-Object {$_.Extent.Text}) -join "`n"
+Assert ($projection -notmatch '\$content($|[;\r\n])|\$content\.targets') 'Private UIA references reached JSON projection.'
+
+# Штатный Observe не dispatch-ит действия: исполняется точная ветка production reader.
+$actionBranch=$readerAst.Find({param($node)
+    $node -is [Management.Automation.Language.IfStatementAst] -and $node.Extent.Text -match '(?s)^if \(\$operation -ne ''Observe''\).*\$observation.action='
+},$true)
+Assert ($null -ne $actionBranch) 'Operation dispatch branch missing.'
+& {
+    $operation='Observe'; $observation=@{action=$null}
+    function Set-SettingsRangeAndApply { throw 'Observe dispatched mutation.' }
+    . ([scriptblock]::Create($actionBranch.Extent.Text))
+    Assert ($null -eq $observation.action) 'Observe created action receipt.'
+}
+
+# Настоящие qualification/restore и внешний catch/finally, подменены лишь эффекты.
+foreach($fault in @('none','apply-throw','apply-error','target-getter','smoke','receipt',
+    'restore-throw','restore-error','restore-getter','restore-both','cleanup')) {
+    & {
+        param($fault)
+        $Qualify=$true; $owned=@{hwnd=42}; $ownedProcess=$null; $failure=$null; $stage='qualify-text-scale'
+        $output=Join-Path ([IO.Path]::GetTempPath()) "labui-scale-orchestration-$([guid]::NewGuid()).json"
+        $result=New-CapabilityFixture; Set-TextScaleCapability $result
+        $result.contentRoot=@{hwnd=43;threadId=5501}
+        $result.topology=@{original=@{ownerHwnd=900};owner=@{nativePid=9999;nativeThreadId=9900}}
+        foreach($field in @('prepared','qualification','restore','restoreError','restoreGetterError','cleanupError','error')){$result[$field]=$null}
+        $result.systemTextScaleBefore=@{textScaleFactor=1.3}; $result.changeMayHaveOccurred=$false
+        $result.systemTextScaleChanged=$false; $result.fontQualification='not-performed'; $result.cleanup='not-started'
+        $context=@{sourceCommit='a'*40;sourceTree='b'*40;smokeStartedAtUnixMs=$null}; $winapp=@{}
+        $calls=[Collections.Generic.List[string]]::new()
+        function Invoke-TextScaleAction {
+            param($Owned,$Expected,$Operation,$TargetValue,$TimeoutMs)
+            Assert ($Owned.hwnd -eq 42 -and $Expected.hwnd -eq 43) 'Action replaced saved HWND.'
+            Assert ($result.changeMayHaveOccurred -and $result.prepared.originalSliderValue -eq 130 -and
+                $result.systemTextScaleBefore.textScaleFactor -eq 1.3) 'Dispatch preceded saved originals/possible-effect flag.'
+            $calls.Add($Operation)
+            $limit=if($Operation -eq 'Apply'){30000}else{45000}
+            Assert ($TimeoutMs -gt 0 -and $TimeoutMs -le $limit) 'Action budget exceeded phase/reserve.'
+            Assert ($TargetValue -eq $(if($Operation -eq 'Apply'){225}else{130})) 'Restore guessed original percentage.'
+            if(($Operation -eq 'Apply' -and $fault -eq 'apply-throw') -or
+               ($Operation -eq 'Restore' -and $fault -in @('restore-throw','restore-both'))){throw "fixture $Operation throw"}
+            return @{setDispatched=$true;error=if(($Operation -eq 'Apply' -and $fault -eq 'apply-error') -or
+                ($Operation -eq 'Restore' -and $fault -eq 'restore-error')){@{stage='invoke';message="fixture $Operation error"}}else{$null}}
+        }
+        function Wait-SystemTextScale {
+            param($ExpectedFactor,$Budget,$LimitMs)
+            $calls.Add("getter-$LimitMs")
+            Assert ($null -ne $Budget -and $LimitMs -in @(30000,60000)) 'Getter has no phase budget.'
+            if(($LimitMs -eq 30000 -and $fault -eq 'target-getter') -or
+               ($LimitMs -eq 60000 -and $fault -in @('restore-getter','restore-both'))){throw 'fixture independent getter'}
+            return @{textScaleFactor=$ExpectedFactor}
+        }
+        function Invoke-QualifiedSmoke { param($Context,$WinApp) $calls.Add('smoke'); if($fault -eq 'smoke'){throw 'fixture smoke'} }
+        function Read-TextScaleSmokeReceipt { param($Context,$WinApp) $calls.Add('receipt'); if($fault -eq 'receipt'){throw 'fixture receipt'}; return @{visualReview='pending'} }
+        function Close-SettingsWindow { param($Owned) Assert ($Owned.hwnd -eq 42) 'Cleanup changed target.'; $calls.Add('cleanup'); if($fault -eq 'cleanup'){throw 'fixture cleanup'}; return 'closed' }
+        try {
+            try { Invoke-TextScaleQualification $owned $result $context $winapp } catch { . $catchBlock }
+            . $finallyBlock | Out-Null
+            $readback=Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+            Assert ($calls[-1] -eq 'cleanup' -and $calls.Contains('Restore') -and $calls.Contains('getter-60000')) "Restore/getter/cleanup order lost: $fault."
+            Assert ($calls.IndexOf('Restore') -lt $calls.IndexOf('getter-60000')) 'Independent getter skipped/reordered after restore.'
+            Assert (($readback.status -eq 'passed') -eq ($fault -eq 'none')) "False qualification PASS: $fault."
+            Assert (($null -ne $readback.restoreError) -eq ($fault -in @('restore-throw','restore-error','restore-both'))) 'Restore error was erased/invented.'
+            Assert (($null -ne $readback.restoreGetterError) -eq ($fault -in @('restore-getter','restore-both'))) 'Getter error was erased/invented.'
+            Assert (($null -ne $readback.error) -eq ($fault -in @('apply-throw','apply-error','target-getter','smoke','receipt'))) 'Primary error was erased/invented.'
+            if($fault -eq 'none'){Assert ($readback.fontQualification -eq 'runtime-capture-awaiting-visual-review') 'Runtime capture became visual acceptance.'}
+        } finally { if(Test-Path -LiteralPath $output){Remove-Item -LiteralPath $output} }
+    } $fault
+}
+Write-Output 'Qualification witness: partial apply/smoke/restore/getter failures retain separate errors; original HWND cleanup runs last.'
+
+# Readback расходует общий остаток, включая повторы; исчерпанный бюджет не перезапускается.
+& {
+    $budget=[pscustomobject]@{ElapsedMilliseconds=1000}; $timeouts=[Collections.Generic.List[int]]::new()
+    function Read-SystemTextScale {param($TimeoutMs) $timeouts.Add($TimeoutMs); $budget.ElapsedMilliseconds+=1000; return @{textScaleFactor=if($timeouts.Count -eq 1){1}else{2.25}}}
+    function Start-Sleep {param($Milliseconds) $budget.ElapsedMilliseconds+=$Milliseconds}
+    $value=Wait-SystemTextScale 2.25 $budget 30000
+    Assert ($value.textScaleFactor -eq 2.25 -and $timeouts[0] -eq 29000 -and $timeouts[1] -eq 27900) 'OS readback reset phase budget.'
+    $budget.ElapsedMilliseconds=60000; $failure=$null
+    try { Wait-SystemTextScale 1 $budget 60000 | Out-Null } catch {$failure=$_}
+    Assert ($null -ne $failure -and $timeouts.Count -eq 2) 'Getter launched after restore deadline.'
+}
+
+# Receipt связывает нетронутые JSON bytes с одним app/source/PID/start.
+foreach($fault in @('none','source','pid','start','cli','app','animation','factor','time','passed')) {
+    & {
+        param($fault)
+        $directory=Join-Path ([IO.Path]::GetTempPath()) "labui-scale-receipt-$([guid]::NewGuid())"
+        $null=New-Item -ItemType Directory -Path $directory
+        $now=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        $context=@{evidenceDirectory=$directory;sourceCommit='a'*40;sourceTree='b'*40;appSha256='c'*64;smokeStartedAtUnixMs=$now-5000}
+        $winapp=@{version='0.7.1';archiveSha256='d'*64}
+        $identity=@{source=$context.sourceCommit;pid=3187;startedAtUnixMs=$now-1000;cliVersion=$winapp.version;
+            cliZipSha256=$winapp.archiveSha256;appSha256=$context.appSha256;animation=@{expected=$true}}
+        $result=@{passed=$true;initialLayout=@{pid=3187;textScaleFactor=2.25;observedAtUnixMs=$now}}
+        switch($fault){
+            'source'{$identity.source='e'*40}; 'pid'{$result.initialLayout.pid=99}; 'start'{$identity.startedAtUnixMs=$now-6000}
+            'cli'{$identity.cliZipSha256='f'*64}; 'app'{$identity.appSha256='f'*64}; 'animation'{$identity.animation.expected=$false}
+            'factor'{$result.initialLayout.textScaleFactor=1}; 'time'{$result.initialLayout.observedAtUnixMs=$now-2000}; 'passed'{$result.passed=$false}
+        }
+        try {
+            foreach($name in @('identity','result')){[IO.File]::WriteAllText((Join-Path $directory "$name.json"),((Get-Variable $name -ValueOnly)|ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))}
+            $before=@(Get-FileHash -LiteralPath (Join-Path $directory 'identity.json'),(Join-Path $directory 'result.json'))
+            $failure=$null; $receipt=$null
+            try {$receipt=Read-TextScaleSmokeReceipt $context $winapp} catch {$failure=$_}
+            Assert (($null -eq $failure) -eq ($fault -eq 'none')) "Smoke receipt identity boundary lost: $fault."
+            $after=@(Get-FileHash -LiteralPath (Join-Path $directory 'identity.json'),(Join-Path $directory 'result.json'))
+            Assert ($before[0].Hash -ceq $after[0].Hash -and $before[1].Hash -ceq $after[1].Hash) 'Qualifier rewrote smoke JSON.'
+            if($fault -eq 'none'){Assert ($receipt.identitySha256 -ceq $before[0].Hash.ToLowerInvariant() -and
+                $receipt.resultSha256 -ceq $before[1].Hash.ToLowerInvariant() -and $receipt.visualReview -eq 'pending') 'Receipt hashes/visual boundary lost.'}
+        } finally {
+            Remove-Item -LiteralPath (Join-Path $directory 'identity.json'),(Join-Path $directory 'result.json') -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $directory
+        }
+    } $fault
+}
 
 # F1: исполняются текущий selector и настоящий блок readback после native metadata.
 # Только IsChild/metadata/UIA заменены fixture; подмена не меняет проверяемый guard.
@@ -573,7 +931,7 @@ $getterText = @($ast.FindAll({ param($node)
 }, $true) | Where-Object Value -Match 'ContentType=WindowsRuntime')[0].Value
 $null = [Management.Automation.Language.Parser]::ParseInput($getterText, [ref]$tokens, [ref]$errors)
 Assert ($errors.Count -eq 0) 'Повреждён синтаксис framework getter.'
-Assert ($source -notmatch '\bSetValue\s*\(|\bset-value\b|\bSet-ItemProperty\b|\bStop-Process\b') 'Read-only experiment получил путь изменения настройки/чужого процесса.'
+Assert ($source -notmatch '\bSet-ItemProperty\b|\bStop-Process\b|HKCU:|HKLM:|ui.+set-value') 'Harness получил registry/CLI fallback либо убийство чужого процесса.'
 
 # Настоящий свежий PS5 getter: служебный progress не должен ломать JSON-ответ.
 # Читается действующее значение OS API; настройка и окна не изменяются.

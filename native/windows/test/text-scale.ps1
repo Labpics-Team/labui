@@ -1,5 +1,11 @@
 param(
-    [Parameter(Mandatory)][string]$OutputPath
+    [Parameter(Mandatory)][string]$OutputPath,
+    [switch]$Qualify,
+    [string]$ApplicationDirectory,
+    [string]$EvidenceDirectory,
+    [string]$AnimationSettingsPath,
+    [string]$SourceCommit,
+    [string]$WinAppDirectory
 )
 
 $ErrorActionPreference = 'Stop'
@@ -28,6 +34,8 @@ function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$
     $stderrReader = $null
     $stdout = $null
     $stderr = $null
+    $failure = $null
+    $cleanupErrors = [Collections.Generic.List[Exception]]::new()
     try {
         $child = [Diagnostics.Process]::Start($info)
         $cancellation.CancelAfter([int][Math]::Max(0, $TimeoutMs - $budget.ElapsedMilliseconds))
@@ -53,28 +61,48 @@ function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$
             throw "Дочерний процесс: $code, exit=$($child.ExitCode)."
         }
         if ($errorText.Trim()) { throw 'Успешный дочерний процесс записал неожиданный stderr.' }
-        return $text
+    } catch {
+        $failure = $_
     } finally {
-        try {
-            $cancellation.Cancel()
-            if ($child -and !$child.HasExited) {
-                $child.Kill()
+        # Каждый ресурс освобождается независимо; cleanup не заменяет первичный отказ.
+        try { $cancellation.Cancel() } catch { $cleanupErrors.Add($_.Exception) }
+        if ($child) {
+            try { if (!$child.HasExited) { $child.Kill() } }
+            catch { $cleanupErrors.Add($_.Exception) }
+            try {
                 if (!$child.WaitForExit(5000)) { throw 'Собственный дочерний процесс не завершился.' }
-            }
+            } catch { $cleanupErrors.Add($_.Exception) }
+        }
+        try {
             $reads = @(@($stdout, $stderr) | Where-Object { $null -ne $_ })
             if ($reads.Count) {
-                try { $null = [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]$reads, 5000) } catch { }
+                try { $null = [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]$reads, 5000) }
+                catch {
+                    # Отмена чтений ожидаема; faulted task остаётся отдельной ошибкой.
+                    if (@($reads | Where-Object { $_.IsFaulted }).Count -or
+                        !@($reads | Where-Object { $_.IsCanceled }).Count) {
+                        $cleanupErrors.Add($_.Exception)
+                    }
+                }
                 if (@($reads | Where-Object { !$_.IsCompleted }).Count) {
                     throw 'Отменённые чтения дочернего процесса не завершились.'
                 }
             }
-        } finally {
-            if ($stdoutReader) { $stdoutReader.Dispose() }
-            if ($stderrReader) { $stderrReader.Dispose() }
-            if ($child) { $child.Dispose() }
-            $cancellation.Dispose()
+        } catch { $cleanupErrors.Add($_.Exception) }
+        foreach ($resource in @($stdoutReader, $stderrReader, $child, $cancellation)) {
+            if ($null -ne $resource) {
+                try { $resource.Dispose() } catch { $cleanupErrors.Add($_.Exception) }
+            }
         }
     }
+    if ($cleanupErrors.Count) {
+        $causes = [Collections.Generic.List[Exception]]::new()
+        if ($failure) { $causes.Add($failure.Exception) }
+        $causes.AddRange($cleanupErrors)
+        throw [AggregateException]::new('Дочерний процесс завершился с ошибками очистки.', $causes.ToArray())
+    }
+    if ($failure) { throw $failure }
+    return $text
 }
 
 function Get-SettingsSnapshot {
@@ -169,7 +197,7 @@ function Read-SettingsWindowDiagnostic($Owned) {
     return $state
 }
 
-function Read-SystemTextScale {
+function Read-SystemTextScale([int]$TimeoutMs = 15000) {
     $reader = @'
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -189,7 +217,7 @@ try {
     $started = [DateTimeOffset]::UtcNow
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($reader))
     $frameworkShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-    $observation = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', $encoded) | ConvertFrom-Json
+    $observation = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', $encoded) $TimeoutMs | ConvertFrom-Json
     $current = [Diagnostics.Process]::GetCurrentProcess()
     try {
         foreach ($field in @('schemaVersion', 'pid', 'startTicks', 'sessionId', 'observedAtUnixMs')) {
@@ -225,7 +253,9 @@ function Close-SettingsWindow($Owned) {
     if ($null -eq $Owned -or !$Owned.hwnd) { return 'no-owned-window' }
     $process = Get-OwnedSettings $Owned
     try {
-        Assert-SettingsWindowIdentity $Owned (Read-SettingsWindowOwner $Owned.hwnd)
+        $initialWindow=Read-SettingsWindowOwner $Owned.hwnd
+        if (!$initialWindow.nativeAlive -and $initialWindow.nativeError -eq 1400) { return 'closed' }
+        Assert-SettingsWindowIdentity $Owned $initialWindow
         if (!(Test-SettingsWindowEnabled $Owned.hwnd)) { throw 'Disabled окно Settings не закрывается.' }
         # Проверка и PostMessage не атомарны; другой HWND не выбирается даже при отказе.
         Assert-SettingsWindowIdentity $Owned (Read-SettingsWindowOwner $Owned.hwnd)
@@ -244,7 +274,8 @@ function Close-SettingsWindow($Owned) {
     } finally { $process.Dispose() }
 }
 
-function Read-SettingsContent($Owned, [int]$TimeoutMs) {
+function Read-SettingsContent($Owned, [int]$TimeoutMs,
+    [ValidateSet('Observe','Apply','Restore')][string]$Operation = 'Observe', $Expected = $null, [double]$TargetValue = 0) {
     # CLI 0.7.1 группирует child под GA_ROOT и допускает fallback. Весь допуск
     # страницы читается одним root; cleanup по-прежнему принадлежит исходному HWND.
     $reader = @'
@@ -252,6 +283,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$operationClock = [Diagnostics.Stopwatch]::StartNew()
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 $nativeSource = @"
@@ -370,6 +402,7 @@ function Read-ContentTree($Process, $Root, $Walker) {
     $pending.Push(@{ element=$Root; depth=0 })
     $seen = [Collections.Generic.HashSet[string]]::new()
     $elements = [Collections.Generic.List[object]]::new()
+    $targets = [Collections.Generic.List[object]]::new()
     $types = @{}
     $count = 0; $maxDepth = 0; $depthLimited = $false; $nodeLimited = $false
     while ($pending.Count) {
@@ -409,10 +442,12 @@ function Read-ContentTree($Process, $Root, $Walker) {
                     $range.value=$value.Value; $range.isReadOnly=$value.IsReadOnly
                 }
                 $entry.rangeValue=$range
+                $targets.Add(@{ element=$element; pattern=$pattern; observation=$entry })
             }
             if ($type -eq 'Button' -and $name -ceq 'Apply') {
                 $pattern=$null
                 $entry.invokeSupported=$element.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)
+                $targets.Add(@{ element=$element; pattern=$pattern; observation=$entry })
             }
             $elements.Add($entry)
         }
@@ -429,8 +464,82 @@ function Read-ContentTree($Process, $Root, $Walker) {
     }
     $Process.Refresh()
     Assert-SettingsContentIdentity $Process $Root
-    return @{ elements=$elements.ToArray(); tree=@{ nodeCount=$count; maxDepth=$maxDepth; typeCounts=$types;
+    return @{ elements=$elements.ToArray(); targets=$targets.ToArray(); tree=@{ nodeCount=$count; maxDepth=$maxDepth; typeCounts=$types;
         hasMoreChildren=$depthLimited -or $nodeLimited; depthLimited=$depthLimited; nodeLimited=$nodeLimited } }
+}
+function Assert-SettingsActionBoundary($Process, $Root, $Candidate, $Owner, $Original) {
+    if ($operationClock.ElapsedMilliseconds -ge $operationTimeoutMs) { throw 'Settings action deadline expired.' }
+    Assert-SettingsContentIdentity $Process $Root
+    $liveCandidate=[LabUISettingsContentNative]::Read($Candidate.hwnd)
+    Assert-ContentWindow $liveCandidate $Candidate.hwnd $Candidate.nativeThreadId
+    if ($liveCandidate.parentHwnd -ne $Candidate.parentHwnd -or $liveCandidate.rootHwnd -ne $Candidate.rootHwnd) {
+        throw 'Action content parent/root changed.'
+    }
+    Assert-ContentAncestry $liveCandidate $Owner
+    if ($null -ne $Owner) {
+        $liveOwner=[LabUISettingsContentNative]::Read($Owner.hwnd)
+        if ($liveOwner.nativePid -ne $Owner.nativePid -or $liveOwner.nativeThreadId -ne $Owner.nativeThreadId) {
+            throw 'Action host identity changed.'
+        }
+    }
+}
+function Assert-SettingsActionTarget($Target, [bool]$RequireEnabled) {
+    $current=$Target.element.Current
+    $observed=$Target.observation
+    if ($current.ProcessId -ne $settingsPid -or $current.AutomationId -cne $observed.automationId -or
+        $current.Name -cne $observed.name -or $current.ControlType.ProgrammaticName -cne "ControlType.$($observed.type)" -or
+        $current.IsOffscreen -isnot [bool] -or $current.IsOffscreen -or $current.IsEnabled -isnot [bool] -or
+        ($RequireEnabled -and !$current.IsEnabled) -or
+        (@($Target.element.GetRuntimeId()) -join ',') -cne ($observed.runtimeId -join ',')) {
+        throw 'Action control identity/state changed.'
+    }
+}
+function Set-SettingsRangeAndApply($Process, $Root, $Candidate, $Owner, $Original, $Content, $Receipt) {
+    $admission=@{status='unavailable';reason=$null;elements=$Content.elements;tree=$Content.tree}
+    Set-TextScaleCapability $admission
+    if ($admission.status -ne 'available') { throw "Action page unavailable: $($admission.reason)." }
+    $sliders=@($Content.targets | Where-Object { $_.observation.type -eq 'Slider' })
+    $buttons=@($Content.targets | Where-Object { $_.observation.type -eq 'Button' -and $_.observation.name -ceq 'Apply' })
+    if ($sliders.Count -ne 1 -or $buttons.Count -ne 1) { throw 'Action references are not unique.' }
+    $slider=$sliders[0]; $apply=$buttons[0]
+    if ($slider.observation.automationId -cne $expected.sliderAutomationId -or
+        $apply.observation.automationId -cne $expected.applyAutomationId) { throw 'Action controls differ from prepared page.' }
+    Assert-SettingsActionBoundary $Process $Root $Candidate $Owner $Original
+    Assert-SettingsActionTarget $slider $true
+    Assert-SettingsActionTarget $apply $false
+    $range=$slider.pattern.Current
+    if ([double]::IsNaN($targetValue) -or [double]::IsInfinity($targetValue) -or $range.IsReadOnly -isnot [bool] -or
+        $range.IsReadOnly -or $targetValue -lt $range.Minimum -or $targetValue -gt $range.Maximum) { throw 'Action target outside writable range.' }
+    if ($operation -eq 'Apply' -and $range.Value -ne $expected.originalSliderValue) { throw 'Prepared slider value changed before apply.' }
+    $Receipt.beforeValue=$range.Value
+    if ($range.Value -ne $targetValue) {
+        if ($operationClock.ElapsedMilliseconds -ge $operationTimeoutMs) { throw 'Settings action deadline expired before SetValue.' }
+        $Receipt.stage='set-value'; $Receipt.setDispatched=$true
+        $slider.pattern.SetValue($targetValue)
+        $Receipt.afterValue=$slider.pattern.Current.Value
+        if ($Receipt.afterValue -ne $targetValue) { throw 'RangeValue readback differs from requested value.' }
+    } else { $Receipt.afterValue=$range.Value }
+    $Receipt.stage='wait-apply'
+    while ($true) {
+        Assert-SettingsActionTarget $apply $false
+        if ($apply.element.Current.IsEnabled) { break }
+        if (!$Receipt.setDispatched) {
+            $Receipt.stage='already-at-range'; $Receipt.noChange=$true
+            return
+        }
+        $remaining=[int][Math]::Max(0,$operationTimeoutMs-$operationClock.ElapsedMilliseconds)
+        if ($remaining -le 0) { throw 'Apply remained disabled until the operation deadline.' }
+        Start-Sleep -Milliseconds ([Math]::Min(100,$remaining))
+    }
+    $Receipt.stage='invoke-apply'
+    Assert-SettingsActionBoundary $Process $Root $Candidate $Owner $Original
+    Assert-SettingsActionTarget $slider $true
+    Assert-SettingsActionTarget $apply $true
+    if ($slider.pattern.Current.Value -ne $targetValue) { throw 'Slider changed before Apply.' }
+    if ($operationClock.ElapsedMilliseconds -ge $operationTimeoutMs) { throw 'Settings action deadline expired before Invoke.' }
+    $Receipt.invokeDispatched=$true
+    $apply.pattern.Invoke()
+    $Receipt.stage='applied'
 }
 $process = Get-Process -Id $settingsPid -ErrorAction Stop
 try {
@@ -439,10 +548,11 @@ try {
         throw 'Settings native process handle unavailable.'
     }
     Assert-SettingsContentIdentity $process
-    $original=[LabUISettingsContentNative]::Read($cleanupHandle)
-    Assert-ContentWindow $original $cleanupHandle $cleanupThread
-    $owner=$null; $descendants=@(); $summary=@{ visited=0; matching=0; truncated=$false }
-    if ($original.ownerHwnd -ne 0) {
+    $original=$null; $owner=$null; $descendants=@(); $summary=@{ visited=0; matching=0; truncated=$false }
+    if ($operation -eq 'Observe') {
+      $original=[LabUISettingsContentNative]::Read($cleanupHandle)
+      Assert-ContentWindow $original $cleanupHandle $cleanupThread
+      if ($original.ownerHwnd -ne 0) {
         $owner=[LabUISettingsContentNative]::Read($original.ownerHwnd)
         if ($owner.nativePid -ne $settingsPid) {
             $native=[LabUISettingsContentNative]::Descendants($owner.hwnd, $settingsPid)
@@ -453,9 +563,22 @@ try {
                 $window
             })
         }
+      }
+      $candidate=Select-ContentWindow $original $owner $descendants $summary
+    } else {
+        # После admission действие живёт на сохранённом content HWND, независимо от popup.
+        $candidate=[LabUISettingsContentNative]::Read($expected.hwnd)
+        Assert-ContentWindow $candidate $expected.hwnd $expected.threadId
+        if ($expected.ownerHwnd -ne 0) {
+            $owner=[LabUISettingsContentNative]::Read($expected.ownerHwnd)
+            if ($owner.nativePid -ne $expected.ownerPid -or $owner.nativeThreadId -ne $expected.ownerThreadId) {
+                throw 'Action cannot replace the confirmed content owner.'
+            }
+        }
+        Assert-ContentAncestry $candidate $owner
     }
-    $candidate=Select-ContentWindow $original $owner $descendants $summary
     $observation=@{ observedAtUtc=[DateTime]::UtcNow.ToString('o'); contentRoot=$null; elements=@(); tree=$null;
+        action=$null;
         topology=@{ original=$original; owner=$owner; descendants=$descendants; enumeration=$summary };
         reason=if ($summary.truncated) { 'native-window-tree-truncated' } else { 'settings-content-window-not-unique' } }
     $root=$null
@@ -469,6 +592,12 @@ try {
         $observation.contentRoot=@{ hwnd=$handle; pid=$settingsPid; threadId=$candidate.nativeThreadId;
             uiaProcessId=$root.Current.ProcessId; uiaNativeWindowHandle=$root.Current.NativeWindowHandle; runtimeId=@($root.GetRuntimeId()) }
         $observation.elements=$content.elements; $observation.tree=$content.tree; $observation.reason=$null
+        if ($operation -ne 'Observe') {
+            $observation.action=@{ operation=$operation; targetValue=$targetValue; beforeValue=$null; afterValue=$null;
+                setDispatched=$false; invokeDispatched=$false; noChange=$false; stage='admission'; error=$null }
+            try { Set-SettingsRangeAndApply $process $root $candidate $owner $original $content $observation.action }
+            catch { $observation.action.error=@{ stage=$observation.action.stage; type=$_.Exception.GetType().FullName; message=$_.Exception.Message } }
+        }
         $candidateAfter=[LabUISettingsContentNative]::Read($handle)
         Assert-ContentWindow $candidateAfter $handle $candidate.nativeThreadId
         Assert-ContentAncestry $candidateAfter $owner
@@ -476,9 +605,11 @@ try {
             throw 'Content parent/root changed during observation.'
         }
     }
-    $originalAfter=[LabUISettingsContentNative]::Read($cleanupHandle)
-    Assert-ContentWindow $originalAfter $cleanupHandle $cleanupThread
-    if ($originalAfter.ownerHwnd -ne $original.ownerHwnd) { throw 'Popup owner changed during observation.' }
+    if ($operation -eq 'Observe') {
+        $originalAfter=[LabUISettingsContentNative]::Read($cleanupHandle)
+        Assert-ContentWindow $originalAfter $cleanupHandle $cleanupThread
+        if ($originalAfter.ownerHwnd -ne $original.ownerHwnd) { throw 'Popup owner changed during observation.' }
+    }
     if ($null -ne $owner) {
         $ownerAfter=[LabUISettingsContentNative]::Read($owner.hwnd)
         if ($ownerAfter.nativePid -ne $owner.nativePid -or $ownerAfter.nativeThreadId -ne $owner.nativeThreadId) {
@@ -490,15 +621,20 @@ try {
     $observation | ConvertTo-Json -Depth 8 -Compress
 } finally { $process.Dispose() }
 '@
-    Assert-SettingsWindow $Owned
+    if ($Operation -eq 'Observe') { Assert-SettingsWindow $Owned }
     $path64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Owned.path))
+    if ($Operation -ne 'Observe' -and $null -eq $Expected) { throw 'Mutation requires a prepared content identity.' }
+    $expected64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($Expected | ConvertTo-Json -Depth 4 -Compress)))
     $prefix = "`$settingsPid = $([int]$Owned.pid); `$startTicks = $([long]$Owned.startTicks); `$handle = 0; " +
         "`$cleanupHandle = $([long]$Owned.hwnd); `$cleanupThread = $([long]$Owned.threadId); " +
-        "`$sessionId = $([int]$Owned.sessionId); `$settingsPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64'))`n"
+        "`$sessionId = $([int]$Owned.sessionId); `$settingsPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64')); " +
+        "`$operation='$Operation'; `$targetValue=$($TargetValue.ToString('R',[Globalization.CultureInfo]::InvariantCulture)); `$operationTimeoutMs=$TimeoutMs; " +
+        "`$expected=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$expected64')) | ConvertFrom-Json`n" +
+        "function Set-TextScaleCapability {`n$((Get-Item Function:Set-TextScaleCapability).Definition)`n}`n"
     $frameworkShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
     # ArgumentList сохраняет Unicode/quotes; UTF-16 base64 этого reader превысил бы лимит CreateProcess.
     $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-Command', ($prefix + $reader)) $TimeoutMs
-    Assert-SettingsWindow $Owned
+    if ($Operation -eq 'Observe') { Assert-SettingsWindow $Owned }
     return $text | ConvertFrom-Json
 }
 
@@ -520,7 +656,7 @@ function Set-TextScaleCapability($Result) {
     if (!$range.supported) { $Result.reason = 'range-value-pattern-not-supported'; return }
     foreach ($field in @('minimum', 'maximum', 'value')) {
         if (($range.$field -isnot [int] -and $range.$field -isnot [long] -and $range.$field -isnot [double]) -or
-            ![double]::IsFinite($range.$field)) { throw 'RangeValue не содержит конечное числовое значение.' }
+            [double]::IsNaN($range.$field) -or [double]::IsInfinity($range.$field)) { throw 'RangeValue не содержит конечное числовое значение.' }
     }
     if ($range.minimum -gt $range.maximum -or $range.value -lt $range.minimum -or $range.value -gt $range.maximum -or
         $range.isReadOnly -isnot [bool]) { throw 'RangeValue нарушил контракт диапазона.' }
@@ -532,7 +668,7 @@ function Set-TextScaleCapability($Result) {
     $Result.reason = 'text-size-page-and-writable-range-observed'
 }
 
-function Get-TextScaleRemainingMs($Budget) { return [int][Math]::Max(0, 20000 - $Budget.ElapsedMilliseconds) }
+function Get-TextScaleRemainingMs($Budget, [int]$LimitMs=20000) { return [int][Math]::Max(0, $LimitMs - $Budget.ElapsedMilliseconds) }
 
 function Observe-SettingsContent($Owned, $Result, $Budget) {
     do {
@@ -554,30 +690,174 @@ function Observe-SettingsContent($Owned, $Result, $Budget) {
     if ($null -eq $Result.reason) { $Result.reason='settings-content-not-observed-within-deadline' }
 }
 
+function Wait-SystemTextScale([double]$ExpectedFactor, $Budget, [int]$LimitMs) {
+    do {
+        $remaining=Get-TextScaleRemainingMs $Budget $LimitMs
+        if ($remaining -le 0) { throw 'Срок независимого OS readback истёк.' }
+        $observation=Read-SystemTextScale $remaining
+        if ($observation.textScaleFactor -eq $ExpectedFactor) { return $observation }
+        $remaining=Get-TextScaleRemainingMs $Budget $LimitMs
+        if ($remaining -gt 0) { Start-Sleep -Milliseconds ([Math]::Min(100,$remaining)) }
+    } while ((Get-TextScaleRemainingMs $Budget $LimitMs) -gt 0)
+    throw 'Независимый OS getter не подтвердил ожидаемый масштаб в срок.'
+}
+
+function Get-PreparedTextScale($Result) {
+    if ($Result.status -ne 'available' -or $null -eq $Result.contentRoot) { throw 'Qualification требует доступную страницу Text size.' }
+    $admission=@{status='unavailable';reason=$null;tree=$Result.tree;elements=$Result.elements}
+    Set-TextScaleCapability $admission
+    if ($admission.status -ne 'available') { throw 'Prepared page больше не соответствует capability.' }
+    $slider=@($Result.elements | Where-Object type -eq 'Slider')
+    $apply=@($Result.elements | Where-Object { $_.type -eq 'Button' -and $_.name -ceq 'Apply' })
+    if ($slider.Count -ne 1 -or $apply.Count -ne 1 -or
+        [string]::IsNullOrEmpty($slider[0].automationId) -or [string]::IsNullOrEmpty($apply[0].automationId)) {
+        throw 'Qualification не получила однозначные AutomationId controls.'
+    }
+    if ($slider[0].rangeValue.minimum -gt 225 -or $slider[0].rangeValue.maximum -lt 225 -or
+        $null -eq $Result.systemTextScaleBefore -or $Result.systemTextScaleBefore.textScaleFactor -lt 1 -or
+        $Result.systemTextScaleBefore.textScaleFactor -gt 2.25) { throw 'Исходный OS factor или диапазон 225% не подтверждён.' }
+    $owner=$Result.topology.owner
+    return @{ hwnd=$Result.contentRoot.hwnd; threadId=$Result.contentRoot.threadId;
+        ownerHwnd=$Result.topology.original.ownerHwnd;
+        ownerPid=if ($null -ne $owner) { $owner.nativePid } else { $null };
+        ownerThreadId=if ($null -ne $owner) { $owner.nativeThreadId } else { $null };
+        sliderAutomationId=$slider[0].automationId; applyAutomationId=$apply[0].automationId;
+        originalSliderValue=$slider[0].rangeValue.value }
+}
+
+function Invoke-TextScaleAction($Owned, $Expected, [string]$Operation, [double]$TargetValue, [int]$TimeoutMs) {
+    $observation=Read-SettingsContent $Owned $TimeoutMs $Operation $Expected $TargetValue
+    if ($null -eq $observation.action) { throw 'Settings action не вернул receipt.' }
+    return $observation.action
+}
+
+function Invoke-QualifiedSmoke($Context, $WinApp) {
+    # Отдельный script scope в том же PowerShell сохраняет finally владельца анимации.
+    & (Join-Path $PSScriptRoot 'smoke.ps1') -ApplicationDirectory $Context.applicationDirectory `
+        -OutputDirectory $Context.evidenceDirectory -AnimationSettingsPath $Context.animationSettingsPath `
+        -AnimationsEnabled $true -ExpectedTextScale 2.25 -Lifetime:$false -WinApp $WinApp
+}
+
+function Read-TextScaleSmokeReceipt($Context, $WinApp) {
+    $artifacts=@{}
+    foreach ($name in @('identity','result')) {
+        $bytes=[IO.File]::ReadAllBytes((Join-Path $Context.evidenceDirectory "$name.json"))
+        if (!$bytes.Length -or $bytes.Length -gt 262144) { throw 'Smoke JSON выходит за предел размера.' }
+        $artifacts[$name]=@{ value=([Text.Encoding]::UTF8.GetString($bytes).TrimStart([char]0xfeff) | ConvertFrom-Json);
+            sha256=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant() }
+    }
+    $identity=$artifacts.identity.value; $smoke=$artifacts.result.value
+    if ($identity.source -cne $Context.sourceCommit -or $identity.pid -le 0 -or
+        ($identity.pid -isnot [int] -and $identity.pid -isnot [long]) -or
+        ($identity.startedAtUnixMs -isnot [int] -and $identity.startedAtUnixMs -isnot [long]) -or
+        $identity.startedAtUnixMs -lt $Context.smokeStartedAtUnixMs -or
+        $identity.startedAtUnixMs -gt [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() -or
+        $identity.cliVersion -cne $WinApp.version -or $identity.cliZipSha256 -cne $WinApp.archiveSha256 -or
+        $identity.appSha256.ToLowerInvariant() -cne $Context.appSha256 -or
+        $identity.animation.expected -isnot [bool] -or !$identity.animation.expected -or
+        $smoke.passed -isnot [bool] -or !$smoke.passed -or
+        $smoke.initialLayout.pid -ne $identity.pid -or $smoke.initialLayout.textScaleFactor -ne 2.25 -or
+        $smoke.initialLayout.observedAtUnixMs -lt $identity.startedAtUnixMs -or
+        $smoke.initialLayout.observedAtUnixMs -gt [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()) {
+        throw 'Smoke receipt не подтверждает текущий source/app/run и TextScaleFactor=2.25.'
+    }
+    return @{ source=$Context.sourceCommit; tree=$Context.sourceTree; pid=$identity.pid;
+        startedAtUnixMs=$identity.startedAtUnixMs; textScaleFactor=$smoke.initialLayout.textScaleFactor;
+        appSha256=$Context.appSha256; identitySha256=$artifacts.identity.sha256; resultSha256=$artifacts.result.sha256;
+        visualReview='pending' }
+}
+
+function Invoke-TextScaleQualification($Owned, $Result, $Context, $WinApp) {
+    $prepared=Get-PreparedTextScale $Result
+    $Result.prepared=$prepared
+    $Result.qualification=@{ status='not-completed'; source=$Context.sourceCommit; tree=$Context.sourceTree;
+        apply=$null; scaleAtTarget=$null; smoke=$null; transitionObserved=$false }
+    $budget=[Diagnostics.Stopwatch]::StartNew()
+    # Родитель знает исходные значения до dispatch, даже если child потеряет ответ после эффекта.
+    $Result.changeMayHaveOccurred=$true; $Result.systemTextScaleChanged=$null
+    $Result.qualification.apply=Invoke-TextScaleAction $Owned $prepared 'Apply' 225 (Get-TextScaleRemainingMs $budget 30000)
+    if ($null -ne $Result.qualification.apply.error) { throw "Settings apply failed at $($Result.qualification.apply.error.stage): $($Result.qualification.apply.error.message)" }
+    $Result.qualification.scaleAtTarget=Wait-SystemTextScale 2.25 $budget 30000
+    $Result.systemTextScaleChanged=$Result.systemTextScaleBefore.textScaleFactor -ne 2.25
+    $Result.qualification.transitionObserved=$Result.systemTextScaleChanged -and $Result.qualification.apply.setDispatched
+    $Context.smokeStartedAtUnixMs=[DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+    Invoke-QualifiedSmoke $Context $WinApp | Out-Null
+    $Result.qualification.smoke=Read-TextScaleSmokeReceipt $Context $WinApp
+    $Result.qualification.status='runtime-captured'
+    $Result.fontQualification='runtime-capture-awaiting-visual-review'
+}
+
+function Restore-TextScaleQualification($Owned, $Result) {
+    $budget=[Diagnostics.Stopwatch]::StartNew()
+    $Result.restore=@{ action=$null; os=$null; confirmed=$false }
+    try {
+        # Резерв штатного getter внутри 60 секунд оставляет readback после timeout action/его cleanup.
+        $actionBudget=[Math]::Max(0,(Get-TextScaleRemainingMs $budget 60000)-15000)
+        $Result.restore.action=Invoke-TextScaleAction $Owned $Result.prepared 'Restore' $Result.prepared.originalSliderValue $actionBudget
+        if ($null -ne $Result.restore.action.error) { throw "Settings restore failed at $($Result.restore.action.error.stage): $($Result.restore.action.error.message)" }
+    } catch {
+        $Result.restoreError=@{ stage='restore'; type=$_.Exception.GetType().FullName; message=$_.Exception.Message }
+    } finally {
+        try {
+            $Result.restore.os=Wait-SystemTextScale $Result.systemTextScaleBefore.textScaleFactor $budget 60000
+            $Result.restore.confirmed=$true
+        } catch {
+            $Result.restoreGetterError=@{ stage='restore-os-readback'; type=$_.Exception.GetType().FullName; message=$_.Exception.Message }
+        }
+    }
+}
+
 $output = [IO.Path]::GetFullPath($OutputPath)
 $tempRoot = [IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
 if (!$output.StartsWith($tempRoot, [StringComparison]::OrdinalIgnoreCase) -or (Test-Path -LiteralPath $output)) {
     throw 'Результат должен быть новым файлом внутри RUNNER_TEMP.'
 }
-$toolRoot = Join-Path $env:RUNNER_TEMP 'labui-native/evidence/tool'
-$executables = @(Get-ChildItem -LiteralPath $toolRoot -Filter winapp.exe -Recurse -File)
-if ($executables.Count -ne 1) { throw 'Требуется единственный CLI после успешного native smoke.' }
-$cli = $executables[0].FullName
+if ([string]::IsNullOrWhiteSpace($WinAppDirectory)) { throw 'Требуется новый job-owned WinAppDirectory.' }
+. (Join-Path $PSScriptRoot 'winapp.ps1')
+$context=$null
+if ($Qualify) {
+    foreach ($value in @($ApplicationDirectory,$EvidenceDirectory,$AnimationSettingsPath,$SourceCommit)) {
+        if ([string]::IsNullOrWhiteSpace($value)) { throw 'Qualification требует app/evidence/animation/source параметры.' }
+    }
+    $evidence=[IO.Path]::GetFullPath($EvidenceDirectory)
+    $evidencePrefix=$evidence.TrimEnd([IO.Path]::DirectorySeparatorChar)+[IO.Path]::DirectorySeparatorChar
+    $toolDirectory=[IO.Path]::GetFullPath($WinAppDirectory)
+    if (Test-Path -LiteralPath $evidence) { throw 'Qualification evidence directory уже существует.' }
+    if ($output.Equals($evidence,[StringComparison]::OrdinalIgnoreCase) -or
+        $output.StartsWith($evidencePrefix,[StringComparison]::OrdinalIgnoreCase) -or
+        $toolDirectory.Equals($evidence,[StringComparison]::OrdinalIgnoreCase) -or
+        $toolDirectory.StartsWith($evidencePrefix,[StringComparison]::OrdinalIgnoreCase)) { throw 'Smoke evidence должен быть отдельным от receipt и CLI.' }
+    $actualSource=(git -C $PSScriptRoot rev-parse HEAD)
+    if ($LASTEXITCODE -ne 0 -or $SourceCommit -cnotmatch '^[a-f0-9]{40}$' -or $actualSource -cne $SourceCommit) { throw 'Qualification source не совпадает с checkout.' }
+    $tree=(git -C $PSScriptRoot rev-parse 'HEAD^{tree}')
+    if ($LASTEXITCODE -ne 0 -or $tree -cnotmatch '^[a-f0-9]{40}$') { throw 'Qualification source tree не определён.' }
+    $appPath=Join-Path ([IO.Path]::GetFullPath($ApplicationDirectory)) 'Buttons.exe'
+    if (!(Test-Path -LiteralPath $AnimationSettingsPath -PathType Leaf)) { throw 'Animation helper отсутствует.' }
+    $context=@{ applicationDirectory=[IO.Path]::GetFullPath($ApplicationDirectory); evidenceDirectory=$evidence;
+        animationSettingsPath=[IO.Path]::GetFullPath($AnimationSettingsPath); sourceCommit=$SourceCommit; sourceTree=$tree;
+        appSha256=(Get-FileHash -LiteralPath $appPath -Algorithm SHA256).Hash.ToLowerInvariant(); smokeStartedAtUnixMs=$null }
+}
+$winapp=$null; $cli=$null
 $owned = $null
 $ownedProcess = $null
 $failure = $null
 $stage = 'read-system-text-scale'
 $result = [ordered]@{
-    schemaVersion = 2; experiment = 'settings-text-size-capability'; status = 'unavailable'; reason = $null;
+    schemaVersion = 3; experiment = if ($Qualify) { 'settings-text-size-qualification' } else { 'settings-text-size-capability' }; status = 'unavailable'; reason = $null;
     uri = 'ms-settings:easeofaccess-display'; observedAtUtc = [DateTime]::UtcNow.ToString('o');
     osVersion = [Environment]::OSVersion.Version.ToString(); imageOS = $env:ImageOS; imageVersion = $env:ImageVersion;
-    cliVersion = '0.7.1'; cliSha256 = (Get-FileHash -LiteralPath $cli -Algorithm SHA256).Hash.ToLowerInvariant();
+    cliVersion = $null; cliSha256 = $null;
     systemTextScaleChanged = $false; fontQualification = 'not-performed';
+    changeMayHaveOccurred=$false; prepared=$null; qualification=$null; restore=$null; restoreError=$null; restoreGetterError=$null;
     systemTextScaleBefore = $null; snapshotBefore = @(); snapshotAfter = @(); windowCandidate = $null;
     windowDiagnostic = $null; window = $null; contentRoot=$null; topology=$null; tree=$null; samples=@();
     elements = @(); cleanup = 'not-started'; error = $null; cleanupError = $null
 }
 try {
+    $stage='bootstrap-cli'
+    $winapp=Initialize-WinApp -Directory $WinAppDirectory
+    $cli=$winapp.path; $result.cliVersion=$winapp.version; $result.cliSha256=$winapp.executableSha256
+    $stage='read-system-text-scale'
     $result.systemTextScaleBefore = Read-SystemTextScale
     $stage = 'snapshot-before'
     $before = @(Get-SettingsSnapshot)
@@ -630,12 +910,24 @@ try {
             }
         }
     }
+    if ($Qualify) {
+        $stage='qualify-text-scale'
+        Invoke-TextScaleQualification $owned $result $context $winapp
+    }
 } catch {
     $failure = $_
     $result.status = 'unavailable'
     $result.reason = 'unexpected-error'
     $result.error = @{ stage = $stage; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }
 } finally {
+    if ($Qualify -and $result.changeMayHaveOccurred) {
+        try { Restore-TextScaleQualification $owned $result }
+        catch { $result.restoreError=@{ stage='restore'; type=$_.Exception.GetType().FullName; message=$_.Exception.Message } }
+        if ($null -ne $result.restoreError -or $null -ne $result.restoreGetterError -or !$result.restore.confirmed) {
+            $result.status='failed'
+            if (!$failure) { $result.reason='restore-not-clean'; $failure=[InvalidOperationException]::new('Исходный scale не восстановлен без ошибок.') }
+        }
+    }
     try {
         try { $result.cleanup = Close-SettingsWindow $owned }
         finally { if ($ownedProcess) { $ownedProcess.Dispose() } }
@@ -645,6 +937,7 @@ try {
         $result.cleanupError = @{ stage = 'cleanup'; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }
         if (!$failure) { $result.reason = 'cleanup-error'; $failure = $_ }
     }
+    if ($Qualify -and !$failure) { $result.status='passed'; $result.reason='runtime-captured-and-original-scale-restored' }
     $json = $result | ConvertTo-Json -Depth 8 -Compress
     if ([Text.Encoding]::UTF8.GetByteCount($json) -gt 65536) { throw 'Capability JSON превысил 64 KiB.' }
     [IO.File]::WriteAllText($output, $json, [Text.UTF8Encoding]::new($false))

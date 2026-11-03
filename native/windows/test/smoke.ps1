@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][string]$AnimationSettingsPath,
     [bool]$AnimationsEnabled = $true,
     [ValidateRange(1.0, 2.25)][Nullable[double]]$ExpectedTextScale = $null,
-    [switch]$Lifetime
+    [switch]$Lifetime,
+    [object]$WinApp = $null
 )
 
 $ErrorActionPreference = 'Stop'
@@ -337,50 +338,115 @@ function Start-Tool([string]$Name, [string[]]$Arguments, [switch]$Recording) {
     foreach ($argument in $Arguments) { $info.ArgumentList.Add($argument) }
     $startedMs = $clock.Elapsed.TotalMilliseconds
     $child = [Diagnostics.Process]::Start($info)
+    $cancellation = [Threading.CancellationTokenSource]::new()
+    $stdoutReader = $null
+    $stderrReader = $null
     try {
-        $stdout = $child.StandardOutput.ReadToEndAsync()
-        $stderr = if ($Recording) { $null } else { $child.StandardError.ReadToEndAsync() }
+        $stdoutReader = $child.StandardOutput
+        $stderrReader = $child.StandardError
+        $stdout = $stdoutReader.ReadToEndAsync($cancellation.Token)
+        $stderr = if ($Recording) { $null } else { $stderrReader.ReadToEndAsync($cancellation.Token) }
         return @{ process = $child; stdout = $stdout; stderr = $stderr; prefix = ''; lineTask = $null;
+            stdoutReader = $stdoutReader; stderrReader = $stderrReader; cancellation = $cancellation;
             ended = $false; name = $Name; arguments = $Arguments; startedMs = $startedMs }
     } catch {
         try {
+            $cancellation.Cancel()
             if (!$child.HasExited) { $child.Kill($true); $null = $child.WaitForExit(5000) }
-        } finally { $child.Dispose() }
+        } finally {
+            if ($stdoutReader) { $stdoutReader.Dispose() }
+            if ($stderrReader) { $stderrReader.Dispose() }
+            $child.Dispose(); $cancellation.Dispose()
+        }
         throw
     }
 }
 
+function Wait-ToolRead($Task, [Diagnostics.Stopwatch]$Budget, [int]$Timeout, [string]$Name) {
+    $remaining = [int][Math]::Max(0, $Timeout - $Budget.ElapsedMilliseconds)
+    try { $completed = $Task.IsCompleted -or $Task.Wait($remaining) }
+    catch {
+        if (!$Task.IsCompleted) { throw }
+        $completed = $true
+    }
+    if (!$completed -or $Task.IsCanceled) {
+        throw "Вывод winapp превысил общий срок ожидания: $Name"
+    }
+    return $Task.GetAwaiter().GetResult()
+}
+
 function Close-Tool($Tool) {
     if ($Tool.ended) { return }
+    $budget = [Diagnostics.Stopwatch]::StartNew()
+    $Tool.cancellation.CancelAfter(5000)
+    $failure = $null
+    $errorText = ''
     try {
         if (!$Tool.process.HasExited) {
             $Tool.process.Kill($true)
-            if (!$Tool.process.WaitForExit(5000)) { throw "Не завершился собственный winapp: $($Tool.name)" }
+            $remaining = [int][Math]::Max(0, 5000 - $budget.ElapsedMilliseconds)
+            if (!$Tool.process.WaitForExit($remaining)) { throw "Не завершился собственный winapp: $($Tool.name)" }
         }
         if (!$Tool.stderr) {
-            if ($Tool.lineTask) { $Tool.prefix += "$($Tool.lineTask.GetAwaiter().GetResult())`n" }
-            $Tool.stderr = $Tool.process.StandardError.ReadToEndAsync()
+            if ($Tool.lineTask) { $Tool.prefix += "$(Wait-ToolRead $Tool.lineTask $budget 5000 $Tool.name)`n" }
+            $Tool.stderr = $Tool.stderrReader.ReadToEndAsync($Tool.cancellation.Token)
         }
-        [IO.File]::WriteAllText((Join-Path $output "$($Tool.name).stderr.log"),
-            $Tool.prefix + $Tool.stderr.GetAwaiter().GetResult())
-    } finally { $Tool.ended = $true; $Tool.process.Dispose() }
+        $errorText = Wait-ToolRead $Tool.stderr $budget 5000 $Tool.name
+    } catch { $failure = $_ }
+    finally {
+        try {
+            try {
+                # Завершённые строки recorder сохраняются и при незавершённом хвосте.
+                [IO.File]::WriteAllText((Join-Path $output "$($Tool.name).stderr.log"), $Tool.prefix + $errorText)
+            } catch {
+                if ($failure) { $failure.Exception.Data['stderrLogError'] = $_.Exception.ToString() }
+                else { $failure = $_ }
+            }
+            $Tool.cancellation.Cancel()
+            $reads = @(@($Tool.stdout, $Tool.stderr, $Tool.lineTask) | Where-Object { $null -ne $_ })
+            $remaining = [int][Math]::Max(0, 5000 - $budget.ElapsedMilliseconds)
+            if ($reads.Count) {
+                try { $null = [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]$reads, $remaining) } catch { }
+                if (@($reads | Where-Object { !$_.IsCompleted }).Count) {
+                    throw "Отменённое чтение winapp не завершилось: $($Tool.name)"
+                }
+            }
+        } catch {
+            if ($failure) { $failure.Exception.Data['readCleanupError'] = $_.Exception.ToString() }
+            else { $failure = $_ }
+        } finally {
+            $Tool.ended = $true
+            $Tool.stdoutReader.Dispose(); $Tool.stderrReader.Dispose(); $Tool.process.Dispose(); $Tool.cancellation.Dispose()
+        }
+    }
+    if ($failure) { throw $failure }
 }
 
 function Finish-Tool($Tool, [int]$Timeout = 30000) {
+    $budget = [Diagnostics.Stopwatch]::StartNew()
+    $failure = $null
+    $value = $null
+    $Tool.cancellation.CancelAfter($Timeout)
     try {
-        $timedOut = !$Tool.process.WaitForExit($Timeout)
-        if ($timedOut) {
-            $Tool.process.Kill($true)
-            if (!$Tool.process.WaitForExit(5000)) { throw "Не завершился собственный winapp: $($Tool.name)" }
-        }
-        $text = $Tool.stdout.GetAwaiter().GetResult()
+        $remaining = [int][Math]::Max(0, $Timeout - $budget.ElapsedMilliseconds)
+        $timedOut = !$Tool.process.WaitForExit($remaining)
+        if ($timedOut) { throw "Таймаут winapp: $($Tool.name)" }
+        $text = Wait-ToolRead $Tool.stdout $budget $Timeout $Tool.name
         [IO.File]::WriteAllText((Join-Path $output "$($Tool.name).json"), $text)
         $commands.Add(@{ name = $Tool.name; arguments = $Tool.arguments; exitCode = $Tool.process.ExitCode;
             startedMs = $Tool.startedMs; completedMs = $clock.Elapsed.TotalMilliseconds; timedOut = $timedOut })
-        if ($timedOut) { throw "Таймаут winapp: $($Tool.name)" }
         if ($Tool.process.ExitCode -ne 0) { throw "winapp $($Tool.name) завершился с кодом $($Tool.process.ExitCode)" }
-        return $text | ConvertFrom-Json
-    } finally { Close-Tool $Tool }
+        $value = $text | ConvertFrom-Json
+    } catch { $failure = $_ }
+    finally {
+        try { Close-Tool $Tool }
+        catch {
+            if ($failure) { $failure.Exception.Data['winappCleanupError'] = $_.Exception.ToString() }
+            else { $failure = $_ }
+        }
+    }
+    if ($failure) { throw $failure }
+    return $value
 }
 
 function Ui([string]$Name, [string[]]$Arguments) {
@@ -467,6 +533,7 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
     Ui "$name-target" @('get-property', 'LabButtonMedium') | Out-Null
     $gestures = [Collections.Generic.List[object]]::new()
     $recording = $null
+    $recordingFailure = $null
     # Бюджет включает запуск recorder и все команды; последний кадр проверяется отдельно.
     $inputBudgetMs = 60000
     $durationSec = [int]($inputBudgetMs / 1000) + 1
@@ -475,7 +542,7 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
             '--duration-sec', "$durationSec", '--fps', '30', '--max-edge', '1000',
             '--output', (Join-Path $output "$name.mp4"), '--json') -Recording
         $ready = $false
-        $recording.lineTask = $recording.process.StandardError.ReadLineAsync()
+        $recording.lineTask = $recording.stderrReader.ReadLineAsync($recording.cancellation.Token).AsTask()
         while ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -lt 15000) {
             if ($recording.process.HasExited) { throw 'Запись завершилась до первого кадра.' }
             if (!$recording.lineTask.Wait(100)) { continue }
@@ -488,12 +555,12 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
                 $ready = $true
                 break
             }
-            $recording.lineTask = $recording.process.StandardError.ReadLineAsync()
+            $recording.lineTask = $recording.stderrReader.ReadLineAsync($recording.cancellation.Token).AsTask()
         }
         if (!$ready -or $clock.Elapsed.TotalMilliseconds - $recording.startedMs -ge 15000) {
             throw 'Нет подтверждения первого кадра за 15 секунд.'
         }
-        $recording.stderr = $recording.process.StandardError.ReadToEndAsync()
+        $recording.stderr = $recording.stderrReader.ReadToEndAsync($recording.cancellation.Token)
         $captureWindow = @{ recordStartedMs = $recording.startedMs; firstFrameReceivedMs = $clock.Elapsed.TotalMilliseconds;
             clock = 'harness-stopwatch-ms'; gestures = $gestures }
         $steps = @(
@@ -520,23 +587,27 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
         }
         $recordResult = Finish-Tool $recording -Timeout ($durationSec * 1000 + 30000)
         return Assert-Capture $name $recordResult $captureWindow
-    } finally { if ($recording) { Close-Tool $recording } }
+    } catch { $recordingFailure = $_; throw }
+    finally {
+        if ($recording) {
+            try { Close-Tool $recording }
+            catch {
+                if ($recordingFailure) { $recordingFailure.Exception.Data['winappCleanupError'] = $_.Exception.ToString() }
+                else { throw }
+            }
+        }
+    }
 }
 
 try {
     $env:WINAPP_UI_WORKFLOW_ID = [guid]::NewGuid().ToString()
     $env:WINAPP_CLI_TELEMETRY_OPTOUT = '1'
     $env:WINAPP_CLI_UPDATE_CHECK = '0'
-    $zip = Join-Path $output 'winapp.zip'
-    Invoke-WebRequest 'https://github.com/microsoft/winappCli/releases/download/v0.7.1/winappcli-x64.zip' -OutFile $zip
-    $digest = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($digest -ne 'd925d1e32cdc320b6d271f653fd2cd3c05b5d7558deb20d1b548bead77900fcf') {
-        throw 'SHA256 winapp CLI не совпал.'
-    }
-    Expand-Archive -LiteralPath $zip -DestinationPath (Join-Path $output 'tool')
-    $executables = @(Get-ChildItem -LiteralPath (Join-Path $output 'tool') -Filter winapp.exe -Recurse -File)
-    if ($executables.Count -ne 1) { throw 'Ожидался один winapp.exe.' }
-    $script:cli = $executables[0].FullName
+    . "$PSScriptRoot/winapp.ps1"
+    if ($null -eq $WinApp) { $WinApp = Initialize-WinApp -Directory (Join-Path $output 'winapp') }
+    else { Assert-WinAppReceipt $WinApp }
+    $digest = $WinApp.archiveSha256
+    $script:cli = $WinApp.path
     Add-Type -Path $AnimationSettingsPath
     $env:LABUI_LAYOUT_OBSERVATION = $layoutObservationPath
     $animationBefore = [ClientAreaAnimation]::Read()
@@ -564,7 +635,7 @@ try {
        consumerSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'Buttons.dll')).Hash;
        uiSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabUI.WinUI.dll')).Hash;
        motionSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabMotion.WinUI.dll')).Hash;
-       cliVersion = '0.7.1'; cliZipSha256 = $digest;
+       cliVersion = $WinApp.version; cliZipSha256 = $digest;
        animation = @{ expected = $AnimationsEnabled; clientAreaBefore = $animationBefore; clientAreaReadback = $animationReadback;
            helperSha256 = (Get-FileHash -LiteralPath $AnimationSettingsPath).Hash;
            process = $animationObservation } } |
@@ -645,8 +716,10 @@ try {
                     if (!$process.WaitForExit(5000)) {
                         $current = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
                         if ($current -and $current.Path -eq $app -and $current.StartTime -eq $started) {
+                            $forceBudget = [Diagnostics.Stopwatch]::StartNew()
                             Stop-Process -Id $current.Id -Force
-                            $process.WaitForExit()
+                            $remaining = [int][Math]::Max(0, 5000 - $forceBudget.ElapsedMilliseconds)
+                            if (!$process.WaitForExit($remaining)) { throw 'Собственное приложение не завершилось после принудительного закрытия.' }
                         }
                     }
                 }

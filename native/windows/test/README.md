@@ -12,10 +12,14 @@
 `layout.test.ps1` проверяет admission и полный readback без GUI; существующий
 log-кодек сохраняет снимок внутри `result.json`.
 
-`text-scale.ps1` — конечный read-only эксперимент доступности штатной страницы
-Settings → Text size на `windows-2025`. Он запускается после успешного native smoke
-только в normal job и использует уже скачанный WinApp CLI 0.7.1. До любых эффектов
-проверяется GitHub-hosted Windows. URI `ms-settings:easeofaccess-display` не выдаёт
+`text-scale.ps1 -Qualify` выполняет сценарий системного масштаба 225% через
+штатную страницу Settings → Text size на `windows-2025`. Третий job матрицы
+запускает один normal-motion smoke с `ExpectedTextScale=2.25`, без lifetime probe.
+Без `-Qualify` harness только читает доступность страницы. До открытия Settings
+общий `winapp.ps1` подготавливает CLI 0.7.1 в новом job-owned каталоге, проверяет
+закреплённый архив и байты executable. Готовый receipt передаётся smoke без
+повторной загрузки. До любых эффектов проверяется GitHub-hosted Windows.
+URI `ms-settings:easeofaccess-display` не выдаёт
 подтверждение создания нового PID, поэтому существующий SystemSettings в текущей
 сессии означает `unavailable` без запуска и закрытия. После одного URI launch
 нужны единственный новый процесс, его время старта, штатный путь и собственный
@@ -25,8 +29,8 @@ HWND. Это корреляция на одноразовом runner; парал
 До запуска Settings отдельный короткий Windows PowerShell 5 child читает
 `new UISettings().TextScaleFactor` через штатную WinRT metadata projection.
 `systemTextScaleBefore` сохраняет значение OS API, PID/start time/session и время
-чтения; ошибка getter останавливает эксперимент до URI launch. Это будущий
-независимый readback восстановления, не запуск Buttons или чтение реестра.
+чтения; ошибка getter останавливает сценарий до URI launch. Тот же API независимо
+подтверждает 2.25 перед запуском Buttons и исходный масштаб после восстановления.
 
 Перед прежним HWND admission `windowCandidate` сохраняет выбранные CLI HWND/PID,
 owner HWND и className, а `windowDiagnostic` — результат
@@ -70,16 +74,49 @@ URI launch; `samples` сохраняет время и результат каж
 Slider и Apply: разрешённые labels, UIA RuntimeIds, AutomationIds, PID/HWND и типы.
 Имя и AutomationId нерелевантного Slider скрываются, его RangeValue не читается; сам Slider учитывается
 для проверки единственности. Остальные тексты Settings не публикуются.
-Schema version 2 хранит RangeValue внутри наблюдения того же Slider; внешнего
+Schema version 3 хранит RangeValue внутри наблюдения того же Slider; внешнего
 массива range или выдуманного CLI selector нет. `available` требует
 видимую страницу, единственный доступный Slider с label Text size/Make text bigger, соответствующий ему настоящий
 RangeValue с конечными minimum/maximum/value, `isReadOnly=false` и единственную
 видимую кнопку Apply с InvokePattern. Кнопка может быть disabled до изменения
 Slider; её фактическое состояние сохраняется.
-Ничего не устанавливается и не применяется; `available` не подтверждает 225%,
-политику системного текста или читаемость шрифта Button. Другой язык Settings
+В read-only режиме `available` подтверждает только доступность controls.
+Другой язык Settings
 или неподходящий SKU могут дать `unavailable` с конкретной причиной. Неожиданная
 ошибка и отказ cleanup завершают шаг ошибкой, сохраняя диагностический JSON.
+
+В qualification до dispatch сохраняются фактический Slider.Value, независимый
+OS factor, content HWND/thread, owner HWND/PID/thread и AutomationIds. Возможный
+эффект отмечается до вызова child, поэтому потеря ответа не отменяет восстановление.
+Один PS5 child получает controls из bounded traversal того же подтверждённого
+content HWND. Он вызывает только `RangeValuePattern.SetValue(225)`, требует точный
+readback Slider.Value, ожидает enabled Apply и вызывает его `InvokePattern`.
+Сохранённые references повторно проверяются перед действием; другой control,
+pattern, HWND или координатный ввод не выбираются. SetValue, ожидание Apply,
+Invoke и независимый OS readback делят общий бюджет 30 секунд. Округлённое значение,
+timeout или отказ provider завершают сценарий ошибкой.
+
+Smoke вызывается через `&` в отдельном script scope того же PowerShell и сохраняет
+свой animation finally. Внешний finally восстанавливает наблюдённый исходный
+Slider.Value с отдельным общим бюджетом 60 секунд. Независимый getter выполняется
+также после ошибки restore. Если slider уже равен цели и Apply отключён, запись
+пропускается, но OS readback остаётся обязательным. `restore.confirmed` означает
+совпадение с исходным OS factor; ошибка action всё равно не даёт PASS. `error`,
+`restoreError`, `restoreGetterError` и `cleanupError` сохраняются отдельно.
+
+Apply и restore читают сохранённые content/owner HWND напрямую и проверяют
+поколение Settings и текущий `IsChild`. Они не требуют, чтобы первоначальный
+popup оставался жив, и не ищут замену исчезнувшему content HWND. Перевыборка
+controls допустима внутри этого же root: RuntimeId не переносится между
+операциями как постоянный идентификатор. Закрытие исходного popup выполняется
+последним; исчезнувший HWND с Win32 `ERROR_INVALID_WINDOW_HANDLE` считается закрытым.
+
+`qualification.smoke` связывает source/tree, app hash, PID/start time и SHA-256
+точных байтов `identity.json`/`result.json`. Проверяются normal animation и
+`initialLayout.textScaleFactor=2.25` из того же запуска. Эти файлы не переписываются.
+`fontQualification=runtime-capture-awaiting-visual-review` оставляет проверку
+читаемости, обрезки и анатомии S/M/L в обеих темах открытой до просмотра кадров.
+`status=passed` относится к capture и восстановлению, а не к визуальной приёмке.
 
 В [точном исходнике CLI 0.7.1](https://github.com/microsoft/winappCli/blob/e3cd0b94f3e7b776ac51ba0564f4908094e979b5/src/winapp-CLI/WinApp.UIAutomation/Services/UiAutomationService.cs)
 `GetPropertiesAsync` читает ValuePattern, но не RangeValue. Кроме того, `inspect`
@@ -105,10 +142,11 @@ driver нет. Reader можно удалить, когда квалифицир
 либо исчезновение HWND; отказ/таймаут записывается в cleanupError без retry/kill.
 Проверка HWND и отправка не атомарны; reuse между ними остаётся пределом этого
 одноразового эксперимента без конкурентного внешнего управления Settings.
-`text-scale.test.ps1` проверяет guard, подменённую границу cleanup и ложный
-`available`, не открывая Settings. После hosted результата этот discovery
-заменяется установкой/readback/restore в том же harness. Существующий native
-payload, SDK и продуктовый код эта проверка не меняет.
+`text-scale.test.ps1` проверяет guard, identity, bounded traversal, Apply с
+первоначально disabled кнопкой, частичный эффект, ошибки smoke/restore/getter
+и порядок cleanup без открытия Settings. Action body исполняется также в PS5
+с inert references; настоящий OS getter только читает настройку. Фактическое
+поведение provider и render/input при 225% проверяет завершённый hosted job.
 
 `smoke.ps1` запускает собственное приложение и ввод только на одноразовом hosted
 runner. После успешной проверки `evidence.mjs export` передаёт исходные снимки,
@@ -138,8 +176,9 @@ boolean и по умолчанию равен `$true`; `$false` проверяе
 `animationsEnabled`, равный ожидаемому режиму. В identity также остаются
 `animation.expected`, исходная настройка, readback и SHA-256 helper.
 
-CI запускает оба режима в отдельных одноразовых runner: **Windows Button** — normal,
-**Windows Button · reduced motion** — начальный false. Оба выполняют те же сборку,
+CI запускает три сценария в отдельных одноразовых runner: **Windows Button** — normal,
+**Windows Button · reduced motion** — начальный false, третий — normal при 225%.
+Все выполняют те же сборку,
 проверки отрисовки, ввода и захвата. Матрица передаёт boolean через `[bool]::Parse`,
 чтобы строка `"false"` не превратилась в `$true`. Полный журнал каждого job
 декодируется отдельно: смешивание normal/reduced создаёт повторные имена файлов.
