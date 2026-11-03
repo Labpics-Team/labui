@@ -109,17 +109,17 @@ for (const closeFails of [false, true]) {
   });
 }
 
-test('настоящий mode finally отвергает здоровый proof при отказе закрытия context', async () => {
+test('настоящий mode отвергает здоровый proof при отказе закрытия context', async () => {
   const source = await readFile(packedUrl, 'utf8');
   const start = source.indexOf("    } finally {\n      mark('context-close');");
-  const end = source.indexOf('\n    }\n  };', start);
-  assert.ok(start >= 0 && end > start);
+  const cleanupEnd = source.indexOf('\n    }\n    if (contextCloseFailure)', start);
+  const end = source.indexOf('\n  };', cleanupEnd);
+  assert.ok(start >= 0 && cleanupEnd > start && end > cleanupEnd);
   const finalize = new AsyncFunction(
     'context',
     'cleanupErrors',
-    'proofFailed',
     'mark',
-    source.slice(start + '    } finally {'.length, end),
+    `let contextCloseFailure;\n${source.slice(start + '    } finally {'.length, cleanupEnd)}${source.slice(cleanupEnd + '\n    }'.length, end)}`,
   );
   const original = new Error('controlled finalizer failure');
   const cleanupErrors = [];
@@ -131,7 +131,6 @@ test('настоящий mode finally отвергает здоровый proof 
         },
       },
       cleanupErrors,
-      false,
       (stage) => assert.equal(stage, 'context-close'),
     ),
     (error) => error === original,

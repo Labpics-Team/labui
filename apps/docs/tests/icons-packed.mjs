@@ -1244,7 +1244,12 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
-export function browserProofRecords(records, frontier, now = () => performance.now(), publish) {
+export function browserProofRecords(
+  records,
+  frontier,
+  now = () => performance.now(),
+  publish = undefined,
+) {
   const append = (...items) => {
     const length = records.push(...items);
     if (items.length) frontier.lastCompletedAt = now();
@@ -1380,7 +1385,7 @@ function browserProof(
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
     page.on('pageerror', (error) => browserErrors.push(error.message));
-    let proofFailed = false;
+    let contextCloseFailure;
     try {
       mark('navigation');
       await page.goto(url, { waitUntil: 'networkidle' });
@@ -1713,7 +1718,6 @@ function browserProof(
             records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
           }
     } catch (error) {
-      proofFailed = true;
       mark('failure-capture', frontier.stage);
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -1725,9 +1729,10 @@ function browserProof(
         await context.close();
       } catch (error) {
         cleanupErrors.push(String(error));
-        if (!proofFailed) throw error;
+        contextCloseFailure = { error };
       }
     }
+    if (contextCloseFailure) throw contextCloseFailure.error;
   };
   return browserProofModes(runMode, records, frontier);
 }
