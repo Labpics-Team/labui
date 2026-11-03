@@ -21,7 +21,7 @@ import {
 } from './icons-microphone-consumer.mjs';
 import {
   MOTION_PROJECTION_VISUAL_FILES,
-  assertTimerPoseEvidence,
+  assertTimerRefusalEvidence,
   motionProjectionReference,
 } from './icons-motion-projection-consumer.mjs';
 import {
@@ -992,9 +992,9 @@ export async function summarize(directory) {
     }
     if (subject.schemaVersion >= 11 && receipt.outcome === 'passed') {
       try {
-        assertTimerPoseEvidence(visuals, receipt.records, subject.motionProjectionReference);
+        assertTimerRefusalEvidence(visuals, receipt.records, subject.motionProjectionReference);
       } catch (error) {
-        readbackFailure ??= { file: 'result/timer-pose-evidence', error };
+        readbackFailure ??= { file: 'result/timer-refusal-evidence', error };
       }
     }
     if (subject.schemaVersion >= 12 && receipt.outcome === 'passed') {

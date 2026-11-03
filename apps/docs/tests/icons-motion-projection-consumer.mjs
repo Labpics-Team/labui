@@ -5,10 +5,11 @@ import { join } from 'node:path';
 import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 
 export const MOTION_PROJECTION_ICONS = Object.freeze(['reload', 'refresh', 'timer']);
-export const MOTION_PROJECTION_ENTRIES = Object.freeze(
-  MOTION_PROJECTION_ICONS.map((icon) => `@labpics/icons/gestures/${icon}`),
-);
-export const TIMER_POSES = Object.freeze([0, 0.125, 0.875, 0.5]);
+export const MOTION_PROJECTION_ROTATION_ICONS = Object.freeze(['reload', 'refresh']);
+export const MOTION_PROJECTION_ENTRIES = Object.freeze([
+  ...MOTION_PROJECTION_ROTATION_ICONS.map((icon) => `@labpics/icons/gestures/${icon}`),
+  '@labpics/icons/symbols/timer',
+]);
 const MODES = ['no-preference', 'reduce'];
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const stableJSON = (value) =>
@@ -24,26 +25,21 @@ const stableJSON = (value) =>
 const HASH = /^[a-f0-9]{64}$/;
 const VARIANTS = ['outline', 'filled'];
 
-export function timerPoseVisualFile(mode, phase) {
-  assert.ok(MODES.includes(mode), 'timer pose: неизвестный режим');
-  assert.ok(TIMER_POSES.includes(phase), 'timer pose: неизвестная фаза');
-  return `result/${mode}-timer-pose-${phase}.png`;
+export function timerRefusalVisualFile(mode) {
+  assert.ok(MODES.includes(mode), 'timer refusal: неизвестный режим');
+  return `result/${mode}-timer-static-refusal.png`;
 }
-export const MOTION_PROJECTION_VISUAL_FILES = Object.freeze(
-  MODES.flatMap((mode) => TIMER_POSES.map((phase) => timerPoseVisualFile(mode, phase))),
-);
+export const MOTION_PROJECTION_VISUAL_FILES = Object.freeze(MODES.map(timerRefusalVisualFile));
 
-function variantsFor(icon) {
-  return icon === 'timer' ? ['outline'] : VARIANTS;
+function variantsFor() {
+  return VARIANTS;
 }
 function rawGesture(icon, partId) {
   return {
-    id: `${icon}.${icon === 'timer' ? 'advance' : 'cycle'}`,
+    id: `${icon}.cycle`,
     kind: 'cycle',
     meaning:
-      icon === 'timer'
-        ? 'Один интервал таймера: отдельная авторская стрелка делает оборот по часовой стрелке из исходной позы; циферблат остаётся неподвижным.'
-        : 'Один оборот команды обновления по часовой стрелке; промежуточную позу можно развернуть или продолжить.',
+      'Один оборот команды обновления по часовой стрелке; промежуточную позу можно развернуть или продолжить.',
     partIds: [partId],
     progress: 'normalized-0-to-1',
     tracks: [
@@ -59,7 +55,8 @@ function rawGesture(icon, partId) {
     ],
   };
 }
-function expectedDeclaration(icon, item) {
+function expectedDeclaration(icon, item, variant) {
+  if (icon === 'timer' && variant === 'filled') return null;
   return {
     ...(icon === 'timer' ? { scope: 'motion' } : {}),
     masterSha256: item.author.masterSha256,
@@ -85,11 +82,13 @@ function expectedDeclaration(icon, item) {
               anchorMeaning: 'canvas-center',
             },
           ],
-    gesture: {
-      law: 'cycle.clockwise',
-      ...(icon === 'timer' ? { purpose: 'elapsed-time' } : {}),
-      partId: icon === 'timer' ? 'timer-hand' : 'cycle-body',
-    },
+    gesture:
+      icon === 'timer'
+        ? null
+        : {
+            law: 'cycle.clockwise',
+            partId: 'cycle-body',
+          },
   };
 }
 
@@ -107,7 +106,7 @@ export async function motionProjectionReference(iconsRoot, pin, readAuthorMaster
     icons[icon] = {};
     for (const variant of variantsFor(icon)) {
       const record = manifest.icons[icon][variant];
-      const declaration = semantic.icons[icon][variant];
+      const declaration = semantic.icons[icon][variant] ?? null;
       const sourceFile = `masters/figma/${pin.figma.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/${icon}.svg`;
       assert.equal(record.master, sourceFile);
       const bytes = await readFile(join(iconsRoot, sourceFile));
@@ -116,7 +115,7 @@ export async function motionProjectionReference(iconsRoot, pin, readAuthorMaster
       const { viewBox, paths } = readAuthorMaster(bytes);
       const fingerprint = hash(stableJSON(paths.map((path, index) => ({ index, ...path }))));
       assert.equal(fingerprint, record.normalizedSource.pathFingerprintSha256);
-      const gesture = rawGesture(icon, declaration.gesture.partId);
+      const gesture = declaration?.gesture ? rawGesture(icon, declaration.gesture.partId) : null;
       icons[icon][variant] = {
         sourceFile,
         viewBox,
@@ -133,21 +132,23 @@ export async function motionProjectionReference(iconsRoot, pin, readAuthorMaster
           normalizedSha256: record.normalizedSource.sha256,
           pathFingerprintSha256: fingerprint,
         },
-        anatomy: {
-          version: 1,
-          masterSha256: hash(bytes),
-          pathFingerprintSha256: fingerprint,
-          annotationSha256: hash(
-            stableJSON({
-              schemaVersion: 1,
-              source: semantic.source,
-              icon,
-              variant,
-              declaration,
-              gestures: [gesture],
-            }),
-          ),
-        },
+        anatomy: declaration
+          ? {
+              version: 1,
+              masterSha256: hash(bytes),
+              pathFingerprintSha256: fingerprint,
+              annotationSha256: hash(
+                stableJSON({
+                  schemaVersion: 1,
+                  source: semantic.source,
+                  icon,
+                  variant,
+                  declaration,
+                  gestures: gesture ? [gesture] : [],
+                }),
+              ),
+            }
+          : null,
       };
     }
   }
@@ -178,11 +179,15 @@ export function validateMotionProjectionReference(reference, author) {
         'pathFingerprintSha256',
       ])
         assert.match(item.author[field], HASH);
-      assert.equal(item.anatomy.version, 1);
-      assert.equal(item.anatomy.masterSha256, item.author.masterSha256);
-      assert.equal(item.anatomy.pathFingerprintSha256, item.author.pathFingerprintSha256);
+      if (item.declaration) {
+        assert.equal(item.anatomy.version, 1);
+        assert.equal(item.anatomy.masterSha256, item.author.masterSha256);
+        assert.equal(item.anatomy.pathFingerprintSha256, item.author.pathFingerprintSha256);
+      } else assert.equal(item.anatomy, null);
       assert.deepEqual(item.viewBox, [0, 0, 24, 24]);
-      assert.equal(item.paths.length, icon === 'timer' ? 2 : 1);
+      if (icon !== 'timer' || variant === 'outline')
+        assert.equal(item.paths.length, icon === 'timer' ? 2 : 1);
+      else assert.ok(item.paths.length > 0);
       for (const path of item.paths) {
         assert.ok(typeof path.d === 'string' && path.d.length > 0);
         assert.ok(['nonzero', 'evenodd'].includes(path.fillRule));
@@ -191,21 +196,25 @@ export function validateMotionProjectionReference(reference, author) {
         hash(stableJSON(item.paths.map((path, index) => ({ index, ...path })))),
         item.author.pathFingerprintSha256,
       );
-      assert.deepEqual(item.declaration, expectedDeclaration(icon, item));
-      assert.deepEqual(item.gesture, rawGesture(icon, item.declaration.gesture.partId));
-      assert.equal(
-        item.anatomy.annotationSha256,
-        hash(
-          stableJSON({
-            schemaVersion: 1,
-            source: { fileKey: reference.fileKey, version: reference.version },
-            icon,
-            variant,
-            declaration: item.declaration,
-            gestures: [item.gesture],
-          }),
-        ),
+      assert.deepEqual(item.declaration, expectedDeclaration(icon, item, variant));
+      assert.deepEqual(
+        item.gesture,
+        item.declaration?.gesture ? rawGesture(icon, item.declaration.gesture.partId) : null,
       );
+      if (item.declaration)
+        assert.equal(
+          item.anatomy.annotationSha256,
+          hash(
+            stableJSON({
+              schemaVersion: 1,
+              source: { fileKey: reference.fileKey, version: reference.version },
+              icon,
+              variant,
+              declaration: item.declaration,
+              gestures: item.gesture ? [item.gesture] : [],
+            }),
+          ),
+        );
     }
   }
   return reference;
@@ -245,31 +254,38 @@ export function assertMotionProjectionEffect(effect, raw, icon, variant, request
   });
 }
 
-export function assertTimerPoseEvidence(visuals, records, reference) {
-  for (const mode of MODES)
-    for (const phase of TIMER_POSES) {
-      const file = timerPoseVisualFile(mode, phase);
-      const images = visuals.filter((image) => image.path === file);
-      const receipts = records.filter(
-        (record) => record.name === `${mode}:timer-pose-${phase}:capture`,
-      );
-      assert.equal(images.length, 1, `timer pose: нужен один ${file}`);
-      assert.equal(receipts.length, 1, `timer pose: нужен один receipt ${file}`);
-      const record = receipts[0];
-      assert.equal(record.result, 'PASS');
-      assert.equal(record.file, file);
-      assert.equal(record.phase, phase);
-      assert.equal(record.variant, 'outline');
-      assert.equal(record.icon, 'timer');
-      assert.deepEqual(record.sizes, [16, 24, 48]);
-      assert.equal(record.samples, 3);
-      assert.equal(record.pngSha256, hash(images[0].bytes));
-      assertTimerPoses(record.poses, phase, reference);
-    }
+export function assertTimerRefusals(refusals) {
+  assert.deepEqual(Object.keys(refusals), VARIANTS);
+  for (const variant of VARIANTS) {
+    assert.equal(refusals[variant].ok, false);
+    assert.equal(refusals[variant].reason.code, 'SEMANTIC_MOTION_UNAVAILABLE');
+  }
+}
+
+export function assertTimerRefusalEvidence(visuals, records, reference) {
+  for (const mode of MODES) {
+    const file = timerRefusalVisualFile(mode);
+    const images = visuals.filter((image) => image.path === file);
+    const receipts = records.filter(
+      (record) => record.name === `${mode}:timer-static-refusal:capture`,
+    );
+    assert.equal(images.length, 1, `timer refusal: нужен один ${file}`);
+    assert.equal(receipts.length, 1, `timer refusal: нужен один receipt ${file}`);
+    const record = receipts[0];
+    assert.equal(record.result, 'PASS');
+    assert.equal(record.file, file);
+    assert.deepEqual(record.variants, VARIANTS);
+    assert.equal(record.icon, 'timer');
+    assert.deepEqual(record.sizes, [16, 24, 48]);
+    assert.equal(record.samples, 6);
+    assert.equal(record.pngSha256, hash(images[0].bytes));
+    assertTimerStaticSamples(record.poses, reference);
+    assertTimerRefusals(record.refusals);
+  }
 }
 
 /** В consumer нет геометрии: DOM создаётся из готового SVG, anchors из packet. */
-export function mountMotionProjectionConsumer(apis, animate) {
+export function mountMotionProjectionConsumer(apis, timerApi, compileSymbolEffect, animate) {
   const section = document.createElement('section');
   section.className = 'motion-projection';
   section.setAttribute('aria-labelledby', 'motion-projection-heading');
@@ -278,13 +294,16 @@ export function mountMotionProjectionConsumer(apis, animate) {
   heading.textContent = 'Движение символов';
   section.append(heading);
   const entries = apis.flatMap((api, index) => {
-    const icon = ['reload', 'refresh', 'timer'][index];
-    return (icon === 'timer' ? ['outline'] : ['outline', 'filled']).map((variant) => ({
+    const icon = ['reload', 'refresh'][index];
+    return ['outline', 'filled'].map((variant) => ({
       api,
       icon,
       variant,
     }));
   });
+  entries.push(
+    ...['outline', 'filled'].map((variant) => ({ api: timerApi, icon: 'timer', variant })),
+  );
   const bindings = [];
   const events = [];
   let disposed = false;
@@ -293,6 +312,8 @@ export function mountMotionProjectionConsumer(apis, animate) {
     if (disposed) throw new Error('MOTION_PROJECTION_DISPOSED');
   }
   const labels = { reload: 'Обновить', refresh: 'Синхронизировать', timer: 'Таймер' };
+  const timerRows = document.createElement('div');
+  timerRows.className = 'timer-static-refusal';
   for (const entry of entries) {
     const row = document.createElement('div');
     row.className = 'motion-projection-row';
@@ -302,8 +323,13 @@ export function mountMotionProjectionConsumer(apis, animate) {
     title.textContent = `${labels[entry.icon]}: ${entry.variant === 'outline' ? 'контурный' : 'залитый'}`;
     row.append(title);
     for (const size of [16, 24, 48]) {
-      const rendered = entry.api.renderMotionSvg(entry.variant);
-      const capability = entry.api.motionCapabilities(entry.variant);
+      const model = entry.icon === 'timer' ? timerApi.glyph({ variant: entry.variant }) : null;
+      const rendered = model
+        ? { ok: true, svg: model.svg }
+        : entry.api.renderMotionSvg(entry.variant);
+      const capability = model
+        ? { ok: true, capabilities: timerApi.glyphCapabilities(entry.variant) }
+        : entry.api.motionCapabilities(entry.variant);
       if (!rendered.ok || !capability.ok) throw new Error('MOTION_PROJECTION_REFUSED');
       const figure = document.createElement('figure');
       const button = document.createElement('lab-button');
@@ -328,6 +354,7 @@ export function mountMotionProjectionConsumer(apis, animate) {
       const nodes = [...svg.querySelectorAll('[data-part]')];
       const item = {
         ...entry,
+        model,
         size,
         svg,
         button,
@@ -356,39 +383,23 @@ export function mountMotionProjectionConsumer(apis, animate) {
       };
       button.addEventListener('click', item.click);
     }
-    section.append(row);
+    (entry.icon === 'timer' ? timerRows : section).append(row);
   }
+  section.append(timerRows);
   const controls = document.createElement('div');
   controls.className = 'motion-projection-controls';
   const pose = document.createElement('output');
-  pose.textContent = 'Исходная поза';
+  pose.textContent = 'Таймер: анимация недоступна';
   pose.setAttribute('aria-live', 'polite');
   const timerItems = bindings.filter((item) => item.icon === 'timer');
-  const actions = [];
-  for (const [phase, label] of [
-    [0, 'Исходная поза'],
-    [0.125, '+45°'],
-    [0.875, '−45°'],
-    [0.5, 'Пол-оборота'],
-  ]) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = label;
-    button.dataset.phase = String(phase);
-    const handler = () => setTimerPose(phase);
-    button.addEventListener('click', handler);
-    actions.push({ button, handler });
-    controls.append(button);
-  }
   const download = document.createElement('button');
   download.type = 'button';
   download.className = 'motion-projection-download';
   download.textContent = 'Скачать исходный SVG таймера';
   const downloadHandler = () => {
     requireActive();
-    const result = apis[2].renderMotionSvg('outline');
-    if (!result.ok) throw new Error(result.reason.code);
-    const url = URL.createObjectURL(new Blob([result.svg], { type: 'image/svg+xml' }));
+    const svg = timerApi.outline;
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     const link = document.createElement('a');
     try {
       link.href = url;
@@ -402,7 +413,7 @@ export function mountMotionProjectionConsumer(apis, animate) {
   };
   download.addEventListener('click', downloadHandler);
   controls.append(download, pose);
-  section.append(controls);
+  timerRows.append(controls);
   document.body.append(section);
   function matrices(item) {
     return item.nodes.map((node) => {
@@ -412,6 +423,19 @@ export function mountMotionProjectionConsumer(apis, animate) {
   }
   function start(item, { from = 0, to = 1, duration = 600, initialize = false } = {}) {
     requireActive();
+    if (item.icon === 'timer') {
+      const before = matrices(item);
+      const refusal = compileSymbolEffect(item.model, item.capability, 'timer.advance', {
+        from,
+        to,
+        duration,
+        reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+      });
+      if (refusal.ok || refusal.reason.code !== 'SEMANTIC_MOTION_UNAVAILABLE')
+        throw new Error('TIMER_MOTION_ADMISSION_DRIFT');
+      pose.value = 'Таймер: анимация недоступна';
+      return { refusal, before, after: matrices(item), generation: item.generation };
+    }
     const result = item.api.compileMotionEffect(item.capability.gestures[0].id, {
       variant: item.variant,
       from,
@@ -501,6 +525,7 @@ export function mountMotionProjectionConsumer(apis, animate) {
       slot: item.svg.getAttribute('slot'),
       nativeClicks: item.nativeClicks,
       generation: item.generation,
+      animations: item.svg.getAnimations({ subtree: true }).length,
     };
   };
   async function settleItem(item) {
@@ -521,13 +546,6 @@ export function mountMotionProjectionConsumer(apis, animate) {
       clearTimeout(timer);
     }
   }
-  function setTimerPose(phase) {
-    requireActive();
-    for (const item of timerItems)
-      start(item, { from: phase, to: phase, duration: 0, initialize: true });
-    pose.value = `Поза таймера: ${phase * 360}°`;
-    section.querySelector('[data-motion-icon="timer"]').dataset.phase = String(phase);
-  }
   const ready = Promise.all(
     bindings.map(async (item) => {
       await item.button.updateComplete;
@@ -543,14 +561,24 @@ export function mountMotionProjectionConsumer(apis, animate) {
     },
     start: (icon, variant, request) => start(find(icon, variant), request),
     settle: (icon, variant) => settleItem(find(icon, variant)),
-    setTimerPose,
-    settleTimerPose: () => Promise.all(timerItems.map(settleItem)),
+    timerSamples: () => {
+      requireActive();
+      return timerItems.map(readItem);
+    },
     refuse: () => ({
-      filled: apis[2].renderMotionSvg('filled'),
-      capability: apis[2].motionCapabilities('filled'),
-      effect: apis[2].compileMotionEffect('timer.advance', { variant: 'filled', duration: 0 }),
-      gesture: apis[2].compileMotionEffect('timer.morph', { duration: 300 }),
-      phase: apis[2].compileMotionEffect('timer.advance', { duration: 300, to: 1.1 }),
+      timer: Object.fromEntries(
+        ['outline', 'filled'].map((variant) => [
+          variant,
+          compileSymbolEffect(
+            timerApi.glyph({ variant }),
+            timerApi.glyphCapabilities(variant),
+            'timer.advance',
+            { duration: 600 },
+          ),
+        ]),
+      ),
+      gesture: apis[0].compileMotionEffect('reload.morph', { duration: 300 }),
+      phase: apis[0].compileMotionEffect('reload.cycle', { duration: 300, to: 1.1 }),
     }),
     disposal: () => disposal,
     cleanup: async () => {
@@ -564,7 +592,6 @@ export function mountMotionProjectionConsumer(apis, animate) {
             ?.removeEventListener('click', item.nativeClick);
           for (const control of item.controls) control.stop();
         }
-        for (const action of actions) action.button.removeEventListener('click', action.handler);
         download.removeEventListener('click', downloadHandler);
         section.remove();
         const eventCount = events.length;
@@ -575,7 +602,6 @@ export function mountMotionProjectionConsumer(apis, animate) {
             ?.querySelector('button')
             ?.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
         }
-        for (const action of actions) action.button.dispatchEvent(new MouseEvent('click'));
         download.dispatchEvent(new MouseEvent('click'));
         listenersRemoved =
           events.length === eventCount &&
@@ -598,8 +624,9 @@ export function mountMotionProjectionConsumer(apis, animate) {
 
 export function motionProjectionFixture() {
   return `
-${MOTION_PROJECTION_ICONS.map((icon, index) => `import * as projectedMotion${index} from '@labpics/icons/gestures/${icon}';`).join('\n')}
-const motionProjectionConsumer = (${mountMotionProjectionConsumer.toString()})([projectedMotion0, projectedMotion1, projectedMotion2], animate);
+${MOTION_PROJECTION_ROTATION_ICONS.map((icon, index) => `import * as projectedMotion${index} from '@labpics/icons/gestures/${icon}';`).join('\n')}
+import * as staticTimer from '@labpics/icons/symbols/timer';
+const motionProjectionConsumer = (${mountMotionProjectionConsumer.toString()})([projectedMotion0, projectedMotion1], staticTimer, compileSymbolEffect, animate);
 window.__iconsPacked.motionProjectionConsumer = motionProjectionConsumer;
 window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, motionProjectionConsumer.ready]);
 const motionProjectionCleanup = window.__iconsPacked.cleanup;
@@ -609,17 +636,19 @@ window.__iconsPacked.cleanup = async () => { await motionProjectionConsumer.clea
 
 export function motionProjectionTypeFixture() {
   return `
-import { renderMotionSvg as renderTimer, compileMotionEffect as timerEffect } from '@labpics/icons/gestures/timer';
+import { glyph as timerGlyph, glyphCapabilities as timerCapabilities } from '@labpics/icons/symbols/timer';
+import { compileSymbolEffect } from '@labpics/icons/motion';
 import { renderMotionSvg as renderReload, compileMotionEffect as reloadEffect } from '@labpics/icons/gestures/reload';
 import { compileMotionEffect as refreshEffect } from '@labpics/icons/gestures/refresh';
-renderTimer('outline'); renderReload('filled');
-timerEffect('timer.advance', {duration:300,from:.125,to:.5});
+renderReload('filled');
+for (const variant of ['outline', 'filled'] as const)
+  compileSymbolEffect(timerGlyph({ variant }), timerCapabilities(variant), 'timer.advance', {duration:300});
 reloadEffect('reload.cycle', {variant:'filled',duration:300});
 refreshEffect('refresh.cycle', {duration:300,reducedMotion:true});
-// @ts-expect-error: Filled timer не имеет доказанного motion target.
-renderTimer('filled');
+// @ts-expect-error: неизвестное начертание не должно проходить types.
+timerGlyph({variant:'other'});
 // @ts-expect-error: неизвестный жест не имеет export.
-timerEffect('timer.morph', {duration:300});
+reloadEffect('reload.morph', {duration:300});
 // @ts-expect-error: неподдержанная ось не должна проходить types.
 reloadEffect('reload.cycle', {duration:300,weight:1});
 `;
@@ -641,22 +670,40 @@ function rotationMatrix(phase) {
 function assertSample(sample, reference) {
   const raw = reference.icons[sample.icon][sample.variant];
   assert.deepEqual(sample.viewBox, raw.viewBox);
-  assert.deepEqual(
-    sample.paths,
-    raw.paths.map((path, index) => ({
-      ...path,
-      id: raw.declaration.parts[index].id,
-      role: raw.declaration.parts[index].role,
-    })),
-  );
-  assert.deepEqual(sample.capability, {
-    icon: sample.icon,
-    variant: sample.variant,
-    gestures: [{ id: raw.gesture.id, kind: raw.gesture.kind, meaning: raw.gesture.meaning }],
-    formats: ['svg', 'web-effect'],
-    author: raw.author,
-    anatomy: raw.anatomy,
-  });
+  if (sample.icon === 'timer') {
+    assert.deepEqual(
+      sample.paths.map(({ d, fillRule }) => ({ d, fillRule })),
+      raw.paths,
+    );
+    for (const path of sample.paths) {
+      assert.match(path.id, /^source-[a-f0-9]{12}(?:-[1-9][0-9]*)?$/);
+      assert.equal(path.role, 'unclassified');
+    }
+    assert.equal(new Set(sample.paths.map((path) => path.id)).size, sample.paths.length);
+    assert.deepEqual(sample.capability.author, raw.author);
+    assert.equal(sample.capability.icon, 'timer');
+    assert.equal(sample.capability.variant, sample.variant);
+    assert.equal(sample.capability.motion.state, 'source-only');
+    assert.deepEqual(sample.capability.motion.gestures, []);
+    assert.equal(sample.capability.anatomy, undefined);
+  } else {
+    assert.deepEqual(
+      sample.paths,
+      raw.paths.map((path, index) => ({
+        ...path,
+        id: raw.declaration.parts[index].id,
+        role: raw.declaration.parts[index].role,
+      })),
+    );
+    assert.deepEqual(sample.capability, {
+      icon: sample.icon,
+      variant: sample.variant,
+      gestures: [{ id: raw.gesture.id, kind: raw.gesture.kind, meaning: raw.gesture.meaning }],
+      formats: ['svg', 'web-effect'],
+      author: raw.author,
+      anatomy: raw.anatomy,
+    });
+  }
   assert.equal(sample.identity, true);
   assert.equal(sample.width, sample.size);
   assert.equal(sample.height, sample.size);
@@ -666,25 +713,27 @@ function assertSample(sample, reference) {
   assert.equal(sample.hidden, 'true');
   assert.equal(sample.focusable, 'false');
   assert.equal(sample.slot, 'icon');
-  for (const [index, part] of raw.declaration.parts.entries())
-    if (part.id !== raw.gesture.partIds[0]) {
+  for (const [index, part] of sample.paths.entries())
+    if (sample.icon === 'timer' || part.id !== raw.gesture.partIds[0]) {
       sameMatrices([sample.matrices[index]], [[1, 0, 0, 1, 0, 0]]);
       assert.deepEqual(sample.styles[index], { transformBox: '', transformOrigin: '' });
     }
 }
 
-export function assertTimerPoses(samples, phase, reference) {
+export function assertTimerStaticSamples(samples, reference) {
   assert.deepEqual(
-    samples.map((sample) => sample.size),
-    [16, 24, 48],
+    samples.map((sample) => [sample.variant, sample.size]),
+    VARIANTS.flatMap((variant) => [16, 24, 48].map((size) => [variant, size])),
   );
   for (const sample of samples) {
     assert.equal(sample.icon, 'timer');
-    assert.equal(sample.variant, 'outline');
     assertSample(sample, reference);
-    const index = sample.paths.findIndex((part) => part.role === 'control');
-    sameMatrices([sample.matrices[index]], [rotationMatrix(phase)]);
-    assert.deepEqual(sample.statuses, ['finished']);
+    sameMatrices(
+      sample.matrices,
+      sample.paths.map(() => [1, 0, 0, 1, 0, 0]),
+    );
+    assert.equal(sample.generation, 0);
+    assert.equal(sample.animations, 0);
   }
 }
 
@@ -697,13 +746,13 @@ export async function motionProjectionBrowserProof(page, reference, mode, record
   const read = () => call('read');
   const check = async () => {
     const observation = await read();
-    assert.equal(observation.samples.length, 15);
+    assert.equal(observation.samples.length, 18);
     for (const sample of observation.samples) assertSample(sample, reference);
     return observation;
   };
   const section = page.locator('section.motion-projection');
   const initial = await check();
-  for (const icon of MOTION_PROJECTION_ICONS)
+  for (const icon of MOTION_PROJECTION_ROTATION_ICONS)
     for (const variant of variantsFor(icon)) {
       const raw = reference.icons[icon][variant];
       const host = section
@@ -747,11 +796,13 @@ export async function motionProjectionBrowserProof(page, reference, mode, record
     }
   if (mode === 'no-preference') {
     for (const target of [0, 0.5]) {
-      await call('start', 'timer', 'outline', { from: 0, to: 1, duration: 800, initialize: true });
+      await call('start', 'reload', 'outline', { from: 0, to: 1, duration: 800, initialize: true });
       await page.waitForFunction(() => {
         const item = window.__iconsPacked.motionProjectionConsumer
           .read()
-          .samples.find((item) => item.icon === 'timer' && item.size === 24);
+          .samples.find(
+            (item) => item.icon === 'reload' && item.variant === 'outline' && item.size === 24,
+          );
         const index = item.paths.findIndex((path) => path.role === 'control');
         const phase = Math.atan2(item.matrices[index][1], item.matrices[index][0]) / (2 * Math.PI);
         return phase > 0.05 && phase < 0.3;
@@ -760,17 +811,19 @@ export async function motionProjectionBrowserProof(page, reference, mode, record
         const consumer = window.__iconsPacked.motionProjectionConsumer;
         const item = consumer
           .read()
-          .samples.find((item) => item.icon === 'timer' && item.size === 24);
+          .samples.find(
+            (item) => item.icon === 'reload' && item.variant === 'outline' && item.size === 24,
+          );
         const index = item.paths.findIndex((path) => path.role === 'control');
         const from = Math.atan2(item.matrices[index][1], item.matrices[index][0]) / (2 * Math.PI);
-        return consumer.start('timer', 'outline', { from, to, duration: 240 });
+        return consumer.start('reload', 'outline', { from, to, duration: 240 });
       }, target);
       assert.ok(transfer.effect.from > 0.05 && transfer.effect.from < 0.3);
       sameMatrices(transfer.before, transfer.after);
       assertMotionProjectionEffect(
         transfer.effect,
-        reference.icons.timer.outline,
-        'timer',
+        reference.icons.reload.outline,
+        'reload',
         'outline',
         {
           from: transfer.effect.from,
@@ -778,45 +831,49 @@ export async function motionProjectionBrowserProof(page, reference, mode, record
           duration: 240,
         },
       );
-      const terminal = await call('settle', 'timer', 'outline');
+      const terminal = await call('settle', 'reload', 'outline');
       const index = terminal.paths.findIndex((part) => part.role === 'control');
       sameMatrices([terminal.matrices[index]], [rotationMatrix(target)]);
       await check();
       records.push({
-        name: `${mode}:timer:interrupt-${target === 0 ? 'reverse' : 'newer'}`,
+        name: `${mode}:reload:interrupt-${target === 0 ? 'reverse' : 'newer'}`,
         result: 'PASS',
         transfer,
         terminal,
       });
     }
   } else {
-    const result = await call('start', 'timer', 'outline', {
+    const result = await call('start', 'reload', 'outline', {
       from: 0.125,
       to: 0.5,
       duration: 600,
       initialize: true,
     });
-    assertMotionProjectionEffect(result.effect, reference.icons.timer.outline, 'timer', 'outline', {
-      from: 0.125,
-      to: 0.5,
-      duration: 600,
-      reducedMotion: true,
-    });
-    const terminal = await call('settle', 'timer', 'outline');
+    assertMotionProjectionEffect(
+      result.effect,
+      reference.icons.reload.outline,
+      'reload',
+      'outline',
+      {
+        from: 0.125,
+        to: 0.5,
+        duration: 600,
+        reducedMotion: true,
+      },
+    );
+    const terminal = await call('settle', 'reload', 'outline');
     const index = terminal.paths.findIndex((part) => part.role === 'control');
     sameMatrices([terminal.matrices[index]], [rotationMatrix(0.5)]);
     records.push({
-      name: `${mode}:timer:thin-reduced`,
+      name: `${mode}:reload:thin-reduced`,
       result: 'PASS',
       effect: result.effect,
       terminal,
     });
   }
   const refusals = await call('refuse');
+  assertTimerRefusals(refusals.timer);
   for (const [field, code] of Object.entries({
-    filled: 'VARIANT_UNSUPPORTED',
-    capability: 'VARIANT_UNSUPPORTED',
-    effect: 'VARIANT_UNSUPPORTED',
     gesture: 'GESTURE_UNSUPPORTED',
     phase: 'INVALID_REQUEST',
   })) {
@@ -824,36 +881,62 @@ export async function motionProjectionBrowserProof(page, reference, mode, record
     assert.equal(refusals[field].reason.code, code);
   }
   records.push({ name: `${mode}:thin-motion-precise-refusals`, result: 'PASS', refusals });
-  for (const phase of TIMER_POSES) {
-    await section.locator(`button[data-phase="${phase}"]`).click();
-    const poses = await call('settleTimerPose');
+  for (const variant of VARIANTS) {
+    const host = section
+      .locator(`[data-motion-icon="timer"][data-variant="${variant}"] lab-button`)
+      .nth(1);
+    const native = host.getByRole('button');
+    await host.click();
+    await native.focus();
+    await native.press('Enter');
+    await native.press('Space');
     const observation = await check();
-    assertTimerPoses(poses, phase, reference);
-    const row = section.locator('[data-motion-icon="timer"]');
-    assert.equal(await row.getAttribute('data-phase'), String(phase));
-    const file = timerPoseVisualFile(mode, phase);
-    const scroll = await page.evaluate(() => [window.scrollX, window.scrollY]);
-    let png;
-    try {
-      png = await row.screenshot({ path: join(out, file.slice('result/'.length)) });
-    } finally {
-      await page.evaluate(([x, y]) => window.scrollTo(x, y), scroll);
+    const sample = observation.samples.find(
+      (item) => item.icon === 'timer' && item.variant === variant && item.size === 24,
+    );
+    const events = observation.events.filter(
+      (item) => item.icon === 'timer' && item.variant === variant && item.size === 24,
+    );
+    assert.equal(sample.nativeClicks, 3);
+    assert.equal(events.length, 3);
+    for (const event of events) {
+      assert.ok(event.trusted && event.composed && event.native);
+      assert.equal(event.refusal.ok, false);
+      assert.equal(event.refusal.reason.code, 'SEMANTIC_MOTION_UNAVAILABLE');
+      sameMatrices(event.before, event.after);
+      assert.equal(event.generation, 0);
     }
-    await check();
     records.push({
-      name: `${mode}:timer-pose-${phase}:capture`,
+      name: `${mode}:timer/${variant}:static-native-refusal`,
       result: 'PASS',
-      file,
-      phase,
-      icon: 'timer',
-      variant: 'outline',
-      sizes: [16, 24, 48],
-      samples: 3,
-      pngSha256: hash(png),
-      poses,
-      label: observation.pose,
+      events,
     });
   }
+  const poses = await call('timerSamples');
+  assertTimerStaticSamples(poses, reference);
+  const file = timerRefusalVisualFile(mode);
+  const scroll = await page.evaluate(() => [window.scrollX, window.scrollY]);
+  let png;
+  try {
+    png = await section
+      .locator('.timer-static-refusal')
+      .screenshot({ path: join(out, file.slice('result/'.length)) });
+  } finally {
+    await page.evaluate(([x, y]) => window.scrollTo(x, y), scroll);
+  }
+  await check();
+  records.push({
+    name: `${mode}:timer-static-refusal:capture`,
+    result: 'PASS',
+    file,
+    icon: 'timer',
+    variants: VARIANTS,
+    sizes: [16, 24, 48],
+    samples: 6,
+    pngSha256: hash(png),
+    poses,
+    refusals: refusals.timer,
+  });
   const exported = await downloadedSvg(page, section.locator('button.motion-projection-download'));
   const paths = await page.evaluate((text) => {
     const svg = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
@@ -874,8 +957,6 @@ export async function motionProjectionBrowserProof(page, reference, mode, record
     result: 'PASS',
     svgSha256: hash(exported),
   });
-  await call('setTimerPose', 0);
-  await call('settleTimerPose');
   await check();
 }
 
@@ -898,7 +979,7 @@ export async function motionProjectionDisposalProof(page, mode, records) {
 
 export async function motionProjectionArmDisposal(page) {
   await page.evaluate(() =>
-    window.__iconsPacked.motionProjectionConsumer.start('timer', 'outline', {
+    window.__iconsPacked.motionProjectionConsumer.start('reload', 'outline', {
       from: 0,
       to: 1,
       duration: 20000,

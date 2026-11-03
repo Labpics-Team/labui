@@ -9,13 +9,13 @@ import {
   MOTION_PROJECTION_ENTRIES,
   MOTION_PROJECTION_ICONS,
   MOTION_PROJECTION_VISUAL_FILES,
-  TIMER_POSES,
   assertMotionProjectionEffect,
-  assertTimerPoseEvidence,
+  assertTimerRefusalEvidence,
+  assertTimerRefusals,
   motionProjectionFixture,
   motionProjectionReference,
   motionProjectionTypeFixture,
-  timerPoseVisualFile,
+  timerRefusalVisualFile,
   validateMotionProjectionReference,
 } from './icons-motion-projection-consumer.mjs';
 import { assertIconsImport, consumerFixture, consumerPublicEntries } from './icons-packed.mjs';
@@ -42,9 +42,10 @@ async function fixture(t) {
   for (const icon of MOTION_PROJECTION_ICONS) {
     manifest.icons[icon] = {};
     semantic.icons[icon] = {};
-    for (const variant of icon === 'timer' ? ['outline'] : ['outline', 'filled']) {
+    for (const variant of ['outline', 'filled']) {
       const content = variant === 'outline' ? 'M8 8L12 12L8 12Z' : 'M9 9L12 12L9 12Z';
-      const paths = icon === 'timer' ? ['M2 2L22 2L22 22L2 22Z', content] : [content];
+      const paths =
+        icon === 'timer' && variant === 'outline' ? ['M2 2L22 2L22 22L2 22Z', content] : [content];
       const svg = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="author">${paths.map((d) => `<path d="${d}" fill="#101012"/>`).join('')}</g></svg>`;
       const master = `masters/figma/42/${variant === 'outline' ? 'Outline' : 'Filled'}/${icon}.svg`;
       await mkdir(dirname(join(root, master)), { recursive: true });
@@ -60,6 +61,7 @@ async function fixture(t) {
         nodeSha256: 'a'.repeat(64),
         normalizedSource: { sha256: 'b'.repeat(64), pathFingerprintSha256: fingerprint },
       };
+      if (icon === 'timer' && variant === 'filled') continue;
       semantic.icons[icon][variant] = {
         ...(icon === 'timer' ? { scope: 'motion' } : {}),
         masterSha256: hash(svg),
@@ -85,11 +87,13 @@ async function fixture(t) {
                   anchorMeaning: 'canvas-center',
                 },
               ],
-        gesture: {
-          law: 'cycle.clockwise',
-          ...(icon === 'timer' ? { purpose: 'elapsed-time' } : {}),
-          partId: icon === 'timer' ? 'timer-hand' : 'cycle-body',
-        },
+        gesture:
+          icon === 'timer'
+            ? null
+            : {
+                law: 'cycle.clockwise',
+                partId: 'cycle-body',
+              },
       };
     }
   }
@@ -104,11 +108,14 @@ async function fixture(t) {
   };
 }
 
-test('raw reference binds five independent masters, timer scope, authored layers and receipts', async (t) => {
+test('raw reference binds six independent masters, withdrawn timer scope and authored receipts', async (t) => {
   const { reference } = await fixture(t);
   assert.equal(validateMotionProjectionReference(reference, pin.figma), reference);
   assert.equal(reference.icons.timer.outline.paths.length, 2);
-  assert.equal(reference.icons.timer.filled, undefined);
+  assert.equal(reference.icons.timer.outline.gesture, null);
+  assert.equal(reference.icons.timer.outline.declaration.gesture, null);
+  assert.equal(reference.icons.timer.filled.declaration, null);
+  assert.notDeepEqual(reference.icons.timer.outline.paths, reference.icons.timer.filled.paths);
   assert.notDeepEqual(reference.icons.reload.outline.paths, reference.icons.reload.filled.paths);
 });
 
@@ -120,6 +127,13 @@ test('raw master edits and dishonest declarations refuse before installed produc
   const wrongAnchor = structuredClone(reference);
   wrongAnchor.icons.timer.outline.declaration.parts[1].anchor = [0.4, 0.5];
   assert.throws(() => validateMotionProjectionReference(wrongAnchor, pin.figma));
+  const falseGesture = structuredClone(reference);
+  falseGesture.icons.timer.outline.declaration.gesture = {
+    law: 'cycle.clockwise',
+    purpose: 'elapsed-time',
+    partId: 'timer-hand',
+  };
+  assert.throws(() => validateMotionProjectionReference(falseGesture, pin.figma));
   const foreign = structuredClone(reference);
   foreign.icons.refresh.filled.author.fileKey = 'Foreign';
   assert.throws(() => validateMotionProjectionReference(foreign, pin.figma));
@@ -134,9 +148,9 @@ test('raw master edits and dishonest declarations refuse before installed produc
 function effect(raw, from, to, duration, reducedMotion = false) {
   return {
     version: 1,
-    icon: 'timer',
+    icon: 'reload',
     variant: 'outline',
-    gesture: 'timer.advance',
+    gesture: 'reload.cycle',
     from,
     to,
     targets: [
@@ -150,7 +164,7 @@ function effect(raw, from, to, duration, reducedMotion = false) {
         ],
       },
     ],
-    unchangedPartIds: ['timer-dial'],
+    unchangedPartIds: [],
     viewport: { overflow: 'visible' },
     options: {
       duration: reducedMotion || from === to ? 0 : duration,
@@ -159,9 +173,9 @@ function effect(raw, from, to, duration, reducedMotion = false) {
     },
   };
 }
-test('packet oracle catches moving dial, altered pivot, false reduction and changed finite interval', async (t) => {
+test('accepted rotation oracle catches wrong target, altered pivot, false reduction and changed interval', async (t) => {
   const { reference } = await fixture(t);
-  const raw = reference.icons.timer.outline;
+  const raw = reference.icons.reload.outline;
   for (const request of [
     { from: 0.125, to: 0.5, duration: 400 },
     { from: 0.5, to: 0.125, duration: 300 },
@@ -169,10 +183,10 @@ test('packet oracle catches moving dial, altered pivot, false reduction and chan
     { from: 0.875, to: 0.875, duration: 400 },
   ]) {
     const healthy = effect(raw, request.from, request.to, request.duration, request.reducedMotion);
-    assertMotionProjectionEffect(healthy, raw, 'timer', 'outline', request);
+    assertMotionProjectionEffect(healthy, raw, 'reload', 'outline', request);
     for (const alter of [
       (value) => {
-        value.targets[0].partId = 'timer-dial';
+        value.targets[0].partId = 'other-body';
       },
       (value) => {
         value.targets[0].style.transformOrigin = '49% 50%';
@@ -186,78 +200,80 @@ test('packet oracle catches moving dial, altered pivot, false reduction and chan
     ]) {
       const broken = structuredClone(healthy);
       alter(broken);
-      assert.throws(() => assertMotionProjectionEffect(broken, raw, 'timer', 'outline', request));
+      assert.throws(() => assertMotionProjectionEffect(broken, raw, 'reload', 'outline', request));
     }
   }
 });
 
-function poses(reference, phase) {
-  const raw = reference.icons.timer.outline;
-  const angle = phase * 2 * Math.PI;
-  return [16, 24, 48].map((size) => ({
-    icon: 'timer',
-    variant: 'outline',
-    size,
-    capability: {
-      icon: 'timer',
-      variant: 'outline',
-      gestures: [{ id: raw.gesture.id, kind: raw.gesture.kind, meaning: raw.gesture.meaning }],
-      formats: ['svg', 'web-effect'],
-      author: raw.author,
-      anatomy: raw.anatomy,
-    },
-    viewBox: raw.viewBox,
-    paths: raw.paths.map((path, index) => ({
-      ...path,
-      id: raw.declaration.parts[index].id,
-      role: raw.declaration.parts[index].role,
-    })),
-    matrices: [
-      [1, 0, 0, 1, 0, 0],
-      [Math.cos(angle), Math.sin(angle), -Math.sin(angle), Math.cos(angle), 0, 0],
-    ],
-    identity: true,
-    styles: [
-      { transformBox: '', transformOrigin: '' },
-      { transformBox: 'view-box', transformOrigin: '50% 50%' },
-    ],
-    width: size,
-    height: size,
-    target: { width: 48, height: 48, name: 'Таймер', type: 'button' },
-    hidden: 'true',
-    focusable: 'false',
-    slot: 'icon',
-    statuses: ['finished'],
-  }));
+function poses(reference) {
+  return ['outline', 'filled'].flatMap((variant) =>
+    [16, 24, 48].map((size) => {
+      const raw = reference.icons.timer[variant];
+      return {
+        icon: 'timer',
+        variant,
+        size,
+        capability: {
+          icon: 'timer',
+          variant,
+          motion: { state: 'source-only', gestures: [] },
+          author: raw.author,
+        },
+        viewBox: raw.viewBox,
+        paths: raw.paths.map((path, index) => ({
+          ...path,
+          id: `source-${String(index).padStart(12, '0')}`,
+          role: 'unclassified',
+        })),
+        matrices: raw.paths.map(() => [1, 0, 0, 1, 0, 0]),
+        identity: true,
+        styles: raw.paths.map(() => ({ transformBox: '', transformOrigin: '' })),
+        width: size,
+        height: size,
+        target: { width: 48, height: 48, name: 'Таймер', type: 'button' },
+        hidden: 'true',
+        focusable: 'false',
+        slot: 'icon',
+        generation: 0,
+        animations: 0,
+      };
+    }),
+  );
 }
-test('capture receipt binds bytes and actual pose, never awards an optical verdict', async (t) => {
+const refusedTimer = () =>
+  Object.fromEntries(
+    ['outline', 'filled'].map((variant) => [
+      variant,
+      { ok: false, reason: { code: 'SEMANTIC_MOTION_UNAVAILABLE' } },
+    ]),
+  );
+
+test('capture receipt binds static authors and actual refusal without a motion or optical verdict', async (t) => {
   const { reference } = await fixture(t);
   const visuals = MOTION_PROJECTION_VISUAL_FILES.map((path) => ({
     path,
     bytes: Buffer.from(path),
   }));
-  const records = ['no-preference', 'reduce'].flatMap((mode) =>
-    TIMER_POSES.map((phase) => {
-      const file = timerPoseVisualFile(mode, phase);
-      const image = visuals.find((item) => item.path === file);
-      return {
-        name: `${mode}:timer-pose-${phase}:capture`,
-        result: 'PASS',
-        file,
-        phase,
-        icon: 'timer',
-        variant: 'outline',
-        sizes: [16, 24, 48],
-        samples: 3,
-        pngSha256: hash(image.bytes),
-        poses: poses(reference, phase),
-      };
-    }),
-  );
-  assertTimerPoseEvidence(visuals, records, reference);
+  const records = ['no-preference', 'reduce'].map((mode) => {
+    const file = timerRefusalVisualFile(mode);
+    const image = visuals.find((item) => item.path === file);
+    return {
+      name: `${mode}:timer-static-refusal:capture`,
+      result: 'PASS',
+      file,
+      icon: 'timer',
+      variants: ['outline', 'filled'],
+      sizes: [16, 24, 48],
+      samples: 6,
+      pngSha256: hash(image.bytes),
+      poses: poses(reference),
+      refusals: refusedTimer(),
+    };
+  });
+  assertTimerRefusalEvidence(visuals, records, reference);
   for (const alter of [
     (value) => {
-      value[0].phase = 0.5;
+      value[0].poses[0].capability.motion.gestures = [{ id: 'timer.advance' }];
     },
     (value) => {
       value[0].poses[0].matrices[1] = [0, 1, -1, 0, 0, 0];
@@ -268,13 +284,33 @@ test('capture receipt binds bytes and actual pose, never awards an optical verdi
     (value) => {
       value[0].poses[0].matrices[0] = [0, 1, -1, 0, 0, 0];
     },
+    (value) => {
+      value[0].refusals.filled = { ok: true, effect: {} };
+    },
+    (value) => {
+      value[0].refusals.outline.reason.code = 'GESTURE_UNSUPPORTED';
+    },
+    (value) => {
+      value[0].poses[0].generation = 1;
+    },
+    (value) => {
+      value[0].poses[0].animations = 1;
+    },
+    (value) => {
+      value[0].poses[0].paths[0].d += 'M0 0Z';
+    },
+    (value) => {
+      value[0].poses[0].target.name = '';
+    },
   ]) {
     const changed = structuredClone(records);
     alter(changed);
-    assert.throws(() => assertTimerPoseEvidence(visuals, changed, reference));
+    assert.throws(() => assertTimerRefusalEvidence(visuals, changed, reference));
   }
-  assert.throws(() => assertTimerPoseEvidence(visuals.slice(1), records, reference));
-  assert.throws(() => assertTimerPoseEvidence(visuals, [...records, records[0]], reference));
+  assert.throws(() => assertTimerRefusalEvidence(visuals.slice(1), records, reference));
+  assert.throws(() => assertTimerRefusalEvidence(visuals, [...records, records[0]], reference));
+  assertTimerRefusals(refusedTimer());
+  assert.throws(() => assertTimerRefusals({ outline: refusedTimer().outline }));
 });
 
 test('schema11 adds only opt-in roots and keeps prior consumers free of them', () => {
@@ -289,6 +325,9 @@ test('schema11 adds only opt-in roots and keeps prior consumers free of them', (
   }
   assert.ok(!consumerPublicEntries(11).includes('@labpics/icons/gestures/mic'));
   assert.ok(!consumerFixture(11).includes('@labpics/icons/gestures/mic'));
+  assert.ok(!consumerPublicEntries(11).includes('@labpics/icons/gestures/timer'));
+  assert.ok(!consumerFixture(11).includes('@labpics/icons/gestures/timer'));
+  assert.throws(() => assertIconsImport('@labpics/icons/gestures/timer'));
   assert.throws(() => assertIconsImport('@labpics/icons/ir/capsule-motion-runtime'));
   assert.ok(ICONS_HARNESS_FILES.includes('apps/docs/tests/icons-motion-projection-consumer.mjs'));
   assert.equal((motionProjectionTypeFixture().match(/@ts-expect-error/g) ?? []).length, 3);
