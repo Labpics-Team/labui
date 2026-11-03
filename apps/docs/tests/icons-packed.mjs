@@ -1244,10 +1244,11 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
-export function browserProofRecords(records, frontier, now = () => performance.now()) {
+export function browserProofRecords(records, frontier, now = () => performance.now(), publish) {
   const append = (...items) => {
     const length = records.push(...items);
     if (items.length) frontier.lastCompletedAt = now();
+    publish?.(items);
     return length;
   };
   return new Proxy(records, {
@@ -1273,6 +1274,16 @@ export function browserProofTimeout(frontier, records, now = performance.now()) 
         : Math.round(frontier.lastCompletedAt - frontier.startedAt),
     sinceLastCompletedMs: Math.round(now - (frontier.lastCompletedAt ?? frontier.startedAt)),
     completedStages: frontier.completedStages.map((stage) => ({ ...stage })),
+    ...(frontier.modes
+      ? {
+          modes: Object.fromEntries(
+            Object.entries(frontier.modes).map(([mode, entry]) => [
+              mode,
+              browserProofTimeout(entry.frontier, entry.records, now).browserFrontier,
+            ]),
+          ),
+        }
+      : {}),
   };
   return Object.assign(
     new Error(`icons-packed browser proof timeout: ${JSON.stringify(diagnostic)}`),
@@ -1280,8 +1291,63 @@ export function browserProofTimeout(frontier, records, now = performance.now()) 
   );
 }
 
-async function browserProof(browser, url, reference, out, records, browserErrors, frontier) {
-  for (const reducedMotion of ['no-preference', 'reduce']) {
+// Каждый режим владеет своей страницей, progress и records; общий срок не сбрасывается.
+export function browserProofModes(run, records, frontier, now = () => performance.now()) {
+  frontier.stage = 'parallel-modes';
+  frontier.modes = {};
+  const tasks = ['no-preference', 'reduce'].map((mode) => {
+    const local = {
+      mode,
+      stage: 'start',
+      member: null,
+      startedAt: frontier.startedAt,
+      stageStartedAt: now(),
+      stageStartedRecord: 0,
+      lastCompletedAt: null,
+      completedStages: [],
+    };
+    const completed = [];
+    frontier.modes[mode] = { frontier: local, records: completed };
+    const observed = browserProofRecords(completed, local, now, (items) => records.push(...items));
+    return Promise.resolve().then(() => run(mode, observed, local));
+  });
+  return { result: Promise.all(tasks), settled: Promise.allSettled(tasks) };
+}
+
+// Отказ транспорта close не позволяет бесконечно ждать callback или менять сохранённый receipt.
+export async function closeBrowserProof(browser, work, timers = { setTimeout, clearTimeout }) {
+  const errors = [];
+  let timer;
+  try {
+    const settled = (async () => {
+      try {
+        await browser?.close();
+      } catch (error) {
+        errors.push(String(error));
+      }
+      await work?.settled;
+      return { settled: true, errors: [...errors] };
+    })();
+    return await Promise.race([
+      settled,
+      new Promise((resolve) => {
+        timer = timers.setTimeout(
+          () =>
+            resolve({
+              settled: false,
+              errors: [...errors, 'Browser proof cleanup timeout after 20000ms'],
+            }),
+          20_000,
+        );
+      }),
+    ]);
+  } finally {
+    timers.clearTimeout(timer);
+  }
+}
+
+function browserProof(browser, url, reference, out, records, browserErrors, frontier) {
+  const runMode = async (reducedMotion, records, frontier) => {
     const mark = (stage, member = null) => {
       const now = performance.now();
       frontier.completedStages.push({
@@ -1646,7 +1712,8 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       mark('context-close');
       await context.close();
     }
-  }
+  };
+  return browserProofModes(runMode, records, frontier);
 }
 
 export function assertNotificationPose(observation, expected, icon, variant, progress) {
@@ -2387,6 +2454,7 @@ export async function main(args = process.argv.slice(2)) {
   let browser;
   let server;
   let proofTimer;
+  let proofWork;
   let failure;
   const cleanupErrors = [];
   let phase = 'subject';
@@ -2653,28 +2721,29 @@ export async function main(args = process.argv.slice(2)) {
       lastCompletedAt: null,
       completedStages: [],
     };
+    proofWork = browserProof(
+      browser,
+      `http://127.0.0.1:${server.address().port}`,
+      {
+        ...subject.authorReference,
+        states: subjectStateReferences(subject),
+        notifications: subject.notificationReference,
+        authoredDots: subject.authoredDotsReference,
+        annulus: subject.annulusReference,
+        stateAnnulus: subject.stateAnnulusReference,
+        contentScale: subject.schemaVersion >= 8 ? subject.annulusReference : undefined,
+        microphones: subject.microphoneReference,
+        motionProjection: subject.motionProjectionReference,
+        widthMotion: subject.widthMotionReference,
+        widthMotionMeasurements: receipt.widthMotionMeasurements,
+      },
+      out,
+      browserProofRecords(records, browserFrontier),
+      browserErrors,
+      browserFrontier,
+    );
     await Promise.race([
-      browserProof(
-        browser,
-        `http://127.0.0.1:${server.address().port}`,
-        {
-          ...subject.authorReference,
-          states: subjectStateReferences(subject),
-          notifications: subject.notificationReference,
-          authoredDots: subject.authoredDotsReference,
-          annulus: subject.annulusReference,
-          stateAnnulus: subject.stateAnnulusReference,
-          contentScale: subject.schemaVersion >= 8 ? subject.annulusReference : undefined,
-          microphones: subject.microphoneReference,
-          motionProjection: subject.motionProjectionReference,
-          widthMotion: subject.widthMotionReference,
-          widthMotionMeasurements: receipt.widthMotionMeasurements,
-        },
-        out,
-        browserProofRecords(records, browserFrontier),
-        browserErrors,
-        browserFrontier,
-      ),
+      proofWork.result,
       new Promise((_, reject) => {
         proofTimer = setTimeout(
           () => reject(browserProofTimeout(browserFrontier, records)),
@@ -2705,11 +2774,9 @@ export async function main(args = process.argv.slice(2)) {
     failure = error;
   } finally {
     clearTimeout(proofTimer);
-    try {
-      await browser?.close();
-    } catch (error) {
-      cleanupErrors.push(String(error));
-    }
+    const browserCleanup = await closeBrowserProof(browser, proofWork);
+    cleanupErrors.push(...browserCleanup.errors);
+    if (!browserCleanup.settled) receipt.records = structuredClone(records);
     try {
       if (server)
         await new Promise((resolve, reject) =>

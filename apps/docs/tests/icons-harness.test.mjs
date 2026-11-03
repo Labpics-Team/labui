@@ -11,13 +11,239 @@ import {
   assertHarnessFilesUnchanged,
   snapshotHarnessFiles,
 } from './icons-harness.mjs';
-import { browserProofRecords, browserProofTimeout } from './icons-packed.mjs';
+import {
+  browserProofModes,
+  browserProofRecords,
+  browserProofTimeout,
+  closeBrowserProof,
+} from './icons-packed.mjs';
 
 const ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const packedUrl = new URL('./icons-packed.mjs', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor;
 const readRepositoryFile = (file) => readFile(join(ROOT, file));
+
+function initialFrontier() {
+  return {
+    mode: null,
+    stage: 'start',
+    member: null,
+    startedAt: 0,
+    stageStartedAt: 0,
+    stageStartedRecord: 0,
+    lastCompletedAt: null,
+    completedStages: [],
+  };
+}
+
+test('оба независимых режима начинают работу до завершения любого из них', async () => {
+  const started = [];
+  const releases = {};
+  const records = [];
+  const frontier = initialFrontier();
+  const work = browserProofModes(
+    async (mode, completed, progress) => {
+      started.push(mode);
+      progress.stage = mode === 'reduce' ? 'annulus' : 'width-motion';
+      completed.push({ name: `${mode}:first` });
+      await new Promise((resolve) => {
+        releases[mode] = resolve;
+      });
+      completed.push({ name: `${mode}:last` });
+    },
+    browserProofRecords(records, frontier, () => 100),
+    frontier,
+    () => 100,
+  );
+  await Promise.resolve();
+  assert.deepEqual(started, ['no-preference', 'reduce']);
+  assert.equal(records.length, 2);
+  const full = frontier.modes['no-preference'];
+  const reduced = frontier.modes.reduce;
+  assert.notEqual(full.frontier, reduced.frontier);
+  assert.notEqual(full.records, reduced.records);
+  assert.equal(full.records.length, 1);
+  assert.equal(reduced.records.length, 1);
+  const failure = browserProofTimeout(frontier, records, 120000).browserFrontier;
+  assert.equal(failure.elapsedMs, 120000);
+  assert.equal(failure.modes['no-preference'].elapsedMs, 120000);
+  assert.equal(failure.modes.reduce.elapsedMs, 120000);
+  assert.equal(failure.modes['no-preference'].stage, 'width-motion');
+  assert.equal(failure.modes.reduce.stage, 'annulus');
+  assert.equal(failure.modes['no-preference'].lastCompletedRecord, 'no-preference:first');
+  assert.equal(failure.modes.reduce.lastCompletedRecord, 'reduce:first');
+  releases.reduce();
+  releases['no-preference']();
+  await work.result;
+  assert.ok((await work.settled).every((result) => result.status === 'fulfilled'));
+  assert.equal(records.length, 4);
+  assert.equal(full.records.length, 2);
+  assert.equal(reduced.records.length, 2);
+  assert.equal(failure.completedRecords, 2, 'timeout snapshot не меняется после завершения');
+});
+
+test('первый отказ сохраняется, а sibling остаётся в settlement до своего finally', async () => {
+  const original = new Error('controlled original failure');
+  let release;
+  let completed = false;
+  const work = browserProofModes(
+    async (mode) => {
+      if (mode === 'no-preference') throw original;
+      try {
+        await new Promise((resolve) => {
+          release = resolve;
+        });
+      } finally {
+        completed = true;
+      }
+    },
+    [],
+    initialFrontier(),
+  );
+  await assert.rejects(work.result, (error) => error === original);
+  assert.equal(completed, false);
+  release();
+  const results = await work.settled;
+  assert.equal(results[0].reason, original);
+  assert.equal(results[1].status, 'fulfilled');
+  assert.equal(completed, true);
+});
+
+test('cleanup ждёт settlement после закрытия браузера и снимает свой timer', async () => {
+  const events = [];
+  let release;
+  const settled = new Promise((resolve) => {
+    release = resolve;
+  });
+  const cleanup = closeBrowserProof(
+    {
+      close: async () => {
+        events.push('browser-close');
+      },
+    },
+    { settled },
+    {
+      setTimeout(_callback, delay) {
+        assert.equal(delay, 20_000);
+        return 'cleanup-timer';
+      },
+      clearTimeout(timer) {
+        assert.equal(timer, 'cleanup-timer');
+        events.push('timer-cleared');
+      },
+    },
+  );
+  await Promise.resolve();
+  events.push('before-settlement');
+  release();
+  assert.deepEqual(await cleanup, { settled: true, errors: [] });
+  events.push('receipt-ready');
+  assert.deepEqual(events, [
+    'browser-close',
+    'before-settlement',
+    'timer-cleared',
+    'receipt-ready',
+  ]);
+});
+
+test('отказ close и зависший sibling завершают cleanup явным ограниченным отказом', async () => {
+  const original = new Error('controlled close failure');
+  let timeout;
+  let release;
+  const settled = new Promise((resolve) => {
+    release = resolve;
+  });
+  const cleanup = closeBrowserProof(
+    {
+      close: async () => {
+        throw original;
+      },
+    },
+    { settled },
+    {
+      setTimeout(callback, delay) {
+        assert.equal(delay, 20_000);
+        timeout = callback;
+        return 1;
+      },
+      clearTimeout(timer) {
+        assert.equal(timer, 1);
+      },
+    },
+  );
+  await Promise.resolve();
+  timeout();
+  const result = await cleanup;
+  assert.deepEqual(result, {
+    settled: false,
+    errors: [String(original), 'Browser proof cleanup timeout after 20000ms'],
+  });
+  release();
+  await settled;
+  assert.equal(result.settled, false);
+  assert.equal(result.errors.length, 2);
+});
+
+test('даже незавершившийся transport close не оставляет cleanup без срока', async () => {
+  let timeout;
+  let release;
+  const closing = new Promise((resolve) => {
+    release = resolve;
+  });
+  const cleanup = closeBrowserProof(
+    { close: () => closing },
+    { settled: Promise.resolve() },
+    {
+      setTimeout(callback, delay) {
+        assert.equal(delay, 20_000);
+        timeout = callback;
+        return 1;
+      },
+      clearTimeout(timer) {
+        assert.equal(timer, 1);
+      },
+    },
+  );
+  timeout();
+  assert.deepEqual(await cleanup, {
+    settled: false,
+    errors: ['Browser proof cleanup timeout after 20000ms'],
+  });
+  release();
+  await closing;
+});
+
+test('неполный cleanup замораживает records до записи failed receipt', async () => {
+  const source = await readFile(packedUrl, 'utf8');
+  const start = source.indexOf('    const browserCleanup = await closeBrowserProof(');
+  const end = source.indexOf('\n    try {', start);
+  assert.ok(start >= 0 && end > start);
+  const finalize = new AsyncFunction(
+    'closeBrowserProof',
+    'browser',
+    'proofWork',
+    'cleanupErrors',
+    'receipt',
+    'records',
+    source.slice(start, end),
+  );
+  const records = [{ name: 'accepted', observation: { width: 0.8 } }];
+  const receipt = { records };
+  const errors = [];
+  await finalize(
+    async () => ({ settled: false, errors: ['cleanup timeout'] }),
+    {},
+    {},
+    errors,
+    receipt,
+    records,
+  );
+  records[0].observation.width = 1;
+  records.push({ name: 'late' });
+  assert.deepEqual(errors, ['cleanup timeout']);
+  assert.deepEqual(receipt.records, [{ name: 'accepted', observation: { width: 0.8 } }]);
+});
 
 test('progress отличает свежую завершённую запись от остановки при том же общем elapsed', () => {
   const frontier = {
