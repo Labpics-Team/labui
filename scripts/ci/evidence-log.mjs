@@ -48,8 +48,9 @@ export function writeStdout(bytes) {
   });
 }
 
-// REST job log содержит timestamp; gh run view добавляет два столбца через tab.
-const LOG_PREFIX = /^(?:[^\t\r\n]+\t[^\t\r\n]+\t)?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z[ \t]+/;
+// REST объединяет UTF-8 блоки с BOM; gh run view добавляет два столбца через tab.
+const LOG_PREFIX =
+  /^(?:[^\t\r\n]+\t[^\t\r\n]+\t)?\uFEFF?\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+Z[ \t]+/;
 const positive = (value) => Number.isSafeInteger(value) && value > 0;
 
 export function decodeEvidenceLog(

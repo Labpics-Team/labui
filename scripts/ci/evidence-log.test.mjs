@@ -61,6 +61,48 @@ test('readback handles raw, REST timestamp and gh tab-column logs without taking
   assert.equal(decodeEvidenceLog(`${packet}${packet}`, prefix, limits).length, 2);
 });
 
+test('timestamped readback preserves a packet across a BOM log-block boundary', async (t) => {
+  const lines = packet.trimEnd().split('\n');
+  const timestamp = '2026-11-03T08:13:58.9443536Z ';
+  const wrap = (boundaryPrefix, columns = '') =>
+    lines
+      .map((line, index) => (index === 2 ? boundaryPrefix : columns + timestamp) + line)
+      .join('\r\n');
+
+  await t.test('REST and gh logs preserve bytes when a later chunk starts a new block', () => {
+    for (const columns of ['', 'Windows Button\tExport\t']) {
+      const log = wrap(`${columns}\uFEFF${timestamp}`, columns);
+      const packets = decodeEvidenceLog(log, prefix, limits);
+      assert.equal(packets.length, 1);
+      assert.deepEqual(packets[0].bytes, payload);
+    }
+  });
+
+  await t.test('diagnostics and misplaced BOMs cannot supply a missing chunk', () => {
+    for (const boundaryPrefix of [
+      `diagnostic \uFEFF${timestamp}`,
+      '\uFEFF',
+      `${timestamp}\uFEFF`,
+      ` \uFEFF${timestamp}`,
+      `\uFEFF\uFEFF${timestamp}`,
+      '\uFEFF2026-11-03 08:13:58.9443536Z ',
+      `Windows Button\tExport\t${timestamp}\uFEFF`,
+    ]) {
+      assert.throws(() => decodeEvidenceLog(wrap(boundaryPrefix), prefix, limits));
+    }
+  });
+
+  await t.test('BOM handling preserves chunk-order and payload-digest checks', () => {
+    const log = wrap(`\uFEFF${timestamp}`);
+    assert.throws(() =>
+      decodeEvidenceLog(log.replace(`${prefix}_CHUNK 1 `, `${prefix}_CHUNK 0 `), prefix, limits),
+    );
+    assert.throws(() =>
+      decodeEvidenceLog(log.replaceAll(hash(payload), '0'.repeat(64)), prefix, limits),
+    );
+  });
+});
+
 test('framing rejects truncation, duplication, reordering, interleaving and trailing markers', () => {
   const lines = packet.trimEnd().split('\n');
   const mutations = [
