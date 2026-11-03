@@ -23,6 +23,7 @@ import {
 import {
   assertStateAnatomy,
   browserProofTimeout,
+  consumerReceiptBytes,
   stateCapabilitiesReference,
   staticStatePathsReference,
   subjectStateReferences,
@@ -2254,6 +2255,78 @@ test('summary transmits successful raw observations and PNG authenticated agains
   }
 });
 
+test('native receipt and projected packet conserve every observation within the existing byte limit', async (t) => {
+  const fixture = await summaryFixture(t, 3);
+  const clock = JSON.parse(
+    await readFile(new URL('./fixtures/icons-clock-masters.json', import.meta.url)),
+  ).icons.history.outline;
+  const observation = {
+    result: 'PASS',
+    file: 'result/no-preference-clock-rest.png',
+    pngSha256: 'a'.repeat(64),
+    entries: [
+      {
+        icon: 'history',
+        variant: 'outline',
+        supported: true,
+        lastWrittenHours: 0,
+        samples: [16, 24, 48].map((size) => ({
+          size,
+          width: size,
+          height: size,
+          viewBox: clock.viewBox,
+          identity: true,
+          hidden: 'true',
+          focusable: 'false',
+          slot: 'icon',
+          name: 'История',
+          paths: clock.paths,
+        })),
+      },
+    ],
+  };
+  const receipt = {
+    ...fixture.receipt,
+    records: Array.from({ length: 650 }, (_, index) => ({
+      name: `history/outline:synthetic-${index}`,
+      ...observation,
+    })),
+  };
+  const limit = 4 * 1024 * 1024;
+  const pretty = Buffer.from(JSON.stringify(receipt, null, 2));
+  const compact = Buffer.from(JSON.stringify(receipt));
+  assert.ok(
+    pretty.length > limit && compact.length < limit,
+    'witness crosses only whitespace budget',
+  );
+  const native = consumerReceiptBytes(receipt);
+  assert.deepEqual(JSON.parse(native), receipt);
+  assert.ok(native.length <= limit, 'native serializer retains the existing byte limit');
+  const log = consumerReceiptLog(native, PIN.sourceCommit, PIN.sourceCommit);
+  const packet = decodeConsumerEvidence(
+    log,
+    'LABUI_ICONS_CONSUMER_RECEIPT',
+    'receiptSha256',
+    'result/receipt.json',
+  );
+  assert.ok(packet.bytes.length <= limit, 'projected packet retains the decoder byte limit');
+  assert.deepEqual(assertProjectedBytes(packet.bytes, native).records, receipt.records);
+  assert.equal(packet.metadata.originalBytesSha256, hash(native));
+  assert.equal(packet.metadata.originalBytes, native.length);
+  assert.throws(
+    () => consumerReceiptLog(Buffer.alloc(limit + 1), PIN.sourceCommit, PIN.sourceCommit),
+    /receipt: bytes вне лимита/,
+  );
+  const full = { schemaVersion: 1, outcome: 'passed', records: [{ name: 'bounded', d: '' }] };
+  full.records[0].d = 'M'.repeat(limit - Buffer.byteLength(JSON.stringify(full)));
+  const fullBytes = Buffer.from(JSON.stringify(full));
+  assert.equal(fullBytes.length, limit);
+  assert.throws(
+    () => consumerReceiptLog(fullBytes, PIN.sourceCommit, PIN.sourceCommit),
+    /receipt: projection вне лимита/,
+  );
+});
+
 test('oversized raw failure and refused PNG keep the limited continuity RESULT', async (t) => {
   const fixture = await summaryFixture(t, 1);
   const stateContinuity = { differences: [{ partId: 'mouth', before: 0.375, after: 0.25 }] };
@@ -2343,10 +2416,7 @@ test('RESULT framing authenticates the same private-safe projection and refuses 
   );
   assert.equal(metadata.originalBytesSha256, projection.originalBytesSha256);
   assert.equal(metadata.originalBytes, raw.length);
-  assert.equal(
-    metadata.resultSha256,
-    hash(Buffer.from(`${JSON.stringify(projection, null, 2)}\n`)),
-  );
+  assert.equal(metadata.resultSha256, hash(Buffer.from(`${JSON.stringify(projection)}\n`)));
   assert.equal(log.includes(PIN.figma.fileKey), false);
   assert.equal(log.includes('private stack'), false);
   assert.throws(() => consumerResultLog(Buffer.alloc(4 * 1024 * 1024 + 1, 'x')));

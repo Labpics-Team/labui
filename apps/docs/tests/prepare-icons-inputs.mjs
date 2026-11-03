@@ -26,14 +26,14 @@ import {
 import { assertPublicScreenshot } from '../../../scripts/ci/icons-screenshot-profile.mjs';
 import { annulusReference } from './icons-annulus-consumer.mjs';
 import {
+  AUTHORED_DOT_ICONS,
+  validateAuthoredDotsReference,
+} from './icons-authored-dots-consumer.mjs';
+import {
   CLOCK_MOTION_VISUAL_FILES,
   assertClockMotionVisualEvidence,
   clockMotionReference,
 } from './icons-clock-motion-consumer.mjs';
-import {
-  AUTHORED_DOT_ICONS,
-  validateAuthoredDotsReference,
-} from './icons-authored-dots-consumer.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
 import {
@@ -697,7 +697,7 @@ export function projectJsonBytes(
     originalBytes: bytes.length,
   };
   assertPublicEvidence(projection, { privateLocations });
-  return Buffer.from(`${JSON.stringify(projection, null, 2)}\n`);
+  return Buffer.from(`${JSON.stringify(projection)}\n`);
 }
 
 export function platformMeasurementLog(bytes, sourceSha, privateLocations) {
@@ -754,8 +754,10 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit, privateLocations)
   assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
   assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
   assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
+  const projected = projectJsonBytes(bytes, privateLocations);
+  assert.ok(projected.length <= CONSUMER_MAX_EVIDENCE_BYTES, 'receipt: projection вне лимита');
   return evidenceLog(
-    projectJsonBytes(bytes, privateLocations),
+    projected,
     'LABUI_ICONS_CONSUMER_RECEIPT',
     {
       file: 'result/receipt.json',

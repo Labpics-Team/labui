@@ -2497,6 +2497,10 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assertStateAnatomy(await evaluate('pauseState', 200), reference);
 }
 
+export function consumerReceiptBytes(receipt) {
+  return Buffer.from(`${JSON.stringify(receipt)}\n`);
+}
+
 export async function main(args = process.argv.slice(2)) {
   assertSelfHostedRunner();
   const options = new Map();
@@ -2866,9 +2870,9 @@ export async function main(args = process.argv.slice(2)) {
       receipt.cleanupErrors = [...cleanupErrors];
     }
     receipt.completed = new Date().toISOString();
-    await writeFile(join(out, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
-    if (receipt.outcome === 'failed')
-      await writeFile(join(out, 'failure.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+    const receiptBytes = consumerReceiptBytes(receipt);
+    await writeFile(join(out, 'receipt.json'), receiptBytes);
+    if (receipt.outcome === 'failed') await writeFile(join(out, 'failure.json'), receiptBytes);
     if (receipt.outcome === 'passed')
       process.stdout.write(`icons-packed: passed, ${records.length} observations\n`);
   }
