@@ -655,7 +655,9 @@ test('workflow requires successful export and includes transport contracts', asy
   };
   validate(text);
   assert.doesNotThrow(() =>
-    validate(`${text}\n      - name: Conditional successor\n        if: always()\n        run: echo successor\n`),
+    validate(
+      `${text}\n      - name: Conditional successor\n        if: always()\n        run: echo successor\n`,
+    ),
   );
   assert.throws(() =>
     validate(
@@ -665,10 +667,14 @@ test('workflow requires successful export and includes transport contracts', asy
       ),
     ),
   );
-  assert.throws(() =>
-    validate(
-      text.replace('      - name: Export native evidence to job log', '      - name: Missing export'),
-    ),
+  assert.throws(
+    () =>
+      validate(
+        text.replace(
+          '      - name: Export native evidence to job log',
+          '      - name: Missing export',
+        ),
+      ),
     /Export step is required/,
   );
   assert.throws(() =>

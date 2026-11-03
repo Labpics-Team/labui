@@ -22,6 +22,21 @@ Settings → Text size на `windows-2025`. Он запускается посл
 HWND. Это корреляция на одноразовом runner; параллельный запуск Settings извне
 не покрывается. Неоднозначность не разрешает закрыть прежнее окно.
 
+До запуска Settings отдельный короткий Windows PowerShell 5 child читает
+`new UISettings().TextScaleFactor` через штатную WinRT metadata projection.
+`systemTextScaleBefore` сохраняет значение OS API, PID/start time/session и время
+чтения; ошибка getter останавливает эксперимент до URI launch. Это будущий
+независимый readback восстановления, не запуск Buttons или чтение реестра.
+
+Перед прежним HWND admission `windowCandidate` сохраняет выбранные CLI HWND/PID,
+owner HWND и className, а `windowDiagnostic` — результат
+`GetWindowThreadProcessId` и обновлённый `Process.MainWindowHandle`. CLI включает
+видимые top-level окна с owner; .NET main-window heuristic их исключает.
+Эти наблюдения различают определения окна и его исчезновение при запуске;
+они не ослабляют guard и не меняют `CloseMainWindow`. Отсутствие UIA inventory
+после такого отказа ещё не устанавливает отсутствие страницы Text size.
+Первичный отказ остаётся в `error`, ошибка закрытия отдельно в `cleanupError`.
+
 Inspect ограничен этим HWND. В отдельный
 `RUNNER_TEMP/labui-native/text-scale-capability.json` и строку
 `LABUI_TEXT_SCALE_CAPABILITY_JSON` попадают только Text size/Make text bigger,

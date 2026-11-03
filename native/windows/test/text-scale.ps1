@@ -99,6 +99,86 @@ function Get-OwnedSettings($Owned) {
     return $process
 }
 
+function Read-SettingsWindowOwner([long]$Handle) {
+    if ($Handle -le 0) { throw 'Для наблюдения нужен положительный HWND.' }
+    if ($null -eq ('LabUISettingsWindowReadback' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class LabUISettingsWindowReadback
+{
+    [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
+    public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+}
+'@
+    }
+    [uint32]$ownerPid = 0
+    $threadId = [LabUISettingsWindowReadback]::GetWindowThreadProcessId([IntPtr]$Handle, [ref]$ownerPid)
+    $lastError = if ($threadId -eq 0) { [Runtime.InteropServices.Marshal]::GetLastWin32Error() } else { 0 }
+    return @{ nativePid = $ownerPid; nativeThreadId = $threadId; nativeAlive = $threadId -ne 0; nativeError = $lastError }
+}
+
+function Read-SettingsWindowDiagnostic($Owned) {
+    $state = Read-SettingsWindowOwner $Owned.hwnd
+    $state.observedAtUtc = [DateTime]::UtcNow.ToString('o')
+    $state.mainWindowHandle = $null
+    $state.processError = $null
+    $process = $null
+    try {
+        $process = Get-OwnedSettings $Owned
+        $process.Refresh()
+        $state.mainWindowHandle = $process.MainWindowHandle.ToInt64()
+    } catch {
+        # Наблюдение сохраняет отказ; существующий admission повторно проверит процесс.
+        $state.processError = $_.Exception.Message
+    } finally { if ($process) { $process.Dispose() } }
+    return $state
+}
+
+function Read-SystemTextScale {
+    $reader = @'
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+$null = [Windows.UI.ViewManagement.UISettings, Windows.UI.ViewManagement, ContentType=WindowsRuntime]
+$settings = [Windows.UI.ViewManagement.UISettings]::new()
+$process = [Diagnostics.Process]::GetCurrentProcess()
+try {
+    $value = $settings.TextScaleFactor
+    @{ schemaVersion = 1; api = 'Windows.UI.ViewManagement.UISettings.TextScaleFactor';
+        pid = $process.Id; startTicks = $process.StartTime.ToUniversalTime().Ticks; sessionId = $process.SessionId;
+        observedAtUnixMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(); textScaleFactor = $value } |
+        ConvertTo-Json -Compress
+} finally { $process.Dispose() }
+'@
+    $started = [DateTimeOffset]::UtcNow
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($reader))
+    $frameworkShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
+    $observation = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', $encoded) | ConvertFrom-Json
+    $current = [Diagnostics.Process]::GetCurrentProcess()
+    try {
+        foreach ($field in @('schemaVersion', 'pid', 'startTicks', 'sessionId', 'observedAtUnixMs')) {
+            if ($observation.$field -isnot [int] -and $observation.$field -isnot [long]) {
+                throw 'Повреждено целое поле OS text-scale observation.'
+            }
+        }
+        if ($observation.schemaVersion -ne 1 -or $observation.pid -le 0 -or
+            $observation.api -cne 'Windows.UI.ViewManagement.UISettings.TextScaleFactor' -or
+            $observation.sessionId -ne $current.SessionId -or $observation.startTicks -lt $started.UtcTicks -or
+            $observation.startTicks -gt [DateTime]::UtcNow.Ticks -or
+            $observation.observedAtUnixMs -lt $started.ToUnixTimeMilliseconds() -or
+            $observation.observedAtUnixMs -gt [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()) {
+            throw 'OS text-scale observation не соответствует текущему вызову/session.'
+        }
+    } finally { $current.Dispose() }
+    $value = $observation.textScaleFactor
+    if (($value -isnot [int] -and $value -isnot [long] -and $value -isnot [double]) -or
+        ![double]::IsFinite($value) -or $value -lt 1 -or $value -gt 2.25) {
+        throw 'UISettings.TextScaleFactor не вернул конечное число в диапазоне 1..2.25.'
+    }
+    return $observation
+}
+
 function Assert-SettingsWindow($Owned) {
     $process = Get-OwnedSettings $Owned
     try {
@@ -247,16 +327,19 @@ if ($executables.Count -ne 1) { throw 'Требуется единственны
 $cli = $executables[0].FullName
 $owned = $null
 $failure = $null
-$stage = 'snapshot-before'
+$stage = 'read-system-text-scale'
 $result = [ordered]@{
     schemaVersion = 1; experiment = 'settings-text-size-capability'; status = 'unavailable'; reason = $null;
     uri = 'ms-settings:easeofaccess-display'; observedAtUtc = [DateTime]::UtcNow.ToString('o');
     osVersion = [Environment]::OSVersion.Version.ToString(); imageOS = $env:ImageOS; imageVersion = $env:ImageVersion;
     cliVersion = '0.7.1'; cliSha256 = (Get-FileHash -LiteralPath $cli -Algorithm SHA256).Hash.ToLowerInvariant();
     systemTextScaleChanged = $false; fontQualification = 'not-performed';
-    snapshotBefore = @(); snapshotAfter = @(); window = $null; elements = @(); ranges = @(); cleanup = 'not-started'; error = $null
+    systemTextScaleBefore = $null; snapshotBefore = @(); snapshotAfter = @(); windowCandidate = $null;
+    windowDiagnostic = $null; window = $null; elements = @(); ranges = @(); cleanup = 'not-started'; error = $null; cleanupError = $null
 }
 try {
+    $result.systemTextScaleBefore = Read-SystemTextScale
+    $stage = 'snapshot-before'
     $before = @(Get-SettingsSnapshot)
     $result.snapshotBefore = @($before | Select-Object pid, startTicks, sessionId)
     if ($before.Count) {
@@ -291,6 +374,11 @@ try {
             } else {
                 $owned = $after[0]
                 $owned.hwnd = [long]$windows[0].hwnd
+                $result.windowCandidate = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd;
+                    ownerHwnd = $windows[0].ownerHwnd; className = $windows[0].className }
+                $stage = 'window-diagnostic'
+                $result.windowDiagnostic = Read-SettingsWindowDiagnostic $owned
+                $stage = 'window-admission'
                 Assert-SettingsWindow $owned
                 $result.window = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd }
                 $stage = 'inspect-page'
@@ -317,9 +405,8 @@ try {
     try { $result.cleanup = Close-SettingsWindow $owned } catch {
         $result.cleanup = 'failed'
         $result.status = 'unavailable'
-        $result.reason = 'cleanup-error'
-        $result.error = @{ stage = 'cleanup'; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }
-        if (!$failure) { $failure = $_ }
+        $result.cleanupError = @{ stage = 'cleanup'; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }
+        if (!$failure) { $result.reason = 'cleanup-error'; $failure = $_ }
     }
     $json = $result | ConvertTo-Json -Depth 8 -Compress
     if ([Text.Encoding]::UTF8.GetByteCount($json) -gt 65536) { throw 'Capability JSON превысил 64 KiB.' }

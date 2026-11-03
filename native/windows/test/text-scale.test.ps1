@@ -64,6 +64,95 @@ foreach ($fault in @('none', 'pid-reused', 'path-changed', 'session-changed', 'w
 }
 Assert ((Close-SettingsWindow $null) -eq 'no-owned-window') 'Cleanup требует несуществующее владение.'
 
+# Исполняются настоящий catch/finally: cleanup не должен стирать первичный отказ.
+$outer = @($ast.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.TryStatementAst] })[-1]
+$catchBody = $outer.CatchClauses[0].Body.Extent.Text
+$catchBlock = [scriptblock]::Create($catchBody.Substring(1, $catchBody.Length - 2))
+$finallyBody = $outer.Finally.Extent.Text
+$finallyBlock = [scriptblock]::Create($finallyBody.Substring(1, $finallyBody.Length - 2))
+foreach ($hasPrimary in @($true, $false)) {
+    & {
+        param($hasPrimary)
+        $result = [ordered]@{ status = 'available'; reason = $null; error = $null; cleanupError = $null; cleanup = 'not-started' }
+        $output = Join-Path ([IO.Path]::GetTempPath()) "labui-settings-error-$([guid]::NewGuid()).json"
+        $owned = $null
+        $failure = $null
+        $stage = 'window-admission'
+        function Close-SettingsWindow { param($Owned) throw 'fixture cleanup' }
+        try {
+            if ($hasPrimary) { try { throw 'fixture primary' } catch { . $catchBlock } }
+            . $finallyBlock | Out-Null
+            $readback = Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+            if ($hasPrimary) {
+                Assert ($readback.error.message -eq 'fixture primary' -and $readback.error.stage -eq 'window-admission') 'Cleanup стёр первичный отказ в JSON.'
+                Assert ($failure.Exception.Message -eq 'fixture primary') 'Cleanup заменил выбрасываемый первичный отказ.'
+            } else {
+                Assert ($null -eq $readback.error -and $readback.reason -eq 'cleanup-error') 'Создан несуществующий первичный отказ.'
+            }
+            Assert ($readback.cleanupError.message -eq 'fixture cleanup') 'Отказ cleanup не сохранён отдельно.'
+        } finally { if (Test-Path -LiteralPath $output) { Remove-Item -LiteralPath $output } }
+    } $hasPrimary
+}
+
+# UISettings child подменён только на границе процесса; WinRT/GUI не запускаются.
+foreach ($fault in @('none', 'wrong-api', 'wrong-session', 'stale', 'future', 'string-value', 'out-of-range', 'child-failed')) {
+    & {
+        param($fault)
+        function Invoke-TextScaleChild {
+            param($Executable, $Arguments)
+            Assert ($Executable -like '*WindowsPowerShell*v1.0*powershell.exe') 'Getter не направлен в framework PowerShell.'
+            $code = [Text.Encoding]::Unicode.GetString([Convert]::FromBase64String($Arguments[-1]))
+            Assert ($code -match 'ContentType=WindowsRuntime' -and $code -match '\$settings.TextScaleFactor') 'Getter не читает настоящий OS API.'
+            if ($fault -eq 'child-failed') { throw 'fixture getter failure' }
+            $now = [DateTimeOffset]::UtcNow
+            $value = @{ schemaVersion = 1; api = 'Windows.UI.ViewManagement.UISettings.TextScaleFactor';
+                pid = 3187; sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId;
+                startTicks = $now.UtcTicks; observedAtUnixMs = $now.ToUnixTimeMilliseconds(); textScaleFactor = 1.25 }
+            switch ($fault) {
+                'wrong-api' { $value.api = 'registry' }
+                'wrong-session' { $value.sessionId = -1 }
+                'stale' { $value.startTicks = $now.AddMinutes(-1).UtcTicks }
+                'future' { $value.observedAtUnixMs = $now.AddMinutes(1).ToUnixTimeMilliseconds() }
+                'string-value' { $value.textScaleFactor = '1.25' }
+                'out-of-range' { $value.textScaleFactor = 2.5 }
+            }
+            return $value | ConvertTo-Json -Compress
+        }
+        $failure = $null
+        $value = $null
+        try { $value = Read-SystemTextScale } catch { $failure = $_ }
+        Assert (($null -ne $failure) -eq ($fault -ne 'none')) "OS getter потерял границу readback: $fault."
+        if ($fault -eq 'none') { Assert ($value.textScaleFactor -eq 1.25) 'Getter подменил реальное значение expected/default.' }
+    } $fault
+}
+
+# Разные критерии окна остаются наблюдаемыми; diagnostic не меняет admission.
+foreach ($mainHandle in @(0, 42, 43)) {
+    & {
+        param($mainHandle)
+        $started = [DateTime]::UtcNow.AddMinutes(-1)
+        $owned = @{ pid = 3187; startTicks = $started.Ticks; path = 'fixture/SystemSettings.exe'; sessionId = 1; hwnd = 42 }
+        $fixtureProcess = [pscustomobject]@{ StartTime = $started; Path = $owned.path; SessionId = 1;
+            MainWindowHandle = [IntPtr]$mainHandle; Refreshed = $false }
+        $fixtureProcess | Add-Member ScriptMethod Refresh { $this.Refreshed = $true }
+        $fixtureProcess | Add-Member ScriptMethod Dispose { }
+        function Get-Process { param($Id, $ErrorAction) return $fixtureProcess }
+        function Read-SettingsWindowOwner { param($Handle)
+            Assert ($Handle -eq 42) 'Native read вышел за выбранный HWND.'
+            return @{ nativePid = 3187; nativeThreadId = 5500; nativeAlive = $true; nativeError = 0 }
+        }
+        $value = Read-SettingsWindowDiagnostic $owned
+        Assert ($fixtureProcess.Refreshed -and $value.mainWindowHandle -eq $mainHandle -and $value.nativePid -eq 3187) 'Потерян различитель main/native HWND.'
+        $failure = $null
+        try { Assert-SettingsWindow $owned } catch { $failure = $_ }
+        Assert (($null -ne $failure) -eq ($mainHandle -ne 42)) 'Diagnostic ослабил прежний guard.'
+    } $mainHandle
+}
+$mainBody = $outer.Body.Extent.Text
+Assert ($mainBody.IndexOf('Read-SystemTextScale') -lt $mainBody.IndexOf('Start-Process -FilePath ms-settings:')) 'OS getter должен завершиться до Settings launch.'
+Assert ($mainBody.IndexOf('$result.windowCandidate =') -lt $mainBody.IndexOf('Assert-SettingsWindow $owned')) 'Candidate теряется при отказе admission.'
+Assert ($mainBody.IndexOf('Read-SettingsWindowDiagnostic $owned') -lt $mainBody.IndexOf('Assert-SettingsWindow $owned')) 'Native HWND observation записан после admission.'
+
 function New-CapabilityFixture {
     return [ordered]@{ status = 'unavailable'; reason = $null; elements = @(
         @{ selector = 'observed-header'; name = 'Text size'; automationId = 'observed-header'; type = 'Text'; isOffscreen = $false; isEnabled = $true },
@@ -113,6 +202,12 @@ $readerText = @($ast.FindAll({ param($node)
 }, $true) | Where-Object Value -Match 'UIAutomationClient')[0].Value
 $null = [Management.Automation.Language.Parser]::ParseInput($readerText, [ref]$tokens, [ref]$errors)
 Assert ($errors.Count -eq 0) 'Повреждён синтаксис framework reader.'
+$getterText = @($ast.FindAll({ param($node)
+    $node -is [Management.Automation.Language.StringConstantExpressionAst] -and
+    $node.StringConstantType -eq [Management.Automation.Language.StringConstantType]::SingleQuotedHereString
+}, $true) | Where-Object Value -Match 'ContentType=WindowsRuntime')[0].Value
+$null = [Management.Automation.Language.Parser]::ParseInput($getterText, [ref]$tokens, [ref]$errors)
+Assert ($errors.Count -eq 0) 'Повреждён синтаксис framework getter.'
 Assert ($source -notmatch '\bSetValue\s*\(|\bset-value\b|\bSet-ItemProperty\b|\bStop-Process\b') 'Read-only experiment получил путь изменения настройки/чужого процесса.'
 
 # Настоящий bounded child, но только echo/exit/sleep: никакого GUI или UIAutomation.
