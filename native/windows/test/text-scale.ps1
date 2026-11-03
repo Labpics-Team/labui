@@ -91,12 +91,21 @@ function Get-SettingsSnapshot {
 
 function Get-OwnedSettings($Owned) {
     $process = Get-Process -Id $Owned.pid -ErrorAction Stop
-    if ($process.StartTime.ToUniversalTime().Ticks -ne $Owned.startTicks -or
-        $process.Path -ine $Owned.path -or $process.SessionId -ne $Owned.sessionId) {
+    try {
+        # Native handle удерживает поколение PID до Dispose владельцем операции.
+        $processHandle = $process.Handle
+        if ($processHandle -isnot [IntPtr] -or $processHandle -eq [IntPtr]::Zero) {
+            throw 'Не получен native handle процесса Settings; чтение и закрытие запрещены.'
+        }
+        if ($process.HasExited -or $process.StartTime.ToUniversalTime().Ticks -ne $Owned.startTicks -or
+            $process.Path -ine $Owned.path -or $process.SessionId -ne $Owned.sessionId) {
+            throw 'Изменилось поколение процесса Settings; чтение и закрытие запрещены.'
+        }
+        return $process
+    } catch {
         $process.Dispose()
-        throw 'Изменилось поколение процесса Settings; чтение и закрытие запрещены.'
+        throw
     }
-    return $process
 }
 
 function Read-SettingsWindowOwner([long]$Handle) {
@@ -109,6 +118,12 @@ public static class LabUISettingsWindowReadback
 {
     [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
     public static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+    [DllImport("user32.dll", ExactSpelling = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsWindowEnabled(IntPtr window);
+    [DllImport("user32.dll", ExactSpelling = true, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool PostMessageW(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
 }
 '@
     }
@@ -116,6 +131,24 @@ public static class LabUISettingsWindowReadback
     $threadId = [LabUISettingsWindowReadback]::GetWindowThreadProcessId([IntPtr]$Handle, [ref]$ownerPid)
     $lastError = if ($threadId -eq 0) { [Runtime.InteropServices.Marshal]::GetLastWin32Error() } else { 0 }
     return @{ nativePid = $ownerPid; nativeThreadId = $threadId; nativeAlive = $threadId -ne 0; nativeError = $lastError }
+}
+
+function Assert-SettingsWindowIdentity($Owned, $Window) {
+    if (!$Window.nativeAlive -or $Window.nativePid -ne $Owned.pid -or $Window.nativeThreadId -le 0 -or
+        ($Owned.ContainsKey('threadId') -and $Window.nativeThreadId -ne $Owned.threadId)) {
+        throw 'Выбранный HWND больше не принадлежит прежнему Settings PID/thread.'
+    }
+    $Owned.threadId = $Window.nativeThreadId
+}
+
+function Test-SettingsWindowEnabled([long]$Handle) {
+    return [LabUISettingsWindowReadback]::IsWindowEnabled([IntPtr]$Handle)
+}
+
+function Send-SettingsWindowClose([long]$Handle) {
+    $sent = [LabUISettingsWindowReadback]::PostMessageW([IntPtr]$Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+    $lastError = if (!$sent) { [Runtime.InteropServices.Marshal]::GetLastWin32Error() } else { 0 }
+    return @{ sent = $sent; nativeError = $lastError }
 }
 
 function Read-SettingsWindowDiagnostic($Owned) {
@@ -183,9 +216,7 @@ try {
 function Assert-SettingsWindow($Owned) {
     $process = Get-OwnedSettings $Owned
     try {
-        if ($process.MainWindowHandle.ToInt64() -ne $Owned.hwnd) {
-            throw 'Settings HWND больше не совпадает с выбранным окном.'
-        }
+        Assert-SettingsWindowIdentity $Owned (Read-SettingsWindowOwner $Owned.hwnd)
     } finally { $process.Dispose() }
 }
 
@@ -193,15 +224,22 @@ function Close-SettingsWindow($Owned) {
     if ($null -eq $Owned -or !$Owned.hwnd) { return 'no-owned-window' }
     $process = Get-OwnedSettings $Owned
     try {
-        if ($process.MainWindowHandle.ToInt64() -ne $Owned.hwnd) {
-            throw 'Settings HWND изменился до закрытия; чужое окно не закрывается.'
-        }
-        if (!$process.CloseMainWindow()) { throw 'Settings отклонил закрытие собственного окна.' }
-        if (!$process.WaitForExit(5000)) {
-            $process.Refresh()
-            if ($process.MainWindowHandle.ToInt64() -ne 0) { throw 'Окно Settings не закрылось в срок.' }
-        }
-        return 'closed'
+        Assert-SettingsWindowIdentity $Owned (Read-SettingsWindowOwner $Owned.hwnd)
+        if (!(Test-SettingsWindowEnabled $Owned.hwnd)) { throw 'Disabled окно Settings не закрывается.' }
+        # Проверка и PostMessage не атомарны; другой HWND не выбирается даже при отказе.
+        Assert-SettingsWindowIdentity $Owned (Read-SettingsWindowOwner $Owned.hwnd)
+        $posted = Send-SettingsWindowClose $Owned.hwnd
+        if (!$posted.sent) { throw "Settings close message отклонён: Win32=$($posted.nativeError)." }
+        $budget = [Diagnostics.Stopwatch]::StartNew()
+        do {
+            if ($process.HasExited) { return 'closed' }
+            $window = Read-SettingsWindowOwner $Owned.hwnd
+            if (!$window.nativeAlive -and $window.nativeError -eq 1400) { return 'closed' }
+            Assert-SettingsWindowIdentity $Owned $window
+            $remaining = [int][Math]::Max(0, 5000 - $budget.ElapsedMilliseconds)
+            if ($process.WaitForExit([Math]::Min(100, $remaining))) { return 'closed' }
+        } while ($budget.ElapsedMilliseconds -lt 5000)
+        throw 'Окно Settings не закрылось в срок.'
     } finally { $process.Dispose() }
 }
 
@@ -246,12 +284,23 @@ Set-StrictMode -Version Latest
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
+function Assert-SettingsRangeIdentity($Process, $Root) {
+    if ($Process.HasExited -or $Process.StartTime.ToUniversalTime().Ticks -ne $startTicks -or
+        $Process.Path -ine $settingsPath -or $Process.SessionId -ne $sessionId) {
+        throw 'Settings process identity changed.'
+    }
+    if ($null -ne $Root -and ($Root.Current.ProcessId -ne $settingsPid -or
+        $Root.Current.NativeWindowHandle -ne $handle)) { throw 'UIA root belongs to another PID/HWND.' }
+}
 $process = Get-Process -Id $settingsPid -ErrorAction Stop
 try {
-    if ($process.StartTime.ToUniversalTime().Ticks -ne $startTicks -or
-        $process.MainWindowHandle.ToInt64() -ne $handle) { throw 'Settings identity changed.' }
+    $processHandle = $process.Handle
+    if ($processHandle -isnot [IntPtr] -or $processHandle -eq [IntPtr]::Zero) {
+        throw 'Settings native process handle unavailable.'
+    }
+    Assert-SettingsRangeIdentity $process
     $root = [Windows.Automation.AutomationElement]::FromHandle([IntPtr]$handle)
-    if ($root.Current.ProcessId -ne $settingsPid) { throw 'UIA root belongs to another PID.' }
+    Assert-SettingsRangeIdentity $process $root
     $condition = [Windows.Automation.PropertyCondition]::new(
         [Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Slider)
     $elements = $root.FindAll([Windows.Automation.TreeScope]::Descendants, $condition)
@@ -274,11 +323,15 @@ try {
         }
         $ranges += $entry
     }
+    $process.Refresh()
+    Assert-SettingsRangeIdentity $process $root
     @{ ranges = $ranges } | ConvertTo-Json -Depth 5 -Compress
 } finally { $process.Dispose() }
 '@
     Assert-SettingsWindow $Owned
-    $prefix = "`$settingsPid = $([int]$Owned.pid); `$startTicks = $([long]$Owned.startTicks); `$handle = $([long]$Owned.hwnd)`n"
+    $path64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Owned.path))
+    $prefix = "`$settingsPid = $([int]$Owned.pid); `$startTicks = $([long]$Owned.startTicks); `$handle = $([long]$Owned.hwnd); " +
+        "`$sessionId = $([int]$Owned.sessionId); `$settingsPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64'))`n"
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($prefix + $reader))
     $frameworkShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
     $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', $encoded)
@@ -328,6 +381,7 @@ $executables = @(Get-ChildItem -LiteralPath $toolRoot -Filter winapp.exe -Recurs
 if ($executables.Count -ne 1) { throw 'Требуется единственный CLI после успешного native smoke.' }
 $cli = $executables[0].FullName
 $owned = $null
+$ownedProcess = $null
 $failure = $null
 $stage = 'read-system-text-scale'
 $result = [ordered]@{
@@ -378,11 +432,12 @@ try {
                 $owned.hwnd = [long]$windows[0].hwnd
                 $result.windowCandidate = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd;
                     ownerHwnd = $windows[0].ownerHwnd; className = $windows[0].className }
+                $ownedProcess = Get-OwnedSettings $owned
                 $stage = 'window-diagnostic'
                 $result.windowDiagnostic = Read-SettingsWindowDiagnostic $owned
                 $stage = 'window-admission'
                 Assert-SettingsWindow $owned
-                $result.window = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd }
+                $result.window = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd; threadId = $owned.threadId }
                 $stage = 'inspect-page'
                 for ($attempt = 0; $attempt -lt 3; $attempt++) {
                     Assert-SettingsWindow $owned
@@ -404,7 +459,10 @@ try {
     $result.reason = 'unexpected-error'
     $result.error = @{ stage = $stage; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }
 } finally {
-    try { $result.cleanup = Close-SettingsWindow $owned } catch {
+    try {
+        try { $result.cleanup = Close-SettingsWindow $owned }
+        finally { if ($ownedProcess) { $ownedProcess.Dispose() } }
+    } catch {
         $result.cleanup = 'failed'
         $result.status = 'unavailable'
         $result.cleanupError = @{ stage = 'cleanup'; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }

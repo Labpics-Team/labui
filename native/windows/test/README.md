@@ -32,8 +32,11 @@ HWND. Это корреляция на одноразовом runner; парал
 owner HWND и className, а `windowDiagnostic` — результат
 `GetWindowThreadProcessId` и обновлённый `Process.MainWindowHandle`. CLI включает
 видимые top-level окна с owner; .NET main-window heuristic их исключает.
-Эти наблюдения различают определения окна и его исчезновение при запуске;
-они не ослабляют guard и не меняют `CloseMainWindow`. Отсутствие UIA inventory
+MainWindow остаётся диагностикой. Допуск проверяет живой creator PID выбранного
+HWND и закрепляет creator thread; owned окно допустимо и при MainWindowHandle=0.
+Native handle свежего Settings удерживается до завершения cleanup; поколение,
+path/session и HWND→PID/thread повторно проверяются перед чтением и закрытием.
+Отсутствие UIA inventory
 после такого отказа ещё не устанавливает отсутствие страницы Text size.
 Первичный отказ остаётся в `error`, ошибка закрытия отдельно в `cleanupError`.
 
@@ -54,14 +57,21 @@ RangeValue с конечными minimum/maximum/value, `isReadOnly=false` и к
 range-read выполняет отдельный Windows PowerShell 5 child со штатной
 UIAutomationClient.dll: [FromHandle](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.fromhandle?view=netframework-4.8.1)
 и [RangeValuePattern.Current](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.rangevaluepattern.current?view=netframework-4.8.1).
-Он проверяет HWND/PID/start time, читает Slider descendants и возвращает UTF-8;
+Он удерживает process handle, проверяет start time/path/session и UIA root PID/HWND
+до и после чтения, читает Slider descendants и возвращает UTF-8;
 его команда передаётся как UTF-16 EncodedCommand. Новых пакетов и другого UI
 driver нет. Reader удаляется, когда квалифицированный CLI предоставит эти getter.
 
 Процессы CLI/reader/launcher имеют общий deadline для exit и stdout/stderr.
 По истечении срока чтения отменяются штатным CancellationToken; cleanup проверяет
-завершение обеих задач и освобождает свои readers/process handles. Settings закрывается штатным CloseMainWindow только при прежних
-PID/start time/path/session/HWND; принудительного убийства Settings нет.
+завершение обеих задач и освобождает свои readers/process handles. После повторной
+проверки PID/start time/path/session/HWND/thread Settings получает единственный
+`PostMessageW(WM_CLOSE)` на выбранный HWND — тот же Windows primitive, который
+использует `.NET CloseMainWindow`, с явным адресатом. Disabled окно не закрывается.
+Успешная отправка не доказывает закрытие: до пяти секунд наблюдаются выход процесса
+либо исчезновение HWND; отказ/таймаут записывается в cleanupError без retry/kill.
+Проверка HWND и отправка не атомарны; reuse между ними остаётся пределом этого
+одноразового эксперимента без конкурентного внешнего управления Settings.
 `text-scale.test.ps1` проверяет guard, подменённую границу cleanup и ложный
 `available`, не открывая Settings. После hosted результата этот discovery
 заменяется установкой/readback/restore в том же harness. Существующий native
