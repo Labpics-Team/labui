@@ -4,10 +4,11 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gzipSync } from 'node:zlib';
+import { evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import {
   assertSelfHostedRunner,
+  runtimeDependencyContracts,
   stateReferenceContract,
   validateSubject,
 } from './icons-packed.mjs';
@@ -467,27 +468,6 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   };
 }
 
-function evidenceLog(bytes, prefix, identity, digestField) {
-  const compressed = gzipSync(bytes, { level: 9 });
-  const chunks = compressed.toString('base64').match(/.{1,4096}/g);
-  const digest = hash(bytes);
-  const metadata = {
-    schemaVersion: 1,
-    encoding: 'gzip-base64',
-    ...identity,
-    [digestField]: digest,
-    bytes: bytes.length,
-    compressedBytes: compressed.length,
-    chunks: chunks.length,
-  };
-  const lines = [
-    `${prefix}_BEGIN ${JSON.stringify(metadata)}`,
-    ...chunks.map((chunk, index) => `${prefix}_CHUNK ${index} ${chunk}`),
-    `${prefix}_END ${digest}`,
-  ].join('\n');
-  return `${lines}\n`;
-}
-
 export function platformMeasurementLog(bytes, sourceSha) {
   return evidenceLog(bytes, 'LABUI_ICONS_PLATFORM_MEASUREMENT', { sourceSha }, 'reportSha256');
 }
@@ -566,10 +546,13 @@ export async function prepareInputs(options) {
     assert.ok(outside(relative(root, parent)), 'Inputs должны находиться вне source checkout');
   }
   const packages = {};
+  const manifests = {};
   const files = [];
   for (const [key, option, root, commit, file] of [
     ['icons', '--icons-tarball', iconsRoot, pin.sourceCommit, 'package.json'],
     ['uiCore', '--ui-core-tarball', uiRoot, uiCommit, 'packages/core/package.json'],
+    ['uiMaterials', '--ui-materials-tarball', uiRoot, uiCommit, 'packages/materials/package.json'],
+    ['uiTokens', '--ui-tokens-tarball', uiRoot, uiCommit, 'packages/tokens/package.json'],
     ['uiShadow', '--ui-shadow-tarball', uiRoot, uiCommit, 'packages/shadow/package.json'],
   ]) {
     files.push({
@@ -577,6 +560,7 @@ export async function prepareInputs(options) {
       ...(await sourceFile(root, commit, file)),
     });
     const pkg = JSON.parse(await readFile(join(root, file)));
+    manifests[key] = pkg;
     const archive = await readFile(resolve(options.get(option)));
     packages[key] = {
       name: pkg.name,
@@ -586,6 +570,8 @@ export async function prepareInputs(options) {
       sourceCommit: commit,
     };
   }
+  for (const [key, runtimeDependencies] of Object.entries(runtimeDependencyContracts(manifests)))
+    packages[key].runtimeDependencies = runtimeDependencies;
   const reference = await authorReference(iconsRoot, pin);
   const states = await stateReference(iconsRoot, pin);
   const expression = await stateReference(iconsRoot, pin, 'expression-face');
@@ -603,7 +589,7 @@ export async function prepareInputs(options) {
     });
   }
   const subject = validateSubject({
-    schemaVersion: 3,
+    schemaVersion: 4,
     packages,
     authorReference: reference,
     stateReferences: { 'status-circle': states, 'expression-face': expression },
@@ -624,28 +610,6 @@ export async function prepareInputs(options) {
   process.stdout.write(
     `icons-inputs: ${JSON.stringify({ subjectSha256: hash(bytes), packages })}\n`,
   );
-}
-
-function writeStdout(bytes) {
-  const output = process.stdout;
-  return new Promise((resolve, reject) => {
-    output.once('error', reject);
-    try {
-      output.write(bytes, (error) => {
-        if (error) {
-          // Writable вызывает callback до события error; once-обработчик остаётся
-          // до него, чтобы ошибка потока не затёрла исходную причину.
-          reject(error);
-          return;
-        }
-        output.removeListener('error', reject);
-        resolve();
-      });
-    } catch (error) {
-      output.removeListener('error', reject);
-      reject(error);
-    }
-  });
 }
 
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
@@ -748,6 +712,8 @@ async function main() {
     '--ui-commit',
     '--icons-tarball',
     '--ui-core-tarball',
+    '--ui-materials-tarball',
+    '--ui-tokens-tarball',
     '--ui-shadow-tarball',
     '--out',
   ];

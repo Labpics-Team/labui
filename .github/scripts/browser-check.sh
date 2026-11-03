@@ -117,7 +117,7 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     mkdir -p /job/source /job/bin /job/home
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
       tar -C /source --exclude=node_modules -cf - . | tar -C /job/source -xf -
-      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-shadow
+      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-materials /job/output/ui-tokens /job/output/ui-shadow
       tar -C /icons-source --exclude=node_modules -cf - . | tar -C /job/icons -xf -
     else
       tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
@@ -136,16 +136,22 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
       cd /job/source
       pnpm --filter @labpics/ui-core... build
       pnpm --dir packages/core pack --pack-destination /job/output/ui-core
+      pnpm --dir packages/materials pack --pack-destination /job/output/ui-materials
+      pnpm --dir packages/tokens pack --pack-destination /job/output/ui-tokens
       pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow
       LABUI_ICONS_GIT_DIAGNOSTICS=/job/output node apps/docs/tests/prepare-icons-inputs.mjs \
         --icons-source /job/icons --ui-source /job/source --ui-commit "$UI_SOURCE_COMMIT" \
         --icons-tarball /job/output/icons/*.tgz \
         --ui-core-tarball /job/output/ui-core/*.tgz \
+        --ui-materials-tarball /job/output/ui-materials/*.tgz \
+        --ui-tokens-tarball /job/output/ui-tokens/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz --out /job/output/inputs
       status=0
       node apps/docs/tests/icons-packed.mjs \
         --icons-tarball /job/output/icons/*.tgz \
         --ui-core-tarball /job/output/ui-core/*.tgz \
+        --ui-materials-tarball /job/output/ui-materials/*.tgz \
+        --ui-tokens-tarball /job/output/ui-tokens/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
       node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
