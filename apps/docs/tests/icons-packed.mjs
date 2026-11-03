@@ -1346,7 +1346,16 @@ export async function closeBrowserProof(browser, work, timers = { setTimeout, cl
   }
 }
 
-function browserProof(browser, url, reference, out, records, browserErrors, frontier) {
+function browserProof(
+  browser,
+  url,
+  reference,
+  out,
+  records,
+  browserErrors,
+  frontier,
+  cleanupErrors,
+) {
   const runMode = async (reducedMotion, records, frontier) => {
     const mark = (stage, member = null) => {
       const now = performance.now();
@@ -1371,6 +1380,7 @@ function browserProof(browser, url, reference, out, records, browserErrors, fron
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
     page.on('pageerror', (error) => browserErrors.push(error.message));
+    let proofFailed = false;
     try {
       mark('navigation');
       await page.goto(url, { waitUntil: 'networkidle' });
@@ -1703,6 +1713,7 @@ function browserProof(browser, url, reference, out, records, browserErrors, fron
             records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
           }
     } catch (error) {
+      proofFailed = true;
       mark('failure-capture', frontier.stage);
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
@@ -1710,7 +1721,12 @@ function browserProof(browser, url, reference, out, records, browserErrors, fron
       throw error;
     } finally {
       mark('context-close');
-      await context.close();
+      try {
+        await context.close();
+      } catch (error) {
+        cleanupErrors.push(String(error));
+        if (!proofFailed) throw error;
+      }
     }
   };
   return browserProofModes(runMode, records, frontier);
@@ -2741,6 +2757,7 @@ export async function main(args = process.argv.slice(2)) {
       browserProofRecords(records, browserFrontier),
       browserErrors,
       browserFrontier,
+      cleanupErrors,
     );
     await Promise.race([
       proofWork.result,
@@ -2797,7 +2814,7 @@ export async function main(args = process.argv.slice(2)) {
     }
     if (cleanupErrors.length) {
       receipt.outcome = 'failed';
-      receipt.cleanupErrors = cleanupErrors;
+      receipt.cleanupErrors = [...cleanupErrors];
     }
     receipt.completed = new Date().toISOString();
     await writeFile(join(out, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);

@@ -37,6 +37,122 @@ function initialFrontier() {
   };
 }
 
+async function actualBrowserProof() {
+  const source = await readFile(packedUrl, 'utf8');
+  const start = source.indexOf('function browserProof(');
+  const end = source.indexOf('\nexport function assertNotificationPose', start);
+  assert.ok(start >= 0 && end > start);
+  return new Function(
+    'browserProofModes',
+    'performance',
+    'join',
+    `${source.slice(start, end)}\nreturn browserProof;`,
+  )(browserProofModes, performance, join);
+}
+
+for (const closeFails of [false, true]) {
+  test(`настоящий mode callback сохраняет navigation failure при closeFails=${closeFails}`, async () => {
+    const original = new Error('controlled navigation failure');
+    const captureFailure = new Error('controlled capture failure');
+    const cleanupErrors = [];
+    const closing = [];
+    const browser = {
+      async newContext({ reducedMotion }) {
+        return {
+          async newPage() {
+            return {
+              setDefaultTimeout(timeout) {
+                assert.equal(timeout, 20_000);
+              },
+              on() {},
+              async goto() {
+                throw original;
+              },
+              async screenshot() {
+                throw captureFailure;
+              },
+            };
+          },
+          async close() {
+            closing.push(reducedMotion);
+            if (closeFails) throw new Error(`controlled ${reducedMotion} close failure`);
+          },
+        };
+      },
+    };
+    const run = await actualBrowserProof();
+    const work = run(
+      browser,
+      'http://controlled',
+      {},
+      'out',
+      [],
+      [],
+      initialFrontier(),
+      cleanupErrors,
+    );
+    await assert.rejects(work.result, (error) => error === original);
+    const results = await work.settled;
+    assert.ok(
+      results.every((result) => result.status === 'rejected' && result.reason === original),
+    );
+    assert.deepEqual(closing, ['no-preference', 'reduce']);
+    assert.deepEqual(
+      cleanupErrors,
+      closeFails
+        ? [
+            'Error: controlled no-preference close failure',
+            'Error: controlled reduce close failure',
+          ]
+        : [],
+    );
+  });
+}
+
+test('настоящий mode finally отвергает здоровый proof при отказе закрытия context', async () => {
+  const source = await readFile(packedUrl, 'utf8');
+  const start = source.indexOf("    } finally {\n      mark('context-close');");
+  const end = source.indexOf('\n    }\n  };', start);
+  assert.ok(start >= 0 && end > start);
+  const finalize = new AsyncFunction(
+    'context',
+    'cleanupErrors',
+    'proofFailed',
+    'mark',
+    source.slice(start + '    } finally {'.length, end),
+  );
+  const original = new Error('controlled finalizer failure');
+  const cleanupErrors = [];
+  await assert.rejects(
+    finalize(
+      {
+        async close() {
+          throw original;
+        },
+      },
+      cleanupErrors,
+      false,
+      (stage) => assert.equal(stage, 'context-close'),
+    ),
+    (error) => error === original,
+  );
+  assert.deepEqual(cleanupErrors, [String(original)]);
+});
+
+test('failed receipt сохраняет отдельный snapshot cleanupErrors до позднего callback', async () => {
+  const source = await readFile(packedUrl, 'utf8');
+  const start = source.indexOf('    if (cleanupErrors.length) {');
+  const end = source.indexOf('    receipt.completed =', start);
+  assert.ok(start >= 0 && end > start);
+  const finalize = new Function('cleanupErrors', 'receipt', source.slice(start, end));
+  const errors = ['context close failed'];
+  const receipt = { outcome: 'passed' };
+  finalize(errors, receipt);
+  errors.push('late context close failed');
+  assert.equal(receipt.outcome, 'failed');
+  assert.deepEqual(receipt.cleanupErrors, ['context close failed']);
+});
+
 test('оба независимых режима начинают работу до завершения любого из них', async () => {
   const started = [];
   const releases = {};
