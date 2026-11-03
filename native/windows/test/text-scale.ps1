@@ -10,6 +10,7 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
 }
 
 function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$TimeoutMs = 15000) {
+    if ($TimeoutMs -le 0) { throw 'Срок наблюдения истёк до запуска дочернего процесса.' }
     $info = [Diagnostics.ProcessStartInfo]::new($Executable)
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
@@ -243,40 +244,9 @@ function Close-SettingsWindow($Owned) {
     } finally { $process.Dispose() }
 }
 
-function Get-TextScaleElements($Tree, [long]$Handle) {
-    if (@($Tree.windows).Count -ne 1 -or $Tree.windows[0].hwnd -ne $Handle) {
-        throw 'Inspect вышел за выбранный HWND.'
-    }
-    $pending = [Collections.Generic.Queue[object]]::new()
-    foreach ($item in $Tree.windows[0].elements) { $pending.Enqueue($item) }
-    $inventory = [Collections.Generic.List[object]]::new()
-    $count = 0
-    while ($pending.Count) {
-        $item = $pending.Dequeue()
-        if (++$count -gt 512) { throw 'Settings tree превысил 512 элементов.' }
-        $name = if ($item.PSObject.Properties['name']) { [string]$item.name } else { '' }
-        if ($item.type -eq 'Slider' -or $name -match '^(Text size|Make text bigger|Apply)$') {
-            if ($inventory.Count -ge 32) { throw 'Text size inventory превысил 32 элемента.' }
-            foreach ($field in @('selector', 'type')) {
-                if ($item.$field -isnot [string] -or $item.$field.Length -gt 256) {
-                    throw 'Повреждено поле элемента Settings.'
-                }
-            }
-            $automationId = if ($item.PSObject.Properties['automationId']) { [string]$item.automationId } else { '' }
-            if ($automationId.Length -gt 256 -or $name.Length -gt 256) { throw 'Label/AutomationId превысил лимит.' }
-            $inventory.Add(@{ selector = $item.selector; name = $name; type = $item.type;
-                automationId = $automationId; isEnabled = $item.isEnabled; isOffscreen = $item.isOffscreen })
-        }
-        if ($item.PSObject.Properties['children']) {
-            foreach ($child in $item.children) { $pending.Enqueue($child) }
-        }
-    }
-    return $inventory.ToArray()
-}
-
-function Read-SettingsRanges($Owned) {
-    # CLI 0.7.1 не публикует RangeValue getters. Этот reader удаляется при появлении
-    # квалифицированного CLI getter; он не получает setters или другие UI-команды.
+function Read-SettingsContent($Owned, [int]$TimeoutMs) {
+    # CLI 0.7.1 группирует child под GA_ROOT и допускает fallback. Весь допуск
+    # страницы читается одним root; cleanup по-прежнему принадлежит исходному HWND.
     $reader = @'
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -284,7 +254,83 @@ Set-StrictMode -Version Latest
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
-function Assert-SettingsRangeIdentity($Process, $Root) {
+$nativeSource = @"
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Text;
+public sealed class LabUIContentWindow {
+    public long hwnd, ownerHwnd, parentHwnd, rootHwnd;
+    public uint nativePid, nativeThreadId;
+    public string className;
+    public bool visible;
+    public long width, height;
+}
+public sealed class LabUIContentDescendants {
+    public int visited, matching;
+    public bool truncated;
+    public long[] handles;
+}
+public static class LabUISettingsContentNative {
+    private delegate bool EnumWindow(IntPtr hwnd, IntPtr state);
+    [StructLayout(LayoutKind.Sequential)] private struct Rect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll", ExactSpelling=true, SetLastError=true)]
+    private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+    [DllImport("user32.dll", ExactSpelling=true)] private static extern IntPtr GetWindow(IntPtr hwnd, uint command);
+    [DllImport("user32.dll", ExactSpelling=true)] private static extern IntPtr GetAncestor(IntPtr hwnd, uint flag);
+    [DllImport("user32.dll", ExactSpelling=true)] [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool IsChild(IntPtr parent, IntPtr window);
+    [DllImport("user32.dll", ExactSpelling=true, CharSet=CharSet.Unicode, SetLastError=true)]
+    private static extern int GetClassNameW(IntPtr hwnd, StringBuilder text, int size);
+    [DllImport("user32.dll", ExactSpelling=true)] [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool IsWindowVisible(IntPtr hwnd);
+    [DllImport("user32.dll", ExactSpelling=true, SetLastError=true)] [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetWindowRect(IntPtr hwnd, out Rect rect);
+    [DllImport("user32.dll", ExactSpelling=true)] [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumChildWindows(IntPtr parent, EnumWindow callback, IntPtr state);
+    public static LabUIContentWindow Read(long handle) {
+        if (handle <= 0) throw new ArgumentException("Positive HWND required.");
+        IntPtr hwnd = new IntPtr(handle);
+        uint pid; uint thread = GetWindowThreadProcessId(hwnd, out pid);
+        if (thread == 0 || pid == 0) throw new Win32Exception(Marshal.GetLastWin32Error());
+        StringBuilder text = new StringBuilder(256);
+        if (GetClassNameW(hwnd, text, text.Capacity) == 0) throw new Win32Exception(Marshal.GetLastWin32Error());
+        Rect rect;
+        if (!GetWindowRect(hwnd, out rect)) throw new Win32Exception(Marshal.GetLastWin32Error());
+        LabUIContentWindow result = new LabUIContentWindow();
+        result.hwnd = handle; result.nativePid = pid; result.nativeThreadId = thread;
+        result.ownerHwnd = GetWindow(hwnd, 4).ToInt64();
+        result.parentHwnd = GetAncestor(hwnd, 1).ToInt64(); result.rootHwnd = GetAncestor(hwnd, 2).ToInt64();
+        result.className = text.ToString(); result.visible = IsWindowVisible(hwnd);
+        result.width = (long)rect.Right - rect.Left; result.height = (long)rect.Bottom - rect.Top;
+        uint finalPid; uint finalThread = GetWindowThreadProcessId(hwnd, out finalPid);
+        if (finalPid != pid || finalThread != thread) throw new InvalidOperationException("Window identity changed during metadata read.");
+        return result;
+    }
+    public static LabUIContentDescendants Descendants(long owner, uint settingsPid) {
+        if (owner <= 0 || settingsPid == 0) throw new ArgumentException("Scoped owner and PID required.");
+        LabUIContentDescendants result = new LabUIContentDescendants();
+        List<long> handles = new List<long>();
+        EnumWindow callback = delegate(IntPtr hwnd, IntPtr state) {
+            if (result.visited == 128) { result.truncated = true; return false; }
+            result.visited++;
+            uint pid; uint thread = GetWindowThreadProcessId(hwnd, out pid);
+            if (thread != 0 && pid == settingsPid) {
+                result.matching++;
+                if (handles.Count < 8) handles.Add(hwnd.ToInt64());
+            }
+            return true;
+        };
+        EnumChildWindows(new IntPtr(owner), callback, IntPtr.Zero);
+        GC.KeepAlive(callback);
+        result.handles = handles.ToArray();
+        return result;
+    }
+}
+"@
+Add-Type -TypeDefinition $nativeSource
+function Assert-SettingsContentIdentity($Process, $Root) {
     if ($Process.HasExited -or $Process.StartTime.ToUniversalTime().Ticks -ne $startTicks -or
         $Process.Path -ine $settingsPath -or $Process.SessionId -ne $sessionId) {
         throw 'Settings process identity changed.'
@@ -292,54 +338,172 @@ function Assert-SettingsRangeIdentity($Process, $Root) {
     if ($null -ne $Root -and ($Root.Current.ProcessId -ne $settingsPid -or
         $Root.Current.NativeWindowHandle -ne $handle)) { throw 'UIA root belongs to another PID/HWND.' }
 }
+function Assert-ContentWindow($Window, [long]$ExpectedHandle, [long]$ExpectedThread) {
+    if ($Window.hwnd -ne $ExpectedHandle -or $Window.nativePid -ne $settingsPid -or
+        $Window.nativeThreadId -le 0 -or ($ExpectedThread -gt 0 -and $Window.nativeThreadId -ne $ExpectedThread)) {
+        throw 'Content HWND belongs to another Settings PID/thread.'
+    }
+}
+function Test-ContentDescendant([long]$OwnerHandle, [long]$ContentHandle) {
+    return [LabUISettingsContentNative]::IsChild([IntPtr]$OwnerHandle, [IntPtr]$ContentHandle)
+}
+function Assert-ContentAncestry($Window, $Owner) {
+    if ($null -eq $Owner -or $Window.hwnd -eq $Owner.hwnd) { return }
+    # IsChild учитывает вложенных потомков: parent/root кандидата не заменяют членство.
+    if (!(Test-ContentDescendant $Owner.hwnd $Window.hwnd)) {
+        throw 'Content HWND no longer belongs to the selected owner subtree.'
+    }
+}
+function Select-ContentWindow($Original, $Owner, $Descendants, $Summary) {
+    if ($Original.ownerHwnd -eq 0) { return $Original }
+    if ($null -eq $Owner -or $Owner.hwnd -ne $Original.ownerHwnd) { throw 'Popup owner identity missing.' }
+    if ($Owner.nativePid -eq $settingsPid) { return $Owner }
+    if ($Summary.truncated -or $Summary.matching -ne 1) { return $null }
+    if (@($Descendants).Count -ne 1) { throw 'Native descendant observation incomplete.' }
+    Assert-ContentWindow $Descendants[0] $Descendants[0].hwnd 0
+    Assert-ContentAncestry $Descendants[0] $Owner
+    return $Descendants[0]
+}
+function Read-ContentTree($Process, $Root, $Walker) {
+    Assert-SettingsContentIdentity $Process $Root
+    $pending = [Collections.Generic.Stack[object]]::new()
+    $pending.Push(@{ element=$Root; depth=0 })
+    $seen = [Collections.Generic.HashSet[string]]::new()
+    $elements = [Collections.Generic.List[object]]::new()
+    $types = @{}
+    $count = 0; $maxDepth = 0; $depthLimited = $false; $nodeLimited = $false
+    while ($pending.Count) {
+        if ($count -eq 512) { $nodeLimited = $true; break }
+        $item = $pending.Pop(); $element = $item.element; $depth = $item.depth
+        $current = $element.Current
+        if ($current.ProcessId -ne $settingsPid) { throw 'UIA descendant belongs to another PID.' }
+        $runtimeId = @($element.GetRuntimeId())
+        if (!$runtimeId.Count -or $runtimeId.Count -gt 32 -or @($runtimeId | Where-Object { $_ -isnot [int] }).Count) {
+            throw 'UIA runtime identity malformed.'
+        }
+        if (!$seen.Add(($runtimeId -join ','))) { throw 'UIA traversal repeated a runtime identity.' }
+        $count++; $maxDepth = [Math]::Max($maxDepth, $depth)
+        $typeName = $current.ControlType.ProgrammaticName
+        if ($typeName -isnot [string] -or $typeName -cnotmatch '^ControlType\.[A-Za-z]{1,32}$') { throw 'UIA control type malformed.' }
+        $type = $typeName.Substring(12)
+        if (!$types.ContainsKey($type)) { $types[$type] = 0 }; $types[$type]++
+        $name = $current.Name
+        if ($name -isnot [string]) { throw 'UIA name unavailable.' }
+        $allowedName = $name -cmatch '^(Text size|Make text bigger|Apply)$'
+        if ($type -eq 'Slider' -or $allowedName) {
+            if ($elements.Count -eq 32) { throw 'Text size inventory exceeds 32 entries.' }
+            $automationId = if ($allowedName) { $current.AutomationId } else { '' }
+            if ($automationId -isnot [string] -or $automationId.Length -gt 256) { throw 'UIA AutomationId exceeds limit or is unavailable.' }
+            if ($current.IsEnabled -isnot [bool] -or $current.IsOffscreen -isnot [bool]) { throw 'UIA visibility/enabled state unavailable.' }
+            $entry = @{ name = if ($allowedName) { $name } else { '' }; type=$type; automationId=$automationId;
+                runtimeId=$runtimeId; processId=$current.ProcessId; nativeWindowHandle=$current.NativeWindowHandle;
+                isEnabled=$current.IsEnabled; isOffscreen=$current.IsOffscreen; rangeValue=$null; invokeSupported=$null }
+            if ($type -eq 'Slider' -and $name -cmatch '^(Text size|Make text bigger)$') {
+                $pattern = $null
+                $supported = $element.TryGetCurrentPattern([Windows.Automation.RangeValuePattern]::Pattern, [ref]$pattern)
+                $range = @{ supported=$supported; minimum=$null; maximum=$null; value=$null; isReadOnly=$null }
+                if ($supported) {
+                    if ($null -eq $pattern) { throw 'RangeValue pattern missing after successful lookup.' }
+                    $value = $pattern.Current
+                    $range.minimum=$value.Minimum; $range.maximum=$value.Maximum
+                    $range.value=$value.Value; $range.isReadOnly=$value.IsReadOnly
+                }
+                $entry.rangeValue=$range
+            }
+            if ($type -eq 'Button' -and $name -ceq 'Apply') {
+                $pattern=$null
+                $entry.invokeSupported=$element.TryGetCurrentPattern([Windows.Automation.InvokePattern]::Pattern, [ref]$pattern)
+            }
+            $elements.Add($entry)
+        }
+        # Следующий sibling добавляется лениво: предел ограничивает обход, а не только output.
+        if ($depth -gt 0) {
+            $sibling=$Walker.GetNextSibling($element)
+            if ($null -ne $sibling) { $pending.Push(@{ element=$sibling; depth=$depth }) }
+        }
+        $child=$Walker.GetFirstChild($element)
+        if ($null -ne $child) {
+            if ($depth -eq 12) { $depthLimited=$true }
+            else { $pending.Push(@{ element=$child; depth=$depth+1 }) }
+        }
+    }
+    $Process.Refresh()
+    Assert-SettingsContentIdentity $Process $Root
+    return @{ elements=$elements.ToArray(); tree=@{ nodeCount=$count; maxDepth=$maxDepth; typeCounts=$types;
+        hasMoreChildren=$depthLimited -or $nodeLimited; depthLimited=$depthLimited; nodeLimited=$nodeLimited } }
+}
 $process = Get-Process -Id $settingsPid -ErrorAction Stop
 try {
     $processHandle = $process.Handle
     if ($processHandle -isnot [IntPtr] -or $processHandle -eq [IntPtr]::Zero) {
         throw 'Settings native process handle unavailable.'
     }
-    Assert-SettingsRangeIdentity $process
-    $root = [Windows.Automation.AutomationElement]::FromHandle([IntPtr]$handle)
-    Assert-SettingsRangeIdentity $process $root
-    $condition = [Windows.Automation.PropertyCondition]::new(
-        [Windows.Automation.AutomationElement]::ControlTypeProperty, [Windows.Automation.ControlType]::Slider)
-    $elements = $root.FindAll([Windows.Automation.TreeScope]::Descendants, $condition)
-    if ($elements.Count -gt 8) { throw 'More than eight Settings sliders.' }
-    $ranges = @()
-    foreach ($element in $elements) {
-        if ($element.Current.ProcessId -ne $settingsPid) { throw 'Slider belongs to another PID.' }
-        $pattern = $null
-        $supported = $element.TryGetCurrentPattern([Windows.Automation.RangeValuePattern]::Pattern, [ref]$pattern)
-        $entry = @{ name = $element.Current.Name; automationId = $element.Current.AutomationId;
-            type = 'Slider'; supported = $supported; minimum = $null; maximum = $null;
-            value = $null; isReadOnly = $null }
-        if ($entry.name.Length -gt 256 -or $entry.automationId.Length -gt 256) { throw 'Slider label exceeds limit.' }
-        if ($supported) {
-            $current = ([Windows.Automation.RangeValuePattern]$pattern).Current
-            $entry.minimum = $current.Minimum
-            $entry.maximum = $current.Maximum
-            $entry.value = $current.Value
-            $entry.isReadOnly = $current.IsReadOnly
+    Assert-SettingsContentIdentity $process
+    $original=[LabUISettingsContentNative]::Read($cleanupHandle)
+    Assert-ContentWindow $original $cleanupHandle $cleanupThread
+    $owner=$null; $descendants=@(); $summary=@{ visited=0; matching=0; truncated=$false }
+    if ($original.ownerHwnd -ne 0) {
+        $owner=[LabUISettingsContentNative]::Read($original.ownerHwnd)
+        if ($owner.nativePid -ne $settingsPid) {
+            $native=[LabUISettingsContentNative]::Descendants($owner.hwnd, $settingsPid)
+            $summary=@{ visited=$native.visited; matching=$native.matching; truncated=$native.truncated }
+            $descendants=@(foreach ($windowHandle in $native.handles) {
+                $window=[LabUISettingsContentNative]::Read($windowHandle)
+                Assert-ContentWindow $window $windowHandle 0
+                $window
+            })
         }
-        $ranges += $entry
+    }
+    $candidate=Select-ContentWindow $original $owner $descendants $summary
+    $observation=@{ observedAtUtc=[DateTime]::UtcNow.ToString('o'); contentRoot=$null; elements=@(); tree=$null;
+        topology=@{ original=$original; owner=$owner; descendants=$descendants; enumeration=$summary };
+        reason=if ($summary.truncated) { 'native-window-tree-truncated' } else { 'settings-content-window-not-unique' } }
+    $root=$null
+    if ($null -ne $candidate) {
+        $handle=[long]$candidate.hwnd
+        Assert-ContentWindow $candidate $handle 0
+        $root = [Windows.Automation.AutomationElement]::FromHandle([IntPtr]$handle)
+        if ($null -eq $root) { throw 'UIA root unavailable.' }
+        Assert-SettingsContentIdentity $process $root
+        $content=Read-ContentTree $process $root ([Windows.Automation.TreeWalker]::ControlViewWalker)
+        $observation.contentRoot=@{ hwnd=$handle; pid=$settingsPid; threadId=$candidate.nativeThreadId;
+            uiaProcessId=$root.Current.ProcessId; uiaNativeWindowHandle=$root.Current.NativeWindowHandle; runtimeId=@($root.GetRuntimeId()) }
+        $observation.elements=$content.elements; $observation.tree=$content.tree; $observation.reason=$null
+        $candidateAfter=[LabUISettingsContentNative]::Read($handle)
+        Assert-ContentWindow $candidateAfter $handle $candidate.nativeThreadId
+        Assert-ContentAncestry $candidateAfter $owner
+        if ($candidateAfter.parentHwnd -ne $candidate.parentHwnd -or $candidateAfter.rootHwnd -ne $candidate.rootHwnd) {
+            throw 'Content parent/root changed during observation.'
+        }
+    }
+    $originalAfter=[LabUISettingsContentNative]::Read($cleanupHandle)
+    Assert-ContentWindow $originalAfter $cleanupHandle $cleanupThread
+    if ($originalAfter.ownerHwnd -ne $original.ownerHwnd) { throw 'Popup owner changed during observation.' }
+    if ($null -ne $owner) {
+        $ownerAfter=[LabUISettingsContentNative]::Read($owner.hwnd)
+        if ($ownerAfter.nativePid -ne $owner.nativePid -or $ownerAfter.nativeThreadId -ne $owner.nativeThreadId) {
+            throw 'Popup owner identity changed during observation.'
+        }
     }
     $process.Refresh()
-    Assert-SettingsRangeIdentity $process $root
-    @{ ranges = $ranges } | ConvertTo-Json -Depth 5 -Compress
+    Assert-SettingsContentIdentity $process $root
+    $observation | ConvertTo-Json -Depth 8 -Compress
 } finally { $process.Dispose() }
 '@
     Assert-SettingsWindow $Owned
     $path64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($Owned.path))
-    $prefix = "`$settingsPid = $([int]$Owned.pid); `$startTicks = $([long]$Owned.startTicks); `$handle = $([long]$Owned.hwnd); " +
+    $prefix = "`$settingsPid = $([int]$Owned.pid); `$startTicks = $([long]$Owned.startTicks); `$handle = 0; " +
+        "`$cleanupHandle = $([long]$Owned.hwnd); `$cleanupThread = $([long]$Owned.threadId); " +
         "`$sessionId = $([int]$Owned.sessionId); `$settingsPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64'))`n"
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($prefix + $reader))
     $frameworkShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-    $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-EncodedCommand', $encoded)
+    # ArgumentList сохраняет Unicode/quotes; UTF-16 base64 этого reader превысил бы лимит CreateProcess.
+    $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-Command', ($prefix + $reader)) $TimeoutMs
     Assert-SettingsWindow $Owned
-    return ($text | ConvertFrom-Json).ranges
+    return $text | ConvertFrom-Json
 }
 
-function Set-TextScaleCapability($Result, $Ranges) {
+function Set-TextScaleCapability($Result) {
+    if ($Result.tree.hasMoreChildren) { $Result.reason='settings-content-tree-truncated'; return }
     $markers = @($Result.elements | Where-Object {
         $_.type -in @('Text', 'Group', 'Pane') -and $_.name -match '^(Text size|Make text bigger)$' -and !$_.isOffscreen
     })
@@ -350,13 +514,8 @@ function Set-TextScaleCapability($Result, $Ranges) {
     if ($sliders[0].name -notmatch '(?i)\b(text size|make text bigger)\b') {
         $Result.reason = 'text-size-slider-label-not-observed'; return
     }
-    if (@($Ranges).Count -ne 1) { $Result.reason = 'range-reader-slider-not-unique'; return }
-    $matches = @($Ranges | Where-Object {
-        $_.automationId -ceq $sliders[0].automationId -and $_.name -ceq $sliders[0].name -and $_.type -eq 'Slider'
-    })
-    if ($matches.Count -ne 1) { $Result.reason = 'range-reader-identity-not-unique'; return }
-    $range = $matches[0]
-    $sliders[0].rangeValue = $range
+    if (@($Result.elements | Where-Object type -eq 'Slider').Count -ne 1) { $Result.reason = 'range-reader-slider-not-unique'; return }
+    $range = $sliders[0].rangeValue
     if ($range.supported -isnot [bool]) { throw 'RangeValue supported не является boolean.' }
     if (!$range.supported) { $Result.reason = 'range-value-pattern-not-supported'; return }
     foreach ($field in @('minimum', 'maximum', 'value')) {
@@ -367,8 +526,32 @@ function Set-TextScaleCapability($Result, $Ranges) {
         $range.isReadOnly -isnot [bool]) { throw 'RangeValue нарушил контракт диапазона.' }
     if ($range.isReadOnly -or !$sliders[0].isEnabled) { $Result.reason = 'text-size-slider-read-only-or-disabled'; return }
     if ($apply.Count -ne 1) { $Result.reason = 'apply-button-not-unique'; return }
+    if ($apply[0].invokeSupported -isnot [bool]) { throw 'Apply Invoke availability не является boolean.' }
+    if (!$apply[0].invokeSupported) { $Result.reason = 'apply-invoke-pattern-not-supported'; return }
     $Result.status = 'available'
     $Result.reason = 'text-size-page-and-writable-range-observed'
+}
+
+function Get-TextScaleRemainingMs($Budget) { return [int][Math]::Max(0, 20000 - $Budget.ElapsedMilliseconds) }
+
+function Observe-SettingsContent($Owned, $Result, $Budget) {
+    do {
+        $remaining=Get-TextScaleRemainingMs $Budget
+        if ($remaining -le 0) { break }
+        $observation=Read-SettingsContent $Owned $remaining
+        $Result.contentRoot=$observation.contentRoot; $Result.topology=$observation.topology
+        $Result.tree=$observation.tree; $Result.elements=@($observation.elements)
+        $Result.reason=$observation.reason
+        if ($null -ne $Result.contentRoot) { Set-TextScaleCapability $Result }
+        $Result.samples+=@{ observedAtUtc=$observation.observedAtUtc; reason=$Result.reason;
+            contentHwnd=if ($null -ne $Result.contentRoot) { $Result.contentRoot.hwnd } else { $null };
+            tree=$Result.tree }
+        if ($Result.status -eq 'available' -or $Result.reason -in @('native-window-tree-truncated', 'settings-content-tree-truncated')) { return }
+        $remaining=Get-TextScaleRemainingMs $Budget
+        if ($remaining -le 500) { break }
+        Start-Sleep -Milliseconds 500
+    } while ($Result.samples.Count -lt 40)
+    if ($null -eq $Result.reason) { $Result.reason='settings-content-not-observed-within-deadline' }
 }
 
 $output = [IO.Path]::GetFullPath($OutputPath)
@@ -385,13 +568,14 @@ $ownedProcess = $null
 $failure = $null
 $stage = 'read-system-text-scale'
 $result = [ordered]@{
-    schemaVersion = 1; experiment = 'settings-text-size-capability'; status = 'unavailable'; reason = $null;
+    schemaVersion = 2; experiment = 'settings-text-size-capability'; status = 'unavailable'; reason = $null;
     uri = 'ms-settings:easeofaccess-display'; observedAtUtc = [DateTime]::UtcNow.ToString('o');
     osVersion = [Environment]::OSVersion.Version.ToString(); imageOS = $env:ImageOS; imageVersion = $env:ImageVersion;
     cliVersion = '0.7.1'; cliSha256 = (Get-FileHash -LiteralPath $cli -Algorithm SHA256).Hash.ToLowerInvariant();
     systemTextScaleChanged = $false; fontQualification = 'not-performed';
     systemTextScaleBefore = $null; snapshotBefore = @(); snapshotAfter = @(); windowCandidate = $null;
-    windowDiagnostic = $null; window = $null; elements = @(); ranges = @(); cleanup = 'not-started'; error = $null; cleanupError = $null
+    windowDiagnostic = $null; window = $null; contentRoot=$null; topology=$null; tree=$null; samples=@();
+    elements = @(); cleanup = 'not-started'; error = $null; cleanupError = $null
 }
 try {
     $result.systemTextScaleBefore = Read-SystemTextScale
@@ -407,24 +591,27 @@ try {
         # URI не выдаёт receipt нового Settings PID. Владелец устанавливается отдельно.
         $null = Invoke-TextScaleChild (Join-Path $PSHOME 'pwsh.exe') @('-NoProfile', '-NonInteractive', '-Command',
             'Start-Process -FilePath ms-settings:easeofaccess-display') 10000
-        $deadline = [DateTime]::UtcNow.AddSeconds(20)
+        $discoveryBudget = [Diagnostics.Stopwatch]::StartNew()
         $stage = 'snapshot-after'
         do {
             $after = @(Get-SettingsSnapshot)
             if ($after.Count) { break }
             Start-Sleep -Milliseconds 250
-        } while ([DateTime]::UtcNow -lt $deadline)
+        } while ((Get-TextScaleRemainingMs $discoveryBudget) -gt 0)
         $result.snapshotAfter = @($after | Select-Object pid, startTicks, sessionId)
         $settingsPath = Join-Path $env:SystemRoot 'ImmersiveControlPanel/SystemSettings.exe'
         if ($after.Count -ne 1 -or $after[0].startTicks -lt $launchTicks -or $after[0].path -ine $settingsPath) {
             $result.reason = 'fresh-settings-process-not-unique'
         } else {
             $stage = 'discover-window'
+            $windows=@()
             do {
-                $windows = @(Invoke-TextScaleChild $cli @('ui', 'list-windows', '-a', [string]$after[0].pid, '--json') | ConvertFrom-Json)
+                $remaining=Get-TextScaleRemainingMs $discoveryBudget
+                if ($remaining -le 0) { break }
+                $windows = @(Invoke-TextScaleChild $cli @('ui', 'list-windows', '-a', [string]$after[0].pid, '--json') $remaining | ConvertFrom-Json)
                 if ($windows.Count) { break }
                 Start-Sleep -Milliseconds 250
-            } while ([DateTime]::UtcNow -lt $deadline)
+            } while ((Get-TextScaleRemainingMs $discoveryBudget) -gt 0)
             if ($windows.Count -ne 1 -or $windows[0].processId -ne $after[0].pid -or $windows[0].hwnd -le 0) {
                 $result.reason = 'settings-window-not-unique'
             } else {
@@ -438,18 +625,8 @@ try {
                 $stage = 'window-admission'
                 Assert-SettingsWindow $owned
                 $result.window = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd; threadId = $owned.threadId }
-                $stage = 'inspect-page'
-                for ($attempt = 0; $attempt -lt 3; $attempt++) {
-                    Assert-SettingsWindow $owned
-                    $tree = Invoke-TextScaleChild $cli @('ui', 'inspect', '-w', [string]$owned.hwnd, '--depth', '12', '--json') | ConvertFrom-Json
-                    Assert-SettingsWindow $owned
-                    $result.elements = @(Get-TextScaleElements $tree $owned.hwnd)
-                    if (@($result.elements | Where-Object type -eq 'Slider').Count) { break }
-                    if ($attempt -lt 2) { Start-Sleep -Milliseconds 500 }
-                }
-                $stage = 'read-range-value'
-                $result.ranges = @(Read-SettingsRanges $owned)
-                Set-TextScaleCapability $result $result.ranges
+                $stage = 'observe-content'
+                Observe-SettingsContent $owned $result $discoveryBudget
             }
         }
     }

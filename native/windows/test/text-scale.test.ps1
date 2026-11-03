@@ -183,46 +183,36 @@ Assert ($mainBody.IndexOf('$result.windowCandidate =') -lt $mainBody.IndexOf('As
 Assert ($mainBody.IndexOf('Read-SettingsWindowDiagnostic $owned') -lt $mainBody.IndexOf('Assert-SettingsWindow $owned')) 'Native HWND observation записан после admission.'
 
 function New-CapabilityFixture {
-    return [ordered]@{ status = 'unavailable'; reason = $null; elements = @(
-        @{ selector = 'observed-header'; name = 'Text size'; automationId = 'observed-header'; type = 'Text'; isOffscreen = $false; isEnabled = $true },
-        @{ selector = 'observed-slider'; name = 'Text size'; automationId = 'observed-slider'; type = 'Slider'; isOffscreen = $false; isEnabled = $true },
-        @{ selector = 'observed-apply'; name = 'Apply'; automationId = 'observed-apply'; type = 'Button'; isOffscreen = $false; isEnabled = $false }
+    return [ordered]@{ status = 'unavailable'; reason = $null; tree=@{ hasMoreChildren=$false }; elements = @(
+        @{ name = 'Text size'; automationId = 'observed-header'; type = 'Text'; isOffscreen = $false; isEnabled = $true },
+        @{ name = 'Text size'; automationId = 'observed-slider'; type = 'Slider'; isOffscreen = $false; isEnabled = $true;
+            rangeValue=@{ supported=$true; minimum=100; maximum=225; value=130; isReadOnly=$false } },
+        @{ name = 'Apply'; automationId = 'observed-apply'; type = 'Button'; isOffscreen = $false; isEnabled = $false; invokeSupported=$true }
     ) }
 }
-foreach ($fault in @('none', 'missing-page', 'duplicate-slider', 'wrong-slider-label', 'foreign-range', 'extra-range', 'missing-apply', 'unsupported', 'readonly', 'invalid-value', 'string-value')) {
+foreach ($fault in @('none', 'missing-page', 'duplicate-slider', 'wrong-slider-label', 'extra-offscreen-slider', 'missing-apply',
+    'unsupported', 'readonly', 'invalid-value', 'string-value', 'truncated', 'apply-not-invokable', 'duplicate-apply')) {
     $result = New-CapabilityFixture
-    $range = @{ name = 'Text size'; automationId = 'observed-slider'; type = 'Slider'; supported = $true;
-        minimum = 100; maximum = 225; value = 130; isReadOnly = $false }
+    $range = $result.elements[1].rangeValue
     switch ($fault) {
         'missing-page' { $result.elements = @($result.elements | Where-Object type -ne 'Text') }
         'duplicate-slider' { $result.elements += $result.elements[1].Clone() }
-        'wrong-slider-label' { $result.elements[1].name = 'Brightness'; $range.name = 'Brightness' }
-        'foreign-range' { $range.automationId = 'foreign' }
+        'wrong-slider-label' { $result.elements[1].name = '' }
+        'extra-offscreen-slider' { $other=$result.elements[1].Clone(); $other.isOffscreen=$true; $result.elements+=$other }
         'missing-apply' { $result.elements = @($result.elements | Where-Object type -ne 'Button') }
         'unsupported' { $range.supported = $false }
         'readonly' { $range.isReadOnly = $true }
         'invalid-value' { $range.value = 300 }
         'string-value' { $range.value = '130' }
-    }
-    $ranges = @($range)
-    if ($fault -eq 'extra-range') {
-        $other = $range.Clone()
-        $other.automationId = 'second-slider-beyond-inspect-depth'
-        $ranges += $other
+        'truncated' { $result.tree.hasMoreChildren=$true }
+        'apply-not-invokable' { $result.elements[2].invokeSupported=$false }
+        'duplicate-apply' { $result.elements+=$result.elements[2].Clone() }
     }
     $failure = $null
-    try { Set-TextScaleCapability $result $ranges } catch { $failure = $_ }
+    try { Set-TextScaleCapability $result } catch { $failure = $_ }
     Assert (($null -ne $failure) -eq ($fault -in @('invalid-value', 'string-value'))) "Неверный контракт RangeValue: $fault."
     Assert (($result.status -eq 'available') -eq ($fault -eq 'none')) "Ложный capability available: $fault."
 }
-
-$tree = '{"windows":[{"hwnd":42,"elements":[{"selector":"account","name":"PRIVATE ACCOUNT","type":"Text","isEnabled":true,"isOffscreen":false,"children":[{"selector":"live-slider","name":"Text size","automationId":"live-slider","type":"Slider","isEnabled":true,"isOffscreen":false},{"type":"Pane"}]}]}]}' | ConvertFrom-Json
-$inventory = @(Get-TextScaleElements $tree 42)
-Assert ($inventory.Count -eq 1 -and $inventory[0].selector -eq 'live-slider') 'В опубликованный inventory попал посторонний текст Settings.'
-Assert (!(($inventory | ConvertTo-Json -Depth 5) -match 'PRIVATE ACCOUNT')) 'Inventory раскрыл нерелевантный label.'
-$failure = $null
-try { Get-TextScaleElements $tree 43 | Out-Null } catch { $failure = $_ }
-Assert ($null -ne $failure) 'Inspect другого HWND принят.'
 
 # Вложенный PS5 reader проверяется как source; UIAutomation/Settings здесь не запускаются.
 $readerText = @($ast.FindAll({ param($node)
@@ -233,9 +223,11 @@ $null = [Management.Automation.Language.Parser]::ParseInput($readerText, [ref]$t
 Assert ($errors.Count -eq 0) 'Повреждён синтаксис framework reader.'
 $readerAst = [Management.Automation.Language.Parser]::ParseInput($readerText, [ref]$tokens, [ref]$errors)
 $rangeIdentity = @($readerAst.EndBlock.Statements | Where-Object {
-    $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Assert-SettingsRangeIdentity'
+    $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Assert-SettingsContentIdentity'
 })[0]
-. ([scriptblock]::Create($rangeIdentity.Extent.Text))
+foreach ($definition in $readerAst.EndBlock.Statements | Where-Object {
+    $_ -is [Management.Automation.Language.FunctionDefinitionAst]
+}) { . ([scriptblock]::Create($definition.Extent.Text)) }
 foreach ($fault in @('none', 'pid-reused', 'wrong-path', 'wrong-session', 'exited', 'foreign-root', 'wrong-hwnd')) {
     & {
         param($fault)
@@ -252,14 +244,226 @@ foreach ($fault in @('none', 'pid-reused', 'wrong-path', 'wrong-session', 'exite
             'wrong-hwnd' { $fixtureRoot.Current.NativeWindowHandle = 43 }
         }
         $failure = $null
-        try { Assert-SettingsRangeIdentity $fixtureProcess $fixtureRoot } catch { $failure = $_ }
+        try { Assert-SettingsContentIdentity $fixtureProcess $fixtureRoot } catch { $failure = $_ }
         Assert (($null -ne $failure) -eq ($fault -ne 'none')) "Range reader identity пропустил отказ: $fault."
     } $fault
 }
 Assert ($readerText -notmatch 'MainWindowHandle') 'Range reader сохранил main-window heuristic.'
 $pinOffset = $readerText.IndexOf('$processHandle = $process.Handle')
 Assert ($pinOffset -ge 0 -and $pinOffset -lt $readerText.IndexOf('::FromHandle')) 'Range reader не закрепил процесс до UIA lookup.'
-Assert ($readerText.LastIndexOf('Assert-SettingsRangeIdentity $process $root') -gt $readerText.IndexOf('$ranges += $entry')) 'Range reader не проверил identity после чтения.'
+Assert ($readerText.LastIndexOf('Assert-SettingsContentIdentity $process $root') -gt $readerText.IndexOf('$content=Read-ContentTree')) 'Content reader не проверил identity после чтения.'
+Assert ($readerText -notmatch '\.FindAll\(' -and $source -notmatch "'ui', 'inspect'|Get-TextScaleElements|Read-SettingsRanges") 'Остался отдельный источник допуска либо неограниченный UIA обход.'
+
+# Native shim компилируется без вызовов user32; topology проверяется подставными данными.
+$nativeText = @($readerAst.FindAll({ param($node)
+    $node -is [Management.Automation.Language.StringConstantExpressionAst] -or
+    $node -is [Management.Automation.Language.ExpandableStringExpressionAst]
+}, $true) | Where-Object Value -Match 'class LabUISettingsContentNative')[0].Value
+Add-Type -TypeDefinition $nativeText
+$readerStart=@($readerAst.EndBlock.Statements | Where-Object {
+    $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$process'
+})[0].Extent.StartOffset
+$readerInitialization=$readerText.Substring(0,$readerStart)+"`n'PS5 reader initialization: native/UIA types compiled; no discovery executed.'"
+$frameworkShell=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
+$initialization=Invoke-TextScaleChild $frameworkShell @('-NoProfile','-NonInteractive','-STA','-Command',$readerInitialization)
+Assert ($initialization.Trim() -eq 'PS5 reader initialization: native/UIA types compiled; no discovery executed.') 'PS5 command transport/compilation lost the real reader.'
+Write-Output $initialization.Trim()
+foreach ($invalidScope in @(@(0,3187), @(900,0))) {
+    $failure=$null
+    try { [LabUISettingsContentNative]::Descendants($invalidScope[0], $invalidScope[1]) | Out-Null } catch { $failure=$_ }
+    Assert ($null -ne $failure) 'NULL owner/empty PID получил desktop-wide enumeration.'
+}
+foreach ($fault in @('own-root', 'own-owner', 'hosted-child', 'no-child', 'two-children', 'truncated', 'missing-owner', 'foreign-child', 'wrong-thread')) {
+    & {
+        param($fault)
+        $settingsPid=3187
+        $original=[pscustomobject]@{ hwnd=42; ownerHwnd=900; nativePid=3187; nativeThreadId=5500 }
+        $owner=[pscustomobject]@{ hwnd=900; nativePid=9999; nativeThreadId=9900 }
+        $child=[pscustomobject]@{ hwnd=43; parentHwnd=900; rootHwnd=900; nativePid=3187; nativeThreadId=5501 }
+        $summary=@{ visited=3; matching=1; truncated=$false }; $descendants=@($child)
+        function Test-ContentDescendant { param($OwnerHandle,$ContentHandle)
+            Assert ($OwnerHandle -eq 900 -and $ContentHandle -eq 43) 'Ancestry lookup вышел за fixture owner/child.'
+            return $true
+        }
+        switch($fault) {
+            'own-root' { $original.ownerHwnd=0; $owner=$null; $descendants=@() }
+            'own-owner' { $owner.nativePid=3187; $descendants=@() }
+            'no-child' { $summary.matching=0; $descendants=@() }
+            'two-children' { $summary.matching=2; $descendants+= $child }
+            'truncated' { $summary.truncated=$true }
+            'missing-owner' { $owner=$null }
+            'foreign-child' { $child.nativePid=9999 }
+            'wrong-thread' { $child.nativeThreadId=0 }
+        }
+        $failure=$null; $selected=$null
+        try { $selected=Select-ContentWindow $original $owner $descendants $summary } catch { $failure=$_ }
+        Assert (($null -ne $failure) -eq ($fault -in @('missing-owner','foreign-child','wrong-thread'))) "Topology error lost: $fault."
+        $expected=switch($fault){ 'own-root'{42}; 'own-owner'{900}; 'hosted-child'{43}; default{$null} }
+        Assert (($null -eq $selected -and $null -eq $expected) -or ($null -ne $selected -and $selected.hwnd -eq $expected)) "Wrong content selection: $fault."
+        Assert ($original.hwnd -eq 42) 'Content discovery изменил cleanup HWND.'
+    } $fault
+}
+
+# Загружаются только типы UIA. FromHandle, UIA walker и Settings не вызываются.
+Add-Type -AssemblyName UIAutomationClient
+Add-Type -AssemblyName UIAutomationTypes
+function New-TreeNode([int]$Id, [string]$Type='Pane', [string]$Name='PRIVATE ACCOUNT') {
+    $node=[pscustomobject]@{ Id=$Id; Child=$null; Sibling=$null; RangeReads=0; InvokeReads=0; ReadFault=$false;
+        Current=[pscustomobject]@{ ProcessId=3187; NativeWindowHandle=0; Name=$Name; AutomationId="id-$Id";
+            ControlType=[pscustomobject]@{ ProgrammaticName="ControlType.$Type" }; IsEnabled=$true; IsOffscreen=$false };
+        Range=[pscustomobject]@{ Minimum=100; Maximum=225; Value=137; IsReadOnly=$false } }
+    $node | Add-Member ScriptMethod GetRuntimeId { return [int[]]@(42,$this.Id) }
+    $node | Add-Member ScriptMethod TryGetCurrentPattern {
+        param($Pattern, $Value)
+        if ($this.ReadFault) { throw 'fixture pattern failure' }
+        if ($Pattern -eq [Windows.Automation.RangeValuePattern]::Pattern) {
+            $this.RangeReads++; $Value.Value=[pscustomobject]@{ Current=$this.Range }; return $true
+        }
+        if ($Pattern -eq [Windows.Automation.InvokePattern]::Pattern) { $this.InvokeReads++; return $true }
+        throw 'Unexpected pattern read'
+    }
+    return $node
+}
+function New-TreeWalker {
+    $walker=[pscustomobject]@{ Calls=0 }
+    $walker | Add-Member ScriptMethod GetFirstChild { param($Node) $this.Calls++; return $Node.Child }
+    $walker | Add-Member ScriptMethod GetNextSibling { param($Node) $this.Calls++; return $Node.Sibling }
+    return $walker
+}
+foreach ($fault in @('healthy-child', 'foreign-root', 'foreign-node', 'wrong-root-hwnd', 'changes-after-read',
+    'pattern-error', 'duplicate-runtime', 'long-relevant-id', 'private-slider', 'node-limit', 'depth-limit', 'entry-limit')) {
+    & {
+        param($fault)
+        $settingsPid=3187; $settingsPath='fixture/SystemSettings.exe'; $sessionId=1; $handle=43
+        $started=[DateTime]::UtcNow.AddMinutes(-1); $startTicks=$started.Ticks
+        $process=[pscustomobject]@{ StartTime=$started; Path=$settingsPath; SessionId=1; HasExited=$false; ChangeAfter=$fault -eq 'changes-after-read' }
+        $process | Add-Member ScriptMethod Refresh { if($this.ChangeAfter){ $this.StartTime=$this.StartTime.AddSeconds(1) } }
+        $root=New-TreeNode 1; $root.Current.NativeWindowHandle=43
+        $header=New-TreeNode 2 'Text' 'Text size'; $slider=New-TreeNode 3 'Slider' 'Text size'; $apply=New-TreeNode 4 'Button' 'Apply'
+        $root.Child=$header; $header.Sibling=$slider; $slider.Sibling=$apply
+        $outside=New-TreeNode 5 'Slider' 'Text size'; $outside.Current.ProcessId=9999
+        $root.Sibling=$outside
+        switch($fault) {
+            'foreign-root' { $root.Current.ProcessId=9999 }
+            'foreign-node' { $header.Current.ProcessId=9999 }
+            'wrong-root-hwnd' { $root.Current.NativeWindowHandle=900 }
+            'pattern-error' { $slider.ReadFault=$true }
+            'duplicate-runtime' { $slider.Id=$header.Id }
+            'long-relevant-id' { $slider.Current.AutomationId='x'*257 }
+            'private-slider' { $slider.Current.Name='PRIVATE ACCOUNT'; $slider.Current.AutomationId='PRIVATE ACCOUNT' }
+            'node-limit' {
+                $node=$apply
+                foreach($id in 10..530){ $node.Sibling=New-TreeNode $id; $node=$node.Sibling }
+            }
+            'depth-limit' {
+                $node=$root
+                foreach($id in 10..22){ $node.Child=New-TreeNode $id; $node=$node.Child }
+                $node.Child=$header
+            }
+            'entry-limit' {
+                $node=$apply
+                foreach($id in 10..40){ $node.Sibling=New-TreeNode $id 'Text' 'Text size'; $node=$node.Sibling }
+            }
+        }
+        $walker=New-TreeWalker; $failure=$null; $observed=$null
+        try { $observed=Read-ContentTree $process $root $walker } catch { $failure=$_ }
+        $fails=$fault -in @('foreign-root','foreign-node','wrong-root-hwnd','changes-after-read','pattern-error','duplicate-runtime','long-relevant-id','entry-limit')
+        Assert (($null -ne $failure) -eq $fails) "Same-root reader boundary lost: $fault."
+        Assert ($outside.RangeReads -eq 0) 'Reader прочитал соседний root с теми же labels/AutomationId.'
+        if(!$fails) {
+            Assert (!(($observed | ConvertTo-Json -Depth 8) -match 'PRIVATE ACCOUNT')) 'Reader раскрыл посторонний Settings label/AutomationId.'
+            $result=@{ status='unavailable'; reason=$null; elements=@($observed.elements); tree=$observed.tree }
+            Set-TextScaleCapability $result
+            Assert (($result.status -eq 'available') -eq ($fault -eq 'healthy-child')) "Incomplete/private tree became available: $fault."
+            if($fault -eq 'healthy-child') {
+                Assert ($observed.tree.nodeCount -eq 4 -and $observed.elements.Count -eq 3 -and $slider.RangeReads -eq 1 -and $apply.InvokeReads -eq 1) 'Same-root healthy control не прочитал полный набор.'
+                Assert ($observed.elements[1].rangeValue.value -eq 137 -and $observed.elements[1].runtimeId[1] -eq 3) 'RangeValue оторван от наблюдённого Slider.'
+            }
+            if($fault -eq 'private-slider') { Assert ($slider.RangeReads -eq 0 -and $null -eq $observed.elements[1].rangeValue) 'Reader прочитал значение нерелевантного Slider.' }
+            if($fault -eq 'node-limit') { Assert ($observed.tree.nodeCount -eq 512 -and $observed.tree.nodeLimited -and $walker.Calls -le 1024) 'Node bound ограничил только output.' }
+            if($fault -eq 'depth-limit') { Assert ($observed.tree.maxDepth -eq 12 -and $observed.tree.depthLimited -and $slider.RangeReads -eq 0) 'Reader вышел за depth bound.' }
+        }
+    } $fault
+}
+Write-Output 'Same-root witness: hosted child accepted; neighboring root unread; range=137 retained; identity/privacy/depth/node/entry limits checked.'
+
+# F1: исполняются текущий selector и настоящий блок readback после native metadata.
+# Только IsChild/metadata/UIA заменены fixture; подмена не меняет проверяемый guard.
+$afterAssignment=$readerAst.Find({ param($node)
+    $node -is [Management.Automation.Language.AssignmentStatementAst] -and $node.Left.Extent.Text -eq '$candidateAfter'
+}, $true)
+$readbackGuard=[scriptblock]::Create((@($afterAssignment.Parent.Statements | Where-Object {
+    $_.Extent.StartOffset -gt $afterAssignment.Extent.EndOffset
+} | ForEach-Object { $_.Extent.Text }) -join "`n"))
+foreach($mode in @('direct','nested','owner-self','own-root','reparented-before-metadata','ancestor-moved-before-readback')) {
+    & {
+        param($mode)
+        $settingsPid=3187; $settingsPath='fixture/SystemSettings.exe'; $sessionId=1
+        $started=[DateTime]::UtcNow.AddMinutes(-1); $startTicks=$started.Ticks
+        $process=[pscustomobject]@{StartTime=$started;Path=$settingsPath;SessionId=1;HasExited=$false}
+        $process | Add-Member ScriptMethod Refresh {}
+        $original=[pscustomobject]@{hwnd=42;ownerHwnd=900;parentHwnd=0;rootHwnd=42;nativePid=3187;nativeThreadId=5500}
+        $owner=[pscustomobject]@{hwnd=900;parentHwnd=1000;rootHwnd=1000;nativePid=9999;nativeThreadId=9900}
+        $child=[pscustomobject]@{hwnd=43;parentHwnd=900;rootHwnd=1000;nativePid=3187;nativeThreadId=5501}
+        if($mode -in @('nested','ancestor-moved-before-readback')){ $child.parentHwnd=800 }
+        if($mode -eq 'reparented-before-metadata'){ $child.parentHwnd=901; $child.rootHwnd=901 }
+        if($mode -eq 'owner-self'){ $owner.nativePid=3187 }
+        if($mode -eq 'own-root'){ $original.ownerHwnd=0; $owner=$null }
+        $calls=@{ ancestry=0; uia=0 }
+        function Test-ContentDescendant { param($OwnerHandle,$ContentHandle)
+            Assert ($OwnerHandle -eq 900 -and $ContentHandle -eq 43) 'IsChild получил неверные HWND.'
+            $calls.ancestry++
+            return $mode -ne 'reparented-before-metadata' -and !($mode -eq 'ancestor-moved-before-readback' -and $calls.ancestry -eq 2)
+        }
+        $failure=$null; $result=@{status='unavailable';reason=$null;tree=$null;elements=@()}
+        try {
+            $candidate=Select-ContentWindow $original $owner @($child) @{visited=1;matching=1;truncated=$false}
+            $handle=[long]$candidate.hwnd
+            Assert-ContentWindow $candidate $handle 0
+            $root=New-TreeNode 1; $root.Current.NativeWindowHandle=[int]$handle
+            $header=New-TreeNode 2 'Text' 'Text size'; $slider=New-TreeNode 3 'Slider' 'Text size'; $apply=New-TreeNode 4 'Button' 'Apply'
+            $root.Child=$header; $header.Sibling=$slider; $slider.Sibling=$apply
+            $calls.uia++
+            $content=Read-ContentTree $process $root (New-TreeWalker)
+            $candidateAfter=$candidate.PSObject.Copy()
+            . $readbackGuard
+            $result.tree=$content.tree; $result.elements=$content.elements
+            Set-TextScaleCapability $result
+        } catch { $failure=$_ }
+        $reject=$mode -in @('reparented-before-metadata','ancestor-moved-before-readback')
+        Write-Output ("Ancestry witness: mode=$mode rejected=$($null -ne $failure) status=$($result.status) checks=$($calls.ancestry) uiaReads=$($calls.uia) cleanup=$($original.hwnd)")
+        Assert (($null -ne $failure) -eq $reject -and ($result.status -eq 'available') -eq !$reject) "F1 ancestry boundary failed: $mode."
+        if($reject){ Assert ($failure.Exception.Message -match 'subtree') 'Отказ вызван не ancestry guard.' }
+        Assert ($original.hwnd -eq 42) 'Ancestry guard изменил cleanup target.'
+        if($mode -eq 'reparented-before-metadata'){ Assert ($calls.uia -eq 0 -and $calls.ancestry -eq 1) 'Stale enumeration допустил UIA lookup.' }
+        elseif($mode -in @('owner-self','own-root')){ Assert ($calls.ancestry -eq 0) 'Self/root требует ложного IsChild(owner,owner).' }
+    } $mode
+}
+
+# Topology и UIA повторяются внутри одного остаточного бюджета; cleanup HWND не подменяется.
+foreach($fault in @('late-page','exhausted','truncated')) {
+    & {
+        param($fault)
+        $owned=@{ hwnd=42 }; $budget=[pscustomobject]@{ ElapsedMilliseconds=if($fault -eq 'exhausted'){20000}else{1000} }
+        $calls=[Collections.Generic.List[int]]::new()
+        $result=[ordered]@{ status='unavailable'; reason=$null; contentRoot=$null; topology=$null; tree=$null; elements=@(); samples=@() }
+        function Read-SettingsContent { param($Owned,$TimeoutMs)
+            Assert ($Owned.hwnd -eq 42) 'Retry изменил cleanup HWND.'
+            $calls.Add($TimeoutMs); $budget.ElapsedMilliseconds+=1000
+            $fixture=New-CapabilityFixture
+            if($calls.Count -eq 1){ $fixture.elements=@() }
+            if($fault -eq 'truncated'){ $fixture.tree.hasMoreChildren=$true }
+            return @{ contentRoot=@{hwnd=43}; topology=@{}; tree=$fixture.tree; elements=$fixture.elements; reason=$null; observedAtUtc=[DateTime]::UtcNow.ToString('o') }
+        }
+        function Start-Sleep { param($Milliseconds) $budget.ElapsedMilliseconds+=$Milliseconds }
+        Observe-SettingsContent $owned $result $budget
+        Assert ($owned.hwnd -eq 42) 'Observed content стал cleanup target.'
+        if($fault -eq 'late-page') {
+            Assert ($result.status -eq 'available' -and $result.samples.Count -eq 2 -and $calls[0] -eq 19000 -and $calls[1] -eq 17500) 'Retry заново выдал deadline либо не увидел позднюю страницу.'
+        } elseif($fault -eq 'exhausted') { Assert ($calls.Count -eq 0 -and $result.status -eq 'unavailable') 'Reader запущен после deadline.' }
+        else { Assert ($calls.Count -eq 1 -and $result.reason -eq 'settings-content-tree-truncated') 'Заведомо неполный обход повторён/принят.' }
+    } $fault
+}
 
 # Настоящий .NET getter важен: PowerShell может поглотить его исключение.
 $handleFixture = @'
@@ -303,7 +507,7 @@ function New-HandleAdmissionFixture {
 # Исполняется точный reader prefix до FromHandle на PS5; вместо UIA — счётчик допуска.
 $rangeTry = @($readerAst.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.TryStatementAst] })[0]
 $rootLookup = @($rangeTry.Body.Statements | Where-Object {
-    $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$root'
+    $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$original'
 })[0]
 $rangePrefix = ($rangeTry.Body.Statements | Where-Object { $_.Extent.StartOffset -lt $rootLookup.Extent.StartOffset } | ForEach-Object { $_.Extent.Text }) -join "`n"
 $factory = "function New-HandleAdmissionFixture {`n$((Get-Item Function:New-HandleAdmissionFixture).Definition)`n}"

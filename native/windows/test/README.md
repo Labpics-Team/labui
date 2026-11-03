@@ -40,27 +40,60 @@ path/session и HWND→PID/thread повторно проверяются пер
 после такого отказа ещё не устанавливает отсутствие страницы Text size.
 Первичный отказ остаётся в `error`, ошибка закрытия отдельно в `cleanupError`.
 
-Inspect ограничен этим HWND. В отдельный
+Содержимое может находиться в другом HWND, связанном с исходным popup. Reader
+заново читает его `GW_OWNER`, native PID/thread, class, parent/root и геометрию.
+Owner свежего Settings сам становится кандидатом; для внешнего owner выполняется
+`EnumChildWindows` только этого ненулевого HWND, с пределом 128 обработанных окон.
+Сохраняются число совпадений PID и до восьми их metadata; неоднозначность или
+обрезанный обход не дают допуска. При отсутствии owner читается исходный HWND.
+Имена классов, foreground и размер не используются для выбора. `contentRoot`
+отделён от первоначального `window`, который остаётся единственной целью cleanup.
+Перед UIA-чтением и после него
+[`IsChild(owner, content)`](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-ischild)
+проверяет текущее членство дочернего HWND в subtree выбранного owner, включая
+вложенных потомков. Старого результата enumeration или неизменных parent/root
+самого кандидата недостаточно. Если content — сам owner, отдельного child нет.
+
+Один Windows PowerShell 5 child получает `FromHandle(contentRoot)`, проверяет
+UIA PID/HWND и читает marker страницы, Slider/RangeValue и Apply из одного
+ControlView. Пределы: глубина 12, 512 узлов, 32 записи разрешённого inventory.
+Обход sibling выполняется по одному; предел ограничивает чтение, а не только
+готовый output. `tree` сохраняет count/depth/type counts и `hasMoreChildren`;
+неполный обход не доказывает единственность controls и не даёт `available`.
+Topology и UIA повторно наблюдаются в остатке общего 20-секундного бюджета после
+URI launch; `samples` сохраняет время и результат каждой попытки. Нет отдельного
+полного бюджета для каждой попытки. Неожиданный отказ provider останавливает опыт.
+
+В отдельный
 `RUNNER_TEMP/labui-native/text-scale-capability.json` и строку
 `LABUI_TEXT_SCALE_CAPABILITY_JSON` попадают только Text size/Make text bigger,
-Slider и Apply: наблюдённые labels, selectors, AutomationIds и типы. Остальные
-окна рабочего стола и тексты навигации не публикуются. `available` требует
+Slider и Apply: разрешённые labels, UIA RuntimeIds, AutomationIds, PID/HWND и типы.
+Имя и AutomationId нерелевантного Slider скрываются, его RangeValue не читается; сам Slider учитывается
+для проверки единственности. Остальные тексты Settings не публикуются.
+Schema version 2 хранит RangeValue внутри наблюдения того же Slider; внешнего
+массива range или выдуманного CLI selector нет. `available` требует
 видимую страницу, единственный доступный Slider с label Text size/Make text bigger, соответствующий ему настоящий
-RangeValue с конечными minimum/maximum/value, `isReadOnly=false` и кнопку Apply.
+RangeValue с конечными minimum/maximum/value, `isReadOnly=false` и единственную
+видимую кнопку Apply с InvokePattern. Кнопка может быть disabled до изменения
+Slider; её фактическое состояние сохраняется.
 Ничего не устанавливается и не применяется; `available` не подтверждает 225%,
 политику системного текста или читаемость шрифта Button. Другой язык Settings
 или неподходящий SKU могут дать `unavailable` с конкретной причиной. Неожиданная
 ошибка и отказ cleanup завершают шаг ошибкой, сохраняя диагностический JSON.
 
 В [точном исходнике CLI 0.7.1](https://github.com/microsoft/winappCli/blob/e3cd0b94f3e7b776ac51ba0564f4908094e979b5/src/winapp-CLI/WinApp.UIAutomation/Services/UiAutomationService.cs)
-`GetPropertiesAsync` читает ValuePattern, но не RangeValue. Поэтому только
-range-read выполняет отдельный Windows PowerShell 5 child со штатной
+`GetPropertiesAsync` читает ValuePattern, но не RangeValue. Кроме того, `inspect`
+группирует дочерний HWND под GA_ROOT и допускает fallback при отказе
+ElementFromHandle. Поэтому допуск страницы целиком читает PS5 child со штатной
 UIAutomationClient.dll: [FromHandle](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.fromhandle?view=netframework-4.8.1)
 и [RangeValuePattern.Current](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.rangevaluepattern.current?view=netframework-4.8.1).
 Он удерживает process handle, проверяет start time/path/session и UIA root PID/HWND
-до и после чтения, читает Slider descendants и возвращает UTF-8;
-его команда передаётся как UTF-16 EncodedCommand. Новых пакетов и другого UI
-driver нет. Reader удаляется, когда квалифицированный CLI предоставит эти getter.
+до и после чтения, повторно сверяет native identity и связь окон. Эти проверки
+не являются атомарной гарантией отсутствия HWND reuse. Команда передаётся через
+`ProcessStartInfo.ArgumentList` и `-Command`, ответ — UTF-8. UTF-16 base64 полного
+reader превысил бы лимит командной строки Windows. Новых пакетов и другого UI
+driver нет. Reader можно удалить, когда квалифицированный CLI даст тот же
+полный контракт чтения и identity без fallback.
 
 Процессы CLI/reader/launcher имеют общий deadline для exit и stdout/stderr.
 По истечении срока чтения отменяются штатным CancellationToken; cleanup проверяет
