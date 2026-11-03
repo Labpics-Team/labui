@@ -751,7 +751,7 @@ export async function widthMotionBrowserProof(page, raw, mode, records, out) {
     for (const entry of observation.entries) assertWidthEntry(entry, raw);
     return observation;
   };
-  const section = page.locator('section.width-motion');
+  const section = page.locator('section[aria-labelledby="width-motion-heading"]');
   await check();
   for (const icon of MICROPHONE_ICONS)
     for (const variant of ['outline', 'filled']) {

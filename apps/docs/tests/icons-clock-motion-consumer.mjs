@@ -98,12 +98,14 @@ export function rawClockControls(reference) {
   assert.equal(tokens.join(''), d.replace(/[\s,]/g, ''), 'clock oracle: неизвестная raw grammar');
   const points = [];
   const edges = [];
-  let current, start;
+  let current;
+  let start;
   for (let index = 0; index < tokens.length;) {
     const command = tokens[index++];
     assert.ok(['M', 'L', 'H', 'V', 'C', 'Z'].includes(command));
     const count = { M: 2, L: 2, H: 1, V: 1, C: 6, Z: 0 }[command];
-    const values = tokens.slice(index, index += count).map(Number);
+    const values = tokens.slice(index, index + count).map(Number);
+    index += count;
     assert.ok(values.every(Number.isFinite));
     const next = command === 'H' ? [values[0], current[1]]
       : command === 'V' ? [current[0], values[0]]
@@ -139,14 +141,18 @@ export function clockPathPoints(d) {
 
 /** Четверть оборота — перестановка координат raw tip, без runtime тригонометрии. */
 export function assertClockQuarterControls(d, reference, hours) {
-  const controls = rawClockControls(reference), contours = clockPathPoints(d);
+  const controls = rawClockControls(reference);
+  const contours = clockPathPoints(d);
   const [cx, cy] = controls.bearing;
   for (const [limb, rate] of [['minute', 1], ['hour', 1 / 12]]) {
     const quarter = hours * rate * 4;
     if (!Number.isInteger(quarter)) continue;
-    const point = controls[limb], x = point[0] - cx, y = point[1] - cy;
+    const point = controls[limb];
+    const x = point[0] - cx;
+    const y = point[1] - cy;
     const expected = [[point[0], point[1]], [cx - y, cy + x], [cx - x, cy - y], [cx + y, cy - x]][(quarter % 4 + 4) % 4];
-    const u = Number.EPSILON / 2, gamma = 64 * u / (1 - 64 * u);
+    const u = Number.EPSILON / 2;
+    const gamma = 64 * u / (1 - 64 * u);
     assert.ok(contours[limb === 'minute' ? 0 : 1].some((actual) => actual.every((coordinate, index) =>
       Math.abs(coordinate - expected[index]) <= gamma * Math.max(1, Math.abs(coordinate), Math.abs(expected[index])))),
     `clock oracle: ${limb} rate или authored pivot изменён`);
@@ -167,8 +173,11 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
   heading.textContent = 'Ход времени';
   section.setAttribute('aria-labelledby', heading.id);
   section.append(heading);
-  const entries = [], events = [], listeners = [];
-  let disposed = false, disposal;
+  const entries = [];
+  const events = [];
+  const listeners = [];
+  let disposed = false;
+  let disposal;
   const listen = (element, type, handler) => {
     if (disposed) return;
     element.addEventListener(type, handler);
@@ -420,7 +429,8 @@ export async function clockMotionBrowserProof(page, raw, mode, records, out) {
   await call('showReferences', raw);
   await check();
   const capture = async (id) => {
-    const observation = await check(), file = `result/${mode}-clock-${id}.png`;
+    const observation = await check();
+    const file = `result/${mode}-clock-${id}.png`;
     const scroll = await page.evaluate(() => [scrollX, scrollY]);
     let png;
     try { png = await section.screenshot({ path: join(out, file.slice(7)) }); }
@@ -436,7 +446,8 @@ export async function clockMotionBrowserProof(page, raw, mode, records, out) {
       records.push({ name: `${mode}:time/filled:clock-static-refusal`, result: 'PASS', refusal });
       continue;
     }
-    const host = group.locator('lab-button').nth(1), native = host.getByRole('button');
+    const host = group.locator('lab-button').nth(1);
+    const native = host.getByRole('button');
     await host.click(); await native.focus(); await native.press('Enter'); await native.press('Space');
     const activated = await call('settle', icon, variant);
     assertClockEntry(activated, raw);
@@ -515,7 +526,8 @@ export async function clockMotionBrowserProof(page, raw, mode, records, out) {
     assert.equal(exported.error, false); assert.equal(exported.xmlns, 'http://www.w3.org/2000/svg');
     assert.deepEqual(exported.paths, (await check()).entries.find((entry) => entry.icon === icon && entry.variant === variant).samples[1].paths);
     const png = await page.evaluate(async (text) => {
-      const blob = new Blob([text], { type: 'image/svg+xml' }), url = URL.createObjectURL(blob);
+      const blob = new Blob([text], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
       try { const image = new Image(); image.src = url; await image.decode(); return { width: image.naturalWidth, height: image.naturalHeight }; }
       finally { URL.revokeObjectURL(url); }
     }, text);

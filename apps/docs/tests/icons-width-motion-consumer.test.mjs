@@ -15,6 +15,7 @@ import {
   mountWidthMotionConsumer,
   mountWidthWorkload,
   validateWidthMotionReference,
+  widthMotionBrowserProof,
   widthMotionFixture,
   widthMotionMeasurementFixtures,
   widthMotionReference,
@@ -584,6 +585,39 @@ test('mounted readiness owns native listeners until cleanup and cannot revive th
     } finally {
       mounted.restore();
     }
+  }
+});
+
+test('width capture owns its section when another consumer shares the layout class', async () => {
+  const mounted = deferredWidthMount();
+  try {
+    const widthSection = document.body.querySelector('section');
+    const sibling = document.createElement('section');
+    sibling.className = 'clock-motion width-motion';
+    sibling.setAttribute('aria-labelledby', 'clock-motion-heading');
+    document.body.append(sibling);
+    let selector;
+    const captured = new Error('LOCATOR_CAPTURED');
+    await assert.rejects(
+      widthMotionBrowserProof({
+        locator(query) {
+          selector = query;
+          throw captured;
+        },
+      }, undefined, 'reduce', [], ''),
+      (error) => error === captured,
+    );
+    const match = selector.match(/^section(?:\.([\w-]+))?(?:\[aria-labelledby="([^"]+)"\])?$/);
+    assert.ok(match, 'section selector is supported by the boundary witness');
+    const selected = document.body.querySelectorAll('section').filter((section) =>
+      (!match[1] || section.className.split(/\s+/).includes(match[1])) &&
+      (!match[2] || section.getAttribute('aria-labelledby') === match[2]),
+    );
+    assert.equal(selected.length, 1, 'capture selects exactly its owned section');
+    assert.equal(selected[0], widthSection);
+  } finally {
+    await mounted.consumer.cleanup();
+    mounted.restore();
   }
 });
 

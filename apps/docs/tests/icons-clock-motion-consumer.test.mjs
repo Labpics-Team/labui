@@ -14,7 +14,8 @@ const raw = JSON.parse(await readFile(new URL('./fixtures/icons-clock-masters.js
 function motionFixture() {
   let valid = true;
   const targets = ['rest', 'rest', 'rest'];
-  const instances = [], listeners = new Set();
+  const instances = [];
+  const listeners = new Set();
   const media = { matches: false,
     addEventListener: (_type, callback) => listeners.add(callback),
     removeEventListener: (_type, callback) => listeners.delete(callback),
@@ -24,13 +25,16 @@ function motionFixture() {
     ? { ok: true, elapsedHours: hours, d: hours % 12 === 0 ? 'rest' : `hours:${hours}` }
     : { ok: false, reason: { code: 'INVALID_REQUEST' } } };
   const value = (initial) => {
-    let callback, captured, playback;
+    let callback;
+    let captured;
+    let playback;
     const scalar = { initial, disposed: false,
       subscribe(listener) { callback = listener; captured = listener; return () => { callback = undefined; }; },
       stale(next) { captured?.(next); },
       animate(target, options) {
         assert.equal(options.ease, 'linear');
-        let done, fail;
+        let done;
+        let fail;
         const finished = new Promise((resolve, reject) => { done = resolve; fail = reject; });
         playback = { state: 'running', finished,
           pause() { this.state = 'paused'; }, play() { this.state = 'running'; },
@@ -63,7 +67,8 @@ test('clock parameter conserves authored zero, unwrapped twelve hours and negati
   assert.equal(f.controller.read().lastWrittenHours, 0);
   f.controller.request(1, 800); f.controller.pause(); f.controller.seek(300);
   assert.equal(f.controller.read().lastWrittenHours, 0.375);
-  const before = f.controller.read(), old = f.instances[0];
+  const before = f.controller.read();
+  const old = f.instances[0];
   const reverse = f.controller.request(-1, 800);
   assert.deepEqual(reverse.before, reverse.after);
   assert.equal(reverse.from, before.lastWrittenHours);
@@ -204,9 +209,12 @@ test('independent raw oracle retains all four masters and derives off-canvas His
 });
 
 function controlD(reference, hours, pivot, rates = [1, 1 / 12]) {
-  const source = rawClockControls(reference), bearing = pivot ?? source.bearing;
+  const source = rawClockControls(reference);
+  const bearing = pivot ?? source.bearing;
   return ['minute', 'hour'].map((limb, index) => {
-    const p = source[limb], x = p[0] - bearing[0], y = p[1] - bearing[1];
+    const p = source[limb];
+    const x = p[0] - bearing[0];
+    const y = p[1] - bearing[1];
     const angle = hours * rates[index] * Math.PI * 2;
     const rotated = [bearing[0] + x * Math.cos(angle) - y * Math.sin(angle), bearing[1] + x * Math.sin(angle) + y * Math.cos(angle)];
     return `M${rotated.join(' ')}L${rotated.join(' ')}Z`;
@@ -224,7 +232,8 @@ test('orthogonal raw-tip oracle kills canvas pivot, shared rate and reversed rat
 });
 
 test('schema15 packed closure keeps earlier consumers, public imports and the shared scalar executor', () => {
-  const old = consumerPublicEntries(14), entries = consumerPublicEntries(15);
+  const old = consumerPublicEntries(14);
+  const entries = consumerPublicEntries(15);
   assert.deepEqual(entries.filter((entry) => !old.includes(entry)), CLOCK_MOTION_ENTRIES);
   for (const entry of CLOCK_MOTION_ENTRIES) assertIconsImport(entry);
   assert.ok(ICONS_HARNESS_FILES.includes('apps/docs/tests/icons-clock-motion-consumer.mjs'));
