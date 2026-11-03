@@ -1,12 +1,19 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import {
+  PUBLIC_ICONS_DESIGN_REFERENCE,
+  assertPublicEvidence,
+  collectPrivateLocations,
+  sourceIdentitySha256,
+} from '../../../scripts/ci/icons-public-provenance.mjs';
 import { ICONS_HARNESS_FILES } from './icons-harness.mjs';
 import {
   MICROPHONE_COMPARISON_VISUAL_FILES,
@@ -24,13 +31,17 @@ import {
   authorReference,
   consumerReceiptLog,
   consumerVisualLog,
+  exportPublicEvidence,
   notificationReference,
   platformMeasurementLog,
+  projectJsonBytes,
   readAuthorMaster,
   readCycleMaster,
+  resolveSourcePin,
   stateReference,
   validatePlatformMeasurement,
   validateSourcePin,
+  verifyPublicExport,
 } from './prepare-icons-inputs.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
@@ -44,6 +55,15 @@ const PIN = {
     version: '2416636003859748575',
   },
 };
+
+function publicPin(pin = PIN) {
+  return {
+    schemaVersion: 2,
+    repository: pin.repository,
+    sourceCommit: pin.sourceCommit,
+    sourceIdentitySha256: sourceIdentitySha256(pin.figma),
+  };
+}
 
 const MANIFEST = {
   schemaVersion: 1,
@@ -241,9 +261,10 @@ test('current pin retains the frozen author identity and both masters remain who
   const actualPin = validateSourcePin(
     JSON.parse(await readFile(new URL('./icons-consumer-source.json', import.meta.url))),
   );
-  assert.equal(actualPin.schemaVersion, PIN.schemaVersion);
+  assert.equal(actualPin.schemaVersion, 2);
   assert.equal(actualPin.repository, PIN.repository);
-  assert.deepEqual(actualPin.figma, PIN.figma);
+  assert.equal(actualPin.figma, undefined);
+  assert.equal(actualPin.sourceIdentitySha256, sourceIdentitySha256(PIN.figma));
   for (const variant of ['outline', 'filled']) {
     const bytes = Buffer.from(MASTERS[variant]);
     assert.equal(bytes.length, MANIFEST.icons.reload[variant].bytes);
@@ -431,7 +452,7 @@ async function stateFixture(t, schemaVersion = 1) {
         master: file,
         sha256: hash(bytes),
         bytes: bytes.length,
-        nodeId: `1:${index + 1}`,
+        nodeId: `901001:${index + 1}`,
         nodeSha256: hash(`node-${id}`),
         normalizedSource: { sha256: hash(`normalized-${id}`), pathFingerprintSha256: fingerprint },
       },
@@ -484,7 +505,7 @@ async function expressionFixture(t) {
       master: file,
       sha256: hash(text),
       bytes: Buffer.byteLength(text),
-      nodeId: `2:${index + 1}`,
+      nodeId: `902001:${index + 1}`,
       nodeSha256: hash(`face-${id}`),
       normalizedSource: {
         sha256: hash(`face-normalized-${id}`),
@@ -1123,17 +1144,19 @@ test('complete measurement remains diagnostic and refuses stale or incomplete so
 });
 
 test('log block reconstructs exact report bytes with bounded indexed lines and a digest', () => {
-  const bytes = Buffer.concat(
-    Array.from({ length: 256 }, (_, index) =>
-      createHash('sha256').update(`independent-packet-${index}`).digest(),
-    ),
+  const bytes = Buffer.from(
+    JSON.stringify({
+      witness: Array.from({ length: 256 }, (_, index) =>
+        createHash('sha256').update(`independent-packet-${index}`).digest('hex'),
+      ),
+    }),
   );
   const lines = platformMeasurementLog(bytes, PIN.sourceCommit).trim().split('\n');
   const metadata = JSON.parse(lines[0].slice('LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN '.length));
   assert.equal(metadata.sourceSha, PIN.sourceCommit);
-  assert.equal(metadata.reportSha256, hash(bytes));
+  assert.equal(metadata.originalBytesSha256, hash(bytes));
   assert.ok(metadata.chunks > 1);
-  assert.equal(lines.at(-1), `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}`);
+  assert.equal(lines.at(-1), `LABUI_ICONS_PLATFORM_MEASUREMENT_END ${metadata.reportSha256}`);
   const chunks = lines.slice(1, -1).map((line, index) => {
     const match = /^LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK (\d+) ([A-Za-z0-9+/=]+)$/.exec(line);
     assert.equal(Number(match[1]), index);
@@ -1143,15 +1166,281 @@ test('log block reconstructs exact report bytes with bounded indexed lines and a
   assert.equal(chunks.length, metadata.chunks);
   const compressed = Buffer.from(chunks.join(''), 'base64');
   assert.equal(compressed.length, metadata.compressedBytes);
-  assert.deepEqual(gunzipSync(compressed), bytes);
+  const projected = gunzipSync(compressed);
+  assert.equal(metadata.reportSha256, hash(projected));
+  assert.deepEqual(assertProjectedBytes(projected, bytes), JSON.parse(bytes));
   assert.throws(() => gunzipSync(Buffer.from(chunks.slice(0, -1).join(''), 'base64')));
 });
 
 // Независимый однопиксельный PNG; это transport witness, не render продукта.
 const PNG_WITNESS = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+xuo4AAAAASUVORK5CYII=',
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=',
   'base64',
 );
+
+function assertProjectedBytes(bytes, original) {
+  const projection = JSON.parse(bytes);
+  assert.equal(projection.projectionVersion, 1);
+  assert.equal(projection.publicDesignReference, PUBLIC_ICONS_DESIGN_REFERENCE);
+  assert.equal(projection.originalBytesSha256, hash(original));
+  assert.equal(projection.originalBytes, Buffer.byteLength(original));
+  assertPublicEvidence(projection, {
+    privateLocations: collectPrivateLocations(JSON.parse(original)),
+  });
+  return projection.evidence;
+}
+
+test('public projection preserves numeric geometry and exact raw-byte commitments', () => {
+  const input = {
+    author: {
+      fileKey: 'PrivateWitness903',
+      version: '1',
+      nodeId: '907001:902',
+      master: 'masters/figma/1/Outline/witness.svg',
+      masterSha256: 'a'.repeat(64),
+    },
+    geometry: { width: 1, controls: [0.8, 1, 0.5], version: 1 },
+    failure: {
+      phase: 'newer-request',
+      stateContinuity: { from: 0.9, to: 0.8 },
+      message: 'private source PrivateWitness903',
+    },
+  };
+  const compact = Buffer.from(JSON.stringify(input));
+  const formatted = Buffer.from(JSON.stringify(input, null, 2));
+  assert.throws(() => projectJsonBytes(JSON.stringify(input)), /точные JSON bytes/);
+  const first = JSON.parse(projectJsonBytes(compact));
+  const second = JSON.parse(projectJsonBytes(formatted));
+  assert.equal(first.originalSha256, second.originalSha256, 'canonical value identity сохраняется');
+  assert.notEqual(
+    first.originalBytesSha256,
+    second.originalBytesSha256,
+    'разные raw bytes различаются',
+  );
+  assert.equal(first.originalBytesSha256, hash(compact));
+  assert.equal(second.originalBytesSha256, hash(formatted));
+  assert.deepEqual(first.evidence.geometry, input.geometry);
+  assert.deepEqual(first.evidence.failure.stateContinuity, input.failure.stateContinuity);
+  assert.equal(first.evidence.failure.phase, input.failure.phase);
+  assert.equal(first.evidence.author.masterSha256, input.author.masterSha256);
+  assert.equal(first.evidence.author.sourceIdentitySha256, sourceIdentitySha256(input.author));
+  assertPublicEvidence(first, { privateLocations: collectPrivateLocations(input) });
+  assert.notEqual(first.evidence.failure.message, input.failure.message);
+});
+
+test('pin binds the clean committed source without publishing its Figma locator', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'labui-icons-public-pin-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const source = { fileKey: 'PrivateWitness903', version: '9037421903217548171' };
+  await mkdir(join(root, 'semantics'));
+  const file = join(root, 'semantics/figma-baseline.json');
+  await writeFile(file, JSON.stringify({ source }));
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  git('init');
+  git('add', 'semantics/figma-baseline.json');
+  git(
+    '-c',
+    'user.name=public-pin-witness',
+    '-c',
+    'user.email=witness@example.invalid',
+    'commit',
+    '-m',
+    'test: freeze synthetic source identity',
+  );
+  const pin = {
+    schemaVersion: 2,
+    repository: PIN.repository,
+    sourceCommit: git('rev-parse', 'HEAD').trim(),
+    sourceIdentitySha256: sourceIdentitySha256(source),
+  };
+  assert.equal(validateSourcePin(pin), pin);
+  assertPublicEvidence(pin, { privateLocations: collectPrivateLocations(source) });
+  assert.deepEqual((await resolveSourcePin(root, pin)).figma, source);
+  await assert.rejects(resolveSourcePin(root, { ...pin, sourceIdentitySha256: '0'.repeat(64) }), {
+    code: 'SOURCE_IDENTITY_REFUSED',
+  });
+  assert.throws(() => validateSourcePin({ ...pin, figma: source }));
+  await writeFile(file, JSON.stringify({ source: { ...source, version: '2' } }));
+  await assert.rejects(resolveSourcePin(root, pin), /изменён источник/);
+});
+
+test('public export allowlist excludes raw inputs, producer archives and extra files', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'labui-icons-public-export-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [{ bodyWidth: 0.9 }],
+    author: {
+      fileKey: 'PrivateWitness903',
+      version: '9037421903217548171',
+      master: 'masters/figma/9037421903217548171/Outline/witness.svg',
+    },
+  };
+  const raw = Buffer.from(JSON.stringify(receipt));
+  await writeFile(join(root, 'producer.tgz'), raw);
+  await mkdir(join(root, 'inputs'));
+  await writeFile(join(root, 'inputs/subject.json'), raw);
+  const options = {
+    jsonFiles: new Map([['receipt.json', raw]]),
+    visuals: [{ path: 'result/reduce.png', bytes: PNG_WITNESS }],
+    privateLocations: collectPrivateLocations(receipt),
+  };
+  const manifest = await exportPublicEvidence(root, options);
+  assert.deepEqual(await verifyPublicExport(join(root, 'public')), manifest);
+  assert.deepEqual((await readdir(join(root, 'public'))).sort(), [
+    'manifest.json',
+    'receipt.json',
+    'reduce.png',
+  ]);
+  for (const file of manifest.files) {
+    const bytes = await readFile(join(root, 'public', file.file));
+    assert.equal(file.sha256, hash(bytes));
+    assert.equal(file.bytes, bytes.length);
+    assertPublicEvidence(bytes, { privateLocations: options.privateLocations });
+  }
+  assert.deepEqual(
+    assertProjectedBytes(await readFile(join(root, 'public/receipt.json')), raw).records,
+    receipt.records,
+  );
+  assert.ok((await readFile(join(root, 'public/reduce.png'))).equals(PNG_WITNESS));
+  await assert.rejects(
+    exportPublicEvidence(root, { ...options, jsonFiles: new Map([['producer.tgz', raw]]) }),
+    /неизвестный документ/,
+  );
+  await writeFile(join(root, 'public/subject-raw.json'), raw);
+  await assert.rejects(exportPublicEvidence(root, options), /неизвестный или связанный файл/);
+});
+
+test('public verification rejects incomplete markers and every artifact drift', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'labui-icons-export-verifier-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const publicRoot = join(root, 'public');
+  const raw = Buffer.from(
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'failed',
+      records: [],
+      failure: { phase: 'interrupt', stateContinuity: { before: 0.9, after: 0.9 } },
+    }),
+  );
+  const options = {
+    jsonFiles: new Map([['receipt.json', raw]]),
+    visuals: [{ path: 'result/reduce.png', bytes: PNG_WITNESS }],
+    privateLocations: [],
+  };
+  const rejected = { name: 'PublicEvidenceRefusal', code: 'PUBLIC_EVIDENCE_REFUSED' };
+  const invoke = () =>
+    spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--verify-public',
+        publicRoot,
+      ],
+      { encoding: 'utf8', timeout: 5000 },
+    );
+  for (const [name, mutate] of [
+    ['empty marker', () => writeFile(join(publicRoot, 'manifest.json'), '')],
+    [
+      'truncated marker',
+      () => writeFile(join(publicRoot, 'manifest.json'), '{"projectionVersion":1,'),
+    ],
+    ['missing artifact', () => rm(join(publicRoot, 'receipt.json'))],
+    ['changed artifact', () => writeFile(join(publicRoot, 'receipt.json'), '{}')],
+    ['unexpected artifact', () => writeFile(join(publicRoot, 'producer.tgz'), raw)],
+    [
+      'interrupted pending marker',
+      () => writeFile(join(publicRoot, '.manifest-interrupted.pending'), '{'),
+    ],
+    [
+      'artifact symlink',
+      async () => {
+        await rm(join(publicRoot, 'receipt.json'));
+        await import('node:fs/promises').then(({ symlink }) =>
+          symlink(join(publicRoot, 'reduce.png'), join(publicRoot, 'receipt.json')),
+        );
+      },
+    ],
+    [
+      'wrong public reference',
+      async () => {
+        const manifest = JSON.parse(await readFile(join(publicRoot, 'manifest.json')));
+        manifest.publicDesignReference = 'https://www.figma.com/file/PrivateWitness903';
+        await writeFile(join(publicRoot, 'manifest.json'), JSON.stringify(manifest));
+      },
+    ],
+    [
+      'empty file set',
+      async () => {
+        const manifest = JSON.parse(await readFile(join(publicRoot, 'manifest.json')));
+        manifest.files = [];
+        await writeFile(join(publicRoot, 'manifest.json'), JSON.stringify(manifest));
+      },
+    ],
+  ]) {
+    await t.test(name, async () => {
+      await rm(publicRoot, { recursive: true, force: true });
+      const manifest = await exportPublicEvidence(root, options);
+      assert.deepEqual(await verifyPublicExport(publicRoot), manifest);
+      assert.equal(invoke().status, 0);
+      await mutate();
+      await assert.rejects(verifyPublicExport(publicRoot), rejected);
+      const result = invoke();
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, '');
+      const error = JSON.parse(result.stderr.slice('LABUI_ICONS_CONSUMER_ERROR '.length));
+      assert.equal(error.code, 'PUBLIC_EVIDENCE_REFUSED');
+      assert.match(error.diagnosticSha256, /^[a-f0-9]{64}$/);
+      assert.doesNotMatch(result.stderr, /PrivateWitness903|Error:|at file:/);
+    });
+  }
+});
+
+test('interrupted manifest write cannot expose a final publication marker', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'labui-icons-manifest-interruption-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const owner = new URL('./prepare-icons-inputs.mjs', import.meta.url);
+  const original = await readFile(owner, 'utf8');
+  const nativeImport = /import\s*\{[^}]*\}\s*from\s*'node:fs\/promises';/;
+  assert.ok(nativeImport.test(original), 'fault injection должен перехватить настоящий writeFile');
+  const transformed = original
+    .replace(nativeImport, (declaration) =>
+      declaration.replace(/\bwriteFile\b/, 'writeFile as nativeWriteFile'),
+    )
+    .replace(/from '([^']+)'/g, (match, specifier) =>
+      specifier.startsWith('.') ? `from ${JSON.stringify(new URL(specifier, owner).href)}` : match,
+    );
+  const source = `${transformed}\nasync function writeFile(path, bytes, options) {
+      if (String(path).includes('manifest')) {
+        await nativeWriteFile(path, '{"projectionVersion":1,', options);
+        throw Object.assign(new Error('injected pending manifest write failure'), {code:'EIO'});
+      }
+      return nativeWriteFile(path, bytes, options);
+    }\n`;
+  const artifact = join(root, 'interrupted-publisher.mjs');
+  await writeFile(artifact, source);
+  const publisher = await import(pathToFileURL(artifact).href);
+  await assert.rejects(
+    publisher.exportPublicEvidence(root, {
+      jsonFiles: new Map([
+        ['receipt.json', Buffer.from('{"schemaVersion":1,"outcome":"failed","records":[]}')],
+      ]),
+      visuals: [],
+      privateLocations: [],
+    }),
+    /injected pending manifest write failure/,
+  );
+  assert.equal(
+    existsSync(join(root, 'public/manifest.json')),
+    false,
+    'неполная запись никогда не становится final marker',
+  );
+  await assert.rejects(verifyPublicExport(join(root, 'public')), {
+    code: 'PUBLIC_EVIDENCE_REFUSED',
+  });
+});
 
 function decodeConsumerEvidence(stdout, prefix, digestField, file) {
   const all = stdout.split('\n').filter((line) => line.startsWith(`${prefix}_`));
@@ -1320,7 +1609,7 @@ async function summaryFixture(t, schemaVersion) {
   const source = {
     schemaVersion: 1,
     uiCommit: PIN.sourceCommit,
-    pin: PIN,
+    pin: publicPin(),
     subjectSha256: hash(subjectBytes),
     files: [
       { repository: PIN.repository, ...program },
@@ -1452,11 +1741,16 @@ test('summary refuses preparation-to-launch identity drift and preserves the fai
       assert.equal(result.status, 1, result.stderr);
       assert.match(result.stdout, /LABUI_ICONS_PLATFORM_MEASUREMENT_END/);
       assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_(?:RECEIPT|VISUAL)_BEGIN/);
-      const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+      const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
       assert.equal(summary.outcome, 'failed');
       assert.equal(summary.browserOutcome, 'passed');
       assert.equal(summary.sourceIdentityFailure.code, 'CONSUMER_SOURCE_IDENTITY_REFUSED');
-      assert.match(summary.sourceIdentityFailure.reason, expectedReason);
+      assert.equal(
+        summary.sourceIdentityFailure.diagnostic.code,
+        'CONSUMER_SOURCE_IDENTITY_REFUSED',
+      );
+      assert.match(summary.sourceIdentityFailure.diagnostic.diagnosticSha256, /^[a-f0-9]{64}$/);
+      assert.doesNotMatch(result.stderr, expectedReason, 'приватная диагностика не передаётся');
       assert.equal(
         summary.files.find((item) => item.path === 'result/receipt.json').sha256,
         hash(receiptBytes),
@@ -1530,7 +1824,7 @@ test('malformed preparation identity retains RESULT and authenticatable policy c
         .split('\n')
         .find((item) => item.startsWith('LABUI_ICONS_CONSUMER_RESULT '));
       assert.ok(line, 'Отказ identity потерял RESULT');
-      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length));
+      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length)).evidence;
       assert.equal(summary.outcome, 'failed');
       assert.equal(summary.browserOutcome, 'passed');
       assert.equal(summary.sourceIdentityFailure.code, 'CONSUMER_SOURCE_IDENTITY_REFUSED');
@@ -1573,7 +1867,7 @@ test('historical subject schemas without native identity cannot claim exact-sour
         { encoding: 'utf8', timeout: 5000 },
       );
       assert.equal(result.status, 1, result.stderr);
-      const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+      const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
       assert.equal(summary.outcome, 'failed');
       assert.equal(summary.browserOutcome, 'passed');
       assert.equal(summary.sourceIdentityFailure.code, 'CONSUMER_SOURCE_IDENTITY_REFUSED');
@@ -1635,19 +1929,22 @@ test('delivery summary refuses reported policy failures and numeric overruns whi
       '',
       'Ожидаемый policy отказ не должен разрывать stdout packets вторым потоком',
     );
-    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
     assert.equal(summary.outcome, 'failed');
     assert.equal(summary.browserOutcome, 'passed');
     assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
     assert.ok(summary.policyFailure.violations.length > 0);
     assert.deepEqual(
-      decodeConsumerEvidence(
-        result.stdout,
-        'LABUI_ICONS_CONSUMER_RECEIPT',
-        'receiptSha256',
-        'result/receipt.json',
-      ).bytes,
-      receipt,
+      assertProjectedBytes(
+        decodeConsumerEvidence(
+          result.stdout,
+          'LABUI_ICONS_CONSUMER_RECEIPT',
+          'receiptSha256',
+          'result/receipt.json',
+        ).bytes,
+        receipt,
+      ).records,
+      JSON.parse(receipt).records,
     );
     assert.deepEqual(
       decodeConsumerEvidence(
@@ -1697,7 +1994,7 @@ test('delivery summary refuses rejected PNG and receipt packets without losing h
       { encoding: 'utf8', timeout: 5000 },
     );
     assert.equal(result.status, 1);
-    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
     assert.equal(
       summary.outcome,
       'failed',
@@ -1722,17 +2019,21 @@ test('delivery summary refuses rejected PNG and receipt packets without losing h
       );
     else
       assert.deepEqual(
-        decodeConsumerEvidence(
-          result.stdout,
-          'LABUI_ICONS_CONSUMER_RECEIPT',
-          'receiptSha256',
-          'result/receipt.json',
-        ).bytes,
-        receipt,
+        assertProjectedBytes(
+          decodeConsumerEvidence(
+            result.stdout,
+            'LABUI_ICONS_CONSUMER_RECEIPT',
+            'receiptSha256',
+            'result/receipt.json',
+          ).bytes,
+          receipt,
+        ).records,
+        JSON.parse(receipt).records,
       );
     if (rejected === 'png-and-policy') {
       assert.equal(summary.policyFailure.code, 'PLATFORM_POLICY_REFUSED');
-      assert.match(result.stderr, /visual: PNG bytes/);
+      assert.match(result.stderr, /LABUI_ICONS_CONSUMER_ERROR/);
+      assert.doesNotMatch(result.stderr, /visual: PNG bytes/);
       assert.doesNotMatch(result.stderr, /Platform policy отказала/);
     } else assert.equal(summary.policyFailure, undefined);
   }
@@ -1749,7 +2050,7 @@ test('summary transmits successful raw observations and PNG authenticated agains
   await writeFile(join(fixture.output, 'result/reduce.png'), PNG_WITNESS);
   await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
   const stdout = fixture.invoke();
-  const summary = JSON.parse(stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+  const summary = JSON.parse(stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
   assert.equal(summary.outcome, 'passed');
   assert.equal(summary.browserOutcome, undefined);
   assert.equal(summary.readbackFailure, undefined);
@@ -1760,9 +2061,15 @@ test('summary transmits successful raw observations and PNG authenticated agains
   ]) {
     const { metadata, bytes } = decodeConsumerEvidence(stdout, prefix, digestField, file);
     const material = summary.files.find((item) => item.path === file);
-    assert.deepEqual(bytes, expected);
-    assert.equal(metadata[digestField], material.sha256);
-    assert.equal(metadata.bytes, material.bytes);
+    if (prefix === 'LABUI_ICONS_CONSUMER_RECEIPT') {
+      assert.deepEqual(assertProjectedBytes(bytes, expected).records, receipt.records);
+      assert.equal(metadata.originalBytesSha256, material.sha256);
+      assert.equal(metadata.originalBytes, material.bytes);
+    } else {
+      assert.ok(bytes.equals(expected), 'PNG bytes изменились');
+      assert.equal(metadata[digestField], material.sha256);
+      assert.equal(metadata.bytes, material.bytes);
+    }
     assert.equal(metadata.sourceSha, summary.source.pin.sourceCommit);
     assert.equal(metadata.uiCommit, summary.source.uiCommit);
   }
@@ -1793,7 +2100,7 @@ test('oversized raw failure and refused PNG keep the limited continuity RESULT',
     );
     assert.equal(result.status, 1);
     assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
-    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
     assert.deepEqual(summary.failure, { phase: 'browser', stateContinuity });
     assert.equal(summary.outcome, 'failed');
     assert.ok(result.stdout.length < 5000, 'failure.message не передаётся');
@@ -1819,7 +2126,14 @@ for (const schema of [2, 3])
       join(fixture.output, 'inputs/source-receipt.json'),
       JSON.stringify(fixture.source),
     );
-    assert.throws(fixture.invoke, /measurement относится к другому source SHA/);
+    assert.throws(fixture.invoke, (error) => {
+      assert.equal(error.status, 1);
+      const refusal = JSON.parse(error.stderr.slice('LABUI_ICONS_CONSUMER_ERROR '.length));
+      assert.equal(refusal.code, 'ERR_ASSERTION');
+      assert.match(refusal.diagnosticSha256, /^[a-f0-9]{64}$/);
+      assert.doesNotMatch(error.stderr, /measurement относится к другому source SHA/);
+      return true;
+    });
     await rm(join(fixture.output, 'inputs/platform-measurement.json'));
     assert.throws(fixture.invoke, /ENOENT/);
   });
@@ -1916,14 +2230,17 @@ test('failed receipt waits for a complete large report through asynchronous stdo
       Array.from({ length: header.chunks }, (_, index) => index),
     );
     assert.deepEqual(
-      gunzipSync(Buffer.from(chunks.map((chunk) => chunk[2]).join(''), 'base64')),
-      bytes,
+      assertProjectedBytes(
+        gunzipSync(Buffer.from(chunks.map((chunk) => chunk[2]).join(''), 'base64')),
+        bytes,
+      ),
+      JSON.parse(bytes),
     );
     assert.ok(
-      result.stdout.indexOf(`LABUI_ICONS_PLATFORM_MEASUREMENT_END ${hash(bytes)}\n`) <
+      result.stdout.indexOf(`LABUI_ICONS_PLATFORM_MEASUREMENT_END ${header.reportSha256}\n`) <
         result.stdout.indexOf('LABUI_ICONS_CONSUMER_RESULT '),
     );
-    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]).evidence;
     assert.equal(summary.outcome, outcome);
   }
 });
@@ -2007,7 +2324,7 @@ test('failed schema1 and schema2 summaries preserve an optional native continuit
         .split('\n')
         .find((item) => item.startsWith('LABUI_ICONS_CONSUMER_RESULT '));
       assert.ok(line, 'failed receipt потерял RESULT');
-      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length));
+      const summary = JSON.parse(line.slice('LABUI_ICONS_CONSUMER_RESULT '.length)).evidence;
       assert.equal(summary.outcome, 'failed');
       assert.equal(summary.schemaVersion, 1);
       assert.deepEqual(

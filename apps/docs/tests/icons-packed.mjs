@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import { publicError } from '../../../scripts/ci/icons-public-provenance.mjs';
 import {
   ANNULUS_ENTRIES,
   annulusBrowserProof,
@@ -2832,4 +2833,11 @@ export async function main(args = process.argv.slice(2)) {
   if (cleanupErrors.length) throw new Error(`icons-packed cleanup: ${cleanupErrors.join('; ')}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main();
+  } catch (error) {
+    process.stderr.write(`LABUI_ICONS_CONSUMER_ERROR ${JSON.stringify(publicError(error))}\n`);
+    process.exitCode = 1;
+  }
+}

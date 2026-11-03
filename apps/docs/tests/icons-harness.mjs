@@ -14,6 +14,9 @@ export const ICONS_HARNESS_FILES = Object.freeze([
   'apps/docs/tests/icons-motion-projection-consumer.mjs',
   'apps/docs/tests/icons-source-state-consumer.mjs',
   'apps/docs/tests/icons-width-motion-consumer.mjs',
+  'scripts/ci/evidence-log.mjs',
+  'scripts/ci/icons-public-provenance.mjs',
+  'scripts/ci/icons-screenshot-profile.mjs',
 ]);
 
 export async function snapshotHarnessFiles(readRepositoryFile) {

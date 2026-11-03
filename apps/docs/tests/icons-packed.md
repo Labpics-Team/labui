@@ -339,23 +339,25 @@ Notification consumer подтверждает native pointer/Enter/Space, до�
 Disposal останавливает ещё действующий прогон и проверяет его `stopped` receipt.
 
 Schema11 добавляет установленные `@labpics/icons/gestures/reload`, `refresh` и
-`timer`. SVG, parts и rotation operands уже подготовлены Lab Icons; публичный
-Lab Motion исполняет числовой rotate. Пять доступных начертаний показываются
+статический `@labpics/icons/symbols/timer`. SVG, parts и rotation operands команд
+Reload/Refresh уже подготовлены Lab Icons; публичный Lab Motion исполняет числовой rotate.
+Outline и Filled показываются
 на native Lab UI кнопках при 16, 24 и 48 px. Контуры, part IDs, author/anatomy
 receipt и неподвижные части сверяются с raw Figma masters независимо от producer.
 Полный оборот, частичный интервал, reversal и новое намерение проверяют конечные
 матрицы и C0 continuity при передаче в одном browser task. Reduced motion сохраняет
-целевую позу с duration 0. Filled timer, неизвестный жест и недопустимая фаза
-получают точные отказы; disposal проверяет stopped активного playback, снятие
+целевую позу с duration 0. Движение Timer получает `SEMANTIC_MOTION_UNAVAILABLE`;
+неизвестный жест и недопустимая фаза получают точные отказы.
+Disposal проверяет stopped активного playback, снятие
 listeners и удаление mounted nodes.
 
-Восемь отдельных PNG сохраняют timer Outline в фазах 0, 0.125, 0.875 и 0.5
-при обоих motion preferences. Receipt связывает фазу, размеры, имя файла и SHA PNG.
-Успех capture проверяет происхождение снимка; оптическая оценка pivot и пересечения
-стрелки с фиксированной меткой требует просмотра этих изображений. SVG download
-содержит исходный master таймера, независимо от текущей анимированной позы.
+Два PNG, `no-preference-timer-static-refusal.png` и `reduce-timer-static-refusal.png`,
+сохраняют статический Timer в обоих начертаниях и трёх размерах — по одному снимку
+на motion preference. Receipt связывает размеры, имя файла и SHA PNG.
+Успех capture проверяет происхождение снимка; оптическая оценка требует просмотра
+этих изображений. SVG download содержит исходный master таймера.
 Размеры тонких SVG/effect/combined imports измеряет отдельный producer benchmark;
-для timer motion прежний default runtime не выполнял ту же полезную работу,
+для движения Reload/Refresh прежний default runtime не выполнял ту же полезную работу,
 поэтому speedup относительно отказа не заявляется.
 
 Schema12 добавляет подготовленную анимацию ширины `mic` и `mic-circle` во всех
@@ -426,8 +428,8 @@ remote receipt не означает пройденную интеграцию.
 соедините base64, декодируйте и gunzip, затем проверьте исходный размер и SHA256.
 Неполный блок не является report. Schema1 не требует measurement packet.
 
-Тот же код передачи выводит PNG двумя режимами и полный успешный `receipt.json`
-с реальными observations. PNG сохраняет исходные байты; пересэмплирования нет.
+Тот же код передачи выводит PNG двумя режимами и публичную проекцию успешного
+`receipt.json` с реальными observations. PNG сохраняет исходные байты; пересэмплирования нет.
 Блоки `LABUI_ICONS_CONSUMER_VISUAL` и `LABUI_ICONS_CONSUMER_RECEIPT` используют
 тот же порядок BEGIN/CHUNK/END и gzip-base64. Metadata добавляет `file`,
 `sourceSha` Icons и `uiCommit`; digest называется `pngSha256` или `receiptSha256`.
@@ -436,15 +438,45 @@ remote receipt не означает пройденную интеграцию.
 Каждый передаваемый файл ограничен 4 MiB, PNG — 16 Mi pixels. Эти пределы
 относятся к readback, а не к размеру glyph или optical domain.
 
-После восстановления проверьте оба source SHA по RESULT, затем digest и размер
-по соответствующему элементу `files`. Gunzip должен иметь `maxOutputLength`
+JSON имеет отдельный `projectionVersion: 1`. `originalSha256` связывает
+каноническое исходное значение, `originalBytesSha256` и `originalBytes` — точные
+проверенные bytes. `publicDesignReference` указывает на опубликованный Community
+reference; происхождение частного master остаётся commitment и не подменяется.
+Геометрия, хеши, outcome, phase и stateContinuity сохраняются; приватные locator
+поля и сырые диагностические строки заменяются commitments.
+
+После восстановления проверьте оба source SHA по evidence в RESULT, затем digest и размер
+публичного packet. Gunzip должен иметь `maxOutputLength`
 4 MiB; отсутствие части, чужой SHA или несовпадение bytes запрещает использовать
-packet как evidence. PNG signature/IHDR/IEND guards ограничивают вход; реальный
-просмотр decoder остаётся отдельной проверкой изображения. Raw receipt передаётся
+packet как evidence. Native PNG-профиль принимает только IHDR (8 bit), IDAT и
+IEND с корректными длинами, порядком и CRC. Произвольные, в том числе сжатые,
+metadata получают `PUBLIC_EVIDENCE_REFUSED`; изображение не переписывается.
+IDAT обязан содержать ровно один полностью использованный zlib stream с ожидаемым
+числом строк canvas. Распаковка ограничена его объявленными размерами; скрытый хвост
+после image stream запрещён. Реальный
+просмотр decoder остаётся отдельной проверкой изображения. Проекция receipt передаётся
 только для `passed`; неуспешный RESULT сохраняет прежний ограниченный failure
 и continuity witness. Отказ отдельному packet сохраняет RESULT с
 `readbackFailure: { code: 'EVIDENCE_REFUSED', file }` и завершает шаг ошибкой.
 Наличие PNG не объявляет live Figma parity.
+
+Pin schema2 хранит repository, sourceCommit и `sourceIdentitySha256` пары
+fileKey/version. Перед чтением masters подготовка проверяет этот digest по
+зафиксированному source manifest. Полные source references проверяются внутри
+runner до публичной проекции. CLI-отказы сохраняют allowlisted code и
+diagnosticSha256, без raw stack и argv.
+
+В host artifacts переносится только `output/public` с завершённым manifest:
+проверенные проекции JSON и разрешённые screenshots. Raw inputs, result,
+producer tarballs и Trace2 не экспортируются. Отсутствие manifest, ссылки и
+незавершённая проекция запрещают readiness; проверка браузера сохраняет отказ.
+Manifest записывается во временный файл того же каталога и публикуется rename
+после завершения записи. До копирования host вызывает `--verify-public`: schema,
+полный набор файлов, bytes/SHA256, публичные JSON и PNG проверяются повторно.
+Частичный manifest и изменённый файл не получают readiness; первичный ненулевой
+статус workload сохраняется.
+
+Основание PNG-профиля: [PNG Third Edition, W3C Recommendation 2025-06-24](https://www.w3.org/TR/png-3/).
 
 `summarize` дожидается завершения записи полного блока и RESULT перед отказом
 по неуспешному receipt. При ошибке stdout возвращается исходная причина согласно
