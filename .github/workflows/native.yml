@@ -41,7 +41,7 @@ jobs:
           node-version: "24.19.0"
 
       - name: Native projection contract
-        run: node --test native/windows/test/generate-theme.test.mjs
+        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
 
       - name: Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
@@ -68,16 +68,10 @@ jobs:
             -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
             -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence"
 
-      - name: Keep native evidence
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: native-button
-          path: |
-            ${{ runner.temp }}/labui-native/*.log
-            ${{ runner.temp }}/labui-native/evidence/*.json
-            ${{ runner.temp }}/labui-native/evidence/*.txt
-            ${{ runner.temp }}/labui-native/evidence/*.log
-            ${{ runner.temp }}/labui-native/evidence/*.png
-          retention-days: 7
-          if-no-files-found: error
+      - name: Export native evidence to job log
+        shell: pwsh
+        run: |
+          $source = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
+          node native/windows/test/evidence.mjs export "$env:RUNNER_TEMP/labui-native/evidence" $source
+          if ($LASTEXITCODE -ne 0) { throw 'Native evidence export failed.' }

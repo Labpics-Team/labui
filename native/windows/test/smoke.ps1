@@ -97,6 +97,7 @@ try {
     $script:window = $process.MainWindowHandle.ToInt64().ToString()
     @{ pid = $process.Id; window = $window; source = (git -C $PSScriptRoot rev-parse HEAD);
        os = [Environment]::OSVersion.VersionString; appSha256 = (Get-FileHash -LiteralPath $app).Hash;
+       consumerSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'Buttons.dll')).Hash;
        uiSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabUI.WinUI.dll')).Hash;
        motionSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabMotion.WinUI.dll')).Hash;
        cliVersion = '0.7.1'; cliZipSha256 = $digest } |
