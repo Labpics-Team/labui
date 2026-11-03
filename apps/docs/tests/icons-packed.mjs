@@ -1018,6 +1018,17 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
+function assertLargeIconButton(target, name) {
+  assert.deepEqual(target, {
+    width: 56,
+    height: 56,
+    name,
+    type: 'button',
+    iconHidden: 'true',
+    slotHidden: 'true',
+  });
+}
+
 async function browserProof(browser, url, reference, out, records, browserErrors) {
   for (const reducedMotion of ['no-preference', 'reduce']) {
     const context = await browser.newContext({
@@ -1054,14 +1065,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.deepEqual(initial.capabilities.anatomy, expected.anatomy);
         assert.deepEqual(initial.capabilities.motion.gestures, [expected.gesture]);
         assert.deepEqual(initial.capabilities.supportedAxes, []);
-        assert.deepEqual(initial.target, {
-          width: 56,
-          height: 56,
-          name: 'Обновить',
-          type: 'button',
-          iconHidden: 'true',
-          slotHidden: 'true',
-        });
+        assertLargeIconButton(initial.target, 'Обновить');
         const host = page.locator(`lab-button[data-variant="${variant}"]`);
         const button = host.getByRole('button', { name: 'Обновить', exact: true });
         assert.equal(await button.count(), 1, 'native accessible button не найден');
@@ -1379,14 +1383,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assertStateAnatomy(observation, reference);
   };
   oneHot(initial, reference.defaultState);
-  assert.deepEqual(initial.target, {
-    width: 48,
-    height: 48,
-    name: contract.buttonLabel,
-    type: 'button',
-    iconHidden: 'true',
-    slotHidden: 'true',
-  });
+  assertLargeIconButton(initial.target, contract.buttonLabel);
   const host = page.locator(`lab-button[data-state-group="${reference.group}"]`);
   const button = host.getByRole('button', { name: contract.buttonLabel, exact: true });
   assert.equal(await button.count(), 1);
