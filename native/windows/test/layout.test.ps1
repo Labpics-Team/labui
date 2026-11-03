@@ -83,6 +83,15 @@ foreach ($scale in @(1.0, 1.25, 2.25)) {
     }
 }
 
+# LineHeight=0 выбирает штатные метрики шрифта; измеренные размеры остаются положительными.
+foreach ($lineHeight in @(0, [long]0, 0.0, 0.5, 20.0)) {
+    $value = New-Observation
+    foreach ($button in $value.buttons) {
+        foreach ($text in $button.texts) { $text.lineHeight = $lineHeight }
+    }
+    Assert-LayoutObservation $value $processFixture
+}
+
 $mutations = @(
     { param($v) $v.schemaVersion = 2 },
     { param($v) $v.schemaVersion = '1' },
@@ -142,8 +151,9 @@ foreach ($index in 0..6) {
 foreach ($target in @('page') + @(0..6 | ForEach-Object { "button:$_"; "label:$_" }) + @('description:3', 'description:4')) {
     foreach ($field in @('x', 'y', 'width', 'height', 'desiredWidth', 'desiredHeight', 'fontSize', 'lineHeight')) {
         if ($target -notmatch '^(label|description):' -and $field -notin @('x', 'y', 'width', 'height')) { continue }
-        $bads = @($null, '12', $false, [double]::NaN, [double]::PositiveInfinity)
-        if ($field -notin @('x', 'y')) { $bads += @(0, -1) }
+        $bads = @($null, '12', $false, [double]::NaN, [double]::PositiveInfinity, [double]::NegativeInfinity)
+        if ($field -eq 'lineHeight') { $bads += -1 }
+        elseif ($field -notin @('x', 'y')) { $bads += @(0, -1) }
         foreach ($bad in $bads) {
             $value = New-Observation
             $parts = $target.Split(':')
@@ -194,9 +204,10 @@ try {
         try {
             . ([scriptblock]::Create($setEnvironment[0].Extent.Text))
             Assert ($env:LABUI_LAYOUT_OBSERVATION -ceq $layoutObservationPath) 'Probe не включён в данном режиме.'
-            foreach ($case in @('valid', 'expected-scale', 'wrong-scale', 'near-scale', 'wrong-pid', 'stale', 'missing-scale', 'bad-geometry')) {
+            foreach ($case in @('valid', 'auto-line-height', 'expected-scale', 'wrong-scale', 'near-scale', 'wrong-pid', 'stale', 'missing-scale', 'bad-geometry')) {
                 $value = New-Observation 2.25
                 switch ($case) {
+                    'auto-line-height' { foreach ($button in $value.buttons) { foreach ($text in $button.texts) { $text.lineHeight = 0 } } }
                     'near-scale' { $value.textScaleFactor = 2.2499999 }
                     'wrong-pid' { $value.pid++ }
                     'stale' { $value.observedAtUnixMs = $epoch - 1 }
@@ -209,8 +220,8 @@ try {
                 $initialLayout = $null
                 $failed = $false
                 try { . $admission } catch { $failed = $true }
-                Assert ($failed -eq ($case -notin @('valid', 'expected-scale'))) "Настоящий reader/admission принял неверный результат: $case."
-                if ($case -eq 'valid') {
+                Assert ($failed -eq ($case -notin @('valid', 'auto-line-height', 'expected-scale'))) "Настоящий reader/admission принял неверный результат: $case."
+                if ($case -in @('valid', 'auto-line-height')) {
                     # Выполняется настоящий serializer result.json; GUI и настройки не запускаются.
                     $Lifetime = $false
                     $captures = @{}

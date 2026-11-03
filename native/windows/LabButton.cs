@@ -167,23 +167,23 @@ public sealed class LabButton : Button
             || description is null || leading is null || trailing is null || focus is null) return;
         content.Margin = new Thickness(value.InsetX, value.InsetY, value.InsetX, value.InsetY);
         labelGroup.Margin = new Thickness(Geometry.LabelInset, 0, Geometry.LabelInset, 0);
-        labelGroup.MinHeight = value.ContentSize;
+        var hasDescription = !string.IsNullOrEmpty(Description);
+        var lineHeight = Math.Max(value.LineHeight, hasDescription ? value.DescriptionLineHeight : 0);
+        // Авторская строка задаёт минимум слота; высоту увеличенного текста измеряет WinUI.
+        labelGroup.MinHeight = Math.Max(value.ContentSize, lineHeight);
         labelGroup.Spacing = Geometry.LabelGap;
         label.FontSize = value.FontSize;
         label.FontWeight = new FontWeight { Weight = Geometry.FontWeightMedium };
-        label.LineHeight = value.LineHeight;
-        // BlockLineHeight сжимает baseline вместе со строкой ниже кегля, но не сами глифы.
-        label.LineStackingStrategy = value.LineHeight < value.FontSize
-            ? LineStackingStrategy.MaxHeight : LineStackingStrategy.BlockLineHeight;
+        label.LineHeight = 0;
+        label.LineStackingStrategy = LineStackingStrategy.MaxHeight;
         // DTCG хранит em; WinUI принимает целое число тысячных em.
         label.CharacterSpacing = (int)Math.Round(value.Tracking * 1000);
         description.FontSize = value.DescriptionFontSize;
         description.FontWeight = new FontWeight { Weight = value.DescriptionWeight };
-        description.LineHeight = value.DescriptionLineHeight;
-        description.LineStackingStrategy = value.DescriptionLineHeight < value.DescriptionFontSize
-            ? LineStackingStrategy.MaxHeight : LineStackingStrategy.BlockLineHeight;
+        description.LineHeight = 0;
+        description.LineStackingStrategy = LineStackingStrategy.MaxHeight;
         description.CharacterSpacing = (int)Math.Round(value.DescriptionTracking * 1000);
-        description.Visibility = string.IsNullOrEmpty(Description) ? Visibility.Collapsed : Visibility.Visible;
+        description.Visibility = hasDescription ? Visibility.Visible : Visibility.Collapsed;
         leading.Width = trailing.Width = value.ContentSize;
         leading.Height = trailing.Height = value.ContentSize;
         leading.Visibility = LeadingIcon is null ? Visibility.Collapsed : Visibility.Visible;

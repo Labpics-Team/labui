@@ -99,10 +99,13 @@ function Assert-LayoutObservation($Observation, $Process, [Nullable[double]]$Exp
             }
             $text = $texts[0]
             Assert-LayoutBounds $text.bounds
-            foreach ($field in @('desiredWidth', 'desiredHeight', 'fontSize', 'lineHeight')) {
+            foreach ($field in @('desiredWidth', 'desiredHeight', 'fontSize')) {
                 if (!(Test-LayoutNumber $text.$field) -or $text.$field -le 0) {
                     throw "Не прочитана положительная текстовая метрика $($target.id).$part.$field."
                 }
+            }
+            if (!(Test-LayoutNumber $text.lineHeight) -or $text.lineHeight -lt 0) {
+                throw "Не прочитана неотрицательная высота строки $($target.id).$part."
             }
             if ($text.lineStackingStrategy -cnotin @('MaxHeight', 'BlockLineHeight', 'BaselineToBaseline') -or
                 $text.isTextScaleFactorEnabled -isnot [bool] -or !$text.isTextScaleFactorEnabled) {

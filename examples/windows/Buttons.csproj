@@ -17,6 +17,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../native/windows/LabUI.WinUI.csproj" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
   </ItemGroup>
