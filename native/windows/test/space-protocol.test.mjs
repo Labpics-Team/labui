@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
@@ -115,15 +115,28 @@ test('real Space protocol bounds messages and completes a redirected WinExe chil
       join(dir, 'Probe.csproj'),
       '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>WinExe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>',
     );
-    const build = spawnSync(dotnet, ['build', join(dir, 'Probe.csproj'), '--verbosity', 'quiet'], {
-      encoding: 'utf8',
-      timeout: 120_000,
-    });
-    assert.equal(build.status, 0, build.stdout + build.stderr);
-    const run = spawnSync(
+    const build = spawnSync(
       dotnet,
-      [join(dir, 'bin/Debug/net10.0/Probe.dll'), dirname(resolve(dotnet))],
-      { encoding: 'utf8', timeout: 30_000 },
+      [
+        'build',
+        join(dir, 'Probe.csproj'),
+        '--verbosity',
+        'quiet',
+        '-target:Build',
+        '-getProperty:DOTNET_HOST_PATH',
+      ],
+      { encoding: 'utf8', timeout: 120_000 },
+    );
+    assert.equal(build.status, 0, build.stdout + build.stderr);
+    // SDK сообщает путь выбранного host; имя команды из PATH не является путём к runtime.
+    const host = build.stdout.trim();
+    assert.ok(isAbsolute(host), `SDK did not report an absolute host path: ${host}`);
+    const dotnetRoot = dirname(host);
+    const fixtureEnvironment = { ...process.env, DOTNET_DISABLE_GUI_ERRORS: '1' };
+    const run = spawnSync(
+      host,
+      [join(dir, 'bin/Debug/net10.0/Probe.dll'), dotnetRoot],
+      { encoding: 'utf8', timeout: 30_000, env: fixtureEnvironment },
     );
     assert.equal(run.status, 0, run.stdout + run.stderr);
     assert.match(run.stdout, /WinExe pipes and EOF PASS/);
@@ -136,9 +149,9 @@ test('real Space protocol bounds messages and completes a redirected WinExe chil
         '-PipeFixture',
         join(dir, 'bin/Debug/net10.0/Probe.exe'),
         '-DotnetRoot',
-        dirname(resolve(dotnet)),
+        dotnetRoot,
       ],
-      { encoding: 'utf8', timeout: 45_000 },
+      { encoding: 'utf8', timeout: 45_000, env: fixtureEnvironment },
     );
     assert.equal(cleanup.status, 0, cleanup.error || cleanup.stdout + cleanup.stderr);
     assert.match(
