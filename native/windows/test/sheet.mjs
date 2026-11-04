@@ -147,39 +147,6 @@ function observationError(value) {
           ]),
         }
       : {}),
-    ...(Object.hasOwn(value, 'effects')
-      ? {
-          effects: Array.isArray(value.effects)
-            ? value.effects.slice(0, 64).map((sample) => ({
-                index:
-                  Number.isInteger(sample?.index) && sample.index >= 0 && sample.index < 64
-                    ? sample.index
-                    : null,
-                type: known(sample?.type, [
-                  'ColorSourceEffect',
-                  'OpacityEffect',
-                  'CompositeEffect',
-                  'AlphaMaskEffect',
-                  'GaussianBlurEffect',
-                  'ArithmeticCompositeEffect',
-                  'BlendEffect',
-                ]),
-                hresult:
-                  Number.isInteger(sample?.hresult) &&
-                  sample.hresult >= -2147483648 &&
-                  sample.hresult <= 2147483647
-                    ? sample.hresult
-                    : null,
-                cleanupHresult:
-                  Number.isInteger(sample?.cleanupHresult) &&
-                  sample.cleanupHresult >= -2147483648 &&
-                  sample.cleanupHresult <= 2147483647
-                    ? sample.cleanupHresult
-                    : null,
-              }))
-            : null,
-        }
-      : {}),
   };
 }
 
