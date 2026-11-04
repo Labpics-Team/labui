@@ -490,7 +490,9 @@ function Ui([string]$Name, [string[]]$Arguments) {
 }
 
 function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
-    if ($Command -cnotin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete')) { throw 'Неверная команда Space.' }
+    if ($Command -cnotin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete') -and
+        !($DynamicMotion -and $Command -cin @('dynamic arm', 'dynamic prepare', 'dynamic disable',
+            'dynamic ready 1', 'dynamic ready 2', 'dynamic complete'))) { throw 'Неверная команда Space.' }
     if ($Timeout -lt 1 -or $Timeout -gt 5000) { throw 'Неверный бюджет ответа Space.' }
     $spaceChannel.id++
     $process.StandardInput.WriteLine($Command)
