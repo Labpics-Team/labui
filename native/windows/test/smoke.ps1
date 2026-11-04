@@ -617,7 +617,7 @@ function Invoke-SpaceGesture([string]$Theme) {
     } while ($clock.Elapsed.TotalMilliseconds -lt $deadline)
     $timing.completeCompletedMs = $clock.Elapsed.TotalMilliseconds
     if ($null -eq $observation -or $observation.status -cne 'complete') { throw 'Space не достиг последнего idle за 5 секунд.' }
-    return @{ observation = $observation; injection = $injection; window = $timing }
+    return @{ observation = $observation; injection = $injection; window = $timing; polls = $spaceDiagnostic.polls.ToArray() }
 }
 
 function Write-SpaceFailure($Diagnostic, $Primary) {

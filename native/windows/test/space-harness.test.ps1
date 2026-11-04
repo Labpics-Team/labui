@@ -113,6 +113,7 @@ Assert ($null -ne $readyFunction) 'Нет настоящего ожидания 
 # Меняется только ответ дочернего канала. Polling, остаток срока и проверки identity исполняются из harness.
 $script:readyCalls = [Collections.Generic.List[object]]::new()
 $script:replyTheme = 'Light'
+$script:collectGesturePolls = $false
 function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     if ($Command.StartsWith('arm ')) {
         return @{ status = 'armed'; pid = 3187; theme = $script:replyTheme; automationId = 'LabButtonMedium';
@@ -121,6 +122,7 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     }
     if ($Command -ceq 'complete') { return @{ status = 'complete'; pid = 3187 } }
     $script:readyCalls.Add(@{ command = $Command; timeout = $Timeout })
+    if ($script:collectGesturePolls) { $spaceDiagnostic.polls.Add(@{ command = $Command }) }
     $step = [int]$Command.Substring(6)
     $reply = [pscustomobject]@{ schemaVersion = 1; status = 'ready'; pid = 3187;
         processStartedAtUnixMs = 1700000000000L; theme = $script:replyTheme;
@@ -254,6 +256,7 @@ $gestureFunction = $ast.Find({ param($node)
 }, $false)
 . ([scriptblock]::Create($gestureFunction.Extent.Text))
 # Подменена только граница отправителя. Настоящий delegate проходит оба шага и переносит отказ вместе с receipt.
+$script:collectGesturePolls = $true
 foreach ($theme in @('Light', 'Dark')) {
     foreach ($fault in @('none', 'failed')) {
         & {
@@ -271,6 +274,8 @@ foreach ($theme in @('Light', 'Dark')) {
             Assert ($diagnosticJson.Contains('readiness')) 'Диагностика не сериализовала ready-ответы.'
             if ($fault -eq 'none') {
                 Assert ($null -eq $failure -and $output.Count -eq 1 -and $output[0].observation.status -ceq 'complete') 'Два ready нарушили полезный gesture.'
+                Assert ($output[0].polls.Count -eq 2 -and $output[0].polls[0].command -ceq 'ready 1' -and
+                    $output[0].polls[1].command -ceq 'ready 2') 'Успешный gesture потерял timeline polls.'
                 Assert (([SpaceInput]::Steps -join ',') -ceq '1,2' -and $spaceDiagnostic.readiness.Count -eq 2) 'Gesture потерял одну из двух точек ожидания.'
                 Assert ($script:readyCalls[0].timeout -le 950 -and $script:readyCalls[1].timeout -le 800) 'Delegate не передал оставшийся sender-бюджет.'
                 Assert ($spaceDiagnostic.readiness['2'].theme -ceq $theme -and
@@ -278,6 +283,7 @@ foreach ($theme in @('Light', 'Dark')) {
             } else {
                 Assert ($null -ne $failure -and $failure.Exception.Message.Contains('channel-lost') -and $output.Count -eq 0) 'Callback заменил исходную ошибку или принял failed.'
                 Assert (([SpaceInput]::Steps -join ',') -ceq '1' -and $spaceDiagnostic.readiness['1'].reason -ceq 'channel-lost') 'После отказа callback продолжился либо потерял диагностический ответ.'
+                Assert ($spaceDiagnostic.polls.Count -eq 1 -and $spaceDiagnostic.polls[0].command -ceq 'ready 1') 'Отказ потерял timeline уже отправленного poll.'
             }
         } $theme $fault
     }
