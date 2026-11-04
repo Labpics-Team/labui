@@ -70,6 +70,27 @@ function errorInfo(value) {
   };
 }
 
+function topologyInfo(value) {
+  if (!Array.isArray(value) || value.length > 15) return null;
+  const integer = (value, minimum, maximum) =>
+    Number.isInteger(value) && value >= minimum && value <= maximum ? value : null;
+  const boolean = (value) => (typeof value === 'boolean' ? value : null);
+  return value.map((input) => {
+    const row = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
+    return {
+      index: integer(row.index, 0, 14),
+      inputs: integer(row.inputs, 2, 8),
+      combine: known(row.combine, ['Add', 'Arithmetic']),
+      source: known(row.source, ['shared', 'repeat', 'distinct']),
+      named: boolean(row.named),
+      blur: boolean(row.blur),
+      mask: boolean(row.mask),
+      hresult: integer(row.hresult, -2147483648, 2147483647),
+      cleanupHresult: integer(row.cleanupHresult, -2147483648, 2147483647),
+    };
+  });
+}
+
 function observationError(value) {
   if (value === null) return null;
   if (typeof value === 'string') return 'reported';
@@ -147,6 +168,7 @@ function observationError(value) {
           ]),
         }
       : {}),
+    ...(Object.hasOwn(value, 'topology') ? { topology: topologyInfo(value.topology) } : {}),
   };
 }
 

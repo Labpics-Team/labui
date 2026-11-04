@@ -113,6 +113,10 @@ jobs:
         shell: pwsh
         run: dotnet run --project native/windows/test/sheet-failure-site.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-failure-site"
 
+      - name: Sheet topology diagnostic boundary
+        shell: pwsh
+        run: dotnet run --project native/windows/test/sheet-topology.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-topology"
+
       - name: Sheet geometry boundary
         shell: pwsh
         run: dotnet run --project native/windows/test/sheet-geometry.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-geometry"

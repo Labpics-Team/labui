@@ -368,7 +368,8 @@ public sealed class SheetLayers : Grid
             }
             var border = Source("border", Surface(DrawBorder));
             var graph = Over(sheet, border);
-            var factory = result.Own(compositor.CreateEffectFactory((IGraphicsEffect)graph));
+            var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
+                (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma));
             var brush = result.Own(factory.CreateBrush());
             foreach (var (name, source) in parameters) brush.SetSourceParameter(name, source);
             result.Visual.Brush = brush;

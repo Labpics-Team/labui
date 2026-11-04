@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Rendering/SheetSourceTopologyProbe.cs" Link="SheetSourceTopologyProbe.cs" />
+    <Compile Include="../Rendering/SheetBlurProfile.cs" Link="SheetBlurProfile.cs" />
+    <Compile Include="../../../examples/windows/SheetSourceTopology.cs" Link="SheetSourceTopology.cs" />
+    <Compile Include="sheet-topology.test.cs" />
+  </ItemGroup>
+</Project>
