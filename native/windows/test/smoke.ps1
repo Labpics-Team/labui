@@ -489,18 +489,42 @@ function Ui([string]$Name, [string[]]$Arguments) {
 function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     if ($Command -cnotin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete')) { throw 'Неверная команда Space.' }
     if ($Timeout -lt 1 -or $Timeout -gt 5000) { throw 'Неверный бюджет ответа Space.' }
+    $poll = $null
+    if ($Command.StartsWith('ready ')) {
+        if ($spaceDiagnostic.polls.Count -ge 256) { throw 'Space переполнил ограниченную диагностику polls.' }
+        $poll = [ordered]@{ id = $spaceChannel.id + 1; command = $Command;
+            commandStartedTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture);
+            commandWrittenTicks = $null; responseReadTicks = $null; nextReaderStartedTicks = $null;
+            responseParsedTicks = $null; transport = $null; status = $null; elapsedMs = $null;
+            observationCount = $null; operation = $null; nativeRequestId = $null }
+        $spaceDiagnostic.polls.Add($poll)
+    }
     $spaceChannel.id++
     $process.StandardInput.WriteLine($Command)
     $process.StandardInput.Flush()
+    if ($null -ne $poll) { $poll.commandWrittenTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture) }
     if (!$spaceChannel.read.Wait($Timeout)) { throw 'Space не ответил в бюджете команды.' }
     $line = $spaceChannel.read.GetAwaiter().GetResult()
+    if ($null -ne $poll) { $poll.responseReadTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture) }
     if ($null -eq $line -or [Text.Encoding]::UTF8.GetByteCount($line) -gt 128 * 1024) { throw 'Нет полного ограниченного ответа Space.' }
     $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
+    if ($null -ne $poll) { $poll.nextReaderStartedTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture) }
     $reply = $line | ConvertFrom-Json
+    if ($null -ne $poll) {
+        $poll.responseParsedTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture)
+        $transport = $reply.PSObject.Properties['transport']
+        if ($null -ne $transport) { $poll.transport = $transport.Value }
+    }
     if (($reply.id -isnot [int] -and $reply.id -isnot [long]) -or $reply.id -ne $spaceChannel.id -or
         $reply.ok -isnot [bool] -or !$reply.ok) { throw "Space отклонил $Command`: $line" }
     if (($reply.value.pid -isnot [int] -and $reply.value.pid -isnot [long]) -or $reply.value.pid -ne $process.Id) {
         throw 'Space ответил от другого процесса.'
+    }
+    if ($null -ne $poll) {
+        foreach ($field in @('status', 'elapsedMs', 'observationCount', 'operation', 'nativeRequestId')) {
+            $property = $reply.value.PSObject.Properties[$field]
+            if ($null -ne $property) { $poll[$field] = $property.Value }
+        }
     }
     return $reply.value
 }
@@ -554,7 +578,8 @@ function Invoke-SpaceGesture([string]$Theme) {
     $timing = @{ armStartedMs = $clock.Elapsed.TotalMilliseconds }
     $script:spaceDiagnostic = @{ theme = $Theme; window = $timing;
         clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
-        clockFrequency = [Diagnostics.Stopwatch]::Frequency; armed = $null; injection = $null; observation = $null; readiness = @{} }
+        clockFrequency = [Diagnostics.Stopwatch]::Frequency; armed = $null; injection = $null; observation = $null; readiness = @{};
+        polls = [Collections.Generic.List[object]]::new() }
     $armed = Invoke-SpaceCommand "arm $Theme"
     $timing.armCompletedMs = $clock.Elapsed.TotalMilliseconds
     $spaceDiagnostic.armed = $armed

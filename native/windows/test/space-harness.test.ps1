@@ -64,6 +64,46 @@ foreach ($fault in @('none', 'reply-id', 'string-id', 'wrong-pid', 'string-pid',
 }
 'Space harness: PASS (actual bounded reader, request identity, PID, typed reply, EOF and timeout)'
 
+# Метки каждого poll сохраняются и при отказе; pending read не выдаётся за полученный ответ.
+foreach ($fault in @('none', 'rejected', 'timeout')) {
+    & {
+        param($fault)
+        $reply = @{ id = 1; ok = $true; value = @{ pid = 3187; status = 'waiting'; elapsedMs = 12.5;
+            observationCount = 3; operation = 9; nativeRequestId = 11 }; transport = @{
+            clockFrequency = [Diagnostics.Stopwatch]::Frequency; readStartedTicks = '1001';
+            commandReadTicks = '1002'; dispatchCompletedTicks = '1003' } }
+        if ($fault -ceq 'rejected') { $reply = @{ id = 1; ok = $false; error = 'fixture rejection' } }
+        $line = ($reply | ConvertTo-Json -Depth 5 -Compress) + "`n"
+        $process = [pscustomobject]@{ Id = 3187; StandardInput = [IO.StringWriter]::new(); StandardOutput = [IO.StringReader]::new($line) }
+        $spaceChannel = @{ id = 0; stdoutReader = $process.StandardOutput; cancellation = [Threading.CancellationTokenSource]::new() }
+        $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
+        if ($fault -ceq 'timeout') { $spaceChannel.read = [Threading.Tasks.TaskCompletionSource[string]]::new().Task }
+        $spaceDiagnostic = @{ polls = [Collections.Generic.List[object]]::new() }
+        $failure = $null
+        try { $value = Invoke-SpaceCommand 'ready 1' 20 } catch { $failure = $_ }
+        Assert (($null -ne $failure) -eq ($fault -cne 'none')) "Диагностика изменила исход poll: $fault."
+        Assert ($spaceDiagnostic.polls.Count -eq 1) 'Poll не сохранён однозначно.'
+        $poll = $spaceDiagnostic.polls[0]
+        Assert ($poll.id -eq 1 -and $poll.command -ceq 'ready 1' -and
+            [long]$poll.commandStartedTicks -le [long]$poll.commandWrittenTicks) 'Неверная identity или время отправки poll.'
+        if ($fault -ceq 'timeout') {
+            Assert ($null -eq $poll.responseReadTicks -and $null -eq $poll.responseParsedTicks -and $null -eq $poll.transport) 'Timeout создал выдуманный ответ.'
+        } else {
+            Assert ([long]$poll.commandWrittenTicks -le [long]$poll.responseReadTicks -and
+                [long]$poll.responseReadTicks -le [long]$poll.nextReaderStartedTicks -and
+                [long]$poll.nextReaderStartedTicks -le [long]$poll.responseParsedTicks) 'Этапы чтения poll поменялись местами.'
+        }
+        if ($fault -ceq 'none') {
+            Assert ($value.status -ceq 'waiting' -and $poll.status -ceq 'waiting' -and
+                $poll.transport.dispatchCompletedTicks -ceq '1003' -and $poll.operation -eq 9 -and
+                $poll.nativeRequestId -eq 11 -and $poll.observationCount -eq 3) 'Диагностика потеряла этап приложения или request.'
+        }
+        if ($fault -ceq 'rejected') { Assert ($failure.Exception.Message -like '*Space отклонил ready 1*') 'Диагностика скрыла primary error.' }
+        $process.StandardInput.Dispose(); $process.StandardOutput.Dispose(); $spaceChannel.cancellation.Dispose()
+    } $fault
+}
+'Space poll timing: PASS (actual observer, stage order, rejected reply and pending timeout)'
+
 $readyFunction = $ast.Find({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Wait-SpaceReady'
 }, $false)

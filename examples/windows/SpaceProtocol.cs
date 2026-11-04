@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -17,6 +19,8 @@ public static class SpaceProtocol
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase, IncludeFields = true,
         Converters = { new JsonStringEnumConverter() }
     };
+
+    private static string Timestamp() => Stopwatch.GetTimestamp().ToString(CultureInfo.InvariantCulture);
 
     // Reader продолжает drain независимо от ожидания процесса; лимит действует до построения строки.
     public static async Task<string?> ReadLineAsync(TextReader reader, int limit, CancellationToken cancellationToken = default)
@@ -52,14 +56,21 @@ public static class SpaceProtocol
         using var writer = new StreamWriter(output, new UTF8Encoding(false), 1024, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
         for (var id = 1; id <= 256; id++)
         {
+            var readStartedTicks = Timestamp();
             var command = await ReadLineAsync(reader, 32);
             if (command is null) return;
+            var commandReadTicks = Timestamp();
             string json;
             try
             {
                 if (command is not ("arm Light" or "arm Dark" or "ready 1" or "ready 2" or "complete"))
                     throw new InvalidDataException("Неизвестная команда Space.");
-                json = JsonSerializer.Serialize(new { id, ok = true, value = await dispatch(command) }, Json);
+                var value = await dispatch(command);
+                var dispatchCompletedTicks = Timestamp();
+                // Часы отделяют очередь dispatcher от сериализации и передачи ответа.
+                json = JsonSerializer.Serialize(new { id, ok = true, value, transport = new {
+                    clockFrequency = Stopwatch.Frequency, readStartedTicks, commandReadTicks, dispatchCompletedTicks
+                } }, Json);
                 if (Encoding.UTF8.GetByteCount(json) > 128 * 1024)
                     throw new InvalidDataException("Ответ Space превышает лимит.");
             }
