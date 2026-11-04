@@ -6,6 +6,30 @@ function Assert([bool]$Value, [string]$Message) { if (!$Value) { throw $Message 
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseInput([IO.File]::ReadAllText($Harness), [ref]$tokens, [ref]$errors)
 Assert ($errors.Count -eq 0) 'Синтаксис harness повреждён.'
+$outer = @($ast.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.TryStatementAst] })
+Assert ($outer.Count -eq 1) 'Нет однозначного основного блока harness.'
+$launcher = [Collections.Generic.List[string]]::new()
+$collect = $false; $foundStart = $false
+foreach ($statement in $outer[0].Body.Statements) {
+    if ($statement -is [Management.Automation.Language.AssignmentStatementAst]) {
+        if ($statement.Left.Extent.Text -ceq '$appStart') { $collect = $true }
+        if ($collect -and $statement.Left.Extent.Text -ceq '$process') { $foundStart = $true; break }
+    }
+    if ($collect) { $launcher.Add($statement.Extent.Text) }
+}
+Assert ($launcher.Count -gt 0 -and $foundStart) 'Нет законченного initializer перед запуском приложения.'
+# Создаётся настоящий ProcessStartInfo; Process.Start и последующее ожидание окна не исполняются.
+& {
+    $ApplicationDirectory = Join-Path ([IO.Path]::GetTempPath()) 'labui-launcher-fixture'
+    $app = Join-Path $ApplicationDirectory 'Buttons.exe'
+    . ([scriptblock]::Create(($launcher -join "`n")))
+    Assert ($appStart -is [Diagnostics.ProcessStartInfo]) 'Initializer не создал ProcessStartInfo.'
+    Assert ($appStart.FileName -ceq $app -and $appStart.WorkingDirectory -ceq $ApplicationDirectory) 'Launcher изменил целевой процесс или рабочий каталог.'
+    Assert ($appStart.WindowStyle -eq [Diagnostics.ProcessWindowStyle]::Normal) 'Launcher скрывает целевое окно, необходимое для capture/input.'
+    Assert (!$appStart.UseShellExecute -and $appStart.CreateNoWindow) 'Launcher изменил прямой запуск без консольного окна.'
+    Assert ($appStart.RedirectStandardInput -and $appStart.RedirectStandardOutput -and $appStart.RedirectStandardError) 'Launcher потерял stdio-канал.'
+    'Space launcher: PASS (actual ProcessStartInfo, normal window, redirected stdio; process not started)'
+}
 $command = $ast.Find({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-SpaceCommand'
 }, $false)

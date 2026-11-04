@@ -758,7 +758,6 @@ try {
     $appStart.WorkingDirectory = $ApplicationDirectory
     $appStart.UseShellExecute = $false
     $appStart.CreateNoWindow = $true
-    $appStart.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
     $appStart.RedirectStandardInput = $true
     $appStart.RedirectStandardOutput = $true
     $appStart.RedirectStandardError = $true
