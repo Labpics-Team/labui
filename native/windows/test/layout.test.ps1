@@ -3,6 +3,7 @@ param([string]$Harness = (Join-Path $PSScriptRoot 'smoke.ps1'))
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $smokeFailure = $null
+$DynamicMotion = $false
 function Assert([bool]$Condition, [string]$Message) { if (!$Condition) { throw $Message } }
 function Assert-Rejected([scriptblock]$Action, [string]$Message) {
     $failed = $false
