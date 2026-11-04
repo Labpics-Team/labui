@@ -225,6 +225,7 @@ try {
                     # Выполняется настоящий serializer result.json; GUI и настройки не запускаются.
                     $Lifetime = $false
                     $captures = @{}
+                    $lowerControls = @{}
                     . $publication
                     $readback = Get-Content -LiteralPath (Join-Path $output 'result.json') -Raw | ConvertFrom-Json
                     Assert ($readback.initialLayout.textScaleFactor -eq 2.25) 'Result потерял фактический масштаб.'
