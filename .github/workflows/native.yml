@@ -57,7 +57,7 @@ jobs:
           node-version: "24.19.0"
 
       - name: Native projection contract
-        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
+        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs
 
       - name: Native animation capture contract
         shell: pwsh
@@ -103,6 +103,10 @@ jobs:
       - name: Device-loss boundary
         run: node native/windows/test/device-loss.test.mjs
 
+      - name: Sheet geometry boundary
+        shell: pwsh
+        run: dotnet run --project native/windows/test/sheet-geometry.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-geometry"
+
       - name: Lifetime observation boundary
         run: node native/windows/test/lifetime-probe.test.mjs
 
@@ -118,6 +122,21 @@ jobs:
             "-p:LabMotionProject=$env:GITHUB_WORKSPACE/.native-deps/motion/native/windows/LabMotion.WinUI.csproj" `
             --output "$output/app" --verbosity minimal 2>&1 | Tee-Object "$output/build.log"
           if ($LASTEXITCODE -ne 0) { throw 'Native build failed.' }
+
+      - name: Capture native Sheet materials
+        if: matrix.lifetime == true
+        shell: pwsh
+        run: |
+          $source = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
+          . ./native/windows/test/winapp.ps1
+          $tool = Initialize-WinApp -Directory "$env:RUNNER_TEMP/labui-native/sheet-winapp"
+          Assert-WinAppReceipt $tool
+          $receipt = "$env:RUNNER_TEMP/labui-native/sheet-winapp.json"
+          $tool | ConvertTo-Json | Set-Content -Encoding utf8 $receipt
+          node native/windows/test/sheet.mjs capture "$env:RUNNER_TEMP/labui-native/app" `
+            "$env:RUNNER_TEMP/labui-native/sheet" $receipt $source
+          if ($LASTEXITCODE -ne 0) { throw 'Native Sheet capture failed.' }
 
       - name: Capture and exercise native Button
         shell: pwsh
