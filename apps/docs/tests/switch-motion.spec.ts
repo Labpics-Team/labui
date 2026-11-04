@@ -396,34 +396,57 @@ for (const renderer of ['lit', 'react'] as const) {
   });
 
   test(`${renderer}: CSS duration масштабирует скорость пружины`, async ({ page }, testInfo) => {
-    const values: number[] = [];
-    for (const duration of ['100ms', '500ms']) {
+    const samples = [];
+    for (const requestedCssDuration of ['100ms', '500ms']) {
       await openFixture(page);
-      values.push(
+      samples.push(
         await page.evaluate(
-          async ({ renderer, duration }) => {
+          async ({ renderer, requestedCssDuration }) => {
+            const fixture = window.switchMotionFixture;
+            const thumb = fixture.thumb(renderer);
             document.documentElement.style.setProperty(
               '--lab-motion-transition-duration',
-              duration,
+              requestedCssDuration,
             );
-            await window.switchMotionFixture.toggle(renderer);
-            const start = performance.now();
-            do {
-              await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-            } while (performance.now() - start < 80);
-            return new DOMMatrixReadOnly(
-              getComputedStyle(window.switchMotionFixture.thumb(renderer)).transform,
-            ).m41;
+            const startedAt = performance.now();
+            await fixture.toggle(renderer);
+            const [animation] = thumb.getAnimations();
+            if (!animation || animation.playState !== 'running') {
+              throw new Error('Switch должен самостоятельно запустить native-анимацию');
+            }
+            const beforeSeek = {
+              wallElapsedMs: performance.now() - startedAt,
+              nativeTimeMs: animation.currentTime,
+              timelineTimeMs: document.timeline.currentTime,
+              sameTimeline: animation.timeline === document.timeline,
+              playbackRate: animation.playbackRate,
+              timing: animation.effect?.getComputedTiming(),
+            };
+            // CSS duration масштабирует response пружины, а не срок её завершения.
+            // Задаём фазу native-кривой: поздний rAF не должен подменять 80 ms финалом.
+            const sampleTimeMs = 80;
+            animation.pause();
+            animation.currentTime = sampleTimeMs;
+            return {
+              requestedCssDuration,
+              beforeSeek,
+              sampleTimeMs,
+              nativeTimeMs: animation.currentTime,
+              x: new DOMMatrixReadOnly(getComputedStyle(thumb).transform).m41,
+              wallElapsedMs: performance.now() - startedAt,
+            };
           },
-          { renderer, duration },
+          { renderer, requestedCssDuration },
         ),
       );
     }
-    await saveTrace(testInfo, `${renderer}-speed-trace`, {
-      durationMs: [100, 500],
-      afterMs: 80,
-      positions: values,
-    });
+    await saveTrace(testInfo, `${renderer}-speed-trace`, samples);
+    for (const sample of samples) {
+      expect(sample.beforeSeek.sameTimeline).toBe(true);
+      expect(sample.beforeSeek.playbackRate).toBe(1);
+      expect(sample.nativeTimeMs).toBe(sample.sampleTimeMs);
+    }
+    const values = samples.map((sample) => sample.x);
     expect(values[0]).toBeGreaterThan(5);
     expect(values[1]).toBeGreaterThan(0.1);
     expect(values[1]).toBeLessThan((values[0] ?? 0) * 0.6);
