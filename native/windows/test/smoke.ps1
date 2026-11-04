@@ -515,13 +515,13 @@ function Wait-SpaceReady([int]$Step, [int]$RemainingMs, [string]$Theme, $Armed, 
         if ($remaining -lt 1) { throw 'Space не подтвердил готовность в остатке бюджета ввода.' }
         $reply = Invoke-SpaceCommand "ready $Step" $remaining
         $spaceDiagnostic.readiness[[string]$Step] = $reply
-        if ($reply.schemaVersion -isnot [int] -or $reply.schemaVersion -ne 1 -or
+        if (($reply.schemaVersion -isnot [int] -and $reply.schemaVersion -isnot [long]) -or $reply.schemaVersion -ne 1 -or
             ($reply.pid -isnot [int] -and $reply.pid -isnot [long]) -or $reply.pid -ne $process.Id -or
             ($reply.processStartedAtUnixMs -isnot [int] -and $reply.processStartedAtUnixMs -isnot [long]) -or
             $reply.processStartedAtUnixMs -ne ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds() -or
             $reply.theme -cne $Theme -or $reply.automationId -cne 'LabButtonMedium' -or
-            $reply.channel -isnot [int] -or $reply.channel -ne $Armed.channel -or
-            $reply.step -isnot [int] -or $reply.step -ne $Step -or
+            ($reply.channel -isnot [int] -and $reply.channel -isnot [long]) -or $reply.channel -ne $Armed.channel -or
+            ($reply.step -isnot [int] -and $reply.step -isnot [long]) -or $reply.step -ne $Step -or
             $reply.animationsEnabled -isnot [bool] -or $reply.animationsEnabled -ne $AnimationsEnabled -or
             $reply.clockOriginTicks -isnot [string] -or $reply.clockOriginTicks -cne $Armed.clockOriginTicks -or
             ($reply.clockFrequency -isnot [int] -and $reply.clockFrequency -isnot [long]) -or

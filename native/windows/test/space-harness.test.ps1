@@ -97,9 +97,22 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
         'theme' { $reply.theme = 'Dark' }
         'channel' { $reply.channel = 2 }
         'channel-type' { $reply.channel = '1' }
+        'channel-fraction' { $reply.channel = 1.5 }
+        'channel-float' { $reply.channel = [double]1 }
+        'channel-bool' { $reply.channel = $true }
+        'channel-null' { $reply.channel = $null }
         'step' { $reply.step = 2 }
         'step-type' { $reply.step = '1' }
+        'step-fraction' { $reply.step = 1.5 }
+        'step-float' { $reply.step = [double]1 }
+        'step-bool' { $reply.step = $true }
+        'step-null' { $reply.step = $null }
         'schema' { $reply.schemaVersion = 2 }
+        'schema-type' { $reply.schemaVersion = '1' }
+        'schema-fraction' { $reply.schemaVersion = 1.5 }
+        'schema-float' { $reply.schemaVersion = [double]1 }
+        'schema-bool' { $reply.schemaVersion = $true }
+        'schema-null' { $reply.schemaVersion = $null }
         'target' { $reply.automationId = 'LabButtonSmall' }
         'mode' { $reply.animationsEnabled = !$AnimationsEnabled }
         'clock-origin' { $reply.clockOriginTicks = '9007199254740994' }
@@ -115,10 +128,14 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
         'prior-operation' { if ($step -eq 2) { $reply.operation = 11 } }
         'late' { [Threading.Thread]::Sleep(50) }
     }
-    return $reply
+    # Граница JSON сохраняет те же типы чисел, что и настоящий ответ stdio.
+    return ($reply | ConvertTo-Json -Depth 5 -Compress | ConvertFrom-Json)
 }
 foreach ($fault in @('none', 'waiting', 'pid', 'pid-type', 'process-generation', 'process-generation-type',
-    'theme', 'channel', 'channel-type', 'step', 'step-type', 'schema', 'target', 'mode', 'clock-origin', 'clock-frequency',
+    'theme', 'channel', 'channel-type', 'channel-fraction', 'channel-float', 'channel-bool', 'channel-null',
+    'step', 'step-type', 'step-fraction', 'step-float', 'step-bool', 'step-null',
+    'schema', 'schema-type', 'schema-fraction', 'schema-float', 'schema-bool', 'schema-null',
+    'target', 'mode', 'clock-origin', 'clock-frequency',
     'request-type', 'request-zero', 'operation-type', 'operation-zero', 'origin', 'status', 'failed',
     'prior-request', 'prior-operation', 'late')) {
     & {
