@@ -18,6 +18,59 @@ test('normal interruption fixtures and reduced Snap keep independent clocks and 
   }
 });
 
+for (const boundary of [1, 2]) {
+  test(`retarget ${boundary} preserves movement samples at the replacement timestamp`, () => {
+    const fixture = spaceFixture();
+    const samples = fixture.space.observation.observations;
+    const requests = samples.filter((sample) => sample.motion.phase === 'requested');
+    for (const sample of samples) {
+      if (
+        sample.motion.nativeRequestId === requests[boundary - 1].motion.nativeRequestId &&
+        sample.motion.phase !== 'requested'
+      ) {
+        sample.elapsedMs = requests[boundary].elapsedMs;
+        sample.motion.seconds = sample.elapsedMs / 1000;
+      }
+    }
+    assert.doesNotThrow(() => validate(fixture));
+  });
+
+  for (const offsetMs of [-0.001, 0]) {
+    test(`retarget ${boundary} rejects prior idle at replacement timestamp ${offsetMs} ms`, () => {
+      const fixture = spaceFixture();
+      const samples = fixture.space.observation.observations;
+      const requests = samples.filter((sample) => sample.motion.phase === 'requested');
+      const replacement = requests[boundary];
+      const elapsedMs = replacement.elapsedMs + offsetMs;
+      const endpoint = boundary === 1 ? 1 : 0;
+      const position = {
+        position: endpoint,
+        readbackPosition: endpoint,
+        nativePosition: { x: endpoint * 1000, y: 0, z: 0 },
+        nativeReadbackPosition: { x: endpoint * 1000, y: 0, z: 0 },
+      };
+      Object.assign(replacement.motion, structuredClone(position));
+      samples.splice(samples.indexOf(replacement), 0, {
+        elapsedMs,
+        threadId: 1,
+        motion: {
+          ...requests[boundary - 1].motion,
+          ...position,
+          phase: 'idle',
+          seconds: elapsedMs / 1000,
+          nativeVelocity: 0,
+          nativeVelocityVector: { x: 0, y: 0, z: 0 },
+        },
+      });
+      if (boundary === 2) {
+        fixture.space.observation.events[6].position = 0.00001;
+        fixture.space.observation.events[7].position = 0.00002;
+      }
+      assert.throws(() => validate(fixture), /interrupted operation already idle/);
+    });
+  }
+}
+
 test('missing trace and invalid required fields, enum, number or generation cannot pass', () => {
   const changes = [
     (f) => {

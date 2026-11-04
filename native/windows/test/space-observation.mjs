@@ -341,10 +341,10 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
         keys[index].position > 0 && keys[index].position < 1,
         'Space: early transition was not in flight',
       );
-      const segment = samples.filter(
-        (sample) =>
-          sample.elapsedMs >= requests[index - 1].elapsedMs &&
-          sample.elapsedMs < requests[index].elapsedMs,
+      // При равном времени порядок наблюдений сохраняет границу следующего requested.
+      const segment = samples.slice(
+        samples.indexOf(requests[index - 1]),
+        samples.indexOf(requests[index]),
       );
       assert.ok(
         segment.some((sample) => ['value', 'inertia'].includes(sample.motion.phase)),
