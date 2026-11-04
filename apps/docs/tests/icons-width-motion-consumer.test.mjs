@@ -579,6 +579,9 @@ test('width caption follows admitted native and programmatic targets without fra
       },
     });
     assert.equal(label, 'Авторская ширина');
+    assert.equal(mounted.consumer.control('mic', 'outline', 'request', 0.8).ok, true);
+    assert.equal(label, 'Целевая ширина корпуса 0.8');
+    writes = 0;
     assert.equal(mounted.consumer.request('mic', 'outline', 0.92, 800).ok, true);
     assert.equal(label, 'Целевая ширина корпуса 0.92');
     f.factory.instances.at(-1).emit(0.96);
@@ -888,6 +891,10 @@ test('capture binds actual raw geometry, all variants and sizes to exact width a
   assert.throws(() => assertWidthMotionVisualEvidence(visuals, legacy, raw, 15));
   for (const sabotage of [
     (changed) => {
+      changed[0].entries[0].targetLabel = 'Целевая ширина корпуса 0.8';
+    },
+    (changed) => {
+      changed[0].entries[0].targetWidth = 0.8;
       changed[0].entries[0].targetLabel = 'Целевая ширина корпуса 0.8';
     },
     (changed) => {

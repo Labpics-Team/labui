@@ -613,7 +613,10 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
     ready,
     read: () => ({ entries: entries.map(readEntry), events }),
     request: (icon, variant, width, duration) => find(icon, variant).request(width, duration),
-    control: (icon, variant, method, argument) => find(icon, variant).controller[method](argument),
+    control: (icon, variant, method, argument) => {
+      const entry = find(icon, variant);
+      return method === 'request' ? entry.request(argument) : entry.controller[method](argument);
+    },
     settle: async (icon, variant) => {
       await find(icon, variant).controller.settle();
       await new Promise(requestAnimationFrame);
@@ -761,6 +764,7 @@ export function assertWidthMotionVisualEvidence(visuals, records, raw, schemaVer
       );
       for (const entry of record.entries) {
         assert.equal(entry.lastWrittenWidth, width);
+        if (schemaVersion >= 15) assert.equal(entry.targetWidth, width);
         assertWidthEntry(entry, raw, schemaVersion);
       }
     }
@@ -811,6 +815,11 @@ export async function widthMotionBrowserProof(page, raw, mode, records, out, sch
         result: 'PASS',
         events: nativeEvents,
       });
+      if (schemaVersion >= 15) {
+        const routed = await call('control', icon, variant, 'request', 1);
+        assert.equal(routed.ok, true);
+        await check();
+      }
       await call('request', icon, variant, 1, 0);
       await call('settle', icon, variant);
       const started = await call('request', icon, variant, 0.8, 800);

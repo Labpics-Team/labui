@@ -498,7 +498,12 @@ export function mountClockMotionConsumer(apis, timeFilledSvg, value) {
     ready,
     read: () => ({ entries: entries.map(readEntry), events }),
     request: (icon, variant, hours, duration) => find(icon, variant).request(hours, duration),
-    control: (icon, variant, method, argument) => find(icon, variant).controller[method](argument),
+    control: (icon, variant, method, argument) => {
+      const entry = find(icon, variant);
+      return method === 'request' || !entry.controller
+        ? entry.request(argument)
+        : entry.controller[method](argument);
+    },
     settle: async (icon, variant) => {
       await find(icon, variant).controller?.settle();
       return readEntry(find(icon, variant));
@@ -705,6 +710,7 @@ export async function clockMotionBrowserProof(page, raw, mode, records, out) {
       if (icon === 'time' && variant === 'filled') {
         const refusal = await call('request', icon, variant, 1, 200);
         assert.equal(refusal.reason.code, 'COMPOSITION_UNSUPPORTED');
+        assert.deepEqual(await call('control', icon, variant, 'request', 1), refusal);
         assert.equal(await group.locator('[data-hours]').count(), 0);
         records.push({ name: `${mode}:time/filled:clock-static-refusal`, result: 'PASS', refusal });
         continue;
@@ -732,6 +738,9 @@ export async function clockMotionBrowserProof(page, raw, mode, records, out) {
         result: 'PASS',
         events,
       });
+      const routed = await call('control', icon, variant, 'request', -1);
+      assert.equal(routed.ok, true);
+      await check();
       for (const hours of [-0.25, 0.25, 3, -3, 12]) {
         await call('request', icon, variant, hours, 0);
         const observed = await call('settle', icon, variant);
