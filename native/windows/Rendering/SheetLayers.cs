@@ -36,8 +36,8 @@ public sealed class SheetLayers : Grid
     public SolidColorBrush? ShadowInk { get => (SolidColorBrush?)GetValue(ShadowInkProperty); set => SetValue(ShadowInkProperty, value); }
     public SolidColorBrush? Solid { get => (SolidColorBrush?)GetValue(SolidProperty); set => SetValue(SolidProperty, value); }
 
-    internal LabSheetMaterial? EffectiveMaterial { get; private set; }
-    internal LabSheetMaterialReason? MaterialReason { get; private set; }
+    internal LabSheetMaterial? EffectiveMaterial => frame?.Material;
+    internal LabSheetMaterialReason? MaterialReason => frame?.Reason;
     internal event EventHandler? EffectiveMaterialChanged;
 
     private readonly List<(DependencyObject Owner, DependencyProperty Property, long Token)> paintCallbacks = [];
@@ -103,8 +103,6 @@ public sealed class SheetLayers : Grid
         capabilities = null;
         ClearPaintCallbacks();
         ReleaseGraphics();
-        EffectiveMaterial = null;
-        MaterialReason = null;
     }
 
     private static DependencyProperty PaintProperty(string name) => DependencyProperty.Register(
@@ -174,13 +172,19 @@ public sealed class SheetLayers : Grid
     private void Render(bool recreate = false)
     {
         if (!active || ActualWidth <= 0 || ActualHeight <= 0) return;
+        var current = generation;
         try
         {
             if (Tint is null || Blend is null || Ghost is null || Border is null || Noise is null || ShadowInk is null || Solid is null)
                 throw new InvalidOperationException("Sheet требует готовые LabUI brushes из LabColors.");
             if (Solid.Opacity != 1 || Solid.Color.A != byte.MaxValue)
                 throw new InvalidOperationException("Solid Sheet требует непрозрачную краску LabColors.");
-            if (recreate) ReleaseGraphics();
+            if (recreate)
+            {
+                ReleaseGraphics();
+                // Уведомление об утрате готовности может выгрузить или переподключить контрол.
+                if (!active || current != generation) return;
+            }
             var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
             if (device is null)
             {
@@ -189,15 +193,18 @@ public sealed class SheetLayers : Grid
                 graphics = CanvasComposition.CreateCompositionGraphicsDevice(compositor, device);
             }
             var resolved = ResolveMaterial();
-            var candidate = BuildFrame(compositor, SheetMetrics.Half(ActualWidth, ActualHeight), resolved.Material);
+            var candidate = BuildFrame(compositor, SheetMetrics.Half(ActualWidth, ActualHeight), resolved.Material, resolved.Reason);
             try { ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual); }
-            catch { candidate.Dispose(); throw; }
+            catch (Exception error)
+            {
+                try { candidate.Dispose(); }
+                catch (Exception cleanup) { throw new AggregateException("Ошибка подключения и освобождения Sheet.", error, cleanup); }
+                throw;
+            }
             var previous = frame;
             frame = candidate;
             previous?.Dispose();
-            var changed = EffectiveMaterial != resolved.Material || MaterialReason != resolved.Reason;
-            EffectiveMaterial = resolved.Material;
-            MaterialReason = resolved.Reason;
+            var changed = previous?.Material != candidate.Material || previous?.Reason != candidate.Reason;
             if (changed) EffectiveMaterialChanged?.Invoke(this, EventArgs.Empty);
         }
         catch (Exception error) when (!recovering && device is { } failed && failed.IsDeviceLost(error.HResult))
@@ -239,13 +246,14 @@ public sealed class SheetLayers : Grid
         Attempt(() => ElementCompositionPreview.SetElementChildVisual(this, null));
         if (ownedFrame is not null) Attempt(ownedFrame.Dispose);
         if (ownedGraphics is not null) Attempt(ownedGraphics.Dispose);
+        if (ownedFrame is not null) Attempt(() => EffectiveMaterialChanged?.Invoke(this, EventArgs.Empty));
         // SharedDevice освобождает Win2D; Sheet не владеет им.
         Frame.ThrowCleanup(errors);
     }
 
-    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material)
+    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material, LabSheetMaterialReason reason)
     {
-        var result = new Frame(compositor);
+        var result = new Frame(compositor, material, reason);
         try
         {
             var scale = XamlRoot?.RasterizationScale ?? 1;
@@ -429,7 +437,14 @@ public sealed class SheetLayers : Grid
     {
         private readonly List<IDisposable> owned = [];
         internal SpriteVisual Visual { get; }
-        internal Frame(Compositor compositor) => Visual = Own(compositor.CreateSpriteVisual());
+        internal LabSheetMaterial Material { get; }
+        internal LabSheetMaterialReason Reason { get; }
+        internal Frame(Compositor compositor, LabSheetMaterial material, LabSheetMaterialReason reason)
+        {
+            Material = material;
+            Reason = reason;
+            Visual = Own(compositor.CreateSpriteVisual());
+        }
         internal T Own<T>(T value) where T : IDisposable { owned.Add(value); return value; }
         public void Dispose()
         {
