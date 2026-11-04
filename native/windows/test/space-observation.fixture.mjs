@@ -87,13 +87,13 @@ export function spaceFixture(theme = 'Light', animationsEnabled = true) {
       ]
     : [
         sample(0, 'requested', 124.5, 1),
-        sample(0, 'idle', 124.6, 1),
+        sample(0, 'value', 124.6, 1),
         sample(1, 'requested', 204.5, 0),
-        sample(1, 'idle', 204.6, 0),
+        sample(1, 'value', 204.6, 0),
         sample(2, 'requested', 254.5, 1),
-        sample(2, 'idle', 254.6, 1),
+        sample(2, 'value', 254.6, 1),
         sample(3, 'requested', 334.5, 0),
-        sample(3, 'idle', 334.6, 0),
+        sample(3, 'value', 334.6, 0),
       ];
   const prefixes = animationsEnabled
     ? [0, 0, 1, 1, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 8, 10]

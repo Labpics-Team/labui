@@ -64,7 +64,8 @@ static async Task<JsonElement> Complete(SpaceProbe probe) {
     return json.RootElement.GetProperty("value").Clone();
 }
 
-foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, .0005f), (false, 0f) }) {
+foreach (var (animate, priorRelease, terminalPhase) in new[] {
+    (true, .3f, "idle"), (true, 0f, "idle"), (true, .0005f, "idle"), (false, 0f, "value"), (false, 0f, "idle") }) {
     UISettings.Enabled = animate;
     var parent = new UIElement();
     var button = new LabButton();
@@ -101,10 +102,10 @@ foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, 
         button.DriverPressed(down);
         if (!down) { count++; button.DriverClick(); }
         button.Raise(down ? UIElement.KeyDownEvent : UIElement.KeyUpEvent, keyArgs);
-        channel.Publish(Motion(animate, edge, animate ? "value" : "idle", replacement));
+        channel.Publish(Motion(animate, edge, "value", replacement));
     }
     channel.DriverPosition(0);
-    channel.Publish(Motion(animate, 3, "idle", 0));
+    if (animate || terminalPhase == "idle") channel.Publish(Motion(animate, 3, terminalPhase, 0));
     using var input = new MemoryStream(Encoding.UTF8.GetBytes("complete\\n"));
     using var output = new MemoryStream();
     await SpaceProtocol.RunAsync(input, output, _ => Task.FromResult(Call(probe, "Complete")));
@@ -114,6 +115,8 @@ foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, 
     Check(trace.GetProperty("status").GetString() == "complete", "healthy trace no longer completes");
     var events = trace.GetProperty("events").EnumerateArray().ToArray();
     var samples = trace.GetProperty("observations").EnumerateArray().ToArray();
+    if (!animate && terminalPhase == "value") Check(samples.All(sample => sample.GetProperty("motion").GetProperty("phase").GetString() != "idle"),
+        "reduced value control invented idle");
     var previews = events.Where(e => e.GetProperty("kind").GetString()!.StartsWith("previewKey")).ToArray();
     var bubbles = events.Where(e => e.GetProperty("kind").GetString() is "keyDown" or "keyUp").ToArray();
     Check(previews.Length == 4 && bubbles.Length == 4 && events.Length == 16,
@@ -151,6 +154,7 @@ foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, 
     Check(List(probe, "events").Count == 16, "detached probe retained input");
 }
 foreach (var target in new[] { "events", "samples", "exact-events", "owner-failure" }) {
+    UISettings.Enabled = true;
     var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
     using var probe = new SpaceProbe(parent, button, () => 4);
     Call(probe, "Arm", "Light");
@@ -191,6 +195,7 @@ foreach (var target in new[] { "events", "samples", "exact-events", "owner-failu
 }
 // Контролируемые состояния различают причины waiting; порядок native callbacks здесь не утверждается.
 foreach (var pending in new[] { "key-up", "pressed", "phase", "idle-before-value", "request", "operation", "intent", "readback", "position" }) {
+    UISettings.Enabled = true;
     var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
     using var probe = new SpaceProbe(parent, button, () => 4);
     Call(probe, "Arm", "Light");
@@ -235,6 +240,28 @@ foreach (var pending in new[] { "key-up", "pressed", "phase", "idle-before-value
     button.Channel.DriverPosition(0);
     button.Channel.Publish(Motion(true, 3, "idle", 0));
     Check((await Complete(probe)).GetProperty("status").GetString() == "complete", "waiting diagnostic prevented later valid completion");
+}
+// Snap завершается наблюдённым endpoint текущего запроса, а не самим requested или чужим callback.
+foreach (var pending in new[] { "requested-only", "inertia", "ignored", "stale-request", "stale-operation", "nonzero-operation", "foreign-origin", "foreign-intent", "reported-position", "readback", "position" }) {
+    UISettings.Enabled = false;
+    var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
+    using var probe = new SpaceProbe(parent, button, () => 4);
+    Call(probe, "Arm", "Light");
+    button.Raise(UIElement.KeyUpEvent, Key(false)); button.Raise(UIElement.KeyUpEvent, Key(false));
+    var requested = Motion(false, 3, "requested", 0);
+    var latest = Motion(false, 3, pending is "inertia" or "ignored" ? pending : "value", 0);
+    if (pending == "stale-request") latest = latest with { NativeRequestId = 103 };
+    if (pending == "stale-operation") latest = latest with { Operation = 1 };
+    if (pending == "nonzero-operation") { requested = requested with { Operation = 1 }; latest = latest with { Operation = 1 }; }
+    if (pending == "foreign-origin") latest = latest with { Origin = MotionOrigin.Animation };
+    if (pending == "foreign-intent") { requested = requested with { Origin = MotionOrigin.Animation }; latest = latest with { Origin = MotionOrigin.Animation }; }
+    if (pending == "reported-position") latest = latest with { Position = .002f };
+    if (pending == "readback") latest = latest with { ReadbackPosition = .002f };
+    button.Channel.Publish(requested);
+    if (pending != "requested-only") button.Channel.Publish(latest);
+    button.Channel.DriverPosition(pending == "position" ? .002f : 0);
+    Check((await Complete(probe)).GetProperty("status").GetString() == "waiting", "invalid Snap completion accepted: " + pending);
+    Check(button.Channel.Subscribers == 1, "invalid Snap completion detached before valid endpoint");
 }
 Console.WriteLine("Space producer: PASS (ancestor preview, passive old state, equal-time request prefix, real serializer, bounded failure, waiting state, detach)");
 

@@ -46,6 +46,67 @@ test('normal interruption fixtures and reduced Snap keep independent clocks and 
   }
 });
 
+test('reduced Snap accepts value-only callbacks and an explicit idle endpoint', () => {
+  for (const theme of ['Light', 'Dark']) {
+    const fixture = spaceFixture(theme, false);
+    const samples = fixture.space.observation.observations;
+    assert.equal(samples.filter((sample) => sample.motion.phase === 'value').length, 4);
+    assert.ok(samples.every((sample) => sample.motion.phase !== 'idle'));
+    assert.doesNotThrow(() => validate(fixture, theme));
+    for (const sample of samples.filter((sample) => sample.motion.phase === 'value')) {
+      sample.motion.phase = 'idle';
+      sample.motion.nativeVelocity = 0;
+      sample.motion.nativeVelocityVector = { x: 0, y: 0, z: 0 };
+    }
+    assert.doesNotThrow(() => validate(fixture, theme));
+  }
+});
+
+test('reduced Snap rejects requested-only, stale, foreign, active and nonendpoint completions', () => {
+  for (const change of [
+    (fixture) => {
+      fixture.space.observation.observations.pop();
+      for (const event of fixture.space.observation.events) {
+        if (event.observationCount === 8) event.observationCount = 7;
+      }
+    },
+    ...['inertia', 'ignored', 'custom', 'interacting'].map((phase) => (fixture) => {
+      fixture.space.observation.observations.at(-1).motion.phase = phase;
+    }),
+    (fixture) => {
+      fixture.space.observation.observations.at(-1).motion.nativeRequestId--;
+      for (const event of fixture.space.observation.events) {
+        if (event.observationCount === 8) event.nativeRequestId--;
+      }
+    },
+    (fixture) => {
+      fixture.space.observation.observations.at(-1).motion.operation = 1;
+      for (const event of fixture.space.observation.events) {
+        if (event.observationCount === 8) event.operation = 1;
+      }
+    },
+    (fixture) => {
+      for (const sample of fixture.space.observation.observations) sample.motion.operation = 1;
+      for (const event of fixture.space.observation.events) {
+        if (event.observationCount > 0) event.operation = 1;
+      }
+    },
+    (fixture) => {
+      fixture.space.observation.observations.at(-1).motion.origin = 'Animation';
+    },
+    ...['position', 'readbackPosition'].map((field) => (fixture) => {
+      fixture.space.observation.observations.at(-1).motion[field] = 0.002;
+    }),
+    (fixture) => {
+      fixture.space.observation.events.at(-1).position = 0.002;
+    },
+  ]) {
+    const fixture = spaceFixture('Light', false);
+    change(fixture);
+    assert.throws(() => validate(fixture), undefined, String(change));
+  }
+});
+
 test('widening only the measured harness start bracket preserves a feasible shared clock', () => {
   for (const theme of ['Light', 'Dark']) {
     for (const motion of [true, false]) {
@@ -439,55 +500,57 @@ test('OS acceptance and measured clock windows bind every edge to this gesture',
   }
 });
 
-test('CLI reads the same result, identity and both timing files, preserving input bytes', async () => {
-  const temporaryRoot = await realpath(tmpdir());
-  const directory = await mkdtemp(join(temporaryRoot, 'labui-space-observation-'));
-  try {
-    const identity = spaceFixture().identity;
-    const result = { spacePattern: 'interrupted', captures: {} };
-    for (const theme of ['Light', 'Dark']) {
-      const fixture = spaceFixture(theme);
-      result.captures[theme] = {
-        space: fixture.space,
-        gestureTiming: `interaction-${theme}-window.json`,
-      };
-      await writeFile(
-        join(directory, `interaction-${theme}-window.json`),
-        JSON.stringify(fixture.window),
+for (const animationsEnabled of [true, false]) {
+  test(`CLI preserves input bytes and both themes with animations=${animationsEnabled}`, async () => {
+    const temporaryRoot = await realpath(tmpdir());
+    const directory = await mkdtemp(join(temporaryRoot, 'labui-space-observation-'));
+    try {
+      const identity = spaceFixture('Light', animationsEnabled).identity;
+      const result = { spacePattern: 'interrupted', captures: {} };
+      for (const theme of ['Light', 'Dark']) {
+        const fixture = spaceFixture(theme, animationsEnabled);
+        result.captures[theme] = {
+          space: fixture.space,
+          gestureTiming: `interaction-${theme}-window.json`,
+        };
+        await writeFile(
+          join(directory, `interaction-${theme}-window.json`),
+          JSON.stringify(fixture.window),
+        );
+      }
+      const resultBytes = JSON.stringify(result);
+      await writeFile(join(directory, 'result.json'), resultBytes);
+      await writeFile(join(directory, 'identity.json'), JSON.stringify(identity));
+      const cli = fileURLToPath(new URL('./space-observation.mjs', import.meta.url));
+      const run = () =>
+        spawnSync(
+          process.execPath,
+          [cli, join(directory, 'result.json'), join(directory, 'identity.json')],
+          { encoding: 'utf8', windowsHide: true },
+        );
+      const passed = run();
+      assert.equal(passed.status, 0, passed.stderr);
+      assert.equal(await readFile(join(directory, 'result.json'), 'utf8'), resultBytes);
+      Reflect.deleteProperty(result.captures.Dark, 'space');
+      await writeFile(join(directory, 'result.json'), JSON.stringify(result));
+      const failed = run();
+      assert.notEqual(failed.status, 0);
+      assert.equal(failed.stdout, '');
+      assert.match(failed.stderr, /trace/);
+    } finally {
+      const target = await realpath(directory);
+      const child = relative(temporaryRoot, target);
+      assert.ok(
+        child &&
+          !isAbsolute(child) &&
+          child !== '..' &&
+          !child.startsWith(`..${sep}`) &&
+          !child.includes(sep),
       );
+      await rm(target, { recursive: true, force: true });
     }
-    const resultBytes = JSON.stringify(result);
-    await writeFile(join(directory, 'result.json'), resultBytes);
-    await writeFile(join(directory, 'identity.json'), JSON.stringify(identity));
-    const cli = fileURLToPath(new URL('./space-observation.mjs', import.meta.url));
-    const run = () =>
-      spawnSync(
-        process.execPath,
-        [cli, join(directory, 'result.json'), join(directory, 'identity.json')],
-        { encoding: 'utf8', windowsHide: true },
-      );
-    const passed = run();
-    assert.equal(passed.status, 0, passed.stderr);
-    assert.equal(await readFile(join(directory, 'result.json'), 'utf8'), resultBytes);
-    Reflect.deleteProperty(result.captures.Dark, 'space');
-    await writeFile(join(directory, 'result.json'), JSON.stringify(result));
-    const failed = run();
-    assert.notEqual(failed.status, 0);
-    assert.equal(failed.stdout, '');
-    assert.match(failed.stderr, /trace/);
-  } finally {
-    const target = await realpath(directory);
-    const child = relative(temporaryRoot, target);
-    assert.ok(
-      child &&
-        !isAbsolute(child) &&
-        child !== '..' &&
-        !child.startsWith(`..${sep}`) &&
-        !child.includes(sep),
-    );
-    await rm(target, { recursive: true, force: true });
-  }
-});
+  });
+}
 
 test('actual CLI rejects disjoint theme origins and accepts their common healthy neighbour', async () => {
   const temporaryRoot = await realpath(tmpdir());

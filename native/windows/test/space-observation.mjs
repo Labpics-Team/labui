@@ -455,11 +455,17 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     }
   }
   const final = samples.at(-1);
-  assert.equal(final.motion.phase, 'idle', 'Space: final operation not idle');
+  if (observation.animationsEnabled)
+    assert.equal(final.motion.phase, 'idle', 'Space: final operation not idle');
+  else
+    assert.ok(
+      ['value', 'idle'].includes(final.motion.phase),
+      'Space: final Snap endpoint not observed',
+    );
   assert.ok(sameRequest(final.motion, requests[3].motion), 'Space: wrong final operation');
   assert.ok(
     final.elapsedMs >= requests[3].elapsedMs,
-    'Space: idle precedes latest release request',
+    'Space: final observation precedes latest release request',
   );
   assert.ok(
     Math.abs(final.motion.readbackPosition) <= progressTolerance &&

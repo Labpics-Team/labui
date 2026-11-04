@@ -177,7 +177,12 @@ internal sealed class SpaceProbe : IDisposable
         var keyUpCount = events.Count(item => item.Kind == "keyUp");
         var isPressed = button.IsPressed;
         var position = channel!.Position;
-        if (keyUpCount < 2 || isPressed || final is not { Phase: "idle" } settled ||
+        // Snap из idle меняет координату без нового перехода состояния; value подтверждает запрос.
+        var terminalObserved = animationsEnabled ? final is { Phase: "idle" } :
+            final is { Origin: MotionOrigin.Snap, Operation: 0, Phase: "value" or "idle" } snap &&
+            intent is { Origin: MotionOrigin.Snap, Operation: 0 } &&
+            Math.Abs(snap.Position) <= .001f && Math.Abs(snap.ReadbackPosition) <= .001f && Math.Abs(position) <= .001f;
+        if (keyUpCount < 2 || isPressed || !terminalObserved || final is not { } settled ||
             intent is not { } current || settled.NativeRequestId != current.NativeRequestId || settled.Operation != current.Operation ||
             Math.Abs(settled.ReadbackPosition) > .001f || Math.Abs(position) > .001f)
             return new { status = "waiting", pid = Environment.ProcessId, elapsedMs = Elapsed,
