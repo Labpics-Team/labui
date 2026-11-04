@@ -2,7 +2,8 @@ param(
     [string]$Harness = (Join-Path $PSScriptRoot 'smoke.ps1'),
     [string]$Protocol = (Join-Path $PSScriptRoot '../../../examples/windows/SpaceProtocol.cs'),
     [string]$PipeFixture = '',
-    [string]$DotnetRoot = ''
+    [string]$DotnetRoot = '',
+    [string]$RawTraceFixture = ''
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -81,9 +82,22 @@ $diagnosticFunction = @($ast.FindAll({
 Assert ($diagnosticFunction.Count -eq 1) 'Нет ограниченного вывода отказа Space.'
 . ([scriptblock]::Create($diagnosticFunction[0].Extent.Text))
 # Запускается настоящий вывод диагностики; stderr заменён только у границы записи.
-foreach ($case in @('bounded', 'utf8-overflow', 'write-failure', 'unavailable-stderr')) {
+$diagnosticRoot = Join-Path ([IO.Path]::GetTempPath()) ('labui-space-identity-' + [guid]::NewGuid().ToString('N'))
+$null = New-Item -ItemType Directory -Path $diagnosticRoot
+$identity = @{ pid = 42; startedAtUnixMs = 1700000000000L; window = '77'; source = 'a' * 40; motionSource = 'b' * 40;
+    appSha256 = '1' * 64; consumerSha256 = '2' * 64; uiSha256 = '3' * 64; motionSha256 = '4' * 64 }
+$identity | ConvertTo-Json -Compress | Set-Content -Encoding utf8 (Join-Path $diagnosticRoot 'identity.json')
+try {
+foreach ($case in @('bounded', 'utf8-overflow', 'write-failure', 'unavailable-stderr', 'identity-unavailable') +
+    $(if ($RawTraceFixture) { @('composed-raw') } else { @() })) {
+    $output = if ($case -eq 'identity-unavailable') { Join-Path $diagnosticRoot 'absent' } else { $diagnosticRoot }
     $diagnostic = @{ theme = 'Light'; status = 'failed'; observation = @{ overflow = 1; failure = $null }; ticks = '9223372036854775807' }
     if ($case -eq 'utf8-overflow') { $diagnostic.payload = 'Я' * 140000 }
+    if ($case -eq 'composed-raw') {
+        $trace = Get-Content -LiteralPath $RawTraceFixture -Raw | ConvertFrom-Json
+        $diagnostic.observation = $trace
+        $diagnostic.readiness = @{ '1' = $trace; '2' = $trace }
+    }
     $primary = [Management.Automation.ErrorRecord]::new([TimeoutException]::new('primary-space-timeout'),
         'space-timeout', [Management.Automation.ErrorCategory]::OperationTimeout, $null)
     $original = $primary.Exception
@@ -102,12 +116,18 @@ foreach ($case in @('bounded', 'utf8-overflow', 'write-failure', 'unavailable-st
         Assert ([object]::ReferenceEquals($primary.Exception, $original) -and $primary.Exception.Message -ceq 'primary-space-timeout') 'Диагностика заменила primary error.'
         $written = $writer.ToString()
         Assert ([Text.Encoding]::UTF8.GetByteCount($written) -le 256 * 1024) 'Диагностика превысила общий лимит UTF-8 [space-diagnostic-byte-limit].'
-        if ($case -eq 'bounded') {
+        if ($case -in @('bounded', 'composed-raw')) {
             Assert (!$primary.Exception.Data.Contains('spaceDiagnosticError')) 'Здоровый вывод диагностики получил ошибку.'
             Assert ($written.StartsWith('LABUI_SPACE_FAILURE_JSON ')) 'Нет JSON-маркера отказа.'
             $readback = $written.Substring('LABUI_SPACE_FAILURE_JSON '.Length) | ConvertFrom-Json
             Assert ($readback.status -ceq 'failed' -and $readback.theme -ceq 'Light' -and
                 $readback.observation.overflow -eq 1 -and $readback.ticks -ceq '9223372036854775807') 'Ограниченный отказ потерял исходные поля.'
+            foreach ($name in $identity.Keys) { Assert ($readback.identity.$name -ceq $identity[$name]) "Отказ потерял executing identity: $name." }
+            Assert (!$diagnostic.ContainsKey('identity')) 'Вывод отказа изменил исходный объект диагностики.'
+            if ($case -eq 'composed-raw') {
+                Assert ($readback.observation.rawTrace.records.Count -eq 24 -and $readback.observation.rawTrace.terminals.Count -eq 12 -and
+                    $readback.observation.observations.Count -eq 128 -and $readback.readiness.'2'.rawTrace.counts.Count -eq 36) 'Общий транспорт потерял ограниченные raw records либо observations.'
+            }
         } else {
             Assert ($primary.Exception.Data.Contains('spaceDiagnosticError')) 'Вторичная ошибка диагностики потеряна.'
             Assert (!$written.Contains('LABUI_SPACE_FAILURE_JSON ')) 'Частичная диагностика выдана за полный JSON.'
@@ -115,8 +135,15 @@ foreach ($case in @('bounded', 'utf8-overflow', 'write-failure', 'unavailable-st
                 Assert ($written.StartsWith('LABUI_SPACE_DIAGNOSTIC_ERROR ')) 'Нет явного сообщения об отказе диагностики.'
             }
         }
-        "Space diagnostic: $case PASS primaryPreserved=True"
+        "Space diagnostic: $case PASS primaryPreserved=True bytes=$([Text.Encoding]::UTF8.GetByteCount($written))"
     } finally { $writer.Dispose() }
+}
+} finally {
+    $resolvedDiagnostic = [IO.Path]::GetFullPath($diagnosticRoot)
+    $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    Assert ($resolvedDiagnostic.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase) -and
+        [IO.Path]::GetFileName($resolvedDiagnostic).StartsWith('labui-space-identity-')) 'Неверная граница очистки identity fixture.'
+    Remove-Item -LiteralPath $resolvedDiagnostic -Recurse -Force
 }
 $gestureFunction = @($ast.FindAll({
     param($node)

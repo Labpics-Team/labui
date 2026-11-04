@@ -54,6 +54,14 @@ Check(calls == 2 && replies.Length == 2, "Lost protocol command/reply");
 Check(replies[0].GetProperty("id").GetInt32() == 1 && replies[1].GetProperty("id").GetInt32() == 2, "Lost reply order");
 Check(replies[0].GetProperty("value").GetProperty("phase").GetString() == "Idle", "Enum lost");
 Check(replies[0].GetProperty("value").GetProperty("nested").GetProperty("position").GetSingle() == .25f, "Field lost");
+foreach (var reply in replies) {
+    var transport = reply.GetProperty("transport");
+    Check(transport.GetProperty("clockFrequency").GetInt64() == Stopwatch.Frequency, "Transport clock changed");
+    var readStarted = long.Parse(transport.GetProperty("readStartedTicks").GetString()!);
+    var commandRead = long.Parse(transport.GetProperty("commandReadTicks").GetString()!);
+    var dispatched = long.Parse(transport.GetProperty("dispatchCompletedTicks").GetString()!);
+    Check(readStarted <= commandRead && commandRead <= dispatched, "Transport stages lost monotonic order");
+}
 calls = 0;
 var readyText = await Run("ready 1\\nready 2\\n", command => {
     calls++; return Task.FromResult<object>(new { command, status = "waiting" });

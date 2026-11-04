@@ -64,6 +64,47 @@ foreach ($fault in @('none', 'reply-id', 'string-id', 'wrong-pid', 'string-pid',
 }
 'Space harness: PASS (actual bounded reader, request identity, PID, typed reply, EOF and timeout)'
 
+# Метки каждого poll сохраняются и при отказе; pending read не выдаётся за полученный ответ.
+foreach ($fault in @('none', 'rejected', 'timeout')) {
+    & {
+        param($fault)
+        $reply = @{ id = 1; ok = $true; value = @{ pid = 3187; status = 'waiting'; elapsedMs = 12.5;
+            observationCount = 3; operation = 9; nativeRequestId = 11; position = 0.25; origin = 'Animation'; reason = $null }; transport = @{
+            clockFrequency = [Diagnostics.Stopwatch]::Frequency; readStartedTicks = '1001';
+            commandReadTicks = '1002'; dispatchCompletedTicks = '1003' } }
+        if ($fault -ceq 'rejected') { $reply = @{ id = 1; ok = $false; error = 'fixture rejection' } }
+        $line = ($reply | ConvertTo-Json -Depth 5 -Compress) + "`n"
+        $process = [pscustomobject]@{ Id = 3187; StandardInput = [IO.StringWriter]::new(); StandardOutput = [IO.StringReader]::new($line) }
+        $spaceChannel = @{ id = 0; stdoutReader = $process.StandardOutput; cancellation = [Threading.CancellationTokenSource]::new() }
+        $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
+        if ($fault -ceq 'timeout') { $spaceChannel.read = [Threading.Tasks.TaskCompletionSource[string]]::new().Task }
+        $spaceDiagnostic = @{ polls = [Collections.Generic.List[object]]::new() }
+        $failure = $null
+        try { $value = Invoke-SpaceCommand 'ready 1' 20 } catch { $failure = $_ }
+        Assert (($null -ne $failure) -eq ($fault -cne 'none')) "Диагностика изменила исход poll: $fault."
+        Assert ($spaceDiagnostic.polls.Count -eq 1) 'Poll не сохранён однозначно.'
+        $poll = $spaceDiagnostic.polls[0]
+        Assert ($poll.id -eq 1 -and $poll.command -ceq 'ready 1' -and
+            [long]$poll.commandStartedTicks -le [long]$poll.commandWrittenTicks) 'Неверная identity или время отправки poll.'
+        if ($fault -ceq 'timeout') {
+            Assert ($null -eq $poll.responseReadTicks -and $null -eq $poll.responseParsedTicks -and $null -eq $poll.transport) 'Timeout создал выдуманный ответ.'
+        } else {
+            Assert ([long]$poll.commandWrittenTicks -le [long]$poll.responseReadTicks -and
+                [long]$poll.responseReadTicks -le [long]$poll.nextReaderStartedTicks -and
+                [long]$poll.nextReaderStartedTicks -le [long]$poll.responseParsedTicks) 'Этапы чтения poll поменялись местами.'
+        }
+        if ($fault -ceq 'none') {
+            Assert ($value.status -ceq 'waiting' -and $poll.status -ceq 'waiting' -and
+                $poll.transport.dispatchCompletedTicks -ceq '1003' -and $poll.operation -eq 9 -and
+                $poll.nativeRequestId -eq 11 -and $poll.observationCount -eq 3 -and $poll.position -eq 0.25 -and
+                $poll.origin -ceq 'Animation' -and $null -eq $poll.reason) 'Диагностика потеряла этап приложения или request.'
+        }
+        if ($fault -ceq 'rejected') { Assert ($failure.Exception.Message -like '*Space отклонил ready 1*') 'Диагностика скрыла primary error.' }
+        $process.StandardInput.Dispose(); $process.StandardOutput.Dispose(); $spaceChannel.cancellation.Dispose()
+    } $fault
+}
+'Space poll timing: PASS (actual observer, stage order, rejected reply and pending timeout)'
+
 $readyFunction = $ast.Find({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Wait-SpaceReady'
 }, $false)
@@ -72,6 +113,7 @@ Assert ($null -ne $readyFunction) 'Нет настоящего ожидания 
 # Меняется только ответ дочернего канала. Polling, остаток срока и проверки identity исполняются из harness.
 $script:readyCalls = [Collections.Generic.List[object]]::new()
 $script:replyTheme = 'Light'
+$script:collectGesturePolls = $false
 function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     if ($Command.StartsWith('arm ')) {
         return @{ status = 'armed'; pid = 3187; theme = $script:replyTheme; automationId = 'LabButtonMedium';
@@ -80,6 +122,7 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     }
     if ($Command -ceq 'complete') { return @{ status = 'complete'; pid = 3187 } }
     $script:readyCalls.Add(@{ command = $Command; timeout = $Timeout })
+    if ($script:collectGesturePolls) { $spaceDiagnostic.polls.Add(@{ command = $Command }) }
     $step = [int]$Command.Substring(6)
     $reply = [pscustomobject]@{ schemaVersion = 1; status = 'ready'; pid = 3187;
         processStartedAtUnixMs = 1700000000000L; theme = $script:replyTheme;
@@ -213,6 +256,7 @@ $gestureFunction = $ast.Find({ param($node)
 }, $false)
 . ([scriptblock]::Create($gestureFunction.Extent.Text))
 # Подменена только граница отправителя. Настоящий delegate проходит оба шага и переносит отказ вместе с receipt.
+$script:collectGesturePolls = $true
 foreach ($theme in @('Light', 'Dark')) {
     foreach ($fault in @('none', 'failed')) {
         & {
@@ -230,6 +274,8 @@ foreach ($theme in @('Light', 'Dark')) {
             Assert ($diagnosticJson.Contains('readiness')) 'Диагностика не сериализовала ready-ответы.'
             if ($fault -eq 'none') {
                 Assert ($null -eq $failure -and $output.Count -eq 1 -and $output[0].observation.status -ceq 'complete') 'Два ready нарушили полезный gesture.'
+                Assert ($output[0].polls.Count -eq 2 -and $output[0].polls[0].command -ceq 'ready 1' -and
+                    $output[0].polls[1].command -ceq 'ready 2') 'Успешный gesture потерял timeline polls.'
                 Assert (([SpaceInput]::Steps -join ',') -ceq '1,2' -and $spaceDiagnostic.readiness.Count -eq 2) 'Gesture потерял одну из двух точек ожидания.'
                 Assert ($script:readyCalls[0].timeout -le 950 -and $script:readyCalls[1].timeout -le 800) 'Delegate не передал оставшийся sender-бюджет.'
                 Assert ($spaceDiagnostic.readiness['2'].theme -ceq $theme -and
@@ -237,6 +283,7 @@ foreach ($theme in @('Light', 'Dark')) {
             } else {
                 Assert ($null -ne $failure -and $failure.Exception.Message.Contains('channel-lost') -and $output.Count -eq 0) 'Callback заменил исходную ошибку или принял failed.'
                 Assert (([SpaceInput]::Steps -join ',') -ceq '1' -and $spaceDiagnostic.readiness['1'].reason -ceq 'channel-lost') 'После отказа callback продолжился либо потерял диагностический ответ.'
+                Assert ($spaceDiagnostic.polls.Count -eq 1 -and $spaceDiagnostic.polls[0].command -ceq 'ready 1') 'Отказ потерял timeline уже отправленного poll.'
             }
         } $theme $fault
     }

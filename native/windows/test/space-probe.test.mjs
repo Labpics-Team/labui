@@ -67,6 +67,57 @@ static Task<JsonElement> Complete(SpaceProbe probe) => Serialize(() => Call(prob
 static Task<JsonElement> Ready(SpaceProbe probe, int step) => Serialize(() =>
     ((Task<object>)Call(probe, "Dispatch", "ready " + step)).GetAwaiter().GetResult());
 
+// Проверяется настоящий readback и serializer. Fake Motion задаёт только приватный DTO владельца.
+{
+    UISettings.Enabled = true;
+    var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
+    using var probe = new SpaceProbe(parent, button, () => 4);
+    Check(button.Channel.TraceBegins == 0, "probe enabled trace before Arm");
+    Call(probe, "Arm", "Light");
+    Check(button.Channel.TraceBegins == 1, "Arm did not enable actual pressed channel trace once");
+    var waiting = await Complete(probe);
+    var raw = waiting.GetProperty("rawTrace");
+    Check(waiting.GetProperty("status").GetString() == "waiting" && waiting.GetProperty("channel").GetInt32() == 1 &&
+        waiting.GetProperty("processStartedAtUnixMs").GetInt64() > 0, "waiting lost process/channel identity");
+    Check(raw.GetProperty("records").GetArrayLength() == 24 && raw.GetProperty("terminals").GetArrayLength() == 12 &&
+        raw.GetProperty("callbackCount").GetInt64() == 1000 && raw.GetProperty("droppedRecords").GetInt64() == 976 &&
+        raw.GetProperty("counts")[0].GetProperty("count").GetInt64() == 1000 &&
+        raw.GetProperty("countersComplete").GetBoolean() && raw.GetProperty("recordsTruncated").GetBoolean(),
+        "raw readback lost storage/counter distinction");
+    Check(raw.GetProperty("records")[0].GetProperty("disposition").GetString() == "Mismatch" &&
+        raw.GetProperty("records")[0].GetProperty("kind").GetString() == "Idle" &&
+        raw.GetProperty("records")[0].GetProperty("velocity").ValueKind == JsonValueKind.Null &&
+        raw.GetProperty("records")[0].GetProperty("position").GetProperty("z").ValueKind == JsonValueKind.Null,
+        "raw rejected Idle or unavailable native field changed");
+    Check(!raw.GetRawText().Contains("not-for-transport") && !raw.GetRawText().Contains("secretField"),
+        "readback serialized unapproved producer fields");
+    Check(!(await Ready(probe, 1)).GetProperty("rawTrace").GetProperty("stopped").GetBoolean(),
+        "passive readiness closed diagnostic window");
+    for (var index = 0; index < 130; index++) button.Channel.Publish(Motion(true, 0, "value", .3f));
+    var failed = await Complete(probe);
+    Check(failed.GetProperty("status").GetString() == "failed" && failed.GetProperty("observations").GetArrayLength() == 128 &&
+        failed.GetProperty("rawTrace").GetProperty("stopped").GetBoolean() && button.Channel.TraceStops == 1,
+        "raw trace changed ordinary overflow failure or failed to close its window");
+    if (Environment.GetEnvironmentVariable("SPACE_PROBE_CAPTURE_PATH") is { Length: > 0 } capturePath)
+        File.WriteAllText(capturePath, failed.GetRawText());
+    Console.WriteLine("Space raw trace: PASS replyBytes=" + Encoding.UTF8.GetByteCount(failed.GetRawText()));
+    var reads = button.Channel.TraceCaptures;
+    var frozen = await Serialize(() => Call(probe, "Snapshot", "failed"));
+    Check(frozen.GetProperty("rawTrace").GetRawText() == failed.GetProperty("rawTrace").GetRawText() &&
+        button.Channel.TraceCaptures == reads, "detached raw snapshot continued reading producer");
+    button.ActualTheme = ElementTheme.Dark;
+    Call(probe, "Arm", "Dark");
+    Check(button.Channel.TraceBegins == 2 && !(await Complete(probe)).GetProperty("rawTrace").GetProperty("stopped").GetBoolean(),
+        "Dark Arm reused closed raw window");
+}
+foreach (var fault in new[] { "schema", "enum", "enum-type", "records", "counts", "terminals", "numeric", "nonfinite" }) {
+    var channel = new ScalarMotion { TraceFault = fault };
+    SpaceRawTrace.Begin(channel);
+    var rejected = false;
+    try { SpaceRawTrace.Capture(channel); } catch (InvalidOperationException) { rejected = true; }
+    Check(rejected, "raw readback accepted malformed private snapshot: " + fault);
+}
+
 // Подтверждение приходит только после фактического edge и его наблюдения.
 foreach (var animate in new[] { true, false }) {
     UISettings.Enabled = animate;
@@ -464,7 +515,7 @@ namespace LabUI.WinUI {
     }
 }
 namespace LabMotion.WinUI {
-    public enum MotionOrigin { Animation, Snap }
+    public enum MotionOrigin { Animation, Input, Initial, Snap, Stop }
     public readonly record struct MotionObservation(long Operation, string Phase, double Seconds, float Position, float? NativeVelocity, float ReadbackPosition) {
         public MotionOrigin Origin { get; init; }
         public int NativeRequestId { get; init; }
@@ -479,6 +530,35 @@ namespace LabMotion.WinUI {
         public int Subscribers => Observed?.GetInvocationList().Length ?? 0;
         public void DriverPosition(float value) => position = value;
         public void Publish(MotionObservation value) => Observed?.Invoke(value);
+        public int TraceBegins, TraceCaptures, TraceStops;
+        public string? TraceFault;
+        private bool traceStopped;
+        private enum RawKind { Values, Inertia, Idle, Interacting, Custom, Ignored }
+        private enum RawDisposition { Pending, Disposed, Input, Request, Mismatch, Unconditional }
+        private enum RawPhase { Idle, Inertia, Interacting, Custom, Unknown }
+        private void BeginRawTrace() { TraceBegins++; traceStopped = false; }
+        private object TraceState() => new { RequestId = (int?)104, RequestOrigin = (MotionOrigin?)MotionOrigin.Animation,
+            RequestOperation = (long?)4, ActiveRequest = (int?)104, ActiveOperation = (long?)4,
+            Disposed = false, Interacting = false, Phase = RawPhase.Inertia };
+        private object TraceRecord(long index) => new { Sequence = index, Timestamp = 20L + index, ThreadId = 1,
+            Kind = (object)(TraceFault == "enum-type" ? "not-for-transport" : TraceFault == "enum" ? (RawKind)99 : RawKind.Idle),
+            Before = TraceState(), IncomingRequestId = (int?)101, Disposition = RawDisposition.Mismatch,
+            Position = new { X = (float?)1, Y = (float?)(TraceFault == "nonfinite" ? float.NaN : 2), Z = (float?)null },
+            Velocity = (object?)null, SecretField = "not-for-transport" };
+        private object CaptureRawTrace(bool stop) {
+            TraceCaptures++;
+            if (stop && !traceStopped) { TraceStops++; traceStopped = true; }
+            return new { SchemaVersion = TraceFault == "schema" ? 2 : 1, ProcessId = Environment.ProcessId,
+                StartedTicks = 10L, EndedTicks = 2000L, Frequency = 10000000L, OwnerThreadId = 1, Stopped = traceStopped,
+                CallbackCount = (object)(TraceFault == "numeric" ? "not-for-transport" : 1000L), CompletedCount = 1000L,
+                OtherThreadCount = 0L, CountersComplete = true, RecordsTruncated = true, DroppedRecords = 976L,
+                Initial = TraceState(), Records = Enumerable.Range(1, TraceFault == "records" ? 25 : 24).Select(index => TraceRecord(index)).ToArray(),
+                Counts = Enumerable.Range(0, TraceFault == "counts" ? 37 : 36).Select(index => new {
+                    Kind = (RawKind)(index / 6), Disposition = (RawDisposition)(index % 6), Count = index == 0 ? 1000L : 0L }).ToArray(),
+                Terminals = Enumerable.Range(0, TraceFault == "terminals" ? 13 : 12).Select(index => new {
+                    Kind = index < 6 ? RawKind.Idle : RawKind.Ignored, Disposition = (RawDisposition)(index % 6),
+                    First = TraceRecord(1), Last = TraceRecord(1000) }).ToArray(), SecretField = "not-for-transport" };
+        }
     }
 }
 `;
@@ -488,6 +568,10 @@ test('actual Space producer preserves preview order and bounded completion diagn
   const directory = await mkdtemp(join(temporaryRoot, 'labui-space-probe-'));
   try {
     await writeFile(join(directory, 'SpaceProbe.cs'), producer);
+    await writeFile(
+      join(directory, 'SpaceRawTrace.cs'),
+      await readFile(new URL('../../../examples/windows/SpaceRawTrace.cs', import.meta.url)),
+    );
     await writeFile(
       join(directory, 'SpaceProtocol.cs'),
       await readFile(new URL('../../../examples/windows/SpaceProtocol.cs', import.meta.url)),
@@ -506,6 +590,99 @@ test('actual Space producer preserves preview order and bounded completion diagn
     assert.match(run.stdout, /Space producer: PASS/);
     process.stdout.write(run.stdout);
   } finally {
+    const target = await realpath(directory);
+    const child = relative(temporaryRoot, target);
+    assert.ok(
+      child &&
+        !isAbsolute(child) &&
+        child !== '..' &&
+        !child.startsWith(`..${sep}`) &&
+        !child.includes(sep),
+    );
+    await rm(target, { recursive: true, force: true });
+  }
+});
+
+test('private trace crosses actual Motion, example DTO and bounded Space serializer', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'labui-space-raw-trace-'));
+  const motionRoot =
+    process.env.LABMOTION_SOURCE || new URL('../../../.native-deps/motion/', import.meta.url);
+  const motionFile = (path) =>
+    typeof motionRoot === 'string' ? join(motionRoot, path) : new URL(path, motionRoot);
+  try {
+    for (const name of ['ScalarMotion.cs', 'ScalarBinding.cs', 'ScalarPan.cs']) {
+      await writeFile(join(directory, name), await readFile(motionFile(`native/windows/${name}`)));
+    }
+    await writeFile(
+      join(directory, 'Doubles.cs'),
+      await readFile(motionFile('test/windows/boundary-doubles.cs')),
+    );
+    for (const name of ['SpaceRawTrace.cs', 'SpaceProtocol.cs']) {
+      await writeFile(
+        join(directory, name),
+        await readFile(new URL(`../../../examples/windows/${name}`, import.meta.url)),
+      );
+    }
+    await writeFile(
+      join(directory, 'Program.cs'),
+      String.raw`
+using System.Numerics;
+using System.Text;
+using System.Text.Json;
+using LabMotion.WinUI;
+using LabUI.Buttons;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Composition.Interactions;
+
+static void Check(bool value, string message) { if (!value) throw new Exception(message); }
+using var motion = new ScalarMotion(new Compositor(), 0, 1);
+var tracker = InteractionTracker.LastCreated;
+var observations = new List<MotionObservation>();
+motion.Observed += observations.Add;
+SpaceRawTrace.Begin(motion);
+var operation = motion.AnimateTo(.8f, new Spring(350, 0));
+var request = tracker.LastRequest;
+motion.IdleStateEntered(tracker, new() { RequestId = request - 1 });
+Check(!operation.IsCompleted && observations.All(item => item.Phase != "idle"), "raw rejected Idle changed public completion");
+for (var index = 0; index < 1000; index++) motion.ValuesChanged(tracker, new() { RequestId = request, Position = new Vector3(.4f, 0, 0) });
+motion.InertiaStateEntered(tracker, new() { RequestId = request, PositionVelocityInPixelsPerSecond = new Vector3(.2f, 0, 0) });
+motion.IdleStateEntered(tracker, new() { RequestId = request });
+var snapshot = SpaceRawTrace.Capture(motion, stop: true);
+Check(snapshot.CallbackCount == 1003 && snapshot.CompletedCount == 1003 && snapshot.CountersComplete && snapshot.Stopped &&
+    snapshot.RecordsTruncated && snapshot.DroppedRecords == 979 && snapshot.Records.Length == 24,
+    "actual raw window or saturation lost across private reflection");
+Check(snapshot.Terminals.Any(item => item.Kind == SpaceRawTrace.Kind.Idle && item.Disposition == SpaceRawTrace.Disposition.Mismatch &&
+    item.First.IncomingRequestId == request - 1 && item.First.Before.ActiveRequest == request) &&
+    snapshot.Terminals.Any(item => item.Kind == SpaceRawTrace.Kind.Idle && item.Disposition == SpaceRawTrace.Disposition.Request &&
+    item.Last.IncomingRequestId == request), "actual terminal witnesses lost across private reflection");
+using var input = new MemoryStream(Encoding.UTF8.GetBytes("complete\n"));
+using var output = new MemoryStream();
+await SpaceProtocol.RunAsync(input, output, _ => Task.FromResult<object>(new {
+    status = "failed", pid = Environment.ProcessId, overflow = 1, rawTrace = snapshot, observations = observations.Take(128).ToArray() }));
+using var json = JsonDocument.Parse(output.ToArray());
+var value = json.RootElement.GetProperty("value");
+Check(json.RootElement.GetProperty("ok").GetBoolean() && value.GetProperty("status").GetString() == "failed" &&
+    value.GetProperty("rawTrace").GetProperty("terminals").GetArrayLength() == 2 && value.GetProperty("observations").GetArrayLength() == 128 &&
+    output.Length < 128 * 1024, "actual raw trace lost failure or crossed reply limit");
+if (Environment.GetEnvironmentVariable("SPACE_RAW_CAPTURE_PATH") is { Length: > 0 } capturePath)
+    File.WriteAllText(capturePath, value.GetRawText());
+Console.WriteLine("Space actual raw transport: PASS replyBytes=" + output.Length);
+`,
+    );
+    await writeFile(
+      join(directory, 'Probe.csproj'),
+      '<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>',
+    );
+    const run = spawnSync(
+      process.env.DOTNET_HOST_PATH || 'dotnet',
+      ['run', '--project', join(directory, 'Probe.csproj'), '--verbosity', 'quiet'],
+      { encoding: 'utf8', windowsHide: true, timeout: 120_000 },
+    );
+    assert.equal(run.status, 0, run.error || run.stdout + run.stderr);
+    assert.match(run.stdout, /Space actual raw transport: PASS/);
+    process.stdout.write(run.stdout);
+  } finally {
+    const temporaryRoot = await realpath(tmpdir());
     const target = await realpath(directory);
     const child = relative(temporaryRoot, target);
     assert.ok(

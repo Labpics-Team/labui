@@ -195,7 +195,7 @@ $lifetimeBoundary = [scriptblock]::Create($lifetimeBlock[0].Extent.Text)
     Assert ($null -ne $failure -and [object]::ReferenceEquals($failure.Exception, $primary) -and
         [object]::ReferenceEquals($lifetimeDiagnostic, $before)) 'Неуспешный Lifetime потерял исходную ошибку или диагностику.'
 }
-foreach ($case in @('commands', 'empty', 'oversized', 'space')) {
+foreach ($case in @('commands', 'empty', 'oversized', 'space', 'identity-missing', 'identity-malformed')) {
     & {
         param($case)
         $primary = [InvalidOperationException]::new('injected lifetime guard failure')
@@ -227,9 +227,17 @@ foreach ($case in @('commands', 'empty', 'oversized', 'space')) {
         $output = Join-Path ([IO.Path]::GetTempPath()) ('labui-lifetime-diagnostic-' + [guid]::NewGuid().ToString('N'))
         $null = [IO.Directory]::CreateDirectory($output)
         $failureFile = Join-Path $output 'failure.txt'
+        $identityFile = Join-Path $output 'identity.json'
+        $identity = @{ pid = 3187; startedAtUnixMs = $epoch; window = '77'; source = 'a' * 40; motionSource = 'b' * 40;
+            appSha256 = '1' * 64; consumerSha256 = '2' * 64; uiSha256 = '3' * 64; motionSha256 = '4' * 64 }
         $writer = [IO.StringWriter]::new()
         $previousError = [Console]::Error
         try {
+            # В рабочем сценарии identity уже доставлена до ввода и lifetime.
+            if ($case -ne 'identity-missing') {
+                $identityJson = if ($case -eq 'identity-malformed') { '{broken' } else { $identity | ConvertTo-Json -Compress }
+                [IO.File]::WriteAllText($identityFile, $identityJson, [Text.UTF8Encoding]::new($false))
+            }
             [Console]::SetError($writer)
             $failure = $null
             try { & $failureBoundary $primary } catch { $failure = $_ }
@@ -237,12 +245,20 @@ foreach ($case in @('commands', 'empty', 'oversized', 'space')) {
             Assert ([IO.File]::Exists($failureFile) -and [IO.File]::ReadAllText($failureFile).Contains($primary.Message)) 'failure.txt потерял исходную ошибку.'
             $stderr = $writer.ToString()
             Assert ([Text.Encoding]::UTF8.GetByteCount($stderr) -le 256 * 1024) 'Lifetime диагностика превысила общий лимит.'
-            if ($case -eq 'oversized') {
+            if ($case -in @('oversized', 'identity-missing', 'identity-malformed')) {
                 Assert ($stderr.StartsWith('LABUI_SPACE_DIAGNOSTIC_ERROR ') -and
-                    !$stderr.Contains('LABUI_SPACE_FAILURE_JSON ') -and $primary.Data.Contains('spaceDiagnosticError')) 'Oversized lifetime не сохранил ограниченный вторичный отказ.'
+                    !$stderr.Contains('LABUI_SPACE_FAILURE_JSON ') -and $primary.Data.Contains('spaceDiagnosticError')) 'Неполная диагностика не сохранила ограниченный вторичный отказ.'
+                if ($case -eq 'oversized') {
+                    Assert ($primary.Data['spaceDiagnosticError'].Contains('Диагностика Space превысила общий лимит 256 KiB.')) 'Oversized случай отказал до проверки общего размера.'
+                } elseif ($case -eq 'identity-missing') {
+                    Assert ($primary.Data['spaceDiagnosticError'].Contains($identityFile)) 'Ошибка не связана с отсутствующей identity.'
+                } else {
+                    Assert ($primary.Data['spaceDiagnosticError'] -match 'JSON') 'Ошибка не связана с повреждённой identity.'
+                }
             } else {
                 Assert ($stderr.StartsWith('LABUI_SPACE_FAILURE_JSON ')) 'Основной catch не вывел диагностический JSON.'
                 $diagnostic = $stderr.Substring('LABUI_SPACE_FAILURE_JSON '.Length) | ConvertFrom-Json
+                foreach ($name in $identity.Keys) { Assert ($diagnostic.identity.$name -ceq $identity[$name]) "Отказ потерял executing identity: $name." }
                 if ($case -eq 'space') {
                     Assert ($diagnostic.phase -ceq 'validation' -and $diagnostic.captures.Dark.status -ceq 'complete') 'Диагностика Space потеряна после успешного lifetime.'
                 } else {
@@ -265,6 +281,7 @@ foreach ($case in @('commands', 'empty', 'oversized', 'space')) {
             [Console]::SetError($previousError)
             $writer.Dispose()
             if ([IO.File]::Exists($failureFile)) { [IO.File]::Delete($failureFile) }
+            if ([IO.File]::Exists($identityFile)) { [IO.File]::Delete($identityFile) }
             [IO.Directory]::Delete($output)
         }
     } $case
