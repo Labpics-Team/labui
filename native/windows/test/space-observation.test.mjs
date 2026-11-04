@@ -46,6 +46,51 @@ test('normal interruption fixtures and reduced Snap keep independent clocks and 
   }
 });
 
+test('widening only the measured harness start bracket preserves a feasible shared clock', () => {
+  for (const theme of ['Light', 'Dark']) {
+    for (const motion of [true, false]) {
+      const fixture = spaceFixture(theme, motion);
+      const actualOrigin = BigInt(fixture.window.clockOriginTicks);
+      fixture.window.clockOriginTicks = String(actualOrigin - 4000n);
+      // f=1 MHz: receipt завершён на 435 ms при том же истинном H, внутри [216,438].
+      assert.equal(
+        Number(BigInt(fixture.space.injection.completedTicks) - actualOrigin) / 1000,
+        435,
+      );
+      assert.doesNotThrow(() => validate(fixture, theme));
+    }
+  }
+});
+
+test('clock binding accepts an inclusive origin endpoint and rejects the adjacent impossible interval', () => {
+  const fixture = spaceFixture();
+  const actualOrigin = BigInt(fixture.window.clockOriginTicks);
+  fixture.window.clockOriginTicks = String(actualOrigin - 4000n);
+  fixture.window.clockOriginUpperTicks = String(actualOrigin);
+  fixture.space.window.inputCompletedMs = 435;
+  assert.deepEqual(validate(fixture), {
+    originTicks: String(actualOrigin - 4000n),
+    originUpperTicks: String(actualOrigin),
+    frequency: 1000000,
+    lowerMs: 4,
+    upperMs: 4,
+  });
+  fixture.space.window.inputCompletedMs = 434.999;
+  assert.throws(() => validate(fixture), /outside measured command/);
+});
+
+test('different events cannot choose contradictory origins from the same measured bracket', () => {
+  const fixture = spaceFixture();
+  const actualOrigin = BigInt(fixture.window.clockOriginTicks);
+  fixture.window.clockOriginTicks = String(actualOrigin - 4000n);
+  fixture.window.clockOriginUpperTicks = String(actualOrigin);
+  fixture.space.window.inputStartedMs = 226;
+  fixture.space.window.inputCompletedMs = 442;
+  // Receipt start требует delta>=104 ms; arm end требует delta<=101 ms.
+  // Оба ограничения по отдельности пересекают [100,104], общего решения нет.
+  assert.throws(() => validate(fixture), /outside measured command/);
+});
+
 for (const boundary of [1, 2]) {
   test(`retarget ${boundary} preserves movement samples at the replacement timestamp`, () => {
     const fixture = spaceFixture();

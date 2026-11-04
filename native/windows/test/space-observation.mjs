@@ -95,13 +95,18 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     return (Number(difference) * 1000) / frequency;
   };
   const appTime = (value) => milliseconds(value - appOrigin);
-  const harnessTime = (elapsed) => [
-    milliseconds(appOrigin - harnessHigh) + elapsed,
-    milliseconds(appOrigin - harnessLow) + elapsed,
-  ];
+  const appFromHarnessLower = milliseconds(appOrigin - harnessLow);
+  let originLowerMs = 0;
+  let originUpperMs = milliseconds(harnessHigh - harnessLow);
   const within = (elapsed, start, end, name) => {
-    const [lower, upper] = harnessTime(elapsed);
-    assert.ok(lower >= start && upper <= end, `Space: ${name} outside measured command`);
+    // Один h=(H-L)*1000/frequency в ms должен подходить всем событиям трассы.
+    const fromLower = appFromHarnessLower + elapsed;
+    originLowerMs = Math.max(originLowerMs, fromLower - end);
+    originUpperMs = Math.min(originUpperMs, fromLower - start);
+    assert.ok(
+      originLowerMs <= originUpperMs,
+      `Space: ${name} outside measured command: no common harness origin`,
+    );
   };
   const fields = [
     'armStartedMs',
@@ -461,6 +466,13 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
       Math.abs(final.motion.position) <= progressTolerance,
     'Space: final Motion endpoint',
   );
+  return {
+    originTicks: captureWindow.clockOriginTicks,
+    originUpperTicks: captureWindow.clockOriginUpperTicks,
+    frequency,
+    lowerMs: originLowerMs,
+    upperMs: originUpperMs,
+  };
 }
 
 async function readJSON(filename) {

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { evidenceLog } from '../../../scripts/ci/evidence-log.mjs';
 import { EVIDENCE_FILES, decodeNativeEvidence, encodeNativeEvidence } from './evidence.mjs';
 import { spaceFixture } from './space-observation.fixture.mjs';
+import { validateSpaceObservation } from './space-observation.mjs';
 
 const SOURCE = 'a'.repeat(40);
 const PREFIX = 'LABUI_NATIVE_EVIDENCE';
@@ -253,6 +254,87 @@ test('both transport boundaries reject a complete PRE endpoint despite a later m
   assert.throws(
     () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
     /before-retarget readback/,
+  );
+});
+
+test('a widened shared clock bracket survives both transport boundaries without changing trace bytes', () => {
+  for (const animate of [true, false]) {
+    const files = interactionFixture(animate);
+    for (const theme of ['Light', 'Dark']) {
+      editJSON(files, `interaction-${theme}-window.json`, (window) => {
+        window.clockOriginTicks = String(BigInt(window.clockOriginTicks) - 4000n);
+      });
+    }
+    assert.deepEqual(
+      decodeNativeEvidence(
+        encodeNativeEvidence(files, SOURCE, 'interaction'),
+        SOURCE,
+        'interaction',
+      ),
+      files,
+    );
+    assert.deepEqual(decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'), files);
+  }
+});
+
+test('individually feasible themes must share one harness origin when the full capture is qualified', () => {
+  const files = interactionFixture();
+  for (const theme of ['Light', 'Dark']) {
+    editJSON(files, `interaction-${theme}-window.json`, (window) => {
+      window.clockOriginUpperTicks = window.clockOriginTicks;
+      window.clockOriginTicks = String(BigInt(window.clockOriginTicks) - 4000n);
+    });
+  }
+  editJSON(files, 'result.json', (result) => {
+    Object.assign(result.captures.Dark.space.window, {
+      armStartedMs: 215,
+      armCompletedMs: 219,
+      inputStartedMs: 226,
+      inputCompletedMs: 442,
+      completeStartedMs: 449,
+      completeCompletedMs: 484,
+    });
+  });
+  const result = JSON.parse(files.get('result.json'));
+  const identity = JSON.parse(files.get('identity.json'));
+  const intervals = ['Light', 'Dark'].map((theme) =>
+    validateSpaceObservation(
+      result.captures[theme].space,
+      identity,
+      theme,
+      JSON.parse(files.get(`interaction-${theme}-window.json`)),
+    ),
+  );
+  // Оба валидны отдельно: H-L для Light в [3,4] ms, для Dark только 0 ms.
+  assert.deepEqual(
+    intervals.map(({ lowerMs, upperMs }) => [lowerMs, upperMs]),
+    [
+      [3, 4],
+      [0, 0],
+    ],
+  );
+  assert.throws(
+    () => encodeNativeEvidence(files, SOURCE, 'interaction'),
+    /no common Space harness origin/,
+  );
+  assert.throws(
+    () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
+    /no common Space harness origin/,
+  );
+});
+
+test('capture themes cannot substitute different measured harness origin identities', () => {
+  const files = interactionFixture();
+  editJSON(files, 'interaction-Dark-window.json', (window) => {
+    window.clockOriginUpperTicks = String(BigInt(window.clockOriginUpperTicks) + 1n);
+  });
+  assert.throws(
+    () => encodeNativeEvidence(files, SOURCE, 'interaction'),
+    /Space harness clock identity/,
+  );
+  assert.throws(
+    () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
+    /Space harness clock identity/,
   );
 });
 
