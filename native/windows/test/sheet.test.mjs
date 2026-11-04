@@ -220,6 +220,53 @@ test('failed capture preserves bounded source and capability diagnostics without
   }
 });
 
+test('startup diagnostics distinguish image failure and typed application errors without free-form text', () => {
+  const marker = 'PRIVATE_VALUE_NOT_FOR_LOG';
+  const readback = (error) => {
+    const line = sheetFailureLog({
+      sourceSha: SOURCE,
+      name: 'Light-Blur',
+      phase: 'render',
+      pid: 42,
+      observation: { ...observation(), error },
+      error: new Error(marker),
+      stderrBytes: 0,
+    });
+    assert.doesNotMatch(line, new RegExp(marker));
+    assert.throws(() => decodeSheetEvidence(line, SOURCE));
+    return JSON.parse(line.slice('LABUI_SHEET_FAILURE_JSON '.length)).observation.error;
+  };
+  for (const error of [
+    { origin: 'image', type: null, hresult: null },
+    { origin: 'unhandled', type: 'COMException', hresult: -2147024809 },
+    { origin: 'unhandled', type: 'InvalidOperationException', hresult: -2147483648 },
+    { origin: 'unhandled', type: 'Exception', hresult: 2147483647 },
+  ]) {
+    assert.deepEqual(readback({ ...error, message: marker, stack: marker }), error);
+    assert.throws(
+      () =>
+        validateObservation(
+          { ...observation(), error },
+          { ...EXPECTED_CASES[0], ...processIdentity },
+        ),
+      (failure) => failure.sheetPhase === 'render',
+    );
+  }
+  assert.deepEqual(readback({ origin: marker, type: marker, hresult: marker }), {
+    origin: null,
+    type: null,
+    hresult: null,
+  });
+  for (const hresult of [-2147483649, 2147483648, 1.25, Number.NaN, Number.POSITIVE_INFINITY])
+    assert.deepEqual(readback({ origin: 'unhandled', type: 'COMException', hresult }), {
+      origin: 'unhandled',
+      type: 'COMException',
+      hresult: null,
+    });
+  assert.equal(readback(marker), 'reported');
+  assert.equal(readback([marker]), 'invalid');
+});
+
 test('diagnostics classify free-form exceptions and malformed geometry without publishing their text', async (t) => {
   const marker = 'PRIVATE_VALUE_NOT_FOR_LOG';
   for (const [name, change, phase] of [

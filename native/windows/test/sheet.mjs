@@ -70,6 +70,35 @@ function errorInfo(value) {
   };
 }
 
+function observationError(value) {
+  if (value === null) return null;
+  if (typeof value === 'string') return 'reported';
+  if (typeof value !== 'object' || Array.isArray(value)) return 'invalid';
+  return {
+    origin: known(value.origin, ['image', 'unhandled']),
+    type: known(value.type, [
+      'COMException',
+      'ArgumentException',
+      'ArgumentOutOfRangeException',
+      'InvalidOperationException',
+      'ObjectDisposedException',
+      'FileNotFoundException',
+      'IOException',
+      'NotSupportedException',
+      'NullReferenceException',
+      'TypeLoadException',
+      'OutOfMemoryException',
+      'UnauthorizedAccessException',
+      'AggregateException',
+      'Exception',
+    ]),
+    hresult:
+      Number.isInteger(value.hresult) && value.hresult >= -2147483648 && value.hresult <= 2147483647
+        ? value.hresult
+        : null,
+  };
+}
+
 export function validateObservation(value, expected) {
   let phase = 'identity';
   try {
@@ -235,12 +264,7 @@ export function sheetFailureLog({
         'EffectsUnsupported',
         'EffectsNotFast',
       ]),
-      error:
-        observation.error === null
-          ? null
-          : typeof observation.error === 'string'
-            ? 'reported'
-            : 'invalid',
+      error: observationError(observation.error),
     };
     for (const field of ['layoutReady', 'imageLoaded', 'rendererReady'])
       readback[field] = typeof observation[field] === 'boolean' ? observation[field] : null;

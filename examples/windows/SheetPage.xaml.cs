@@ -41,9 +41,25 @@ public sealed partial class SheetPage : Page
     private void LoadedPage(object sender, RoutedEventArgs args) => QueueSnapshot();
     private void ImageOpened(object sender, RoutedEventArgs args) { imageLoaded = true; QueueSnapshot(); }
     private void MaterialReady(object? sender, EventArgs args) => QueueSnapshot();
-    private void ImageFailed(object sender, ExceptionRoutedEventArgs args) => WriteSnapshot(args.ErrorMessage);
+    private void ImageFailed(object sender, ExceptionRoutedEventArgs args)
+        => WriteSnapshot(new("image", null, null));
     private void Unhandled(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs args)
-        => WriteSnapshot(args.Message);
+        => WriteSnapshot(new("unhandled", ErrorType(args.Exception), args.Exception?.HResult));
+
+    private sealed record ObservationError(string origin, string? type, int? hresult);
+
+    private static string? ErrorType(Exception? error)
+    {
+        var type = error?.GetType();
+        return type is not null && (type == typeof(System.Runtime.InteropServices.COMException)
+            || type == typeof(ArgumentException) || type == typeof(ArgumentOutOfRangeException)
+            || type == typeof(InvalidOperationException) || type == typeof(ObjectDisposedException)
+            || type == typeof(FileNotFoundException) || type == typeof(IOException)
+            || type == typeof(NotSupportedException) || type == typeof(NullReferenceException)
+            || type == typeof(TypeLoadException) || type == typeof(OutOfMemoryException)
+            || type == typeof(UnauthorizedAccessException) || type == typeof(AggregateException)
+            || type == typeof(Exception)) ? type.Name : null;
+    }
 
     private void UnloadedPage(object sender, RoutedEventArgs args)
     {
@@ -81,7 +97,7 @@ public sealed partial class SheetPage : Page
         return new { x = bounds.X, y = bounds.Y, width = bounds.Width, height = bounds.Height };
     }
 
-    private void WriteSnapshot(string? error)
+    private void WriteSnapshot(ObservationError? error)
     {
         if (observationPath is null || snapshotWritten) return;
         var body = FindPart(Sheet, "PART_Body");
