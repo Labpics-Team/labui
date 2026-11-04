@@ -54,15 +54,78 @@ static MotionObservation Motion(bool animate, int edge, string phase, float posi
     NativePosition = new Vector3(position * 1000, 0, 0), NativeReadbackPosition = new Vector3(position * 1000, 0, 0)
 };
 static KeyRoutedEventArgs Key(bool down) => new() { Key = VirtualKey.Space, KeyStatus = new() { WasKeyDown = !down } };
-static async Task<JsonElement> Complete(SpaceProbe probe) {
+static async Task<JsonElement> Serialize(Func<object> read) {
     using var input = new MemoryStream(Encoding.UTF8.GetBytes("complete\\n"));
     using var output = new MemoryStream();
-    await SpaceProtocol.RunAsync(input, output, _ => Task.FromResult(Call(probe, "Complete")));
+    await SpaceProtocol.RunAsync(input, output, _ => Task.FromResult(read()));
     Check(output.Length <= 128 * 1024, "diagnostic exceeded protocol response limit");
     using var json = JsonDocument.Parse(output.ToArray());
     Check(json.RootElement.GetProperty("ok").GetBoolean(), "diagnostic lost in protocol error");
     return json.RootElement.GetProperty("value").Clone();
 }
+static Task<JsonElement> Complete(SpaceProbe probe) => Serialize(() => Call(probe, "Complete"));
+
+// Хвост после переполнения не меняет первый отброшенный callback и принятый префикс.
+foreach (var phase in new[] { "idle", "inertia" }) foreach (var tailLength in new[] { 1, 7 }) {
+    UISettings.Enabled = true;
+    var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
+    using var probe = new SpaceProbe(parent, button, () => 4);
+    FixtureClock.Now = 0;
+    Call(probe, "Arm", "Light");
+    button.Raise(UIElement.KeyUpEvent, Key(false)); button.Raise(UIElement.KeyUpEvent, Key(false));
+    for (var i = 0; i < 128; i++) {
+        FixtureClock.Now = i;
+        button.Channel.Publish(Motion(true, 3, i == 0 ? "requested" : "inertia", .3f));
+    }
+    Check((await Complete(probe)).GetProperty("status").GetString() == "waiting", "exact sample capacity falsely overflowed");
+    FixtureClock.Now = 256.5;
+    var first = Motion(true, 8, phase, phase == "idle" ? 0 : -.02f) with { NativeVelocity = .4f };
+    var firstThread = Environment.CurrentManagedThreadId;
+    button.Channel.Publish(first);
+    for (var i = 0; i < tailLength; i++) {
+        FixtureClock.Now = 300 + i;
+        button.Channel.Publish(Motion(true, 13, "value", .8f));
+    }
+    parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
+    var trace = await Complete(probe);
+    Check(trace.GetProperty("status").GetString() == "failed" && trace.GetProperty("overflow").GetInt32() == 1,
+        "sample overflow no longer rejects completion");
+    Check(trace.TryGetProperty("firstDiscarded", out var discarded) && discarded.ValueKind == JsonValueKind.Object,
+        "first discarded sample was lost");
+    Check(discarded.GetProperty("elapsedMs").GetDouble() == 256.5 && discarded.GetProperty("threadId").GetInt32() == firstThread,
+        "first discarded sample lost callback clock or thread");
+    var motion = discarded.GetProperty("motion");
+    Check(motion.GetProperty("phase").GetString() == phase && motion.GetProperty("operation").GetInt64() == 9 &&
+        motion.GetProperty("nativeRequestId").GetInt32() == 109 && motion.GetProperty("seconds").GetDouble() == .2565 &&
+        motion.GetProperty("position").GetSingle() == first.Position && motion.GetProperty("nativeVelocity").GetSingle() == .4f,
+        "first discarded sample was replaced or lost Motion fields");
+    var retained = trace.GetProperty("observations").EnumerateArray().ToArray();
+    Check(retained.Length == 128 && retained.Select((sample, i) => sample.GetProperty("elapsedMs").GetDouble() == i &&
+        sample.GetProperty("motion").GetProperty("phase").GetString() == (i == 0 ? "requested" : "inertia") &&
+        sample.GetProperty("motion").GetProperty("nativeRequestId").GetInt32() == 104).All(value => value),
+        "overflow changed the retained sample prefix");
+    var lastEvent = trace.GetProperty("events").EnumerateArray().Last();
+    Check(lastEvent.GetProperty("observationCount").GetInt32() == 128 && lastEvent.GetProperty("operation").GetInt64() == 4 &&
+        lastEvent.GetProperty("nativeRequestId").GetInt32() == 104, "discarded callback changed latest accepted observation");
+    Check(parent.HandlerCount == 0 && button.HandlerCount == 0 && button.CallbackCount == 0 && button.Channel.Subscribers == 0,
+        "sample overflow did not detach observations");
+    FixtureClock.Now = 500;
+    button.Channel.Publish(Motion(true, 21, "idle", 0));
+    var detached = await Serialize(() => Call(probe, "Snapshot", "failed"));
+    Check(detached.GetProperty("firstDiscarded").GetRawText() == discarded.GetRawText() &&
+        detached.GetProperty("observations").GetRawText() == trace.GetProperty("observations").GetRawText(),
+        "detached probe changed overflow diagnostic");
+    button.ActualTheme = ElementTheme.Dark;
+    Call(probe, "Arm", "Dark");
+    button.Raise(UIElement.KeyUpEvent, Key(false)); button.Raise(UIElement.KeyUpEvent, Key(false));
+    button.Channel.Publish(Motion(true, 30, "requested", 0));
+    button.Channel.Publish(Motion(true, 30, "idle", 0));
+    var next = await Complete(probe);
+    Check(next.GetProperty("status").GetString() == "complete" && next.GetProperty("overflow").GetInt32() == 0 &&
+        next.GetProperty("firstDiscarded").ValueKind == JsonValueKind.Null && next.GetProperty("observations").GetArrayLength() == 2,
+        "next Arm retained prior overflow diagnostic or prevented completion");
+}
+FixtureClock.Now = 12;
 
 foreach (var (animate, priorRelease, terminalPhase) in new[] {
     (true, .3f, "idle"), (true, 0f, "idle"), (true, .0005f, "idle"), (false, 0f, "value"), (false, 0f, "idle") }) {
@@ -113,6 +176,7 @@ foreach (var (animate, priorRelease, terminalPhase) in new[] {
     Check(json.RootElement.GetProperty("ok").GetBoolean(), "producer did not complete through real serializer");
     var trace = json.RootElement.GetProperty("value");
     Check(trace.GetProperty("status").GetString() == "complete", "healthy trace no longer completes");
+    Check(trace.GetProperty("firstDiscarded").ValueKind == JsonValueKind.Null, "healthy trace invented a discarded callback");
     var events = trace.GetProperty("events").EnumerateArray().ToArray();
     var samples = trace.GetProperty("observations").EnumerateArray().ToArray();
     if (!animate && terminalPhase == "value") Check(samples.All(sample => sample.GetProperty("motion").GetProperty("phase").GetString() != "idle"),
@@ -186,6 +250,8 @@ foreach (var target in new[] { "events", "samples", "exact-events", "owner-failu
     } else {
         Check(trace.GetProperty("overflow").GetInt32() != 0, "overflow diagnostic lost rejection reason");
     }
+    if (target != "samples") Check(trace.GetProperty("firstDiscarded").ValueKind == JsonValueKind.Null,
+        "failure without sample overflow invented a discarded callback");
     Check(parent.HandlerCount == 0 && button.HandlerCount == 0 && button.CallbackCount == 0 && button.Channel.Subscribers == 0,
         "failed completion did not detach observations");
     parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
@@ -315,7 +381,7 @@ namespace LabUI.WinUI {
         public Dispatcher DispatcherQueue { get; } = new();
         public bool IsLoaded => true;
         public bool IsEnabled => true;
-        public ElementTheme ActualTheme => ElementTheme.Light;
+        public ElementTheme ActualTheme { get; set; } = ElementTheme.Light;
         private bool pressed;
         public int Writes;
         public bool IsPressed { get => pressed; set { Writes++; pressed = value; } }

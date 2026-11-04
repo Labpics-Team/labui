@@ -43,6 +43,7 @@ internal sealed class SpaceProbe : IDisposable
     private bool animationsEnabled;
     private MotionObservation? requested;
     private MotionObservation? latest;
+    private Sample? firstDiscarded;
 
     internal SpaceProbe(UIElement parent, LabButton button, Func<int> count)
     {
@@ -97,7 +98,7 @@ internal sealed class SpaceProbe : IDisposable
         animationsEnabled = new UISettings().AnimationsEnabled;
         countBefore = count();
         events.Clear();
-        lock (samples) { samples.Clear(); requested = null; latest = null; }
+        lock (samples) { samples.Clear(); requested = null; latest = null; firstDiscarded = null; }
         failure = null;
         overflow = 0;
         generation++;
@@ -149,7 +150,12 @@ internal sealed class SpaceProbe : IDisposable
         lock (samples)
         {
             if (!observing) return;
-            if (samples.Count == 128) { Interlocked.Exchange(ref overflow, 1); return; }
+            if (samples.Count == 128)
+            {
+                firstDiscarded ??= new(Elapsed, Environment.CurrentManagedThreadId, value);
+                Interlocked.Exchange(ref overflow, 1);
+                return;
+            }
             samples.Add(new(Elapsed, Environment.CurrentManagedThreadId, value));
             if (value.Phase == "requested") requested = value;
             latest = value;
@@ -197,12 +203,14 @@ internal sealed class SpaceProbe : IDisposable
     private object Snapshot(string status)
     {
         Sample[] observations;
-        lock (samples) observations = samples.ToArray();
+        Sample? discarded;
+        lock (samples) { observations = samples.ToArray(); discarded = firstDiscarded; }
         return new { schemaVersion = 1, status, pid = Environment.ProcessId, processStartedAtUnixMs,
             automationId = AutomationProperties.GetAutomationId(button), theme, channel = generation,
             animationsEnabled, countBefore, countAfter = count(), overflow, failure,
             clock = "app-stopwatch-ms", clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture),
-            clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events, observations };
+            clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events, observations,
+            firstDiscarded = discarded };
     }
 
     private void Detach()
