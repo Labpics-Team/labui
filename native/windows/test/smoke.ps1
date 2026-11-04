@@ -475,6 +475,65 @@ function Ui([string]$Name, [string[]]$Arguments) {
     return Finish-Tool $tool
 }
 
+function Capture-LowerControls([string]$Theme) {
+    $file = "page-lower-$Theme.png"
+    $states = @{}
+    $scrollable = $false
+    $targets = @(
+        @{ id = 'LabThemeLight'; label = 'Светлая тема' },
+        @{ id = 'LabThemeDark'; label = 'Тёмная тема' },
+        @{ id = 'LabToggleEnabled'; label = 'Включить кнопку' }
+    )
+    foreach ($stage in @('before', 'captured', 'restored')) {
+        if ($scrollable -and $stage -ne 'before') {
+            $destination = if ($stage -eq 'captured') { 'bottom' } else { 'top' }
+            $expected = if ($stage -eq 'captured') { '100' } else { '0' }
+            Ui "lower-$Theme-$destination" @('scroll', 'LabButtonViewport', '--to', $destination) | Out-Null
+            Ui "lower-$Theme-$destination-ready" @('wait-for', 'LabButtonViewport',
+                '--property', 'ScrollVerticalPercent', '--value', $expected, '--timeout', '5000') | Out-Null
+        }
+        $state = Ui "lower-$Theme-$stage-viewport" @('get-property', 'LabButtonViewport', '--property', 'ScrollVerticalPercent')
+        $percent = $state.properties.ScrollVerticalPercent
+        # CLI 0.7.1 отдаёт строки; UIA NoScroll (-1) исключает вызов scroll без overflow.
+        if ($percent -isnot [string] -or ($stage -eq 'before' -and $percent -cnotin @('-1', '0'))) {
+            throw "Не подтверждена исходная прокрутка нижней группы $Theme."
+        }
+        if ($stage -eq 'before') { $scrollable = $percent -ceq '0' }
+        $expected = if (!$scrollable) { '-1' } elseif ($stage -eq 'captured') { '100' } else { '0' }
+        if ($percent -cne $expected) { throw "Не подтверждена прокрутка нижней группы ${Theme}/${stage}: $percent вместо $expected." }
+        $viewport = $state.element
+        Assert-LayoutBounds $viewport
+        $actions = foreach ($target in $targets) {
+            if ($stage -eq 'captured') {
+                Ui "lower-$Theme-visible-$($target.id)" @('wait-for', $target.id, '--property', 'IsOffscreen',
+                    '--value', 'False', '--timeout', '5000') | Out-Null
+            }
+            $action = (Ui "lower-$Theme-$stage-$($target.id)" @('get-property', $target.id)).element
+            if ($action.automationId -cne $target.id -or $action.name -cne $target.label -or $action.isOffscreen -isnot [bool]) {
+                throw "Не подтверждены исходная подпись и состояние $($target.id)."
+            }
+            if ($stage -eq 'captured') {
+                Assert-LayoutBounds $action
+                if ($action.isOffscreen -or $action.x -lt $viewport.x -or $action.y -lt $viewport.y -or
+                    $action.x + $action.width -gt $viewport.x + $viewport.width -or
+                    $action.y + $action.height -gt $viewport.y + $viewport.height) {
+                    throw "Нижняя кнопка $($target.id) не помещается в viewport."
+                }
+            }
+            $action | Select-Object automationId, name, isOffscreen, x, y, width, height
+        }
+        $states[$stage] = @{
+            viewport = @{ scrollVerticalPercent = $percent; x = $viewport.x; y = $viewport.y;
+                width = $viewport.width; height = $viewport.height }
+            actions = @($actions)
+        }
+        if ($stage -eq 'captured') {
+            Ui "page-lower-$Theme" @('screenshot', '--output', (Join-Path $output $file)) | Out-Null
+        }
+    }
+    return @{ file = $file; before = $states.before; captured = $states.captured; restored = $states.restored }
+}
+
 function Assert-Count([int]$Expected) {
     Ui "wait-count-$Expected" @('wait-for', 'LabActionResult', '--property', 'Name',
         '--value', "Действие выполнено: $Expected", '--timeout', '5000') | Out-Null
@@ -666,6 +725,7 @@ try {
     Ui 'ready' @('wait-for', 'LabButtonMedium', '--timeout', '10000') | Out-Null
     Add-Type -AssemblyName System.Drawing
     $fills = @{}
+    $lowerControls = @{}
     foreach ($theme in @('Light', 'Dark')) {
         Ui "theme-$theme" @('invoke', "LabTheme$theme") | Out-Null
         Ui "tree-$theme" @('inspect', '--depth', '8') | Out-Null
@@ -695,6 +755,7 @@ try {
             }
         }
         Ui "page-$theme" @('screenshot', '--output', (Join-Path $output "page-$theme.png")) | Out-Null
+        $lowerControls[$theme] = Capture-LowerControls $theme
     }
     Ui 'click' @('click', 'LabButtonMedium') | Out-Null
     Assert-Count 1
@@ -715,7 +776,8 @@ try {
     $captures.Dark = Capture-Interaction 'Dark' 7
     $result = @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input/cancelled-press capture';
        gesturePattern = 'cancel-drag'; retarget = 'not-qualified';
-       captures = $captures; initialLayout = $initialLayout; visualReview = 'pending'; motionLifetime = 'not-qualified';
+       captures = $captures; lowerControls = $lowerControls; initialLayout = $initialLayout;
+       visualReview = 'pending'; motionLifetime = 'not-qualified';
        smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' }
     if ($Lifetime) {
         $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 11

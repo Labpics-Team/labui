@@ -8,7 +8,8 @@
     Background="{ThemeResource LabPageBrush}"
     Foreground="{ThemeResource LabLabelPrimaryBrush}"
     FontFamily="ms-appx:///LabUI.WinUI/Assets/Fonts/Geist-Variable.ttf#Geist">
-  <ScrollViewer HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
+  <ScrollViewer AutomationProperties.AutomationId="LabButtonViewport"
+      HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
       VerticalScrollBarVisibility="Auto">
     <StackPanel Spacing="32" Padding="40">
       <StackPanel Spacing="8">

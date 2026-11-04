@@ -256,7 +256,7 @@ test('cancel-drag validates its command and complete monotonic capture window on
 test('interaction mode preserves both full clips and every indexed JPEG without an idle downgrade', () => {
   const files = interactionFixture();
   const log = encodeNativeEvidence(files, SOURCE, 'interaction');
-  assert.equal(files.size, 28);
+  assert.equal(files.size, 30);
   assert.deepEqual(decodeNativeEvidence(log, SOURCE, 'interaction'), files);
   assert.throws(() => encodeNativeEvidence(files, SOURCE, 'idle'));
   assert.throws(() => decodeNativeEvidence(log, SOURCE, 'idle'));
@@ -463,12 +463,19 @@ test('interaction CLI emits nothing for a missing late image and recreates neste
   const manifest = JSON.parse(await readFile(join(output, 'manifest.json'), 'utf8'));
   assert.equal(manifest.mode, 'interaction');
   assert.equal(manifest.coverage, 'all indexed JPEG frames and complete MP4');
-  await rm(join(directory, 'interaction-Dark.frames/frames/frame-000000.jpg'));
-  const failed = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE, 'interaction'], {
-    encoding: 'utf8',
-  });
-  assert.notEqual(failed.status, 0);
-  assert.equal(failed.stdout, '');
+  for (const file of [
+    'page-lower-Light.png',
+    'page-lower-Dark.png',
+    'interaction-Dark.frames/frames/frame-000000.jpg',
+  ]) {
+    await rm(join(directory, file));
+    const failed = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE, 'interaction'], {
+      encoding: 'utf8',
+    });
+    assert.notEqual(failed.status, 0, file);
+    assert.equal(failed.stdout, '', file);
+    await writeFile(join(directory, file), files.get(file));
+  }
   const implicit = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE], {
     encoding: 'utf8',
   });
@@ -476,11 +483,29 @@ test('interaction CLI emits nothing for a missing late image and recreates neste
   assert.equal(implicit.stdout, '');
 });
 
-test('native allowlist round-trip preserves all 14 exact files and source identity', () => {
+test('lower-control screenshots are mandatory in both modes and survive transport', () => {
+  for (const mode of ['idle', 'interaction']) {
+    const files = mode === 'idle' ? fixture() : interactionFixture();
+    for (const file of ['page-lower-Light.png', 'page-lower-Dark.png']) {
+      assert.deepEqual(files.get(file), PNG, `${mode}: ${file} is required`);
+    }
+    const restored = decodeNativeEvidence(encodeNativeEvidence(files, SOURCE, mode), SOURCE, mode);
+    for (const file of ['page-lower-Light.png', 'page-lower-Dark.png']) {
+      assert.deepEqual(restored.get(file), PNG);
+      const incomplete = new Map(files);
+      incomplete.delete(file);
+      assert.throws(() => encodeNativeEvidence(incomplete, SOURCE, mode), /набор файлов/);
+      const packets = mode === 'idle' ? rawPackets(incomplete) : interactionPackets(incomplete);
+      assert.throws(() => decodeNativeEvidence(packets, SOURCE, mode), /набор файлов/);
+    }
+  }
+});
+
+test('native allowlist round-trip preserves all 16 exact files and source identity', () => {
   const files = fixture();
   const log = encodeNativeEvidence(files, SOURCE);
   assert.deepEqual(decodeNativeEvidence(log, SOURCE), files);
-  assert.equal([...decodeNativeEvidence(log, SOURCE)].length, 14);
+  assert.equal([...decodeNativeEvidence(log, SOURCE)].length, 16);
   assert.throws(() => decodeNativeEvidence(log, 'b'.repeat(40)), /packet source/);
   assert.throws(() => encodeNativeEvidence(files, 'b'.repeat(40)), /identity source/);
 });
@@ -621,17 +646,20 @@ test('complete CLI export and timestamped decode preserve files; missing input e
   for (const [file, bytes] of files) assert.deepEqual(await readFile(join(output, file)), bytes);
   const manifest = JSON.parse(await readFile(join(output, 'manifest.json'), 'utf8'));
   assert.equal(manifest.sourceSha, SOURCE);
-  assert.equal(manifest.files.length, 14);
+  assert.equal(manifest.files.length, 16);
   const again = spawnSync(process.execPath, [CLI, 'decode', input, SOURCE, output, 'idle'], {
     encoding: 'utf8',
   });
   assert.notEqual(again.status, 0, 'readback must not overwrite prior evidence');
-  await rm(join(directory, 'focus.png'));
-  const incomplete = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE, 'idle'], {
-    encoding: 'utf8',
-  });
-  assert.notEqual(incomplete.status, 0);
-  assert.equal(incomplete.stdout, '', 'неполный набор не публикует часть packets');
+  for (const file of ['page-lower-Light.png', 'page-lower-Dark.png', 'focus.png']) {
+    await rm(join(directory, file));
+    const incomplete = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE, 'idle'], {
+      encoding: 'utf8',
+    });
+    assert.notEqual(incomplete.status, 0, file);
+    assert.equal(incomplete.stdout, '', 'неполный набор не публикует часть packets');
+    await writeFile(join(directory, file), files.get(file));
+  }
 });
 
 test('workflow requires successful export and includes transport contracts', async () => {

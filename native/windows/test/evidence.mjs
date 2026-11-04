@@ -23,6 +23,8 @@ export const EVIDENCE_FILES = Object.freeze([
   'Dark-Large.png',
   'page-Light.png',
   'page-Dark.png',
+  'page-lower-Light.png',
+  'page-lower-Dark.png',
   'focus.png',
   'identity.json',
   'result.json',

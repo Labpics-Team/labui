@@ -13,6 +13,23 @@
 `layout.test.ps1` проверяет admission и полный readback без GUI; существующий
 log-кодек сохраняет снимок внутри `result.json`.
 
+После исходного `page-<Theme>.png` smoke снимает нижнюю группу отдельно в
+`page-lower-Light.png` и `page-lower-Dark.png`, пока подпись доступности остаётся
+«Включить кнопку». `LabButtonViewport` адресует существующий ScrollViewer.
+Harness читает строковый `ScrollVerticalPercent`: UIA `NoScroll` (`-1`) означает
+съёмку без прокрутки, исходный `0` — переход в bottom с ожиданием `100`, снимок,
+возврат в top с ожиданием `0`. Остальные исходные значения и отсутствующие
+данные завершают проверку ошибкой. Контракт `NoScroll` описан в
+[требованиях UIA Scroll](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-implementingscroll).
+Перед снимком проверяются три исходные подписи, видимость и границы кнопок внутри
+viewport. Краткие состояния до съёмки, при съёмке и после возврата находятся в
+`result.json.lowerControls`. Возврат завершается до прежних сценариев ввода и
+записей. При отказе smoke прекращается и закрывает своё приложение. Целостность
+глифов проверяется по PNG; эти снимки не квалифицируют движение.
+Оба нижних PNG обязательны в общем наборе: теперь в idle передаются 16 файлов.
+Для повторного декодирования исторического журнала нужен codec его source commit;
+прежние журналы и manifests сохраняются без добавления новых снимков.
+
 `text-scale.ps1 -Qualify` выполняет сценарий системного масштаба 225% через
 штатную страницу Settings → Text size на `windows-2025`. Третий job матрицы
 запускает один normal-motion smoke с `ExpectedTextScale=2.25`, без lifetime probe.
@@ -307,6 +324,7 @@ COM-ссылки, исход скрытых async-ожиданий или отс
 ```powershell
 node --test scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
 pwsh -NoProfile -File native/windows/test/animation.test.ps1
+pwsh -NoProfile -File native/windows/test/viewport.test.ps1
 pwsh -NoProfile -File native/windows/test/retarget.test.ps1
 pwsh -NoProfile -File native/windows/test/lifetime.test.ps1
 node native/windows/test/lifetime-probe.test.mjs
