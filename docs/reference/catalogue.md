@@ -60,9 +60,10 @@
 не удостоверяют значения свойств.
 
 У Button сохранены все 432 фактических сочетания по пяти осям:
-`Type`, `Kind`, `Icon-button`, `Size`, `State`. Цвет и материалы не
-добавлены к этим осям искусственно: их связи с режимами и foundations
-проверяются отдельно.
+`Type`, `Kind`, `Icon-button`, `Size`, `State`. Значения Type — accent, neutral,
+danger; Kind — fill, tinted, border, ghost. Состояния — default, hover, pressed,
+loading, disabled, focus. Связь этих свойств с режимами, материалами и
+семантическими ролями LabColors проверяется отдельно.
 
 Bottom Sheet содержит пять состояний: Full, 2/3, Half, 1/3 и Flex.
 Его декларация включает опциональные Header, Description, Controls,
