@@ -61,6 +61,7 @@ const SMOKE_SPECS = [
   'button.spec.ts',
   'button-geometry.spec.ts',
   'button-anatomy.spec.ts',
+  'adapter-slots.spec.ts',
   'button-effects.spec.ts',
   'contrast.spec.ts',
   'authored-colors.spec.ts',

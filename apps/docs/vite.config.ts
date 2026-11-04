@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 import hydrate from '@labpics/ui-core/hydrate';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { type Plugin, defineConfig, transformWithEsbuild } from 'vite';
 import { registerBooleanExtensions } from '../../packages/core/test/fixtures/boolean-extensions';
 
@@ -221,6 +222,7 @@ export default defineConfig({
   root: 'src',
   plugins: [
     hydrate(),
+    svelte(),
     booleanExtensionFixture(),
     ssrProofPlugin(),
     ssrButtonNamesPlugin(),
@@ -259,6 +261,7 @@ export default defineConfig({
         'fixture-boolean-ssr': resolve(__dirname, 'src/_fixtures/boolean-ssr.html'),
         'fixture-button-names': resolve(__dirname, 'src/_fixtures/button-names.html'),
         'fixture-button-anatomy': resolve(__dirname, 'src/_fixtures/button-anatomy.html'),
+        'fixture-adapter-slots': resolve(__dirname, 'src/_fixtures/adapter-slots.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-switch-motion': resolve(__dirname, 'src/_fixtures/switch-motion.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
