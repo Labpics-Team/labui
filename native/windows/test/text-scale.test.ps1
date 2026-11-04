@@ -94,7 +94,8 @@ foreach ($definition in $ast.EndBlock.Statements | Where-Object {
             function Start-ChildFixture { return $fixture }
             function New-ChildCancellationFixture { return $cancellationFixture }
             $failure=$null; $output=$null
-            try { $output=Invoke-TextScaleChild 'inert' @() 1000 } catch { $failure=$_ }
+            $diagnostic=@{}
+            try { $output=Invoke-TextScaleChild 'inert' @() 1000 -Diagnostic $diagnostic } catch { $failure=$_ }
             $message = if ($failure) { $failure.Exception.Message } else { '' }
             Write-Output ('Child cleanup witness: ' + (@{ case=$Case.name; message=$message;
                 kill=$fixture.KillCalls; wait=$fixture.WaitCalls; stdoutDispose=$readers[0].DisposeCalls;
@@ -112,6 +113,9 @@ foreach ($definition in $ast.EndBlock.Statements | Where-Object {
             Assert ($readers[0].DisposeCalls -eq 1 -and $readers[1].DisposeCalls -eq 1 -and
                 $fixture.DisposeCalls -eq 1 -and $cancellationFixture.DisposeCalls -eq 1 -and
                 $cancellationFixture.CancelCalls -eq 1) "Один cleanup отказ прервал остальные attempts: $($Case.name)."
+            Assert ($diagnostic.childStarted -and $diagnostic.childWaitRemainingMs -ge 0 -and
+                $diagnostic.childWaitRemainingMs -le 1000 -and $diagnostic.childExited -eq ('wait' -notin $Case.faults)) `
+                "Child diagnostic выдал неподтверждённый exit либо потерял остаток срока: $($Case.name)."
             if ($Case.name -eq 'timeout+cancelled-read') {
                 Assert ($failure.Exception -isnot [AggregateException]) 'Ожидаемая отмена чтения добавлена как новый cleanup отказ.'
             }
@@ -213,6 +217,7 @@ foreach ($hasPrimary in @($true, $false)) {
         $output = Join-Path ([IO.Path]::GetTempPath()) "labui-settings-error-$([guid]::NewGuid()).json"
         $owned = $null
         $ownedProcess = $null
+        $discoveryBudget = $null
         $failure = $null
         $stage = 'window-admission'
         function Close-SettingsWindow { param($Owned) throw 'fixture cleanup' }
@@ -330,6 +335,158 @@ $readerText = @($ast.FindAll({ param($node)
 $null = [Management.Automation.Language.Parser]::ParseInput($readerText, [ref]$tokens, [ref]$errors)
 Assert ($errors.Count -eq 0) 'Повреждён синтаксис framework reader.'
 $readerAst = [Management.Automation.Language.Parser]::ParseInput($readerText, [ref]$tokens, [ref]$errors)
+$phaseWriter=@($readerAst.EndBlock.Statements | Where-Object {
+    $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Write-SettingsReaderPhase'
+})[0].Extent.Text
+
+# Исполняются настоящее владение phase-файлом и сериализация; граница child инертна.
+foreach ($fault in @('success','timeout','malformed','extra-field','unknown-phase','missing','oversized','not-started','exit-unconfirmed','create-failed')) {
+    & {
+        param($fault)
+        $fixtureRoot=Join-Path ([IO.Path]::GetTempPath()) ('labui-phase-fixture-'+[guid]::NewGuid().ToString('N'))
+        $null=New-Item -ItemType Directory -Path $fixtureRoot
+        $savedTemp=$env:RUNNER_TEMP
+        $env:RUNNER_TEMP=if ($fault -eq 'create-failed') { Join-Path $fixtureRoot 'absent' } else { $fixtureRoot }
+        $owned=@{pid=3187;startTicks=42;path='fixture/SystemSettings.exe';sessionId=1;hwnd=43;threadId=55}
+        $calls=@{path=$null;admission=0}
+        function Assert-SettingsWindow { param($Owned) $calls.admission++ }
+        function Invoke-TextScaleChild {
+            param($Executable,$Arguments,$TimeoutMs,$Diagnostic)
+            Assert ($TimeoutMs -eq 18000) 'Phase observation изменила заданный срок child.'
+            $Diagnostic.childStarted=$fault -ne 'not-started'; $Diagnostic.childExited=$fault -notin @('not-started','exit-unconfirmed')
+            $Diagnostic.childWaitRemainingMs=17999
+            $commandAst=[Management.Automation.Language.Parser]::ParseInput($Arguments[-1],[ref]$null,[ref]$null)
+            $pathAssignment=@($commandAst.EndBlock.Statements | Where-Object {
+                $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$phasePath'
+            })
+            if ($fault -eq 'create-failed') { Assert ($pathAssignment.Count -eq 0) 'Child получил не принадлежащий вызову файл.' }
+            else {
+                Assert ($pathAssignment.Count -eq 1) 'Phase path не передан ровно один раз.'
+                . ([scriptblock]::Create($pathAssignment[0].Extent.Text))
+                $calls.path=$phasePath
+                Assert ([IO.File]::Exists($phasePath)) 'Child создал файл вместо parent.'
+                . ([scriptblock]::Create($phaseWriter))
+                $operationClock=[Diagnostics.Stopwatch]::StartNew()
+                $phaseOutput=@(if ($fault -ne 'not-started') { Write-SettingsReaderPhase 'from-handle' })
+                Assert ($phaseOutput.Count -eq 0) 'Phase writer загрязнил stdout.'
+                switch ($fault) {
+                    'malformed' { [IO.File]::WriteAllText($phasePath,'{"phase":"from-handle","elapsedMs":"0"}') }
+                    'extra-field' { [IO.File]::WriteAllText($phasePath,'{"phase":"from-handle","elapsedMs":0,"name":"private UI"}') }
+                    'unknown-phase' { [IO.File]::WriteAllText($phasePath,'{"phase":"private UI","elapsedMs":0}') }
+                    'missing' { [IO.File]::Delete($phasePath) }
+                    'oversized' { [IO.File]::WriteAllText($phasePath,('x'*513)) }
+                }
+            }
+            if ($fault -ne 'success') { throw 'fixture primary observation failure' }
+            return '{"contentRoot":null,"reason":"fixture"}'
+        }
+        try {
+            $diagnostic=[ordered]@{}; $failure=$null; $observation=$null
+            $fixtureBudget=[pscustomobject]@{ElapsedMilliseconds=3000}
+            try { $observation=Read-SettingsContent $owned 18000 -Diagnostic $diagnostic -DiscoveryBudget $fixtureBudget } catch { $failure=$_ }
+            Assert (($null -eq $failure) -eq ($fault -eq 'success')) "Phase diagnostic изменила исход: $fault."
+            if ($failure) { Assert ($failure.Exception.Message -ceq 'fixture primary observation failure') "Phase diagnostic стёрла primary: $fault." }
+            $observed=$fault -in @('success','timeout')
+            Assert (($diagnostic.phaseRead -ceq 'observed') -eq $observed) "Неверный допуск phase JSON: $fault."
+            if ($observed) { Assert ($diagnostic.phase -ceq 'from-handle' -and $diagnostic.readerElapsedMs -ge 0) "Потеряна последняя фаза: $fault." }
+            else { Assert ($null -eq $diagnostic.phase -and $null -eq $diagnostic.readerElapsedMs) "Неопределённость подменена фазой: $fault." }
+            Assert ($diagnostic.timeoutMs -eq 18000 -and $diagnostic.elapsedMs -ge 0) "Потеряно время вызова: $fault."
+            Assert ($diagnostic.childStartRemainingMs -eq 17000) 'Child start выдал старый timeout за текущий остаток discovery.'
+            if ($fault -eq 'exit-unconfirmed') {
+                Assert ($diagnostic.cleanup -eq 'child-exit-unconfirmed' -and [IO.File]::Exists($calls.path)) 'Phase читался/удалялся при живом child.'
+            } elseif ($fault -eq 'create-failed') { Assert ($diagnostic.cleanup -eq 'not-created') 'Приписано владение несозданным файлом.' }
+            else { Assert ($diagnostic.cleanup -eq 'deleted' -and ![IO.File]::Exists($calls.path)) "Утёк собственный phase-файл: $fault." }
+            $receipt=@{status=if ($failure) {'unavailable'} else {'fixture'};discovery=@{reader=$diagnostic}} | ConvertTo-Json -Depth 8 -Compress
+            $readback=$receipt | ConvertFrom-Json
+            Assert ($readback.discovery.reader.phaseRead -eq $diagnostic.phaseRead -and $receipt -notmatch 'private UI|labui-settings-phase-') 'Receipt раскрыл UI/path либо потерял diagnostic.'
+        } finally {
+            $env:RUNNER_TEMP=$savedTemp
+            # Нет настоящего child; fixture владеет каждым созданным здесь файлом.
+            if ($calls.path -and [IO.File]::Exists($calls.path)) { [IO.File]::Delete($calls.path) }
+            [IO.Directory]::Delete($fixtureRoot)
+        }
+    } $fault
+}
+Write-Output 'Settings phase diagnostic: PASS (fixed schema, time, primary failure, confirmed exit, owned cleanup; no GUI).'
+
+# Startup failure не оставляет несуществующий child в состоянии started.
+& {
+    $diagnostic=@{}; $failure=$null
+    $missing=Join-Path ([IO.Path]::GetTempPath()) ('labui-no-child-'+[guid]::NewGuid().ToString('N')+'.exe')
+    try { Invoke-TextScaleChild $missing @() 1000 -Diagnostic $diagnostic | Out-Null } catch { $failure=$_ }
+    Assert ($null -ne $failure -and !$diagnostic.childStarted -and !$diagnostic.childExited) 'Отказ Process.Start получил ложную identity child.'
+}
+
+# Реальная компиляция shim; единственный native вызов заменён значениями fixture.
+& {
+    $nativeDefinition=@($ast.EndBlock.Statements | Where-Object {
+        $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Read-SettingsWindowOwner'
+    })[0].Extent.Text
+    $nativeCall='$threadId = [LabUISettingsWindowReadback]::GetWindowThreadProcessId([IntPtr]$Handle, [ref]$ownerPid)'
+    Assert ($nativeDefinition.Contains($nativeCall)) 'Native timing fixture потерял границу user32.'
+    . ([scriptblock]::Create($nativeDefinition.Replace($nativeCall,'$ownerPid=3187; $threadId=55')))
+    foreach ($attempt in @(1,2)) {
+        $diagnostic=[ordered]@{}
+        $value=Read-SettingsWindowOwner 42 $diagnostic
+        Assert ($value.nativePid -eq 3187 -and $diagnostic.nativeTypeReadyMs -ge 0 -and
+            $diagnostic.nativeOwnerReadMs -ge $diagnostic.nativeTypeReadyMs) 'Native timing потерял порядок compile/read.'
+        if ($attempt -eq 2) { Assert $diagnostic.nativeTypeWasLoaded 'Повторный native read снова заявил cold compile.' }
+    }
+}
+
+# Настоящие main/catch/finally с инертными границами: elapsed и remaining сохраняются при отказе Observe.
+foreach ($rejectObserve in @($false,$true)) {
+    & {
+        param($rejectObserve)
+        $Qualify=$false
+        $resultInitialization=@($ast.EndBlock.Statements | Where-Object {
+            $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$result'
+        })[0].Extent.Text
+        . ([scriptblock]::Create($resultInitialization))
+        $Qualify=$false; $WinAppDirectory='inert'; $owned=$null; $ownedProcess=$null; $failure=$null; $discoveryBudget=$null
+        $calls=@{snapshots=0}; $stage='fixture'
+        $output=Join-Path ([IO.Path]::GetTempPath()) ('labui-discovery-time-'+[guid]::NewGuid().ToString('N')+'.json')
+        function Initialize-WinApp { param($Directory) return @{path='inert';version='fixture';executableSha256='fixture'} }
+        function Read-SystemTextScale { return @{textScaleFactor=1} }
+        function Get-SettingsSnapshot {
+            $calls.snapshots++
+            if ($calls.snapshots -gt 1) { return @{pid=3187;startTicks=[DateTime]::UtcNow.Ticks;sessionId=1;path=(Join-Path $env:SystemRoot 'ImmersiveControlPanel/SystemSettings.exe')} }
+        }
+        function Invoke-TextScaleChild {
+            param($Executable,$Arguments,$TimeoutMs)
+            if ($Executable -eq 'inert') { return '[{"processId":3187,"hwnd":42,"ownerHwnd":0,"className":"fixture"}]' }
+            Assert ($TimeoutMs -eq 10000) 'URI launch получил другой deadline.'
+        }
+        function Get-OwnedSettings { param($Owned) return $null }
+        function Read-SettingsWindowDiagnostic { param($Owned,$Diagnostic) return @{nativePid=3187} }
+        function Assert-SettingsWindow { param($Owned) $Owned.threadId=55 }
+        function Read-SettingsContent {
+            param($Owned,$TimeoutMs,$Diagnostic)
+            Assert ($Diagnostic.remainingMs -eq $TimeoutMs -and $TimeoutMs -gt 0 -and $TimeoutMs -le 20000) 'Reader не получил фактический остаток discovery.'
+            $Diagnostic.timeoutMs=$TimeoutMs
+            if ($rejectObserve) { throw 'fixture Observe timeout' }
+            $result.status='available'
+            return @{contentRoot=$null;topology=$null;tree=$null;elements=@();reason='fixture';observedAtUtc='fixture'}
+        }
+        function Close-SettingsWindow { param($Owned) return 'closed' }
+        try {
+            try { . ([scriptblock]::Create($mainBody.Substring(1,$mainBody.Length-2))) } catch { . $catchBlock }
+            . $finallyBlock | Out-Null
+            $receipt=Get-Content -LiteralPath $output -Raw | ConvertFrom-Json
+            Assert ($receipt.discovery.elapsedMs -ge 0 -and $receipt.discovery.remainingMs -eq [Math]::Max(0,20000-$receipt.discovery.elapsedMs)) 'Discovery elapsed/remaining потерян при сериализации.'
+            Assert ($receipt.discovery.launchElapsedMs -ge 0 -and $receipt.discovery.reader.timeoutMs -gt 0) 'Launch/reader timing отсутствует.'
+            $previous=0
+            foreach ($phase in $receipt.discovery.phases.PSObject.Properties) {
+                Assert ($phase.Value -ge $previous -and $phase.Value -le $receipt.discovery.elapsedMs) 'Parent phases переставлены либо вышли за свой clock.'
+                $previous=$phase.Value
+            }
+            Assert (($null -ne $receipt.error) -eq $rejectObserve) 'Timing diagnostic изменила исход Observe.'
+            if ($rejectObserve) { Assert ($receipt.error.message -ceq 'fixture Observe timeout' -and $receipt.error.stage -ceq 'observe-content') 'Timing diagnostic потеряла primary/stage.' }
+        } finally { if ([IO.File]::Exists($output)) { [IO.File]::Delete($output) } }
+    } $rejectObserve
+}
+Write-Output 'Settings discovery timing: PASS (launch, native compilation, parent deadline, Observe failure receipt; no GUI).'
+
 $rangeIdentity = @($readerAst.EndBlock.Statements | Where-Object {
     $_ -is [Management.Automation.Language.FunctionDefinitionAst] -and $_.Name -eq 'Assert-SettingsContentIdentity'
 })[0]
@@ -648,7 +805,7 @@ foreach($fault in @('none','apply-throw','apply-error','target-getter','smoke','
     'restore-throw','restore-error','restore-getter','restore-both','cleanup')) {
     & {
         param($fault)
-        $Qualify=$true; $owned=@{hwnd=42}; $ownedProcess=$null; $failure=$null; $stage='qualify-text-scale'
+        $Qualify=$true; $owned=@{hwnd=42}; $ownedProcess=$null; $discoveryBudget=$null; $failure=$null; $stage='qualify-text-scale'
         $output=Join-Path ([IO.Path]::GetTempPath()) "labui-scale-orchestration-$([guid]::NewGuid()).json"
         $result=New-CapabilityFixture; Set-TextScaleCapability $result
         $result.contentRoot=@{hwnd=43;threadId=5501}

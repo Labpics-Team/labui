@@ -15,7 +15,7 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
     throw 'Settings разрешены этой проверке только на одноразовом GitHub-hosted Windows runner.'
 }
 
-function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$TimeoutMs = 15000) {
+function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$TimeoutMs = 15000, $Diagnostic = $null) {
     if ($TimeoutMs -le 0) { throw 'Срок наблюдения истёк до запуска дочернего процесса.' }
     $info = [Diagnostics.ProcessStartInfo]::new($Executable)
     $info.UseShellExecute = $false
@@ -36,14 +36,17 @@ function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$
     $stderr = $null
     $failure = $null
     $cleanupErrors = [Collections.Generic.List[Exception]]::new()
+    if ($null -ne $Diagnostic) { $Diagnostic.childStarted=$false; $Diagnostic.childExited=$false }
     try {
         $child = [Diagnostics.Process]::Start($info)
+        if ($null -ne $Diagnostic) { $Diagnostic.childStarted=$true }
         $cancellation.CancelAfter([int][Math]::Max(0, $TimeoutMs - $budget.ElapsedMilliseconds))
         $stdoutReader = $child.StandardOutput
         $stderrReader = $child.StandardError
         $stdout = $stdoutReader.ReadToEndAsync($cancellation.Token)
         $stderr = $stderrReader.ReadToEndAsync($cancellation.Token)
         $remaining = [int][Math]::Max(0, $TimeoutMs - $budget.ElapsedMilliseconds)
+        if ($null -ne $Diagnostic) { $Diagnostic.childWaitRemainingMs=$remaining }
         if (!$child.WaitForExit($remaining)) { throw 'Дочерний процесс превысил срок наблюдения.' }
         $remaining = [int][Math]::Max(0, $TimeoutMs - $budget.ElapsedMilliseconds)
         if (![Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]@($stdout, $stderr), $remaining)) {
@@ -71,6 +74,7 @@ function Invoke-TextScaleChild([string]$Executable, [string[]]$Arguments, [int]$
             catch { $cleanupErrors.Add($_.Exception) }
             try {
                 if (!$child.WaitForExit(5000)) { throw 'Собственный дочерний процесс не завершился.' }
+                if ($null -ne $Diagnostic) { $Diagnostic.childExited=$true }
             } catch { $cleanupErrors.Add($_.Exception) }
         }
         try {
@@ -137,8 +141,10 @@ function Get-OwnedSettings($Owned) {
     }
 }
 
-function Read-SettingsWindowOwner([long]$Handle) {
+function Read-SettingsWindowOwner([long]$Handle, $Diagnostic = $null) {
     if ($Handle -le 0) { throw 'Для наблюдения нужен положительный HWND.' }
+    $nativeClock=[Diagnostics.Stopwatch]::StartNew()
+    if ($null -ne $Diagnostic) { $Diagnostic.nativeTypeWasLoaded=$null -ne ('LabUISettingsWindowReadback' -as [type]) }
     if ($null -eq ('LabUISettingsWindowReadback' -as [type])) {
         Add-Type -TypeDefinition @'
 using System;
@@ -156,9 +162,11 @@ public static class LabUISettingsWindowReadback
 }
 '@
     }
+    if ($null -ne $Diagnostic) { $Diagnostic.nativeTypeReadyMs=$nativeClock.ElapsedMilliseconds }
     [uint32]$ownerPid = 0
     $threadId = [LabUISettingsWindowReadback]::GetWindowThreadProcessId([IntPtr]$Handle, [ref]$ownerPid)
     $lastError = if ($threadId -eq 0) { [Runtime.InteropServices.Marshal]::GetLastWin32Error() } else { 0 }
+    if ($null -ne $Diagnostic) { $Diagnostic.nativeOwnerReadMs=$nativeClock.ElapsedMilliseconds }
     return @{ nativePid = $ownerPid; nativeThreadId = $threadId; nativeAlive = $threadId -ne 0; nativeError = $lastError }
 }
 
@@ -180,8 +188,8 @@ function Send-SettingsWindowClose([long]$Handle) {
     return @{ sent = $sent; nativeError = $lastError }
 }
 
-function Read-SettingsWindowDiagnostic($Owned) {
-    $state = Read-SettingsWindowOwner $Owned.hwnd
+function Read-SettingsWindowDiagnostic($Owned, $Diagnostic = $null) {
+    $state = Read-SettingsWindowOwner $Owned.hwnd $Diagnostic
     $state.observedAtUtc = [DateTime]::UtcNow.ToString('o')
     $state.mainWindowHandle = $null
     $state.processError = $null
@@ -275,7 +283,10 @@ function Close-SettingsWindow($Owned) {
 }
 
 function Read-SettingsContent($Owned, [int]$TimeoutMs,
-    [ValidateSet('Observe','Apply','Restore')][string]$Operation = 'Observe', $Expected = $null, [double]$TargetValue = 0) {
+    [ValidateSet('Observe','Apply','Restore')][string]$Operation = 'Observe', $Expected = $null, [double]$TargetValue = 0,
+    $Diagnostic = $null, $DiscoveryBudget = $null) {
+    if ($null -ne $Diagnostic -and $Operation -ne 'Observe') { throw 'Reader diagnostic разрешён только для Observe.' }
+    $childClock=[Diagnostics.Stopwatch]::StartNew()
     # CLI 0.7.1 группирует child под GA_ROOT и допускает fallback. Весь допуск
     # страницы читается одним root; cleanup по-прежнему принадлежит исходному HWND.
     $reader = @'
@@ -284,6 +295,16 @@ $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $operationClock = [Diagnostics.Stopwatch]::StartNew()
+function Write-SettingsReaderPhase([string]$Phase) {
+    if ((Test-Path variable:phasePath) -and ![string]::IsNullOrEmpty($phasePath)) {
+        # Только фиксированная фаза и монотонное время; UI-данные сюда не попадают.
+        try {
+            $phaseJson=@{ phase=$Phase; elapsedMs=$operationClock.ElapsedMilliseconds } | ConvertTo-Json -Compress
+            [IO.File]::WriteAllText($phasePath,$phaseJson,[Text.UTF8Encoding]::new($false))
+        } catch { }
+    }
+}
+Write-SettingsReaderPhase 'load-uia'
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 $nativeSource = @"
@@ -361,6 +382,7 @@ public static class LabUISettingsContentNative {
     }
 }
 "@
+Write-SettingsReaderPhase 'compile-native'
 Add-Type -TypeDefinition $nativeSource
 function Assert-SettingsContentIdentity($Process, $Root) {
     if ($Process.HasExited -or $Process.StartTime.ToUniversalTime().Ticks -ne $startTicks -or
@@ -541,6 +563,7 @@ function Set-SettingsRangeAndApply($Process, $Root, $Candidate, $Owner, $Origina
     $apply.pattern.Invoke()
     $Receipt.stage='applied'
 }
+Write-SettingsReaderPhase 'pin-process'
 $process = Get-Process -Id $settingsPid -ErrorAction Stop
 try {
     $processHandle = $process.Handle
@@ -550,6 +573,7 @@ try {
     Assert-SettingsContentIdentity $process
     $original=$null; $owner=$null; $descendants=@(); $summary=@{ visited=0; matching=0; truncated=$false }
     if ($operation -eq 'Observe') {
+      Write-SettingsReaderPhase 'discover-native'
       $original=[LabUISettingsContentNative]::Read($cleanupHandle)
       Assert-ContentWindow $original $cleanupHandle $cleanupThread
       if ($original.ownerHwnd -ne 0) {
@@ -585,9 +609,11 @@ try {
     if ($null -ne $candidate) {
         $handle=[long]$candidate.hwnd
         Assert-ContentWindow $candidate $handle 0
+        Write-SettingsReaderPhase 'from-handle'
         $root = [Windows.Automation.AutomationElement]::FromHandle([IntPtr]$handle)
         if ($null -eq $root) { throw 'UIA root unavailable.' }
         Assert-SettingsContentIdentity $process $root
+        Write-SettingsReaderPhase 'read-tree'
         $content=Read-ContentTree $process $root ([Windows.Automation.TreeWalker]::ControlViewWalker)
         $observation.contentRoot=@{ hwnd=$handle; pid=$settingsPid; threadId=$candidate.nativeThreadId;
             uiaProcessId=$root.Current.ProcessId; uiaNativeWindowHandle=$root.Current.NativeWindowHandle; runtimeId=@($root.GetRuntimeId()) }
@@ -598,6 +624,7 @@ try {
             try { Set-SettingsRangeAndApply $process $root $candidate $owner $original $content $observation.action }
             catch { $observation.action.error=@{ stage=$observation.action.stage; type=$_.Exception.GetType().FullName; message=$_.Exception.Message } }
         }
+        Write-SettingsReaderPhase 'verify-native'
         $candidateAfter=[LabUISettingsContentNative]::Read($handle)
         Assert-ContentWindow $candidateAfter $handle $candidate.nativeThreadId
         Assert-ContentAncestry $candidateAfter $owner
@@ -618,6 +645,7 @@ try {
     }
     $process.Refresh()
     Assert-SettingsContentIdentity $process $root
+    Write-SettingsReaderPhase 'complete'
     $observation | ConvertTo-Json -Depth 8 -Compress
 } finally { $process.Dispose() }
 '@
@@ -633,7 +661,48 @@ try {
         "function Set-TextScaleCapability {`n$((Get-Item Function:Set-TextScaleCapability).Definition)`n}`n"
     $frameworkShell = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
     # ArgumentList сохраняет Unicode/quotes; UTF-16 base64 этого reader превысил бы лимит CreateProcess.
-    $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-Command', ($prefix + $reader)) $TimeoutMs
+    $phasePath=$null; $phaseOwned=$false
+    try {
+        if ($null -ne $Diagnostic) {
+            $Diagnostic.timeoutMs=$TimeoutMs; $Diagnostic.phase=$null; $Diagnostic.readerElapsedMs=$null
+            $Diagnostic.childStarted=$false; $Diagnostic.childExited=$false
+            $Diagnostic.phaseRead='unavailable'; $Diagnostic.cleanup='not-created'
+            try {
+                $phasePath=Join-Path $env:RUNNER_TEMP ('labui-settings-phase-'+[guid]::NewGuid().ToString('N')+'.json')
+                $phaseFile=[IO.File]::Open($phasePath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+                $phaseOwned=$true
+                $phaseFile.Dispose()
+                $phase64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($phasePath))
+                $prefix="`$phasePath=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$phase64'))`n"+$prefix
+            } catch { $Diagnostic.phaseRead='create-failed' }
+        }
+        if ($null -ne $Diagnostic) {
+            if ($null -ne $DiscoveryBudget) { $Diagnostic.childStartRemainingMs=Get-TextScaleRemainingMs $DiscoveryBudget }
+            $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-Command', ($prefix + $reader)) $TimeoutMs -Diagnostic $Diagnostic
+        } else { $text = Invoke-TextScaleChild $frameworkShell @('-NoProfile', '-NonInteractive', '-STA', '-Command', ($prefix + $reader)) $TimeoutMs }
+    } finally {
+        if ($null -ne $Diagnostic) {
+            $Diagnostic.elapsedMs=$childClock.ElapsedMilliseconds
+            # Invoke-TextScaleChild уже завершил/остановил child; неполная запись остаётся неопределённостью.
+            if ($phaseOwned -and (!$Diagnostic.childStarted -or $Diagnostic.childExited)) {
+                try {
+                    $phaseInfo=[IO.FileInfo]::new($phasePath)
+                    if (!$phaseInfo.Exists -or $phaseInfo.Length -le 0 -or $phaseInfo.Length -gt 512) { throw 'Reader phase missing/oversized.' }
+                    $phase=Get-Content -LiteralPath $phasePath -Raw | ConvertFrom-Json -AsHashtable
+                    if ($phase.Count -ne 2 -or $phase.phase -cnotin @('load-uia','compile-native','pin-process',
+                        'discover-native','from-handle','read-tree','verify-native','complete') -or
+                        ($phase.elapsedMs -isnot [int] -and $phase.elapsedMs -isnot [long]) -or $phase.elapsedMs -lt 0) {
+                        throw 'Reader phase malformed.'
+                    }
+                    $Diagnostic.phase=$phase.phase; $Diagnostic.readerElapsedMs=$phase.elapsedMs; $Diagnostic.phaseRead='observed'
+                } catch { $Diagnostic.phaseRead='unavailable' }
+                finally {
+                    try { [IO.File]::Delete($phasePath); $Diagnostic.cleanup='deleted' }
+                    catch { $Diagnostic.cleanup='failed' }
+                }
+            } elseif ($phaseOwned) { $Diagnostic.phaseRead='child-exit-unconfirmed'; $Diagnostic.cleanup='child-exit-unconfirmed' }
+        }
+    }
     if ($Operation -eq 'Observe') { Assert-SettingsWindow $Owned }
     return $text | ConvertFrom-Json
 }
@@ -670,11 +739,14 @@ function Set-TextScaleCapability($Result) {
 
 function Get-TextScaleRemainingMs($Budget, [int]$LimitMs=20000) { return [int][Math]::Max(0, $LimitMs - $Budget.ElapsedMilliseconds) }
 
-function Observe-SettingsContent($Owned, $Result, $Budget) {
+function Observe-SettingsContent($Owned, $Result, $Budget, $Diagnostic = $null) {
     do {
         $remaining=Get-TextScaleRemainingMs $Budget
         if ($remaining -le 0) { break }
-        $observation=Read-SettingsContent $Owned $remaining
+        if ($null -ne $Diagnostic) {
+            $Diagnostic.reader=[ordered]@{ attempt=$Result.samples.Count+1; remainingMs=$remaining }
+            $observation=Read-SettingsContent $Owned $remaining -Diagnostic $Diagnostic.reader -DiscoveryBudget $Budget
+        } else { $observation=Read-SettingsContent $Owned $remaining }
         $Result.contentRoot=$observation.contentRoot; $Result.topology=$observation.topology
         $Result.tree=$observation.tree; $Result.elements=@($observation.elements)
         $Result.reason=$observation.reason
@@ -841,6 +913,7 @@ $winapp=$null; $cli=$null
 $owned = $null
 $ownedProcess = $null
 $failure = $null
+$discoveryBudget = $null
 $stage = 'read-system-text-scale'
 $result = [ordered]@{
     schemaVersion = 3; experiment = if ($Qualify) { 'settings-text-size-qualification' } else { 'settings-text-size-capability' }; status = 'unavailable'; reason = $null;
@@ -850,7 +923,9 @@ $result = [ordered]@{
     systemTextScaleChanged = $false; fontQualification = 'not-performed';
     changeMayHaveOccurred=$false; prepared=$null; qualification=$null; restore=$null; restoreError=$null; restoreGetterError=$null;
     systemTextScaleBefore = $null; snapshotBefore = @(); snapshotAfter = @(); windowCandidate = $null;
-    windowDiagnostic = $null; window = $null; contentRoot=$null; topology=$null; tree=$null; samples=@();
+    windowDiagnostic = $null; discovery=[ordered]@{ limitMs=20000; launchElapsedMs=$null; startedAtUtc=$null;
+        elapsedMs=$null; remainingMs=$null; phases=[ordered]@{}; nativeRead=[ordered]@{}; reader=$null };
+    window = $null; contentRoot=$null; topology=$null; tree=$null; samples=@();
     elements = @(); cleanup = 'not-started'; error = $null; cleanupError = $null
 }
 try {
@@ -869,9 +944,13 @@ try {
         $stage = 'launch-uri'
         $launchTicks = [DateTime]::UtcNow.Ticks
         # URI не выдаёт receipt нового Settings PID. Владелец устанавливается отдельно.
-        $null = Invoke-TextScaleChild (Join-Path $PSHOME 'pwsh.exe') @('-NoProfile', '-NonInteractive', '-Command',
-            'Start-Process -FilePath ms-settings:easeofaccess-display') 10000
+        $launchClock=[Diagnostics.Stopwatch]::StartNew()
+        try {
+            $null = Invoke-TextScaleChild (Join-Path $PSHOME 'pwsh.exe') @('-NoProfile', '-NonInteractive', '-Command',
+                'Start-Process -FilePath ms-settings:easeofaccess-display') 10000
+        } finally { $result.discovery.launchElapsedMs=$launchClock.ElapsedMilliseconds }
         $discoveryBudget = [Diagnostics.Stopwatch]::StartNew()
+        $result.discovery.startedAtUtc=[DateTime]::UtcNow.ToString('o')
         $stage = 'snapshot-after'
         do {
             $after = @(Get-SettingsSnapshot)
@@ -879,11 +958,13 @@ try {
             Start-Sleep -Milliseconds 250
         } while ((Get-TextScaleRemainingMs $discoveryBudget) -gt 0)
         $result.snapshotAfter = @($after | Select-Object pid, startTicks, sessionId)
+        $result.discovery.phases.snapshotAfterMs=$discoveryBudget.ElapsedMilliseconds
         $settingsPath = Join-Path $env:SystemRoot 'ImmersiveControlPanel/SystemSettings.exe'
         if ($after.Count -ne 1 -or $after[0].startTicks -lt $launchTicks -or $after[0].path -ine $settingsPath) {
             $result.reason = 'fresh-settings-process-not-unique'
         } else {
             $stage = 'discover-window'
+            $result.discovery.phases.windowSearchStartedMs=$discoveryBudget.ElapsedMilliseconds
             $windows=@()
             do {
                 $remaining=Get-TextScaleRemainingMs $discoveryBudget
@@ -892,6 +973,7 @@ try {
                 if ($windows.Count) { break }
                 Start-Sleep -Milliseconds 250
             } while ((Get-TextScaleRemainingMs $discoveryBudget) -gt 0)
+            $result.discovery.phases.windowSearchCompletedMs=$discoveryBudget.ElapsedMilliseconds
             if ($windows.Count -ne 1 -or $windows[0].processId -ne $after[0].pid -or $windows[0].hwnd -le 0) {
                 $result.reason = 'settings-window-not-unique'
             } else {
@@ -901,12 +983,16 @@ try {
                     ownerHwnd = $windows[0].ownerHwnd; className = $windows[0].className }
                 $ownedProcess = Get-OwnedSettings $owned
                 $stage = 'window-diagnostic'
-                $result.windowDiagnostic = Read-SettingsWindowDiagnostic $owned
+                $result.discovery.phases.windowDiagnosticStartedMs=$discoveryBudget.ElapsedMilliseconds
+                $result.windowDiagnostic = Read-SettingsWindowDiagnostic $owned $result.discovery.nativeRead
+                $result.discovery.phases.windowDiagnosticCompletedMs=$discoveryBudget.ElapsedMilliseconds
                 $stage = 'window-admission'
                 Assert-SettingsWindow $owned
+                $result.discovery.phases.windowAdmissionCompletedMs=$discoveryBudget.ElapsedMilliseconds
                 $result.window = @{ pid = $owned.pid; startTicks = $owned.startTicks; hwnd = $owned.hwnd; threadId = $owned.threadId }
                 $stage = 'observe-content'
-                Observe-SettingsContent $owned $result $discoveryBudget
+                try { Observe-SettingsContent $owned $result $discoveryBudget $result.discovery }
+                finally { $discoveryBudget.Stop() }
             }
         }
     }
@@ -920,6 +1006,11 @@ try {
     $result.reason = 'unexpected-error'
     $result.error = @{ stage = $stage; type = $_.Exception.GetType().FullName; message = $_.Exception.Message }
 } finally {
+    if ($null -ne $discoveryBudget) {
+        $discoveryBudget.Stop()
+        $result.discovery.elapsedMs=$discoveryBudget.ElapsedMilliseconds
+        $result.discovery.remainingMs=Get-TextScaleRemainingMs $discoveryBudget
+    }
     if ($Qualify -and $result.changeMayHaveOccurred) {
         try { Restore-TextScaleQualification $owned $result }
         catch { $result.restoreError=@{ stage='restore'; type=$_.Exception.GetType().FullName; message=$_.Exception.Message } }
