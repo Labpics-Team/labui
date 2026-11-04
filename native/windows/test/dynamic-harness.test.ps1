@@ -5,7 +5,7 @@ function Assert([bool]$Value, [string]$Message) { if (!$Value) { throw $Message 
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($Harness, [ref]$tokens, [ref]$errors)
 Assert ($errors.Count -eq 0) 'Синтаксис harness повреждён.'
-foreach ($name in @('Assert-DynamicReply', 'Wait-SpaceReady', 'Invoke-DynamicGesture', 'Capture-Dynamic')) {
+foreach ($name in @('Assert-DynamicReply', 'Wait-SpaceReady', 'Invoke-DynamicGesture', 'Capture-Dynamic', 'Write-SpaceFailure')) {
     $found = @($ast.FindAll({ param($node)
         $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq $name
     }, $false))
@@ -121,13 +121,19 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
         if ($Command -ceq 'dynamic ready 1' -and $script:dynamicFault -eq 'wrong-snap') { $ready.origin = 'Animation' }
         if ($Command -ceq 'dynamic ready 1' -and $script:dynamicFault -eq 'ready-wrapper-pid') { $wrapper.pid = 3188 }
         if ($Command -ceq 'dynamic ready 1' -and $script:dynamicFault -eq 'ready-mode') { $ready.animationsEnabled = $true }
+        if ($Command -ceq 'dynamic ready 1' -and $script:dynamicFault -eq 'ready-failed') {
+            $ready.status = 'failed'; $ready.reason = 'fixture-dynamic-overflow'
+            $ready.diagnostic = @{ schemaVersion = 1; status = 'failed'; pid = 3187; channel = 3; overflow = 1;
+                observations = @(0..127 | ForEach-Object { @{ elapsedMs = $_; motion = @{ phase = 'value'; nativeRequestId = 21; readbackPosition = 1.0 } } });
+                firstDiscarded = @{ elapsedMs = 128; motion = @{ phase = 'idle'; nativeRequestId = 22; readbackPosition = 0.0 } } }
+        }
         if ($prepare) { [Threading.Thread]::Sleep(20) }
         if ($isStatic) { return ($ready | ConvertTo-Json -Depth 7 -Compress | ConvertFrom-Json) }
         $wrapper.readiness = $ready
     }
     return ($wrapper | ConvertTo-Json -Depth 7 -Compress | ConvertFrom-Json)
 }
-foreach ($fault in @('none', 'prepare-waiting', 'setter-timeout', 'setter-late', 'setter-readback', 'wrong-snap', 'ready-wrapper-pid', 'ready-mode', 'arm-channel-type')) {
+foreach ($fault in @('none', 'prepare-waiting', 'setter-timeout', 'setter-late', 'setter-readback', 'wrong-snap', 'ready-wrapper-pid', 'ready-mode', 'ready-failed', 'arm-channel-type')) {
     & {
         param($fault)
         $script:dynamicFault = $fault; $script:dynamicCalls.Clear(); $script:prepareWaiting = $false
@@ -163,6 +169,31 @@ foreach ($fault in @('none', 'prepare-waiting', 'setter-timeout', 'setter-late',
             }
             if ($fault -eq 'setter-timeout') { Assert ($failure.Exception.ToString().Contains('injected-setting-timeout')) 'Первичный timeout заменён.' }
             if ($fault -eq 'setter-late') { Assert ($failure.Exception.ToString().Contains('исчерпал бюджет')) 'Поздний setter принят.' }
+            if ($fault -eq 'ready-failed') {
+                Assert ($failure.Exception.ToString().Contains('fixture-dynamic-overflow')) 'Первичная ошибка readiness потеряна.'
+                Assert ($null -ne $spaceDiagnostic.readiness['1'].PSObject.Properties['diagnostic']) 'Failed readiness потерял сохранённый prefix.'
+                $diagnostic = $spaceDiagnostic.readiness['1'].diagnostic
+                Assert ($diagnostic.status -ceq 'failed' -and $diagnostic.overflow -eq 1 -and
+                    $diagnostic.observations.Count -eq 128 -and $diagnostic.firstDiscarded.motion.nativeRequestId -eq 22) 'Failed readiness потерял сохранённый prefix.'
+                $expected = $diagnostic | ConvertTo-Json -Depth 8 -Compress
+                $original = $failure.Exception
+                $writer = [IO.StringWriter]::new(); $previousError = [Console]::Error
+                try {
+                    [Console]::SetError($writer)
+                    $successOutput = @(Write-SpaceFailure $spaceDiagnostic $failure)
+                } finally { [Console]::SetError($previousError) }
+                try {
+                    Assert ($successOutput.Count -eq 0 -and [object]::ReferenceEquals($failure.Exception, $original) -and
+                        !$failure.Exception.Data.Contains('spaceDiagnosticError')) 'Вывод диагностики заменил первичный отказ.'
+                    $written = $writer.ToString()
+                    Assert ($written.StartsWith('LABUI_SPACE_FAILURE_JSON ') -and
+                        [Text.Encoding]::UTF8.GetByteCount($written) -le 256 * 1024) 'Не сохранена ограниченная диагностика динамического отказа.'
+                    $transported = $written.Substring('LABUI_SPACE_FAILURE_JSON '.Length) | ConvertFrom-Json
+                    $actualDiagnostic = $transported.readiness.'1'.diagnostic | ConvertTo-Json -Depth 8 -Compress
+                    Assert ($actualDiagnostic -ceq $expected -and $transported.mutation.mutation.readback -eq $false -and
+                        $null -ne $transported.injection) 'Вывод потерял полный prefix, setter receipt или input cleanup receipt.'
+                } finally { $writer.Dispose() }
+            }
         }
     } $fault
 }

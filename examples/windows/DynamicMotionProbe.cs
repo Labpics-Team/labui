@@ -116,7 +116,8 @@ internal sealed partial class SpaceProbe
                 clockOriginTicks = origin.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 clockFrequency = System.Diagnostics.Stopwatch.Frequency, elapsedMs = Elapsed,
                 operation = requested?.Operation, nativeRequestId = requested?.NativeRequestId,
-                origin = requested?.Origin.ToString(), position, observationCount = samples.Count, reason };
+                origin = requested?.Origin.ToString(), position, observationCount = samples.Count, reason,
+                diagnostic = reason is null ? null : Snapshot("failed") };
         }
     }
 

@@ -400,7 +400,7 @@ foreach (var pending in new[] { "requested-only", "inertia", "ignored", "stale-r
 Environment.SetEnvironmentVariable("LABUI_DYNAMIC_MOTION_OBSERVATION", "1");
 Environment.SetEnvironmentVariable("GITHUB_ACTIONS", "true");
 Environment.SetEnvironmentVariable("RUNNER_ENVIRONMENT", "github-hosted");
-foreach (var fault in new[] { "none", "idle", "endpoint", "requested-only", "missing-setting" }) {
+foreach (var fault in new[] { "none", "idle", "endpoint", "requested-only", "missing-setting", "overflow-idle", "overflow-inertia" }) {
     UISettings.Enabled = true;
     var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
     var count = 10;
@@ -436,9 +436,50 @@ foreach (var fault in new[] { "none", "idle", "endpoint", "requested-only", "mis
         continue;
     }
     Check(!rejected && ClientAreaAnimation.Writes == 1, "dynamic setter did not execute exactly once");
-    var ready = await Serialize(() => Call(probe, "DynamicCommand", "dynamic ready 1"));
-    Check(ready.GetProperty("readiness").GetProperty("status").GetString() == (fault == "none" ? "ready" : "waiting"),
+    var overflowed = fault.StartsWith("overflow-");
+    var rejectedPhase = fault == "overflow-idle" ? "idle" : "inertia";
+    if (overflowed) {
+        for (var i = 4; i < 128; i++) {
+            FixtureClock.Now += 1;
+            channel.Publish(Motion(false, 1, "value", 1));
+        }
+        channel.Publish(Motion(false, 8, rejectedPhase, .75f));
+    }
+    var eventCount = List(probe, "events").Count;
+    var readyValue = Call(probe, "DynamicCommand", "dynamic ready 1");
+    if (overflowed) {
+        for (var i = 0; i < (fault == "overflow-idle" ? 1 : 7); i++)
+            channel.Publish(Motion(false, 13, "value", .25f));
+        parent.Raise(UIElement.PreviewKeyUpEvent, Key(false));
+    }
+    var ready = await Serialize(() => readyValue);
+    var readiness = ready.GetProperty("readiness");
+    Check(readiness.GetProperty("status").GetString() == (overflowed ? "failed" : fault == "none" ? "ready" : "waiting"),
         "dynamic readiness accepted missing setting/native acknowledgment or rejected healthy state");
+    if (overflowed) {
+        Check(readiness.TryGetProperty("diagnostic", out var diagnostic) && diagnostic.ValueKind == JsonValueKind.Object,
+            "dynamic failed readiness lost bounded diagnostic before complete");
+        Check(diagnostic.GetProperty("status").GetString() == "failed" &&
+            diagnostic.GetProperty("overflow").GetInt32() == 1 &&
+            diagnostic.GetProperty("events").GetArrayLength() == eventCount &&
+            diagnostic.GetProperty("channel").GetInt32() == 3 &&
+            diagnostic.GetProperty("pid").GetInt32() == Environment.ProcessId,
+            "dynamic failed readiness lost identity or frozen event prefix");
+        var observations = diagnostic.GetProperty("observations").EnumerateArray().ToArray();
+        Check(observations.Length == 128 && observations.Select((item, i) =>
+            item.GetProperty("motion").GetProperty("nativeRequestId").GetInt32() == (i < 2 ? 101 : 102) &&
+            item.GetProperty("motion").GetProperty("phase").GetString() == (i is 0 or 2 ? "requested" : "value")).All(value => value),
+            "dynamic failed readiness truncated or replaced retained observations");
+        var discarded = diagnostic.GetProperty("firstDiscarded").GetProperty("motion");
+        Check(discarded.GetProperty("phase").GetString() == rejectedPhase &&
+            discarded.GetProperty("nativeRequestId").GetInt32() == 109 && discarded.GetProperty("position").GetSingle() == .75f,
+            "dynamic failed readiness lost or replaced first discarded callback");
+        Check(channel.Subscribers == 1 && observer.Subscribers == 1 && ClientAreaAnimation.Writes == 1 && count == 10,
+            "failure readback changed input, settings or passive subscriptions");
+        continue;
+    }
+    Check(!readiness.TryGetProperty("diagnostic", out var healthyDiagnostic) || healthyDiagnostic.ValueKind == JsonValueKind.Null,
+        "healthy dynamic readiness invented failure diagnostic");
     if (fault != "none") continue;
     try { await (Task<object>)Call(probe, "DisableAnimationAsync"); throw new Exception("duplicate setter accepted"); }
     catch (InvalidOperationException) { Check(ClientAreaAnimation.Writes == 1, "duplicate setter had effect"); }
