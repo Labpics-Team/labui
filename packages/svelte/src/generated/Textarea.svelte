@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/textarea';
   import type { LabTextarea } from '@labpics/ui-core/textarea';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-textarea> — типы взяты прямо из класса ядра (LabTextarea). */
   interface Props {
@@ -54,11 +54,19 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, rows, autoResize, readonly, disabled, required, invalid, name });
   });
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
 
-<lab-textarea bind:this={el} {...rest}>
+<lab-textarea bind:this={el} {...rest} {...initialBooleans}>
 </lab-textarea>

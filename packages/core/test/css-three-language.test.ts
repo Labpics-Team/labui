@@ -37,6 +37,12 @@ describe('classifyLabVar — three-language boundary', () => {
     expect(classifyLabVar('--lab-focus-ring-width')).toBe('dimension');
   });
 
+  it('относит числовые opacity-токены к ui-tokens, а не к цветовым ролям', () => {
+    expect(classifyLabVar('--lab-opacity-50')).toBe('dimension');
+    expect(classifyLabVar('--lab-opacity-disabled')).toBe('dimension');
+    expect(classifyLabVar('--lab-opacity-button-sheen')).toBe('dimension');
+  });
+
   it('REJECTS a forbidden primitive as "forbidden-primitive"', () => {
     expect(classifyLabVar('--lab-neutral-100')).toBe('forbidden-primitive');
     expect(classifyLabVar('--lab-accent-500')).toBe('forbidden-primitive');

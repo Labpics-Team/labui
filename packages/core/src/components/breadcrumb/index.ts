@@ -1,9 +1,8 @@
-/**
- * `lab-breadcrumb` public entry — the single-wildcard resolution seam.
- *
- * Re-exports the element module and runs its self-registration side effect, so
- * importing this barrel upgrades `<lab-breadcrumb>`. One wildcard
- * (`@labpics/ui-core/<name>`) reaches it; adding the component stays purely
- * additive — this one-line barrel plus the element file, no shared file touched.
- */
+/** Импорт регистрирует <lab-breadcrumb>; этот entrypoint защищён от tree shaking. */
+import { LabBreadcrumb } from './lab-breadcrumb.js';
+
 export * from './lab-breadcrumb.js';
+
+if (typeof customElements !== 'undefined' && !customElements.get('lab-breadcrumb')) {
+  customElements.define('lab-breadcrumb', LabBreadcrumb);
+}

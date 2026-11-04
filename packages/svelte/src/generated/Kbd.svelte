@@ -6,7 +6,7 @@
 <script lang="ts">
   import '@labpics/ui-core/kbd';
   import type { LabKbd } from '@labpics/ui-core/kbd';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-kbd> — типы взяты прямо из класса ядра (LabKbd). */
@@ -23,6 +23,7 @@
   ];
 
   let el: HTMLElement | undefined = $state();
+
 
   $effect(() => {
     forwardDeclared(el, specs, { size });

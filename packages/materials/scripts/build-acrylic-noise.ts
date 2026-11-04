@@ -162,24 +162,26 @@ const START =
 const END = '/* <<< ACRYLIC-NOISE:GENERATED */';
 
 /**
- * Тело региона: ассет ОДНОЙ генерации, объявленный дважды.
+ * Тело региона: байты PNG объявлены один раз в приватной переменной.
  *   1. `url()` — фолбэк без image-set (тайл 48 CSS-px на любом DPR).
  *   2. `image-set(тот же URI 1x/2x/3x)` под @supports: на DPR≥2 браузер берёт
  *      2x/3x-запись → интринзик-тайл 24/16 CSS-px → зерно остаётся В ОДИН
- *      ФИЗИЧЕСКИЙ ПИКСЕЛЬ (per-device-pixel, как у Fluent) без новых ассетов;
- *      дубль строки URI гасится gzip. @supports обязателен: невалидное
- *      значение в `background` уронило бы всю многослойную декларацию
+ *      ФИЗИЧЕСКИЙ ПИКСЕЛЬ без новых ассетов. Повторяется только ссылка
+ *      на переменную, включая серверный HTML.
+ *      @supports обязателен: невалидное значение в `background`
+ *      уронило бы всю многослойную декларацию
  *      (включая тинт), а не только слой зерна.
  */
 export function acrylicNoiseCssBlock(): string {
   const uri = acrylicNoiseDataUri();
   return [
-    '.lab-material {',
-    `  --_acrylic-noise: ${uri};`,
+    ':host([data-material="acrylic"]), [data-material="acrylic"] {',
+    `  --_acrylic-noise-image: ${uri};`,
+    '  --_acrylic-noise: var(--_acrylic-noise-image);',
     '}',
-    `@supports (background-image: image-set(${uri} 1x)) {`,
-    '  .lab-material {',
-    `    --_acrylic-noise: image-set(${uri} 1x, ${uri} 2x, ${uri} 3x);`,
+    '@supports (background-image: image-set(url("data:,") 1x)) {',
+    '  :host([data-material="acrylic"]), [data-material="acrylic"] {',
+    '    --_acrylic-noise: image-set(var(--_acrylic-noise-image) 1x, var(--_acrylic-noise-image) 2x, var(--_acrylic-noise-image) 3x);',
     '  }',
     '}',
   ].join('\n');

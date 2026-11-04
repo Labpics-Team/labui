@@ -1,11 +1,8 @@
-/**
- * `lab-kbd` public entry — the single-wildcard resolution seam.
- *
- * Re-exports the element module and runs its self-registration side effect, so
- * importing this barrel upgrades `<lab-kbd>`. Its existence lets ONE wildcard
- * (`@labpics/ui-core/<name>` resolving to this barrel) reach every component
- * with a single substitution — the only form TypeScript and esbuild both
- * accept. Adding a component stays purely additive: drop the element file plus
- * this one-line barrel, touch no shared file.
- */
+/** Импорт регистрирует <lab-kbd>; этот entrypoint защищён от tree shaking. */
+import { LabKbd } from './lab-kbd.js';
+
 export * from './lab-kbd.js';
+
+if (typeof customElements !== 'undefined' && !customElements.get('lab-kbd')) {
+  customElements.define('lab-kbd', LabKbd);
+}

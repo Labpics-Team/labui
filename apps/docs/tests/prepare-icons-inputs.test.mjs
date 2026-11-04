@@ -8,34 +8,35 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
-  authorReference,
-  readAuthorMaster,
-  readCycleMaster,
-  stateReference,
-  platformMeasurementLog,
-  consumerVisualLog,
-  consumerReceiptLog,
-  validatePlatformMeasurement,
-  validateSourcePin,
-} from './prepare-icons-inputs.mjs';
-import {
   assertStateAnatomy,
+  stateCapabilitiesReference,
   staticStatePathsReference,
   subjectStateReferences,
-  stateCapabilitiesReference,
   validateStateReference,
   validateSubject,
 } from './icons-packed.mjs';
+import {
+  authorReference,
+  consumerReceiptLog,
+  consumerVisualLog,
+  platformMeasurementLog,
+  readAuthorMaster,
+  readCycleMaster,
+  stateReference,
+  validatePlatformMeasurement,
+  validateSourcePin,
+} from './prepare-icons-inputs.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
+// File key и version вымышлены; геометрия raw SVG сохранена побайтово.
 const PIN = {
   schemaVersion: 1,
   repository: 'Labpics-Team/lab-icons',
   sourceCommit: 'a31c881e335d9e5b4d0d4c690931a6cf444e52ce',
   figma: {
-    fileKey: 'LuaiBd4anRi4DMZayKAnY2',
-    version: '2416636003859748575',
+    fileKey: 'labuiTestFileKey0000000001',
+    version: '1234567890123456789',
   },
 };
 
@@ -44,8 +45,8 @@ const MANIFEST = {
   source: {
     kind: 'figma',
     name: '🧪Lab UI (v2.1)',
-    fileKey: 'LuaiBd4anRi4DMZayKAnY2',
-    version: '2416636003859748575',
+    fileKey: 'labuiTestFileKey0000000001',
+    version: '1234567890123456789',
     lastModified: '2026-11-01T01:18:02Z',
     pageId: '4045:632',
     frames: {
@@ -60,7 +61,7 @@ const MANIFEST = {
       filled: {
         nodeId: '6413:79',
         nodeSha256: '73a64f7a2fb9ec448c00f8b627e2bb8dc744a0e5c0ec3cac504223792cb17601',
-        master: 'masters/figma/2416636003859748575/Filled/reload.svg',
+        master: 'masters/figma/1234567890123456789/Filled/reload.svg',
         sha256: '3c7a57edcdac59581175696289e383f78ec43381bcbb72ed49c5034ae8ae871a',
         bytes: 1136,
         normalizedSource: {
@@ -73,7 +74,7 @@ const MANIFEST = {
       outline: {
         nodeId: '6431:3898',
         nodeSha256: 'feaaeb86b97b3013999ca9054bc166caf9b8e38bc62af0d5926b153d92f6c140',
-        master: 'masters/figma/2416636003859748575/Outline/reload.svg',
+        master: 'masters/figma/1234567890123456789/Outline/reload.svg',
         sha256: '9a6784d21805bb7374a37a62fab427be8a49b985bdb5ffc04876bfb3ed93bd80',
         bytes: 1325,
         normalizedSource: {
@@ -90,8 +91,8 @@ const MANIFEST = {
 const ANNOTATIONS = {
   schemaVersion: 1,
   source: {
-    fileKey: 'LuaiBd4anRi4DMZayKAnY2',
-    version: '2416636003859748575',
+    fileKey: 'labuiTestFileKey0000000001',
+    version: '1234567890123456789',
   },
   icons: {
     reload: {
@@ -141,8 +142,8 @@ const MASTERS = {
 };
 
 const RECEIPTS = {
-  outline: '1a1fb97986966df057cf0a50e67872e82ac3e4f9ed562e830bb9b61bfc022d5c',
-  filled: '0be0aa7b6b29ca6ee7763e212664f219fdc7d02bcc75206f977b329ba652865c',
+  outline: '7366c27275e774d30de047a35a4dd34d831d6b69ada6217b259c36efe7ec20b0',
+  filled: 'b21135638f67d4a50f52bfe8c4efefd2e51a54c0900bc78515eb37d2fbdb924a',
 };
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const wholePath = (variant) => MASTERS[variant].match(/\bd="([^"]+)"/)[1];
@@ -231,13 +232,13 @@ function assertReference(reference) {
   }
 }
 
-test('current pin retains the frozen author identity and both masters remain whole', async () => {
+test('current source pin validates and synthetic-reference masters remain whole', async () => {
   const actualPin = validateSourcePin(
     JSON.parse(await readFile(new URL('./icons-consumer-source.json', import.meta.url))),
   );
   assert.equal(actualPin.schemaVersion, PIN.schemaVersion);
   assert.equal(actualPin.repository, PIN.repository);
-  assert.deepEqual(actualPin.figma, PIN.figma);
+  assert.equal(validateSourcePin(structuredClone(PIN)).figma.fileKey, PIN.figma.fileKey);
   for (const variant of ['outline', 'filled']) {
     const bytes = Buffer.from(MASTERS[variant]);
     assert.equal(bytes.length, MANIFEST.icons.reload[variant].bytes);
@@ -945,6 +946,38 @@ test('schema3 requires both independent state references and dispatches every gr
     stateReferences: { 'status-circle': status, 'expression-face': expression },
   };
   assert.equal(validateSubject(subject), subject);
+  const complete = structuredClone(subject);
+  complete.schemaVersion = 4;
+  for (const [key, name] of [
+    ['uiMaterials', '@labpics/ui-materials'],
+    ['uiTokens', '@labpics/ui-tokens'],
+  ])
+    complete.packages[key] = { ...complete.packages.uiCore, name };
+  for (const item of Object.values(complete.packages))
+    item.runtimeDependencies = { dependencies: {}, optionalDependencies: {}, peerDependencies: {} };
+  assert.equal(validateSubject(complete), complete);
+  assert.deepEqual(subjectStateReferences(complete), subjectStateReferences(subject));
+  for (const mutate of [
+    (value) => {
+      Reflect.deleteProperty(value.packages, 'uiMaterials');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.packages, 'uiTokens');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.packages.uiCore, 'runtimeDependencies');
+    },
+    (value) => {
+      value.packages.uiTokens.sourceCommit = 'f'.repeat(40);
+    },
+    (value) => {
+      value.packages.uiCore.runtimeDependencies.dependencies['@labpics/ui-tokens'] = 'workspace:*';
+    },
+  ]) {
+    const changed = structuredClone(complete);
+    mutate(changed);
+    assert.throws(() => validateSubject(changed));
+  }
   assert.equal(subjectStateReferences(subject), subject.stateReferences);
   assert.deepEqual(subjectStateReferences({ schemaVersion: 2, stateReference: status }), {
     'status-circle': status,
@@ -1162,7 +1195,7 @@ test('consumer readback refuses unrelated files, unbounded PNG and incomplete re
 });
 
 async function summaryFixture(t, schemaVersion) {
-  const { root } = schemaVersion === 3 ? await expressionFixture(t) : await stateFixture(t);
+  const { root } = schemaVersion >= 3 ? await expressionFixture(t) : await stateFixture(t);
   const author = await authorReference(root, PIN);
   const states = await stateReference(root, PIN);
   const packages = Object.fromEntries(
@@ -1181,12 +1214,25 @@ async function summaryFixture(t, schemaVersion) {
       },
     ]),
   );
+  if (schemaVersion >= 4) {
+    for (const [key, name] of [
+      ['uiMaterials', '@labpics/ui-materials'],
+      ['uiTokens', '@labpics/ui-tokens'],
+    ])
+      packages[key] = { ...packages.uiCore, name };
+    for (const item of Object.values(packages))
+      item.runtimeDependencies = {
+        dependencies: {},
+        optionalDependencies: {},
+        peerDependencies: {},
+      };
+  }
   const subject = {
     schemaVersion,
     packages,
     authorReference: author,
     ...(schemaVersion === 2 ? { stateReference: states } : {}),
-    ...(schemaVersion === 3
+    ...(schemaVersion >= 3
       ? {
           stateReferences: {
             'status-circle': states,
@@ -1319,7 +1365,7 @@ test('oversized raw failure and refused PNG keep the limited continuity RESULT',
   }
 });
 
-for (const schema of [2, 3])
+for (const schema of [2, 3, 4])
   test(`schema${schema} summary publishes the authenticated report and rejects missing or wrong-source output`, async (t) => {
     const fixture = await summaryFixture(t, schema);
     const stdout = fixture.invoke();

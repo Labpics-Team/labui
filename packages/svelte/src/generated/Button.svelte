@@ -6,28 +6,31 @@
 <script lang="ts">
   import '@labpics/ui-core/button';
   import type { LabButton } from '@labpics/ui-core/button';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-button> — типы взяты прямо из класса ядра (LabButton). */
   interface Props {
     type?: LabButton['type'];
     kind?: LabButton['kind'];
     size?: LabButton['size'];
+    description?: LabButton['description'];
     icon?: LabButton['icon'];
     loading?: LabButton['loading'];
     disabled?: LabButton['disabled'];
     htmlType?: LabButton['htmlType'];
+    end?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { type, kind, size, icon, loading, disabled, htmlType, children, ...rest }: Props = $props();
+  let { type, kind, size, description, icon, loading, disabled, htmlType, children, end, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
     { name: 'kind', attr: 'kind', kind: 'string' },
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'description', attr: 'description', kind: 'string' },
     { name: 'icon', attr: 'icon', kind: 'boolean' },
     { name: 'loading', attr: 'loading', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
@@ -36,12 +39,21 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, kind, size, description, icon, loading, disabled, htmlType })));
+  });
+
+
   $effect(() => {
-    forwardDeclared(el, specs, { type, kind, size, icon, loading, disabled, htmlType });
+    forwardDeclared(el, specs, { type, kind, size, description, icon, loading, disabled, htmlType });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-button bind:this={el} {...rest}>
+<lab-button bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
+  {#if end}<div slot="end" style="display:contents">{@render end()}</div>{/if}
 </lab-button>

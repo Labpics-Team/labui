@@ -323,8 +323,3 @@ declare global {
     'lab-tabs': LabTabs;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-tabs')) {
-  customElements.define('lab-tabs', LabTabs);
-}

@@ -315,6 +315,7 @@ function render(state: VeilState): void {
  */
 export function attach(el: HTMLElement): VeilHandle {
   registry.get(el)?.destroy();
+  let disposed = false;
   // The one integration invariant: a host that forms a backdrop root makes
   // the strips blur the ELEMENT instead of the page behind it — the effect
   // silently dies. Shout once instead of degrading quietly.
@@ -337,12 +338,17 @@ export function attach(el: HTMLElement): VeilHandle {
     enabled: true,
   };
 
-  const update = (): void => render(state);
+  const update = (): void => {
+    if (!disposed) render(state);
+  };
   // Trailing-edge rAF — общий примитив (./mount): шторм ресайза → один render.
   const raf = trailingRaf(update);
-  const ro = new ResizeObserver(raf.schedule);
+  const schedule = (): void => {
+    if (!disposed) raf.schedule();
+  };
+  const ro = new ResizeObserver(schedule);
   ro.observe(el);
-  window.addEventListener('resize', raf.schedule);
+  window.addEventListener('resize', schedule);
   const mq =
     typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;
   mq?.addEventListener('change', update);
@@ -354,9 +360,11 @@ export function attach(el: HTMLElement): VeilHandle {
       update();
     },
     destroy: (): void => {
+      if (disposed) return;
+      disposed = true;
       ro.disconnect();
       raf.cancel();
-      window.removeEventListener('resize', raf.schedule);
+      window.removeEventListener('resize', schedule);
       mq?.removeEventListener('change', update);
       for (const s of state.strips) s.remove();
       state.strips = [];

@@ -1,4 +1,4 @@
-import { spring as evaluateSpring } from '@labpics/motion';
+import { spring as evaluateSpring } from '@labpics/motion/driver';
 import { spring as motionSpring, springFromDurationBounce } from '@labpics/motion/tokens';
 import { describe, expect, it } from 'vitest';
 

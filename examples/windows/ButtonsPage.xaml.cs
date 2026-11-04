@@ -1,0 +1,72 @@
+using LabUI.WinUI;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+
+namespace LabUI.Buttons;
+
+public sealed partial class ButtonsPage : Page
+{
+    private int activations;
+    private readonly LifetimeProbe? lifetime;
+    private readonly SpaceProbe? space;
+
+    public ButtonsPage()
+    {
+        InitializeComponent();
+        if (Environment.GetEnvironmentVariable("LABUI_SPACE_OBSERVATION") == "1")
+        {
+            space = new SpaceProbe(this, LifetimeTarget, () => activations);
+            Unloaded += UnloadedSpace;
+        }
+        if (Environment.GetEnvironmentVariable("LABUI_LAYOUT_OBSERVATION") is { } layoutPath)
+        {
+            void ObserveLayout(object sender, RoutedEventArgs args)
+            {
+                Loaded -= ObserveLayout;
+                if (!DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
+                    () => LayoutObservation.Write(this, layoutPath)))
+                    throw new InvalidOperationException("Не удалось запланировать снимок геометрии.");
+            }
+            Loaded += ObserveLayout;
+        }
+        if (Environment.GetEnvironmentVariable("LABUI_LIFETIME_OBSERVATION") is { } lifetimePath)
+        {
+            _ = FindName(nameof(LifetimeCommands))
+                ?? throw new InvalidOperationException("Не удалось загрузить команды lifetime probe.");
+            lifetime = new LifetimeProbe(lifetimePath, LifetimeTarget, ButtonsRow, LifetimeStatus, () => activations);
+            Unloaded += UnloadedPage;
+        }
+    }
+
+    private void Activate(object sender, RoutedEventArgs args)
+    {
+        Result.Text = $"Действие выполнено: {++activations}";
+        lifetime?.Activated(sender);
+    }
+
+    private void ArmLifetime(object sender, RoutedEventArgs args) => lifetime?.Arm();
+    private void RestoreLifetime(object sender, RoutedEventArgs args) => lifetime?.Restore();
+    private void CompleteLifetime(object sender, RoutedEventArgs args) => lifetime?.Complete();
+
+    private void UnloadedSpace(object sender, RoutedEventArgs args)
+    {
+        Unloaded -= UnloadedSpace;
+        space?.Dispose();
+    }
+
+    private void UnloadedPage(object sender, RoutedEventArgs args)
+    {
+        Unloaded -= UnloadedPage;
+        lifetime?.Dispose();
+    }
+
+    private void LightTheme(object sender, RoutedEventArgs args) => RequestedTheme = ElementTheme.Light;
+    private void DarkTheme(object sender, RoutedEventArgs args) => RequestedTheme = ElementTheme.Dark;
+
+    private void ToggleEnabled(object sender, RoutedEventArgs args)
+    {
+        Unavailable.IsEnabled = !Unavailable.IsEnabled;
+        Unavailable.Content = Unavailable.IsEnabled ? "Продолжить" : "Недоступно";
+        ((LabButton)sender).Content = Unavailable.IsEnabled ? "Выключить кнопку" : "Включить кнопку";
+    }
+}

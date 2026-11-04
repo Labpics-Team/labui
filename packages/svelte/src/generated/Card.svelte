@@ -6,14 +6,23 @@
 <script lang="ts">
   import '@labpics/ui-core/card';
   import type { LabCard } from '@labpics/ui-core/card';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-card> — типы взяты прямо из класса ядра (LabCard). */
   interface Props {
     variant?: LabCard['variant'];
     padding?: LabCard['padding'];
     interactive?: LabCard['interactive'];
+    imageSrc?: LabCard['imageSrc'];
+    imageAlt?: LabCard['imageAlt'];
+    heading?: LabCard['heading'];
+    headingLevel?: LabCard['headingLevel'];
+    caption?: LabCard['caption'];
+    description?: LabCard['description'];
+    lowerCaption?: LabCard['lowerCaption'];
+    titleHint?: LabCard['titleHint'];
+    badge?: LabCard['badge'];
     footer?: Snippet;
     header?: Snippet;
     media?: Snippet;
@@ -21,23 +30,40 @@
     [key: string]: unknown;
   }
 
-  let { variant, padding, interactive, children, footer, header, media, ...rest }: Props = $props();
+  let { variant, padding, interactive, imageSrc, imageAlt, heading, headingLevel, caption, description, lowerCaption, titleHint, badge, children, footer, header, media, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'variant', attr: 'variant', kind: 'string' },
     { name: 'padding', attr: 'padding', kind: 'string' },
     { name: 'interactive', attr: 'interactive', kind: 'boolean' },
+    { name: 'imageSrc', attr: 'image-src', kind: 'string' },
+    { name: 'imageAlt', attr: 'image-alt', kind: 'string' },
+    { name: 'heading', attr: 'heading', kind: 'string' },
+    { name: 'headingLevel', attr: 'heading-level', kind: 'string' },
+    { name: 'caption', attr: 'caption', kind: 'string' },
+    { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'lowerCaption', attr: 'lower-caption', kind: 'string' },
+    { name: 'titleHint', attr: 'title-hint', kind: 'string' },
+    { name: 'badge', attr: 'badge', kind: 'string' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { variant, padding, interactive, imageSrc, imageAlt, heading, headingLevel, caption, description, lowerCaption, titleHint, badge })));
+  });
+
+
   $effect(() => {
-    forwardDeclared(el, specs, { variant, padding, interactive });
+    forwardDeclared(el, specs, { variant, padding, interactive, imageSrc, imageAlt, heading, headingLevel, caption, description, lowerCaption, titleHint, badge });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-card bind:this={el} {...rest}>
+<lab-card bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if footer}<div slot="footer" style="display:contents">{@render footer()}</div>{/if}
   {#if header}<div slot="header" style="display:contents">{@render header()}</div>{/if}

@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/textarea';
 import type { LabTextarea } from '@labpics/ui-core/textarea';
 
@@ -15,9 +15,9 @@ export type TextareaSsrProps = Partial<Pick<LabTextarea, 'type' | 'size' | 'labe
 export type TextareaSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-textarea> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-textarea> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderTextarea(
   props: TextareaSsrProps = {},
@@ -26,17 +26,17 @@ export function renderTextarea(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       value=${ifDefined(props.value)}
       placeholder=${ifDefined(props.placeholder)}
       rows=${ifDefined(props.rows)}
-      ?auto-resize=${Boolean(props.autoResize)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .autoResize=${props.autoResize === undefined ? noChange : Boolean(props.autoResize)}
+      .readonly=${props.readonly === undefined ? noChange : Boolean(props.readonly)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
+      .required=${props.required === undefined ? noChange : Boolean(props.required)}
+      .invalid=${props.invalid === undefined ? noChange : Boolean(props.invalid)}
       name=${ifDefined(props.name)}
     ></lab-textarea>`);
 }

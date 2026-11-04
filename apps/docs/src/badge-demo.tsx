@@ -7,8 +7,10 @@
  */
 import '@labpics/ui-core/badge';
 import { Badge } from '@labpics/ui-react';
+import { Badge as VueBadge } from '@labpics/ui-vue/badge';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createApp, h, ref } from 'vue';
 import { wireThemeSwitch } from './theme-switch.js';
 
 wireThemeSwitch();
@@ -41,3 +43,35 @@ createRoot(mount).render(
     </Badge>
   </StrictMode>,
 );
+
+// Адаптер сохраняет размер иконки и пустой слот при реактивной смене содержимого.
+const vueMount = document.querySelector<HTMLElement>('#vue-root');
+if (!vueMount) throw new Error('Missing #vue-root mount node in badge.html');
+const showIcon = ref(true);
+const glyph = () =>
+  h('svg', { viewBox: '0 0 24 24', width: 24, height: 24, 'aria-hidden': 'true' }, [
+    h('path', { d: 'M0 0h24v24H0Z' }),
+  ]);
+createApp({
+  render: () => [
+    h(
+      VueBadge,
+      { 'data-testid': 'vue-icon' },
+      {
+        default: () => 'Badge',
+        leading: () => (showIcon.value ? glyph() : []),
+      },
+    ),
+    h(VueBadge, { 'data-testid': 'vue-bare' }, () => 'Badge'),
+    h(
+      'button',
+      {
+        'data-testid': 'vue-toggle',
+        onClick: () => {
+          showIcon.value = !showIcon.value;
+        },
+      },
+      'Переключить иконку',
+    ),
+  ],
+}).mount(vueMount);

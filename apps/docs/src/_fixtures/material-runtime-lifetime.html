@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <title>Владение ресурсами материалов</title>
+    <style>
+      @import "@labui/colors/contract.css";
+      @import "@labpics/ui-tokens/tokens.css";
+      @import "@labpics/ui-materials/material.css";
+
+      #surface {
+        position: relative;
+        width: 240px;
+        height: 120px;
+        border-radius: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="container">
+      <section
+        id="surface"
+        class="lab-material"
+        data-material="acrylic"
+        data-veil="top"
+        style="backdrop-filter: blur(2px) !important; -webkit-backdrop-filter: blur(2px) !important"
+      >
+        Содержимое поверхности
+      </section>
+    </main>
+    <script type="module" src="./material-runtime-lifetime.ts"></script>
+  </body>
+</html>

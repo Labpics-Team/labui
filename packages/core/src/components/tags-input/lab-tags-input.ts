@@ -1,3 +1,12 @@
+import {
+  type FieldA11yInput,
+  type LabFieldSize,
+  type LabFieldType,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+} from '@labpics/ui-core/shared';
+import { tagsInputTranslations } from '@labpics/ui-core/shared';
 import * as tagsInputMachine from '@zag-js/tags-input';
 /**
  * `<lab-tags-input>` — a tokenized text field: a text input plus a row of removable tag
@@ -55,15 +64,9 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
-import {
-  type FieldA11yInput,
-  type LabFieldSize,
-  type LabFieldType,
-  fieldControlAria,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
+
+export { tagsInputTranslations } from '@labpics/ui-core/shared';
 
 export type { LabFieldSize as LabTagsInputSize, LabFieldType as LabTagsInputType };
 
@@ -79,24 +82,6 @@ const tagsInputModule: MachineModule<TagsInputSchema, TagsInputApi> = tagsInputM
 /** Per-instance machine id source — keeps the input/label/chip ids deterministic and the
  * derived helper/error ids collision-free across instances. */
 let tagsInputSeq = 0;
-
-/**
- * The accessible-name translations for the chip controls. The machine wires these onto
- * the delete trigger (`aria-label`) and the edit input — so the X button has a real name
- * ("Delete <tag>") and a screen reader announces tag lifecycle events. Shared with the
- * React twin so both renderers name the chip controls identically (parity, not a second
- * implementation). Only the strings the controls need are overridden; the rest fall back
- * to the machine's English defaults.
- */
-export const tagsInputTranslations: Partial<tagsInputMachine.IntlTranslations> = {
-  deleteTagTriggerLabel: (value: string) => `Delete ${value}`,
-  tagSelected: (value: string) => `${value} selected. Press Backspace or Delete to remove.`,
-  tagAdded: (value: string) => `Added tag ${value}`,
-  tagsPasted: (values: string[]) => `Pasted ${values.length} tags`,
-  tagEdited: (value: string) => `Editing tag ${value}. Press Enter to save or Escape to cancel.`,
-  tagUpdated: (value: string) => `Tag updated to ${value}`,
-  tagDeleted: (value: string) => `Deleted tag ${value}`,
-};
 
 export class LabTagsInput extends LabElement {
   static override properties = {
@@ -575,9 +560,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-tags-input': LabTagsInput;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-tags-input')) {
-  customElements.define('lab-tags-input', LabTagsInput);
 }

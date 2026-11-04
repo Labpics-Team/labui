@@ -30,6 +30,27 @@ const bash = process.platform === 'win32' ? 'C:/Program Files/Git/bin/bash.exe' 
 const posix = (path) =>
   path.replaceAll('\\', '/').replace(/^([A-Za-z]):/, (_, drive) => `/${drive.toLowerCase()}`);
 
+test('each local runtime archive is packed and supplied to both input and installed-consumer handoffs', () => {
+  const source = readFileSync(helper, 'utf8');
+  const core = JSON.parse(
+    readFileSync(new URL('../../packages/core/package.json', import.meta.url)),
+  );
+  const local = Object.entries(core.dependencies)
+    .filter(([, range]) => range.startsWith('workspace:'))
+    .map(([name]) => name.replace('@labpics/ui-', ''));
+  for (const name of ['core', ...local]) {
+    assert.ok(
+      source.includes(`pnpm --dir packages/${name} pack --pack-destination /job/output/ui-${name}`),
+      `missing packed ${name}`,
+    );
+    assert.equal(
+      source.split(`--ui-${name}-tarball /job/output/ui-${name}/*.tgz`).length - 1,
+      2,
+      `both handoffs require ${name}`,
+    );
+  }
+});
+
 test('Icons workflow delegates the workload and preserves source-read failure', () => {
   assert.match(workflow, /runs-on: \[self-hosted, Linux, X64\]/);
   assert.match(

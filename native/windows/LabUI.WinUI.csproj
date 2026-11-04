@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WinUISDKReferences>false</WinUISDKReferences>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="test/**/*.cs" />
+    <ProjectReference Include="$(LabMotionProject)" Condition="'$(LabMotionProject)' != ''" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
+  </ItemGroup>
+  <Target Name="RequireLabMotion" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(LabMotionProject)' == '' Or !Exists('$(LabMotionProject)')"
+           Text="Укажите LabMotionProject — путь к проверенному native/windows/LabMotion.WinUI.csproj." />
+  </Target>
+</Project>

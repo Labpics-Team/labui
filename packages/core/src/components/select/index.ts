@@ -1,7 +1,8 @@
-/**
- * `@labpics/ui-core/select` — the compound + positioned Select element.
- *
- * Self-registers `<lab-select>` on import (side-effect) and re-exports the class
- * + axis types so the React twin can share ONE public-API source of truth.
- */
+/** Импорт регистрирует <lab-select>; этот entrypoint защищён от tree shaking. */
+import { LabSelect } from './lab-select.js';
+
 export * from './lab-select.js';
+
+if (typeof customElements !== 'undefined' && !customElements.get('lab-select')) {
+  customElements.define('lab-select', LabSelect);
+}

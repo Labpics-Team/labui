@@ -87,6 +87,46 @@ export function buildTypography(config: TypographyConfig): {
     });
   }
 
+  // Фиксированные роли используют те же выходы; плавная шкала остаётся прежней.
+  for (const [name, role] of Object.entries(config.fixedRoles ?? {})) {
+    if (fontSizes.some((token) => token.name === name)) {
+      throw new Error(`typography fixed role "${name}" collides with a fluid step`);
+    }
+    if (
+      !Number.isFinite(role.fontSizeRem) ||
+      role.fontSizeRem <= 0 ||
+      !Number.isFinite(role.lineHeight) ||
+      role.lineHeight <= 0 ||
+      !Number.isFinite(role.letterSpacingEm)
+    ) {
+      throw new Error(
+        `typography fixed role "${name}" must have finite positive size and line-height, and finite tracking`,
+      );
+    }
+    fontSizes.push({
+      kind: 'font-size',
+      name,
+      cssValue: rem(role.fontSizeRem),
+      numeric: role.fontSizeRem * config.remBasePx,
+      dtcgType: 'dimension',
+    });
+    lineHeights.push({
+      kind: 'line-height',
+      name,
+      // Округление 12/14 до 0.8571 уменьшает реальную строку ниже 12px.
+      cssValue: String(role.lineHeight),
+      numeric: role.lineHeight,
+      dtcgType: 'number',
+    });
+    letterSpacings.push({
+      kind: 'letter-spacing',
+      name,
+      cssValue: `${num(role.letterSpacingEm, 6)}em`,
+      numeric: role.letterSpacingEm,
+      dtcgType: 'dimension',
+    });
+  }
+
   // Мера строки (line measure): классическая типографская вилка 45–75
   // знаков на строку, 66 — идеал (Bringhurst, «The Elements of Typographic
   // Style» §2.1.2). `ch` — ширина «0» текущего шрифта: мера следует и за

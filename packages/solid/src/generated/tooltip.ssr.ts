@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/tooltip';
 import type { LabTooltip } from '@labpics/ui-core/tooltip';
 
@@ -15,9 +15,9 @@ export type TooltipSsrProps = Partial<Pick<LabTooltip, 'placement' | 'size' | 'c
 export type TooltipSsrSlots = { default?: string; content?: string };
 
 /**
- * Рендерит <lab-tooltip> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-tooltip> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderTooltip(
   props: TooltipSsrProps = {},
@@ -29,7 +29,7 @@ export function renderTooltip(
       content=${ifDefined(props.content)}
       open-delay=${ifDefined(props.openDelay)}
       close-delay=${ifDefined(props.closeDelay)}
-      ?disabled=${Boolean(props.disabled)}
-      ?arrow=${Boolean(props.arrow)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
+      .arrow=${props.arrow === undefined ? noChange : Boolean(props.arrow)}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-tooltip>`);
 }

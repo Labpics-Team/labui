@@ -6,7 +6,7 @@
 <script lang="ts">
   import '@labpics/ui-core/pagination';
   import type { LabPagination } from '@labpics/ui-core/pagination';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-pagination> — типы взяты прямо из класса ядра (LabPagination). */
@@ -34,6 +34,7 @@
   ];
 
   let el: HTMLElement | undefined = $state();
+
 
   $effect(() => {
     forwardDeclared(el, specs, { size, count, pageSize, siblingCount, page, defaultPage });

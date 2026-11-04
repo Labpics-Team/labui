@@ -4,7 +4,7 @@ set -euo pipefail
 exec 2>&1
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
-image='mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c'
+image='mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f'
 workload=e2e
 source_options=()
 if [ "$#" -ne 0 ]; then
@@ -117,13 +117,15 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     mkdir -p /job/source /job/bin /job/home
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
       tar -C /source --exclude=node_modules -cf - . | tar -C /job/source -xf -
-      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-shadow
+      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-materials /job/output/ui-tokens /job/output/ui-shadow
       tar -C /icons-source --exclude=node_modules -cf - . | tar -C /job/icons -xf -
     else
       tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
     fi
     cd /job/source
     export COREPACK_HOME=/job/corepack PATH="/job/bin:$PATH"
+    # Node.js 25+ не содержит Corepack; bootstrap остаётся в каталоге задания.
+    npm install --global --prefix /job --cache /job/npm-cache --ignore-scripts --no-audit --no-fund corepack@0.36.0
     corepack enable --install-directory /job/bin
     pnpm install --frozen-lockfile --store-dir /job/pnpm-store
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
@@ -134,22 +136,28 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
       cd /job/source
       pnpm --filter @labpics/ui-core... build
       pnpm --dir packages/core pack --pack-destination /job/output/ui-core
+      pnpm --dir packages/materials pack --pack-destination /job/output/ui-materials
+      pnpm --dir packages/tokens pack --pack-destination /job/output/ui-tokens
       pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow
       LABUI_ICONS_GIT_DIAGNOSTICS=/job/output node apps/docs/tests/prepare-icons-inputs.mjs \
         --icons-source /job/icons --ui-source /job/source --ui-commit "$UI_SOURCE_COMMIT" \
         --icons-tarball /job/output/icons/*.tgz \
         --ui-core-tarball /job/output/ui-core/*.tgz \
+        --ui-materials-tarball /job/output/ui-materials/*.tgz \
+        --ui-tokens-tarball /job/output/ui-tokens/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz --out /job/output/inputs
       status=0
       node apps/docs/tests/icons-packed.mjs \
         --icons-tarball /job/output/icons/*.tgz \
         --ui-core-tarball /job/output/ui-core/*.tgz \
+        --ui-materials-tarball /job/output/ui-materials/*.tgz \
+        --ui-tokens-tarball /job/output/ui-tokens/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
       node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
       exit "$status"
     else
-      pnpm build
+      pnpm --filter "@labpics/ui-docs^..." build
       pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
       pnpm --filter @labui/colors fx:render
       pnpm test:e2e

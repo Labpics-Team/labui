@@ -62,6 +62,17 @@ describe('no magic dimensions in migrated components (dimension contract)', () =
     ]);
   });
 
+  it.each([
+    ['p.css', '.x { --_shift: var(--lab-space-none, 0rem); }'],
+    ['p.ts', ".x { --_shift: ${litVar('--lab-space-none', '0rem')}; }"],
+  ])('размерный ноль в %s требует токен и сохраняет единицу длины', (file, tokenSource) => {
+    expect(canon.get('--lab-space-none')).toBe('0rem');
+    expect(scanDimensionSource(file, tokenSource, canon)).toEqual([]);
+    expect(scanDimensionSource(file, '.x { --_shift: 0rem; }', canon)).toMatchObject([
+      { rule: 'magic-length', token: '0rem' },
+    ]);
+  });
+
   it('DETECTS a magic border-radius literal', () => {
     const hits = scanDimensionSource('p.css', '.x { border-radius: 0.375rem; }', canon);
     expect(hits.some((v) => v.rule === 'magic-radius')).toBe(true);

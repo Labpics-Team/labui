@@ -1,0 +1,153 @@
+name: Native
+
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: ${{ matrix.name }}
+    runs-on: windows-2025
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows Button
+            animationsEnabled: true
+            lifetime: true
+            qualifyTextScale: false
+          - name: Windows Button · reduced motion
+            animationsEnabled: false
+            lifetime: false
+            qualifyTextScale: false
+          - name: Windows Button · text 225%
+            animationsEnabled: true
+            lifetime: false
+            qualifyTextScale: true
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - name: Checkout LabUI
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Checkout qualified LabMotion
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Labpics-Team/lab-motion
+          ref: 7a8bfbba3ead9f57743c0cbc6c3d2fe52d370121
+          path: .native-deps/motion
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.19.0"
+
+      - name: Native projection contract
+        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs
+
+      - name: Native animation capture contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/animation.test.ps1
+
+      - name: Native tool bootstrap contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/winapp.test.ps1
+
+      - name: Native command completion contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/tool.test.ps1
+
+      - name: Native pointer-cancel contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/retarget.test.ps1
+
+      - name: Native Space child reply contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/space-harness.test.ps1
+
+      - name: Native lifetime contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/lifetime.test.ps1
+
+      - name: Initial native layout contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/layout.test.ps1
+
+      - name: Native viewport capture contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/viewport.test.ps1
+
+      - name: Settings text-size capability contract
+        shell: pwsh
+        run: pwsh -NoProfile -File native/windows/test/text-scale.test.ps1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "10.0.403"
+
+      - name: Device-loss boundary
+        run: node native/windows/test/device-loss.test.mjs
+
+      - name: Lifetime observation boundary
+        run: node native/windows/test/lifetime-probe.test.mjs
+
+      - name: Space input and child protocol boundaries
+        run: node --test native/windows/test/space-input.test.mjs native/windows/test/space-protocol.test.mjs native/windows/test/space-probe.test.mjs native/windows/test/space-observation.test.mjs
+
+      - name: Build native consumer
+        shell: pwsh
+        run: |
+          $output = "$env:RUNNER_TEMP/labui-native"
+          New-Item -ItemType Directory -Path $output -Force | Out-Null
+          dotnet build examples/windows/Buttons.csproj --configuration Release -p:Platform=x64 `
+            "-p:LabMotionProject=$env:GITHUB_WORKSPACE/.native-deps/motion/native/windows/LabMotion.WinUI.csproj" `
+            --output "$output/app" --verbosity minimal 2>&1 | Tee-Object "$output/build.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Native build failed.' }
+
+      - name: Capture and exercise native Button
+        shell: pwsh
+        run: |
+          $qualifyTextScale = [bool]::Parse('${{ matrix.qualifyTextScale }}')
+          if ($qualifyTextScale) {
+            $source = git rev-parse HEAD
+            if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
+            & ./native/windows/test/text-scale.ps1 `
+              -OutputPath "$env:RUNNER_TEMP/labui-native/text-scale-capability.json" `
+              -Qualify `
+              -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
+              -EvidenceDirectory "$env:RUNNER_TEMP/labui-native/evidence" `
+              -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
+              -SourceCommit $source `
+              -WinAppDirectory "$env:RUNNER_TEMP/labui-native/winapp"
+          } else {
+            $animationsEnabled = [bool]::Parse('${{ matrix.animationsEnabled }}')
+            $lifetime = [bool]::Parse('${{ matrix.lifetime }}')
+            & ./native/windows/test/smoke.ps1 `
+              -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
+              -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence" `
+              -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
+              -AnimationsEnabled $animationsEnabled -Lifetime:$lifetime
+          }
+
+      - name: Export native evidence to job log
+        shell: pwsh
+        run: |
+          $source = git rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
+          node native/windows/test/evidence.mjs export "$env:RUNNER_TEMP/labui-native/evidence" $source interaction
+          if ($LASTEXITCODE -ne 0) { throw 'Native evidence export failed.' }

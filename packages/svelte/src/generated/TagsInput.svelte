@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/tags-input';
   import type { LabTagsInput } from '@labpics/ui-core/tags-input';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tags-input> — типы взяты прямо из класса ядра (LabTagsInput). */
   interface Props {
@@ -63,11 +63,19 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, placeholder, max, delimiter, editable, addOnPaste, allowDuplicates, value, defaultValue, readonly, disabled, required, invalid, name });
   });
   $effect(() => forwardEvents(el, { 'input-value-change': onInputValueChange, 'value-change': onValueChange, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-tags-input bind:this={el} {...rest}>
+<lab-tags-input bind:this={el} {...rest} {...initialBooleans}>
 </lab-tags-input>

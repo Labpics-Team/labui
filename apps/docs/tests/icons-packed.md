@@ -11,7 +11,8 @@ Schema3 добавляет `expression-face`: спокойствие, груст
 Публичный `sequence` Lab Motion исполняет opacity stages с явным первым кадром
 из видимой позы; новый control создаётся до остановки прежнего. Reload остаётся
 в том же приложении.
-Harness принимает три готовых архива и независимые авторские references. Он не
+Schema4 сохраняет те же визуальные сценарии и замыкает runtime-зависимости Lab UI.
+Harness принимает пять готовых архивов и независимые авторские references. Он не
 клонирует producer-репозитории и не собирает их вместо владельцев пакетов.
 
 ## Запуск
@@ -26,6 +27,8 @@ Harness принимает три готовых архива и независ�
 node apps/docs/tests/icons-packed.mjs \
   --icons-tarball /artifacts/labpics-icons.tgz \
   --ui-core-tarball /artifacts/labpics-ui-core.tgz \
+  --ui-materials-tarball /artifacts/labpics-ui-materials.tgz \
+  --ui-tokens-tarball /artifacts/labpics-ui-tokens.tgz \
   --ui-shadow-tarball /artifacts/labpics-ui-shadow.tgz \
   --subject /artifacts/icons-subject.json \
   --out /artifacts/icons-consumer-result
@@ -42,7 +45,7 @@ Icons: доступ к приватному Lab UI и проверка его п
 Playwright image, host UID/GID, отдельным контейнером, CID и очисткой обычного E2E.
 Фиксированный Icons workload копирует оба checkout с Git metadata в изолированную
 директорию; Corepack читает их собственные `packageManager`, а pnpm stores разделены.
-Icons проходит обычный `pack` с `prepack`; Lab UI собирает и упаковывает core/shadow.
+Icons проходит обычный `pack` с `prepack`; Lab UI собирает runtime-замыкание core и упаковывает core/materials/tokens/shadow.
 Исходные mounts доступны только для чтения.
 
 Inputs и результат находятся вне копий исходников. После удаления контейнера
@@ -54,9 +57,9 @@ Workflow не загружает архивы в Actions storage. Локальн
 
 ## Входной reference
 
-Текущий JSON имеет `schemaVersion: 3`, `packages`, `authorReference` и
+Текущий JSON имеет `schemaVersion: 4`, `packages`, `authorReference` и
 `stateReferences` с двумя обязательными ключами: `status-circle` и `expression-face`.
-Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
+Schema3 сохраняет прежний набор из трёх архивов. Schema2 сохраняет прежний `stateReference` только для status-circle. Schema1
 сохраняет cycle reference и исполняемый путь reload без state reference.
 Одновременное присутствие старого и нового state полей получает отказ.
 
@@ -64,8 +67,10 @@ Schema2 сохраняет прежний `stateReference` только для s
 |---|---|
 | `packages.icons` | Архив `@labpics/icons` |
 | `packages.uiCore` | Архив `@labpics/ui-core` |
+| `packages.uiMaterials` | Архив `@labpics/ui-materials` |
+| `packages.uiTokens` | Архив `@labpics/ui-tokens` |
 | `packages.uiShadow` | Архив `@labpics/ui-shadow` |
-| Каждый пакет | `name`, `version`, `archiveSha256`, `archiveBytes`, `sourceCommit` |
+| Каждый пакет | `name`, `version`, `archiveSha256`, `archiveBytes`, `sourceCommit`; в schema4 также `runtimeDependencies` |
 | `authorReference` | `fileName`, `fileKey`, `version`, `icons.reload` |
 | `icons.reload` | Ровно `outline` и `filled` |
 | Каждый variant | `sourceFile`, `author`, `anatomy`, `viewBox`, `paths`, `parts`, `gesture` |
@@ -73,6 +78,15 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `expression-face` | Также `sharedPartIds` и упорядоченные `sharedParts` с `id`, `role`, `d`, `fillRule` |
 | Каждый state | `id`, `partId`, `icon`, `contentPartIds`, `sourceFile`, `author`, `viewBox`, `dimensions`, `paths` |
 | `proof` | Закон, Figma source, hashes полной enclosure identity и semantic spec; для shared anatomy также `sharedPartsSha256` |
+
+`runtimeDependencies` фиксирует `dependencies`, `optionalDependencies` и `peerDependencies`
+исходного manifest после преобразования `workspace:*`, `workspace:^` и `workspace:~`
+в публикуемый диапазон по правилам [pnpm pack](https://pnpm.io/workspaces).
+Каждая runtime workspace-зависимость должна иметь архив среди входов; build-only
+зависимости туда не входят. Неизвестный workspace-диапазон получает явный отказ.
+Manifest каждого snapshot-архива сверяется до npm install, установленный manifest
+и обязательный lock integrity — после установки. Недостающий архив не заменяется
+случайным пакетом из registry.
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.

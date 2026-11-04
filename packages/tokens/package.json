@@ -17,6 +17,16 @@
     "./tokens.css": "./dist/tokens.css",
     "./tokens.dtcg.json": "./dist/tokens.dtcg.json",
     "./motion.css": "./dist/motion.css",
+    "./motion": {
+      "import": {
+        "types": "./dist/generated/motion.d.ts",
+        "default": "./dist/generated/motion.js"
+      },
+      "require": {
+        "types": "./dist/generated/motion.d.cts",
+        "default": "./dist/generated/motion.cjs"
+      }
+    },
     "./motion.dtcg.json": "./dist/motion.dtcg.json",
     "./package.json": "./package.json"
   },
@@ -31,7 +41,7 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@labpics/motion": "0.3.0",
+    "@labpics/motion": "0.5.0",
     "@types/node": "22.10.5",
     "tsup": "8.3.6",
     "tsx": "4.19.2",

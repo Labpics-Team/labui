@@ -1,11 +1,11 @@
 /**
  * Фабрика тонких Solid-обёрток над Lit web-components (ADR-0001, A-prime).
  *
- * Написана на РАНТАЙМ-примитивах Solid (createComponent / Dynamic / createEffect), а не
+ * Написана на РАНТАЙМ-примитивах Solid (createComponent / Dynamic / createRenderEffect), а не
  * на JSX: тогда пакет — чистый TS и собирается обычным tsup (без solid-компилятора),
  * а JSX самого потребителя (`<Select .../>`) компилит его же билд. Форвардинг
- * императивный — через ref + createEffect, поэтому undefined-обработчик/проп
- * обрабатывается чисто (атрибут снят, слушатель не повешен). Вид проброса — по PropKind.
+ * императивный — через ref и render effect. Свойства заданы до первого обновления
+ * Lit; отсутствующий Boolean-проп не сбрасывает текущее состояние элемента.
  *
  * Регистрация: генерируемый файл делает side-effect импорт @labpics/ui-core/<subpath>.
  */
@@ -13,6 +13,7 @@ import {
   type JSX,
   createComponent,
   createEffect,
+  createRenderEffect,
   createSignal,
   mergeProps,
   onCleanup,
@@ -70,7 +71,7 @@ function applyProp(el: HTMLElement, spec: LabPropSpec, value: unknown): void {
     // Массив/объект/контролируемое значение — только JS-свойством.
     if (value !== undefined) (el as unknown as Record<string, unknown>)[spec.name] = value;
   } else if (spec.kind === 'boolean') {
-    el.toggleAttribute(spec.attr, Boolean(value));
+    if (value !== undefined) (el as unknown as Record<string, unknown>)[spec.name] = Boolean(value);
   } else if (value === undefined || value === null) {
     el.removeAttribute(spec.attr);
   } else {
@@ -97,7 +98,7 @@ export function createLabComponent<Props, Events extends string>(
     // (нативные атрибуты) спредим на элемент.
     const [, rest] = splitProps(all, [...propNames, ...handlerNames, 'children']);
     // Реактивный проброс объявленных пропов.
-    createEffect(() => {
+    createRenderEffect(() => {
       const node = el();
       if (!node) return;
       for (const s of spec.specs) applyProp(node, s, all[s.name]);

@@ -38,6 +38,9 @@ importers:
 
   apps/docs:
     dependencies:
+      '@labpics/fonts':
+        specifier: workspace:*
+        version: link:../../packages/fonts
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -50,6 +53,9 @@ importers:
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../../packages/shadow
+      '@labpics/ui-svelte':
+        specifier: workspace:*
+        version: link:../../packages/svelte
       '@labpics/ui-tokens':
         specifier: workspace:*
         version: link:../../packages/tokens
@@ -65,16 +71,25 @@ importers:
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      svelte:
+        specifier: 5.19.0
+        version: 5.19.0
       vue:
         specifier: 3.5.42
         version: 3.5.42(typescript@5.7.3)
     devDependencies:
       '@axe-core/playwright':
         specifier: 4.12.1
-        version: 4.12.1(playwright-core@1.55.1)
+        version: 4.12.1(playwright-core@1.64.1)
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
       '@playwright/test':
-        specifier: 1.55.1
-        version: 1.55.1
+        specifier: 1.64.1
+        version: 1.64.1
+      '@sveltejs/vite-plugin-svelte':
+        specifier: 5.0.3
+        version: 5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2))
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -158,9 +173,18 @@ importers:
 
   packages/core:
     dependencies:
+      '@labpics/motion':
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+      '@labpics/ui-materials':
+        specifier: workspace:*
+        version: link:../materials
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
@@ -227,10 +251,25 @@ importers:
       lit:
         specifier: 3.3.3
         version: 3.3.3
+      magic-string:
+        specifier: 0.30.21
+        version: 0.30.21
+      parse5:
+        specifier: 7.3.0
+        version: 7.3.0
     devDependencies:
       '@lit-labs/ssr':
         specifier: 4.1.0
         version: 4.1.0(@types/node@22.15.3)
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
+      happy-dom:
+        specifier: 21.0.4
+        version: 21.0.4
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -240,6 +279,9 @@ importers:
       typescript:
         specifier: 5.7.3
         version: 5.7.3
+      vite:
+        specifier: 6.4.4
+        version: 6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2)
       vitest:
         specifier: 3.2.6
         version: 3.2.6(@types/debug@4.1.13)(@types/node@22.15.3)(happy-dom@21.0.4)(lightningcss@1.33.0)(tsx@4.19.2)
@@ -255,6 +297,9 @@ importers:
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       tsup:
         specifier: 8.3.6
         version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
@@ -273,6 +318,9 @@ importers:
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../core
+      '@labpics/ui-materials':
+        specifier: workspace:*
+        version: link:../materials
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
@@ -433,8 +481,8 @@ importers:
   packages/tokens:
     devDependencies:
       '@labpics/motion':
-        specifier: 0.3.0
-        version: 0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
+        specifier: 0.5.0
+        version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
       '@types/node':
         specifier: 22.10.5
         version: 22.10.5
@@ -1292,8 +1340,8 @@ packages:
   '@labpics/colors@0.6.2':
     resolution: {integrity: sha512-zilUt3OHixV7MsLX/FkAaI/umpsxyaRklW8qQvWMnR35SQmwCuSe7eFHdNWDRMuhiv/An6LmPpwSTr+sMRWbUw==}
 
-  '@labpics/motion@0.3.0':
-    resolution: {integrity: sha512-mGgd7tB9bTPBRU0Yj+kJU7P6WktMX4wAQm0005XQH8owtC1vhDWlYi6cGcz7r7qEb9xgnYXywkriKSW6k2ajcw==}
+  '@labpics/motion@0.5.0':
+    resolution: {integrity: sha512-HtZceGmhBc4ldefBRpW6mg0cTLSINsyH1fXGKm9TXn57btjTnA3LPwq41Rdkd+cWWd2dA3qXGulPnJo+EcRFlQ==}
     engines: {node: '>=22'}
     peerDependencies:
       '@angular/core': '>=16.0.0'
@@ -1374,9 +1422,9 @@ packages:
   '@parse5/tools@0.3.0':
     resolution: {integrity: sha512-zxRyTHkqb7WQMV8kTNBKWb1BeOFUKXBXTBWuxg9H9hfvQB3IwP6Iw2U75Ia5eyRxPNltmY7E8YAlz6zWwUnjKg==}
 
-  '@playwright/test@1.55.1':
-    resolution: {integrity: sha512-IVAh/nOJaw6W9g+RJVlIQJ6gSiER+ae6mKQ5CX1bERzQgbC1VSeBlwdvczT7pxb0GWiyrxH4TGKbMfDb4Sq/ig==}
-    engines: {node: '>=18'}
+  '@playwright/test@1.64.1':
+    resolution: {integrity: sha512-IaYGml/nSOiZWROfPtuIL7neuu9qDOZ3TNvNljUIrhDMxiGTgPjzj/g9p9RxpS2tSepPDRY+UwAaEeiKtUvIAg==}
+    engines: {node: '>=20'}
     hasBin: true
 
   '@rolldown/binding-android-arm-eabi@1.2.12':
@@ -2305,11 +2353,6 @@ packages:
     resolution: {integrity: sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g==}
     engines: {node: '>=6 <7 || >=8'}
 
-  fsevents@2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -2751,14 +2794,14 @@ packages:
     resolution: {integrity: sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA==}
     engines: {node: '>= 6'}
 
-  playwright-core@1.55.1:
-    resolution: {integrity: sha512-Z6Mh9mkwX+zxSlHqdr5AOcJnfp+xUWLCt9uKV18fhzA8eyxUd8NUWzAjxUh55RZKSYwDGX0cfaySdhZJGMoJ+w==}
-    engines: {node: '>=18'}
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
+    engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.55.1:
-    resolution: {integrity: sha512-cJW4Xd/G3v5ovXtJJ52MAOclqeac9S/aGGgRzLabuF8TnIb6xHvMzKIa6JmrRzUkeXJgfL1MhukP0NK6l39h3A==}
-    engines: {node: '>=18'}
+  playwright@1.64.1:
+    resolution: {integrity: sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==}
+    engines: {node: '>=20'}
     hasBin: true
 
   postcss-load-config@6.0.1:
@@ -3522,10 +3565,10 @@ snapshots:
       is-docker: 4.0.0
       package-manager-detector: 1.8.0
 
-  '@axe-core/playwright@4.12.1(playwright-core@1.55.1)':
+  '@axe-core/playwright@4.12.1(playwright-core@1.64.1)':
     dependencies:
       axe-core: 4.12.1
-      playwright-core: 1.55.1
+      playwright-core: 1.64.1
 
   '@babel/helper-string-parser@7.29.7': {}
 
@@ -4093,7 +4136,7 @@ snapshots:
 
   '@labpics/colors@0.6.2': {}
 
-  '@labpics/motion@0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
+  '@labpics/motion@0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
     optionalDependencies:
       lit: 3.3.3
       react: 18.3.1
@@ -4178,9 +4221,9 @@ snapshots:
     dependencies:
       parse5: 7.3.0
 
-  '@playwright/test@1.55.1':
+  '@playwright/test@1.64.1':
     dependencies:
-      playwright: 1.55.1
+      playwright: 1.64.1
 
   '@rolldown/binding-android-arm-eabi@1.2.12':
     optional: true
@@ -4355,12 +4398,34 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
+  '@sveltejs/vite-plugin-svelte-inspector@4.0.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2)))(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2))':
+    dependencies:
+      '@sveltejs/vite-plugin-svelte': 5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2))
+      debug: 4.4.3
+      svelte: 5.19.0
+      vite: 6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2)
+    transitivePeerDependencies:
+      - supports-color
+
   '@sveltejs/vite-plugin-svelte-inspector@4.0.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2)))(svelte@5.19.0)(vite@6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2))':
     dependencies:
       '@sveltejs/vite-plugin-svelte': 5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2))
       debug: 4.4.3
       svelte: 5.19.0
       vite: 6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2))':
+    dependencies:
+      '@sveltejs/vite-plugin-svelte-inspector': 4.0.1(@sveltejs/vite-plugin-svelte@5.0.3(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2)))(svelte@5.19.0)(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2))
+      debug: 4.4.3
+      deepmerge: 4.3.1
+      kleur: 4.1.5
+      magic-string: 0.30.21
+      svelte: 5.19.0
+      vite: 6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2)
+      vitefu: 1.1.3(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2))
     transitivePeerDependencies:
       - supports-color
 
@@ -5278,9 +5343,6 @@ snapshots:
       jsonfile: 4.0.0
       universalify: 0.1.2
 
-  fsevents@2.3.2:
-    optional: true
-
   fsevents@2.3.3:
     optional: true
 
@@ -5679,13 +5741,11 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  playwright-core@1.55.1: {}
+  playwright-core@1.64.1: {}
 
-  playwright@1.55.1:
+  playwright@1.64.1:
     dependencies:
-      playwright-core: 1.55.1
-    optionalDependencies:
-      fsevents: 2.3.2
+      playwright-core: 1.64.1
 
   postcss-load-config@6.0.1(postcss@8.5.18)(tsx@4.19.2):
     dependencies:
@@ -6267,6 +6327,10 @@ snapshots:
       esbuild: 0.28.2
       fsevents: 2.3.3
       tsx: 4.19.2
+
+  vitefu@1.1.3(vite@6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2)):
+    optionalDependencies:
+      vite: 6.4.4(@types/node@22.10.5)(lightningcss@1.33.0)(tsx@4.19.2)
 
   vitefu@1.1.3(vite@6.4.4(@types/node@22.15.3)(lightningcss@1.33.0)(tsx@4.19.2)):
     optionalDependencies:

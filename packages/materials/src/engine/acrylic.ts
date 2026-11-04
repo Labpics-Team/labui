@@ -55,16 +55,15 @@
  * Требование — браузерная способность рисовать url()-фильтр на backdrop
  * (`supportsBackdropFilterUrl` из ./mount, общая capability; НЕ импорт из
  * glass-модуля — acrylic от него не зависит). Инлайновый стиль сильнее
- * @media-деградаций листа, поэтому движок гаснет сам: ACRYLIC_ENGINE_MEDIA
- * перечисляет запрещающие медиа (reduced-transparency / forced-colors /
- * contrast:more); рантайм не даёт attach под ними и пере-синкается на их change.
+ * @media-деградаций листа. Рантайм учитывает запрещающие медиа и разрешённый
+ * Colors контраст области; смена настроек пере-синхронизирует поверхности.
  */
 
 import { ACRYLIC_LUMINOSITY_OPACITY } from '../acrylic-corridor';
 import { MATERIAL_TIERS, type MaterialTier } from '../material-guarantee';
 import {
   type EngineHandle,
-  ensureHiddenDefs,
+  createHiddenDefs,
   supportsBackdropFilterUrl,
   trailingRaf,
 } from './mount';
@@ -91,25 +90,11 @@ export const ACRYLIC_SATURATE = 1.8;
  *  пикселей, чем прежний процентный регион (замер — bench/BASELINE.md). */
 export const ACRYLIC_REACH_PX = 2 * ACRYLIC_BLUR_PX;
 
-/** Медиа-режимы, в которых движок обязан НЕ держать поверхность (инлайн сильнее
- *  листовых деградаций — гаснем в JS, лист остаётся бэкстопом v1). */
-export const ACRYLIC_ENGINE_MEDIA = [
-  '(prefers-reduced-transparency: reduce)',
-  '(forced-colors: active)',
-  '(prefers-contrast: more)',
-] as const;
-
 /** Способность рисовать url()-фильтр на backdrop (общая проба ./mount) — то же
  *  браузерное требование, что у стекла, но НЕ через glass-модуль: acrylic от
  *  него не зависит (у них общая браузерная способность, не общий эффект). */
 export function supportsAcrylicChain(): boolean {
   return supportsBackdropFilterUrl();
-}
-
-/** true, когда хотя бы один запрещающий медиа-режим активен. */
-export function acrylicMediaBlocked(): boolean {
-  if (typeof matchMedia === 'undefined') return false;
-  return ACRYLIC_ENGINE_MEDIA.some((query) => matchMedia(query).matches);
 }
 
 /** Tier поверхности из её классов; без модификатора — base (как в CSS). */
@@ -120,15 +105,21 @@ function tierOf(el: HTMLElement): MaterialTier {
   return 'base';
 }
 
-/** Собрать per-surface фильтр в общих defs; вернуть его id и живой feFlood
+/** Собрать фильтр в локальных defs; вернуть его id и живой feFlood
  *  (flood-color пере-биндится на смену tier). Регион ставит caller (зависит
  *  от размера). */
-function buildFilter(tier: MaterialTier): {
+function buildFilter(
+  el: HTMLElement,
+  tier: MaterialTier,
+): {
   id: string;
+  svg: SVGSVGElement;
   filter: SVGFilterElement;
   flood: SVGFEFloodElement;
+  restore(): void;
 } {
   const id = `lab-acrylic-${++uid}`;
+  const document = el.ownerDocument;
   const filter = document.createElementNS(SVGNS, 'filter');
   filter.setAttribute('id', id);
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
@@ -155,8 +146,9 @@ function buildFilter(tier: MaterialTier): {
   blend.setAttribute('mode', 'luminosity');
 
   filter.append(blur, saturate, flood, blend);
-  ensureHiddenDefs(DEFS_CLASS).appendChild(filter);
-  return { id, filter, flood };
+  const { svg, defs, restore } = createHiddenDefs(el, DEFS_CLASS);
+  defs.appendChild(filter);
+  return { id, svg, filter, flood, restore };
 }
 
 /** Регион = бокс элемента (border-box CSS px, без transform-масштаба —
@@ -178,26 +170,40 @@ function writeBackdrop(el: HTMLElement, id: string): void {
 /**
  * Прицепить acrylic-конвейер к поверхности. Package-internal: единственный
  * caller — декларативный рантайм (runtime.ts) через binding. Механика per-
- * surface фильтра (общий defs, регион по боксу через ResizeObserver, tier из
+ * surface фильтра (локальные defs, регион по боксу через ResizeObserver, tier из
  * классов) — общая инженерия backdrop-фильтров (./mount), рецепт внутри — свой.
  * Attach решений о гейте/медиа не дублирует — их принимает рантайм.
  */
 export function attach(el: HTMLElement): EngineHandle {
   registry.get(el)?.destroy();
+  let disposed = false;
+  const baseline = ['backdrop-filter', '-webkit-backdrop-filter'].map((property) => ({
+    property,
+    value: el.style.getPropertyValue(property),
+    priority: el.style.getPropertyPriority(property),
+  }));
 
   let tier = tierOf(el);
-  const { id, filter, flood } = buildFilter(tier);
+  const { id, svg, filter, flood, restore } = buildFilter(el, tier);
   setRegion(filter, el);
   writeBackdrop(el, id);
 
   // Регион зависит от размера — держим его в синхроне с боксом. Trailing-rAF
   // сворачивает шторм ресайза в один пере-расчёт (общий примитив mount.ts).
-  const raf = trailingRaf(() => setRegion(filter, el));
-  const ro = new ResizeObserver(() => raf.schedule());
+  const raf = trailingRaf(() => {
+    if (!disposed) setRegion(filter, el);
+  });
+  const ro = new ResizeObserver(() => {
+    if (!disposed) raf.schedule();
+  });
   ro.observe(el);
 
   const handle: EngineHandle = {
+    restore(): void {
+      if (!disposed) restore();
+    },
     refresh(): void {
+      if (disposed) return;
       const now = tierOf(el);
       if (now !== tier) {
         tier = now;
@@ -206,11 +212,14 @@ export function attach(el: HTMLElement): EngineHandle {
       }
     },
     destroy(): void {
+      if (disposed) return;
+      disposed = true;
       ro.disconnect();
       raf.cancel();
-      filter.remove();
-      el.style.removeProperty('backdrop-filter');
-      el.style.removeProperty('-webkit-backdrop-filter');
+      svg.remove();
+      for (const { property, value, priority } of baseline) {
+        el.style.setProperty(property, value, priority);
+      }
       if (registry.get(el) === handle) registry.delete(el);
     },
   };

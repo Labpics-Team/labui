@@ -2,11 +2,8 @@
  * `lab-switch` documentation config — the FIRST production component that
  * CONSUMES a Zag machine through the Behaviors seam (the inverse of Button).
  *
- * The states matrix and live controls render REAL `<lab-switch>` elements. The
- * machine reads the reflected `checked` / `disabled` / `size` attributes, so the
- * live controls genuinely drive it — toggling `disabled` really blocks the
- * machine, switching `size` really re-lays-out, and toggling `checked` flips the
- * controlled state. Nothing is faked (no misleading stop-gaps).
+ * Матрица и настройки используют настоящий `<lab-switch>`. Атрибуты меняют
+ * свойства элемента; checked передаётся машине как текущее значение.
  */
 import '@labpics/ui-core/switch';
 import type { ComponentDoc } from '../template/component-doc.js';
@@ -32,7 +29,7 @@ export const switchDoc: ComponentDoc = {
   tag: 'lab-switch',
   title: 'Switch',
   summary:
-    'A binary on/off control for an immediate, self-applying setting. Runs the @zag-js/switch machine through the LabUI seam: the machine owns checked-state, keyboard, focus, role="switch" and aria-checked — the element only paints with semantic --lab-* roles.',
+    'Переключатель для настройки, которая применяется сразу. Элемент хранит checked, а машина взаимодействия обрабатывает ввод, клавиатуру, фокус и доступность. Оформление использует семантические роли --lab-*.',
   status: { kind: 'stable' },
 
   statesMatrix: {
@@ -114,7 +111,7 @@ export const switchDoc: ComponentDoc = {
     dos: [
       'Use for an immediate, self-applying binary setting (on now, off now).',
       'Pair it with a short, static label that names the thing being toggled.',
-      'Let the machine own the state — read checked-change, never fight aria-checked by hand.',
+      'Читайте checked-change и меняйте checked через свойство или атрибут; доступное состояние синхронизируется автоматически.',
     ],
     donts: [
       "Don't use it inside a form that needs an explicit Save — that is a checkbox's job.",
@@ -174,13 +171,14 @@ export const switchDoc: ComponentDoc = {
         type: 'boolean',
         default: 'false',
         description:
-          'Controlled checked state. Reflected for CSS + SSR. When present, the consumer owns the value; otherwise the machine owns it from default-checked.',
+          'Текущее состояние. Обновляется при вводе и присваивании свойства, отражается для CSS и SSR. Явный checked=false до первого render имеет приоритет над default-checked. Удаление атрибута выключает переключатель.',
       },
       {
         name: 'default-checked',
         type: 'boolean',
         default: 'false',
-        description: 'Uncontrolled initial state — read once by the machine at init.',
+        description:
+          'Начальное состояние, если checked ещё не задан. Применяется один раз перед первым render; последующие изменения и переподключение не сбрасывают checked. Присваивание свойства не создаёт атрибут: SSR-адаптеры сохраняют вычисленный checked.',
       },
       {
         name: 'disabled',
@@ -193,7 +191,7 @@ export const switchDoc: ComponentDoc = {
       {
         name: 'checked-change',
         description:
-          'CustomEvent<{ checked: boolean }> fired when the Zag machine flips the state via click or Space/Enter. The machine is the source of truth.',
+          'CustomEvent<{ checked: boolean }> после пользовательского переключения. Свойство checked уже обновлено; обработчик может присвоить другое значение. Программное присваивание события не создаёт.',
       },
     ],
     slots: [

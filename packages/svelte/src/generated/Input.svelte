@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/input';
   import type { LabInput } from '@labpics/ui-core/input';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-input> — типы взяты прямо из класса ядра (LabInput). */
   interface Props {
@@ -54,11 +54,19 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name });
   });
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
 
-<lab-input bind:this={el} {...rest}>
+<lab-input bind:this={el} {...rest} {...initialBooleans}>
 </lab-input>

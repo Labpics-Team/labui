@@ -1,8 +1,8 @@
-/**
- * `lab-slider` public entry — the single-wildcard resolution seam.
- *
- * Re-exports the element module and runs its self-registration side effect, so
- * importing this barrel upgrades `<lab-slider>`. Adding a component stays purely
- * additive: drop the element file plus this one-line barrel, touch no shared file.
- */
+/** Импорт регистрирует <lab-slider>; этот entrypoint защищён от tree shaking. */
+import { LabSlider } from './lab-slider.js';
+
 export * from './lab-slider.js';
+
+if (typeof customElements !== 'undefined' && !customElements.get('lab-slider')) {
+  customElements.define('lab-slider', LabSlider);
+}

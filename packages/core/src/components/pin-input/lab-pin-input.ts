@@ -1,3 +1,11 @@
+import {
+  type FieldA11yInput,
+  type LabFieldSize,
+  type LabFieldType,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+} from '@labpics/ui-core/shared';
 import * as pinInputMachine from '@zag-js/pin-input';
 /**
  * `<lab-pin-input>` — a segmented code field: N single-character `<input>`s that
@@ -46,14 +54,6 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
-import {
-  type FieldA11yInput,
-  type LabFieldSize,
-  type LabFieldType,
-  fieldControlAria,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
 
 export type { LabFieldSize as LabPinInputSize, LabFieldType as LabPinInputType };
@@ -459,9 +459,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-pin-input': LabPinInput;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-pin-input')) {
-  customElements.define('lab-pin-input', LabPinInput);
 }

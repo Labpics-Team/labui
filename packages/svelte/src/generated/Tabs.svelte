@@ -6,7 +6,7 @@
 <script lang="ts">
   import '@labpics/ui-core/tabs';
   import type { LabTabs } from '@labpics/ui-core/tabs';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-tabs> — типы взяты прямо из класса ядра (LabTabs). */
@@ -34,6 +34,7 @@
   ];
 
   let el: HTMLElement | undefined = $state();
+
 
   $effect(() => {
     forwardDeclared(el, specs, { orientation, size, activationMode, value, defaultValue, items });

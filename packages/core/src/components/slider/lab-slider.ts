@@ -1,3 +1,10 @@
+import {
+  type FieldA11yInput,
+  type LabFieldSize,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+} from '@labpics/ui-core/shared';
 /**
  * `<lab-slider>` — a value slider: a track with a filled range and one or more
  * draggable thumbs, driven end-to-end by the `@zag-js/slider` machine.
@@ -54,13 +61,6 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
-import {
-  type FieldA11yInput,
-  type LabFieldSize,
-  fieldControlAria,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '../field/field-a11y.js';
 
 /** Control size — drives track thickness and thumb diameter. */
 export type LabSliderSize = LabFieldSize;
@@ -613,9 +613,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-slider': LabSlider;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-slider')) {
-  customElements.define('lab-slider', LabSlider);
 }

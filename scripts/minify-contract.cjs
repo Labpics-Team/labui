@@ -9,11 +9,12 @@ const minPath = path.join(__dirname, '..', 'packages', 'colors', 'contract.min.c
 const css = fs.readFileSync(contractPath, 'utf8');
 
 // Единственный писатель contract.min.css. Минификация консервативная — только
-// срез комментариев: селекторы и значения не трогаем, чтобы не менять семантику
+// срез комментариев и отступов пустых строк: селекторы и значения не трогаем,
+// чтобы не менять семантику
 // контракта (основной выигрыш к gz даёт именно срез прозы). Прежняя
 // «амбициозная» ветка была мертва: её regex /:root\s*\{/ не матчился на
 // селекторный список ':root,\n[data-theme="light"]' в contract.css.
-const min = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+const min = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[\t ]+$/gm, '').trim();
 
 fs.writeFileSync(minPath, `${min}\n`);
 

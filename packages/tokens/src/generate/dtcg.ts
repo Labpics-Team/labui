@@ -69,7 +69,8 @@ function numberGroup(list: readonly ResolvedToken[]): DtcgGroup {
   for (const t of list) {
     group[t.name] = {
       $type: 'number',
-      $value: round(requireNumeric(t)),
+      // Точность множителя строки определяет владелец, а не формат экспорта.
+      $value: t.kind === 'line-height' ? requireNumeric(t) : Number(num(requireNumeric(t), 6)),
       ...(t.description ? { $description: t.description } : {}),
     };
   }

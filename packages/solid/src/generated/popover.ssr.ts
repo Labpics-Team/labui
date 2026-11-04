@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/popover';
 import type { LabPopover } from '@labpics/ui-core/popover';
 
@@ -15,9 +15,9 @@ export type PopoverSsrProps = Partial<Pick<LabPopover, 'placement' | 'size' | 'm
 export type PopoverSsrSlots = { default?: string; content?: string };
 
 /**
- * Рендерит <lab-popover> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-popover> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderPopover(
   props: PopoverSsrProps = {},
@@ -26,9 +26,9 @@ export function renderPopover(
   return renderToString(html`<lab-popover
       placement=${ifDefined(props.placement)}
       size=${ifDefined(props.size)}
-      ?modal=${Boolean(props.modal)}
-      ?closable=${Boolean(props.closable)}
-      ?arrow=${Boolean(props.arrow)}
+      .modal=${props.modal === undefined ? noChange : Boolean(props.modal)}
+      .closable=${props.closable === undefined ? noChange : Boolean(props.closable)}
+      .arrow=${props.arrow === undefined ? noChange : Boolean(props.arrow)}
       heading=${ifDefined(props.heading)}
       description=${ifDefined(props.description)}
     >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-popover>`);

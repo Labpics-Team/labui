@@ -13,6 +13,7 @@ import {
   missingColourRoles,
   repoRoot,
 } from './consumed-contract.js';
+import { themeVars } from './state-overlays-shared.mjs';
 
 /**
  * Contract-pin test — the CONSUMER → contract direction.
@@ -30,33 +31,15 @@ import {
  * naming the role.
  */
 
-// ── Shared scope helpers (mirror of contract.test.ts, kept local so the two
-// suites stay independent — a change to one cannot silently weaken the other).
 const css = readFileSync(resolve(repoRoot, 'packages/colors/contract.css'), 'utf8');
 
-function scopeBody(source: string, selectorPrefix: string): string {
-  const start = source.indexOf(selectorPrefix);
-  if (start === -1) throw new Error(`scope not found: ${selectorPrefix}`);
-  const open = source.indexOf('{', start);
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}') {
-      depth--;
-      if (depth === 0) return source.slice(open + 1, i);
-    }
-  }
-  throw new Error(`unbalanced braces for: ${selectorPrefix}`);
-}
-
-function declares(body: string, role: string): boolean {
-  const re = new RegExp(`(^|[;{\\s])${role.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:`, 'm');
-  return re.test(body);
-}
-
-const lightBody = scopeBody(css, ':root,\n[data-theme="light"]');
-const darkBody = scopeBody(css, '[data-theme="dark"]');
-const mediaBody = scopeBody(css, '@media (prefers-color-scheme: dark)');
+// Конечные карты из общего CSS binding; браузерный cascade/no-JS проверяет contrast.spec.ts.
+const lightBody = themeVars(css, 'light');
+const darkBody = themeVars(css, 'dark');
+const mediaBody = darkBody;
+const moreLightBody = themeVars(css, 'light', 'more');
+const moreDarkBody = themeVars(css, 'dark', 'more');
+const declares = (body: Map<string, string>, role: string) => body.has(role);
 
 describe('consumed --lab-* contract (consumer → contract pin)', () => {
   it('enumerates a substantial consumed surface including known colour roles', () => {
@@ -82,6 +65,112 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     expect(classify('--lab-state-pressed')).toBe('dimension');
     expect(classify('--lab-surface-shadow-tint')).toBe('local-or-gap');
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
+  });
+
+  it('классифицирует все объявленные opacity-токены, включая шкалу и алиасы', () => {
+    const tokens = readFileSync(
+      resolve(repoRoot, 'packages/tokens/src/generated/tokens.css'),
+      'utf8',
+    );
+    const names = [...tokens.matchAll(/^\s*(--lab-opacity-[a-z0-9-]+)\s*:/gm)].map(
+      (match) => match[1] as string,
+    );
+    expect(names).toContain('--lab-opacity-50');
+    expect(names).toContain('--lab-opacity-disabled');
+    expect(names).toContain('--lab-opacity-button-sheen');
+    for (const name of names) {
+      expect(classify(name), name).toBe('dimension');
+    }
+  });
+
+  it.each(['--lab-opacity-missing', '--lab-opacity-101', '--lab-opacity-button-sheen-ghost'])(
+    'не пропускает необъявленный opacity-токен %s по одному префиксу',
+    (name) => {
+      expect(classify(name)).toBe('unclassified');
+    },
+  );
+
+  it.each(['--lab-opacity-50', '--lab-opacity-button-sheen'])(
+    'сохраняет полное CSS-имя с неизвестным суффиксом после %s',
+    (base) => {
+      for (const suffix of ['-', '_ghost', 'éghost', String.raw`\_ghost`, String.raw`\67 host`]) {
+        const name = `${base}${suffix}`;
+        const source = `.x { opacity: var(${name}, 0.5); }`;
+        expect(
+          consumedNamesInSource('p.css', source).map(({ name }) => ({
+            name,
+            bucket: classify(name),
+          })),
+          source,
+        ).toEqual([{ name, bucket: 'unclassified' }]);
+      }
+    },
+  );
+
+  it.each(['litVar', 'cssVar'])(
+    'сохраняет полное имя первого строкового аргумента %s',
+    (helper) => {
+      for (const base of ['--lab-opacity-50', '--lab-opacity-button-sheen']) {
+        for (const suffix of [
+          '-',
+          '_ghost',
+          'éghost',
+          String.raw`\u005fghost`,
+          String.raw`\\_ghost`,
+        ]) {
+          const name = `${base}${suffix}`;
+          for (const quote of ["'", '"', '`']) {
+            const source = `const value = ${helper}(${quote}${name}${quote}, '0.5');`;
+            expect(
+              consumedNamesInSource('p.ts', source).map(({ name }) => ({
+                name,
+                bucket: classify(name),
+              })),
+              source,
+            ).toEqual([{ name, bucket: 'unclassified' }]);
+          }
+        }
+      }
+    },
+  );
+
+  it('извлекает объявленные имена с пробелами и fallback во всех формах', () => {
+    const cssSource =
+      '.x { opacity: var(\n --lab-opacity-50 \t, var(--lab-opacity-button-sheen, 0.5)); }';
+    expect(
+      consumedNamesInSource('p.css', cssSource).map(({ name }) => ({
+        name,
+        bucket: classify(name),
+      })),
+    ).toEqual([
+      { name: '--lab-opacity-50', bucket: 'dimension' },
+      { name: '--lab-opacity-button-sheen', bucket: 'dimension' },
+    ]);
+    for (const helper of ['litVar', 'cssVar']) {
+      for (const quote of ["'", '"', '`']) {
+        const source = `const value = ${helper}(\n ${quote}--lab-opacity-50${quote} , '0.5');`;
+        expect(
+          consumedNamesInSource('p.ts', source).map(({ name }) => ({
+            name,
+            bucket: classify(name),
+          })),
+          source,
+        ).toEqual([{ name: '--lab-opacity-50', bucket: 'dimension' }]);
+      }
+    }
+  });
+
+  it('не принимает динамический фрагмент template за полное статическое имя', () => {
+    const source = [
+      "flood.style.setProperty('flood-color', `var(--lab-bg-material-${tier}-01)`);",
+      "const opacity = cssVar('--lab-opacity-50');",
+    ].join('\n');
+    expect(consumedNamesInSource('p.ts', source)).toEqual([{ name: '--lab-opacity-50', line: 2 }]);
+    expect(
+      consumedNamesInSource('p.css', '.x { color: var(--lab-bg-material-${tier}-01); }').map(
+        ({ name }) => ({ name, bucket: classify(name) }),
+      ),
+    ).toEqual([{ name: '--lab-bg-material-${tier}-01', bucket: 'unclassified' }]);
   });
 
   // ── (0) Provenance guard — test files and `_`-prefixed scratch files must NEVER
@@ -125,6 +214,8 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
       ['light', lightBody],
       ['dark', darkBody],
       ['media', mediaBody],
+      ['more-light', moreLightBody],
+      ['more-dark', moreDarkBody],
     ] as const) {
       const missing = consumed.filter((r) => !declares(body, r));
       expect(

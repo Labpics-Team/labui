@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/select';
 import type { LabSelect } from '@labpics/ui-core/select';
 
@@ -15,9 +15,9 @@ export type SelectSsrProps = Partial<Pick<LabSelect, 'size' | 'placement' | 'mul
 export type SelectSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-select> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-select> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderSelect(
   props: SelectSsrProps = {},
@@ -25,8 +25,8 @@ export function renderSelect(
   return renderToString(html`<lab-select
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?multiple=${Boolean(props.multiple)}
-      ?disabled=${Boolean(props.disabled)}
+      .multiple=${props.multiple === undefined ? noChange : Boolean(props.multiple)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       name=${ifDefined(props.name)}
       placeholder=${ifDefined(props.placeholder)}
       label=${ifDefined(props.label)}

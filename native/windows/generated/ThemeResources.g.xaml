@@ -1,0 +1,28 @@
+<!-- СГЕНЕРИРОВАНО. Не править вручную. normal; Colors source 1bf6e9b94684f2bd51685222cd313c5cf5dd95a2; WASM 17d338d4bdf783b861191d121d6171481fbc9e48b397fd19dcbade77ed2d147e; input 1ce2199e92dadb4a150bfa74aa5db91a4bb5085e6ddeff784914aa07849fd2c4; geometry 2aaa56a0874f4b19ef1671f19f98fb5b7d9068fb2029c520276db62e7929bdbd -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="LabFillAccentBrush" Color="#007AFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabLabelOnAccentBrush" Color="#FFFFFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabLabelSecondaryOnAccentBrush" Color="#FFFFFF" Opacity="0.722" />
+      <SolidColorBrush x:Key="LabLightBrush" Color="#FFFFFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabDarkBrush" Color="#101012" Opacity="1" />
+      <SolidColorBrush x:Key="LabFocusBrush" Color="#007AFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabPageBrush" Color="#FFFFFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabLabelPrimaryBrush" Color="#101012" Opacity="1" />
+      <x:Double x:Key="LabButtonShadowOpacity">0.12</x:Double>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="LabFillAccentBrush" Color="#4A8FFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabLabelOnAccentBrush" Color="#FFFFFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabLabelSecondaryOnAccentBrush" Color="#FFFFFF" Opacity="0.722" />
+      <SolidColorBrush x:Key="LabLightBrush" Color="#FFFFFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabDarkBrush" Color="#101012" Opacity="1" />
+      <SolidColorBrush x:Key="LabFocusBrush" Color="#4A8FFF" Opacity="1" />
+      <SolidColorBrush x:Key="LabPageBrush" Color="#101012" Opacity="1" />
+      <SolidColorBrush x:Key="LabLabelPrimaryBrush" Color="#F6F8FA" Opacity="1" />
+      <x:Double x:Key="LabButtonShadowOpacity">0.2</x:Double>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

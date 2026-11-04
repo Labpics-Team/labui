@@ -165,9 +165,16 @@
       "slots": {
         "default": true,
         "named": [
-          "dot"
+          "dot",
+          "leading",
+          "trailing"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "fill": [
+          "dot",
+          "leading",
+          "trailing"
+        ]
       }
     },
     {
@@ -221,6 +228,11 @@
           "kind": "string"
         },
         {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
           "name": "icon",
           "attr": "icon",
           "kind": "boolean"
@@ -245,6 +257,7 @@
       "slots": {
         "default": true,
         "named": [
+          "end",
           "icon"
         ],
         "dynamic": false
@@ -270,6 +283,51 @@
           "name": "interactive",
           "attr": "interactive",
           "kind": "boolean"
+        },
+        {
+          "name": "imageSrc",
+          "attr": "image-src",
+          "kind": "string"
+        },
+        {
+          "name": "imageAlt",
+          "attr": "image-alt",
+          "kind": "string"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "headingLevel",
+          "attr": "heading-level",
+          "kind": "string"
+        },
+        {
+          "name": "caption",
+          "attr": "caption",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "lowerCaption",
+          "attr": "lower-caption",
+          "kind": "string"
+        },
+        {
+          "name": "titleHint",
+          "attr": "title-hint",
+          "kind": "string"
+        },
+        {
+          "name": "badge",
+          "attr": "badge",
+          "kind": "string"
         }
       ],
       "events": [],

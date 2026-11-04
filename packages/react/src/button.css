@@ -18,13 +18,15 @@
 [data-lab-button] {
   /* Size knobs the size axis maps onto. Dimension fallbacks keep it usable
      before tokens load; colour roles below never carry a fallback. */
-  --_lab-btn-radius: var(--lab-radius-control, 0.5rem);
-  --_lab-btn-font: var(--lab-font-size-md, 1rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-md, -0.0083em);
-  --_lab-btn-pad-x: var(--lab-space-md, 1rem);
-  --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-min: var(--lab-size-control-h-m, 2.5rem);
+  --_lab-btn-radius: var(--lab-radius-button, 1rem);
+  --_lab-btn-font: var(--lab-font-size-button-label, 1rem);
+  --_lab-btn-line: var(--lab-line-height-button-label, 1.5);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-label, 0em);
+  --_lab-btn-pad-x: var(--lab-space-button-inset, 0.75rem);
+  --_lab-btn-pad-y: var(--lab-space-button-inset, 0.75rem);
+  --_lab-btn-content: var(--lab-size-button-content, 1.5rem);
+  --_lab-btn-min: var(--lab-size-button-h-m, 3rem);
+  --_lab-btn-glow-x: var(--lab-space-none, 0rem);
 
   box-sizing: border-box;
   position: relative;
@@ -32,16 +34,15 @@
   align-items: center;
   justify-content: center;
   vertical-align: middle;
-  gap: var(--_lab-btn-gap);
   min-height: var(--_lab-btn-min);
   padding: var(--_lab-btn-pad-y) var(--_lab-btn-pad-x);
   border-radius: var(--_lab-btn-radius);
-  border: var(--lab-stroke-hairline) solid transparent;
+  border: 0 solid transparent;
   font: inherit;
   font-size: var(--_lab-btn-font);
   letter-spacing: var(--_lab-btn-tracking);
-  line-height: var(--lab-line-height-md, 1.5);
-  font-weight: var(--lab-font-weight-semibold, 600);
+  line-height: var(--_lab-btn-line);
+  font-weight: var(--lab-font-weight-medium, 500);
   cursor: pointer;
   transition: background-color var(--lab-motion-transition-duration)
     var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration)
@@ -52,19 +53,33 @@
   color: var(--lab-label-primary);
 }
 
+/* Border округляется браузером до device px. Отдельная обводка сохраняет
+   rem-inset при любом масштабе и наследует цвет настоящего состояния. */
+[data-lab-button]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: var(--lab-stroke-hairline) solid;
+  border-color: inherit;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
 [data-lab-button][data-size="s"] {
-  --_lab-btn-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0009em);
-  --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
-  --_lab-btn-min: var(--lab-size-control-h-s, 2rem);
+  --_lab-btn-radius: var(--lab-radius-full, 9999px);
+  --_lab-btn-font: var(--lab-font-size-button-label-s, 0.875rem);
+  --_lab-btn-line: var(--lab-line-height-button-label-s, 0.8571);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-label-s, 0em);
+  --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
+  --_lab-btn-content: var(--lab-size-button-content-s, 1.25rem);
+  --_lab-btn-min: var(--lab-size-button-h-s, 2.25rem);
+  --_lab-btn-glow-x: calc(-1 * var(--lab-size-button-glow-shift-s, 0.0625rem));
 }
 [data-lab-button][data-size="l"] {
-  --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0194em);
-  --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
+  --_lab-btn-pad-x: var(--lab-space-md, 1rem);
   --_lab-btn-pad-y: var(--lab-space-md, 1rem);
-  --_lab-btn-min: var(--lab-size-control-h-l, 3rem);
+  --_lab-btn-min: var(--lab-size-button-h-l, 3.5rem);
+  --_lab-btn-glow-x: var(--lab-size-button-glow-shift-l, 0.1875rem);
 }
 
 /* Icon-only: square, no text padding asymmetry. */
@@ -78,6 +93,71 @@
 [data-lab-button][data-type="accent"][data-kind="fill"] {
   background-color: var(--lab-fill-accent);
   color: var(--lab-label-on-accent);
+}
+
+/* Отдельный clip ограничивает только эффект, сохраняя glyph и focus. */
+[data-lab-button] .lab-button-effects {
+  display: none;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+[data-lab-button][data-type="accent"][data-kind="fill"] .lab-button-effects {
+  display: block;
+}
+[data-lab-button] .lab-button-effects::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  color: var(--_lab-button-sheen-color, var(--lab-bg-static-light));
+  background-image: linear-gradient(180deg, currentColor, transparent);
+  opacity: var(--_lab-button-sheen-opacity, var(--lab-opacity-button-sheen, 0.2));
+  transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+    color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+}
+[data-lab-button] .lab-button-effects::after {
+  content: "";
+  position: absolute;
+  left: calc(50% + var(--_lab-btn-glow-x));
+  top: 50%;
+  width: var(--lab-size-button-glow, 6rem);
+  height: var(--lab-size-button-glow, 6rem);
+  transform: translate(-50%, -50%);
+  border-radius: var(--lab-radius-full, 9999px);
+  background-color: var(--lab-bg-static-light);
+  filter: blur(var(--lab-size-button-glow-blur, 1.125rem));
+  opacity: 0;
+  transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+}
+[data-lab-button][data-type="accent"][data-kind="fill"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: var(--lab-shadow-button);
+  transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+}
+[data-lab-button][data-type="accent"][data-kind="fill"]:hover:not(:disabled)
+  .lab-button-effects::before {
+  opacity: var(--_lab-button-sheen-hover-opacity, var(--lab-opacity-button-sheen-hover, 0.32));
+}
+[data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled)
+  .lab-button-effects::before {
+  color: var(--lab-bg-static-dark);
+  opacity: var(--lab-opacity-button-shade-pressed, 0.12);
+}
+[data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled)
+  .lab-button-effects::after {
+  opacity: var(
+    --_lab-button-glow-pressed-opacity,
+    calc(var(--lab-opacity-button-glow, 0.32) * var(--lab-opacity-button-glow-fill, 0.52))
+  );
+}
+[data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled)::after {
+  box-shadow: var(--lab-shadow-button-pressed);
 }
 [data-lab-button][data-type="accent"][data-kind="tinted"] {
   background-color: var(--lab-fill-accent-tinted);
@@ -133,16 +213,6 @@
    поверхности/текст/бордеры: чернила темы (--lab-label-primary). Ручки — в
    @labpics/ui-tokens; CI-гейты: state-overlay-{contrast,muddiness}. */
 @supports (color: color-mix(in oklab, red, blue)) {
-  [data-lab-button][data-type="accent"][data-kind="fill"]:hover:not(:disabled) {
-    background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover, 8%));
-  }
-  [data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-accent),
-      black var(--lab-state-pressed, 14%)
-    );
-  }
   [data-lab-button][data-type="accent"][data-kind="tinted"]:hover:not(:disabled) {
     background-color: color-mix(
       in oklab,
@@ -328,10 +398,10 @@
    расходится с миксом — задокументировано). Вёрстка не смещается: filter
    не участвует в лейауте. Disabled гасится ниже каскадом (filter: none). */
 @supports not (color: color-mix(in oklab, red, blue)) {
-  [data-lab-button]:hover {
+  [data-lab-button]:not([data-type="accent"][data-kind="fill"]):hover {
     filter: brightness(0.7787);
   }
-  [data-lab-button]:active {
+  [data-lab-button]:not([data-type="accent"][data-kind="fill"]):active {
     filter: brightness(0.6361);
   }
 }
@@ -351,12 +421,68 @@
 [data-lab-button][data-loading="true"] {
   cursor: progress;
 }
+[data-lab-button] .lab-button-content {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+[data-lab-button] .lab-button-icon {
+  /* Область принадлежит кнопке; явный размер рисунка остаётся у потребителя. */
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: var(--_lab-btn-content);
+  grid-auto-rows: var(--_lab-btn-content);
+  place-items: center;
+  flex: 0 0 auto;
+  line-height: 0;
+}
 [data-lab-button] .lab-button-label {
   display: inline-flex;
   align-items: center;
-  gap: var(--_lab-btn-gap);
+  min-height: var(--_lab-btn-content);
+  padding-inline: var(--lab-space-sm, 0.5rem);
+  gap: var(--lab-space-sm, 0.5rem);
 }
-[data-lab-button][data-loading="true"] .lab-button-label {
+[data-lab-button] .lab-button-description {
+  font-size: var(--lab-font-size-button-description, 1rem);
+  line-height: var(--lab-line-height-button-description, 1.5);
+  letter-spacing: var(--lab-letter-spacing-button-description, -0.015625em);
+  font-weight: var(--lab-font-weight-regular, 400);
+  color: var(--lab-label-secondary);
+}
+[data-lab-button][data-size="s"] .lab-button-description {
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  font-weight: var(--_lab-button-description-small-weight, inherit);
+}
+[data-lab-button][data-type="accent"] .lab-button-description {
+  color: var(--lab-label-brand-secondary);
+}
+[data-lab-button][data-type="danger"] .lab-button-description {
+  color: var(--lab-label-danger-secondary);
+}
+[data-lab-button][data-type="accent"][data-kind="fill"] .lab-button-description,
+[data-lab-button][data-type="danger"][data-kind="fill"] .lab-button-description {
+  color: var(--lab-label-static-light-secondary);
+}
+[data-lab-button][data-icon="true"] .lab-button-icon[data-position="end"] {
+  display: none;
+}
+[data-lab-button][data-icon="true"] .lab-button-label {
+  /* Подпись не занимает место, но остаётся источником доступного имени. */
+  position: absolute;
+  width: var(--lab-stroke-hairline);
+  height: var(--lab-stroke-hairline);
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+[data-lab-button][data-loading="true"] .lab-button-content,
+[data-lab-button][data-loading="true"] .lab-button-content .lab-button-description {
   /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of
      those strip the label from the accessibility tree in at least one engine
      (visibility:hidden everywhere; WebKit ALSO drops opacity:0 from its a11y
@@ -366,6 +492,10 @@
      stays in the a11y tree on every engine, so "Saving…" remains the
      accessible name while the spinner is visually shown. */
   color: transparent;
+}
+[data-lab-button][data-loading="true"] .lab-button-icon {
+  /* Скрываем paint фиксированного SVG/img без потери геометрии и имени. */
+  clip-path: inset(50%);
 }
 [data-lab-button] .lab-button-spinner {
   display: none;
