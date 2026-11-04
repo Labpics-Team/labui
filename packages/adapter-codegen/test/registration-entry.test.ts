@@ -71,6 +71,38 @@ export function register() { customElements.define('lab-control', Minimal); }
     });
   });
 
+  it('наследует размерное заполнение слотов без собственного render', () => {
+    expect(
+      analyze({
+        'shared/ancestor.ts': `
+export class Ancestor extends HTMLElement {
+  render() {
+    return '<slot name="leading" data-sizing="fill"></slot><slot name="body"></slot>';
+  }
+}
+`,
+        'probe/index.ts': `
+import { Ancestor } from '../shared/ancestor.js';
+export class Probe extends Ancestor {}
+customElements.define('lab-probe', Probe);
+`,
+      }),
+    ).toEqual({
+      version: 1,
+      components: [
+        {
+          tag: 'lab-probe',
+          subpath: 'probe',
+          pascal: 'Probe',
+          className: 'Probe',
+          props: [],
+          events: [],
+          slots: { default: false, named: ['body', 'leading'], dynamic: false, fill: ['leading'] },
+        },
+      ],
+    });
+  });
+
   it.each([
     {
       name: 'класс в соседнем файле',
