@@ -496,7 +496,8 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
             commandStartedTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture);
             commandWrittenTicks = $null; responseReadTicks = $null; nextReaderStartedTicks = $null;
             responseParsedTicks = $null; transport = $null; status = $null; elapsedMs = $null;
-            observationCount = $null; operation = $null; nativeRequestId = $null }
+            observationCount = $null; operation = $null; nativeRequestId = $null;
+            position = $null; origin = $null; reason = $null }
         $spaceDiagnostic.polls.Add($poll)
     }
     $spaceChannel.id++
@@ -521,7 +522,7 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
         throw 'Space ответил от другого процесса.'
     }
     if ($null -ne $poll) {
-        foreach ($field in @('status', 'elapsedMs', 'observationCount', 'operation', 'nativeRequestId')) {
+        foreach ($field in @('status', 'elapsedMs', 'observationCount', 'operation', 'nativeRequestId', 'position', 'origin', 'reason')) {
             $property = $reply.value.PSObject.Properties[$field]
             if ($null -ne $property) { $poll[$field] = $property.Value }
         }

@@ -69,7 +69,7 @@ foreach ($fault in @('none', 'rejected', 'timeout')) {
     & {
         param($fault)
         $reply = @{ id = 1; ok = $true; value = @{ pid = 3187; status = 'waiting'; elapsedMs = 12.5;
-            observationCount = 3; operation = 9; nativeRequestId = 11 }; transport = @{
+            observationCount = 3; operation = 9; nativeRequestId = 11; position = 0.25; origin = 'Animation'; reason = $null }; transport = @{
             clockFrequency = [Diagnostics.Stopwatch]::Frequency; readStartedTicks = '1001';
             commandReadTicks = '1002'; dispatchCompletedTicks = '1003' } }
         if ($fault -ceq 'rejected') { $reply = @{ id = 1; ok = $false; error = 'fixture rejection' } }
@@ -96,7 +96,8 @@ foreach ($fault in @('none', 'rejected', 'timeout')) {
         if ($fault -ceq 'none') {
             Assert ($value.status -ceq 'waiting' -and $poll.status -ceq 'waiting' -and
                 $poll.transport.dispatchCompletedTicks -ceq '1003' -and $poll.operation -eq 9 -and
-                $poll.nativeRequestId -eq 11 -and $poll.observationCount -eq 3) 'Диагностика потеряла этап приложения или request.'
+                $poll.nativeRequestId -eq 11 -and $poll.observationCount -eq 3 -and $poll.position -eq 0.25 -and
+                $poll.origin -ceq 'Animation' -and $null -eq $poll.reason) 'Диагностика потеряла этап приложения или request.'
         }
         if ($fault -ceq 'rejected') { Assert ($failure.Exception.Message -like '*Space отклонил ready 1*') 'Диагностика скрыла primary error.' }
         $process.StandardInput.Dispose(); $process.StandardOutput.Dispose(); $spaceChannel.cancellation.Dispose()
