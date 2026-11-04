@@ -1562,6 +1562,36 @@ test('consumer readback refuses unrelated files, unbounded PNG and incomplete re
     );
 });
 
+test('consumer receipt limits projected bytes while retaining a decodable healthy packet', () => {
+  const healthy = Buffer.from(
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: [{ opacity: 0.375 }],
+    }),
+  );
+  const { bytes } = decodeConsumerEvidence(
+    consumerReceiptLog(healthy, PIN.sourceCommit, PIN.sourceCommit),
+    'LABUI_ICONS_CONSUMER_RECEIPT',
+    'receiptSha256',
+    'result/receipt.json',
+  );
+  assert.deepEqual(assertProjectedBytes(bytes, healthy).records, [{ opacity: 0.375 }]);
+  const expanding = Buffer.from(
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: Array.from({ length: 150_000 }, () => ({ opacity: 0.375 })),
+    }),
+  );
+  assert.ok(expanding.length < 4 * 1024 * 1024);
+  assert.ok(projectJsonBytes(expanding).length > 4 * 1024 * 1024);
+  assert.throws(
+    () => consumerReceiptLog(expanding, PIN.sourceCommit, PIN.sourceCommit),
+    /receipt: projection вне лимита/,
+  );
+});
+
 async function summaryFixture(t, schemaVersion) {
   const { root } = schemaVersion >= 3 ? await expressionFixture(t) : await stateFixture(t);
   const author = await authorReference(root, PIN);
@@ -1706,6 +1736,38 @@ test('summary transmits successful raw observations and PNG authenticated agains
     assert.equal(metadata.sourceSha, summary.source.pin.sourceCommit);
     assert.equal(metadata.uiCommit, summary.source.uiCommit);
   }
+});
+
+test('summary refuses an expanding receipt projection and retains RESULT readbackFailure', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  const receiptBytes = Buffer.from(
+    JSON.stringify({
+      ...fixture.receipt,
+      records: Array.from({ length: 150_000 }, () => ({ opacity: 0.375 })),
+    }),
+  );
+  assert.ok(receiptBytes.length < 4 * 1024 * 1024);
+  assert.ok(projectJsonBytes(receiptBytes).length > 4 * 1024 * 1024);
+  await writeFile(join(fixture.output, 'result/receipt.json'), receiptBytes);
+  const result = spawnSync(
+    process.execPath,
+    [
+      fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+      '--summarize',
+      fixture.output,
+    ],
+    { encoding: 'utf8', timeout: 10_000 },
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 1);
+  assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
+  const summary = readConsumerResult(result.stdout).evidence;
+  assert.equal(summary.outcome, 'failed');
+  assert.equal(summary.browserOutcome, 'passed');
+  assert.deepEqual(summary.readbackFailure, {
+    code: 'EVIDENCE_REFUSED',
+    file: 'result/receipt.json',
+  });
 });
 
 test('oversized raw failure and refused PNG keep the limited continuity RESULT', async (t) => {

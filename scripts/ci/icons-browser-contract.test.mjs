@@ -142,7 +142,7 @@ case "$1" in
     printf 'private-producer-archive\\n' > "$work/output/icons/producer.tgz"
     if [ "$RAW_TRACE" = file ]; then printf 'secret-argv-env-config\\n' > "$work/output/.git-trace2.raw"; fi
     if [ "$RAW_TRACE" = directory ]; then mkdir "$work/output/.git-trace2.raw"; fi
-    if [ "$BAD_LINK" = true ]; then ln "$FOREIGN_FILE" "$work/output/public/unsafe"; fi
+    if [ "$BAD_LINK" = true ]; then ln "$work/output/public/receipt.json" "$work/linked-receipt.json"; fi
     printf '::set-output name=icons_ready::forged\\n'
     if [ "$INTERRUPT" = true ]; then kill -TERM "$PPID"; fi
     exit "$START_STATUS";;
@@ -350,7 +350,7 @@ test('inner workload and cancellation status survive a later summary refusal', (
     [0, 0, 0],
   ]) {
     const result = spawnSync(bash, ['--noprofile', '--norc'], {
-      input: `node() { case "$1" in *icons-packed.mjs) return "$WORK_STATUS";; *prepare-icons-inputs.mjs) return "$SUMMARY_STATUS";; *) return 99;; esac; }\n${snippet}\n`,
+      input: `set -euo pipefail\nnode() { case "$1" in *icons-packed.mjs) return "$WORK_STATUS";; *prepare-icons-inputs.mjs) return "$SUMMARY_STATUS";; *) return 99;; esac; }\n${snippet}\n`,
       env: {
         ...process.env,
         WORK_STATUS: String(workStatus),
