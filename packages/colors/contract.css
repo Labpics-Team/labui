@@ -2,7 +2,7 @@
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@1.0.3, source 1bf6e9b94684f2bd51685222cd313c5cf5dd95a2.
 WASM SHA256: 17d338d4bdf783b861191d121d6171481fbc9e48b397fd19dcbade77ed2d147e.
-Авторские входы: labui.config.json, SHA256 1ce2199e92dadb4a150bfa74aa5db91a4bb5085e6ddeff784914aa07849fd2c4.
+Авторские входы: labui.config.json, SHA256 7841011caa311f7435e53790ba6bf02f8e566bb9b4c2217b91a1c1f780175ecc.
 Краски и alpha получены из готового Program; aliases принадлежат LabUI.
 Регенерация: node packages/colors/generate-contract.mjs
 */
@@ -185,6 +185,7 @@ WASM SHA256: 17d338d4bdf783b861191d121d6171481fbc9e48b397fd19dcbade77ed2d147e.
   --lab-fx-glow-inverted: var(--_lab-light, rgb(176 176 185)) var(--_lab-dark, rgb(60 60 67));
   --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
   --lab-fx-glow-warning: var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522));
+  --lab-fx-noise: rgb(1 2 5);
   --lab-fx-skeleton-highlight: var(--_lab-light, rgb(255 255 255 / 0.078)) var(--_lab-dark, rgb(255 255 255 / 0.161));
 
   /* Misc */

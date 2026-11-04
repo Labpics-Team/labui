@@ -252,6 +252,7 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
     for (const { alias: name, target } of config.aliases) alias(name, target);
 
     add('fx-glow-inverted', selected.invertedMuted);
+    add('fx-noise', 'noise');
     // Белый источник и общая alpha базы сохраняют действующий смысл светлого блика.
     add('fx-skeleton-highlight', 'white', authored.fillAlpha[theme].quaternary);
     for (const family of GLOW_FAMILIES) {

@@ -4,6 +4,7 @@
     "sources": {
       "white": "#FFFFFF",
       "shade": "#101012",
+      "noise": "#010205",
       "mid": "#787880",
       "primary-dark": "#F6F8FA",
       "muted-light": "#3C3C43",

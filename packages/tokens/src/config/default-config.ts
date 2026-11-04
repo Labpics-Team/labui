@@ -65,6 +65,9 @@ export const defaultConfig: TokensConfig = {
       'glow-halo': '8', // 32px — радиус размытия ореола свечения
       'switch-label-gap-l': '3', // 12px между треком и подписью Switch L.
       'button-inset': '3', // 12px внешнего отступа Button S/M.
+      'sheet-inset': '4',
+      'sheet-gap': '6',
+      'sheet-overlap': '8',
     },
   },
 
@@ -110,6 +113,14 @@ export const defaultConfig: TokensConfig = {
       'button-glow-blur': 1.125,
       'button-glow-shift-s': 0.0625,
       'button-glow-shift-l': 0.1875,
+      // Sheet Half: read-only эталон от 2026-11-04, Unit 100%.
+      'sheet-drag-area': 1.5,
+      'sheet-indicator-w': 2.25,
+      'sheet-indicator-h': 0.25,
+      'sheet-indicator-y': 0.875,
+      'sheet-indicator-x': 0.03125,
+      'sheet-body-blur': 8,
+      'sheet-ghost-blur': 1.5,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,
@@ -178,6 +189,7 @@ export const defaultConfig: TokensConfig = {
       control: 'm', //  8px — поля ввода и общие контролы.
       button: 'xl', // 16px — Button M/L; S использует capsule.
       card: 'xl', // 16px — cards, panels
+      sheet: '5xl', // 32px — только верхние углы Sheet.
       pill: 'full',
       circle: 'full',
       // Floor of the concentric-radius law: an inner radius derived as
@@ -323,6 +335,8 @@ export const defaultConfig: TokensConfig = {
   opacity: {
     steps: {
       '0': 0, //    прозрачно — явный нулевой токен
+      '4': 0.04,
+      '6': 0.06,
       '12': 0.12,
       '20': 0.2,
       '32': 0.32,
@@ -338,6 +352,8 @@ export const defaultConfig: TokensConfig = {
       'button-shade-pressed': '12',
       'button-glow': '32',
       'button-glow-fill': '52',
+      'sheet-body-noise': '4',
+      'sheet-ghost-noise': '6',
       disabled: '45', // задизейбленный контрол целиком
       muted: '50', //    вторичный/приглушённый текст, плейсхолдеры
       full: '100',

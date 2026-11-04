@@ -1,0 +1,12 @@
+<Page
+    x:Class="LabUI.Buttons.SheetPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:lab="using:LabUI.WinUI"
+    Background="{ThemeResource LabPageBrush}">
+  <Grid>
+    <Image x:Name="Backdrop" Source="ms-appx:///Assets/SheetBackdrop.png" Stretch="UniformToFill" />
+    <lab:LabSheet x:Name="Sheet" AutomationProperties.Name="Нижняя панель"
+        AutomationProperties.AutomationId="Sheet" />
+  </Grid>
+</Page>

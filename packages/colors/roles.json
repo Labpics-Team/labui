@@ -142,6 +142,7 @@
       "--lab-fx-glow-inverted",
       "--lab-fx-glow-neutral",
       "--lab-fx-glow-warning",
+      "--lab-fx-noise",
       "--lab-fx-skeleton-highlight"
     ],
     "Misc": ["--lab-badge-label-contrast", "--lab-badge-label-default", "--lab-control-bg"],

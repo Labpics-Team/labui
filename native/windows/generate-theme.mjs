@@ -1,11 +1,13 @@
 // Сборочная проекция LabUI: Colors назначает краски, нативный renderer читает ресурсы.
 import { createHash } from 'node:crypto';
-import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { defaultConfig } from '../../packages/tokens/src/config/default-config.ts';
-import { BUTTON_INSET } from '../../packages/shadow/src/config.ts';
 import { createLabuiEngine } from '../../packages/colors/engine.mjs';
+import { BUTTON_INSET } from '../../packages/shadow/src/config.ts';
+import { ELEVATION_SHAPES } from '../../packages/shadow/src/domain/elevation.ts';
+import { SHADOW_SLOTS, SLOT_ALPHA } from '../../packages/shadow/src/domain/layer.ts';
+import { defaultConfig } from '../../packages/tokens/src/config/default-config.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '../..');
@@ -15,6 +17,8 @@ const sources = [
   'packages/tokens/src/generated/tokens.dtcg.json',
   'packages/tokens/src/generated/motion.dtcg.json',
   'packages/shadow/src/config.ts',
+  'packages/shadow/src/domain/elevation.ts',
+  'packages/shadow/src/domain/layer.ts',
 ];
 
 export const brushRoles = Object.freeze({
@@ -26,6 +30,13 @@ export const brushRoles = Object.freeze({
   LabFocusBrush: '--lab-border-focus',
   LabPageBrush: '--lab-bg-primary',
   LabLabelPrimaryBrush: '--lab-label-primary',
+  LabSheetTintBrush: '--lab-bg-material-elevated-01',
+  LabSheetBlendBrush: '--lab-bg-material-elevated-02',
+  LabSheetGhostBrush: '--lab-bg-overlay-ghost',
+  LabSheetBorderBrush: '--lab-border-base',
+  LabSheetHandleBrush: '--lab-label-tertiary',
+  LabSheetNoiseBrush: '--lab-fx-noise',
+  LabSheetSolidBrush: '--lab-bg-grouped-secondary',
 });
 
 function finite(value, name, minimum = 0) {
@@ -177,7 +188,26 @@ export function renderGeometry(
     FocusOffset: value('focus-ring', 'offset'),
     SmoothResponse: response,
     SmoothBounce: bounce,
+    SheetRadius: value('radius', config.radii.aliases.sheet),
+    SheetInset: space('sheet-inset'),
+    SheetGap: space('sheet-gap'),
+    SheetOverlap: space('sheet-overlap'),
+    SheetDragArea: value('size', 'sheet-drag-area'),
+    SheetIndicatorWidth: value('size', 'sheet-indicator-w'),
+    SheetIndicatorHeight: value('size', 'sheet-indicator-h'),
+    SheetIndicatorOffset: value('size', 'sheet-indicator-y'),
+    SheetIndicatorShift: value('size', 'sheet-indicator-x'),
+    SheetBorderWidth: value('stroke', 'hairline'),
+    SheetBodyBlurRadius: value('size', 'sheet-body-blur'),
+    SheetGhostBlurRadius: value('size', 'sheet-ghost-blur'),
+    SheetBodyNoiseOpacity: opacity('sheet-body-noise'),
+    SheetGhostNoiseOpacity: opacity('sheet-ghost-noise'),
   };
+  const elevation = ELEVATION_SHAPES.find((shape) => shape.name === 'xl');
+  const shadows = SHADOW_SLOTS.map((slot) => {
+    const ply = elevation?.slots[slot];
+    return `        new(${finite(ply?.blur, `sheet/${slot}/blur`)}, ${finite(ply?.offsetY, `sheet/${slot}/offset`)}, ${unit(SLOT_ALPHA[slot], `sheet/${slot}/alpha`)}),`;
+  });
   return `// СГЕНЕРИРОВАНО. Не править вручную. ${provenance}
 // Размеры — DIP при масштабе 100%; tracking — em, line height — DIP.
 namespace LabUI.WinUI;
@@ -194,6 +224,11 @@ ${Object.entries(constants)
   .map(([key, value]) => `    internal const double ${key} = ${value};`)
   .join('\n')}
     internal const ushort FontWeightMedium = ${value('font-weight', 'medium')};
+    private static readonly SheetShadow[] sheetShadows =
+    [
+${shadows.join('\n')}
+    ];
+    internal static System.ReadOnlySpan<SheetShadow> SheetShadows => sheetShadows;
 }
 `;
 }

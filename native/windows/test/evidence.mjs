@@ -229,7 +229,7 @@ function validateInteractions(files, records, dimensions) {
   return required;
 }
 
-function png(bytes) {
+export function png(bytes) {
   assert.ok(bytes.length >= 45 && bytes.length <= PNG_MAX_BYTES, 'native: PNG bytes');
   assert.ok(bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])));
   let offset = 8;

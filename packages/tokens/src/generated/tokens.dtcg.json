@@ -566,6 +566,90 @@
         }
       }
     },
+    "sheet-drag-area": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "sheet-indicator-w": {
+      "$type": "dimension",
+      "$value": {
+        "value": 36,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "2.25rem"
+        }
+      }
+    },
+    "sheet-indicator-h": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
+    "sheet-indicator-y": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
+    "sheet-indicator-x": {
+      "$type": "dimension",
+      "$value": {
+        "value": 0.5,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0313rem"
+        }
+      }
+    },
+    "sheet-body-blur": {
+      "$type": "dimension",
+      "$value": {
+        "value": 128,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "8rem"
+        }
+      }
+    },
+    "sheet-ghost-blur": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
     "loader-stroke-s": {
       "$type": "dimension",
       "$value": {
@@ -1693,6 +1777,14 @@
     "0": {
       "$type": "number",
       "$value": 0
+    },
+    "4": {
+      "$type": "number",
+      "$value": 0.04
+    },
+    "6": {
+      "$type": "number",
+      "$value": 0.06
     },
     "12": {
       "$type": "number",

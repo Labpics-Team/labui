@@ -27,6 +27,13 @@ const roles = {
   LabFocusBrush: '--lab-border-focus',
   LabPageBrush: '--lab-bg-primary',
   LabLabelPrimaryBrush: '--lab-label-primary',
+  LabSheetTintBrush: '--lab-bg-material-elevated-01',
+  LabSheetBlendBrush: '--lab-bg-material-elevated-02',
+  LabSheetGhostBrush: '--lab-bg-overlay-ghost',
+  LabSheetBorderBrush: '--lab-border-base',
+  LabSheetHandleBrush: '--lab-label-tertiary',
+  LabSheetNoiseBrush: '--lab-fx-noise',
+  LabSheetSolidBrush: '--lab-bg-grouped-secondary',
 };
 
 function readyThemes() {
@@ -265,6 +272,35 @@ test('смена семантической ссылки меняет тольк
   assert.deepEqual([small.radius, medium.radius, large.radius], [9999, 12, 12]);
   assert.equal(constant(source, 'SheenOpacity'), 0.45);
   assert.equal(constant(source, 'SheenHoverOpacity'), 0.32);
+});
+
+test('размеры Sheet следуют изменению владельца, сохраняя независимую геометрию', () => {
+  const reference = emit();
+  for (const [name, expected, mutate] of [
+    [
+      'SheetRadius',
+      12,
+      (fixture) => {
+        fixture.config.radii.aliases.sheet = 'l';
+      },
+    ],
+    [
+      'SheetDragArea',
+      28,
+      (fixture) => {
+        fixture.tokens.size['sheet-drag-area'].$value.value = 28;
+      },
+    ],
+  ]) {
+    const fixture = geometryFixture();
+    mutate(fixture);
+    const source = emit(fixture);
+    assert.equal(constant(source, name), expected);
+    assert.equal(
+      source.replace(`${name} = ${expected};`, `${name} = ${constant(reference, name)};`),
+      reference,
+    );
+  }
 });
 
 test('новые значения DTCG передаются в DIP, line height вычисляется по font size, tracking остаётся em', () => {

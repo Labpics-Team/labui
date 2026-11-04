@@ -126,6 +126,7 @@ describe('авторские источники Program', () => {
     [['authored'], undefined],
     [['authored', 'sources'], null],
     [['authored', 'sources', 'white'], undefined],
+    [['authored', 'sources', 'noise'], undefined],
     [['authored', 'sources', 'shade'], '#12345Z'],
     [['authored', 'sources', 'white'], '#fff'],
     [['authored', 'sources', 'shade'], 16],

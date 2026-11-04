@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="sheet-geometry.test.cs" />
+    <Compile Include="../SheetMetrics.cs" Link="SheetMetrics.cs" />
+    <Compile Include="../ButtonMetrics.cs" Link="ButtonMetrics.cs" />
+    <Compile Include="../Rendering/SheetBlurProfile.cs" Link="SheetBlurProfile.cs" />
+    <Compile Include="../generated/Geometry.g.cs" Link="Geometry.g.cs" />
+  </ItemGroup>
+</Project>

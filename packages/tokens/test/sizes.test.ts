@@ -56,6 +56,14 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'button-glow-blur': 18,
     'button-glow-shift-s': 1,
     'button-glow-shift-l': 3,
+    // Sheet Half: размеры и optical shift read-only эталона от 2026-11-04.
+    'sheet-drag-area': 24,
+    'sheet-indicator-w': 36,
+    'sheet-indicator-h': 4,
+    'sheet-indicator-y': 14,
+    'sheet-indicator-x': 0.5,
+    'sheet-body-blur': 128,
+    'sheet-ghost-blur': 24,
     // Loader: толщина штриха спиннера (DECLARED).
     'loader-stroke-s': 2,
     'loader-stroke-m': 3,

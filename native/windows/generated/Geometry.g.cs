@@ -1,4 +1,4 @@
-// СГЕНЕРИРОВАНО. Не править вручную. owners 2aaa56a0874f4b19ef1671f19f98fb5b7d9068fb2029c520276db62e7929bdbd
+// СГЕНЕРИРОВАНО. Не править вручную. owners 2b26f1e3331eb6ca3afc1ee60d6ffdf4d2bd8c263d6fe1c68d58672771a05de1
 // Размеры — DIP при масштабе 100%; tracking — em, line height — DIP.
 namespace LabUI.WinUI;
 
@@ -27,5 +27,27 @@ internal static class Geometry
     internal const double FocusOffset = 2;
     internal const double SmoothResponse = 350;
     internal const double SmoothBounce = 0;
+    internal const double SheetRadius = 32;
+    internal const double SheetInset = 16;
+    internal const double SheetGap = 24;
+    internal const double SheetOverlap = 32;
+    internal const double SheetDragArea = 24;
+    internal const double SheetIndicatorWidth = 36;
+    internal const double SheetIndicatorHeight = 4;
+    internal const double SheetIndicatorOffset = 14;
+    internal const double SheetIndicatorShift = 0.5;
+    internal const double SheetBorderWidth = 1;
+    internal const double SheetBodyBlurRadius = 128;
+    internal const double SheetGhostBlurRadius = 24;
+    internal const double SheetBodyNoiseOpacity = 0.04;
+    internal const double SheetGhostNoiseOpacity = 0.06;
     internal const ushort FontWeightMedium = 500;
+    private static readonly SheetShadow[] sheetShadows =
+    [
+        new(36, 16, 0.12),
+        new(48, 24, 0.04),
+        new(64, 36, 0.02),
+        new(96, 48, 0.01),
+    ];
+    internal static System.ReadOnlySpan<SheetShadow> SheetShadows => sheetShadows;
 }
