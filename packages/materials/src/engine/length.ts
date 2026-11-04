@@ -29,7 +29,8 @@ const PROJECTION_CSS = `${Object.entries(PROPERTIES)
 @property ${key}-number{syntax:"<number>";inherits:false;initial-value:-1}
 [data-veil]{${key}-length:var(${property},${fallback});${key}-number:var(${property},${fallback});
 ${key}-width:calc(var(${key}-length) + var(${key}-number)*1px + 2px)}
-@container style(${property}: ){.${probeClass(property as LengthProperty)}{--_lab-material-length-empty:1px}}`;
+@container style(${property}: ){.${probeClass(property as LengthProperty)}{--_lab-material-length-empty:1px}}
+${fallback === 'auto' ? `@container style(${property}:auto){.${probeClass(property as LengthProperty)}{--_lab-material-length-auto:2px}}` : ''}`;
   })
   .join(
     '\n',
@@ -80,10 +81,10 @@ export function createLengthProbe(
   element.className = `lab-material__length ${probeClass(property)}`;
   element.setAttribute('aria-hidden', 'true');
   element.style.cssText =
-    'all:initial;display:block;position:absolute;left:0;top:0;height:var(--_lab-material-length-empty,0px);padding:0;border:0;margin:0;min-width:0;max-width:none;box-sizing:content-box;visibility:hidden;pointer-events:none';
+    'all:initial;display:block;position:absolute;left:0;top:0;height:calc(var(--_lab-material-length-empty,0px) + var(--_lab-material-length-auto,0px));padding:0;border:0;margin:0;min-width:0;max-width:none;box-sizing:content-box;visibility:hidden;pointer-events:none';
   parent.style.setProperty('--_lab-material-length-ready', 'ready');
-  // Обе ошибки дают 0px. Любая разрешённая длина/число, включая ноль,
-  // даёт положительный бокс: valid→invalid тоже будит ResizeObserver.
+  // Ошибка даёт 0×0; пустой токен и auto различаются высотой. Разрешённая
+  // длина/число, включая ноль, дают положительную ширину для ResizeObserver.
   element.style.width = `var(${key}-width)`;
   let document: Document | null = null;
   let root: ShadowRoot | null = null;
@@ -115,7 +116,28 @@ export function createLengthProbe(
     read(): number {
       restore();
       const view = surface.ownerDocument.defaultView;
-      if (!view || typeof view.CSS.registerProperty !== 'function') {
+      if (!view) throw new RangeError('lab-material: поверхность не имеет Window');
+      const cs = view.getComputedStyle(surface);
+      const raw = cs.getPropertyValue(property).trim();
+      if (!raw) {
+        const fallback = PROPERTIES[property];
+        if (fallback.endsWith('px')) return Number(fallback.slice(0, -2));
+      }
+      const numeric = /^\+?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(raw);
+      const pixels = /^(\+?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?)px$/i.exec(raw);
+      // CSS может ограничить бесконечное число конечной проекцией. Legacy px
+      // проверяется до этого преобразования, чтобы ошибка не стала радиусом.
+      if (numeric || pixels) {
+        const value = Number(pixels ? pixels[1] : raw);
+        if (!Number.isFinite(value) || value < 0) {
+          throw new RangeError(`lab-material: недопустимая длина ${property}`);
+        }
+        return value;
+      }
+      if (raw && !view.CSS.supports('filter', `blur(${raw})`)) {
+        throw new RangeError(`lab-material: недопустимая длина ${property}`);
+      }
+      if (typeof view.CSS.registerProperty !== 'function') {
         throw new RangeError('lab-material: измерение требует CSS Properties and Values API');
       }
       if (
@@ -126,29 +148,8 @@ export function createLengthProbe(
       ) {
         throw new RangeError('lab-material: измерение требует container style queries');
       }
-      const cs = view.getComputedStyle(surface);
-      const raw = cs.getPropertyValue(property).trim();
-      if (!raw) {
-        const fallback = PROPERTIES[property];
-        if (fallback.endsWith('px')) return Number(fallback.slice(0, -2));
-      }
-      const numeric = /^\+?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(raw);
-      // CSS может ограничить бесконечное число конечной проекцией. Legacy px
-      // проверяется до этого преобразования, чтобы ошибка не стала радиусом.
-      if (numeric && !Number.isFinite(Number(raw))) {
-        throw new RangeError(`lab-material: недопустимая длина ${property}`);
-      }
-      if (raw && !numeric && !view.CSS.supports('filter', `blur(${raw})`)) {
-        throw new RangeError(`lab-material: недопустимая длина ${property}`);
-      }
-      const measured = cs.getPropertyValue(`${key}-${numeric ? 'number' : 'length'}`).trim();
-      const value = numeric
-        ? measured
-          ? Number(measured)
-          : Number.NaN
-        : measured.endsWith('px')
-          ? Number(measured.slice(0, -2))
-          : Number.NaN;
+      const measured = cs.getPropertyValue(`${key}-length`).trim();
+      const value = measured.endsWith('px') ? Number(measured.slice(0, -2)) : Number.NaN;
       if (!Number.isFinite(value) || value < 0) {
         throw new RangeError(`lab-material: не получена длина ${property} в px`);
       }

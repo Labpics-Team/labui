@@ -73,6 +73,101 @@ test('нечисловой legacy ввод не становится конеч�
   expect(errors.some((message) => message.includes('--lab-veil-strength'))).toBe(true);
 });
 
+test('media-смена auto на ошибку feather снимает эффект и восстанавливает его', async ({
+  page,
+}) => {
+  await load(page);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.evaluate(() =>
+    window.__veilLength.css(
+      '.scope{--lab-veil-strength:24px;--lab-veil-feather:auto}@media(prefers-color-scheme:dark){.scope{--lab-veil-feather:50%}}',
+    ),
+  );
+  await strength(page, 24);
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect.poll(() => page.evaluate(() => window.__veilLength.snapshot().count)).toBe(0);
+  await expect
+    .poll(() => errors.some((message) => message.includes('--lab-veil-feather')))
+    .toBe(true);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await strength(page, 24);
+  expect(await page.evaluate(() => window.__veilLength.snapshot().box)).toEqual([200, 200]);
+  const auto = await page.evaluate(() => window.__veilLength.snapshot().masks);
+  await page.evaluate(() => window.__veilLength.feather('8px'));
+  await expect
+    .poll(() => page.evaluate(() => window.__veilLength.snapshot().masks))
+    .not.toEqual(auto);
+  await page.evaluate(() => window.__veilLength.feather('auto'));
+  await expect.poll(() => page.evaluate(() => window.__veilLength.snapshot().masks)).toEqual(auto);
+});
+
+for (const missing of ['registration', 'queries'] as const) {
+  test(`прежние px-настройки сохраняются без ${missing}`, async ({ page }) => {
+    await page.addInitScript((capability) => {
+      if (capability === 'registration') {
+        Object.defineProperty(CSS, 'registerProperty', { configurable: true, value: undefined });
+      } else {
+        const computedStyle = window.getComputedStyle.bind(window);
+        window.getComputedStyle = (element, pseudo) =>
+          new Proxy(computedStyle(element, pseudo), {
+            get(target, key) {
+              if (key === 'getPropertyValue') {
+                return (property: string) =>
+                  property === '--_lab-material-length-supported'
+                    ? ''
+                    : target.getPropertyValue(property);
+              }
+              return Reflect.get(target, key, target);
+            },
+          });
+      }
+    }, missing);
+    const errors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await load(page);
+    await settle(page);
+    expect(await page.evaluate(() => window.__veilLength.snapshot().count)).toBe(0);
+    expect(errors.some((message) => message.includes('измерение требует'))).toBe(true);
+    errors.length = 0;
+    for (const [input, expected] of [
+      ['initial', 24],
+      [' ', 24],
+      ['24px', 24],
+      ['32', 32],
+      ['32px', 32],
+    ] as const) {
+      await page.evaluate((value) => window.__veilLength.strength(value), input);
+      await strength(page, expected);
+    }
+    await page.evaluate(() => window.__veilLength.feather('8px'));
+    await settle(page);
+    expect(await page.evaluate(() => window.__veilLength.snapshot().masks.length)).toBeGreaterThan(
+      0,
+    );
+    expect(errors).toEqual([]);
+    await page.evaluate(() => window.__veilLength.strength('0px'));
+    await strength(page, 0);
+    await page.evaluate(() => window.__veilLength.strength('50%'));
+    await settle(page);
+    expect(errors.some((message) => message.includes('--lab-veil-strength'))).toBe(true);
+    expect(await page.evaluate(() => window.__veilLength.snapshot().count)).toBe(0);
+    await page.evaluate(() => window.__veilLength.strength('24px'));
+    await strength(page, 24);
+    await page.evaluate(() => window.__veilLength.dispose());
+    expect(await page.evaluate(() => window.__veilLength.snapshot())).toMatchObject({
+      count: 0,
+      children: 0,
+      types: 0,
+    });
+  });
+}
+
 test('отсутствующий и пустой токены сохраняют default, а media-смена пустого на ошибку наблюдаема', async ({
   page,
 }) => {
