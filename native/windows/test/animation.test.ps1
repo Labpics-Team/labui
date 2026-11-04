@@ -279,15 +279,18 @@ foreach ($expected in @($true, $false)) {
                 return New-Observation $enabled
             }
             function Get-FileHash { param($LiteralPath) return @{ Hash = 'a' * 64 } }
-            function git { return 'b' * 40 }
+            function git { $global:LASTEXITCODE = 0; return 'b' * 40 }
             function Ui { $probe.input++ }
             function Set-Content {
                 param([Parameter(Position = 0)][string]$Path, [string]$Encoding,
                     [Parameter(ValueFromPipeline = $true)]$InputObject)
                 process { $probe.identity = $InputObject | ConvertFrom-Json }
             }
+            # Успешный native вызов сбрасывает код прежнего отказа на каждом чтении.
+            $global:LASTEXITCODE = 29
             $failed = $false
             try { . $admission } catch { $failed = $true }
+            Assert ($LASTEXITCODE -eq 0) 'Git double не передал успешный native exit code.'
             Assert ($failed -eq ($enabled -ne $expected)) 'Policy gate не управляет первым вводом.'
             Assert ($probe.input -eq [int]($enabled -eq $expected)) 'Ввод начался без совпадения observation с ожидаемым режимом.'
             Assert ($null -ne $probe.identity) 'Наблюдение не сохранено до gate.'
