@@ -3,6 +3,7 @@ param([string]$Harness = (Join-Path $PSScriptRoot 'smoke.ps1'))
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $smokeFailure = $null
+$DynamicMotion = $false
 
 # Подменяется только системная граница. Настройки Windows тест не читает и не меняет.
 class ClientAreaAnimation {

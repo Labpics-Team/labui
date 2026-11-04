@@ -25,14 +25,17 @@ jobs:
           - name: Windows Button
             animationsEnabled: true
             lifetime: true
+            dynamicMotion: true
             qualifyTextScale: false
           - name: Windows Button · reduced motion
             animationsEnabled: false
             lifetime: false
+            dynamicMotion: false
             qualifyTextScale: false
           - name: Windows Button · text 225%
             animationsEnabled: true
             lifetime: false
+            dynamicMotion: false
             qualifyTextScale: true
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
@@ -77,7 +80,11 @@ jobs:
 
       - name: Native Space child reply contract
         shell: pwsh
-        run: pwsh -NoProfile -File native/windows/test/space-harness.test.ps1
+        run: |
+          pwsh -NoProfile -File native/windows/test/space-harness.test.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Space harness contract failed.' }
+          pwsh -NoProfile -File native/windows/test/dynamic-harness.test.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Dynamic harness contract failed.' }
 
       - name: Native lifetime contract
         shell: pwsh
@@ -107,7 +114,7 @@ jobs:
         run: node native/windows/test/lifetime-probe.test.mjs
 
       - name: Space input and child protocol boundaries
-        run: node --test native/windows/test/space-input.test.mjs native/windows/test/space-protocol.test.mjs native/windows/test/space-probe.test.mjs native/windows/test/space-observation.test.mjs
+        run: node --test native/windows/test/space-input.test.mjs native/windows/test/space-protocol.test.mjs native/windows/test/space-probe.test.mjs native/windows/test/space-observation.test.mjs native/windows/test/dynamic-observation.test.mjs
 
       - name: Build native consumer
         shell: pwsh
@@ -137,11 +144,12 @@ jobs:
           } else {
             $animationsEnabled = [bool]::Parse('${{ matrix.animationsEnabled }}')
             $lifetime = [bool]::Parse('${{ matrix.lifetime }}')
+            $dynamicMotion = [bool]::Parse('${{ matrix.dynamicMotion }}')
             & ./native/windows/test/smoke.ps1 `
               -ApplicationDirectory "$env:RUNNER_TEMP/labui-native/app" `
               -OutputDirectory "$env:RUNNER_TEMP/labui-native/evidence" `
               -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
-              -AnimationsEnabled $animationsEnabled -Lifetime:$lifetime
+              -AnimationsEnabled $animationsEnabled -Lifetime:$lifetime -DynamicMotion:$dynamicMotion
           }
 
       - name: Export native evidence to job log

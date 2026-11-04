@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { evidenceLog } from '../../../scripts/ci/evidence-log.mjs';
+import { dynamicFixture } from './dynamic-observation.fixture.mjs';
 import { EVIDENCE_FILES, decodeNativeEvidence, encodeNativeEvidence } from './evidence.mjs';
 import { spaceFixture } from './space-observation.fixture.mjs';
 import { validateSpaceObservation } from './space-observation.mjs';
@@ -134,6 +135,147 @@ function editJSON(files, file, change) {
   change(value);
   files.set(file, json(value));
 }
+
+function dynamicInteractionFixture() {
+  const files = interactionFixture();
+  const dynamic = dynamicFixture();
+  for (const [name, bytes] of [...files]) {
+    if (name.startsWith('interaction-Dark')) files.set(name.replace('Dark', 'Dynamic'), bytes);
+  }
+  files.set('interaction-Dynamic-window.json', json(dynamic.window));
+  editJSON(files, 'identity.json', (value) => {
+    value.dynamicMotionExpected = true;
+    value.animation.clientAreaBefore = true;
+  });
+  editJSON(files, 'close.json', (value) => {
+    value.animation = { expected: true, actual: true };
+  });
+  editJSON(files, 'result.json', (value) => {
+    value.dynamicMotion = {
+      scenario: 'dynamic-reduced-motion',
+      mode: 'wgc',
+      samples: 10,
+      images: 1,
+      gestureTiming: 'interaction-Dynamic-window.json',
+      space: dynamic.space,
+    };
+  });
+  return files;
+}
+
+test('opt-in dynamic capture retains its full evidence beside unchanged static traces', () => {
+  const files = dynamicInteractionFixture();
+  const decoded = decodeNativeEvidence(
+    encodeNativeEvidence(files, SOURCE, 'interaction'),
+    SOURCE,
+    'interaction',
+  );
+  assert.deepEqual(decoded, files);
+  assert.deepEqual(decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'), files);
+  assert.deepEqual(
+    JSON.parse(decoded.get('result.json')).captures,
+    JSON.parse(interactionFixture().get('result.json')).captures,
+  );
+});
+
+test('dynamic declarations cannot be downgraded to idle evidence', () => {
+  for (const field of ['identity', 'result']) {
+    const full = dynamicInteractionFixture();
+    const files = fixture();
+    if (field === 'identity') files.set('identity.json', full.get('identity.json'));
+    else
+      editJSON(files, 'result.json', (value) => {
+        value.dynamicMotion = JSON.parse(full.get('result.json')).dynamicMotion;
+      });
+    files.set('close.json', full.get('close.json'));
+    assert.throws(() => encodeNativeEvidence(files, SOURCE, 'idle'), /dynamic.*interaction/);
+    assert.throws(
+      () => decodeNativeEvidence(rawPackets(files), SOURCE, 'idle'),
+      /dynamic.*interaction/,
+    );
+  }
+});
+
+test('dynamic CLI preserves the third capture and refuses partial export', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'labui-native-dynamic-evidence-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const files = dynamicInteractionFixture();
+  for (const [file, bytes] of files) {
+    await mkdir(dirname(join(directory, file)), { recursive: true });
+    await writeFile(join(directory, file), bytes);
+  }
+  const exported = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE, 'interaction'], {
+    encoding: 'utf8',
+  });
+  assert.equal(exported.status, 0, exported.stderr);
+  const input = join(directory, 'job.log');
+  const output = join(directory, 'readback');
+  await writeFile(input, exported.stdout);
+  const decoded = spawnSync(
+    process.execPath,
+    [CLI, 'decode', input, SOURCE, output, 'interaction'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(decoded.status, 0, decoded.stderr);
+  for (const [file, bytes] of files) assert.deepEqual(await readFile(join(output, file)), bytes);
+  for (const file of [
+    'interaction-Dynamic.frames/frames/frame-000000.jpg',
+    'interaction-Dynamic.mp4',
+    'interaction-Dynamic-window.json',
+  ]) {
+    await rm(join(directory, file));
+    const failed = spawnSync(process.execPath, [CLI, 'export', directory, SOURCE, 'interaction'], {
+      encoding: 'utf8',
+    });
+    assert.notEqual(failed.status, 0, file);
+    assert.equal(failed.stdout, '', file);
+    await writeFile(join(directory, file), files.get(file));
+  }
+});
+
+test('dynamic opt-in cannot lose its trace, native acknowledgment, settings event or media', () => {
+  for (const change of [
+    (files) =>
+      editJSON(files, 'result.json', (value) => {
+        value.dynamicMotion = undefined;
+      }),
+    (files) =>
+      editJSON(files, 'identity.json', (value) => {
+        value.dynamicMotionExpected = false;
+      }),
+    (files) =>
+      editJSON(files, 'identity.json', (value) => {
+        value.dynamicMotionExpected = 'true';
+      }),
+    (files) =>
+      editJSON(files, 'result.json', (value) => {
+        value.dynamicMotion.space.observation.settings.pop();
+      }),
+    (files) =>
+      editJSON(files, 'result.json', (value) => {
+        value.dynamicMotion.space.observation.mutation.readback = true;
+      }),
+    (files) =>
+      editJSON(files, 'result.json', (value) => {
+        value.dynamicMotion.space.observation.trace.observations.pop();
+      }),
+    (files) =>
+      editJSON(files, 'close.json', (value) => {
+        value.animation = undefined;
+      }),
+    (files) =>
+      editJSON(files, 'close.json', (value) => {
+        value.animation.actual = false;
+      }),
+    (files) => files.delete('interaction-Dynamic.frames/frames/frame-000000.jpg'),
+    (files) => files.delete('interaction-Dynamic.mp4'),
+  ]) {
+    const files = dynamicInteractionFixture();
+    change(files);
+    assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'));
+    assert.throws(() => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'));
+  }
+});
 
 function cancelDragFixture() {
   const files = interactionFixture();

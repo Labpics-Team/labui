@@ -396,6 +396,75 @@ foreach (var pending in new[] { "requested-only", "inertia", "ignored", "stale-r
     Check((await Complete(probe)).GetProperty("status").GetString() == "waiting", "invalid Snap completion accepted: " + pending);
     Check(button.Channel.Subscribers == 1, "invalid Snap completion detached before valid endpoint");
 }
+// Мутация выполняется fake SPI; реальная системная настройка здесь недоступна.
+Environment.SetEnvironmentVariable("LABUI_DYNAMIC_MOTION_OBSERVATION", "1");
+Environment.SetEnvironmentVariable("GITHUB_ACTIONS", "true");
+Environment.SetEnvironmentVariable("RUNNER_ENVIRONMENT", "github-hosted");
+foreach (var fault in new[] { "none", "idle", "endpoint", "requested-only", "missing-setting" }) {
+    UISettings.Enabled = true;
+    var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
+    var count = 10;
+    using var probe = new SpaceProbe(parent, button, () => count);
+    Call(probe, "Arm", "Light"); Call(probe, "Detach");
+    button.ActualTheme = ElementTheme.Dark;
+    Call(probe, "Arm", "Dark"); Call(probe, "Detach");
+    button.DriverChannel(); // Lifetime сохранил экземпляр и создал новый канал.
+    var channel = button.Channel;
+    var armed = await Serialize(() => Call(probe, "DynamicCommand", "dynamic arm"));
+    Check(armed.GetProperty("armed").GetProperty("channel").GetInt32() == 3, "dynamic reused static generation");
+    FixtureClock.Now += 20;
+    parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
+    channel.Publish(Motion(true, 0, "requested", 0)); button.DriverPressed(true);
+    button.Raise(UIElement.KeyDownEvent, Key(true));
+    channel.DriverPosition(fault == "endpoint" ? 1 : .4f);
+    channel.Publish(Motion(true, 0, fault == "idle" ? "idle" : "value", fault == "endpoint" ? 1 : .4f));
+    var observer = (UISettings)typeof(SpaceProbe).GetField("settingObserver", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(probe)!;
+    ClientAreaAnimation.Writes = 0;
+    ClientAreaAnimation.OnWrite = () => {
+        FixtureClock.Now += 1;
+        channel.Publish(Motion(false, 1, "requested", .4f)); channel.DriverPosition(1);
+        if (fault != "requested-only") channel.Publish(Motion(false, 1, "value", 1));
+        if (fault != "missing-setting") observer.DriverChanged();
+    };
+    Dispatcher.SeparateThread = true;
+    var rejected = false;
+    try { await (Task<object>)Call(probe, "DisableAnimationAsync"); }
+    catch (InvalidOperationException) { rejected = true; }
+    Dispatcher.SeparateThread = false;
+    if (fault is "idle" or "endpoint") {
+        Check(rejected && ClientAreaAnimation.Writes == 0, "setter ran after movement finished");
+        continue;
+    }
+    Check(!rejected && ClientAreaAnimation.Writes == 1, "dynamic setter did not execute exactly once");
+    var ready = await Serialize(() => Call(probe, "DynamicCommand", "dynamic ready 1"));
+    Check(ready.GetProperty("readiness").GetProperty("status").GetString() == (fault == "none" ? "ready" : "waiting"),
+        "dynamic readiness accepted missing setting/native acknowledgment or rejected healthy state");
+    if (fault != "none") continue;
+    try { await (Task<object>)Call(probe, "DisableAnimationAsync"); throw new Exception("duplicate setter accepted"); }
+    catch (InvalidOperationException) { Check(ClientAreaAnimation.Writes == 1, "duplicate setter had effect"); }
+    for (var edge = 1; edge < 4; edge++) {
+        var down = edge % 2 == 0; FixtureClock.Now += 20;
+        parent.Raise(down ? UIElement.PreviewKeyDownEvent : UIElement.PreviewKeyUpEvent, Key(down));
+        channel.Publish(Motion(false, edge + 1, "requested", channel.Position));
+        channel.DriverPosition(down ? 1 : 0); button.DriverPressed(down);
+        if (!down) { count++; button.DriverClick(); }
+        button.Raise(down ? UIElement.KeyDownEvent : UIElement.KeyUpEvent, Key(down));
+        channel.Publish(Motion(false, edge + 1, "value", down ? 1 : 0));
+        if (edge == 1) {
+            var release = await Serialize(() => Call(probe, "DynamicCommand", "dynamic ready 2"));
+            Check(release.GetProperty("readiness").GetProperty("status").GetString() == "ready", "dynamic release was not confirmed");
+        }
+    }
+    var completed = await Serialize(() => Call(probe, "DynamicCommand", "dynamic complete"));
+    Check(completed.GetProperty("status").GetString() == "complete" &&
+        completed.GetProperty("trace").GetProperty("countAfter").GetInt32() == 12, "dynamic input did not finish");
+    var mutation = completed.GetProperty("mutation");
+    Check(!mutation.GetProperty("readback").GetBoolean() &&
+        mutation.GetProperty("threadId").GetInt32() != mutation.GetProperty("uiThreadId").GetInt32(), "SPI ran on fake UI thread");
+    Check(observer.Subscribers == 0 && channel.Subscribers == 0, "dynamic observation leaked subscriptions");
+}
+ClientAreaAnimation.OnWrite = null;
+Console.WriteLine("Dynamic producer: PASS (fresh in-flight state, one setter off UI, actual setting/native observation, further keys, detach)");
 Console.WriteLine("Space producer: PASS (ancestor preview, passive old state, equal-time request prefix, real serializer, bounded failure, waiting state, detach)");
 
 public static class FixtureClock { public static double Now; }
@@ -437,9 +506,31 @@ namespace Microsoft.UI.Xaml.Input {
 }
 namespace Microsoft.UI.Xaml.Automation { public static class AutomationProperties { public static string GetAutomationId(object target) => "LabButtonMedium"; } }
 namespace Windows.System { public enum VirtualKey { Space } }
-namespace Windows.UI.ViewManagement { public sealed class UISettings { public static bool Enabled; public bool AnimationsEnabled => Enabled; } }
+public static class ClientAreaAnimation {
+    public static int Writes;
+    public static Action? OnWrite;
+    public static bool Read() => UISettings.Enabled;
+    public static void Write(bool value) { Writes++; UISettings.Enabled = value; OnWrite?.Invoke(); }
+}
+namespace Windows.UI.ViewManagement {
+    public sealed class UISettingsAnimationsEnabledChangedEventArgs : EventArgs { }
+    public sealed class UISettings {
+        public static bool Enabled;
+        public bool AnimationsEnabled => Enabled;
+        public event Action<UISettings, UISettingsAnimationsEnabledChangedEventArgs>? AnimationsEnabledChanged;
+        public int Subscribers => AnimationsEnabledChanged?.GetInvocationList().Length ?? 0;
+        public void DriverChanged() => AnimationsEnabledChanged?.Invoke(this, new());
+    }
+}
 namespace LabUI.WinUI {
-    public sealed class Dispatcher { public bool TryEnqueue(Action action) { action(); return true; } }
+    public sealed class Dispatcher {
+        public static bool SeparateThread;
+        public bool TryEnqueue(Action action) {
+            if (!SeparateThread) action();
+            else { var thread = new Thread(() => action()) { IsBackground = true }; thread.Start(); thread.Join(); }
+            return true;
+        }
+    }
     public sealed class LabButton : UIElement {
         private ScalarMotion pressedMotion = new();
         private Action<DependencyObject, DependencyProperty>? changed;
@@ -488,6 +579,10 @@ test('actual Space producer preserves preview order and bounded completion diagn
   const directory = await mkdtemp(join(temporaryRoot, 'labui-space-probe-'));
   try {
     await writeFile(join(directory, 'SpaceProbe.cs'), producer);
+    await writeFile(
+      join(directory, 'DynamicMotionProbe.cs'),
+      await readFile(new URL('../../../examples/windows/DynamicMotionProbe.cs', import.meta.url)),
+    );
     await writeFile(
       join(directory, 'SpaceProtocol.cs'),
       await readFile(new URL('../../../examples/windows/SpaceProtocol.cs', import.meta.url)),

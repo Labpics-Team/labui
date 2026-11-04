@@ -377,3 +377,35 @@ TryUpdatePosition из уже неподвижного состояния мен
 реальный WinExe через pipes без создания UI и отсутствие test helpers в Compile-наборе SDK.
 `space-probe.test.mjs` исполняет producer и его сериализацию на инертных границах;
 порядок Windows tunneling он моделирует, а настоящий UI проверяет hosted-запуск.
+
+### Отключение анимации во время движения
+
+`-DynamicMotion` включает отдельную пробу только при начальном
+`-AnimationsEnabled $true`. Normal job выполняет её после обычных взаимодействий
+и lifetime: отключение до lifetime нарушило бы его требование наблюдать Animation.
+Reduced и text-scale jobs эту пробу не запускают.
+
+На той же кнопке в Dark начинается Space down. Проба требует промежуточный
+native readback текущей Animation без уже наблюдённого idle, затем вызывает
+закреплённый `ClientAreaAnimation.Write(false)` вне UI dispatcher. Нужны
+процессное `UISettings.AnimationsEnabledChanged`, false readback и подтверждение
+Snap к прежней цели 1 через native value/idle. Последующие up → down → up
+должны дать Snap к 0 → 1 → 0, два Click и конечный released readback.
+Запись `requested` сама по себе подтверждением не считается.
+
+Prepare, setter и четыре события ввода расходуют общий бюджет 5 s. Промах
+внутри перехода, timeout, старый request или неполный trace означают отказ
+квалификации. Системный setter работает в собственном consumer; его завершение
+подтверждается до восстановления исходной настройки, чтобы поздняя запись не
+перезаписала restore. Cleanup сохраняет первичную ошибку и проверяет readback.
+Настоящий системный ввод и setter допускаются только на disposable GitHub runner.
+
+Полный trace находится в `result.json.dynamicMotion`; отдельная WGC-запись
+`interaction-Dynamic` сохраняет MP4, каждый индексированный JPEG и временные
+границы. `identity.json.dynamicMotionExpected` делает весь набор обязательным
+для export/decode. Старые static trace проверяются прежним validator;
+`dynamic-observation.mjs` проверяет новую историю и exporter связывает все три
+записи общим clock origin. Локальные `dynamic-harness.test.ps1`,
+`dynamic-observation.test.mjs`, producer и codec fixtures проверяют границы без
+изменения пользовательской ОС. Hosted-результат этого сценария ещё не получен;
+эти проверки не удостоверяют плавность, FPS или мгновенность Snap.

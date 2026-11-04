@@ -12,7 +12,7 @@ using Windows.UI.ViewManagement;
 namespace LabUI.Buttons;
 
 // Пассивная проверка закреплённого consumer: публичный API LabButton не расширяется.
-internal sealed class SpaceProbe : IDisposable
+internal sealed partial class SpaceProbe : IDisposable
 {
     private sealed record Event(double ElapsedMs, double ReadStartedMs, string Kind, string? Key, bool Repeat,
         bool IsPressed, bool Focused, int Count, bool CurrentChannel, float Position,
@@ -57,7 +57,7 @@ internal sealed class SpaceProbe : IDisposable
         // Console.In.ReadLineAsync может читать синхронно: reader никогда не занимает UI dispatcher.
         _ = Task.Run(async () =>
         {
-            try { await SpaceProtocol.RunAsync(Console.OpenStandardInput(), Console.OpenStandardOutput(), Dispatch); }
+            try { await SpaceProtocol.RunAsync(Console.OpenStandardInput(), Console.OpenStandardOutput(), Dispatch, allowDynamic); }
             catch (Exception error) { failure = error.GetType().Name + ": " + error.Message; }
             finally
             {
@@ -69,6 +69,7 @@ internal sealed class SpaceProbe : IDisposable
     private double Elapsed => (Stopwatch.GetTimestamp() - origin) * 1000d / Stopwatch.Frequency;
     private Task<object> Dispatch(string command)
     {
+        if (command == "dynamic disable") return DisableAnimationAsync();
         var completion = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
         if (!button.DispatcherQueue.TryEnqueue(() =>
         {
@@ -76,6 +77,7 @@ internal sealed class SpaceProbe : IDisposable
             {
                 if (command == "dispose") { Dispose(); completion.SetResult(new { status = "closed" }); }
                 else if (disposed) throw new ObjectDisposedException(nameof(SpaceProbe));
+                else if (command.StartsWith("dynamic ", StringComparison.Ordinal)) completion.SetResult(DynamicCommand(command));
                 else completion.SetResult(command switch {
                     "complete" => Complete(), "ready 1" => Ready(1), "ready 2" => Ready(2), _ => Arm(command[4..])
                 });
@@ -91,9 +93,9 @@ internal sealed class SpaceProbe : IDisposable
 
     private object Arm(string requestedTheme)
     {
-        if (observing || !button.IsLoaded || button.IsPressed || !Focused || !button.IsEnabled || generation >= 2)
+        if (observing || !button.IsLoaded || button.IsPressed || !Focused || !button.IsEnabled || generation >= (dynamicMotion ? 3 : 2))
             throw new InvalidOperationException("Кнопка не готова к Space-наблюдению.");
-        if (button.ActualTheme.ToString() != requestedTheme || (generation == 0 ? "Light" : "Dark") != requestedTheme)
+        if (button.ActualTheme.ToString() != requestedTheme || (dynamicMotion ? "Dark" : generation == 0 ? "Light" : "Dark") != requestedTheme)
             throw new InvalidOperationException("Неверный порядок тем Space.");
         channel = Current();
         theme = requestedTheme;
@@ -244,7 +246,7 @@ internal sealed class SpaceProbe : IDisposable
         var isPressed = button.IsPressed;
         var position = channel!.Position;
         // Snap из idle меняет координату без нового перехода состояния; value подтверждает запрос.
-        var terminalObserved = animationsEnabled ? final is { Phase: "idle" } :
+        var terminalObserved = animationsEnabled && !dynamicMotion ? final is { Phase: "idle" } :
             final is { Origin: MotionOrigin.Snap, Operation: 0, Phase: "value" or "idle" } snap &&
             intent is { Origin: MotionOrigin.Snap, Operation: 0 } &&
             Math.Abs(snap.Position) <= .001f && Math.Abs(snap.ReadbackPosition) <= .001f && Math.Abs(position) <= .001f;
@@ -287,6 +289,7 @@ internal sealed class SpaceProbe : IDisposable
         button.LostFocus -= Focus;
         button.Click -= Click;
         button.MotionFailed -= Failed;
+        DetachSettings();
     }
 
     public void Dispose() { Detach(); disposed = true; }

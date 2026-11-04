@@ -46,7 +46,7 @@ public static class SpaceProtocol
         return text.ToString();
     }
 
-    internal static async Task RunAsync(Stream input, Stream output, Func<string, Task<object>> dispatch)
+    internal static async Task RunAsync(Stream input, Stream output, Func<string, Task<object>> dispatch, bool allowDynamic = false)
     {
         using var reader = new StreamReader(input, new UTF8Encoding(false, true), false, 1024, leaveOpen: true);
         using var writer = new StreamWriter(output, new UTF8Encoding(false), 1024, leaveOpen: true) { AutoFlush = true, NewLine = "\n" };
@@ -57,7 +57,9 @@ public static class SpaceProtocol
             string json;
             try
             {
-                if (command is not ("arm Light" or "arm Dark" or "ready 1" or "ready 2" or "complete"))
+                if (command is not ("arm Light" or "arm Dark" or "ready 1" or "ready 2" or "complete") &&
+                    !(allowDynamic && command is ("dynamic arm" or "dynamic prepare" or "dynamic disable" or
+                        "dynamic ready 1" or "dynamic ready 2" or "dynamic complete")))
                     throw new InvalidDataException("Неизвестная команда Space.");
                 json = JsonSerializer.Serialize(new { id, ok = true, value = await dispatch(command) }, Json);
                 if (Encoding.UTF8.GetByteCount(json) > 128 * 1024)

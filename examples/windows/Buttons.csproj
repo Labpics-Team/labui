@@ -14,11 +14,17 @@
     <PublishTrimmed>false</PublishTrimmed>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <LabMotionSettingsSource Condition="'$(LabMotionSettingsSource)' == '' And '$(LabMotionProject)' != ''">$([System.IO.Path]::GetDirectoryName('$(LabMotionProject)'))/../../test/windows/animation-settings.cs</LabMotionSettingsSource>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(LabMotionSettingsSource)" Link="NativeAnimationSettings.cs" />
     <ProjectReference Include="../../native/windows/LabUI.WinUI.csproj" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
   </ItemGroup>
+  <Target Name="RequireAnimationSettings" BeforeTargets="PrepareForBuild">
+    <Error Condition="'$(LabMotionSettingsSource)' == '' Or !Exists('$(LabMotionSettingsSource)')"
+           Text="Укажите LabMotionSettingsSource из той же проверенной версии LabMotion." />
+  </Target>
 </Project>
