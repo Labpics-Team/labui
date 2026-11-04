@@ -30,6 +30,7 @@ public sealed class LabSheet : ContentControl
     private Grid? dragArea;
     private Border? indicator;
     private bool attached;
+    private EventHandler? materialForwarder;
 
     public LabSheet()
     {
@@ -66,8 +67,15 @@ public sealed class LabSheet : ContentControl
     {
         if (attached || layers is null) return;
         attached = true;
-        layers.EffectiveMaterialChanged += ForwardMaterial;
-        layers.Attach(Material);
+        var source = layers;
+        EventHandler? forwarder = null;
+        forwarder = (sender, args) =>
+        {
+            if (ReferenceEquals(materialForwarder, forwarder)) ForwardMaterial(sender, args);
+        };
+        materialForwarder = forwarder;
+        source.EffectiveMaterialChanged += forwarder;
+        source.Attach(Material);
         ApplyMetrics();
     }
 
@@ -75,10 +83,14 @@ public sealed class LabSheet : ContentControl
     {
         if (!attached) return;
         attached = false;
-        if (layers is not null)
+        var source = layers;
+        var forwarder = materialForwarder;
+        try { source?.Detach(); }
+        finally
         {
-            layers.EffectiveMaterialChanged -= ForwardMaterial;
-            layers.Detach();
+            // Утрата готовности уже передана. Callback мог подключить тот же слой заново.
+            if (source is not null && forwarder is not null) source.EffectiveMaterialChanged -= forwarder;
+            if (ReferenceEquals(materialForwarder, forwarder)) materialForwarder = null;
         }
     }
 
