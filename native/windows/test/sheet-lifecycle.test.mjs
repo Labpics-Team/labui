@@ -121,6 +121,39 @@ Check(reattached.Ready && reattached.Draws == 2,
     "Old rebuild replaced a generation created from its readiness notification");
 Console.WriteLine("Sheet healthy replacement, generation and recovery PASS");
 
+foreach (var callbackError in new Exception[] {
+    new InvalidOperationException("reattach then throw"),
+    new COMException("old callback with device-loss HRESULT", unchecked((int)0x887A0005))
+}) {
+    var successor = new Probe();
+    successor.Start();
+    var oldResources = successor.Tracked.ToArray();
+    var oldGraphics = successor.OwnedGraphics;
+    var oldDevice = successor.OwnedDevice;
+    SpriteVisual? successorVisual = null;
+    CompositionGraphicsDevice? successorGraphics = null;
+    var replaced = false;
+    successor.WhenChanged(() => {
+        if (successor.Ready || replaced) return;
+        replaced = true;
+        successor.ReplaceGeneration();
+        successorVisual = successor.CurrentVisual;
+        successorGraphics = successor.OwnedGraphics;
+        throw callbackError;
+    });
+    SameError(successor.Rebuild, callbackError);
+    Check(successor.Ready && !successor.FrameAbsent && !successor.GraphicsAbsent
+        && ReferenceEquals(successor.CurrentVisual, successorVisual)
+        && ReferenceEquals(successor.OwnedGraphics, successorGraphics),
+        "Old failing rebuild destroyed a successfully reattached generation");
+    Check(oldResources.All(resource => resource.Attempted) && oldGraphics!.Attempted
+        && oldDevice!.Subscriptions == 0, "Old resources were not cleaned before reattachment");
+    successor.Queue(); successor.DispatcherQueue.Drain();
+    Check(successor.Ready && successor.Draws == 3,
+        "Old failure disabled rendering or reported device loss to the successor");
+}
+Console.WriteLine("Sheet reattach-plus-throw preserves successor ownership PASS");
+
 sealed class Probe {
     private CanvasDevice? device;
     private CompositionGraphicsDevice? graphics;

@@ -207,6 +207,11 @@ public sealed class SheetLayers : Grid
             var changed = previous?.Material != candidate.Material || previous?.Reason != candidate.Reason;
             if (changed) EffectiveMaterialChanged?.Invoke(this, EventArgs.Empty);
         }
+        catch (Exception) when (current != generation)
+        {
+            // Callback уже сменил владельца полей. Ошибка старого вызова не относится к преемнику.
+            throw;
+        }
         catch (Exception error) when (!recovering && device is { } failed && failed.IsDeviceLost(error.HResult))
         {
             failed.RaiseDeviceLost();
