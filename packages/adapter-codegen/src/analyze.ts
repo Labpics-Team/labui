@@ -24,6 +24,7 @@ interface RawClass {
   readonly props: PropMeta[];
   readonly events: Set<string>;
   readonly slots: RawSlots;
+  readonly mayRenderBase: boolean;
 }
 
 /** Слоты класса до слияния наследования. */
@@ -170,6 +171,42 @@ function extractSlots(cls: ts.ClassDeclaration): RawSlots {
   return slots;
 }
 
+/**
+ * Собственный render заменяет базовый. Ссылки на super.render в helper/alias
+ * учитываются консервативно: анализатор не прослеживает поток значений.
+ */
+function mayRenderBase(cls: ts.ClassDeclaration): boolean {
+  const members = cls.members.filter(
+    (member) =>
+      ts.canHaveModifiers(member) &&
+      !ts.getModifiers(member)?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword),
+  );
+  const ownRender = members.some(
+    (member) =>
+      member.name &&
+      (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) &&
+      member.name.text === 'render' &&
+      ((ts.isMethodDeclaration(member) && member.body) ||
+        (ts.isPropertyDeclaration(member) && member.initializer)),
+  );
+  if (!ownRender) return true;
+
+  const visit = (node: ts.Node): boolean | undefined => {
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      node.expression.kind === ts.SyntaxKind.SuperKeyword &&
+      node.name.text === 'render'
+    ) {
+      const use =
+        ts.isCallExpression(node.parent) && node.parent.expression === node ? node.parent : node;
+      // Отдельное выражение вычисляет и отбрасывает результат базового render.
+      return ts.isExpressionStatement(use.parent) ? undefined : true;
+    }
+    return ts.forEachChild(node, visit);
+  };
+  return members.some((member) => ts.forEachChild(member, visit));
+}
+
 /** TypeScript разрешает alias; имя из строки не заменяет неизвестный symbol. */
 function targetSymbol(symbol: ts.Symbol, checker: ts.TypeChecker): ts.Symbol {
   return symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
@@ -203,6 +240,7 @@ function parseFile(
         props: extractProps(node),
         events: extractEvents(node),
         slots: extractSlots(node),
+        mayRenderBase: mayRenderBase(node),
       });
     }
     if (
@@ -326,7 +364,7 @@ export function analyzeCore(componentsDir: string): Manifest {
         default: base.slots.default || raw.slots.default,
         named: new Set<string>([...base.slots.named, ...raw.slots.named]),
         dynamic: base.slots.dynamic || raw.slots.dynamic,
-        fill: new Set<string>([...base.slots.fill, ...raw.slots.fill]),
+        fill: new Set<string>([...(raw.mayRenderBase ? base.slots.fill : []), ...raw.slots.fill]),
       },
     };
     resolved.set(classSymbol, merged);

@@ -105,6 +105,107 @@ customElements.define('lab-probe', Probe);
 
   it.each([
     {
+      name: 'полная замена шаблона снимает базовый fill',
+      render: 'render() { return html`<slot name="leading"></slot>`; }',
+      fill: undefined,
+    },
+    {
+      name: 'полная замена сохраняет только собственный fill',
+      render: 'render() { return html`<slot name="body" data-sizing="fill"></slot>`; }',
+      fill: ['body'],
+    },
+    {
+      name: 'поле render экземпляра снимает базовый fill',
+      render: 'render = () => html`<slot name="leading"></slot>`;',
+      fill: undefined,
+    },
+    {
+      name: 'отброшенный результат super.render не включает базовый шаблон',
+      render: 'render() { super.render(); return html`<slot name="leading"></slot>`; }',
+      fill: undefined,
+    },
+    {
+      name: 'возврат super.render сохраняет базовый fill',
+      render: 'render() { return super.render(); }',
+      fill: ['leading'],
+    },
+    {
+      name: 'композиция Lit-шаблонов сохраняет базовый и собственный fill',
+      render:
+        'render() { return html`${super.render()}<slot name="body" data-sizing="fill"></slot>`; }',
+      fill: ['body', 'leading'],
+    },
+    {
+      name: 'массив шаблонов сохраняет базовый и собственный fill',
+      render:
+        'render() { return [super.render(), html`<slot name="body" data-sizing="fill"></slot>`]; }',
+      fill: ['body', 'leading'],
+    },
+    {
+      name: 'статический render не заменяет унаследованный метод экземпляра',
+      render: 'static render() { return html`<slot name="leading"></slot>`; }',
+      fill: ['leading'],
+    },
+  ])('$name; свойства и события остаются унаследованными', ({ render, fill }) => {
+    const manifest = analyze({
+      'shared/ancestor.ts': `
+import { html, LitElement } from 'lit';
+export class Ancestor extends LitElement {
+  static properties = { heading: { type: String } };
+  notify() { this.dispatchEvent(new CustomEvent('ancestor-change')); }
+  render(): unknown {
+    return html\`<slot name="leading" data-sizing="fill"></slot><slot name="body"></slot>\`;
+  }
+}
+`,
+      'probe/index.ts': `
+import { html } from 'lit';
+import { Ancestor } from '../shared/ancestor.js';
+export class Probe extends Ancestor { ${render} }
+customElements.define('lab-probe', Probe);
+`,
+    });
+    expect(manifest.components).toEqual([
+      {
+        tag: 'lab-probe',
+        subpath: 'probe',
+        pascal: 'Probe',
+        className: 'Probe',
+        props: [{ name: 'heading', attr: 'heading', kind: 'string' }],
+        events: ['ancestor-change'],
+        slots: {
+          default: false,
+          named: ['body', 'leading'],
+          dynamic: false,
+          ...(fill ? { fill } : {}),
+        },
+      },
+    ]);
+  });
+
+  it('наследник заменённого render не восстанавливает fill дальнего предка', () => {
+    const manifest = analyze({
+      'probe/index.ts': `
+import { html, LitElement } from 'lit';
+class Ancestor extends LitElement {
+  render() { return html\`<slot name="leading" data-sizing="fill"></slot>\`; }
+}
+class Parent extends Ancestor {
+  render() { return html\`<slot name="leading"></slot>\`; }
+}
+export class Probe extends Parent {}
+customElements.define('lab-probe', Probe);
+`,
+    });
+    expect(manifest.components[0]?.slots).toEqual({
+      default: false,
+      named: ['leading'],
+      dynamic: false,
+    });
+  });
+
+  it.each([
+    {
       name: 'класс в соседнем файле',
       entry: `
 import { ActualElement } from './implementation.js';
