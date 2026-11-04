@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { gunzipSync, gzipSync } from 'node:zlib';
-import { decodeEvidenceLog, evidenceLog } from './evidence-log.mjs';
+import { decodeEvidenceLog, decodeJsonEvidenceLog, evidenceLog } from './evidence-log.mjs';
 
 const prefix = 'TEST_EVIDENCE';
 const limits = { digestField: 'sha256', maxBytes: 32768, maxPackets: 3 };
@@ -195,4 +195,60 @@ test('awaited stdout observes completion and propagates callback, event and sync
     assert.equal(output.listenerCount('error'), before);
   `;
   execFileSync(process.execPath, ['--input-type=module', '-e', script], { timeout: 10000 });
+});
+
+test('JSON result readback preserves compressed and historical raw formats', () => {
+  const value = {
+    projectionVersion: 1,
+    evidence: { outcome: 'failed', failure: { phase: 'browser' } },
+  };
+  const bytes = Buffer.from(`${JSON.stringify(value)}\n`);
+  const resultPrefix = 'TEST_JSON_RESULT';
+  const resultLimits = { digestField: 'resultSha256', maxBytes: 32768 };
+  const framed = evidenceLog(bytes, resultPrefix, { projectionVersion: 1 }, 'resultSha256');
+  const legacy = `${resultPrefix} ${JSON.stringify(value)}\n`;
+  for (const packet of [framed, legacy]) {
+    for (const wrapper of [
+      '',
+      '2026-11-03T12:30:04.0001234Z ',
+      'Consumer\tVerify\t2026-11-03T12:30:04.0001234Z ',
+    ]) {
+      const log = packet
+        .trimEnd()
+        .split('\n')
+        .map((line) => wrapper + line)
+        .join('\r\n');
+      assert.deepEqual(decodeJsonEvidenceLog(log, resultPrefix, resultLimits), value);
+    }
+  }
+});
+
+test('JSON result refuses missing, duplicate, mixed, partial and oversized output', () => {
+  const resultPrefix = 'TEST_JSON_RESULT';
+  const resultLimits = { digestField: 'resultSha256', maxBytes: 32768 };
+  const bytes = Buffer.from('{"outcome":"failed"}');
+  const framed = evidenceLog(bytes, resultPrefix, {}, 'resultSha256');
+  const legacy = `${resultPrefix} ${bytes}\n`;
+  const incomplete = framed.trimEnd().split('\n').slice(0, -1).join('\n');
+  for (const output of [
+    '',
+    `diagnostic ${legacy}`,
+    `${framed}${framed}`,
+    `${legacy}${legacy}`,
+    `${framed}${legacy}`,
+    `${incomplete}\n${legacy}`,
+    incomplete,
+    framed.replace(/_END [a-f0-9]+/, `_END ${'0'.repeat(64)}`),
+    `${resultPrefix} {invalid json}\n`,
+    `${resultPrefix} "${'a'.repeat(resultLimits.maxBytes)}"\n`,
+  ]) {
+    assert.throws(() => decodeJsonEvidenceLog(output, resultPrefix, resultLimits));
+  }
+  assert.throws(() =>
+    decodeJsonEvidenceLog(
+      evidenceLog(Buffer.alloc(resultLimits.maxBytes + 1, 'a'), resultPrefix, {}, 'resultSha256'),
+      resultPrefix,
+      resultLimits,
+    ),
+  );
 });

@@ -40,7 +40,10 @@ node apps/docs/tests/icons-packed.mjs \
 Icons: доступ к приватному Lab UI и проверка его пакетов принадлежат Lab UI.
 
 Штатный workflow Lab UI `icons-consumer.yml` получает точный head Lab UI и
-публичный Icons commit из `icons-consumer-source.json`. Затем вызывает
+Icons commit из `icons-consumer-source.json`. Публичный pin schema2 хранит
+`repository`, `sourceCommit` и `sourceIdentitySha256`: SHA256 canonical JSON
+`{fileKey, version}`. Prepare сверяет commitment с manifest чистого закреплённого
+producer; locator остаётся внутри runner. Затем workflow вызывает
 `browser-check.sh --icons-consumer <icons-checkout>`. Этот же helper владеет
 Playwright image, host UID/GID, отдельным контейнером, CID и очисткой обычного E2E.
 Фиксированный Icons workload копирует оба checkout с Git metadata в изолированную
@@ -49,9 +52,12 @@ Icons проходит обычный `pack` с `prepack`; Lab UI собирае
 Исходные mounts доступны только для чтения.
 
 Inputs и результат находятся вне копий исходников. После удаления контейнера
-helper переносит только обычные файлы без ссылок в
-`apps/docs/test-results/icons-consumer`, затем удаляет собственную временную
-директорию. Ошибка удаления контейнера запрещает перенос нестабильной диагностики.
+helper проверяет `output/public` через `--verify-public`, затем переносит его в
+новый `apps/docs/test-results/icons-consumer` и удаляет свою временную директорию.
+Проверка требует завершённый manifest, точный набор файлов и совпадение bytes/SHA256;
+ссылки, лишние файлы, неполная запись и существующий destination получают отказ.
+Raw inputs и архивы producer остаются во временной директории. Ошибка удаления
+контейнера запрещает экспорт.
 Workflow не загружает архивы в Actions storage. Локальные тесты oracle и lifecycle
 проверяют вызовы Docker через recorder и не запускают контейнерный workload.
 
@@ -236,18 +242,18 @@ reload кнопки; schema2 также содержит status-circle и select
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного
 remote receipt не означает пройденную интеграцию.
 
-`--summarize` также выводит полный report стандартным
+`--summarize` создаёт публичную проекцию JSON и выводит её стандартным
 [gzip](https://nodejs.org/api/zlib.html#zlibgzipsyncbuffer-options) и base64 блоком
 в stdout, без нового Actions artifact storage. `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN`
-содержит encoding, source SHA, исходный digest/размер, compressed size и число
+содержит encoding, source SHA, digest/размер проекции, compressed size и число
 частей. Строки `LABUI_ICONS_PLATFORM_MEASUREMENT_CHUNK <index> <base64>` имеют
 последовательные индексы и не более 4096 base64 символов. `..._END` повторяет digest.
 Для восстановления из полного job log проверьте наличие всех индексов и END,
-соедините base64, декодируйте и gunzip, затем проверьте исходный размер и SHA256.
+соедините base64, декодируйте и gunzip, затем проверьте размер и SHA256 проекции.
 Неполный блок не является report. Schema1 не требует measurement packet.
 
-Тот же код передачи выводит PNG двумя режимами и полный успешный `receipt.json`
-с реальными observations. PNG сохраняет исходные байты; пересэмплирования нет.
+Тот же код передачи выводит PNG двух режимов и публичную проекцию успешного
+`receipt.json` с реальными observations. PNG сохраняет исходные байты; пересэмплирования нет.
 Блоки `LABUI_ICONS_CONSUMER_VISUAL` и `LABUI_ICONS_CONSUMER_RECEIPT` используют
 тот же порядок BEGIN/CHUNK/END и gzip-base64. Metadata добавляет `file`,
 `sourceSha` Icons и `uiCommit`; digest называется `pngSha256` или `receiptSha256`.
@@ -256,15 +262,36 @@ remote receipt не означает пройденную интеграцию.
 Каждый передаваемый файл ограничен 4 MiB, PNG — 16 Mi pixels. Эти пределы
 относятся к readback, а не к размеру glyph или optical domain.
 
-После восстановления проверьте оба source SHA по RESULT, затем digest и размер
-по соответствующему элементу `files`. Gunzip должен иметь `maxOutputLength`
+После восстановления проверьте оба source SHA по RESULT. Для PNG сравните digest
+и размер с соответствующим элементом `files`; для JSON сравните
+`originalBytesSha256` и `originalBytes` с исходной записью. Gunzip должен иметь `maxOutputLength`
 4 MiB; отсутствие части, чужой SHA или несовпадение bytes запрещает использовать
-packet как evidence. PNG signature/IHDR/IEND guards ограничивают вход; реальный
-просмотр decoder остаётся отдельной проверкой изображения. Raw receipt передаётся
-только для `passed`; неуспешный RESULT сохраняет прежний ограниченный failure
+packet как evidence. PNG guard проверяет CRC, порядок chunks и ограниченный
+поток пикселей; metadata, включая сжатую, и хвосты получают отказ. Пиксели
+сохраняются побайтово. Проекция receipt передаётся только для `passed`; неуспешный RESULT сохраняет прежний ограниченный failure
 и continuity witness. Отказ отдельному packet сохраняет RESULT с
 `readbackFailure: { code: 'EVIDENCE_REFUSED', file }` и завершает шаг ошибкой.
 Наличие PNG не объявляет live Figma parity.
+
+Публичные JSON сохраняют геометрию, author hashes, canonical commitment
+`originalSha256`, а также hash/размер исходных bytes. Приватные Figma locator и
+пути заменяются commitments; неизвестное поле с locator получает отказ.
+Свободные ошибки превращаются в diagnostic commitment. CLI возвращает
+`LABUI_ICONS_CONSUMER_ERROR` с безопасными name/code и hash диагностики.
+
+`LABUI_ICONS_CONSUMER_RESULT` также передаётся BEGIN/CHUNK/END: его проекция
+ограничена 4 MiB, base64 строки — 4096 символами. Для чтения используйте
+`decodeJsonEvidenceLog` из `scripts/ci/evidence-log.mjs` с
+`digestField: 'resultSha256'` и `maxBytes: 4 * 1024 * 1024`. Reader принимает
+исторический одиночный JSON RESULT, но отвергает смесь форматов, дубли и неполные
+packets. При отказе RESULT сохраняет phase, численный continuity witness и
+проверенный browser frontier до отправки PNG.
+
+`public/manifest.json` завершает запись каталога. Допустимы проекции subject,
+source receipt, consumer receipt/failure, measurement и RESULT, а также четыре
+screenshot имени существующих режимов. Внешний экспорт требует повторной
+проверки manifest после остановки контейнера. Эта граница не удостоверяет
+чистоту истории репозитория или готовность изменить его visibility.
 
 `summarize` дожидается завершения записи полного блока и RESULT перед отказом
 по неуспешному receipt. При ошибке stdout возвращается исходная причина согласно

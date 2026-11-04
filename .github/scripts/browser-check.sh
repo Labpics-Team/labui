@@ -57,6 +57,13 @@ copy_artifact() {
   directory_path "${job}/work" "$source_path" || return 1
   directory_path "$root" "$1" || return 1
   [ -d "$source" ] || return 0
+  if [ "$workload" = icons-consumer ] && [ -e "$destination" ]; then
+    echo '::error::Icons evidence requires a fresh destination.' >&2
+    return 1
+  fi
+  if [ "$workload" = icons-consumer ] && ! node "$root/apps/docs/tests/prepare-icons-inputs.mjs" --verify-public "$source"; then
+    return 1
+  fi
   for tree in "$source" "$destination"; do
     [ -d "$tree" ] || continue
     if ! invalid="$(find "$tree" ! -type d \( ! -type f -o -links +1 \) -print -quit)"; then return 1; fi
@@ -69,6 +76,11 @@ copy_artifact() {
   artifact_outputs+=("$2=true")
 }
 
+cleanup_failure() {
+  if [ "$status" -eq 0 ]; then status=1; fi
+  artifacts_safe=false
+}
+
 cleanup() {
   status=$?
   artifact_outputs=()
@@ -78,27 +90,32 @@ cleanup() {
     container="$(cat "${job}/container.id")"
     if ! docker rm --force "$container" >/dev/null; then
       echo '::error::Container removal failed; artifact export and directory cleanup are unsafe.' >&2
+      cleanup_failure
       resume_commands
-      exit 1
+      exit "$status"
     fi
   fi
   # После удаления контейнера содержимое стабильно; ссылки не переносятся на хост.
   if [ "$workload" = icons-consumer ]; then
-    # Прерванная подготовка может оставить raw Trace2; argv и config не экспортируются.
+    # Наружу выходит только проверенная публичная проекция. Raw inputs и архивы
+    # производителей остаются во временном каталоге до его удаления.
     if ! rm -f -- "${job}/work/output/.git-trace2.raw"; then
-      status=1; artifacts_safe=false
-    elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output; then
-      status=1; artifacts_safe=false
+      cleanup_failure
+    elif [ ! -f "${job}/work/output/public/manifest.json" ] || [ -L "${job}/work/output/public/manifest.json" ]; then
+      echo '::error::Complete public Icons evidence is missing.' >&2
+      cleanup_failure
+    elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output/public; then
+      cleanup_failure
     fi
   else
-    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then status=1; artifacts_safe=false; fi
-    if ! copy_artifact apps/docs/playwright-report report_ready; then status=1; artifacts_safe=false; fi
+    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then cleanup_failure; fi
+    if ! copy_artifact apps/docs/playwright-report report_ready; then cleanup_failure; fi
   fi
-  if ! rm -rf -- "$job"; then status=1; artifacts_safe=false; fi
+  if ! rm -rf -- "$job"; then cleanup_failure; fi
   if [ "$artifacts_safe" = true ] && [ "${#artifact_outputs[@]}" -gt 0 ] && [ -n "${GITHUB_OUTPUT:-}" ]; then
-    if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then status=1; fi
+    if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then cleanup_failure; fi
   fi
-  if ! resume_commands; then status=1; fi
+  if ! resume_commands; then cleanup_failure; fi
   exit "$status"
 }
 trap cleanup EXIT
@@ -154,7 +171,7 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
         --ui-tokens-tarball /job/output/ui-tokens/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
-      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
+      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || { if [ "$status" -eq 0 ]; then status=1; fi; }
       exit "$status"
     else
       pnpm --filter "@labpics/ui-docs^..." build

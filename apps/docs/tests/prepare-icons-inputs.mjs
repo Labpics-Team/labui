@@ -1,10 +1,30 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, readdir, realpath, writeFile } from 'node:fs/promises';
+import { createHash, randomUUID } from 'node:crypto';
+import {
+  lstat,
+  mkdir,
+  readFile,
+  readdir,
+  realpath,
+  rename,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
+import {
+  PUBLIC_ICONS_DESIGN_REFERENCE,
+  assertPublicEvidence,
+  assertSourceIdentity,
+  collectPrivateLocations,
+  parseEvidenceJSON,
+  projectPublicEvidence,
+  publicBrowserFrontier,
+  publicError,
+} from '../../../scripts/ci/icons-public-provenance.mjs';
+import { assertPublicScreenshot } from '../../../scripts/ci/icons-screenshot-profile.mjs';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import {
   assertSelfHostedRunner,
@@ -26,22 +46,35 @@ const stableJSON = (value) =>
       : item,
   );
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
-const git = createGitRunner(process.env.LABUI_ICONS_GIT_DIAGNOSTICS);
+const git = createGitRunner(process.env.LABUI_ICONS_GIT_DIAGNOSTICS, (file, args, options) =>
+  execFileSync(file, args, { ...options, stdio: ['ignore', 'pipe', 'pipe'] }),
+);
 
 export function validateSourcePin(pin) {
   assert.deepEqual(Object.keys(pin).sort(), [
-    'figma',
     'repository',
     'schemaVersion',
     'sourceCommit',
+    'sourceIdentitySha256',
   ]);
-  assert.equal(pin.schemaVersion, 1);
+  assert.equal(pin.schemaVersion, 2);
   assert.equal(pin.repository, 'Labpics-Team/lab-icons');
   assert.match(pin.sourceCommit, /^[a-f0-9]{40}$/);
-  assert.deepEqual(Object.keys(pin.figma).sort(), ['fileKey', 'version']);
-  assert.match(pin.figma.fileKey, /^[A-Za-z0-9]+$/);
-  assert.match(pin.figma.version, /^\d+$/);
+  assert.match(pin.sourceIdentitySha256, /^[a-f0-9]{64}$/);
   return pin;
+}
+
+// Публичный pin связывает точный источник по commitment; его locator остаётся в runner.
+export async function resolveSourcePin(iconsRoot, pin) {
+  validateSourcePin(pin);
+  const file = 'semantics/figma-baseline.json';
+  await sourceFile(iconsRoot, pin.sourceCommit, file);
+  const manifest = JSON.parse(await readFile(join(iconsRoot, file)));
+  assertSourceIdentity(manifest.source, pin.sourceIdentitySha256);
+  return {
+    ...pin,
+    figma: { fileKey: manifest.source.fileKey, version: manifest.source.version },
+  };
 }
 
 export function assertCheckout(root, expected) {
@@ -441,7 +474,7 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   execFileSync(process.execPath, [join(iconsRoot, program.file), '--output', join(out, file)], {
     cwd: iconsRoot,
     timeout: 600_000,
-    stdio: ['ignore', 'inherit', 'inherit'],
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   assertCheckout(iconsRoot, sourceSha);
   for (const material of materials)
@@ -449,7 +482,7 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   const bytes = await readFile(join(out, file));
   const lockfileSha256 = materials.find((item) => item.file === 'pnpm-lock.yaml').sha256;
   const report = validatePlatformMeasurement(
-    JSON.parse(bytes),
+    parseEvidenceJSON(bytes),
     sourceSha,
     artifactFiles,
     lockfileSha256,
@@ -468,8 +501,30 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   };
 }
 
-export function platformMeasurementLog(bytes, sourceSha) {
-  return evidenceLog(bytes, 'LABUI_ICONS_PLATFORM_MEASUREMENT', { sourceSha }, 'reportSha256');
+export function projectJsonBytes(bytes, privateLocations = []) {
+  assert.ok(Buffer.isBuffer(bytes) && bytes.length > 0, 'public: нужны точные JSON bytes');
+  const projection = {
+    ...projectPublicEvidence(parseEvidenceJSON(bytes), { privateLocations }),
+    originalBytesSha256: hash(bytes),
+    originalBytes: bytes.length,
+  };
+  assertPublicEvidence(projection, { privateLocations });
+  return Buffer.from(`${JSON.stringify(projection, null, 2)}\n`);
+}
+
+export function platformMeasurementLog(bytes, sourceSha, privateLocations) {
+  assert.match(sourceSha, /^[a-f0-9]{40}$/);
+  return evidenceLog(
+    projectJsonBytes(bytes, privateLocations),
+    'LABUI_ICONS_PLATFORM_MEASUREMENT',
+    {
+      sourceSha,
+      projectionVersion: 1,
+      originalBytesSha256: hash(bytes),
+      originalBytes: bytes.length,
+    },
+    'reportSha256',
+  );
 }
 
 const VISUAL_FILES = new Set([
@@ -479,33 +534,14 @@ const VISUAL_FILES = new Set([
   'result/reduce-failure.png',
 ]);
 const CONSUMER_MAX_EVIDENCE_BYTES = 4 * 1024 * 1024;
-const VISUAL_MAX_PIXELS = 16 * 1024 * 1024;
 
 // Только PNG известного consumer; лимиты ограничивают log и последующий decode.
-export function consumerVisualLog(bytes, file, sourceSha, uiCommit) {
+export function consumerVisualLog(bytes, file, sourceSha, uiCommit, privateLocations = []) {
   assert.ok(VISUAL_FILES.has(file), 'visual: неизвестный screenshot');
   assert.match(sourceSha, /^[a-f0-9]{40}$/);
   assert.match(uiCommit, /^[a-f0-9]{40}$/);
-  assert.ok(
-    Buffer.isBuffer(bytes) && bytes.length >= 45 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
-    'visual: PNG bytes вне лимита',
-  );
-  assert.ok(
-    bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])),
-    'visual: PNG signature',
-  );
-  assert.equal(bytes.readUInt32BE(8), 13, 'visual: IHDR length');
-  assert.equal(bytes.toString('ascii', 12, 16), 'IHDR', 'visual: IHDR');
-  const width = bytes.readUInt32BE(16);
-  const height = bytes.readUInt32BE(20);
-  assert.ok(
-    width > 0 && height > 0 && width * height <= VISUAL_MAX_PIXELS,
-    'visual: PNG dimensions вне лимита',
-  );
-  assert.ok(
-    bytes.subarray(-12).equals(Buffer.from([0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130])),
-    'visual: IEND',
-  );
+  const { width, height } = assertPublicScreenshot(bytes);
+  assertPublicEvidence(bytes, { privateLocations });
   return evidenceLog(
     bytes,
     'LABUI_ICONS_CONSUMER_VISUAL',
@@ -514,31 +550,58 @@ export function consumerVisualLog(bytes, file, sourceSha, uiCommit) {
   );
 }
 
-export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
+export function consumerReceiptLog(bytes, sourceSha, uiCommit, privateLocations) {
   assert.match(sourceSha, /^[a-f0-9]{40}$/);
   assert.match(uiCommit, /^[a-f0-9]{40}$/);
   assert.ok(
     Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
     'receipt: bytes вне лимита',
   );
-  const receipt = JSON.parse(bytes);
+  const receipt = parseEvidenceJSON(bytes);
   assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
   assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
   assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
   return evidenceLog(
-    bytes,
+    projectJsonBytes(bytes, privateLocations),
     'LABUI_ICONS_CONSUMER_RECEIPT',
-    { file: 'result/receipt.json', sourceSha, uiCommit },
+    {
+      file: 'result/receipt.json',
+      sourceSha,
+      uiCommit,
+      projectionVersion: 1,
+      originalBytesSha256: hash(bytes),
+      originalBytes: bytes.length,
+    },
     'receiptSha256',
   );
 }
 
+export function consumerResultLog(bytes, privateLocations) {
+  assert.ok(
+    Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
+    'result: bytes вне лимита',
+  );
+  const projected = projectJsonBytes(bytes, privateLocations);
+  assert.ok(projected.length <= CONSUMER_MAX_EVIDENCE_BYTES, 'result: projection вне лимита');
+  return evidenceLog(
+    projected,
+    'LABUI_ICONS_CONSUMER_RESULT',
+    {
+      projectionVersion: 1,
+      originalBytesSha256: hash(bytes),
+      originalBytes: bytes.length,
+    },
+    'resultSha256',
+  );
+}
+
 export async function prepareInputs(options) {
-  const pin = validateSourcePin(JSON.parse(await readFile(PIN)));
+  const sourcePin = validateSourcePin(JSON.parse(await readFile(PIN)));
   const iconsRoot = await realpath(resolve(options.get('--icons-source')));
   const uiRoot = await realpath(resolve(options.get('--ui-source')));
   const uiCommit = options.get('--ui-commit');
-  assertCheckout(iconsRoot, pin.sourceCommit);
+  assertCheckout(iconsRoot, sourcePin.sourceCommit);
+  const pin = await resolveSourcePin(iconsRoot, sourcePin);
   assertCheckout(uiRoot, uiCommit);
   const out = resolve(options.get('--out'));
   const parent = await realpath(dirname(out));
@@ -604,7 +667,7 @@ export async function prepareInputs(options) {
   assertCheckout(uiRoot, uiCommit);
   await writeFile(
     join(out, 'source-receipt.json'),
-    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement }, null, 2)}\n`,
+    `${JSON.stringify({ schemaVersion: 1, pin: sourcePin, uiCommit, subjectSha256: hash(bytes), files, measurement }, null, 2)}\n`,
     { flag: 'wx', mode: 0o600 },
   );
   process.stdout.write(
@@ -613,8 +676,179 @@ export async function prepareInputs(options) {
 }
 
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
+const PUBLIC_JSON_FILES = new Set([
+  'subject.json',
+  'source-receipt.json',
+  'receipt.json',
+  'failure.json',
+  'platform-measurement.json',
+  'consumer-result.json',
+]);
+
+const isPublicFile = (name) => PUBLIC_JSON_FILES.has(name) || VISUAL_FILES.has(`result/${name}`);
+
+// После остановки producer проверяется весь закрытый набор; наличие marker недостаточно.
+export async function verifyPublicExport(directory) {
+  try {
+    const requested = resolve(directory);
+    const rootStat = await lstat(requested);
+    assert.ok(rootStat.isDirectory() && !rootStat.isSymbolicLink());
+    const root = await realpath(requested);
+    const marker = join(root, 'manifest.json');
+    const markerStat = await lstat(marker);
+    assert.ok(markerStat.isFile() && !markerStat.isSymbolicLink());
+    const markerBytes = await readFile(marker);
+    assertPublicEvidence(markerBytes);
+    const manifest = JSON.parse(markerBytes);
+    assert.deepEqual(Object.keys(manifest).sort(), [
+      'files',
+      'projectionVersion',
+      'publicDesignReference',
+    ]);
+    assert.equal(manifest.projectionVersion, 1);
+    assert.equal(manifest.publicDesignReference, PUBLIC_ICONS_DESIGN_REFERENCE);
+    assert.ok(Array.isArray(manifest.files) && manifest.files.length > 0);
+    const names = new Set();
+    for (const item of manifest.files) {
+      assert.deepEqual(Object.keys(item).sort(), ['bytes', 'file', 'sha256']);
+      assert.ok(typeof item.file === 'string' && isPublicFile(item.file) && !names.has(item.file));
+      assert.match(item.sha256, /^[a-f0-9]{64}$/);
+      assert.ok(Number.isSafeInteger(item.bytes) && item.bytes > 0);
+      names.add(item.file);
+    }
+    const entries = await readdir(root, { withFileTypes: true });
+    assert.ok(entries.every((entry) => entry.isFile() && !entry.isSymbolicLink()));
+    assert.deepEqual(entries.map((entry) => entry.name).sort(), ['manifest.json', ...names].sort());
+    for (const item of manifest.files) {
+      const path = join(root, item.file);
+      const stat = await lstat(path);
+      assert.ok(stat.isFile() && !stat.isSymbolicLink() && stat.size === item.bytes);
+      const bytes = await readFile(path);
+      assert.equal(bytes.length, item.bytes);
+      assert.equal(hash(bytes), item.sha256);
+      if (PUBLIC_JSON_FILES.has(item.file)) {
+        assertPublicEvidence(bytes);
+        const projection = JSON.parse(bytes);
+        assert.deepEqual(Object.keys(projection).sort(), [
+          'evidence',
+          'originalBytes',
+          'originalBytesSha256',
+          'originalSha256',
+          'projectionVersion',
+          'publicDesignReference',
+        ]);
+        assert.equal(projection.projectionVersion, 1);
+        assert.equal(projection.publicDesignReference, PUBLIC_ICONS_DESIGN_REFERENCE);
+        for (const key of ['originalBytesSha256', 'originalSha256'])
+          assert.match(projection[key], /^[a-f0-9]{64}$/);
+        assert.ok(Number.isSafeInteger(projection.originalBytes) && projection.originalBytes > 0);
+      } else {
+        assertPublicScreenshot(bytes);
+        assertPublicEvidence(bytes);
+      }
+    }
+    return manifest;
+  } catch {
+    throw Object.assign(new Error('Публичный export не завершён или изменён'), {
+      name: 'PublicEvidenceRefusal',
+      code: 'PUBLIC_EVIDENCE_REFUSED',
+    });
+  }
+}
+
+// Экспорт получает только уже проверенные документы. Manifest завершает публикацию
+// каталога; прерванная запись не даёт shell право экспортировать частичный результат.
+export async function exportPublicEvidence(directory, { jsonFiles, visuals, privateLocations }) {
+  const root = await realpath(resolve(directory));
+  const publicRoot = join(root, 'public');
+  try {
+    const stat = await lstat(publicRoot);
+    assert.ok(
+      stat.isDirectory() && !stat.isSymbolicLink(),
+      'public: каталог не должен быть ссылкой',
+    );
+    await unlink(join(publicRoot, 'manifest.json'));
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+  const material = new Map();
+  assert.ok(jsonFiles instanceof Map, 'public: нужен явный набор документов');
+  for (const [name, bytes] of jsonFiles) {
+    assert.ok(
+      PUBLIC_JSON_FILES.has(name) && Buffer.isBuffer(bytes),
+      'public: неизвестный документ',
+    );
+    material.set(name, projectJsonBytes(bytes, privateLocations));
+  }
+  for (const visual of visuals) {
+    assert.ok(VISUAL_FILES.has(visual.path), 'public: неизвестный screenshot');
+    consumerVisualLog(visual.bytes, visual.path, '0'.repeat(40), '0'.repeat(40), privateLocations);
+    const name = visual.path.slice('result/'.length);
+    assert.ok(!material.has(name), 'public: повторён artifact');
+    material.set(name, visual.bytes);
+  }
+  // Никакие файлы прежнего/чужого экспорта не примешиваются к allowlist.
+  try {
+    const stat = await lstat(publicRoot);
+    assert.ok(
+      stat.isDirectory() && !stat.isSymbolicLink(),
+      'public: каталог не должен быть ссылкой',
+    );
+    const entries = await readdir(publicRoot, { withFileTypes: true });
+    for (const entry of entries)
+      assert.ok(
+        entry.isFile() &&
+          (entry.name === 'manifest.json' ||
+            PUBLIC_JSON_FILES.has(entry.name) ||
+            VISUAL_FILES.has(`result/${entry.name}`)),
+        'public: неизвестный или связанный файл',
+      );
+    for (const entry of entries) await unlink(join(publicRoot, entry.name));
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+    await mkdir(publicRoot, { recursive: false, mode: 0o700 });
+  }
+  const files = [];
+  for (const [name, bytes] of material) {
+    assertPublicEvidence(bytes, { privateLocations });
+    await writeFile(join(publicRoot, name), bytes, { flag: 'wx', mode: 0o600 });
+    files.push({ file: name, sha256: hash(bytes), bytes: bytes.length });
+  }
+  const manifest = {
+    projectionVersion: 1,
+    publicDesignReference: PUBLIC_ICONS_DESIGN_REFERENCE,
+    files,
+  };
+  assertPublicEvidence(manifest, { privateLocations });
+  const pending = join(publicRoot, `.manifest-${randomUUID()}.pending`);
+  let publicationFailure;
+  try {
+    await writeFile(pending, `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx', mode: 0o600 });
+    await rename(pending, join(publicRoot, 'manifest.json'));
+  } catch (error) {
+    publicationFailure = error;
+    throw error;
+  } finally {
+    await unlink(pending).catch((error) => {
+      if (error?.code !== 'ENOENT' && !publicationFailure) throw error;
+    });
+  }
+  return manifest;
+}
+
 export async function summarize(directory) {
   const root = await realpath(resolve(directory));
+  try {
+    const publicRoot = join(root, 'public');
+    const stat = await lstat(publicRoot);
+    assert.ok(
+      stat.isDirectory() && !stat.isSymbolicLink(),
+      'public: каталог не должен быть ссылкой',
+    );
+    await unlink(join(publicRoot, 'manifest.json'));
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
   const files = [];
   const visuals = [];
   for (const name of ['inputs', 'result']) {
@@ -627,10 +861,20 @@ export async function summarize(directory) {
     }
   }
   const receiptBytes = await readFile(join(root, 'result/receipt.json'));
-  const receipt = JSON.parse(receiptBytes);
-  const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
+  const receipt = parseEvidenceJSON(receiptBytes);
+  const sourceBytes = await readFile(join(root, 'inputs/source-receipt.json'));
+  const source = parseEvidenceJSON(sourceBytes);
   const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
-  const subject = validateSubject(JSON.parse(subjectBytes));
+  const subject = validateSubject(parseEvidenceJSON(subjectBytes));
+  const privateLocations = collectPrivateLocations({ source, subject, receipt });
+  const publicDocuments = new Map([
+    ['subject.json', subjectBytes],
+    ['source-receipt.json', sourceBytes],
+    ['receipt.json', receiptBytes],
+  ]);
+  if (receipt.outcome === 'failed') publicDocuments.set('failure.json', receiptBytes);
+  validateSourcePin(source.pin);
+  assertSourceIdentity(subject.authorReference, source.pin.sourceIdentitySha256);
   assert.equal(hash(subjectBytes), source.subjectSha256);
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
   if (subject.schemaVersion >= 2) {
@@ -651,15 +895,24 @@ export async function summarize(directory) {
     const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
     assert.equal(lockfile.sha256, measurement.lockfileSha256);
     validatePlatformMeasurement(
-      JSON.parse(bytes),
+      parseEvidenceJSON(bytes),
       source.pin.sourceCommit,
       measurement.artifactFiles,
       measurement.lockfileSha256,
     );
-    await writeStdout(platformMeasurementLog(bytes, source.pin.sourceCommit));
+    publicDocuments.set('platform-measurement.json', bytes);
+    await writeStdout(platformMeasurementLog(bytes, source.pin.sourceCommit, privateLocations));
   }
   const packets = [];
   let readbackFailure;
+  let browserFrontier;
+  if (receipt.failure?.browserFrontier !== undefined) {
+    try {
+      browserFrontier = publicBrowserFrontier(receipt.failure.browserFrontier, privateLocations);
+    } catch (error) {
+      readbackFailure = { file: 'result/browser-frontier-evidence', error };
+    }
+  }
   const addPacket = (file, encode) => {
     try {
       packets.push(encode());
@@ -669,32 +922,50 @@ export async function summarize(directory) {
   };
   for (const visual of visuals)
     addPacket(visual.path, () =>
-      consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit),
+      consumerVisualLog(
+        visual.bytes,
+        visual.path,
+        source.pin.sourceCommit,
+        source.uiCommit,
+        privateLocations,
+      ),
     );
   if (receipt.outcome === 'passed')
     addPacket('result/receipt.json', () =>
-      consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit),
+      consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit, privateLocations),
     );
-  for (const packet of packets) await writeStdout(packet);
-  await writeStdout(
-    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
+  const summary = JSON.parse(
+    JSON.stringify({
       schemaVersion: 1,
-      outcome: receipt.outcome,
+      outcome: readbackFailure ? 'failed' : receipt.outcome,
+      ...(readbackFailure ? { browserOutcome: receipt.outcome } : {}),
       source,
       harness: receipt.harness,
       runner: receipt.runner,
       archives: receipt.archives,
       observations: receipt.records?.length,
       failure: receipt.failure
-        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+        ? {
+            phase: receipt.failure.phase,
+            stateContinuity: receipt.failure.stateContinuity,
+            ...(browserFrontier ? { browserFrontier } : {}),
+          }
         : null,
       files,
-      diagnosticDirectory: root,
       ...(readbackFailure
         ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
         : {}),
-    })}\n`,
+    }),
   );
+  const summaryBytes = Buffer.from(`${JSON.stringify(summary)}\n`);
+  publicDocuments.set('consumer-result.json', summaryBytes);
+  const resultPacket = consumerResultLog(summaryBytes, privateLocations);
+  // Отказ передаёт frontier до PNG; успешный RESULT завершает все packets.
+  if (summary.outcome === 'failed') await writeStdout(resultPacket);
+  for (const packet of packets) await writeStdout(packet);
+  if (summary.outcome !== 'failed') await writeStdout(resultPacket);
+  if (!readbackFailure)
+    await exportPublicEvidence(root, { jsonFiles: publicDocuments, visuals, privateLocations });
   if (readbackFailure) throw readbackFailure.error;
   assert.equal(receipt.outcome, 'passed');
 }
@@ -703,6 +974,10 @@ async function main() {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === '--checkout-ref') {
     process.stdout.write(`${validateSourcePin(JSON.parse(await readFile(PIN))).sourceCommit}\n`);
+    return;
+  }
+  if (args.length === 2 && args[0] === '--verify-public') {
+    await verifyPublicExport(args[1]);
     return;
   }
   if (args.length === 2 && args[0] === '--summarize') return summarize(args[1]);
@@ -726,4 +1001,11 @@ async function main() {
   return prepareInputs(options);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main();
+  } catch (error) {
+    process.stderr.write(`LABUI_ICONS_CONSUMER_ERROR ${JSON.stringify(publicError(error))}\n`);
+    process.exitCode = 1;
+  }
+}

@@ -8,6 +8,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import { publicError } from '../../../scripts/ci/icons-public-provenance.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -85,6 +86,7 @@ export function readArchiveManifest(path, expected) {
   const bytes = execFileSync('tar', ['-xOf', path, 'package/package.json'], {
     timeout: 10_000,
     maxBuffer: 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   const manifest = JSON.parse(bytes);
   assertArchiveManifest(manifest, expected);
@@ -1575,13 +1577,23 @@ export async function main(args = process.argv.slice(2)) {
     receipt.subject = subject;
     receipt.subjectSha256 = hash(subjectBytes);
     const source = (args) =>
-      execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 20_000 }).trim();
+      execFileSync('git', args, {
+        cwd: ROOT,
+        encoding: 'utf8',
+        timeout: 20_000,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }).trim();
     const harnessBytes = await readFile(fileURLToPath(import.meta.url));
     receipt.harness = {
       commit: source(['rev-parse', 'HEAD']),
       sourceSha256: hash(harnessBytes),
       dirty: source(['status', '--porcelain']) !== '',
-      diffSha256: hash(execFileSync('git', ['diff', 'HEAD', '--binary'], { cwd: ROOT })),
+      diffSha256: hash(
+        execFileSync('git', ['diff', 'HEAD', '--binary'], {
+          cwd: ROOT,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        }),
+      ),
     };
     receipt.runner = {
       node: process.version,
@@ -1826,4 +1838,11 @@ export async function main(args = process.argv.slice(2)) {
   if (cleanupErrors.length) throw new Error(`icons-packed cleanup: ${cleanupErrors.join('; ')}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main();
+  } catch (error) {
+    process.stderr.write(`LABUI_ICONS_CONSUMER_ERROR ${JSON.stringify(publicError(error))}\n`);
+    process.exitCode = 1;
+  }
+}
