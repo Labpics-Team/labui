@@ -262,6 +262,47 @@ try {
         }
         Assert ($env:LABUI_LAYOUT_OBSERVATION -ceq 'prior-layout-value') 'Layout env не восстановлен настоящим finally.'
     }
+
+    # Полные ограниченные trace обеих тем должны помещаться без потери вложенных полей.
+    $Lifetime = $true
+    $initialLayout = New-Observation 2.25
+    $lowerControls = @{}
+    $captures = @{}
+    foreach ($theme in @('Light', 'Dark')) {
+        $samples = @(foreach ($index in 0..127) {
+            @{ elapsedMs = $index + 0.1234567; threadId = 2;
+               motion = @{ operation = 4; phase = 'value'; seconds = $index / 1000.0;
+                   position = 0.1234567; nativeVelocity = $null; readbackPosition = 0.1234567;
+                   origin = 'Animation'; nativeRequestId = 19;
+                   nativePosition = @{ x = 123.4567; y = 0; z = 0 };
+                   nativeReadbackPosition = @{ x = 123.4567; y = 0; z = 0 };
+                   nativeVelocityVector = $null } }
+        })
+        $captures[$theme] = @{ space = @{ observation = @{ observations = $samples;
+            clockOriginTicks = '9007199254740993'; theme = $theme } } }
+    }
+    $expectedCaptures = $captures | ConvertTo-Json -Depth 12 -Compress
+    $boundedLifetime = @{ countBefore = 9; countAfter = 10; observations = $samples }
+    function Invoke-Lifetime($Path, $Process, [int]$Count) {
+        Assert ($Count -eq 9) 'Полный результат потерял исходный lifetime count.'
+        return $boundedLifetime
+    }
+    . $publication
+    $resultPath = Join-Path $output 'result.json'
+    $acceptedBytes = [IO.File]::ReadAllBytes($resultPath)
+    $readback = [Text.Encoding]::UTF8.GetString($acceptedBytes) | ConvertFrom-Json -AsHashtable
+    Assert ($acceptedBytes.Length -le 256 * 1024) 'Ограниченные trace не поместились в result.json.'
+    Assert (($readback.captures | ConvertTo-Json -Depth 12 -Compress) -ceq $expectedCaptures) 'Сериализация потеряла содержимое trace.'
+    Assert (($readback.lifetime | ConvertTo-Json -Depth 12 -Compress) -ceq ($boundedLifetime | ConvertTo-Json -Depth 12 -Compress)) 'Сериализация потеряла lifetime trace.'
+    foreach ($theme in @('Light', 'Dark')) {
+        Assert ($readback.captures[$theme].space.observation.observations.Count -eq 128) 'Сериализация усекла observations.'
+        Assert ($readback.captures[$theme].space.observation.clockOriginTicks -ceq '9007199254740993') 'Сериализация округлила clock origin.'
+    }
+    $captures = @{ payload = 'x' * (256 * 1024) }
+    $sizeFailure = $null
+    try { . $publication } catch { $sizeFailure = $_.Exception.Message }
+    Assert ($sizeFailure -ceq 'Полный result.json превысил лимит evidence.') 'Превышение лимита перестало отклоняться.'
+    Assert ([Convert]::ToBase64String([IO.File]::ReadAllBytes($resultPath)) -ceq [Convert]::ToBase64String($acceptedBytes)) 'Отклонённый результат перезаписал принятый файл.'
 } finally {
     [Environment]::SetEnvironmentVariable('LABUI_LAYOUT_OBSERVATION', $previousLayoutEnv)
     Remove-Item -LiteralPath $output -Recurse -Force

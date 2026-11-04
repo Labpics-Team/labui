@@ -882,7 +882,7 @@ try {
         $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 9
         $result.motionLifetime = 'bounded-disposal-reuse'
     }
-    $resultJson = $result | ConvertTo-Json -Depth 12
+    $resultJson = $result | ConvertTo-Json -Depth 12 -Compress
     if ([Text.Encoding]::UTF8.GetByteCount($resultJson + [Environment]::NewLine) -gt 256 * 1024) { throw 'Полный result.json превысил лимит evidence.' }
     $resultJson | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
     # Обе существующие trace нужны для проверки общего clock origin; отдельного журнала нет.
