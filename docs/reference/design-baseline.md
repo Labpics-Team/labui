@@ -167,6 +167,10 @@ definitions; материалы также просмотрены на изоб�
 
 ## Граница каталога
 
+Структурный [снимок каталога от 4 ноября 2026 года](catalogue.md) содержит наборы
+и варианты всех компонентных страниц. Его покрытие отделено от визуальной
+приёмки и соответствия реализации.
+
 Страницы эталона: Accordion, Alert, Alert Dialog, Avatar, Badge, Bottom Sheet,
 Breadcrumb, Button, Calendar, Card, Charts, Chats, Check & Radio, Chips,
 Choicebox, Color Picker, Context menu, Data Table, Drag Button, Drag'n'drop,
