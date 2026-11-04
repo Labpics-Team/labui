@@ -27,14 +27,15 @@ foreach ($fault in @('none', 'reply-id', 'string-id', 'wrong-pid', 'string-pid',
         if ($fault -eq 'missing') { $line = '' }
         if ($fault -eq 'partial') { $line = $line.TrimEnd() }
         $process = [pscustomobject]@{ Id = 3187; StandardInput = [IO.StringWriter]::new(); StandardOutput = [IO.StringReader]::new($line) }
-        $spaceChannel = @{ id = 0; read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($process.StandardOutput, 128 * 1024) }
+        $spaceChannel = @{ id = 0; stdoutReader = $process.StandardOutput; cancellation = [Threading.CancellationTokenSource]::new() }
+        $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
         if ($fault -eq 'timeout') { $spaceChannel.read = [Threading.Tasks.TaskCompletionSource[string]]::new().Task }
         $failed = $false
         try { $value = Invoke-SpaceCommand 'arm Light' 20 } catch { $failed = $true }
         Assert ($failed -eq ($fault -ne 'none')) "Неверное принятие ответа Space: $fault."
         Assert ($process.StandardInput.ToString().TrimEnd() -ceq 'arm Light') 'Команда изменена.'
         if ($fault -eq 'none') { Assert ($value.status -ceq 'armed' -and $spaceChannel.id -eq 1) 'Полезный ответ потерян.' }
-        $process.StandardInput.Dispose(); $process.StandardOutput.Dispose()
+        $process.StandardInput.Dispose(); $process.StandardOutput.Dispose(); $spaceChannel.cancellation.Dispose()
     } $fault
 }
 'Space harness: PASS (actual bounded reader, request identity, PID, typed reply, EOF and timeout)'

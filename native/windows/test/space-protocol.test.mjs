@@ -15,6 +15,25 @@ using System.Text.Json;
 using LabUI.Buttons;
 
 static void Check(bool value, string message) { if (!value) throw new Exception(message); }
+if (args.FirstOrDefault() == "cleanup-hold") {
+    using var ready = EventWaitHandle.OpenExisting(args[1]);
+    using var release = EventWaitHandle.OpenExisting(args[2]);
+    ready.Set();
+    Check(release.WaitOne(30000), "Pipe fixture release deadline");
+    return;
+}
+if (args.FirstOrDefault() == "cleanup-inherited") {
+    var info = new ProcessStartInfo(Path.ChangeExtension(typeof(Program).Assembly.Location, ".exe")) {
+        UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true
+    };
+    foreach (var argument in new[] { "cleanup-hold", args[1], args[2] }) info.ArgumentList.Add(argument);
+    using var holder = Process.Start(info) ?? throw new Exception("Pipe holder not started");
+    using var ready = EventWaitHandle.OpenExisting(args[1]);
+    Check(ready.WaitOne(10000), "Pipe holder startup deadline");
+    Console.WriteLine(holder.Id);
+    return;
+}
+if (args.FirstOrDefault() == "cleanup-eof") { Console.Error.Write("healthy-stderr"); return; }
 if (args.FirstOrDefault() == "child") {
     await SpaceProtocol.RunAsync(Console.OpenStandardInput(), Console.OpenStandardOutput(),
         command => Task.FromResult<object>(new { command, pid = Environment.ProcessId }));
@@ -108,6 +127,26 @@ test('real Space protocol bounds messages and completes a redirected WinExe chil
     );
     assert.equal(run.status, 0, run.stdout + run.stderr);
     assert.match(run.stdout, /WinExe pipes and EOF PASS/);
+    const cleanup = spawnSync(
+      process.env.PWSH_PATH || 'pwsh',
+      [
+        '-NoProfile',
+        '-File',
+        join(root, 'native/windows/test/space-cleanup.test.ps1'),
+        '-PipeFixture',
+        join(dir, 'bin/Debug/net10.0/Probe.exe'),
+        '-DotnetRoot',
+        dirname(resolve(dotnet)),
+      ],
+      { encoding: 'utf8', timeout: 45_000 },
+    );
+    assert.equal(cleanup.status, 0, cleanup.error || cleanup.stdout + cleanup.stderr);
+    assert.match(
+      cleanup.stdout,
+      /real-inherited PASS.*stdout=Canceled stderr=Canceled handlesClosed=True/,
+    );
+    assert.match(cleanup.stdout, /real-eof PASS/);
+    process.stdout.write(cleanup.stdout);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

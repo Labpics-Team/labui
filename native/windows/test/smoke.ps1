@@ -488,7 +488,7 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     if (!$spaceChannel.read.Wait($Timeout)) { throw 'Space не ответил в бюджете команды.' }
     $line = $spaceChannel.read.GetAwaiter().GetResult()
     if ($null -eq $line -or [Text.Encoding]::UTF8.GetByteCount($line) -gt 128 * 1024) { throw 'Нет полного ограниченного ответа Space.' }
-    $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($process.StandardOutput, 128 * 1024)
+    $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
     $reply = $line | ConvertFrom-Json
     if (($reply.id -isnot [int] -and $reply.id -isnot [long]) -or $reply.id -ne $spaceChannel.id -or
         $reply.ok -isnot [bool] -or !$reply.ok) { throw "Space отклонил $Command`: $line" }
@@ -766,9 +766,12 @@ try {
     $appStart.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
     $appStart.StandardErrorEncoding = [Text.UTF8Encoding]::new($false, $true)
     $process = [Diagnostics.Process]::Start($appStart)
-    $spaceChannel = @{ id = 0;
-        read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($process.StandardOutput, 128 * 1024);
-        errorRead = [LabUI.Buttons.SpaceProtocol]::ReadErrorAsync($process.StandardError) }
+    $spaceChannel = @{ id = 0; stdoutReader = $null; stderrReader = $null; read = $null; errorRead = $null;
+        cancellation = [Threading.CancellationTokenSource]::new() }
+    $spaceChannel.stdoutReader = $process.StandardOutput
+    $spaceChannel.stderrReader = $process.StandardError
+    $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
+    $spaceChannel.errorRead = [LabUI.Buttons.SpaceProtocol]::ReadErrorAsync($spaceChannel.stderrReader, $spaceChannel.cancellation.Token)
     $started = $process.StartTime
     $deadline = [DateTime]::UtcNow.AddSeconds(20)
     do {
@@ -867,30 +870,60 @@ try {
 } finally {
     try {
         if ($process) {
+            $cleanupBudget = [Diagnostics.Stopwatch]::StartNew()
+            $cleanupErrors = [Collections.Generic.List[Exception]]::new()
+            if ($spaceChannel) {
+                try { $spaceChannel.cancellation.Cancel() } catch { $cleanupErrors.Add($_.Exception) }
+            }
             try {
                 $process.Refresh()
                 if ($spaceChannel) { $process.StandardInput.Close() }
                 if (!$process.HasExited) {
                     $process.CloseMainWindow() | Out-Null
-                    if (!$process.WaitForExit(5000)) {
+                    $remaining = [int][Math]::Max(0, [Math]::Min(5000, 10000 - $cleanupBudget.ElapsedMilliseconds))
+                    if (!$process.WaitForExit($remaining)) {
                         $current = Get-Process -Id $process.Id -ErrorAction SilentlyContinue
                         if ($current -and $current.Path -eq $app -and $current.StartTime -eq $started) {
-                            $forceBudget = [Diagnostics.Stopwatch]::StartNew()
                             Stop-Process -Id $current.Id -Force
-                            $remaining = [int][Math]::Max(0, 5000 - $forceBudget.ElapsedMilliseconds)
+                            $remaining = [int][Math]::Max(0, [Math]::Min(5000, 10000 - $cleanupBudget.ElapsedMilliseconds))
                             if (!$process.WaitForExit($remaining)) { throw 'Собственное приложение не завершилось после принудительного закрытия.' }
                         }
                     }
                 }
                 $close.exited = $process.HasExited
                 $close.exitCode = $process.ExitCode
+            } catch { $cleanupErrors.Add($_.Exception) }
+            finally {
                 if ($spaceChannel) {
-                    if (!$spaceChannel.read.Wait(5000) -or !$spaceChannel.errorRead.Wait(5000)) { throw 'Потоки Space не завершились после процесса.' }
-                    if ($null -ne $spaceChannel.read.GetAwaiter().GetResult()) { throw 'Space отправил лишний ответ.' }
-                    $close.stderr = $spaceChannel.errorRead.GetAwaiter().GetResult()
-                    $close.spaceChannel = 'closed'
+                    try {
+                        $reads = @(@($spaceChannel.read, $spaceChannel.errorRead) | Where-Object { $null -ne $_ })
+                        $remaining = [int][Math]::Max(0, 10000 - $cleanupBudget.ElapsedMilliseconds)
+                        if ($reads.Count) {
+                            try { $null = [Threading.Tasks.Task]::WaitAll([Threading.Tasks.Task[]]$reads, $remaining) } catch { }
+                            if (@($reads | Where-Object { !$_.IsCompleted }).Count) { throw 'Отменённые потоки Space не завершились в общем бюджете.' }
+                        }
+                        $close.spaceChannel = 'closed'
+                    } catch { $cleanupErrors.Add($_.Exception) }
+                    foreach ($name in @('read', 'errorRead')) {
+                        $task = $spaceChannel[$name]
+                        if ($null -ne $task -and $task.IsCompleted -and !$task.IsCanceled) {
+                            try {
+                                $result = $task.GetAwaiter().GetResult()
+                                if ($name -eq 'read' -and $null -ne $result) { throw 'Space отправил лишний ответ.' }
+                                if ($name -eq 'errorRead') { $close.stderr = $result }
+                            } catch { $cleanupErrors.Add($_.Exception) }
+                        }
+                    }
+                    # Ошибка одного Dispose не отнимает владение оставшимися ресурсами.
+                    foreach ($resource in @($spaceChannel.stdoutReader, $spaceChannel.stderrReader, $spaceChannel.cancellation)) {
+                        if ($null -ne $resource) {
+                            try { $resource.Dispose() } catch { $cleanupErrors.Add($_.Exception) }
+                        }
+                    }
                 }
-            } finally { $process.Dispose() }
+                try { $process.Dispose() } catch { $cleanupErrors.Add($_.Exception) }
+            }
+            if ($cleanupErrors.Count) { throw [AggregateException]::new('Ошибка очистки собственного приложения.', $cleanupErrors) }
         }
         $commands | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'commands.json')
     } catch {

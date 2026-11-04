@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LabUI.Buttons;
@@ -18,11 +19,11 @@ public static class SpaceProtocol
     };
 
     // Reader продолжает drain независимо от ожидания процесса; лимит действует до построения строки.
-    public static async Task<string?> ReadLineAsync(TextReader reader, int limit)
+    public static async Task<string?> ReadLineAsync(TextReader reader, int limit, CancellationToken cancellationToken = default)
     {
         var character = new char[1];
         var line = new StringBuilder();
-        while (await reader.ReadAsync(character, 0, 1) != 0)
+        while (await reader.ReadAsync(character.AsMemory(), cancellationToken) != 0)
         {
             if (character[0] == '\n') return line.Length > 0 && line[^1] == '\r' ? line.ToString(0, line.Length - 1) : line.ToString();
             if (line.Length == limit) throw new InvalidDataException("Строка Space превышает лимит.");
@@ -32,12 +33,12 @@ public static class SpaceProtocol
         return null;
     }
 
-    public static async Task<string> ReadErrorAsync(TextReader reader)
+    public static async Task<string> ReadErrorAsync(TextReader reader, CancellationToken cancellationToken = default)
     {
         var buffer = new char[1024];
         var text = new StringBuilder();
         int count;
-        while ((count = await reader.ReadAsync(buffer, 0, buffer.Length)) != 0)
+        while ((count = await reader.ReadAsync(buffer.AsMemory(), cancellationToken)) != 0)
         {
             if (text.Length + count > 32 * 1024) throw new InvalidDataException("stderr Space превышает лимит.");
             text.Append(buffer, 0, count);
