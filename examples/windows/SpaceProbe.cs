@@ -159,19 +159,41 @@ internal sealed class SpaceProbe : IDisposable
     private object Complete()
     {
         if (!observing) throw new InvalidOperationException("Space не подготовлен.");
-        if (failure is not null || overflow != 0) throw new InvalidOperationException(failure ?? "Space потерял observations.");
+        if (failure is not null || overflow != 0)
+        {
+            Detach();
+            return Snapshot("failed");
+        }
         MotionObservation? final;
         MotionObservation? intent;
-        lock (samples) { final = latest; intent = requested; }
-        if (events.Count(item => item.Kind == "keyUp") < 2 || button.IsPressed || final is not { Phase: "idle" } settled ||
+        Sample? lastIdle;
+        int observationCount;
+        lock (samples)
+        {
+            final = latest; intent = requested; observationCount = samples.Count;
+            lastIdle = intent is { } observedRequest ? samples.LastOrDefault(item => item.Motion.Phase == "idle" &&
+                item.Motion.Operation == observedRequest.Operation && item.Motion.NativeRequestId == observedRequest.NativeRequestId) : null;
+        }
+        var keyUpCount = events.Count(item => item.Kind == "keyUp");
+        var isPressed = button.IsPressed;
+        var position = channel!.Position;
+        if (keyUpCount < 2 || isPressed || final is not { Phase: "idle" } settled ||
             intent is not { } current || settled.NativeRequestId != current.NativeRequestId || settled.Operation != current.Operation ||
-            Math.Abs(settled.ReadbackPosition) > .001f || Math.Abs(channel!.Position) > .001f)
-            return new { status = "waiting", pid = Environment.ProcessId, elapsedMs = Elapsed };
+            Math.Abs(settled.ReadbackPosition) > .001f || Math.Abs(position) > .001f)
+            return new { status = "waiting", pid = Environment.ProcessId, elapsedMs = Elapsed,
+                state = new { eventCount = events.Count, observationCount, keyUpCount, isPressed, position,
+                    requested = intent, latest = final, lastIdle } };
         Record("complete");
         Detach();
+        return Snapshot(overflow == 0 ? "complete" : "failed");
+    }
+
+    // Ошибка сохраняет тот же ограниченный trace; status=failed не допускается валидатором.
+    private object Snapshot(string status)
+    {
         Sample[] observations;
         lock (samples) observations = samples.ToArray();
-        return new { schemaVersion = 1, status = "complete", pid = Environment.ProcessId, processStartedAtUnixMs,
+        return new { schemaVersion = 1, status, pid = Environment.ProcessId, processStartedAtUnixMs,
             automationId = AutomationProperties.GetAutomationId(button), theme, channel = generation,
             animationsEnabled, countBefore, countAfter = count(), overflow, failure,
             clock = "app-stopwatch-ms", clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture),

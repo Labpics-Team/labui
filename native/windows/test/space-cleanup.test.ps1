@@ -54,6 +54,19 @@ public sealed class SpaceCleanupProcess : IDisposable {
     // Process.Dispose не закрывает readers, уже полученные через свойства.
     public void Dispose() { Disposed = true; }
 }
+public sealed class SpaceDiagnosticWriter : StringWriter {
+    public int Writes;
+    public bool FailFirst, FailAlways;
+    public override void WriteLine(string? value) {
+        Writes++;
+        if (FailAlways || FailFirst && Writes == 1) throw new IOException("fixture-diagnostic-write-failure");
+        base.WriteLine(value);
+    }
+}
+public static class SpaceInput {
+    public static readonly object Receipt = new();
+    public static object Run(int processId, long window) => Receipt;
+}
 '@
 $tokens = $null; $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($Harness, [ref]$tokens, [ref]$errors)
@@ -61,6 +74,87 @@ Assert ($errors.Count -eq 0) 'Синтаксис harness повреждён.'
 $outer = @($ast.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.TryStatementAst] })
 Assert ($outer.Count -eq 1 -and $null -ne $outer[0].Finally) 'Нет однозначного внешнего finally.'
 $finalizer = [scriptblock]::Create(($outer[0].Finally.Statements.Extent.Text -join "`n"))
+$diagnosticFunction = @($ast.FindAll({
+    param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Write-SpaceFailure'
+}, $false))
+Assert ($diagnosticFunction.Count -eq 1) 'Нет ограниченного вывода отказа Space.'
+. ([scriptblock]::Create($diagnosticFunction[0].Extent.Text))
+# Запускается настоящий вывод диагностики; stderr заменён только у границы записи.
+foreach ($case in @('bounded', 'utf8-overflow', 'write-failure', 'unavailable-stderr')) {
+    $diagnostic = @{ theme = 'Light'; status = 'failed'; observation = @{ overflow = 1; failure = $null }; ticks = '9223372036854775807' }
+    if ($case -eq 'utf8-overflow') { $diagnostic.payload = 'Я' * 140000 }
+    $primary = [Management.Automation.ErrorRecord]::new([TimeoutException]::new('primary-space-timeout'),
+        'space-timeout', [Management.Automation.ErrorCategory]::OperationTimeout, $null)
+    $original = $primary.Exception
+    $writer = [SpaceDiagnosticWriter]::new()
+    $writer.FailFirst = $case -eq 'write-failure'
+    $writer.FailAlways = $case -eq 'unavailable-stderr'
+    $previousError = [Console]::Error
+    $escaped = $null
+    try {
+        [Console]::SetError($writer)
+        try { $successOutput = @(Write-SpaceFailure $diagnostic $primary) } catch { $escaped = $_ }
+    } finally { [Console]::SetError($previousError) }
+    try {
+        Assert ($null -eq $escaped) 'Сбой диагностики вышел вместо исходной ошибки [space-diagnostic-primary].'
+        Assert ($successOutput.Count -eq 0) 'Диагностика загрязнила success pipeline.'
+        Assert ([object]::ReferenceEquals($primary.Exception, $original) -and $primary.Exception.Message -ceq 'primary-space-timeout') 'Диагностика заменила primary error.'
+        $written = $writer.ToString()
+        Assert ([Text.Encoding]::UTF8.GetByteCount($written) -le 256 * 1024) 'Диагностика превысила общий лимит UTF-8 [space-diagnostic-byte-limit].'
+        if ($case -eq 'bounded') {
+            Assert (!$primary.Exception.Data.Contains('spaceDiagnosticError')) 'Здоровый вывод диагностики получил ошибку.'
+            Assert ($written.StartsWith('LABUI_SPACE_FAILURE_JSON ')) 'Нет JSON-маркера отказа.'
+            $readback = $written.Substring('LABUI_SPACE_FAILURE_JSON '.Length) | ConvertFrom-Json
+            Assert ($readback.status -ceq 'failed' -and $readback.theme -ceq 'Light' -and
+                $readback.observation.overflow -eq 1 -and $readback.ticks -ceq '9223372036854775807') 'Ограниченный отказ потерял исходные поля.'
+        } else {
+            Assert ($primary.Exception.Data.Contains('spaceDiagnosticError')) 'Вторичная ошибка диагностики потеряна.'
+            Assert (!$written.Contains('LABUI_SPACE_FAILURE_JSON ')) 'Частичная диагностика выдана за полный JSON.'
+            if ($case -ne 'unavailable-stderr') {
+                Assert ($written.StartsWith('LABUI_SPACE_DIAGNOSTIC_ERROR ')) 'Нет явного сообщения об отказе диагностики.'
+            }
+        }
+        "Space diagnostic: $case PASS primaryPreserved=True"
+    } finally { $writer.Dispose() }
+}
+$gestureFunction = @($ast.FindAll({
+    param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Invoke-SpaceGesture'
+}, $false))
+Assert ($gestureFunction.Count -eq 1) 'Нет однозначного потребителя Space.'
+. ([scriptblock]::Create($gestureFunction[0].Extent.Text))
+# Настоящий consumer получает инертный receipt и ответы протокола; OS input не выполняется.
+function Invoke-SpaceCommand([string]$Command, [int]$Timeout) {
+    if ($Command -ceq 'arm Light') {
+        return @{ status = 'armed'; theme = 'Light'; automationId = 'LabButtonMedium'; focused = $true }
+    }
+    Assert ($Command -ceq 'complete') 'Fixture получил постороннюю команду.'
+    return @{ status = $script:gestureStatus; pid = 42 }
+}
+foreach ($status in @('failed', 'complete')) {
+    $script:gestureStatus = $status
+    $process = [pscustomobject]@{ Id = 42 }; $window = '77'
+    $clockOriginTicks = '100'; $clockOriginUpperTicks = '101'; $clock = [Diagnostics.Stopwatch]::StartNew()
+    $writer = [SpaceDiagnosticWriter]::new(); $previousError = [Console]::Error
+    $escaped = $null; $value = @()
+    try {
+        [Console]::SetError($writer)
+        try { $value = @(Invoke-SpaceGesture 'Light') } catch { $escaped = $_ }
+    } finally { [Console]::SetError($previousError) }
+    try {
+        Assert ($writer.ToString().Length -eq 0) 'Gesture вывел диагностику вне внешнего отказа.'
+        Assert ($spaceDiagnostic.observation.status -ceq $status -and
+            [object]::ReferenceEquals($spaceDiagnostic.injection, [SpaceInput]::Receipt)) 'Gesture потерял последний ответ или receipt.'
+        if ($status -eq 'failed') {
+            Assert ($null -ne $escaped -and $escaped.Exception.Message.Contains('наблюдение с ошибкой') -and $value.Count -eq 0) 'Failed trace принят как успешный gesture.'
+        } else {
+            Assert ($null -eq $escaped -and $value.Count -eq 1 -and $value[0].observation.status -ceq 'complete' -and
+                [object]::ReferenceEquals($value[0].injection, [SpaceInput]::Receipt)) 'Диагностика изменила успешный результат gesture.'
+        }
+        "Space gesture: $status PASS diagnosticSeparated=True"
+    } finally { $writer.Dispose() }
+}
 # Исполняются настоящие присваивания канала, после запуска процесса и до ожидания окна.
 $setup = [Collections.Generic.List[string]]::new()
 $collect = $false

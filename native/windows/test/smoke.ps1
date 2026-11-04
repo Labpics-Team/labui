@@ -24,6 +24,7 @@ $clock = [Diagnostics.Stopwatch]::StartNew()
 $clockOriginUpperTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture)
 $process = $null
 $spaceChannel = $null
+$spaceDiagnostic = $null
 $smokeFailure = $null
 $animationBefore = $null
 $animationReadback = $null
@@ -500,8 +501,12 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
 
 function Invoke-SpaceGesture([string]$Theme) {
     $timing = @{ armStartedMs = $clock.Elapsed.TotalMilliseconds }
+    $script:spaceDiagnostic = @{ theme = $Theme; window = $timing;
+        clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
+        clockFrequency = [Diagnostics.Stopwatch]::Frequency; armed = $null; injection = $null; observation = $null }
     $armed = Invoke-SpaceCommand "arm $Theme"
     $timing.armCompletedMs = $clock.Elapsed.TotalMilliseconds
+    $spaceDiagnostic.armed = $armed
     if ($armed.status -cne 'armed' -or $armed.theme -cne $Theme -or
         $armed.automationId -cne 'LabButtonMedium' -or $armed.focused -isnot [bool] -or !$armed.focused) {
         throw 'Space не подтвердил подключение к нужной кнопке.'
@@ -509,6 +514,7 @@ function Invoke-SpaceGesture([string]$Theme) {
     $timing.inputStartedMs = $clock.Elapsed.TotalMilliseconds
     $injection = [SpaceInput]::Run($process.Id, [long]$window)
     $timing.inputCompletedMs = $clock.Elapsed.TotalMilliseconds
+    $spaceDiagnostic.injection = $injection
     $timing.completeStartedMs = $clock.Elapsed.TotalMilliseconds
     $deadline = $clock.Elapsed.TotalMilliseconds + 5000
     $observation = $null
@@ -516,13 +522,32 @@ function Invoke-SpaceGesture([string]$Theme) {
         $remaining = [int][Math]::Max(0, $deadline - $clock.Elapsed.TotalMilliseconds)
         if ($remaining -eq 0) { break }
         $observation = Invoke-SpaceCommand 'complete' $remaining
+        $spaceDiagnostic.observation = $observation
         if ($observation.status -ceq 'complete') { break }
+        if ($observation.status -ceq 'failed') { throw 'Space завершил наблюдение с ошибкой; trace сохранён в диагностике.' }
         if ($observation.status -cne 'waiting') { throw 'Неизвестное состояние Space.' }
         Start-Sleep -Milliseconds 50
     } while ($clock.Elapsed.TotalMilliseconds -lt $deadline)
     $timing.completeCompletedMs = $clock.Elapsed.TotalMilliseconds
     if ($null -eq $observation -or $observation.status -cne 'complete') { throw 'Space не достиг последнего idle за 5 секунд.' }
     return @{ observation = $observation; injection = $injection; window = $timing }
+}
+
+function Write-SpaceFailure($Diagnostic, $Primary) {
+    try {
+        $json = $Diagnostic | ConvertTo-Json -Depth 12 -Compress -WarningAction Stop -ErrorAction Stop
+        $line = "LABUI_SPACE_FAILURE_JSON $json"
+        if ([Text.Encoding]::UTF8.GetByteCount($line + [Environment]::NewLine) -gt 256 * 1024) {
+            throw 'Диагностика Space превысила общий лимит 256 KiB.'
+        }
+        [Console]::Error.WriteLine($line)
+    } catch {
+        $Primary.Exception.Data['spaceDiagnosticError'] = $_.Exception.ToString()
+        $message = $_.Exception.Message
+        if ($message.Length -gt 512) { $message = $message.Substring(0, 512) }
+        try { [Console]::Error.WriteLine("LABUI_SPACE_DIAGNOSTIC_ERROR $message") }
+        catch { $Primary.Exception.Data['spaceDiagnosticWriteError'] = $_.Exception.ToString() }
+    }
 }
 
 function Capture-LowerControls([string]$Theme) {
@@ -860,11 +885,16 @@ try {
     $resultJson = $result | ConvertTo-Json -Depth 12
     if ([Text.Encoding]::UTF8.GetByteCount($resultJson + [Environment]::NewLine) -gt 256 * 1024) { throw 'Полный result.json превысил лимит evidence.' }
     $resultJson | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
+    # Обе существующие trace нужны для проверки общего clock origin; отдельного журнала нет.
+    $script:spaceDiagnostic = @{ phase = 'validation'; captures = $captures;
+        clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
+        clockFrequency = [Diagnostics.Stopwatch]::Frequency }
     & node "$PSScriptRoot/space-observation.mjs" (Join-Path $output 'result.json') (Join-Path $output 'identity.json')
     if ($LASTEXITCODE -ne 0) { throw 'Space trace не прошёл полную проверку.' }
 } catch {
     $smokeFailure = $_
-    $_ | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
+    if ($spaceDiagnostic) { Write-SpaceFailure $spaceDiagnostic $smokeFailure }
+    $smokeFailure | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
     throw
 } finally {
     try {

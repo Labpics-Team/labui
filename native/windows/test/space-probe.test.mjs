@@ -54,6 +54,15 @@ static MotionObservation Motion(bool animate, int edge, string phase, float posi
     NativePosition = new Vector3(position * 1000, 0, 0), NativeReadbackPosition = new Vector3(position * 1000, 0, 0)
 };
 static KeyRoutedEventArgs Key(bool down) => new() { Key = VirtualKey.Space, KeyStatus = new() { WasKeyDown = !down } };
+static async Task<JsonElement> Complete(SpaceProbe probe) {
+    using var input = new MemoryStream(Encoding.UTF8.GetBytes("complete\\n"));
+    using var output = new MemoryStream();
+    await SpaceProtocol.RunAsync(input, output, _ => Task.FromResult(Call(probe, "Complete")));
+    Check(output.Length <= 128 * 1024, "diagnostic exceeded protocol response limit");
+    using var json = JsonDocument.Parse(output.ToArray());
+    Check(json.RootElement.GetProperty("ok").GetBoolean(), "diagnostic lost in protocol error");
+    return json.RootElement.GetProperty("value").Clone();
+}
 
 foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, .0005f), (false, 0f) }) {
     UISettings.Enabled = animate;
@@ -102,6 +111,7 @@ foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, 
     using var json = JsonDocument.Parse(output.ToArray());
     Check(json.RootElement.GetProperty("ok").GetBoolean(), "producer did not complete through real serializer");
     var trace = json.RootElement.GetProperty("value");
+    Check(trace.GetProperty("status").GetString() == "complete", "healthy trace no longer completes");
     var events = trace.GetProperty("events").EnumerateArray().ToArray();
     var samples = trace.GetProperty("observations").EnumerateArray().ToArray();
     var previews = events.Where(e => e.GetProperty("kind").GetString()!.StartsWith("previewKey")).ToArray();
@@ -140,22 +150,93 @@ foreach (var (animate, priorRelease) in new[] { (true, .3f), (true, 0f), (true, 
     parent.Raise(UIElement.PreviewKeyDownEvent, Key(true)); button.Raise(UIElement.KeyDownEvent, Key(true));
     Check(List(probe, "events").Count == 16, "detached probe retained input");
 }
-foreach (var target in new[] { "events", "samples" }) {
+foreach (var target in new[] { "events", "samples", "exact-events", "owner-failure" }) {
     var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
     using var probe = new SpaceProbe(parent, button, () => 4);
     Call(probe, "Arm", "Light");
-    for (var i = 0; i < 160; i++) {
-        if (target == "events") parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
-        else button.Channel.Publish(Motion(true, 0, "value", .3f));
+    if (target is "events" or "samples") {
+        for (var i = 0; i < 160; i++) {
+            if (target == "events") parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
+            else button.Channel.Publish(Motion(true, 0, "value", .3f));
+        }
+        Check(List(probe, target).Count == (target == "events" ? 24 : 128), "producer memory is not bounded");
+    } else if (target == "exact-events") {
+        button.Raise(UIElement.KeyUpEvent, Key(false)); button.Raise(UIElement.KeyUpEvent, Key(false));
+        for (var i = 0; i < 21; i++) parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
+        button.Channel.Publish(Motion(true, 3, "requested", 0));
+        button.Channel.Publish(Motion(true, 3, "idle", 0));
+        Check(List(probe, "events").Count == 24, "exact-capacity control is not full");
+    } else {
+        button.DriverFailure(new InvalidOperationException("fixture-motion-failure"));
     }
-    Check(List(probe, target).Count == (target == "events" ? 24 : 128), "producer memory is not bounded");
-    try { Call(probe, "Complete"); throw new Exception("overflow accepted"); }
-    catch (InvalidOperationException error) { Check(error.Message.Contains("observations"), "wrong overflow rejection"); }
-    probe.Dispose();
+    var eventCount = List(probe, "events").Count;
+    var sampleCount = List(probe, "samples").Count;
+    var trace = await Complete(probe);
+    Check(trace.GetProperty("status").GetString() == "failed", "failed diagnostic promoted to complete");
+    Check(trace.GetProperty("schemaVersion").GetInt32() == 1, "failure changed trace schema");
+    Check(trace.GetProperty("events").GetArrayLength() == eventCount &&
+        trace.GetProperty("observations").GetArrayLength() == sampleCount, "failure lost retained bounded records");
+    if (target == "owner-failure") {
+        Check(trace.GetProperty("overflow").GetInt32() == 0 &&
+            trace.GetProperty("failure").GetString()!.Contains("fixture-motion-failure"), "owner failure lost or misclassified as overflow");
+    } else {
+        Check(trace.GetProperty("overflow").GetInt32() != 0, "overflow diagnostic lost rejection reason");
+    }
     Check(parent.HandlerCount == 0 && button.HandlerCount == 0 && button.CallbackCount == 0 && button.Channel.Subscribers == 0,
-        "explicit dispose did not detach after overflow");
+        "failed completion did not detach observations");
+    parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
+    button.Channel.Publish(Motion(true, 3, "idle", 0));
+    Check(List(probe, "events").Count == eventCount && List(probe, "samples").Count == sampleCount,
+        "failure snapshot continued collecting records");
 }
-Console.WriteLine("Space producer: PASS (ancestor preview, passive old state, equal-time request prefix, real serializer, bounded memory, detach)");
+// Контролируемые состояния различают причины waiting; порядок native callbacks здесь не утверждается.
+foreach (var pending in new[] { "key-up", "pressed", "phase", "idle-before-value", "request", "operation", "intent", "readback", "position" }) {
+    var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
+    using var probe = new SpaceProbe(parent, button, () => 4);
+    Call(probe, "Arm", "Light");
+    button.Raise(UIElement.KeyUpEvent, Key(false));
+    if (pending != "key-up") button.Raise(UIElement.KeyUpEvent, Key(false));
+    if (pending != "intent") button.Channel.Publish(Motion(true, 3, "requested", 0));
+    if (pending == "idle-before-value") button.Channel.Publish(Motion(true, 3, "idle", 0));
+    var latest = Motion(true, 3, pending is "phase" or "idle-before-value" ? "value" : "idle", pending == "readback" ? .2f : 0);
+    if (pending == "request") latest = latest with { NativeRequestId = 99 };
+    if (pending == "operation") latest = latest with { Operation = 99 };
+    button.Channel.Publish(latest);
+    if (pending == "pressed") button.DriverPressed(true);
+    button.Channel.DriverPosition(pending == "position" ? .2f : 0);
+    var eventCount = List(probe, "events").Count;
+    var trace = await Complete(probe);
+    Check(trace.GetProperty("status").GetString() == "waiting", "unmet completion predicate accepted");
+    var state = trace.GetProperty("state");
+    Check(state.GetProperty("eventCount").GetInt32() == eventCount &&
+        state.GetProperty("observationCount").GetInt32() == (pending == "intent" ? 1 : pending == "idle-before-value" ? 3 : 2), "waiting counts lost");
+    Check(state.GetProperty("keyUpCount").GetInt32() == (pending == "key-up" ? 1 : 2) &&
+        state.GetProperty("isPressed").GetBoolean() == (pending == "pressed"), "waiting key state lost");
+    Check(state.GetProperty("position").GetSingle() == (pending == "position" ? .2f : 0), "waiting position lost");
+    Check(state.GetProperty("latest").GetProperty("phase").GetString() == latest.Phase &&
+        state.GetProperty("latest").GetProperty("nativeRequestId").GetInt32() == latest.NativeRequestId &&
+        state.GetProperty("latest").GetProperty("operation").GetInt64() == latest.Operation &&
+        state.GetProperty("latest").GetProperty("readbackPosition").GetSingle() == latest.ReadbackPosition, "waiting latest observation lost");
+    Check((state.GetProperty("requested").ValueKind == JsonValueKind.Null) == (pending == "intent"), "waiting intent presence lost");
+    if (pending != "intent") Check(state.GetProperty("requested").GetProperty("nativeRequestId").GetInt32() == 104,
+        "waiting changed requested identity to latest identity");
+    var lastIdle = state.GetProperty("lastIdle");
+    var hasIdle = pending is "key-up" or "pressed" or "idle-before-value" or "readback" or "position";
+    Check((lastIdle.ValueKind != JsonValueKind.Null) == hasIdle, "matching idle presence lost or stale idle accepted");
+    if (hasIdle) Check(lastIdle.GetProperty("elapsedMs").GetDouble() == 12 &&
+        lastIdle.GetProperty("motion").GetProperty("phase").GetString() == "idle" &&
+        lastIdle.GetProperty("motion").GetProperty("nativeRequestId").GetInt32() == 104 &&
+        lastIdle.GetProperty("motion").GetProperty("operation").GetInt64() == 4, "last matching idle identity or time lost");
+    Check(button.Channel.Subscribers == 1 && List(probe, "events").Count == eventCount,
+        "waiting diagnostic changed observation lifecycle or recorded a complete event");
+    if (pending == "key-up") button.Raise(UIElement.KeyUpEvent, Key(false));
+    if (pending == "pressed") button.DriverPressed(false);
+    if (pending == "intent") button.Channel.Publish(Motion(true, 3, "requested", 0));
+    button.Channel.DriverPosition(0);
+    button.Channel.Publish(Motion(true, 3, "idle", 0));
+    Check((await Complete(probe)).GetProperty("status").GetString() == "complete", "waiting diagnostic prevented later valid completion");
+}
+Console.WriteLine("Space producer: PASS (ancestor preview, passive old state, equal-time request prefix, real serializer, bounded failure, waiting state, detach)");
 
 public static class FixtureClock { public static double Now; }
 namespace Microsoft.UI.Xaml {
@@ -218,6 +299,7 @@ namespace LabUI.WinUI {
         public void UnregisterPropertyChangedCallback(DependencyProperty property, long token) { changed = null; }
         public void DriverPressed(bool value) { pressed = value; changed?.Invoke(this, IsPressedProperty); }
         public void DriverClick() => Click?.Invoke(this, new());
+        public void DriverFailure(Exception error) => MotionFailed?.Invoke(this, error);
     }
 }
 namespace LabMotion.WinUI {
@@ -240,7 +322,7 @@ namespace LabMotion.WinUI {
 }
 `;
 
-test('actual Space producer preserves old preview state before retarget and serializes its request prefix', async () => {
+test('actual Space producer preserves preview order and bounded completion diagnostics', async () => {
   const temporaryRoot = await realpath(tmpdir());
   const directory = await mkdtemp(join(temporaryRoot, 'labui-space-probe-'));
   try {
