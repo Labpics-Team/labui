@@ -488,3 +488,94 @@ test('CLI reads the same result, identity and both timing files, preserving inpu
     await rm(target, { recursive: true, force: true });
   }
 });
+
+test('actual CLI rejects disjoint theme origins and accepts their common healthy neighbour', async () => {
+  const temporaryRoot = await realpath(tmpdir());
+  const directory = await mkdtemp(join(temporaryRoot, 'labui-space-cli-clock-'));
+  const cli = fileURLToPath(new URL('./space-observation.mjs', import.meta.url));
+  const run = () =>
+    spawnSync(
+      process.execPath,
+      [cli, join(directory, 'result.json'), join(directory, 'identity.json')],
+      { encoding: 'utf8', windowsHide: true },
+    );
+  try {
+    for (const animate of [true, false]) {
+      const result = { spacePattern: 'interrupted', captures: {} };
+      const fixtures = ['Light', 'Dark'].map((theme) => {
+        const fixture = spaceFixture(theme, animate);
+        fixture.window.clockOriginUpperTicks = fixture.window.clockOriginTicks;
+        fixture.window.clockOriginTicks = String(BigInt(fixture.window.clockOriginTicks) - 4000n);
+        result.captures[theme] = {
+          space: fixture.space,
+          gestureTiming: `interaction-${theme}-window.json`,
+        };
+        return fixture;
+      });
+      for (const [index, theme] of ['Light', 'Dark'].entries())
+        await writeFile(
+          join(directory, `interaction-${theme}-window.json`),
+          JSON.stringify(fixtures[index].window),
+        );
+      const healthyBytes = JSON.stringify(result);
+      await writeFile(join(directory, 'result.json'), healthyBytes);
+      await writeFile(join(directory, 'identity.json'), JSON.stringify(fixtures[0].identity));
+      const healthy = run();
+      assert.equal(healthy.status, 0, healthy.stderr);
+      assert.equal(healthy.stdout, 'Space observation: PASS\n');
+      assert.equal(await readFile(join(directory, 'result.json'), 'utf8'), healthyBytes);
+
+      Object.assign(result.captures.Dark.space.window, {
+        armStartedMs: 215,
+        armCompletedMs: 219,
+        inputStartedMs: 226,
+        inputCompletedMs: 442,
+        completeStartedMs: 449,
+        completeCompletedMs: 484,
+      });
+      const intervals = fixtures.map((fixture, index) =>
+        validate(fixture, index === 0 ? 'Light' : 'Dark'),
+      );
+      assert.deepEqual(
+        intervals.map(({ lowerMs, upperMs }) => [lowerMs, upperMs]),
+        [
+          [3, 4],
+          [0, 0],
+        ],
+      );
+      await writeFile(join(directory, 'result.json'), JSON.stringify(result));
+      const impossible = run();
+      assert.notEqual(
+        impossible.status,
+        0,
+        `CLI accepted disjoint origins (animations=${animate})`,
+      );
+      assert.equal(impossible.stdout, '');
+      assert.match(impossible.stderr, /no common Space harness origin/);
+
+      await writeFile(join(directory, 'result.json'), healthyBytes);
+      fixtures[1].window.clockOriginUpperTicks = String(
+        BigInt(fixtures[1].window.clockOriginUpperTicks) + 1n,
+      );
+      await writeFile(
+        join(directory, 'interaction-Dark-window.json'),
+        JSON.stringify(fixtures[1].window),
+      );
+      const mismatch = run();
+      assert.notEqual(mismatch.status, 0);
+      assert.equal(mismatch.stdout, '');
+      assert.match(mismatch.stderr, /Space harness clock identity/);
+    }
+  } finally {
+    const target = await realpath(directory);
+    const child = relative(temporaryRoot, target);
+    assert.ok(
+      child &&
+        !isAbsolute(child) &&
+        child !== '..' &&
+        !child.startsWith(`..${sep}`) &&
+        !child.includes(sep),
+    );
+    await rm(target, { recursive: true, force: true });
+  }
+});

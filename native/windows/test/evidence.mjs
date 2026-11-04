@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32 } from 'node:zlib';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
-import { validateSpaceObservation } from './space-observation.mjs';
+import { assertSpaceClockOrigins, validateSpaceObservation } from './space-observation.mjs';
 
 const PREFIX = 'LABUI_NATIVE_EVIDENCE';
 const PNG_MAX_BYTES = 4 * 1024 * 1024;
@@ -160,7 +160,7 @@ function validateInteractions(files, records, dimensions) {
     'native: обе записи обязательны',
   );
   const required = [...staticFiles('interaction')];
-  let harnessOrigin;
+  const origins = [];
   for (const theme of THEMES) {
     const name = `interaction-${theme}`;
     const manifest = records.get(`${name}.frames/manifest.json`);
@@ -184,26 +184,9 @@ function validateInteractions(files, records, dimensions) {
     assert.equal(captures[theme].samples, frames.length, 'native: summary samples');
     assert.equal(captures[theme].images, images.size, 'native: summary images');
     assert.equal(captures[theme].gestureTiming, `${name}-window.json`, 'native: timing filename');
-    const feasibleOrigin = validateSpaceObservation(
-      captures[theme].space,
-      records.get('identity.json'),
-      theme,
-      window,
+    origins.push(
+      validateSpaceObservation(captures[theme].space, records.get('identity.json'), theme, window),
     );
-    if (harnessOrigin) {
-      for (const field of ['originTicks', 'originUpperTicks', 'frequency'])
-        assert.equal(
-          feasibleOrigin[field],
-          harnessOrigin[field],
-          'native: Space harness clock identity',
-        );
-      harnessOrigin.lowerMs = Math.max(harnessOrigin.lowerMs, feasibleOrigin.lowerMs);
-      harnessOrigin.upperMs = Math.min(harnessOrigin.upperMs, feasibleOrigin.upperMs);
-      assert.ok(
-        harnessOrigin.lowerMs <= harnessOrigin.upperMs,
-        'native: no common Space harness origin',
-      );
-    } else harnessOrigin = feasibleOrigin;
     assert.equal(window.clock, 'harness-stopwatch-ms', 'native: timing clock');
     assert.deepEqual(
       window.gestures.map(({ name: gesture }) => gesture),
@@ -242,6 +225,7 @@ function validateInteractions(files, records, dimensions) {
       assert.equal(image?.height, manifest.frames.height, 'native: JPEG height');
     }
   }
+  assertSpaceClockOrigins(origins);
   return required;
 }
 

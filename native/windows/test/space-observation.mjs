@@ -475,6 +475,20 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
   };
 }
 
+export function assertSpaceClockOrigins(origins) {
+  assert.ok(origins.length > 0, 'native: no Space clock observations');
+  const first = origins[0];
+  let lowerMs = first.lowerMs;
+  let upperMs = first.upperMs;
+  for (const origin of origins.slice(1)) {
+    for (const field of ['originTicks', 'originUpperTicks', 'frequency'])
+      assert.equal(origin[field], first[field], 'native: Space harness clock identity');
+    lowerMs = Math.max(lowerMs, origin.lowerMs);
+    upperMs = Math.min(upperMs, origin.upperMs);
+  }
+  assert.ok(lowerMs <= upperMs, 'native: no common Space harness origin');
+}
+
 async function readJSON(filename) {
   const bytes = await readFile(filename);
   assert.ok(bytes.length > 0 && bytes.length <= 256 * 1024, 'Space: JSON byte limit');
@@ -488,6 +502,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       readJSON(process.argv[3]),
     ]);
     assert.equal(result.spacePattern, 'interrupted', 'Space: result marker');
+    const origins = [];
     for (const theme of ['Light', 'Dark']) {
       const capture = result.captures?.[theme];
       assert.equal(
@@ -496,8 +511,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
         'Space: timing filename',
       );
       const window = await readJSON(join(dirname(resolve(process.argv[2])), capture.gestureTiming));
-      validateSpaceObservation(capture.space, identity, theme, window);
+      origins.push(validateSpaceObservation(capture.space, identity, theme, window));
     }
+    assertSpaceClockOrigins(origins);
     process.stdout.write('Space observation: PASS\n');
   } catch (error) {
     process.stderr.write(`${error.message}\n`);
