@@ -42,6 +42,9 @@ export const space = {
   'glow-halo': 'var(--lab-space-glow-halo)',
   'switch-label-gap-l': 'var(--lab-space-switch-label-gap-l)',
   'button-inset': 'var(--lab-space-button-inset)',
+  'sheet-inset': 'var(--lab-space-sheet-inset)',
+  'sheet-gap': 'var(--lab-space-sheet-gap)',
+  'sheet-overlap': 'var(--lab-space-sheet-overlap)',
 } as const;
 
 export type SpaceToken = keyof typeof space;
@@ -71,6 +74,13 @@ export const size = {
   'button-glow-blur': 'var(--lab-size-button-glow-blur)',
   'button-glow-shift-s': 'var(--lab-size-button-glow-shift-s)',
   'button-glow-shift-l': 'var(--lab-size-button-glow-shift-l)',
+  'sheet-drag-area': 'var(--lab-size-sheet-drag-area)',
+  'sheet-indicator-w': 'var(--lab-size-sheet-indicator-w)',
+  'sheet-indicator-h': 'var(--lab-size-sheet-indicator-h)',
+  'sheet-indicator-y': 'var(--lab-size-sheet-indicator-y)',
+  'sheet-indicator-x': 'var(--lab-size-sheet-indicator-x)',
+  'sheet-body-blur': 'var(--lab-size-sheet-body-blur)',
+  'sheet-ghost-blur': 'var(--lab-size-sheet-ghost-blur)',
   'loader-stroke-s': 'var(--lab-size-loader-stroke-s)',
   'loader-stroke-m': 'var(--lab-size-loader-stroke-m)',
   'loader-stroke-l': 'var(--lab-size-loader-stroke-l)',
@@ -117,6 +127,7 @@ export const radius = {
   control: 'var(--lab-radius-control)',
   button: 'var(--lab-radius-button)',
   card: 'var(--lab-radius-card)',
+  sheet: 'var(--lab-radius-sheet)',
   pill: 'var(--lab-radius-pill)',
   circle: 'var(--lab-radius-circle)',
   'concentric-min': 'var(--lab-radius-concentric-min)',
@@ -265,6 +276,8 @@ export type StateToken = keyof typeof state;
 
 export const opacity = {
   '0': 'var(--lab-opacity-0)',
+  '4': 'var(--lab-opacity-4)',
+  '6': 'var(--lab-opacity-6)',
   '12': 'var(--lab-opacity-12)',
   '20': 'var(--lab-opacity-20)',
   '32': 'var(--lab-opacity-32)',
@@ -278,6 +291,8 @@ export const opacity = {
   'button-shade-pressed': 'var(--lab-opacity-button-shade-pressed)',
   'button-glow': 'var(--lab-opacity-button-glow)',
   'button-glow-fill': 'var(--lab-opacity-button-glow-fill)',
+  'sheet-body-noise': 'var(--lab-opacity-sheet-body-noise)',
+  'sheet-ghost-noise': 'var(--lab-opacity-sheet-ghost-noise)',
   disabled: 'var(--lab-opacity-disabled)',
   muted: 'var(--lab-opacity-muted)',
   full: 'var(--lab-opacity-full)',

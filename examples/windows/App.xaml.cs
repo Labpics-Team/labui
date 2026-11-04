@@ -12,8 +12,17 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        window = new Window { Title = "LabUI", Content = new ButtonsPage() };
-        window.AppWindow.Resize(new Windows.Graphics.SizeInt32(760, 680));
+        var arguments = Environment.GetCommandLineArgs().Skip(1).ToHashSet(StringComparer.Ordinal);
+        var sheet = arguments.Contains("--sheet");
+        window = new Window
+        {
+            Title = "LabUI",
+            Content = sheet ? new SheetPage(arguments.Contains("--dark"), arguments.Contains("--solid"),
+                arguments.Contains("--content")) : new ButtonsPage()
+        };
+        if (window.Content is SheetPage sheetPage) sheetPage.HostWindow = window;
+        if (sheet) window.AppWindow.ResizeClient(new Windows.Graphics.SizeInt32(375, 812));
+        else window.AppWindow.Resize(new Windows.Graphics.SizeInt32(760, 680));
         window.Activate();
         WriteAnimationObservation();
     }

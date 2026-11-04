@@ -1,0 +1,452 @@
+using System.Numerics;
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Effects;
+using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.Graphics.Canvas.UI.Composition;
+using Microsoft.Graphics.DirectX;
+using Microsoft.UI.Composition;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
+using Windows.Graphics.Effects;
+using Windows.UI;
+using Windows.UI.ViewManagement;
+
+namespace LabUI.WinUI.Rendering;
+
+// Один граф читает исходный backdrop: Body не размывает уже нарисованный Ghost.
+public sealed class SheetLayers : Grid
+{
+    public static readonly DependencyProperty TintProperty = PaintProperty(nameof(Tint));
+    public static readonly DependencyProperty BlendProperty = PaintProperty(nameof(Blend));
+    public static readonly DependencyProperty GhostProperty = PaintProperty(nameof(Ghost));
+    public static readonly DependencyProperty BorderProperty = PaintProperty(nameof(Border));
+    public static readonly DependencyProperty NoiseProperty = PaintProperty(nameof(Noise));
+    public static readonly DependencyProperty ShadowInkProperty = PaintProperty(nameof(ShadowInk));
+    public static readonly DependencyProperty SolidProperty = PaintProperty(nameof(Solid));
+
+    public SolidColorBrush? Tint { get => (SolidColorBrush?)GetValue(TintProperty); set => SetValue(TintProperty, value); }
+    public SolidColorBrush? Blend { get => (SolidColorBrush?)GetValue(BlendProperty); set => SetValue(BlendProperty, value); }
+    public SolidColorBrush? Ghost { get => (SolidColorBrush?)GetValue(GhostProperty); set => SetValue(GhostProperty, value); }
+    public SolidColorBrush? Border { get => (SolidColorBrush?)GetValue(BorderProperty); set => SetValue(BorderProperty, value); }
+    public SolidColorBrush? Noise { get => (SolidColorBrush?)GetValue(NoiseProperty); set => SetValue(NoiseProperty, value); }
+    public SolidColorBrush? ShadowInk { get => (SolidColorBrush?)GetValue(ShadowInkProperty); set => SetValue(ShadowInkProperty, value); }
+    public SolidColorBrush? Solid { get => (SolidColorBrush?)GetValue(SolidProperty); set => SetValue(SolidProperty, value); }
+
+    internal LabSheetMaterial? EffectiveMaterial { get; private set; }
+    internal LabSheetMaterialReason? MaterialReason { get; private set; }
+    internal event EventHandler? EffectiveMaterialChanged;
+
+    private readonly List<(DependencyObject Owner, DependencyProperty Property, long Token)> paintCallbacks = [];
+    private CanvasDevice? device;
+    private CompositionGraphicsDevice? graphics;
+    private Frame? frame;
+    private XamlRoot? root;
+    private UISettings? settings;
+    private CompositionCapabilities? capabilities;
+    private LabSheetMaterial requested;
+    private bool active;
+    private bool queued;
+    private bool recovering;
+    private bool recoveryFailed;
+    private long generation;
+
+    // Экспериментальная проекция: Figma radius не доказан равным Win2D sigma.
+    // Начальная гипотеза radius / 2 проверяется на эталонном backdrop отдельно от paints.
+    internal const double RadiusToSigma = 0.5;
+    // Дискретные Gaussian-ветви с линейными весами, не маска одного сильного blur.
+    // Число ветвей и зерно требуют визуальной и GPU-квалификации.
+
+    internal void Attach(LabSheetMaterial material)
+    {
+        if (active) return;
+        active = true;
+        recoveryFailed = false;
+        generation++;
+        requested = material;
+        root = XamlRoot;
+        if (root is not null) root.Changed += RootChanged;
+        settings = new UISettings();
+        settings.AdvancedEffectsEnabledChanged += AdvancedEffectsChanged;
+        capabilities = new CompositionCapabilities();
+        capabilities.Changed += CapabilitiesChanged;
+        SizeChanged += Resized;
+        ActualThemeChanged += ThemeChanged;
+        ObservePaints();
+        Render();
+    }
+
+    internal void SetMaterial(LabSheetMaterial material)
+    {
+        if (material is not (LabSheetMaterial.Blur or LabSheetMaterial.Solid))
+            throw new ArgumentOutOfRangeException(nameof(material));
+        requested = material;
+        QueueRedraw();
+    }
+
+    internal void Detach()
+    {
+        if (!active) return;
+        active = false;
+        generation++;
+        queued = false;
+        SizeChanged -= Resized;
+        ActualThemeChanged -= ThemeChanged;
+        if (root is not null) root.Changed -= RootChanged;
+        if (settings is not null) settings.AdvancedEffectsEnabledChanged -= AdvancedEffectsChanged;
+        if (capabilities is not null) capabilities.Changed -= CapabilitiesChanged;
+        root = null;
+        settings = null;
+        capabilities = null;
+        ClearPaintCallbacks();
+        ReleaseGraphics();
+        EffectiveMaterial = null;
+        MaterialReason = null;
+    }
+
+    private static DependencyProperty PaintProperty(string name) => DependencyProperty.Register(
+        name, typeof(SolidColorBrush), typeof(SheetLayers), new PropertyMetadata(null, PaintChanged));
+
+    private static void PaintChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        var layers = (SheetLayers)sender;
+        if (!layers.active) return;
+        layers.ObservePaints();
+        layers.QueueRedraw();
+    }
+
+    private void ObservePaints()
+    {
+        ClearPaintCallbacks();
+        foreach (var paint in new[] { Tint, Blend, Ghost, Border, Noise, ShadowInk, Solid }.OfType<SolidColorBrush>().Distinct())
+            foreach (var property in new[] { SolidColorBrush.ColorProperty, Brush.OpacityProperty })
+            {
+                var token = paint.RegisterPropertyChangedCallback(property, (_, _) => QueueRedraw());
+                paintCallbacks.Add((paint, property, token));
+            }
+    }
+
+    private void ClearPaintCallbacks()
+    {
+        foreach (var (owner, property, token) in paintCallbacks) owner.UnregisterPropertyChangedCallback(property, token);
+        paintCallbacks.Clear();
+    }
+
+    private void Resized(object sender, SizeChangedEventArgs args) => QueueRedraw();
+    private void RootChanged(XamlRoot sender, XamlRootChangedEventArgs args) => QueueRedraw();
+    private void ThemeChanged(FrameworkElement sender, object args) => QueueRedraw();
+    private void AdvancedEffectsChanged(UISettings sender, object args) => QueueFromAnyThread();
+    private void CapabilitiesChanged(CompositionCapabilities sender, object args) => QueueFromAnyThread();
+
+    private void QueueFromAnyThread()
+    {
+        var current = generation;
+        DispatcherQueue.TryEnqueue(() => { if (active && current == generation) QueueRedraw(); });
+    }
+
+    private void QueueRedraw()
+    {
+        if (!active || queued || recoveryFailed) return;
+        queued = true;
+        var current = generation;
+        if (!DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!active || current != generation || recoveryFailed) return;
+            queued = false;
+            Render();
+        })) queued = false;
+    }
+
+    private (LabSheetMaterial Material, LabSheetMaterialReason Reason) ResolveMaterial()
+    {
+        if (requested == LabSheetMaterial.Solid) return (requested, LabSheetMaterialReason.Requested);
+        if (settings?.AdvancedEffectsEnabled == false)
+            return (LabSheetMaterial.Solid, LabSheetMaterialReason.TransparencyDisabled);
+        if (capabilities?.AreEffectsSupported() != true)
+            return (LabSheetMaterial.Solid, LabSheetMaterialReason.EffectsUnsupported);
+        if (!capabilities.AreEffectsFast()) return (LabSheetMaterial.Solid, LabSheetMaterialReason.EffectsNotFast);
+        return (LabSheetMaterial.Blur, LabSheetMaterialReason.Requested);
+    }
+
+    private void Render(bool recreate = false)
+    {
+        if (!active || ActualWidth <= 0 || ActualHeight <= 0) return;
+        try
+        {
+            if (Tint is null || Blend is null || Ghost is null || Border is null || Noise is null || ShadowInk is null || Solid is null)
+                throw new InvalidOperationException("Sheet требует готовые LabUI brushes из LabColors.");
+            if (Solid.Opacity != 1 || Solid.Color.A != byte.MaxValue)
+                throw new InvalidOperationException("Solid Sheet требует непрозрачную краску LabColors.");
+            if (recreate) ReleaseGraphics();
+            var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
+            if (device is null)
+            {
+                device = CanvasDevice.GetSharedDevice();
+                device.DeviceLost += DeviceLost;
+                graphics = CanvasComposition.CreateCompositionGraphicsDevice(compositor, device);
+            }
+            var resolved = ResolveMaterial();
+            var candidate = BuildFrame(compositor, SheetMetrics.Half(ActualWidth, ActualHeight), resolved.Material);
+            try { ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual); }
+            catch { candidate.Dispose(); throw; }
+            var previous = frame;
+            frame = candidate;
+            previous?.Dispose();
+            var changed = EffectiveMaterial != resolved.Material || MaterialReason != resolved.Reason;
+            EffectiveMaterial = resolved.Material;
+            MaterialReason = resolved.Reason;
+            if (changed) EffectiveMaterialChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception error) when (!recovering && device is { } failed && failed.IsDeviceLost(error.HResult))
+        {
+            failed.RaiseDeviceLost();
+        }
+        catch (Exception error)
+        {
+            recoveryFailed = true;
+            try { ReleaseGraphics(); }
+            catch (Exception cleanup) { throw new AggregateException("Ошибка рисования и освобождения Sheet.", error, cleanup); }
+            throw;
+        }
+    }
+
+    private void DeviceLost(CanvasDevice sender, object args)
+    {
+        var current = generation;
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (!active || current != generation || !ReferenceEquals(sender, device) || recoveryFailed) return;
+            recovering = true;
+            try { Render(recreate: true); }
+            finally { recovering = false; }
+        });
+    }
+
+    private void ReleaseGraphics()
+    {
+        var ownedDevice = device;
+        var ownedGraphics = graphics;
+        var ownedFrame = frame;
+        device = null;
+        graphics = null;
+        frame = null;
+        List<Exception> errors = [];
+        void Attempt(Action release) { try { release(); } catch (Exception error) { errors.Add(error); } }
+        if (ownedDevice is not null) Attempt(() => ownedDevice.DeviceLost -= DeviceLost);
+        Attempt(() => ElementCompositionPreview.SetElementChildVisual(this, null));
+        if (ownedFrame is not null) Attempt(ownedFrame.Dispose);
+        if (ownedGraphics is not null) Attempt(ownedGraphics.Dispose);
+        // SharedDevice освобождает Win2D; Sheet не владеет им.
+        Frame.ThrowCleanup(errors);
+    }
+
+    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material)
+    {
+        var result = new Frame(compositor);
+        try
+        {
+            var scale = XamlRoot?.RasterizationScale ?? 1;
+            var pixelWidth = checked((int)Math.Ceiling(metrics.Width * scale));
+            var pixelHeight = checked((int)Math.Ceiling(metrics.Height * scale));
+            using var bodyShape = BodyShape(metrics);
+
+            CompositionSurfaceBrush Surface(Action<CanvasDrawingSession> draw)
+            {
+                var surface = result.Own(graphics!.CreateDrawingSurface(new Size(pixelWidth, pixelHeight),
+                    DirectXPixelFormat.B8G8R8A8UIntNormalized, DirectXAlphaMode.Premultiplied));
+                using (var drawing = CanvasComposition.CreateDrawingSession(surface,
+                    new Rect(0, 0, pixelWidth, pixelHeight), (float)(96 * scale)))
+                {
+                    drawing.Clear(Color.FromArgb(0, 0, 0, 0));
+                    draw(drawing);
+                }
+                return result.Own(compositor.CreateSurfaceBrush(surface));
+            }
+
+            void DrawBorder(CanvasDrawingSession drawing)
+            {
+                using var clip = drawing.CreateLayer(1, bodyShape);
+                using var ink = new CanvasSolidColorBrush(device, Border!.Color) { Opacity = (float)Border.Opacity };
+                drawing.DrawGeometry(bodyShape, ink, (float)(Geometry.SheetBorderWidth * 2));
+            }
+
+            result.Visual.Size = new Vector2((float)metrics.Width, (float)metrics.Height);
+            if (material == LabSheetMaterial.Solid)
+            {
+                // Отказ Composition effects не должен пытаться построить другой effect graph.
+                result.Visual.Brush = Surface(drawing =>
+                {
+                    DrawShadows(drawing, metrics, bodyShape);
+                    using var ink = new CanvasSolidColorBrush(device, Solid!.Color);
+                    drawing.FillGeometry(bodyShape, ink);
+                    DrawBorder(drawing);
+                });
+                return result;
+            }
+
+            var parameters = new Dictionary<string, CompositionBrush>();
+            IGraphicsEffectSource Source(string name, CompositionBrush brush)
+            {
+                parameters.Add(name, brush);
+                return new CompositionEffectSourceParameter(name);
+            }
+            IGraphicsEffectSource Paint(SolidColorBrush brush) => result.Own(new OpacityEffect
+            {
+                Opacity = (float)brush.Opacity,
+                Source = result.Own(new ColorSourceEffect { Color = brush.Color }),
+            });
+            IGraphicsEffectSource Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
+                => result.Own(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
+            IGraphicsEffectSource Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
+                => result.Own(new AlphaMaskEffect { Source = source, AlphaMask = mask });
+            IGraphicsEffectSource Blur(IGraphicsEffectSource source, double radius) => result.Own(new GaussianBlurEffect
+            {
+                Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,
+            });
+
+            // Белая структурная маска не является краской поверхности.
+            var maskInk = Color.FromArgb(255, 255, 255, 255);
+            var bodyMask = Source("bodyMask", Surface(drawing => drawing.FillGeometry(bodyShape, maskInk)));
+            var outer = Source("shadows", Surface(drawing => DrawShadows(drawing, metrics, bodyShape)));
+            IGraphicsEffectSource sheet;
+            {
+                var backdrop = Source("backdrop", result.Own(compositor.CreateBackdropBrush()));
+                var noise = Source("noise", Surface(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale)));
+                IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
+                    result.Own(new OpacityEffect { Source = noise, Opacity = (float)opacity }));
+
+                IGraphicsEffectSource? progressive = null;
+                for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
+                {
+                    var level = index;
+                    var mask = Source($"ghostMask{index}", Surface(drawing =>
+                    {
+                        var stops = SheetBlurProfile.Stops(level).Select(stop => new CanvasGradientStop
+                        { Position = stop.Position, Color = Color.FromArgb((byte)(stop.Weight * 255), maskInk.R, maskInk.G, maskInk.B) }).ToArray();
+                        using var gradient = new CanvasLinearGradientBrush(device, stops)
+                        { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
+                        drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
+                    }));
+                    var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), mask);
+                    progressive = progressive is null ? branch : result.Own(new ArithmeticCompositeEffect
+                    { Source1 = progressive, Source2 = branch, MultiplyAmount = 0, Source1Amount = 1, Source2Amount = 1, Offset = 0 });
+                }
+                var ghostMask = Source("ghostMask", Surface(drawing =>
+                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk)));
+                // Alpha Ghost tint не управляет существованием backdrop/noise.
+                var ghost = Mask(WithNoise(Over(progressive!, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
+                var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius), Paint(Tint!));
+                var blended = result.Own(new BlendEffect
+                {
+                    Background = tinted, Foreground = Paint(Blend!),
+                    Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
+                });
+                var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), bodyMask);
+                sheet = Over(Over(ghost, outer), body);
+            }
+            var border = Source("border", Surface(DrawBorder));
+            var graph = Over(sheet, border);
+            var factory = result.Own(compositor.CreateEffectFactory((IGraphicsEffect)graph));
+            var brush = result.Own(factory.CreateBrush());
+            foreach (var (name, source) in parameters) brush.SetSourceParameter(name, source);
+            result.Visual.Brush = brush;
+            return result;
+        }
+        catch (Exception error)
+        {
+            try { result.Dispose(); }
+            catch (Exception cleanup) { throw new AggregateException("Ошибка создания и освобождения Sheet.", error, cleanup); }
+            throw;
+        }
+    }
+
+    private CanvasGeometry BodyShape(SheetMetrics metrics, double offsetY = 0)
+    {
+        var radius = (float)Math.Min(Geometry.SheetRadius, Math.Min(metrics.Width / 2, metrics.BodyHeight));
+        var left = 0f;
+        var right = (float)metrics.Width;
+        var top = (float)(metrics.BodyTop + offsetY);
+        var bottom = (float)(metrics.Height + offsetY);
+        using var path = new CanvasPathBuilder(device);
+        path.BeginFigure(left + radius, top);
+        path.AddLine(right - radius, top);
+        path.AddArc(new Vector2(right, top + radius), radius, radius, 0, CanvasSweepDirection.Clockwise, CanvasArcSize.Small);
+        path.AddLine(right, bottom);
+        path.AddLine(left, bottom);
+        path.AddLine(left, top + radius);
+        path.AddArc(new Vector2(left + radius, top), radius, radius, 0, CanvasSweepDirection.Clockwise, CanvasArcSize.Small);
+        path.EndFigure(CanvasFigureLoop.Closed);
+        return CanvasGeometry.CreatePath(path);
+    }
+
+    private void DrawShadows(CanvasDrawingSession drawing, SheetMetrics metrics, CanvasGeometry body)
+    {
+        using var viewport = CanvasGeometry.CreateRectangle(device, new Rect(0, 0, metrics.Width, metrics.Height));
+        using var outside = viewport.CombineWith(body, Matrix3x2.Identity, CanvasGeometryCombine.Exclude);
+        using var clip = drawing.CreateLayer(1, outside);
+        // showShadowBehindNode=false: полупрозрачная заливка не скрывает внутреннюю тень сама.
+        for (var index = Geometry.SheetShadows.Length - 1; index >= 0; index--)
+        {
+            var shadow = Geometry.SheetShadows[index];
+            using var shifted = BodyShape(metrics, shadow.OffsetY);
+            using var source = new CanvasCommandList(device);
+            using (var sourceDrawing = source.CreateDrawingSession())
+            using (var ink = new CanvasSolidColorBrush(device, ShadowInk!.Color)
+            { Opacity = (float)(ShadowInk.Opacity * shadow.Opacity) }) sourceDrawing.FillGeometry(shifted, ink);
+            using var blur = new GaussianBlurEffect
+            { Source = source, BlurAmount = (float)(shadow.BlurRadius * RadiusToSigma), BorderMode = EffectBorderMode.Soft };
+            drawing.DrawImage(blur);
+        }
+    }
+
+    private void DrawNoise(CanvasDrawingSession drawing, int width, int height, double scale)
+    {
+        var paint = Noise!;
+        var pixels = new byte[checked(width * height * 4)];
+        uint state = 0x9E3779B9;
+        for (var offset = 0; offset < pixels.Length; offset += 4)
+        {
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            var alpha = (byte)Math.Round((state & 255) * paint.Opacity * paint.Color.A / 255);
+            pixels[offset] = (byte)(paint.Color.B * alpha / 255);
+            pixels[offset + 1] = (byte)(paint.Color.G * alpha / 255);
+            pixels[offset + 2] = (byte)(paint.Color.R * alpha / 255);
+            pixels[offset + 3] = alpha;
+        }
+        // Пока один sample на физический пиксель; Figma noiseSize=0.2 не квалифицирован.
+        using var bitmap = CanvasBitmap.CreateFromBytes(device, pixels, width, height,
+            Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized, (float)(96 * scale), CanvasAlphaMode.Premultiplied);
+        drawing.DrawImage(bitmap);
+    }
+
+    // Снимок владеет каждым COM/effect ресурсом, в том числе при частичном построении.
+    private sealed class Frame : IDisposable
+    {
+        private readonly List<IDisposable> owned = [];
+        internal SpriteVisual Visual { get; }
+        internal Frame(Compositor compositor) => Visual = Own(compositor.CreateSpriteVisual());
+        internal T Own<T>(T value) where T : IDisposable { owned.Add(value); return value; }
+        public void Dispose()
+        {
+            if (owned.Count == 0) return;
+            var resources = owned.ToArray();
+            owned.Clear();
+            List<Exception> errors = [];
+            // Visual перестаёт удерживать граф до закрытия его кистей и поверхностей.
+            try { Visual.Brush = null; } catch (Exception error) { errors.Add(error); }
+            for (var index = resources.Length - 1; index >= 0; index--)
+                try { resources[index].Dispose(); } catch (Exception error) { errors.Add(error); }
+            ThrowCleanup(errors);
+        }
+        internal static void ThrowCleanup(List<Exception> errors)
+        {
+            if (errors.Count == 1) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(errors[0]).Throw();
+            if (errors.Count > 1) throw new AggregateException("Не удалось освободить ресурсы Sheet.", errors);
+        }
+    }
+}

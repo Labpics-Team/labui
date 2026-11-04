@@ -61,3 +61,52 @@ pressed. Включение reduced motion должно завершать уж�
 
 Geist включён под OFL; версия, внутреннее имя и хеши находятся в
 `Assets/Fonts/PROVENANCE.md`. Win2D 1.4.0 используется под MIT.
+
+## Sheet Half
+
+`LabSheet` занимает выделенный ему конечный viewport и размещает `Content` в
+нижней поверхности. При 375×812 DIP верх Body находится на 390 DIP, высота —
+422 DIP. Верхние углы — 32 DIP; содержимое начинается после drag area и
+отступа, на 48 DIP от верха Body. Header и Controls по умолчанию отсутствуют.
+
+```xml
+<lab:LabSheet xmlns:lab="using:LabUI.WinUI" Material="Blur">
+  <TextBlock Text="Содержимое панели" />
+</lab:LabSheet>
+```
+
+Это статический срез для проверки материала. Перетаскивание, Flex и остальные
+положения пока не реализованы. Движение следующего среза должен исполнять LabMotion.
+Контрол не устанавливает modal focus, закрытие по Escape или блокировку фона:
+эти свойства ещё требуют полноценного сценария Sheet.
+
+`Material` принимает `Blur` и `Solid`. Blur строит единый Composition effect graph:
+ветви Ghost и Body читают один исходный in-app backdrop. В Light применяется
+ColorDodge, в Dark — Overlay. Все краски, включая noise, приходят из LabColors;
+размеры — из токенов LabUI, тени — из существующей ступени Shadow XL.
+При выключенной Transparency или недостаточных возможностях Composition выбирается
+непрозрачный Solid с существующей базой Elevated/Grouped Secondary.
+`EffectiveMaterial`, `MaterialReason` и событие `EffectiveMaterialChanged` показывают
+этот исход. До успешного построения графики фактические значения равны `null`.
+Solid не создаёт Composition effect graph. Glass и High Contrast не квалифицированы.
+
+Соответствие материала эталону ещё требует сравнения native PNG. Начальная
+гипотеза переводит Figma blur radius в Win2D sigma как `radius / 2`; восемь
+Gaussian-ветвей аппроксимируют Ghost с пространственными весами. Шум пока имеет
+один sample на физический пиксель. Эти решения не подтверждают точность Figma
+noise size 0.2, непрерывного progressive blur или бюджет GPU. Внешние WebView2,
+MediaPlayerElement и SwapChainPanel не входят в поддержанный источник backdrop.
+
+После сборки пример запускается как `Buttons.exe --sheet`; `--dark`, `--solid`
+и `--content` выбирают тему, материал и пример содержимого. Для исходной пробы
+нужны клиентская область 375×812 и DPI 100%. Фон находится в
+`examples/windows/Assets/SheetBackdrop.png`: это исходная текстура, а не снимок
+готового Sheet. Обычный запуск без `--sheet` сохраняет пример Buttons.
+
+`LABUI_SHEET_OBSERVATION` задаёт путь одноразового JSON примера с PID/HWND,
+фактической геометрией, темой, загрузкой изображения и состоянием renderer.
+`rendererReady` подтверждает построение графики; визуальное соответствие
+проверяется отдельно по захваченным пикселям.
+
+Проверка геометрии без UI:
+`dotnet run --project native/windows/test/sheet-geometry.test.csproj`.

@@ -27,6 +27,13 @@ const roles = {
   LabFocusBrush: '--lab-border-focus',
   LabPageBrush: '--lab-bg-primary',
   LabLabelPrimaryBrush: '--lab-label-primary',
+  LabSheetTintBrush: '--lab-bg-material-elevated-01',
+  LabSheetBlendBrush: '--lab-bg-material-elevated-02',
+  LabSheetGhostBrush: '--lab-bg-overlay-ghost',
+  LabSheetBorderBrush: '--lab-border-base',
+  LabSheetHandleBrush: '--lab-label-tertiary',
+  LabSheetNoiseBrush: '--lab-fx-noise',
+  LabSheetSolidBrush: '--lab-bg-grouped-secondary',
 };
 
 function readyThemes() {

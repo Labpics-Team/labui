@@ -49,4 +49,41 @@
       </Setter.Value>
     </Setter>
   </Style>
+  <Style TargetType="local:LabSheet">
+    <Setter Property="FontFamily" Value="ms-appx:///LabUI.WinUI/Assets/Fonts/Geist-Variable.ttf#Geist" />
+    <Setter Property="Foreground" Value="{ThemeResource LabLabelPrimaryBrush}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="local:LabSheet">
+          <Grid>
+            <rendering:SheetLayers x:Name="PART_Layers" IsHitTestVisible="False"
+                Tint="{ThemeResource LabSheetTintBrush}" Blend="{ThemeResource LabSheetBlendBrush}"
+                Ghost="{ThemeResource LabSheetGhostBrush}" Border="{ThemeResource LabSheetBorderBrush}"
+                Noise="{ThemeResource LabSheetNoiseBrush}" ShadowInk="{ThemeResource LabDarkBrush}"
+                Solid="{ThemeResource LabSheetSolidBrush}" />
+            <Grid x:Name="PART_Body" AutomationProperties.AutomationId="SheetBody">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <Grid x:Name="PART_DragArea">
+                <Border x:Name="PART_Indicator" HorizontalAlignment="Center" VerticalAlignment="Top"
+                    AutomationProperties.AutomationId="SheetIndicator"
+                    Background="{ThemeResource LabSheetHandleBrush}" IsHitTestVisible="False" />
+              </Grid>
+              <ContentPresenter Grid.Row="1" Content="{TemplateBinding Content}"
+                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                  ContentTransitions="{TemplateBinding ContentTransitions}"
+                  Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}"
+                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            </Grid>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
 </ResourceDictionary>

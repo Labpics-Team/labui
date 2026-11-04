@@ -68,7 +68,7 @@ describe('--lab-* semantic color contract', () => {
       Labels: 36,
       Fills: 33,
       Border: 26,
-      FX: 12,
+      FX: 13,
       Misc: 3,
       Component: 27,
     });

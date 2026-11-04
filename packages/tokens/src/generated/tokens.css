@@ -40,6 +40,9 @@
   --lab-space-glow-halo: var(--lab-space-8); /* -> 8 */
   --lab-space-switch-label-gap-l: var(--lab-space-3); /* -> 3 */
   --lab-space-button-inset: var(--lab-space-3); /* -> 3 */
+  --lab-space-sheet-inset: var(--lab-space-4); /* -> 4 */
+  --lab-space-sheet-gap: var(--lab-space-6); /* -> 6 */
+  --lab-space-sheet-overlap: var(--lab-space-8); /* -> 8 */
 
   /* Sizes — габариты контрол-бокса оси размера компонента (rem) */
   --lab-size-control-s: 0.75rem;
@@ -66,6 +69,13 @@
   --lab-size-button-glow-blur: 1.125rem;
   --lab-size-button-glow-shift-s: 0.0625rem;
   --lab-size-button-glow-shift-l: 0.1875rem;
+  --lab-size-sheet-drag-area: 1.5rem;
+  --lab-size-sheet-indicator-w: 2.25rem;
+  --lab-size-sheet-indicator-h: 0.25rem;
+  --lab-size-sheet-indicator-y: 0.875rem;
+  --lab-size-sheet-indicator-x: 0.0313rem;
+  --lab-size-sheet-body-blur: 8rem;
+  --lab-size-sheet-ghost-blur: 1.5rem;
   --lab-size-loader-stroke-s: 0.125rem;
   --lab-size-loader-stroke-m: 0.1875rem;
   --lab-size-loader-stroke-l: 0.25rem;
@@ -109,6 +119,7 @@
   --lab-radius-control: var(--lab-radius-m); /* -> m */
   --lab-radius-button: var(--lab-radius-xl); /* -> xl */
   --lab-radius-card: var(--lab-radius-xl); /* -> xl */
+  --lab-radius-sheet: var(--lab-radius-5xl); /* -> 5xl */
   --lab-radius-pill: var(--lab-radius-full); /* -> full */
   --lab-radius-circle: var(--lab-radius-full); /* -> full */
   --lab-radius-concentric-min: var(--lab-radius-xxs); /* -> xxs */
@@ -224,6 +235,8 @@
 
   /* Opacity — непрозрачность состояний (unitless доли, задача 13) */
   --lab-opacity-0: 0;
+  --lab-opacity-4: 0.04;
+  --lab-opacity-6: 0.06;
   --lab-opacity-12: 0.12;
   --lab-opacity-20: 0.2;
   --lab-opacity-32: 0.32;
@@ -237,6 +250,8 @@
   --lab-opacity-button-shade-pressed: var(--lab-opacity-12); /* -> 12 */
   --lab-opacity-button-glow: var(--lab-opacity-32); /* -> 32 */
   --lab-opacity-button-glow-fill: var(--lab-opacity-52); /* -> 52 */
+  --lab-opacity-sheet-body-noise: var(--lab-opacity-4); /* -> 4 */
+  --lab-opacity-sheet-ghost-noise: var(--lab-opacity-6); /* -> 6 */
   --lab-opacity-disabled: var(--lab-opacity-45); /* -> 45 */
   --lab-opacity-muted: var(--lab-opacity-50); /* -> 50 */
   --lab-opacity-full: var(--lab-opacity-100); /* -> 100 */
