@@ -1562,6 +1562,26 @@ test('consumer readback refuses unrelated files, unbounded PNG and incomplete re
     );
 });
 
+test('receipt projection respects the consumer decoded-byte limit', () => {
+  const receipt = { schemaVersion: 1, outcome: 'passed', records: [{ opacity: 0.375 }] };
+  const small = Buffer.from(JSON.stringify(receipt));
+  const packet = consumerReceiptLog(small, PIN.sourceCommit, PIN.sourceCommit, []);
+  const projected = decodeJsonEvidenceLog(packet, 'LABUI_ICONS_CONSUMER_RECEIPT', {
+    digestField: 'receiptSha256',
+    maxBytes: 4 * 1024 * 1024,
+  });
+  assert.deepEqual(projected.evidence.records, receipt.records);
+  const large = Buffer.from(
+    JSON.stringify({ ...receipt, records: Array(150_000).fill(receipt.records[0]) }),
+  );
+  assert.ok(large.length < 4 * 1024 * 1024);
+  assert.ok(projectJsonBytes(large, []).length > 4 * 1024 * 1024);
+  assert.throws(
+    () => consumerReceiptLog(large, PIN.sourceCommit, PIN.sourceCommit, []),
+    /receipt: projection вне лимита/,
+  );
+});
+
 async function summaryFixture(t, schemaVersion) {
   const { root } = schemaVersion >= 3 ? await expressionFixture(t) : await stateFixture(t);
   const author = await authorReference(root, PIN);
@@ -1666,6 +1686,33 @@ async function summaryFixture(t, schemaVersion) {
     );
   return { output, source, report, receipt, invoke };
 }
+
+test('summary reports an oversized receipt projection as readback failure', async (t) => {
+  const fixture = await summaryFixture(t, 1);
+  await writeFile(
+    join(fixture.output, 'result/receipt.json'),
+    JSON.stringify({ ...fixture.receipt, records: Array(150_000).fill({ opacity: 0.375 }) }),
+  );
+  const result = spawnSync(
+    process.execPath,
+    [
+      fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+      '--summarize',
+      fixture.output,
+    ],
+    { encoding: 'utf8', timeout: 10_000 },
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 1);
+  const summary = readConsumerResult(result.stdout).evidence;
+  assert.equal(summary.outcome, 'failed');
+  assert.equal(summary.browserOutcome, 'passed');
+  assert.deepEqual(summary.readbackFailure, {
+    code: 'EVIDENCE_REFUSED',
+    file: 'result/receipt.json',
+  });
+  assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
+});
 
 test('summary transmits successful raw observations and PNG authenticated against RESULT files', async (t) => {
   const fixture = await summaryFixture(t, 3);
