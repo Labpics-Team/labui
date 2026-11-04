@@ -301,11 +301,9 @@ public sealed class SheetLayers : Grid
             }
 
             var parameters = new Dictionary<string, CompositionBrush>();
-            List<IGraphicsEffect> effectCandidates = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
                 result.Own(effect);
-                effectCandidates.Add(effect);
                 return effect;
             }
             IGraphicsEffectSource Source(string name, CompositionBrush brush)
@@ -338,7 +336,9 @@ public sealed class SheetLayers : Grid
                 IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
                     Effect(new OpacityEffect { Source = noise, Opacity = (float)opacity }));
 
-                IGraphicsEffectSource? progressive = null;
+                // Маски задают неотрицательное разбиение единицы. Add суммирует
+                // premultiplied ветви без перекрытия по правилу SourceOver.
+                var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
                 for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
                 {
                     var level = index;
@@ -351,13 +351,12 @@ public sealed class SheetLayers : Grid
                         drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
                     }));
                     var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), mask);
-                    progressive = progressive is null ? branch : Effect(new ArithmeticCompositeEffect
-                    { Source1 = progressive, Source2 = branch, MultiplyAmount = 0, Source1Amount = 1, Source2Amount = 1, Offset = 0 });
+                    progressive.Sources.Add(branch);
                 }
                 var ghostMask = Source("ghostMask", Surface(drawing =>
                     drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk)));
                 // Alpha Ghost tint не управляет существованием backdrop/noise.
-                var ghost = Mask(WithNoise(Over(progressive!, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
+                var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
                 var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius), Paint(Tint!));
                 var blended = Effect(new BlendEffect
                 {
@@ -369,7 +368,7 @@ public sealed class SheetLayers : Grid
             }
             var border = Source("border", Surface(DrawBorder));
             var graph = Over(sheet, border);
-            var factory = result.Own(SheetEffectProbe.CreateFactory(compositor, (IGraphicsEffect)graph, effectCandidates));
+            var factory = result.Own(compositor.CreateEffectFactory((IGraphicsEffect)graph));
             var brush = result.Own(factory.CreateBrush());
             foreach (var (name, source) in parameters) brush.SetSourceParameter(name, source);
             result.Visual.Brush = brush;
