@@ -44,6 +44,7 @@ public sealed class SheetLayers : Grid
     private CanvasDevice? device;
     private CompositionGraphicsDevice? graphics;
     private Frame? frame;
+    private SheetMetrics? geometry;
     private XamlRoot? root;
     private UISettings? settings;
     private CompositionCapabilities? capabilities;
@@ -84,6 +85,13 @@ public sealed class SheetLayers : Grid
         if (material is not (LabSheetMaterial.Blur or LabSheetMaterial.Solid))
             throw new ArgumentOutOfRangeException(nameof(material));
         requested = material;
+        QueueRedraw();
+    }
+
+    internal void SetMetrics(SheetMetrics metrics)
+    {
+        if (geometry == metrics) return;
+        geometry = metrics;
         QueueRedraw();
     }
 
@@ -171,7 +179,7 @@ public sealed class SheetLayers : Grid
 
     private void Render(bool recreate = false)
     {
-        if (!active || ActualWidth <= 0 || ActualHeight <= 0) return;
+        if (!active || ActualWidth <= 0 || ActualHeight <= 0 || geometry is not { } metrics) return;
         var current = generation;
         try
         {
@@ -193,7 +201,7 @@ public sealed class SheetLayers : Grid
                 graphics = CanvasComposition.CreateCompositionGraphicsDevice(compositor, device);
             }
             var resolved = ResolveMaterial();
-            var candidate = BuildFrame(compositor, SheetMetrics.Half(ActualWidth, ActualHeight), resolved.Material, resolved.Reason);
+            var candidate = BuildFrame(compositor, metrics, resolved.Material, resolved.Reason);
             try { ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual); }
             catch (Exception error)
             {
@@ -283,7 +291,7 @@ public sealed class SheetLayers : Grid
             {
                 using var clip = drawing.CreateLayer(1, bodyShape);
                 using var ink = new CanvasSolidColorBrush(device, Border!.Color) { Opacity = (float)Border.Opacity };
-                drawing.DrawGeometry(bodyShape, ink, (float)(Geometry.SheetBorderWidth * 2));
+                drawing.DrawGeometry(bodyShape, ink, (float)(Geometry.SheetBorderWidth * metrics.Scale * 2));
             }
 
             result.Visual.Size = new Vector2((float)metrics.Width, (float)metrics.Height);
@@ -350,14 +358,14 @@ public sealed class SheetLayers : Grid
                         { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
                         drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
                     }));
-                    var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), mask);
+                    var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale), mask);
                     progressive.Sources.Add(branch);
                 }
                 var ghostMask = Source("ghostMask", Surface(drawing =>
                     drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk)));
                 // Alpha Ghost tint не управляет существованием backdrop/noise.
                 var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
-                var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius), Paint(Tint!));
+                var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!));
                 var blended = Effect(new BlendEffect
                 {
                     Background = tinted, Foreground = Paint(Blend!),
@@ -369,7 +377,7 @@ public sealed class SheetLayers : Grid
             var border = Source("border", Surface(DrawBorder));
             var graph = Over(sheet, border);
             var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
-                (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma));
+                (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma));
             var brush = result.Own(factory.CreateBrush());
             foreach (var (name, source) in parameters) brush.SetSourceParameter(name, source);
             result.Visual.Brush = brush;
@@ -385,7 +393,7 @@ public sealed class SheetLayers : Grid
 
     private CanvasGeometry BodyShape(SheetMetrics metrics, double offsetY = 0)
     {
-        var radius = (float)Math.Min(Geometry.SheetRadius, Math.Min(metrics.Width / 2, metrics.BodyHeight));
+        var radius = (float)Math.Min(Geometry.SheetRadius * metrics.Scale, Math.Min(metrics.Width / 2, metrics.BodyHeight));
         var left = 0f;
         var right = (float)metrics.Width;
         var top = (float)(metrics.BodyTop + offsetY);
@@ -411,13 +419,13 @@ public sealed class SheetLayers : Grid
         for (var index = Geometry.SheetShadows.Length - 1; index >= 0; index--)
         {
             var shadow = Geometry.SheetShadows[index];
-            using var shifted = BodyShape(metrics, shadow.OffsetY);
+            using var shifted = BodyShape(metrics, shadow.OffsetY * metrics.Scale);
             using var source = new CanvasCommandList(device);
             using (var sourceDrawing = source.CreateDrawingSession())
             using (var ink = new CanvasSolidColorBrush(device, ShadowInk!.Color)
             { Opacity = (float)(ShadowInk.Opacity * shadow.Opacity) }) sourceDrawing.FillGeometry(shifted, ink);
             using var blur = new GaussianBlurEffect
-            { Source = source, BlurAmount = (float)(shadow.BlurRadius * RadiusToSigma), BorderMode = EffectBorderMode.Soft };
+            { Source = source, BlurAmount = (float)(shadow.BlurRadius * metrics.Scale * RadiusToSigma), BorderMode = EffectBorderMode.Soft };
             drawing.DrawImage(blur);
         }
     }

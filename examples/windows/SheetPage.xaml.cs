@@ -2,6 +2,7 @@ using LabUI.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using System.Globalization;
 using System.Text.Json;
 using Windows.Foundation;
 
@@ -20,6 +21,19 @@ public sealed partial class SheetPage : Page
         InitializeComponent();
         RequestedTheme = dark ? ElementTheme.Dark : ElementTheme.Light;
         Sheet.Material = solid ? LabSheetMaterial.Solid : LabSheetMaterial.Blur;
+        var arguments = Environment.GetCommandLineArgs();
+        if (arguments.FirstOrDefault(value => value.StartsWith("--sheet-state=", StringComparison.Ordinal)) is { } state)
+            Sheet.State = state[14..] switch
+            {
+                "full" => LabSheetState.Full,
+                "two-thirds" => LabSheetState.TwoThirds,
+                "half" => LabSheetState.Half,
+                "one-third" => LabSheetState.OneThird,
+                "flex" => LabSheetState.Flex,
+                _ => throw new ArgumentException("Неизвестное состояние Sheet."),
+            };
+        if (arguments.FirstOrDefault(value => value.StartsWith("--sheet-scale=", StringComparison.Ordinal)) is { } scale)
+            Sheet.GeometryScale = double.Parse(scale[14..], CultureInfo.InvariantCulture);
         if (observationPath is not null)
         {
             Backdrop.ImageOpened += ImageOpened;
@@ -117,6 +131,9 @@ public sealed partial class SheetPage : Page
             imageLoaded,
             rendererReady = Sheet.EffectiveMaterial is not null,
             requestedMaterial = Sheet.Material.ToString(),
+            requestedState = Sheet.State.ToString(),
+            geometryScale = Sheet.GeometryScale,
+            contentViewport = Bounds(FindPart(Sheet, "PART_ContentViewport")),
             effectiveMaterial = Sheet.EffectiveMaterial?.ToString(),
             materialReason = Sheet.MaterialReason?.ToString(),
             error

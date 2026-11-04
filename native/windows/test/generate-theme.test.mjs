@@ -278,6 +278,27 @@ test('размеры Sheet следуют изменению владельца,
   const reference = emit();
   for (const [name, expected, mutate] of [
     [
+      'SheetBodyFull',
+      700,
+      (fixture) => {
+        fixture.tokens.size['sheet-body-full'].$value.value = 700;
+      },
+    ],
+    [
+      'SheetBodyTwoThirds',
+      500,
+      (fixture) => {
+        fixture.tokens.size['sheet-body-two-thirds'].$value.value = 500;
+      },
+    ],
+    [
+      'SheetBodyOneThird',
+      250,
+      (fixture) => {
+        fixture.tokens.size['sheet-body-one-third'].$value.value = 250;
+      },
+    ],
+    [
       'SheetRadius',
       12,
       (fixture) => {

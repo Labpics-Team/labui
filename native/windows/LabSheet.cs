@@ -2,15 +2,38 @@ using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Windows.Foundation;
 
 namespace LabUI.WinUI;
 
 public enum LabSheetMaterial { Blur, Solid }
 public enum LabSheetMaterialReason { Requested, TransparencyDisabled, EffectsUnsupported, EffectsNotFast }
 
-/// <summary>Нативный Half Sheet. Content — содержимое поверхности, сам контрол занимает viewport.</summary>
+/// <summary>Content — содержимое поверхности; сам Sheet занимает конечный viewport.</summary>
 public sealed class LabSheet : ContentControl
 {
+    public static readonly DependencyProperty StateProperty = DependencyProperty.Register(
+        nameof(State), typeof(LabSheetState), typeof(LabSheet),
+        new PropertyMetadata(LabSheetState.Half, GeometryChanged));
+
+    public static readonly DependencyProperty GeometryScaleProperty = DependencyProperty.Register(
+        nameof(GeometryScale), typeof(double), typeof(LabSheet),
+        new PropertyMetadata(1d, GeometryChanged));
+
+    public LabSheetState State
+    {
+        get => (LabSheetState)GetValue(StateProperty);
+        set { SheetMetrics.ValidateState(value); SetValue(StateProperty, value); }
+    }
+
+    /// <summary>Масштаб размеров в DIP; системные DPI и масштаб текста применяются отдельно.</summary>
+    public double GeometryScale
+    {
+        get => (double)GetValue(GeometryScaleProperty);
+        set { SheetMetrics.ValidateScale(value); SetValue(GeometryScaleProperty, value); }
+    }
+
     public static readonly DependencyProperty MaterialProperty = DependencyProperty.Register(
         nameof(Material), typeof(LabSheetMaterial), typeof(LabSheet),
         new PropertyMetadata(LabSheetMaterial.Blur, MaterialChanged));
@@ -30,6 +53,8 @@ public sealed class LabSheet : ContentControl
     private Grid? body;
     private Grid? dragArea;
     private Border? indicator;
+    private ScrollViewer? contentViewport;
+    private ContentPresenter? presenter;
     private bool attached;
     private EventHandler? materialForwarder;
 
@@ -57,6 +82,8 @@ public sealed class LabSheet : ContentControl
         body = Part<Grid>("PART_Body");
         dragArea = Part<Grid>("PART_DragArea");
         indicator = Part<Border>("PART_Indicator");
+        contentViewport = Part<ScrollViewer>("PART_ContentViewport");
+        presenter = Part<ContentPresenter>("PART_Content");
         ApplyMetrics();
         if (IsLoaded) AttachParts();
     }
@@ -106,6 +133,20 @@ public sealed class LabSheet : ContentControl
     private void ForwardMaterial(object? sender, EventArgs args) => EffectiveMaterialChanged?.Invoke(this, args);
     private void Resized(object sender, SizeChangedEventArgs args) => ApplyMetrics();
 
+    private static void GeometryChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+    {
+        var sheet = (LabSheet)sender;
+        SheetMetrics.ValidateState(sheet.State);
+        SheetMetrics.ValidateScale(sheet.GeometryScale);
+        sheet.InvalidateMeasure();
+    }
+
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        ApplyMetrics(availableSize.Width, availableSize.Height);
+        return base.MeasureOverride(availableSize);
+    }
+
     private static void MaterialChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var sheet = (LabSheet)sender;
@@ -114,18 +155,34 @@ public sealed class LabSheet : ContentControl
         sheet.layers?.SetMaterial(sheet.Material);
     }
 
-    private void ApplyMetrics()
+    private void ApplyMetrics() => ApplyMetrics(ActualWidth, ActualHeight);
+
+    private void ApplyMetrics(double width, double height)
     {
-        if (body is null || dragArea is null || indicator is null) return;
-        body.Padding = new Thickness(Geometry.SheetInset, 0, Geometry.SheetInset, Geometry.SheetInset);
-        body.RowSpacing = Geometry.SheetGap;
-        dragArea.Height = Geometry.SheetDragArea;
-        indicator.Width = Geometry.SheetIndicatorWidth;
-        indicator.Height = Geometry.SheetIndicatorHeight;
-        indicator.Margin = new Thickness(Geometry.SheetIndicatorShift * 2, Geometry.SheetIndicatorOffset, 0, 0);
-        indicator.CornerRadius = new CornerRadius(Geometry.SheetIndicatorHeight / 2);
-        if (ActualWidth <= 0 || ActualHeight <= 0) return;
-        var metrics = SheetMetrics.Half(ActualWidth, ActualHeight);
+        if (body is null || dragArea is null || indicator is null || contentViewport is null || presenter is null
+            || !double.IsFinite(width) || width <= 0 || !double.IsFinite(height) || height <= 0) return;
+        var hasContent = Content is not null;
+        var desiredContent = 0d;
+        if (State == LabSheetState.Flex && hasContent)
+        {
+            // Конечная ширина сохраняет перенос текста; высоту до clamp измеряет сам ContentPresenter.
+            presenter.Measure(new Size(Math.Max(0, width - Geometry.SheetInset * GeometryScale * 2), double.PositiveInfinity));
+            desiredContent = presenter.DesiredSize.Height;
+        }
+        var metrics = SheetMetrics.Create(width, height, State, desiredContent, hasContent, GeometryScale);
+        body.Padding = new Thickness(metrics.Inset, 0, metrics.Inset, metrics.Inset);
+        body.RowSpacing = metrics.ContentGap;
+        body.Height = metrics.BodyHeight;
         body.Margin = new Thickness(0, metrics.BodyTop, 0, 0);
+        body.Clip = new RectangleGeometry { Rect = new Rect(0, 0, metrics.Width, metrics.BodyHeight) };
+        dragArea.Height = metrics.DragArea;
+        indicator.Width = Geometry.SheetIndicatorWidth * metrics.Scale;
+        indicator.Height = Geometry.SheetIndicatorHeight * metrics.Scale;
+        indicator.Margin = new Thickness(Geometry.SheetIndicatorShift * metrics.Scale * 2,
+            Geometry.SheetIndicatorOffset * metrics.Scale, 0, 0);
+        indicator.CornerRadius = new CornerRadius(indicator.Height / 2);
+        contentViewport.Height = metrics.ContentHeight;
+        contentViewport.Visibility = State == LabSheetState.Flex && !hasContent ? Visibility.Collapsed : Visibility.Visible;
+        layers?.SetMetrics(metrics);
     }
 }
