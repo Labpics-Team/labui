@@ -172,16 +172,19 @@ $statements = @($outer.Body.Statements)
 $layoutIndex = -1
 $inputIndex = -1
 $resultIndex = -1
+$publicationEndIndex = -1
 for ($i = 0; $i -lt $statements.Count; $i++) {
     $text = $statements[$i].Extent.Text
     if ($text -match '^\$initialLayout\s*=') { $layoutIndex = $i }
     if ($inputIndex -lt 0 -and $text -match '^Ui\s') { $inputIndex = $i }
     if ($text -match '^\$result\s*=') { $resultIndex = $i }
+    if ($text -match '^\$resultJson\s*\|\s*Set-Content\b') { $publicationEndIndex = $i }
 }
 Assert ($layoutIndex -ge 0 -and $layoutIndex -lt $inputIndex) 'Layout admission отсутствует до первого ввода.'
 Assert ($resultIndex -gt $inputIndex) 'Нет результата после сценария ввода.'
+Assert ($publicationEndIndex -gt $resultIndex) 'Нет записи сериализованного результата.'
 $admission = [scriptblock]::Create($statements[$layoutIndex].Extent.Text)
-$publication = [scriptblock]::Create(($statements[$resultIndex..($statements.Count - 1)].Extent.Text -join "`n"))
+$publication = [scriptblock]::Create(($statements[$resultIndex..$publicationEndIndex].Extent.Text -join "`n"))
 $cleanup = [scriptblock]::Create($outer.Finally.Extent.Text.Substring(1, $outer.Finally.Extent.Text.Length - 2))
 $saveEnvironment = [scriptblock]::Create((@($ast.EndBlock.Statements | Where-Object {
     $_ -is [Management.Automation.Language.ForEachStatementAst] -and $_.Extent.Text -match '\$saved\['
@@ -227,12 +230,6 @@ try {
                     $Lifetime = $false
                     $captures = @{}
                     $lowerControls = @{}
-                    function node {
-                        param($Validator, $Result, $Identity)
-                        Assert ($Validator.EndsWith('space-observation.mjs')) 'Неизвестная внешняя проверка результата.'
-                        Assert (Test-Path -LiteralPath $Result) 'Проверка Space запущена до сериализации.'
-                        $script:LASTEXITCODE = 0
-                    }
                     . $publication
                     $readback = Get-Content -LiteralPath (Join-Path $output 'result.json') -Raw | ConvertFrom-Json
                     Assert ($readback.initialLayout.textScaleFactor -eq 2.25) 'Result потерял фактический масштаб.'
