@@ -120,6 +120,21 @@ customElements.define('lab-probe', Probe);
       fill: undefined,
     },
     {
+      name: 'метод с буквальным вычисляемым именем render снимает базовый fill',
+      render: '["render"]() { return html`<slot name="leading"></slot>`; }',
+      fill: undefined,
+    },
+    {
+      name: 'поле с буквальным вычисляемым именем render снимает базовый fill',
+      render: '["render"] = () => html`<slot name="leading"></slot>`;',
+      fill: undefined,
+    },
+    {
+      name: 'имя render в шаблонной строке без подстановок снимает базовый fill',
+      render: '[`render`]() { return html`<slot name="leading"></slot>`; }',
+      fill: undefined,
+    },
+    {
       name: 'отброшенный результат super.render не включает базовый шаблон',
       render: 'render() { super.render(); return html`<slot name="leading"></slot>`; }',
       fill: undefined,
@@ -128,6 +143,21 @@ customElements.define('lab-probe', Probe);
       name: 'возврат super.render сохраняет базовый fill',
       render: 'render() { return super.render(); }',
       fill: ['leading'],
+    },
+    {
+      name: 'возврат super с буквальным строковым ключом сохраняет базовый fill',
+      render: 'render() { return super["render"](); }',
+      fill: ['leading'],
+    },
+    {
+      name: 'возврат super с ключом без подстановок сохраняет базовый fill',
+      render: 'render() { return super[`render`](); }',
+      fill: ['leading'],
+    },
+    {
+      name: 'отброшенный вызов super с буквальным ключом не включает базовый шаблон',
+      render: 'render() { super["render"](); return html`<slot name="leading"></slot>`; }',
+      fill: undefined,
     },
     {
       name: 'композиция Lit-шаблонов сохраняет базовый и собственный fill',
@@ -144,6 +174,16 @@ customElements.define('lab-probe', Probe);
     {
       name: 'статический render не заменяет унаследованный метод экземпляра',
       render: 'static render() { return html`<slot name="leading"></slot>`; }',
+      fill: ['leading'],
+    },
+    {
+      name: 'статический render с буквальным ключом не заменяет метод экземпляра',
+      render: 'static ["render"]() { return html`<slot name="leading"></slot>`; }',
+      fill: ['leading'],
+    },
+    {
+      name: 'другое буквальное имя не заменяет унаследованный render',
+      render: '["renderOther"]() { return html`<slot name="leading"></slot>`; }',
       fill: ['leading'],
     },
   ])('$name; свойства и события остаются унаследованными', ({ render, fill }) => {

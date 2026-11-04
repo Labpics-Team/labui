@@ -184,8 +184,11 @@ function mayRenderBase(cls: ts.ClassDeclaration): boolean {
   const ownRender = members.some(
     (member) =>
       member.name &&
-      (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) &&
-      member.name.text === 'render' &&
+      (((ts.isIdentifier(member.name) || ts.isStringLiteral(member.name)) &&
+        member.name.text === 'render') ||
+        (ts.isComputedPropertyName(member.name) &&
+          ts.isStringLiteralLike(member.name.expression) &&
+          member.name.expression.text === 'render')) &&
       ((ts.isMethodDeclaration(member) && member.body) ||
         (ts.isPropertyDeclaration(member) && member.initializer)),
   );
@@ -193,9 +196,12 @@ function mayRenderBase(cls: ts.ClassDeclaration): boolean {
 
   const visit = (node: ts.Node): boolean | undefined => {
     if (
-      ts.isPropertyAccessExpression(node) &&
+      (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) &&
       node.expression.kind === ts.SyntaxKind.SuperKeyword &&
-      node.name.text === 'render'
+      (ts.isPropertyAccessExpression(node)
+        ? node.name.text === 'render'
+        : ts.isStringLiteralLike(node.argumentExpression) &&
+          node.argumentExpression.text === 'render')
     ) {
       const use =
         ts.isCallExpression(node.parent) && node.parent.expression === node ? node.parent : node;
