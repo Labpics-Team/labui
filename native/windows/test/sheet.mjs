@@ -31,8 +31,44 @@ const parse = (bytes) => {
 const near = (actual, expected) =>
   assert.ok(
     Number.isFinite(actual) && Math.abs(actual - expected) <= 0.01,
-    `sheet: геометрия ${actual} вместо ${expected}`,
+    'sheet: геометрия вне эталона',
   );
+const known = (value, values) => (values.includes(value) ? value : null);
+const failurePhases = [
+  'identity',
+  'observation',
+  'render',
+  'capability',
+  'readiness',
+  'geometry',
+  'window-before',
+  'screenshot',
+  'window-after',
+  'cleanup',
+];
+function errorInfo(value) {
+  if (value == null) return null;
+  // Ни префикс сообщения, ни форма строки не разрешают публиковать текст исключения.
+  return {
+    type: known(value.name, ['Error', 'AssertionError', 'SyntaxError', 'TypeError', 'RangeError']),
+    code: known(value.code, [
+      'ERR_ASSERTION',
+      'SHEET_HOST_REQUIRED',
+      'ETIMEDOUT',
+      'ENOENT',
+      'EACCES',
+      'EPERM',
+      'ESRCH',
+      'EIO',
+      'ENOBUFS',
+      'EPIPE',
+      'ABORT_ERR',
+      'ERR_INVALID_ARG_TYPE',
+      'ERR_INVALID_ARG_VALUE',
+      'ERR_ENCODING_INVALID_ENCODED_DATA',
+    ]),
+  };
+}
 
 export function validateObservation(value, expected) {
   let phase = 'identity';
@@ -179,25 +215,6 @@ export function sheetFailureLog({
     'sheet: failure case',
   );
   const number = (value) => (Number.isFinite(value) ? value : null);
-  const known = (value, values) => (values.includes(value) ? value : null);
-  const bounded = (value) => (typeof value === 'string' ? value.slice(0, 512) : null);
-  const message = (value) => {
-    if (!value) return null;
-    const firstLine = typeof value.message === 'string' ? value.message.split(/[\r\n]/, 1)[0] : '';
-    if (firstLine.startsWith('sheet: ')) return bounded(firstLine);
-    // Ошибки parser/CLI могут содержать фрагменты ввода: публикуется только тип и код.
-    return {
-      type: known(value.name, [
-        'Error',
-        'AssertionError',
-        'SyntaxError',
-        'TypeError',
-        'RangeError',
-      ]),
-      code:
-        typeof value.code === 'string' && /^[A-Z0-9_]{1,40}$/.test(value.code) ? value.code : null,
-    };
-  };
   let readback = null;
   if (observation !== null && typeof observation === 'object') {
     readback = {
@@ -218,7 +235,12 @@ export function sheetFailureLog({
         'EffectsUnsupported',
         'EffectsNotFast',
       ]),
-      error: bounded(observation.error),
+      error:
+        observation.error === null
+          ? null
+          : typeof observation.error === 'string'
+            ? 'reported'
+            : 'invalid',
     };
     for (const field of ['layoutReady', 'imageLoaded', 'rendererReady'])
       readback[field] = typeof observation[field] === 'boolean' ? observation[field] : null;
@@ -236,11 +258,11 @@ export function sheetFailureLog({
   return `LABUI_SHEET_FAILURE_JSON ${JSON.stringify({
     source: sourceSha,
     name,
-    phase: error?.sheetPhase ?? phase,
+    phase: known(error?.sheetPhase, failurePhases) ?? known(phase, failurePhases),
     pid: number(pid),
     observation: readback,
-    error: message(error),
-    cleanupError: message(cleanupError),
+    error: errorInfo(error),
+    cleanupError: errorInfo(cleanupError),
     stderrBytes: number(stderrBytes),
   })}\n`;
 }
@@ -430,12 +452,16 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
 }
 
 async function capture(appDirectory, output, receiptPath, sourceSha) {
-  assert.ok(
-    process.platform === 'win32' &&
+  if (
+    !(
+      process.platform === 'win32' &&
       process.env.GITHUB_ACTIONS === 'true' &&
-      process.env.RUNNER_ENVIRONMENT === 'github-hosted',
-    'sheet: capture требует GitHub hosted Windows',
-  );
+      process.env.RUNNER_ENVIRONMENT === 'github-hosted'
+    )
+  )
+    throw Object.assign(new Error('sheet: capture требует GitHub hosted Windows'), {
+      code: 'SHEET_HOST_REQUIRED',
+    });
   source(sourceSha);
   const receipt = parse(await readFile(receiptPath));
   const cliBytes = await readFile(receipt.path);
@@ -504,5 +530,11 @@ async function main([operation, ...args]) {
     );
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
-  await main(process.argv.slice(2));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main(process.argv.slice(2));
+  } catch (error) {
+    process.stderr.write(`LABUI_SHEET_ERROR_JSON ${JSON.stringify(errorInfo(error))}\n`);
+    process.exitCode = 1;
+  }
+}

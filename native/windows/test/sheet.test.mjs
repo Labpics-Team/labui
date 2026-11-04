@@ -171,8 +171,8 @@ test('failed capture preserves bounded source and capability diagnostics without
   assert.equal(value.pid, 42);
   assert.equal(value.observation.effectiveMaterial, 'Solid');
   assert.equal(value.observation.materialReason, 'EffectsNotFast');
-  assert.match(value.error, /исполненный материал/);
-  assert.equal(value.cleanupError, 'sheet: cleanup deadline');
+  assert.deepEqual(value.error, { type: 'AssertionError', code: 'ERR_ASSERTION' });
+  assert.deepEqual(value.cleanupError, { type: 'Error', code: null });
   assert.equal(value.stderrBytes, 17);
   assert.doesNotMatch(line, /not-for-job-log|privateEnvironment|"stderr"/);
   assert.throws(() => decodeSheetEvidence(line, SOURCE));
@@ -217,6 +217,75 @@ test('failed capture preserves bounded source and capability diagnostics without
         ),
       (error) => error.sheetPhase === phase,
     );
+  }
+});
+
+test('diagnostics classify free-form exceptions and malformed geometry without publishing their text', async (t) => {
+  const marker = 'PRIVATE_VALUE_NOT_FOR_LOG';
+  for (const [name, change, phase] of [
+    ['application exception', { error: marker }, 'render'],
+    ['malformed geometry', { body: { x: marker, y: 390, width: 375, height: 422 } }, 'geometry'],
+  ])
+    await t.test(name, () => {
+      const observed = { ...observation(), ...change };
+      let failure;
+      try {
+        validateObservation(observed, { ...EXPECTED_CASES[0], ...processIdentity });
+      } catch (error) {
+        failure = error;
+      }
+      assert.ok(failure);
+      const line = sheetFailureLog({
+        sourceSha: SOURCE,
+        name: 'Light-Blur',
+        phase: 'observation',
+        pid: 42,
+        observation: observed,
+        error: failure,
+        stderrBytes: 0,
+      });
+      assert.doesNotMatch(line, new RegExp(marker));
+      const parsed = JSON.parse(line.slice('LABUI_SHEET_FAILURE_JSON '.length));
+      assert.equal(parsed.phase, phase);
+      assert.equal(parsed.observation.imageLoaded, true);
+      assert.equal(parsed.observation.requestedMaterial, 'Blur');
+    });
+  await t.test('prefix, error code and phase cannot authorize arbitrary text', () => {
+    const failure = Object.assign(new Error(`sheet: ${marker}`), {
+      code: marker,
+      sheetPhase: marker,
+    });
+    const line = sheetFailureLog({
+      sourceSha: SOURCE,
+      name: 'Light-Blur',
+      phase: 'render',
+      pid: 42,
+      observation: null,
+      error: failure,
+      cleanupError: failure,
+      stderrBytes: 0,
+    });
+    assert.doesNotMatch(line, new RegExp(marker));
+  });
+});
+
+test('CLI rejection does not republish an application exception in terminal stderr', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'labui-sheet-private-'));
+  try {
+    const files = fixture();
+    const marker = 'PRIVATE_VALUE_NOT_FOR_LOG';
+    files.set('Light-Blur.json', json({ ...observation(), error: marker }));
+    const log = join(directory, 'job.log');
+    await writeFile(log, rawPackets(files));
+    const result = spawnSync(
+      process.execPath,
+      [CLI, 'decode', log, SOURCE, join(directory, 'decoded')],
+      { encoding: 'utf8', windowsHide: true, timeout: 10000 },
+    );
+    assert.notEqual(result.status, 0);
+    assert.doesNotMatch(result.stdout + result.stderr, new RegExp(marker));
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
 });
 
@@ -280,7 +349,7 @@ test('real CLI decodes once and refuses local native capture before creating out
       RUNNER_ENVIRONMENT: '',
     });
     assert.notEqual(denied.status, 0);
-    assert.match(denied.stderr, /GitHub hosted Windows/);
+    assert.match(denied.stderr, /"code":"SHEET_HOST_REQUIRED"/);
     await assert.rejects(readFile(join(local, 'identity.json')), { code: 'ENOENT' });
   } finally {
     await rm(directory, { recursive: true, force: true });
