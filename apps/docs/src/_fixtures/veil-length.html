@@ -6,12 +6,13 @@
     <style>
       html { font-size: 16px; }
       .scope { --lab-veil-strength: 1.5rem; }
-      .veil { width: 200px; height: 200px; }
+      .veil, .reference { width: 200px; height: 200px; }
+      .reference { filter: blur(var(--lab-veil-strength, 24px)); }
       @media (min-width: 1000px) { .scope { --lab-veil-strength: 2rem; } }
     </style>
   </head>
   <body>
-    <div class="scope"><div class="veil" data-veil="bottom"></div></div>
+    <div class="scope"><div class="veil" data-veil="bottom"></div><div class="reference"></div></div>
     <script type="module" src="./veil-length.ts"></script>
   </body>
 </html>

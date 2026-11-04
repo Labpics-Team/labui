@@ -87,7 +87,6 @@ const registry = new WeakMap<HTMLElement, VeilHandle>(); // host → handle (no 
 const DEFAULTS = {
   from: '50% 0%',
   to: '50% 100%',
-  strength: 24, // px at the strong end of the canonical preset profile
   levels: 6,
   feather: 'auto',
 } as const;
@@ -153,7 +152,7 @@ function readConfig(state: VeilState): VeilConfig {
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
   const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
-  const strength = state.strength.read();
+  const stops = raw('--lab-veil-stops', '');
   const feather = raw('--lab-veil-feather', DEFAULTS.feather);
   return {
     w,
@@ -162,7 +161,7 @@ function readConfig(state: VeilState): VeilConfig {
     to: preset ? preset.to : raw('--lab-veil-to', DEFAULTS.to),
     // The canonical profile: strength at the strong end (t=0), easing out to
     // sharp — `--lab-veil-stops` overrides it wholesale (Figma-like stops).
-    stops: raw('--lab-veil-stops', `0 ${strength}px, 1 0px ease-out`),
+    stops: stops || `0 ${state.strength.read()}px, 1 0px ease-out`,
     levels:
       Number.parseInt(raw('--lab-veil-levels', String(DEFAULTS.levels)), 10) || DEFAULTS.levels,
     feather: feather === 'auto' ? feather : String(state.feather.read()),
@@ -355,8 +354,8 @@ export function attach(el: HTMLElement): VeilHandle {
   const state: VeilState = {
     el,
     measurements,
-    strength: createLengthProbe(measurements, '--lab-veil-strength', DEFAULTS.strength),
-    feather: createLengthProbe(measurements, '--lab-veil-feather', 0),
+    strength: createLengthProbe(el, measurements, '--lab-veil-strength'),
+    feather: createLengthProbe(el, measurements, '--lab-veil-feather'),
     strips: [],
     sig: null,
     enabled: true,

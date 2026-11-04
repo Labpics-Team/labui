@@ -84,6 +84,20 @@ const dispose = mountMaterialRuntime(content);
 `prefers-reduced-transparency: reduce`, `prefers-contrast: more` или
 `forced-colors: active` поверхность переходит к непрозрачному оформлению.
 
+## Progressive blur
+
+`data-veil="top|bottom|left|right"` задаёт край размытия. `--lab-veil-strength`
+принимает CSS-длину, например `1.5rem`, `calc(1rem + .5em)` или `10cqw`;
+число без единицы сохраняет прежний смысл px. Длина вычисляется на поверхности.
+Отсутствующий и пустой токены дают 24 px, явный `0px` снимает эффект.
+`--lab-veil-feather` принимает такую же длину или `auto`.
+Явный `--lab-veil-stops` полностью задаёт профиль и перекрывает `strength`.
+
+Живое измерение требует CSS Properties and Values API и container style queries.
+При ошибочной активной длине или отсутствии этих возможностей runtime сообщает
+ошибку и снимает полосы. Служебные таблицы стилей используются совместно
+в документе и ShadowRoot и удаляются после отключения последней поверхности.
+
 ## Card и серверный HTML
 
 `lab-card` подключает стили материалов и движки самостоятельно; тему подключает
