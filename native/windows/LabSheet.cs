@@ -54,7 +54,7 @@ public sealed class LabSheet : ContentControl
     private Grid? dragArea;
     private Border? indicator;
     private ScrollViewer? contentViewport;
-    private ContentPresenter? presenter;
+    private long? viewportTemplateToken;
     private bool attached;
     private EventHandler? materialForwarder;
 
@@ -77,19 +77,45 @@ public sealed class LabSheet : ContentControl
     protected override void OnApplyTemplate()
     {
         DetachParts();
+        if (contentViewport is not null && viewportTemplateToken is { } token)
+            contentViewport.UnregisterPropertyChangedCallback(Control.TemplateProperty, token);
+        viewportTemplateToken = null;
         base.OnApplyTemplate();
         layers = Part<SheetLayers>("PART_Layers");
         body = Part<Grid>("PART_Body");
         dragArea = Part<Grid>("PART_DragArea");
         indicator = Part<Border>("PART_Indicator");
         contentViewport = Part<ScrollViewer>("PART_ContentViewport");
-        presenter = Part<ContentPresenter>("PART_Content");
+        ConfigureContentViewport(contentViewport);
+        viewportTemplateToken = contentViewport.RegisterPropertyChangedCallback(Control.TemplateProperty,
+            static (sender, _) => ConfigureContentViewport((ScrollViewer)sender));
         ApplyMetrics();
         if (IsLoaded) AttachParts();
     }
 
     private T Part<T>(string name) where T : DependencyObject => GetTemplateChild(name) as T
         ?? throw new InvalidOperationException($"Шаблон LabSheet требует {name} ({typeof(T).Name}).");
+
+    private static void ConfigureContentViewport(ScrollViewer viewport)
+    {
+        viewport.ApplyTemplate();
+        var presenter = FindContentPresenter(viewport)
+            ?? throw new InvalidOperationException("Шаблон viewport Sheet требует ScrollContentPresenter.");
+        // Только native presenter этой поверхности получает конечный размер измерения.
+        if (!presenter.SizesContentToTemplatedParent) presenter.SizesContentToTemplatedParent = true;
+    }
+
+    private static ScrollContentPresenter? FindContentPresenter(DependencyObject parent)
+    {
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, index);
+            if (child is ScrollContentPresenter presenter && presenter.Name == "ScrollContentPresenter") return presenter;
+            // Собственный ScrollViewer содержимого остаётся у его владельца.
+            if (child is not ScrollViewer && FindContentPresenter(child) is { } found) return found;
+        }
+        return null;
+    }
 
     private void LoadedControl(object sender, RoutedEventArgs args)
     {
@@ -159,15 +185,17 @@ public sealed class LabSheet : ContentControl
 
     private void ApplyMetrics(double width, double height)
     {
-        if (body is null || dragArea is null || indicator is null || contentViewport is null || presenter is null
+        if (body is null || dragArea is null || indicator is null || contentViewport is null
             || !double.IsFinite(width) || width <= 0 || !double.IsFinite(height) || height <= 0) return;
+        ConfigureContentViewport(contentViewport);
         var hasContent = Content is not null;
         var desiredContent = 0d;
         if (State == LabSheetState.Flex && hasContent)
         {
-            // Конечная ширина сохраняет перенос текста; высоту до clamp измеряет сам ContentPresenter.
-            presenter.Measure(new Size(Math.Max(0, width - Geometry.SheetInset * GeometryScale * 2), double.PositiveInfinity));
-            desiredContent = presenter.DesiredSize.Height;
+            // Конечная высота сохраняет собственную прокрутку виртуализирующего содержимого.
+            var availableContentHeight = Math.Max(0, height - (Geometry.SheetDragArea + Geometry.SheetGap + Geometry.SheetInset) * GeometryScale);
+            contentViewport.Measure(new Size(Math.Max(0, width - Geometry.SheetInset * GeometryScale * 2), availableContentHeight));
+            desiredContent = contentViewport.DesiredSize.Height;
         }
         var metrics = SheetMetrics.Create(width, height, State, desiredContent, hasContent, GeometryScale);
         body.Padding = new Thickness(metrics.Inset, 0, metrics.Inset, metrics.Inset);
@@ -181,7 +209,6 @@ public sealed class LabSheet : ContentControl
         indicator.Margin = new Thickness(Geometry.SheetIndicatorShift * metrics.Scale * 2,
             Geometry.SheetIndicatorOffset * metrics.Scale, 0, 0);
         indicator.CornerRadius = new CornerRadius(indicator.Height / 2);
-        contentViewport.Height = metrics.ContentHeight;
         contentViewport.Visibility = State == LabSheetState.Flex && !hasContent ? Visibility.Collapsed : Visibility.Visible;
         layers?.SetMetrics(metrics);
     }

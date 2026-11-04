@@ -82,13 +82,18 @@ Geist включён под OFL; версия, внутреннее имя и х
 перекрытием 32 DIP. Flex измеряет содержимое при ширине окна минус боковые
 отступы; пустая поверхность имеет высоту 40 DIP. При наличии Content добавляются
 его высота и отступ 24 DIP. Длинное содержимое доступно через штатный ScrollViewer.
+Его ScrollContentPresenter передаёт содержимому конечный размер: ListView и другие
+контролы сохраняют собственную область прокрутки без обязательного `Height`.
+Обычная панель может иметь большую фактическую высоту; её прокрутку учитывает WinUI.
 Каждая поверхность ограничена высотой viewport и остаётся у его нижнего края.
 Верх Full на 36 DIP относится к окну высотой 812 DIP; это не постоянный верхний отступ.
 
 `GeometryScale` умножает токены размеров, включая фиксированные высоты,
 перекрытие, отступы и индикатор. Он не меняет размер viewport и не умножает
 уже измеренную высоту Content. Системные DPI и масштаб текста применяются отдельно.
-Для Flex используется цикл [Measure WinUI](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.uielement.measure).
+Flex измеряет содержимое при конечной доступной высоте. Используются
+[Measure WinUI](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.uielement.measure) и
+[SizesContentToTemplatedParent](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.scrollcontentpresenter.sizescontenttotemplatedparent).
 
 Состояния меняются статически. Перетаскивание и движение должен исполнять LabMotion.
 Контрол не устанавливает modal focus, закрытие по Escape или блокировку фона:
@@ -123,6 +128,15 @@ MediaPlayerElement и SwapChainPanel не входят в поддержанны
 фактической геометрией, темой, загрузкой изображения и состоянием renderer.
 `rendererReady` подтверждает построение графики; визуальное соответствие
 проверяется отдельно по захваченным пикселям.
+
+`--sheet-content=list|long|short` включает пассивную пробу содержимого: ListView
+из 1000 элементов без `Height`, панель высотой 3000 DIP или панель высотой 100 DIP.
+Поле JSON `contentWitness` содержит входные размеры последнего измерения, признак
+неконечного размера, фактическую высоту, размеры прокрутки и число созданных
+контейнеров списка. При 375×812 и DPI 100% Half должен измерить список при высоте
+358 DIP; длинная панель должна иметь scroll extent больше viewport; короткий
+Flex должен иметь высоту поверхности 164 DIP. Эти условия требуют запуска WinUI
+на Windows; локальная сборка проверяет только готовность пробы к исполнению.
 
 Проверка геометрии без UI:
 `dotnet run --project native/windows/test/sheet-geometry.test.csproj`.

@@ -8,6 +8,12 @@ import path from 'node:path';
 // Проба проверяет публичные уведомления, factory peer и перенос geometry к частям.
 // Цикл WinUI measure/arrange, живой UIA, GPU и capture требуют hosted исполнения.
 const source = await readFile(new URL('../LabSheet.cs', import.meta.url), 'utf8');
+const template = await readFile(new URL('../Themes/Generic.xaml', import.meta.url), 'utf8');
+const sheetTemplate = template.match(
+  /<Style\b[^>]*TargetType="local:LabSheet"[^>]*>[\s\S]*?<\/Style>/,
+)?.[0];
+if (!sheetTemplate) throw new Error('Шаблон LabSheet отсутствует.');
+const wrapsContent = sheetTemplate.includes('<ContentPresenter x:Name="PART_Content"');
 const program = `using LabUI.WinUI;
 using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
@@ -107,19 +113,59 @@ Run("state layout and renderer receive the same geometry", () => {
 });
 Run("Flex measures content at its width, grows, shrinks and clamps", () => {
     var (sheet, layer, _) = Ready();
-    var presenter=sheet.TemplatePart<ContentPresenter>("PART_Content");
     var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
-    sheet.State=LabSheetState.Flex; sheet.Content=new object(); presenter.NaturalHeight=100;
+    var content=new ContentWitness(100);
+    sheet.State=LabSheetState.Flex; sheet.Content=content;
     sheet.Measure(new Size(375,812));
-    Check(presenter.Available.Width==343 && double.IsPositiveInfinity(presenter.Available.Height), "Flex lost content wrapping or intrinsic height");
-    Check(layer.LastMetrics?.BodyHeight==164 && viewport.Height==100, "Flex did not hug content");
-    presenter.NaturalHeight=200; sheet.Measure(new Size(375,812));
-    Check(layer.LastMetrics?.BodyHeight==264 && viewport.Height==200, "Flex did not react to content growth");
-    presenter.NaturalHeight=3000; sheet.Measure(new Size(375,400));
-    Check(layer.LastMetrics?.BodyTop==0 && layer.LastMetrics?.BodyHeight==400 && viewport.Height==336,
+    Check(content.Constraints.All(size=>size.Width==343 && double.IsFinite(size.Height)), "Flex obscured the finite viewport");
+    Check(layer.LastMetrics?.BodyHeight==164, "Flex did not hug content");
+    content.NaturalHeight=200; sheet.Measure(new Size(375,812));
+    Check(layer.LastMetrics?.BodyHeight==264, "Flex did not react to content growth");
+    content.NaturalHeight=3000; sheet.Measure(new Size(375,400));
+    Check(layer.LastMetrics?.BodyTop==0 && layer.LastMetrics?.BodyHeight==400 && layer.LastMetrics?.ContentHeight==336,
         "Overflow was not constrained to a scroll viewport");
+    Check(viewport.ExtentHeight==3000, "Finite content measurement lost ordinary panel extent");
     sheet.Content=null; sheet.Measure(new Size(375,812));
     Check(layer.LastMetrics?.BodyHeight==40 && viewport.Visibility==Visibility.Collapsed, "Empty Flex retained a content gap");
+});
+Run("fill consumers retain finite measurement and their own viewport", () => {
+    var (sheet, layer, _) = Ready();
+    var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    var content=new ContentWitness(30000, selfScrolling:true);
+    sheet.Content=content;
+    foreach(var state in Enum.GetValues<LabSheetState>().OrderBy(state=>state==LabSheetState.Half?0:1)) {
+        sheet.State=state; content.Constraints.Clear(); sheet.Measure(new Size(375,812));
+        Check(content.Constraints.Count>0 && content.Constraints.All(size=>double.IsFinite(size.Height)), $"{state}: self-scrolling content received infinity");
+        Check(content.Constraints[^1].Height==layer.LastMetrics?.ContentHeight, $"{state}: native fill lost its viewport");
+        Check(viewport.ExtentHeight==layer.LastMetrics?.ContentHeight, $"{state}: outer scroll extent expanded a fill consumer");
+    }
+});
+Run("native template replacement reapplies the finite content policy", () => {
+    var viewport=Ready().Sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    foreach(var _ in new[] { 0, 1 }) {
+        viewport.UseNativeTemplate(); viewport.ApplyTemplate();
+        Check(viewport.TemplatePart<ScrollContentPresenter>("ScrollContentPresenter").SizesContentToTemplatedParent,
+            "A replaced native template restored infinite content measurement");
+    }
+});
+Run("replacing the Sheet template retires its old viewport callback", () => {
+    var (sheet, _, _) = Ready();
+    var old=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    Check(old.CallbackCount(Control.TemplateProperty)==1, "Current native template has no policy owner");
+    sheet.UseTemplate(new SheetLayers()); sheet.ApplyTemplate();
+    var current=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    Check(old.CallbackCount(Control.TemplateProperty)==0 && current.CallbackCount(Control.TemplateProperty)==1,
+        "Native policy leaked to the retired viewport or lost its successor");
+});
+Run("missing outer presenter never adopts the content's own viewport", () => {
+    var (sheet, _, _) = Ready();
+    var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    viewport.UseTemplate(new SheetLayers());
+    var inner=viewport.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    try { sheet.Measure(new Size(375,812)); throw new Exception("Foreign presenter was accepted"); }
+    catch(InvalidOperationException) { }
+    Check(!inner.TemplatePart<ScrollContentPresenter>("ScrollContentPresenter").SizesContentToTemplatedParent,
+        "Sheet changed the content's own scrolling policy");
 });
 Run("scale and resize preserve the body/renderer relation", () => {
     var (sheet, layer, _) = Ready();
@@ -146,8 +192,20 @@ return failures.Count == 0 ? 0 : 1;
 const fakes = `namespace Microsoft.UI.Xaml {
     public class DependencyObject {
         private readonly Dictionary<DependencyProperty, object?> values = [];
+        private readonly Dictionary<DependencyProperty, Dictionary<long, Action<DependencyObject, DependencyProperty>>> callbacks = [];
+        private long nextToken;
+        public virtual IReadOnlyList<DependencyObject> VisualChildren => [];
         public object GetValue(DependencyProperty p) => values.TryGetValue(p, out var value) ? value! : p.Metadata.DefaultValue!;
         public void SetValue(DependencyProperty p, object? value) { values[p] = value; p.Metadata.Changed?.Invoke(this, new()); }
+        public long RegisterPropertyChangedCallback(DependencyProperty p, Action<DependencyObject, DependencyProperty> callback) {
+            if(!callbacks.TryGetValue(p,out var listeners)) callbacks[p]=listeners=[];
+            var token=++nextToken; listeners[token]=callback; return token;
+        }
+        public void UnregisterPropertyChangedCallback(DependencyProperty p, long token) => callbacks.GetValueOrDefault(p)?.Remove(token);
+        protected void NotifyPropertyChanged(DependencyProperty p) {
+            if(callbacks.TryGetValue(p,out var listeners)) foreach(var callback in listeners.Values.ToArray()) callback(this,p);
+        }
+        public int CallbackCount(DependencyProperty p) => callbacks.GetValueOrDefault(p)?.Count??0;
     }
     public sealed class DependencyProperty(PropertyMetadata metadata) {
         public PropertyMetadata Metadata { get; } = metadata;
@@ -171,9 +229,15 @@ const fakes = `namespace Microsoft.UI.Xaml {
         public double ActualWidth { get; private set; } = 375;
         public double ActualHeight { get; private set; } = 812;
         public Visibility Visibility { get; set; }
+        public double Height { get; set; } = double.NaN;
+        public string Name { get; set; } = "";
         public Windows.Foundation.Size DesiredSize { get; private set; }
+        public virtual double ProjectedActualHeight => DesiredSize.Height;
         public void InvalidateMeasure() { }
-        public void Measure(Windows.Foundation.Size size) => DesiredSize=MeasureOverride(size);
+        public void Measure(Windows.Foundation.Size size) {
+            if(double.IsFinite(Height)) size=new(size.Width, Math.Min(size.Height,Height));
+            DesiredSize=MeasureOverride(size);
+        }
         protected virtual Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) => size;
         public void Load() { IsLoaded = true; Loaded?.Invoke(this, new()); }
         public void Unload() { IsLoaded = false; Unloaded?.Invoke(this, new()); }
@@ -185,42 +249,97 @@ const fakes = `namespace Microsoft.UI.Xaml {
     public enum Visibility { Visible, Collapsed }
 }
 namespace Microsoft.UI.Xaml.Controls {
-    public class ContentControl : FrameworkElement {
+    public class Control : FrameworkElement { public static readonly DependencyProperty TemplateProperty = new(new(null)); }
+    public class ContentControl : Control {
         private readonly Dictionary<string, DependencyObject> parts = [];
         private bool applied;
         public Type? DefaultStyleKey { get; set; }
         public object? Content { get; set; }
+        public Func<object?>? ContentBinding { get; set; }
+        protected object? CurrentContent => ContentBinding?.Invoke() ?? Content;
+        public override IReadOnlyList<DependencyObject> VisualChildren => parts.Values.ToArray();
+        protected void ClearTemplateParts() { parts.Clear(); applied=false; }
+        protected void SetTemplatePart(string name, DependencyObject value) {
+            if(value is FrameworkElement element) element.Name=name;
+            parts[name]=value; applied=false;
+        }
         public T TemplatePart<T>(string name) => (T)(object)parts[name];
         public void UseTemplate(LabUI.WinUI.Rendering.SheetLayers layer) {
+            ClearTemplateParts();
             parts["PART_Layers"] = layer; parts["PART_Body"] = new Grid();
             parts["PART_DragArea"] = new Grid(); parts["PART_Indicator"] = new Border();
-            parts["PART_ContentViewport"] = new ScrollViewer(); parts["PART_Content"] = new ContentPresenter(); applied = false;
+            var viewport=new ScrollViewer();
+            var presenter=new ContentPresenter { ContentBinding=()=>Content };
+            ${wrapsContent ? 'viewport.Content=presenter;' : 'viewport.ContentBinding=()=>Content;'}
+            parts["PART_ContentViewport"] = viewport; parts["PART_Content"] = presenter; applied = false;
         }
         protected DependencyObject? GetTemplateChild(string name) => parts.GetValueOrDefault(name);
         protected virtual void OnApplyTemplate() { }
         public bool ApplyTemplate() { if(applied) return false; applied=true; OnApplyTemplate(); return true; }
+        protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
+            if(parts.GetValueOrDefault("PART_ContentViewport") is ScrollViewer viewport
+                && parts.GetValueOrDefault("PART_Body") is Grid body && parts.GetValueOrDefault("PART_DragArea") is Grid drag) {
+                var height=Math.Max(0,body.Height-drag.Height-body.RowSpacing-body.Padding.B);
+                viewport.Measure(new(size.Width-body.Padding.L-body.Padding.R,height));
+            }
+            return size;
+        }
     }
     public class Grid : FrameworkElement {
         public Thickness Padding { get; set; }
         public Thickness Margin { get; set; }
         public double RowSpacing { get; set; }
-        public double Height { get; set; }
         public Microsoft.UI.Xaml.Media.RectangleGeometry? Clip { get; set; }
     }
     public class Border : Grid {
         public double Width { get; set; }
         public CornerRadius CornerRadius { get; set; }
     }
-    public class ScrollViewer : Grid { }
+    // Модель правил измерения и scroll extent SCP; живые layout и виртуализация проверяются отдельно.
+    // Microsoft source baf4916: ScrollContentPresenter_Partial.cpp 1768-1789, 2422-2499, 3067-3113.
+    public sealed class ScrollViewer : ContentControl {
+        public double ExtentHeight { get; private set; }
+        public ScrollViewer() => UseNativeTemplate();
+        public void UseNativeTemplate() {
+            ClearTemplateParts();
+            SetTemplatePart("ScrollContentPresenter",new ScrollContentPresenter());
+            NotifyPropertyChanged(TemplateProperty);
+        }
+        protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
+            ApplyTemplate();
+            var presenter=TemplatePart<ScrollContentPresenter>("ScrollContentPresenter");
+            var child=CurrentContent as FrameworkElement;
+            var childSize=presenter.SizesContentToTemplatedParent?size:new Windows.Foundation.Size(size.Width,double.PositiveInfinity);
+            child?.Measure(childSize);
+            ExtentHeight=child?.ProjectedActualHeight??0;
+            return new(size.Width,Math.Min(size.Height,child?.DesiredSize.Height??0));
+        }
+    }
+    public class ScrollContentPresenter : ContentPresenter { public bool SizesContentToTemplatedParent { get; set; } }
     public class ContentPresenter : FrameworkElement {
         public double NaturalHeight { get; set; }
+        public Func<object?>? ContentBinding { get; set; }
         public Windows.Foundation.Size Available { get; private set; }
         protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
-            Available=size; return new(size.Width, NaturalHeight);
+            Available=size;
+            if(ContentBinding?.Invoke() is FrameworkElement child) { child.Measure(size); return child.DesiredSize; }
+            return new(size.Width, Math.Min(size.Height,NaturalHeight));
+        }
+    }
+    public sealed class ContentWitness(double height, bool selfScrolling=false) : FrameworkElement {
+        public double NaturalHeight { get; set; } = height;
+        public List<Windows.Foundation.Size> Constraints { get; }=[];
+        public override double ProjectedActualHeight => selfScrolling?DesiredSize.Height:NaturalHeight;
+        protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
+            Constraints.Add(size); return new(size.Width,Math.Min(size.Height,NaturalHeight));
         }
     }
 }
 namespace Microsoft.UI.Xaml.Media {
+    public static class VisualTreeHelper {
+        public static int GetChildrenCount(Microsoft.UI.Xaml.DependencyObject parent) => parent.VisualChildren.Count;
+        public static Microsoft.UI.Xaml.DependencyObject GetChild(Microsoft.UI.Xaml.DependencyObject parent, int index) => parent.VisualChildren[index];
+    }
     public sealed class RectangleGeometry { public Windows.Foundation.Rect Rect { get; set; } }
 }
 namespace Windows.Foundation {

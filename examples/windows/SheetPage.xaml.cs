@@ -14,6 +14,7 @@ public sealed partial class SheetPage : Page
     private bool imageLoaded;
     private bool snapshotQueued;
     private bool snapshotWritten;
+    private readonly SheetContentProbe? contentProbe;
     internal Window? HostWindow { get; set; }
 
     public SheetPage(bool dark, bool solid, bool withContent)
@@ -43,7 +44,13 @@ public sealed partial class SheetPage : Page
             Unloaded += UnloadedPage;
             Application.Current.UnhandledException += Unhandled;
         }
-        if (withContent)
+        const string contentPrefix = "--sheet-content=";
+        if (arguments.FirstOrDefault(value => value.StartsWith(contentPrefix, StringComparison.Ordinal)) is { } content)
+        {
+            contentProbe = new SheetContentProbe(content[contentPrefix.Length..]);
+            Sheet.Content = contentProbe.Content;
+        }
+        else if (withContent)
         {
             var result = new TextBlock { Text = "Выберите действие", TextWrapping = TextWrapping.Wrap };
             var action = new LabButton { Content = "Продолжить", HorizontalAlignment = HorizontalAlignment.Left };
@@ -134,6 +141,7 @@ public sealed partial class SheetPage : Page
             requestedState = Sheet.State.ToString(),
             geometryScale = Sheet.GeometryScale,
             contentViewport = Bounds(FindPart(Sheet, "PART_ContentViewport")),
+            contentWitness = contentProbe?.Snapshot(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer),
             effectiveMaterial = Sheet.EffectiveMaterial?.ToString(),
             materialReason = Sheet.MaterialReason?.ToString(),
             error
