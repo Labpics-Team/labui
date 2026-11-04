@@ -246,6 +246,7 @@ export default defineConfig({
         'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),
         'fixture-acrylic-live': resolve(__dirname, 'src/_fixtures/acrylic-live.html'),
         'fixture-material-context': resolve(__dirname, 'src/_fixtures/material-context.html'),
+        'fixture-veil-length': resolve(__dirname, 'src/_fixtures/veil-length.html'),
         'fixture-card-material-shadow': resolve(
           __dirname,
           'src/_fixtures/card-material-shadow.html',

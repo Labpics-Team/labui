@@ -52,6 +52,7 @@ const SMOKE_SPECS = [
   'materials-flag.spec.ts',
   'material-scope.spec.ts',
   'material-context.spec.ts',
+  'veil-length.spec.ts',
   'card-material-shadow.spec.ts',
   'card-backdrop.spec.ts',
   // Acrylic v2 (ADR-0009): движок-контракт материала — конвейер держит

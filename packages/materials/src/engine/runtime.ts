@@ -151,6 +151,7 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
           'data-material',
           'data-theme',
           'class',
+          'style',
           'data-veil',
           'data-contrast',
           'slot',
