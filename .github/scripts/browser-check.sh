@@ -57,6 +57,13 @@ copy_artifact() {
   directory_path "${job}/work" "$source_path" || return 1
   directory_path "$root" "$1" || return 1
   [ -d "$source" ] || return 0
+  if [ "$workload" = icons-consumer ] && [ -e "$destination" ]; then
+    echo '::error::Icons evidence requires a fresh destination.' >&2
+    return 1
+  fi
+  if [ "$workload" = icons-consumer ] && ! node "$root/apps/docs/tests/prepare-icons-inputs.mjs" --verify-public "$source"; then
+    return 1
+  fi
   for tree in "$source" "$destination"; do
     [ -d "$tree" ] || continue
     if ! invalid="$(find "$tree" ! -type d \( ! -type f -o -links +1 \) -print -quit)"; then return 1; fi
@@ -69,6 +76,11 @@ copy_artifact() {
   artifact_outputs+=("$2=true")
 }
 
+cleanup_failure() {
+  if [ "$status" -eq 0 ]; then status=1; fi
+  artifacts_safe=false
+}
+
 cleanup() {
   status=$?
   artifact_outputs=()
@@ -78,27 +90,32 @@ cleanup() {
     container="$(cat "${job}/container.id")"
     if ! docker rm --force "$container" >/dev/null; then
       echo '::error::Container removal failed; artifact export and directory cleanup are unsafe.' >&2
+      cleanup_failure
       resume_commands
-      exit 1
+      exit "$status"
     fi
   fi
   # После удаления контейнера содержимое стабильно; ссылки не переносятся на хост.
   if [ "$workload" = icons-consumer ]; then
-    # Прерванная подготовка может оставить raw Trace2; argv и config не экспортируются.
+    # Наружу выходит только проверенная публичная проекция. Raw inputs и архивы
+    # производителей остаются во временном каталоге до его удаления.
     if ! rm -f -- "${job}/work/output/.git-trace2.raw"; then
-      status=1; artifacts_safe=false
-    elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output; then
-      status=1; artifacts_safe=false
+      cleanup_failure
+    elif [ ! -f "${job}/work/output/public/manifest.json" ] || [ -L "${job}/work/output/public/manifest.json" ]; then
+      echo '::error::Complete public Icons evidence is missing.' >&2
+      cleanup_failure
+    elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output/public; then
+      cleanup_failure
     fi
   else
-    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then status=1; artifacts_safe=false; fi
-    if ! copy_artifact apps/docs/playwright-report report_ready; then status=1; artifacts_safe=false; fi
+    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then cleanup_failure; fi
+    if ! copy_artifact apps/docs/playwright-report report_ready; then cleanup_failure; fi
   fi
-  if ! rm -rf -- "$job"; then status=1; artifacts_safe=false; fi
+  if ! rm -rf -- "$job"; then cleanup_failure; fi
   if [ "$artifacts_safe" = true ] && [ "${#artifact_outputs[@]}" -gt 0 ] && [ -n "${GITHUB_OUTPUT:-}" ]; then
-    if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then status=1; fi
+    if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then cleanup_failure; fi
   fi
-  if ! resume_commands; then status=1; fi
+  if ! resume_commands; then cleanup_failure; fi
   exit "$status"
 }
 trap cleanup EXIT
@@ -117,7 +134,7 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     mkdir -p /job/source /job/bin /job/home
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
       tar -C /source --exclude=node_modules -cf - . | tar -C /job/source -xf -
-      mkdir /job/icons /job/output /job/output/icons /job/output/ui-core /job/output/ui-shadow
+      mkdir /job/icons /job/output
       tar -C /icons-source --exclude=node_modules -cf - . | tar -C /job/icons -xf -
     else
       tar -C /source --exclude=.git --exclude=node_modules -cf - . | tar -C /job/source -xf -
@@ -130,23 +147,35 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
       # Corepack выбирает packageManager каждого checkout; stores не пересекаются.
       cd /job/icons
       pnpm install --frozen-lockfile --store-dir /job/icons-pnpm-store
-      pnpm pack --pack-destination /job/output/icons
       cd /job/source
       pnpm --filter @labpics/ui-core... build
-      pnpm --dir packages/core pack --pack-destination /job/output/ui-core
-      pnpm --dir packages/shadow pack --pack-destination /job/output/ui-shadow
+      # Manifest owner выбирает closure и архивные флаги; shell не ведёт второй список.
+      node apps/docs/tests/icons-runtime-packages.mjs --pack-plan /job/icons /job/source > /job/runtime-packages.txt
+      archive_options=()
+      while read -r package_key package_directory archive_option; do
+        mkdir "/job/output/$package_key"
+        if [ "$package_key" = icons ]; then
+          cd /job/icons
+          pnpm pack --pack-destination "/job/output/$package_key"
+          cd /job/source
+        else
+          pnpm --dir "$package_directory" pack --pack-destination "/job/output/$package_key"
+        fi
+        tarballs=("/job/output/$package_key"/*.tgz)
+        if [ "${#tarballs[@]}" -ne 1 ] || [ ! -f "${tarballs[0]}" ]; then
+          echo "Runtime package $package_key requires exactly one archive." >&2
+          exit 1
+        fi
+        archive_options+=("$archive_option" "${tarballs[0]}")
+      done < /job/runtime-packages.txt
       LABUI_ICONS_GIT_DIAGNOSTICS=/job/output node apps/docs/tests/prepare-icons-inputs.mjs \
         --icons-source /job/icons --ui-source /job/source --ui-commit "$UI_SOURCE_COMMIT" \
-        --icons-tarball /job/output/icons/*.tgz \
-        --ui-core-tarball /job/output/ui-core/*.tgz \
-        --ui-shadow-tarball /job/output/ui-shadow/*.tgz --out /job/output/inputs
+        "${archive_options[@]}" --out /job/output/inputs
       status=0
       node apps/docs/tests/icons-packed.mjs \
-        --icons-tarball /job/output/icons/*.tgz \
-        --ui-core-tarball /job/output/ui-core/*.tgz \
-        --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
+        "${archive_options[@]}" \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
-      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
+      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || { if [ "$status" -eq 0 ]; then status=1; fi; }
       exit "$status"
     else
       pnpm build

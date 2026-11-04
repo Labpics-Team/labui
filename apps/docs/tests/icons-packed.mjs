@@ -8,6 +8,99 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import { publicError } from '../../../scripts/ci/icons-public-provenance.mjs';
+import {
+  ANNULUS_ENTRIES,
+  annulusBrowserProof,
+  annulusFixture,
+  annulusTypeFixture,
+  validateAnnulusReference,
+} from './icons-annulus-consumer.mjs';
+import {
+  AUTHORED_DOT_ENTRIES,
+  authoredDotsBrowserProof,
+  authoredDotsFixture,
+  authoredDotsTypeFixture,
+  validateAuthoredDotsReference,
+} from './icons-authored-dots-consumer.mjs';
+import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
+import {
+  CLOCK_MOTION_ENTRIES,
+  clockMotionArmDisposal,
+  clockMotionBrowserProof,
+  clockMotionDisposalProof,
+  clockMotionFixture,
+  clockMotionTypeFixture,
+  validateClockMotionReference,
+} from './icons-clock-motion-consumer.mjs';
+import {
+  CONTENT_SCALE_ENTRIES,
+  contentScaleBrowserProof,
+  contentScaleFixture,
+  contentScaleTypeFixture,
+} from './icons-content-scale-consumer.mjs';
+import { assertHarnessFilesUnchanged, snapshotHarnessFiles } from './icons-harness.mjs';
+import {
+  MICROPHONE_ENTRIES,
+  microphoneBrowserProof,
+  microphoneComparisonBrowserProof,
+  microphoneFixture,
+  microphoneTypeFixture,
+  validateMicrophoneReference,
+} from './icons-microphone-consumer.mjs';
+import {
+  MOTION_PROJECTION_ENTRIES,
+  motionProjectionArmDisposal,
+  motionProjectionBrowserProof,
+  motionProjectionDisposalProof,
+  motionProjectionFixture,
+  motionProjectionTypeFixture,
+  validateMotionProjectionReference,
+} from './icons-motion-projection-consumer.mjs';
+import {
+  NOTIFICATION_ENTRIES,
+  assertNotificationAnatomy,
+  assertNotificationEffect,
+  notificationFixture,
+  notificationPosition,
+  validateNotificationReference,
+} from './icons-notification-consumer.mjs';
+import {
+  ARCHIVE_OPTIONS,
+  PACKAGE_SOURCES,
+  assertArchiveOptions,
+  assertInstalledPackage,
+  readArchiveManifest,
+  runtimeFields,
+  subjectPackagePlan,
+} from './icons-runtime-packages.mjs';
+import {
+  isSourceStateGroup,
+  sourceStateEntries,
+  sourceStateFixture,
+  sourceStateGroups,
+  sourceStateReferenceContract,
+  sourceStateTypeFixture,
+} from './icons-source-state-consumer.mjs';
+import {
+  STATE_ANNULUS_ENTRIES,
+  stateAnnulusBrowserProof,
+  stateAnnulusFixture,
+  stateAnnulusReferenceContract,
+  stateAnnulusTypeFixture,
+  validateStateAnnulusReference,
+} from './icons-state-annulus-consumer.mjs';
+import {
+  WIDTH_MOTION_ENTRIES,
+  measureWidthMotionConsumers,
+  validateWidthMotionReference,
+  widthMotionArmDisposal,
+  widthMotionBrowserProof,
+  widthMotionDisposalProof,
+  widthMotionFixture,
+  widthMotionMeasurementBrowserProof,
+  widthMotionTypeFixture,
+} from './icons-width-motion-consumer.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -55,21 +148,37 @@ const STATE_GROUPS = {
 };
 
 export function stateReferenceContract(group) {
+  if (isSourceStateGroup(group)) return sourceStateReferenceContract(group);
+  if (!Object.hasOwn(STATE_GROUPS, group)) return stateAnnulusReferenceContract(group);
   assert.ok(Object.hasOwn(STATE_GROUPS, group), 'consumer не запрашивал такую state group');
   return structuredClone(STATE_GROUPS[group]);
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(schemaVersion));
   return [
-    ...REQUIRED_PUBLIC_ENTRIES,
-    ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
-    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : []),
+    ...new Set([
+      ...REQUIRED_PUBLIC_ENTRIES,
+      ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
+      ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
+      ...(schemaVersion >= 4 ? NOTIFICATION_ENTRIES : []),
+      ...(schemaVersion >= 5 ? AUTHORED_DOT_ENTRIES : []),
+      ...(schemaVersion >= 6 ? ANNULUS_ENTRIES : []),
+      ...(schemaVersion >= 7 ? STATE_ANNULUS_ENTRIES : []),
+      ...(schemaVersion >= 8 ? CONTENT_SCALE_ENTRIES : []),
+      ...(schemaVersion >= 9 ? MICROPHONE_ENTRIES : []),
+      ...(schemaVersion >= 10 ? sourceStateEntries(schemaVersion) : []),
+      ...(schemaVersion >= 11 ? MOTION_PROJECTION_ENTRIES : []),
+      ...(schemaVersion >= 12 ? WIDTH_MOTION_ENTRIES : []),
+      ...(schemaVersion >= 15 ? CLOCK_MOTION_ENTRIES : []),
+    ]),
   ];
 }
 
 export function subjectStateReferences(subject) {
-  return subject.schemaVersion === 3
+  if (subject.schemaVersion >= 10)
+    return { ...subject.stateReferences, ...subject.sourceStateReferences };
+  return subject.schemaVersion >= 3
     ? subject.stateReferences
     : subject.schemaVersion === 2
       ? { 'status-circle': subject.stateReference }
@@ -85,6 +194,16 @@ export function assertIconsImport(source) {
       '@labpics/icons/motion',
       STATE_ENTRY,
       EXPRESSION_ENTRY,
+      ...NOTIFICATION_ENTRIES,
+      ...AUTHORED_DOT_ENTRIES,
+      ...ANNULUS_ENTRIES,
+      ...STATE_ANNULUS_ENTRIES,
+      ...CONTENT_SCALE_ENTRIES,
+      ...MICROPHONE_ENTRIES,
+      ...sourceStateEntries(14),
+      ...MOTION_PROJECTION_ENTRIES,
+      ...WIDTH_MOTION_ENTRIES,
+      ...CLOCK_MOTION_ENTRIES,
     ].includes(source),
     `consumer импортирует чужой symbol или whole catalog: ${source}`,
   );
@@ -159,20 +278,8 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assert.ok([1, 2, 3].includes(subject?.schemaVersion));
-  assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
-  for (const [key, name] of [
-    ['icons', '@labpics/icons'],
-    ['uiCore', '@labpics/ui-core'],
-    ['uiShadow', '@labpics/ui-shadow'],
-  ]) {
-    const item = subject.packages?.[key];
-    assert.equal(item?.name, name);
-    assert.ok(typeof item.version === 'string' && item.version.length > 0);
-    assert.match(item.archiveSha256, HASH);
-    assert.ok(Number.isSafeInteger(item.archiveBytes) && item.archiveBytes > 0);
-    assert.match(item.sourceCommit, /^[a-f0-9]{40}$/);
-  }
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(subject?.schemaVersion));
+  subjectPackagePlan(subject.schemaVersion, subject.packages);
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
   assert.match(reference.fileKey, /^[A-Za-z0-9]+$/);
@@ -249,7 +356,7 @@ export function validateSubject(subject) {
       );
     }
   }
-  if (subject.schemaVersion === 3) {
+  if (subject.schemaVersion >= 3) {
     assert.equal(subject.stateReference, undefined);
     assert.deepEqual(
       Object.keys(subject.stateReferences ?? {}).sort(),
@@ -262,19 +369,69 @@ export function validateSubject(subject) {
     if (subject.schemaVersion === 2) validateStateReference(subject.stateReference, reference);
     else assert.equal(subject.stateReference, undefined);
   }
+  if (subject.schemaVersion >= 4)
+    validateNotificationReference(subject.notificationReference, reference);
+  else assert.equal(subject.notificationReference, undefined);
+  if (subject.schemaVersion >= 5)
+    validateAuthoredDotsReference(subject.authoredDotsReference, reference);
+  else assert.equal(subject.authoredDotsReference, undefined);
+  if (subject.schemaVersion >= 6) validateAnnulusReference(subject.annulusReference, reference);
+  else assert.equal(subject.annulusReference, undefined);
+  if (subject.schemaVersion >= 7)
+    validateStateAnnulusReference(
+      subject.stateAnnulusReference,
+      reference,
+      subject.annulusReference,
+      validateStateReference,
+    );
+  else assert.equal(subject.stateAnnulusReference, undefined);
+  if (subject.schemaVersion >= 8)
+    for (const variants of Object.values(subject.annulusReference.icons))
+      assert.deepEqual(variants.outline.declaration.contentVariation, {
+        law: 'annulus.content-counter-scale',
+        parameters: ['contentScale', 'enclosureEmphasis'],
+        enclosurePartId: variants.outline.declaration.variation.enclosurePartId,
+      });
+  if (subject.schemaVersion >= 9)
+    validateMicrophoneReference(subject.microphoneReference, reference);
+  else assert.equal(subject.microphoneReference, undefined);
+  if (subject.schemaVersion >= 10) {
+    assert.deepEqual(
+      Object.keys(subject.sourceStateReferences ?? {}).sort(),
+      Object.keys(sourceStateGroups(subject.schemaVersion)).sort(),
+    );
+    for (const [group, state] of Object.entries(subject.sourceStateReferences))
+      validateStateReference(state, reference, group);
+  } else assert.equal(subject.sourceStateReferences, undefined);
+  if (subject.schemaVersion >= 11)
+    validateMotionProjectionReference(subject.motionProjectionReference, reference);
+  else assert.equal(subject.motionProjectionReference, undefined);
+  if (subject.schemaVersion >= 12)
+    validateWidthMotionReference(subject.widthMotionReference, subject.microphoneReference);
+  else assert.equal(subject.widthMotionReference, undefined);
+  if (subject.schemaVersion >= 15)
+    validateClockMotionReference(subject.clockMotionReference, reference);
+  else assert.equal(subject.clockMotionReference, undefined);
   return subject;
 }
 
 export function validateStateReference(reference, author, group = 'status-circle') {
   const contract = stateReferenceContract(group);
+  const sourceReplacement = contract.law === 'source.replace';
+  const variant = contract.variant ?? 'outline';
   assert.equal(reference?.group, group);
-  assert.equal(reference.variant, 'outline');
+  assert.equal(reference.variant, variant);
   assert.equal(reference.defaultState, contract.defaultState);
   assert.equal(reference.enclosurePartId, contract.enclosurePartId);
   assert.deepEqual(reference.proof?.source, { fileKey: author.fileKey, version: author.version });
-  assert.equal(reference.proof.law, 'enclosure.replace');
+  assert.equal(reference.proof.law, sourceReplacement ? 'source.replace' : 'enclosure.replace');
   assert.match(reference.proof.specSha256, HASH);
-  assert.match(reference.proof.enclosureSha256, HASH);
+  if (sourceReplacement) {
+    assert.equal(reference.enclosure, null);
+    assert.equal(reference.proof.enclosureSha256, null);
+    assert.deepEqual(reference.sharedPartIds, []);
+    assert.deepEqual(reference.sharedParts, []);
+  } else assert.match(reference.proof.enclosureSha256, HASH);
   if (Object.hasOwn(reference, 'sharedPartIds')) {
     assert.deepEqual(
       reference.sharedPartIds,
@@ -316,8 +473,12 @@ export function validateStateReference(reference, author, group = 'status-circle
   const sharedCount = reference.sharedPartIds?.length ?? 1;
   for (const state of reference.states) {
     assert.match(state.icon, /^[a-z][a-z0-9-]*$/);
+    if (sourceReplacement) assert.equal(state.icon, contract.icons[state.id]);
     assert.equal(state.partId, `state-${state.id}`);
-    assert.equal(state.sourceFile, `masters/figma/${author.version}/Outline/${state.icon}.svg`);
+    assert.equal(
+      state.sourceFile,
+      `masters/figma/${author.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/${state.icon}.svg`,
+    );
     assert.deepEqual(state.viewBox, [0, 0, 24, 24]);
     assert.deepEqual(state.dimensions, [24, 24]);
     assert.equal(state.author.kind, 'figma');
@@ -326,7 +487,7 @@ export function validateStateReference(reference, author, group = 'status-circle
     assert.match(state.author.nodeId, /^\d+:\d+$/);
     for (const key of ['nodeSha256', 'masterSha256', 'normalizedSha256', 'pathFingerprintSha256'])
       assert.match(state.author[key], HASH);
-    assert.ok(state.paths.length >= 2);
+    assert.ok(state.paths.length >= (sourceReplacement ? 1 : 2));
     for (const path of state.paths) {
       assert.ok(typeof path.d === 'string' && path.d.length > 0);
       assert.ok(['nonzero', 'evenodd'].includes(path.fillRule));
@@ -342,31 +503,32 @@ export function validateStateReference(reference, author, group = 'status-circle
       assert.ok(!ids.has(part));
       ids.add(part);
     }
-    assert.deepEqual(state.paths.at(-1), reference.enclosure);
+    if (!sourceReplacement) assert.deepEqual(state.paths.at(-1), reference.enclosure);
     if (reference.sharedParts)
       assert.deepEqual(
         state.paths.slice(state.contentPartIds.length),
         reference.sharedParts.map(({ d, fillRule }) => ({ d, fillRule })),
       );
   }
-  assert.equal(
-    hash(
-      stableJSON({
-        ...reference.enclosure,
-        paint: { kind: 'fill', fill: 'currentColor' },
-        viewBox: [0, 0, 24, 24],
-        dimensions: [24, 24],
-        placement: 'after-content',
-      }),
-    ),
-    reference.proof.enclosureSha256,
-  );
+  if (!sourceReplacement)
+    assert.equal(
+      hash(
+        stableJSON({
+          ...reference.enclosure,
+          paint: { kind: 'fill', fill: 'currentColor' },
+          viewBox: [0, 0, 24, 24],
+          dimensions: [24, 24],
+          placement: 'after-content',
+        }),
+      ),
+      reference.proof.enclosureSha256,
+    );
   return reference;
 }
 
 // Проверенные bytes переходят в собственный snapshot; input path больше не читается.
 export async function snapshotArchive(consumer, key, inputPath, expected) {
-  assert.ok(['icons', 'uiCore', 'uiShadow'].includes(key));
+  assert.ok(PACKAGE_SOURCES.some((item) => item.key === key));
   const bytes = await readFile(inputPath);
   assert.equal(hash(bytes), expected.archiveSha256, key);
   assert.equal(bytes.length, expected.archiveBytes, key);
@@ -399,10 +561,58 @@ figcaption { font-size:14px; } svg[slot=icon] { width:24px; height:24px; display
 section { margin-top:48px; } h2 { margin:0 0 20px; font-size:18px; font-weight:600; }
 .state-sample { display:flex; align-items:center; gap:24px; }
 .state-sample select { min-height:44px; padding:8px 12px; font:inherit; }
+.state-export-controls { display:flex; flex-wrap:wrap; gap:16px; margin-top:20px; }
+.state-export-controls button { min-height:44px; padding:8px 12px; font:inherit; }
 .size-samples { display:flex; flex-wrap:wrap; align-items:end; gap:32px; margin-top:24px; }
 .size-samples figure { gap:12px; min-width:48px; }
 .size-sample-row { display:flex; align-items:end; gap:24px; }
 .size-sample-row span { display:grid; justify-items:center; gap:12px; font-size:12px; }
+.notification-sample { display:flex; flex-wrap:wrap; align-items:start; gap:48px; }
+.notification-sample figure { justify-items:start; }
+.notification-sample h3, h3 { font-size:14px; font-weight:500; margin:28px 0 16px; }
+.dots-row { display:flex; flex-wrap:wrap; gap:40px; align-items:start; }
+.dots-orientation, .dots-variation { justify-items:start; gap:16px; min-width:224px; }
+.dots-orientation select, .authored-dots button { min-height:44px; padding:8px 12px; font:inherit; }
+.dots-parameters { display:grid; gap:12px; width:100%; }
+.dots-parameters label { display:grid; gap:8px; font-size:14px; }
+.dots-parameters input { width:100%; min-height:24px; accent-color:var(--lab-border-focus); }
+.dots-variation output { max-width:240px; font-size:12px; line-height:1.5; }
+.annulus-row { display:flex; flex-wrap:wrap; gap:40px; align-items:start; }
+.annulus-sample { justify-items:start; min-width:224px; }
+.annulus-parameter { display:grid; gap:8px; width:100%; font-size:14px; }
+.annulus-parameter input, .authored-annulus button { min-height:44px; padding:8px 12px; font:inherit; }
+.annulus-sample output { max-width:240px; font-size:12px; line-height:1.5; }
+.content-scale-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:24px; }
+.content-scale-row span { font-size:12px; }
+.content-scale-controls { display:flex; flex-wrap:wrap; gap:16px; align-items:end; }
+.content-scale-controls label { display:grid; gap:8px; font-size:14px; }
+.content-scale-controls input, .content-scale-controls button { min-height:44px; padding:8px 12px; font:inherit; box-sizing:border-box; }
+.content-scale-controls input { width:112px; }
+.content-scale-controls output { flex-basis:100%; font-size:14px; }
+.microphone-row { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-bottom:24px; }
+.microphone-row span { font-size:12px; }
+.microphone-controls { display:flex; flex-wrap:wrap; gap:16px; align-items:end; }
+.microphone-controls label { display:grid; gap:8px; font-size:14px; }
+.microphone-controls input, .microphone-controls button { min-height:44px; padding:8px 12px; font:inherit; box-sizing:border-box; }
+.microphone-controls input { width:112px; }
+.microphone-controls output { flex-basis:100%; font-size:14px; }
+.motion-projection-row { display:flex; flex-wrap:wrap; align-items:center; gap:24px; margin-bottom:24px; }
+.motion-projection-row h3 { width:184px; margin:0; }
+.motion-projection-row figure { gap:8px; }
+.motion-projection-controls { display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+.motion-projection-controls button { min-height:44px; padding:8px 12px; font:inherit; }
+.motion-projection-controls output { flex-basis:100%; font-size:14px; }
+.width-motion-group { margin-bottom:32px; }
+.width-motion-row { display:flex; flex-wrap:wrap; align-items:center; gap:16px; margin-bottom:16px; }
+.width-motion-row span { font-size:12px; }
+.width-motion-controls { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.width-motion-controls button { min-height:44px; padding:8px 12px; font:inherit; }
+.width-motion-controls output { flex-basis:100%; font-size:14px; }
+.state-enclosure-controls { display:flex; align-items:end; flex-wrap:wrap; gap:16px; margin-top:20px; }
+.state-enclosure-controls label { display:grid; gap:8px; font-size:14px; }
+.state-enclosure-controls input, .state-enclosure-controls button { min-height:44px; padding:8px 12px; font:inherit; }
+.state-enclosure-controls input { width:112px; box-sizing:border-box; }
+.state-enclosure-controls output { flex-basis:100%; font-size:14px; line-height:1.5; }
 @media (max-width:480px) { body { padding:24px; } .state-sample { flex-wrap:wrap; gap:16px; } }
 </style><body><h1>Обновить</h1><form id="actions"></form>
 <script type="module" src="/consumer.mjs"></script></body></html>`;
@@ -533,6 +743,35 @@ window.__iconsPacked = { ready: Promise.all([...instances.values()].map(async it
   } };
 `;
 
+// SVG presentation-атрибуты уступают CSS cascade: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+// Нейтральные свойства не добавляют paint, преобразование или отсечение raw paths.
+const SOURCE_STATE_NEUTRAL_PRESENTATION = Object.freeze({
+  stroke: 'none',
+  transform: 'none',
+  translate: 'none',
+  rotate: 'none',
+  scale: 'none',
+  zoom: '1',
+  filter: 'none',
+  'clip-path': 'none',
+  'mask-image': 'none',
+  'offset-path': 'none',
+  clip: 'auto',
+  'marker-start': 'none',
+  'marker-mid': 'none',
+  'marker-end': 'none',
+  visibility: 'visible',
+  'mix-blend-mode': 'normal',
+  'background-color': 'rgba(0, 0, 0, 0)',
+  'background-image': 'none',
+  'box-shadow': 'none',
+  'outline-style': 'none',
+  'border-top-style': 'none',
+  'border-right-style': 'none',
+  'border-bottom-style': 'none',
+  'border-left-style': 'none',
+});
+
 const STATE_FIXTURE = `
 import * as statusCircle from '@labpics/icons/states/status-circle';
 import { sequence } from '@labpics/motion';
@@ -541,16 +780,17 @@ function mountStateConsumer(api, configuration) {
 const { render, renderStateSvg, compileStateEffect, stateCapabilities, exportStateTransition } = api;
 const stateCapabilitiesValue = stateCapabilities();
 const stateLabels = configuration.labels;
+const presentationKey = configuration.presentationKey ?? stateCapabilitiesValue.group;
 const stateSection = document.createElement('section');
-stateSection.dataset.stateGroup = stateCapabilitiesValue.group;
-stateSection.setAttribute('aria-labelledby', stateCapabilitiesValue.group + '-heading');
+stateSection.dataset.stateGroup = presentationKey;
+stateSection.setAttribute('aria-labelledby', presentationKey + '-heading');
 const stateHeading = document.createElement('h2');
-stateHeading.id = stateCapabilitiesValue.group + '-heading'; stateHeading.textContent = configuration.buttonLabel;
+stateHeading.id = presentationKey + '-heading'; stateHeading.textContent = configuration.heading ?? configuration.buttonLabel;
 const stateSample = document.createElement('div'); stateSample.className = 'state-sample';
 const stateButton = document.createElement('lab-button');
 for (const [name, value] of Object.entries({ size: 'l', icon: '', type: 'neutral',
   'aria-label': configuration.buttonLabel,
-  'data-state-group': stateCapabilitiesValue.group })) stateButton.setAttribute(name, value);
+  'data-state-group': presentationKey })) stateButton.setAttribute(name, value);
 const initialState = renderStateSvg(stateCapabilitiesValue.defaultState);
 if (!initialState.ok) throw new Error(initialState.reason.code);
 stateButton.innerHTML = initialState.svg;
@@ -559,7 +799,8 @@ stateSvg.setAttribute('slot', 'icon'); stateSvg.setAttribute('aria-hidden', 'tru
 stateSvg.setAttribute('focusable', 'false');
 const stateNodes = new Map([...stateSvg.querySelectorAll('g[data-state][data-part]')]
   .map(node => [node.dataset.part, node]));
-const stateEnclosure = stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]');
+const stateEnclosure = stateCapabilitiesValue.enclosurePartId === null ? null
+  : stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]');
 const sharedPartIds = stateCapabilitiesValue.sharedPartIds ?? [stateCapabilitiesValue.enclosurePartId];
 const sharedNodes = new Map(sharedPartIds.map(id => {
   const node = stateSvg.querySelector('[data-part="' + id + '"]');
@@ -604,6 +845,30 @@ if (configuration.samples) {
 let stateControl; let stateCompletion; let stateGeneration = 0;
 let stateTarget = stateSelect.value; let stateNativeClicks = 0;
 const stateEvents = [];
+if (configuration.exportControls) {
+  const controls = document.createElement('div'); controls.className = 'state-export-controls';
+  for (const [format, label] of [['svg', 'Скачать SVG'], ['web-effect', 'Скачать переход']]) {
+    const button = document.createElement('button'); button.type = 'button';
+    button.textContent = label; button.dataset.exportFormat = format;
+    button.addEventListener('click', () => {
+      const result = exportState(format);
+      if (!result.ok) { stateStatus.textContent = result.reason.message; return; }
+      const text = format === 'svg' ? result.svg : JSON.stringify(result.effect);
+      const url = URL.createObjectURL(new Blob([text], { type: format === 'svg' ? 'image/svg+xml' : 'application/json' }));
+      const link = document.createElement('a');
+      try { link.href = url; link.download = presentationKey + '-' + stateTarget + (format === 'svg' ? '.svg' : '.json');
+        document.body.append(link); link.click(); }
+      finally { link.remove(); URL.revokeObjectURL(url); }
+    });
+    controls.append(button);
+  }
+  stateSection.append(controls);
+}
+const enclosurePresentation = configuration.enclosureVariation
+  ? mountStateAnnulusPresentation(api, stateSvg, stateCapabilitiesValue, stateSection, {
+      pose: () => stateOpacityWitness(),
+      execution: () => ({ generation: stateGeneration, playback: stateControl?.state ?? null }),
+    }) : null;
 stateButton.addEventListener('click', event => {
   const ids = stateCapabilitiesValue.states.map(state => state.id);
   const next = ids[(ids.indexOf(stateTarget) + 1) % ids.length];
@@ -649,6 +914,44 @@ function statePath(node) {
     fillRule: node.getAttribute('fill-rule') ?? 'nonzero', fill: node.getAttribute('fill'),
     partId: node.dataset.part, role: node.dataset.role };
 }
+function stateTree() {
+  const nodes = [...stateSvg.querySelectorAll('*')];
+  const indices = new Map(nodes.map((node, index) => [node, index]));
+  return nodes.map(node => ({ tag: node.localName, parent: node.parentElement === stateSvg ? -1 : indices.get(node.parentElement),
+    partId: node.dataset.part ?? null, role: node.dataset.role ?? null, state: node.dataset.state ?? null,
+    path: node.localName === 'path' ? statePath(node) : null }));
+}
+function statePresentation() {
+  const properties = ${JSON.stringify([
+    ...Object.keys(SOURCE_STATE_NEUTRAL_PRESENTATION),
+    'color',
+    'fill',
+    'fill-opacity',
+    'fill-rule',
+    'opacity',
+    'display',
+    'width',
+    'height',
+    'd',
+  ])};
+  // CSS lengths не включают effective zoom; client rect включает: https://drafts.csswg.org/css-viewport/#cssom
+  const viewport = stateSvg.getBoundingClientRect();
+  return { color: getComputedStyle(stateButton).color,
+    viewport: { left: viewport.left, top: viewport.top, width: viewport.width, height: viewport.height },
+    nodes: [stateSvg, ...stateSvg.querySelectorAll('*')].map(node => {
+      const style = getComputedStyle(node);
+      const screenCtm = node.getScreenCTM?.();
+      // CSSOM сериализует оба path значения одинаково; raw d отдельно сверяется с master.
+      const sourcePath = node.localName === 'path' ? document.createElementNS('http://www.w3.org/2000/svg', 'path') : null;
+      sourcePath?.style.setProperty('d', 'path("' + node.getAttribute('d') + '")');
+      return { tag: node.localName,
+        attributes: Object.fromEntries(node.getAttributeNames().sort().map(name => [name, node.getAttribute(name)])),
+        inline: Object.fromEntries([...node.style].map(name => [name, node.style.getPropertyValue(name)])),
+        computed: Object.fromEntries(properties.map(name => [name, style.getPropertyValue(name)])),
+        screenCtm: screenCtm ? ['a', 'b', 'c', 'd', 'e', 'f'].map(name => screenCtm[name]) : null,
+        sourceD: sourcePath?.style.getPropertyValue('d') ?? null };
+    }) };
+}
 function sharedAncestorsUnchanged(node) {
   for (let parent = node.parentElement; parent; parent = parent.parentElement) {
     const style = getComputedStyle(parent);
@@ -675,6 +978,7 @@ function changeState(state, duration = 600) {
   previous?.stop(); stateControl = next; stateCompletion = next.finished;
   stateGeneration++; stateTarget = state; stateSelect.value = state;
   stateStatus.textContent = stateLabels[state];
+  if (configuration.actionLabels) stateButton.setAttribute('aria-label', configuration.actionLabels[state]);
   const after = stateOpacityWitness();
   return { effect, before: before.opacity, after: after.opacity, generation: stateGeneration,
     continuity: { before, admitted, after } };
@@ -683,16 +987,18 @@ function readState() {
   const native = stateButton.shadowRoot?.querySelector('button');
   const rectangle = native?.getBoundingClientRect();
   return { capabilities: stateCapabilitiesValue, opacity: stateOpacity(),
+    tree: stateTree(),
+    ...(configuration.law === 'source.replace' ? { presentation: statePresentation() } : {}),
     viewBox: stateSvg.getAttribute('viewBox').split(/\\s+/).map(Number),
     dimensions: ['width', 'height'].map(name => Number(stateSvg.getAttribute(name))),
     groups: [...stateSvg.querySelectorAll('g[data-state][data-part]')].map(node => ({ id: node.dataset.state,
       partId: node.dataset.part, role: node.dataset.role, paths: statePaths(node) })),
-    enclosure: statePaths(stateSvg).at(-1), enclosureCount:
+    enclosure: stateEnclosure === null ? null : statePath(stateEnclosure), enclosureCount:
       stateSvg.querySelectorAll('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]').length,
     identity: originalStateNodes.length === stateSvg.querySelectorAll('*').length &&
       originalStateNodes.every((node, index) => node === stateSvg.querySelectorAll('*')[index]) &&
       stateEnclosure === stateSvg.querySelector('[data-part="' + stateCapabilitiesValue.enclosurePartId + '"]'),
-    enclosureOpacity: Number(getComputedStyle(stateEnclosure).opacity),
+    enclosureOpacity: stateEnclosure === null ? null : Number(getComputedStyle(stateEnclosure).opacity),
     sharedParts: [...stateSvg.querySelectorAll('[data-part]')]
       .filter(node => sharedNodes.has(node.dataset.part)).map(node => ({ ...statePath(node),
       count: stateSvg.querySelectorAll('[data-part="' + node.dataset.part + '"]').length,
@@ -706,7 +1012,8 @@ function readState() {
       name: native?.getAttribute('aria-label'), type: native?.type,
       iconHidden: stateSvg.getAttribute('aria-hidden'),
       slotHidden: native?.querySelector('slot[name=icon]')?.getAttribute('aria-hidden') },
-    statusText: stateStatus.textContent, selected: stateSelect.value };
+    statusText: stateStatus.textContent, selected: stateSelect.value,
+    ...(enclosurePresentation ? { enclosurePresentation: enclosurePresentation.read() } : {}) };
 }
 async function settleState() {
   let timer;
@@ -727,8 +1034,13 @@ function staticState(state) {
     viewBox: svg.getAttribute('viewBox').split(/\\s+/).map(Number),
     dimensions: ['width', 'height'].map(name => Number(svg.getAttribute(name))) };
 }
+function exportState(format) {
+  return format === 'svg' ? render(stateTarget) : exportStateTransition(stateTarget, { format, duration: 240 });
+}
 return { readState, changeState, settleState, staticState,
-  cleanup: () => { stateControl?.stop(); stateSection.remove(); },
+  exportState,
+  ...(enclosurePresentation ? { updateEnclosure: enclosurePresentation.update } : {}),
+  cleanup: () => { stateControl?.stop(); enclosurePresentation?.cleanup(); stateSection.remove(); },
   ready: stateButton.updateComplete.then(() => {
   stateButton.shadowRoot.querySelector('button').addEventListener('click', () => stateNativeClicks++);
   }),
@@ -741,12 +1053,18 @@ return { readState, changeState, settleState, staticState,
   pauseState: milliseconds => { stateControl.pause(); if (milliseconds !== undefined) stateControl.seek(milliseconds); return readState(); },
   playState: () => { stateControl.play(); return readState(); },
   stateRefusals: () => ({
-    filled: renderStateSvg(stateCapabilitiesValue.defaultState, { variant: 'filled' }),
+    filled: renderStateSvg(stateCapabilitiesValue.defaultState, { variant: stateCapabilitiesValue.variant === 'outline' ? 'filled' : 'outline' }),
     nullRequest: compileStateEffect(stateCapabilitiesValue.defaultState, null),
     unknown: render('missing'),
     exports: ['lottie', 'dotlottie', 'sf-symbols'].map(format =>
       exportStateTransition(stateCapabilitiesValue.defaultState, { format, duration: 240 })),
     web: exportStateTransition(stateCapabilitiesValue.states[1].id, { format: 'web-effect', duration: 240 }),
+    ...(configuration.law === 'source.replace' ? {
+      variationRender: render(stateTarget, { variation: { bodyWidth: .9 } }),
+      variationEffect: compileStateEffect(stateTarget, { duration: 240, variation: { bodyWidth: .9 } }),
+      variationExport: exportStateTransition(stateTarget, { duration: 240, format: 'web-effect', variation: { bodyWidth: .9 } }),
+      invalidVariation: compileStateEffect(stateTarget, { duration: 240, variation: null }),
+    } : {}),
   }),
 };
 }
@@ -776,11 +1094,21 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
-    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '')
+    (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '') +
+    (schemaVersion >= 4 ? notificationFixture() : '') +
+    (schemaVersion >= 5 ? authoredDotsFixture() : '') +
+    (schemaVersion >= 6 ? annulusFixture() : '') +
+    (schemaVersion >= 7 ? stateAnnulusFixture() : '') +
+    (schemaVersion >= 8 ? contentScaleFixture() : '') +
+    (schemaVersion >= 9 ? microphoneFixture() : '') +
+    (schemaVersion >= 10 ? sourceStateFixture(schemaVersion) : '') +
+    (schemaVersion >= 11 ? motionProjectionFixture() : '') +
+    (schemaVersion >= 12 ? widthMotionFixture(schemaVersion) : '') +
+    (schemaVersion >= 15 ? clockMotionFixture() : '')
   );
 }
 
@@ -930,8 +1258,170 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
-async function browserProof(browser, url, reference, out, records, browserErrors) {
-  for (const reducedMotion of ['no-preference', 'reduce']) {
+export function browserProofRecords(
+  records,
+  frontier,
+  now = () => performance.now(),
+  publish = undefined,
+) {
+  const append = (...items) => {
+    const length = records.push(...items);
+    if (items.length) frontier.lastCompletedAt = now();
+    publish?.(items);
+    return length;
+  };
+  return new Proxy(records, {
+    get(target, key, receiver) {
+      return key === 'push' ? append : Reflect.get(target, key, receiver);
+    },
+  });
+}
+
+function freezeBrowserDiagnostic(diagnostic) {
+  for (const stage of diagnostic.completedStages) Object.freeze(stage);
+  Object.freeze(diagnostic.completedStages);
+  if (diagnostic.modes) {
+    for (const mode of Object.values(diagnostic.modes)) freezeBrowserDiagnostic(mode);
+    Object.freeze(diagnostic.modes);
+  }
+  return Object.freeze(diagnostic);
+}
+
+export function snapshotBrowserFrontier(frontier, records, now = performance.now()) {
+  const diagnostic = {
+    mode: frontier.mode,
+    stage: frontier.stage,
+    member: frontier.member,
+    elapsedMs: Math.round(now - frontier.startedAt),
+    stageElapsedMs: Math.round(now - frontier.stageStartedAt),
+    stageCompletedRecords: records.length - frontier.stageStartedRecord,
+    completedRecords: records.length,
+    lastCompletedRecord: records.at(-1)?.name ?? null,
+    lastCompletedAtMs:
+      frontier.lastCompletedAt === null
+        ? null
+        : Math.round(frontier.lastCompletedAt - frontier.startedAt),
+    sinceLastCompletedMs: Math.round(now - (frontier.lastCompletedAt ?? frontier.startedAt)),
+    completedStages: frontier.completedStages.map((stage) => ({ ...stage })),
+    ...(frontier.modes
+      ? {
+          modes: Object.fromEntries(
+            Object.entries(frontier.modes).map(([mode, entry]) => [
+              mode,
+              snapshotBrowserFrontier(entry.frontier, entry.records, now),
+            ]),
+          ),
+        }
+      : {}),
+  };
+  return freezeBrowserDiagnostic(diagnostic);
+}
+
+export function browserFailureFrontier(error, frontier, records, now = performance.now()) {
+  const snapshot = error?.browserFrontier ?? frontier?.failureSnapshot;
+  if (snapshot) return freezeBrowserDiagnostic(structuredClone(snapshot));
+  return frontier ? snapshotBrowserFrontier(frontier, records, now) : undefined;
+}
+
+export function browserProofTimeout(frontier, records, now = performance.now()) {
+  const diagnostic = snapshotBrowserFrontier(frontier, records, now);
+  return Object.assign(
+    new Error(`icons-packed browser proof timeout: ${JSON.stringify(diagnostic)}`),
+    { browserFrontier: diagnostic },
+  );
+}
+
+// Каждый режим владеет своей страницей, progress и records; общий срок не сбрасывается.
+export function browserProofModes(run, records, frontier, now = () => performance.now()) {
+  frontier.stage = 'parallel-modes';
+  frontier.modes = {};
+  const tasks = ['no-preference', 'reduce'].map((mode) => {
+    const local = {
+      mode,
+      stage: 'start',
+      member: null,
+      startedAt: frontier.startedAt,
+      stageStartedAt: now(),
+      stageStartedRecord: 0,
+      lastCompletedAt: null,
+      completedStages: [],
+    };
+    const completed = [];
+    frontier.modes[mode] = { frontier: local, records: completed };
+    const observed = browserProofRecords(completed, local, now, (items) => records.push(...items));
+    return Promise.resolve()
+      .then(() => run(mode, observed, local))
+      .catch((error) => {
+        // Общий snapshot выбирает тот же rejection, что и Promise.all.
+        frontier.failureSnapshot ??=
+          local.failureSnapshot ??
+          snapshotBrowserFrontier({ ...local, modes: frontier.modes }, completed, now());
+        throw error;
+      });
+  });
+  return { result: Promise.all(tasks), settled: Promise.allSettled(tasks) };
+}
+
+// Отказ транспорта close не позволяет бесконечно ждать callback или менять сохранённый receipt.
+export async function closeBrowserProof(browser, work, timers = { setTimeout, clearTimeout }) {
+  const errors = [];
+  let timer;
+  try {
+    const settled = (async () => {
+      try {
+        await browser?.close();
+      } catch (error) {
+        errors.push(String(error));
+      }
+      await work?.settled;
+      return { settled: true, errors: [...errors] };
+    })();
+    return await Promise.race([
+      settled,
+      new Promise((resolve) => {
+        timer = timers.setTimeout(
+          () =>
+            resolve({
+              settled: false,
+              errors: [...errors, 'Browser proof cleanup timeout after 20000ms'],
+            }),
+          20_000,
+        );
+      }),
+    ]);
+  } finally {
+    timers.clearTimeout(timer);
+  }
+}
+
+function browserProof(
+  browser,
+  url,
+  reference,
+  out,
+  records,
+  browserErrors,
+  frontier,
+  cleanupErrors,
+) {
+  const commonFrontier = frontier;
+  const runMode = async (reducedMotion, records, frontier) => {
+    const mark = (stage, member = null) => {
+      const now = performance.now();
+      frontier.completedStages.push({
+        mode: frontier.mode,
+        stage: frontier.stage,
+        member: frontier.member,
+        elapsedMs: Math.round(now - frontier.stageStartedAt),
+        completedRecords: records.length - frontier.stageStartedRecord,
+      });
+      frontier.mode = reducedMotion;
+      frontier.stage = stage;
+      frontier.member = member;
+      frontier.stageStartedAt = now;
+      frontier.stageStartedRecord = records.length;
+    };
+    mark('context');
     const context = await browser.newContext({
       viewport: { width: 640, height: 360 },
       reducedMotion,
@@ -939,11 +1429,15 @@ async function browserProof(browser, url, reference, out, records, browserErrors
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
     page.on('pageerror', (error) => browserErrors.push(error.message));
+    let contextCloseFailure;
     try {
+      mark('navigation');
       await page.goto(url, { waitUntil: 'networkidle' });
+      mark('ready');
       await page.waitForFunction(() => window.__iconsPacked !== undefined);
       await page.evaluate(() => window.__iconsPacked.ready);
       for (const variant of ['outline', 'filled']) {
+        mark('authored-cycle', variant);
         const expected = reference.icons.reload[variant];
         const read = () => page.evaluate((id) => window.__iconsPacked.read(id), variant);
         const initial = await read();
@@ -1105,14 +1599,118 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           refusal,
         });
       }
-      for (const stateReference of Object.values(reference.states))
+      for (const stateReference of Object.values(reference.states)) {
+        mark('state', stateReference.group);
         await stateBrowserProof(page, stateReference, reducedMotion, records);
+      }
+      if (reference.notifications) {
+        mark('notifications');
+        await notificationBrowserProof(page, reference.notifications, reducedMotion, records);
+      }
+      if (reference.authoredDots) {
+        mark('authored-dots');
+        await authoredDotsBrowserProof(page, reference.authoredDots, reducedMotion, records);
+      }
+      if (reference.annulus) {
+        mark('annulus');
+        await annulusBrowserProof(page, reference.annulus, reducedMotion, records, (member) => {
+          frontier.member = member;
+        });
+      }
+      if (reference.stateAnnulus) {
+        mark('state-annulus');
+        await stateAnnulusBrowserProof(
+          page,
+          reference.stateAnnulus,
+          reference.annulus,
+          reducedMotion,
+          records,
+          sameStateOpacity,
+        );
+      }
+      if (reference.contentScale) {
+        mark('content-scale');
+        await contentScaleBrowserProof(page, reference.contentScale, reducedMotion, records);
+      }
+      if (reference.microphones) {
+        mark('microphone-width');
+        await microphoneBrowserProof(page, reference.microphones, reducedMotion, records, out);
+        mark('microphone-adjacent');
+        await microphoneComparisonBrowserProof(
+          page,
+          reference.microphones,
+          reference.annulus,
+          reducedMotion,
+          records,
+          out,
+        );
+      }
+      if (reference.motionProjection) {
+        mark('motion-projection');
+        await motionProjectionBrowserProof(
+          page,
+          reference.motionProjection,
+          reducedMotion,
+          records,
+          out,
+        );
+      }
+      if (reference.widthMotion) {
+        mark('width-motion');
+        await widthMotionBrowserProof(
+          page,
+          reference.microphones,
+          reducedMotion,
+          records,
+          out,
+          reference.schemaVersion,
+        );
+        mark('width-motion-measurement');
+        await widthMotionMeasurementBrowserProof(
+          page,
+          reference.widthMotionMeasurements,
+          reference.microphones,
+          reducedMotion,
+          records,
+        );
+      }
+      if (reference.clockMotion) {
+        mark('clock-motion');
+        await clockMotionBrowserProof(page, reference.clockMotion, reducedMotion, records, out);
+      }
+      mark('full-page-capture');
       await page.screenshot({ path: join(out, `${reducedMotion}.png`), fullPage: true });
+      if (reference.motionProjection) {
+        mark('motion-projection-arm-disposal');
+        await motionProjectionArmDisposal(page);
+      }
+      if (reference.widthMotion) {
+        mark('width-motion-arm-disposal');
+        await widthMotionArmDisposal(page);
+      }
+      if (reference.clockMotion) {
+        mark('clock-motion-arm-disposal');
+        await clockMotionArmDisposal(page);
+      }
+      mark('cleanup');
       assert.deepEqual(await page.evaluate(() => window.__iconsPacked.cleanup()), {
         connected: 0,
         runningNativeAnimations: 0,
       });
+      if (reference.motionProjection) {
+        mark('motion-projection-disposal');
+        await motionProjectionDisposalProof(page, reducedMotion, records);
+      }
+      if (reference.widthMotion) {
+        mark('width-motion-disposal');
+        await widthMotionDisposalProof(page, reducedMotion, records);
+      }
+      if (reference.clockMotion) {
+        mark('clock-motion-disposal');
+        await clockMotionDisposalProof(page, reducedMotion, records);
+      }
       for (const group of Object.keys(reference.states)) {
+        mark('state-disposal', group);
         const disposed = await page.evaluate(
           (group) => window.__iconsPacked.stateConsumers[group].stateDisposal(),
           group,
@@ -1124,13 +1722,291 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         );
         records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
       }
+      for (const group of Object.keys(reference.stateAnnulus?.groups ?? {})) {
+        mark('state-annulus-disposal', group);
+        const disposed = await page.evaluate(
+          (group) => window.__iconsPacked.stateAnnulusConsumers[group].stateDisposal(),
+          group,
+        );
+        assert.equal(disposed.connected, false);
+        assert.equal(
+          disposed.completionStatus,
+          reducedMotion === 'reduce' ? 'finished' : 'stopped',
+        );
+        records.push({ name: `${group}:${reducedMotion}:state-enclosure-dispose`, ...disposed });
+      }
+      if (reference.notifications)
+        for (const icon of ['notifications', 'notifications-unread'])
+          for (const variant of ['outline', 'filled']) {
+            const id = `${icon}/${variant}`;
+            mark('notification-disposal', id);
+            const disposed = await page.evaluate(
+              (id) => window.__iconsPacked.notificationConsumers[id].disposal(),
+              id,
+            );
+            assert.equal(disposed.connected, false);
+            assert.equal(disposed.playback, reducedMotion === 'reduce' ? 'finished' : 'stopped');
+            assert.equal(
+              disposed.completionStatus,
+              reducedMotion === 'reduce' ? 'finished' : 'stopped',
+            );
+            records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
+          }
+      if (reference.authoredDots)
+        for (const variant of ['outline', 'filled']) {
+          mark('authored-dots-disposal', variant);
+          const disposed = await page.evaluate(
+            (variant) => window.__iconsPacked.contourConsumers[variant].disposal(),
+            variant,
+          );
+          assert.equal(disposed.connected, false);
+          assert.equal(disposed.playback, reducedMotion === 'reduce' ? 'finished' : 'stopped');
+          records.push({ name: `ellipsis/${variant}:${reducedMotion}:dispose`, ...disposed });
+        }
+      if (reference.annulus)
+        for (const icon of Object.keys(reference.annulus.icons))
+          for (const variant of ['outline', 'filled']) {
+            const id = `${icon}/${variant}`;
+            mark('annulus-disposal', id);
+            const disposed = await page.evaluate(
+              (id) => window.__iconsPacked.annulusConsumers[id].disposal(),
+              id,
+            );
+            assert.equal(disposed.connected, false);
+            if (icon === 'checkmark-circle' && variant === 'outline') {
+              const terminal = reducedMotion === 'reduce' ? 'finished' : 'stopped';
+              assert.equal(disposed.playback, terminal);
+              assert.equal(disposed.completionStatus, terminal);
+            }
+            records.push({ name: `${id}:${reducedMotion}:dispose`, ...disposed });
+          }
     } catch (error) {
+      // Локальное место отказа сохраняется до screenshot/close; общий исход выбирает rejection.
+      frontier.failureSnapshot = snapshotBrowserFrontier(
+        { ...frontier, modes: commonFrontier.modes },
+        records,
+      );
+      mark('failure-capture', frontier.stage);
       await page
         .screenshot({ path: join(out, `${reducedMotion}-failure.png`), fullPage: true })
         .catch(() => {});
       throw error;
     } finally {
-      await context.close();
+      mark('context-close');
+      try {
+        await context.close();
+      } catch (error) {
+        cleanupErrors.push(String(error));
+        contextCloseFailure = { error };
+      }
+    }
+    if (contextCloseFailure) throw contextCloseFailure.error;
+  };
+  return browserProofModes(runMode, records, frontier);
+}
+
+export function assertNotificationPose(observation, expected, icon, variant, progress) {
+  assertNotificationAnatomy(observation, expected, icon, variant);
+  assert.deepEqual(
+    observation.pose.map((item) => item.partId),
+    expected.parts.map((item) => item.id),
+  );
+  for (const item of observation.pose) {
+    const x =
+      item.partId === 'notification-clapper'
+        ? notificationPosition(expected.amplitude, progress)
+        : 0;
+    samePose([item.matrix], [[1, 0, 0, 1, x, 0]]);
+  }
+}
+
+async function notificationBrowserProof(page, reference, reducedMotion, records) {
+  const reduced = reducedMotion === 'reduce';
+  for (const [icon, label] of [
+    ['notifications', 'Входящее уведомление'],
+    ['notifications-unread', 'Новое непрочитанное уведомление'],
+  ]) {
+    for (const variant of ['outline', 'filled']) {
+      const id = `${icon}/${variant}`;
+      const expected = reference.icons[icon][variant];
+      const evaluate = (operation, ...args) =>
+        page.evaluate(
+          ({ id, operation, args }) =>
+            window.__iconsPacked.notificationConsumers[id][operation](...args),
+          { id, operation, args },
+        );
+      const read = () => evaluate('read');
+      const matrices = (observation) => observation.pose.map((item) => item.matrix);
+      const initial = await read();
+      assertNotificationPose(initial, expected, icon, variant, 0);
+      assert.deepEqual(initial.target, {
+        width: 48,
+        height: 48,
+        name: label,
+        type: 'button',
+        iconHidden: 'true',
+        slotHidden: 'true',
+      });
+      for (const [index, size] of [16, 24, 48].entries())
+        assert.deepEqual(initial.sizeSamples[index], {
+          size,
+          width: size,
+          height: size,
+          viewBox: expected.viewBox,
+          paths: expected.paths,
+        });
+      assert.equal(initial.sizeSamples.length, 3);
+      const host = page.locator(`lab-button[data-notification="${id}"]`);
+      const button = host.getByRole('button', { name: label, exact: true });
+      assert.equal(await button.count(), 1);
+      await host.click();
+      if (!reduced)
+        await page.waitForFunction(
+          ({ id, amplitude }) => {
+            const current = window.__iconsPacked.notificationConsumers[id].read();
+            const x = current.pose.find((item) => item.partId === 'notification-clapper').matrix[4];
+            return current.playback === 'running' && Math.abs(x) > amplitude * 0.05;
+          },
+          { id, amplitude: expected.amplitude },
+        );
+      await button.focus();
+      await button.press('Enter');
+      await button.press('Space');
+      const activated = await read();
+      assertNotificationAnatomy(activated, expected, icon, variant);
+      assert.equal(activated.nativeClicks, 3);
+      assert.equal(activated.events.length, 3);
+      for (const event of activated.events) {
+        assert.ok(event.trusted && event.composed && event.native);
+        assertNotificationEffect(event.effect, expected, icon, variant, 0, 1, reduced ? 0 : 1000);
+        if (!reduced)
+          samePose(
+            event.before.map((item) => item.matrix),
+            event.after.map((item) => item.matrix),
+          );
+      }
+      const terminal = await evaluate('settle');
+      assertNotificationPose(terminal, expected, icon, variant, 1);
+      assert.equal(terminal.completionStatus, 'finished');
+      assert.equal(terminal.knownPhase, 1);
+      records.push({
+        name: `${id}:${reducedMotion}:trusted-occurrences`,
+        events: activated.events,
+        target: initial.target,
+        source: initial.provenance,
+        sizeSamples: initial.sizeSamples,
+      });
+      if (!reduced) {
+        const forward = await evaluate('start', { duration: 1000, initialize: true });
+        assertNotificationEffect(forward.effect, expected, icon, variant, 0, 1, 1000);
+        const poses = [];
+        for (const phase of [0, 0.2, 0.4, 0.6, 0.8, 1]) {
+          const observation = await evaluate('pauseAt', phase * 1000);
+          assertNotificationPose(observation, expected, icon, variant, phase);
+          assert.equal(observation.knownPhase, phase);
+          poses.push({ phase, pose: observation.pose });
+        }
+        const routes = [];
+        for (const phase of [0.1, 0.25]) {
+          await evaluate('start', { duration: 1000, initialize: true });
+          const paused = await evaluate('pauseAt', phase * 1000);
+          assertNotificationPose(paused, expected, icon, variant, phase);
+          const reverse = await evaluate('start', {
+            from: paused.knownPhase,
+            to: 0,
+            duration: 500,
+          });
+          assertNotificationEffect(reverse.effect, expected, icon, variant, phase, 0, 500);
+          samePose(
+            matrices(paused),
+            reverse.before.map((item) => item.matrix),
+          );
+          samePose(
+            reverse.before.map((item) => item.matrix),
+            reverse.after.map((item) => item.matrix),
+          );
+          assert.equal(reverse.previousPlayback, 'stopped');
+          const reversing = await evaluate('pauseAt', 100);
+          assertNotificationPose(reversing, expected, icon, variant, phase * 0.8);
+          routes.push({
+            from: phase,
+            start: paused.pose,
+            reverse: reverse.effect,
+            intermediate: reversing.pose,
+          });
+        }
+        samePose(
+          routes[0].start.map((item) => item.matrix),
+          routes[1].start.map((item) => item.matrix),
+        );
+        const routeX = (route) =>
+          route.intermediate.find((item) => item.partId === 'notification-clapper').matrix[4];
+        assert.ok(
+          routeX(routes[0]) < expected.amplitude / 2 && routeX(routes[1]) > expected.amplitude / 2,
+          'Одинаковая координата требует двух разных маршрутов по сохранённой фазе',
+        );
+        const beforeNew = await read();
+        const newer = await evaluate('start', { duration: 800 });
+        assertNotificationEffect(newer.effect, expected, icon, variant, 0, 1, 800);
+        samePose(
+          matrices(beforeNew),
+          newer.before.map((item) => item.matrix),
+        );
+        samePose(
+          newer.before.map((item) => item.matrix),
+          newer.after.map((item) => item.matrix),
+        );
+        const interrupted = await evaluate('pauseAt', 320);
+        assertNotificationPose(interrupted, expected, icon, variant, 0.4);
+        const partial = await evaluate('start', {
+          from: interrupted.knownPhase,
+          to: 0.7,
+          duration: 300,
+        });
+        assertNotificationEffect(partial.effect, expected, icon, variant, 0.4, 0.7, 300);
+        samePose(
+          matrices(interrupted),
+          partial.before.map((item) => item.matrix),
+        );
+        samePose(
+          partial.before.map((item) => item.matrix),
+          partial.after.map((item) => item.matrix),
+        );
+        assertNotificationPose(await evaluate('pauseAt', 200), expected, icon, variant, 0.6);
+        // Новый частичный интервал заканчивается самостоятельно после прерывания.
+        const partialEnd = await evaluate('start', { from: 0.6, to: 0.7, duration: 100 });
+        assertNotificationEffect(partialEnd.effect, expected, icon, variant, 0.6, 0.7, 100);
+        assertNotificationPose(await evaluate('settle'), expected, icon, variant, 0.7);
+        records.push({
+          name: `${id}:six-stops-reverse-newer-partial`,
+          poses,
+          routes,
+          newer,
+          partial,
+          partialEnd,
+        });
+      } else {
+        const reducedEnd = await evaluate('start', { from: 0.25, to: 0.6, duration: 800 });
+        assertNotificationEffect(reducedEnd.effect, expected, icon, variant, 0.25, 0.6, 0);
+        assertNotificationPose(await evaluate('settle'), expected, icon, variant, 0.6);
+        records.push({ name: `${id}:reduced-terminal-phase`, effect: reducedEnd.effect });
+      }
+      const refusal = await evaluate('refuse');
+      assert.equal(refusal.axis, 'AUTHOR_PARITY_REQUIRED');
+      for (const [key, code] of [
+        ['morph', 'GESTURE_UNSUPPORTED'],
+        ['off', 'SEMANTIC_MOTION_UNAVAILABLE'],
+      ]) {
+        assert.equal(refusal[key].ok, false);
+        assert.equal(refusal[key].reason.code, code);
+      }
+      assert.deepEqual(refusal.offPaths, reference.icons['notifications-off'][variant].paths);
+      records.push({ name: `${id}:${reducedMotion}:refusals`, refusal });
+      const disposing = await evaluate('start', { duration: 1000 });
+      assertNotificationEffect(disposing.effect, expected, icon, variant, 0, 1, reduced ? 0 : 1000);
+      if (!reduced)
+        assertNotificationAnatomy(await evaluate('pauseAt', 200), expected, icon, variant);
+      else assertNotificationPose(await evaluate('settle'), expected, icon, variant, 1);
     }
   }
 }
@@ -1163,7 +2039,7 @@ function stateEffect(effect, reference, target, duration) {
   assert.deepEqual(effect, {
     contract: 'labpics.symbol-state-effect/1',
     version: 1,
-    kind: 'enclosure-replacement',
+    kind: reference.proof.law === 'source.replace' ? 'source-replacement' : 'enclosure-replacement',
     group: reference.group,
     variant: reference.variant,
     targetState: target,
@@ -1184,7 +2060,8 @@ export function stateCapabilitiesReference(reference) {
     group: reference.group,
     variant: reference.variant,
     defaultState: reference.defaultState,
-    transition: 'enclosure-replacement',
+    transition:
+      reference.proof.law === 'source.replace' ? 'source-replacement' : 'enclosure-replacement',
     morph: 'unavailable',
     enclosurePartId: reference.enclosurePartId,
     ...(reference.sharedPartIds ? { sharedPartIds: reference.sharedPartIds } : {}),
@@ -1229,6 +2106,134 @@ export function assertStateAnatomy(observation, reference) {
   assert.deepEqual(observation.viewBox, [0, 0, 24, 24]);
   assert.deepEqual(observation.dimensions, [24, 24]);
   assert.equal(observation.identity, true);
+  if (reference.proof.law === 'source.replace') {
+    const tree = [];
+    for (const state of reference.states) {
+      const parent = tree.length;
+      tree.push({
+        tag: 'g',
+        parent: -1,
+        partId: state.partId,
+        role: 'state',
+        state: state.id,
+        path: null,
+      });
+      for (const path of staticStatePathsReference(reference, state))
+        tree.push({ tag: 'path', parent, partId: path.partId, role: path.role, state: null, path });
+    }
+    assert.deepEqual(
+      observation.tree,
+      tree,
+      'source state SVG содержит необъявленную геометрию или структуру',
+    );
+    const presentation = observation.presentation;
+    const validOpacity = (value) =>
+      typeof value === 'string' &&
+      value.trim() !== '' &&
+      Number.isFinite(Number(value)) &&
+      Number(value) >= 0 &&
+      Number(value) <= 1;
+    assert.deepEqual(
+      presentation?.nodes.map((node) => node.tag),
+      ['svg', ...tree.map((node) => node.tag)],
+      'source presentation содержит не все узлы',
+    );
+    assert.ok(
+      presentation.viewport &&
+        ['left', 'top', 'width', 'height'].every((name) =>
+          Number.isFinite(presentation.viewport[name]),
+        ),
+      'source presentation: viewport не измерен',
+    );
+    assert.deepEqual(
+      [presentation.viewport.width, presentation.viewport.height],
+      [24, 24],
+      'source presentation: физический viewport SVG',
+    );
+    const screenCtm = [1, 0, 0, 1, presentation.viewport.left, presentation.viewport.top];
+    for (const [index, node] of presentation.nodes.entries()) {
+      assert.deepEqual(
+        node.screenCtm,
+        screenCtm,
+        'source presentation: экранная геометрия raw parts',
+      );
+      const part = tree[index - 1];
+      const group = node.tag === 'g';
+      const expected =
+        index === 0
+          ? {
+              viewBox: '0 0 24 24',
+              xmlns: 'http://www.w3.org/2000/svg',
+              width: '24',
+              height: '24',
+              fill: 'currentColor',
+              slot: 'icon',
+              'aria-hidden': 'true',
+              focusable: 'false',
+            }
+          : group
+            ? { 'data-part': part.partId, 'data-role': 'state', 'data-state': part.state }
+            : {
+                'data-part': part.partId,
+                'data-role': part.role,
+                d: part.path.d,
+                fill: 'currentColor',
+                'fill-rule': part.path.fillRule,
+              };
+      const allowed = [...Object.keys(expected), 'style', ...(group ? ['opacity'] : [])];
+      for (const name of Object.keys(node.attributes))
+        assert.ok(allowed.includes(name), `source presentation: атрибут ${name}`);
+      for (const [name, value] of Object.entries(expected))
+        assert.equal(node.attributes[name], value, `source presentation: атрибут ${name}`);
+      for (const [name, value] of Object.entries(node.inline)) {
+        assert.equal(group && name === 'opacity', true, `source presentation: style ${name}`);
+        assert.ok(validOpacity(value), 'source presentation: opacity');
+      }
+      if (group)
+        assert.ok(validOpacity(node.attributes.opacity), 'source presentation: атрибут opacity');
+      for (const [name, value] of Object.entries(SOURCE_STATE_NEUTRAL_PRESENTATION))
+        assert.equal(node.computed[name], value, `source presentation: paint/геометрия ${name}`);
+      assert.equal(
+        node.computed.color,
+        presentation.color,
+        'source presentation: наследуемый color',
+      );
+      assert.equal(
+        node.computed.fill,
+        presentation.color,
+        'source presentation: заливка currentColor',
+      );
+      assert.equal(Number(node.computed['fill-opacity']), 1, 'source presentation: fill opacity');
+      assert.equal(
+        node.computed['fill-rule'],
+        part?.path?.fillRule ?? 'nonzero',
+        'source presentation: fill rule',
+      );
+      assert.equal(
+        node.computed.display,
+        index === 0 ? 'block' : 'inline',
+        'source presentation: display',
+      );
+      assert.ok(
+        group ? validOpacity(node.computed.opacity) : node.computed.opacity === '1',
+        'source presentation: opacity вне state group',
+      );
+      if (index === 0) {
+        assert.equal(node.computed.width, '24px', 'source presentation: ширина SVG');
+        assert.equal(node.computed.height, '24px', 'source presentation: высота SVG');
+      } else if (node.tag === 'path') {
+        assert.ok(
+          typeof node.sourceD === 'string' && node.sourceD.length > 0,
+          'source presentation: CSS path не разобран',
+        );
+        assert.equal(
+          node.computed.d,
+          node.sourceD,
+          'source presentation: CSS изменил raw геометрию',
+        );
+      }
+    }
+  }
   assert.deepEqual(
     observation.groups,
     reference.states.map((state) => ({
@@ -1238,14 +2243,19 @@ export function assertStateAnatomy(observation, reference) {
       paths: staticStatePathsReference(reference, state).slice(0, state.contentPartIds.length),
     })),
   );
-  assert.deepEqual(observation.enclosure, {
-    ...reference.enclosure,
-    fill: 'currentColor',
-    partId: reference.enclosurePartId,
-    role: 'container',
-  });
-  assert.equal(observation.enclosureCount, 1);
-  assert.equal(observation.enclosureOpacity, 1);
+  assert.deepEqual(
+    observation.enclosure,
+    reference.enclosurePartId === null
+      ? null
+      : {
+          ...reference.enclosure,
+          fill: 'currentColor',
+          partId: reference.enclosurePartId,
+          role: 'container',
+        },
+  );
+  assert.equal(observation.enclosureCount, reference.enclosurePartId === null ? 0 : 1);
+  assert.equal(observation.enclosureOpacity, reference.enclosurePartId === null ? null : 1);
   assert.deepEqual(
     observation.sharedParts,
     sharedStateParts(reference).map(({ id, ...part }) => ({
@@ -1272,7 +2282,8 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   const read = () => evaluate('readState');
   const contract = stateReferenceContract(reference.group);
   const alternatives = reference.states.filter((state) => state.id !== reference.defaultState);
-  const [first, second] = alternatives;
+  const first = alternatives[0];
+  const second = alternatives[1] ?? first;
   const selectedTarget = alternatives.at(-1).id;
   const initial = await read();
   assert.deepEqual(initial.capabilities, stateCapabilitiesReference(reference));
@@ -1281,6 +2292,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assert.equal(observation.targetState, target);
     assert.equal(observation.selected, target);
     assert.equal(observation.statusText, contract.labels[target]);
+    assert.equal(observation.target.name, contract.actionLabels?.[target] ?? contract.buttonLabel);
     assert.deepEqual(
       observation.opacity,
       reference.states.map((state) => ({
@@ -1300,7 +2312,8 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     slotHidden: 'true',
   });
   const host = page.locator(`lab-button[data-state-group="${reference.group}"]`);
-  const button = host.getByRole('button', { name: contract.buttonLabel, exact: true });
+  const section = page.locator(`section[data-state-group="${reference.group}"]`);
+  const button = host.getByRole('button');
   assert.equal(await button.count(), 1);
   await host.click();
   await button.focus();
@@ -1325,7 +2338,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     if (reducedMotion === 'no-preference')
       sameStateOpacity(event.before, event.after, { eventIndex: index, ...event });
   }
-  await page.getByRole('combobox', { name: contract.selectLabel }).selectOption(selectedTarget);
+  await section.getByRole('combobox', { name: contract.selectLabel }).selectOption(selectedTarget);
   oneHot(await evaluate('settleState'), selectedTarget);
   for (const state of reference.states) {
     const svg = await evaluate('staticState', state.id);
@@ -1338,6 +2351,38 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     const terminal = await evaluate('settleState');
     assert.equal(terminal.completionStatus, 'finished');
     oneHot(terminal, state.id);
+    if (contract.exportControls) {
+      const svgText = await downloadedSvg(
+        page,
+        section.getByRole('button', { name: 'Скачать SVG', exact: true }),
+      );
+      const paths = await page.evaluate(
+        (text) =>
+          [...new DOMParser().parseFromString(text, 'image/svg+xml').querySelectorAll('path')].map(
+            (node) => ({
+              d: node.getAttribute('d'),
+              fillRule: node.getAttribute('fill-rule') ?? 'nonzero',
+              fill: node.getAttribute('fill'),
+              partId: node.dataset.part,
+              role: node.dataset.role,
+            }),
+          ),
+        svgText,
+      );
+      assert.deepEqual(paths, staticStatePathsReference(reference, state));
+      const effectText = await downloadedSvg(
+        page,
+        section.getByRole('button', { name: 'Скачать переход', exact: true }),
+      );
+      stateEffect(JSON.parse(effectText), reference, state.id, 240);
+      oneHot(await read(), state.id);
+      records.push({
+        name: `${reference.group}:${state.id}:${reducedMotion}:native-exports`,
+        svgSha256: hash(svgText),
+        webEffectSha256: hash(effectText),
+        paths,
+      });
+    }
     records.push({
       name: `${reference.group}:${state.id}:${reducedMotion}`,
       source: state.author,
@@ -1378,9 +2423,24 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assertStateAnatomy(mixture, reference);
     assert.equal(
       mixture.opacity.filter((item) => item.value > 0.01).length,
-      3,
-      'третье намерение должно сохранить всю прежнюю смесь',
+      Math.min(3, reference.states.length),
+      'новое намерение должно сохранить прежнюю смесь',
     );
+    if (contract.law === 'source.replace') {
+      const refused = await evaluate('stateRefusals');
+      for (const name of ['variationRender', 'variationEffect', 'variationExport']) {
+        assert.equal(refused[name].ok, false);
+        assert.equal(refused[name].reason.code, 'VARIATION_UNSUPPORTED');
+      }
+      assert.equal(refused.invalidVariation.reason.code, 'INVALID_REQUEST');
+      sameStateOpacity(mixture.opacity, (await read()).opacity);
+      assertStateAnatomy(await read(), reference);
+      records.push({
+        name: `${reference.group}:${reducedMotion}:variation-refused-midflight`,
+        refusal: refused,
+        pose: mixture.opacity,
+      });
+    }
     const latest = await evaluate('changeState', first.id, 200);
     sameStateOpacity(mixture.opacity, latest.before);
     sameStateOpacity(latest.before, latest.after, latest.continuity);
@@ -1396,7 +2456,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
       latest,
     });
   }
-  if (reference.group === 'expression-face') {
+  if (reference.group === 'expression-face' || contract.samples) {
     const samples = await evaluate('sizeSamples');
     assert.equal(samples.length, reference.states.length * 3);
     for (const [index, state] of reference.states.entries())
@@ -1412,6 +2472,17 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     records.push({ name: `${reference.group}:${reducedMotion}:author-size-samples`, samples });
   }
   const refusal = await evaluate('stateRefusals');
+  const priorRefusalPose = await read();
+  if (contract.law === 'source.replace') {
+    for (const name of ['variationRender', 'variationEffect', 'variationExport']) {
+      assert.equal(refusal[name].ok, false);
+      assert.equal(refusal[name].reason.code, 'VARIATION_UNSUPPORTED');
+    }
+    assert.equal(refusal.invalidVariation.reason.code, 'INVALID_REQUEST');
+    await evaluate('stateRefusals');
+    sameStateOpacity(priorRefusalPose.opacity, (await read()).opacity);
+    assertStateAnatomy(await read(), reference);
+  }
   for (const [key, code] of [
     ['filled', 'VARIANT_UNSUPPORTED'],
     ['nullRequest', 'INVALID_REQUEST'],
@@ -1433,29 +2504,24 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assertStateAnatomy(await evaluate('pauseState', 200), reference);
 }
 
+export function consumerReceiptBytes(receipt) {
+  return Buffer.from(`${JSON.stringify(receipt)}\n`);
+}
+
 export async function main(args = process.argv.slice(2)) {
   assertSelfHostedRunner();
   const options = new Map();
   for (let index = 0; index < args.length; index += 2) {
     assert.ok(
-      [
-        '--icons-tarball',
-        '--ui-core-tarball',
-        '--ui-shadow-tarball',
-        '--subject',
-        '--out',
-        '--browser-channel',
-      ].includes(args[index]),
+      [...ARCHIVE_OPTIONS, '--subject', '--out', '--browser-channel'].includes(args[index]),
       args[index],
     );
     assert.ok(args[index + 1] && !options.has(args[index]), `missing or duplicate ${args[index]}`);
     options.set(args[index], args[index + 1]);
   }
   assert.ok(
-    ['--icons-tarball', '--ui-core-tarball', '--ui-shadow-tarball', '--subject', '--out'].every(
-      (key) => options.has(key),
-    ),
-    'Нужны три tarball, --subject и новый --out',
+    ['--icons-tarball', '--ui-core-tarball', '--subject', '--out'].every((key) => options.has(key)),
+    'Нужны runtime tarballs, --subject и новый --out',
   );
   const out = resolve(options.get('--out'));
   assert.ok(outside(relative(ROOT, out)), 'Отчёт должен находиться вне checkout');
@@ -1472,12 +2538,16 @@ export async function main(args = process.argv.slice(2)) {
   let browser;
   let server;
   let proofTimer;
+  let proofWork;
+  let browserFrontier;
   let failure;
   const cleanupErrors = [];
   let phase = 'subject';
   try {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
     const subject = validateSubject(JSON.parse(subjectBytes));
+    const packagePlan = subjectPackagePlan(subject.schemaVersion, subject.packages);
+    assertArchiveOptions(options, packagePlan);
     const fixture = consumerFixture(subject.schemaVersion);
     const requiredEntries = consumerPublicEntries(subject.schemaVersion);
     receipt.subject = subject;
@@ -1485,11 +2555,13 @@ export async function main(args = process.argv.slice(2)) {
     const source = (args) =>
       execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', timeout: 20_000 }).trim();
     const harnessBytes = await readFile(fileURLToPath(import.meta.url));
+    const harnessFiles = await snapshotHarnessFiles((file) => readFile(join(ROOT, file)));
     receipt.harness = {
       commit: source(['rev-parse', 'HEAD']),
       sourceSha256: hash(harnessBytes),
       dirty: source(['status', '--porcelain']) !== '',
       diffSha256: hash(execFileSync('git', ['diff', 'HEAD', '--binary'], { cwd: ROOT })),
+      files: harnessFiles,
     };
     receipt.runner = {
       node: process.version,
@@ -1505,15 +2577,14 @@ export async function main(args = process.argv.slice(2)) {
     consumer = await mkdtemp(join(tmpdir(), 'labui-icons-consumer-'));
     assert.ok(outside(relative(ROOT, await realpath(consumer))));
     const archives = [];
-    for (const [key, option] of [
-      ['icons', '--icons-tarball'],
-      ['uiCore', '--ui-core-tarball'],
-      ['uiShadow', '--ui-shadow-tarball'],
-    ]) {
+    for (const { key, option } of packagePlan) {
       archives.push(
         await snapshotArchive(consumer, key, resolve(options.get(option)), subject.packages[key]),
       );
     }
+    // Непроверенный runtime contract не получает возможность registry/install effects.
+    for (const archive of archives)
+      readArchiveManifest(archive.path, subject.packages[archive.key]);
     receipt.archives = archives.map(({ path, ...archive }) => ({
       ...archive,
       snapshot: relative(consumer, path).replaceAll('\\', '/'),
@@ -1551,35 +2622,75 @@ export async function main(args = process.argv.slice(2)) {
       );
       const bytes = await readFile(path);
       const manifest = JSON.parse(bytes);
-      assert.equal(manifest.name, expected.name);
-      assert.equal(manifest.version, expected.version);
-      assert.ok(
-        Object.values(manifest.dependencies ?? {}).every(
-          (value) => !value.startsWith('workspace:'),
-        ),
-      );
       const locked =
         lock.packages?.[`node_modules/${expected.name}`] ??
         lock.dependencies?.[expected.name] ??
         {};
       const archive = archives.find((item) => subject.packages[item.key].name === expected.name);
-      if (archive && locked.integrity !== undefined) {
-        assert.ok(
-          typeof locked.integrity === 'string' &&
-            locked.integrity.split(/\s+/).includes(archive.integrity),
-          `${expected.name}: installed lock integrity не совпадает со snapshot`,
-        );
-      }
+      assertInstalledPackage(manifest, expected, locked, archive);
       receipt.installed.push({
         name: manifest.name,
         version: manifest.version,
         manifestSha256: hash(bytes),
+        ...(expected.runtimeDependencies ? { runtimeDependencies: runtimeFields(manifest) } : {}),
         lockIntegrity: locked.integrity ?? null,
         lockResolved: locked.resolved ?? null,
       });
     }
     await writeFile(join(consumer, 'index.html'), HTML);
     await writeFile(join(consumer, 'consumer.mjs'), fixture);
+    if (subject.schemaVersion >= 5) {
+      phase = 'public types';
+      const typeFixture =
+        authoredDotsTypeFixture() +
+        (subject.schemaVersion >= 6 ? annulusTypeFixture() : '') +
+        (subject.schemaVersion >= 7 ? stateAnnulusTypeFixture() : '') +
+        (subject.schemaVersion >= 8 ? contentScaleTypeFixture() : '') +
+        (subject.schemaVersion >= 9 ? microphoneTypeFixture() : '') +
+        (subject.schemaVersion >= 10 ? sourceStateTypeFixture(subject.schemaVersion) : '') +
+        (subject.schemaVersion >= 11 ? motionProjectionTypeFixture() : '') +
+        (subject.schemaVersion >= 12 ? widthMotionTypeFixture() : '') +
+        (subject.schemaVersion >= 15 ? clockMotionTypeFixture() : '');
+      await writeFile(join(consumer, 'consumer.ts'), typeFixture);
+      await writeFile(
+        join(consumer, 'tsconfig.json'),
+        JSON.stringify({
+          compilerOptions: {
+            target: 'ES2022',
+            module: 'NodeNext',
+            moduleResolution: 'NodeNext',
+            strict: true,
+            noEmit: true,
+            types: [],
+            lib: ['ES2022', 'DOM'],
+          },
+          files: ['consumer.ts'],
+        }),
+      );
+      const { createRequire } = await import('node:module');
+      const require = createRequire(import.meta.url);
+      const compiler = require.resolve('typescript/lib/tsc.js');
+      let result;
+      try {
+        result = execFileSync(
+          process.execPath,
+          [compiler, '--project', join(consumer, 'tsconfig.json')],
+          { cwd: consumer, encoding: 'utf8', timeout: 20_000 },
+        );
+      } catch (error) {
+        const diagnostics = `${error.stdout ?? ''}${error.stderr ?? ''}`;
+        await writeFile(join(out, 'public-types.log'), diagnostics);
+        throw new Error(`Public NodeNext consumer failed: ${diagnostics}`, { cause: error });
+      }
+      await writeFile(join(out, 'public-types.log'), result);
+      receipt.types = {
+        outcome: 'passed',
+        compilerVersion: require('typescript/package.json').version,
+        fixtureSha256: hash(typeFixture),
+        resolution: 'NodeNext',
+        negativeControls: (typeFixture.match(/@ts-expect-error/g) ?? []).length,
+      };
+    }
     phase = 'build';
     // Зависимости tooling загружаются только после запрета локального heavy run.
     const { build } = await import('vite');
@@ -1650,11 +2761,24 @@ export async function main(args = process.argv.slice(2)) {
       ),
       moduleGraph,
       bundles,
-      scenario:
-        'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim',
+      scenario: `LabUI icon-only buttons, reload Outline/Filled${subject.schemaVersion >= 2 ? ', status-circle' : ''}${subject.schemaVersion >= 3 ? ', expression-face' : ''}${subject.schemaVersion >= 4 ? ', notifications/unread Outline/Filled и off controls' : ''}${subject.schemaVersion >= 5 ? ', authored ellipsis variation и contour transition Outline/Filled' : ''}${subject.schemaVersion >= 6 ? ', авторские круговые семейства: Outline обрамление и независимые Filled masters' : ''}${subject.schemaVersion >= 7 ? ', status/playback: изменение общего обрамления во время перехода' : ''}${subject.schemaVersion >= 9 ? ', mic/mic-circle: ширина корпуса независимых Outline/Filled, native выбор и SVG export' : ''}${subject.schemaVersion >= 11 ? ', подготовленные rotation targets reload/refresh; статический timer Outline/Filled с точным отказом анимации и SVG export' : ''}${subject.schemaVersion >= 12 ? ', подготовленная ширина mic/mic-circle, независимый числовой executor, прерывание и текущий SVG' : ''}${subject.schemaVersion >= 14 ? ', mic/plus plain→circle Outline/Filled: авторские формы, прерывание, обратный ход и SVG export' : ''}; публичный Lab Motion, размер полного consumer без baseline speedup claim`,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
+    if (subject.schemaVersion >= 12) {
+      phase = 'width consumer measurement';
+      receipt.widthMotionMeasurements = await measureWidthMotionConsumers(
+        build,
+        consumer,
+        out,
+        {
+          iconsSha: subject.packages.icons.sourceCommit,
+          uiSha: subject.packages.uiCore.sourceCommit,
+          motionVersion: receipt.installed.find((item) => item.name === '@labpics/motion').version,
+        },
+        assertConsumerModuleGraph,
+      );
+    }
     phase = 'browser';
     server = await serve(join(out, 'bundle'));
     browser = await chromium.launch({
@@ -1662,18 +2786,45 @@ export async function main(args = process.argv.slice(2)) {
       ...(options.has('--browser-channel') ? { channel: options.get('--browser-channel') } : {}),
     });
     receipt.runner.browser = browser.version();
+    browserFrontier = {
+      mode: null,
+      stage: 'start',
+      member: null,
+      startedAt: performance.now(),
+      stageStartedAt: performance.now(),
+      stageStartedRecord: 0,
+      lastCompletedAt: null,
+      completedStages: [],
+    };
+    proofWork = browserProof(
+      browser,
+      `http://127.0.0.1:${server.address().port}`,
+      {
+        ...subject.authorReference,
+        schemaVersion: subject.schemaVersion,
+        states: subjectStateReferences(subject),
+        notifications: subject.notificationReference,
+        authoredDots: subject.authoredDotsReference,
+        annulus: subject.annulusReference,
+        stateAnnulus: subject.stateAnnulusReference,
+        contentScale: subject.schemaVersion >= 8 ? subject.annulusReference : undefined,
+        microphones: subject.microphoneReference,
+        motionProjection: subject.motionProjectionReference,
+        widthMotion: subject.widthMotionReference,
+        widthMotionMeasurements: receipt.widthMotionMeasurements,
+        clockMotion: subject.clockMotionReference,
+      },
+      out,
+      browserProofRecords(records, browserFrontier),
+      browserErrors,
+      browserFrontier,
+      cleanupErrors,
+    );
     await Promise.race([
-      browserProof(
-        browser,
-        `http://127.0.0.1:${server.address().port}`,
-        { ...subject.authorReference, states: subjectStateReferences(subject) },
-        out,
-        records,
-        browserErrors,
-      ),
+      proofWork.result,
       new Promise((_, reject) => {
         proofTimer = setTimeout(
-          () => reject(new Error('icons-packed browser proof timeout')),
+          () => reject(browserProofTimeout(browserFrontier, records)),
           120_000,
         );
       }),
@@ -1685,25 +2836,25 @@ export async function main(args = process.argv.slice(2)) {
       hash(await readFile(fileURLToPath(import.meta.url))),
       receipt.harness.sourceSha256,
     );
+    await assertHarnessFilesUnchanged(receipt.harness.files, (file) => readFile(join(ROOT, file)));
     receipt.outcome = 'passed';
-    receipt.qualification =
-      'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
+    receipt.qualification = `${packagePlan.length} заданных архивов и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.`;
   } catch (error) {
     receipt.outcome = 'failed';
+    const frontierSnapshot = browserFailureFrontier(error, browserFrontier, records);
     receipt.failure = {
       phase,
       browserErrors,
       message: String(error?.stack ?? error),
       ...(error?.stateContinuity ? { stateContinuity: error.stateContinuity } : {}),
+      ...(frontierSnapshot ? { browserFrontier: frontierSnapshot } : {}),
     };
     failure = error;
   } finally {
     clearTimeout(proofTimer);
-    try {
-      await browser?.close();
-    } catch (error) {
-      cleanupErrors.push(String(error));
-    }
+    const browserCleanup = await closeBrowserProof(browser, proofWork);
+    cleanupErrors.push(...browserCleanup.errors);
+    if (!browserCleanup.settled) receipt.records = structuredClone(records);
     try {
       if (server)
         await new Promise((resolve, reject) =>
@@ -1724,12 +2875,12 @@ export async function main(args = process.argv.slice(2)) {
     }
     if (cleanupErrors.length) {
       receipt.outcome = 'failed';
-      receipt.cleanupErrors = cleanupErrors;
+      receipt.cleanupErrors = [...cleanupErrors];
     }
     receipt.completed = new Date().toISOString();
-    await writeFile(join(out, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
-    if (receipt.outcome === 'failed')
-      await writeFile(join(out, 'failure.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+    const receiptBytes = consumerReceiptBytes(receipt);
+    await writeFile(join(out, 'receipt.json'), receiptBytes);
+    if (receipt.outcome === 'failed') await writeFile(join(out, 'failure.json'), receiptBytes);
     if (receipt.outcome === 'passed')
       process.stdout.write(`icons-packed: passed, ${records.length} observations\n`);
   }
@@ -1737,4 +2888,11 @@ export async function main(args = process.argv.slice(2)) {
   if (cleanupErrors.length) throw new Error(`icons-packed cleanup: ${cleanupErrors.join('; ')}`);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  try {
+    await main();
+  } catch (error) {
+    process.stderr.write(`LABUI_ICONS_CONSUMER_ERROR ${JSON.stringify(publicError(error))}\n`);
+    process.exitCode = 1;
+  }
+}

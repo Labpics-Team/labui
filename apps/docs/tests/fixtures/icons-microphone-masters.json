@@ -1,0 +1,313 @@
+{
+  "sourceCommit": "ad29e4a44f3b985fea2ef1b75fbb03041fedd792",
+  "manifest": {
+    "schemaVersion": 1,
+    "source": {
+      "kind": "figma",
+      "name": "🧪Lab UI (v2.1)",
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2416636003859748575",
+      "lastModified": "2026-11-01T01:18:02Z",
+      "pageId": "4045:632",
+      "frames": {
+        "outline": "8513:1000",
+        "filled": "6397:2241"
+      },
+      "capturedAt": "2026-11-01T02:22:39.173Z",
+      "geometrySnapshotSha256": "622f0ccb116c0dad940b6d11b590ca78952ee460c42cad69f8c3d0cc8353c967"
+    },
+    "counts": {
+      "families": 330,
+      "variants": 660
+    },
+    "comparison": {
+      "repoBaseSha": "03a4ca3ac1bf7978f9e8f554106c132a69668afb",
+      "priorFamilies": 238,
+      "addedFamilies": [
+        "align-bottom",
+        "align-horizontal-center",
+        "align-items-bottom",
+        "align-items-horizontal-center",
+        "align-items-left",
+        "align-items-right",
+        "align-items-top",
+        "align-items-vertical-center",
+        "align-left",
+        "align-right",
+        "align-top",
+        "align-vertical-center",
+        "arrow-redo-curve",
+        "arrow-undo-curve",
+        "at",
+        "basket",
+        "cards",
+        "caret-back",
+        "caret-down",
+        "caret-forward",
+        "caret-up",
+        "caret-vertical",
+        "chart-area",
+        "chart-area-panel",
+        "chart-bars-horizontal",
+        "chart-columns",
+        "chart-combo",
+        "chart-donut",
+        "chart-flow",
+        "chart-lines",
+        "chart-metric",
+        "chart-nodes",
+        "chart-pie",
+        "chart-treemap-horizontal",
+        "chart-treemap-vertical",
+        "chart-trend-up",
+        "cherries",
+        "chevrons-down",
+        "close-octagon",
+        "code",
+        "code-frame",
+        "coin-dollar",
+        "coin-ruble",
+        "collapse-horizontal",
+        "collapse-horizontal-line",
+        "collapse-vertical",
+        "collapse-vertical-line",
+        "computer",
+        "connectors",
+        "corners-in",
+        "corners-out",
+        "cursor",
+        "cursor-click",
+        "dashboard",
+        "database-export",
+        "database-plus",
+        "database-search",
+        "database-settings",
+        "expand-horizontal-line",
+        "expand-vertical",
+        "field-text",
+        "fingerprint",
+        "folder-open",
+        "fullscreen-enter",
+        "fullscreen-exit",
+        "hand-point-down",
+        "hand-point-left",
+        "hand-point-right",
+        "hand-point-up",
+        "hand-two-fingers",
+        "hard-drive",
+        "heart-pulse",
+        "justify-horizontal",
+        "justify-items-horizontal",
+        "justify-items-vertical",
+        "justify-vertical",
+        "keyboard",
+        "keys",
+        "monitor-pulse",
+        "pin-vertical",
+        "pin-vertical-off",
+        "server",
+        "sidebar-collapsed",
+        "sidebar-expanded",
+        "stop",
+        "stop-circle",
+        "storefront",
+        "tag-dollar",
+        "tag-ruble",
+        "tags",
+        "target",
+        "waveform"
+      ],
+      "removedFamilies": [],
+      "identicalGeometryFingerprints": 3,
+      "changedGeometryFingerprints": 473
+    },
+    "qualification": {
+      "capture": "complete",
+      "opticalAcceptance": "pending",
+      "constructiveParity": "pending",
+      "normalizedSourceRefusals": 0
+    },
+    "icons": {
+      "mic": {
+        "filled": {
+          "nodeId": "6413:283",
+          "nodeSha256": "a33b3a4efa176985878d0aee71483e54b93515c3bb6dabcfb9d609c531171ac9",
+          "master": "masters/figma/2416636003859748575/Filled/mic.svg",
+          "sha256": "e0efa7ec88dfdd01862ffd1b508de9b0789528046fb1b9d00442b9cdac093029",
+          "bytes": 1131,
+          "normalizedSource": {
+            "status": "supported",
+            "sha256": "6d4849fa7b7ad9996ec9ef1e1797910f4eef3a7e016439b62a643f9d5303b8c6",
+            "pathFingerprintSha256": "1cc371d2b7a2c52310e784e36b9827c4d50a245343b8f477e307fad650a28f6f",
+            "priorGeometryFingerprint": "changed"
+          }
+        },
+        "outline": {
+          "nodeId": "6431:3962",
+          "nodeSha256": "b3efbc520078bd97f7f8b30862cc7748ae5c0d8e313325b445ab3f343ab6f451",
+          "master": "masters/figma/2416636003859748575/Outline/mic.svg",
+          "sha256": "c526c734a2225a29ec6e71f76d860546f5bccf8475bad6e1842915a75f2a5f9c",
+          "bytes": 1493,
+          "normalizedSource": {
+            "status": "supported",
+            "sha256": "a7de0b228a6ba888b23603eaa6a7c38bcb78aad85c7df6d97a4a0e2e72c5bcbc",
+            "pathFingerprintSha256": "f7451fdcb743aaff3832866caea46af111a8d7ea39283472787996dc212978a6",
+            "priorGeometryFingerprint": "changed"
+          }
+        }
+      },
+      "mic-circle": {
+        "filled": {
+          "nodeId": "6413:30",
+          "nodeSha256": "0002a377d96882ffb2f794bed38ae52e1fca2bf6f71ebfebeb41a0ae58c7aea5",
+          "master": "masters/figma/2416636003859748575/Filled/mic-circle.svg",
+          "sha256": "a2b2c05074d1a8b791e1a31962c7c57658184cf7b16b737efedbed2cf792d8a7",
+          "bytes": 1639,
+          "normalizedSource": {
+            "status": "supported",
+            "sha256": "48cca8f6ea5bc172684c861fc3935234229075425a489ad5c951aced02d15907",
+            "pathFingerprintSha256": "2ab6c70b6036f654a3ef5f332a2a283509dadab0ccabd01f324a0ab3b7950ed9",
+            "priorGeometryFingerprint": "changed"
+          }
+        },
+        "outline": {
+          "nodeId": "6431:3896",
+          "nodeSha256": "be2c0ad0e597d1942428d8f71f6e66ccde7bc3859e1b97c3a1fe734114821c08",
+          "master": "masters/figma/2416636003859748575/Outline/mic-circle.svg",
+          "sha256": "86a0ac827fea4a8294c35332ec606f1f9b992f28e28660af12c72eddce3c2d32",
+          "bytes": 1838,
+          "normalizedSource": {
+            "status": "supported",
+            "sha256": "77faeaddf66365184e131199497d16110ab88b7a5be672777fdaa759451e18fa",
+            "pathFingerprintSha256": "04e69ba05e75395f552b6828dc12caf853f452bab30c81aa572392468efc2cc6",
+            "priorGeometryFingerprint": "changed"
+          }
+        }
+      }
+    }
+  },
+  "semantic": {
+    "schemaVersion": 1,
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2416636003859748575"
+    },
+    "icons": {
+      "mic": {
+        "outline": {
+          "masterSha256": "c526c734a2225a29ec6e71f76d860546f5bccf8475bad6e1842915a75f2a5f9c",
+          "pathFingerprintSha256": "f7451fdcb743aaff3832866caea46af111a8d7ea39283472787996dc212978a6",
+          "parts": [
+            {
+              "pathIndex": 0,
+              "id": "microphone-support",
+              "role": "content"
+            },
+            {
+              "pathIndex": 1,
+              "id": "microphone-body",
+              "role": "content"
+            }
+          ],
+          "gesture": null,
+          "variation": {
+            "law": "capsule.width",
+            "parameter": "bodyWidth",
+            "bodyPartId": "microphone-body"
+          }
+        },
+        "filled": {
+          "masterSha256": "e0efa7ec88dfdd01862ffd1b508de9b0789528046fb1b9d00442b9cdac093029",
+          "pathFingerprintSha256": "1cc371d2b7a2c52310e784e36b9827c4d50a245343b8f477e307fad650a28f6f",
+          "parts": [
+            {
+              "pathIndex": 0,
+              "id": "microphone-support",
+              "role": "content"
+            },
+            {
+              "pathIndex": 1,
+              "id": "microphone-body",
+              "role": "content"
+            }
+          ],
+          "gesture": null,
+          "variation": {
+            "law": "capsule.width",
+            "parameter": "bodyWidth",
+            "bodyPartId": "microphone-body"
+          }
+        }
+      },
+      "mic-circle": {
+        "outline": {
+          "masterSha256": "86a0ac827fea4a8294c35332ec606f1f9b992f28e28660af12c72eddce3c2d32",
+          "pathFingerprintSha256": "04e69ba05e75395f552b6828dc12caf853f452bab30c81aa572392468efc2cc6",
+          "parts": [
+            {
+              "pathIndex": 0,
+              "id": "microphone-support",
+              "role": "content"
+            },
+            {
+              "pathIndex": 1,
+              "id": "microphone-body",
+              "role": "content"
+            },
+            {
+              "pathIndex": 2,
+              "id": "microphone-enclosure",
+              "role": "container"
+            }
+          ],
+          "gesture": null,
+          "variation": {
+            "law": "capsule.width",
+            "parameter": "bodyWidth",
+            "bodyPartId": "microphone-body"
+          }
+        },
+        "filled": {
+          "masterSha256": "a2b2c05074d1a8b791e1a31962c7c57658184cf7b16b737efedbed2cf792d8a7",
+          "pathFingerprintSha256": "2ab6c70b6036f654a3ef5f332a2a283509dadab0ccabd01f324a0ab3b7950ed9",
+          "composition": {
+            "kind": "compound",
+            "fillRule": "evenodd"
+          },
+          "parts": [
+            {
+              "pathIndex": 0,
+              "contourIndices": [0],
+              "id": "microphone-enclosure",
+              "role": "container"
+            },
+            {
+              "pathIndex": 0,
+              "contourIndices": [1],
+              "id": "microphone-support",
+              "role": "counter"
+            },
+            {
+              "pathIndex": 0,
+              "contourIndices": [2],
+              "id": "microphone-body",
+              "role": "counter"
+            }
+          ],
+          "gesture": null,
+          "variation": {
+            "law": "capsule.width",
+            "parameter": "bodyWidth",
+            "bodyPartId": "microphone-body"
+          }
+        }
+      }
+    }
+  },
+  "masters": {
+    "masters/figma/2416636003859748575/Outline/mic.svg": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<g id=\"mic\" data-node-id=\"6431:3962\">\n<g id=\"Vector\" data-node-id=\"6432:324\">\n<path d=\"M19.1299 11.001C19.627 11.001 20.0303 11.4043 20.0303 11.9014C20.0302 14.0311 19.1847 16.0742 17.6788 17.5801C16.3864 18.8724 14.6981 19.6761 12.8995 19.8789V21.5908C12.8993 22.0876 12.4969 22.491 12 22.4912C11.5031 22.4912 11.0998 22.0878 11.0997 21.5908V19.8789C9.30125 19.6761 7.61355 18.8722 6.32129 17.5801C4.81536 16.0742 3.96888 14.0311 3.96875 11.9014C3.96875 11.4043 4.3721 11.001 4.86914 11.001C5.36616 11.0011 5.76856 11.4044 5.76856 11.9014C5.76868 13.5535 6.4256 15.1383 7.59375 16.3067C8.76221 17.475 10.3477 18.1318 12 18.1318C13.6523 18.1318 15.2369 17.475 16.4053 16.3067C17.5737 15.1383 18.2294 13.5537 18.2295 11.9014C18.2295 11.4045 18.6331 11.0012 19.1299 11.001Z\" fill=\"#101012\"/>\n<path d=\"M12.2491 1.49805C14.8072 1.62466 16.8956 3.6817 16.8956 6.26758V12.0215L16.8887 12.2666V12.2685C16.7553 14.8186 14.5878 16.7943 12.001 16.7949L11.752 16.7891C9.27617 16.6669 7.24042 14.7366 7.11132 12.2685V12.2666L7.10449 12.0215V6.26758C7.10449 3.59787 9.32998 1.49023 12.001 1.49023L12.2491 1.49805ZM12.001 3.29101C10.2664 3.29101 8.90429 4.64877 8.90429 6.26758V12.0195C8.90465 13.638 10.2666 14.9951 12.001 14.9951C13.7349 14.9945 15.0954 13.6377 15.0957 12.0195V6.26758C15.0957 4.64914 13.7351 3.29163 12.001 3.29101Z\" fill-rule=\"evenodd\" clip-rule=\"evenodd\" fill=\"#101012\"/>\n</g>\n</g>\n</svg>\n",
+    "masters/figma/2416636003859748575/Filled/mic.svg": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<g id=\"mic\" data-node-id=\"6413:283\">\n<g id=\"Vector\" data-node-id=\"6429:33\">\n<path d=\"M19.1191 10.9854C19.6246 10.9854 20.0349 11.395 20.0352 11.9004C20.035 14.0313 19.1884 16.0763 17.6816 17.583C16.3922 18.8722 14.7089 19.6753 12.915 19.8809V21.5752C12.9148 22.0805 12.5055 22.4912 12 22.4912C11.4945 22.4912 11.0842 22.0806 11.084 21.5752V19.8809C9.2905 19.6751 7.6076 18.872 6.31836 17.583C4.81161 16.0763 3.96497 14.0313 3.96484 11.9004C3.96506 11.395 4.37543 10.9854 4.88086 10.9854C5.38612 10.9857 5.79471 11.3953 5.79492 11.9004C5.79504 13.5454 6.44927 15.1238 7.6123 16.2871C8.77579 17.4505 10.3546 18.1045 12 18.1045C13.6453 18.1045 15.2232 17.4505 16.3867 16.2871C17.55 15.1238 18.204 13.5456 18.2041 11.9004C18.2043 11.3952 18.6139 10.9856 19.1191 10.9854Z\" fill=\"#101012\"/>\n<path d=\"M12 1.49121C14.6754 1.49121 16.905 3.6002 16.9053 6.27539V12.0196C16.9052 14.6949 14.6755 16.8047 12 16.8047C9.3245 16.8047 7.09579 14.6948 7.0957 12.0196V6.27539C7.09594 3.60024 9.3246 1.49124 12 1.49121Z\" fill=\"#101012\"/>\n</g>\n</g>\n</svg>\n",
+    "masters/figma/2416636003859748575/Outline/mic-circle.svg": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<g id=\"mic-circle\" data-node-id=\"6431:3896\">\n<g id=\"Vector\" data-node-id=\"6432:326\">\n<path d=\"M17.3154 10.6217C17.8105 10.6656 18.1767 11.1031 18.1328 11.5982L18.1035 11.8629L18.1025 11.8639C17.9257 13.1894 17.3148 14.4282 16.3525 15.3824L16.3516 15.3834L16.1318 15.5914L16.1309 15.5924C15.2262 16.4043 14.1019 16.9254 12.9053 17.1012V19.0875C12.9053 19.5845 12.5019 19.9879 12.0049 19.9879C11.5081 19.9875 11.1055 19.5843 11.1055 19.0875V17.1012C9.80909 16.9107 8.5976 16.3138 7.6582 15.3824L7.4707 15.1891C6.61659 14.2638 6.07225 13.1011 5.90723 11.8639L5.87793 11.5992V11.5963L5.87402 11.5084V11.5055C5.88009 11.0497 6.23063 10.6631 6.69434 10.6217C7.15834 10.5805 7.57197 10.8995 7.6582 11.3473L7.65918 11.3492L7.6709 11.4371L7.69141 11.6266L7.74707 11.9498C7.90638 12.6976 8.26569 13.3951 8.79297 13.9664L8.92578 14.1051C9.74102 14.9133 10.8487 15.3686 12.0049 15.3687C13.0887 15.3687 14.13 14.9683 14.9277 14.2525L15.0859 14.1041C15.8102 13.3855 16.251 12.4403 16.3398 11.4391V11.4371L16.3525 11.3492V11.3473C16.4387 10.8997 16.8517 10.5809 17.3154 10.6217Z\" fill=\"#101012\"/>\n<path d=\"M11.999 5.58887C13.6443 5.5889 15.0164 6.8867 15.0166 8.53223V11.1064C15.0166 12.7521 13.6444 14.0498 11.999 14.0498C10.3538 14.0496 8.98242 12.752 8.98242 11.1064V8.53223C8.9826 6.88682 10.3539 5.58909 11.999 5.58887Z\" fill=\"#101012\"/>\n<path d=\"M12 1.5C17.7988 1.50013 22.4998 6.20126 22.5 12C22.4999 17.7988 17.7988 22.4999 12 22.5C6.20126 22.4998 1.50013 17.7988 1.5 12C1.5002 6.2013 6.2013 1.5002 12 1.5ZM12 3.2998C7.19541 3.3 3.3 7.19541 3.2998 12C3.29993 16.8046 7.19537 20.7 12 20.7002C16.8047 20.7001 20.7001 16.8047 20.7002 12C20.7 7.19537 16.8046 3.29993 12 3.2998Z\" fill-rule=\"evenodd\" clip-rule=\"evenodd\" fill=\"#101012\"/>\n</g>\n</g>\n</svg>\n",
+    "masters/figma/2416636003859748575/Filled/mic-circle.svg": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<g id=\"mic-circle\" data-node-id=\"6413:30\">\n<path id=\"Vector\" data-node-id=\"6429:31\" d=\"M12.001 1.50098C17.7997 1.50125 22.501 6.20216 22.501 12.0009C22.5008 17.7996 17.7997 22.5007 12.001 22.5009C6.20208 22.5009 1.50112 17.7998 1.50098 12.0009C1.50098 6.20199 6.20199 1.50098 12.001 1.50098ZM17.3574 10.6191C16.8937 10.5783 16.4807 10.8972 16.3945 11.3447L16.3936 11.3467L16.3818 11.4345V11.4365C16.292 12.4474 15.8466 13.4015 15.1152 14.1269L14.957 14.2754C14.1517 14.9984 13.1003 15.4032 12.0059 15.4033C10.9117 15.4032 9.85996 14.9991 9.05469 14.2763L8.89746 14.1279L8.7627 13.9873C8.15451 13.3282 7.76756 12.5025 7.65039 11.625L7.62988 11.4355L7.61817 11.3467L7.61719 11.3447L7.59766 11.2617C7.47939 10.858 7.08826 10.5805 6.65332 10.6191C6.18974 10.6607 5.83913 11.0473 5.83301 11.5029V11.5049L5.83692 11.5937V11.5957L5.86621 11.8613C6.03233 13.1068 6.58063 14.2775 7.44043 15.209L7.62891 15.4043L7.62988 15.4052C8.57693 16.3441 9.79839 16.9459 11.1055 17.1367V19.1445C11.1055 19.6411 11.5084 20.0443 12.0049 20.0449C12.5017 20.0446 12.9052 19.6413 12.9053 19.1445V17.1367C14.1126 16.9607 15.2467 16.4343 16.1592 15.6152L16.3818 15.4052L16.5596 15.2217C17.4262 14.2882 17.9776 13.1135 18.1445 11.8623L18.1748 11.5957C18.2183 11.101 17.8522 10.6632 17.3574 10.6191ZM12 5.5459C10.3454 5.5459 8.9668 6.85134 8.9668 8.50586V11.0996C8.9668 12.7541 10.3454 14.0595 12 14.0595C13.6545 14.0594 15.0332 12.754 15.0332 11.0996V8.50586C15.0332 6.85144 13.6545 5.54605 12 5.5459Z\" fill-rule=\"evenodd\" clip-rule=\"evenodd\" fill=\"#101012\"/>\n</g>\n</svg>\n"
+  }
+}
