@@ -274,6 +274,35 @@ test('смена семантической ссылки меняет тольк
   assert.equal(constant(source, 'SheenHoverOpacity'), 0.32);
 });
 
+test('размеры Sheet следуют изменению владельца, сохраняя независимую геометрию', () => {
+  const reference = emit();
+  for (const [name, expected, mutate] of [
+    [
+      'SheetRadius',
+      12,
+      (fixture) => {
+        fixture.config.radii.aliases.sheet = 'l';
+      },
+    ],
+    [
+      'SheetDragArea',
+      28,
+      (fixture) => {
+        fixture.tokens.size['sheet-drag-area'].$value.value = 28;
+      },
+    ],
+  ]) {
+    const fixture = geometryFixture();
+    mutate(fixture);
+    const source = emit(fixture);
+    assert.equal(constant(source, name), expected);
+    assert.equal(
+      source.replace(`${name} = ${expected};`, `${name} = ${constant(reference, name)};`),
+      reference,
+    );
+  }
+});
+
 test('новые значения DTCG передаются в DIP, line height вычисляется по font size, tracking остаётся em', () => {
   const fixture = geometryFixture();
   fixture.tokens.size['button-h-m'].$value.value = 52;
