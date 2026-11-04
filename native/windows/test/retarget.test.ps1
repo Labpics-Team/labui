@@ -30,10 +30,12 @@ $scenario = [scriptblock]::Create($steps.Extent.Text + "`n" + $loop.Extent.Text)
 . ([scriptblock]::Create($count.Extent.Text))
 
 # Исполняется настоящий цикл и Assert-Count. UI, ввод и запись файлов заменены.
-foreach ($fault in @('none', 'cancel-drag', 'pointer-out')) {
+foreach ($fault in @('none', 'cancel-drag', 'pointer-out', 'space-failure')) {
     & {
         param($fault)
         $Count = 3
+        $Theme = 'Light'
+        $space = $null
         $name = 'interaction-Test'
         $output = [IO.Path]::GetTempPath()
         $gestures = [Collections.Generic.List[object]]::new()
@@ -45,6 +47,15 @@ foreach ($fault in @('none', 'cancel-drag', 'pointer-out')) {
         $script:lastGesture = ''
         $script:observed = [Collections.Generic.List[string]]::new()
         $script:performed = [Collections.Generic.List[string]]::new()
+
+        function Invoke-SpaceGesture([string]$Theme) {
+            Assert ($Theme -eq 'Light') 'Space потерял тему.'
+            $script:lastGesture = 'rapid-space'
+            $script:performed.Add($script:lastGesture)
+            if ($fault -eq 'space-failure') { throw 'injected Space failure' }
+            $script:activationCount += 2
+            return @{ observation = @{ status = 'complete' } }
+        }
 
         function Ui([string]$Name, [string[]]$Arguments) {
             switch ($Arguments[0]) {
@@ -68,11 +79,6 @@ foreach ($fault in @('none', 'cancel-drag', 'pointer-out')) {
                         $script:lastGesture = 'cancel-drag'
                     }
                 }
-                'send-keys' {
-                    Assert (($Arguments -join '|') -eq 'send-keys|space space space|--target|LabButtonMedium|--via|send-input') 'Серия Space изменилась.'
-                    $script:lastGesture = 'rapid-space'
-                    $script:activationCount += 3
-                }
                 default { throw "Неизвестная операция тестовой границы: $($Arguments[0])" }
             }
             $script:performed.Add($script:lastGesture)
@@ -89,12 +95,16 @@ foreach ($fault in @('none', 'cancel-drag', 'pointer-out')) {
         try { . $scenario } catch { $failure = $_ }
         if ($fault -eq 'none') {
             Assert ($null -eq $failure) "Здоровый сценарий не прошёл: $failure"
-            Assert ($script:activationCount -eq 7) 'Нарушено число click и Space активаций.'
+            Assert ($script:activationCount -eq 6) 'Нарушено число click и Space активаций.'
             Assert (($script:performed -join ',') -eq 'hover,pressed,rapid-space,cancel-drag,pointer-out') 'Сценарий не прошёл все пять жестов в нужном порядке.'
-            Assert (($script:observed -join ',') -eq 'pressed:4,rapid-space:7,cancel-drag:7,pointer-out:7') 'Readback не подтвердил каждый переход и конечный счётчик.'
+            Assert (($script:observed -join ',') -eq 'pressed:4,rapid-space:6,cancel-drag:6,pointer-out:6') 'Readback не подтвердил каждый переход и конечный счётчик.'
+            Assert ($space.observation.status -eq 'complete') 'Цикл потерял полное наблюдение Space.'
+        } elseif ($fault -eq 'space-failure') {
+            Assert ($null -ne $failure -and $failure.Exception.Message -eq 'injected Space failure') 'Ошибка Space потеряна.'
+            Assert (($script:performed -join ',') -eq 'hover,pressed,rapid-space') 'После отказа Space начался другой жест.'
         } else {
-            Assert ($null -ne $failure -and $failure.Exception.Message -match 'ровно 7 действий') 'Лишняя активация не отвергнута настоящим Assert-Count.'
-            Assert ($script:observed[-1] -eq "${fault}:8") 'Отказ не связан с наблюдаемым неверным счётчиком.'
+            Assert ($null -ne $failure -and $failure.Exception.Message -match 'ровно 6 действий') 'Лишняя активация не отвергнута настоящим Assert-Count.'
+            Assert ($script:observed[-1] -eq "${fault}:7") 'Отказ не связан с наблюдаемым неверным счётчиком.'
             if ($fault -eq 'cancel-drag') {
                 Assert (!$script:performed.Contains('pointer-out')) 'После неверного счётчика отмены начался следующий жест.'
             }

@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32 } from 'node:zlib';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
+import { validateSpaceObservation } from './space-observation.mjs';
 
 const PREFIX = 'LABUI_NATIVE_EVIDENCE';
 const PNG_MAX_BYTES = 4 * 1024 * 1024;
@@ -143,6 +144,7 @@ function frameIndex(bytes) {
 
 function validateInteractions(files, records, dimensions) {
   const result = records.get('result.json');
+  assert.equal(result.spacePattern, 'interrupted', 'native: Space pattern');
   const captures = result.captures;
   assert.ok(
     result.gesturePattern === undefined || result.gesturePattern === 'cancel-drag',
@@ -181,6 +183,7 @@ function validateInteractions(files, records, dimensions) {
     assert.equal(captures[theme].samples, frames.length, 'native: summary samples');
     assert.equal(captures[theme].images, images.size, 'native: summary images');
     assert.equal(captures[theme].gestureTiming, `${name}-window.json`, 'native: timing filename');
+    validateSpaceObservation(captures[theme].space, records.get('identity.json'), theme, window);
     assert.equal(window.clock, 'harness-stopwatch-ms', 'native: timing clock');
     assert.deepEqual(
       window.gestures.map(({ name: gesture }) => gesture),

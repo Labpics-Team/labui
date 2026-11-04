@@ -7,6 +7,7 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { evidenceLog } from '../../../scripts/ci/evidence-log.mjs';
 import { EVIDENCE_FILES, decodeNativeEvidence, encodeNativeEvidence } from './evidence.mjs';
+import { spaceFixture } from './space-observation.fixture.mjs';
 
 const SOURCE = 'a'.repeat(40);
 const PREFIX = 'LABUI_NATIVE_EVIDENCE';
@@ -77,10 +78,16 @@ const interactionPackets = (files) =>
     )
     .join('');
 
-function interactionFixture() {
+function interactionFixture(animationsEnabled = true) {
   const files = fixture();
+  const identity = JSON.parse(files.get('identity.json'));
+  files.set(
+    'identity.json',
+    json({ ...identity, ...spaceFixture('Light', animationsEnabled).identity }),
+  );
   const captures = {};
   for (const theme of ['Light', 'Dark']) {
+    const space = spaceFixture(theme, animationsEnabled);
     const name = `interaction-${theme}`;
     const frames = Array.from({ length: 10 }, (_, sampleIndex) => ({
       sampleIndex,
@@ -90,19 +97,7 @@ function interactionFixture() {
     files.set(`${name}-hover.png`, PNG);
     files.set(`${name}.mp4`, MP4);
     files.set(`${name}-record.json`, json({ mode: 'wgc', frames: 10, fileSize: MP4.length }));
-    files.set(
-      `${name}-window.json`,
-      json({
-        clock: 'harness-stopwatch-ms',
-        recordStartedMs: 1,
-        firstFrameReceivedMs: 5,
-        gestures: ['hover', 'pressed', 'rapid-space', 'pointer-out'].map((name, index) => ({
-          name,
-          startedMs: 10 + index * 100,
-          completedMs: 20 + index * 100,
-        })),
-      }),
-    );
+    files.set(`${name}-window.json`, json(space.window));
     files.set(
       `${name}.frames/manifest.json`,
       json({
@@ -118,9 +113,18 @@ function interactionFixture() {
       Buffer.from(`${frames.map(JSON.stringify).join('\n')}\n`),
     );
     files.set(`${name}.frames/frames/frame-000000.jpg`, JPEG);
-    captures[theme] = { mode: 'wgc', samples: 10, images: 1, gestureTiming: `${name}-window.json` };
+    captures[theme] = {
+      mode: 'wgc',
+      samples: 10,
+      images: 1,
+      gestureTiming: `${name}-window.json`,
+      space: space.space,
+    };
   }
-  files.set('result.json', json({ passed: true, captures, smoothness: 'not-qualified' }));
+  files.set(
+    'result.json',
+    json({ passed: true, captures, spacePattern: 'interrupted', smoothness: 'not-qualified' }),
+  );
   return files;
 }
 
@@ -140,17 +144,17 @@ function cancelDragFixture() {
       value.gestures.splice(3, 0, {
         name: 'cancel-drag',
         arguments: ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50'],
-        startedMs: 310,
-        completedMs: 320,
+        startedMs: 610,
+        completedMs: 620,
       });
-      value.gestures[4].startedMs = 410;
-      value.gestures[4].completedMs = 420;
+      value.gestures[4].startedMs = 710;
+      value.gestures[4].completedMs = 720;
     });
   }
   return files;
 }
 
-test('cancel-drag and legacy captures retain every byte under their explicit gesture contract', () => {
+test('interrupted Space captures retain every byte under both explicit gesture layouts', () => {
   for (const files of [interactionFixture(), cancelDragFixture()]) {
     assert.deepEqual(
       decodeNativeEvidence(
@@ -164,7 +168,78 @@ test('cancel-drag and legacy captures retain every byte under their explicit ges
   }
 });
 
-test('cancel-drag cannot be missing, reordered, mixed with legacy or silently downgraded', () => {
+test('current interaction requires the full Space trace even when its marker is removed', () => {
+  for (const change of [
+    (value) => {
+      Reflect.deleteProperty(value.captures.Light, 'space');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.captures.Dark.space.observation, 'events');
+    },
+    (value) => {
+      Reflect.deleteProperty(value, 'spacePattern');
+    },
+    (value) => {
+      Reflect.deleteProperty(value, 'spacePattern');
+      Reflect.deleteProperty(value.captures.Light, 'space');
+      Reflect.deleteProperty(value.captures.Dark, 'space');
+    },
+    (value) => {
+      value.spacePattern = 'settled';
+    },
+    (value) => {
+      value.captures.Light.space.injection.events[1].accepted = 0;
+    },
+  ]) {
+    const files = interactionFixture();
+    editJSON(files, 'result.json', change);
+    assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'), /Space/);
+    assert.throws(
+      () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
+      /Space/,
+    );
+  }
+});
+
+test('Space traces survive transport byte-exactly in both motion modes within the shared result limit', () => {
+  for (const animationsEnabled of [true, false]) {
+    const files = interactionFixture(animationsEnabled);
+    const original = files.get('result.json');
+    const decoded = decodeNativeEvidence(
+      encodeNativeEvidence(files, SOURCE, 'interaction'),
+      SOURCE,
+      'interaction',
+    );
+    assert.deepEqual(decoded.get('result.json'), original);
+    for (const theme of ['Light', 'Dark']) {
+      assert.deepEqual(
+        JSON.parse(decoded.get('result.json')).captures[theme].space,
+        JSON.parse(original).captures[theme].space,
+      );
+    }
+    const result = { ...JSON.parse(original), padding: '' };
+    result.padding = 'x'.repeat(256 * 1024 - json(result).length);
+    files.set('result.json', json(result));
+    assert.equal(files.get('result.json').length, 256 * 1024);
+    assert.deepEqual(
+      decodeNativeEvidence(
+        encodeNativeEvidence(files, SOURCE, 'interaction'),
+        SOURCE,
+        'interaction',
+      ),
+      files,
+    );
+    result.padding += 'x';
+    files.set('result.json', json(result));
+    assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'), /размер/);
+    assert.throws(
+      () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
+      /размер/,
+    );
+  }
+});
+
+test('cancel-drag cannot be missing, reordered, mixed with four gestures or silently downgraded', () => {
   const rejects = (files, reason = 'invalid cancel-drag contract') => {
     assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'), reason);
     assert.throws(

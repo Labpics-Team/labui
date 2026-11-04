@@ -19,8 +19,12 @@ if (Test-Path -LiteralPath $output) { throw 'Каталог результата
 New-Item -ItemType Directory -Path $output | Out-Null
 $app = Join-Path ([IO.Path]::GetFullPath($ApplicationDirectory)) 'Buttons.exe'
 $commands = [Collections.Generic.List[object]]::new()
+$clockOriginTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture)
 $clock = [Diagnostics.Stopwatch]::StartNew()
+$clockOriginUpperTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globalization.CultureInfo]::InvariantCulture)
 $process = $null
+$spaceChannel = $null
+$smokeFailure = $null
 $animationBefore = $null
 $animationReadback = $null
 $animationObservationPath = Join-Path $output 'animation-observation.json'
@@ -29,7 +33,7 @@ $layoutObservationPath = Join-Path $output 'layout-observation.json'
 $close = @{}
 $saved = @{}
 foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK',
-    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION', 'LABUI_LAYOUT_OBSERVATION')) {
+    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION', 'LABUI_LAYOUT_OBSERVATION', 'LABUI_SPACE_OBSERVATION')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 
@@ -475,6 +479,52 @@ function Ui([string]$Name, [string[]]$Arguments) {
     return Finish-Tool $tool
 }
 
+function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
+    if ($Command -cnotin @('arm Light', 'arm Dark', 'complete')) { throw 'Неверная команда Space.' }
+    if ($Timeout -lt 1 -or $Timeout -gt 5000) { throw 'Неверный бюджет ответа Space.' }
+    $spaceChannel.id++
+    $process.StandardInput.WriteLine($Command)
+    $process.StandardInput.Flush()
+    if (!$spaceChannel.read.Wait($Timeout)) { throw 'Space не ответил в бюджете команды.' }
+    $line = $spaceChannel.read.GetAwaiter().GetResult()
+    if ($null -eq $line -or [Text.Encoding]::UTF8.GetByteCount($line) -gt 128 * 1024) { throw 'Нет полного ограниченного ответа Space.' }
+    $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($process.StandardOutput, 128 * 1024)
+    $reply = $line | ConvertFrom-Json
+    if (($reply.id -isnot [int] -and $reply.id -isnot [long]) -or $reply.id -ne $spaceChannel.id -or
+        $reply.ok -isnot [bool] -or !$reply.ok) { throw "Space отклонил $Command`: $line" }
+    if (($reply.value.pid -isnot [int] -and $reply.value.pid -isnot [long]) -or $reply.value.pid -ne $process.Id) {
+        throw 'Space ответил от другого процесса.'
+    }
+    return $reply.value
+}
+
+function Invoke-SpaceGesture([string]$Theme) {
+    $timing = @{ armStartedMs = $clock.Elapsed.TotalMilliseconds }
+    $armed = Invoke-SpaceCommand "arm $Theme"
+    $timing.armCompletedMs = $clock.Elapsed.TotalMilliseconds
+    if ($armed.status -cne 'armed' -or $armed.theme -cne $Theme -or
+        $armed.automationId -cne 'LabButtonMedium' -or $armed.focused -isnot [bool] -or !$armed.focused) {
+        throw 'Space не подтвердил подключение к нужной кнопке.'
+    }
+    $timing.inputStartedMs = $clock.Elapsed.TotalMilliseconds
+    $injection = [SpaceInput]::Run($process.Id, [long]$window)
+    $timing.inputCompletedMs = $clock.Elapsed.TotalMilliseconds
+    $timing.completeStartedMs = $clock.Elapsed.TotalMilliseconds
+    $deadline = $clock.Elapsed.TotalMilliseconds + 5000
+    $observation = $null
+    do {
+        $remaining = [int][Math]::Max(0, $deadline - $clock.Elapsed.TotalMilliseconds)
+        if ($remaining -eq 0) { break }
+        $observation = Invoke-SpaceCommand 'complete' $remaining
+        if ($observation.status -ceq 'complete') { break }
+        if ($observation.status -cne 'waiting') { throw 'Неизвестное состояние Space.' }
+        Start-Sleep -Milliseconds 50
+    } while ($clock.Elapsed.TotalMilliseconds -lt $deadline)
+    $timing.completeCompletedMs = $clock.Elapsed.TotalMilliseconds
+    if ($null -eq $observation -or $observation.status -cne 'complete') { throw 'Space не достиг последнего idle за 5 секунд.' }
+    return @{ observation = $observation; injection = $injection; window = $timing }
+}
+
 function Capture-LowerControls([string]$Theme) {
     $file = "page-lower-$Theme.png"
     $states = @{}
@@ -642,17 +692,20 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
         }
         $recording.stderr = $recording.stderrReader.ReadToEndAsync($recording.cancellation.Token)
         $captureWindow = @{ recordStartedMs = $recording.startedMs; firstFrameReceivedMs = $clock.Elapsed.TotalMilliseconds;
-            clock = 'harness-stopwatch-ms'; gestures = $gestures }
+            clock = 'harness-stopwatch-ms'; clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
+            clockFrequency = [Diagnostics.Stopwatch]::Frequency; gestures = $gestures }
+        $space = $null
         $steps = @(
             @{ name = 'hover'; arguments = @('hover', 'LabButtonMedium', '--dwell-time', '1000') },
             @{ name = 'pressed'; arguments = @('drag', 'LabButtonMedium', 'LabButtonMedium', '--hold-ms', '1000') },
-            @{ name = 'rapid-space'; arguments = @('send-keys', 'space space space', '--target', 'LabButtonMedium', '--via', 'send-input') },
+            @{ name = 'rapid-space'; arguments = @('space-down-up-down-up', 'LabButtonMedium') },
             @{ name = 'cancel-drag'; arguments = @('drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50') },
             @{ name = 'pointer-out'; arguments = @('hover', 'LabActionResult', '--dwell-time', '800') }
         )
         foreach ($step in $steps) {
             $startedMs = $clock.Elapsed.TotalMilliseconds
-            Ui "$name-$($step.name)" $step.arguments | Out-Null
+            if ($step.name -eq 'rapid-space') { $space = Invoke-SpaceGesture $Theme }
+            else { Ui "$name-$($step.name)" $step.arguments | Out-Null }
             $gestures.Add(@{ name = $step.name; arguments = $step.arguments;
                 startedMs = $startedMs; completedMs = $clock.Elapsed.TotalMilliseconds })
             $captureWindow | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output "$name-window.json")
@@ -660,13 +713,15 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
                 Ui "$name-hover-image" @('screenshot', 'LabButtonMedium', '--output', (Join-Path $output "$name-hover.png")) | Out-Null
             }
             if ($step.name -eq 'pressed') { Assert-Count ($Count + 1) }
-            if ($step.name -in @('rapid-space', 'cancel-drag', 'pointer-out')) { Assert-Count ($Count + 4) }
+            if ($step.name -in @('rapid-space', 'cancel-drag', 'pointer-out')) { Assert-Count ($Count + 3) }
             if ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -ge $inputBudgetMs) {
                 throw "Ввод $name вышел за бюджет записи."
             }
         }
         $recordResult = Finish-Tool $recording -Timeout ($durationSec * 1000 + 30000)
-        return Assert-Capture $name $recordResult $captureWindow
+        $capture = Assert-Capture $name $recordResult $captureWindow
+        $capture.space = $space
+        return $capture
     } catch { $recordingFailure = $_; throw }
     finally {
         if ($recording) {
@@ -689,6 +744,8 @@ try {
     $digest = $WinApp.archiveSha256
     $script:cli = $WinApp.path
     Add-Type -Path $AnimationSettingsPath
+    Add-Type -Path "$PSScriptRoot/space-input.cs"
+    Add-Type -Path "$PSScriptRoot/../../../examples/windows/SpaceProtocol.cs"
     $env:LABUI_LAYOUT_OBSERVATION = $layoutObservationPath
     $animationBefore = [ClientAreaAnimation]::Read()
     [ClientAreaAnimation]::Write($AnimationsEnabled)
@@ -696,7 +753,22 @@ try {
     if ($animationReadback -ne $AnimationsEnabled) { throw 'Настройка анимации hosted runner не подтвердилась.' }
     $env:LABUI_ANIMATION_OBSERVATION = $animationObservationPath
     $env:LABUI_LIFETIME_OBSERVATION = if ($Lifetime) { $lifetimeObservationPath } else { $null }
-    $process = Start-Process -FilePath $app -WorkingDirectory $ApplicationDirectory -WindowStyle Hidden -PassThru
+    $env:LABUI_SPACE_OBSERVATION = '1'
+    $appStart = [Diagnostics.ProcessStartInfo]::new($app)
+    $appStart.WorkingDirectory = $ApplicationDirectory
+    $appStart.UseShellExecute = $false
+    $appStart.CreateNoWindow = $true
+    $appStart.WindowStyle = [Diagnostics.ProcessWindowStyle]::Hidden
+    $appStart.RedirectStandardInput = $true
+    $appStart.RedirectStandardOutput = $true
+    $appStart.RedirectStandardError = $true
+    $appStart.StandardInputEncoding = [Text.UTF8Encoding]::new($false)
+    $appStart.StandardOutputEncoding = [Text.UTF8Encoding]::new($false, $true)
+    $appStart.StandardErrorEncoding = [Text.UTF8Encoding]::new($false, $true)
+    $process = [Diagnostics.Process]::Start($appStart)
+    $spaceChannel = @{ id = 0;
+        read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($process.StandardOutput, 128 * 1024);
+        errorRead = [LabUI.Buttons.SpaceProtocol]::ReadErrorAsync($process.StandardError) }
     $started = $process.StartTime
     $deadline = [DateTime]::UtcNow.AddSeconds(20)
     do {
@@ -773,20 +845,23 @@ try {
     Assert-Count 3
     $captures = @{}
     $captures.Light = Capture-Interaction 'Light' 3
-    $captures.Dark = Capture-Interaction 'Dark' 7
+    $captures.Dark = Capture-Interaction 'Dark' 6
     $result = @{ passed = $true; scope = 'native render capture, click, Space, disabled-to-enabled, hover/hold/rapid-input/cancelled-press capture';
-       gesturePattern = 'cancel-drag'; retarget = 'not-qualified';
+       gesturePattern = 'cancel-drag'; spacePattern = 'interrupted'; retarget = 'not-qualified';
        captures = $captures; lowerControls = $lowerControls; initialLayout = $initialLayout;
        visualReview = 'pending'; motionLifetime = 'not-qualified';
        smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' }
     if ($Lifetime) {
-        $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 11
+        $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 9
         $result.motionLifetime = 'bounded-disposal-reuse'
     }
     $resultJson = $result | ConvertTo-Json -Depth 12
     if ([Text.Encoding]::UTF8.GetByteCount($resultJson + [Environment]::NewLine) -gt 256 * 1024) { throw 'Полный result.json превысил лимит evidence.' }
     $resultJson | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
+    & node "$PSScriptRoot/space-observation.mjs" (Join-Path $output 'result.json') (Join-Path $output 'identity.json')
+    if ($LASTEXITCODE -ne 0) { throw 'Space trace не прошёл полную проверку.' }
 } catch {
+    $smokeFailure = $_
     $_ | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
     throw
 } finally {
@@ -794,6 +869,7 @@ try {
         if ($process) {
             try {
                 $process.Refresh()
+                if ($spaceChannel) { $process.StandardInput.Close() }
                 if (!$process.HasExited) {
                     $process.CloseMainWindow() | Out-Null
                     if (!$process.WaitForExit(5000)) {
@@ -808,9 +884,20 @@ try {
                 }
                 $close.exited = $process.HasExited
                 $close.exitCode = $process.ExitCode
+                if ($spaceChannel) {
+                    if (!$spaceChannel.read.Wait(5000) -or !$spaceChannel.errorRead.Wait(5000)) { throw 'Потоки Space не завершились после процесса.' }
+                    if ($null -ne $spaceChannel.read.GetAwaiter().GetResult()) { throw 'Space отправил лишний ответ.' }
+                    $close.stderr = $spaceChannel.errorRead.GetAwaiter().GetResult()
+                    $close.spaceChannel = 'closed'
+                }
             } finally { $process.Dispose() }
         }
         $commands | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output 'commands.json')
+    } catch {
+        if ($smokeFailure) {
+            $close.applicationCleanupError = $_.Exception.ToString()
+            $smokeFailure.Exception.Data['applicationCleanupError'] = $close.applicationCleanupError
+        } else { throw }
     } finally {
         try {
             foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }

@@ -8,10 +8,16 @@ public sealed partial class ButtonsPage : Page
 {
     private int activations;
     private readonly LifetimeProbe? lifetime;
+    private readonly SpaceProbe? space;
 
     public ButtonsPage()
     {
         InitializeComponent();
+        if (Environment.GetEnvironmentVariable("LABUI_SPACE_OBSERVATION") == "1")
+        {
+            space = new SpaceProbe(LifetimeTarget, () => activations);
+            Unloaded += UnloadedSpace;
+        }
         if (Environment.GetEnvironmentVariable("LABUI_LAYOUT_OBSERVATION") is { } layoutPath)
         {
             void ObserveLayout(object sender, RoutedEventArgs args)
@@ -41,6 +47,12 @@ public sealed partial class ButtonsPage : Page
     private void ArmLifetime(object sender, RoutedEventArgs args) => lifetime?.Arm();
     private void RestoreLifetime(object sender, RoutedEventArgs args) => lifetime?.Restore();
     private void CompleteLifetime(object sender, RoutedEventArgs args) => lifetime?.Complete();
+
+    private void UnloadedSpace(object sender, RoutedEventArgs args)
+    {
+        Unloaded -= UnloadedSpace;
+        space?.Dispose();
+    }
 
     private void UnloadedPage(object sender, RoutedEventArgs args)
     {

@@ -10,6 +10,7 @@
     <WindowsAppSDKBootstrapInitialize>false</WindowsAppSDKBootstrapInitialize>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="test/**/*.cs" />
     <ProjectReference Include="$(LabMotionProject)" Condition="'$(LabMotionProject)' != ''" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />

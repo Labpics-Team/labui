@@ -245,6 +245,7 @@ function Assert-AppCleanup([bool]$AlreadyExited) {
     $process.Exited = $AlreadyExited
     $app = $process.Path; $started = $process.StartTime
     $close = @{}; $saved = @{}; $commands = @()
+    $spaceChannel = $null; $smokeFailure = $null
     $animationBefore = $true
     [ClientAreaAnimation]::Value = $false; [ClientAreaAnimation]::Writes = 0
     # Подменяется только граница ОС; исполняется настоящий внешний finally smoke.

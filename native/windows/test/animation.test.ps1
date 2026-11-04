@@ -2,6 +2,7 @@ param([string]$Harness = (Join-Path $PSScriptRoot 'smoke.ps1'))
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+$smokeFailure = $null
 
 # Подменяется только системная граница. Настройки Windows тест не читает и не меняет.
 class ClientAreaAnimation {
@@ -55,7 +56,7 @@ $setupStart = -1
 $launch = -1
 for ($i = 0; $i -lt $statements.Count; $i++) {
     if ($statements[$i].Extent.Text -match '^\$animationBefore\s*=') { $setupStart = $i }
-    if ($statements[$i].Extent.Text -match '^\$process\s*=\s*Start-Process') { $launch = $i; break }
+    if ($statements[$i].Extent.Text -match '^\$appStart\s*=') { $launch = $i; break }
 }
 Assert ($setupStart -ge 0 -and $launch -gt $setupStart) 'Нет настройки перед запуском процесса.'
 $setup = [scriptblock]::Create(($statements[$setupStart..($launch - 1)].Extent.Text -join "`n"))
@@ -78,6 +79,7 @@ foreach ($expected in @($true, $false)) {
                 $saved = @{ LABUI_ANIMATION_OBSERVATION = $env:LABUI_ANIMATION_OBSERVATION;
                     LABUI_LIFETIME_OBSERVATION = $env:LABUI_LIFETIME_OBSERVATION }
                 $process = $null
+                $spaceChannel = $null
                 $close = @{}
                 $commands = @()
                 $output = [IO.Path]::GetTempPath()
@@ -117,6 +119,7 @@ foreach ($expected in @($true, $false)) {
                 $close = @{}
                 $output = [IO.Path]::GetTempPath()
                 $app = 'fake-app.exe'
+                $spaceChannel = $null
                 $commands = @(@{ name = 'fixture'; arguments = @(); exitCode = 0 })
                 $written = @{}
                 $process = [pscustomobject]@{

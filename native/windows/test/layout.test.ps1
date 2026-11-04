@@ -2,6 +2,7 @@ param([string]$Harness = (Join-Path $PSScriptRoot 'smoke.ps1'))
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+$smokeFailure = $null
 function Assert([bool]$Condition, [string]$Message) { if (!$Condition) { throw $Message } }
 function Assert-Rejected([scriptblock]$Action, [string]$Message) {
     $failed = $false
@@ -226,10 +227,25 @@ try {
                     $Lifetime = $false
                     $captures = @{}
                     $lowerControls = @{}
+                    function node {
+                        param($Validator, $Result, $Identity)
+                        Assert ($Validator.EndsWith('space-observation.mjs')) 'Неизвестная внешняя проверка результата.'
+                        Assert (Test-Path -LiteralPath $Result) 'Проверка Space запущена до сериализации.'
+                        $script:LASTEXITCODE = 0
+                    }
                     . $publication
                     $readback = Get-Content -LiteralPath (Join-Path $output 'result.json') -Raw | ConvertFrom-Json
                     Assert ($readback.initialLayout.textScaleFactor -eq 2.25) 'Result потерял фактический масштаб.'
                     Assert (($readback.initialLayout | ConvertTo-Json -Depth 10 -Compress) -ceq ($value | ConvertTo-Json -Depth 10 -Compress)) 'Result потерял полное исходное наблюдение.'
+                    function Invoke-Lifetime($Path, $Process, [int]$Count) {
+                        Assert ($Count -eq 9) 'Lifetime caller не сохранил две активации Space на тему.'
+                        return @{ countBefore = $Count; countAfter = $Count + 1 }
+                    }
+                    $Lifetime = $true
+                    $lifetimeObservationPath = 'fixture-lifetime.json'
+                    . $publication
+                    $readback = Get-Content -LiteralPath (Join-Path $output 'result.json') -Raw | ConvertFrom-Json
+                    Assert ($readback.lifetime.countBefore -eq 9 -and $readback.lifetime.countAfter -eq 10) 'Result потерял lifetime caller.'
                 }
             }
             $processFixture.HasExited = $true
@@ -241,6 +257,7 @@ try {
             Assert-Rejected { Read-LayoutObservation $layoutObservationPath $processFixture } 'Принят JSON сверх лимита.'
         } finally {
             $process = $null
+            $spaceChannel = $null
             $animationBefore = $null
             $commands = @()
             $close = @{}
