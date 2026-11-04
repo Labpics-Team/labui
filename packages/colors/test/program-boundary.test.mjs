@@ -27,7 +27,7 @@ describe('граница полного Program-контракта', () => {
   it('полный словарь и все реальные значения доходят до light/dark/system CSS', async () => {
     const engine = await createLabuiEngine();
     const output = scopes(await generateContract());
-    expect(declared).toHaveLength(163);
+    expect(declared).toHaveLength(164);
     expect(new Set(declared).size).toBe(declared.length);
     for (const [index, theme] of THEMES.entries()) {
       const result = readyTheme(engine, theme);

@@ -60,7 +60,7 @@ describe('IC: назначение общей акцентной заливки'
       ready(engine, theme);
       expect(engine.resolve(theme).paints).toEqual(before.paints);
       expect(engine.resolve(theme, 'normal').vars).toEqual(before.vars);
-      expect(before.paints.size).toBe(163);
+      expect(before.paints.size).toBe(164);
       expect(get(before, 'fill-accent')).toEqual(get(before, 'label-accent'));
     },
   );
