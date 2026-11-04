@@ -1657,7 +1657,14 @@ function browserProof(
       }
       if (reference.widthMotion) {
         mark('width-motion');
-        await widthMotionBrowserProof(page, reference.microphones, reducedMotion, records, out);
+        await widthMotionBrowserProof(
+          page,
+          reference.microphones,
+          reducedMotion,
+          records,
+          out,
+          reference.schemaVersion,
+        );
         mark('width-motion-measurement');
         await widthMotionMeasurementBrowserProof(
           page,
@@ -2794,6 +2801,7 @@ export async function main(args = process.argv.slice(2)) {
       `http://127.0.0.1:${server.address().port}`,
       {
         ...subject.authorReference,
+        schemaVersion: subject.schemaVersion,
         states: subjectStateReferences(subject),
         notifications: subject.notificationReference,
         authoredDots: subject.authoredDotsReference,

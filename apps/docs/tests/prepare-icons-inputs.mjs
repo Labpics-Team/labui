@@ -1232,7 +1232,12 @@ export async function summarize(directory) {
     }
     if (subject.schemaVersion >= 12 && receipt.outcome === 'passed') {
       try {
-        assertWidthMotionVisualEvidence(visuals, receipt.records, subject.microphoneReference);
+        assertWidthMotionVisualEvidence(
+          visuals,
+          receipt.records,
+          subject.microphoneReference,
+          subject.schemaVersion,
+        );
       } catch (error) {
         readbackFailure ??= { file: 'result/width-motion-visual-evidence', error };
       }

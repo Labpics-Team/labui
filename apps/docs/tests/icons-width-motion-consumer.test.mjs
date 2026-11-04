@@ -431,7 +431,7 @@ test('mounted width cleanup removes its nodes even after a rejected Motion compl
   }
 });
 
-function deferredWidthMount() {
+function deferredWidthMount(options = {}) {
   const elements = [];
   const updates = [];
   class Element {
@@ -523,18 +523,28 @@ function deferredWidthMount() {
         icon,
         svg: '<svg><path /></svg>',
         renderTarget: { selector: 'path' },
-        sample: () => ({ ok: true, d: 'width:1' }),
+        sample: options.sample ?? (() => ({ ok: true, d: 'width:1' })),
       },
     }),
     motionCapabilities: () => ({ ok: true, capabilities: {} }),
   }));
-  const consumer = mountWidthMotionConsumer(apis, [], [], () => {
-    throw new Error('Readiness проверка не запускает анимацию');
-  });
+  const consumer = mountWidthMotionConsumer(
+    apis,
+    [],
+    [],
+    options.value ??
+      (() => {
+        throw new Error('Readiness проверка не запускает анимацию');
+      }),
+  );
   return {
     consumer,
+    media,
     mediaListeners,
     updates,
+    statuses: elements.filter((element) => element.tag === 'output'),
+    controls: elements.filter((element) => element.tag === 'button' && element.dataset.width),
+    symbols: elements.filter((element) => element.tag === 'lab-button'),
     nativeButtons: elements
       .filter((element) => element.tag === 'lab-button')
       .map((element) => element.shadowRoot.querySelector('button')),
@@ -551,6 +561,67 @@ function deferredWidthMount() {
     },
   };
 }
+
+test('width caption follows admitted native and programmatic targets without frame writes', async () => {
+  const f = fixture();
+  const mounted = deferredWidthMount({ value: f.value, sample: f.prepared.sample });
+  try {
+    for (const update of mounted.updates) update();
+    await mounted.consumer.ready;
+    const status = mounted.statuses[0];
+    let label = status.textContent;
+    let writes = 0;
+    Object.defineProperty(status, 'textContent', {
+      get: () => label,
+      set: (next) => {
+        label = next;
+        writes++;
+      },
+    });
+    assert.equal(label, 'Авторская ширина');
+    assert.equal(mounted.consumer.request('mic', 'outline', 0.92, 800).ok, true);
+    assert.equal(label, 'Целевая ширина корпуса 0.92');
+    f.factory.instances.at(-1).emit(0.96);
+    assert.equal(label, 'Целевая ширина корпуса 0.92');
+    assert.equal(writes, 1, 'an intermediate pose does not rewrite the target caption');
+    mounted.controls
+      .find((button) => button.dataset.width === '0.8')
+      .dispatchEvent({
+        type: 'click',
+        isTrusted: true,
+      });
+    assert.equal(label, 'Целевая ширина корпуса 0.8');
+    const symbol = mounted.symbols[0];
+    symbol.dispatchEvent({
+      type: 'click',
+      isTrusted: true,
+      composed: true,
+      composedPath: () => [symbol.shadowRoot.querySelector('button'), symbol],
+    });
+    assert.equal(label, 'Авторская ширина');
+    for (const width of [0.79, 1.01, Number.NaN]) {
+      assert.equal(mounted.consumer.request('mic', 'outline', width).ok, false);
+      assert.equal(label, 'Авторская ширина');
+    }
+    assert.equal(mounted.consumer.request('mic', 'outline', 0.9, -1).ok, false);
+    assert.equal(label, 'Авторская ширина');
+    mounted.media.matches = true;
+    assert.equal(mounted.consumer.request('mic', 'outline', 0.92).ok, true);
+    assert.equal(label, 'Целевая ширина корпуса 0.92');
+    symbol.querySelector('path').setAttribute('d', 'foreign');
+    mounted.controls
+      .find((button) => button.dataset.width === '0.8')
+      .dispatchEvent({
+        type: 'click',
+        isTrusted: true,
+      });
+    assert.equal(label, 'Целевая ширина корпуса 0.92', 'refused native request keeps the target');
+  } finally {
+    await mounted.consumer.cleanup();
+    await f.controller.cleanup();
+    mounted.restore();
+  }
+});
 
 test('mounted readiness owns native listeners until cleanup and cannot revive them afterward', async () => {
   for (const order of ['ready-first', 'cleanup-first', 'partially-ready', 'cleanup-pending']) {
@@ -752,6 +823,8 @@ function captureEntry(raw, icon, variant, width) {
     icon,
     variant,
     lastWrittenWidth: width,
+    targetWidth: width,
+    targetLabel: width === 1 ? 'Авторская ширина' : `Целевая ширина корпуса ${width}`,
     capability: {
       law: 'capsule.width',
       formats: ['svg', 'prepared-width'],
@@ -808,7 +881,15 @@ test('capture binds actual raw geometry, all variants and sizes to exact width a
     }),
   );
   assertWidthMotionVisualEvidence(visuals, records, raw);
+  const legacy = structuredClone(records);
+  for (const record of legacy)
+    for (const entry of record.entries) Reflect.deleteProperty(entry, 'targetLabel');
+  assertWidthMotionVisualEvidence(visuals, legacy, raw, 14);
+  assert.throws(() => assertWidthMotionVisualEvidence(visuals, legacy, raw, 15));
   for (const sabotage of [
+    (changed) => {
+      changed[0].entries[0].targetLabel = 'Целевая ширина корпуса 0.8';
+    },
     (changed) => {
       changed[1].entries[0].samples[0].paths = raw.icons.mic.outline.paths;
     },

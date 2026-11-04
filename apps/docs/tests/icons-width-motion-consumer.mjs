@@ -3,9 +3,9 @@ import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import legacyWidthMotionFixture from './fixtures/icons-width-motion-v14.json' with { type: 'json' };
 import { downloadedSvg } from './icons-authored-dots-consumer.mjs';
 import { MICROPHONE_ICONS, assertMicrophonePaths } from './icons-microphone-consumer.mjs';
-import legacyWidthMotionFixture from './fixtures/icons-width-motion-v14.json' with { type: 'json' };
 
 export const WIDTH_MOTION_ENTRIES = Object.freeze(
   MICROPHONE_ICONS.map((icon) => `@labpics/icons/gestures/${icon}`),
@@ -476,6 +476,13 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
       const status = document.createElement('output');
       status.setAttribute('aria-live', 'polite');
       status.textContent = 'Авторская ширина';
+      const request = (width, duration) => {
+        const receipt = controller.request(width, duration);
+        if (receipt.ok)
+          status.textContent =
+            receipt.to === 1 ? 'Авторская ширина' : `Целевая ширина корпуса ${receipt.to}`;
+        return receipt;
+      };
       for (const [width, label] of [
         [1, 'Авторская ширина'],
         [0.8, 'Узкий корпус'],
@@ -486,9 +493,8 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
         button.textContent = label;
         button.dataset.width = String(width);
         listen(button, 'click', (event) => {
-          const result = controller.request(width);
+          const result = request(width);
           events.push({ trusted: event.isTrusted, icon: prepared.icon, variant, result });
-          status.textContent = `Ширина корпуса ${width}`;
         });
         controls.append(button);
       }
@@ -538,6 +544,8 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
         prepared,
         capability: capability.capabilities,
         controller,
+        request,
+        status,
         samples,
         group,
         exportSvg,
@@ -546,8 +554,7 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
       for (const sample of samples)
         listen(sample.button, 'click', (event) => {
           const target = controller.read().targetWidth === 1 ? 0.8 : 1;
-          const result = controller.request(target);
-          status.textContent = `Целевая ширина корпуса ${target}`;
+          const result = request(target);
           events.push({
             icon: prepared.icon,
             variant,
@@ -576,6 +583,7 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
     icon: entry.icon,
     variant: entry.variant,
     ...entry.controller.read(),
+    targetLabel: entry.status.textContent,
     capability: entry.capability,
     renderTarget: entry.prepared.renderTarget,
     staticCapability: entry.staticApi.glyphCapabilities(entry.variant).variation,
@@ -604,8 +612,7 @@ export function mountWidthMotionConsumer(apis, staticApis, peers, value) {
   return {
     ready,
     read: () => ({ entries: entries.map(readEntry), events }),
-    request: (icon, variant, width, duration) =>
-      find(icon, variant).controller.request(width, duration),
+    request: (icon, variant, width, duration) => find(icon, variant).request(width, duration),
     control: (icon, variant, method, argument) => find(icon, variant).controller[method](argument),
     settle: async (icon, variant) => {
       await find(icon, variant).controller.settle();
@@ -680,9 +687,14 @@ if(preparedWidth.ok) preparedWidth.prepared.sample({width:.9});
 `;
 }
 
-function assertWidthEntry(entry, raw) {
+function assertWidthEntry(entry, raw, schemaVersion = 15) {
   const reference = raw.icons[entry.icon][entry.variant];
   assert.ok(entry.lastWrittenWidth >= 0.8 && entry.lastWrittenWidth <= 1);
+  if (schemaVersion >= 15)
+    assert.equal(
+      entry.targetLabel,
+      entry.targetWidth === 1 ? 'Авторская ширина' : `Целевая ширина корпуса ${entry.targetWidth}`,
+    );
   assert.equal(entry.capability.law, 'capsule.width');
   assert.deepEqual(entry.capability.formats, ['svg', 'prepared-width']);
   assert.deepEqual(entry.capability.author, reference.author);
@@ -725,7 +737,7 @@ function assertWidthEntry(entry, raw) {
   }
 }
 
-export function assertWidthMotionVisualEvidence(visuals, records, raw) {
+export function assertWidthMotionVisualEvidence(visuals, records, raw, schemaVersion = 15) {
   for (const mode of ['no-preference', 'reduce'])
     for (const width of WIDTH_MOTION_POSES) {
       const file = `result/${mode}-width-motion-${width}.png`;
@@ -749,12 +761,12 @@ export function assertWidthMotionVisualEvidence(visuals, records, raw) {
       );
       for (const entry of record.entries) {
         assert.equal(entry.lastWrittenWidth, width);
-        assertWidthEntry(entry, raw);
+        assertWidthEntry(entry, raw, schemaVersion);
       }
     }
 }
 
-export async function widthMotionBrowserProof(page, raw, mode, records, out) {
+export async function widthMotionBrowserProof(page, raw, mode, records, out, schemaVersion = 15) {
   const call = (method, ...args) =>
     page.evaluate(({ method, args }) => window.__iconsPacked.widthMotionConsumer[method](...args), {
       method,
@@ -764,7 +776,7 @@ export async function widthMotionBrowserProof(page, raw, mode, records, out) {
   const check = async () => {
     const observation = await read();
     assert.equal(observation.entries.length, 4);
-    for (const entry of observation.entries) assertWidthEntry(entry, raw);
+    for (const entry of observation.entries) assertWidthEntry(entry, raw, schemaVersion);
     return observation;
   };
   const section = page.locator('section[aria-labelledby="width-motion-heading"]');
@@ -837,7 +849,7 @@ export async function widthMotionBrowserProof(page, raw, mode, records, out) {
         assert.deepEqual(newer.before, newer.after);
         const terminal = await call('settle', icon, variant);
         assert.equal(terminal.lastWrittenWidth, 0.92);
-        assertWidthEntry(terminal, raw);
+        assertWidthEntry(terminal, raw, schemaVersion);
         await call('request', icon, variant, 0.8, 800);
         await call('control', icon, variant, 'pause');
         await call('control', icon, variant, 'seek', 280);
@@ -860,7 +872,7 @@ export async function widthMotionBrowserProof(page, raw, mode, records, out) {
       } else {
         const terminal = await call('settle', icon, variant);
         assert.equal(terminal.lastWrittenWidth, 0.8);
-        assertWidthEntry(terminal, raw);
+        assertWidthEntry(terminal, raw, schemaVersion);
       }
       const latest = await page.evaluate(
         ({ icon, variant }) => {
@@ -874,7 +886,7 @@ export async function widthMotionBrowserProof(page, raw, mode, records, out) {
       assert.ok(latest.every((result) => result.ok));
       const terminal = await call('settle', icon, variant);
       assert.equal(terminal.lastWrittenWidth, 0.92);
-      assertWidthEntry(terminal, raw);
+      assertWidthEntry(terminal, raw, schemaVersion);
       const staticPaths = await call('staticPaths', icon, variant, 0.92);
       assert.deepEqual(terminal.samples[0].paths, staticPaths);
       records.push({
