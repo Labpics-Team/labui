@@ -31,6 +31,6 @@ export function renderRadioGroup(
       .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       name=${ifDefined(props.name)}
       label=${ifDefined(props.label)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-radio-group>`);
 }

@@ -11,25 +11,25 @@
 
   /** Пропы <lab-dialog> — типы взяты прямо из класса ядра (LabDialog). */
   interface Props {
-    size?: LabDialog['size'];
     modal?: LabDialog['modal'];
     closable?: LabDialog['closable'];
     heading?: LabDialog['heading'];
     description?: LabDialog['description'];
+    size?: LabDialog['size'];
     onOpenChange?: (event: CustomEvent) => void;
     content?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { size, modal, closable, heading, description, onOpenChange, children, content, ...rest }: Props = $props();
+  let { modal, closable, heading, description, size, onOpenChange, children, content, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
-    { name: 'size', attr: 'size', kind: 'string' },
     { name: 'modal', attr: 'modal', kind: 'string' },
     { name: 'closable', attr: 'closable', kind: 'boolean' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'size', attr: 'size', kind: 'string' },
   ];
 
   let el: HTMLElement | undefined = $state();
@@ -38,12 +38,12 @@
   // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
   const initialBooleans: Record<string, boolean> = {};
   $effect.pre(() => {
-    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { size, modal, closable, heading, description })));
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { modal, closable, heading, description, size })));
   });
 
 
   $effect(() => {
-    forwardDeclared(el, specs, { size, modal, closable, heading, description });
+    forwardDeclared(el, specs, { modal, closable, heading, description, size });
   });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange }));
 </script>

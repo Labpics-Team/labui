@@ -37,8 +37,8 @@ export function renderCombobox(
       .labelHidden=${props.labelHidden === undefined ? noChange : Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
-      .items=${props.items}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-combobox>`);
 }

@@ -31,6 +31,39 @@ function run(consumer: string, source: string) {
 
 describe('собранные SSR-входы: регистрация без предварительных импортов', () => {
   for (const adapter of ['vue', 'solid', 'svelte', 'astro']) {
+    it(`${adapter}: Sheet сохраняет пропущенную position и доставляет content при явном open`, () => {
+      const result = run(
+        adapter,
+        `import { renderSheet } from '@labpics/ui-${adapter}/ssr';
+const state = (props) => {
+  const markup = renderSheet(props, {default: 'Открыть', content: '<form><input value="Сохранённый ввод" /></form>'});
+  const start = markup.indexOf('<lab-sheet');
+  const host = markup.slice(start, markup.indexOf('>', start) + 1);
+  return {
+    position: /position="([^"]+)"/.exec(host)?.[1] ?? null,
+    open: /\\sopen(?:[\\s=>])/.test(host),
+    dsd: markup.includes('shadowrootmode'),
+    trigger: markup.includes('class="trigger"'),
+    content: markup.includes('slot="content"') && markup.includes('Сохранённый ввод'),
+    floating: markup.includes('class="positioner"'),
+  };
+};
+console.log(JSON.stringify([state({}), state({open: true, position: 'one-third'}), state({open: false, position: 'flex'})]));`,
+      );
+      expect(result).toEqual([
+        { position: null, open: false, dsd: true, trigger: true, content: true, floating: false },
+        {
+          position: 'one-third',
+          open: true,
+          dsd: true,
+          trigger: true,
+          content: true,
+          floating: false,
+        },
+        { position: 'flex', open: false, dsd: true, trigger: true, content: true, floating: false },
+      ]);
+    });
+
     it(`${adapter}: boolean SSR отличает пропущенный current от явного false`, () => {
       const result = run(
         adapter,

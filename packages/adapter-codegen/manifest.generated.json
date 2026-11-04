@@ -64,11 +64,6 @@
       "className": "LabAlertDialog",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
-          "kind": "string"
-        },
-        {
           "name": "modal",
           "attr": "modal",
           "kind": "string"
@@ -86,6 +81,11 @@
         {
           "name": "description",
           "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
           "kind": "string"
         }
       ],
@@ -507,11 +507,6 @@
       "className": "LabDialog",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
-          "kind": "string"
-        },
-        {
           "name": "modal",
           "attr": "modal",
           "kind": "string"
@@ -529,6 +524,11 @@
         {
           "name": "description",
           "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
           "kind": "string"
         }
       ],
@@ -1208,6 +1208,56 @@
       "slots": {
         "default": false,
         "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-sheet",
+      "subpath": "sheet",
+      "pascal": "Sheet",
+      "className": "LabSheet",
+      "props": [
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "string"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "position",
+          "attr": "position",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "motion-error",
+        "open-change",
+        "position-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content"
+        ],
         "dynamic": false
       }
     },

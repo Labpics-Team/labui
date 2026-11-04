@@ -28,8 +28,8 @@ export function renderAccordion(
       .multiple=${props.multiple === undefined ? noChange : Boolean(props.multiple)}
       .collapsible=${props.collapsible === undefined ? noChange : Boolean(props.collapsible)}
       .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
-      .items=${props.items}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-accordion>`);
 }

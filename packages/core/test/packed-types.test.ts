@@ -59,6 +59,24 @@ void LabCombobox;
 `,
   },
   {
+    name: 'core-sheet',
+    source: `
+import { LabSheet, type LabSheetPosition, type SheetPositionChangeDetails, type SheetMotionErrorDetails } from '@labpics/ui-core/sheet';
+const sheet: LabSheet = document.createElement('lab-sheet');
+const position: LabSheetPosition = 'two-thirds';
+sheet.open = true;
+sheet.position = position;
+sheet.modal = 'false';
+const changed: SheetPositionChangeDetails = { position };
+const failed: SheetMotionErrorDetails = { error: new Error('Движение отменено') };
+// @ts-expect-error Позиции ограничены публичным контрактом.
+sheet.position = 'three-fourths';
+// @ts-expect-error Sheet не наследует размер Dialog.
+sheet.size = 'm';
+void [LabSheet, changed, failed];
+`,
+  },
+  {
     name: 'shared',
     source: `
 import { cssVar, filterComboboxItems, type LabComboboxItem } from '@labpics/ui-core/shared';

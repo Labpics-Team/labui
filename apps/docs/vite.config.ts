@@ -264,6 +264,7 @@ export default defineConfig({
         'fixture-adapter-slots': resolve(__dirname, 'src/_fixtures/adapter-slots.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-switch-motion': resolve(__dirname, 'src/_fixtures/switch-motion.html'),
+        'fixture-sheet': resolve(__dirname, 'src/_fixtures/sheet.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

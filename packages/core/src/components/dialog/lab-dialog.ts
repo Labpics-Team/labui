@@ -62,27 +62,14 @@
  * nothing for the floating layer; the machine upgrades it on the client (the portal
  * is created on connect, after the DOM exists). No flash, no pre-work.
  */
-import * as dialogMachine from '@zag-js/dialog';
-import { type TemplateResult, css, html, render } from 'lit';
-import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
+import { type TemplateResult, css, html } from 'lit';
 import { litVar } from '../../css.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
+import { LabModal, type ModalRole } from './modal.js';
 
 /** Control size — drives panel width band and padding. */
 export type LabDialogSize = 's' | 'm' | 'l';
 /** The dialog's ARIA role. `alertdialog` is the stricter variant (see `<lab-alert-dialog>`). */
-export type LabDialogRole = 'dialog' | 'alertdialog';
-
-type DialogSchema = SchemaOf<dialogMachine.Service>;
-type DialogApi = dialogMachine.Api;
-
-/** The `@zag-js/dialog` package seen through the renderer-agnostic seam. */
-const dialogModule: MachineModule<DialogSchema, DialogApi> = dialogMachine;
-
-/** Per-instance machine id source. Dialogs are client-only, so a client counter is
- * SSR-safe; an explicit id keeps the machine's element ids deterministic. */
-let dialogInstanceSeq = 0;
+export type LabDialogRole = ModalRole;
 
 /**
  * Styles for the floating layer, adopted by the PORTAL's shadow root (not the
@@ -230,173 +217,28 @@ export const dialogFloatingStyles = css`
   }
 `;
 
-export class LabDialog extends LabElement {
+/** Dialog передаёт общему владельцу модальности свою геометрию и оформление. */
+export class LabDialog extends LabModal {
   static override properties = {
     size: { reflect: true },
-    /** Modal mode as a STRING attribute, defaulting to 'true' for a dialog. A Boolean
-     * attribute can't express "default true, opt out" (absence would force false), so
-     * this is the honest tri-state: 'true' | 'false', read into a boolean for the
-     * machine. Reflected so SSR/CSS can read it. */
-    modal: { reflect: true },
-    /** Render a built-in close button wired to the machine. */
-    closable: { type: Boolean, reflect: true },
-    /** Optional dialog heading — wires aria-labelledby on the content. */
-    heading: {},
-    /** Optional dialog description — wires aria-describedby on the content. */
-    description: {},
   };
 
   declare size: LabDialogSize;
-  /** The raw `modal` attribute value ('true' | 'false'); read via `isModal`. */
-  declare modal: string;
-  declare closable: boolean;
-  declare heading: string;
-  declare description: string;
-
-  /** Modal is on unless explicitly set to the string 'false'. One source of truth for
-   * the boolean the machine and the scrim/styles read. */
-  private get isModal(): boolean {
-    return this.modal !== 'false';
-  }
-
-  /** This element's OWN trigger button (in this shadow root, NOT the portal). The
-   * machine's `finalFocusEl` reads it lazily at close time to restore focus to it,
-   * since the machine's getRootNode-scoped trigger lookup can't reach this root. */
-  private get triggerEl(): HTMLElement | null {
-    return this.renderRoot.querySelector<HTMLElement>('.trigger');
-  }
-
-  /** The ARIA role the machine renders. Overridden to `alertdialog` by the subclass. */
-  protected dialogRole: LabDialogRole = 'dialog';
-
-  private readonly machineCtl: ZagController<DialogSchema, DialogApi>;
-  /** Stable machine id — keeps the content/title/description element ids deterministic. */
-  private readonly machineId = `lab-dialog-${++dialogInstanceSeq}`;
-
-  /** The portal element appended to `document.body`; its shadow root holds the
-   * floating layer + the relocated dialog body. */
-  private portalHost?: HTMLElement;
-  /** The portal's shadow root — the machine's `getRootNode` for this instance. */
-  private portalRoot?: ShadowRoot;
-  /** The `.body` mount inside the portal content where the consumer's slotted nodes
-   * are relocated. Relocation happens once; the nodes then live in the trap subtree. */
-  private bodyMount?: HTMLElement;
-  /** Guard so the one-time relocation of slotted children runs exactly once. */
-  private bodyRelocated = false;
 
   constructor() {
     super();
     this.size = 'm';
-    this.modal = 'true';
-    this.closable = true;
-    this.heading = '';
-    this.description = '';
-    // Wire the Zag dialog behavior. `getRootNode` is the PORTAL's shadow root, where
-    // the floating layer (and the relocated body) live, so the machine resolves
-    // content/title/description/backdrop by id THERE. The trigger lives in a different
-    // root; its behaviour is wired by the spread handler (not an id lookup).
-    //
-    // Return-focus across the split roots: on close, @zag-js/focus-trap asks the dialog
-    // machine for the node to restore focus to (its `setReturnFocus`). That resolver
-    // tries, in order, `finalFocusEl()`, then a trigger looked up via getRootNode —
-    // `getTriggerEls(scope)` queries the PORTAL root, where the trigger does NOT live —
-    // then the node captured before activation. With no finalFocusEl the trigger lookup
-    // returns nothing (wrong root) and the fallback is used; on WebKit that captured node
-    // is the portal-host <div> (non-focusable), so focus is lost instead of returning to
-    // the trigger. `finalFocusEl` is consulted FIRST and used by reference (not re-queried
-    // through getRootNode), so pointing it at THIS element's own trigger makes Zag's own
-    // trap restore focus to the right node. The trap performs the single, final focus
-    // write — there is no second `.focus()` from the element to race it.
-    this.machineCtl = this.runMachine(dialogModule, () => ({
-      id: this.machineId,
-      role: this.dialogRole,
-      modal: this.isModal,
-      getRootNode: () => this.portalRoot ?? document,
-      finalFocusEl: () => this.triggerEl,
-      onOpenChange: (details: dialogMachine.OpenChangeDetails) => {
-        this.dispatchEvent(
-          new CustomEvent<dialogMachine.OpenChangeDetails>('open-change', {
-            detail: details,
-            bubbles: true,
-            composed: true,
-          }),
-        );
-      },
-    }));
   }
 
-  static override styles = css`
-    :host {
-      display: inline-flex;
-      vertical-align: middle;
-    }
-
-    /* The Zag trigger — a real button; the machine spreads aria-haspopup=dialog,
-       aria-controls, aria-expanded, the toggle handler and focus restoration here. */
-    .trigger {
-      display: inline-flex;
-      align-items: center;
-      gap: ${litVar('--lab-space-xs', '0.25rem')};
-      margin: 0;
-      padding: 0;
-      border: 0;
-      background: none;
-      font: inherit;
-      color: inherit;
-      cursor: pointer;
-    }
-    .trigger:focus-visible {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-      border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
-    }
-  `;
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.ensurePortal();
+  protected override get portalStyleSheets(): CSSStyleSheet[] {
+    return [dialogFloatingStyles.styleSheet as CSSStyleSheet];
   }
 
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this.portalHost?.remove();
-    this.portalHost = undefined;
-    this.portalRoot = undefined;
-    this.bodyMount = undefined;
-    this.bodyRelocated = false;
+  protected override get portalAttributes(): Readonly<Record<string, string>> {
+    return { 'data-size': this.size };
   }
 
-  /** Create the portal element + shadow root once and append it to `document.body`. */
-  private ensurePortal(): void {
-    if (this.portalHost || typeof document === 'undefined') return;
-    const host = document.createElement('div');
-    host.setAttribute('data-lab-dialog-portal', this.machineId);
-    host.setAttribute('data-size', this.size);
-    // Mirror modal state so the floating styles can re-enable scrim hit-testing for
-    // a modal (whose scroll-lock sets body{pointer-events:none}). See dialogFloatingStyles.
-    host.setAttribute('data-modal', String(this.isModal));
-    // Mirror the element's own test id onto the portal so a test can find the
-    // portalled floating layer for a specific dialog (the floating layer lives in
-    // document.body, detached from the element in the DOM tree).
-    const ownTestId = this.getAttribute('data-testid');
-    if (ownTestId) host.setAttribute('data-portal-for', ownTestId);
-    // Mirror the page theme/material so the portalled panel resolves the same roles.
-    const docEl = document.documentElement;
-    const theme = docEl.getAttribute('data-theme');
-    const material = docEl.getAttribute('data-material');
-    if (theme) host.setAttribute('data-theme', theme);
-    if (material) host.setAttribute('data-material', material);
-    const root = host.attachShadow({ mode: 'open' });
-    root.adoptedStyleSheets = [dialogFloatingStyles.styleSheet as CSSStyleSheet];
-    document.body.append(host);
-    this.portalHost = host;
-    this.portalRoot = root;
-  }
-
-  /** The floating subtree, rendered into the portal's shadow root. Structure only;
-   * behaviour is spread in `updated()` from the machine. The `.body` mount is where
-   * the consumer's relocated slot="content" nodes are appended (once). */
-  private floatingTemplate(): TemplateResult {
+  protected override floatingTemplate(): TemplateResult {
     return html`
       <div class="backdrop" part="backdrop" hidden></div>
       <div class="positioner" part="positioner" hidden>
@@ -415,68 +257,6 @@ export class LabDialog extends LabElement {
           }
         </div>
       </div>
-    `;
-  }
-
-  /** Move the consumer's `slot="content"` light-DOM children into the portal `.body`
-   * exactly once, so they live inside the trap's subtree. Idempotent. */
-  private relocateBody(): void {
-    if (this.bodyRelocated || !this.bodyMount) return;
-    const slotted = Array.from(this.children).filter(
-      (child) => child.getAttribute('slot') === 'content',
-    );
-    for (const node of slotted) this.bodyMount.append(node);
-    this.bodyRelocated = true;
-  }
-
-  override updated(): void {
-    this.ensurePortal();
-    const root = this.portalRoot;
-    if (root) {
-      render(this.floatingTemplate(), root);
-      this.portalHost?.setAttribute('data-size', this.size);
-      this.portalHost?.setAttribute('data-modal', String(this.isModal));
-      this.bodyMount = root.querySelector<HTMLElement>('.body') ?? undefined;
-      this.relocateBody();
-    }
-
-    // Spread the machine's connect props onto the real nodes — trigger in THIS shadow
-    // root, the floating nodes in the portal root. Clear prior spreads first so
-    // listeners/props never stack across renders.
-    this.machineCtl.clearSpreads();
-    const api = this.machineCtl.api;
-
-    const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
-    if (trigger) this.machineCtl.spread(trigger, api.getTriggerProps());
-
-    if (root) {
-      const backdrop = root.querySelector<HTMLElement>('.backdrop');
-      const positioner = root.querySelector<HTMLElement>('.positioner');
-      const content = root.querySelector<HTMLElement>('.content');
-      const heading = root.querySelector<HTMLElement>('.heading');
-      const description = root.querySelector<HTMLElement>('.description');
-      const close = root.querySelector<HTMLElement>('.close');
-
-      if (backdrop) this.machineCtl.spread(backdrop, api.getBackdropProps());
-      if (positioner) this.machineCtl.spread(positioner, api.getPositionerProps());
-      if (content) this.machineCtl.spread(content, api.getContentProps());
-      if (heading) this.machineCtl.spread(heading, api.getTitleProps());
-      if (description) this.machineCtl.spread(description, api.getDescriptionProps());
-      if (this.closable && close) this.machineCtl.spread(close, api.getCloseTriggerProps());
-
-      // The positioner is a viewport-filling flex frame; gate its visibility on the
-      // machine's open state so it never intercepts pointer events while closed.
-      if (positioner) positioner.toggleAttribute('hidden', !api.open);
-    }
-  }
-
-  override render(): TemplateResult {
-    // The element's OWN shadow root holds ONLY the trigger; the floating layer lives
-    // in the portal. The default slot keeps the consumer's slot="content" children in
-    // the light DOM until `relocateBody()` moves them into the portal body.
-    return html`
-      <button class="trigger" type="button" part="trigger"><slot></slot></button>
-      <slot name="content" hidden aria-hidden="true"></slot>
     `;
   }
 }
