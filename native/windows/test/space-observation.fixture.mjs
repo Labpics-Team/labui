@@ -30,8 +30,8 @@ export function spaceFixture(theme = 'Light', animationsEnabled = true) {
     elapsedMs,
     readStartedMs: elapsedMs - 0.1,
     isPressed,
-    key: kind.startsWith('key') ? 'Space' : null,
-    repeat: kind === 'keyUp',
+    key: kind.startsWith('key') || kind.startsWith('previewKey') ? 'Space' : null,
+    repeat: kind === 'keyUp' || kind === 'previewKeyUp',
     focused: true,
     count,
     currentChannel: true,
@@ -39,13 +39,17 @@ export function spaceFixture(theme = 'Light', animationsEnabled = true) {
   });
   const events = [
     event('armed', 114, false, 0),
+    event('previewKeyDown', 123.5, false, 0),
     event('pressed', 125, true, animationsEnabled ? 0.01 : 1),
     event('keyDown', 126, true, animationsEnabled ? 0.02 : 1),
+    event('previewKeyUp', 204.3, true, animationsEnabled ? 0.61 : 1),
     event('pressed', 205, false, animationsEnabled ? 0.6 : 0),
     event('click', 206, false, animationsEnabled ? 0.59 : 0, before + 1),
     event('keyUp', 207, false, animationsEnabled ? 0.58 : 0, before + 1),
+    event('previewKeyDown', 254.3, false, animationsEnabled ? 0.31 : 0, before + 1),
     event('pressed', 255, true, animationsEnabled ? 0.3 : 1, before + 1),
     event('keyDown', 256, true, animationsEnabled ? 0.32 : 1, before + 1),
+    event('previewKeyUp', 334.3, true, animationsEnabled ? 0.71 : 1, before + 1),
     event('pressed', 335, false, animationsEnabled ? 0.7 : 0, before + 1),
     event('click', 336, false, animationsEnabled ? 0.69 : 0, before + 2),
     event('keyUp', 337, false, animationsEnabled ? 0.68 : 0, before + 2),
@@ -91,6 +95,16 @@ export function spaceFixture(theme = 'Light', animationsEnabled = true) {
         sample(3, 'requested', 334.5, 0),
         sample(3, 'idle', 334.6, 0),
       ];
+  const prefixes = animationsEnabled
+    ? [0, 0, 1, 1, 3, 4, 4, 4, 5, 6, 6, 7, 8, 8, 8, 10]
+    : [0, 0, 2, 2, 2, 4, 4, 4, 4, 6, 6, 6, 8, 8, 8, 8];
+  for (const [index, entry] of events.entries()) {
+    const prefix = prefixes[index];
+    const last = observations[prefix - 1]?.motion;
+    entry.observationCount = prefix;
+    entry.operation = last?.operation ?? null;
+    entry.nativeRequestId = last?.nativeRequestId ?? null;
+  }
   const space = {
     observation: {
       schemaVersion: 1,

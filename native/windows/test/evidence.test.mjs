@@ -239,6 +239,23 @@ test('Space traces survive transport byte-exactly in both motion modes within th
   }
 });
 
+test('both transport boundaries reject a complete PRE endpoint despite a later moving key readback', () => {
+  const files = interactionFixture();
+  editJSON(files, 'result.json', (value) => {
+    const observation = value.captures.Light.space.observation;
+    observation.events.filter((event) => event.kind === 'previewKeyDown')[1].position = 0;
+    observation.events.filter((event) => event.kind === 'keyDown')[1].position = 0.00002;
+  });
+  assert.throws(
+    () => encodeNativeEvidence(files, SOURCE, 'interaction'),
+    /before-retarget readback/,
+  );
+  assert.throws(
+    () => decodeNativeEvidence(interactionPackets(files), SOURCE, 'interaction'),
+    /before-retarget readback/,
+  );
+});
+
 test('cancel-drag cannot be missing, reordered, mixed with four gestures or silently downgraded', () => {
   const rejects = (files, reason = 'invalid cancel-drag contract') => {
     assert.throws(() => encodeNativeEvidence(files, SOURCE, 'interaction'), reason);

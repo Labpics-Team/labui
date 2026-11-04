@@ -12,6 +12,34 @@ function validate(fixture, theme = 'Light') {
   return validateSpaceObservation(fixture.space, fixture.identity, theme, fixture.window);
 }
 
+for (const boundary of [1, 2]) {
+  test(`complete PRE endpoint data rejects a missing late idle at retarget ${boundary}`, () => {
+    const fixture = spaceFixture();
+    const observation = fixture.space.observation;
+    const requests = observation.observations.filter(
+      (sample) => sample.motion.phase === 'requested',
+    );
+    const preview = observation.events.filter((event) => event.kind.startsWith('previewKey'))[
+      boundary
+    ];
+    const endpoint = boundary === 1 ? 1 : 0;
+    Object.assign(requests[boundary].motion, {
+      position: endpoint,
+      readbackPosition: endpoint,
+      nativePosition: { x: endpoint * 1000, y: 0, z: 0 },
+      nativeReadbackPosition: { x: endpoint * 1000, y: 0, z: 0 },
+    });
+    preview.position = endpoint;
+    const key = observation.events.filter(
+      (event) => event.kind === 'keyDown' || event.kind === 'keyUp',
+    )[boundary];
+    key.position = boundary === 1 ? 0.99998 : 0.00002;
+    // PRE полностью заполнен и относится к прежнему request; последующий key уже видит новое движение.
+    assert.equal(preview.nativeRequestId, requests[boundary - 1].motion.nativeRequestId);
+    assert.throws(() => validate(fixture), /before-retarget readback/);
+  });
+}
+
 test('normal interruption fixtures and reduced Snap keep independent clocks and two native activations', () => {
   for (const theme of ['Light', 'Dark']) {
     for (const motion of [true, false]) validate(spaceFixture(theme, motion), theme);
@@ -23,6 +51,11 @@ for (const boundary of [1, 2]) {
     const fixture = spaceFixture();
     const samples = fixture.space.observation.observations;
     const requests = samples.filter((sample) => sample.motion.phase === 'requested');
+    const preview = fixture.space.observation.events.filter((event) =>
+      event.kind.startsWith('previewKey'),
+    )[boundary];
+    preview.elapsedMs = requests[boundary].elapsedMs;
+    preview.readStartedMs = preview.elapsedMs;
     for (const sample of samples) {
       if (
         sample.motion.nativeRequestId === requests[boundary - 1].motion.nativeRequestId &&
@@ -50,7 +83,8 @@ for (const boundary of [1, 2]) {
         nativeReadbackPosition: { x: endpoint * 1000, y: 0, z: 0 },
       };
       Object.assign(replacement.motion, structuredClone(position));
-      samples.splice(samples.indexOf(replacement), 0, {
+      const insertion = samples.indexOf(replacement);
+      samples.splice(insertion, 0, {
         elapsedMs,
         threadId: 1,
         motion: {
@@ -62,9 +96,14 @@ for (const boundary of [1, 2]) {
           nativeVelocityVector: { x: 0, y: 0, z: 0 },
         },
       });
+      for (const event of fixture.space.observation.events) {
+        if (event.observationCount > insertion) event.observationCount++;
+      }
       if (boundary === 2) {
-        fixture.space.observation.events[6].position = 0.00001;
-        fixture.space.observation.events[7].position = 0.00002;
+        fixture.space.observation.events.filter((event) => event.kind === 'pressed')[2].position =
+          0.00001;
+        fixture.space.observation.events.filter((event) => event.kind === 'keyDown')[1].position =
+          0.00002;
       }
       assert.throws(() => validate(fixture), /interrupted operation already idle/);
     });
@@ -132,7 +171,7 @@ test('missing trace and invalid required fields, enum, number or generation cann
       f.space.observation.events[1].position = '0.5';
     },
     (f) => {
-      f.space.observation.events[1].key = 'Space';
+      f.space.observation.events[0].key = 'Space';
     },
     (f) => {
       f.space.observation.events[1].kind = 'pressed-intent';
@@ -175,10 +214,10 @@ test('lost phase, stale completion and a third click are rejected without weaken
       f.space.observation.events.splice(3, 1);
     },
     (f) => {
-      f.space.observation.events[5].position = 0;
+      f.space.observation.events.filter((event) => event.kind === 'previewKeyUp')[0].position = 0;
     },
     (f) => {
-      f.space.observation.events[7].position = 1;
+      f.space.observation.events.filter((event) => event.kind === 'previewKeyDown')[1].position = 1;
     },
     (f) => {
       f.space.observation.observations[4].motion.phase = 'idle';
@@ -226,7 +265,77 @@ test('lost phase, stale completion and a third click are rejected without weaken
   const snap = spaceFixture('Light', false);
   validate(snap);
   snap.space.observation.observations.at(-1).motion.nativeRequestId--;
+  for (const event of snap.space.observation.events) {
+    if (event.observationCount === snap.space.observation.observations.length)
+      event.nativeRequestId--;
+  }
   assert.throws(() => validate(snap), /stale|final/);
+});
+
+test('PRE uses existing endpoint tolerances and permits interior readback regardless of later movement', () => {
+  for (const boundary of [1, 2]) {
+    for (const position of [0, 0.0005, 0.001, 0.999, 0.9995, 1]) {
+      const fixture = spaceFixture();
+      fixture.space.observation.events.filter((event) => event.kind.startsWith('previewKey'))[
+        boundary
+      ].position = position;
+      assert.throws(() => validate(fixture), /before-retarget readback/);
+    }
+    for (const position of [0.0011, 0.5, 0.9989]) {
+      const fixture = spaceFixture();
+      fixture.space.observation.events.filter((event) => event.kind.startsWith('previewKey'))[
+        boundary
+      ].position = position;
+      fixture.space.observation.events.filter(
+        (event) => event.kind === 'keyDown' || event.kind === 'keyUp',
+      )[boundary].position = 0;
+      assert.doesNotThrow(() => validate(fixture));
+    }
+  }
+});
+
+test('PRE requires preceding movement and rejects mismatched state, prefix, request or ordering', () => {
+  for (const change of [
+    (preview) => {
+      preview.isPressed = !preview.isPressed;
+    },
+    (preview) => {
+      preview.operation++;
+    },
+    (preview) => {
+      preview.nativeRequestId++;
+    },
+    (preview) => {
+      preview.observationCount++;
+    },
+    (preview) => {
+      preview.observationCount = '3';
+    },
+    (preview) => {
+      preview.operation = null;
+    },
+    (preview) => {
+      preview.readStartedMs = 204.6;
+      preview.elapsedMs = 204.6;
+    },
+  ]) {
+    const fixture = spaceFixture();
+    change(fixture.space.observation.events.find((event) => event.kind === 'previewKeyUp'));
+    assert.throws(() => validate(fixture), undefined, String(change));
+  }
+  const late = spaceFixture();
+  const preview = late.space.observation.events.find((event) => event.kind === 'previewKeyUp');
+  preview.observationCount = 1;
+  for (const sample of late.space.observation.observations.slice(1, 3)) {
+    sample.elapsedMs = 204.4;
+    sample.motion.seconds = 0.2044;
+  }
+  assert.throws(() => validate(late), /movement before interruption absent/);
+  const absent = spaceFixture();
+  absent.space.observation.events = absent.space.observation.events.filter(
+    (event) => !event.kind.startsWith('previewKey'),
+  );
+  assert.throws(() => validate(absent), /bounded events|preview keys/);
 });
 
 test('OS acceptance and measured clock windows bind every edge to this gesture', () => {

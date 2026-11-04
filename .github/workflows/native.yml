@@ -107,7 +107,7 @@ jobs:
         run: node native/windows/test/lifetime-probe.test.mjs
 
       - name: Space input and child protocol boundaries
-        run: node --test native/windows/test/space-input.test.mjs native/windows/test/space-protocol.test.mjs native/windows/test/space-observation.test.mjs
+        run: node --test native/windows/test/space-input.test.mjs native/windows/test/space-protocol.test.mjs native/windows/test/space-probe.test.mjs native/windows/test/space-observation.test.mjs
 
       - name: Build native consumer
         shell: pwsh

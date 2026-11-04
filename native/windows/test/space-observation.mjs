@@ -29,6 +29,7 @@ const sameRequest = (left, right) =>
   left.operation === right.operation &&
   left.nativeRequestId === right.nativeRequestId &&
   left.origin === right.origin;
+const progressTolerance = 0.001;
 
 // Проверка конкретного consumer trace. Время чтения Position не является временем атомарного состояния клавиши.
 export function validateSpaceObservation(space, identity, theme, captureWindow) {
@@ -166,11 +167,12 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
   );
   const events = observation.events;
   assert.ok(
-    Array.isArray(events) && events.length >= 12 && events.length <= 24,
+    Array.isArray(events) && events.length >= 16 && events.length <= 24,
     'Space: complete bounded events',
   );
   let elapsed = -1;
   let count = before;
+  let observationCount = 0;
   for (const event of events) {
     object(event, 'app event');
     number(event.elapsedMs, 'event time');
@@ -183,7 +185,17 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     );
     elapsed = event.elapsedMs;
     assert.ok(
-      ['armed', 'pressed', 'keyDown', 'keyUp', 'click', 'focus', 'complete'].includes(event.kind),
+      [
+        'armed',
+        'pressed',
+        'previewKeyDown',
+        'previewKeyUp',
+        'keyDown',
+        'keyUp',
+        'click',
+        'focus',
+        'complete',
+      ].includes(event.kind),
       'Space: event kind',
     );
     for (const name of ['repeat', 'isPressed', 'focused', 'currentChannel'])
@@ -194,7 +206,20 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     assert.ok(event.count >= count && event.count <= before + 2, 'Space: count changed');
     count = event.count;
     number(event.position, 'event position', Number.NEGATIVE_INFINITY);
-    if (event.kind === 'keyDown' || event.kind === 'keyUp')
+    integer(event.observationCount, 'event observation prefix');
+    assert.ok(
+      event.observationCount >= observationCount && event.observationCount <= 128,
+      'Space: observation prefix order',
+    );
+    observationCount = event.observationCount;
+    if (observationCount === 0) {
+      assert.equal(event.operation, null, 'Space: empty observation operation');
+      assert.equal(event.nativeRequestId, null, 'Space: empty observation request');
+    } else {
+      integer(event.operation, 'event operation');
+      integer(event.nativeRequestId, 'event native request');
+    }
+    if (['previewKeyDown', 'previewKeyUp', 'keyDown', 'keyUp'].includes(event.kind))
       assert.equal(event.key, 'Space', 'Space: actual key');
     else {
       assert.equal(event.key, null, 'Space: non-key event');
@@ -216,7 +241,7 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
   );
   assert.equal(complete.isPressed, false, 'Space: latest up not applied');
   assert.equal(complete.count, before + 2, 'Space: completion count');
-  assert.ok(Math.abs(complete.position) <= 0.001, 'Space: final readback');
+  assert.ok(Math.abs(complete.position) <= progressTolerance, 'Space: final readback');
   within(
     complete.readStartedMs,
     window.completeStartedMs,
@@ -224,7 +249,15 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     'completion',
   );
   const keys = events.filter((event) => event.kind === 'keyDown' || event.kind === 'keyUp');
+  const previews = events.filter(
+    (event) => event.kind === 'previewKeyDown' || event.kind === 'previewKeyUp',
+  );
   const pressed = events.filter((event) => event.kind === 'pressed');
+  assert.deepEqual(
+    previews.map((event) => event.kind),
+    ['previewKeyDown', 'previewKeyUp', 'previewKeyDown', 'previewKeyUp'],
+    'Space: four ancestor preview keys',
+  );
   assert.deepEqual(
     keys.map((event) => event.kind),
     ['keyDown', 'keyUp', 'keyDown', 'keyUp'],
@@ -236,10 +269,21 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     'Space: native IsPressed transitions',
   );
   for (const [index, key] of keys.entries()) {
+    const preview = previews[index];
+    assert.equal(preview.isPressed, index % 2 !== 0, 'Space: preview/native old state');
+    assert.equal(preview.repeat, key.repeat, 'Space: preview/key repeat identity');
+    assert.ok(
+      events.indexOf(preview) < events.indexOf(pressed[index]) &&
+        events.indexOf(pressed[index]) < events.indexOf(key) &&
+        (index === 0 || events.indexOf(preview) > events.indexOf(keys[index - 1])),
+      'Space: preview precedes native processing',
+    );
     assert.equal(key.isPressed, index % 2 === 0, 'Space: key/native state');
     if (index % 2 === 0) assert.equal(key.repeat, false, 'Space: autorepeat is not a new press');
     assert.ok(
-      key.readStartedMs >= edgeStarts[index] && pressed[index].readStartedMs >= edgeStarts[index],
+      preview.readStartedMs >= edgeStarts[index] &&
+        key.readStartedMs >= edgeStarts[index] &&
+        pressed[index].readStartedMs >= edgeStarts[index],
       'Space: app event precedes OS edge',
     );
   }
@@ -298,6 +342,28 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
       vector(motion.nativeVelocityVector, 'native velocity vector');
   }
   const requests = samples.filter((sample) => sample.motion.phase === 'requested');
+  for (const event of events) {
+    const prefix = event.observationCount;
+    assert.ok(prefix <= samples.length, 'Space: observation prefix outside trace');
+    if (prefix > 0) {
+      const last = samples[prefix - 1];
+      assert.equal(event.operation, last.motion.operation, 'Space: event last observed operation');
+      assert.equal(
+        event.nativeRequestId,
+        last.motion.nativeRequestId,
+        'Space: event last observed request',
+      );
+      assert.ok(
+        last.elapsedMs <= event.readStartedMs,
+        'Space: observation prefix follows read start',
+      );
+    }
+    if (prefix < samples.length)
+      assert.ok(
+        samples[prefix].elapsedMs >= event.elapsedMs,
+        'Space: future observation precedes read end',
+      );
+  }
   assert.equal(requests.length, 4, 'Space: four Motion requests');
   assert.equal(
     new Set(requests.map((sample) => sample.motion.nativeRequestId)).size,
@@ -320,6 +386,30 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
           'Space: operation order',
         );
     } else assert.equal(motion.operation, 0, 'Space: Snap operation');
+    const preview = previews[index];
+    const requestIndex = samples.indexOf(request);
+    assert.ok(
+      requestIndex >= preview.observationCount &&
+        requestIndex < keys[index].observationCount &&
+        request.elapsedMs >= preview.elapsedMs,
+      'Space: request is not after preview and before bubbling',
+    );
+    if (index > 0) {
+      assert.equal(
+        preview.operation,
+        requests[index - 1].motion.operation,
+        'Space: preview previous operation',
+      );
+      assert.equal(
+        preview.nativeRequestId,
+        requests[index - 1].motion.nativeRequestId,
+        'Space: preview previous request',
+      );
+      assert.ok(
+        preview.observationCount > samples.indexOf(requests[index - 1]),
+        'Space: preview missed previous request',
+      );
+    }
     assert.ok(
       request.elapsedMs >= edgeStarts[index] &&
         request.elapsedMs <= Math.max(keys[index].elapsedMs, pressed[index].elapsedMs) &&
@@ -338,8 +428,9 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
   if (observation.animationsEnabled) {
     for (const index of [1, 2]) {
       assert.ok(
-        keys[index].position > 0 && keys[index].position < 1,
-        'Space: early transition was not in flight',
+        previews[index].position > progressTolerance &&
+          previews[index].position < 1 - progressTolerance,
+        'Space: before-retarget readback is within an endpoint tolerance',
       );
       // При равном времени порядок наблюдений сохраняет границу следующего requested.
       const segment = samples.slice(
@@ -347,7 +438,9 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
         samples.indexOf(requests[index]),
       );
       assert.ok(
-        segment.some((sample) => ['value', 'inertia'].includes(sample.motion.phase)),
+        samples
+          .slice(samples.indexOf(requests[index - 1]), previews[index].observationCount)
+          .some((sample) => ['value', 'inertia'].includes(sample.motion.phase)),
         'Space: movement before interruption absent',
       );
       assert.ok(
@@ -364,7 +457,8 @@ export function validateSpaceObservation(space, identity, theme, captureWindow) 
     'Space: idle precedes latest release request',
   );
   assert.ok(
-    Math.abs(final.motion.readbackPosition) <= 0.001 && Math.abs(final.motion.position) <= 0.001,
+    Math.abs(final.motion.readbackPosition) <= progressTolerance &&
+      Math.abs(final.motion.position) <= progressTolerance,
     'Space: final Motion endpoint',
   );
 }

@@ -15,7 +15,7 @@ public sealed partial class ButtonsPage : Page
         InitializeComponent();
         if (Environment.GetEnvironmentVariable("LABUI_SPACE_OBSERVATION") == "1")
         {
-            space = new SpaceProbe(LifetimeTarget, () => activations);
+            space = new SpaceProbe(this, LifetimeTarget, () => activations);
             Unloaded += UnloadedSpace;
         }
         if (Environment.GetEnvironmentVariable("LABUI_LAYOUT_OBSERVATION") is { } layoutPath)

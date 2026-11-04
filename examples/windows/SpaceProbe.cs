@@ -15,9 +15,11 @@ namespace LabUI.Buttons;
 internal sealed class SpaceProbe : IDisposable
 {
     private sealed record Event(double ElapsedMs, double ReadStartedMs, string Kind, string? Key, bool Repeat,
-        bool IsPressed, bool Focused, int Count, bool CurrentChannel, float Position);
+        bool IsPressed, bool Focused, int Count, bool CurrentChannel, float Position,
+        int ObservationCount, long? Operation, int? NativeRequestId);
     private sealed record Sample(double ElapsedMs, int ThreadId, MotionObservation Motion);
     private readonly LabButton button;
+    private readonly UIElement parent;
     private readonly Func<int> count;
     private readonly FieldInfo pressedField = typeof(LabButton).GetField("pressedMotion", BindingFlags.Instance | BindingFlags.NonPublic)
         ?? throw new InvalidOperationException("Закреплённая сборка не содержит pressedMotion.");
@@ -27,6 +29,8 @@ internal sealed class SpaceProbe : IDisposable
     private readonly List<Sample> samples = [];
     private readonly KeyEventHandler down;
     private readonly KeyEventHandler up;
+    private readonly KeyEventHandler previewDown;
+    private readonly KeyEventHandler previewUp;
     private ScalarMotion? channel;
     private long pressedToken;
     private volatile bool observing;
@@ -40,12 +44,15 @@ internal sealed class SpaceProbe : IDisposable
     private MotionObservation? requested;
     private MotionObservation? latest;
 
-    internal SpaceProbe(LabButton button, Func<int> count)
+    internal SpaceProbe(UIElement parent, LabButton button, Func<int> count)
     {
+        this.parent = parent;
         this.button = button;
         this.count = count;
         down = (_, args) => Key("keyDown", args);
         up = (_, args) => Key("keyUp", args);
+        previewDown = (_, args) => Key("previewKeyDown", args);
+        previewUp = (_, args) => Key("previewKeyUp", args);
         // Console.In.ReadLineAsync может читать синхронно: reader никогда не занимает UI dispatcher.
         _ = Task.Run(async () =>
         {
@@ -97,6 +104,8 @@ internal sealed class SpaceProbe : IDisposable
         observing = true;
         channel.Observed += Motion;
         pressedToken = button.RegisterPropertyChangedCallback(LabButton.IsPressedProperty, Pressed);
+        parent.AddHandler(UIElement.PreviewKeyDownEvent, previewDown, true);
+        parent.AddHandler(UIElement.PreviewKeyUpEvent, previewUp, true);
         button.AddHandler(UIElement.KeyDownEvent, down, true);
         button.AddHandler(UIElement.KeyUpEvent, up, true);
         button.GotFocus += Focus;
@@ -123,10 +132,16 @@ internal sealed class SpaceProbe : IDisposable
     {
         if (!observing) return;
         if (events.Count == 24) { overflow = 1; return; }
-        var started = Elapsed;
-        var position = channel!.Position;
-        events.Add(new(Elapsed, started, kind, key, repeat, button.IsPressed, Focused, count(),
-            ReferenceEquals(channel, Current()), position));
+        lock (samples)
+        {
+            var started = Elapsed;
+            var isPressed = button.IsPressed;
+            var currentChannel = ReferenceEquals(channel, Current());
+            var position = channel!.Position;
+            // Префикс observations сохраняет порядок с preview и при равных timestamps.
+            events.Add(new(Elapsed, started, kind, key, repeat, isPressed, Focused, count(),
+                currentChannel, position, samples.Count, latest?.Operation, latest?.NativeRequestId));
+        }
     }
 
     private void Motion(MotionObservation value)
@@ -169,6 +184,8 @@ internal sealed class SpaceProbe : IDisposable
         observing = false;
         channel!.Observed -= Motion;
         button.UnregisterPropertyChangedCallback(LabButton.IsPressedProperty, pressedToken);
+        parent.RemoveHandler(UIElement.PreviewKeyDownEvent, previewDown);
+        parent.RemoveHandler(UIElement.PreviewKeyUpEvent, previewUp);
         button.RemoveHandler(UIElement.KeyDownEvent, down);
         button.RemoveHandler(UIElement.KeyUpEvent, up);
         button.GotFocus -= Focus;
