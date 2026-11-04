@@ -25,6 +25,7 @@ $clockOriginUpperTicks = [Diagnostics.Stopwatch]::GetTimestamp().ToString([Globa
 $process = $null
 $spaceChannel = $null
 $spaceDiagnostic = $null
+$lifetimeDiagnostic = $null
 $smokeFailure = $null
 $animationBefore = $null
 $animationReadback = $null
@@ -305,6 +306,7 @@ function Assert-LifetimeCompletion($Observation, $Process, [int]$Count) {
 }
 
 function Read-LifetimeObservation([string]$Path, $Process, [string]$ExpectedStatus) {
+    $script:lifetimeDiagnostic = @{ expectedStatus = $ExpectedStatus; observation = $null; observationAdmitted = $false }
     $deadline = [DateTime]::UtcNow.AddSeconds(16)
     do {
         $Process.Refresh()
@@ -312,7 +314,11 @@ function Read-LifetimeObservation([string]$Path, $Process, [string]$ExpectedStat
         if (Test-Path -LiteralPath $Path) {
             if ((Get-Item -LiteralPath $Path).Length -gt 256 * 1024) { throw 'Lifetime JSON превысил лимит.' }
             $value = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+            # Сохраняем отвергнутый ответ до admission; полный motion trace остаётся в файле.
+            $script:lifetimeDiagnostic.observationAdmitted = $false
+            $script:lifetimeDiagnostic.observation = $value | Select-Object schemaVersion, pid, observedAtUnixMs, elapsedMs, status, failure, events
             Assert-LifetimeObservation $value $Process ''
+            $script:lifetimeDiagnostic.observationAdmitted = $true
             if ($value.status -ceq $ExpectedStatus) { return $value }
         }
         Start-Sleep -Milliseconds 100
@@ -880,6 +886,7 @@ try {
        smoothness = 'not-qualified'; performance = 'not-qualified'; reducedMotion = 'not-qualified' }
     if ($Lifetime) {
         $result.lifetime = Invoke-Lifetime $lifetimeObservationPath $process 9
+        $lifetimeDiagnostic = $null
         $result.motionLifetime = 'bounded-disposal-reuse'
     }
     $resultJson = $result | ConvertTo-Json -Depth 12 -Compress
@@ -893,7 +900,10 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Space trace не прошёл полную проверку.' }
 } catch {
     $smokeFailure = $_
-    if ($spaceDiagnostic) { Write-SpaceFailure $spaceDiagnostic $smokeFailure }
+    if ($lifetimeDiagnostic) {
+        Write-SpaceFailure @{ phase = 'lifetime'; lifetime = $lifetimeDiagnostic;
+            lastCommand = $commands | Select-Object -Last 1 -Property name, exitCode, startedMs, completedMs, timedOut } $smokeFailure
+    } elseif ($spaceDiagnostic) { Write-SpaceFailure $spaceDiagnostic $smokeFailure }
     $smokeFailure | Out-String | Set-Content -Encoding utf8 (Join-Path $output 'failure.txt')
     throw
 } finally {

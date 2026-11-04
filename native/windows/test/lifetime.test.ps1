@@ -13,11 +13,11 @@ $functions = @($ast.EndBlock.Statements | Where-Object {
     $_ -is [Management.Automation.Language.FunctionDefinitionAst]
 })
 foreach ($name in @('Assert-LifetimeObservation', 'Assert-LifetimeCompletion',
-    'Read-LifetimeObservation', 'Invoke-Lifetime', 'Assert-Count')) {
+    'Read-LifetimeObservation', 'Invoke-Lifetime', 'Assert-Count', 'Write-SpaceFailure')) {
     $definition = @($functions | Where-Object { $_.Name -eq $name })
     Assert ($definition.Count -eq 1) "Отсутствует исполняемая граница $name."
 }
-foreach ($definition in $functions | Where-Object { $_.Name -match 'Lifetime' -or $_.Name -eq 'Assert-Count' }) {
+foreach ($definition in $functions | Where-Object { $_.Name -match 'Lifetime' -or $_.Name -in @('Assert-Count', 'Write-SpaceFailure') }) {
     . ([scriptblock]::Create($definition.Extent.Text))
 }
 
@@ -104,24 +104,170 @@ foreach ($mutation in @(
 }
 
 # Исполняется настоящий parser/readback; файлы, ожидание и процесс подменены на границе.
-foreach ($fault in @('none', 'json', 'failed', 'pid', 'size', 'exited')) {
+foreach ($expectedStatus in @('armed', 'removed', 'restored', 'passed')) {
+    foreach ($fault in @('none', 'json', 'failed', 'pid', 'size', 'exited', 'missing', 'missing-field')) {
+        & {
+            param($fault, $expectedStatus)
+            $value = New-Observation
+            $value.status = $expectedStatus
+            if ($fault -eq 'failed') { $value.status = 'failed'; $value.failure = 'injected failure' }
+            if ($fault -eq 'pid') { $value.pid++ }
+            if ($fault -eq 'missing-field') { $value.PSObject.Properties.Remove('schemaVersion') }
+            $payload = if ($fault -eq 'json') { '{broken' } else { $value | ConvertTo-Json -Depth 10 }
+            $process = [pscustomobject]@{ Id = 3187; StartTime = $started; HasExited = $fault -eq 'exited' }
+            $process | Add-Member ScriptMethod Refresh { }
+            function Test-Path { param($LiteralPath) return $fault -ne 'missing' }
+            function Get-Item { param($LiteralPath) return @{ Length = $(if ($fault -eq 'size') { 262145 } else { 4096 }) } }
+            function Get-Content { param($LiteralPath, [switch]$Raw) return $payload }
+            function Start-Sleep { throw 'Неверное наблюдение не должно превращаться в ожидание.' }
+            $script:lifetimeDiagnostic = @{ expectedStatus = 'stale'; observation = @{ status = 'passed' }; observationAdmitted = $true }
+            $failure = $null
+            try { $result = Read-LifetimeObservation 'fixture.json' $process $expectedStatus } catch { $failure = $_ }
+            Assert (($null -ne $failure) -eq ($fault -ne 'none')) "Readback неверно обработал $fault : $failure"
+            Assert ($lifetimeDiagnostic.expectedStatus -ceq $expectedStatus -and
+                $lifetimeDiagnostic.observationAdmitted -eq ($fault -eq 'none')) 'Lifetime диагностика не сбросила прежний status/admission [lifetime-diagnostic-reset].'
+            if ($fault -in @('json', 'size', 'exited', 'missing')) {
+                Assert ($null -eq $lifetimeDiagnostic.observation) 'Непрочитанный ответ выдан за наблюдение.'
+            } else {
+                Assert ($null -ne $lifetimeDiagnostic.observation) 'Диагностика потеряла распарсенное observation [lifetime-diagnostic-snapshot].'
+                $raw = $lifetimeDiagnostic.observation | ConvertTo-Json -Depth 10 | ConvertFrom-Json
+                $actualFields = @($raw.PSObject.Properties.Name)
+                $allowedFields = @('schemaVersion', 'pid', 'observedAtUnixMs', 'elapsedMs', 'status', 'failure', 'events')
+                Assert (@($actualFields | Where-Object { $_ -notin $allowedFields }).Count -eq 0) 'В диагностику попали полный motion trace или лишние поля.'
+                Assert ($raw.pid -eq $value.pid -and $raw.observedAtUnixMs -eq $value.observedAtUnixMs -and
+                    $raw.elapsedMs -eq $value.elapsedMs -and $raw.status -ceq $value.status -and $raw.failure -ceq $value.failure) 'Диагностика изменила отклонённые значения.'
+                Assert (($raw.events | ConvertTo-Json -Depth 8 -Compress) -ceq ($value.events | ConvertTo-Json -Depth 8 -Compress)) 'Диагностика потеряла lifetime events.'
+                if ($fault -eq 'missing-field') {
+                    Assert (!$raw.PSObject.Properties['schemaVersion'] -or $null -eq $raw.schemaVersion) 'Отсутствующая схема получила выдуманный default.'
+                } else { Assert ($raw.schemaVersion -eq 1) 'Диагностика потеряла schemaVersion.' }
+            }
+            if ($fault -eq 'none') { Assert ($result.pid -eq 3187 -and $result.status -ceq $expectedStatus) 'Readback потерял принятое observation.' }
+        } $fault $expectedStatus
+    }
+}
+
+# Допуск промежуточного ответа не переносится на следующий отклонённый ответ.
+foreach ($fault in @('failed', 'pid')) {
     & {
         param($fault)
-        $value = New-Observation
-        if ($fault -eq 'failed') { $value.status = 'failed'; $value.failure = 'injected failure' }
-        if ($fault -eq 'pid') { $value.pid++ }
-        $payload = if ($fault -eq 'json') { '{broken' } else { $value | ConvertTo-Json -Depth 10 }
-        $process = [pscustomobject]@{ Id = 3187; StartTime = $started; HasExited = $fault -eq 'exited' }
-        $process | Add-Member ScriptMethod Refresh { }
+        $intermediate = New-Observation
+        $intermediate.status = 'armed'
+        $rejected = New-Observation
+        if ($fault -eq 'failed') { $rejected.status = 'failed'; $rejected.failure = 'later failure' }
+        if ($fault -eq 'pid') { $rejected.pid++ }
+        $payloads = @($intermediate, $rejected) | ForEach-Object { $_ | ConvertTo-Json -Depth 10 }
+        $state = @{ reads = 0 }
         function Test-Path { param($LiteralPath) return $true }
-        function Get-Item { param($LiteralPath) return @{ Length = $(if ($fault -eq 'size') { 262145 } else { 4096 }) } }
-        function Get-Content { param($LiteralPath, [switch]$Raw) return $payload }
-        function Start-Sleep { throw 'Неверное наблюдение не должно превращаться в ожидание.' }
+        function Get-Item { param($LiteralPath) return @{ Length = 4096 } }
+        function Get-Content { param($LiteralPath, [switch]$Raw) return $payloads[$state.reads++] }
+        function Start-Sleep { if ($state.reads -ne 1) { throw 'Readback продолжил ожидание после отклонённого ответа.' } }
         $failure = $null
-        try { $result = Read-LifetimeObservation 'fixture.json' $process 'passed' } catch { $failure = $_ }
-        Assert (($null -ne $failure) -eq ($fault -ne 'none')) "Readback неверно обработал $fault : $failure"
-        if ($fault -eq 'none') { Assert ($result.pid -eq 3187 -and $result.status -ceq 'passed') 'Readback потерял observation.' }
+        try { $null = Read-LifetimeObservation 'fixture.json' $processFixture 'removed' } catch { $failure = $_ }
+        Assert ($null -ne $failure -and $state.reads -eq 2) 'Последовательный readback не дошёл до отклонённого ответа.'
+        Assert (!$lifetimeDiagnostic.observationAdmitted -and
+            $lifetimeDiagnostic.observation.pid -eq $rejected.pid -and
+            $lifetimeDiagnostic.observation.status -ceq $rejected.status -and
+            $lifetimeDiagnostic.observation.failure -ceq $rejected.failure) 'Допуск промежуточного ответа присвоен отклонённому наблюдению.'
     } $fault
+}
+
+# Исполняются настоящий catch и ограниченный writer; основной сценарий заменён одним отказом.
+$mainTry = @($ast.EndBlock.Statements | Where-Object { $_ -is [Management.Automation.Language.TryStatementAst] })
+Assert ($mainTry.Count -eq 1 -and $mainTry[0].CatchClauses.Count -eq 1) 'Не найден единственный основной catch harness.'
+$failureBoundary = [scriptblock]::Create('param($Primary) try { throw $Primary } catch ' + $mainTry[0].CatchClauses[0].Body.Extent.Text)
+$lifetimeBlock = @($mainTry[0].Body.Statements | Where-Object {
+    $_ -is [Management.Automation.Language.IfStatementAst] -and $_.Clauses.Count -eq 1 -and
+    $_.Clauses[0].Item1.Extent.Text -ceq '$Lifetime'
+})
+Assert ($lifetimeBlock.Count -eq 1) 'Не найден основной Lifetime блок.'
+$lifetimeBoundary = [scriptblock]::Create($lifetimeBlock[0].Extent.Text)
+& {
+    $Lifetime = $true
+    $lifetimeObservationPath = 'fixture.json'
+    $process = $processFixture
+    $result = @{}
+    $before = @{ expectedStatus = 'removed'; observation = $null; observationAdmitted = $false }
+    $lifetimeDiagnostic = $before
+    $primary = [InvalidOperationException]::new('injected lifetime invocation failure')
+    function Invoke-Lifetime { throw $primary }
+    $failure = $null
+    try { . $lifetimeBoundary } catch { $failure = $_ }
+    Assert ($null -ne $failure -and [object]::ReferenceEquals($failure.Exception, $primary) -and
+        [object]::ReferenceEquals($lifetimeDiagnostic, $before)) 'Неуспешный Lifetime потерял исходную ошибку или диагностику.'
+}
+foreach ($case in @('commands', 'empty', 'oversized', 'space')) {
+    & {
+        param($case)
+        $primary = [InvalidOperationException]::new('injected lifetime guard failure')
+        $script:lifetimeDiagnostic = [ordered]@{
+            expectedStatus = 'removed'; observationAdmitted = $false
+            observation = [ordered]@{ schemaVersion = 1; pid = 3187; observedAtUnixMs = $epoch + 40;
+                elapsedMs = 40; status = 'failed'; failure = 'detached guard failure';
+                events = @(@{ kind = 'removing'; elapsedMs = 26; unixMs = $epoch + 26; data = @{ count = 11 } }) }
+        }
+        $script:spaceDiagnostic = @{ phase = 'stale-space'; observation = @{ status = 'complete' } }
+        if ($case -eq 'space') {
+            $Lifetime = $true
+            $lifetimeObservationPath = 'fixture.json'
+            $process = $processFixture
+            $result = @{}
+            function Invoke-Lifetime { return New-Observation }
+            . $lifetimeBoundary
+            Assert ($null -eq $lifetimeDiagnostic) 'Успешный Lifetime сохранил диагностику для следующего этапа [lifetime-diagnostic-release].'
+            $script:spaceDiagnostic = @{ phase = 'validation'; captures = @{ Dark = @{ status = 'complete' } } }
+        }
+        if ($case -eq 'oversized') { $lifetimeDiagnostic.observation.failure = 'я' * (256 * 1024) }
+        $commands = [Collections.Generic.List[object]]::new()
+        if ($case -ne 'empty') {
+            $commands.Add(@{ name = 'prior-command-must-not-appear'; arguments = @('private-prior'); exitCode = 0;
+                startedMs = 1; completedMs = 2; timedOut = $false })
+            $commands.Add(@{ name = 'lifetime-remove'; arguments = @('private-command-arguments'); exitCode = 12;
+                startedMs = 7.25; completedMs = 8.75; timedOut = $true; extra = 'private-extra-field' })
+        }
+        $output = Join-Path ([IO.Path]::GetTempPath()) ('labui-lifetime-diagnostic-' + [guid]::NewGuid().ToString('N'))
+        $null = [IO.Directory]::CreateDirectory($output)
+        $failureFile = Join-Path $output 'failure.txt'
+        $writer = [IO.StringWriter]::new()
+        $previousError = [Console]::Error
+        try {
+            [Console]::SetError($writer)
+            $failure = $null
+            try { & $failureBoundary $primary } catch { $failure = $_ }
+            Assert ($null -ne $failure -and [object]::ReferenceEquals($failure.Exception, $primary)) 'Диагностика заменила исходное исключение.'
+            Assert ([IO.File]::Exists($failureFile) -and [IO.File]::ReadAllText($failureFile).Contains($primary.Message)) 'failure.txt потерял исходную ошибку.'
+            $stderr = $writer.ToString()
+            Assert ([Text.Encoding]::UTF8.GetByteCount($stderr) -le 256 * 1024) 'Lifetime диагностика превысила общий лимит.'
+            if ($case -eq 'oversized') {
+                Assert ($stderr.StartsWith('LABUI_SPACE_DIAGNOSTIC_ERROR ') -and
+                    !$stderr.Contains('LABUI_SPACE_FAILURE_JSON ') -and $primary.Data.Contains('spaceDiagnosticError')) 'Oversized lifetime не сохранил ограниченный вторичный отказ.'
+            } else {
+                Assert ($stderr.StartsWith('LABUI_SPACE_FAILURE_JSON ')) 'Основной catch не вывел диагностический JSON.'
+                $diagnostic = $stderr.Substring('LABUI_SPACE_FAILURE_JSON '.Length) | ConvertFrom-Json
+                if ($case -eq 'space') {
+                    Assert ($diagnostic.phase -ceq 'validation' -and $diagnostic.captures.Dark.status -ceq 'complete') 'Диагностика Space потеряна после успешного lifetime.'
+                } else {
+                    Assert ($diagnostic.phase -ceq 'lifetime' -and
+                        $diagnostic.lifetime.expectedStatus -ceq 'removed' -and !$diagnostic.lifetime.observationAdmitted) 'Основной catch вывел устаревший Space вместо lifetime.'
+                    Assert (($diagnostic.lifetime | ConvertTo-Json -Depth 10 -Compress) -ceq
+                        ($lifetimeDiagnostic | ConvertTo-Json -Depth 10 -Compress)) 'Основной catch изменил lifetime snapshot.'
+                    Assert (!$stderr.Contains('private-') -and !$stderr.Contains('prior-command-must-not-appear')) 'Диагностика раскрыла аргументы или историю команд.'
+                    if ($case -eq 'empty') { Assert ($null -eq $diagnostic.lastCommand) 'Пустой журнал получил выдуманную команду.' }
+                    else {
+                        Assert ((@($diagnostic.lastCommand.PSObject.Properties.Name | Sort-Object) -join ',') -ceq
+                            'completedMs,exitCode,name,startedMs,timedOut') 'Последняя команда содержит лишние либо недостающие поля.'
+                        Assert ($diagnostic.lastCommand.name -ceq 'lifetime-remove' -and $diagnostic.lastCommand.exitCode -eq 12 -and
+                            $diagnostic.lastCommand.startedMs -eq 7.25 -and $diagnostic.lastCommand.completedMs -eq 8.75 -and
+                            $diagnostic.lastCommand.timedOut -eq $true) 'Последняя команда потеряла исходные значения.'
+                    }
+                }
+            }
+        } finally {
+            [Console]::SetError($previousError)
+            $writer.Dispose()
+            if ([IO.File]::Exists($failureFile)) { [IO.File]::Delete($failureFile) }
+            [IO.Directory]::Delete($output)
+        }
+    } $case
 }
 
 # Ui синхронен, как Finish-Tool: restore после возврата drag, а не после его старта.
@@ -203,4 +349,4 @@ foreach ($case in @(
     } $case
 }
 
-'lifetime contract: PASS (raw identity, negative readback, input/restore order, default/reduced guard)'
+'lifetime contract: PASS (raw identity, negative readback, bounded failure diagnostics, input/restore order, default/reduced guard)'
