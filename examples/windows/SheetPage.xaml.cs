@@ -44,9 +44,18 @@ public sealed partial class SheetPage : Page
     private void ImageFailed(object sender, ExceptionRoutedEventArgs args)
         => WriteSnapshot(new("image", null, null));
     private void Unhandled(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs args)
-        => WriteSnapshot(new("unhandled", ErrorType(args.Exception), args.Exception?.HResult, SheetFailureSite.Read(args.Exception)));
+        => WriteSnapshot(new("unhandled", ErrorType(args.Exception), args.Exception?.HResult,
+            SheetFailureSite.Read(args.Exception), ReadEffectProbes(args.Exception)));
 
-    private sealed record ObservationError(string origin, string? type, int? hresult, string? site = null);
+    private sealed record ObservationError(string origin, string? type, int? hresult, string? site = null,
+        Dictionary<string, object?>[]? effects = null);
+
+    private static Dictionary<string, object?>[]? ReadEffectProbes(Exception? error)
+    {
+        for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            if (error.Data["LabUI.SheetEffectProbe"] is Dictionary<string, object?>[] effects) return effects;
+        return null;
+    }
 
     private static string? ErrorType(Exception? error)
     {

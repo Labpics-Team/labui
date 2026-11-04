@@ -300,6 +300,52 @@ test('diagnostics retain only known renderer failure sites and keep rejecting fa
   }
 });
 
+test('effect diagnostics keep bounded HRESULTs and never certify a failed renderer', () => {
+  const marker = 'PRIVATE_EFFECT_DIAGNOSTIC_TEXT';
+  const effects = [
+    { index: 0, type: 'ColorSourceEffect', hresult: 0, cleanupHresult: null },
+    { index: 1, type: 'AlphaMaskEffect', hresult: -2147024809, cleanupHresult: null },
+    { index: 2, type: 'OpacityEffect', hresult: 0, cleanupHresult: -2146232800 },
+    { index: marker, type: marker, hresult: marker, cleanupHresult: marker, message: marker },
+    ...Array.from({ length: 100 }, () => ({ index: 99, type: marker, hresult: 1.5 })),
+  ];
+  const error = {
+    origin: 'unhandled',
+    type: 'ArgumentException',
+    hresult: -2147024809,
+    site: 'Compositor.CreateEffectFactory',
+    effects,
+  };
+  const line = sheetFailureLog({
+    sourceSha: SOURCE,
+    name: 'Light-Blur',
+    phase: 'render',
+    pid: 42,
+    observation: { ...observation(), error },
+    error: new Error(marker),
+    stderrBytes: 0,
+  });
+  assert.doesNotMatch(line, new RegExp(marker));
+  const readback = JSON.parse(line.slice('LABUI_SHEET_FAILURE_JSON '.length)).observation.error;
+  assert.equal(readback.effects.length, 64);
+  assert.deepEqual(readback.effects.slice(0, 3), effects.slice(0, 3));
+  assert.deepEqual(readback.effects[3], {
+    index: null,
+    type: null,
+    hresult: null,
+    cleanupHresult: null,
+  });
+  assert.throws(() => decodeSheetEvidence(line, SOURCE));
+  assert.throws(
+    () =>
+      validateObservation(
+        { ...observation(), error },
+        { ...EXPECTED_CASES[0], ...processIdentity },
+      ),
+    (failure) => failure.sheetPhase === 'render',
+  );
+});
+
 test('diagnostics classify free-form exceptions and malformed geometry without publishing their text', async (t) => {
   const marker = 'PRIVATE_VALUE_NOT_FOR_LOG';
   for (const [name, change, phase] of [
