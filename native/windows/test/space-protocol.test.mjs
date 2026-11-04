@@ -39,10 +39,10 @@ if (args.FirstOrDefault() == "child") {
         command => Task.FromResult<object>(new { command, pid = Environment.ProcessId }));
     return;
 }
-async Task<string> Run(string command, Func<string, Task<object>> dispatch) {
+async Task<string> Run(string command, Func<string, Task<object>> dispatch, bool allowDynamic = false) {
     using var input = new MemoryStream(Encoding.UTF8.GetBytes(command));
     using var output = new MemoryStream();
-    await SpaceProtocol.RunAsync(input, output, dispatch);
+    await SpaceProtocol.RunAsync(input, output, dispatch, allowDynamic);
     return Encoding.UTF8.GetString(output.ToArray());
 }
 var calls = 0;
@@ -69,6 +69,19 @@ foreach (var command in new[] { "ready 0", "ready 3", "ready 01", "ready 1 2" })
 calls = 0;
 var invalid = await Run("change-product-policy\\n", command => { calls++; return Task.FromResult<object>(new { }); });
 Check(calls == 0 && !JsonDocument.Parse(invalid).RootElement.GetProperty("ok").GetBoolean(), "Unknown command reached owner");
+foreach (var command in new[] { "dynamic arm", "dynamic prepare", "dynamic disable", "dynamic ready 1", "dynamic ready 2", "dynamic complete" }) {
+    foreach (var enabled in new[] { false, true }) {
+        calls = 0;
+        var reply = await Run(command + "\\n", _ => { calls++; return Task.FromResult<object>(new { }); }, enabled);
+        Check(calls == (enabled ? 1 : 0) && JsonDocument.Parse(reply).RootElement.GetProperty("ok").GetBoolean() == enabled,
+            "Dynamic namespace crossed opt-in boundary");
+    }
+}
+foreach (var command in new[] { "dynamic before", "dynamic ready 0", "dynamic ready 3", "dynamic disable again" }) {
+    calls = 0;
+    var reply = await Run(command + "\\n", _ => { calls++; return Task.FromResult<object>(new { }); }, true);
+    Check(calls == 0 && !JsonDocument.Parse(reply).RootElement.GetProperty("ok").GetBoolean(), "Internal/unbounded dynamic command reached owner");
+}
 var polling = await Run(string.Concat(Enumerable.Repeat("complete\\n", 202)),
     _ => Task.FromResult<object>(new { status = "waiting" }));
 Check(polling.Trim().Split('\\n').Length == 202, "Two bounded polling windows cannot complete");

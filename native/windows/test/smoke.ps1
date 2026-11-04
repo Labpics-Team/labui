@@ -5,6 +5,7 @@ param(
     [bool]$AnimationsEnabled = $true,
     [ValidateRange(1.0, 2.25)][Nullable[double]]$ExpectedTextScale = $null,
     [switch]$Lifetime,
+    [switch]$DynamicMotion,
     [object]$WinApp = $null
 )
 
@@ -14,6 +15,7 @@ if ($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_ENVIRONMENT -ne 'github-hoste
     throw 'Ввод и захват окна разрешены этой проверке только на одноразовом GitHub hosted runner.'
 }
 if ($Lifetime -and !$AnimationsEnabled) { throw 'Lifetime требует normal-анимацию для наблюдения удаления внутри перехода.' }
+if ($DynamicMotion -and !$AnimationsEnabled) { throw 'Динамический сценарий начинает работу с включённой анимацией.' }
 $output = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $output) { throw 'Каталог результата уже существует.' }
 New-Item -ItemType Directory -Path $output | Out-Null
@@ -35,7 +37,8 @@ $layoutObservationPath = Join-Path $output 'layout-observation.json'
 $close = @{}
 $saved = @{}
 foreach ($name in @('WINAPP_UI_WORKFLOW_ID', 'WINAPP_CLI_TELEMETRY_OPTOUT', 'WINAPP_CLI_UPDATE_CHECK',
-    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION', 'LABUI_LAYOUT_OBSERVATION', 'LABUI_SPACE_OBSERVATION')) {
+    'LABUI_ANIMATION_OBSERVATION', 'LABUI_LIFETIME_OBSERVATION', 'LABUI_LAYOUT_OBSERVATION', 'LABUI_SPACE_OBSERVATION',
+    'LABUI_DYNAMIC_MOTION_OBSERVATION')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name)
 }
 
@@ -487,7 +490,9 @@ function Ui([string]$Name, [string[]]$Arguments) {
 }
 
 function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
-    if ($Command -cnotin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete')) { throw 'Неверная команда Space.' }
+    if ($Command -cnotin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete') -and
+        !($DynamicMotion -and $Command -cin @('dynamic arm', 'dynamic prepare', 'dynamic disable',
+            'dynamic ready 1', 'dynamic ready 2', 'dynamic complete'))) { throw 'Неверная команда Space.' }
     if ($Timeout -lt 1 -or $Timeout -gt 5000) { throw 'Неверный бюджет ответа Space.' }
     $spaceChannel.id++
     $process.StandardInput.WriteLine($Command)
@@ -505,41 +510,47 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     return $reply.value
 }
 
-function Wait-SpaceReady([int]$Step, [int]$RemainingMs, [string]$Theme, $Armed, [hashtable]$State) {
+function Wait-SpaceReady([int]$Step, [int]$RemainingMs, [string]$Theme, $Armed, [hashtable]$State,
+    [ValidateSet('', 'dynamic', 'prepare')][string]$CommandPrefix = '', [Nullable[bool]]$ExpectedAnimations = $null) {
     if ($Step -notin @(1, 2) -or $Step -ne $State.nextStep -or $RemainingMs -lt 1 -or $RemainingMs -gt 5000) {
         throw 'Неверный шаг или остаток бюджета готовности Space.'
     }
     $wait = [Diagnostics.Stopwatch]::StartNew()
+    $expectedAnimation = if ($null -eq $ExpectedAnimations) { $AnimationsEnabled } else { [bool]$ExpectedAnimations }
     do {
         $remaining = [int][Math]::Floor($RemainingMs - $wait.Elapsed.TotalMilliseconds)
         if ($remaining -lt 1) { throw 'Space не подтвердил готовность в остатке бюджета ввода.' }
-        $reply = Invoke-SpaceCommand "ready $Step" $remaining
+        $command = if ($CommandPrefix -eq 'prepare') { 'dynamic prepare' } elseif ($CommandPrefix) { "dynamic ready $Step" } else { "ready $Step" }
+        $reply = Invoke-SpaceCommand $command $remaining
+        if ($CommandPrefix) { $reply = (Assert-DynamicReply $reply).readiness }
         $spaceDiagnostic.readiness[[string]$Step] = $reply
         if (($reply.schemaVersion -isnot [int] -and $reply.schemaVersion -isnot [long]) -or $reply.schemaVersion -ne 1 -or
             ($reply.pid -isnot [int] -and $reply.pid -isnot [long]) -or $reply.pid -ne $process.Id -or
             ($reply.processStartedAtUnixMs -isnot [int] -and $reply.processStartedAtUnixMs -isnot [long]) -or
             $reply.processStartedAtUnixMs -ne ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds() -or
-            $reply.theme -cne $Theme -or $reply.automationId -cne 'LabButtonMedium' -or
+            $reply.theme -isnot [string] -or $reply.theme -cne $Theme -or
+            $reply.automationId -isnot [string] -or $reply.automationId -cne 'LabButtonMedium' -or
             ($reply.channel -isnot [int] -and $reply.channel -isnot [long]) -or $reply.channel -ne $Armed.channel -or
             ($reply.step -isnot [int] -and $reply.step -isnot [long]) -or $reply.step -ne $Step -or
-            $reply.animationsEnabled -isnot [bool] -or $reply.animationsEnabled -ne $AnimationsEnabled -or
+            $reply.animationsEnabled -isnot [bool] -or $reply.animationsEnabled -ne $expectedAnimation -or
             $reply.clockOriginTicks -isnot [string] -or $reply.clockOriginTicks -cne $Armed.clockOriginTicks -or
             ($reply.clockFrequency -isnot [int] -and $reply.clockFrequency -isnot [long]) -or
             $reply.clockFrequency -ne $Armed.clockFrequency) {
             throw 'Space вернул готовность другой identity, темы, канала или шага.'
         }
+        if ($reply.status -isnot [string]) { throw 'Неверный тип статуса готовности Space.' }
         if ($reply.status -ceq 'failed') { throw "Space отклонил готовность: $($reply.reason)" }
         if ($reply.status -cnotin @('ready', 'waiting')) { throw 'Неизвестный статус готовности Space.' }
         $remaining = [int][Math]::Floor($RemainingMs - $wait.Elapsed.TotalMilliseconds)
         if ($remaining -lt 1) { throw 'Space ответил после остатка бюджета ввода.' }
         if ($reply.status -ceq 'ready') {
-            $origin = if ($AnimationsEnabled) { 'Animation' } else { 'Snap' }
+            $origin = if ($expectedAnimation) { 'Animation' } else { 'Snap' }
             if (($reply.operation -isnot [int] -and $reply.operation -isnot [long]) -or
                 ($reply.nativeRequestId -isnot [int] -and $reply.nativeRequestId -isnot [long]) -or
-                $reply.nativeRequestId -lt 1 -or $reply.origin -cne $origin -or
-                ($AnimationsEnabled -and $reply.operation -lt 1) -or (!$AnimationsEnabled -and $reply.operation -ne 0) -or
+                $reply.nativeRequestId -lt 1 -or $reply.origin -isnot [string] -or $reply.origin -cne $origin -or
+                ($expectedAnimation -and $reply.operation -lt 1) -or (!$expectedAnimation -and $reply.operation -ne 0) -or
                 ($Step -eq 2 -and ($reply.nativeRequestId -eq $State.previous.nativeRequestId -or
-                    ($AnimationsEnabled -and $reply.operation -le $State.previous.operation)))) {
+                    ($expectedAnimation -and $reply.operation -le $State.previous.operation)))) {
                 throw 'Space подтвердил неверный или прежний Motion request.'
             }
             $State.previous = $reply
@@ -592,6 +603,74 @@ function Invoke-SpaceGesture([string]$Theme) {
     $timing.completeCompletedMs = $clock.Elapsed.TotalMilliseconds
     if ($null -eq $observation -or $observation.status -cne 'complete') { throw 'Space не достиг последнего idle за 5 секунд.' }
     return @{ observation = $observation; injection = $injection; window = $timing }
+}
+
+function Assert-DynamicReply($Reply) {
+    if (($Reply.schemaVersion -isnot [int] -and $Reply.schemaVersion -isnot [long]) -or $Reply.schemaVersion -ne 1 -or
+        $Reply.scenario -isnot [string] -or $Reply.scenario -cne 'dynamic-reduced-motion' -or
+        ($Reply.pid -isnot [int] -and $Reply.pid -isnot [long]) -or $Reply.pid -ne $process.Id) {
+        throw 'Ответ не принадлежит динамическому сценарию текущего процесса.'
+    }
+    return $Reply
+}
+
+function Invoke-DynamicGesture([int]$CountBefore) {
+    $timing = @{ armStartedMs = $clock.Elapsed.TotalMilliseconds }
+    $script:spaceDiagnostic = @{ phase = 'dynamic'; window = $timing; armed = $null; injection = $null; observation = $null; readiness = @{} }
+    $armed = (Assert-DynamicReply (Invoke-SpaceCommand 'dynamic arm')).armed
+    $timing.armCompletedMs = $clock.Elapsed.TotalMilliseconds
+    $spaceDiagnostic.armed = $armed
+    if ($armed.status -isnot [string] -or $armed.status -cne 'armed' -or
+        $armed.theme -isnot [string] -or $armed.theme -cne 'Dark' -or
+        ($armed.channel -isnot [int] -and $armed.channel -isnot [long]) -or $armed.channel -ne 3 -or
+        $armed.automationId -isnot [string] -or $armed.automationId -cne 'LabButtonMedium' -or
+        $armed.focused -isnot [bool] -or !$armed.focused -or
+        ($armed.countBefore -isnot [int] -and $armed.countBefore -isnot [long]) -or $armed.countBefore -ne $CountBefore) {
+        throw 'Динамическая проба не подтвердила живую кнопку после предыдущих сценариев.'
+    }
+    $timing.inputStartedMs = $clock.Elapsed.TotalMilliseconds
+    $readyState = @{ nextStep = 1; previous = $null }
+    try {
+        $injection = [SpaceInput]::Run($process.Id, [long]$window, [Action[int,int]]{
+            param($Step, $RemainingMs)
+            $wait = [Diagnostics.Stopwatch]::StartNew()
+            if ($Step -eq 1) {
+                Wait-SpaceReady 1 $RemainingMs 'Dark' $armed @{ nextStep = 1; previous = $null } 'prepare' $true
+                $remaining = [int][Math]::Floor($RemainingMs - $wait.Elapsed.TotalMilliseconds)
+                if ($remaining -lt 1) { throw 'Подготовка исчерпала бюджет динамического ввода.' }
+                $changed = Assert-DynamicReply (Invoke-SpaceCommand 'dynamic disable' $remaining)
+                $spaceDiagnostic.mutation = $changed
+                if ($changed.status -isnot [string] -or $changed.status -cne 'disabled' -or
+                    $changed.mutation.readback -isnot [bool] -or $changed.mutation.readback) {
+                    throw 'Системный setter не подтвердил отключение анимации.'
+                }
+            }
+            $remaining = [int][Math]::Floor($RemainingMs - $wait.Elapsed.TotalMilliseconds)
+            if ($remaining -lt 1) { throw 'Системный setter исчерпал бюджет динамического ввода.' }
+            Wait-SpaceReady $Step $remaining 'Dark' $armed $readyState 'dynamic' $false
+        })
+    } catch {
+        for ($cause = $_.Exception; $null -ne $cause; $cause = $cause.InnerException) {
+            if ($cause.Data.Contains('spaceInputReceipt')) { $spaceDiagnostic.injection = $cause.Data['spaceInputReceipt']; break }
+        }
+        throw
+    } finally { $timing.inputCompletedMs = $clock.Elapsed.TotalMilliseconds }
+    $spaceDiagnostic.injection = $injection
+    $timing.completeStartedMs = $clock.Elapsed.TotalMilliseconds
+    $deadline = $clock.Elapsed.TotalMilliseconds + 5000
+    do {
+        $remaining = [int][Math]::Floor($deadline - $clock.Elapsed.TotalMilliseconds)
+        if ($remaining -lt 1) { throw 'Динамическая проба не завершилась в бюджете.' }
+        $observation = Assert-DynamicReply (Invoke-SpaceCommand 'dynamic complete' $remaining)
+        $spaceDiagnostic.observation = $observation
+        if ($clock.Elapsed.TotalMilliseconds -ge $deadline) { throw 'Динамическая проба ответила после срока.' }
+        if ($observation.status -isnot [string]) { throw 'Неверный тип статуса динамического наблюдения.' }
+        if ($observation.status -ceq 'complete') { break }
+        if ($observation.status -cne 'waiting') { throw 'Динамическая проба сохранила отказ.' }
+        Start-Sleep -Milliseconds ([Math]::Min(50, $remaining))
+    } while ($true)
+    $timing.completeCompletedMs = $clock.Elapsed.TotalMilliseconds
+    return @{ scenario = 'dynamic-reduced-motion'; observation = $observation; injection = $injection; window = $timing }
 }
 
 function Write-SpaceFailure($Diagnostic, $Primary) {
@@ -694,7 +773,8 @@ function Read-Fill([string]$File) {
     } finally { $bitmap.Dispose() }
 }
 
-function Assert-Capture([string]$Name, $Record, $Window) {
+function Assert-Capture([string]$Name, $Record, $Window,
+    [string[]]$GestureNames = @('hover', 'pressed', 'rapid-space', 'cancel-drag', 'pointer-out')) {
     $directory = Join-Path $output "$Name.frames"
     $manifest = Get-Content -LiteralPath (Join-Path $directory 'manifest.json') -Raw | ConvertFrom-Json
     $frames = @(Get-Content -LiteralPath (Join-Path $directory 'frames.ndjson') | ForEach-Object { $_ | ConvertFrom-Json })
@@ -727,7 +807,7 @@ function Assert-Capture([string]$Name, $Record, $Window) {
     }
     # Часы harness стартуют до recorder: это консервативная верхняя граница конца ввода.
     if ($Window.firstFrameReceivedMs -le $Window.recordStartedMs -or
-        ($Window.gestures.name -join ',') -ne 'hover,pressed,rapid-space,cancel-drag,pointer-out' -or
+        ($Window.gestures.name -join ',') -cne ($GestureNames -join ',') -or
         $Window.gestures[0].startedMs -lt $Window.firstFrameReceivedMs) {
         throw "Не подтверждён первый кадр до ввода $Name."
     }
@@ -742,21 +822,12 @@ function Assert-Capture([string]$Name, $Record, $Window) {
         visualReview = 'pending'; gestureTiming = "$Name-window.json" }
 }
 
-function Capture-Interaction([string]$Theme, [int]$Count) {
-    $name = "interaction-$Theme"
-    Ui "$name-theme" @('invoke', "LabTheme$Theme") | Out-Null
-    Ui "$name-before" @('hover', 'LabActionResult', '--dwell-time', '800') | Out-Null
-    Ui "$name-target" @('get-property', 'LabButtonMedium') | Out-Null
-    $gestures = [Collections.Generic.List[object]]::new()
+function Start-Recording([string]$Name, [int]$DurationSec) {
     $recording = $null
-    $recordingFailure = $null
-    # Бюджет включает запуск recorder и все команды; последний кадр проверяется отдельно.
-    $inputBudgetMs = 60000
-    $durationSec = [int]($inputBudgetMs / 1000) + 1
     try {
-        $recording = Start-Tool "$name-record" @('ui', 'record', '-w', $window, '--frames',
-            '--duration-sec', "$durationSec", '--fps', '30', '--max-edge', '1000',
-            '--output', (Join-Path $output "$name.mp4"), '--json') -Recording
+        $recording = Start-Tool "$Name-record" @('ui', 'record', '-w', $window, '--frames',
+            '--duration-sec', "$DurationSec", '--fps', '30', '--max-edge', '1000',
+            '--output', (Join-Path $output "$Name.mp4"), '--json') -Recording
         $ready = $false
         $recording.lineTask = $recording.stderrReader.ReadLineAsync($recording.cancellation.Token).AsTask()
         while ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -lt 15000) {
@@ -777,7 +848,32 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
             throw 'Нет подтверждения первого кадра за 15 секунд.'
         }
         $recording.stderr = $recording.stderrReader.ReadToEndAsync($recording.cancellation.Token)
-        $captureWindow = @{ recordStartedMs = $recording.startedMs; firstFrameReceivedMs = $clock.Elapsed.TotalMilliseconds;
+        $recording.firstFrameReceivedMs = $clock.Elapsed.TotalMilliseconds
+        return $recording
+    } catch {
+        $primary = $_
+        if ($recording) {
+            try { Close-Tool $recording }
+            catch { $primary.Exception.Data['winappCleanupError'] = $_.Exception.ToString() }
+        }
+        throw $primary
+    }
+}
+
+function Capture-Interaction([string]$Theme, [int]$Count) {
+    $name = "interaction-$Theme"
+    Ui "$name-theme" @('invoke', "LabTheme$Theme") | Out-Null
+    Ui "$name-before" @('hover', 'LabActionResult', '--dwell-time', '800') | Out-Null
+    Ui "$name-target" @('get-property', 'LabButtonMedium') | Out-Null
+    $gestures = [Collections.Generic.List[object]]::new()
+    $recording = $null
+    $recordingFailure = $null
+    # Бюджет включает запуск recorder и все команды; последний кадр проверяется отдельно.
+    $inputBudgetMs = 60000
+    $durationSec = [int]($inputBudgetMs / 1000) + 1
+    try {
+        $recording = Start-Recording $name $durationSec
+        $captureWindow = @{ recordStartedMs = $recording.startedMs; firstFrameReceivedMs = $recording.firstFrameReceivedMs;
             clock = 'harness-stopwatch-ms'; clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
             clockFrequency = [Diagnostics.Stopwatch]::Frequency; gestures = $gestures }
         $space = $null
@@ -820,6 +916,44 @@ function Capture-Interaction([string]$Theme, [int]$Count) {
     }
 }
 
+function Capture-Dynamic([int]$CountBefore) {
+    $name = 'interaction-Dynamic'
+    Ui "$name-before" @('screenshot', 'LabButtonMedium', '--output', (Join-Path $output "$name-hover.png")) | Out-Null
+    $gestures = [Collections.Generic.List[object]]::new()
+    $recording = $null
+    $recordingFailure = $null
+    # First-frame 15 s + arm 5 s + весь ввод 5 s + complete 5 s.
+    $inputBudgetMs = 15000 + 5000 + 5000 + 5000
+    $durationSec = [int]($inputBudgetMs / 1000) + 1
+    try {
+        $recording = Start-Recording $name $durationSec
+        $captureWindow = @{ recordStartedMs = $recording.startedMs; firstFrameReceivedMs = $recording.firstFrameReceivedMs;
+            clock = 'harness-stopwatch-ms'; clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
+            clockFrequency = [Diagnostics.Stopwatch]::Frequency; gestures = $gestures }
+        $startedMs = $clock.Elapsed.TotalMilliseconds
+        $space = Invoke-DynamicGesture $CountBefore
+        $gestures.Add(@{ name = 'dynamic-space'; startedMs = $startedMs; completedMs = $clock.Elapsed.TotalMilliseconds })
+        if ($clock.Elapsed.TotalMilliseconds - $recording.startedMs -ge $inputBudgetMs) {
+            throw 'Динамический ввод вышел за бюджет записи.'
+        }
+        $captureWindow | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $output "$name-window.json")
+        $recordResult = Finish-Tool $recording -Timeout ($durationSec * 1000 + 30000)
+        $capture = Assert-Capture $name $recordResult $captureWindow @('dynamic-space')
+        $capture.scenario = 'dynamic-reduced-motion'
+        $capture.space = $space
+        return $capture
+    } catch { $recordingFailure = $_; throw }
+    finally {
+        if ($recording) {
+            try { Close-Tool $recording }
+            catch {
+                if ($recordingFailure) { $recordingFailure.Exception.Data['winappCleanupError'] = $_.Exception.ToString() }
+                else { throw }
+            }
+        }
+    }
+}
+
 try {
     $env:WINAPP_UI_WORKFLOW_ID = [guid]::NewGuid().ToString()
     $env:WINAPP_CLI_TELEMETRY_OPTOUT = '1'
@@ -840,6 +974,7 @@ try {
     $env:LABUI_ANIMATION_OBSERVATION = $animationObservationPath
     $env:LABUI_LIFETIME_OBSERVATION = if ($Lifetime) { $lifetimeObservationPath } else { $null }
     $env:LABUI_SPACE_OBSERVATION = '1'
+    $env:LABUI_DYNAMIC_MOTION_OBSERVATION = if ($DynamicMotion) { '1' } else { $null }
     $appStart = [Diagnostics.ProcessStartInfo]::new($app)
     $appStart.WorkingDirectory = $ApplicationDirectory
     $appStart.UseShellExecute = $false
@@ -870,7 +1005,7 @@ try {
     $initialLayout = Read-LayoutObservation $layoutObservationPath $process $ExpectedTextScale
     $animationObservation = Read-AnimationObservation $animationObservationPath $process
     @{ pid = $process.Id; startedAtUnixMs = ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds();
-       window = $window; source = (git -C $PSScriptRoot rev-parse HEAD);
+       window = $window; source = (git -C $PSScriptRoot rev-parse HEAD); dynamicMotionExpected = [bool]$DynamicMotion;
        os = [Environment]::OSVersion.VersionString; appSha256 = (Get-FileHash -LiteralPath $app).Hash;
        consumerSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'Buttons.dll')).Hash;
        uiSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabUI.WinUI.dll')).Hash;
@@ -944,6 +1079,11 @@ try {
         $lifetimeDiagnostic = $null
         $result.motionLifetime = 'bounded-disposal-reuse'
     }
+    if ($DynamicMotion) {
+        $countBefore = 9 + [int][bool]$Lifetime
+        $result.dynamicMotion = Capture-Dynamic $countBefore
+        Assert-Count ($countBefore + 2)
+    }
     $resultJson = $result | ConvertTo-Json -Depth 12 -Compress
     if ([Text.Encoding]::UTF8.GetByteCount($resultJson + [Environment]::NewLine) -gt 256 * 1024) { throw 'Полный result.json превысил лимит evidence.' }
     $resultJson | Set-Content -Encoding utf8 (Join-Path $output 'result.json')
@@ -953,6 +1093,10 @@ try {
         clockFrequency = [Diagnostics.Stopwatch]::Frequency }
     & node "$PSScriptRoot/space-observation.mjs" (Join-Path $output 'result.json') (Join-Path $output 'identity.json')
     if ($LASTEXITCODE -ne 0) { throw 'Space trace не прошёл полную проверку.' }
+    if ($DynamicMotion) {
+        & node "$PSScriptRoot/dynamic-observation.mjs" (Join-Path $output 'result.json') (Join-Path $output 'identity.json')
+        if ($LASTEXITCODE -ne 0) { throw 'Динамический trace не прошёл полную проверку.' }
+    }
 } catch {
     $smokeFailure = $_
     if ($lifetimeDiagnostic) {
@@ -1024,20 +1168,32 @@ try {
         if ($smokeFailure) {
             $close.applicationCleanupError = $_.Exception.ToString()
             $smokeFailure.Exception.Data['applicationCleanupError'] = $close.applicationCleanupError
-        } else { throw }
+        } else { $smokeFailure = $_; throw }
     } finally {
         try {
             foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name]) }
         } finally {
             try {
                 if ($null -ne $animationBefore) {
+                    if ($DynamicMotion -and $null -ne $process -and
+                        (!$close.ContainsKey('exited') -or $close.exited -ne $true)) {
+                        throw 'Настройка не восстанавливается до подтверждённого завершения child с системным setter.'
+                    }
                     [ClientAreaAnimation]::Write($animationBefore)
                     $restored = [ClientAreaAnimation]::Read()
                     $close.animation = @{ expected = $animationBefore; actual = $restored }
                     if ($restored -ne $animationBefore) { throw 'Исходная настройка анимации не восстановлена.' }
                 }
+            } catch {
+                $close.animationCleanupError = $_.Exception.ToString()
+                if ($smokeFailure) { $smokeFailure.Exception.Data['animationCleanupError'] = $close.animationCleanupError }
+                else { $smokeFailure = $_; throw }
             } finally {
-                $close | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $output 'close.json')
+                try { $close | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $output 'close.json') }
+                catch {
+                    if ($smokeFailure) { $smokeFailure.Exception.Data['closeWriteError'] = $_.Exception.ToString() }
+                    else { throw }
+                }
             }
         }
     }

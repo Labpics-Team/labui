@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32 } from 'node:zlib';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
+import { validateDynamicObservation } from './dynamic-observation.mjs';
 import { assertSpaceClockOrigins, validateSpaceObservation } from './space-observation.mjs';
 
 const PREFIX = 'LABUI_NATIVE_EVIDENCE';
@@ -53,13 +54,16 @@ const staticFiles = (mode) =>
 
 function fileLimit(file, mode) {
   assert.equal(typeof file, 'string', 'native: имя файла');
-  if (staticFiles(mode).includes(file)) {
+  if (
+    staticFiles(mode).includes(file) ||
+    (mode === 'interaction' && interactionNames('Dynamic').includes(file))
+  ) {
     if (file.endsWith('.png') || file.endsWith('.mp4')) return PNG_MAX_BYTES;
     return file.endsWith('.ndjson') ? INDEX_MAX_BYTES : JSON_MAX_BYTES;
   }
   assert.ok(
     mode === 'interaction' &&
-      /^interaction-(Light|Dark)\.frames\/frames\/[A-Za-z0-9_-]+\.jpe?g$/.test(file),
+      /^interaction-(Light|Dark|Dynamic)\.frames\/frames\/[A-Za-z0-9_-]+\.jpe?g$/.test(file),
     'native: неизвестный файл',
   );
   return JPEG_MAX_BYTES;
@@ -160,9 +164,20 @@ function validateInteractions(files, records, dimensions) {
     'native: обе записи обязательны',
   );
   const required = [...staticFiles('interaction')];
+  const identity = records.get('identity.json');
+  const dynamic = identity.dynamicMotionExpected === true;
+  if (dynamic) {
+    assert.equal(
+      result.dynamicMotion?.scenario,
+      'dynamic-reduced-motion',
+      'native: dynamic scenario missing',
+    );
+    required.push(...interactionNames('Dynamic'));
+  } else assert.equal(result.dynamicMotion, undefined, 'native: dynamic scenario without opt-in');
   const origins = [];
-  for (const theme of THEMES) {
+  for (const theme of [...THEMES, ...(dynamic ? ['Dynamic'] : [])]) {
     const name = `interaction-${theme}`;
+    const capture = theme === 'Dynamic' ? result.dynamicMotion : captures[theme];
     const manifest = records.get(`${name}.frames/manifest.json`);
     const record = records.get(`${name}-record.json`);
     const window = records.get(`${name}-window.json`);
@@ -180,20 +195,22 @@ function validateInteractions(files, records, dimensions) {
     assert.equal(record.mode, 'wgc', 'native: capture mode');
     assert.equal(record.frames, frames.length, 'native: recorded samples');
     assert.equal(record.fileSize, manifest.video.fileSize, 'native: recorded video size');
-    assert.equal(captures[theme].mode, 'wgc', 'native: summary mode');
-    assert.equal(captures[theme].samples, frames.length, 'native: summary samples');
-    assert.equal(captures[theme].images, images.size, 'native: summary images');
-    assert.equal(captures[theme].gestureTiming, `${name}-window.json`, 'native: timing filename');
+    assert.equal(capture.mode, 'wgc', 'native: summary mode');
+    assert.equal(capture.samples, frames.length, 'native: summary samples');
+    assert.equal(capture.images, images.size, 'native: summary images');
+    assert.equal(capture.gestureTiming, `${name}-window.json`, 'native: timing filename');
     origins.push(
-      validateSpaceObservation(captures[theme].space, records.get('identity.json'), theme, window),
+      theme === 'Dynamic'
+        ? validateDynamicObservation(capture.space, identity, window, result.lifetime ? 10 : 9)
+        : validateSpaceObservation(capture.space, identity, theme, window),
     );
     assert.equal(window.clock, 'harness-stopwatch-ms', 'native: timing clock');
     assert.deepEqual(
       window.gestures.map(({ name: gesture }) => gesture),
-      gestures,
+      theme === 'Dynamic' ? ['dynamic-space'] : gestures,
       'native: gestures',
     );
-    if (result.gesturePattern === 'cancel-drag') {
+    if (theme !== 'Dynamic' && result.gesturePattern === 'cancel-drag') {
       assert.deepEqual(
         window.gestures[3].arguments,
         ['drag', 'LabButtonMedium', 'LabActionResult', '--hold-ms', '50'],
@@ -293,6 +310,8 @@ function validate(files, sourceSha, mode) {
     else if (!file.endsWith('.ndjson')) records.set(file, json(bytes));
   }
   const identity = records.get('identity.json');
+  if (identity.dynamicMotionExpected !== undefined)
+    assert.equal(typeof identity.dynamicMotionExpected, 'boolean', 'native: dynamic opt-in type');
   assert.equal(identity.source, sourceSha, 'native: identity source');
   for (const field of ['appSha256', 'consumerSha256', 'uiSha256', 'motionSha256', 'cliZipSha256']) {
     assert.match(identity[field], /^[a-f0-9]{64}$/i, `native: identity ${field}`);
@@ -300,16 +319,41 @@ function validate(files, sourceSha, mode) {
   assert.equal(records.get('result.json').passed, true, 'native: smoke не прошёл');
   const required =
     mode === 'interaction' ? validateInteractions(files, records, dimensions) : EVIDENCE_FILES;
-  if (mode === 'idle')
+  if (mode === 'idle') {
+    assert.ok(
+      identity.dynamicMotionExpected !== true &&
+        records.get('result.json').dynamicMotion === undefined,
+      'native: dynamic scenario requires interaction mode',
+    );
     assert.equal(
       records.get('result.json').captures,
       undefined,
       'native: interaction mode required',
     );
+  }
   assert.deepEqual([...files.keys()].sort(), [...required].sort(), 'native: набор файлов');
   const close = records.get('close.json');
   assert.equal(close.exited, true, 'native: приложение не завершилось');
   assert.equal(close.exitCode, 0, 'native: приложение завершилось с ошибкой');
+  if (identity.dynamicMotionExpected === true) {
+    assert.equal(
+      typeof identity.animation.clientAreaBefore,
+      'boolean',
+      'native: исходная настройка',
+    );
+    assert.equal(
+      close.animation?.expected,
+      identity.animation.clientAreaBefore,
+      'native: цель восстановления',
+    );
+    assert.equal(
+      close.animation?.actual,
+      identity.animation.clientAreaBefore,
+      'native: настройка не восстановлена',
+    );
+    for (const field of ['applicationCleanupError', 'animationCleanupError'])
+      assert.equal(close[field], undefined, 'native: dynamic cleanup failed');
+  }
   const commands = records.get('commands.json');
   assert.ok(Array.isArray(commands) && commands.length > 0, 'native: нет commands');
   for (const command of commands) {
@@ -351,7 +395,9 @@ export function decodeNativeEvidence(log, sourceSha, mode = 'idle') {
     digestField: 'sha256',
     maxBytes: PNG_MAX_BYTES,
     maxPackets:
-      mode === 'idle' ? EVIDENCE_FILES.length : staticFiles(mode).length + 2 * MAX_SAMPLES,
+      mode === 'idle'
+        ? EVIDENCE_FILES.length
+        : staticFiles(mode).length + interactionNames('Dynamic').length + 3 * MAX_SAMPLES,
     maxTotalBytes: MAX_TOTAL_BYTES,
   })) {
     assert.equal(metadata.sourceSha, sourceSha, 'native: packet source');
@@ -397,7 +443,9 @@ async function main(args) {
     };
     for (const file of staticFiles(mode)) await load(file);
     if (mode === 'interaction') {
-      for (const theme of THEMES) {
+      const dynamic = json(files.get('identity.json')).dynamicMotionExpected === true;
+      if (dynamic) for (const file of interactionNames('Dynamic')) await load(file);
+      for (const theme of [...THEMES, ...(dynamic ? ['Dynamic'] : [])]) {
         const name = `interaction-${theme}.frames`;
         for (const directory of [name, `${name}/frames`]) {
           assert.ok(

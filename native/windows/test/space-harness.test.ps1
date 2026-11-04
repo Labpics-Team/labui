@@ -64,6 +64,39 @@ foreach ($fault in @('none', 'reply-id', 'string-id', 'wrong-pid', 'string-pid',
 }
 'Space harness: PASS (actual bounded reader, request identity, PID, typed reply, EOF and timeout)'
 
+# Настоящий entrypoint пишет команды в инертный транспорт; никаких child/input/SPI здесь нет.
+$dynamicCommands = @('dynamic arm', 'dynamic prepare', 'dynamic disable', 'dynamic ready 1', 'dynamic ready 2', 'dynamic complete')
+foreach ($enabled in @($true, $false)) {
+    foreach ($commandText in @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete') + $dynamicCommands +
+        @('dynamic before', 'dynamic ready 3', 'dynamic Arm', 'dynamic arm ', ' dynamic arm', "dynamic arm`ncomplete", 'unknown')) {
+        & {
+            param($enabled, $commandText)
+            $DynamicMotion = $enabled
+            $isDynamic = $commandText -cin $dynamicCommands
+            $accepted = $commandText -cin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete') -or ($enabled -and $isDynamic)
+            $reply = @{ id = 1; ok = $true; value = @{ pid = 3187; command = $commandText } }
+            $line = ($reply | ConvertTo-Json -Depth 5 -Compress) + "`n"
+            $process = [pscustomobject]@{ Id = 3187; StandardInput = [IO.StringWriter]::new(); StandardOutput = [IO.StringReader]::new($line) }
+            $spaceChannel = @{ id = 0; stdoutReader = $process.StandardOutput; cancellation = [Threading.CancellationTokenSource]::new() }
+            $spaceChannel.read = [LabUI.Buttons.SpaceProtocol]::ReadLineAsync($spaceChannel.stdoutReader, 128 * 1024, $spaceChannel.cancellation.Token)
+            $failure = $null; $actual = $null
+            try { $actual = Invoke-SpaceCommand $commandText 100 }
+            catch { $failure = $_ }
+            finally { $process.StandardOutput.Dispose(); $spaceChannel.cancellation.Dispose() }
+            $written = $process.StandardInput.ToString(); $process.StandardInput.Dispose()
+            Assert (($null -eq $failure) -eq $accepted) "Command entrypoint: dynamic=$enabled command=[$commandText]."
+            if ($accepted) {
+                Assert ($written -ceq ($commandText + [Environment]::NewLine) -and $spaceChannel.id -eq 1 -and
+                    $actual.command -ceq $commandText) 'Entrypoint потерял команду, reply или identity.'
+            } else {
+                Assert ($failure.Exception.Message -ceq 'Неверная команда Space.' -and $written -ceq '' -and
+                    $spaceChannel.id -eq 0) 'Запрещённая команда достигла транспорта или изменила identity.'
+            }
+        } $enabled $commandText
+    }
+}
+'Space command entrypoint: PASS (six opt-in dynamic commands, static compatibility, invalid commands rejected before transport)'
+
 $readyFunction = $ast.Find({ param($node)
     $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Wait-SpaceReady'
 }, $false)
