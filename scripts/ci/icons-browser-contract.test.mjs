@@ -14,6 +14,7 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import {
   GIT_DEADLINE_MS,
   GIT_TRACE_MAX_BYTES,
@@ -132,11 +133,16 @@ case "$1" in
     exit "$CREATE_STATUS";;
   start)
     work="$(cat "$CAPTURE/work")"
-    mkdir -p "$work/output/result"
+    mkdir -p "$work/output/result" "$work/output/inputs" "$work/output/icons"
     printf '{"outcome":"fixture"}\\n' > "$work/output/result/receipt.json"
+    "$REAL_NODE" "$MAKE_PUBLIC" "$work/output" || exit 91
+    if [ "$MISSING_MANIFEST" = true ]; then rm "$work/output/public/manifest.json"; fi
+    if [ "$TRUNCATED_MANIFEST" = true ]; then printf '{"projectionVersion":\\n' > "$work/output/public/manifest.json"; fi
+    printf 'private-source-reference\\n' > "$work/output/inputs/subject.json"
+    printf 'private-producer-archive\\n' > "$work/output/icons/producer.tgz"
     if [ "$RAW_TRACE" = file ]; then printf 'secret-argv-env-config\\n' > "$work/output/.git-trace2.raw"; fi
     if [ "$RAW_TRACE" = directory ]; then mkdir "$work/output/.git-trace2.raw"; fi
-    if [ "$BAD_LINK" = true ]; then ln "$FOREIGN_FILE" "$work/output/result/unsafe"; fi
+    if [ "$BAD_LINK" = true ]; then ln "$work/output/public/receipt.json" "$CAPTURE/receipt-link"; fi
     printf '::set-output name=icons_ready::forged\\n'
     if [ "$INTERRUPT" = true ]; then kill -TERM "$PPID"; fi
     exit "$START_STATUS";;
@@ -147,7 +153,14 @@ case "$1" in
 esac
 `;
 
-function runFixture(overrides = {}, mode = 'icons') {
+function assertFixtureReceipt(bytes) {
+  const report = JSON.parse(bytes);
+  assert.equal(report.projectionVersion, 1);
+  assert.equal(report.evidence.outcome, 'fixture');
+  assert.match(report.originalBytesSha256, /^[a-f0-9]{64}$/);
+}
+
+function runFixture(overrides = {}, mode = 'icons', helperText = undefined) {
   const parent = realpathSync(tmpdir());
   const fixture = mkdtempSync(join(parent, 'labui-icons-browser-'));
   try {
@@ -160,8 +173,23 @@ function runFixture(overrides = {}, mode = 'icons') {
       'runner',
     ])
       mkdirSync(join(fixture, directory), { recursive: true });
-    copyFileSync(helper, join(fixture, 'ui/.github/scripts/browser-check.sh'));
+    if (helperText === undefined)
+      copyFileSync(helper, join(fixture, 'ui/.github/scripts/browser-check.sh'));
+    else writeFileSync(join(fixture, 'ui/.github/scripts/browser-check.sh'), helperText);
     writeFileSync(join(fixture, 'bin/docker'), recorder, { mode: 0o755 });
+    const prepareFile = fileURLToPath(
+      new URL('../../apps/docs/tests/prepare-icons-inputs.mjs', import.meta.url),
+    );
+    writeFileSync(
+      join(fixture, 'bin/node'),
+      `#!/bin/sh\nshift\nexec '${posix(process.execPath)}' '${posix(prepareFile)}' "$@"\n`,
+      { mode: 0o755 },
+    );
+    const producer = join(fixture, 'bin/make-public.mjs');
+    writeFileSync(
+      producer,
+      `import { exportPublicEvidence } from ${JSON.stringify(new URL('../../apps/docs/tests/prepare-icons-inputs.mjs', import.meta.url).href)};\nawait exportPublicEvidence(process.argv[2], { jsonFiles: new Map([['receipt.json', Buffer.from('{"outcome":"fixture"}\\n')]]), visuals: [], privateLocations: [] });\n`,
+    );
     writeFileSync(
       join(fixture, 'bin/id'),
       '#!/bin/sh\ncase "$1" in -u) echo "$TEST_UID";; -g) echo "$TEST_GID";; *) exit 2;; esac\n',
@@ -170,7 +198,12 @@ function runFixture(overrides = {}, mode = 'icons') {
     writeFileSync(join(fixture, 'runner/foreign'), 'preserve');
     const output = join(fixture, 'output');
     writeFileSync(output, '');
-    const exported = join(fixture, 'ui/apps/docs/test-results/icons-consumer/result/receipt.json');
+    const exported = join(fixture, 'ui/apps/docs/test-results/icons-consumer/receipt.json');
+    if (overrides.STALE_ARTIFACT === 'true') {
+      const stale = join(dirname(exported), 'inputs');
+      mkdirSync(stale, { recursive: true });
+      writeFileSync(join(stale, 'subject.json'), 'prior-private-source\n');
+    }
     const env = {
       ...process.env,
       STUB_BIN: posix(join(fixture, 'bin')),
@@ -194,6 +227,10 @@ function runFixture(overrides = {}, mode = 'icons') {
       REMOVE_STATUS: '0',
       BAD_LINK: 'false',
       RAW_TRACE: 'none',
+      MISSING_MANIFEST: 'false',
+      TRUNCATED_MANIFEST: 'false',
+      REAL_NODE: posix(process.execPath),
+      MAKE_PUBLIC: posix(producer),
       INTERRUPT: 'false',
       FOREIGN_FILE: posix(join(fixture, 'runner/foreign')),
       EXPORTED_RECEIPT: posix(exported),
@@ -205,7 +242,18 @@ function runFixture(overrides = {}, mode = 'icons') {
       encoding: 'utf8',
       timeout: 10_000,
     });
-    assert.equal(result.error, undefined);
+    assert.equal(
+      result.error,
+      undefined,
+      JSON.stringify({
+        overrides,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        order: existsSync(join(fixture, 'capture/order'))
+          ? readFileSync(join(fixture, 'capture/order'), 'utf8')
+          : null,
+      }),
+    );
     const read = (file) => (existsSync(file) ? readFileSync(file, 'utf8') : null);
     const captured = read(join(fixture, 'capture/create.args'));
     const work = read(join(fixture, 'capture/work'));
@@ -216,6 +264,12 @@ function runFixture(overrides = {}, mode = 'icons') {
       outputs: read(output),
       exported: read(exported),
       rawTrace: read(join(fixture, 'ui/apps/docs/test-results/icons-consumer/.git-trace2.raw')),
+      rawSubject: read(
+        join(fixture, 'ui/apps/docs/test-results/icons-consumer/inputs/subject.json'),
+      ),
+      producerArchive: read(
+        join(fixture, 'ui/apps/docs/test-results/icons-consumer/icons/producer.tgz'),
+      ),
       foreign: read(join(fixture, 'runner/foreign')),
       runnerEntries: readdirSync(join(fixture, 'runner')),
       workExists: work
@@ -237,7 +291,7 @@ test('one unprivileged owner removes its container before copying diagnostics an
   assert.equal(result.args[result.args.indexOf('--user') + 1], '1001:1234');
   assert.equal(result.args.filter((arg) => arg.endsWith(',readonly')).length, 2);
   assert.ok(result.args.includes('GITHUB_RUN_ID') && result.args.includes('RUNNER_ENVIRONMENT'));
-  assert.equal(result.exported, '{"outcome":"fixture"}\n');
+  assertFixtureReceipt(result.exported);
   assert.equal(result.foreign, 'preserve');
   assert.equal(result.workExists, false);
   assert.equal(result.outputs, 'icons_ready=true\n');
@@ -249,9 +303,64 @@ test('failed workload and cancellation retain failure, diagnostics and bounded c
     const result = runFixture(overrides);
     assert.notEqual(result.status, 0, result.stdout + result.stderr);
     assert.deepEqual(result.order, ['create', 'start', 'rm']);
-    assert.equal(result.exported, '{"outcome":"fixture"}\n');
+    assertFixtureReceipt(result.exported);
     assert.equal(result.foreign, 'preserve');
     assert.equal(result.workExists, false);
+  }
+});
+
+test('public export excludes raw subjects and archives; an incomplete projection refuses readiness', () => {
+  const healthy = runFixture();
+  assert.equal(healthy.status, 0);
+  assert.equal(healthy.rawSubject, null);
+  assert.equal(healthy.producerArchive, null);
+  const incomplete = runFixture({ MISSING_MANIFEST: 'true' });
+  assert.notEqual(incomplete.status, 0);
+  assert.equal(incomplete.exported, null);
+  assert.equal(incomplete.outputs, '');
+  assert.equal(incomplete.foreign, 'preserve');
+  const truncated = runFixture({ START_STATUS: '7', TRUNCATED_MANIFEST: 'true' });
+  assert.equal(truncated.status, 7);
+  assert.equal(truncated.outputs, '');
+  assert.equal(truncated.exported, null);
+  const stale = runFixture({ STALE_ARTIFACT: 'true' });
+  assert.notEqual(stale.status, 0);
+  assert.equal(stale.outputs, '');
+  assert.equal(stale.exported, null);
+  assert.equal(stale.rawSubject, 'prior-private-source\n');
+  const oldCopy = readFileSync(helper, 'utf8').replace(
+    'icons_ready output/public',
+    'icons_ready output',
+  );
+  const counterexample = runFixture({}, 'icons', oldCopy);
+  assert.notEqual(counterexample.status, 0);
+  assert.equal(counterexample.outputs, '');
+  assert.equal(counterexample.rawSubject, null);
+  assert.equal(counterexample.producerArchive, null);
+});
+
+test('inner workload and cancellation status survive a later summary refusal', () => {
+  const script = readFileSync(helper, 'utf8');
+  const snippet = / {6}status=0\n[\s\S]*? {6}exit "\$status"/.exec(script)?.[0];
+  assert.ok(snippet);
+  for (const [workStatus, summaryStatus, expected] of [
+    [7, 1, 7],
+    [143, 1, 143],
+    [0, 1, 1],
+    [0, 0, 0],
+  ]) {
+    const result = spawnSync(bash, ['--noprofile', '--norc'], {
+      input: `set -euo pipefail\nnode() { case "$1" in *icons-packed.mjs) return "$WORK_STATUS";; *prepare-icons-inputs.mjs) return "$SUMMARY_STATUS";; *) return 99;; esac; }\n${snippet}\n`,
+      env: {
+        ...process.env,
+        WORK_STATUS: String(workStatus),
+        SUMMARY_STATUS: String(summaryStatus),
+      },
+      encoding: 'utf8',
+      timeout: 5000,
+    });
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, expected);
   }
 });
 
@@ -485,13 +594,23 @@ test('native Git Trace2 supplies the actual binary version and sanitizes its eve
 test('cancellation raw trace is removed before export; an unremovable raw trace forbids export', () => {
   const safe = runFixture({ RAW_TRACE: 'file', START_STATUS: '7' });
   assert.equal(safe.status, 7);
-  assert.equal(safe.exported, '{"outcome":"fixture"}\n');
+  assertFixtureReceipt(safe.exported);
   assert.equal(safe.rawTrace, null);
   const unsafe = runFixture({ RAW_TRACE: 'directory' });
   assert.notEqual(unsafe.status, 0);
   assert.equal(unsafe.exported, null);
   assert.equal(unsafe.outputs, '');
   assert.equal(unsafe.foreign, 'preserve');
+  for (const overrides of [
+    { RAW_TRACE: 'directory', START_STATUS: '7' },
+    { RAW_TRACE: 'directory', INTERRUPT: 'true' },
+    { REMOVE_STATUS: '11', START_STATUS: '7' },
+  ]) {
+    const failed = runFixture(overrides);
+    assert.equal(failed.status, overrides.INTERRUPT === 'true' ? 143 : 7);
+    assert.equal(failed.outputs, '');
+    assert.equal(failed.exported, null);
+  }
 });
 
 test('create failure still removes an assigned CID; removal failure forbids copying unstable output', () => {
