@@ -1,5 +1,6 @@
 using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 
 namespace LabUI.WinUI;
@@ -38,6 +39,14 @@ public sealed class LabSheet : ContentControl
         Loaded += LoadedControl;
         Unloaded += UnloadedControl;
         SizeChanged += Resized;
+    }
+
+    protected override AutomationPeer OnCreateAutomationPeer() => new LabSheetAutomationPeer(this);
+
+    private sealed class LabSheetAutomationPeer(LabSheet owner) : FrameworkElementAutomationPeer(owner)
+    {
+        protected override string GetClassNameCore() => nameof(LabSheet);
+        protected override AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Group;
     }
 
     protected override void OnApplyTemplate()

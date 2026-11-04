@@ -106,6 +106,9 @@ jobs:
       - name: Sheet lifecycle boundary
         run: node native/windows/test/sheet-lifecycle.test.mjs
 
+      - name: Sheet public control boundary
+        run: node native/windows/test/sheet-control.test.mjs
+
       - name: Sheet geometry boundary
         shell: pwsh
         run: dotnet run --project native/windows/test/sheet-geometry.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-geometry"
