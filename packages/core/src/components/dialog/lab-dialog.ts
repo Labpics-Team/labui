@@ -1,66 +1,10 @@
 /**
- * `<lab-dialog>` — the first TRUE modal overlay: a blocking task surface that owns
- * the screen until it is finished or dismissed. It extends the overlay canon set by
- * `<lab-tooltip>` (passive) and `<lab-popover>` (interactive, anchored) to the
- * centered, scrim-backed, focus-TRAPPING dialog.
+ * Центрированное окно размеров s/m/l. Zag задаёт ARIA, закрытие, блокировку фона,
+ * trap и возврат фокуса. modal="false" сохраняет немодальный режим.
  *
- * Axes (the Figma model — Size × Modal × State):
- *   - size:     s | m | l — panel width band and padding.
- *   - modal:    when true (the default for a dialog) the machine TRAPS focus, locks
- *               scroll, blocks + hides outside content, and a scrim is shown. When
- *               false it is a light non-modal panel (no trap, no scroll-lock) that
- *               still dismisses on Escape / outside-click.
- *   - closable: render a built-in close button (the machine wires its handler).
- *
- * Why a machine: a dialog is dense interaction state — open on trigger click, focus
- * MOVED into the panel on open and RESTORED to the trigger on close, dismiss on
- * Escape / outside-click, a real focus trap + scroll lock when modal, `role="dialog"`
- * + `aria-modal` + `aria-labelledby`/`aria-describedby`, and the content below hidden
- * from assistive tech. Every bit of that is the platform/Zag machinery LabUI consumes
- * rather than rebuilds. So this element runs `@zag-js/dialog` through `ZagController`.
- *
- * ── The overlay canon (Lit half), with a DELIBERATE break for a real trap ────────
- * `<lab-popover>` keeps its content inside the element's OWN shadow root (style
- * encapsulation, `getRootNode` scoped to that shadow). That has a documented cost:
- * Zag's modal trap walks the CONTENT element's DOM subtree, and content projected
- * through a `<slot>` physically lives in the host's LIGHT DOM — outside that subtree —
- * so a slotted focusable is NOT trapped and Tab can leave through it. For a popover
- * (a compact, hint-like panel) that caveat is acceptable. For a DIALOG it is not: a
- * modal with a focus leak is an a11y bug. A dialog MUST trap.
- *
- * So this element breaks the no-portal canon on purpose (lesson #22): the floating
- * layer — backdrop + positioner + content + heading/description/close — is rendered
- * into a DEDICATED PORTAL element appended to `document.body` (the Lit equivalent of
- * React's `createPortal(body)`), the portal carries its OWN shadow root with the
- * floating styles, and the machine's `getRootNode` for this instance is pointed at
- * THAT shadow root. The dialog body the consumer provides through `slot="content"` is
- * physically MOVED out of the host's light DOM and into the portal content element,
- * so it lives inside the very subtree the trap walks (`getShadowRoot:true` lets the
- * trap pierce the portal's shadow root). The result is a REAL focus trap around the
- * whole dialog body, slotted controls included — parity with the React twin.
- *
- * Focus RESTORE across the split roots: the trigger stays encapsulated/styled in THIS
- * element's shadow root; only the floating layer is portalled. On close the machine's
- * `setReturnFocus` resolves the node to focus — its trigger lookup runs through
- * `getRootNode` (the portal root), where the trigger does NOT live, so that path finds
- * nothing and the trap would fall back to the node captured before activation. On WebKit
- * that captured node is the portal-host `<div>` (non-focusable), so the fallback drops
- * focus instead of returning it to the trigger. We therefore hand the machine an explicit
- * `finalFocusEl` pointing at this element's own trigger; it is consulted FIRST and used by
- * reference, so Zag's own trap restores focus to the right node on every engine. See the
- * `finalFocusEl` wiring in the constructor.
- *
- * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The panel is the
- * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a
- * `--lab-border-soft` hairline and a `--lab-fx-shadow-major` lift, layered at
- * `--lab-z-modal`; the scrim is `--lab-bg-overlay-base` at `--lab-z-modal-underlay`.
- * No hex, no primitive, no invented role. The portal carries the page's
- * `[data-theme]`/`[data-material]` (copied from `document.documentElement`) so the
- * portalled panel resolves the SAME role bindings as the rest of the page.
- *
- * SSR (core-CONTRACT §7): a dialog is client-only. The server emits the trigger and
- * nothing for the floating layer; the machine upgrades it on the client (the portal
- * is created on connect, after the DOM exists). No flash, no pre-work.
+ * LabModal размещает поверхность в manual popover внутри исходного CSS-контекста.
+ * Узлы slot="content" физически входят в поддерево trap: Zag не обходит assigned
+ * slots при поиске tabbable. На сервере floating content не создаётся.
  */
 import { type TemplateResult, css, html } from 'lit';
 import { litVar } from '../../css.js';
@@ -119,23 +63,9 @@ export const dialogFloatingStyles = css`
     display: none;
   }
 
-  /* Scrim hit-test restore (modal only). A modal locks the page with
-     @zag-js/remove-scroll, which sets body { pointer-events: none }; that cascades
-     down to this portal host (appended to document.body) and would make the whole
-     floating layer transparent to clicks — an outside-click on the scrim would fall
-     through to the document element and never reach Zag's document-level
-     interact-outside listener, so the dialog could not be dismissed by clicking the
-     scrim. The backdrop is the scrim: re-arm hit-testing on it so an outside click
-     lands on a real node (a descendant pointer-events:auto re-enables hit-testing
-     regardless of the inherited none) and Zag's interact-outside fires. The
-     positioner sits ABOVE the backdrop (higher z-index) and fills the viewport, so it
-     is kept transparent (pointer-events:none) for the modal case: a click in the
-     frame around the panel passes THROUGH to the backdrop beneath, while the centered
-     content keeps Zag's inline pointer-events:auto and stays interactive. For an
-     alert-dialog the click still reaches the document listener, but the machine
-     refuses outside-dismiss (closeOnInteractOutside = modal && !alertDialog = false),
-     so it does not close — policy preserved. Non-modal is untouched: Zag already sets
-     the positioner's pointer-events:none inline and renders no backdrop. */
+  /* Zag блокирует pointer-events фона. Подложка принимает outside click,
+     positioner пропускает его, а content сохраняет Zag pointer-events:auto.
+     Политику outside-dismiss для Dialog/AlertDialog определяет машина. */
   :host([data-modal='true']) .backdrop {
     pointer-events: auto;
   }

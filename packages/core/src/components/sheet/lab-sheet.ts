@@ -29,7 +29,7 @@ const sheetStyles = css`
     z-index: ${litVar('--lab-z-modal-underlay', '1100')};
     pointer-events: auto;
   }
-  .backdrop[hidden], .positioner[hidden], .content[hidden], .panel-body[hidden] {
+  .backdrop[hidden], .positioner[hidden], .content[hidden] {
     display: none;
   }
   .positioner {
@@ -73,7 +73,7 @@ const sheetStyles = css`
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: var(--_sheet-gap);
+    gap: var(--_sheet-panel-gap, 0px);
     width: 100%;
     height: 100%;
     min-width: 0;
@@ -115,12 +115,18 @@ const sheetStyles = css`
     display: flex;
     flex: 1;
     flex-direction: column;
-    gap: var(--_sheet-gap);
+    gap: var(--_sheet-body-gap, 0px);
     min-height: 0;
     overflow: auto;
     overscroll-behavior: contain;
   }
   .body { display: block; flex: none; }
+  .panel-heading {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: var(--_sheet-gap);
+  }
   .heading, .description { flex: none; margin: 0; }
   .heading {
     font-size: ${litVar('--lab-font-size-lg', '1.2rem')};
@@ -150,6 +156,7 @@ const sheetStyles = css`
   .preset-two-thirds { height: ${litVar('--lab-size-sheet-body-two-thirds', '33.75rem')}; }
   .preset-one-third { height: ${litVar('--lab-size-sheet-body-one-third', '16.875rem')}; }
   .overlap { height: var(--_sheet-overlap); }
+  .gap { height: var(--_sheet-gap); }
 `;
 
 /** Нижняя модальная поверхность: LabModal владеет focus/portal, LabMotion — движением. */
@@ -225,8 +232,16 @@ export class LabSheet extends LabModal {
                 <span class="indicator" part="indicator"></span>
               </button>
               <div class="panel-body" part="scroll-area">
-                ${this.heading ? html`<h2 class="heading" part="heading">${this.heading}</h2>` : null}
-                ${this.description ? html`<p class="description" part="description">${this.description}</p>` : null}
+                ${
+                  this.heading || this.description
+                    ? html`
+                  <div class="panel-heading">
+                    ${this.heading ? html`<h2 class="heading" part="heading">${this.heading}</h2>` : null}
+                    ${this.description ? html`<p class="description" part="description">${this.description}</p>` : null}
+                  </div>
+                `
+                    : null
+                }
                 <div class="body" part="body"></div>
               </div>
               ${this.closable ? html`<button class="close" part="close-trigger" type="button" aria-label="Закрыть">×</button>` : null}
@@ -237,6 +252,7 @@ export class LabSheet extends LabModal {
         <div class="preset preset-two-thirds" aria-hidden="true"></div>
         <div class="preset preset-one-third" aria-hidden="true"></div>
         <div class="preset overlap" aria-hidden="true"></div>
+        <div class="preset gap" aria-hidden="true"></div>
       </div>
     `;
   }
@@ -249,9 +265,8 @@ export class LabSheet extends LabModal {
     const panel = root.querySelector<HTMLElement>('.panel-body');
     const body = root.querySelector<HTMLElement>('.body');
     if (!positioner || !frame || !surface || !handle || !panel || !body) return;
-    panel.hidden = !this.heading && !this.description && body.childNodes.length === 0;
     if (this.open) this.present = true;
-    if (!this.sheetMotion) {
+    if (!this.sheetMotion || (!this.sheetMotion.active && this.open)) {
       const view = this.ownerDocument.defaultView;
       if (!view) return;
       const measure = (selector: string): number => {
@@ -261,22 +276,28 @@ export class LabSheet extends LabModal {
       this.sheetMotion = mountSheetMotion(
         frame,
         handle,
-        [body, ...root.querySelectorAll('.preset')],
+        [handle, panel, body, ...root.querySelectorAll('.preset')],
         {
           readGeometry: () => {
             const viewport = positioner.getBoundingClientRect().height || view.innerHeight;
             const surfaceStyle = view.getComputedStyle(surface);
-            const gap = Number.parseFloat(surfaceStyle.rowGap);
-            const children = [...panel.children].filter(
-              (child) => child !== body || body.childNodes.length > 0,
+            const gap = measure('.gap');
+            // Body остаётся измеряемым и при пустом adapter wrapper. Скрытие
+            // измеряемого узла создало бы цикл: новое содержимое имело бы height=0.
+            const bodyHeight = body.getBoundingClientRect().height;
+            const headingHeight =
+              root.querySelector('.panel-heading')?.getBoundingClientRect().height ?? 0;
+            const natural = bodyHeight + headingHeight;
+            const bodyGap = bodyHeight > 0 && headingHeight > 0 ? gap : 0;
+            surface.style.setProperty(
+              '--_sheet-panel-gap',
+              natural > 0 ? 'var(--_sheet-gap)' : '0px',
             );
-            const natural =
-              children.reduce((height, child) => height + child.getBoundingClientRect().height, 0) +
-              Math.max(0, children.length - 1) * gap;
+            panel.style.setProperty('--_sheet-body-gap', bodyGap > 0 ? 'var(--_sheet-gap)' : '0px');
             const flex =
               measure('.handle') +
               Number.parseFloat(surfaceStyle.paddingBottom) +
-              (panel.hidden ? 0 : gap + natural);
+              (natural > 0 ? gap + natural + bodyGap : 0);
             return sheetGeometry(viewport, measure('.overlap'), {
               full: measure('.preset-full'),
               'two-thirds': measure('.preset-two-thirds'),
@@ -304,32 +325,42 @@ export class LabSheet extends LabModal {
           onError: (error) => {
             this.open = false;
             this.present = false;
-            this.dispatchEvent(
-              new CustomEvent<SheetMotionErrorDetails>('motion-error', {
-                detail: { error },
-                bubbles: true,
-                composed: true,
-              }),
-            );
-            this.requestUpdate();
+            try {
+              this.completeFailedDialogFocus();
+            } finally {
+              this.dispatchEvent(
+                new CustomEvent<SheetMotionErrorDetails>('motion-error', {
+                  detail: { error },
+                  bubbles: true,
+                  composed: true,
+                }),
+              );
+              this.requestUpdate();
+            }
           },
         },
       );
-      // Zag очищает spread styles. Frame и surface оставляют эффекты их владельцам.
-      this.disposeMaterial = mountMaterialRuntime(frame);
     }
+    // Runtime материала не пересоздаётся при замене завершённого Motion scope.
+    if (!this.disposeMaterial) this.disposeMaterial = mountMaterialRuntime(frame);
     this.sheetMotion.update(this.open, this.position);
     // Закрытый idle portal остаётся скрытым: motion не управляет modal visibility.
     if (!modalOpen && !this.open) positioner.hidden = true;
   }
 
   override disconnectedCallback(): void {
-    this.sheetMotion?.dispose();
-    this.sheetMotion = undefined;
-    this.disposeMaterial?.();
-    this.disposeMaterial = undefined;
-    this.present = false;
-    super.disconnectedCallback();
+    try {
+      this.sheetMotion?.dispose();
+    } finally {
+      this.sheetMotion = undefined;
+      try {
+        this.disposeMaterial?.();
+      } finally {
+        this.disposeMaterial = undefined;
+        this.present = false;
+        super.disconnectedCallback();
+      }
+    }
   }
 }
 

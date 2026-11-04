@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-material="solid" data-contrast="normal">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Живой контекст модальных поверхностей</title>
+    <link rel="stylesheet" href="../button-demo.css" />
+    <style id="local-rules">
+      #local-context { --lab-label-primary: rgb(11 22 33); }
+      @media (prefers-color-scheme: dark) {
+        #local-context { --lab-label-primary: rgb(44 55 66); }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Настройки</h1>
+      <div id="local-context">
+        <lab-sheet id="sheet" data-testid="sheet" position="flex" aria-label="Параметры">
+          Открыть панель
+          <div id="sheet-content" slot="content" style="height:100px">Параметры панели</div>
+        </lab-sheet>
+        <lab-dialog id="dialog" data-testid="dialog" heading="Контакт">
+          Открыть диалог
+          <form id="dialog-content" slot="content">
+            <label>Имя <input id="dialog-name" /></label>
+            <button type="button">Применить</button>
+          </form>
+        </lab-dialog>
+        <lab-alert-dialog id="alert" data-testid="alert" heading="Подтверждение">
+          Открыть подтверждение
+          <form id="alert-content" slot="content">
+            <label>Причина <input id="alert-name" /></label>
+            <button type="button">Подтвердить</button>
+          </form>
+        </lab-alert-dialog>
+        <div id="vue-sheet"></div>
+      </div>
+    </main>
+    <script type="module" src="./modal-live.ts"></script>
+  </body>
+</html>

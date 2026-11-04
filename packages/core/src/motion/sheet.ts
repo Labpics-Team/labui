@@ -9,6 +9,7 @@ import {
 } from '../components/sheet/positions.js';
 
 export interface SheetMotion {
+  readonly active: boolean;
   update(open: boolean, position: LabSheetPosition): void;
   dispose(): void;
 }
@@ -70,41 +71,62 @@ export function mountSheetMotion(
   function move(goal: number, snap = false): void {
     if (disposed) return;
     const currentGeneration = ++generation;
-    const scale = durationScale();
-    const spring = motionSpringRuntime.smooth;
-    lastGoal = goal;
-    lastScale = scale;
-    const playback = motion.animate(
-      frame,
-      { '--_sheet-top': `${goal}px` },
-      {
-        spring: scale > 0 ? { response: spring.response * scale, bounce: spring.bounce } : spring,
-        reducedMotion: snap || reduced.matches || scale === 0 ? 'always' : 'user',
-      },
-    );
-    void playback.finished.then(
-      (result) => {
-        if (disposed || currentGeneration !== generation || result.status !== 'finished') return;
-        if (!open && pointer === undefined) options.onClosed();
-      },
-      (error: unknown) => {
-        if (!disposed && currentGeneration === generation) options.onError(error);
-      },
-    );
+    try {
+      const scale = durationScale();
+      const spring = motionSpringRuntime.smooth;
+      lastGoal = goal;
+      lastScale = scale;
+      const playback = motion.animate(
+        frame,
+        { '--_sheet-top': `${goal}px` },
+        {
+          spring: scale > 0 ? { response: spring.response * scale, bounce: spring.bounce } : spring,
+          reducedMotion: snap || reduced.matches || scale === 0 ? 'always' : 'user',
+        },
+      );
+      void playback.finished.then(
+        (result) => {
+          if (disposed || currentGeneration !== generation || result.status !== 'finished') return;
+          if (!open && pointer === undefined) options.onClosed();
+        },
+        (error: unknown) => {
+          if (!disposed && currentGeneration === generation) fail(error);
+        },
+      );
+    } catch (error) {
+      fail(error);
+    }
+  }
+
+  function fail(error: unknown): void {
+    if (disposed) return;
+    try {
+      dispose();
+    } catch {
+      // Терминальный исход сохраняет первичный отказ, даже если очистка
+      // внешнего ресурса тоже завершилась ошибкой.
+    }
+    options.onError(error);
   }
 
   function releaseCapture(): void {
     const captured = pointer;
     pointer = undefined;
-    if (captured !== undefined && handle.hasPointerCapture(captured)) {
-      handle.releasePointerCapture(captured);
+    try {
+      if (captured !== undefined && handle.hasPointerCapture(captured)) {
+        handle.releasePointerCapture(captured);
+      }
+    } finally {
+      handle.removeAttribute('data-dragging');
     }
-    handle.removeAttribute('data-dragging');
   }
 
   function cancelGesture(): void {
-    releaseCapture();
-    pan.pointerCancel();
+    try {
+      releaseCapture();
+    } finally {
+      pan.pointerCancel();
+    }
   }
 
   function choose(next: LabSheetPosition | 'closed'): void {
@@ -156,6 +178,7 @@ export function mountSheetMotion(
     // Прямой ввод принимает текущую позу. Распознавание принадлежит LabMotion;
     // при смене анимационной цели stop/[from,to] не используются.
     move(origin, true);
+    if (disposed) return;
     if (!open) {
       open = true;
       options.onOpenChange(true);
@@ -218,20 +241,24 @@ export function mountSheetMotion(
 
   function update(nextOpen: boolean, nextPosition: LabSheetPosition): void {
     if (disposed) return;
-    const nextGeometry = options.readGeometry();
-    const resized =
-      nextGeometry.viewport !== geometry.viewport ||
-      sheetPositions.some((value) => nextGeometry.tops[value] !== geometry.tops[value]);
-    const retargeted = nextPosition !== position;
-    if (pointer !== undefined && (!nextOpen || resized || retargeted)) cancelGesture();
-    if (nextOpen !== open) role = nextOpen ? 'entrance' : 'exit';
-    else if (resized || retargeted) role = 'transition';
-    geometry = nextGeometry;
-    open = nextOpen;
-    position = nextPosition;
-    if (pointer !== undefined) return;
-    const goal = open ? geometry.tops[position] : geometry.viewport;
-    if (goal !== lastGoal || durationScale() !== lastScale) move(goal);
+    try {
+      const nextGeometry = options.readGeometry();
+      const resized =
+        nextGeometry.viewport !== geometry.viewport ||
+        sheetPositions.some((value) => nextGeometry.tops[value] !== geometry.tops[value]);
+      const retargeted = nextPosition !== position;
+      if (pointer !== undefined && (!nextOpen || resized || retargeted)) cancelGesture();
+      if (nextOpen !== open) role = nextOpen ? 'entrance' : 'exit';
+      else if (resized || retargeted) role = 'transition';
+      geometry = nextGeometry;
+      open = nextOpen;
+      position = nextPosition;
+      if (pointer !== undefined) return;
+      const goal = open ? geometry.tops[position] : geometry.viewport;
+      if (goal !== lastGoal || durationScale() !== lastScale) move(goal);
+    } catch (error) {
+      fail(error);
+    }
   }
 
   const resize = new ResizeObserver(() => update(open, position));
@@ -242,18 +269,32 @@ export function mountSheetMotion(
   frame.setAttribute('data-lab-motion', '');
   move(geometry.viewport, true);
 
-  return {
-    update,
-    dispose(): void {
-      if (disposed) return;
-      disposed = true;
-      generation++;
-      resize.disconnect();
+  function dispose(): void {
+    if (disposed) return;
+    disposed = true;
+    generation++;
+    resize.disconnect();
+    try {
       cancelGesture();
-      motion.dispose();
-      if (original) frame.style.setProperty('--_sheet-top', original, originalPriority);
-      else frame.style.removeProperty('--_sheet-top');
-      frame.removeAttribute('data-lab-motion');
+    } finally {
+      try {
+        motion.dispose();
+      } finally {
+        try {
+          if (original) frame.style.setProperty('--_sheet-top', original, originalPriority);
+          else frame.style.removeProperty('--_sheet-top');
+        } finally {
+          frame.removeAttribute('data-lab-motion');
+        }
+      }
+    }
+  }
+
+  return {
+    get active(): boolean {
+      return !disposed;
     },
+    update,
+    dispose,
   };
 }

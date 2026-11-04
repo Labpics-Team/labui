@@ -11,9 +11,9 @@ const dialogModule: MachineModule<DialogSchema, dialogMachine.Api> = dialogMachi
 let instanceSequence = 0;
 
 /**
- * Общий владелец модальности Dialog и Sheet. Перенесённые узлы находятся в
- * поддереве focus trap; маркеры сохраняют их исходное место при disconnect.
- * Геометрия и движение конкретной поверхности остаются у наследника.
+ * Общий владелец модальности Dialog и Sheet. Manual popover сохраняет CSS-предков
+ * и выводит поверхность из clipping/transform; Zag владеет закрытием и фокусом.
+ * Физически перенесённые узлы остаются в поддереве trap, маркеры — у потребителя.
  */
 export abstract class LabModal extends LabElement {
   static override properties: PropertyDeclarations = {
@@ -55,6 +55,15 @@ export abstract class LabModal extends LabElement {
   /** Вызывается после переноса контента и применения актуальных Zag props. */
   protected afterFloatingUpdate(_root: ShadowRoot, _open: boolean): void {}
 
+  protected completeFailedDialogFocus(): void {
+    if (!this.isConnected) return;
+    const focus = this.modalFocus();
+    if (focus && focus.content !== this.portalRoot?.querySelector('.content')) return;
+    // trapFocus создаёт trap на RAF. Ранний отказ отменяет его до активации,
+    // поэтому уже заданная точка finalFocus должна завершиться здесь, до callback.
+    this.finalFocusTarget()?.focus({ preventScroll: true });
+  }
+
   private readonly machineId = `lab-dialog-${++instanceSequence}`;
   private readonly machineCtl: ZagController<DialogSchema, dialogMachine.Api>;
   private portalHost?: HTMLElement;
@@ -62,7 +71,7 @@ export abstract class LabModal extends LabElement {
   private bodyMount?: HTMLElement;
   private readonly origins = new Map<Element, Comment>();
   private contextObserver?: MutationObserver;
-  private copiedProperties = new Set<string>();
+  private contentObserver?: MutationObserver;
 
   private get isModal(): boolean {
     return this.modal !== 'false';
@@ -82,9 +91,44 @@ export abstract class LabModal extends LabElement {
       getRootNode: () => this.portalRoot ?? document,
       // Trigger остаётся в другом shadow root. Заг передаёт ссылку focus trap,
       // а не пытается повторно искать её в portal root.
-      finalFocusEl: () => this.renderRoot.querySelector<HTMLElement>('.trigger'),
+      finalFocusEl: () => this.finalFocusTarget(),
+      onRequestDismiss: (event) => {
+        // Zag считает вложенными все более поздние слои. Каскад закрывает только
+        // потомка исходного modal с учётом shadow root и slot.
+        const parent = event.detail.targetLayer;
+        if (parent && !this.contextAncestors().includes(parent)) event.preventDefault();
+      },
       onOpenChange: (details) => this.onDialogOpenChange(details),
     }));
+  }
+
+  private modalFocus(): { active: HTMLElement; content: Element } | undefined {
+    let active = this.ownerDocument.activeElement;
+    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+    if (!(active instanceof HTMLElement)) return;
+    let node: Node | null = active;
+    while (node) {
+      if (
+        node instanceof Element &&
+        node.matches('[data-scope="dialog"][data-part="content"][data-state="open"]')
+      )
+        return { active, content: node };
+      node = node instanceof ShadowRoot ? node.host : node.parentNode;
+    }
+  }
+
+  private finalFocusTarget(): HTMLElement | null {
+    const focus = this.modalFocus();
+    // Поздний cleanup Zag сохраняет текущий фокус нового modal, включая его
+    // вложенный shadow root; старый trigger уже не является точкой возврата.
+    if (focus && focus.content !== this.portalRoot?.querySelector('.content')) return focus.active;
+    const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
+    return this.isConnected &&
+      trigger?.isConnected &&
+      !trigger.matches(':disabled') &&
+      !trigger.closest('[inert]')
+      ? trigger
+      : null;
   }
 
   static override styles = css`
@@ -109,43 +153,70 @@ export abstract class LabModal extends LabElement {
       outline-offset: ${litVar('--lab-focus-ring-offset')};
       border-radius: ${litVar('--lab-radius-xs', '0.25rem')};
     }
+    .portal-plane {
+      position: fixed;
+      inset: 0;
+      width: auto;
+      height: auto;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      overflow: visible;
+      pointer-events: none;
+      font: inherit;
+      color: inherit;
+    }
+    .portal-plane::backdrop {
+      pointer-events: none;
+    }
   `;
 
   override connectedCallback(): void {
-    this.ensurePortal();
     super.connectedCallback();
     this.contextObserver = new MutationObserver(() => this.requestUpdate());
+    this.contentObserver = new MutationObserver(() => this.requestUpdate());
+    // Удаление origin-маркера не вызывает slotchange: content уже перенесён.
+    this.contentObserver.observe(this, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['slot'],
+    });
     this.requestUpdate();
   }
 
   override disconnectedCallback(): void {
     this.contextObserver?.disconnect();
     this.contextObserver = undefined;
-    super.disconnectedCallback();
-    for (const [node, marker] of this.origins) {
-      if (marker.parentNode === this && node.parentNode === this.bodyMount) {
-        marker.replaceWith(node);
-      } else {
-        marker.remove();
+    this.contentObserver?.disconnect();
+    this.contentObserver = undefined;
+    try {
+      super.disconnectedCallback();
+    } finally {
+      for (const [node, marker] of this.origins) {
+        if (marker.parentNode === this && node.parentNode === this.bodyMount) {
+          marker.replaceWith(node);
+        } else {
+          marker.remove();
+        }
       }
+      this.origins.clear();
+      if (this.portalRoot) render(null, this.portalRoot);
+      this.bodyMount = undefined;
     }
-    this.origins.clear();
-    this.portalHost?.remove();
-    this.portalHost = undefined;
-    this.portalRoot = undefined;
-    this.bodyMount = undefined;
-    this.copiedProperties.clear();
   }
 
   private ensurePortal(): void {
     if (this.portalHost || !this.isConnected || typeof document === 'undefined') return;
-    const host = this.ownerDocument.createElement('div');
+    // Lit владеет стабильным host; отдельный shadow root не затрагивается render.
+    const host = this.renderRoot.querySelector<HTMLElement>('.portal-plane');
+    if (!host) return;
     host.setAttribute(this.portalAttribute, this.machineId);
     const ownTestId = this.getAttribute('data-testid');
     if (ownTestId) host.setAttribute('data-portal-for', ownTestId);
     const root = host.attachShadow({ mode: 'open' });
     root.adoptedStyleSheets = this.portalStyleSheets;
-    this.ownerDocument.body.append(host);
     this.portalHost = host;
     this.portalRoot = root;
   }
@@ -168,8 +239,7 @@ export abstract class LabModal extends LabElement {
 
   private syncContext(): void {
     const host = this.portalHost;
-    const view = this.ownerDocument.defaultView;
-    if (!host || !view) return;
+    if (!host) return;
     const ancestors = this.contextAncestors();
     for (const attribute of ['data-theme', 'data-material', 'data-contrast']) {
       const value = ancestors.find((node) => node.hasAttribute(attribute))?.getAttribute(attribute);
@@ -177,28 +247,13 @@ export abstract class LabModal extends LabElement {
       else host.removeAttribute(attribute);
     }
 
-    // Копируется результат CSS-владельца, включая локальные role overrides и
-    // наследуемый material context. Portal не вычисляет палитру или режим.
-    const style = view.getComputedStyle(this);
-    const next = new Set<string>();
-    for (let index = 0; index < style.length; index++) {
-      const property = style.item(index);
-      if (!property.startsWith('--')) continue;
-      next.add(property);
-      const value = style.getPropertyValue(property);
-      if (host.style.getPropertyValue(property) !== value) host.style.setProperty(property, value);
-    }
-    for (const property of this.copiedProperties) {
-      if (!next.has(property)) host.style.removeProperty(property);
-    }
-    this.copiedProperties = next;
-    host.style.font = style.font;
-
+    // CSS наследуется браузером, включая media/CSSOM/font changes. Проецируются
+    // только предметные флаги, нужные селекторам и runtime материала.
     this.contextObserver?.disconnect();
     for (const ancestor of ancestors) {
       this.contextObserver?.observe(ancestor, {
         attributes: true,
-        attributeFilter: ['data-theme', 'data-material', 'data-contrast', 'style', 'class'],
+        attributeFilter: ['data-theme', 'data-material', 'data-contrast'],
       });
     }
   }
@@ -206,7 +261,15 @@ export abstract class LabModal extends LabElement {
   private relocateBody(): void {
     if (!this.bodyMount) return;
     for (const [node, marker] of this.origins) {
-      if (marker.parentNode === this && node.parentNode === this.bodyMount) continue;
+      if (
+        marker.parentNode === this &&
+        node.parentNode === this.bodyMount &&
+        node.getAttribute('slot') === 'content'
+      )
+        continue;
+      if (marker.parentNode === this && node.parentNode === this.bodyMount) {
+        marker.replaceWith(node);
+      }
       if (node.parentNode === this.bodyMount) node.remove();
       marker.remove();
       this.origins.delete(node);
@@ -234,6 +297,14 @@ export abstract class LabModal extends LabElement {
     }
     this.bodyMount = root.querySelector<HTMLElement>('.body') ?? undefined;
     this.relocateBody();
+    if (this.bodyMount) {
+      this.contentObserver?.observe(this.bodyMount, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['slot'],
+      });
+    }
 
     this.machineCtl.clearSpreads();
     const api = this.machineCtl.api;
@@ -252,6 +323,11 @@ export abstract class LabModal extends LabElement {
     const close = root.querySelector<HTMLElement>('.close');
     if (this.closable && close) this.machineCtl.spread(close, api.getCloseTriggerProps());
     root.querySelector('.positioner')?.toggleAttribute('hidden', !api.open);
+    const host = this.portalHost;
+    if (host && api.open !== host.matches(':popover-open')) {
+      if (api.open) host.showPopover();
+      else host.hidePopover();
+    }
     this.afterFloatingUpdate(root, api.open);
   }
 
@@ -259,15 +335,11 @@ export abstract class LabModal extends LabElement {
     return html`
       <button class="trigger" type="button" part="trigger"><slot></slot></button>
       <slot name="content" hidden aria-hidden="true" @slotchange=${this.contentSlotChanged}></slot>
+      <div class="portal-plane" popover="manual"></div>
     `;
   }
 
   private contentSlotChanged(): void {
-    if (
-      this.isConnected &&
-      [...this.children].some((node) => node.getAttribute('slot') === 'content')
-    ) {
-      this.requestUpdate();
-    }
+    if (this.isConnected) this.requestUpdate();
   }
 }

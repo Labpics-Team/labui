@@ -27,7 +27,7 @@ const PORTAL = (testid: string) => `[data-portal-for="${testid}"]`;
 function litHost(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
-/** The Lit floating content lives in the portal's shadow root (in document.body). */
+/** Floating content находится в shadow root поверхности LabModal. */
 function litContent(page: Page, testid: string): Locator {
   return page.locator(PORTAL(testid)).locator('.content');
 }
@@ -253,7 +253,7 @@ test('scroll-lock: a modal dialog locks body scroll while open (machine)', async
 
 /**
  * REAL focus trap — the dialog's defining contract, and the inverse of the popover
- * caveat. The dialog portals its floating layer to <body> and RELOCATES the projected
+ * caveat. The dialog RELOCATES the projected
  * slot="content" body into it, so the slotted focusables (a link + an Action button)
  * physically live inside the content subtree Zag's trap walks. Tabbing must therefore:
  *   - keep focus INSIDE the dialog the whole cycle (never escape to the trigger/body);

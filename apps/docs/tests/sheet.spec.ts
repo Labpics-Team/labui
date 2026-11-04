@@ -259,7 +259,7 @@ test('retarget и close → reopen в полёте продолжают теку
       position: string;
       updateComplete: Promise<unknown>;
     };
-    const root = document.querySelector('[data-portal-for="sheet"]')?.shadowRoot;
+    const root = element.shadowRoot?.querySelector('[data-portal-for="sheet"]')?.shadowRoot;
     const panel = root?.querySelector('.content');
     if (!panel) throw new Error('Нет панели');
     const before = panel.getBoundingClientRect().top;
@@ -311,8 +311,8 @@ test('disconnect отменяет движение, возвращает фор�
   await host(page).evaluate((element) => {
     const record = window as unknown as { detachedSheet: Element; retiredFrame: HTMLElement };
     record.detachedSheet = element;
-    record.retiredFrame = document
-      .querySelector('[data-portal-for="sheet"]')
+    record.retiredFrame = element.shadowRoot
+      ?.querySelector('[data-portal-for="sheet"]')
       ?.shadowRoot?.querySelector('.sheet-frame') as HTMLElement;
     element.remove();
   });

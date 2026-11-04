@@ -21,18 +21,22 @@ it('отключение и повторное подключение сохра
   document.body.append(dialog);
   await dialog.updateComplete;
 
-  const firstPortal = document.querySelector('[data-portal-for="reconnected-dialog"]');
+  const firstPortal = dialog.shadowRoot?.querySelector('[data-portal-for="reconnected-dialog"]');
+  expect(firstPortal?.isConnected).toBe(true);
   expect(firstPortal?.shadowRoot?.querySelector('.body')?.firstElementChild).toBe(body);
 
   dialog.remove();
-  expect(document.querySelector('[data-portal-for="reconnected-dialog"]')).toBeNull();
+  expect(firstPortal?.isConnected).toBe(false);
   expect([...dialog.childNodes]).toEqual([before, body, after]);
   expect(input.value).toBe('несохранённый ввод');
 
   document.body.append(dialog);
   await dialog.updateComplete;
-  const secondPortal = document.querySelector('[data-portal-for="reconnected-dialog"]');
-  expect(secondPortal).not.toBe(firstPortal);
+  const secondPortal = dialog.shadowRoot?.querySelector('[data-portal-for="reconnected-dialog"]');
+  expect(secondPortal?.isConnected).toBe(true);
+  expect(
+    dialog.shadowRoot?.querySelectorAll('[data-portal-for="reconnected-dialog"]'),
+  ).toHaveLength(1);
   expect(secondPortal?.shadowRoot?.querySelector('.body')?.firstElementChild).toBe(body);
   expect(input.value).toBe('несохранённый ввод');
 });
