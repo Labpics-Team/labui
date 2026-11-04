@@ -133,6 +133,11 @@ export function createLengthProbe(
         if (fallback.endsWith('px')) return Number(fallback.slice(0, -2));
       }
       const numeric = /^\+?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(raw);
+      // CSS может ограничить бесконечное число конечной проекцией. Legacy px
+      // проверяется до этого преобразования, чтобы ошибка не стала радиусом.
+      if (numeric && !Number.isFinite(Number(raw))) {
+        throw new RangeError(`lab-material: недопустимая длина ${property}`);
+      }
       if (raw && !numeric && !view.CSS.supports('filter', `blur(${raw})`)) {
         throw new RangeError(`lab-material: недопустимая длина ${property}`);
       }

@@ -43,6 +43,36 @@ test('px-числа прежнего API обновляются через то�
   await strength(page, 40);
 });
 
+for (const value of ['0.0000001px', 'calc(1px / 10000000)', '1e-7']) {
+  test(`допустимый радиус ${value} ниже порога не сообщает ошибку`, async ({ page }) => {
+    await load(page);
+    await strength(page, 24);
+    const errors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
+    await page.evaluate((input) => window.__veilLength.strength(input), value);
+    await settle(page);
+    expect(await page.evaluate(() => window.__veilLength.snapshot().count)).toBe(0);
+    expect(errors).toEqual([]);
+    await page.evaluate(() => window.__veilLength.strength('24px'));
+    await strength(page, 24);
+  });
+}
+
+test('нечисловой legacy ввод не становится конечной длиной CSS', async ({ page }) => {
+  await load(page);
+  await strength(page, 24);
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  await page.evaluate(() => window.__veilLength.strength('1e309'));
+  await settle(page);
+  expect(await page.evaluate(() => window.__veilLength.snapshot().count)).toBe(0);
+  expect(errors.some((message) => message.includes('--lab-veil-strength'))).toBe(true);
+});
+
 test('отсутствующий и пустой токены сохраняют default, а media-смена пустого на ошибку наблюдаема', async ({
   page,
 }) => {
