@@ -109,6 +109,10 @@ jobs:
       - name: Sheet public control boundary
         run: node native/windows/test/sheet-control.test.mjs
 
+      - name: Sheet failure-site boundary
+        shell: pwsh
+        run: dotnet run --project native/windows/test/sheet-failure-site.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-failure-site"
+
       - name: Sheet geometry boundary
         shell: pwsh
         run: dotnet run --project native/windows/test/sheet-geometry.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-geometry"
