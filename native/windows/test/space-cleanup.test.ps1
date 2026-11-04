@@ -65,7 +65,7 @@ public sealed class SpaceDiagnosticWriter : StringWriter {
 }
 public static class SpaceInput {
     public static readonly object Receipt = new();
-    public static object Run(int processId, long window) => Receipt;
+    public static object Run(int processId, long window, Action<int, int> ready) => Receipt;
 }
 '@
 $tokens = $null; $errors = $null

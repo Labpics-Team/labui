@@ -64,6 +64,68 @@ static async Task<JsonElement> Serialize(Func<object> read) {
     return json.RootElement.GetProperty("value").Clone();
 }
 static Task<JsonElement> Complete(SpaceProbe probe) => Serialize(() => Call(probe, "Complete"));
+static Task<JsonElement> Ready(SpaceProbe probe, int step) => Serialize(() =>
+    ((Task<object>)Call(probe, "Dispatch", "ready " + step)).GetAwaiter().GetResult());
+
+// Подтверждение приходит только после фактического edge и его наблюдения.
+foreach (var animate in new[] { true, false }) {
+    UISettings.Enabled = animate;
+    var parent = new UIElement(); var button = new LabButton(); FocusManager.Focused = button;
+    var count = 4;
+    using var probe = new SpaceProbe(parent, button, () => count);
+    FixtureClock.Now = 0;
+    Call(probe, "Arm", "Light");
+    Check((await Ready(probe, 1)).GetProperty("status").GetString() == "waiting", "missing native edge acknowledged");
+    for (var edge = 0; edge < 2; edge++) {
+        var down = edge == 0;
+        FixtureClock.Now += 20;
+        parent.Raise(down ? UIElement.PreviewKeyDownEvent : UIElement.PreviewKeyUpEvent, Key(down));
+        button.Channel.Publish(Motion(animate, edge, "requested", down ? 0 : .4f));
+        button.DriverPressed(down);
+        if (!down) { count++; button.DriverClick(); }
+        Check((await Ready(probe, edge + 1)).GetProperty("status").GetString() == "waiting", "request without native key completion acknowledged");
+        button.Raise(down ? UIElement.KeyDownEvent : UIElement.KeyUpEvent, Key(down));
+        button.Channel.DriverPosition(animate ? .4f : down ? 1 : 0);
+        Check((await Ready(probe, edge + 1)).GetProperty("status").GetString() == "waiting", "requested-only acknowledged");
+        button.Channel.Publish(Motion(animate, edge + 10, "value", .4f));
+        Check((await Ready(probe, edge + 1)).GetProperty("status").GetString() == "waiting", "foreign sample acknowledged");
+        var position = animate ? .4f : down ? 1 : 0;
+        FixtureClock.Now += 20;
+        button.Channel.Publish(Motion(animate, edge, "value", position));
+        var writes = (button.Writes, button.Channel.Writes, count, button.IsPressed, FocusManager.Focused);
+        var ready = await Ready(probe, edge + 1);
+        Check(ready.GetProperty("status").GetString() == "ready", "processed current edge did not become ready");
+        Check((button.Writes, button.Channel.Writes, count, button.IsPressed, FocusManager.Focused) == writes,
+            "readiness changed native product state");
+        Check(ready.GetProperty("pid").GetInt32() == Environment.ProcessId && ready.GetProperty("processStartedAtUnixMs").GetInt64() > 0 &&
+            ready.GetProperty("theme").GetString() == "Light" && ready.GetProperty("channel").GetInt32() == 1 &&
+            ready.GetProperty("step").GetInt32() == edge + 1 && ready.GetProperty("operation").GetInt64() == (animate ? edge + 1 : 0) &&
+            ready.GetProperty("nativeRequestId").GetInt32() == 101 + edge &&
+            ready.GetProperty("origin").GetString() == (animate ? "Animation" : "Snap") &&
+            ready.GetProperty("diagnostic").ValueKind == JsonValueKind.Null, "readiness lost current identity or invented failure");
+        Check((await Ready(probe, edge + 1)).GetProperty("status").GetString() == "ready", "cached observation required a future callback");
+    }
+    Check((await Ready(probe, 1)).GetProperty("status").GetString() == "failed", "old readiness step replayed after next edge");
+    if (animate) {
+        button.Channel.Publish(Motion(true, 1, "idle", 0));
+        Check((await Ready(probe, 2)).GetProperty("status").GetString() == "failed", "settled request acknowledged for interruption");
+    }
+    FocusManager.Focused = null;
+    var rejected = ((Task<object>)Call(probe, "Dispatch", "ready 2")).GetAwaiter().GetResult();
+    button.Raise(UIElement.KeyUpEvent, Key(false));
+    var frozen = await Serialize(() => rejected);
+    Check(frozen.GetProperty("status").GetString() == "failed" &&
+        frozen.GetProperty("diagnostic").GetProperty("events").EnumerateArray().Count(item => item.GetProperty("kind").GetString() == "keyUp") == 1,
+        "failed readiness diagnostic changed while serializing");
+    FocusManager.Focused = button;
+    button.DriverChannel();
+    var replaced = await Ready(probe, 2);
+    Check(replaced.GetProperty("status").GetString() == "failed" && replaced.GetProperty("reason").GetString()!.Contains("канал"),
+        "replaced Motion channel reused prior readiness");
+    probe.Dispose();
+    try { await ((Task<object>)Call(probe, "Dispatch", "ready 2")); throw new Exception("disposed readiness succeeded"); }
+    catch (InvalidOperationException) { }
+}
 
 // Хвост после переполнения не меняет первый отброшенный callback и принятый префикс.
 foreach (var phase in new[] { "idle", "inertia" }) foreach (var tailLength in new[] { 1, 7 }) {
@@ -87,6 +149,11 @@ foreach (var phase in new[] { "idle", "inertia" }) foreach (var tailLength in ne
         button.Channel.Publish(Motion(true, 13, "value", .8f));
     }
     parent.Raise(UIElement.PreviewKeyDownEvent, Key(true));
+    var rejectedReady = await Ready(probe, 1);
+    Check(rejectedReady.GetProperty("status").GetString() == "failed" &&
+        rejectedReady.GetProperty("diagnostic").GetProperty("overflow").GetInt32() == 1 &&
+        rejectedReady.GetProperty("diagnostic").GetProperty("firstDiscarded").GetProperty("motion").GetProperty("phase").GetString() == phase &&
+        button.Channel.Subscribers == 1, "readiness lost overflow diagnostic or detached a passive observation");
     var trace = await Complete(probe);
     Check(trace.GetProperty("status").GetString() == "failed" && trace.GetProperty("overflow").GetInt32() == 1,
         "sample overflow no longer rejects completion");
@@ -374,7 +441,7 @@ namespace Windows.UI.ViewManagement { public sealed class UISettings { public st
 namespace LabUI.WinUI {
     public sealed class Dispatcher { public bool TryEnqueue(Action action) { action(); return true; } }
     public sealed class LabButton : UIElement {
-        private readonly ScalarMotion pressedMotion = new();
+        private ScalarMotion pressedMotion = new();
         private Action<DependencyObject, DependencyProperty>? changed;
         public static readonly DependencyProperty IsPressedProperty = new();
         public ScalarMotion Channel => pressedMotion;
@@ -393,6 +460,7 @@ namespace LabUI.WinUI {
         public void DriverPressed(bool value) { pressed = value; changed?.Invoke(this, IsPressedProperty); }
         public void DriverClick() => Click?.Invoke(this, new());
         public void DriverFailure(Exception error) => MotionFailed?.Invoke(this, error);
+        public void DriverChannel() => pressedMotion = new();
     }
 }
 namespace LabMotion.WinUI {

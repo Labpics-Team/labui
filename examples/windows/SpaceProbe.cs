@@ -76,7 +76,9 @@ internal sealed class SpaceProbe : IDisposable
             {
                 if (command == "dispose") { Dispose(); completion.SetResult(new { status = "closed" }); }
                 else if (disposed) throw new ObjectDisposedException(nameof(SpaceProbe));
-                else completion.SetResult(command == "complete" ? Complete() : Arm(command[4..]));
+                else completion.SetResult(command switch {
+                    "complete" => Complete(), "ready 1" => Ready(1), "ready 2" => Ready(2), _ => Arm(command[4..])
+                });
             }
             catch (Exception error) { completion.SetException(error); }
         })) completion.SetException(new InvalidOperationException("Space потерял UI dispatcher."));
@@ -162,6 +164,64 @@ internal sealed class SpaceProbe : IDisposable
         }
     }
 
+    // Запрос лишь наблюдает уже обработанный edge. Позднее состояние ввода всё равно проверяет полный trace.
+    private object Ready(int step)
+    {
+        if (!observing || disposed) throw new InvalidOperationException("Space не подготовлен.");
+        if (step is not (1 or 2)) throw new ArgumentOutOfRangeException(nameof(step));
+        lock (samples)
+        {
+            var keys = events.Where(item => item.Kind is "keyDown" or "keyUp").ToArray();
+            var intents = samples.Where(item => item.Motion.Phase == "requested").ToArray();
+            var intent = requested;
+            var position = channel!.Position;
+            string? reason = failure;
+            if (overflow != 0) reason ??= "Space переполнил наблюдение.";
+            if (!button.IsLoaded || !button.IsEnabled || !Focused || !ReferenceEquals(channel, Current()) ||
+                button.ActualTheme.ToString() != theme)
+                reason ??= "Space потерял исходную кнопку или канал.";
+            if (keys.Length > step || intents.Length > step || keys.Where((item, index) =>
+                item.Kind != (index == 0 ? "keyDown" : "keyUp") || item.Key != "Space" ||
+                item.Kind == "keyDown" && item.Repeat || !item.CurrentChannel || !item.Focused).Any())
+                reason ??= "Space получил другой порядок клавиш или запросов.";
+            var ready = false;
+            if (reason is null && keys.Length == step && intents.Length == step && intent is { } current)
+            {
+                var key = keys[^1];
+                var currentSamples = samples.Skip(samples.IndexOf(intents[^1]) + 1)
+                    .Where(item => SameRequest(item.Motion, current)).ToArray();
+                if (key.Operation != current.Operation || key.NativeRequestId != current.NativeRequestId ||
+                    button.IsPressed != (step == 1))
+                    reason = "Space не подтвердил запрос обработанной клавиши.";
+                else if (animationsEnabled)
+                {
+                    if (current.Origin != MotionOrigin.Animation || currentSamples.Any(item => item.Motion.Phase == "idle"))
+                        reason = "Space уже завершил движение до прерывания.";
+                    else ready = currentSamples.Any(item => item.Motion.Phase is "value" or "inertia") &&
+                        float.IsFinite(position) && position > .001f && position < .999f;
+                }
+                else
+                {
+                    var target = step == 1 ? 1f : 0f;
+                    ready = current.Origin == MotionOrigin.Snap && current.Operation == 0 &&
+                        latest is { Phase: "value" or "idle" } snap && SameRequest(snap, current) &&
+                        Math.Abs(snap.Position - target) <= .001f && Math.Abs(snap.ReadbackPosition - target) <= .001f &&
+                        Math.Abs(position - target) <= .001f;
+                }
+            }
+            return new { schemaVersion = 1, status = reason is not null ? "failed" : ready ? "ready" : "waiting",
+                pid = Environment.ProcessId, processStartedAtUnixMs, theme, channel = generation, step,
+                automationId = AutomationProperties.GetAutomationId(button), animationsEnabled,
+                clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture), clockFrequency = Stopwatch.Frequency,
+                elapsedMs = Elapsed, operation = intent?.Operation, nativeRequestId = intent?.NativeRequestId,
+                origin = intent?.Origin.ToString(), position, observationCount = samples.Count, reason,
+                diagnostic = reason is null ? null : Snapshot("failed") };
+        }
+    }
+
+    private static bool SameRequest(MotionObservation left, MotionObservation right) =>
+        left.Operation == right.Operation && left.NativeRequestId == right.NativeRequestId && left.Origin == right.Origin;
+
     private object Complete()
     {
         if (!observing) throw new InvalidOperationException("Space не подготовлен.");
@@ -209,7 +269,7 @@ internal sealed class SpaceProbe : IDisposable
             automationId = AutomationProperties.GetAutomationId(button), theme, channel = generation,
             animationsEnabled, countBefore, countAfter = count(), overflow, failure,
             clock = "app-stopwatch-ms", clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture),
-            clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events, observations,
+            clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events = events.ToArray(), observations,
             firstDiscarded = discarded };
     }
 

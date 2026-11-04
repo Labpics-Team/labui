@@ -55,11 +55,33 @@ Check(replies[0].GetProperty("id").GetInt32() == 1 && replies[1].GetProperty("id
 Check(replies[0].GetProperty("value").GetProperty("phase").GetString() == "Idle", "Enum lost");
 Check(replies[0].GetProperty("value").GetProperty("nested").GetProperty("position").GetSingle() == .25f, "Field lost");
 calls = 0;
+var readyText = await Run("ready 1\\nready 2\\n", command => {
+    calls++; return Task.FromResult<object>(new { command, status = "waiting" });
+});
+var readyReplies = readyText.Trim().Split('\\n').Select(row => JsonDocument.Parse(row).RootElement).ToArray();
+Check(calls == 2 && readyReplies.Length == 2 && readyReplies.All(reply => reply.GetProperty("ok").GetBoolean()),
+    "Passive readiness commands did not reach the existing dispatcher");
+foreach (var command in new[] { "ready 0", "ready 3", "ready 01", "ready 1 2" }) {
+    calls = 0;
+    var rejected = await Run(command + "\\n", _ => { calls++; return Task.FromResult<object>(new { }); });
+    Check(calls == 0 && !JsonDocument.Parse(rejected).RootElement.GetProperty("ok").GetBoolean(), "Unbounded readiness step accepted");
+}
+calls = 0;
 var invalid = await Run("change-product-policy\\n", command => { calls++; return Task.FromResult<object>(new { }); });
 Check(calls == 0 && !JsonDocument.Parse(invalid).RootElement.GetProperty("ok").GetBoolean(), "Unknown command reached owner");
 var polling = await Run(string.Concat(Enumerable.Repeat("complete\\n", 202)),
     _ => Task.FromResult<object>(new { status = "waiting" }));
 Check(polling.Trim().Split('\\n').Length == 202, "Two bounded polling windows cannot complete");
+var twoThemes = "arm Light\\n" + string.Concat(Enumerable.Repeat("ready 1\\n", 120)) + "ready 2\\ncomplete\\n" +
+    "arm Dark\\n" + string.Concat(Enumerable.Repeat("ready 1\\n", 120)) + "ready 2\\ncomplete\\n";
+var composed = await Run(twoThemes, _ => Task.FromResult<object>(new { status = "waiting" }));
+Check(composed.Trim().Split('\\n').Length == 246, "Bounded readiness polls lost a theme or command");
+calls = 0;
+try {
+    await Run("arm Light\\n" + string.Concat(Enumerable.Repeat("ready 1\\n", 128)) +
+        "arm Dark\\n" + string.Concat(Enumerable.Repeat("ready 2\\n", 128)), _ => { calls++; return Task.FromResult<object>(new { }); });
+    throw new Exception("Readiness polling removed the shared command bound");
+} catch (InvalidDataException) { Check(calls == 256, "Readiness reset the command budget at the second theme"); }
 foreach (var input in new[] { new string('x', 33) + "\\n", "arm Light" }) {
     try { await Run(input, _ => Task.FromResult<object>(new { })); throw new Exception("Malformed command accepted"); }
     catch (InvalidDataException) { }
@@ -133,11 +155,11 @@ test('real Space protocol bounds messages and completes a redirected WinExe chil
     assert.ok(isAbsolute(host), `SDK did not report an absolute host path: ${host}`);
     const dotnetRoot = dirname(host);
     const fixtureEnvironment = { ...process.env, DOTNET_DISABLE_GUI_ERRORS: '1' };
-    const run = spawnSync(
-      host,
-      [join(dir, 'bin/Debug/net10.0/Probe.dll'), dotnetRoot],
-      { encoding: 'utf8', timeout: 30_000, env: fixtureEnvironment },
-    );
+    const run = spawnSync(host, [join(dir, 'bin/Debug/net10.0/Probe.dll'), dotnetRoot], {
+      encoding: 'utf8',
+      timeout: 30_000,
+      env: fixtureEnvironment,
+    });
     assert.equal(run.status, 0, run.stdout + run.stderr);
     assert.match(run.stdout, /WinExe pipes and EOF PASS/);
     const cleanup = spawnSync(

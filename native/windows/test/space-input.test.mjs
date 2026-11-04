@@ -12,7 +12,7 @@ using System.Text.Json;
 
 static void Check(bool value, string reason) { if (!value) throw new Exception(reason); }
 static Exception Reject(Fake platform, string expected) {
-    try { SpaceInput.Run(platform, 42, 100); }
+    try { SpaceInput.Run(platform, 42, 100, platform.AwaitReady); }
     catch (Exception error) {
         Check(error.Message.Contains(expected), "Wrong failure: " + error);
         return error;
@@ -24,7 +24,7 @@ static void Sequence(Fake platform, params bool[] expected) {
 }
 
 Environment.SetEnvironmentVariable("GITHUB_ACTIONS", "false");
-try { SpaceInput.Run(42, 100); throw new Exception("Native facade ignored hosted-only boundary"); }
+try { SpaceInput.Run(42, 100, (_, _) => { }); throw new Exception("Native facade ignored hosted-only boundary"); }
 catch (InvalidOperationException error) { Check(error.Message.Contains("hosted"), "Wrong guard failure"); }
 
 Check(IntPtr.Size == 8, "This fixture qualifies the Windows x64 structure");
@@ -38,11 +38,19 @@ foreach (bool down in new[] { true, false }) {
 }
 
 var good = new Fake();
-var receipt = SpaceInput.Run(good, 42, 100);
+var receipt = SpaceInput.Run(good, 42, 100, good.AwaitReady);
 Sequence(good, true, false, true, false);
-Check(good.Delays.SequenceEqual(new[] { 80, 50, 80 }), "Wrong history of separate edges");
+Check(good.Delays.SequenceEqual(new[] { 80 }) && good.ReadySteps.SequenceEqual(new[] { 1, 2 }),
+    "Two processed edges and final hold were not preserved");
 Check(receipt.pid == 42 && receipt.window == 100 && receipt.clockFrequency == 1000, "Receipt identity lost");
 Check(receipt.events.Length == 4 && receipt.events.All(e => e.accepted == 1), "Missing accepted events");
+Check(receipt.readiness.Length == 2 && receipt.readiness.Select(item => item.step).SequenceEqual(new[] { 1, 2 }),
+    "Readiness receipt lost required steps");
+foreach (var ready in receipt.readiness) {
+    Check(long.Parse(ready.startedTicks) >= long.Parse(receipt.events[ready.step - 1].completedTicks) &&
+        long.Parse(ready.completedTicks) >= long.Parse(ready.startedTicks) &&
+        long.Parse(receipt.events[ready.step].startedTicks) >= long.Parse(ready.completedTicks), "Ack/input chronology lost");
+}
 long previous = long.Parse(receipt.startedTicks);
 foreach (var item in receipt.events) {
     Check(long.Parse(item.startedTicks) >= previous && long.Parse(item.completedTicks) >= long.Parse(item.startedTicks), "Nonmonotonic receipt");
@@ -74,17 +82,25 @@ for (int failureAt = 0; failureAt < 4; failureAt++) {
     Check(error.Data["spaceInputStillHeld"] is false, "Successful cleanup retained hold");
 }
 
-var lost = new Fake { OnDelay = (p, n) => p.IdentityFault = "foreground" };
+var lost = new Fake { OnReady = (p, n, remaining) => p.IdentityFault = "foreground" };
 Reject(lost, "Foreground"); Sequence(lost, true, false);
-var timedOut = new Fake { OnDelay = (p, n) => p.Now += 6000 };
+var timedOut = new Fake { OnReady = (p, n, remaining) => p.Now += 6000 };
 Reject(timedOut, "5 секунд"); Sequence(timedOut, true, false);
+Check(timedOut.ReadySteps.Count == 1, "Expired readiness spent another input budget");
+var lateSecond = new Fake { OnReady = (p, n, remaining) => {
+    if (n == 2) Check(remaining < 3000, "Second wait received a fresh five-second budget");
+    p.Now += n == 1 ? 2200 : 2900;
+} };
+Reject(lateSecond, "5 секунд"); Sequence(lateSecond, true, false);
+var readyFailed = new Fake { OnReady = (_, _, _) => throw new InvalidOperationException("ready failed") };
+Reject(readyFailed, "ready failed"); Sequence(readyFailed, true, false);
 var delayFailed = new Fake { OnDelay = (p, n) => throw new InvalidOperationException("delay failed") };
-Reject(delayFailed, "delay failed"); Sequence(delayFailed, true, false);
+Reject(delayFailed, "delay failed"); Sequence(delayFailed, true, false, true, false);
 var readAfterSendFailed = new Fake { FailTimestampAfterFirstSend = true };
 Reject(readAfterSendFailed, "timestamp failed"); Sequence(readAfterSendFailed, true, false);
-var midModifier = new Fake { OnDelay = (p, n) => { if (n == 2) p.Keys.Add(0x11); } };
+var midModifier = new Fake { OnReady = (p, n, remaining) => { if (n == 2) p.Keys.Add(0x11); } };
 Reject(midModifier, "Модификатор"); Sequence(midModifier, true, false);
-var foreignSpace = new Fake { OnDelay = (p, n) => { if (n == 2) p.Keys.Add(0x20); } };
+var foreignSpace = new Fake { OnReady = (p, n, remaining) => { if (n == 2) p.Keys.Add(0x20); } };
 Reject(foreignSpace, "Space"); Sequence(foreignSpace, true, false);
 Check(foreignSpace.Keys.Contains(0x20), "Another hold acquired between presses was released");
 
@@ -93,9 +109,23 @@ var primary = Reject(cleanupFailed, "SendInput");
 Sequence(cleanupFailed, true, false, false);
 Check(primary.Data["spaceInputCleanupError"] is string && primary.Data["spaceInputStillHeld"] is true,
     "Cleanup failure replaced primary error or hid the remaining hold");
-var throwingCleanup = new Fake { OnDelay = (p, n) => { p.ThrowSend = true; throw new InvalidOperationException("primary"); } };
+var throwingCleanup = new Fake { OnReady = (p, n, remaining) => { p.ThrowSend = true; throw new InvalidOperationException("primary"); } };
 var preserved = Reject(throwingCleanup, "primary");
 Check(preserved.Data["spaceInputCleanupError"] is string && throwingCleanup.Sent.Count == 2, "Thrown cleanup was lost or retried");
+var queueOutcomes = new List<object>();
+var queueGuarded = true;
+foreach (var stallUntil in new[] { 0, 151, 251, 1001 }) {
+    var platform = new Fake();
+    var app = new AppQueue(platform, stallUntil);
+    SpaceInput.Run(platform, 42, 100, app.AwaitReady);
+    Sequence(platform, true, false, true, false);
+    if (stallUntil == 0) Check(!app.RepressedBeforeReleaseMovement, "Healthy queue did not observe release movement");
+    queueOutcomes.Add(new { stallUntil, app.RepressedBeforeReleaseMovement, app.ReleaseHandled, app.ReleaseMovement,
+        sends = platform.Sent.ToArray() });
+    queueGuarded &= !app.RepressedBeforeReleaseMovement;
+}
+Console.WriteLine("SPACE_INPUT_QUEUE_WITNESS " + JsonSerializer.Serialize(queueOutcomes));
+Check(queueGuarded, "Second down was sent before the queued first up produced an observed movement");
 Console.WriteLine("Space input contract: PASS (four edges, identity, hold ownership, cleanup, x64 ABI, exact ticks)");
 
 sealed class Fake : SpaceInput.Platform {
@@ -123,15 +153,66 @@ sealed class Fake : SpaceInput.Platform {
     public bool ThrowSend;
     public bool FailTimestampAfterFirstSend;
     public Action<Fake, int> OnDelay;
+    public Action<Fake, bool> OnSend;
+    public Action<Fake, int, int> OnReady;
+    public List<int> ReadySteps = new();
+    public void AwaitReady(int step, int remaining) {
+        ReadySteps.Add(step);
+        if (OnReady != null) OnReady(this, step, remaining);
+        else Now += step == 1 ? 80 : 50;
+    }
     public uint Send(bool down) {
         int index = Sent.Count;
         Sent.Add(down); Now++;
         if (ThrowSend) throw new InvalidOperationException("send threw");
         if (index == RejectSendAt || index >= RejectFromSend) return 0;
         if (down) Keys.Add(0x20); else Keys.Remove(0x20);
+        OnSend?.Invoke(this, down);
         return 1;
     }
     public void Delay(int milliseconds) { Delays.Add(milliseconds); Now += milliseconds; OnDelay?.Invoke(this, Delays.Count); }
+}
+
+// Только очередь на границе Platform: helper остаётся настоящим. Новый callback
+// движения возникает после отдельного шага часов, а не вместе с обработкой edge.
+sealed class AppQueue {
+    private readonly Fake platform;
+    private readonly long origin;
+    private readonly int stallUntil;
+    private readonly Queue<int> pending = new();
+    private int handled = -1;
+    private long handledAt;
+    public bool ReleaseHandled;
+    public bool ReleaseMovement;
+    public bool FirstMovement;
+    public bool RepressedBeforeReleaseMovement;
+    public AppQueue(Fake platform, int stallUntil) {
+        this.platform = platform; this.stallUntil = stallUntil; origin = platform.Now;
+        platform.OnSend = (_, down) => {
+            var edge = platform.Sent.Count - 1;
+            if (edge == 2 && !ReleaseMovement) RepressedBeforeReleaseMovement = true;
+            pending.Enqueue(edge);
+            Pump();
+        };
+        platform.OnDelay = (_, _) => Pump();
+    }
+    public void AwaitReady(int step, int remaining) {
+        var start = platform.Now;
+        while (step == 1 ? !FirstMovement : !ReleaseMovement) {
+            if (platform.Now - start >= remaining) throw new TimeoutException("queue readiness deadline");
+            platform.Delay(10);
+        }
+    }
+    private void Pump() {
+        var now = platform.Now - origin;
+        if (pending.Count > 0 && pending.Peek() >= 1 && now < stallUntil) return;
+        while (pending.Count > 0) {
+            handled = pending.Dequeue(); handledAt = now;
+            if (handled == 1) ReleaseHandled = true;
+        }
+        if (handled == 1 && now - handledAt >= 16) ReleaseMovement = true;
+        if (handled == 0 && now - handledAt >= 16) FirstMovement = true;
+    }
 }
 `;
 

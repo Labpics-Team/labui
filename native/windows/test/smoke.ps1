@@ -487,7 +487,7 @@ function Ui([string]$Name, [string[]]$Arguments) {
 }
 
 function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
-    if ($Command -cnotin @('arm Light', 'arm Dark', 'complete')) { throw 'Неверная команда Space.' }
+    if ($Command -cnotin @('arm Light', 'arm Dark', 'ready 1', 'ready 2', 'complete')) { throw 'Неверная команда Space.' }
     if ($Timeout -lt 1 -or $Timeout -gt 5000) { throw 'Неверный бюджет ответа Space.' }
     $spaceChannel.id++
     $process.StandardInput.WriteLine($Command)
@@ -505,11 +505,56 @@ function Invoke-SpaceCommand([string]$Command, [int]$Timeout = 5000) {
     return $reply.value
 }
 
+function Wait-SpaceReady([int]$Step, [int]$RemainingMs, [string]$Theme, $Armed, [hashtable]$State) {
+    if ($Step -notin @(1, 2) -or $Step -ne $State.nextStep -or $RemainingMs -lt 1 -or $RemainingMs -gt 5000) {
+        throw 'Неверный шаг или остаток бюджета готовности Space.'
+    }
+    $wait = [Diagnostics.Stopwatch]::StartNew()
+    do {
+        $remaining = [int][Math]::Floor($RemainingMs - $wait.Elapsed.TotalMilliseconds)
+        if ($remaining -lt 1) { throw 'Space не подтвердил готовность в остатке бюджета ввода.' }
+        $reply = Invoke-SpaceCommand "ready $Step" $remaining
+        $spaceDiagnostic.readiness[[string]$Step] = $reply
+        if ($reply.schemaVersion -isnot [int] -or $reply.schemaVersion -ne 1 -or
+            ($reply.pid -isnot [int] -and $reply.pid -isnot [long]) -or $reply.pid -ne $process.Id -or
+            ($reply.processStartedAtUnixMs -isnot [int] -and $reply.processStartedAtUnixMs -isnot [long]) -or
+            $reply.processStartedAtUnixMs -ne ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds() -or
+            $reply.theme -cne $Theme -or $reply.automationId -cne 'LabButtonMedium' -or
+            $reply.channel -isnot [int] -or $reply.channel -ne $Armed.channel -or
+            $reply.step -isnot [int] -or $reply.step -ne $Step -or
+            $reply.animationsEnabled -isnot [bool] -or $reply.animationsEnabled -ne $AnimationsEnabled -or
+            $reply.clockOriginTicks -isnot [string] -or $reply.clockOriginTicks -cne $Armed.clockOriginTicks -or
+            ($reply.clockFrequency -isnot [int] -and $reply.clockFrequency -isnot [long]) -or
+            $reply.clockFrequency -ne $Armed.clockFrequency) {
+            throw 'Space вернул готовность другой identity, темы, канала или шага.'
+        }
+        if ($reply.status -ceq 'failed') { throw "Space отклонил готовность: $($reply.reason)" }
+        if ($reply.status -cnotin @('ready', 'waiting')) { throw 'Неизвестный статус готовности Space.' }
+        $remaining = [int][Math]::Floor($RemainingMs - $wait.Elapsed.TotalMilliseconds)
+        if ($remaining -lt 1) { throw 'Space ответил после остатка бюджета ввода.' }
+        if ($reply.status -ceq 'ready') {
+            $origin = if ($AnimationsEnabled) { 'Animation' } else { 'Snap' }
+            if (($reply.operation -isnot [int] -and $reply.operation -isnot [long]) -or
+                ($reply.nativeRequestId -isnot [int] -and $reply.nativeRequestId -isnot [long]) -or
+                $reply.nativeRequestId -lt 1 -or $reply.origin -cne $origin -or
+                ($AnimationsEnabled -and $reply.operation -lt 1) -or (!$AnimationsEnabled -and $reply.operation -ne 0) -or
+                ($Step -eq 2 -and ($reply.nativeRequestId -eq $State.previous.nativeRequestId -or
+                    ($AnimationsEnabled -and $reply.operation -le $State.previous.operation)))) {
+                throw 'Space подтвердил неверный или прежний Motion request.'
+            }
+            $State.previous = $reply
+            $State.nextStep++
+            return
+        }
+        Start-Sleep -Milliseconds ([Math]::Min(50, $remaining))
+    } while ($true)
+}
+
 function Invoke-SpaceGesture([string]$Theme) {
     $timing = @{ armStartedMs = $clock.Elapsed.TotalMilliseconds }
     $script:spaceDiagnostic = @{ theme = $Theme; window = $timing;
         clockOriginTicks = $clockOriginTicks; clockOriginUpperTicks = $clockOriginUpperTicks;
-        clockFrequency = [Diagnostics.Stopwatch]::Frequency; armed = $null; injection = $null; observation = $null }
+        clockFrequency = [Diagnostics.Stopwatch]::Frequency; armed = $null; injection = $null; observation = $null; readiness = @{} }
     $armed = Invoke-SpaceCommand "arm $Theme"
     $timing.armCompletedMs = $clock.Elapsed.TotalMilliseconds
     $spaceDiagnostic.armed = $armed
@@ -518,8 +563,18 @@ function Invoke-SpaceGesture([string]$Theme) {
         throw 'Space не подтвердил подключение к нужной кнопке.'
     }
     $timing.inputStartedMs = $clock.Elapsed.TotalMilliseconds
-    $injection = [SpaceInput]::Run($process.Id, [long]$window)
-    $timing.inputCompletedMs = $clock.Elapsed.TotalMilliseconds
+    $readyState = @{ nextStep = 1; previous = $null }
+    try {
+        $injection = [SpaceInput]::Run($process.Id, [long]$window, [Action[int,int]]{
+            param($Step, $RemainingMs)
+            Wait-SpaceReady $Step $RemainingMs $Theme $armed $readyState
+        })
+    } catch {
+        for ($cause = $_.Exception; $null -ne $cause; $cause = $cause.InnerException) {
+            if ($cause.Data.Contains('spaceInputReceipt')) { $spaceDiagnostic.injection = $cause.Data['spaceInputReceipt']; break }
+        }
+        throw
+    } finally { $timing.inputCompletedMs = $clock.Elapsed.TotalMilliseconds }
     $spaceDiagnostic.injection = $injection
     $timing.completeStartedMs = $clock.Elapsed.TotalMilliseconds
     $deadline = $clock.Elapsed.TotalMilliseconds + 5000

@@ -57,7 +57,7 @@ public static class SpaceProtocol
             string json;
             try
             {
-                if (command is not ("arm Light" or "arm Dark" or "complete"))
+                if (command is not ("arm Light" or "arm Dark" or "ready 1" or "ready 2" or "complete"))
                     throw new InvalidDataException("Неизвестная команда Space.");
                 json = JsonSerializer.Serialize(new { id, ok = true, value = await dispatch(command) }, Json);
                 if (Encoding.UTF8.GetByteCount(json) > 128 * 1024)

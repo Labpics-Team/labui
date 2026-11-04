@@ -25,6 +25,14 @@ public static class SpaceInput
         public string startedTicks { get; set; }
         public string completedTicks { get; set; }
         public InputEvent[] events { get; set; }
+        public Readiness[] readiness { get; set; }
+    }
+
+    public sealed class Readiness
+    {
+        public int step { get; set; }
+        public string startedTicks { get; set; }
+        public string completedTicks { get; set; }
     }
 
     internal interface Platform
@@ -43,38 +51,46 @@ public static class SpaceInput
     private const int Space = 0x20;
     private static readonly int[] Modifiers = { 0x10, 0x11, 0x12, 0x5b, 0x5c };
 
-    public static Receipt Run(int processId, long window)
+    public static Receipt Run(int processId, long window, Action<int, int> awaitReady)
     {
         if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true" ||
             Environment.GetEnvironmentVariable("RUNNER_ENVIRONMENT") != "github-hosted")
             throw new InvalidOperationException("Space input разрешён только на одноразовом GitHub hosted runner.");
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || IntPtr.Size != 8)
             throw new PlatformNotSupportedException("Space input требует Windows x64.");
-        return Run(new NativePlatform(), processId, window);
+        return Run(new NativePlatform(), processId, window, awaitReady);
     }
 
-    internal static Receipt Run(Platform platform, int processId, long window)
+    internal static Receipt Run(Platform platform, int processId, long window, Action<int, int> awaitReady)
     {
         if (processId <= 0 || window <= 0 || platform.Frequency <= 0)
             throw new ArgumentOutOfRangeException("Недопустимая identity ввода.");
+        if (awaitReady == null) throw new ArgumentNullException(nameof(awaitReady));
         long started = platform.Timestamp;
         var receipt = new Receipt { pid = processId, window = window,
             clockFrequency = platform.Frequency, startedTicks = Ticks(started) };
         var events = new List<InputEvent>(5);
+        var readiness = new List<Readiness>(2);
         bool ownedHold = false;
         Exception failure = null;
         try
         {
             CheckWindow(platform, processId, window);
             if (platform.IsDown(Space)) throw new InvalidOperationException("Space уже удерживается до проверки.");
-            var delays = new[] { 80, 50, 80, 0 };
-            for (int index = 0; index < delays.Length; index++)
+            for (int index = 0; index < 4; index++)
             {
+                // Подтверждение предыдущего edge расходует тот же бюджет всего ввода.
+                if (index is 1 or 2)
+                {
+                    var observation = new Readiness { step = index, startedTicks = Ticks(platform.Timestamp) };
+                    readiness.Add(observation);
+                    try { awaitReady(index, Remaining(platform, started)); }
+                    finally { observation.completedTicks = Ticks(platform.Timestamp); }
+                }
                 CheckWindow(platform, processId, window);
                 foreach (var key in Modifiers)
                     if (platform.IsDown(key)) throw new InvalidOperationException("Модификатор клавиатуры удерживается во время Space.");
-                if ((platform.Timestamp - started) / (double)platform.Frequency > 5)
-                    throw new TimeoutException("Space sequence превысила бюджет 5 секунд.");
+                Remaining(platform, started);
                 bool down = index % 2 == 0;
                 if (down && platform.IsDown(Space))
                     throw new InvalidOperationException("Space удерживается перед новым down.");
@@ -82,7 +98,7 @@ public static class SpaceInput
                 events.Add(input);
                 if (input.accepted != 1)
                     throw new InvalidOperationException("SendInput принял " + input.accepted + " вместо одного события; Win32=" + platform.LastError + ".");
-                if (delays[index] != 0) platform.Delay(delays[index]);
+                if (index == 2) platform.Delay(80);
             }
             CheckWindow(platform, processId, window);
         }
@@ -108,6 +124,7 @@ public static class SpaceInput
             }
             receipt.completedTicks = Ticks(platform.Timestamp);
             receipt.events = events.ToArray();
+            receipt.readiness = readiness.ToArray();
         }
         if (failure != null)
         {
@@ -116,6 +133,13 @@ public static class SpaceInput
             ExceptionDispatchInfo.Capture(failure).Throw();
         }
         return receipt;
+    }
+
+    private static int Remaining(Platform platform, long started)
+    {
+        var remaining = 5000d - (platform.Timestamp - started) * 1000d / platform.Frequency;
+        if (remaining < 1) throw new TimeoutException("Space sequence превысила бюджет 5 секунд.");
+        return (int)remaining;
     }
 
     private static InputEvent Send(Platform platform, bool down, ref bool ownedHold)
