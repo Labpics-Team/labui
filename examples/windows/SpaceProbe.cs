@@ -44,6 +44,7 @@ internal sealed class SpaceProbe : IDisposable
     private MotionObservation? requested;
     private MotionObservation? latest;
     private Sample? firstDiscarded;
+    private SpaceRawTrace.Snapshot? rawTrace;
 
     internal SpaceProbe(UIElement parent, LabButton button, Func<int> count)
     {
@@ -96,6 +97,8 @@ internal sealed class SpaceProbe : IDisposable
         if (button.ActualTheme.ToString() != requestedTheme || (generation == 0 ? "Light" : "Dark") != requestedTheme)
             throw new InvalidOperationException("Неверный порядок тем Space.");
         channel = Current();
+        SpaceRawTrace.Begin(channel);
+        rawTrace = null;
         theme = requestedTheme;
         animationsEnabled = new UISettings().AnimationsEnabled;
         countBefore = count();
@@ -215,6 +218,7 @@ internal sealed class SpaceProbe : IDisposable
                 clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture), clockFrequency = Stopwatch.Frequency,
                 elapsedMs = Elapsed, operation = intent?.Operation, nativeRequestId = intent?.NativeRequestId,
                 origin = intent?.Origin.ToString(), position, observationCount = samples.Count, reason,
+                rawTrace = reason is null ? ReadRawTrace() : null,
                 diagnostic = reason is null ? null : Snapshot("failed") };
         }
     }
@@ -251,7 +255,8 @@ internal sealed class SpaceProbe : IDisposable
         if (keyUpCount < 2 || isPressed || !terminalObserved || final is not { } settled ||
             intent is not { } current || settled.NativeRequestId != current.NativeRequestId || settled.Operation != current.Operation ||
             Math.Abs(settled.ReadbackPosition) > .001f || Math.Abs(position) > .001f)
-            return new { status = "waiting", pid = Environment.ProcessId, elapsedMs = Elapsed,
+            return new { status = "waiting", pid = Environment.ProcessId, processStartedAtUnixMs,
+                theme, channel = generation, elapsedMs = Elapsed, rawTrace = ReadRawTrace(),
                 state = new { eventCount = events.Count, observationCount, keyUpCount, isPressed, position,
                     requested = intent, latest = final, lastIdle } };
         Record("complete");
@@ -270,8 +275,10 @@ internal sealed class SpaceProbe : IDisposable
             animationsEnabled, countBefore, countAfter = count(), overflow, failure,
             clock = "app-stopwatch-ms", clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture),
             clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events = events.ToArray(), observations,
-            firstDiscarded = discarded };
+            firstDiscarded = discarded, rawTrace = ReadRawTrace() };
     }
+
+    private SpaceRawTrace.Snapshot ReadRawTrace() => rawTrace ?? SpaceRawTrace.Capture(channel!);
 
     private void Detach()
     {
@@ -287,6 +294,7 @@ internal sealed class SpaceProbe : IDisposable
         button.LostFocus -= Focus;
         button.Click -= Click;
         button.MotionFailed -= Failed;
+        rawTrace = SpaceRawTrace.Capture(channel!, stop: true);
     }
 
     public void Dispose() { Detach(); disposed = true; }

@@ -596,7 +596,9 @@ function Invoke-SpaceGesture([string]$Theme) {
 
 function Write-SpaceFailure($Diagnostic, $Primary) {
     try {
-        $json = $Diagnostic | ConvertTo-Json -Depth 12 -Compress -WarningAction Stop -ErrorAction Stop
+        $payload = $Diagnostic.Clone()
+        $payload.identity = Get-Content -LiteralPath (Join-Path $output 'identity.json') -Raw | ConvertFrom-Json
+        $json = $payload | ConvertTo-Json -Depth 12 -Compress -WarningAction Stop -ErrorAction Stop
         $line = "LABUI_SPACE_FAILURE_JSON $json"
         if ([Text.Encoding]::UTF8.GetByteCount($line + [Environment]::NewLine) -gt 256 * 1024) {
             throw 'Диагностика Space превысила общий лимит 256 KiB.'
@@ -869,8 +871,12 @@ try {
     $script:window = $process.MainWindowHandle.ToInt64().ToString()
     $initialLayout = Read-LayoutObservation $layoutObservationPath $process $ExpectedTextScale
     $animationObservation = Read-AnimationObservation $animationObservationPath $process
+    $source = git -C $PSScriptRoot rev-parse HEAD
+    if ($LASTEXITCODE -ne 0 -or $source -cnotmatch '^[a-f0-9]{40}$') { throw 'Не определён исполняемый commit LabUI.' }
+    $motionSource = git -C (Split-Path -Parent $AnimationSettingsPath) rev-parse HEAD
+    if ($LASTEXITCODE -ne 0 -or $motionSource -cnotmatch '^[a-f0-9]{40}$') { throw 'Не определён диагностический commit Motion.' }
     @{ pid = $process.Id; startedAtUnixMs = ([DateTimeOffset]$started.ToUniversalTime()).ToUnixTimeMilliseconds();
-       window = $window; source = (git -C $PSScriptRoot rev-parse HEAD);
+       window = $window; source = $source; motionSource = $motionSource;
        os = [Environment]::OSVersion.VersionString; appSha256 = (Get-FileHash -LiteralPath $app).Hash;
        consumerSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'Buttons.dll')).Hash;
        uiSha256 = (Get-FileHash -LiteralPath (Join-Path $ApplicationDirectory 'LabUI.WinUI.dll')).Hash;
