@@ -4,10 +4,79 @@ using LabUI.Buttons;
 using LabUI.WinUI.Rendering;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI.Composition;
+using Windows.Graphics.Effects;
 
 void Check(bool condition, string message)
 {
     if (!condition) throw new InvalidOperationException(message);
+}
+
+void CheckGraph(IGraphicsEffect graph, Dictionary<string, object?> row)
+{
+    List<IGraphicsEffect> effects = [];
+    List<IGraphicsEffectSource> branches = [];
+    void ReadSum(IGraphicsEffectSource source)
+    {
+        if (source is ArithmeticCompositeEffect sum)
+        {
+            effects.Add(sum);
+            Check(sum.MultiplyAmount == 0 && sum.Source1Amount == 1 && sum.Source2Amount == 1
+                && sum.Offset == 0 && !sum.ClampOutput, "Arithmetic не является незажатой суммой ветвей.");
+            ReadSum(sum.Source1 ?? throw new InvalidOperationException("Сумма потеряла Source1."));
+            ReadSum(sum.Source2 ?? throw new InvalidOperationException("Сумма потеряла Source2."));
+        }
+        else branches.Add(source);
+    }
+
+    if ((string)row["combine"]! == "Add")
+    {
+        Check(graph is CompositeEffect, "Подпись Add не соответствует корневому эффекту.");
+        var add = (CompositeEffect)graph;
+        Check(add.Mode == Microsoft.Graphics.Canvas.CanvasComposite.Add, "Composite потерял Add.");
+        effects.Add(add);
+        branches.AddRange(add.Sources);
+    }
+    else
+    {
+        Check(graph is ArithmeticCompositeEffect, "Подпись Arithmetic не соответствует корневому эффекту.");
+        ReadSum(graph);
+    }
+    Check(branches.Count == (int)row["inputs"]!, "Подпись числа ветвей не соответствует графу.");
+
+    List<CompositionEffectSourceParameter> sources = [];
+    for (var index = 0; index < branches.Count; index++)
+    {
+        var branch = branches[index];
+        if ((bool)row["mask"]!)
+        {
+            Check(branch is AlphaMaskEffect, "Подпись mask не соответствует ветви.");
+            var mask = (AlphaMaskEffect)branch;
+            effects.Add(mask);
+            Check(mask.AlphaMask is CompositionEffectSourceParameter input && input.Name == $"mask{index}",
+                "Маска привязана к чужому имени источника.");
+            branch = mask.Source ?? throw new InvalidOperationException("Маска потеряла Source.");
+        }
+        if ((bool)row["blur"]! && index > 0)
+        {
+            Check(branch is GaussianBlurEffect, "Подпись blur не соответствует ветви.");
+            var blur = (GaussianBlurEffect)branch;
+            effects.Add(blur);
+            Check(blur.BlurAmount > 0 && float.IsFinite(blur.BlurAmount) && blur.BorderMode == EffectBorderMode.Hard,
+                "Blur потерял конечную ширину или границу.");
+            branch = blur.Source ?? throw new InvalidOperationException("Blur потерял Source.");
+        }
+        Check(branch is CompositionEffectSourceParameter, "Ветвь содержит лишний эффект либо потеряла источник.");
+        var source = (CompositionEffectSourceParameter)branch;
+        var expectedName = (string)row["source"]! == "distinct" ? $"backdrop{index}" : "backdrop";
+        Check(source.Name == expectedName, "Подпись источников не соответствует их фактическим именам.");
+        sources.Add(source);
+    }
+    var identities = sources.Cast<object>().Distinct(ReferenceEqualityComparer.Instance).Count();
+    Check(identities == ((string)row["source"]! == "shared" ? 1 : sources.Count),
+        "Подпись shared/repeat/distinct не соответствует идентичности источников.");
+    Check((bool)row["named"]!
+        ? effects.All(effect => effect.Name.Length > 0) && effects.Select(effect => effect.Name).Distinct().Count() == effects.Count
+        : effects.All(effect => effect.Name.Length == 0), "Подпись named не соответствует именам эффектов.");
 }
 
 var graph = new AlphaMaskEffect
@@ -19,6 +88,8 @@ var healthy = new Compositor();
 var result = SheetSourceTopologyProbe.CreateFactory(healthy, graph, 12);
 Check(healthy.Calls == 1 && healthy.Factories.Count == 1 && !result.Disposed,
     "Успешный путь обязан вернуть исходную factory без диагностики.");
+Check(healthy.Graphs.Count == 1 && ReferenceEquals(healthy.Graphs[0], graph),
+    "Успешный путь заменил исходный граф.");
 result.Dispose();
 
 foreach (var cleanupFault in new[] { false, true })
@@ -36,6 +107,9 @@ foreach (var cleanupFault in new[] { false, true })
         "Probe изменил исходный exception либо посторонние Data.");
     var rows = SheetSourceTopology.Read(failure) ?? throw new InvalidOperationException("Probe не передал матрицу.");
     Check(rows.Length == 15 && compositor.Calls == 16, "Probe не выполнил конечную матрицу.");
+    Check(compositor.Graphs.Count == 16 && ReferenceEquals(compositor.Graphs[0], graph),
+        "Compositor не получил исходный граф и все диагностические графы.");
+    for (var index = 0; index < rows.Length; index++) CheckGraph(compositor.Graphs[index + 1], rows[index]);
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
         "Один cleanup отказ прервал освобождение остальных ресурсов.");
     Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 15)), "Порядок матрицы потерян.");
@@ -162,8 +236,10 @@ namespace Microsoft.UI.Composition
         internal Exception? Primary;
         public int Calls { get; private set; }
         public List<CompositionEffectFactory> Factories { get; } = [];
+        public List<IGraphicsEffect> Graphs { get; } = [];
         public CompositionEffectFactory CreateEffectFactory(IGraphicsEffect graph)
         {
+            Graphs.Add(graph);
             Calls++;
             if (Calls == 1 && Primary is not null) throw Primary;
             if (Primary is not null && Calls % 3 == 0) throw new InvalidOperationException(Fixture.Marker);
