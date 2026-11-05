@@ -35,21 +35,25 @@ test('Sheet atlas has two brush bindings and a fresh source parameter on each gr
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
 });
 
-test('Sheet atlas applies the managed cell projection and clips each drawing to its original raster bounds', () => {
+test('Sheet virtual atlas uses the original Uniform projection and per-cell updateRect', () => {
   assert.match(build, /TransformMatrix = atlas\.Cell\(index\)\.EffectTransform/);
   assert.match(build, /atlasBrush\.Stretch = CompositionStretch\.None;/);
   assert.match(build, /atlasBrush\.HorizontalAlignmentRatio = 0;/);
   assert.match(build, /atlasBrush\.VerticalAlignmentRatio = 0;/);
   assert.match(build, /atlasBrush\.Scale = atlas\.BrushScale;/);
+  assert.match(build, /atlasBrush\.Offset = atlas\.BrushOffset;/);
   assert.match(
     build,
-    /drawing\.Transform = Matrix3x2\.CreateTranslation\(atlas\.Cell\(index\)\.DrawingOffset\) \* originalTransform;/,
+    /void DrawAtlasCell\(int index\)\s*\{\s*var cell = atlas\.Cell\(index\);\s*using var drawing = CanvasComposition\.CreateDrawingSession\(atlasSurface,\s*new Rect\(cell\.PixelX, cell\.PixelY, pixelWidth, pixelHeight\), \(float\)\(96 \* scale\)\);/,
   );
   assert.match(
     build,
-    /drawing\.CreateLayer\(1, new Rect\(0, 0, pixelWidth \/ scale, pixelHeight \/ scale\)\)/,
+    /for \(var index = 0; index < atlasDrawings\.Count; index\+\+\) DrawAtlasCell\(index\);/,
   );
-  assert.match(build, /finally \{ drawing\.Transform = originalTransform; \}/);
+  assert.match(build, /drawing\.Clear\(Color\.FromArgb\(0, 0, 0, 0\)\);/);
+  assert.match(build, /atlasDrawings\[index\]\(drawing\);/);
+  assert.doesNotMatch(build, /drawing\.Transform|DrawingOffset|MaximumBitmapSizeInPixels/);
+  assert.doesNotMatch(build, /new Rect\(0, 0, atlas\.Width, atlas\.Height\)/);
 });
 
 test('Sheet atlas keeps all authored blur levels, weights and paints at the existing owner', () => {
@@ -76,7 +80,11 @@ test('Sheet atlas keeps all authored blur levels, weights and paints at the exis
 });
 
 test('Sheet atlas preserves frame ownership and cleans failed candidates', () => {
-  assert.match(build, /var atlasSurface = result\.Own\(graphics!\.CreateDrawingSurface\(/);
+  assert.match(build, /var atlasSurface = result\.Own\(graphics!\.CreateVirtualDrawingSurface\(/);
+  assert.match(
+    build,
+    /new Windows\.Graphics\.SizeInt32 \{ Width = atlas\.Width, Height = atlas\.Height \}/,
+  );
   assert.match(
     build,
     /var atlasBrush = result\.Own\(compositor\.CreateSurfaceBrush\(atlasSurface\)\)/,

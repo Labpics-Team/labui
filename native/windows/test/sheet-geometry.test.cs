@@ -95,71 +95,162 @@ static void Near(double actual, double expected, double tolerance, string name)
 }
 
 Equal(SheetAtlasLayout.PaddingPixels, 2, "transparent padding for linear sampling");
-foreach (var (width, height, scale) in new[]
+
+// Pinned SurfaceBrush default: Uniform, centered. Authored fractions distinguish
+// this projection from independent Fill ratios, without a native API dependency.
+var uniformAnchor = SheetAtlasLayout.Create(470, 937, new(375.25f, 749.5f), 1.25, 13);
+Near(uniformAnchor.BrushScale.X, 1501d / 1880, 1e-7, "authored Uniform X scale");
+Near(uniformAnchor.BrushScale.Y, 1501d / 1880, 1e-7, "authored Uniform Y scale");
+Near(uniformAnchor.BrushOffset.X, 0, 1e-7, "authored Uniform X offset");
+Near(uniformAnchor.BrushOffset.Y, 2623d / 3760, 1e-7, "authored Uniform Y offset");
+
+static void Atlas(int pixelWidth, int pixelHeight, Vector2 visualSize, double scale)
 {
-    (375d, 812d, 1d), (375d, 812d, 1.25d), (375.3d, 812.2d, 1.5d),
-    (500.2d, 96.4d, 1.75d), (1d, 64d, 1d), (1920d, 1080d, 2d),
-})
-{
-    var pixelWidth = checked((int)Math.Ceiling(width * scale));
-    var pixelHeight = checked((int)Math.Ceiling(height * scale));
-    var visualSize = new Vector2((float)width, (float)height);
-    var layout = SheetAtlasLayout.Create(pixelWidth, pixelHeight, visualSize, scale, 13, 16384);
+    var layout = SheetAtlasLayout.Create(pixelWidth, pixelHeight, visualSize, scale, 13);
     Equal(layout.CellCount, 13, "eight masks plus five existing raster layers");
-    Equal(layout.BrushScale.X, visualSize.X / pixelWidth, "same X projection as standalone Fill surface");
-    Equal(layout.BrushScale.Y, visualSize.Y / pixelHeight, "same Y projection as standalone Fill surface");
-    if (layout.Width > 16384 || layout.Height > 16384) throw new Exception("Device bitmap extent exceeded");
+    Equal(layout.PixelWidth, pixelWidth, "original update width");
+    Equal(layout.PixelHeight, pixelHeight, "original update height");
+    if (layout.Width > 16777216 || layout.Height > 16777216)
+        throw new Exception("Virtual surface intrinsic extent exceeded");
+    if (layout.Width != pixelWidth && layout.Height != pixelHeight)
+        throw new Exception("Packing added exterior padding to both original axes");
+    Equal(Math.Max(layout.Width, layout.Height),
+        Math.Max(Math.Max(pixelWidth, pixelHeight), 13 * (Math.Min(pixelWidth, pixelHeight) + 4)),
+        "strip fits the original checked noise-array domain");
+
+    var q = Math.Min((double)visualSize.X / pixelWidth, (double)visualSize.Y / pixelHeight);
+    var offsetX = (visualSize.X - pixelWidth * q) / 2;
+    var offsetY = (visualSize.Y - pixelHeight * q) / 2;
+    const double floatUnit = 1d / 8388608;
+    Near(layout.BrushScale.X, q, 2 * floatUnit * q, "uniform X projection");
+    Near(layout.BrushScale.Y, q, 2 * floatUnit * q, "uniform Y projection");
+    Equal(layout.BrushScale.X, layout.BrushScale.Y, "aspect ratio preserved");
+    Near(layout.BrushOffset.X, offsetX, 2 * floatUnit * visualSize.X, "centered X letterbox");
+    Near(layout.BrushOffset.Y, offsetY, 2 * floatUnit * visualSize.Y, "centered Y letterbox");
 
     var cells = Enumerable.Range(0, 13).Select(layout.Cell).ToArray();
+    var stackAlongX = cells[1].PixelX != cells[0].PixelX;
+    if (pixelWidth == 1 && pixelHeight == 1)
+        Equal(stackAlongX ? visualSize.X : visualSize.Y, Math.Min(visualSize.X, visualSize.Y),
+            "one-pixel strip uses the Uniform fit axis");
+
     for (var index = 0; index < cells.Length; index++)
     {
         var cell = cells[index];
-        if (cell.PixelX < 2 || cell.PixelY < 2 || cell.PixelX + pixelWidth + 2 > layout.Width
-            || cell.PixelY + pixelHeight + 2 > layout.Height) throw new Exception("Cell or padding outside bitmap");
+        if (cell.PixelX < 0 || cell.PixelY < 0
+            || cell.PixelX + pixelWidth > layout.Width || cell.PixelY + pixelHeight > layout.Height)
+            throw new Exception("Original updateRect outside virtual surface");
+        if (stackAlongX)
+        {
+            Equal(cell.PixelY, 0, "no exterior padding on Y");
+            if (cell.PixelX < 2 || cell.PixelX + pixelWidth + 2 > layout.Width)
+                throw new Exception("X gutters outside virtual surface");
+        }
+        else
+        {
+            Equal(cell.PixelX, 0, "no exterior padding on X");
+            if (cell.PixelY < 2 || cell.PixelY + pixelHeight + 2 > layout.Height)
+                throw new Exception("Y gutters outside virtual surface");
+        }
         for (var other = index + 1; other < cells.Length; other++)
         {
             var next = cells[other];
             var separated = cell.PixelX + pixelWidth + 4 <= next.PixelX || next.PixelX + pixelWidth + 4 <= cell.PixelX
                 || cell.PixelY + pixelHeight + 4 <= next.PixelY || next.PixelY + pixelHeight + 4 <= cell.PixelY;
-            if (!separated) throw new Exception("Raster cells do not have independent transparent gutters");
+            if (!separated) throw new Exception("Cell updateRects overlap their transparent gutters");
         }
 
-        // Float matrix rounding bound is based on the tested atlas extent, not renderer output.
-        var pixelTolerance = 4 * Math.Pow(2, -23) * Math.Max(layout.Width, layout.Height);
-        var visualTolerance = pixelTolerance * Math.Max(layout.BrushScale.X, layout.BrushScale.Y);
-        foreach (var local in new[] { new Vector2(0.5f, 0.5f), new Vector2(pixelWidth / 2f, pixelHeight / 2f), new Vector2(pixelWidth - 0.5f, pixelHeight - 0.5f) })
+        // Float matrix error bounds qualify this managed projection only.
+        // BeginDraw offsets, native clipping and filtering are not simulated.
+        var toleranceX = 4 * floatUnit * Math.Max(1, (cell.PixelX + pixelWidth) * q + Math.Abs(offsetX));
+        var toleranceY = 4 * floatUnit * Math.Max(1, (cell.PixelY + pixelHeight) * q + Math.Abs(offsetY));
+        foreach (var (x, y) in new[]
         {
-            var drawPoint = Vector2.Transform(local / (float)scale, Matrix3x2.CreateTranslation(cell.DrawingOffset));
-            Near(drawPoint.X * scale, cell.PixelX + local.X, pixelTolerance, "local drawing X into pixel cell");
-            Near(drawPoint.Y * scale, cell.PixelY + local.Y, pixelTolerance, "local drawing Y into pixel cell");
-            var atlasPoint = new Vector2((cell.PixelX + local.X) * layout.BrushScale.X, (cell.PixelY + local.Y) * layout.BrushScale.Y);
+            (0.5, 0.5), (pixelWidth / 2d, pixelHeight / 2d),
+            (pixelWidth - 0.5, pixelHeight - 0.5),
+        })
+        {
+            var atlasPoint = new Vector2(
+                (float)((cell.PixelX + x) * layout.BrushScale.X + layout.BrushOffset.X),
+                (float)((cell.PixelY + y) * layout.BrushScale.Y + layout.BrushOffset.Y));
             var projected = Vector2.Transform(atlasPoint, cell.EffectTransform);
-            Near(projected.X, local.X * visualSize.X / pixelWidth, visualTolerance, "effect X extracts the original projected pixel");
-            Near(projected.Y, local.Y * visualSize.Y / pixelHeight, visualTolerance, "effect Y extracts the original projected pixel");
-            if (cell.PixelX + local.X - 0.5 < cell.PixelX - 2 || cell.PixelX + local.X + 0.5 > cell.PixelX + pixelWidth + 2
-                || cell.PixelY + local.Y - 0.5 < cell.PixelY - 2 || cell.PixelY + local.Y + 0.5 > cell.PixelY + pixelHeight + 2)
-                throw new Exception("Linear sample footprint reaches another cell");
+            Near(projected.X, x * q + offsetX, toleranceX, "cell-local Uniform X projection");
+            Near(projected.Y, y * q + offsetY, toleranceY, "cell-local Uniform Y projection");
         }
+
+        // Across the whole viewport, a linear half-pixel footprint on the strip
+        // axis stays in this cell or its gutters, including tiny letterboxes.
+        var origin = stackAlongX ? cell.PixelX : cell.PixelY;
+        var extent = stackAlongX ? pixelWidth : pixelHeight;
+        var visual = stackAlongX ? visualSize.X : visualSize.Y;
+        var brushScale = stackAlongX ? layout.BrushScale.X : layout.BrushScale.Y;
+        var brushOffset = stackAlongX ? layout.BrushOffset.X : layout.BrushOffset.Y;
+        var translation = stackAlongX ? cell.EffectTransform.M31 : cell.EffectTransform.M32;
+        var minimumSample = (-brushOffset - (double)translation) / brushScale;
+        var maximumSample = (visual - (double)brushOffset - translation) / brushScale;
+        var samplingTolerance = 8 * floatUnit * Math.Max(1, origin + extent);
+        if (minimumSample - 0.5 < origin - 2 - samplingTolerance
+            || maximumSample + 0.5 > origin + extent + 2 + samplingTolerance)
+            throw new Exception("Viewport sampling can reach a neighboring cell");
     }
     Invalid(() => layout.Cell(-1));
     Invalid(() => layout.Cell(13));
 }
 
-var constrained = SheetAtlasLayout.Create(1000, 1000, new(1000, 1000), 1, 13, 4096);
-Equal(constrained.Width, 4016, "four columns are required by device limit");
-Equal(constrained.Height, 4016, "four rows are required by device limit");
-Invalid(() => SheetAtlasLayout.Create(1000, 1000, new(1000, 1000), 1, 13, 3000));
-Invalid(() => SheetAtlasLayout.Create(0, 812, new(375, 812), 1, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 0, new(375, 812), 1, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(float.NaN, 812), 1, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 0), 1, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 0, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), double.NaN, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1e-200, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), double.MaxValue, 13, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1, 0, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1, int.MaxValue, 16384));
-Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1, 13, 0));
-try { SheetAtlasLayout.Create(int.MaxValue, 812, new(375, 812), 1, 13, 16384); throw new Exception("Stride overflow accepted"); }
-catch (OverflowException) { }
-Console.WriteLine("Sheet atlas INERT managed geometry: PASS (exact levels/stops, cell isolation, DPI/ceil mapping, checked capacity)");
+var sizes = new[]
+{
+    (375d, 812d, 1d), (375d, 812d, 1.25d), (375.25d, 749.5d, 1.25d),
+    (375.3d, 812.2d, 1.5d), (500.2d, 96.4d, 1.75d), (1920d, 1080d, 2d),
+    (7680d, 4320d, 2d), (7680d, 4320d, 3d),
+    (1d, 64d, 1d), (64d, 1d, 1d), (0.000001d, 64d, 1d), (64d, 0.000001d, 1d),
+    (1d, 64.125d, 1d), (64.125d, 1d, 1d), (0.000001d, 1.1d, 1d), (1.1d, 0.000001d, 1d),
+    (1d, 1d, 1d), (0.75d, 0.125d, 1d), (0.125d, 0.75d, 1d),
+    (0.99999d, 0.99999d, 1d), (1e-20d, 0.8d, 1d), (0.8d, 1e-20d, 1d),
+    (0.5d, 0.25d, 2d), (0.25d, 0.5d, 2d),
+    (4096d, 4096d, 1d), (6016d, 3384d, 1d), (3384d, 6016d, 1d),
+    (16384d, 16384d, 1d), (23170d, 23170d, 1d),
+    (16777216d, 31d, 1d), (31d, 16777216d, 1d),
+    (16777216d, 1d, 1d), (1d, 16777216d, 1d),
+};
+foreach (var (width, height, scale) in sizes)
+{
+    var pixelWidth = checked((int)Math.Ceiling(width * scale));
+    var pixelHeight = checked((int)Math.Ceiling(height * scale));
+    Atlas(pixelWidth, pixelHeight, new((float)width, (float)height), scale);
+}
+
+var large = SheetAtlasLayout.Create(4096, 4096, new(4096, 4096), 1, 13);
+Equal(large.Width, 4096, "original 4096-pixel long axis retained");
+Equal(large.Height, 53300, "virtual strip is not capped by the 16384-pixel dense extent");
+var elongated = SheetAtlasLayout.Create(16777216, 31, new(16777216, 31), 1, 13);
+Equal(elongated.Width, 16777216, "intrinsic long-axis boundary has no added padding");
+Equal(elongated.Height, 455, "only the short axis is padded and packed");
+
+foreach (var invalid in new[] { 0, -1, 16777217, int.MaxValue })
+{
+    Invalid(() => SheetAtlasLayout.Create(invalid, 1, new(1, 1), 1, 13));
+    Invalid(() => SheetAtlasLayout.Create(1, invalid, new(1, 1), 1, 13));
+}
+foreach (var invalid in new[] { float.NaN, float.PositiveInfinity, float.NegativeInfinity, 0, -1 })
+{
+    Invalid(() => SheetAtlasLayout.Create(375, 812, new(invalid, 812), 1, 13));
+    Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, invalid), 1, 13));
+}
+foreach (var invalid in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity, 0, -1, 1e-200, 1e-40, double.MaxValue })
+    Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), invalid, 13));
+Invalid(() => SheetAtlasLayout.Create(16777216, 1, new(float.Epsilon, 1), 1, 13));
+Invalid(() => SheetAtlasLayout.Create(1, 1, new(float.MaxValue, float.MaxValue), 1, 13));
+Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1, 0));
+Invalid(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1, -1));
+Invalid(() => SheetAtlasLayout.Create(1, 1, new(1, 1), 1, 3355444));
+
+static void Overflow(Action action)
+{
+    try { action(); }
+    catch (OverflowException) { return; }
+    throw new Exception("Original checked noise/strip overflow was accepted");
+}
+Overflow(() => SheetAtlasLayout.Create(23171, 23171, new(23171, 23171), 1, 13));
+Overflow(() => SheetAtlasLayout.Create(16777216, 32, new(16777216, 32), 1, 13));
+Overflow(() => SheetAtlasLayout.Create(375, 812, new(375, 812), 1, int.MaxValue));
+Console.WriteLine($"Sheet virtual atlas INERT managed geometry: PASS ({sizes.Length} size/DPI cases, authored Uniform, original domain, gutters, malformed inputs)");

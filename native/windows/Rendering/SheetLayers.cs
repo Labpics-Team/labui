@@ -301,7 +301,7 @@ public sealed class SheetLayers : Grid
             }
 
             var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale,
-                SheetBlurProfile.Levels.Length + 5, checked((int)device!.MaximumBitmapSizeInPixels));
+                SheetBlurProfile.Levels.Length + 5);
             List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
@@ -381,29 +381,25 @@ public sealed class SheetLayers : Grid
             var graph = Over(sheet, Layer(border));
             if (atlasDrawings.Count != atlas.CellCount)
                 throw new InvalidOperationException("Sheet atlas требует все authored raster-слои.");
-            var atlasSurface = result.Own(graphics!.CreateDrawingSurface(new Size(atlas.Width, atlas.Height),
+            var atlasSurface = result.Own(graphics!.CreateVirtualDrawingSurface(
+                new Windows.Graphics.SizeInt32 { Width = atlas.Width, Height = atlas.Height },
                 DirectXPixelFormat.B8G8R8A8UIntNormalized, DirectXAlphaMode.Premultiplied));
-            using (var drawing = CanvasComposition.CreateDrawingSession(atlasSurface,
-                new Rect(0, 0, atlas.Width, atlas.Height), (float)(96 * scale)))
+            void DrawAtlasCell(int index)
             {
+                var cell = atlas.Cell(index);
+                using var drawing = CanvasComposition.CreateDrawingSession(atlasSurface,
+                    new Rect(cell.PixelX, cell.PixelY, pixelWidth, pixelHeight), (float)(96 * scale));
                 drawing.Clear(Color.FromArgb(0, 0, 0, 0));
-                var originalTransform = drawing.Transform;
-                for (var index = 0; index < atlasDrawings.Count; index++)
-                {
-                    drawing.Transform = Matrix3x2.CreateTranslation(atlas.Cell(index).DrawingOffset) * originalTransform;
-                    try
-                    {
-                        using var clip = drawing.CreateLayer(1, new Rect(0, 0, pixelWidth / scale, pixelHeight / scale));
-                        atlasDrawings[index](drawing);
-                    }
-                    finally { drawing.Transform = originalTransform; }
-                }
+                // Win2D включает returned BeginDraw offset; callback рисует локально.
+                atlasDrawings[index](drawing);
             }
+            for (var index = 0; index < atlasDrawings.Count; index++) DrawAtlasCell(index);
             var atlasBrush = result.Own(compositor.CreateSurfaceBrush(atlasSurface));
             atlasBrush.Stretch = CompositionStretch.None;
             atlasBrush.HorizontalAlignmentRatio = 0;
             atlasBrush.VerticalAlignmentRatio = 0;
             atlasBrush.Scale = atlas.BrushScale;
+            atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
                 (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma));
