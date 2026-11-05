@@ -22,9 +22,14 @@ test('Sheet factories share the original backdrop and atlas with fresh source ed
     /IGraphicsEffectSource Source\(string name\)\s*=>\s*new CompositionEffectSourceParameter\(name\)/,
   );
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
+  assert.match(build, /string LayerSource\(int index\)\s*=>\s*\$"atlas\{index\}";/);
   assert.match(
     build,
-    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
+    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\(LayerSource\(index\)\)/,
+  );
+  assert.match(
+    build,
+    /\(string Name, CompositionBrush Source\) LayerBinding\(int index\)\s*=>\s*\(LayerSource\(index\), atlasBrush\);/,
   );
   assert.match(
     build,
@@ -33,11 +38,11 @@ test('Sheet factories share the original backdrop and atlas with fresh source ed
   assert.match(build, /var name = \$"ghostPair\{index \/ 2\}";/);
   assert.match(
     build,
-    /Brush\(name, pair, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+    /Brush\(name, pair, \("backdrop", backdropBrush\),\s*LayerBinding\(ghostMasks\[index\]\), LayerBinding\(ghostMasks\[index \+ 1\]\)\)/,
   );
   assert.match(
     build,
-    /Brush\("body", body, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+    /Brush\("body", body, \("backdrop", backdropBrush\),\s*LayerBinding\(noise\), LayerBinding\(bodyMask\)\)/,
   );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
   assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
@@ -98,7 +103,7 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
   );
   assert.match(
     build,
-    /Brush\("ghost", ghost, \("progressive", progressiveBrush\), \("atlas", atlasBrush\)\)/,
+    /Brush\("ghost", ghost, \("progressive", progressiveBrush\),\s*LayerBinding\(noise\), LayerBinding\(ghostMask\)\)/,
   );
   assert.match(build, /Over\(Source\("progressive"\), Paint\(Ghost!\)\)/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
@@ -133,7 +138,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, \("ghost", ghostBrush\), \("body", bodyBrush\), \("atlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, \("ghost", ghostBrush\), \("body", bodyBrush\),\s*LayerBinding\(outer\), LayerBinding\(border\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(
