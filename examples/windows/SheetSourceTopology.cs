@@ -28,7 +28,7 @@ internal static class SheetSourceTopology
                         ["index"] = Integer(row["index"], 0, Limit - 1),
                         ["inputs"] = Integer(row["inputs"], 1, 8),
                         ["combine"] = Known(row["combine"], "Add", "Arithmetic", "BalancedAdd", "Gaussian"),
-                ["source"] = Known(row["source"], "shared", "repeat", "distinct", "atlas"),
+                        ["source"] = Known(row["source"], "shared", "repeat", "distinct"),
                         ["named"] = Boolean(row["named"]),
                         ["blur"] = Boolean(row["blur"]),
                         ["mask"] = Boolean(row["mask"]),

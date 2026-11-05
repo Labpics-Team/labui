@@ -14,7 +14,7 @@ const profile = await readFile(
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
 
-test('Sheet graph shares the original backdrop and atlas with cell source edges', () => {
+test('Sheet graph shares the original backdrop and atlas through fresh source edges', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assert.equal([...source.matchAll(/compositor\.CreateSpriteVisual\(\)/g)].length, 1);
   assert.match(
@@ -22,19 +22,9 @@ test('Sheet graph shares the original backdrop and atlas with cell source edges'
     /IGraphicsEffectSource Source\(string name\)\s*=>\s*new CompositionEffectSourceParameter\(name\)/,
   );
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
-  assert.match(build, /string LayerSource\(int index\)\s*=>\s*\$"atlas\{index\}";/);
-  assert.match(build, /IGraphicsEffectSource\[\] layerSources = new IGraphicsEffectSource\[atlas\.CellCount\];/);
   assert.match(
     build,
-    /for \(var index = 0; index < layerSources\.Length; index\+\+\) layerSources\[index\] = Source\(LayerSource\(index\)\);/,
-  );
-  assert.match(
-    build,
-    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = layerSources\[index\]/,
-  );
-  assert.match(
-    build,
-    /\(string Name, CompositionBrush Source\) LayerBinding\(int index\)\s*=>\s*\(LayerSource\(index\), atlasBrush\);/,
+    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
   );
   assert.match(
     build,
@@ -42,13 +32,10 @@ test('Sheet graph shares the original backdrop and atlas with cell source edges'
   );
   assert.match(
     build,
-    /List<\(string Name, CompositionBrush Source\)> bindings = \[\("backdrop", backdropBrush\)\];/,
+    /result\.Visual\.Brush = Brush\("final", graph, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\);/,
   );
-  assert.match(
-    build,
-    /for \(var index = 0; index < atlas\.CellCount; index\+\+\) bindings\.Add\(LayerBinding\(index\)\);/,
-  );
-  assert.equal([...build.matchAll(/Brush\("final", graph, bindings\.ToArray\(\)\)/g)].length, 1);
+  assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
+  assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
   assert.doesNotMatch(build, /ghostPair|pairs|progressiveBrush|ghostBrush|bodyBrush|Source\("progressive"\)/);
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
   assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
@@ -133,7 +120,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, bindings\.ToArray\(\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(

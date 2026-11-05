@@ -30,8 +30,7 @@ internal static class SheetSourceTopologyProbe
         new(1, false, "repeat", Mask: false, LevelStart: 7),
         new(1, false, "repeat", Mask: false, Body: true),
         new(2, true, "repeat", LevelStart: 6),
-        // Прежний noBlur8-repeat уже сохранён в hosted logs. Меняется только имя mask leaf.
-        new(8, true, "atlas", Blur: false),
+        new(8, true, "repeat", Blur: false),
     ];
 
     internal static CompositionEffectFactory CreateFactory(Compositor compositor,
@@ -134,7 +133,7 @@ internal static class SheetSourceTopologyProbe
                 IGraphicsEffectSource branch = spec.Source switch
                 {
                     "shared" => shared,
-                    "repeat" or "atlas" => new CompositionEffectSourceParameter("backdrop"),
+                    "repeat" => new CompositionEffectSourceParameter("backdrop"),
                     _ => new CompositionEffectSourceParameter($"backdrop{input}"),
                 };
                 if (spec.Blur && (input > 0 || sigmas is not null)) branch = Own(new GaussianBlurEffect
@@ -146,8 +145,7 @@ internal static class SheetSourceTopologyProbe
                 if (spec.Mask) branch = Own(new AlphaMaskEffect
                 {
                     Source = branch,
-                    AlphaMask = new CompositionEffectSourceParameter(spec.Source == "atlas"
-                        ? "atlas" : $"mask{spec.LevelStart + input}"),
+                    AlphaMask = new CompositionEffectSourceParameter($"mask{spec.LevelStart + input}"),
                 });
                 if (balanced is not null) balanced.Add(branch);
                 else if (add is not null) add.Sources.Add(branch);

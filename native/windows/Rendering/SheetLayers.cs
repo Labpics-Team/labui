@@ -325,12 +325,9 @@ public sealed class SheetLayers : Grid
             }
             IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
-            string LayerSource(int index) => $"atlas{index}";
-            IGraphicsEffectSource[] layerSources = new IGraphicsEffectSource[atlas.CellCount];
-            for (var index = 0; index < layerSources.Length; index++) layerSources[index] = Source(LayerSource(index));
             IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
             {
-                Source = layerSources[index],
+                Source = Source("atlas"),
                 TransformMatrix = atlas.Cell(index).EffectTransform,
                 InterpolationMode = CanvasImageInterpolation.Linear,
                 BorderMode = EffectBorderMode.Soft,
@@ -391,7 +388,6 @@ public sealed class SheetLayers : Grid
             atlasBrush.VerticalAlignmentRatio = 0;
             atlasBrush.Scale = atlas.BrushScale;
             atlasBrush.Offset = atlas.BrushOffset;
-            (string Name, CompositionBrush Source) LayerBinding(int index) => (LayerSource(index), atlasBrush);
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffectSource graph,
                 params (string Name, CompositionBrush Source)[] bindings)
@@ -444,9 +440,7 @@ public sealed class SheetLayers : Grid
             var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            List<(string Name, CompositionBrush Source)> bindings = [("backdrop", backdropBrush)];
-            for (var index = 0; index < atlas.CellCount; index++) bindings.Add(LayerBinding(index));
-            result.Visual.Brush = Brush("final", graph, bindings.ToArray());
+            result.Visual.Brush = Brush("final", graph, ("backdrop", backdropBrush), ("atlas", atlasBrush));
             return result;
         }
         catch (Exception error)

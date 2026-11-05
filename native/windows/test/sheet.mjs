@@ -116,7 +116,7 @@ function topologyInfo(value) {
       index: integer(row.index, 0, 19),
       inputs: integer(row.inputs, 1, 8),
       combine: known(row.combine, ['Add', 'Arithmetic', 'BalancedAdd', 'Gaussian']),
-      source: known(row.source, ['shared', 'repeat', 'distinct', 'atlas']),
+      source: known(row.source, ['shared', 'repeat', 'distinct']),
       named: boolean(row.named),
       blur: boolean(row.blur),
       mask: boolean(row.mask),
