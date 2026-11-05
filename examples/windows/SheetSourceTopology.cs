@@ -8,7 +8,7 @@ internal static class SheetSourceTopology
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
-    internal const string TransformsDataKey = "LabUI.SheetFactoryTransforms";
+    internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -69,15 +69,15 @@ internal static class SheetSourceTopology
         return null;
     }
 
-    // Вместе с borrowed Transform2D sampler удаляется после RCA/owner fix.
-    internal static Dictionary<string, object?>[]? ReadTransforms(Exception? error)
+    // Вместе с borrowed AlphaMask sampler удаляется после RCA/owner fix.
+    internal static Dictionary<string, object?>[]? ReadBranches(Exception? error)
     {
         try
         {
             for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
             {
-                if (!error.Data.Contains(TransformsDataKey)) continue;
-                if (error.Data[TransformsDataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
+                if (!error.Data.Contains(BranchesDataKey)) continue;
+                if (error.Data[BranchesDataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
                     return null;
                 var projected = new Dictionary<string, object?>[2];
                 for (var index = 0; index < 2; index++)

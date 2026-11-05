@@ -10,7 +10,7 @@ namespace LabUI.WinUI.Rendering;
 internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
-    internal const string TransformsDataKey = "LabUI.SheetFactoryTransforms";
+    internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -52,15 +52,15 @@ internal static class SheetSourceTopologyProbe
         }
     }
 
-    // Borrowed Transform2D из реальной ghostPair0; удалить после RCA/owner fix.
-    internal static void RecordTransforms(Exception primary, Compositor compositor,
+    // Borrowed AlphaMask-ветви реальной ghostPair0; удалить после RCA/owner fix.
+    internal static void RecordBranches(Exception primary, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second)
     {
         try
         {
-            var firstResult = SampleTransform(compositor, first);
-            var secondResult = SampleTransform(compositor, second);
-            primary.Data[TransformsDataKey] = new Dictionary<string, object?>[]
+            var firstResult = SampleFactory(compositor, first);
+            var secondResult = SampleFactory(compositor, second);
+            primary.Data[BranchesDataKey] = new Dictionary<string, object?>[]
             {
                 new() { ["hresult"] = firstResult.HResult, ["cleanupHresult"] = firstResult.CleanupHResult },
                 new() { ["hresult"] = secondResult.HResult, ["cleanupHresult"] = secondResult.CleanupHResult },
@@ -69,15 +69,15 @@ internal static class SheetSourceTopologyProbe
         catch { }
     }
 
-    private static (int? HResult, int? CleanupHResult) SampleTransform(Compositor compositor,
-        IGraphicsEffect transform)
+    private static (int? HResult, int? CleanupHResult) SampleFactory(Compositor compositor,
+        IGraphicsEffect graph)
     {
         CompositionEffectFactory? factory = null;
         int? hresult = null;
         int? cleanupHresult = null;
         try
         {
-            factory = compositor.CreateEffectFactory(transform);
+            factory = compositor.CreateEffectFactory(graph);
             hresult = 0;
         }
         catch (Exception error) { hresult = error.HResult; }

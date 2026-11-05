@@ -152,7 +152,7 @@ function factoryInfo(value) {
   return name !== null && operation !== null ? { name, operation } : null;
 }
 
-function transformsInfo(value) {
+function branchesInfo(value) {
   if (!Array.isArray(value) || value.length !== 2) return null;
   const integerOrNull = (input) =>
     input === null || (Number.isInteger(input) && input >= -2147483648 && input <= 2147483647);
@@ -255,7 +255,7 @@ function observationError(value) {
       : {}),
     ...(Object.hasOwn(value, 'topology') ? { topology: topologyInfo(value.topology) } : {}),
     ...(Object.hasOwn(value, 'factory') ? { factory: factoryInfo(value.factory) } : {}),
-    ...(Object.hasOwn(value, 'transforms') ? { transforms: transformsInfo(value.transforms) } : {}),
+    ...(Object.hasOwn(value, 'branches') ? { branches: branchesInfo(value.branches) } : {}),
   };
 }
 
