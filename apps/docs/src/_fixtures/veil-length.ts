@@ -46,8 +46,74 @@ let shadow:
     }
   | undefined;
 
+let slotted:
+  | {
+      root: ShadowRoot;
+      surface: HTMLElement;
+      reference: HTMLElement;
+      first: HTMLElement;
+      firstSlot: HTMLSlotElement;
+      secondSlot: HTMLSlotElement;
+      release: () => void;
+    }
+  | undefined;
+
 const api = {
   snapshot,
+  startSlot(appLevel: boolean, materialClass: boolean) {
+    if (slotted) throw new Error('Слот уже подключён');
+    release();
+    const shell = document.createElement('div');
+    document.body.appendChild(shell);
+    const root = shell.attachShadow({ mode: 'open' });
+    root.innerHTML = `<style>${materialCss}
+      .first{--lab-veil-strength:32px}
+      .first.alt{--lab-veil-strength:48px}
+      .first.invalid{--lab-veil-feather:50%}
+      .second{--lab-veil-strength:40px}
+      </style><div class="first"><slot name="first"></slot></div><div class="second"><slot name="second"></slot></div>`;
+    const surface = document.createElement('div');
+    surface.className = materialClass ? 'lab-material veil' : 'veil';
+    surface.dataset.veil = 'bottom';
+    surface.slot = 'first';
+    const reference = document.createElement('div');
+    reference.className = 'reference';
+    reference.slot = 'first';
+    shell.append(surface, reference);
+    const first = root.querySelector<HTMLElement>('.first');
+    const firstSlot = root.querySelector<HTMLSlotElement>('.first slot');
+    const secondSlot = root.querySelector<HTMLSlotElement>('.second slot');
+    if (!first || !firstSlot || !secondSlot) throw new Error('Нет доступных обёрток слота');
+    slotted = {
+      root,
+      surface,
+      reference,
+      first,
+      firstSlot,
+      secondSlot,
+      release: mountMaterialRuntime(appLevel ? document : surface),
+    };
+  },
+  slotSnapshot() {
+    if (!slotted) throw new Error('Нет слота');
+    return {
+      ...snapshot(slotted.surface, slotted.reference),
+      slotContext: slotted.surface.assignedSlot?.parentElement?.className,
+    };
+  },
+  slotClass(value: '' | 'alt' | 'invalid') {
+    if (!slotted) throw new Error('Нет слота');
+    slotted.first.className = `first ${value}`.trim();
+  },
+  slotRename(restore = false) {
+    if (!slotted) throw new Error('Нет слота');
+    slotted.firstSlot.name = restore ? 'first' : 'retired';
+    slotted.secondSlot.name = restore ? 'second' : 'first';
+  },
+  disposeSlot() {
+    if (!slotted) throw new Error('Нет слота');
+    slotted.release();
+  },
   startShadow(mode: ShadowRootMode) {
     const shell = document.createElement('div');
     document.body.appendChild(shell);

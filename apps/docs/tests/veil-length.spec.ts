@@ -26,32 +26,139 @@ async function strength(page: Page, expected: number): Promise<void> {
     .toBeLessThanOrEqual(0.02);
 }
 
-async function disableLengthCSS(page: Page, missing: 'registration' | 'queries'): Promise<void> {
+async function disableLengthCSS(
+  page: Page,
+  missing: 'registration' | 'queries' | 'both',
+): Promise<void> {
   await page.addInitScript((capability) => {
-    const observed = { capability, sheets: 0, removed: 0 };
+    const observed = { capability, sheets: 0, removed: 0, properties: 0, queries: 0 };
     Object.defineProperty(window, '__veilCSSDouble', { value: observed });
-    if (capability === 'registration') {
+    if (capability === 'registration' || capability === 'both') {
       Object.defineProperty(CSS, 'registerProperty', { configurable: true, value: undefined });
     }
     const appendChild = Node.prototype.appendChild;
     Node.prototype.appendChild = function <T extends Node>(node: T): T {
+      const result = appendChild.call(this, node) as T;
       if (
         node instanceof HTMLStyleElement &&
         node.classList.contains('lab-material__length-types')
       ) {
-        const rule =
-          capability === 'registration'
-            ? /@property\s+[^{}]+\{[^{}]*\}/g
-            : /@container\s+style\([^)]*\)\{[^{}]*\{[^{}]*\}\}/g;
-        node.textContent = (node.textContent ?? '').replace(rule, () => {
-          observed.removed++;
-          return '';
-        });
+        const sheet = node.sheet;
+        if (!sheet) throw new Error('Нет исполняемой таблицы CSS-длин');
+        for (let index = sheet.cssRules.length - 1; index >= 0; index--) {
+          const current = sheet.cssRules.item(index);
+          if (!current) throw new Error('Правило CSS-длин исчезло');
+          const rule = current.cssText;
+          if (
+            (capability === 'registration' || capability === 'both') &&
+            /^@property\b/.test(rule)
+          ) {
+            sheet.deleteRule(index);
+            observed.properties++;
+            observed.removed++;
+          } else if (
+            (capability === 'queries' || capability === 'both') &&
+            /^@container\b/.test(rule)
+          ) {
+            sheet.deleteRule(index);
+            observed.queries++;
+            observed.removed++;
+          }
+        }
         observed.sheets++;
       }
-      return appendChild.call(this, node) as T;
+      return result;
     };
   }, missing);
+}
+
+for (const context of [
+  { name: 'без registration', missing: 'registration', appLevel: true, materialClass: false },
+  { name: 'без queries', missing: 'queries', appLevel: true, materialClass: false },
+  { name: 'без обеих возможностей', missing: 'both', appLevel: true, materialClass: false },
+  { name: 'полный CSS', missing: 'healthy', appLevel: true, materialClass: false },
+  { name: 'контроль .lab-material', missing: 'both', appLevel: true, materialClass: true },
+  { name: 'контроль прямого mount', missing: 'both', appLevel: false, materialClass: false },
+] as const) {
+  for (const transition of ['class', 'name', 'feather'] as const) {
+    test(`доступный контекст slotted veil: ${context.name}, ${transition}`, async ({
+      page,
+    }, info) => {
+      if (context.missing !== 'healthy') await disableLengthCSS(page, context.missing);
+      await load(page, '.scope{--lab-veil-strength:0px}');
+      await page.evaluate(
+        ({ appLevel, materialClass }) => window.__veilLength.startSlot(appLevel, materialClass),
+        context,
+      );
+      const read = () => page.evaluate(() => window.__veilLength.slotSnapshot());
+      const radius = async (expected: number) => {
+        await expect
+          .poll(async () => Math.abs((await read()).strength - expected))
+          .toBeLessThanOrEqual(0.02);
+      };
+      await radius(32);
+      const before = await read();
+      expect(before).toMatchObject({ native: 'blur(32px)', box: [200, 200], slotContext: 'first' });
+      expect(before.count).toBeGreaterThan(0);
+      const double = await page.evaluate(() => Reflect.get(window, '__veilCSSDouble'));
+      if (context.missing !== 'healthy') {
+        expect(double.sheets).toBeGreaterThan(0);
+        if (context.missing !== 'queries') expect(double.properties).toBeGreaterThanOrEqual(4);
+        if (context.missing !== 'registration') expect(double.queries).toBeGreaterThanOrEqual(4);
+      }
+      const errors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await page.evaluate((change) => {
+        if (change === 'name') window.__veilLength.slotRename();
+        else window.__veilLength.slotClass(change === 'class' ? 'alt' : 'invalid');
+      }, transition);
+      await settle(page);
+      const after = await read();
+      await info.attach('slot-transition.json', {
+        body: JSON.stringify({ before, after, double, errors }),
+        contentType: 'application/json',
+      });
+      expect(after.box).toEqual([200, 200]);
+      expect(after.native).toBe(
+        `blur(${transition === 'class' ? 48 : transition === 'name' ? 40 : 32}px)`,
+      );
+      if (transition === 'name') expect(after.slotContext).toBe('second');
+      await radius(transition === 'class' ? 48 : transition === 'name' ? 40 : 0);
+      if (transition === 'feather') {
+        expect(after.count).toBe(0);
+        await expect
+          .poll(() => errors.some((message) => message.includes('--lab-veil-feather')))
+          .toBe(true);
+      } else {
+        expect(after.count).toBeGreaterThan(0);
+        expect(errors).toEqual([]);
+      }
+      await page.evaluate(() => {
+        window.__veilLength.slotClass('');
+        window.__veilLength.slotRename(true);
+      });
+      await radius(32);
+      const recovered = await read();
+      expect(recovered.count).toBeGreaterThan(0);
+      expect(recovered.native).toBe('blur(32px)');
+      await page.evaluate(() => window.__veilLength.disposeSlot());
+      const errorCount = errors.length;
+      await page.evaluate(() => {
+        window.__veilLength.slotClass('invalid');
+        window.__veilLength.slotRename();
+      });
+      await settle(page);
+      const released = await read();
+      expect(released).toMatchObject({ count: 0, children: 0, types: 0, box: [200, 200] });
+      expect(errors).toHaveLength(errorCount);
+      await info.attach('slot-lifecycle.json', {
+        body: JSON.stringify({ recovered, released, errors }),
+        contentType: 'application/json',
+      });
+    });
+  }
 }
 
 test('rem и медиа меняют радиус при неизменном боксе поверхности', async ({ page }) => {

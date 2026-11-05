@@ -96,8 +96,10 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   if (typeof document === 'undefined') return () => {};
   const scope = root ?? document;
 
-  const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
+  const bindings = BINDINGS.filter((binding) => binding.gate());
+  const engines = bindings.map((binding) => mountEngine(binding, scope));
   if (engines.length === 0) return () => {};
+  const contextSelector = bindings.map((binding) => binding.selector).join(',');
 
   let disposed = false;
   const sync = (): void => {
@@ -123,7 +125,7 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     const visited = new Set<Node>();
     // App-level mount также видит slotted light-DOM поверхности. Их CSS-контекст
     // может проходить через доступный shadow slot вне наблюдаемого DOM-поддерева.
-    for (const start of [root, ...scope.querySelectorAll(SURFACE)]) {
+    for (const start of [root, ...scope.querySelectorAll(contextSelector)]) {
       let node: Node | null = start;
       while (node && !visited.has(node)) {
         visited.add(node);
