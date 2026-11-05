@@ -81,6 +81,7 @@ const BINDINGS: readonly EngineBinding[] = [
     gate: supportsBackdropBlur,
     selector: VEIL,
     wants: () => true,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
     attach: attachVeil,
   },
@@ -173,9 +174,8 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   }
   sync();
 
-  // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
-  // движка обязан сняться сам, листовые деградации его не перебивают). Собираем
-  // объединение медиа-запросов всех смонтированных движков.
+  // Смена системного контекста перечитывает материал даже без сигнала от CSS-бокса.
+  // Один набор подписок обслуживает все смонтированные движки и снимается при dispose.
   const mediaListeners: MediaQueryList[] = [];
   if (typeof matchMedia !== 'undefined') {
     const queries = new Set(engines.flatMap((e) => [...e.mediaQueries]));

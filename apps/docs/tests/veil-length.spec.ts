@@ -1,8 +1,8 @@
 import { type Page, expect, test } from '@playwright/test';
 
-async function load(page: Page): Promise<void> {
+async function load(page: Page, css?: string): Promise<void> {
   await page.setViewportSize({ width: 800, height: 600 });
-  await page.goto('/_fixtures/veil-length.html');
+  await page.goto(`/_fixtures/veil-length.html${css ? `?css=${encodeURIComponent(css)}` : ''}`);
   await page.waitForFunction(() => !!window.__veilLength);
 }
 
@@ -24,6 +24,34 @@ async function strength(page: Page, expected: number): Promise<void> {
       return Math.abs(actual - expected);
     })
     .toBeLessThanOrEqual(0.02);
+}
+
+async function disableLengthCSS(page: Page, missing: 'registration' | 'queries'): Promise<void> {
+  await page.addInitScript((capability) => {
+    const observed = { capability, sheets: 0, removed: 0 };
+    Object.defineProperty(window, '__veilCSSDouble', { value: observed });
+    if (capability === 'registration') {
+      Object.defineProperty(CSS, 'registerProperty', { configurable: true, value: undefined });
+    }
+    const appendChild = Node.prototype.appendChild;
+    Node.prototype.appendChild = function <T extends Node>(node: T): T {
+      if (
+        node instanceof HTMLStyleElement &&
+        node.classList.contains('lab-material__length-types')
+      ) {
+        const rule =
+          capability === 'registration'
+            ? /@property\s+[^{}]+\{[^{}]*\}/g
+            : /@container\s+style\([^)]*\)\{[^{}]*\{[^{}]*\}\}/g;
+        node.textContent = (node.textContent ?? '').replace(rule, () => {
+          observed.removed++;
+          return '';
+        });
+        observed.sheets++;
+      }
+      return appendChild.call(this, node) as T;
+    };
+  }, missing);
 }
 
 test('rem и медиа меняют радиус при неизменном боксе поверхности', async ({ page }) => {
@@ -145,25 +173,7 @@ test('media-смена auto на ошибку feather снимает эффек�
 
 for (const missing of ['registration', 'queries'] as const) {
   test(`прежние px-настройки сохраняются без ${missing}`, async ({ page }) => {
-    await page.addInitScript((capability) => {
-      if (capability === 'registration') {
-        Object.defineProperty(CSS, 'registerProperty', { configurable: true, value: undefined });
-      } else {
-        const computedStyle = window.getComputedStyle.bind(window);
-        window.getComputedStyle = (element, pseudo) =>
-          new Proxy(computedStyle(element, pseudo), {
-            get(target, key) {
-              if (key === 'getPropertyValue') {
-                return (property: string) =>
-                  property === '--_lab-material-length-supported'
-                    ? ''
-                    : target.getPropertyValue(property);
-              }
-              return Reflect.get(target, key, target);
-            },
-          });
-      }
-    }, missing);
+    await disableLengthCSS(page, missing);
     const errors: string[] = [];
     page.on('console', (message) => {
       if (message.type() === 'error') errors.push(message.text());
@@ -218,6 +228,85 @@ for (const missing of ['registration', 'queries'] as const) {
       types: 0,
     });
   });
+}
+
+for (const missing of ['registration', 'queries'] as const) {
+  for (const history of [
+    {
+      name: 'px',
+      before: '--lab-veil-strength:32px',
+      after: '--lab-veil-strength:40px',
+      initial: 32,
+      final: 40,
+    },
+    {
+      name: 'число',
+      before: '--lab-veil-strength:32',
+      after: '--lab-veil-strength:40',
+      initial: 32,
+      final: 40,
+    },
+    {
+      name: 'пустой strength',
+      before: '--lab-veil-strength: ',
+      after: '--lab-veil-strength:50%',
+      initial: 24,
+      final: 0,
+      error: '--lab-veil-strength',
+    },
+    {
+      name: 'default feather',
+      before: '--lab-veil-strength:24px;--lab-veil-feather:initial',
+      after: '--lab-veil-feather:50%',
+      initial: 24,
+      final: 0,
+      error: '--lab-veil-feather',
+    },
+    {
+      name: 'auto feather',
+      before: '--lab-veil-strength:24px;--lab-veil-feather:auto',
+      after: '--lab-veil-feather:invalid',
+      initial: 24,
+      final: 0,
+      error: '--lab-veil-feather',
+    },
+  ]) {
+    test(`смена системной темы обновляет ${history.name} без ${missing}`, async ({ page }) => {
+      await disableLengthCSS(page, missing);
+      await page.emulateMedia({ colorScheme: 'light' });
+      await load(
+        page,
+        `.scope{${history.before}}@media(prefers-color-scheme:dark){.scope{${history.after}}}`,
+      );
+      await strength(page, history.initial);
+      const double = await page.evaluate(() => Reflect.get(window, '__veilCSSDouble'));
+      expect(double).toMatchObject({ capability: missing, removed: 4 });
+      const errors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await strength(page, history.final);
+      if (history.error) {
+        await expect
+          .poll(() => errors.some((message) => message.includes(history.error ?? '')))
+          .toBe(true);
+      } else {
+        expect(errors).toEqual([]);
+      }
+      expect(await page.evaluate(() => window.__veilLength.snapshot().box)).toEqual([200, 200]);
+      await page.emulateMedia({ colorScheme: 'light' });
+      await strength(page, history.initial);
+      await page.evaluate(() => window.__veilLength.dispose());
+      await page.emulateMedia({ colorScheme: 'dark' });
+      await settle(page);
+      expect(await page.evaluate(() => window.__veilLength.snapshot())).toMatchObject({
+        count: 0,
+        children: 0,
+        types: 0,
+      });
+    });
+  }
 }
 
 test('отсутствующий и пустой токены сохраняют default, а media-смена пустого на ошибку наблюдаема', async ({

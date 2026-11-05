@@ -7,9 +7,10 @@ document.head.appendChild(style);
 const scope = document.querySelector<HTMLElement>('.scope');
 const veil = document.querySelector<HTMLElement>('.veil');
 if (!scope || !veil) throw new Error('Нет поверхности для проверки длин');
-const release = mountMaterialRuntime(scope);
 const scenario = document.createElement('style');
+scenario.textContent = new URL(window.location.href).searchParams.get('css') ?? '';
 document.head.appendChild(scenario);
+const release = mountMaterialRuntime(scope);
 
 function snapshot(
   surface: HTMLElement | null = veil,
