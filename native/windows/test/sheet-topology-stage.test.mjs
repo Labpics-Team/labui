@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { decodeSheetEvidence, sheetFailureLog, validateObservation } from './sheet.mjs';
 
@@ -14,6 +15,34 @@ const sample = {
   hresult: -2147024809,
   cleanupHresult: null,
 };
+
+// Source-only: текущая factory scheme проходит оба настоящих wire-проектора.
+export function assertSheetSourceProjection(producer, projector, codec) {
+  const cases = producer.slice(
+    producer.indexOf('private static readonly Case[] cases'),
+    producer.indexOf('internal static CompositionEffectFactory CreateFactory'),
+  );
+  const sources = [...cases.matchAll(/new\(\d+,\s*(?:true|false),\s*"([^"]+)"/g)]
+    .map((match) => match[1]);
+  assert.equal(sources.length, 20, 'Sheet: bounded source cases missing');
+  const csharp = projector.match(/\["source"\]\s*=\s*Known\(row\["source"\],([^)]*)\)/)?.[1];
+  const javascript = codec.match(/source:\s*known\(row\.source,\s*\[([^\]]*)\]\)/)?.[1];
+  assert.ok(csharp && javascript, 'Sheet: actual source projectors missing');
+  const csharpValues = new Set([...csharp.matchAll(/"([^"]+)"/g)].map((match) => match[1]));
+  const javascriptValues = new Set([...javascript.matchAll(/'([^']+)'/g)].map((match) => match[1]));
+  assert.deepEqual([...csharpValues].sort(), [...javascriptValues].sort(), 'Sheet: source vocabularies differ');
+  for (const source of sources)
+    assert.ok(csharpValues.has(source), 'Sheet: current source scheme is lost in projection');
+}
+
+test('current Sheet factory source schemes survive both real wire projectors', async () => {
+  const files = await Promise.all([
+    readFile(new URL('../Rendering/SheetSourceTopologyProbe.cs', import.meta.url), 'utf8'),
+    readFile(new URL('../../../examples/windows/SheetSourceTopology.cs', import.meta.url), 'utf8'),
+    readFile(new URL('./sheet.mjs', import.meta.url), 'utf8'),
+  ]);
+  assertSheetSourceProjection(...files);
+});
 
 function readback(topology) {
   const observation = {
