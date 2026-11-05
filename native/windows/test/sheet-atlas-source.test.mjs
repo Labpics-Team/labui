@@ -14,12 +14,12 @@ const profile = await readFile(
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
 
-test('Sheet factories share the original backdrop and atlas with fresh owned source edges', () => {
+test('Sheet factories share the original backdrop and atlas with fresh source edges', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assert.equal([...source.matchAll(/compositor\.CreateSpriteVisual\(\)/g)].length, 1);
   assert.match(
     build,
-    /IGraphicsEffectSource Source\(string name\)\s*=>\s*result\.Own\(new CompositionEffectSourceParameter\(name\)\)/,
+    /IGraphicsEffectSource Source\(string name\)\s*=>\s*new CompositionEffectSourceParameter\(name\)/,
   );
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
   assert.match(

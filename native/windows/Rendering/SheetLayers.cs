@@ -315,7 +315,7 @@ public sealed class SheetLayers : Grid
                 atlasDrawings.Add(draw);
                 return index;
             }
-            IGraphicsEffectSource Source(string name) => result.Own(new CompositionEffectSourceParameter(name));
+            IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
             IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
             {
