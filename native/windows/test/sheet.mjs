@@ -693,7 +693,16 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
     const pngPath = join(output, `${entry.name}.png`);
     const command = spawnSync(
       cli,
-      ['ui', 'screenshot', 'Sheet', '--output', pngPath, '-w', observed.windowHandle, '--json'],
+      [
+        'ui',
+        'screenshot',
+        'SheetViewport',
+        '--output',
+        pngPath,
+        '-w',
+        observed.windowHandle,
+        '--json',
+      ],
       {
         encoding: 'utf8',
         timeout: 15000,

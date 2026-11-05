@@ -5,7 +5,8 @@
     xmlns:lab="using:LabUI.WinUI"
     Background="{ThemeResource LabPageBrush}">
   <Grid>
-    <Image x:Name="Backdrop" Source="ms-appx:///Assets/SheetBackdrop.png" Stretch="UniformToFill" />
+    <Image x:Name="Backdrop" AutomationProperties.AutomationId="SheetViewport"
+        Source="ms-appx:///Assets/SheetBackdrop.png" Stretch="UniformToFill" />
     <lab:LabSheet x:Name="Sheet" AutomationProperties.Name="Нижняя панель"
         AutomationProperties.AutomationId="Sheet" />
   </Grid>
