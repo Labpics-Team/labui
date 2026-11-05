@@ -11,7 +11,7 @@ void Check(bool condition, string message)
     if (!condition) throw new InvalidOperationException(message);
 }
 
-void CheckGraph(IGraphicsEffect graph, Dictionary<string, object?> row)
+void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected)
 {
     List<IGraphicsEffect> effects = [];
     List<IGraphicsEffectSource> branches = [];
@@ -28,7 +28,7 @@ void CheckGraph(IGraphicsEffect graph, Dictionary<string, object?> row)
         else branches.Add(source);
     }
 
-    if ((string)row["combine"]! == "Add")
+    if (expected.Combine == "Add")
     {
         Check(graph is CompositeEffect, "Подпись Add не соответствует корневому эффекту.");
         var add = (CompositeEffect)graph;
@@ -41,13 +41,13 @@ void CheckGraph(IGraphicsEffect graph, Dictionary<string, object?> row)
         Check(graph is ArithmeticCompositeEffect, "Подпись Arithmetic не соответствует корневому эффекту.");
         ReadSum(graph);
     }
-    Check(branches.Count == (int)row["inputs"]!, "Подпись числа ветвей не соответствует графу.");
+    Check(branches.Count == expected.Inputs, "Исследуемое число ветвей не соответствует графу.");
 
     List<CompositionEffectSourceParameter> sources = [];
     for (var index = 0; index < branches.Count; index++)
     {
         var branch = branches[index];
-        if ((bool)row["mask"]!)
+        if (expected.Mask)
         {
             Check(branch is AlphaMaskEffect, "Подпись mask не соответствует ветви.");
             var mask = (AlphaMaskEffect)branch;
@@ -56,7 +56,7 @@ void CheckGraph(IGraphicsEffect graph, Dictionary<string, object?> row)
                 "Маска привязана к чужому имени источника.");
             branch = mask.Source ?? throw new InvalidOperationException("Маска потеряла Source.");
         }
-        if ((bool)row["blur"]! && index > 0)
+        if (expected.Blur && index > 0)
         {
             Check(branch is GaussianBlurEffect, "Подпись blur не соответствует ветви.");
             var blur = (GaussianBlurEffect)branch;
@@ -67,17 +67,31 @@ void CheckGraph(IGraphicsEffect graph, Dictionary<string, object?> row)
         }
         Check(branch is CompositionEffectSourceParameter, "Ветвь содержит лишний эффект либо потеряла источник.");
         var source = (CompositionEffectSourceParameter)branch;
-        var expectedName = (string)row["source"]! == "distinct" ? $"backdrop{index}" : "backdrop";
+        var expectedName = expected.Source == "distinct" ? $"backdrop{index}" : "backdrop";
         Check(source.Name == expectedName, "Подпись источников не соответствует их фактическим именам.");
         sources.Add(source);
     }
     var identities = sources.Cast<object>().Distinct(ReferenceEqualityComparer.Instance).Count();
-    Check(identities == ((string)row["source"]! == "shared" ? 1 : sources.Count),
+    Check(identities == (expected.Source == "shared" ? 1 : sources.Count),
         "Подпись shared/repeat/distinct не соответствует идентичности источников.");
-    Check((bool)row["named"]!
+    Check(expected.Named
         ? effects.All(effect => effect.Name.Length > 0) && effects.Select(effect => effect.Name).Distinct().Count() == effects.Count
         : effects.All(effect => effect.Name.Length == 0), "Подпись named не соответствует именам эффектов.");
 }
+
+// Набор различителей задан до исполнения; подпись probe не выбирает ожидаемый граф.
+ExpectedGraph[] expectedCases =
+[
+    new(2, "Arithmetic", "shared"), new(3, "Arithmetic", "shared"),
+    new(3, "Arithmetic", "repeat"), new(3, "Arithmetic", "distinct"),
+    new(3, "Arithmetic", "shared", true), new(3, "Arithmetic", "distinct", true),
+    new(2, "Add", "shared"), new(3, "Add", "shared"),
+    new(8, "Add", "shared"), new(8, "Add", "distinct"),
+    new(3, "Add", "shared", true), new(8, "Add", "shared", true),
+    new(8, "Add", "distinct", true),
+    new(8, "Add", "shared", true, false),
+    new(8, "Add", "shared", true, true, false),
+];
 
 var graph = new AlphaMaskEffect
 {
@@ -109,7 +123,17 @@ foreach (var cleanupFault in new[] { false, true })
     Check(rows.Length == 15 && compositor.Calls == 16, "Probe не выполнил конечную матрицу.");
     Check(compositor.Graphs.Count == 16 && ReferenceEquals(compositor.Graphs[0], graph),
         "Compositor не получил исходный граф и все диагностические графы.");
-    for (var index = 0; index < rows.Length; index++) CheckGraph(compositor.Graphs[index + 1], rows[index]);
+    Check(expectedCases.Length == rows.Length, "Обязательный набор различителей изменился.");
+    for (var index = 0; index < rows.Length; index++)
+    {
+        var required = expectedCases[index];
+        var row = rows[index];
+        Check((int)row["inputs"]! == required.Inputs && (string)row["combine"]! == required.Combine
+            && (string)row["source"]! == required.Source && (bool)row["named"]! == required.Named
+            && (bool)row["blur"]! == required.Blur && (bool)row["mask"]! == required.Mask,
+            $"Попытка {index} не выполнила обязательный различитель.");
+        CheckGraph(compositor.Graphs[index + 1], required);
+    }
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
         "Один cleanup отказ прервал освобождение остальных ресурсов.");
     Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 15)), "Порядок матрицы потерян.");
@@ -152,6 +176,9 @@ catch (Exception error) { retained = error; }
 Check(ReferenceEquals(retained, unavailable) && SheetSourceTopology.Read(retained) is null,
     "Отказ доступа к Data заменил исходную ошибку.");
 Console.WriteLine("Sheet topology: actual probe/codec, primary preservation, finite cases and independent cleanup PASS; inert types only.");
+
+readonly record struct ExpectedGraph(int Inputs, string Combine, string Source,
+    bool Named = false, bool Blur = true, bool Mask = true);
 
 static class Fixture
 {
