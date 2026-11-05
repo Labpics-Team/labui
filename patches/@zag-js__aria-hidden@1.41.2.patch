@@ -1,5 +1,5 @@
 diff --git a/dist/walk-tree-outside.js b/dist/walk-tree-outside.js
-index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161854a09b6 100644
+index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..88e3b49fdf796ce49d70642110edcdbabe90c770 100644
 --- a/dist/walk-tree-outside.js
 +++ b/dist/walk-tree-outside.js
 @@ -1,4 +1,3 @@
@@ -7,7 +7,7 @@ index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161
  var __defProp = Object.defineProperty;
  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
  var __getOwnPropNames = Object.getOwnPropertyNames;
-@@ -16,20 +15,18 @@ var __copyProps = (to, from, except, desc) => {
+@@ -16,39 +15,42 @@ var __copyProps = (to, from, except, desc) => {
    return to;
  };
  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
@@ -28,16 +28,24 @@ index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161
 -var lockCount = 0;
 -var unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
 -var correctTargets = (parent, targets) => targets.map((target) => {
+-  if (parent.contains(target)) return target;
+-  const correctedTarget = unwrapHost(target);
+-  if (correctedTarget && parent.contains(correctedTarget)) {
+-    return correctedTarget;
 +let counterMap = /* @__PURE__ */ new WeakMap();
 +let uncontrolledNodes = /* @__PURE__ */ new WeakMap();
 +let markerMap = {};
 +let lockCount = 0;
-+const unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
++const composedParent = (node) => node.assignedSlot || node.parentNode || node.host;
++const composedChildren = (node) => {
++  if (node.localName === "slot") {
++    const assigned = node.assignedElements({ flatten: true });
++    if (assigned.length) return assigned;
+   }
++  return Array.from(node.shadowRoot?.children || node.children || []);
++};
 +const correctTargets = (parent, targets) => targets.map((target) => {
-   if (parent.contains(target)) return target;
-   const correctedTarget = unwrapHost(target);
-   if (correctedTarget && parent.contains(correctedTarget)) {
-@@ -38,17 +35,19 @@ var correctTargets = (parent, targets) => targets.map((target) => {
++  if ((0, import_dom_query.contains)(parent, target)) return target;
    console.error("[zag-js > ariaHidden] target", target, "in not contained inside", parent, ". Doing nothing");
    return null;
  }).filter((x) => Boolean(x));
@@ -55,14 +63,22 @@ index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161
    const { parentNode, markerName, controlAttribute, explicitBooleanValue, followControlledElements = true } = props;
 -  const targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
 -  markerMap[markerName] || (markerMap[markerName] = /* @__PURE__ */ new WeakMap());
-+  const targets = allTargets.filter((target) => parentNode.contains(target));
++  const targets = allTargets.filter((target) => (0, import_dom_query.contains)(parentNode, target));
 +  if (!targets.length) return () => {
 +  };
 +  markerMap[markerName] ||= /* @__PURE__ */ new WeakMap();
    const markerCounter = markerMap[markerName];
    const hiddenNodes = [];
    const elementsToKeep = /* @__PURE__ */ new Set();
-@@ -63,6 +62,7 @@ var walkTreeOutside = (originalTarget, props) => {
+@@ -56,13 +58,14 @@ var walkTreeOutside = (originalTarget, props) => {
+   const keep = (el) => {
+     if (!el || elementsToKeep.has(el)) return;
+     elementsToKeep.add(el);
+-    keep(el.parentNode);
++    keep(composedParent(el));
+   };
+   targets.forEach((target) => {
+     keep(target);
      if (followControlledElements && (0, import_dom_query.isHTMLElement)(target)) {
        (0, import_dom_query.findControlledElements)(target, (controlledElement) => {
          keep(controlledElement);
@@ -70,14 +86,26 @@ index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161
        });
      }
    });
-@@ -126,7 +126,70 @@ var walkTreeOutside = (originalTarget, props) => {
+@@ -70,7 +73,7 @@ var walkTreeOutside = (originalTarget, props) => {
+     if (!parent || elementsToStop.has(parent)) {
+       return;
+     }
+-    Array.prototype.forEach.call(parent.children, (node) => {
++    composedChildren(parent).forEach((node) => {
+       if (elementsToKeep.has(node)) {
+         deep(node);
+       } else {
+@@ -119,13 +122,114 @@ var walkTreeOutside = (originalTarget, props) => {
+     });
+     lockCount--;
+     if (!lockCount) {
+-      counterMap = /* @__PURE__ */ new WeakMap();
+       counterMap = /* @__PURE__ */ new WeakMap();
+       uncontrolledNodes = /* @__PURE__ */ new WeakMap();
+       markerMap = {};
      }
    };
  };
--// Annotate the CommonJS export names for ESM import in node:
--0 && (module.exports = {
--  walkTreeOutside
--});
 +function createLockStack() {
 +  const locks = [];
 +  return {
@@ -118,12 +146,54 @@ index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161
 +    const prevUndo = undo;
 +    undo = applyAttributeToOthers(targets, props);
 +    prevUndo?.();
++    observeTargets();
 +  };
 +  const release = () => {
 +    undo?.();
 +    undo = void 0;
 +  };
-+  const isVisibleController = (record) => !record.target.closest(hiddenSelector);
++  const isVisibleController = (record) => {
++    let node = record.target;
++    while (node) {
++      if ((0, import_dom_query.isHTMLElement)(node) && node.matches(hiddenSelector)) return false;
++      node = composedParent(node);
++    }
++    return true;
++  };
++  const observeTargets = () => {
++    observer?.disconnect();
++    if (!followControlledElements) return;
++    const win = parentNode.ownerDocument.defaultView;
++    if (!win?.MutationObserver) return;
++    observer ||= new win.MutationObserver((records) => {
++      if (records.some(isVisibleController)) apply();
++    });
++    const roots = /* @__PURE__ */ new Set([parentNode]);
++    const visited = /* @__PURE__ */ new Set();
++    const visit = (node) => {
++      if (visited.has(node)) return;
++      visited.add(node);
++      if (node.shadowRoot) roots.add(node.shadowRoot);
++      composedChildren(node).forEach(visit);
++    };
++    const observeTree = (target) => {
++      let node = target;
++      while (node) {
++        if (node.host) roots.add(node);
++        node = composedParent(node);
++      }
++      visit(target);
++    };
++    targets.forEach((target) => {
++      observeTree(target);
++      (0, import_dom_query.findControlledElements)(target, observeTree);
++    });
++    roots.forEach((root) => observer.observe(root, {
++      attributes: true,
++      attributeFilter: ["aria-expanded"],
++      subtree: true
++    }));
++  };
 +  const lock = {
 +    pause() {
 +      observer?.disconnect();
@@ -132,42 +202,47 @@ index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161
 +    },
 +    resume() {
 +      apply();
-+      if (!followControlledElements) return;
-+      const win = parentNode.ownerDocument.defaultView;
-+      if (!win?.MutationObserver) return;
-+      observer = new win.MutationObserver((records) => {
-+        if (records.some(isVisibleController)) apply();
-+      });
-+      observer.observe(parentNode, { attributes: true, attributeFilter: ["aria-expanded"], subtree: true });
 +    }
 +  };
 +  const lockStack = getLockStack(parentNode.ownerDocument);
 +  lockStack.add(lock);
 +  return () => lockStack.remove(lock);
 +};
+ // Annotate the CommonJS export names for ESM import in node:
+ 0 && (module.exports = {
+   walkTreeOutside
 diff --git a/dist/walk-tree-outside.mjs b/dist/walk-tree-outside.mjs
-index a5705a6fc49af7bc9c716a9835ae89a60665b114..b05cdcfe06b5b6c67cc7a0167f9ac47725f85007 100644
+index a5705a6fc49af7bc9c716a9835ae89a60665b114..99e13ea9e4aa89832597a54c92cb5f838950a105 100644
 --- a/dist/walk-tree-outside.mjs
 +++ b/dist/walk-tree-outside.mjs
-@@ -1,11 +1,10 @@
+@@ -1,30 +1,34 @@
 -// src/walk-tree-outside.ts
- import { findControlledElements, isHTMLElement } from "@zag-js/dom-query";
+-import { findControlledElements, isHTMLElement } from "@zag-js/dom-query";
 -var counterMap = /* @__PURE__ */ new WeakMap();
 -var uncontrolledNodes = /* @__PURE__ */ new WeakMap();
 -var markerMap = {};
 -var lockCount = 0;
 -var unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
 -var correctTargets = (parent, targets) => targets.map((target) => {
+-  if (parent.contains(target)) return target;
+-  const correctedTarget = unwrapHost(target);
+-  if (correctedTarget && parent.contains(correctedTarget)) {
+-    return correctedTarget;
++import { contains, findControlledElements, isHTMLElement } from "@zag-js/dom-query";
 +let counterMap = /* @__PURE__ */ new WeakMap();
 +let uncontrolledNodes = /* @__PURE__ */ new WeakMap();
 +let markerMap = {};
 +let lockCount = 0;
-+const unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
++const composedParent = (node) => node.assignedSlot || node.parentNode || node.host;
++const composedChildren = (node) => {
++  if (node.localName === "slot") {
++    const assigned = node.assignedElements({ flatten: true });
++    if (assigned.length) return assigned;
+   }
++  return Array.from(node.shadowRoot?.children || node.children || []);
++};
 +const correctTargets = (parent, targets) => targets.map((target) => {
-   if (parent.contains(target)) return target;
-   const correctedTarget = unwrapHost(target);
-   if (correctedTarget && parent.contains(correctedTarget)) {
-@@ -14,17 +13,19 @@ var correctTargets = (parent, targets) => targets.map((target) => {
++  if (contains(parent, target)) return target;
    console.error("[zag-js > ariaHidden] target", target, "in not contained inside", parent, ". Doing nothing");
    return null;
  }).filter((x) => Boolean(x));
@@ -185,14 +260,22 @@ index a5705a6fc49af7bc9c716a9835ae89a60665b114..b05cdcfe06b5b6c67cc7a0167f9ac477
    const { parentNode, markerName, controlAttribute, explicitBooleanValue, followControlledElements = true } = props;
 -  const targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
 -  markerMap[markerName] || (markerMap[markerName] = /* @__PURE__ */ new WeakMap());
-+  const targets = allTargets.filter((target) => parentNode.contains(target));
++  const targets = allTargets.filter((target) => contains(parentNode, target));
 +  if (!targets.length) return () => {
 +  };
 +  markerMap[markerName] ||= /* @__PURE__ */ new WeakMap();
    const markerCounter = markerMap[markerName];
    const hiddenNodes = [];
    const elementsToKeep = /* @__PURE__ */ new Set();
-@@ -39,6 +40,7 @@ var walkTreeOutside = (originalTarget, props) => {
+@@ -32,13 +36,14 @@ var walkTreeOutside = (originalTarget, props) => {
+   const keep = (el) => {
+     if (!el || elementsToKeep.has(el)) return;
+     elementsToKeep.add(el);
+-    keep(el.parentNode);
++    keep(composedParent(el));
+   };
+   targets.forEach((target) => {
+     keep(target);
      if (followControlledElements && isHTMLElement(target)) {
        findControlledElements(target, (controlledElement) => {
          keep(controlledElement);
@@ -200,7 +283,23 @@ index a5705a6fc49af7bc9c716a9835ae89a60665b114..b05cdcfe06b5b6c67cc7a0167f9ac477
        });
      }
    });
-@@ -102,6 +104,73 @@ var walkTreeOutside = (originalTarget, props) => {
+@@ -46,7 +51,7 @@ var walkTreeOutside = (originalTarget, props) => {
+     if (!parent || elementsToStop.has(parent)) {
+       return;
+     }
+-    Array.prototype.forEach.call(parent.children, (node) => {
++    composedChildren(parent).forEach((node) => {
+       if (elementsToKeep.has(node)) {
+         deep(node);
+       } else {
+@@ -95,13 +100,116 @@ var walkTreeOutside = (originalTarget, props) => {
+     });
+     lockCount--;
+     if (!lockCount) {
+-      counterMap = /* @__PURE__ */ new WeakMap();
+       counterMap = /* @__PURE__ */ new WeakMap();
+       uncontrolledNodes = /* @__PURE__ */ new WeakMap();
+       markerMap = {};
      }
    };
  };
@@ -244,12 +343,56 @@ index a5705a6fc49af7bc9c716a9835ae89a60665b114..b05cdcfe06b5b6c67cc7a0167f9ac477
 +    const prevUndo = undo;
 +    undo = applyAttributeToOthers(targets, props);
 +    prevUndo?.();
++    observeTargets();
 +  };
 +  const release = () => {
 +    undo?.();
 +    undo = void 0;
 +  };
-+  const isVisibleController = (record) => !record.target.closest(hiddenSelector);
++  const isVisibleController = (record) => {
++    let node = record.target;
++    while (node) {
++      if (isHTMLElement(node) && node.matches(hiddenSelector)) return false;
++      node = composedParent(node);
++    }
++    return true;
++  };
++  const observeTargets = () => {
++    observer?.disconnect();
++    if (!followControlledElements) return;
++    const win = parentNode.ownerDocument.defaultView;
++    if (!win?.MutationObserver) return;
++    observer ||= new win.MutationObserver((records) => {
++      if (records.some(isVisibleController)) apply();
++    });
++    // MutationObserver не пересекает ShadowRoot; наблюдаем корни активной цели
++    // и разрешённых popup, сохраняя один существующий lock owner.
++    const roots = new Set([parentNode]);
++    const visited = new Set();
++    const visit = (node) => {
++      if (visited.has(node)) return;
++      visited.add(node);
++      if (node.shadowRoot) roots.add(node.shadowRoot);
++      composedChildren(node).forEach(visit);
++    };
++    const observeTree = (target) => {
++      let node = target;
++      while (node) {
++        if (node.host) roots.add(node);
++        node = composedParent(node);
++      }
++      visit(target);
++    };
++    targets.forEach((target) => {
++      observeTree(target);
++      findControlledElements(target, observeTree);
++    });
++    roots.forEach((root) => observer.observe(root, {
++      attributes: true,
++      attributeFilter: ["aria-expanded"],
++      subtree: true
++    }));
++  };
 +  const lock = {
 +    pause() {
 +      observer?.disconnect();
@@ -258,13 +401,6 @@ index a5705a6fc49af7bc9c716a9835ae89a60665b114..b05cdcfe06b5b6c67cc7a0167f9ac477
 +    },
 +    resume() {
 +      apply();
-+      if (!followControlledElements) return;
-+      const win = parentNode.ownerDocument.defaultView;
-+      if (!win?.MutationObserver) return;
-+      observer = new win.MutationObserver((records) => {
-+        if (records.some(isVisibleController)) apply();
-+      });
-+      observer.observe(parentNode, { attributes: true, attributeFilter: ["aria-expanded"], subtree: true });
 +    }
 +  };
 +  const lockStack = getLockStack(parentNode.ownerDocument);

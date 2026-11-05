@@ -1,5 +1,5 @@
 /**
- * Доставляет CSS-контракты Core и shadow в dist после сборки JS и типов.
+ * Доставляет общий behavior runtime и CSS-контракты Core после сборки JS и типов.
  * Лицензии включённых зависимостей выводятся из фактического графа сборки.
  */
 import {
@@ -12,8 +12,9 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { type Metafile, transformSync } from 'esbuild';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -22,6 +23,40 @@ const dist = join(here, '..', 'dist');
 // Готовый shadow.css принадлежит ui-shadow и доставляется без преобразования.
 const require = createRequire(import.meta.url);
 const shadowPkg = require.resolve('@labpics/ui-shadow/shadow.css');
+
+/** Оба формата читают один CJS runtime; список exports выводится из сборки. */
+function shareBehaviorRuntime(): void {
+  const metadata = JSON.parse(readFileSync(join(dist, 'metafile-esm.json'), 'utf8')) as Metafile;
+  for (const [file, output] of Object.entries(metadata.outputs)) {
+    if (!output.entryPoint?.replaceAll('\\', '/').startsWith('src/behaviors/')) continue;
+    const esm = resolve(here, '..', file);
+    const withinDist = relative(dist, esm).replaceAll('\\', '/');
+    if (!withinDist.startsWith('behaviors/') || !withinDist.endsWith('.js')) {
+      throw new Error(`Некорректный behavior entry сборки: ${file}`);
+    }
+    const cjsName = `${basename(esm, '.js')}.cjs`;
+    if (!existsSync(join(dirname(esm), cjsName))) {
+      throw new Error(`Не найден общий runtime ${cjsName}`);
+    }
+    const bindings = output.exports.map((name, index) => ({ name, binding: `value${index}` }));
+    const source = [
+      `import behavior from ${JSON.stringify(`./${cjsName}`)};`,
+      ...bindings.map(
+        ({ name, binding }) => `const ${binding} = behavior[${JSON.stringify(name)}];`,
+      ),
+      `export { ${bindings.map(({ name, binding }) => `${binding} as ${name}`).join(', ')} };`,
+    ].join('\n');
+    const facade = transformSync(source, {
+      format: 'esm',
+      target: 'es2022',
+      minify: true,
+      sourcemap: 'external',
+      sourcefile: `generated/${basename(esm, '.js')}-facade.js`,
+    });
+    writeFileSync(esm, `${facade.code}//# sourceMappingURL=${basename(esm)}.map\n`);
+    writeFileSync(`${esm}.map`, facade.map);
+  }
+}
 
 /** Лицензии выводятся из фактических bundle inputs, без второго списка зависимостей. */
 function copyBundledLicenses(): void {
@@ -69,6 +104,7 @@ function copyBundledLicenses(): void {
 
 function main(): void {
   mkdirSync(dist, { recursive: true });
+  shareBehaviorRuntime();
 
   // Контракты темы и браузерного выделения принадлежат Core.
   const ownFiles = ['theme.css', 'selection.css'];

@@ -1,5 +1,5 @@
+import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import { type PropertyDeclarations, type TemplateResult, css, html, render } from 'lit';
-import * as dialogMachine from '../../behaviors/dialog.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -58,7 +58,7 @@ export abstract class LabModal extends LabElement {
   protected completeFailedDialogFocus(): void {
     if (!this.isConnected) return;
     const focus = this.modalFocus();
-    if (focus && focus.content !== this.portalRoot?.querySelector('.content')) return;
+    if (focus && this.isIndependentModal(focus.content)) return;
     // trapFocus создаёт trap на RAF. Ранний отказ отменяет его до активации,
     // поэтому уже заданная точка finalFocus должна завершиться здесь, до callback.
     this.finalFocusTarget()?.focus({ preventScroll: true });
@@ -87,6 +87,7 @@ export abstract class LabModal extends LabElement {
       role: this.dialogRole,
       modal: this.isModal,
       getRootNode: () => this.portalRoot ?? document,
+      triggerEl: () => this.renderRoot.querySelector<HTMLElement>('.trigger'),
       // Trigger остаётся в другом shadow root. Заг передаёт ссылку focus trap,
       // а не пытается повторно искать её в portal root.
       finalFocusEl: () => this.finalFocusTarget(),
@@ -115,9 +116,9 @@ export abstract class LabModal extends LabElement {
 
   private finalFocusTarget(): HTMLElement | null {
     const focus = this.modalFocus();
-    // Поздний cleanup Zag сохраняет текущий фокус нового modal, включая его
-    // вложенный shadow root; старый trigger уже не является точкой возврата.
-    if (focus && focus.content !== this.portalRoot?.querySelector('.content')) return focus.active;
+    // Поздний cleanup сохраняет самостоятельный новый modal. Родитель остаётся
+    // допустимым местом возврата: его прежний Sheet trigger снова доступен.
+    if (focus && this.isIndependentModal(focus.content)) return focus.active;
     const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
     return this.isConnected &&
       trigger?.isConnected &&
@@ -125,6 +126,13 @@ export abstract class LabModal extends LabElement {
       !trigger.closest('[inert]')
       ? trigger
       : null;
+  }
+
+  private isIndependentModal(content: Element): boolean {
+    return (
+      content !== this.portalRoot?.querySelector('.content') &&
+      !this.contextAncestors().includes(content)
+    );
   }
 
   static override styles = css`

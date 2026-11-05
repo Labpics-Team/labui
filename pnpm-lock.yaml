@@ -21,8 +21,11 @@ overrides:
 
 patchedDependencies:
   '@zag-js/aria-hidden@1.41.2':
-    hash: d34e23867cd4b268fba56777228f047d7f46cbf32db3306074c27f46684b62e8
+    hash: abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec
     path: patches/@zag-js__aria-hidden@1.41.2.patch
+  '@zag-js/dialog@1.41.2':
+    hash: f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c
+    path: patches/@zag-js__dialog@1.41.2.patch
   '@zag-js/dismissable@1.41.2':
     hash: 38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32
     path: patches/@zag-js__dismissable@1.41.2.patch
@@ -32,6 +35,9 @@ patchedDependencies:
   '@zag-js/menu@1.41.2':
     hash: 93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f
     path: patches/@zag-js__menu@1.41.2.patch
+  tsup@8.3.6:
+    hash: bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6
+    path: patches/tsup@8.3.6.patch
 
 importers:
 
@@ -45,7 +51,7 @@ importers:
         version: 2.27.12
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -173,7 +179,7 @@ importers:
         version: 21.0.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -221,9 +227,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/core':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/dialog':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/menu':
@@ -290,6 +293,9 @@ importers:
       '@lit-labs/ssr-client':
         specifier: 1.1.8
         version: 1.1.8
+      '@zag-js/dialog':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -298,7 +304,7 @@ importers:
         version: 21.0.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -328,7 +334,7 @@ importers:
         version: 0.28.2
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -361,7 +367,7 @@ importers:
         version: 1.41.2
       '@zag-js/dialog':
         specifier: 1.41.2
-        version: 1.41.2
+        version: 1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)
       '@zag-js/menu':
         specifier: 1.41.2
         version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)
@@ -422,7 +428,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -434,7 +440,7 @@ importers:
         version: 22.10.5
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -462,7 +468,7 @@ importers:
         version: 1.9.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -514,7 +520,7 @@ importers:
         version: 22.10.5
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -539,7 +545,7 @@ importers:
         version: 21.0.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -4661,7 +4667,7 @@ snapshots:
 
   '@zag-js/anatomy@1.41.2': {}
 
-  '@zag-js/aria-hidden@1.41.2(patch_hash=d34e23867cd4b268fba56777228f047d7f46cbf32db3306074c27f46684b62e8)':
+  '@zag-js/aria-hidden@1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)':
     dependencies:
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
 
@@ -4700,10 +4706,10 @@ snapshots:
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/dialog@1.41.2':
+  '@zag-js/dialog@1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)':
     dependencies:
       '@zag-js/anatomy': 1.41.2
-      '@zag-js/aria-hidden': 1.41.2(patch_hash=d34e23867cd4b268fba56777228f047d7f46cbf32db3306074c27f46684b62e8)
+      '@zag-js/aria-hidden': 1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)
       '@zag-js/core': 1.41.2
       '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
@@ -4777,7 +4783,7 @@ snapshots:
   '@zag-js/popover@1.41.2':
     dependencies:
       '@zag-js/anatomy': 1.41.2
-      '@zag-js/aria-hidden': 1.41.2(patch_hash=d34e23867cd4b268fba56777228f047d7f46cbf32db3306074c27f46684b62e8)
+      '@zag-js/aria-hidden': 1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)
       '@zag-js/core': 1.41.2
       '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
@@ -6161,7 +6167,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3):
+  tsup@8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.28.2)
       cac: 6.7.14

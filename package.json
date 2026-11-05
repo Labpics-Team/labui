@@ -51,7 +51,9 @@
       "@zag-js/dom-query@1.41.2": "patches/@zag-js__dom-query@1.41.2.patch",
       "@zag-js/dismissable@1.41.2": "patches/@zag-js__dismissable@1.41.2.patch",
       "@zag-js/menu@1.41.2": "patches/@zag-js__menu@1.41.2.patch",
-      "@zag-js/aria-hidden@1.41.2": "patches/@zag-js__aria-hidden@1.41.2.patch"
+      "@zag-js/aria-hidden@1.41.2": "patches/@zag-js__aria-hidden@1.41.2.patch",
+      "@zag-js/dialog@1.41.2": "patches/@zag-js__dialog@1.41.2.patch",
+      "tsup@8.3.6": "patches/tsup@8.3.6.patch"
     }
   }
 }

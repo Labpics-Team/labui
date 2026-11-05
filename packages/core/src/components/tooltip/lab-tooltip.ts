@@ -1,3 +1,4 @@
+import * as tooltipMachine from '@labpics/ui-core/behaviors/tooltip';
 /**
  * `<lab-tooltip>` — the FIRST positioned-overlay component, and the canon every
  * later overlay (Popover, Menu, Select, Dialog) follows.
@@ -45,7 +46,6 @@
  * there is no flash and no work done before interaction.
  */
 import { type TemplateResult, css, html } from 'lit';
-import * as tooltipMachine from '../../behaviors/tooltip.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

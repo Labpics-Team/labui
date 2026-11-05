@@ -86,6 +86,19 @@ filterComboboxItems(items, 'a');
 `,
   },
   {
+    name: 'dialog-behavior',
+    source: `
+import * as dialog from '@labpics/ui-core/behaviors/dialog';
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+type DialogSchema = SchemaOf<dialog.Service>;
+const module: MachineModule<DialogSchema, dialog.Api> = dialog;
+const props: dialog.Props = { id: 'consumer-dialog', triggerEl: () => document.createElement('button') };
+// @ts-expect-error Ссылка на trigger не принимает произвольное значение.
+const invalid: dialog.Props = { id: 'consumer-dialog', triggerEl: 'trigger' };
+void [module, props, invalid];
+`,
+  },
+  {
     name: 'react-root',
     source: `
 import { Input, type InputProps } from '@labpics/ui-react';
@@ -99,6 +112,18 @@ void [Input, props];
 import { Input, type InputProps } from '@labpics/ui-react/input';
 const props: InputProps = {label:'Name',size:'m'};
 void [Input, props];
+`,
+  },
+  {
+    name: 'react-dialog',
+    source: `
+import { Dialog, type DialogProps } from '@labpics/ui-react/dialog';
+import { AlertDialog, type AlertDialogProps } from '@labpics/ui-react/alert-dialog';
+const dialog: DialogProps = { heading: 'Параметры', content: 'Действие' };
+const alert: AlertDialogProps = { heading: 'Подтверждение', content: 'Действие' };
+// @ts-expect-error Потребитель компонента не управляет внутренним DOM binding.
+const invalid: DialogProps = { triggerEl: () => document.createElement('button') };
+void [Dialog, AlertDialog, dialog, alert, invalid];
 `,
   },
 ];

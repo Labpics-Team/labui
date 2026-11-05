@@ -8,26 +8,23 @@ import { createRoot } from 'react-dom/client';
 
 const events: Array<{ kind: string; open: boolean }> = [];
 
-/** Потребитель помещает свой внешний portal в top layer штатным API браузера. */
-function useTopLayer(open: boolean, selector: string): void {
+/** Внешний немодальный popup отдельно квалифицирует native top-layer API. */
+function usePopupTopLayer(open: boolean, kind: 'popup' | 'dialog' | 'alert'): void {
   useLayoutEffect(() => {
-    if (!open) return;
-    const positioner = document.querySelector<HTMLElement>(selector);
+    if (!open || kind !== 'popup') return;
+    const positioner = document.querySelector<HTMLElement>('.lab-popover-positioner');
     if (!positioner) throw new Error('Не создан внешний portal');
     positioner.popover = 'manual';
     positioner.showPopover();
     return () => {
       if (positioner.matches(':popover-open')) positioner.hidePopover();
     };
-  }, [open, selector]);
+  }, [open, kind]);
 }
 
 function Consumer({ kind }: { kind: 'popup' | 'dialog' | 'alert' }) {
   const [open, setOpen] = useState(false);
-  useTopLayer(
-    open,
-    kind === 'popup' ? '.lab-popover-positioner' : '.lab-dialog-positioner[data-open]',
-  );
+  usePopupTopLayer(open, kind);
   const onOpenChange = (value: boolean) => {
     events.push({ kind, open: value });
     setOpen(value);

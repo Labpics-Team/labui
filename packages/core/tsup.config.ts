@@ -11,8 +11,9 @@ import { discoverComponents } from './scripts/discover-components';
  * Проверка packed consumer охватывает входы и вложенные зависимости.
  *
  * Корень, SSR и hydration остаются отдельными входами. Lit внешний. Поведения Zag
- * входят в Core: поправки владельца доставляются в tarball, а общие chunks дают
- * всем компонентам и React один dismissable layer и focus trap.
+ * входят в Core: поправки владельца доставляются в tarball. WC и React читают
+ * public Behaviors boundary; copy-artifacts связывает её ESM/CJS входы с одним
+ * CJS runtime, включая dismissable, focus, aria-hidden и scroll locks.
  */
 const componentEntries = discoverComponents().map(({ entry }) => entry);
 const behaviorEntries = readdirSync(new URL('./src/behaviors', import.meta.url))
@@ -37,6 +38,9 @@ export default libraryPreset({
   metafile: true,
   // tsup 8.3.6 теряет основание унаследованных paths при подготовке DTS options.
   dts: {
+    // Dialog — build dependency: runtime и расширенные типы входят в Core.
+    // tsup сохраняет production dependencies внешними также при dts.resolve.
+    resolve: ['@zag-js/dialog'],
     compilerOptions: { baseUrl: fileURLToPath(new URL('../../', import.meta.url)) },
   },
   esbuildOptions(options, context) {

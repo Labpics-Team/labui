@@ -1,4 +1,3 @@
-import { type TemplateResult, css, html } from 'lit';
 /**
  * `<lab-popover>` — the second positioned overlay, and the first DISMISSABLE,
  * FOCUS-MANAGED one. It extends the overlay canon set by `<lab-tooltip>` from a
@@ -43,7 +42,8 @@ import { type TemplateResult, css, html } from 'lit';
  * SSR (core-CONTRACT §7): a popover is client-only. The server emits the trigger and
  * a `hidden` panel; the machine upgrades it on the client. No flash, no pre-work.
  */
-import * as popoverMachine from '../../behaviors/popover.js';
+import * as popoverMachine from '@labpics/ui-core/behaviors/popover';
+import { type TemplateResult, css, html } from 'lit';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

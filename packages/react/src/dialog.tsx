@@ -11,6 +11,7 @@
  * ── The overlay canon (React half) — the trap is REAL here for free ──────────────
  * React помещает content в document.body через createPortal; controls остаются
  * потомками модальной поверхности. Lit проецирует consumer subtree через слоты.
+ * Стабильная manual popover плоскость поднимает React portal над открытым Sheet.
  * Оба рендерера используют поведение и общий focus runtime из Core.
  * До mounted сервер не выводит клиентскую модальную поверхность.
  *
@@ -22,7 +23,7 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
-import { type ReactNode, useEffect, useId, useState } from 'react';
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';
 import './dialog.css';
@@ -54,6 +55,28 @@ export interface DialogProps {
   children?: ReactNode;
 }
 
+/** Плоскость появляется только после mount; layout effect не вызывается при SSR. */
+function DialogPortalPlane({ open, children }: { open: boolean; children: ReactNode }): ReactNode {
+  const portalPlane = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const plane = portalPlane.current;
+    if (!plane) return;
+    plane.popover = 'manual';
+    if (!open) return;
+    // Тот же manual popover, что у Lit: native top layer сохраняет клики
+    // над открытым Sheet, а порядок закрытия и фокус остаются у Zag.
+    plane.showPopover();
+    return () => {
+      if (plane.matches(':popover-open')) plane.hidePopover();
+    };
+  }, [open]);
+  return (
+    <div ref={portalPlane} className="lab-dialog-portal-plane">
+      {children}
+    </div>
+  );
+}
+
 /**
  * The shared dialog implementation. `<Dialog>` and `<AlertDialog>` are thin presets
  * over it — the ONLY difference is the `role` the machine reads (which flips
@@ -71,20 +94,21 @@ export function Dialog({
   onOpenChange,
   children,
 }: DialogProps): ReactNode {
+  const trigger = useRef<HTMLButtonElement>(null);
   const api = useZag(dialogModule, {
     id: useId(),
     role,
     modal,
+    triggerEl: () => trigger.current,
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Dialogs are client-only: gate the body portal on mount so SSR/first hydration emit
-  // nothing for the floating layer.
+  // SSR и первая hydration выводят только trigger; клиентская плоскость появляется после mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const floating = (
-    <>
+    <DialogPortalPlane open={api.open}>
       {modal && api.open && <div {...api.getBackdropProps()} className="lab-dialog-backdrop" />}
       <div
         {...api.getPositionerProps()}
@@ -111,12 +135,12 @@ export function Dialog({
           )}
         </div>
       </div>
-    </>
+    </DialogPortalPlane>
   );
 
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
+      <button ref={trigger} type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
         {children}
       </button>
       {mounted && createPortal(floating, document.body)}

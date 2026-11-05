@@ -42,6 +42,80 @@ afterEach(() => {
 });
 
 for (const format of ['esm', 'cjs'] as const) {
+  it(`${format}: вложенные shadow roots скрывают фон на каждой границе`, async () => {
+    const runtime = await load(format);
+    const outer = mount();
+    const background = mount();
+    const outerRoot = outer.attachShadow({ mode: 'open' });
+    const inner = document.createElement('div');
+    const outerSibling = document.createElement('button');
+    outerRoot.append(inner, outerSibling);
+    const innerRoot = inner.attachShadow({ mode: 'open' });
+    const target = document.createElement('div');
+    const innerSibling = document.createElement('button');
+    innerRoot.append(target, innerSibling);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const close = hide(runtime, target);
+    expect(error).not.toHaveBeenCalled();
+    for (const element of [outer, inner, target]) {
+      expect(element.hasAttribute('aria-hidden')).toBe(false);
+    }
+    for (const element of [background, outerSibling, innerSibling]) {
+      expect(element.getAttribute('aria-hidden')).toBe('true');
+    }
+    close();
+    for (const element of [background, outerSibling, innerSibling]) {
+      expect(element.hasAttribute('aria-hidden')).toBe(false);
+    }
+  });
+
+  it(`${format}: закрытие body portal возвращает lock родителю в shadow root`, async () => {
+    const runtime = await load(format);
+    const host = mount();
+    const root = host.attachShadow({ mode: 'open' });
+    const parent = document.createElement('div');
+    const sibling = document.createElement('button');
+    root.append(parent, sibling);
+    const child = mount();
+    const background = mount();
+    const closeParent = hide(runtime, parent);
+    const closeChild = hide(runtime, child);
+    expect(host.getAttribute('aria-hidden')).toBe('true');
+    expect(child.hasAttribute('aria-hidden')).toBe(false);
+    closeChild();
+    expect(host.hasAttribute('aria-hidden')).toBe(false);
+    expect(parent.hasAttribute('aria-hidden')).toBe(false);
+    expect(sibling.getAttribute('aria-hidden')).toBe('true');
+    expect(child.getAttribute('aria-hidden')).toBe('true');
+    expect(background.getAttribute('aria-hidden')).toBe('true');
+    closeParent();
+    expect(sibling.hasAttribute('aria-hidden')).toBe(false);
+    expect(background.hasAttribute('aria-hidden')).toBe(false);
+  });
+
+  it(`${format}: shadow controller обновляет popup в собственном native root`, async () => {
+    const runtime = await load(format);
+    const host = mount();
+    const root = host.attachShadow({ mode: 'open' });
+    const target = document.createElement('div');
+    target.innerHTML =
+      '<button aria-controls="shadow-popup" aria-expanded="false">Настройки</button>';
+    const controller = target.querySelector('button');
+    if (!controller) throw new Error('Не создан shadow controller');
+    const popup = document.createElement('div');
+    popup.id = 'shadow-popup';
+    popup.setAttribute('role', 'menu');
+    popup.innerHTML = '<button role="menuitem">Действие</button>';
+    root.append(target, popup);
+    hide(runtime, target);
+    expect(popup.getAttribute('aria-hidden')).toBe('true');
+    controller.setAttribute('aria-expanded', 'true');
+    await vi.waitFor(() => expect(popup.hasAttribute('aria-hidden')).toBe(false));
+    controller.setAttribute('aria-expanded', 'false');
+    await vi.waitFor(() => expect(popup.getAttribute('aria-hidden')).toBe('true'));
+  });
+
   it(`${format}: single lock скрывает фон и сохраняет заданный потребителем aria-hidden`, async () => {
     const runtime = await load(format);
     const target = mount();

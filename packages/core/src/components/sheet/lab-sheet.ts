@@ -1,7 +1,7 @@
+import type * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import { materialCss } from '@labpics/ui-materials/css';
 import { type TemplateResult, css, html, unsafeCSS } from 'lit';
-import type * as dialogMachine from '../../behaviors/dialog.js';
 import { litVar } from '../../css.js';
 import { type SheetMotion, mountSheetMotion } from '../../motion/sheet.js';
 import { LabModal } from '../dialog/modal.js';

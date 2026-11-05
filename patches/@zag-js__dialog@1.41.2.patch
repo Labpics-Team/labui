@@ -1,0 +1,107 @@
+diff --git a/dist/dialog.machine.js b/dist/dialog.machine.js
+index 91087305f79586a1b8e00be3151fc2005bfc9487..fbfea66e7a61b8b2f034a423975cbd0f9ea46814 100644
+--- a/dist/dialog.machine.js
++++ b/dist/dialog.machine.js
+@@ -159,7 +159,7 @@ var machine = (0, import_core.createMachine)({
+           defer: true,
+           pointerBlocking: prop("modal"),
+           layerStyleTargets: [() => dom.getBackdropEl(scope), () => dom.getPositionerEl(scope)],
+-          exclude: [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
++          exclude: [prop("triggerEl")?.(), dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
+           onInteractOutside(event) {
+             prop("onInteractOutside")?.(event);
+             if (!prop("closeOnInteractOutside")) {
+@@ -195,6 +195,8 @@ var machine = (0, import_core.createMachine)({
+           setReturnFocus: (el) => {
+             const finalFocusEl = prop("finalFocusEl")?.();
+             if (finalFocusEl) return finalFocusEl;
++            const triggerEl = prop("triggerEl")?.();
++            if (triggerEl?.isConnected && (0, import_dom_query.isFocusable)(triggerEl)) return triggerEl;
+             const triggerValue = context.get("triggerValue");
+             if (triggerValue) {
+               const activeTriggerEl = dom.getActiveTriggerEl(scope, triggerValue);
+diff --git a/dist/dialog.machine.mjs b/dist/dialog.machine.mjs
+index bf7210a727d299e45b101d2b9db44d44b7290730..924e866e9d7bdb4dcfcaa169cd9693f098c40f36 100644
+--- a/dist/dialog.machine.mjs
++++ b/dist/dialog.machine.mjs
+@@ -2,7 +2,7 @@
+ import { ariaHidden } from "@zag-js/aria-hidden";
+ import { createMachine } from "@zag-js/core";
+ import { trackDismissableElement } from "@zag-js/dismissable";
+-import { getInitialFocus, raf } from "@zag-js/dom-query";
++import { getInitialFocus, isFocusable, raf } from "@zag-js/dom-query";
+ import { trapFocus } from "@zag-js/focus-trap";
+ import { preventBodyScroll } from "@zag-js/remove-scroll";
+ import * as dom from "./dialog.dom.mjs";
+@@ -125,7 +125,7 @@ var machine = createMachine({
+           defer: true,
+           pointerBlocking: prop("modal"),
+           layerStyleTargets: [() => dom.getBackdropEl(scope), () => dom.getPositionerEl(scope)],
+-          exclude: [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
++          exclude: [prop("triggerEl")?.(), dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
+           onInteractOutside(event) {
+             prop("onInteractOutside")?.(event);
+             if (!prop("closeOnInteractOutside")) {
+@@ -161,6 +161,8 @@ var machine = createMachine({
+           setReturnFocus: (el) => {
+             const finalFocusEl = prop("finalFocusEl")?.();
+             if (finalFocusEl) return finalFocusEl;
++            const triggerEl = prop("triggerEl")?.();
++            if (triggerEl?.isConnected && isFocusable(triggerEl)) return triggerEl;
+             const triggerValue = context.get("triggerValue");
+             if (triggerValue) {
+               const activeTriggerEl = dom.getActiveTriggerEl(scope, triggerValue);
+diff --git a/dist/dialog.props.js b/dist/dialog.props.js
+index b1287803f58d55774b3c7c3dae319c15ac16f9cc..752d644853758488b4e7ae345f51c643199c6c95 100644
+--- a/dist/dialog.props.js
++++ b/dist/dialog.props.js
+@@ -52,7 +52,8 @@ var props = (0, import_types.createProps)()([
+   "preventScroll",
+   "restoreFocus",
+   "role",
+-  "trapFocus"
++  "trapFocus",
++  "triggerEl"
+ ]);
+ var splitProps = (0, import_utils.createSplitProps)(props);
+ // Annotate the CommonJS export names for ESM import in node:
+diff --git a/dist/dialog.props.mjs b/dist/dialog.props.mjs
+index 9867f9e66d58849ade92abe2aee48e4139369382..7a0f680d816e9a86b71ab04de1fb69f1c16628e9 100644
+--- a/dist/dialog.props.mjs
++++ b/dist/dialog.props.mjs
+@@ -27,7 +27,8 @@ var props = createProps()([
+   "preventScroll",
+   "restoreFocus",
+   "role",
+-  "trapFocus"
++  "trapFocus",
++  "triggerEl"
+ ]);
+ var splitProps = createSplitProps(props);
+ export {
+diff --git a/dist/dialog.types.d.mts b/dist/dialog.types.d.mts
+index f16206957e6986178ca139bf913b0d5d47071879..96a6dc4a5f53237ebdaec4dc9c64c0417ed4f286 100644
+--- a/dist/dialog.types.d.mts
++++ b/dist/dialog.types.d.mts
+@@ -52,6 +52,8 @@ interface DialogProps extends DirectionProperty, CommonProperties, DismissableEl
+      * Element to receive focus when the dialog is closed
+      */
+     finalFocusEl?: (() => MaybeElement) | undefined;
++    /** Стабильный trigger, когда trigger и content принадлежат разным DOM roots. */
++    triggerEl?: (() => MaybeElement) | undefined;
+     /**
+      * Whether to restore focus to the element that had focus before the dialog was opened
+      */
+diff --git a/dist/dialog.types.d.ts b/dist/dialog.types.d.ts
+index f16206957e6986178ca139bf913b0d5d47071879..96a6dc4a5f53237ebdaec4dc9c64c0417ed4f286 100644
+--- a/dist/dialog.types.d.ts
++++ b/dist/dialog.types.d.ts
+@@ -52,6 +52,8 @@ interface DialogProps extends DirectionProperty, CommonProperties, DismissableEl
+      * Element to receive focus when the dialog is closed
+      */
+     finalFocusEl?: (() => MaybeElement) | undefined;
++    /** Стабильный trigger, когда trigger и content принадлежат разным DOM roots. */
++    triggerEl?: (() => MaybeElement) | undefined;
+     /**
+      * Whether to restore focus to the element that had focus before the dialog was opened
+      */

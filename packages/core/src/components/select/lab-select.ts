@@ -1,4 +1,3 @@
-import { type TemplateResult, css, html, nothing } from 'lit';
 /**
  * `<lab-select>` — the COMPOUND + POSITIONED canon: a trigger that opens a
  * positioned listbox of selectable options. It fuses the two earlier canons —
@@ -59,7 +58,8 @@ import { type TemplateResult, css, html, nothing } from 'lit';
  * SSR (core-CONTRACT §7): a select is client-only. The server emits the trigger and
  * a `hidden` listbox; the machine upgrades it on the client. No flash, no pre-work.
  */
-import * as selectMachine from '../../behaviors/select.js';
+import * as selectMachine from '@labpics/ui-core/behaviors/select';
+import { type TemplateResult, css, html, nothing } from 'lit';
 import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

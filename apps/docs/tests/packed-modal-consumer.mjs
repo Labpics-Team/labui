@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawn } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   cp,
@@ -16,7 +16,8 @@ import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { gzipSync } from 'node:zlib';
 import { build } from 'esbuild';
 
 const docs = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,6 +42,7 @@ const packages = [
 const specifications = [
   'modal-composition.spec.ts',
   'modal-layer-composition.spec.ts',
+  'modal-public-composition.spec.ts',
   'modal-sibling-ownership.spec.ts',
   'modal-early-dismiss.spec.ts',
   'sheet-motion-errors.spec.ts',
@@ -52,6 +54,7 @@ const specifications = [
 const fixtureNames = [
   '_fixtures/modal-composition',
   '_fixtures/modal-layer-composition',
+  '_fixtures/modal-public-composition',
   '_fixtures/modal-live',
   '_fixtures/sheet',
   'dialog',
@@ -61,6 +64,7 @@ const fixtureNames = [
   'combobox',
   'popover',
 ];
+const formats = ['mixed', 'esm', 'cjs'];
 
 async function run(command, args, options) {
   const child = spawn(command, args, { ...options, windowsHide: true, stdio: 'inherit' });
@@ -69,6 +73,239 @@ async function run(command, args, options) {
     child.once('exit', accept);
   });
   assert.equal(code, 0, `Процесс завершился с кодом ${code}.`);
+}
+
+async function verifyTypeContract(consumerRequire) {
+  const source = `
+import * as dialog from '@labpics/ui-core/behaviors/dialog';
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import { Dialog, type DialogProps } from '@labpics/ui-react/dialog';
+import { AlertDialog, type AlertDialogProps } from '@labpics/ui-react/alert-dialog';
+type DialogSchema = SchemaOf<dialog.Service>;
+const module: MachineModule<DialogSchema, dialog.Api> = dialog;
+const behavior: dialog.Props = {
+  id: 'consumer-dialog',
+  triggerEl: () => document.createElement('button'),
+};
+// @ts-expect-error DOM binding принимает ссылку на элемент.
+const invalidBehavior: dialog.Props = { id: 'consumer-dialog', triggerEl: 'trigger' };
+const props: DialogProps = { heading: 'Параметры', content: 'Действие' };
+const alert: AlertDialogProps = { heading: 'Подтверждение', content: 'Действие' };
+// @ts-expect-error Публичный React API сохраняет прежние props.
+const invalidReact: DialogProps = { triggerEl: () => document.createElement('button') };
+void [module, behavior, invalidBehavior, Dialog, AlertDialog, props, alert, invalidReact];
+`;
+  const tsc = consumerRequire.resolve('typescript/lib/tsc.js');
+  for (const extension of ['mts', 'cts']) {
+    const file = join(consumer, `modal-types.${extension}`);
+    await writeFile(file, source);
+    await cp(file, join(evidence, `modal-types.${extension}`));
+    const result = spawnSync(
+      process.execPath,
+      [
+        tsc,
+        '--noEmit',
+        '--strict',
+        '--target',
+        'es2022',
+        '--lib',
+        'es2022,dom,dom.iterable',
+        '--esModuleInterop',
+        '--skipLibCheck',
+        '--module',
+        'nodenext',
+        '--moduleResolution',
+        'nodenext',
+        file,
+      ],
+      { cwd: consumer, encoding: 'utf8', timeout: 20_000, windowsHide: true },
+    );
+    await writeFile(
+      join(evidence, `modal-types-${extension}.json`),
+      JSON.stringify(
+        {
+          extension,
+          status: result.status,
+          error: result.error?.message,
+          stdout: result.stdout,
+          stderr: result.stderr,
+        },
+        null,
+        2,
+      ),
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 0, `${extension}: ${result.stdout}\n${result.stderr}`);
+  }
+}
+
+async function verifyRuntimeIdentity(consumerRequire) {
+  const results = [];
+  for (const name of ['dialog', 'popover', 'menu', 'select', 'combobox', 'tooltip']) {
+    const importFile = join(consumer, 'node_modules/@labpics/ui-core/dist/behaviors', `${name}.js`);
+    const requireFile = consumerRequire.resolve(`@labpics/ui-core/behaviors/${name}`);
+    const imported = await import(pathToFileURL(importFile).href);
+    const required = consumerRequire(`@labpics/ui-core/behaviors/${name}`);
+    const names = Object.keys(required);
+    results.push({
+      name,
+      importFile,
+      requireFile,
+      sameMachine: imported.machine === required.machine,
+      sameConnect: imported.connect === required.connect,
+      sameExports:
+        Object.keys(imported).length === names.length &&
+        names.every((key) => imported[key] === required[key]),
+    });
+  }
+  await writeFile(join(evidence, 'runtime-identities.json'), JSON.stringify(results, null, 2));
+  assert(
+    results.every(
+      ({ sameMachine, sameConnect, sameExports }) => sameMachine && sameConnect && sameExports,
+    ),
+  );
+}
+
+async function verifyReactImport() {
+  for (const format of ['esm', 'cjs']) {
+    const source =
+      format === 'esm'
+        ? "import { Dialog } from '@labpics/ui-react/dialog'; globalThis.component = Dialog;"
+        : "const { Dialog } = require('@labpics/ui-react/dialog'); globalThis.component = Dialog;";
+    const result = await build({
+      absWorkingDir: consumer,
+      stdin: { contents: source, resolveDir: consumer, loader: 'js' },
+      bundle: true,
+      platform: 'browser',
+      format: 'iife',
+      target: 'es2022',
+      minify: true,
+      write: false,
+      metafile: true,
+    });
+    await writeFile(
+      join(evidence, `react-import-${format}-metafile.json`),
+      JSON.stringify(result.metafile),
+    );
+    const emitted = Object.values(result.metafile.outputs).flatMap((output) =>
+      Object.entries(output.inputs)
+        .filter(([, contribution]) => contribution.bytesInOutput > 0)
+        .map(([file]) => resolve(consumer, file).replaceAll('\\', '/')),
+    );
+    assert(
+      !emitted.some((file) =>
+        /\/node_modules\/(?:lit(?:-html|-element)?|@lit(?:-labs)?)\//.test(file),
+      ),
+    );
+    assert(!emitted.some((file) => /\/ui-core\/dist\/components\//.test(file)));
+    const code = result.outputFiles[0].contents;
+    await writeFile(
+      join(evidence, `react-import-${format}-size.json`),
+      JSON.stringify({ bytes: code.length, gzipBytes: gzipSync(code).length }),
+    );
+  }
+}
+
+async function verifyReactSSR(consumerRequire) {
+  const { createElement, version } = consumerRequire('react');
+  const { renderToString } = consumerRequire('react-dom/server');
+  const results = [];
+  for (const format of ['esm', 'cjs']) {
+    for (const [name, exported] of [
+      ['dialog', 'Dialog'],
+      ['alert-dialog', 'AlertDialog'],
+    ]) {
+      const entry =
+        format === 'esm'
+          ? join(consumer, 'node_modules/@labpics/ui-react/dist', `${name}.js`)
+          : consumerRequire.resolve(`@labpics/ui-react/${name}`);
+      const result = { format, component: exported, entry, warnings: [] };
+      const previousError = console.error;
+      console.error = (...args) => result.warnings.push(args.map(String).join(' '));
+      try {
+        const module =
+          format === 'esm'
+            ? await import(pathToFileURL(entry).href)
+            : consumerRequire(`@labpics/ui-react/${name}`);
+        result.markup = renderToString(
+          createElement(
+            module[exported],
+            {
+              heading: 'SSR: параметры',
+              content: 'SSR: клиентское содержимое',
+            },
+            `SSR: открыть ${exported}`,
+          ),
+        );
+      } catch (error) {
+        result.error = String(error);
+      } finally {
+        console.error = previousError;
+      }
+      results.push(result);
+    }
+  }
+  await writeFile(
+    join(evidence, 'react-ssr.json'),
+    JSON.stringify({ node: process.version, react: version, results }, null, 2),
+  );
+  for (const result of results) {
+    assert.equal(result.error, undefined, `${result.format}/${result.component}: ${result.error}`);
+    assert.deepEqual(result.warnings, [], `${result.format}/${result.component}: SSR warnings`);
+    assert(result.markup.includes(`SSR: открыть ${result.component}`));
+    assert(result.markup.includes('data-part="trigger"'));
+    assert(!result.markup.includes('lab-dialog-portal-plane'));
+    assert(!result.markup.includes('SSR: клиентское содержимое'));
+  }
+}
+
+async function verifyCoreSSR() {
+  const source = `
+import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const esm = await import('@labpics/ui-core/ssr');
+require('@labpics/ui-core/sheet');
+const first = esm.renderToString(esm.html\`<lab-sheet heading="SSR: настройки">SSR: открыть Sheet<input slot="content" value="SSR: содержимое" /></lab-sheet>\`);
+const cjs = require('@labpics/ui-core/ssr');
+await import('@labpics/ui-core/sheet');
+const second = cjs.renderToString(cjs.html\`<lab-sheet heading="SSR: настройки">SSR: открыть Sheet<input slot="content" value="SSR: содержимое" /></lab-sheet>\`);
+for (const markup of [first, second]) {
+  assert(markup.includes('shadowrootmode="open"'));
+  assert(markup.includes('SSR: открыть Sheet') && markup.includes('SSR: содержимое'));
+  assert(markup.includes('class="portal-plane" popover="manual"'));
+  assert(!markup.includes('class="positioner"'));
+}
+console.log(JSON.stringify({ node: process.version, results: [
+  { ssr: 'esm', sheet: 'cjs', markup: first },
+  { ssr: 'cjs', sheet: 'esm', markup: second },
+] }));
+`;
+  const file = join(consumer, 'core-ssr-mixed.mjs');
+  await writeFile(file, source);
+  await cp(file, join(evidence, 'core-ssr-mixed.mjs'));
+  const result = spawnSync(process.execPath, [file], {
+    cwd: consumer,
+    encoding: 'utf8',
+    timeout: 20_000,
+    windowsHide: true,
+  });
+  await writeFile(
+    join(evidence, 'core-ssr-mixed.json'),
+    JSON.stringify(
+      {
+        status: result.status,
+        error: result.error?.message,
+        stdout: result.stdout,
+        stderr: result.stderr,
+      },
+      null,
+      2,
+    ),
+  );
+  assert.equal(result.error, undefined);
+  assert.equal(result.status, 0, `Core SSR: ${result.stdout}\n${result.stderr}`);
+  assert.equal(result.stderr, '');
 }
 
 async function bundleFixture(name, format, consumerRequire) {
@@ -103,6 +340,10 @@ async function bundleFixture(name, format, consumerRequire) {
             // Package-private imports разрешает исходный пакет, включая Motion #frame.
             if (args.path.startsWith('#')) return;
             if (format === 'cjs' && /^@labpics\/ui-(?:core|react)(?:\/|$)/.test(args.path)) {
+              return { path: consumerRequire.resolve(args.path) };
+            }
+            // Mixed consumer берёт WC из require entry, а React child из import entry.
+            if (format === 'mixed' && args.path === '@labpics/ui-core/sheet') {
               return { path: consumerRequire.resolve(args.path) };
             }
             return builder.resolve(args.path, {
@@ -144,6 +385,14 @@ async function bundleFixture(name, format, consumerRequire) {
     0,
     `Внешний overlay runtime ${format}:${name}: ${externalOverlay.join(', ')}`,
   );
+  if (format === 'mixed') {
+    const inputs = Object.keys(result.metafile.inputs).map((path) =>
+      resolve(consumer, path).replaceAll('\\', '/'),
+    );
+    assert(inputs.some((path) => path.endsWith('/ui-core/dist/components/sheet/index.cjs')));
+    assert(inputs.some((path) => path.endsWith('/ui-react/dist/dialog.js')));
+    assert(inputs.some((path) => path.endsWith('/ui-core/dist/behaviors/dialog.js')));
+  }
   const scriptName = `${name.replaceAll('/', '-')}.js`;
   const directory = join(temporary, 'public', format);
   await mkdir(dirname(join(directory, `${name}.html`)), { recursive: true });
@@ -155,6 +404,11 @@ async function bundleFixture(name, format, consumerRequire) {
   const output = result.outputFiles.find((file) => file.path.endsWith('.js'));
   assert(output, 'Не создан browser bundle.');
   await writeFile(join(directory, scriptName), output.contents);
+  await writeFile(join(evidence, `${format}-${scriptName}`), output.contents);
+  await writeFile(
+    join(evidence, `${format}-${name.replaceAll('/', '-')}-size.json`),
+    JSON.stringify({ bytes: output.contents.length, gzipBytes: gzipSync(output.contents).length }),
+  );
 }
 
 let server;
@@ -162,6 +416,7 @@ try {
   await mkdir(consumer, { recursive: true });
   await mkdir(evidence, { recursive: true });
   const dependencies = {
+    '@lit-labs/ssr': '4.1.0',
     lit: '3.3.3',
     react: '18.3.1',
     'react-dom': '18.3.1',
@@ -198,6 +453,11 @@ try {
     private: true,
     type: 'module',
     dependencies,
+    devDependencies: {
+      typescript: '5.7.3',
+      '@types/react': '18.3.18',
+      '@types/react-dom': '18.3.5',
+    },
   };
   await writeFile(join(consumer, 'package.json'), JSON.stringify(manifest, null, 2));
   await writeFile(
@@ -244,11 +504,22 @@ try {
   const hidingRoot = dirname(consumerRequire.resolve('@zag-js/aria-hidden'));
   const hiding = await readFile(join(hidingRoot, 'walk-tree-outside.mjs'), 'utf8');
   assert(hiding.includes('counterMap') && !hiding.includes('createLockStack'));
+  const dialogRoot = dirname(consumerRequire.resolve('@zag-js/dialog'));
+  const dialogTypes = await Promise.all(
+    ['dialog.types.d.mts', 'dialog.types.d.ts'].map((name) =>
+      readFile(join(dialogRoot, name), 'utf8'),
+    ),
+  );
+  assert(dialogTypes.every((source) => !source.includes('triggerEl?:')));
   for (const name of [
     '@labpics/ui-core',
     '@labpics/ui-react',
     '@zag-js/dom-query',
     '@zag-js/aria-hidden',
+    '@zag-js/dialog',
+    'typescript',
+    '@types/react',
+    '@types/react-dom',
   ]) {
     const installed = join(consumer, 'node_modules', name);
     assert(!(await lstat(installed)).isSymbolicLink());
@@ -263,11 +534,19 @@ try {
         unpatched: true,
         containsSha256: createHash('sha256').update(containment).digest('hex'),
         tabbableSha256: createHash('sha256').update(tabbable).digest('hex'),
+        dialogTypesSha256: dialogTypes.map((source) =>
+          createHash('sha256').update(source).digest('hex'),
+        ),
       },
       null,
       2,
     ),
   );
+  await verifyTypeContract(consumerRequire);
+  await verifyRuntimeIdentity(consumerRequire);
+  await verifyReactImport();
+  await verifyReactSSR(consumerRequire);
+  await verifyCoreSSR();
   const css = await build({
     stdin: {
       contents: await readFile(join(docs, 'src/button-demo.css'), 'utf8'),
@@ -279,8 +558,9 @@ try {
     outdir: join(temporary, 'unused-css'),
   });
   assert.equal(css.outputFiles.length, 1);
-  for (const format of ['esm', 'cjs']) {
-    for (const name of fixtureNames) await bundleFixture(name, format, consumerRequire);
+  for (const format of formats) {
+    const fixtures = format === 'mixed' ? ['_fixtures/modal-public-composition'] : fixtureNames;
+    for (const name of fixtures) await bundleFixture(name, format, consumerRequire);
     await writeFile(
       join(temporary, 'public', format, 'button-demo.css'),
       css.outputFiles[0].contents,
@@ -308,14 +588,16 @@ try {
     server.listen(0, '127.0.0.1', accept);
   });
   const port = server.address().port;
-  for (const format of ['esm', 'cjs']) {
+  for (const format of formats) {
     activeFormat = format;
     const config = join(temporary, `playwright-${format}.config.cjs`);
     await writeFile(
       config,
       `module.exports = ${JSON.stringify({
         testDir: join(docs, 'tests'),
-        testMatch: specifications.map((name) => `**/${name}`),
+        testMatch: (format === 'mixed' ? ['modal-public-composition.spec.ts'] : specifications).map(
+          (name) => `**/${name}`,
+        ),
         fullyParallel: false,
         workers: 1,
         retries: 0,
@@ -326,13 +608,13 @@ try {
           { name: 'chromium', use: { browserName: 'chromium' } },
           { name: 'webkit', use: { browserName: 'webkit' } },
         ],
-      })};`,
+      })};${format === 'mixed' ? '\nmodule.exports.grep = /Controlled закрытие Sheet в shadow root/;' : ''}`,
     );
     const cli = createRequire(join(docs, 'package.json')).resolve('@playwright/test/cli');
     await run(process.execPath, [cli, 'test', '--config', config], { cwd: docs });
   }
   console.info(
-    'packed-modal-consumer: ESM/CJS и Chromium/WebKit PASS; registry dependencies не исправлены потребителем.',
+    'packed-modal-consumer: NodeNext types, React/Core SSR, ESM/CJS/mixed и Chromium/WebKit PASS; registry dependencies не исправлены потребителем.',
   );
 } finally {
   if (server) await new Promise((accept) => server.close(accept));
