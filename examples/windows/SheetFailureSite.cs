@@ -11,7 +11,7 @@ internal static class SheetFailureSite
         ["Compositor"] = ["CreateEffectFactory", "CreateBackdropBrush", "CreateSurfaceBrush", "CreateSpriteVisual"],
         ["CompositionEffectFactory"] = ["CreateBrush"],
         ["CompositionEffectBrush"] = ["SetSourceParameter"],
-        ["CompositionGraphicsDevice"] = ["CreateDrawingSurface"],
+        ["CompositionGraphicsDevice"] = ["CreateDrawingSurface", "CreateVirtualDrawingSurface"],
         ["CanvasComposition"] = ["CreateCompositionGraphicsDevice", "CreateDrawingSession"],
         ["CanvasDevice"] = ["GetSharedDevice"],
         ["CanvasBitmap"] = ["CreateFromBytes"],
@@ -60,6 +60,7 @@ internal static class SheetFailureSite
             || declaring.FullName?.StartsWith("LabUI.WinUI.Rendering.SheetLayers+", StringComparison.Ordinal) == true)
         {
             if (method.Name.StartsWith("<BuildFrame>g__Surface|", StringComparison.Ordinal)) return "SheetLayers.Surface";
+            if (method.Name.StartsWith("<BuildFrame>g__DrawAtlasCell|", StringComparison.Ordinal)) return "SheetLayers.DrawAtlasCell";
             if (method.Name is "BuildFrame" or "BodyShape" or "DrawShadows" or "DrawNoise" or "Render")
                 return "SheetLayers." + method.Name;
         }

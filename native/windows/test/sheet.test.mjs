@@ -274,6 +274,8 @@ test('diagnostics retain only known renderer failure sites and keep rejecting fa
     'Compositor.CreateEffectFactory',
     'CanvasComposition.CreateDrawingSession',
     'SheetLayers.BuildFrame',
+    'CompositionGraphicsDevice.CreateVirtualDrawingSurface',
+    'SheetLayers.DrawAtlasCell',
     marker,
   ]) {
     const error = { origin: 'unhandled', type: 'ArgumentException', hresult: -2147024809, site };

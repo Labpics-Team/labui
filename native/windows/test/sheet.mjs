@@ -149,6 +149,7 @@ function observationError(value) {
             'CompositionEffectFactory.CreateBrush',
             'CompositionEffectBrush.SetSourceParameter',
             'CompositionGraphicsDevice.CreateDrawingSurface',
+            'CompositionGraphicsDevice.CreateVirtualDrawingSurface',
             'CanvasComposition.CreateCompositionGraphicsDevice',
             'CanvasComposition.CreateDrawingSession',
             'CanvasDevice.GetSharedDevice',
@@ -186,6 +187,7 @@ function observationError(value) {
             'SheetLayers.BodyShape',
             'SheetLayers.DrawShadows',
             'SheetLayers.DrawNoise',
+            'SheetLayers.DrawAtlasCell',
             'SheetLayers.Render',
           ]),
         }
