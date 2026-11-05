@@ -300,17 +300,29 @@ public sealed class SheetLayers : Grid
                 return result;
             }
 
-            var parameters = new Dictionary<string, CompositionBrush>();
+            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale,
+                SheetBlurProfile.Levels.Length + 5, checked((int)device!.MaximumBitmapSizeInPixels));
+            List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
                 result.Own(effect);
                 return effect;
             }
-            IGraphicsEffectSource Source(string name, CompositionBrush brush)
+            int AddLayer(Action<CanvasDrawingSession> draw)
             {
-                parameters.Add(name, brush);
-                return new CompositionEffectSourceParameter(name);
+                var index = atlasDrawings.Count;
+                atlas.Cell(index);
+                atlasDrawings.Add(draw);
+                return index;
             }
+            IGraphicsEffectSource Backdrop() => new CompositionEffectSourceParameter("backdrop");
+            IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
+            {
+                Source = new CompositionEffectSourceParameter("atlas"),
+                TransformMatrix = atlas.Cell(index).EffectTransform,
+                InterpolationMode = CanvasImageInterpolation.Linear,
+                BorderMode = EffectBorderMode.Soft,
+            });
             IGraphicsEffectSource Paint(SolidColorBrush brush) => Effect(new OpacityEffect
             {
                 Opacity = (float)brush.Opacity,
@@ -327,14 +339,13 @@ public sealed class SheetLayers : Grid
 
             // Белая структурная маска не является краской поверхности.
             var maskInk = Color.FromArgb(255, 255, 255, 255);
-            var bodyMask = Source("bodyMask", Surface(drawing => drawing.FillGeometry(bodyShape, maskInk)));
-            var outer = Source("shadows", Surface(drawing => DrawShadows(drawing, metrics, bodyShape)));
+            var bodyMask = AddLayer(drawing => drawing.FillGeometry(bodyShape, maskInk));
+            var outer = AddLayer(drawing => DrawShadows(drawing, metrics, bodyShape));
             IGraphicsEffectSource sheet;
             {
-                var backdrop = Source("backdrop", result.Own(compositor.CreateBackdropBrush()));
-                var noise = Source("noise", Surface(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale)));
+                var noise = AddLayer(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale));
                 IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
-                    Effect(new OpacityEffect { Source = noise, Opacity = (float)opacity }));
+                    Effect(new OpacityEffect { Source = Layer(noise), Opacity = (float)opacity }));
 
                 // Маски задают неотрицательное разбиение единицы. Add суммирует
                 // premultiplied ветви без перекрытия по правилу SourceOver.
@@ -342,36 +353,63 @@ public sealed class SheetLayers : Grid
                 for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
                 {
                     var level = index;
-                    var mask = Source($"ghostMask{index}", Surface(drawing =>
+                    var mask = AddLayer(drawing =>
                     {
                         var stops = SheetBlurProfile.Stops(level).Select(stop => new CanvasGradientStop
                         { Position = stop.Position, Color = Color.FromArgb((byte)(stop.Weight * 255), maskInk.R, maskInk.G, maskInk.B) }).ToArray();
                         using var gradient = new CanvasLinearGradientBrush(device, stops)
                         { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
                         drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
-                    }));
-                    var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), mask);
+                    });
+                    var branch = Mask(index == 0 ? Backdrop() : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), Layer(mask));
                     progressive.Sources.Add(branch);
                 }
-                var ghostMask = Source("ghostMask", Surface(drawing =>
-                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk)));
+                var ghostMask = AddLayer(drawing =>
+                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk));
                 // Alpha Ghost tint не управляет существованием backdrop/noise.
-                var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
-                var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius), Paint(Tint!));
+                var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
+                var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius), Paint(Tint!));
                 var blended = Effect(new BlendEffect
                 {
                     Background = tinted, Foreground = Paint(Blend!),
                     Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
                 });
-                var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), bodyMask);
-                sheet = Over(Over(ghost, outer), body);
+                var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
+                sheet = Over(Over(ghost, Layer(outer)), body);
             }
-            var border = Source("border", Surface(DrawBorder));
-            var graph = Over(sheet, border);
+            var border = AddLayer(DrawBorder);
+            var graph = Over(sheet, Layer(border));
+            if (atlasDrawings.Count != atlas.CellCount)
+                throw new InvalidOperationException("Sheet atlas требует все authored raster-слои.");
+            var atlasSurface = result.Own(graphics!.CreateDrawingSurface(new Size(atlas.Width, atlas.Height),
+                DirectXPixelFormat.B8G8R8A8UIntNormalized, DirectXAlphaMode.Premultiplied));
+            using (var drawing = CanvasComposition.CreateDrawingSession(atlasSurface,
+                new Rect(0, 0, atlas.Width, atlas.Height), (float)(96 * scale)))
+            {
+                drawing.Clear(Color.FromArgb(0, 0, 0, 0));
+                var originalTransform = drawing.Transform;
+                for (var index = 0; index < atlasDrawings.Count; index++)
+                {
+                    drawing.Transform = Matrix3x2.CreateTranslation(atlas.Cell(index).DrawingOffset) * originalTransform;
+                    try
+                    {
+                        using var clip = drawing.CreateLayer(1, new Rect(0, 0, pixelWidth / scale, pixelHeight / scale));
+                        atlasDrawings[index](drawing);
+                    }
+                    finally { drawing.Transform = originalTransform; }
+                }
+            }
+            var atlasBrush = result.Own(compositor.CreateSurfaceBrush(atlasSurface));
+            atlasBrush.Stretch = CompositionStretch.None;
+            atlasBrush.HorizontalAlignmentRatio = 0;
+            atlasBrush.VerticalAlignmentRatio = 0;
+            atlasBrush.Scale = atlas.BrushScale;
+            var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
                 (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma));
             var brush = result.Own(factory.CreateBrush());
-            foreach (var (name, source) in parameters) brush.SetSourceParameter(name, source);
+            brush.SetSourceParameter("backdrop", backdropBrush);
+            brush.SetSourceParameter("atlas", atlasBrush);
             result.Visual.Brush = brush;
             return result;
         }
