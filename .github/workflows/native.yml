@@ -57,7 +57,7 @@ jobs:
           node-version: "24.19.0"
 
       - name: Native projection contract
-        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs native/windows/test/sheet-content.test.mjs
+        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs native/windows/test/sheet-content.test.mjs native/windows/test/sheet-screenshot-readback.test.mjs
 
       - name: Native animation capture contract
         shell: pwsh

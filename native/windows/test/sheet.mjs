@@ -54,6 +54,10 @@ const failurePhases = [
   'content-template',
   'window-before',
   'screenshot',
+  'screenshot-command',
+  'screenshot-reply',
+  'screenshot-process',
+  'screenshot-image',
   'window-after',
   'cleanup',
 ];
@@ -441,6 +445,7 @@ export function sheetFailureLog({
   error,
   cleanupError,
   stderrBytes,
+  screenshot,
 }) {
   source(sourceSha);
   assert.ok(
@@ -518,7 +523,27 @@ export function sheetFailureLog({
     error: errorInfo(error),
     cleanupError: errorInfo(cleanupError),
     stderrBytes: number(stderrBytes),
+    ...(screenshot === undefined ? {} : { screenshot: screenshotReadback(screenshot) }),
   })}\n`;
+}
+
+function screenshotReadback(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
+  const dimension = (value) =>
+    Number.isSafeInteger(value) && value > 0 && value <= 1e6 ? value : null;
+  return {
+    exitCode:
+      Number.isInteger(value.exitCode) &&
+      value.exitCode >= -2147483648 &&
+      value.exitCode <= 4294967295
+        ? value.exitCode
+        : null,
+    replyIsObject: typeof value.replyIsObject === 'boolean' ? value.replyIsObject : null,
+    image:
+      value.image !== null && typeof value.image === 'object' && !Array.isArray(value.image)
+        ? { width: dimension(value.image.width), height: dimension(value.image.height) }
+        : null,
+  };
 }
 
 export function sheetContentCaseLog({ sourceSha, name, pid, windowHandle, exited, observation }) {
@@ -627,6 +652,7 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
   let result;
   let failure;
   let cleanupError;
+  let screenshot;
   let phase = 'readiness';
   try {
     const deadline = startedAtUnixMs + 20000;
@@ -662,7 +688,8 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
       windowBefore.startedAtUnixMs <= observed.observedAtUnixMs,
       'sheet: процесс создан после наблюдения',
     );
-    phase = 'screenshot';
+    phase = 'screenshot-command';
+    screenshot = { exitCode: null, replyIsObject: null, image: null };
     const pngPath = join(output, `${entry.name}.png`);
     const command = spawnSync(
       cli,
@@ -680,14 +707,20 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
         },
       },
     );
+    screenshot.exitCode = command.status;
     if (command.error) throw command.error;
     assert.equal(command.status, 0, 'sheet: screenshot отказал');
+    phase = 'screenshot-reply';
     const reply = JSON.parse(command.stdout);
-    assert.ok(reply !== null && typeof reply === 'object', 'sheet: CLI screenshot не вернул JSON');
+    screenshot.replyIsObject = reply !== null && typeof reply === 'object';
+    assert.ok(screenshot.replyIsObject, 'sheet: CLI screenshot не вернул JSON');
+    phase = 'screenshot-process';
     await delay(0);
     if (childError) throw childError;
     assert.equal(child.exitCode, null, 'sheet: приложение завершилось во время снимка');
-    assert.deepEqual(png(await readFile(pngPath)), { width: 375, height: 812 });
+    phase = 'screenshot-image';
+    screenshot.image = png(await readFile(pngPath));
+    assert.deepEqual(screenshot.image, { width: 375, height: 812 });
     phase = 'window-after';
     const windowAfter = readWindow(child.pid);
     assert.deepEqual(windowAfter, windowBefore, 'sheet: окно изменилось во время снимка');
@@ -725,6 +758,7 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
         error: failure,
         cleanupError,
         stderrBytes,
+        screenshot,
       }),
     );
     throw new Error('sheet: capture отказал; подробности в LABUI_SHEET_FAILURE_JSON');
