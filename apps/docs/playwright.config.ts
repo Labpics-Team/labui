@@ -65,6 +65,7 @@ const SMOKE_SPECS = [
   'button-effects.spec.ts',
   'contrast.spec.ts',
   'authored-colors.spec.ts',
+  'colors-live.spec.ts',
   // Геометрия, шрифт и масштаб Switch сверяются с независимым эталоном.
   'switch-geometry.spec.ts',
   // Runtime Switch: прерывание, reduced motion и освобождение ресурсов.

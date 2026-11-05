@@ -14,9 +14,11 @@ import '@labpics/fonts/fonts.css';
 import { Button } from '@labpics/ui-react';
 import { StrictMode, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { bootColors } from './colors-runtime.js';
 import { wireThemeSwitch } from './theme-switch.js';
 
 wireThemeSwitch();
+bootColors();
 
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in button.html');

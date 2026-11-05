@@ -127,7 +127,11 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
         add(`${prefix}-${level}`, muted, sharedAlpha(table, level, path));
     };
 
-    add('bg-tone-1', selected.background);
+    add(
+      'bg-tone-1',
+      selected.background,
+      selected.backgroundOpacity === undefined ? 1 : selected.backgroundOpacity,
+    );
     const tone = record(selected.tone, `themes.${theme}.tone`);
     source(tone.source);
     if (!Array.isArray(tone.alpha) || tone.alpha.length !== 2)
