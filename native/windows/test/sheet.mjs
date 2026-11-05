@@ -71,16 +71,16 @@ function errorInfo(value) {
 }
 
 function topologyInfo(value) {
-  if (!Array.isArray(value) || value.length > 15) return null;
+  if (!Array.isArray(value) || value.length > 16) return null;
   const integer = (value, minimum, maximum) =>
     Number.isInteger(value) && value >= minimum && value <= maximum ? value : null;
   const boolean = (value) => (typeof value === 'boolean' ? value : null);
   return value.map((input) => {
     const row = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
     return {
-      index: integer(row.index, 0, 14),
+      index: integer(row.index, 0, 15),
       inputs: integer(row.inputs, 2, 8),
-      combine: known(row.combine, ['Add', 'Arithmetic']),
+      combine: known(row.combine, ['Add', 'Arithmetic', 'BalancedAdd']),
       source: known(row.source, ['shared', 'repeat', 'distinct']),
       named: boolean(row.named),
       blur: boolean(row.blur),

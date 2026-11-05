@@ -356,7 +356,7 @@ test('source topology diagnostics preserve bounded cases without publishing priv
         combine: marker,
         source: marker,
         named: marker,
-        index: 15,
+        index: 16,
         inputs: 100,
         hresult: 2147483648,
       },
@@ -373,7 +373,7 @@ test('source topology diagnostics preserve bounded cases without publishing priv
       },
     ],
   );
-  for (const invalid of [null, marker, {}, Array.from({ length: 16 }, () => sample)])
+  for (const invalid of [null, marker, {}, Array.from({ length: 17 }, () => sample)])
     assert.equal(readback(invalid), null);
 });
 

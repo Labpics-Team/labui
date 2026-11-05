@@ -71,3 +71,29 @@ test('topology stage accepts only the two closed operation names', () => {
   for (const stage of ['Factory', 'render', 'PRIVATE_STAGE_NOT_FOR_LOG', 42, {}, ['factory']])
     assert.deepEqual(readback([{ ...sample, stage }]), [{ ...sample, stage: null }]);
 });
+
+test('balanced Add preserves raw factory success or failure without clearing the primary failure', () => {
+  for (const hresult of [0, -2147024809]) {
+    const balanced = { ...sample, index: 15, combine: 'BalancedAdd', stage: 'factory', hresult };
+    assert.deepEqual(readback([sample, balanced]), [sample, balanced]);
+  }
+});
+
+test('topology accepts all sixteen cases and rejects an oversized diagnostic without truncation', () => {
+  const rows = Array.from({ length: 16 }, (_, index) => ({
+    ...sample,
+    index,
+    combine: index === 15 ? 'BalancedAdd' : 'Add',
+    stage: 'factory',
+  }));
+  assert.deepEqual(readback(rows), rows);
+  assert.equal(readback([...rows, sample]), null);
+});
+
+test('balanced Add retains closed combine names and the index boundary', () => {
+  const balanced = { ...sample, index: 15, combine: 'BalancedAdd', stage: 'factory' };
+  for (const combine of ['balancedAdd', 'BinaryAdd', 'PRIVATE_STAGE_NOT_FOR_LOG', 42, {}, ['BalancedAdd']])
+    assert.deepEqual(readback([{ ...balanced, combine }]), [{ ...balanced, combine: null }]);
+  for (const index of [-1, 16, 1.5, '15'])
+    assert.deepEqual(readback([{ ...balanced, index }]), [{ ...balanced, index: null }]);
+});

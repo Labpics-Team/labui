@@ -7,7 +7,7 @@ namespace LabUI.Buttons;
 internal static class SheetSourceTopology
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
-    internal const int Limit = 15;
+    internal const int Limit = 16;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
     {
@@ -25,7 +25,7 @@ internal static class SheetSourceTopology
                     {
                         ["index"] = Integer(row["index"], 0, Limit - 1),
                         ["inputs"] = Integer(row["inputs"], 2, 8),
-                        ["combine"] = Known(row["combine"], "Add", "Arithmetic"),
+                        ["combine"] = Known(row["combine"], "Add", "Arithmetic", "BalancedAdd"),
                         ["source"] = Known(row["source"], "shared", "repeat", "distinct"),
                         ["named"] = Boolean(row["named"]),
                         ["blur"] = Boolean(row["blur"]),
