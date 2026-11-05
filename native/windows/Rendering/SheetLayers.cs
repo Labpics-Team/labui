@@ -317,9 +317,10 @@ public sealed class SheetLayers : Grid
             }
             IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
+            string LayerSource(int index) => $"atlas{index}";
             IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
             {
-                Source = Source("atlas"),
+                Source = Source(LayerSource(index)),
                 TransformMatrix = atlas.Cell(index).EffectTransform,
                 InterpolationMode = CanvasImageInterpolation.Linear,
                 BorderMode = EffectBorderMode.Soft,
@@ -380,6 +381,7 @@ public sealed class SheetLayers : Grid
             atlasBrush.VerticalAlignmentRatio = 0;
             atlasBrush.Scale = atlas.BrushScale;
             atlasBrush.Offset = atlas.BrushOffset;
+            (string Name, CompositionBrush Source) LayerBinding(int index) => (LayerSource(index), atlasBrush);
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffectSource graph,
                 params (string Name, CompositionBrush Source)[] bindings)
@@ -437,14 +439,16 @@ public sealed class SheetLayers : Grid
                 var pair = Effect(new CompositeEffect
                 { Mode = CanvasComposite.Add, Sources = { branches[index], branches[index + 1] } });
                 var name = $"ghostPair{index / 2}";
-                var pairBrush = Brush(name, pair, ("backdrop", backdropBrush), ("atlas", atlasBrush));
+                var pairBrush = Brush(name, pair, ("backdrop", backdropBrush),
+                    LayerBinding(ghostMasks[index]), LayerBinding(ghostMasks[index + 1]));
                 progressive.Sources.Add(Source(name));
                 pairs.Add((name, pairBrush));
             }
             var progressiveBrush = Brush("progressive", progressive, pairs.ToArray());
             // Alpha Ghost tint не управляет существованием backdrop/noise.
             var ghost = Mask(WithNoise(Over(Source("progressive"), Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
-            var ghostBrush = Brush("ghost", ghost, ("progressive", progressiveBrush), ("atlas", atlasBrush));
+            var ghostBrush = Brush("ghost", ghost, ("progressive", progressiveBrush),
+                LayerBinding(noise), LayerBinding(ghostMask));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius), Paint(Tint!));
             var blended = Effect(new BlendEffect
             {
@@ -452,10 +456,12 @@ public sealed class SheetLayers : Grid
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
             var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
-            var bodyBrush = Brush("body", body, ("backdrop", backdropBrush), ("atlas", atlasBrush));
+            var bodyBrush = Brush("body", body, ("backdrop", backdropBrush),
+                LayerBinding(noise), LayerBinding(bodyMask));
             var sheet = Over(Over(Source("ghost"), Layer(outer)), Source("body"));
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, ("ghost", ghostBrush), ("body", bodyBrush), ("atlas", atlasBrush));
+            result.Visual.Brush = Brush("final", graph, ("ghost", ghostBrush), ("body", bodyBrush),
+                LayerBinding(outer), LayerBinding(border));
             return result;
         }
         catch (Exception error)
