@@ -27,10 +27,10 @@ const PROJECTION_CSS = `${Object.entries(PROPERTIES)
     const key = projection(property as LengthProperty);
     return `@property ${key}-length{syntax:"<length>";inherits:false;initial-value:-1px}
 @property ${key}-number{syntax:"<number>";inherits:false;initial-value:-1}
-[data-veil]{${key}-length:var(${property},${fallback});${key}-number:var(${property},${fallback});
+[data-veil]{${key}-value:var(${property},${fallback});${key}-length:var(${property},${fallback});${key}-number:var(${property},${fallback});
 ${key}-width:calc(var(${key}-length) + var(${key}-number)*1px + 2px)}
-@container style(${property}: ){.${probeClass(property as LengthProperty)}{--_lab-material-length-empty:1px}}
-${fallback === 'auto' ? `@container style(${property}:auto){.${probeClass(property as LengthProperty)}{--_lab-material-length-auto:2px}}` : ''}`;
+@container style(${key}-value: ){.${probeClass(property as LengthProperty)}{--_lab-material-length-empty:1px}}
+${fallback === 'auto' ? `@container style(${key}-value:auto){.${probeClass(property as LengthProperty)}{--_lab-material-length-auto:2px}}` : ''}`;
   })
   .join(
     '\n',
@@ -83,8 +83,8 @@ export function createLengthProbe(
   element.style.cssText =
     'all:initial;display:block;position:absolute;left:0;top:0;height:calc(var(--_lab-material-length-empty,0px) + var(--_lab-material-length-auto,0px));padding:0;border:0;margin:0;min-width:0;max-width:none;box-sizing:content-box;visibility:hidden;pointer-events:none';
   parent.style.setProperty('--_lab-material-length-ready', 'ready');
-  // Ошибка даёт 0×0; пустой токен и auto различаются высотой. Разрешённая
-  // длина/число, включая ноль, дают положительную ширину для ResizeObserver.
+  // Ошибка даёт 0×0; пустой токен и auto, включая default, различаются высотой.
+  // Разрешённые длина/число, включая ноль, дают ширину для ResizeObserver.
   element.style.width = `var(${key}-width)`;
   let document: Document | null = null;
   let root: ShadowRoot | null = null;
@@ -123,8 +123,8 @@ export function createLengthProbe(
         const fallback = PROPERTIES[property];
         if (fallback.endsWith('px')) return Number(fallback.slice(0, -2));
       }
-      const numeric = /^\+?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(raw);
-      const pixels = /^(\+?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?)px$/i.exec(raw);
+      const numeric = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i.test(raw);
+      const pixels = /^([+-]?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?)px$/i.exec(raw);
       // CSS может ограничить бесконечное число конечной проекцией. Legacy px
       // проверяется до этого преобразования, чтобы ошибка не стала радиусом.
       if (numeric || pixels) {

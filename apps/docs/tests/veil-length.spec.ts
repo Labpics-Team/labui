@@ -73,6 +73,44 @@ test('нечисловой legacy ввод не становится конеч�
   expect(errors.some((message) => message.includes('--lab-veil-strength'))).toBe(true);
 });
 
+test('media-смена default feather на ошибку снимает эффект и восстанавливает его', async ({
+  page,
+}, info) => {
+  await load(page);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.evaluate(() =>
+    window.__veilLength.css(
+      '.scope{--lab-veil-strength:24px;--lab-veil-feather:initial}@media(prefers-color-scheme:dark){.scope{--lab-veil-feather:50%}}',
+    ),
+  );
+  await settle(page);
+  await strength(page, 24);
+  const errors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text());
+  });
+  const geometry = () =>
+    page.evaluate(() => {
+      const probe = document.querySelector('.lab-material__length--veil-feather');
+      const box = probe?.getBoundingClientRect();
+      return box ? [box.width, box.height] : null;
+    });
+  const before = await geometry();
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await settle(page);
+  await info.attach('feather-geometry.json', {
+    body: JSON.stringify({ before, after: await geometry() }),
+    contentType: 'application/json',
+  });
+  await expect.poll(() => page.evaluate(() => window.__veilLength.snapshot().count)).toBe(0);
+  await expect
+    .poll(() => errors.some((message) => message.includes('--lab-veil-feather')))
+    .toBe(true);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await strength(page, 24);
+  expect(await page.evaluate(() => window.__veilLength.snapshot().box)).toEqual([200, 200]);
+});
+
 test('media-смена auto на ошибку feather снимает эффект и восстанавливает его', async ({
   page,
 }) => {
@@ -139,11 +177,25 @@ for (const missing of ['registration', 'queries'] as const) {
       ['initial', 24],
       [' ', 24],
       ['24px', 24],
+      ['-0px', 0],
+      ['-0', 0],
+      ['-0e0', 0],
       ['32', 32],
       ['32px', 32],
     ] as const) {
       await page.evaluate((value) => window.__veilLength.strength(value), input);
       await strength(page, expected);
+    }
+    await page.evaluate(() => window.__veilLength.feather('0px'));
+    await settle(page);
+    const zero = await page.evaluate(() => window.__veilLength.snapshot().masks);
+    expect(zero.length).toBeGreaterThan(0);
+    for (const value of ['-0px', '-0', '-0.0px', '-0e0']) {
+      await page.evaluate((input) => window.__veilLength.feather(input), value);
+      await strength(page, 32);
+      await expect
+        .poll(() => page.evaluate(() => window.__veilLength.snapshot().masks))
+        .toEqual(zero);
     }
     await page.evaluate(() => window.__veilLength.feather('8px'));
     await settle(page);
@@ -240,16 +292,22 @@ test('media меняет legacy число без изменения DOM и ра
   expect(await page.evaluate(() => window.__veilLength.snapshot().box)).toEqual([200, 200]);
 });
 
-for (const valid of ['32', '0', '0px']) {
-  test(`media-смена ${valid} на проценты снимает эффект и сообщает ошибку`, async ({ page }) => {
+for (const [valid, invalid] of [
+  ['32', '50%'],
+  ['0', '50%'],
+  ['0px', '50%'],
+  ['0', '1e309'],
+  ['0px', '1e309'],
+] as const) {
+  test(`media-смена ${valid} на ${invalid} снимает эффект и сообщает ошибку`, async ({ page }) => {
     await load(page);
     await page.emulateMedia({ colorScheme: 'light' });
     await page.evaluate(
-      (value) =>
+      ([value, error]) =>
         window.__veilLength.css(
-          `.scope{--lab-veil-strength:${value}}@media(prefers-color-scheme:dark){.scope{--lab-veil-strength:50%}}`,
+          `.scope{--lab-veil-strength:${value}}@media(prefers-color-scheme:dark){.scope{--lab-veil-strength:${error}}}`,
         ),
-      valid,
+      [valid, invalid],
     );
     await strength(page, Number.parseFloat(valid));
     const errors: string[] = [];
