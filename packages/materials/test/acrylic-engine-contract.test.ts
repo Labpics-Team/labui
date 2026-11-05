@@ -201,6 +201,7 @@ describe('фильтр принадлежит поверхности и её л�
     const owner = new FilterDocument();
     vi.stubGlobal('document', owner);
     vi.stubGlobal('HTMLElement', FilterNode);
+    vi.stubGlobal('HTMLSlotElement', class extends FilterNode {});
     vi.stubGlobal(
       'ResizeObserver',
       class {

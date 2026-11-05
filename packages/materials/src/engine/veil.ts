@@ -56,6 +56,7 @@
  *     the page behind it.
  */
 
+import { type LengthProbe, createLengthProbe } from './length';
 import { trailingRaf } from './mount';
 import { type Point, type Stop, bandBBox, bandify, parseStops } from './veil-math';
 
@@ -64,6 +65,7 @@ import { type Point, type Stop, bandBBox, bandify, parseStops } from './veil-mat
 export const VEIL_STRIP_CLASS = 'lab-veil__strip';
 
 export interface VeilHandle {
+  restore(): void;
   /** Re-read the declarative config and rebuild if it changed (sig-guarded). */
   refresh(): void;
   setEnabled(b: boolean): void;
@@ -72,6 +74,9 @@ export interface VeilHandle {
 
 interface VeilState {
   el: HTMLElement;
+  measurements: HTMLElement;
+  strength: LengthProbe;
+  feather: LengthProbe;
   strips: HTMLElement[];
   sig: string | null;
   enabled: boolean;
@@ -82,7 +87,6 @@ const registry = new WeakMap<HTMLElement, VeilHandle>(); // host → handle (no 
 const DEFAULTS = {
   from: '50% 0%',
   to: '50% 100%',
-  strength: 24, // px at the strong end of the canonical preset profile
   levels: 6,
   feather: 'auto',
 } as const;
@@ -137,7 +141,8 @@ interface VeilConfig {
  *  `--lab-veil-from/to` tokens), `--lab-veil-*` carries everything else. The
  *  tokens are NOT declared in material.css — a `[data-veil]` declaration would
  *  shadow values inherited from an ancestor, so the defaults live here. */
-function readConfig(el: HTMLElement): VeilConfig {
+function readConfig(state: VeilState): VeilConfig {
+  const { el } = state;
   const cs = getComputedStyle(el);
   const raw = (prop: string, fb: string): string => {
     const v = cs.getPropertyValue(prop).trim();
@@ -147,9 +152,8 @@ function readConfig(el: HTMLElement): VeilConfig {
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
   const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
-  const strengthRaw = Number.parseFloat(raw('--lab-veil-strength', `${DEFAULTS.strength}px`));
-  const strength =
-    Number.isFinite(strengthRaw) && strengthRaw >= 0 ? strengthRaw : DEFAULTS.strength;
+  const stops = raw('--lab-veil-stops', '');
+  const feather = raw('--lab-veil-feather', DEFAULTS.feather);
   return {
     w,
     h,
@@ -157,10 +161,10 @@ function readConfig(el: HTMLElement): VeilConfig {
     to: preset ? preset.to : raw('--lab-veil-to', DEFAULTS.to),
     // The canonical profile: strength at the strong end (t=0), easing out to
     // sharp — `--lab-veil-stops` overrides it wholesale (Figma-like stops).
-    stops: raw('--lab-veil-stops', `0 ${strength}px, 1 0px ease-out`),
+    stops: stops || `0 ${state.strength.read()}px, 1 0px ease-out`,
     levels:
       Number.parseInt(raw('--lab-veil-levels', String(DEFAULTS.levels)), 10) || DEFAULTS.levels,
-    feather: raw('--lab-veil-feather', DEFAULTS.feather),
+    feather: feather === 'auto' ? feather : String(state.feather.read()),
     reduced:
       typeof matchMedia !== 'undefined' &&
       matchMedia('(prefers-reduced-transparency: reduce)').matches,
@@ -175,7 +179,16 @@ const px = (v: number): string => `${v.toFixed(2)}px`;
  */
 function render(state: VeilState): void {
   const { el } = state;
-  const c = readConfig(el);
+  let c: VeilConfig;
+  try {
+    c = readConfig(state);
+  } catch (error) {
+    for (const strip of state.strips) strip.remove();
+    state.strips = [];
+    state.sig = null;
+    console.error(error);
+    return;
+  }
 
   const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${c.stops}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
   if (sig === state.sig) return;
@@ -331,8 +344,18 @@ export function attach(el: HTMLElement): VeilHandle {
       el,
     );
   }
+  // CSS-измерения не увеличивают scrollable overflow самой поверхности.
+  const measurements = el.ownerDocument.createElement('span');
+  measurements.className = 'lab-veil__lengths';
+  measurements.setAttribute('aria-hidden', 'true');
+  measurements.style.cssText =
+    'all:initial;display:block;position:absolute;width:0;height:0;overflow:hidden;font:inherit;visibility:hidden;pointer-events:none';
+  el.appendChild(measurements);
   const state: VeilState = {
     el,
+    measurements,
+    strength: createLengthProbe(el, measurements, '--lab-veil-strength'),
+    feather: createLengthProbe(el, measurements, '--lab-veil-feather'),
     strips: [],
     sig: null,
     enabled: true,
@@ -348,12 +371,21 @@ export function attach(el: HTMLElement): VeilHandle {
   };
   const ro = new ResizeObserver(schedule);
   ro.observe(el);
+  ro.observe(state.strength.element);
+  ro.observe(state.feather.element);
   window.addEventListener('resize', schedule);
   const mq =
     typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;
   mq?.addEventListener('change', update);
 
   const handle: VeilHandle = {
+    restore(): void {
+      if (disposed) return;
+      if (measurements.parentNode !== el) el.appendChild(measurements);
+      state.strength.restore();
+      state.feather.restore();
+      for (const strip of state.strips) if (strip.parentNode !== el) el.appendChild(strip);
+    },
     refresh: update,
     setEnabled: (b: boolean): void => {
       state.enabled = b !== false;
@@ -368,6 +400,9 @@ export function attach(el: HTMLElement): VeilHandle {
       mq?.removeEventListener('change', update);
       for (const s of state.strips) s.remove();
       state.strips = [];
+      state.strength.destroy();
+      state.feather.destroy();
+      measurements.remove();
       if (registry.get(el) === handle) registry.delete(el);
     },
   };

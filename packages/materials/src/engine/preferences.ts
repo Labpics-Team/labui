@@ -1,9 +1,13 @@
-/** Медиа меняют допуск живого материала; контраст разрешается в области элемента. */
+/** Медиа меняют допуск и контекст материала; контраст разрешается в области элемента. */
 const SYSTEM_DEGRADATIONS = [
   '(prefers-reduced-transparency: reduce)',
   '(forced-colors: active)',
 ] as const;
-export const MATERIAL_ENGINE_MEDIA = [...SYSTEM_DEGRADATIONS, '(prefers-contrast: more)'] as const;
+export const MATERIAL_ENGINE_MEDIA = [
+  ...SYSTEM_DEGRADATIONS,
+  '(prefers-contrast: more)',
+  '(prefers-color-scheme: dark)',
+] as const;
 
 /** Принудительные цвета и снижение прозрачности не отменяются режимом normal. */
 export function materialMediaBlocked(): boolean {

@@ -31,7 +31,7 @@
 
 import { attach as attachAcrylic, supportsAcrylicChain } from './acrylic';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
-import { type EngineBinding, mountEngine, trailingRaf } from './mount';
+import { type EngineBinding, collectSurfaces, mountEngine, trailingRaf } from './mount';
 import { MATERIAL_ENGINE_MEDIA, materialMediaBlocked, prefersMoreContrast } from './preferences';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
@@ -81,6 +81,7 @@ const BINDINGS: readonly EngineBinding[] = [
     gate: supportsBackdropBlur,
     selector: VEIL,
     wants: () => true,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
     attach: attachVeil,
   },
@@ -95,8 +96,10 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   if (typeof document === 'undefined') return () => {};
   const scope = root ?? document;
 
-  const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
+  const bindings = BINDINGS.filter((binding) => binding.gate());
+  const engines = bindings.map((binding) => mountEngine(binding, scope));
   if (engines.length === 0) return () => {};
+  const contextSelector = bindings.map((binding) => binding.selector).join(',');
 
   let disposed = false;
   const sync = (): void => {
@@ -112,21 +115,24 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     if (!disposed) raf.schedule();
   };
   const mo = new MutationObserver(schedule);
-  let observed = new Set<Node>();
+  let observed = new Map<Node, boolean>();
   let slotRoots = new Set<ShadowRoot>();
 
   function observeContext(): void {
-    const root = scope instanceof Document ? scope.documentElement : scope;
+    const context = collectSurfaces(scope, contextSelector);
+    const subtrees = [...context.scopes].map((current) =>
+      current instanceof Document ? current.documentElement : current,
+    );
     const ancestors = new Set<Node>();
     const roots = new Set<ShadowRoot>();
     const visited = new Set<Node>();
-    // App-level mount также видит slotted light-DOM поверхности. Их CSS-контекст
-    // может проходить через доступный shadow slot вне наблюдаемого DOM-поддерева.
-    for (const start of [root, ...scope.querySelectorAll(SURFACE)]) {
+    // Назначенный контейнер остаётся наблюдаемым и без выбранных поверхностей:
+    // добавление veil в его поддерево само по себе не вызывает slotchange.
+    for (const start of [...subtrees, ...context.surfaces]) {
       let node: Node | null = start;
       while (node && !visited.has(node)) {
         visited.add(node);
-        if (!root.contains(node)) ancestors.add(node);
+        if (!subtrees.some((root) => root.contains(node))) ancestors.add(node);
         if (node instanceof Element && node.shadowRoot) roots.add(node.shadowRoot);
         // assignedSlot закрытого чужого root недоступен. Его скрытые wrappers
         // требуют участия владельца; этот runtime не наблюдает их по догадке.
@@ -142,8 +148,13 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
         }
       }
     }
-    const next = new Set<Node>([root, ...ancestors]);
-    if (next.size !== observed.size || [...next].some((node) => !observed.has(node))) {
+    const next = new Map<Node, boolean>();
+    for (const node of subtrees) next.set(node, true);
+    for (const node of ancestors) next.set(node, false);
+    if (
+      next.size !== observed.size ||
+      [...next].some(([node, subtree]) => observed.get(node) !== subtree)
+    ) {
       mo.disconnect();
       const options = {
         attributes: true,
@@ -151,6 +162,7 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
           'data-material',
           'data-theme',
           'class',
+          'style',
           'data-veil',
           'data-contrast',
           'slot',
@@ -158,8 +170,7 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
         ],
         childList: true,
       };
-      mo.observe(root, { ...options, subtree: true });
-      for (const node of ancestors) mo.observe(node, options);
+      for (const [node, subtree] of next) mo.observe(node, { ...options, subtree });
       observed = next;
     }
     for (const previous of slotRoots) {
@@ -172,9 +183,8 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   }
   sync();
 
-  // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
-  // движка обязан сняться сам, листовые деградации его не перебивают). Собираем
-  // объединение медиа-запросов всех смонтированных движков.
+  // Смена системного контекста перечитывает материал даже без сигнала от CSS-бокса.
+  // Один набор подписок обслуживает все смонтированные движки и снимается при dispose.
   const mediaListeners: MediaQueryList[] = [];
   if (typeof matchMedia !== 'undefined') {
     const queries = new Set(engines.flatMap((e) => [...e.mediaQueries]));

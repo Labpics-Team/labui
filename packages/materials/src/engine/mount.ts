@@ -142,6 +142,31 @@ export interface MountedEngine {
   readonly mediaQueries: readonly string[];
 }
 
+/**
+ * Один конечный выбор для движков и наблюдения: DOM-поддерево scope и поддеревья
+ * элементов, назначенных его слотам. Fallback уже входит в физический DOM.
+ * Вложенные ShadowRoot принадлежат своим mount и здесь не обходятся.
+ */
+export function collectSurfaces(scope: Document | Element, selector: string) {
+  const surfaces = new Set<HTMLElement>();
+  const scopes = new Set<Document | Element>([scope]);
+  for (const current of scopes) {
+    if (current instanceof HTMLElement && current.matches(selector)) surfaces.add(current);
+    for (const element of current.querySelectorAll(selector)) {
+      if (element instanceof HTMLElement) surfaces.add(element);
+    }
+    const slots = new Set(current.querySelectorAll('slot'));
+    if (current instanceof HTMLSlotElement) slots.add(current);
+    for (const slot of slots) {
+      if (!(slot instanceof HTMLSlotElement)) continue;
+      for (const assigned of slot.assignedElements({ flatten: true })) {
+        if (!current.contains(assigned)) scopes.add(assigned);
+      }
+    }
+  }
+  return { surfaces, scopes };
+}
+
 interface SharedHandle {
   handle: EngineHandle | undefined;
   users: number;
@@ -194,13 +219,7 @@ export function mountEngine(binding: EngineBinding, scope: Document | Element): 
 
   const sync = (): void => {
     if (disposed) return;
-    const want = new Set<HTMLElement>();
-    for (const el of scope.querySelectorAll(binding.selector)) {
-      if (el instanceof HTMLElement) want.add(el);
-    }
-    if (scope instanceof HTMLElement && scope.matches(binding.selector)) {
-      want.add(scope);
-    }
+    const want = collectSurfaces(scope, binding.selector).surfaces;
     for (const el of new Set([...held.keys(), ...want])) reconcileSurface(el);
     // Отцепить вышедших из scope или переставших соответствовать selector.
     for (const [el, shared] of held) {
