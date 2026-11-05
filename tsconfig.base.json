@@ -36,6 +36,8 @@
       "@labpics/ui-tokens/motion": ["./packages/tokens/src/generated/motion.ts"],
       "@labpics/ui-react": ["./packages/react/src/index.ts"],
       "@labpics/ui-react/*": ["./packages/react/src/*.tsx"],
+      "@labpics/ui-solid": ["./packages/solid/src/index.ts"],
+      "@labpics/ui-solid/*": ["./packages/solid/src/*.ts", "./packages/solid/src/generated/*.ts"],
       "@labpics/ui-vue": ["./packages/vue/src/index.ts"],
       "@labpics/ui-vue/*": ["./packages/vue/src/*.ts", "./packages/vue/src/generated/*.ts"],
       "@labpics/ui-materials": ["./packages/materials/src/index.ts"],
