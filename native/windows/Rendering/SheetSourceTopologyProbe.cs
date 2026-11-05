@@ -10,9 +10,10 @@ namespace LabUI.WinUI.Rendering;
 internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
-    internal const int Limit = 16;
+    internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
-        bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false);
+        bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
+        int LevelStart = 0, bool Body = false);
     private static readonly Case[] cases =
     [
         new(2, false, "shared"), new(3, false, "shared"),
@@ -25,10 +26,14 @@ internal static class SheetSourceTopologyProbe
         new(8, true, "shared", true, false),
         new(8, true, "shared", true, true, false),
         new(8, true, "repeat", Balanced: true),
+        new(1, false, "repeat", Mask: false, LevelStart: 7),
+        new(1, false, "repeat", Mask: false, Body: true),
+        new(2, true, "repeat", LevelStart: 6),
+        new(8, true, "repeat", Blur: false),
     ];
 
     internal static CompositionEffectFactory CreateFactory(Compositor compositor,
-        IGraphicsEffect graph, double ghostSigma)
+        IGraphicsEffect graph, double ghostSigma, double bodySigma)
     {
         try { return compositor.CreateEffectFactory(graph); }
         catch (Exception primary)
@@ -36,7 +41,7 @@ internal static class SheetSourceTopologyProbe
             try
             {
                 primary.Data[DataKey] = cases.Select((spec, index) =>
-                    Sample(compositor, spec, index, ghostSigma)).ToArray();
+                    Sample(compositor, spec, index, ghostSigma, bodySigma)).ToArray();
             }
             catch
             {
@@ -47,14 +52,15 @@ internal static class SheetSourceTopologyProbe
     }
 
     private static Dictionary<string, object?> Sample(Compositor compositor,
-        Case spec, int index, double ghostSigma)
+        Case spec, int index, double ghostSigma, double bodySigma)
     {
         List<IDisposable> owned = [];
         CompositionEffectFactory? factory = null;
         var sample = new Dictionary<string, object?>
         {
             ["index"] = index, ["inputs"] = spec.Inputs,
-            ["combine"] = spec.Balanced ? "BalancedAdd" : spec.Add ? "Add" : "Arithmetic",
+            ["combine"] = spec.Inputs == 1 ? "Gaussian" :
+                spec.Balanced ? "BalancedAdd" : spec.Add ? "Add" : "Arithmetic",
             ["source"] = spec.Source, ["named"] = spec.Named,
             ["blur"] = spec.Blur, ["mask"] = spec.Mask,
             ["stage"] = "build",
@@ -62,6 +68,15 @@ internal static class SheetSourceTopologyProbe
         };
         try
         {
+            float[]? sigmas = null;
+            if (spec.Inputs == 1 || spec.LevelStart > 0)
+            {
+                sigmas = spec.Body ? [(float)bodySigma] :
+                    Enumerable.Range(spec.LevelStart, spec.Inputs)
+                        .Select(level => (float)(SheetBlurProfile.Levels[level] * ghostSigma)).ToArray();
+                sample["sigmas"] = sigmas;
+                if (!spec.Body) sample["levelStart"] = spec.LevelStart;
+            }
             T Own<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
                 owned.Add(effect);
@@ -80,15 +95,16 @@ internal static class SheetSourceTopologyProbe
                     "repeat" => new CompositionEffectSourceParameter("backdrop"),
                     _ => new CompositionEffectSourceParameter($"backdrop{input}"),
                 };
-                if (spec.Blur && input > 0) branch = Own(new GaussianBlurEffect
+                if (spec.Blur && (input > 0 || sigmas is not null)) branch = Own(new GaussianBlurEffect
                 {
-                    Source = branch, BlurAmount = (float)(SheetBlurProfile.Levels[input] * ghostSigma),
+                    Source = branch, BlurAmount = sigmas is null
+                        ? (float)(SheetBlurProfile.Levels[input] * ghostSigma) : sigmas[input],
                     BorderMode = EffectBorderMode.Hard,
                 });
                 if (spec.Mask) branch = Own(new AlphaMaskEffect
                 {
                     Source = branch,
-                    AlphaMask = new CompositionEffectSourceParameter($"mask{input}"),
+                    AlphaMask = new CompositionEffectSourceParameter($"mask{spec.LevelStart + input}"),
                 });
                 if (balanced is not null) balanced.Add(branch);
                 else if (add is not null) add.Sources.Add(branch);

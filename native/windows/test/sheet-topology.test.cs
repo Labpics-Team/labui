@@ -11,7 +11,7 @@ void Check(bool condition, string message)
     if (!condition) throw new InvalidOperationException(message);
 }
 
-void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<float> blurWidths)
+void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<float> blurWidths, float bodySigma)
 {
     List<IGraphicsEffect> effects = [];
     List<IGraphicsEffectSource> branches = [];
@@ -57,6 +57,11 @@ void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<floa
         Check(ReadBalanced(graph) == 3 && effects.Count == 7,
             "BalancedAdd не содержит семь бинарных узлов в трёх уровнях.");
     }
+    else if (expected.Combine == "Gaussian")
+    {
+        Check(graph is GaussianBlurEffect, "Подпись Gaussian не соответствует одиночному blur.");
+        branches.Add(graph);
+    }
     else
     {
         Check(graph is ArithmeticCompositeEffect, "Подпись Arithmetic не соответствует корневому эффекту.");
@@ -67,22 +72,23 @@ void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<floa
     List<CompositionEffectSourceParameter> sources = [];
     for (var index = 0; index < branches.Count; index++)
     {
+        var level = expected.LevelStart + index;
         var branch = branches[index];
         if (expected.Mask)
         {
             Check(branch is AlphaMaskEffect, "Подпись mask не соответствует ветви.");
             var mask = (AlphaMaskEffect)branch;
             effects.Add(mask);
-            Check(mask.AlphaMask is CompositionEffectSourceParameter input && input.Name == $"mask{index}",
+            Check(mask.AlphaMask is CompositionEffectSourceParameter input && input.Name == $"mask{level}",
                 "Маска привязана к чужому имени источника.");
             branch = mask.Source ?? throw new InvalidOperationException("Маска потеряла Source.");
         }
-        if (expected.Blur && index > 0)
+        if (expected.Blur && (index > 0 || expected.Combine == "Gaussian" || expected.LevelStart > 0))
         {
             Check(branch is GaussianBlurEffect, "Подпись blur не соответствует ветви.");
             var blur = (GaussianBlurEffect)branch;
             effects.Add(blur);
-            Check(blur.BlurAmount == blurWidths[index] && blur.BorderMode == EffectBorderMode.Hard,
+            Check(blur.BlurAmount == (expected.Body ? bodySigma : blurWidths[level]) && blur.BorderMode == EffectBorderMode.Hard,
                 "Blur потерял выбранную ширину или границу.");
             branch = blur.Source ?? throw new InvalidOperationException("Blur потерял Source.");
         }
@@ -113,6 +119,10 @@ ExpectedGraph[] expectedCases =
     new(8, "Add", "shared", true, false),
     new(8, "Add", "shared", true, true, false),
     new(8, "BalancedAdd", "repeat"),
+    new(1, "Gaussian", "repeat", Mask: false, LevelStart: 7),
+    new(1, "Gaussian", "repeat", Mask: false, Body: true),
+    new(2, "Add", "repeat", LevelStart: 6),
+    new(8, "Add", "repeat", Blur: false),
 ];
 Check(expectedCases[8] with { Source = "repeat" } == expectedCases[11],
     "Matched Add8 отличается от контроля не только идентичностью источников.");
@@ -122,13 +132,15 @@ Check(expectedCases[11] with { Combine = "Arithmetic" } == expectedCases[12],
     "Matched repeat8 отличается от контроля не только оператором суммирования.");
 Check(expectedCases[11] with { Combine = "BalancedAdd" } == expectedCases[15],
     "Matched BalancedAdd8 отличается от контроля не только формой суммирования.");
+Check(expectedCases[11] with { Blur = false } == expectedCases[19],
+    "Matched no-blur repeat8 отличается от контроля не только наличием blur.");
 
 // Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
 // подстановку постоянной sigma, в том числе штатного Win2D значения 3.
-(double Sigma, float[] Widths)[] expectedBlurSamples =
+(double Sigma, double BodySigma, float[] Widths)[] expectedBlurSamples =
 [
-    (12, [0, 0.1875f, 0.375f, 0.75f, 1.5f, 3, 6, 12]),
-    (20, [0, 0.3125f, 0.625f, 1.25f, 2.5f, 5, 10, 20]),
+    (12, 64, [0, 0.1875f, 0.375f, 0.75f, 1.5f, 3, 6, 12]),
+    (20, 48, [0, 0.3125f, 0.625f, 1.25f, 2.5f, 5, 10, 20]),
 ];
 
 var graph = new AlphaMaskEffect
@@ -137,14 +149,14 @@ var graph = new AlphaMaskEffect
     AlphaMask = new CompositionEffectSourceParameter("mask"),
 };
 var healthy = new Compositor();
-var result = SheetSourceTopologyProbe.CreateFactory(healthy, graph, 12);
+var result = SheetSourceTopologyProbe.CreateFactory(healthy, graph, 12, 64);
 Check(healthy.Calls == 1 && healthy.Factories.Count == 1 && !result.Disposed,
     "Успешный путь обязан вернуть исходную factory без диагностики.");
 Check(healthy.Graphs.Count == 1 && ReferenceEquals(healthy.Graphs[0], graph),
     "Успешный путь заменил исходный граф.");
 result.Dispose();
 
-foreach (var (sigma, blurWidths) in expectedBlurSamples)
+foreach (var (sigma, bodySigma, blurWidths) in expectedBlurSamples)
 foreach (var cleanupFault in new[] { false, true })
 {
     Fixture.Created = Fixture.Disposed = 0;
@@ -153,14 +165,14 @@ foreach (var cleanupFault in new[] { false, true })
     primary.Data["unrelated"] = Fixture.Marker;
     var compositor = new Compositor { Primary = primary };
     Exception? failure = null;
-    try { SheetSourceTopologyProbe.CreateFactory(compositor, graph, sigma); }
+    try { SheetSourceTopologyProbe.CreateFactory(compositor, graph, sigma, bodySigma); }
     catch (Exception error) { failure = error; }
     Check(ReferenceEquals(primary, failure) && primary.Message == Fixture.Marker &&
         primary.HResult == -2147024809 && (string?)primary.Data["unrelated"] == Fixture.Marker,
         "Probe изменил исходный exception либо посторонние Data.");
     var rows = SheetSourceTopology.Read(failure) ?? throw new InvalidOperationException("Probe не передал матрицу.");
-    Check(rows.Length == 16 && compositor.Calls == 17, "Probe не выполнил конечную матрицу.");
-    Check(compositor.Graphs.Count == 17 && ReferenceEquals(compositor.Graphs[0], graph),
+    Check(rows.Length == 20 && compositor.Calls == 21, "Probe не выполнил конечную матрицу.");
+    Check(compositor.Graphs.Count == 21 && ReferenceEquals(compositor.Graphs[0], graph),
         "Compositor не получил исходный граф и все диагностические графы.");
     Check(expectedCases.Length == rows.Length, "Обязательный набор различителей изменился.");
     for (var index = 0; index < rows.Length; index++)
@@ -172,11 +184,22 @@ foreach (var cleanupFault in new[] { false, true })
             && (bool)row["blur"]! == required.Blur && (bool)row["mask"]! == required.Mask,
             $"Попытка {index} не выполнила обязательный различитель.");
         Check((string?)row["stage"] == "factory", "Построенный граф потерял стадию factory.");
-        CheckGraph(compositor.Graphs[index + 1], required, blurWidths);
+        CheckGraph(compositor.Graphs[index + 1], required, blurWidths, (float)bodySigma);
+        if (required.Inputs == 1 || required.LevelStart > 0)
+        {
+            float[] sigmas = required.Body ? [(float)bodySigma] :
+                blurWidths.Skip(required.LevelStart).Take(required.Inputs).ToArray();
+            Check(row["sigmas"] is float[] actual && actual.SequenceEqual(sigmas),
+                "Записанные sigma не соответствуют фактическим Gaussian-ветвям.");
+            Check(required.Body ? !row.ContainsKey("levelStart") : (int)row["levelStart"]! == required.LevelStart,
+                "Body получила Ghost level либо потерян выбранный диапазон Ghost.");
+        }
+        else Check(!row.ContainsKey("sigmas") && !row.ContainsKey("levelStart"),
+            "Прежняя форма diagnostic row изменилась.");
     }
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
         "Один cleanup отказ прервал освобождение остальных ресурсов.");
-    Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 16)), "Порядок матрицы потерян.");
+    Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 20)), "Порядок матрицы потерян.");
     Check(rows.All(row => (bool)row["blur"]! || (bool)row["mask"]!), "Случай потерял исследуемую ветвь.");
     Check(rows.Any(row => (int)row["hresult"]! != 0) && rows.Any(row => (int)row["hresult"]! == 0),
         "Диагностика не различает собственный успех и отказ.");
@@ -185,7 +208,7 @@ foreach (var cleanupFault in new[] { false, true })
     Check(rows.Any(row => row["cleanupHresult"] is int) == cleanupFault, "Cleanup HRESULT потерян либо придуман.");
     Check(!JsonSerializer.Serialize(rows).Contains(Fixture.Marker, StringComparison.Ordinal),
         "Проектор опубликовал текст исключения.");
-    Check(SheetSourceTopology.Read(new AggregateException(primary))?.Length == 16,
+    Check(SheetSourceTopology.Read(new AggregateException(primary))?.Length == 20,
         "Cleanup wrapper скрыл диагностику исходного отказа.");
 }
 
@@ -195,12 +218,12 @@ Fixture.BuildFault = true;
 var buildPrimary = new ArgumentException(Fixture.Marker);
 var buildCompositor = new Compositor { Primary = buildPrimary };
 Exception? buildFailure = null;
-try { SheetSourceTopologyProbe.CreateFactory(buildCompositor, graph, 12); }
+try { SheetSourceTopologyProbe.CreateFactory(buildCompositor, graph, 12, 64); }
 catch (Exception error) { buildFailure = error; }
 finally { Fixture.BuildFault = false; }
 var buildRows = SheetSourceTopology.Read(buildFailure)
     ?? throw new InvalidOperationException("Build failure потерял диагностику.");
-Check(ReferenceEquals(buildFailure, buildPrimary) && buildCompositor.Calls == 1 && buildRows.Length == 16,
+Check(ReferenceEquals(buildFailure, buildPrimary) && buildCompositor.Calls == 1 && buildRows.Length == 20,
     "Build failure заменил primary либо дошёл до диагностической factory.");
 Check(buildRows.All(row => (string?)row["stage"] == "build" && (int)row["hresult"]! == -2147024809),
     "Build HRESULT выдан за известный отказ factory.");
@@ -246,22 +269,50 @@ Check(projected?.Length == 1 && projected[0]["index"] is null && projected[0]["n
     projected[0]["combine"] is null && projected[0]["hresult"] is null &&
     !JsonSerializer.Serialize(projected).Contains(Fixture.Marker, StringComparison.Ordinal),
     "Неизвестные поля прошли wire-проектор.");
-foreign.Data[SheetSourceTopology.DataKey] = new Dictionary<string, object?>[17];
+foreign.Data[SheetSourceTopology.DataKey] = new Dictionary<string, object?>[21];
 Check(SheetSourceTopology.Read(foreign) is null, "Oversized diagnostic скрыт усечением.");
 Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exception()) is null,
     "Диагностика появилась без данных.");
 
+foreach (var sigmas in new object?[] { null, new float[0], new float[] { 1, 2, 3 },
+    new float[] { -1 }, new float[] { float.NaN }, new float[] { float.PositiveInfinity },
+    new double[] { 12 }, Fixture.Marker })
+{
+    var sigmaError = new ArgumentException(Fixture.Marker);
+    sigmaError.Data[SheetSourceTopology.DataKey] = new[]
+    {
+        new Dictionary<string, object?> { ["sigmas"] = sigmas, ["levelStart"] = 8, ["hresult"] = -2147024809 },
+    };
+    var sigmaRows = SheetSourceTopology.Read(sigmaError)
+        ?? throw new InvalidOperationException("Проектор потерял bounded sigma diagnostic.");
+    Check(sigmaRows[0]["sigmas"] is null && sigmaRows[0]["levelStart"] is null
+        && sigmaRows[0]["hresult"] is -2147024809, "Неизвестные sigma/level прошли либо потерян HRESULT.");
+    Check(!JsonSerializer.Serialize(sigmaRows).Contains(Fixture.Marker, StringComparison.Ordinal),
+        "Sigma diagnostic опубликовала произвольный текст.");
+}
+var rawSigmas = new float[] { 6, 12 };
+var sigmaCopyError = new ArgumentException(Fixture.Marker);
+sigmaCopyError.Data[SheetSourceTopology.DataKey] = new[]
+{
+    new Dictionary<string, object?> { ["sigmas"] = rawSigmas, ["levelStart"] = 6 },
+};
+var sigmaCopy = SheetSourceTopology.Read(sigmaCopyError)
+    ?? throw new InvalidOperationException("Проектор отверг допустимые sigma.");
+rawSigmas[0] = 99;
+Check(sigmaCopy[0]["sigmas"] is float[] copied && copied.SequenceEqual(new float[] { 6, 12 })
+    && sigmaCopy[0]["levelStart"] is 6, "Проектор потерял bounded sigma либо сохранил изменяемый alias.");
+
 var unavailable = new UnavailableDataException();
 var blocked = new Compositor { Primary = unavailable };
 Exception? retained = null;
-try { SheetSourceTopologyProbe.CreateFactory(blocked, graph, 12); }
+try { SheetSourceTopologyProbe.CreateFactory(blocked, graph, 12, 64); }
 catch (Exception error) { retained = error; }
 Check(ReferenceEquals(retained, unavailable) && SheetSourceTopology.Read(retained) is null,
     "Отказ доступа к Data заменил исходную ошибку.");
 Console.WriteLine("Sheet topology: actual probe/codec, primary preservation, finite cases and independent cleanup PASS; inert types only.");
 
 readonly record struct ExpectedGraph(int Inputs, string Combine, string Source,
-    bool Named = false, bool Blur = true, bool Mask = true);
+    bool Named = false, bool Blur = true, bool Mask = true, int LevelStart = 0, bool Body = false);
 
 static class Fixture
 {
