@@ -70,6 +70,11 @@ test('Sheet atlas keeps all authored blur levels, weights and paints at the exis
   assert.match(build, /Layer\(ghostMasks\[index\]\)/);
   assert.match(
     build,
+    /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\)/,
+  );
+  assert.match(build, /for \(var index = 0; index < branches\.Length; index \+= 2\)/);
+  assert.match(
+    build,
     /Mode = CanvasComposite\.Add, Sources = \{ branches\[index\], branches\[index \+ 1\] \}/,
   );
   assert.match(build, /progressive\.Sources\.Add\(Source\(name\)\)/);
