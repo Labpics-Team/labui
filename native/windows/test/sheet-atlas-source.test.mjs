@@ -36,7 +36,10 @@ test('Sheet graph shares the original backdrop and atlas through fresh source ed
   );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
-  assert.doesNotMatch(build, /ghostPair|pairs|progressiveBrush|ghostBrush|bodyBrush|Source\("progressive"\)/);
+  assert.doesNotMatch(
+    build,
+    /ghostPair|pairs|progressiveBrush|ghostBrush|bodyBrush|Source\("progressive"\)/,
+  );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
   assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
 });
