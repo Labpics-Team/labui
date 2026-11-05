@@ -145,6 +145,26 @@ jobs:
         if: matrix.lifetime == true
         shell: pwsh
         run: |
+          function ConvertTo-NativeDisplayMode([string]$raw) {
+            $mode = $raw
+            if ($mode.IndexOf([char]0) -ge 0) {
+              # Hosted ServerCore readback contains UTF-16LE bytes represented as characters.
+              if ($mode -notmatch '^(?:[0-9x \t\r\n]\x00)+$') {
+                throw 'Native display readback has an invalid UTF-16LE representation.'
+              }
+              $mode = [System.Text.Encoding]::Unicode.GetString([System.Text.Encoding]::ASCII.GetBytes($mode))
+            }
+            $mode = $mode.Trim()
+            $dimensions = [regex]::Match($mode, '^(?<width>[1-9][0-9]*)x(?<height>[1-9][0-9]*)$')
+            $width = 0
+            $height = 0
+            if (-not $dimensions.Success -or
+                -not [int]::TryParse($dimensions.Groups['width'].Value, [ref]$width) -or
+                -not [int]::TryParse($dimensions.Groups['height'].Value, [ref]$height)) {
+              throw 'Native display resolution readback is invalid.'
+            }
+            return [pscustomobject]@{ mode = $mode; raw = $raw; width = $width; height = $height }
+          }
           $source = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
           . ./native/windows/test/winapp.ps1
@@ -152,18 +172,18 @@ jobs:
           Assert-WinAppReceipt $tool
           $receipt = "$env:RUNNER_TEMP/labui-native/sheet-winapp.json"
           $tool | ConvertTo-Json | Set-Content -Encoding utf8 $receipt
-          $originalMode = ([string](Get-DisplayResolution -ErrorAction Stop)).Trim()
-          Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'before'; mode = $originalMode } | ConvertTo-Json -Compress))
-          $dimensions = [regex]::Match($originalMode, '^(?<width>[1-9][0-9]*)x(?<height>[1-9][0-9]*)$')
-          if (-not $dimensions.Success) { throw 'Native display mode is unavailable.' }
-          $originalWidth = [int]$dimensions.Groups['width'].Value
-          $originalHeight = [int]$dimensions.Groups['height'].Value
+          $original = ConvertTo-NativeDisplayMode ([string](Get-DisplayResolution -ErrorAction Stop))
+          $originalMode = $original.mode
+          Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'before'; mode = $original.mode; raw = $original.raw } | ConvertTo-Json -Compress))
+          $originalWidth = $original.width
+          $originalHeight = $original.height
           $captureFailure = $null
           $restoreFailure = $null
           try {
             Set-DisplayResolution -Width 1920 -Height 1080 -Force -ErrorAction Stop
-            $captureMode = ([string](Get-DisplayResolution -ErrorAction Stop)).Trim()
-            Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'capture'; mode = $captureMode } | ConvertTo-Json -Compress))
+            $capture = ConvertTo-NativeDisplayMode ([string](Get-DisplayResolution -ErrorAction Stop))
+            $captureMode = $capture.mode
+            Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'capture'; mode = $capture.mode; raw = $capture.raw } | ConvertTo-Json -Compress))
             if ($captureMode -cne '1920x1080') {
               throw 'Native display mode was not applied.'
             }
@@ -178,8 +198,9 @@ jobs:
           } finally {
             try {
               Set-DisplayResolution -Width $originalWidth -Height $originalHeight -Force -ErrorAction Stop
-              $restoredMode = ([string](Get-DisplayResolution -ErrorAction Stop)).Trim()
-              Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'restored'; mode = $restoredMode } | ConvertTo-Json -Compress))
+              $restored = ConvertTo-NativeDisplayMode ([string](Get-DisplayResolution -ErrorAction Stop))
+              $restoredMode = $restored.mode
+              Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'restored'; mode = $restored.mode; raw = $restored.raw } | ConvertTo-Json -Compress))
               if ($restoredMode -cne $originalMode) {
                 throw 'Original native display mode was not restored.'
               }
