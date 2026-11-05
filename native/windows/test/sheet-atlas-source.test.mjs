@@ -30,8 +30,15 @@ test('Sheet factories share the original backdrop and atlas with fresh source ed
     build,
     /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
-  assert.match(build, /Brush\(pair, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/);
-  assert.match(build, /Brush\(body, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/);
+  assert.match(build, /var name = \$"ghostPair\{index \/ 2\}";/);
+  assert.match(
+    build,
+    /Brush\(name, pair, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+  );
+  assert.match(
+    build,
+    /Brush\("body", body, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+  );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
   assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
 });
@@ -78,7 +85,14 @@ test('Sheet atlas keeps all authored blur levels, weights and paints at the exis
     /Mode = CanvasComposite\.Add, Sources = \{ branches\[index\], branches\[index \+ 1\] \}/,
   );
   assert.match(build, /progressive\.Sources\.Add\(Source\(name\)\)/);
-  assert.match(build, /var progressiveBrush = Brush\(progressive, pairs\.ToArray\(\)\)/);
+  assert.match(
+    build,
+    /var progressiveBrush = Brush\("progressive", progressive, pairs\.ToArray\(\)\)/,
+  );
+  assert.match(
+    build,
+    /Brush\("ghost", ghost, \("progressive", progressiveBrush\), \("atlas", atlasBrush\)\)/,
+  );
   assert.match(build, /Over\(Source\("progressive"\), Paint\(Ghost!\)\)/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
@@ -112,7 +126,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\(graph, \("ghost", ghostBrush\), \("body", bodyBrush\), \("atlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, \("ghost", ghostBrush\), \("body", bodyBrush\), \("atlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(
