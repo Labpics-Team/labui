@@ -57,7 +57,7 @@ jobs:
           node-version: "24.19.0"
 
       - name: Native projection contract
-        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs
+        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs native/windows/test/sheet-atlas-source.test.mjs native/windows/test/sheet-factory.test.mjs
 
       - name: Native animation capture contract
         shell: pwsh
@@ -112,6 +112,10 @@ jobs:
       - name: Sheet failure-site boundary
         shell: pwsh
         run: dotnet run --project native/windows/test/sheet-failure-site.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-failure-site"
+
+      - name: Sheet topology diagnostic boundary
+        shell: pwsh
+        run: dotnet run --project native/windows/test/sheet-topology.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-topology"
 
       - name: Sheet geometry boundary
         shell: pwsh

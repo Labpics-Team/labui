@@ -23,9 +23,12 @@ void Check(Action witness, string? expected)
 
 Check(Microsoft.UI.Composition.Compositor.CreateEffectFactory, "Compositor.CreateEffectFactory");
 Check(ABI.Microsoft.UI.Composition.ICompositorMethods.CreateEffectFactory, "Compositor.CreateEffectFactory");
+Check(Microsoft.UI.Composition.CompositionGraphicsDevice.CreateVirtualDrawingSurface, "CompositionGraphicsDevice.CreateVirtualDrawingSurface");
+Check(ABI.Microsoft.UI.Composition.ICompositionGraphicsDevice2Methods.CreateVirtualDrawingSurface, "CompositionGraphicsDevice.CreateVirtualDrawingSurface");
 Check(ABI.Microsoft.Graphics.Canvas.UI.Composition.ICanvasCompositionStatics2Methods.CreateDrawingSession, "CanvasComposition.CreateDrawingSession");
 Check(ABI.Microsoft.Graphics.Canvas.Effects.IGaussianBlurEffectMethods.set_BlurAmount, "GaussianBlurEffect.BlurAmount");
 Check(LabUI.WinUI.Rendering.SheetLayers.BodyShape, "SheetLayers.BodyShape");
+Check(LabUI.WinUI.Rendering.SheetLayers.BuildFrame, "SheetLayers.DrawAtlasCell");
 Check(LabUI.WinUI.Rendering.SheetLayersLookalike.Render, null);
 Check(Foreign.Compositor.CreateEffectFactory, null);
 Console.WriteLine($"Sheet failure site: {passed} controlled stack shapes and primary preservation PASS");
@@ -38,10 +41,12 @@ static class Fault
 namespace Microsoft.UI.Composition
 {
     static class Compositor { [MethodImpl(MethodImplOptions.NoInlining)] internal static void CreateEffectFactory() => throw Fault.Primary; }
+    static class CompositionGraphicsDevice { [MethodImpl(MethodImplOptions.NoInlining)] internal static void CreateVirtualDrawingSurface() => throw Fault.Primary; }
 }
 namespace ABI.Microsoft.UI.Composition
 {
     static class ICompositorMethods { [MethodImpl(MethodImplOptions.NoInlining)] internal static void CreateEffectFactory() => throw Fault.Primary; }
+    static class ICompositionGraphicsDevice2Methods { [MethodImpl(MethodImplOptions.NoInlining)] internal static void CreateVirtualDrawingSurface() => throw Fault.Primary; }
 }
 namespace ABI.Microsoft.Graphics.Canvas.UI.Composition
 {
@@ -53,7 +58,15 @@ namespace ABI.Microsoft.Graphics.Canvas.Effects
 }
 namespace LabUI.WinUI.Rendering
 {
-    static class SheetLayers { [MethodImpl(MethodImplOptions.NoInlining)] internal static void BodyShape() => throw Fault.Primary; }
+    static class SheetLayers
+    {
+        [MethodImpl(MethodImplOptions.NoInlining)] internal static void BodyShape() => throw Fault.Primary;
+        [MethodImpl(MethodImplOptions.NoInlining)] internal static void BuildFrame()
+        {
+            [MethodImpl(MethodImplOptions.NoInlining)] static void DrawAtlasCell() => throw Fault.Primary;
+            DrawAtlasCell();
+        }
+    }
     static class SheetLayersLookalike { [MethodImpl(MethodImplOptions.NoInlining)] internal static void Render() => throw Fault.Primary; }
 }
 namespace Foreign

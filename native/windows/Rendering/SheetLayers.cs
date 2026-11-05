@@ -17,7 +17,7 @@ using Windows.UI.ViewManagement;
 
 namespace LabUI.WinUI.Rendering;
 
-// Один граф читает исходный backdrop: Body не размывает уже нарисованный Ghost.
+// Ghost и Body используют одну backdrop-кисть и один итоговый SpriteVisual.
 public sealed class SheetLayers : Grid
 {
     public static readonly DependencyProperty TintProperty = PaintProperty(nameof(Tint));
@@ -300,17 +300,31 @@ public sealed class SheetLayers : Grid
                 return result;
             }
 
-            var parameters = new Dictionary<string, CompositionBrush>();
+            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale,
+                SheetBlurProfile.Levels.Length + 5);
+            List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
                 result.Own(effect);
                 return effect;
             }
-            IGraphicsEffectSource Source(string name, CompositionBrush brush)
+            int AddLayer(Action<CanvasDrawingSession> draw)
             {
-                parameters.Add(name, brush);
-                return new CompositionEffectSourceParameter(name);
+                var index = atlasDrawings.Count;
+                atlas.Cell(index);
+                atlasDrawings.Add(draw);
+                return index;
             }
+            IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
+            IGraphicsEffectSource Backdrop() => Source("backdrop");
+            string LayerSource(int index) => $"atlas{index}";
+            IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
+            {
+                Source = Source(LayerSource(index)),
+                TransformMatrix = atlas.Cell(index).EffectTransform,
+                InterpolationMode = CanvasImageInterpolation.Linear,
+                BorderMode = EffectBorderMode.Soft,
+            });
             IGraphicsEffectSource Paint(SolidColorBrush brush) => Effect(new OpacityEffect
             {
                 Opacity = (float)brush.Opacity,
@@ -327,51 +341,127 @@ public sealed class SheetLayers : Grid
 
             // Белая структурная маска не является краской поверхности.
             var maskInk = Color.FromArgb(255, 255, 255, 255);
-            var bodyMask = Source("bodyMask", Surface(drawing => drawing.FillGeometry(bodyShape, maskInk)));
-            var outer = Source("shadows", Surface(drawing => DrawShadows(drawing, metrics, bodyShape)));
-            IGraphicsEffectSource sheet;
+            var bodyMask = AddLayer(drawing => drawing.FillGeometry(bodyShape, maskInk));
+            var outer = AddLayer(drawing => DrawShadows(drawing, metrics, bodyShape));
+            var noise = AddLayer(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale));
+            int[] ghostMasks = new int[SheetBlurProfile.Levels.Length];
+            for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
             {
-                var backdrop = Source("backdrop", result.Own(compositor.CreateBackdropBrush()));
-                var noise = Source("noise", Surface(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale)));
-                IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
-                    Effect(new OpacityEffect { Source = noise, Opacity = (float)opacity }));
-
-                // Маски задают неотрицательное разбиение единицы. Add суммирует
-                // premultiplied ветви без перекрытия по правилу SourceOver.
-                var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
-                for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
+                var level = index;
+                ghostMasks[index] = AddLayer(drawing =>
                 {
-                    var level = index;
-                    var mask = Source($"ghostMask{index}", Surface(drawing =>
-                    {
-                        var stops = SheetBlurProfile.Stops(level).Select(stop => new CanvasGradientStop
-                        { Position = stop.Position, Color = Color.FromArgb((byte)(stop.Weight * 255), maskInk.R, maskInk.G, maskInk.B) }).ToArray();
-                        using var gradient = new CanvasLinearGradientBrush(device, stops)
-                        { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
-                        drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
-                    }));
-                    var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), mask);
-                    progressive.Sources.Add(branch);
-                }
-                var ghostMask = Source("ghostMask", Surface(drawing =>
-                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk)));
-                // Alpha Ghost tint не управляет существованием backdrop/noise.
-                var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
-                var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius), Paint(Tint!));
-                var blended = Effect(new BlendEffect
-                {
-                    Background = tinted, Foreground = Paint(Blend!),
-                    Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
+                    var stops = SheetBlurProfile.Stops(level).Select(stop => new CanvasGradientStop
+                    { Position = stop.Position, Color = Color.FromArgb((byte)(stop.Weight * 255), maskInk.R, maskInk.G, maskInk.B) }).ToArray();
+                    using var gradient = new CanvasLinearGradientBrush(device, stops)
+                    { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
+                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
                 });
-                var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), bodyMask);
-                sheet = Over(Over(ghost, outer), body);
             }
-            var border = Source("border", Surface(DrawBorder));
-            var graph = Over(sheet, border);
-            var factory = result.Own(compositor.CreateEffectFactory((IGraphicsEffect)graph));
-            var brush = result.Own(factory.CreateBrush());
-            foreach (var (name, source) in parameters) brush.SetSourceParameter(name, source);
-            result.Visual.Brush = brush;
+            var ghostMask = AddLayer(drawing =>
+                drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk));
+            var border = AddLayer(DrawBorder);
+            if (atlasDrawings.Count != atlas.CellCount)
+                throw new InvalidOperationException("Sheet atlas требует все authored raster-слои.");
+            var atlasSurface = result.Own(graphics!.CreateVirtualDrawingSurface(
+                new Windows.Graphics.SizeInt32 { Width = atlas.Width, Height = atlas.Height },
+                DirectXPixelFormat.B8G8R8A8UIntNormalized, DirectXAlphaMode.Premultiplied));
+            void DrawAtlasCell(int index)
+            {
+                var cell = atlas.Cell(index);
+                using var drawing = CanvasComposition.CreateDrawingSession(atlasSurface,
+                    new Rect(cell.PixelX, cell.PixelY, pixelWidth, pixelHeight), (float)(96 * scale));
+                drawing.Clear(Color.FromArgb(0, 0, 0, 0));
+                // Win2D включает returned BeginDraw offset; callback рисует локально.
+                atlasDrawings[index](drawing);
+            }
+            for (var index = 0; index < atlasDrawings.Count; index++) DrawAtlasCell(index);
+            var atlasBrush = result.Own(compositor.CreateSurfaceBrush(atlasSurface));
+            atlasBrush.Stretch = CompositionStretch.None;
+            atlasBrush.HorizontalAlignmentRatio = 0;
+            atlasBrush.VerticalAlignmentRatio = 0;
+            atlasBrush.Scale = atlas.BrushScale;
+            atlasBrush.Offset = atlas.BrushOffset;
+            (string Name, CompositionBrush Source) LayerBinding(int index) => (LayerSource(index), atlasBrush);
+            var backdropBrush = result.Own(compositor.CreateBackdropBrush());
+            CompositionEffectBrush Brush(string factoryName, IGraphicsEffectSource graph,
+                params (string Name, CompositionBrush Source)[] bindings)
+            {
+                var operation = "factory";
+                try
+                {
+                    var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
+                        (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma,
+                        Geometry.SheetBodyBlurRadius * RadiusToSigma));
+                    operation = "brush";
+                    var brush = result.Own(factory.CreateBrush());
+                    operation = "binding";
+                    foreach (var (name, source) in bindings) brush.SetSourceParameter(name, source);
+                    return brush;
+                }
+                catch (Exception primary)
+                {
+                    // Удалить временное имя отказа после RCA и проверенного owner fix.
+                    try
+                    {
+                        if (factoryName is ("ghostPair0" or "ghostPair1" or "ghostPair2" or "ghostPair3"
+                            or "progressive" or "ghost" or "body" or "final")
+                            && operation is ("factory" or "brush" or "binding"))
+                            primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
+                            { ["name"] = factoryName, ["operation"] = operation };
+                    }
+                    catch { }
+                    try
+                    {
+                        if (factoryName == "ghostPair0" && operation == "factory"
+                            && graph is CompositeEffect { Mode: CanvasComposite.Add } pair
+                            && pair.Sources is { Count: 2 } sources
+                            && sources[0] is AlphaMaskEffect first
+                            && sources[1] is AlphaMaskEffect second)
+                            SheetSourceTopologyProbe.RecordBranches(primary, compositor, first, second);
+                    }
+                    catch { }
+                    throw;
+                }
+            }
+            IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
+                Effect(new OpacityEffect { Source = Layer(noise), Opacity = (float)opacity }));
+
+            // Каждый authored уровень сохраняет свою Gaussian-ветвь и маску.
+            // Малые factory соединяются кистями; промежуточных SpriteVisual нет.
+            IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
+            for (var index = 0; index < branches.Length; index++)
+                branches[index] = Mask(index == 0 ? Backdrop()
+                    : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), Layer(ghostMasks[index]));
+            var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
+            List<(string Name, CompositionBrush Source)> pairs = [];
+            for (var index = 0; index < branches.Length; index += 2)
+            {
+                var pair = Effect(new CompositeEffect
+                { Mode = CanvasComposite.Add, Sources = { branches[index], branches[index + 1] } });
+                var name = $"ghostPair{index / 2}";
+                var pairBrush = Brush(name, pair, ("backdrop", backdropBrush),
+                    LayerBinding(ghostMasks[index]), LayerBinding(ghostMasks[index + 1]));
+                progressive.Sources.Add(Source(name));
+                pairs.Add((name, pairBrush));
+            }
+            var progressiveBrush = Brush("progressive", progressive, pairs.ToArray());
+            // Alpha Ghost tint не управляет существованием backdrop/noise.
+            var ghost = Mask(WithNoise(Over(Source("progressive"), Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
+            var ghostBrush = Brush("ghost", ghost, ("progressive", progressiveBrush),
+                LayerBinding(noise), LayerBinding(ghostMask));
+            var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius), Paint(Tint!));
+            var blended = Effect(new BlendEffect
+            {
+                Background = tinted, Foreground = Paint(Blend!),
+                Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
+            });
+            var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
+            var bodyBrush = Brush("body", body, ("backdrop", backdropBrush),
+                LayerBinding(noise), LayerBinding(bodyMask));
+            var sheet = Over(Over(Source("ghost"), Layer(outer)), Source("body"));
+            var graph = Over(sheet, Layer(border));
+            result.Visual.Brush = Brush("final", graph, ("ghost", ghostBrush), ("body", bodyBrush),
+                LayerBinding(outer), LayerBinding(border));
             return result;
         }
         catch (Exception error)

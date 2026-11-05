@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
+import './sheet-topology-stage.test.mjs';
 import { evidenceLog } from '../../../scripts/ci/evidence-log.mjs';
 import {
   CASES,
@@ -273,6 +274,8 @@ test('diagnostics retain only known renderer failure sites and keep rejecting fa
     'Compositor.CreateEffectFactory',
     'CanvasComposition.CreateDrawingSession',
     'SheetLayers.BuildFrame',
+    'CompositionGraphicsDevice.CreateVirtualDrawingSurface',
+    'SheetLayers.DrawAtlasCell',
     marker,
   ]) {
     const error = { origin: 'unhandled', type: 'ArgumentException', hresult: -2147024809, site };
@@ -298,6 +301,80 @@ test('diagnostics retain only known renderer failure sites and keep rejecting fa
       (failure) => failure.sheetPhase === 'render',
     );
   }
+});
+
+test('source topology diagnostics preserve bounded cases without publishing private data', () => {
+  const marker = 'PRIVATE_TOPOLOGY_NOT_FOR_LOG';
+  const sample = {
+    index: 0,
+    inputs: 2,
+    combine: 'Arithmetic',
+    source: 'shared',
+    named: false,
+    blur: true,
+    mask: true,
+    hresult: 0,
+    cleanupHresult: null,
+  };
+  const readback = (topology) => {
+    const error = {
+      origin: 'unhandled',
+      type: 'ArgumentException',
+      hresult: -2147024809,
+      site: 'Compositor.CreateEffectFactory',
+      topology,
+    };
+    const line = sheetFailureLog({
+      sourceSha: SOURCE,
+      name: 'Light-Blur',
+      phase: 'render',
+      pid: 42,
+      observation: { ...observation(), error },
+      error: new Error(marker),
+      stderrBytes: 0,
+    });
+    assert.doesNotMatch(line, new RegExp(marker));
+    assert.throws(() => decodeSheetEvidence(line, SOURCE));
+    assert.throws(
+      () =>
+        validateObservation(
+          { ...observation(), error },
+          { ...EXPECTED_CASES[0], ...processIdentity },
+        ),
+      (failure) => failure.sheetPhase === 'render',
+    );
+    return JSON.parse(line.slice('LABUI_SHEET_FAILURE_JSON '.length)).observation.error.topology;
+  };
+  assert.deepEqual(readback([{ ...sample, message: marker, path: marker }]), [sample]);
+  assert.deepEqual(readback([{ ...sample, hresult: -2147024809, cleanupHresult: -2147483648 }]), [
+    { ...sample, hresult: -2147024809, cleanupHresult: -2147483648 },
+  ]);
+  assert.deepEqual(
+    readback([
+      {
+        ...sample,
+        combine: marker,
+        source: marker,
+        named: marker,
+        index: 20,
+        inputs: 100,
+        hresult: 2147483648,
+      },
+    ]),
+    [
+      {
+        ...sample,
+        combine: null,
+        source: null,
+        named: null,
+        index: null,
+        inputs: null,
+        hresult: null,
+      },
+    ],
+  );
+  for (const invalid of [null, marker, {}, Array.from({ length: 21 }, () => sample)])
+    assert.equal(readback(invalid), null);
 });
 
 test('diagnostics classify free-form exceptions and malformed geometry without publishing their text', async (t) => {
