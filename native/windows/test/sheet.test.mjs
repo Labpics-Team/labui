@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
+import './sheet-topology-stage.test.mjs';
 import { evidenceLog } from '../../../scripts/ci/evidence-log.mjs';
 import {
   CASES,

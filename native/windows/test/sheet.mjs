@@ -85,6 +85,7 @@ function topologyInfo(value) {
       named: boolean(row.named),
       blur: boolean(row.blur),
       mask: boolean(row.mask),
+      ...(Object.hasOwn(row, 'stage') ? { stage: known(row.stage, ['build', 'factory']) } : {}),
       hresult: integer(row.hresult, -2147483648, 2147483647),
       cleanupHresult: integer(row.cleanupHresult, -2147483648, 2147483647),
     };
