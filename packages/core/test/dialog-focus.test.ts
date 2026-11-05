@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   type DialogFocusContext,
   completeFailedDialogFocus,
@@ -7,7 +7,10 @@ import {
   dialogFinalFocusTarget,
 } from '../src/components/dialog/focus.js';
 
-afterEach(() => document.body.replaceChildren());
+afterEach(() => {
+  vi.restoreAllMocks();
+  document.body.replaceChildren();
+});
 
 function fixture(): DialogFocusContext & {
   owner: HTMLDivElement;
@@ -17,6 +20,11 @@ function fixture(): DialogFocusContext & {
 } {
   const owner = document.createElement('div');
   const trigger = document.createElement('button');
+  // HappyDOM не выполняет layout. Эта положительная геометрия квалифицируется
+  // реальными hidden/display/visibility cases в installed browser consumer.
+  vi.spyOn(trigger, 'offsetWidth', 'get').mockReturnValue(16);
+  vi.spyOn(trigger, 'offsetHeight', 'get').mockReturnValue(0);
+  vi.spyOn(trigger, 'getClientRects').mockReturnValue(Object.assign([], { item: () => null }));
   const background = document.createElement('button');
   const content = document.createElement('div');
   content.dataset.scope = 'dialog';
@@ -36,11 +44,45 @@ describe('общий владелец final focus Dialog и Sheet', () => {
     expect(dialogFinalFocusTarget(context)).toBe(context.trigger);
   });
 
-  it.each(['removed', 'disabled', 'inert'])('%s trigger не становится точкой возврата', (state) => {
+  it.each([
+    'removed',
+    'disabled',
+    'inert',
+    'not-rendered',
+    'visibility-hidden',
+    'visibility-collapse',
+  ])('%s trigger не становится точкой возврата', (state) => {
     const context = fixture();
     if (state === 'removed') context.trigger.remove();
     else if (state === 'disabled') context.trigger.disabled = true;
-    else context.owner?.setAttribute('inert', '');
+    else if (state === 'inert') context.owner.setAttribute('inert', '');
+    else if (state === 'not-rendered')
+      vi.spyOn(context.trigger, 'offsetWidth', 'get').mockReturnValue(0);
+    else context.trigger.style.visibility = state === 'visibility-hidden' ? 'hidden' : 'collapse';
+    expect(dialogFinalFocusTarget(context)).toBeNull();
+    completeFailedDialogFocus(context);
+    expect(document.activeElement).toBe(context.background);
+  });
+
+  it.each(['shadow', 'slot'])('%s inert ancestor не становится точкой возврата', (ancestry) => {
+    const context = fixture();
+    const host = document.createElement('div');
+    const shadow = host.attachShadow({ mode: 'open' });
+    document.body.append(host);
+    if (ancestry === 'shadow') {
+      host.inert = true;
+      shadow.append(context.owner);
+    } else {
+      const blocker = document.createElement('div');
+      blocker.inert = true;
+      const slot = document.createElement('slot');
+      blocker.append(slot);
+      shadow.append(blocker);
+      host.append(context.owner);
+      expect(slot.assignedElements()).toContain(context.owner);
+      // HappyDOM теряет assignedSlot; браузер проверяет фактическую связь.
+      Object.defineProperty(context.owner, 'assignedSlot', { configurable: true, get: () => slot });
+    }
     expect(dialogFinalFocusTarget(context)).toBeNull();
     completeFailedDialogFocus(context);
     expect(document.activeElement).toBe(context.background);

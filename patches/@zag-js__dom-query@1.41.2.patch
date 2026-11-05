@@ -310,7 +310,7 @@ index 510ba84a480363cff649c2b24addc0026ceaec8c..c5f7f694c615504f270a643253e7bb3e
    return false;
  }
 diff --git a/dist/tabbable.js b/dist/tabbable.js
-index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..3d4410c4a402b76e2b23f7f4aa7132836470914b 100644
+index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..75e1115fe834a83997db63778a94bf8afb251e53 100644
 --- a/dist/tabbable.js
 +++ b/dist/tabbable.js
 @@ -65,47 +65,30 @@ function getShadowRootForNode(element, getShadowRoot) {
@@ -378,7 +378,7 @@ index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..3d4410c4a402b76e2b23f7f4aa713283
    const include = includeContainer == true || includeContainer == "if-empty" && elements.length === 0;
    if (include && (0, import_node.isHTMLElement)(container) && isFocusable(container)) {
      elements.unshift(container);
-@@ -120,9 +103,6 @@ var getFocusables = (container, options = {}) => {
+@@ -120,14 +103,18 @@ var getFocusables = (container, options = {}) => {
      }
      focusableElements.push(element);
    }
@@ -388,7 +388,21 @@ index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..3d4410c4a402b76e2b23f7f4aa713283
    return focusableElements;
  };
  function isFocusable(element) {
-@@ -136,7 +116,7 @@ function getFirstFocusable(container, options = {}) {
+-  if (!(0, import_node.isHTMLElement)(element) || element.closest("[inert]")) return false;
+-  return element.matches(focusableSelector) && (0, import_node.isElementVisible)(element);
++  if (!(0, import_node.isHTMLElement)(element) || element.matches(":disabled")) return false;
++  for (let node = element; (0, import_node.isHTMLElement)(node); ) {
++    if (node.hasAttribute("inert")) return false;
++    const parent = (0, import_node.getParentNode)(node);
++    if (parent === node) break;
++    node = parent;
++  }
++  const visibility = (0, import_node.getWindow)(element).getComputedStyle(element).visibility;
++  return visibility !== "hidden" && visibility !== "collapse" && element.matches(focusableSelector) && (0, import_node.isElementVisible)(element);
+ }
+ function getFirstFocusable(container, options = {}) {
+   const [first] = getFocusables(container, options);
+@@ -136,7 +123,7 @@ function getFirstFocusable(container, options = {}) {
  function getTabbables(container, options = {}) {
    if (!container) return [];
    const { includeContainer, getShadowRoot } = options;
@@ -397,7 +411,7 @@ index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..3d4410c4a402b76e2b23f7f4aa713283
    if (includeContainer && isTabbable(container)) {
      elements.unshift(container);
    }
-@@ -150,13 +130,6 @@ function getTabbables(container, options = {}) {
+@@ -150,21 +137,15 @@ function getTabbables(container, options = {}) {
      }
      tabbableElements.push(element);
    }
@@ -411,10 +425,28 @@ index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..3d4410c4a402b76e2b23f7f4aa713283
    if (!tabbableElements.length && includeContainer) {
      return elements;
    }
+   return tabbableElements;
+ }
+ function isTabbable(el) {
+-  if ((0, import_node.isHTMLElement)(el) && el.tabIndex > 0) return true;
+-  if (!isFocusable(el) || hasNegativeTabIndex(el)) return false;
++  if (!isFocusable(el)) return false;
++  if (el.tabIndex > 0) return true;
++  if (hasNegativeTabIndex(el)) return false;
+   return isTabbableRadio(el);
+ }
+ function getFirstTabbable(container, options = {}) {
 diff --git a/dist/tabbable.mjs b/dist/tabbable.mjs
-index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..8028e1cf608bc50ed963cd1087b5bf2eb3cc95b0 100644
+index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..ccfee2144b9aa662c76d8414a795cd2e7b8bbc36 100644
 --- a/dist/tabbable.mjs
 +++ b/dist/tabbable.mjs
+@@ -3,5 +3,5 @@
+ // src/tabbable.ts
+-import { getActiveElement, isEditableElement, isElementVisible, isHTMLElement, isInputElement } from "./node.mjs";
++import { getActiveElement, getParentNode, getWindow, isEditableElement, isElementVisible, isHTMLElement, isInputElement } from "./node.mjs";
+ var isFrame = (el) => isHTMLElement(el) && el.tagName === "IFRAME";
+ var NATURALLY_TABBABLE_REGEX = /^(audio|video|details)$/;
+ function parseTabIndex(el) {
 @@ -34,47 +34,30 @@ function getShadowRootForNode(element, getShadowRoot) {
    const result = getShadowRoot(element);
    return (result === true ? element.shadowRoot : result) || null;
@@ -480,7 +512,7 @@ index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..8028e1cf608bc50ed963cd1087b5bf2e
    const include = includeContainer == true || includeContainer == "if-empty" && elements.length === 0;
    if (include && isHTMLElement(container) && isFocusable(container)) {
      elements.unshift(container);
-@@ -89,9 +72,6 @@ var getFocusables = (container, options = {}) => {
+@@ -89,14 +72,18 @@ var getFocusables = (container, options = {}) => {
      }
      focusableElements.push(element);
    }
@@ -490,7 +522,21 @@ index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..8028e1cf608bc50ed963cd1087b5bf2e
    return focusableElements;
  };
  function isFocusable(element) {
-@@ -105,7 +85,7 @@ function getFirstFocusable(container, options = {}) {
+-  if (!isHTMLElement(element) || element.closest("[inert]")) return false;
+-  return element.matches(focusableSelector) && isElementVisible(element);
++  if (!isHTMLElement(element) || element.matches(":disabled")) return false;
++  for (let node = element; isHTMLElement(node); ) {
++    if (node.hasAttribute("inert")) return false;
++    const parent = getParentNode(node);
++    if (parent === node) break;
++    node = parent;
++  }
++  const visibility = getWindow(element).getComputedStyle(element).visibility;
++  return visibility !== "hidden" && visibility !== "collapse" && element.matches(focusableSelector) && isElementVisible(element);
+ }
+ function getFirstFocusable(container, options = {}) {
+   const [first] = getFocusables(container, options);
+@@ -105,7 +92,7 @@ function getFirstFocusable(container, options = {}) {
  function getTabbables(container, options = {}) {
    if (!container) return [];
    const { includeContainer, getShadowRoot } = options;
@@ -499,7 +545,7 @@ index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..8028e1cf608bc50ed963cd1087b5bf2e
    if (includeContainer && isTabbable(container)) {
      elements.unshift(container);
    }
-@@ -119,13 +99,6 @@ function getTabbables(container, options = {}) {
+@@ -119,21 +106,15 @@ function getTabbables(container, options = {}) {
      }
      tabbableElements.push(element);
    }
@@ -513,3 +559,14 @@ index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..8028e1cf608bc50ed963cd1087b5bf2e
    if (!tabbableElements.length && includeContainer) {
      return elements;
    }
+   return tabbableElements;
+ }
+ function isTabbable(el) {
+-  if (isHTMLElement(el) && el.tabIndex > 0) return true;
+-  if (!isFocusable(el) || hasNegativeTabIndex(el)) return false;
++  if (!isFocusable(el)) return false;
++  if (el.tabIndex > 0) return true;
++  if (hasNegativeTabIndex(el)) return false;
+   return isTabbableRadio(el);
+ }
+ function getFirstTabbable(container, options = {}) {

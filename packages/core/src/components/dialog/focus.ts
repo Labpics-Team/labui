@@ -1,3 +1,5 @@
+import { isFocusable } from '@zag-js/dom-query';
+
 /** DOM-контекст владельца; функции не создают отдельного focus runtime. */
 export interface DialogFocusContext {
   readonly owner: HTMLElement | null;
@@ -48,10 +50,7 @@ export function dialogFinalFocusTarget(context: DialogFocusContext): HTMLElement
   // допустимым местом возврата: его прежний Sheet trigger снова доступен.
   if (focus && isIndependentModal(context, focus.content)) return focus.active;
   const trigger = context.trigger;
-  return context.owner?.isConnected &&
-    trigger?.isConnected &&
-    !trigger.matches(':disabled') &&
-    !trigger.closest('[inert]')
+  return context.owner?.isConnected && trigger?.isConnected && isFocusable(trigger)
     ? trigger
     : null;
 }

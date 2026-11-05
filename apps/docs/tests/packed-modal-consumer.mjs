@@ -65,7 +65,18 @@ const fixtureNames = [
   'combobox',
   'popover',
 ];
-const formats = ['mixed', 'esm', 'cjs'];
+const playwrightArguments = [];
+const requestedFormats = [];
+for (const argument of process.argv.slice(2)) {
+  if (!argument.startsWith('--format=')) {
+    playwrightArguments.push(argument);
+    continue;
+  }
+  const format = argument.slice('--format='.length);
+  assert(['mixed', 'esm', 'cjs'].includes(format), `Неизвестный packed format: ${format}.`);
+  requestedFormats.push(format);
+}
+const formats = requestedFormats.length ? [...new Set(requestedFormats)] : ['mixed', 'esm', 'cjs'];
 
 async function run(command, args, options) {
   const child = spawn(command, args, { ...options, windowsHide: true, stdio: 'inherit' });
@@ -618,10 +629,12 @@ try {
       })};${format === 'mixed' ? '\nmodule.exports.grep = /Controlled закрытие Sheet в shadow root|React Sheet final focus/;' : ''}`,
     );
     const cli = createRequire(join(docs, 'package.json')).resolve('@playwright/test/cli');
-    await run(process.execPath, [cli, 'test', '--config', config], { cwd: docs });
+    await run(process.execPath, [cli, 'test', '--config', config, ...playwrightArguments], {
+      cwd: docs,
+    });
   }
   console.info(
-    'packed-modal-consumer: NodeNext types, React/Core SSR, ESM/CJS/mixed и Chromium/WebKit PASS; registry dependencies не исправлены потребителем.',
+    `packed-modal-consumer: NodeNext types, React/Core SSR, ${formats.join('/')} и Chromium/WebKit PASS; registry dependencies не исправлены потребителем.`,
   );
 } finally {
   if (server) await new Promise((accept) => server.close(accept));

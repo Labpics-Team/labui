@@ -5,6 +5,8 @@ import { pathToFileURL } from 'node:url';
 import { afterEach, expect, it, vi } from 'vitest';
 
 interface Query {
+  isFocusable(node: HTMLElement): boolean;
+  isTabbable(node: HTMLElement): boolean;
   getTabbables(node: HTMLElement, options?: { getShadowRoot: boolean }): HTMLElement[];
   getFocusables(node: HTMLElement, options?: { getShadowRoot: boolean }): HTMLElement[];
   contains(parent: HTMLElement, child: HTMLElement): boolean;
@@ -30,6 +32,54 @@ afterEach(() => {
 });
 
 for (const format of ['esm', 'cjs'] as const) {
+  it.each(['disabled', 'inert', 'visibility-hidden', 'visibility-collapse'])(
+    `${format}: positive tabindex не обходит %s eligibility`,
+    async (state) => {
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(16);
+      const query = await load<Query>('@zag-js/dom-query', format);
+      const button = document.createElement('button');
+      button.tabIndex = 2;
+      document.body.append(button);
+      expect(query.isFocusable(button)).toBe(true);
+      expect(query.isTabbable(button)).toBe(true);
+      if (state === 'disabled') button.disabled = true;
+      else if (state === 'inert') button.inert = true;
+      else button.style.visibility = state === 'visibility-hidden' ? 'hidden' : 'collapse';
+      expect(query.isFocusable(button)).toBe(false);
+      expect(query.isTabbable(button)).toBe(false);
+      expect(query.getFocusables(document.body)).not.toContain(button);
+      expect(query.getTabbables(document.body)).not.toContain(button);
+    },
+  );
+
+  it.each(['shadow', 'slot'])(
+    `${format}: %s inert ancestor исключает цель из focus и Tab`,
+    async (ancestry) => {
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(16);
+      const query = await load<Query>('@zag-js/dom-query', format);
+      const host = document.createElement('div');
+      const shadow = host.attachShadow({ mode: 'open' });
+      const button = document.createElement('button');
+      button.tabIndex = 1;
+      document.body.append(host);
+      if (ancestry === 'shadow') shadow.append(button);
+      else {
+        const blocker = document.createElement('div');
+        const slot = document.createElement('slot');
+        blocker.append(slot);
+        shadow.append(blocker);
+        host.append(button);
+        expect(slot.assignedElements()).toContain(button);
+        Object.defineProperty(button, 'assignedSlot', { configurable: true, get: () => slot });
+      }
+      expect(query.isFocusable(button)).toBe(true);
+      if (ancestry === 'shadow') host.inert = true;
+      else shadow.querySelector('div')?.setAttribute('inert', '');
+      expect(query.isFocusable(button)).toBe(false);
+      expect(query.isTabbable(button)).toBe(false);
+    },
+  );
+
   it(`${format}: обычные DOM-потомки, forwarded slot и нефокусируемый shadow host образуют один focus scope`, async () => {
     // Здесь проверяется топология. Видимость и реальный Tab проверяются браузерами.
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(16);

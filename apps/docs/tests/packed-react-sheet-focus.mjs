@@ -6,6 +6,7 @@ import { build } from 'esbuild';
 
 let fixture;
 let coreFixture;
+let returnFocusFixture;
 let evidence;
 const pageErrors = new WeakMap();
 
@@ -113,6 +114,187 @@ flushSync(() => root.render(<App/>));
   assert(!inputs.some((name) => /\/packages\/(react|core)\/src\//.test(name)));
   for (const file of bundle.outputFiles) await writeFile(file.path, file.contents);
   await writeFile(`${evidence}-core-metafile.json`, JSON.stringify(bundle.metafile, null, 2));
+  return {
+    js: bundle.outputFiles.find((file) => file.path.endsWith('.js')).text,
+    css: bundle.outputFiles.find((file) => file.path.endsWith('.css'))?.text ?? '',
+  };
+}
+
+async function bundleReturnFocusFixture(consumer, format) {
+  const imports =
+    format === 'esm'
+      ? `import {Sheet} from '@labpics/ui-react';
+import {dialogFinalFocusTarget} from '@labpics/ui-core/shared';
+import * as dialog from '@labpics/ui-core/behaviors/dialog';
+import {VanillaMachine} from '@zag-js/vanilla';`
+      : `const {Sheet} = require('@labpics/ui-react');
+const {dialogFinalFocusTarget} = require('@labpics/ui-core/shared');
+const dialog = require('@labpics/ui-core/behaviors/dialog');
+const {VanillaMachine} = require('@zag-js/vanilla');`;
+  const source = `
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {flushSync} from 'react-dom';
+import '@labui/colors/contract.css';
+import '@labpics/ui-tokens/tokens.css';
+import '@labpics/ui-tokens/motion.css';
+import '@labpics/ui-core/theme.css';
+import '@labpics/ui-core/shadow.css';
+${imports}
+const config = window.sheetFocusConfig;
+const mount = document.getElementById('app');
+let container = mount;
+let blocker = mount;
+if (config.ancestry === 'shadow') container = mount.attachShadow({mode:'open'});
+if (config.ancestry === 'slot') {
+  const host = document.createElement('div');
+  mount.before(host);
+  const shadow = host.attachShadow({mode:'open'});
+  shadow.innerHTML = '<div id="flat-blocker"><slot></slot></div>';
+  blocker = shadow.getElementById('flat-blocker');
+  host.append(mount);
+}
+const events = {closes:[], errors:[], focus:[]};
+const active = () => {
+  let node = document.activeElement;
+  while (node?.shadowRoot?.activeElement) node = node.shadowRoot.activeElement;
+  return node;
+};
+let root;
+let service;
+let directContent;
+let props = {open:true};
+const trigger = () => container.querySelector('[data-part="trigger"]');
+const content = () => directContent ?? document.querySelector('.lab-sheet-content');
+const bodyStyles = () => ({
+  overflow:document.body.style.overflow,
+  paddingRight:document.body.style.paddingRight,
+  scrollbarWidth:document.documentElement.style.getPropertyValue('--scrollbar-width'),
+  locked:document.body.hasAttribute('data-scroll-lock'),
+});
+const baseline = bodyStyles();
+const snapshot = () => ({
+  id:active()?.id,
+  tag:active()?.tagName,
+  trigger:active() === trigger(),
+  background:active()?.id === 'background',
+  primary:active()?.id === 'primary-input',
+  inContent:!!content()?.contains(active()),
+  fallback:active()?.id === 'fallback-good',
+  resolvedTrigger:dialogFinalFocusTarget({owner:trigger(),trigger:trigger(),content:content()}) === trigger(),
+  state:content()?.dataset.state,
+  body:bodyStyles(),
+});
+function render() {
+  flushSync(() => root.render(<React.StrictMode><Sheet
+    {...props} heading="Focus eligibility"
+    content={<input id="primary-input" aria-label="Primary input"/>}
+    onOpenChange={open => {events.closes.push({open,...snapshot()}); props.open=open; render();}}
+    onMotionError={error => events.errors.push(String(error))}
+  >Eligible trigger</Sheet></React.StrictMode>));
+}
+window.sheetFocus = {
+  config, events, trigger, content, snapshot, bodyStyles, baseline,
+  arm(state) {
+    if (state === 'disabled') trigger().disabled=true;
+    if (state === 'fieldset') document.getElementById('area').disabled=true;
+    if (state === 'hidden') mount.hidden=true;
+    if (state === 'display-none') mount.style.display='none';
+    if (state === 'visibility-hidden') mount.style.visibility='hidden';
+    if (state === 'visibility-collapse') mount.style.visibility='collapse';
+    if (state === 'shadow-inert' || state === 'slot-inert') blocker.inert=true;
+    if (state === 'visible-override') {
+      mount.style.visibility='hidden';
+      trigger().style.visibility='visible';
+    }
+    if (state === 'opacity-zero') trigger().style.opacity='0';
+    if (state === 'negative-tabindex') trigger().tabIndex=-1;
+    events.armed=snapshot();
+    events.armed.assignedSlot=mount.assignedSlot?.localName;
+  },
+  invalidateCaptured() {
+    const background=document.getElementById('background');
+    const focus=background.focus;
+    events.invalidCaptureAttempts=0;
+    background.focus=function(...args) {
+      events.invalidCaptureAttempts++;
+      return focus.apply(this,args);
+    };
+    background.hidden=true;
+  },
+  destroy() {
+    events.cleanup=[{at:'before-unmount',body:bodyStyles()}];
+    root?.unmount();
+    service?.stop();
+    directContent?.remove();
+    events.cleanup.push({at:'after-unmount',body:bodyStyles()});
+  },
+};
+document.addEventListener('focusin',() => events.focus.push(snapshot()),true);
+if (config.route) {
+  container.innerHTML = '<button id="focus-candidate" data-scope="dialog" data-part="trigger" data-ownedby="return-focus">Candidate</button>';
+  directContent=document.createElement('div');
+  directContent.id='focus-content';
+  directContent.tabIndex=-1;
+  directContent.dataset.scope='dialog';
+  directContent.dataset.part='content';
+  directContent.dataset.state='open';
+  directContent.innerHTML='<input id="primary-input" aria-label="Primary input"/>';
+  document.body.append(directContent);
+  const candidate=trigger();
+  if (config.route === 'captured') candidate.removeAttribute('data-ownedby');
+  if (config.withFallback) {
+    const fallback=document.createElement('button');
+    fallback.id='fallback-good';
+    fallback.textContent='Fallback';
+    fallback.dataset.scope='dialog';
+    fallback.dataset.part='trigger';
+    fallback.dataset.ownedby='return-focus';
+    document.body.append(fallback);
+  }
+  service=new VanillaMachine(dialog.machine, {
+    id:'return-focus', defaultOpen:true,
+    ids:{content:'focus-content',trigger:value => value === 'active' ? 'focus-candidate' : 'absent-trigger'},
+    getRootNode:() => document,
+    finalFocusEl:() => config.route === 'final' ? candidate : null,
+    triggerEl:() => config.route === 'stable' ? candidate : null,
+    onOpenChange:({open}) => {
+      events.closes.push({open,...snapshot()});
+      directContent.dataset.state=open ? 'open' : 'closed';
+      directContent.hidden=!open;
+    },
+  });
+  service.start();
+  if (config.route === 'active') service.context.set('triggerValue','active');
+} else {
+  root=createRoot(container);
+  render();
+}
+`;
+  const bundle = await build({
+    stdin: { contents: source, resolveDir: consumer, loader: 'tsx' },
+    outfile: `${evidence}-eligibility.js`,
+    bundle: true,
+    platform: 'browser',
+    format: 'iife',
+    write: false,
+    metafile: true,
+  });
+  const emitted = Object.values(bundle.metafile.outputs).flatMap((output) =>
+    Object.entries(output.inputs)
+      .filter(([, contribution]) => contribution.bytesInOutput > 0)
+      .map(([name]) => name.replaceAll('\\', '/')),
+  );
+  assert(!emitted.some((name) => /\/packages\/(react|core)\/src\//.test(name)));
+  assert(
+    !emitted.some((name) => /\/node_modules\/(lit|lit-html|lit-element|@lit-labs)\//.test(name)),
+  );
+  for (const file of bundle.outputFiles) await writeFile(file.path, file.contents);
+  await writeFile(`${evidence}-eligibility-source.txt`, source);
+  await writeFile(
+    `${evidence}-eligibility-metafile.json`,
+    JSON.stringify(bundle.metafile, null, 2),
+  );
   return {
     js: bundle.outputFiles.find((file) => file.path.endsWith('.js')).text,
     css: bundle.outputFiles.find((file) => file.path.endsWith('.css'))?.text ?? '',
@@ -231,7 +413,24 @@ flushSync(() => root.render(<App/>));
   for (const file of bundle.outputFiles) await writeFile(file.path, file.contents);
   await writeFile(`${evidence}-metafile.json`, JSON.stringify(bundle.metafile, null, 2));
   coreFixture = await bundleCoreScrollFixture(consumer, format);
+  returnFocusFixture = await bundleReturnFocusFixture(consumer, format);
 });
+
+async function setupReturnFocus(page, config = {}) {
+  const epoch = new Date('2026-11-05T00:00:00Z');
+  await page.clock.install({ time: epoch });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/_fixtures/packed-react-sheet-focus.html');
+  await page.addStyleTag({ content: returnFocusFixture.css });
+  await page.evaluate((config) => {
+    window.sheetFocusConfig = config;
+    document.getElementById('background').focus();
+  }, config);
+  await page.addScriptTag({ content: returnFocusFixture.js });
+  await expect.poll(() => page.evaluate(() => window.sheetFocus.snapshot().inContent)).toBe(true);
+  await page.clock.pauseAt(epoch.getTime() + 60_000);
+  expect(await page.evaluate(() => window.sheetFocus.snapshot().inContent)).toBe(true);
+}
 
 async function setup(page, config = {}) {
   const epoch = new Date('2026-11-05T00:00:00Z');
@@ -346,6 +545,94 @@ test.afterEach(async ({ page }, info) => {
 });
 
 test.describe('React Sheet final focus', () => {
+  test.describe('return focus eligibility', () => {
+    for (const state of [
+      'disabled',
+      'fieldset',
+      'hidden',
+      'display-none',
+      'visibility-hidden',
+      'visibility-collapse',
+      'shadow-inert',
+      'slot-inert',
+    ]) {
+      test(`${state}: initially open StrictMode Sheet returns to captured background`, async ({
+        page,
+      }) => {
+        const ancestry =
+          state === 'shadow-inert' ? 'shadow' : state === 'slot-inert' ? 'slot' : 'direct';
+        await setupReturnFocus(page, { ancestry });
+        await page.evaluate((state) => window.sheetFocus.arm(state), state);
+        if (state === 'slot-inert') {
+          expect(await page.evaluate(() => window.sheetFocus.events.armed.assignedSlot)).toBe(
+            'slot',
+          );
+        }
+        await page.keyboard.press('Escape');
+        await page.clock.runFor(128);
+        const result = await page.evaluate(() => window.sheetFocus.snapshot());
+        expect(result.state).toBe('closed');
+        expect(result.background).toBe(true);
+        expect(result.resolvedTrigger).toBe(false);
+        expect(result.body).toEqual(await page.evaluate(() => window.sheetFocus.baseline));
+      });
+    }
+
+    for (const state of ['normal', 'visible-override', 'opacity-zero', 'negative-tabindex']) {
+      test(`${state}: legitimate trigger remains a return target`, async ({ page }) => {
+        await setupReturnFocus(page);
+        await page.evaluate((state) => window.sheetFocus.arm(state), state);
+        await page.keyboard.press('Escape');
+        await page.clock.runFor(128);
+        const result = await page.evaluate(() => window.sheetFocus.snapshot());
+        expect(result.state).toBe('closed');
+        expect(result.trigger).toBe(true);
+        expect(result.resolvedTrigger).toBe(true);
+      });
+    }
+
+    for (const route of ['final', 'stable', 'active', 'dom']) {
+      for (const eligible of [false, true]) {
+        test(`${route}: Dialog ${eligible ? 'accepts a legitimate target' : 'skips a composed-inert target'}`, async ({
+          page,
+        }) => {
+          await setupReturnFocus(page, { route, ancestry: 'slot' });
+          await page.evaluate(
+            (state) => window.sheetFocus.arm(state),
+            eligible ? 'normal' : 'slot-inert',
+          );
+          await page.keyboard.press('Escape');
+          await page.clock.runFor(128);
+          const result = await page.evaluate(() => window.sheetFocus.snapshot());
+          expect(result.state).toBe('closed');
+          expect(result.trigger).toBe(eligible);
+          expect(result.background).toBe(!eligible);
+        });
+      }
+    }
+
+    test('DOM fallback skips the ineligible first trigger and keeps the next legitimate target', async ({
+      page,
+    }) => {
+      await setupReturnFocus(page, { route: 'dom', ancestry: 'slot', withFallback: true });
+      await page.evaluate(() => window.sheetFocus.arm('slot-inert'));
+      await page.keyboard.press('Escape');
+      await page.clock.runFor(128);
+      const result = await page.evaluate(() => window.sheetFocus.snapshot());
+      expect(result.state).toBe('closed');
+      expect(result.fallback).toBe(true);
+    });
+
+    test('Dialog does not attempt to focus an invalidated captured target', async ({ page }) => {
+      await setupReturnFocus(page, { route: 'captured' });
+      await page.evaluate(() => window.sheetFocus.invalidateCaptured());
+      await page.keyboard.press('Escape');
+      await page.clock.runFor(128);
+      expect(await page.evaluate(() => window.sheetFocus.snapshot().state)).toBe('closed');
+      expect(await page.evaluate(() => window.sheetFocus.events.invalidCaptureAttempts)).toBe(0);
+    });
+  });
+
   for (const controlled of [false, true]) {
     test(`${controlled ? 'controlled' : 'trusted click'}: ранний отказ завершает фокус до обоих callbacks`, async ({
       page,
