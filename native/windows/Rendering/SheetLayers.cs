@@ -411,21 +411,10 @@ public sealed class SheetLayers : Grid
                     // Удалить временное имя отказа после RCA и проверенного owner fix.
                     try
                     {
-                        if (factoryName is ("ghostPair0" or "ghostPair1" or "ghostPair2" or "ghostPair3"
-                            or "progressive" or "ghost" or "body" or "final")
+                        if (factoryName == "final"
                             && operation is ("factory" or "brush" or "binding"))
                             primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
                             { ["name"] = factoryName, ["operation"] = operation };
-                    }
-                    catch { }
-                    try
-                    {
-                        if (factoryName == "ghostPair0" && operation == "factory"
-                            && graph is CompositeEffect { Mode: CanvasComposite.Add } pair
-                            && pair.Sources is { Count: 2 } sources
-                            && sources[0] is AlphaMaskEffect first
-                            && sources[1] is AlphaMaskEffect second)
-                            SheetSourceTopologyProbe.RecordBranches(primary, compositor, first, second);
                     }
                     catch { }
                     throw;
@@ -435,28 +424,15 @@ public sealed class SheetLayers : Grid
                 Effect(new OpacityEffect { Source = Layer(noise), Opacity = (float)opacity }));
 
             // Каждый authored уровень сохраняет свою Gaussian-ветвь и маску.
-            // Малые factory соединяются кистями; промежуточных SpriteVisual нет.
             IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
             for (var index = 0; index < branches.Length; index++)
                 branches[index] = Mask(index == 0 ? Backdrop()
                     : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale), Layer(ghostMasks[index]));
             var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
-            List<(string Name, CompositionBrush Source)> pairs = [];
-            for (var index = 0; index < branches.Length; index += 2)
-            {
-                var pair = Effect(new CompositeEffect
-                { Mode = CanvasComposite.Add, Sources = { branches[index], branches[index + 1] } });
-                var name = $"ghostPair{index / 2}";
-                var pairBrush = Brush(name, pair, ("backdrop", backdropBrush),
-                    LayerBinding(ghostMasks[index]), LayerBinding(ghostMasks[index + 1]));
-                progressive.Sources.Add(Source(name));
-                pairs.Add((name, pairBrush));
-            }
-            var progressiveBrush = Brush("progressive", progressive, pairs.ToArray());
+            for (var index = 0; index < branches.Length; index++)
+                progressive.Sources.Add(branches[index]);
             // Alpha Ghost tint не управляет существованием backdrop/noise.
-            var ghost = Mask(WithNoise(Over(Source("progressive"), Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
-            var ghostBrush = Brush("ghost", ghost, ("progressive", progressiveBrush),
-                LayerBinding(noise), LayerBinding(ghostMask));
+            var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!));
             var blended = Effect(new BlendEffect
             {
@@ -464,12 +440,11 @@ public sealed class SheetLayers : Grid
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
             var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
-            var bodyBrush = Brush("body", body, ("backdrop", backdropBrush),
-                LayerBinding(noise), LayerBinding(bodyMask));
-            var sheet = Over(Over(Source("ghost"), Layer(outer)), Source("body"));
+            var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, ("ghost", ghostBrush), ("body", bodyBrush),
-                LayerBinding(outer), LayerBinding(border));
+            List<(string Name, CompositionBrush Source)> bindings = [("backdrop", backdropBrush)];
+            for (var index = 0; index < atlas.CellCount; index++) bindings.Add(LayerBinding(index));
+            result.Visual.Brush = Brush("final", graph, bindings.ToArray());
             return result;
         }
         catch (Exception error)
