@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { validateWindowGeometry } from './sheet-window-geometry.mjs';
 
 export const CONTENT_SCHEMA = 'sheet-content-v2';
 
@@ -212,6 +213,11 @@ export function validateContentWitness(value, expected) {
       'error',
       ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
     ]);
+    if (Object.hasOwn(value, 'windowGeometry')) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, 'windowGeometry');
+      assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet content: windowGeometry JSON');
+      validateWindowGeometry(descriptor.value);
+    }
     assert.equal(value.requestedState, 'Half');
     assert.equal(value.geometryScale, 1);
     assert.ok(

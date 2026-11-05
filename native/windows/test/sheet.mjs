@@ -14,6 +14,7 @@ import {
   validateContentWitness,
 } from './sheet-content.mjs';
 import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
+import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-geometry.mjs';
 
 export const CONTENT_CASES = Object.freeze([...SCROLL_CONTENT_CASES, ...POLICY_CASES]);
 
@@ -232,8 +233,64 @@ export function validateObservation(value, expected) {
     phase = 'geometry';
     // Этот статический эталон квалифицируется при 100% DPI; остальные масштабы остаются отдельной проверкой.
     assert.equal(value.rasterizationScale, 1, 'sheet: reference DPI');
+    if (Object.hasOwn(value, 'windowGeometry')) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, 'windowGeometry');
+      assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet: windowGeometry JSON');
+      validateWindowGeometry(descriptor.value);
+    }
+    assert.ok(
+      value.materialReason === null ||
+        ['Requested', 'TransparencyDisabled', 'EffectsUnsupported', 'EffectsNotFast'].includes(
+          value.materialReason,
+        ),
+      'sheet: material reason',
+    );
     const policy = POLICY_CASES.find(({ name }) => name === expected.name);
     let bodyHeight = 422;
+    if (!policy && expected.scenario === undefined) {
+      const optional = [
+        'requestedState',
+        'geometryScale',
+        'contentViewport',
+        'contentWitness',
+        'windowGeometry',
+      ];
+      assert.deepEqual(
+        Object.keys(value).sort(),
+        [
+          'pid',
+          'windowHandle',
+          'observedAtUnixMs',
+          'theme',
+          'rasterizationScale',
+          'viewport',
+          'body',
+          'handle',
+          'layoutReady',
+          'imageLoaded',
+          'rendererReady',
+          'requestedMaterial',
+          'effectiveMaterial',
+          'materialReason',
+          'error',
+          ...optional.filter((field) => Object.hasOwn(value, field)),
+        ].sort(),
+        'sheet: поля наблюдения материала',
+      );
+      if (Object.hasOwn(value, 'requestedState')) assert.equal(value.requestedState, 'Half');
+      if (Object.hasOwn(value, 'geometryScale')) assert.equal(value.geometryScale, 1);
+      if (Object.hasOwn(value, 'contentWitness')) assert.equal(value.contentWitness, null);
+      if (Object.hasOwn(value, 'contentViewport')) {
+        assert.deepEqual(Object.keys(value.contentViewport).sort(), ['height', 'width', 'x', 'y']);
+        for (const [field, expectedValue] of Object.entries({
+          x: 16,
+          y: 438,
+          width: 343,
+          height: 358,
+        }))
+          near(value.contentViewport[field], expectedValue);
+      }
+    }
     if (policy) {
       validatePolicyWitness(value.contentWitness, expected);
       assert.deepEqual(
@@ -264,12 +321,6 @@ export function validateObservation(value, expected) {
       );
       assert.equal(value.requestedState, policy.state);
       assert.equal(value.geometryScale, 1);
-      assert.ok(
-        value.materialReason === null ||
-          ['Requested', 'TransparencyDisabled', 'EffectsUnsupported', 'EffectsNotFast'].includes(
-            value.materialReason,
-          ),
-      );
       for (const part of ['viewport', 'body', 'handle', 'contentViewport'])
         assert.deepEqual(Object.keys(value[part]).sort(), ['x', 'y', 'width', 'height'].sort());
       const final = value.contentWitness.steps.at(-1);
@@ -289,9 +340,11 @@ export function validateObservation(value, expected) {
       viewport: { x: 0, y: 0, width: 375, height: 812 },
       body: { x: 0, y: 812 - bodyHeight, width: 375, height: bodyHeight },
       handle: { x: 170, y: 812 - bodyHeight + 14, width: 36, height: 4 },
-    }))
+    })) {
+      assert.deepEqual(Object.keys(value[part]).sort(), ['height', 'width', 'x', 'y']);
       for (const [field, expectedValue] of Object.entries(bounds))
         near(value[part]?.[field], expectedValue);
+    }
     if (expected.scenario !== undefined && !policy) validateContentWitness(value, expected);
   } catch (error) {
     error.sheetPhase ??= phase;
@@ -318,28 +371,28 @@ function validate(files, sourceSha, content = false) {
     );
   const identity = parse(files.get('identity.json'));
   assert.equal(identity.source, sourceSha, 'sheet: source identity');
+  assert.deepEqual(
+    Object.keys(identity).sort(),
+    [
+      ...(content ? ['schema'] : []),
+      'source',
+      'cases',
+      'cliVersion',
+      'cliZipSha256',
+      'cliSha256',
+      'appSha256',
+      'consumerSha256',
+      'uiSha256',
+      'motionSha256',
+      'visualReview',
+      'motion',
+      'performance',
+    ].sort(),
+    'sheet: поля identity',
+  );
+  assert.match(identity.cliVersion, /^v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]{1,40})?$/);
   if (content) {
-    assert.deepEqual(
-      Object.keys(identity).sort(),
-      [
-        'schema',
-        'source',
-        'cases',
-        'cliVersion',
-        'cliZipSha256',
-        'cliSha256',
-        'appSha256',
-        'consumerSha256',
-        'uiSha256',
-        'motionSha256',
-        'visualReview',
-        'motion',
-        'performance',
-      ].sort(),
-      'sheet content: поля identity',
-    );
     assert.equal(identity.schema, CONTENT_SCHEMA);
-    assert.match(identity.cliVersion, /^v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]{1,40})?$/);
   }
   for (const field of [
     'appSha256',
@@ -357,26 +410,26 @@ function validate(files, sourceSha, content = false) {
   assert.deepEqual(Object.keys(identity.cases).sort(), cases.map(({ name }) => name).sort());
   for (const entry of cases) {
     const owner = identity.cases[entry.name];
-    if (content) {
+    assert.deepEqual(
+      Object.keys(owner).sort(),
+      [
+        'pid',
+        'startedAtUnixMs',
+        'observedUntilUnixMs',
+        'windowHandle',
+        'windowBefore',
+        'windowAfter',
+        'exited',
+        ...(content || Object.hasOwn(owner, 'termination') ? ['termination'] : []),
+      ].sort(),
+      'sheet: поля owner',
+    );
+    for (const window of [owner.windowBefore, owner.windowAfter])
       assert.deepEqual(
-        Object.keys(owner).sort(),
-        [
-          'pid',
-          'startedAtUnixMs',
-          'observedUntilUnixMs',
-          'windowHandle',
-          'windowBefore',
-          'windowAfter',
-          'exited',
-          'termination',
-        ].sort(),
-        'sheet content: поля owner',
+        Object.keys(window).sort(),
+        ['pid', 'windowHandle', 'startedAtUnixMs'].sort(),
       );
-      for (const window of [owner.windowBefore, owner.windowAfter])
-        assert.deepEqual(
-          Object.keys(window).sort(),
-          ['pid', 'windowHandle', 'startedAtUnixMs'].sort(),
-        );
+    if (content || Object.hasOwn(owner, 'termination')) {
       assert.deepEqual(Object.keys(owner.termination).sort(), ['code', 'signal']);
       assert.ok(
         owner.termination.code === null ||
@@ -457,44 +510,6 @@ function decode(log, sourceSha, content = false) {
   }
   validate(files, sourceSha, content);
   return files;
-}
-
-function windowGeometryReadback(value) {
-  const object = (entry) => entry !== null && typeof entry === 'object' && !Array.isArray(entry);
-  const coordinate = (entry) =>
-    Number.isSafeInteger(entry) && Math.abs(entry) <= 1e7 ? entry : null;
-  const fields = (entry, names) =>
-    object(entry) ? Object.fromEntries(names.map((name) => [name, coordinate(entry[name])])) : null;
-  const sample = (entry) => {
-    if (!object(entry)) return null;
-    if (entry.status === 'failed')
-      return {
-        status: 'failed',
-        type:
-          typeof entry.type === 'string' && /^[A-Za-z][A-Za-z0-9]{0,79}$/.test(entry.type)
-            ? entry.type
-            : null,
-        hresult: Number.isSafeInteger(entry.hresult) ? entry.hresult : null,
-      };
-    return {
-      status: known(entry.status, ['complete']),
-      client: fields(entry.client, ['width', 'height']),
-      frame: fields(entry.frame, ['x', 'y', 'width', 'height']),
-      workArea: fields(entry.workArea, ['x', 'y', 'width', 'height']),
-      outerBounds: fields(entry.outerBounds, ['x', 'y', 'width', 'height']),
-      presenter: known(entry.presenter, ['Overlapped', 'CompactOverlay', 'FullScreen']),
-      visible: typeof entry.visible === 'boolean' ? entry.visible : null,
-      extendsContentIntoTitleBar:
-        typeof entry.extendsContentIntoTitleBar === 'boolean'
-          ? entry.extendsContentIntoTitleBar
-          : null,
-    };
-  };
-  return object(value)
-    ? Object.fromEntries(
-        ['afterResize', 'afterActivation', 'observed'].map((name) => [name, sample(value[name])]),
-      )
-    : null;
 }
 
 export function sheetFailureLog({

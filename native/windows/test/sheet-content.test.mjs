@@ -646,6 +646,59 @@ test('Content evidence roundtrips exact files and source independently of the ma
   assert.throws(() => decodeSheetEvidence(log, SOURCE));
 });
 
+test('Content window geometry rejects foreign data at observation and both publication boundaries', () => {
+  const sample = (visible) => ({
+    status: 'complete',
+    client: { width: 375, height: 812 },
+    frame: { x: -300, y: 80, width: 391, height: 851 },
+    workArea: { x: -1920, y: 0, width: 1920, height: 1040 },
+    outerBounds: { x: -1920, y: 0, width: 1920, height: 1080 },
+    presenter: 'Overlapped',
+    visible,
+    extendsContentIntoTitleBar: false,
+  });
+  const geometry = {
+    afterResize: sample(false),
+    afterActivation: sample(true),
+    observed: sample(true),
+  };
+  const healthy = fixture();
+  for (const entry of CONTENT_CASES) {
+    const value = JSON.parse(healthy.get(`${entry.name}.json`));
+    value.windowGeometry = copy(geometry);
+    check(value, entry);
+    healthy.set(`${entry.name}.json`, json(value));
+  }
+  assert.deepEqual(
+    decodeSheetContentEvidence(encodeSheetContentEvidence(healthy, SOURCE), SOURCE),
+    healthy,
+  );
+  for (const entry of CONTENT_CASES) {
+    for (const malformed of [
+      'WINDOW_PRIVATE_SENTINEL',
+      { unrelated: 'WINDOW_PRIVATE_SENTINEL' },
+      {
+        afterResize: null,
+        afterActivation: null,
+        observed: {
+          status: 'failed',
+          type: 'COMException',
+          hresult: -1,
+          message: 'WINDOW_PRIVATE_SENTINEL',
+        },
+      },
+    ]) {
+      const value = JSON.parse(healthy.get(`${entry.name}.json`));
+      value.windowGeometry = copy(malformed);
+      assert.throws(() => check(value, entry));
+      const files = new Map(healthy);
+      files.set(`${entry.name}.json`, json(value));
+      assert.throws(() => encodeSheetContentEvidence(files, SOURCE));
+      assert.throws(() => decodeSheetContentEvidence(packets(files), SOURCE));
+    }
+  }
+});
+
 test('incomplete, duplicate, foreign or corrupted Content packets cannot become evidence', () => {
   const files = fixture();
   const missing = new Map(files);
