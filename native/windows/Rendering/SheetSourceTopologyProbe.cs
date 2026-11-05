@@ -10,6 +10,7 @@ namespace LabUI.WinUI.Rendering;
 internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
+    internal const string TransformsDataKey = "LabUI.SheetFactoryTransforms";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -49,6 +50,46 @@ internal static class SheetSourceTopologyProbe
             }
             throw;
         }
+    }
+
+    // Borrowed Transform2D из реальной ghostPair0; удалить после RCA/owner fix.
+    internal static void RecordTransforms(Exception primary, Compositor compositor,
+        IGraphicsEffect first, IGraphicsEffect second)
+    {
+        try
+        {
+            var firstResult = SampleTransform(compositor, first);
+            var secondResult = SampleTransform(compositor, second);
+            primary.Data[TransformsDataKey] = new Dictionary<string, object?>[]
+            {
+                new() { ["hresult"] = firstResult.HResult, ["cleanupHresult"] = firstResult.CleanupHResult },
+                new() { ["hresult"] = secondResult.HResult, ["cleanupHresult"] = secondResult.CleanupHResult },
+            };
+        }
+        catch { }
+    }
+
+    private static (int? HResult, int? CleanupHResult) SampleTransform(Compositor compositor,
+        IGraphicsEffect transform)
+    {
+        CompositionEffectFactory? factory = null;
+        int? hresult = null;
+        int? cleanupHresult = null;
+        try
+        {
+            factory = compositor.CreateEffectFactory(transform);
+            hresult = 0;
+        }
+        catch (Exception error) { hresult = error.HResult; }
+        finally
+        {
+            if (factory is not null)
+            {
+                try { factory.Dispose(); }
+                catch (Exception cleanup) { cleanupHresult = cleanup.HResult; }
+            }
+        }
+        return (hresult, cleanupHresult);
     }
 
     private static Dictionary<string, object?> Sample(Compositor compositor,
