@@ -79,7 +79,9 @@ function sample(entry, after, observedAtUnixMs) {
       : null,
     realizedItems: isList ? (after ? 40 : 30) : null,
     lastRow: isList
-      ? { realized: false, bounds: null }
+      ? after
+        ? { realized: true, bounds: { x: 0, y: 318, width: 343, height: 40 } }
+        : { realized: false, bounds: null }
       : {
           realized: true,
           bounds: { x: 0, y: after ? 258 : 2900, width: 343, height: 100 },
@@ -375,6 +377,39 @@ test('ListView must own scrolling and retain partial realization through both te
     },
   ])
     rejectMutation(mutate, EXPECTED[2]);
+});
+
+test('ListView admits an unrealized final container before scrolling and a visible partial realization after', () => {
+  const value = observation(EXPECTED[2]);
+  for (const cycle of value.contentWitness.qualification.cycles) {
+    assert.deepEqual(cycle.before.lastRow, { realized: false, bounds: null });
+    cycle.after.realizedItems = 16;
+    cycle.after.lastRow.bounds.y += 0.005;
+  }
+  value.contentWitness.realizedItems = 16;
+  check(value, EXPECTED[2]);
+});
+
+test('ListView rejects a missing or invisible final container at a correct offset in every reached sample', () => {
+  const targets = [
+    (value) => value.contentWitness.qualification.cycles[0].after,
+    (value) => value.contentWitness.qualification.cycles[1].after,
+    (value) => value.contentWitness,
+  ];
+  for (const target of targets)
+    for (const lastRow of [
+      { realized: false, bounds: null },
+      { realized: true, bounds: { x: 0, y: 358, width: 343, height: 40 } },
+      { realized: true, bounds: { x: 0, y: -40, width: 343, height: 40 } },
+      { realized: true, bounds: { x: 0, y: 319, width: 343, height: 40 } },
+    ]) {
+      const value = observation(EXPECTED[2]);
+      target(value).lastRow = copy(lastRow);
+      assert.throws(() => check(value, EXPECTED[2]), {
+        code: 'ERR_ASSERTION',
+        sheetPhase: 'content-scroll',
+      });
+    }
 });
 
 test('phase samples cannot predate the process, reverse time or follow the final observation', () => {

@@ -166,13 +166,12 @@ function change(value) {
 function reached(value, entry) {
   const scroller = entry.scenario === 'list' ? value.inner : value.outer;
   assert.ok(scroller.verticalOffset > 0, 'sheet content: положительный offset отсутствует');
-  if (entry.scenario !== 'list') {
-    const bounds = value.lastRow.bounds;
-    assert.ok(
-      bounds.y >= -0.01 && bounds.y + bounds.height <= scroller.viewportHeight + 0.01,
-      'sheet content: последняя строка не достигнута',
-    );
-  }
+  assert.equal(value.lastRow.realized, true, 'sheet content: последний контейнер не реализован');
+  const bounds = value.lastRow.bounds;
+  assert.ok(
+    bounds.y >= -0.01 && bounds.y + bounds.height <= scroller.viewportHeight + 0.01,
+    'sheet content: последняя строка не достигнута',
+  );
   return scroller;
 }
 

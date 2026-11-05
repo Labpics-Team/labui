@@ -92,6 +92,8 @@ internal sealed class SheetContentProbe
             ?? throw new InvalidOperationException("Нет собственного viewport ListView.");
         var change = await Change(scroller, scroller.ScrollableHeight, cancellationToken);
         viewport.UpdateLayout();
+        if (!await Until(() => LastRowVisible(scroller), cancellationToken))
+            throw new TimeoutException("Последняя строка не появилась во viewport.");
         cycles[^1] = new(template, before, change, Read(viewport));
     }
 
@@ -116,9 +118,8 @@ internal sealed class SheetContentProbe
         {
             var accepted = viewport.ChangeView(null, target, null, disableAnimation: true);
             // Readback offset остаётся обязательным даже при объединении native ViewChanged.
-            var settled = accepted && await Until(() => finalEvents > 0
-                || double.IsFinite(viewport.VerticalOffset) && Math.Abs(viewport.VerticalOffset - target) <= 0.01, cancellationToken);
-            if (settled) await Task.Delay(20, cancellationToken);
+            var settled = accepted && await Until(() => double.IsFinite(viewport.VerticalOffset)
+                && Math.Abs(viewport.VerticalOffset - target) <= 0.01, cancellationToken);
             return new(Finite(target), accepted, settled, finalEvents, Finite(before), Finite(viewport.VerticalOffset));
         }
         finally { viewport.ViewChanged -= Changed; }
@@ -155,21 +156,32 @@ internal sealed class SheetContentProbe
         var scroller = list is null ? viewport : inner;
         var finalRow = list is null ? ((StackPanel)Content).Children.LastOrDefault() as FrameworkElement
             : list.ContainerFromIndex(999) as FrameworkElement;
-        var parent = finalRow is null ? null : VisualTreeHelper.GetParent(finalRow) as UIElement;
-        // Слот строки проверяет всю выделенную область, включая свободное место вокруг текста.
-        var bounds = scroller is { IsLoaded: true } && finalRow is { IsLoaded: true } && parent is not null
-            ? parent.TransformToVisual(scroller).TransformBounds(LayoutInformation.GetLayoutSlot(finalRow))
-            : (Rect?)null;
         return new(scenario, list is null ? "StackPanel" : "ListView", Content.VerticalAlignment.ToString(),
             double.IsNaN(Content.Height), list is null ? ((StackPanel)Content).Children.Count : list.Items.Count,
             list is null ? Finite(finalRow?.Height ?? double.NaN) : null,
             new(Finite(size.Width), Finite(size.Height)), !double.IsFinite(size.Width), !double.IsFinite(size.Height),
             Content.IsLoaded, Finite(Content.ActualHeight), Finite(Content.DesiredSize.Height), ScrollData(viewport),
             ScrollData(inner), list is null ? null : Enumerable.Range(0, 1000).Count(index => list.ContainerFromIndex(index) is not null),
-            new(finalRow is { IsLoaded: true }, bounds is { } value
-                ? new(Finite(value.X), Finite(value.Y), Finite(value.Width), Finite(value.Height)) : null),
+            ReadLastRow(scroller),
             DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
     }
+
+    private RowSample ReadLastRow(ScrollViewer? scroller)
+    {
+        var finalRow = list is null ? ((StackPanel)Content).Children.LastOrDefault() as FrameworkElement
+            : list.ContainerFromIndex(999) as FrameworkElement;
+        var parent = finalRow is null ? null : VisualTreeHelper.GetParent(finalRow) as UIElement;
+        // Слот строки проверяет всю выделенную область, включая свободное место вокруг текста.
+        var bounds = scroller is { IsLoaded: true } && finalRow is { IsLoaded: true } && parent is not null
+            ? parent.TransformToVisual(scroller).TransformBounds(LayoutInformation.GetLayoutSlot(finalRow))
+            : (Rect?)null;
+        return new(finalRow is { IsLoaded: true }, bounds is { } value
+            ? new(Finite(value.X), Finite(value.Y), Finite(value.Width), Finite(value.Height)) : null);
+    }
+
+    private bool LastRowVisible(ScrollViewer scroller) => ReadLastRow(scroller) is
+        { realized: true, bounds: { y: { } top, height: { } height } }
+        && height > 0 && top >= -0.01 && top + height <= scroller.ViewportHeight + 0.01;
 
     private static double? Finite(double value) => double.IsFinite(value) ? value : null;
     private static ScrollSample? ScrollData(ScrollViewer? viewport) => viewport is null ? null
