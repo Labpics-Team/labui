@@ -165,6 +165,8 @@ beforeAll(async () => {
           'react-dom': reactManifest.devDependencies['react-dom'],
           '@zag-js/core': coreManifest.dependencies['@zag-js/core'],
           '@zag-js/collection': coreManifest.dependencies['@zag-js/collection'],
+          '@lit-labs/ssr': coreManifest.devDependencies['@lit-labs/ssr'],
+          '@lit-labs/ssr-client': coreManifest.devDependencies['@lit-labs/ssr-client'],
         },
         devDependencies: {
           typescript: coreManifest.devDependencies.typescript,
@@ -272,6 +274,15 @@ import { cssVar, filterComboboxItems, type LabComboboxItem } from '@labpics/ui-c
 const items: LabComboboxItem[] = [{value:'a',label:'Alpha'}];
 cssVar('--lab-label-primary');
 filterComboboxItems(items, 'a');
+`,
+  },
+  {
+    name: 'core-ssr',
+    source: `
+import { html, ifDefined, noChange, unsafeHTML, renderToString, type TemplateResult } from '@labpics/ui-core/ssr';
+const template: TemplateResult = html\`<div data-label=\${ifDefined(undefined)}>\${unsafeHTML('<span>content</span>')}</div>\`;
+const markup: string = renderToString(template);
+void [html, ifDefined, noChange, unsafeHTML, renderToString, markup];
 `,
   },
   {
