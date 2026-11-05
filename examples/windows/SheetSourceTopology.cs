@@ -7,6 +7,7 @@ namespace LabUI.Buttons;
 internal static class SheetSourceTopology
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
+    internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -39,6 +40,28 @@ internal static class SheetSourceTopology
                     rows.Add(projected);
                 }
                 return rows.ToArray();
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    // Удаляется вместе с factory producer после RCA и проверенного owner fix.
+    internal static Dictionary<string, object?>? ReadFactory(Exception? error)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(FactoryDataKey)) continue;
+                if (error.Data[FactoryDataKey] is not Dictionary<string, object?> value
+                    || value.Count != 2 || !value.TryGetValue("name", out var rawName)
+                    || !value.TryGetValue("operation", out var rawOperation)) return null;
+                var name = Known(rawName, "ghostPair0", "ghostPair1", "ghostPair2", "ghostPair3",
+                    "progressive", "ghost", "body", "final");
+                var operation = Known(rawOperation, "factory", "brush", "binding");
+                return name is not null && operation is not null
+                    ? new() { ["name"] = name, ["operation"] = operation } : null;
             }
         }
         catch { }

@@ -129,6 +129,28 @@ function topologyInfo(value) {
   });
 }
 
+// Временная метка отказа; снять после RCA и проверенного исправления у renderer.
+function factoryInfo(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (
+    Object.keys(value).length !== 2 ||
+    !Object.hasOwn(value, 'name') ||
+    !Object.hasOwn(value, 'operation')
+  )
+    return null;
+  const name = known(value.name, [
+    'ghostPair0',
+    'ghostPair1',
+    'ghostPair2',
+    'ghostPair3',
+    'progressive',
+    'ghost',
+    'body',
+    'final',
+  ]);
+  const operation = known(value.operation, ['factory', 'brush', 'binding']);
+  return name !== null && operation !== null ? { name, operation } : null;
+}
 function observationError(value) {
   if (value === null) return null;
   if (typeof value === 'string') return 'reported';
@@ -209,6 +231,7 @@ function observationError(value) {
         }
       : {}),
     ...(Object.hasOwn(value, 'topology') ? { topology: topologyInfo(value.topology) } : {}),
+    ...(Object.hasOwn(value, 'factory') ? { factory: factoryInfo(value.factory) } : {}),
   };
 }
 

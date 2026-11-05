@@ -389,15 +389,35 @@ public sealed class SheetLayers : Grid
             atlasBrush.Scale = atlas.BrushScale;
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
-            CompositionEffectBrush Brush(IGraphicsEffectSource graph,
+            CompositionEffectBrush Brush(string factoryName, IGraphicsEffectSource graph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
-                var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
-                    (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma,
-                    Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma));
-                var brush = result.Own(factory.CreateBrush());
-                foreach (var (name, source) in bindings) brush.SetSourceParameter(name, source);
-                return brush;
+                var operation = "factory";
+                try
+                {
+                    var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
+                        (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma,
+                        Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma));
+                    operation = "brush";
+                    var brush = result.Own(factory.CreateBrush());
+                    operation = "binding";
+                    foreach (var (name, source) in bindings) brush.SetSourceParameter(name, source);
+                    return brush;
+                }
+                catch (Exception primary)
+                {
+                    // Удалить временное имя отказа после RCA и проверенного owner fix.
+                    try
+                    {
+                        if (factoryName is ("ghostPair0" or "ghostPair1" or "ghostPair2" or "ghostPair3"
+                            or "progressive" or "ghost" or "body" or "final")
+                            && operation is ("factory" or "brush" or "binding"))
+                            primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
+                            { ["name"] = factoryName, ["operation"] = operation };
+                    }
+                    catch { }
+                    throw;
+                }
             }
             IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
                 Effect(new OpacityEffect { Source = Layer(noise), Opacity = (float)opacity }));
@@ -415,14 +435,14 @@ public sealed class SheetLayers : Grid
                 var pair = Effect(new CompositeEffect
                 { Mode = CanvasComposite.Add, Sources = { branches[index], branches[index + 1] } });
                 var name = $"ghostPair{index / 2}";
-                var pairBrush = Brush(pair, ("backdrop", backdropBrush), ("atlas", atlasBrush));
+                var pairBrush = Brush(name, pair, ("backdrop", backdropBrush), ("atlas", atlasBrush));
                 progressive.Sources.Add(Source(name));
                 pairs.Add((name, pairBrush));
             }
-            var progressiveBrush = Brush(progressive, pairs.ToArray());
+            var progressiveBrush = Brush("progressive", progressive, pairs.ToArray());
             // Alpha Ghost tint не управляет существованием backdrop/noise.
             var ghost = Mask(WithNoise(Over(Source("progressive"), Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
-            var ghostBrush = Brush(ghost, ("progressive", progressiveBrush), ("atlas", atlasBrush));
+            var ghostBrush = Brush("ghost", ghost, ("progressive", progressiveBrush), ("atlas", atlasBrush));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!));
             var blended = Effect(new BlendEffect
             {
@@ -430,10 +450,10 @@ public sealed class SheetLayers : Grid
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
             var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
-            var bodyBrush = Brush(body, ("backdrop", backdropBrush), ("atlas", atlasBrush));
+            var bodyBrush = Brush("body", body, ("backdrop", backdropBrush), ("atlas", atlasBrush));
             var sheet = Over(Over(Source("ghost"), Layer(outer)), Source("body"));
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush(graph, ("ghost", ghostBrush), ("body", bodyBrush), ("atlas", atlasBrush));
+            result.Visual.Brush = Brush("final", graph, ("ghost", ghostBrush), ("body", bodyBrush), ("atlas", atlasBrush));
             return result;
         }
         catch (Exception error)
