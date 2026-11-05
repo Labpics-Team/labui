@@ -9,7 +9,7 @@ function Invoke-SettingsInitializationWitness([string]$Executable, [string]$Comm
     $receipt=[ordered]@{schemaVersion=1;status='completed';limitMs=15000;elapsedMs=0;
         childStarted=$false;childExited=$false;childWaitRemainingMs=$null;phase=$null;
         readerElapsedMs=$null;phaseRead='unavailable';cleanup='not-created'}
-    $phasePath=$null; $phaseOwned=$false; $failure=$null; $cleanupFailure=$null; $text=$null
+    $phasePath=$null; $phaseOwned=$false; $failure=$null; $cleanupFailure=$null; $emissionFailure=$null; $text=$null
     try {
         try {
             $phasePath=Join-Path ([IO.Path]::GetTempPath()) ('labui-ps5-initialization-'+[guid]::NewGuid().ToString('N')+'.json')
@@ -43,10 +43,12 @@ function Invoke-SettingsInitializationWitness([string]$Executable, [string]$Comm
             }
         } elseif ($phaseOwned) { $receipt.phaseRead='child-exit-unconfirmed'; $receipt.cleanup='child-exit-unconfirmed' }
         if ($failure -or $cleanupFailure) { $receipt.status='failed' }
-        [Console]::WriteLine('LABUI_PS5_INITIALIZATION_JSON '+($receipt | ConvertTo-Json -Compress))
+        try { [Console]::WriteLine('LABUI_PS5_INITIALIZATION_JSON '+($receipt | ConvertTo-Json -Compress)) }
+        catch { $emissionFailure=$_ }
     }
     if ($failure) { throw $failure }
     if ($cleanupFailure) { throw $cleanupFailure }
+    if ($emissionFailure) { throw $emissionFailure }
     return $text
 }
 $tokens = $null
@@ -581,10 +583,11 @@ Assert ($initialization.Trim() -eq 'PS5 reader initialization: native/UIA types 
 Write-Output $initialization.Trim()
 
 # Отказ инертного процесса сохраняет первичную ошибку и фазу; посторонние данные не публикуются.
-foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit')) {
+foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit','console-primary','console-success')) {
     & {
         param($fault)
         $calls=@{child=0}
+        $primaryException=[IO.IOException]::new('fixture original initialization deadline')
         function Invoke-TextScaleChild {
             param($Executable,$Arguments,$TimeoutMs,$Diagnostic)
             $calls.child++
@@ -601,16 +604,28 @@ foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit
             Write-SettingsReaderPhase 'compile-native'
             if ($fault -eq 'malformed') { [IO.File]::WriteAllText($phasePath,'{"phase":"private UI data","elapsedMs":0,"extra":"foreign"}') }
             if ($fault -eq 'oversized') { [IO.File]::WriteAllText($phasePath,'x'*513) }
-            if ($fault -ne 'none') { throw 'fixture initialization deadline' }
+            if ($fault -eq 'console-primary') { try { throw $primaryException } catch { $calls.primary=$_; throw } }
+            if ($fault -notin @('none','console-success')) { throw 'fixture initialization deadline' }
             return 'inert initialized'
         }
         $savedOut=[Console]::Out; $capture=[IO.StringWriter]::new(); $failure=$null; $observed=$null
         try {
             [Console]::SetOut($capture)
+            if ($fault -in @('console-primary','console-success')) { $capture.Dispose() }
             try { $observed=Invoke-SettingsInitializationWitness 'inert' "'inert initialized'" } catch { $failure=$_ }
         } finally { [Console]::SetOut($savedOut) }
         try {
             $lines=@($capture.ToString() -split '\r?\n' | Where-Object { $_ })
+            if ($fault -in @('console-primary','console-success')) {
+                Assert ($lines.Count -eq 0 -and $calls.child -eq 1 -and ![IO.File]::Exists($calls.path)) 'Закрытый writer нарушил cleanup либо повторил child.'
+                Assert ($null -ne $failure -and $null -eq $observed) 'Отсутствующий обязательный receipt выдан за успешный результат.'
+                if ($fault -eq 'console-primary') {
+                    Assert ([Object]::ReferenceEquals($primaryException,$failure.Exception) -and
+                        $failure.FullyQualifiedErrorId -ceq $calls.primary.FullyQualifiedErrorId -and
+                        $failure.InvocationInfo.PositionMessage -ceq $calls.primary.InvocationInfo.PositionMessage) 'Отказ receipt заменил первичную ошибку либо место throw.'
+                } else { Assert ($failure.FullyQualifiedErrorId -ceq 'ObjectDisposedException') 'Отказ writer при успешном child скрыт либо заменён.' }
+                return
+            }
             Assert ($lines.Count -eq 1 -and $lines[0] -cmatch '^LABUI_PS5_INITIALIZATION_JSON (.+)$' -and $lines[0].Length -le 512) 'Initialization failure receipt отсутствует либо не ограничен.'
             $receipt=$Matches[1] | ConvertFrom-Json -AsHashtable
             Assert ($receipt.Count -eq 11 -and $receipt.schemaVersion -eq 1 -and $receipt.limitMs -eq 15000 -and
