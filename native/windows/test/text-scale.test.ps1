@@ -3,6 +3,52 @@ param([string]$Harness = (Join-Path $PSScriptRoot 'text-scale.ps1'))
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 function Assert([bool]$Condition, [string]$Message) { if (!$Condition) { throw $Message } }
+function Invoke-SettingsInitializationWitness([string]$Executable, [string]$Command) {
+    $clock=[Diagnostics.Stopwatch]::StartNew()
+    $child=@{childStarted=$false;childExited=$false}
+    $receipt=[ordered]@{schemaVersion=1;status='completed';limitMs=15000;elapsedMs=0;
+        childStarted=$false;childExited=$false;childWaitRemainingMs=$null;phase=$null;
+        readerElapsedMs=$null;phaseRead='unavailable';cleanup='not-created'}
+    $phasePath=$null; $phaseOwned=$false; $failure=$null; $cleanupFailure=$null; $text=$null
+    try {
+        try {
+            $phasePath=Join-Path ([IO.Path]::GetTempPath()) ('labui-ps5-initialization-'+[guid]::NewGuid().ToString('N')+'.json')
+            $file=[IO.File]::Open($phasePath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::Read)
+            $phaseOwned=$true
+            $file.Dispose()
+            $path64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($phasePath))
+            $Command="`$phasePath=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64'))`n"+$Command
+        } catch { $receipt.phaseRead='create-failed' }
+        $text=Invoke-TextScaleChild $Executable @('-NoProfile','-NonInteractive','-STA','-Command',$Command) 15000 -Diagnostic $child
+    } catch { $failure=$_ } finally {
+        $receipt.elapsedMs=$clock.ElapsedMilliseconds
+        $receipt.childStarted=$child.childStarted -eq $true; $receipt.childExited=$child.childExited -eq $true
+        if ($child.ContainsKey('childWaitRemainingMs') -and $child.childWaitRemainingMs -is [int] -and
+            $child.childWaitRemainingMs -ge 0 -and $child.childWaitRemainingMs -le 15000) {
+            $receipt.childWaitRemainingMs=$child.childWaitRemainingMs
+        }
+        # Файл принадлежит этому вызову; чтение и удаление допустимы после подтверждённого exit.
+        if ($phaseOwned -and (!$receipt.childStarted -or $receipt.childExited)) {
+            try {
+                $info=[IO.FileInfo]::new($phasePath)
+                if (!$info.Exists -or $info.Length -le 0 -or $info.Length -gt 512) { throw 'Файл фазы инициализации отсутствует либо превышает лимит.' }
+                $phase=Get-Content -LiteralPath $phasePath -Raw | ConvertFrom-Json -AsHashtable
+                if ($phase.Count -ne 2 -or $phase.phase -cnotin @('load-uia','compile-native','pin-process') -or
+                    ($phase.elapsedMs -isnot [int] -and $phase.elapsedMs -isnot [long]) -or
+                    $phase.elapsedMs -lt 0 -or $phase.elapsedMs -gt $receipt.elapsedMs) { throw 'Фаза инициализации нарушила схему.' }
+                $receipt.phase=$phase.phase; $receipt.readerElapsedMs=$phase.elapsedMs; $receipt.phaseRead='observed'
+            } catch { $receipt.phaseRead='unavailable' } finally {
+                try { [IO.File]::Delete($phasePath); $receipt.cleanup='deleted' }
+                catch { $receipt.cleanup='failed'; $cleanupFailure=$_ }
+            }
+        } elseif ($phaseOwned) { $receipt.phaseRead='child-exit-unconfirmed'; $receipt.cleanup='child-exit-unconfirmed' }
+        if ($failure -or $cleanupFailure) { $receipt.status='failed' }
+        [Console]::WriteLine('LABUI_PS5_INITIALIZATION_JSON '+($receipt | ConvertTo-Json -Compress))
+    }
+    if ($failure) { throw $failure }
+    if ($cleanupFailure) { throw $cleanupFailure }
+    return $text
+}
 $tokens = $null
 $errors = $null
 $source = [IO.File]::ReadAllText($Harness)
@@ -530,9 +576,67 @@ $readerStart=@($readerAst.EndBlock.Statements | Where-Object {
 })[0].Extent.StartOffset
 $readerInitialization=$readerText.Substring(0,$readerStart)+"`n'PS5 reader initialization: native/UIA types compiled; no discovery executed.'"
 $frameworkShell=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-$initialization=Invoke-TextScaleChild $frameworkShell @('-NoProfile','-NonInteractive','-STA','-Command',$readerInitialization)
+$initialization=Invoke-SettingsInitializationWitness $frameworkShell $readerInitialization
 Assert ($initialization.Trim() -eq 'PS5 reader initialization: native/UIA types compiled; no discovery executed.') 'PS5 command transport/compilation lost the real reader.'
 Write-Output $initialization.Trim()
+
+# Отказ инертного процесса сохраняет первичную ошибку и фазу; посторонние данные не публикуются.
+foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit')) {
+    & {
+        param($fault)
+        $calls=@{child=0}
+        function Invoke-TextScaleChild {
+            param($Executable,$Arguments,$TimeoutMs,$Diagnostic)
+            $calls.child++
+            Assert ($Executable -ceq 'inert' -and $TimeoutMs -eq 15000 -and $Arguments[-2] -ceq '-Command') 'Initialization witness изменил transport/deadline.'
+            $commandAst=[Management.Automation.Language.Parser]::ParseInput($Arguments[-1],[ref]$tokens,[ref]$errors)
+            $pathAssignment=@($commandAst.EndBlock.Statements | Where-Object {
+                $_ -is [Management.Automation.Language.AssignmentStatementAst] -and $_.Left.Extent.Text -eq '$phasePath'
+            })[0]
+            . ([scriptblock]::Create($pathAssignment.Extent.Text))
+            $calls.path=$phasePath
+            $Diagnostic.childStarted=$true; $Diagnostic.childExited=$fault -ne 'unconfirmed-exit'; $Diagnostic.childWaitRemainingMs=14999
+            $operationClock=[pscustomobject]@{ElapsedMilliseconds=0}
+            . ([scriptblock]::Create($phaseWriter))
+            Write-SettingsReaderPhase 'compile-native'
+            if ($fault -eq 'malformed') { [IO.File]::WriteAllText($phasePath,'{"phase":"private UI data","elapsedMs":0,"extra":"foreign"}') }
+            if ($fault -eq 'oversized') { [IO.File]::WriteAllText($phasePath,'x'*513) }
+            if ($fault -ne 'none') { throw 'fixture initialization deadline' }
+            return 'inert initialized'
+        }
+        $savedOut=[Console]::Out; $capture=[IO.StringWriter]::new(); $failure=$null; $observed=$null
+        try {
+            [Console]::SetOut($capture)
+            try { $observed=Invoke-SettingsInitializationWitness 'inert' "'inert initialized'" } catch { $failure=$_ }
+        } finally { [Console]::SetOut($savedOut) }
+        try {
+            $lines=@($capture.ToString() -split '\r?\n' | Where-Object { $_ })
+            Assert ($lines.Count -eq 1 -and $lines[0] -cmatch '^LABUI_PS5_INITIALIZATION_JSON (.+)$' -and $lines[0].Length -le 512) 'Initialization failure receipt отсутствует либо не ограничен.'
+            $receipt=$Matches[1] | ConvertFrom-Json -AsHashtable
+            Assert ($receipt.Count -eq 11 -and $receipt.schemaVersion -eq 1 -and $receipt.limitMs -eq 15000 -and
+                $receipt.elapsedMs -ge 0 -and $receipt.childStarted -and $receipt.childWaitRemainingMs -eq 14999 -and $calls.child -eq 1) 'Initialization receipt потерял фиксированную схему/срок.'
+            $healthy=$fault -eq 'none'
+            Assert (($null -ne $failure) -eq !$healthy -and $receipt.status -ceq $(if($healthy){'completed'}else{'failed'})) "Initialization receipt изменил исход child: fault=$fault, status=$($receipt.status), failure=$failure."
+            if ($healthy) { Assert ($observed -ceq 'inert initialized') 'Initialization receipt попал в success output.' }
+            else { Assert ($failure.Exception.Message -ceq 'fixture initialization deadline') 'Initialization receipt заменил primary.' }
+            if ($fault -eq 'unconfirmed-exit') {
+                Assert (!$receipt.childExited -and $receipt.phase -eq $null -and $receipt.phaseRead -ceq 'child-exit-unconfirmed' -and
+                    $receipt.cleanup -ceq 'child-exit-unconfirmed' -and [IO.File]::Exists($calls.path)) 'Initialization receipt прочитан/удалён до confirmed exit.'
+            } else {
+                Assert ($receipt.childExited -and $receipt.cleanup -ceq 'deleted' -and ![IO.File]::Exists($calls.path)) 'Initialization receipt потерял owned cleanup.'
+                if ($fault -in @('malformed','oversized')) {
+                    Assert ($receipt.phase -eq $null -and $receipt.readerElapsedMs -eq $null -and $receipt.phaseRead -ceq 'unavailable' -and
+                        $lines[0] -notmatch 'private UI data|foreign') 'Initialization receipt доверился неограниченному/чужому payload.'
+                } else { Assert ($receipt.phase -ceq 'compile-native' -and $receipt.readerElapsedMs -eq 0 -and $receipt.phaseRead -ceq 'observed') 'Initialization failure receipt потерял last phase.' }
+            }
+        } finally {
+            $capture.Dispose()
+            # Здесь исполнитель подставной: живого процесса нет.
+            if ($calls.ContainsKey('path') -and [IO.File]::Exists($calls.path)) { [IO.File]::Delete($calls.path) }
+        }
+    } $fault
+}
+Write-Output 'PS5 initialization receipt: PASS (failure preserved, fixed bounded phase, confirmed exit, owned cleanup; inert sabotage).'
 foreach ($invalidScope in @(@(0,3187), @(900,0))) {
     $failure=$null
     try { [LabUISettingsContentNative]::Descendants($invalidScope[0], $invalidScope[1]) | Out-Null } catch { $failure=$_ }
