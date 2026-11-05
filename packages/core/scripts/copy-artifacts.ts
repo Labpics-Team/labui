@@ -15,6 +15,7 @@ import { createRequire } from 'node:module';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type Metafile, transformSync } from 'esbuild';
+import { cjsDeclarationImports } from './cjs-declaration-imports.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -55,6 +56,17 @@ function shareBehaviorRuntime(): void {
     });
     writeFileSync(esm, `${facade.code}//# sourceMappingURL=${basename(esm)}.map\n`);
     writeFileSync(`${esm}.map`, facade.map);
+  }
+}
+
+/** TS 5.7 разрешает ESM-типы из CJS через явный resolution-mode, включая Lit. */
+function copyCjsDeclarationImports(): void {
+  for (const name of readdirSync(dist, { recursive: true, encoding: 'utf8' })) {
+    if (!name.endsWith('.d.cts')) continue;
+    const file = join(dist, name);
+    const source = readFileSync(file, 'utf8');
+    const declaration = cjsDeclarationImports(file, source);
+    if (source !== declaration) writeFileSync(file, declaration);
   }
 }
 
@@ -105,6 +117,7 @@ function copyBundledLicenses(): void {
 function main(): void {
   mkdirSync(dist, { recursive: true });
   shareBehaviorRuntime();
+  copyCjsDeclarationImports();
 
   // Контракты темы и браузерного выделения принадлежат Core.
   const ownFiles = ['theme.css', 'selection.css'];

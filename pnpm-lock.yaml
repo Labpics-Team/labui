@@ -220,6 +220,9 @@ importers:
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/anatomy':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
@@ -229,6 +232,9 @@ importers:
       '@zag-js/core':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/dismissable':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/menu':
         specifier: 1.41.2
         version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)

@@ -67,13 +67,15 @@ const position: LabSheetPosition = 'two-thirds';
 sheet.open = true;
 sheet.position = position;
 sheet.modal = 'false';
+const updated: Promise<boolean> = sheet.updateComplete;
+const construct: { new(): HTMLElement } = LabSheet;
 const changed: SheetPositionChangeDetails = { position };
 const failed: SheetMotionErrorDetails = { error: new Error('Движение отменено') };
 // @ts-expect-error Позиции ограничены публичным контрактом.
 sheet.position = 'three-fourths';
 // @ts-expect-error Sheet не наследует размер Dialog.
 sheet.size = 'm';
-void [LabSheet, changed, failed];
+void [LabSheet, changed, failed, updated, construct];
 `,
   },
   {
@@ -148,7 +150,8 @@ describe('публичный tarball: декларации соответств�
             '--lib',
             'es2022,dom,dom.iterable',
             '--esModuleInterop',
-            '--skipLibCheck',
+            // Sheet проверяет также весь граф публичных деклараций.
+            ...(name === 'core-sheet' ? [] : ['--skipLibCheck']),
             '--module',
             'nodenext',
             '--moduleResolution',
