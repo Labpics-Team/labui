@@ -15,6 +15,7 @@ public sealed partial class SheetPage : Page
     private bool snapshotQueued;
     private bool snapshotWritten;
     private readonly SheetContentProbe? contentProbe;
+    private readonly SheetPolicyProbe? policyProbe;
     private readonly CancellationTokenSource? contentCancellation;
     internal Window? HostWindow { get; set; }
     internal object? WindowAfterResize { get; set; }
@@ -59,9 +60,15 @@ public sealed partial class SheetPage : Page
                     _ => throw new ArgumentException("Неизвестное выравнивание пробы содержимого.")
                 } : VerticalAlignment.Stretch;
             var qualify = arguments.Contains("--sheet-content-qualify", StringComparer.Ordinal);
-            contentProbe = new SheetContentProbe(content[contentPrefix.Length..], alignment, qualify);
+            var scenario = content[contentPrefix.Length..];
+            if (scenario is "selector-retirement" or "flex-recovery")
+                policyProbe = new SheetPolicyProbe(Sheet, scenario, alignment, qualify);
+            else
+            {
+                contentProbe = new SheetContentProbe(scenario, alignment, qualify);
+                Sheet.Content = contentProbe.Content;
+            }
             if (qualify) contentCancellation = new();
-            Sheet.Content = contentProbe.Content;
         }
         else if (withContent)
         {
@@ -118,6 +125,8 @@ public sealed partial class SheetPage : Page
             {
                 if (IsLoaded && contentProbe is { Qualify: true })
                     await contentProbe.CompleteAsync(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer, contentCancellation!.Token);
+                else if (IsLoaded && policyProbe is not null)
+                    await policyProbe.CompleteAsync(contentCancellation!.Token);
                 if (IsLoaded) WriteSnapshot(null);
             }
             finally { snapshotQueued = false; }
@@ -173,7 +182,8 @@ public sealed partial class SheetPage : Page
         if (observationPath is null || snapshotWritten) return;
         var body = FindPart(Sheet, "PART_Body");
         var handle = FindPart(Sheet, "PART_Indicator");
-        var contentWitness = contentProbe?.Snapshot(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer);
+        var contentWitness = policyProbe?.Snapshot()
+            ?? contentProbe?.Snapshot(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer);
         var observation = new
         {
             pid = Environment.ProcessId,
