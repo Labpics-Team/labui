@@ -7,6 +7,8 @@ import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
 import { evidenceLog } from '../../../scripts/ci/evidence-log.mjs';
+import { policyWitness } from './sheet-policy.fixtures.mjs';
+import { POLICY_CASES } from './sheet-policy.mjs';
 import {
   CONTENT_CASES,
   decodeSheetContentEvidence,
@@ -153,6 +155,18 @@ function observation(entry = EXPECTED[0]) {
   };
 }
 
+function policyObservation(entry = POLICY_CASES[0]) {
+  const value = observation();
+  value.contentWitness = policyWitness(entry);
+  value.requestedState = entry.state;
+  const final = value.contentWitness.steps.at(-1);
+  const height = final.bodyHeight;
+  value.body = { x: 0, y: 812 - height, width: 375, height };
+  value.handle = { x: 170, y: 812 - height + 14, width: 36, height: 4 };
+  value.contentViewport = { x: 16, y: 812 - height + 48, width: 343, height: height - 64 };
+  return value;
+}
+
 function image() {
   const chunk = (name, payload) => {
     const bytes = Buffer.alloc(12 + payload.length);
@@ -196,7 +210,7 @@ function fixture() {
   ])
     identity[field] = 'b'.repeat(64);
   const files = new Map();
-  for (const entry of EXPECTED) {
+  for (const entry of CONTENT_CASES) {
     const window = { pid: 42, windowHandle: '1234', startedAtUnixMs: 110 };
     identity.cases[entry.name] = {
       ...OWNER,
@@ -205,7 +219,10 @@ function fixture() {
       windowAfter: window,
       termination: { code: null, signal: 'SIGTERM' },
     };
-    files.set(`${entry.name}.json`, json(observation(entry)));
+    files.set(
+      `${entry.name}.json`,
+      json(POLICY_CASES.includes(entry) ? policyObservation(entry) : observation(entry)),
+    );
     files.set(`${entry.name}.png`, IMAGE);
   }
   files.set('identity.json', json(identity));
@@ -225,8 +242,134 @@ const rejectMutation = (mutate, entry = EXPECTED[0]) => {
 };
 
 test('hosted Content matrix admits finite Stretch, Top and an un-sized native ListView', () => {
-  assert.deepEqual(CONTENT_CASES, EXPECTED);
+  assert.deepEqual(CONTENT_CASES, [...EXPECTED, ...POLICY_CASES]);
   for (const entry of EXPECTED) check(observation(entry), entry);
+});
+
+test('hosted policy observations bind selector and recovered Flex to measured outer geometry', () => {
+  for (const entry of POLICY_CASES) {
+    check(policyObservation(entry), entry);
+    for (const mutate of [
+      (value) => {
+        value.requestedState = entry.state === 'Flex' ? 'Half' : 'Flex';
+      },
+      (value) => {
+        value.geometryScale = 2;
+      },
+      (value) => {
+        value.body.height += 1;
+      },
+      (value) => {
+        value.handle.y += 1;
+      },
+      (value) => {
+        value.contentViewport.height += 1;
+      },
+      (value) => {
+        value.contentWitness.steps.at(-1).viewport.actualWidth -= 1;
+      },
+      (value) => {
+        value.privateRoot = 'private';
+      },
+    ]) {
+      const value = policyObservation(entry);
+      mutate(value);
+      assert.throws(() => check(value, entry));
+    }
+  }
+});
+
+test('Flex outer geometry admits natural heights and viewport clamp while rejecting stale fixed Half', () => {
+  const entry = POLICY_CASES[1];
+  for (const desiredHeight of [24, 160, 900]) {
+    const value = policyObservation(entry);
+    const final = value.contentWitness.steps.at(-1);
+    const contentHeight = Math.min(748, desiredHeight);
+    final.bodyHeight = contentHeight + 64;
+    final.root.desired.height = desiredHeight;
+    final.root.actual.height = contentHeight;
+    final.root.layoutSlot.height = contentHeight;
+    Object.assign(final.viewport, {
+      actualHeight: contentHeight,
+      viewportHeight: contentHeight,
+      extentHeight: contentHeight,
+    });
+    value.body = { x: 0, y: 812 - final.bodyHeight, width: 375, height: final.bodyHeight };
+    value.handle = { x: 170, y: value.body.y + 14, width: 36, height: 4 };
+    value.contentViewport = { x: 16, y: value.body.y + 48, width: 343, height: contentHeight };
+    check(value, entry);
+    const stale = copy(value);
+    stale.body = { x: 0, y: 390, width: 375, height: 422 };
+    assert.throws(() => check(stale, entry));
+  }
+});
+
+test('policy Content series keeps typed evidence and fails closed on missing recovery or retirement', () => {
+  const files = fixture();
+  assert.equal(files.size, 11);
+  const decoded = decodeSheetContentEvidence(encodeSheetContentEvidence(files, SOURCE), SOURCE);
+  for (const entry of POLICY_CASES) {
+    assert.deepEqual(decoded.get(`${entry.name}.json`), files.get(`${entry.name}.json`));
+    for (const mutate of [
+      (value) => {
+        value.contentWitness.steps.pop();
+      },
+      (value) => {
+        value.contentWitness.status = 'failed';
+      },
+      (value) => {
+        value.contentWitness.scenario = 'unknown';
+      },
+      (value) => {
+        value.contentWitness.steps.at(-1).viewport.sizesContentToTemplatedParent = false;
+      },
+    ]) {
+      const bad = new Map(files);
+      const value = JSON.parse(bad.get(`${entry.name}.json`).toString());
+      mutate(value);
+      bad.set(`${entry.name}.json`, json(value));
+      assert.throws(() => encodeSheetContentEvidence(bad, SOURCE));
+      assert.throws(() => decodeSheetContentEvidence(packets(bad), SOURCE));
+    }
+  }
+});
+
+test('policy diagnostics preserve closed failed witness data for each capture case', () => {
+  for (const entry of POLICY_CASES) {
+    const value = policyObservation(entry);
+    value.contentWitness.status = 'failed';
+    value.contentWitness.failure = {
+      phase: value.contentWitness.phase,
+      code: 'layout-timeout',
+      type: 'TimeoutException',
+      hresult: -2147024809,
+      message: 'private exception text',
+    };
+    const failure = sheetFailureLog({
+      sourceSha: SOURCE,
+      name: entry.name,
+      phase: 'content-layout',
+      pid: 42,
+      observation: value,
+      error: new Error('private exception text'),
+    });
+    assert.ok(!failure.includes('private exception text'));
+    const readback = JSON.parse(failure.slice(failure.indexOf('{')));
+    assert.equal(readback.observation.contentWitness.failure.hresult, -2147024809);
+    assert.equal(readback.observation.contentWitness.schema, 'sheet-policy-v1');
+    assert.equal(readback.observation.contentWitness.steps.length, entry.state === 'Half' ? 5 : 2);
+    const completed = sheetContentCaseLog({
+      sourceSha: SOURCE,
+      name: entry.name,
+      ...OWNER,
+      exited: true,
+      observation: policyObservation(entry),
+    });
+    assert.equal(
+      JSON.parse(completed.slice(completed.indexOf('{'))).contentWitness.status,
+      'complete',
+    );
+  }
 });
 
 test('complete status cannot hide missing phases or a failed native template replacement', () => {
@@ -496,7 +639,7 @@ test('phase samples cannot predate the process, reverse time or follow the final
 
 test('Content evidence roundtrips exact files and source independently of the material series', () => {
   const files = fixture();
-  assert.equal(files.size, 7);
+  assert.equal(files.size, 11);
   const log = encodeSheetContentEvidence(files, SOURCE);
   assert.deepEqual(decodeSheetContentEvidence(log, SOURCE), files);
   assert.throws(() => decodeSheetContentEvidence(log, 'c'.repeat(40)));

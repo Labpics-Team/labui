@@ -8,13 +8,14 @@ import { fileURLToPath } from 'node:url';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { png } from './evidence.mjs';
 import {
-  CONTENT_CASES,
   CONTENT_SCHEMA,
+  CONTENT_CASES as SCROLL_CONTENT_CASES,
   contentReadback,
   validateContentWitness,
 } from './sheet-content.mjs';
+import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
 
-export { CONTENT_CASES } from './sheet-content.mjs';
+export const CONTENT_CASES = Object.freeze([...SCROLL_CONTENT_CASES, ...POLICY_CASES]);
 
 const PREFIX = 'LABUI_SHEET_EVIDENCE';
 const CONTENT_PREFIX = 'LABUI_SHEET_CONTENT_EVIDENCE';
@@ -229,14 +230,67 @@ export function validateObservation(value, expected) {
     phase = 'geometry';
     // Этот статический эталон квалифицируется при 100% DPI; остальные масштабы остаются отдельной проверкой.
     assert.equal(value.rasterizationScale, 1, 'sheet: reference DPI');
+    const policy = POLICY_CASES.find(({ name }) => name === expected.name);
+    let bodyHeight = 422;
+    if (policy) {
+      validatePolicyWitness(value.contentWitness, expected);
+      assert.deepEqual(
+        Object.keys(value).sort(),
+        [
+          'pid',
+          'windowHandle',
+          'observedAtUnixMs',
+          'theme',
+          'rasterizationScale',
+          'viewport',
+          'body',
+          'handle',
+          'layoutReady',
+          'imageLoaded',
+          'rendererReady',
+          'requestedMaterial',
+          'requestedState',
+          'geometryScale',
+          'contentViewport',
+          'contentWitness',
+          'effectiveMaterial',
+          'materialReason',
+          'error',
+          ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
+        ].sort(),
+        'sheet policy: поля наблюдения',
+      );
+      assert.equal(value.requestedState, policy.state);
+      assert.equal(value.geometryScale, 1);
+      assert.ok(
+        value.materialReason === null ||
+          ['Requested', 'TransparencyDisabled', 'EffectsUnsupported', 'EffectsNotFast'].includes(
+            value.materialReason,
+          ),
+      );
+      for (const part of ['viewport', 'body', 'handle', 'contentViewport'])
+        assert.deepEqual(Object.keys(value[part]).sort(), ['x', 'y', 'width', 'height'].sort());
+      const final = value.contentWitness.steps.at(-1);
+      if (policy.state === 'Flex') bodyHeight = Math.min(812, 64 + final.root.desired.height);
+      near(final.bodyHeight, bodyHeight);
+      for (const [field, expectedValue] of Object.entries({
+        x: 16,
+        y: 812 - bodyHeight + 48,
+        width: 343,
+        height: bodyHeight - 64,
+      }))
+        near(value.contentViewport[field], expectedValue);
+      near(final.viewport.actualWidth, value.contentViewport.width);
+      near(final.viewport.actualHeight, value.contentViewport.height);
+    }
     for (const [part, bounds] of Object.entries({
       viewport: { x: 0, y: 0, width: 375, height: 812 },
-      body: { x: 0, y: 390, width: 375, height: 422 },
-      handle: { x: 170, y: 404, width: 36, height: 4 },
+      body: { x: 0, y: 812 - bodyHeight, width: 375, height: bodyHeight },
+      handle: { x: 170, y: 812 - bodyHeight + 14, width: 36, height: 4 },
     }))
       for (const [field, expectedValue] of Object.entries(bounds))
         near(value[part]?.[field], expectedValue);
-    if (expected.scenario !== undefined) validateContentWitness(value, expected);
+    if (expected.scenario !== undefined && !policy) validateContentWitness(value, expected);
   } catch (error) {
     error.sheetPhase ??= phase;
     throw error;
@@ -502,7 +556,9 @@ export function sheetFailureLog({
                     ]),
                   )
                 : null,
-            contentWitness: contentReadback(observation.contentWitness),
+            contentWitness: POLICY_CASES.some((entry) => entry.name === name)
+              ? policyReadback(observation.contentWitness)
+              : contentReadback(observation.contentWitness),
           }
         : {}),
     };
@@ -563,7 +619,9 @@ export function sheetContentCaseLog({ sourceSha, name, pid, windowHandle, exited
     pid,
     windowHandle,
     exited,
-    contentWitness: contentReadback(observation?.contentWitness),
+    contentWitness: POLICY_CASES.some((entry) => entry.name === name)
+      ? policyReadback(observation?.contentWitness)
+      : contentReadback(observation?.contentWitness),
   });
   assert.ok(Buffer.byteLength(payload, 'utf8') <= MAX_JSON);
   return `LABUI_SHEET_CONTENT_OBSERVATION_JSON ${payload}\n`;
@@ -627,7 +685,7 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
           `--sheet-content=${entry.scenario}`,
           `--sheet-content-alignment=${entry.alignment.toLowerCase()}`,
           '--sheet-content-qualify',
-          '--sheet-state=half',
+          `--sheet-state=${(entry.state ?? 'Half').toLowerCase()}`,
           '--sheet-scale=1',
         ]
       : []),
