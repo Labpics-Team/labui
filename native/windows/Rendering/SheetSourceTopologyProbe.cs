@@ -20,7 +20,7 @@ internal static class SheetSourceTopologyProbe
         new(3, false, "shared", true), new(3, false, "distinct", true),
         new(2, true, "shared"), new(3, true, "shared"),
         new(8, true, "shared"), new(8, true, "distinct"),
-        new(3, true, "shared", true), new(8, true, "shared", true),
+        new(3, true, "shared", true), new(8, true, "repeat"),
         new(8, true, "distinct", true),
         new(8, true, "shared", true, false),
         new(8, true, "shared", true, true, false),
@@ -56,6 +56,7 @@ internal static class SheetSourceTopologyProbe
             ["combine"] = spec.Add ? "Add" : "Arithmetic",
             ["source"] = spec.Source, ["named"] = spec.Named,
             ["blur"] = spec.Blur, ["mask"] = spec.Mask,
+            ["stage"] = "build",
             ["hresult"] = 0, ["cleanupHresult"] = null,
         };
         try
@@ -94,7 +95,9 @@ internal static class SheetSourceTopologyProbe
                     Source1Amount = 1, Source2Amount = 1, Offset = 0, ClampOutput = false,
                 });
             }
-            factory = compositor.CreateEffectFactory((IGraphicsEffect)(add ?? sum!));
+            var graph = (IGraphicsEffect)(add ?? sum!);
+            sample["stage"] = "factory";
+            factory = compositor.CreateEffectFactory(graph);
         }
         catch (Exception error) { sample["hresult"] = error.HResult; }
         finally

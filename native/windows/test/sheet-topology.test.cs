@@ -87,11 +87,13 @@ ExpectedGraph[] expectedCases =
     new(3, "Arithmetic", "shared", true), new(3, "Arithmetic", "distinct", true),
     new(2, "Add", "shared"), new(3, "Add", "shared"),
     new(8, "Add", "shared"), new(8, "Add", "distinct"),
-    new(3, "Add", "shared", true), new(8, "Add", "shared", true),
+    new(3, "Add", "shared", true), new(8, "Add", "repeat"),
     new(8, "Add", "distinct", true),
     new(8, "Add", "shared", true, false),
     new(8, "Add", "shared", true, true, false),
 ];
+Check(expectedCases[8] with { Source = "repeat" } == expectedCases[11],
+    "Matched Add8 отличается от контроля не только идентичностью источников.");
 
 // Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
 // подстановку постоянной sigma, в том числе штатного Win2D значения 3.
@@ -141,6 +143,7 @@ foreach (var cleanupFault in new[] { false, true })
             && (string)row["source"]! == required.Source && (bool)row["named"]! == required.Named
             && (bool)row["blur"]! == required.Blur && (bool)row["mask"]! == required.Mask,
             $"Попытка {index} не выполнила обязательный различитель.");
+        Check((string?)row["stage"] == "factory", "Построенный граф потерял стадию factory.");
         CheckGraph(compositor.Graphs[index + 1], required, blurWidths);
     }
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
@@ -149,12 +152,55 @@ foreach (var cleanupFault in new[] { false, true })
     Check(rows.All(row => (bool)row["blur"]! || (bool)row["mask"]!), "Случай потерял исследуемую ветвь.");
     Check(rows.Any(row => (int)row["hresult"]! != 0) && rows.Any(row => (int)row["hresult"]! == 0),
         "Диагностика не различает собственный успех и отказ.");
+    Check(rows.Any(row => row["stage"] is "factory" && row["hresult"] is -2147024809),
+        "Контроль factory не воспроизвёл тот же HRESULT, что и build failure.");
     Check(rows.Any(row => row["cleanupHresult"] is int) == cleanupFault, "Cleanup HRESULT потерян либо придуман.");
     Check(!JsonSerializer.Serialize(rows).Contains(Fixture.Marker, StringComparison.Ordinal),
         "Проектор опубликовал текст исключения.");
     Check(SheetSourceTopology.Read(new AggregateException(primary))?.Length == 15,
         "Cleanup wrapper скрыл диагностику исходного отказа.");
 }
+
+Fixture.Created = Fixture.Disposed = 0;
+Fixture.CleanupFault = false;
+Fixture.BuildFault = true;
+var buildPrimary = new ArgumentException(Fixture.Marker);
+var buildCompositor = new Compositor { Primary = buildPrimary };
+Exception? buildFailure = null;
+try { SheetSourceTopologyProbe.CreateFactory(buildCompositor, graph, 12); }
+catch (Exception error) { buildFailure = error; }
+finally { Fixture.BuildFault = false; }
+var buildRows = SheetSourceTopology.Read(buildFailure)
+    ?? throw new InvalidOperationException("Build failure потерял диагностику.");
+Check(ReferenceEquals(buildFailure, buildPrimary) && buildCompositor.Calls == 1 && buildRows.Length == 15,
+    "Build failure заменил primary либо дошёл до диагностической factory.");
+Check(buildRows.All(row => (string?)row["stage"] == "build" && (int)row["hresult"]! == -2147024809),
+    "Build HRESULT выдан за известный отказ factory.");
+Check(Fixture.Created == Fixture.Disposed, "Build failure потерял освобождение ресурсов.");
+
+foreach (var stage in new object?[] { "build", "factory", null, Fixture.Marker, 42 })
+{
+    var stageError = new ArgumentException(Fixture.Marker);
+    stageError.Data[SheetSourceTopology.DataKey] = new[]
+    {
+        new Dictionary<string, object?> { ["stage"] = stage, ["hresult"] = -2147024809 },
+    };
+    var stageRows = SheetSourceTopology.Read(stageError)
+        ?? throw new InvalidOperationException("Проектор потерял stage diagnostic.");
+    Check(stageRows[0].ContainsKey("stage") && Equals(stageRows[0]["stage"],
+        stage is "build" or "factory" ? stage : null), "Stage не ограничена закрытым набором.");
+    Check(!JsonSerializer.Serialize(stageRows).Contains(Fixture.Marker, StringComparison.Ordinal),
+        "Stage опубликовала произвольный текст.");
+}
+var legacyError = new ArgumentException(Fixture.Marker);
+legacyError.Data[SheetSourceTopology.DataKey] = new[]
+{
+    new Dictionary<string, object?> { ["hresult"] = -2147024809 },
+};
+var legacyRows = SheetSourceTopology.Read(legacyError)
+    ?? throw new InvalidOperationException("Legacy diagnostic без stage отвергнута.");
+Check(!legacyRows[0].ContainsKey("stage") && (int)legacyRows[0]["hresult"]! == -2147024809,
+    "Legacy row получила придуманную стадию либо потеряла HRESULT.");
 
 var foreign = new ArgumentException(Fixture.Marker);
 foreign.Data[SheetSourceTopology.DataKey] = new[]
@@ -195,6 +241,7 @@ static class Fixture
     internal static int Created;
     internal static int Disposed;
     internal static bool CleanupFault;
+    internal static bool BuildFault;
 }
 sealed class UnavailableDataException : Exception
 {
@@ -254,9 +301,14 @@ namespace Microsoft.Graphics.Canvas.Effects
 namespace Microsoft.UI.Composition
 {
     using Windows.Graphics.Effects;
-    public sealed class CompositionEffectSourceParameter(string name) : IGraphicsEffectSource
+    public sealed class CompositionEffectSourceParameter : IGraphicsEffectSource
     {
-        public string Name { get; } = name;
+        public CompositionEffectSourceParameter(string name)
+        {
+            if (Fixture.BuildFault) throw new ArgumentException(Fixture.Marker);
+            Name = name;
+        }
+        public string Name { get; }
     }
     public sealed class CompositionEffectFactory : IDisposable
     {
@@ -278,7 +330,7 @@ namespace Microsoft.UI.Composition
             Graphs.Add(graph);
             Calls++;
             if (Calls == 1 && Primary is not null) throw Primary;
-            if (Primary is not null && Calls % 3 == 0) throw new InvalidOperationException(Fixture.Marker);
+            if (Primary is not null && Calls % 3 == 0) throw new ArgumentException(Fixture.Marker);
             var factory = new CompositionEffectFactory();
             Factories.Add(factory);
             return factory;

@@ -21,7 +21,7 @@ internal static class SheetSourceTopology
                 foreach (var value in values)
                 {
                     if (value is not IDictionary row) return null;
-                    rows.Add(new()
+                    var projected = new Dictionary<string, object?>
                     {
                         ["index"] = Integer(row["index"], 0, Limit - 1),
                         ["inputs"] = Integer(row["inputs"], 2, 8),
@@ -32,7 +32,9 @@ internal static class SheetSourceTopology
                         ["mask"] = Boolean(row["mask"]),
                         ["hresult"] = Integer(row["hresult"], int.MinValue, int.MaxValue),
                         ["cleanupHresult"] = Integer(row["cleanupHresult"], int.MinValue, int.MaxValue),
-                    });
+                    };
+                    if (row.Contains("stage")) projected["stage"] = Known(row["stage"], "build", "factory");
+                    rows.Add(projected);
                 }
                 return rows.ToArray();
             }
