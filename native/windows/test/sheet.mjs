@@ -71,21 +71,36 @@ function errorInfo(value) {
 }
 
 function topologyInfo(value) {
-  if (!Array.isArray(value) || value.length > 16) return null;
+  if (!Array.isArray(value) || value.length > 20) return null;
   const integer = (value, minimum, maximum) =>
     Number.isInteger(value) && value >= minimum && value <= maximum ? value : null;
   const boolean = (value) => (typeof value === 'boolean' ? value : null);
+  const sigmaList = (value) =>
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.length <= 2 &&
+    [...value].every(
+      (sigma) =>
+        typeof sigma === 'number' &&
+        sigma >= 0 &&
+        Number.isFinite(sigma) &&
+        Number.isFinite(Math.fround(sigma)),
+    )
+      ? [...value]
+      : null;
   return value.map((input) => {
     const row = input && typeof input === 'object' && !Array.isArray(input) ? input : {};
     return {
-      index: integer(row.index, 0, 15),
-      inputs: integer(row.inputs, 2, 8),
-      combine: known(row.combine, ['Add', 'Arithmetic', 'BalancedAdd']),
+      index: integer(row.index, 0, 19),
+      inputs: integer(row.inputs, 1, 8),
+      combine: known(row.combine, ['Add', 'Arithmetic', 'BalancedAdd', 'Gaussian']),
       source: known(row.source, ['shared', 'repeat', 'distinct']),
       named: boolean(row.named),
       blur: boolean(row.blur),
       mask: boolean(row.mask),
       ...(Object.hasOwn(row, 'stage') ? { stage: known(row.stage, ['build', 'factory']) } : {}),
+      ...(Object.hasOwn(row, 'levelStart') ? { levelStart: integer(row.levelStart, 0, 7) } : {}),
+      ...(Object.hasOwn(row, 'sigmas') ? { sigmas: sigmaList(row.sigmas) } : {}),
       hresult: integer(row.hresult, -2147483648, 2147483647),
       cleanupHresult: integer(row.cleanupHresult, -2147483648, 2147483647),
     };

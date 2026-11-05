@@ -7,7 +7,7 @@ namespace LabUI.Buttons;
 internal static class SheetSourceTopology
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
-    internal const int Limit = 16;
+    internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
     {
@@ -24,8 +24,8 @@ internal static class SheetSourceTopology
                     var projected = new Dictionary<string, object?>
                     {
                         ["index"] = Integer(row["index"], 0, Limit - 1),
-                        ["inputs"] = Integer(row["inputs"], 2, 8),
-                        ["combine"] = Known(row["combine"], "Add", "Arithmetic", "BalancedAdd"),
+                        ["inputs"] = Integer(row["inputs"], 1, 8),
+                        ["combine"] = Known(row["combine"], "Add", "Arithmetic", "BalancedAdd", "Gaussian"),
                         ["source"] = Known(row["source"], "shared", "repeat", "distinct"),
                         ["named"] = Boolean(row["named"]),
                         ["blur"] = Boolean(row["blur"]),
@@ -34,6 +34,8 @@ internal static class SheetSourceTopology
                         ["cleanupHresult"] = Integer(row["cleanupHresult"], int.MinValue, int.MaxValue),
                     };
                     if (row.Contains("stage")) projected["stage"] = Known(row["stage"], "build", "factory");
+                    if (row.Contains("levelStart")) projected["levelStart"] = Integer(row["levelStart"], 0, 7);
+                    if (row.Contains("sigmas")) projected["sigmas"] = Sigmas(row["sigmas"]);
                     rows.Add(projected);
                 }
                 return rows.ToArray();
@@ -46,6 +48,9 @@ internal static class SheetSourceTopology
     private static int? Integer(object? value, int minimum, int maximum)
         => value is int number && number >= minimum && number <= maximum ? number : null;
     private static bool? Boolean(object? value) => value is bool flag ? flag : null;
+    private static float[]? Sigmas(object? value)
+        => value is float[] { Length: > 0 and <= 2 } numbers
+            && numbers.All(number => float.IsFinite(number) && number >= 0) ? (float[])numbers.Clone() : null;
     private static string? Known(object? value, params string[] allowed)
         => value is string text && allowed.Contains(text, StringComparer.Ordinal) ? text : null;
 }

@@ -402,7 +402,8 @@ public sealed class SheetLayers : Grid
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
-                (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma));
+                (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * RadiusToSigma,
+                Geometry.SheetBodyBlurRadius * RadiusToSigma));
             var brush = result.Own(factory.CreateBrush());
             brush.SetSourceParameter("backdrop", backdropBrush);
             brush.SetSourceParameter("atlas", atlasBrush);
