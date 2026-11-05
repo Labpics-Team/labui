@@ -153,11 +153,11 @@ jobs:
           $receipt = "$env:RUNNER_TEMP/labui-native/sheet-winapp.json"
           $tool | ConvertTo-Json | Set-Content -Encoding utf8 $receipt
           $originalMode = ([string](Get-DisplayResolution -ErrorAction Stop)).Trim()
+          Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'before'; mode = $originalMode } | ConvertTo-Json -Compress))
           $dimensions = [regex]::Match($originalMode, '^(?<width>[1-9][0-9]*)x(?<height>[1-9][0-9]*)$')
           if (-not $dimensions.Success) { throw 'Native display mode is unavailable.' }
           $originalWidth = [int]$dimensions.Groups['width'].Value
           $originalHeight = [int]$dimensions.Groups['height'].Value
-          Write-Output ('LABUI_NATIVE_DISPLAY_JSON ' + (@{ phase = 'before'; mode = $originalMode } | ConvertTo-Json -Compress))
           $captureFailure = $null
           $restoreFailure = $null
           try {
