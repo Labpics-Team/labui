@@ -234,6 +234,7 @@ public sealed class LabSheet : ContentControl
             || !double.IsFinite(width) || width <= 0 || !double.IsFinite(height) || height <= 0) return;
         ConfigureContentViewport(contentViewport);
         var hasContent = Content is not null;
+        contentViewport.Visibility = State == LabSheetState.Flex && !hasContent ? Visibility.Collapsed : Visibility.Visible;
         var desiredContent = 0d;
         if (State == LabSheetState.Flex && hasContent)
         {
@@ -254,7 +255,6 @@ public sealed class LabSheet : ContentControl
         indicator.Margin = new Thickness(Geometry.SheetIndicatorShift * metrics.Scale * 2,
             Geometry.SheetIndicatorOffset * metrics.Scale, 0, 0);
         indicator.CornerRadius = new CornerRadius(indicator.Height / 2);
-        contentViewport.Visibility = State == LabSheetState.Flex && !hasContent ? Visibility.Collapsed : Visibility.Visible;
         layers?.SetMetrics(metrics);
     }
 }
