@@ -46,6 +46,16 @@ interface LiveColorsFixture {
     stableCommits: number;
     propertyCount: number;
   }>;
+  probePublisherReentry(
+    origin: 'listener' | 'callback',
+    action: 'cancel' | 'dispose' | 'none',
+  ): Promise<{
+    ready: LabuiColorsState['state'];
+    state: LabuiColorsState['state'];
+    attribute: string | null;
+    events: LabuiColorsState['state'][];
+    callbacks: LabuiColorsState['state'][];
+  }>;
   measureRoot(
     count: number,
   ): Promise<{ elapsedMs: number[]; propertyCount: number; outputCount?: number }>;
@@ -293,6 +303,45 @@ window.__labColorsLive = {
         commits: changed,
         stableCommits: commits.length - changed.length,
         propertyCount: names.length,
+      };
+    } finally {
+      attachment.dispose();
+      scope.remove();
+    }
+  },
+  async probePublisherReentry(origin, action) {
+    const scope = document.createElement('section');
+    scope.setAttribute('data-theme', 'light');
+    scope.setAttribute('data-contrast', 'normal');
+    document.body.append(scope);
+    const events: LabuiColorsState['state'][] = [];
+    const callbacks: LabuiColorsState['state'][] = [];
+    let attachment: LabuiColorsAttachment;
+    const interrupt = (boundary: typeof origin, state: LabuiColorsState['state']) => {
+      if (boundary === origin && state === 'ready' && action !== 'none') attachment[action]();
+    };
+    scope.addEventListener('lab-colors-state', (event) => {
+      const state = (event as CustomEvent<LabuiColorsState>).detail.state;
+      events.push(state);
+      interrupt('listener', state);
+    });
+    attachment = attachLabuiColors({
+      scope,
+      config: authored,
+      observe: () => ({ kind: 'observed', surface: [255, 255, 255] }),
+      onState(state) {
+        callbacks.push(state.state);
+        interrupt('callback', state.state);
+      },
+    });
+    try {
+      const ready = await attachment.ready;
+      return {
+        ready: ready.state,
+        state: attachment.state.state,
+        attribute: scope.getAttribute('data-lab-colors-state'),
+        events: [...events],
+        callbacks: [...callbacks],
       };
     } finally {
       attachment.dispose();

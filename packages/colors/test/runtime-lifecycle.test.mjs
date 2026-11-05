@@ -131,6 +131,79 @@ function harness(loader, hooks = {}) {
   };
 }
 
+function browserPublisher(runtime, scope, onState, resolveReady) {
+  const source = readFileSync(new URL('../browser.mjs', import.meta.url), 'utf8');
+  const start = source.indexOf('    onState(state) {');
+  const end = source.indexOf('\n    },\n  });', start);
+  assert.ok(start >= 0 && end > start, 'не найден production browser publisher');
+  return new Function(
+    'runtime',
+    'scope',
+    'view',
+    'onState',
+    'resolveReady',
+    `return ({${source.slice(start, end + '\n    },'.length)}}).onState;`,
+  )(runtime, scope, { CustomEvent }, onState, resolveReady);
+}
+
+for (const [origin, action] of [
+  ['listener', 'cancel'],
+  ['listener', 'dispose'],
+  ['attribute', 'cancel'],
+  ['attribute', 'dispose'],
+  ['callback', 'cancel'],
+  ['callback', 'dispose'],
+  ['listener', 'none'],
+]) {
+  test(`browser publisher ${origin}→${action} не доставляет устаревший callback после reentry`, async () => {
+    const events = [];
+    const callbacks = [];
+    const attributes = new Map();
+    const h = harness(undefined, {
+      state(_runtime, state) {
+        publisher(state);
+      },
+    });
+    const interrupt = (boundary, state) => {
+      if (origin === boundary && state === 'ready' && action !== 'none') h.runtime[action]();
+    };
+    const scope = new EventTarget();
+    scope.setAttribute = (name, value) => {
+      attributes.set(name, value);
+      interrupt('attribute', value);
+    };
+    scope.addEventListener('lab-colors-state', (event) => {
+      events.push(event.detail.state);
+      interrupt('listener', event.detail.state);
+    });
+    let resolveReady;
+    const ready = new Promise((resolve) => {
+      resolveReady = resolve;
+    });
+    const publisher = browserPublisher(
+      h.runtime,
+      scope,
+      (state) => {
+        callbacks.push(state.state);
+        interrupt('callback', state.state);
+      },
+      resolveReady,
+    );
+    const result = await h.runtime.refresh();
+    const terminal = action === 'none' ? 'ready' : action === 'cancel' ? 'cancelled' : 'disposed';
+    assert.equal(result.state, terminal);
+    assert.equal(h.runtime.state.state, terminal);
+    assert.equal(attributes.get('data-lab-colors-state'), terminal);
+    assert.equal((await ready).state, 'ready', 'ready сохраняет первый опубликованный результат');
+    assert.deepEqual(
+      events,
+      origin === 'attribute' ? [terminal] : action === 'none' ? ['ready'] : ['ready', terminal],
+    );
+    assert.deepEqual(callbacks, origin === 'callback' ? ['ready', terminal] : [terminal]);
+    h.runtime.dispose();
+  });
+}
+
 test('новая observation пересчитывает тот же attachment; повтор подтверждает прежнюю revision', async () => {
   const h = harness();
   assert.equal((await h.runtime.refresh()).state, 'ready');

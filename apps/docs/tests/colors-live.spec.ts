@@ -211,6 +211,32 @@ test('один кадр black достигает живого Core и неизм
   expect(result.stableCommits).toBe(0);
 });
 
+test('вложенная публикация из DOM listener не доставляет прежний Ready в callback приложения', async ({
+  page,
+}) => {
+  await fixture(page);
+  const cases = [
+    ['listener', 'cancel'],
+    ['listener', 'dispose'],
+    ['callback', 'cancel'],
+    ['callback', 'dispose'],
+    ['listener', 'none'],
+  ] as const;
+  for (const [origin, action] of cases) {
+    const result = await page.evaluate(
+      ({ origin, action }) => window.__labColorsLive?.probePublisherReentry(origin, action),
+      { origin, action },
+    );
+    if (!result) throw new Error('Нет результата browser publisher');
+    const terminal = action === 'none' ? 'ready' : action === 'cancel' ? 'cancelled' : 'disposed';
+    expect(result.ready).toBe('ready');
+    expect(result.state).toBe(terminal);
+    expect(result.attribute).toBe(terminal);
+    expect(result.events).toEqual(action === 'none' ? ['ready'] : ['ready', terminal]);
+    expect(result.callbacks).toEqual(origin === 'callback' ? ['ready', terminal] : [terminal]);
+  }
+});
+
 test('вложенные области, ShadowRoot, selection и повреждённый слой сохраняют свой контекст', async ({
   page,
 }) => {

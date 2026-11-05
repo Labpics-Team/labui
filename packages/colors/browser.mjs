@@ -316,7 +316,9 @@ export function attachLabuiColors({
     onState(state) {
       if (state.state !== 'waiting' || state.reason !== 'loading') resolveReady(state);
       scope.setAttribute('data-lab-colors-state', state.state);
+      if (runtime.state !== state) return;
       scope.dispatchEvent(new view.CustomEvent('lab-colors-state', { detail: state }));
+      if (runtime.state !== state) return;
       onState(state);
     },
   });
