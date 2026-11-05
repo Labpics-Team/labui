@@ -27,6 +27,21 @@ void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<floa
         }
         else branches.Add(source);
     }
+    int ReadBalanced(IGraphicsEffectSource source)
+    {
+        if (source is not CompositeEffect add)
+        {
+            branches.Add(source);
+            return 0;
+        }
+        effects.Add(add);
+        Check(add.Mode == Microsoft.Graphics.Canvas.CanvasComposite.Add && add.Sources.Count == 2,
+            "BalancedAdd содержит не бинарный Add.");
+        var leftDepth = ReadBalanced(add.Sources[0]);
+        var rightDepth = ReadBalanced(add.Sources[1]);
+        Check(leftDepth == rightDepth, "BalancedAdd потерял одинаковую глубину поддеревьев.");
+        return leftDepth + 1;
+    }
 
     if (expected.Combine == "Add")
     {
@@ -35,6 +50,12 @@ void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<floa
         Check(add.Mode == Microsoft.Graphics.Canvas.CanvasComposite.Add, "Composite потерял Add.");
         effects.Add(add);
         branches.AddRange(add.Sources);
+    }
+    else if (expected.Combine == "BalancedAdd")
+    {
+        Check(graph is CompositeEffect, "Подпись BalancedAdd не соответствует корневому эффекту.");
+        Check(ReadBalanced(graph) == 3 && effects.Count == 7,
+            "BalancedAdd не содержит семь бинарных узлов в трёх уровнях.");
     }
     else
     {
@@ -91,6 +112,7 @@ ExpectedGraph[] expectedCases =
     new(8, "Arithmetic", "repeat"),
     new(8, "Add", "shared", true, false),
     new(8, "Add", "shared", true, true, false),
+    new(8, "BalancedAdd", "repeat"),
 ];
 Check(expectedCases[8] with { Source = "repeat" } == expectedCases[11],
     "Matched Add8 отличается от контроля не только идентичностью источников.");
@@ -98,6 +120,8 @@ Check(expectedCases[2] with { Combine = "Add" } == expectedCases[10],
     "Matched repeat3 отличается от контроля не только оператором суммирования.");
 Check(expectedCases[11] with { Combine = "Arithmetic" } == expectedCases[12],
     "Matched repeat8 отличается от контроля не только оператором суммирования.");
+Check(expectedCases[11] with { Combine = "BalancedAdd" } == expectedCases[15],
+    "Matched BalancedAdd8 отличается от контроля не только формой суммирования.");
 
 // Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
 // подстановку постоянной sigma, в том числе штатного Win2D значения 3.
@@ -135,8 +159,8 @@ foreach (var cleanupFault in new[] { false, true })
         primary.HResult == -2147024809 && (string?)primary.Data["unrelated"] == Fixture.Marker,
         "Probe изменил исходный exception либо посторонние Data.");
     var rows = SheetSourceTopology.Read(failure) ?? throw new InvalidOperationException("Probe не передал матрицу.");
-    Check(rows.Length == 15 && compositor.Calls == 16, "Probe не выполнил конечную матрицу.");
-    Check(compositor.Graphs.Count == 16 && ReferenceEquals(compositor.Graphs[0], graph),
+    Check(rows.Length == 16 && compositor.Calls == 17, "Probe не выполнил конечную матрицу.");
+    Check(compositor.Graphs.Count == 17 && ReferenceEquals(compositor.Graphs[0], graph),
         "Compositor не получил исходный граф и все диагностические графы.");
     Check(expectedCases.Length == rows.Length, "Обязательный набор различителей изменился.");
     for (var index = 0; index < rows.Length; index++)
@@ -152,7 +176,7 @@ foreach (var cleanupFault in new[] { false, true })
     }
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
         "Один cleanup отказ прервал освобождение остальных ресурсов.");
-    Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 15)), "Порядок матрицы потерян.");
+    Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 16)), "Порядок матрицы потерян.");
     Check(rows.All(row => (bool)row["blur"]! || (bool)row["mask"]!), "Случай потерял исследуемую ветвь.");
     Check(rows.Any(row => (int)row["hresult"]! != 0) && rows.Any(row => (int)row["hresult"]! == 0),
         "Диагностика не различает собственный успех и отказ.");
@@ -161,7 +185,7 @@ foreach (var cleanupFault in new[] { false, true })
     Check(rows.Any(row => row["cleanupHresult"] is int) == cleanupFault, "Cleanup HRESULT потерян либо придуман.");
     Check(!JsonSerializer.Serialize(rows).Contains(Fixture.Marker, StringComparison.Ordinal),
         "Проектор опубликовал текст исключения.");
-    Check(SheetSourceTopology.Read(new AggregateException(primary))?.Length == 15,
+    Check(SheetSourceTopology.Read(new AggregateException(primary))?.Length == 16,
         "Cleanup wrapper скрыл диагностику исходного отказа.");
 }
 
@@ -176,7 +200,7 @@ catch (Exception error) { buildFailure = error; }
 finally { Fixture.BuildFault = false; }
 var buildRows = SheetSourceTopology.Read(buildFailure)
     ?? throw new InvalidOperationException("Build failure потерял диагностику.");
-Check(ReferenceEquals(buildFailure, buildPrimary) && buildCompositor.Calls == 1 && buildRows.Length == 15,
+Check(ReferenceEquals(buildFailure, buildPrimary) && buildCompositor.Calls == 1 && buildRows.Length == 16,
     "Build failure заменил primary либо дошёл до диагностической factory.");
 Check(buildRows.All(row => (string?)row["stage"] == "build" && (int)row["hresult"]! == -2147024809),
     "Build HRESULT выдан за известный отказ factory.");
@@ -222,7 +246,7 @@ Check(projected?.Length == 1 && projected[0]["index"] is null && projected[0]["n
     projected[0]["combine"] is null && projected[0]["hresult"] is null &&
     !JsonSerializer.Serialize(projected).Contains(Fixture.Marker, StringComparison.Ordinal),
     "Неизвестные поля прошли wire-проектор.");
-foreign.Data[SheetSourceTopology.DataKey] = new Dictionary<string, object?>[16];
+foreign.Data[SheetSourceTopology.DataKey] = new Dictionary<string, object?>[17];
 Check(SheetSourceTopology.Read(foreign) is null, "Oversized diagnostic скрыт усечением.");
 Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exception()) is null,
     "Диагностика появилась без данных.");

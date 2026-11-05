@@ -10,9 +10,9 @@ namespace LabUI.WinUI.Rendering;
 internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
-    internal const int Limit = 15;
+    internal const int Limit = 16;
     private readonly record struct Case(int Inputs, bool Add, string Source,
-        bool Named = false, bool Blur = true, bool Mask = true);
+        bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false);
     private static readonly Case[] cases =
     [
         new(2, false, "shared"), new(3, false, "shared"),
@@ -24,6 +24,7 @@ internal static class SheetSourceTopologyProbe
         new(8, false, "repeat"),
         new(8, true, "shared", true, false),
         new(8, true, "shared", true, true, false),
+        new(8, true, "repeat", Balanced: true),
     ];
 
     internal static CompositionEffectFactory CreateFactory(Compositor compositor,
@@ -53,7 +54,7 @@ internal static class SheetSourceTopologyProbe
         var sample = new Dictionary<string, object?>
         {
             ["index"] = index, ["inputs"] = spec.Inputs,
-            ["combine"] = spec.Add ? "Add" : "Arithmetic",
+            ["combine"] = spec.Balanced ? "BalancedAdd" : spec.Add ? "Add" : "Arithmetic",
             ["source"] = spec.Source, ["named"] = spec.Named,
             ["blur"] = spec.Blur, ["mask"] = spec.Mask,
             ["stage"] = "build",
@@ -69,7 +70,8 @@ internal static class SheetSourceTopologyProbe
             }
             var shared = new CompositionEffectSourceParameter("backdrop");
             IGraphicsEffectSource? sum = null;
-            var add = spec.Add ? Own(new CompositeEffect { Mode = CanvasComposite.Add }) : null;
+            List<IGraphicsEffectSource>? balanced = spec.Balanced ? [] : null;
+            var add = spec.Add && !spec.Balanced ? Own(new CompositeEffect { Mode = CanvasComposite.Add }) : null;
             for (var input = 0; input < spec.Inputs; input++)
             {
                 IGraphicsEffectSource branch = spec.Source switch
@@ -88,12 +90,29 @@ internal static class SheetSourceTopologyProbe
                     Source = branch,
                     AlphaMask = new CompositionEffectSourceParameter($"mask{input}"),
                 });
-                if (add is not null) add.Sources.Add(branch);
+                if (balanced is not null) balanced.Add(branch);
+                else if (add is not null) add.Sources.Add(branch);
                 else sum = sum is null ? branch : Own(new ArithmeticCompositeEffect
                 {
                     Source1 = sum, Source2 = branch, MultiplyAmount = 0,
                     Source1Amount = 1, Source2Amount = 1, Offset = 0, ClampOutput = false,
                 });
+            }
+            if (balanced is not null)
+            {
+                while (balanced.Count > 1)
+                {
+                    List<IGraphicsEffectSource> next = [];
+                    for (var input = 0; input < balanced.Count; input += 2)
+                    {
+                        var pair = Own(new CompositeEffect { Mode = CanvasComposite.Add });
+                        pair.Sources.Add(balanced[input]);
+                        pair.Sources.Add(balanced[input + 1]);
+                        next.Add(pair);
+                    }
+                    balanced = next;
+                }
+                sum = balanced[0];
             }
             var graph = (IGraphicsEffect)(add ?? sum!);
             sample["stage"] = "factory";
