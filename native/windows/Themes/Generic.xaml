@@ -77,7 +77,14 @@
               <ScrollViewer x:Name="PART_ContentViewport" Grid.Row="1" IsTabStop="False"
                   HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollMode="Enabled" VerticalScrollBarVisibility="Auto"
-                  Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}" />
+                  Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}">
+                <ContentPresenter x:Name="PART_Content"
+                    Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                    ContentTransitions="{TemplateBinding ContentTransitions}"
+                    Foreground="{TemplateBinding Foreground}" FontFamily="{TemplateBinding FontFamily}"
+                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+              </ScrollViewer>
             </Grid>
           </Grid>
         </ControlTemplate>

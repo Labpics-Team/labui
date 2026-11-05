@@ -3,7 +3,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
 
@@ -60,17 +59,6 @@ public sealed class LabSheet : ContentControl
     private long? viewportTemplateToken;
     private bool attached;
     private EventHandler? materialForwarder;
-    private static readonly (DependencyProperty Property, string Name)[] ContentBindings =
-    [
-        (ContentPresenter.ContentProperty, nameof(Content)),
-        (ContentPresenter.ContentTemplateProperty, nameof(ContentTemplate)),
-        (ContentPresenter.ContentTemplateSelectorProperty, nameof(ContentTemplateSelector)),
-        (ContentPresenter.ContentTransitionsProperty, nameof(ContentTransitions)),
-        (ContentPresenter.ForegroundProperty, nameof(Foreground)),
-        (ContentPresenter.FontFamilyProperty, nameof(FontFamily)),
-        (ContentPresenter.HorizontalContentAlignmentProperty, nameof(HorizontalContentAlignment)),
-        (ContentPresenter.VerticalContentAlignmentProperty, nameof(VerticalContentAlignment))
-    ];
 
     public LabSheet()
     {
@@ -92,7 +80,10 @@ public sealed class LabSheet : ContentControl
     {
         DetachParts();
         if (contentPresenter is not null)
-            foreach (var binding in ContentBindings) contentPresenter.ClearValue(binding.Property);
+        {
+            contentPresenter.Content = null;
+            contentPresenter.ContentTemplate = null;
+        }
         if (contentViewport is not null && viewportTemplateToken is { } token)
             contentViewport.UnregisterPropertyChangedCallback(Control.TemplateProperty, token);
         viewportTemplateToken = null;
@@ -102,10 +93,10 @@ public sealed class LabSheet : ContentControl
         dragArea = Part<Grid>("PART_DragArea");
         indicator = Part<Border>("PART_Indicator");
         contentViewport = Part<ScrollViewer>("PART_ContentViewport");
-        contentPresenter = new ContentExtentPresenter();
-        foreach (var binding in ContentBindings)
-            contentPresenter.SetBinding(binding.Property, new Binding { Source = this, Path = new PropertyPath(binding.Name) });
-        contentViewport.Content = contentPresenter;
+        contentPresenter = Part<ContentPresenter>("PART_Content");
+        // Native presenter сохраняет templated LabSheet и выбранный им шаблон после смены визуального родителя.
+        contentViewport.Content = null;
+        contentViewport.Content = new ContentExtentHost(contentPresenter);
         ConfigureContentViewport(contentViewport);
         viewportTemplateToken = contentViewport.RegisterPropertyChangedCallback(Control.TemplateProperty,
             static (sender, _) => ConfigureContentViewport((ScrollViewer)sender));
@@ -116,13 +107,27 @@ public sealed class LabSheet : ContentControl
     private T Part<T>(string name) where T : DependencyObject => GetTemplateChild(name) as T
         ?? throw new InvalidOperationException($"Шаблон LabSheet требует {name} ({typeof(T).Name}).");
 
-    private sealed class ContentExtentPresenter : ContentPresenter
+    private sealed class ContentExtentHost : Panel
     {
+        private readonly ContentPresenter presenter;
+
+        public ContentExtentHost(ContentPresenter presenter)
+        {
+            this.presenter = presenter;
+            Children.Add(presenter);
+        }
+
+        protected override Size MeasureOverride(Size availableSize)
+        {
+            presenter.Measure(availableSize);
+            return presenter.DesiredSize;
+        }
+
         protected override Size ArrangeOverride(Size finalSize)
         {
-            base.ArrangeOverride(finalSize);
-            if (VisualTreeHelper.GetChildrenCount(this) == 0
-                || VisualTreeHelper.GetChild(this, 0) is not FrameworkElement child) return finalSize;
+            presenter.Arrange(new Rect(0, 0, finalSize.Width, finalSize.Height));
+            if (VisualTreeHelper.GetChildrenCount(presenter) == 0
+                || VisualTreeHelper.GetChild(presenter, 0) is not FrameworkElement child) return finalSize;
             var maximum = Math.Max(child.MinHeight,
                 Math.Min(child.MaxHeight, double.IsNaN(child.Height) ? double.PositiveInfinity : child.Height));
             var height = Math.Max(0, Math.Min(child.ActualHeight, maximum) + child.Margin.Top + child.Margin.Bottom);
@@ -130,6 +135,7 @@ public sealed class LabSheet : ContentControl
             if (height <= finalSize.Height) return finalSize;
             // Measure остаётся конечным; Arrange сохраняет extent и снимает внутренний clip переполнения.
             var slot = LayoutInformation.GetLayoutSlot(child);
+            presenter.Arrange(new Rect(0, 0, finalSize.Width, height));
             child.Arrange(new Rect(slot.X, slot.Y, slot.Width, height));
             return new Size(finalSize.Width, height);
         }

@@ -7,14 +7,21 @@ import path from 'node:path';
 // Полный LabSheet исполняется с управляемыми XAML/renderer границами.
 // Проба проверяет публичные уведомления, factory peer и перенос geometry к частям.
 // Цикл WinUI measure/arrange, живой UIA, GPU и capture требуют hosted исполнения.
-// Модель clipping/extent относится к публичному исходнику baf4916, а не к бинарной WinUI 2.6.4.
+// Модель clipping/extent и выбора шаблона относится к публичному исходнику baf4916,
+// а не к бинарной WinUI 2.6.4. Динамические public bindings не заменяют native selected template.
 const source = await readFile(new URL('../LabSheet.cs', import.meta.url), 'utf8');
 const template = await readFile(new URL('../Themes/Generic.xaml', import.meta.url), 'utf8');
 const sheetTemplate = template.match(
   /<Style\b[^>]*TargetType="local:LabSheet"[^>]*>[\s\S]*?<\/Style>/,
 )?.[0];
 if (!sheetTemplate) throw new Error('Шаблон LabSheet отсутствует.');
-const wrapsContent = sheetTemplate.includes('<ContentPresenter x:Name="PART_Content"');
+const contentPresenterTag = sheetTemplate.match(/<ContentPresenter\s+x:Name="PART_Content"[^>]*>/)?.[0];
+const wrapsContent = Boolean(contentPresenterTag);
+const nativePresentationBindings = Array.from(
+  contentPresenterTag?.matchAll(/(\w+)="\{TemplateBinding (\w+)\}"/g) ?? [],
+  ([, target, owner]) =>
+    `presenter.SetBinding(ContentPresenter.${target}Property,new Microsoft.UI.Xaml.Data.Binding { Source=this, Path=new PropertyPath("${owner}") });`,
+).join('\n');
 const program = `using LabUI.WinUI;
 using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
@@ -41,6 +48,12 @@ void Check(bool value, string message) { if (!value) throw new Exception(message
     Check(events.SequenceEqual(new LabSheetMaterial?[] { LabSheetMaterial.Solid }), "Initial ready missing");
     return (sheet, layer, events);
 }
+ContentPresenter Presentation(LabSheet sheet) {
+    var content=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").Content;
+    return content is ContentPresenter presenter ? presenter
+        : (ContentPresenter)((Panel)content!).Children.Single();
+}
+string RenderedTemplate(LabSheet sheet) => Presentation(sheet).VisualChildren.OfType<FrameworkElement>().Single().Name;
 
 Run("public unload publishes loss and next attachment", () => {
     var (sheet, layer, events) = Ready();
@@ -170,13 +183,16 @@ foreach(var alignment in Enum.GetValues<VerticalAlignment>()) {
         var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
         var content=new ContentWitness(3000) { VerticalAlignment=alignment };
         sheet.Content=content;
-        foreach(var replaced in new[] { false, true }) {
+        foreach(var replaced in new[] { false, true }) foreach(var contentAlignment in Enum.GetValues<VerticalAlignment>()) {
             if(replaced) { viewport.UseNativeTemplate(); viewport.ApplyTemplate(); }
+            sheet.VerticalContentAlignment=contentAlignment;
             sheet.Measure(new Size(375,812));
             Check(viewport.ExtentHeight==3000, "Ordinary extent depends on the consumer alignment or native template");
             Check(content.VerticalAlignment==alignment && double.IsNaN(content.Height), "Consumer properties were changed");
             Check(content.Constraints.All(size=>size==new Size(343,358)), "Consumer lost its finite measure offer");
             Check(content.LayoutSlot.Height==3000, "Internal layout slot still clips the ordinary content");
+            Check(Presentation(sheet).ActualHeight==3000 && content.LayoutSlot.Y==0,
+                "Native presenter retained a clip or shifted overflowing content by Sheet alignment");
         }
     });
 }
@@ -230,6 +246,78 @@ Run("shrinking and replacing content do not retain an earlier ordinary extent", 
     Check(viewport.ExtentHeight==358 && fill.ActualHeight==358 && fill.Constraints.All(size=>size==new Size(343,358)),
         "A replacement fill consumer inherited an ordinary scroll extent");
 });
+Run("public-source template owners distinguish Content-only selection", () => {
+    var a=new DataTemplate { Factory=_=>new ContentWitness(100) { Name="TemplateA" } };
+    var b=new DataTemplate { Factory=_=>new ContentWitness(200) { Name="TemplateB" } };
+    var selector=new TemplateSelectorWitness(a,b);
+    var owner=new ContentControl { Content="A", ContentTemplateSelector=selector };
+    owner.UseTemplate(new SheetLayers());
+    var native=owner.TemplatePart<ContentPresenter>("PART_Content");
+    native.Measure(new Size(343,358));
+    Check(native.VisualChildren.OfType<FrameworkElement>().Single().Name=="TemplateA", "Native owner has no initial selected template");
+    owner.Content="B"; native.Measure(new Size(343,358));
+    Check(native.VisualChildren.OfType<FrameworkElement>().Single().Name=="TemplateB"
+        && selector.Calls.All(call=>ReferenceEquals(call.Container,owner)), "Native owner failed Content-only selection");
+    var standalone=new ContentPresenter { Content="A" };
+    standalone.SetValue(ContentPresenter.ContentTemplateSelectorProperty,selector);
+    standalone.Measure(new Size(343,358));
+    standalone.Content="B"; standalone.Measure(new Size(343,358));
+    Check(standalone.VisualChildren.OfType<FrameworkElement>().Single().Name=="TemplateA", "Standalone model silently reselected on Content-only change");
+    var replacement=new TemplateSelectorWitness(a,b);
+    standalone.SetValue(ContentPresenter.ContentTemplateSelectorProperty,replacement);
+    standalone.Measure(new Size(343,358));
+    Check(standalone.VisualChildren.OfType<FrameworkElement>().Single().Name=="TemplateB"
+        && replacement.Calls.All(call=>ReferenceEquals(call.Container,standalone)), "Standalone selector replacement lost its healthy path");
+});
+Run("stable selector replaces Template A with B when only Sheet Content changes", () => {
+    var (sheet, _, _) = Ready();
+    var a=new DataTemplate { Factory=_=>new ContentWitness(100) { Name="TemplateA" } };
+    var b=new DataTemplate { Factory=_=>new ContentWitness(3000) { Name="TemplateB", VerticalAlignment=VerticalAlignment.Top } };
+    var selector=new TemplateSelectorWitness(a,b);
+    sheet.Content="A"; sheet.ContentTemplateSelector=selector; sheet.Measure(new Size(375,812));
+    Check(RenderedTemplate(sheet)=="TemplateA", "Initial template A absent");
+    var presenter=Presentation(sheet);
+    sheet.Content="B"; sheet.Measure(new Size(375,812));
+    Check(ReferenceEquals(Presentation(sheet),presenter) && ReferenceEquals(sheet.ContentTemplateSelector,selector)
+        && RenderedTemplate(sheet)=="TemplateB", "Content-only replacement retained Template A");
+    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==3000,
+        "Selected template lost ordinary extent");
+    var content=(ContentWitness)presenter.VisualChildren.Single();
+    Check(content.Constraints.All(size=>size==new Size(343,358)) && content.LayoutSlot.Height==3000,
+        "Selected template lost finite Measure or its full Arrange slot");
+});
+Run("Sheet is the sole selector container across Content and template replacement", () => {
+    var (sheet, _, _) = Ready();
+    var a=new DataTemplate { Factory=_=>new ContentWitness(100) { Name="TemplateA" } };
+    var b=new DataTemplate { Factory=_=>new ContentWitness(200) { Name="TemplateB" } };
+    var selector=new TemplateSelectorWitness(a,b);
+    sheet.Content="A"; sheet.ContentTemplateSelector=selector; sheet.Measure(new Size(375,812));
+    sheet.Content="B"; sheet.Measure(new Size(375,812));
+    var retired=Presentation(sheet);
+    sheet.UseTemplate(new SheetLayers()); sheet.ApplyTemplate(); sheet.Measure(new Size(375,812));
+    Check(RenderedTemplate(sheet)=="TemplateB" && !ReferenceEquals(retired,Presentation(sheet)), "Replacement template lost B or presenter identity");
+    Check(selector.Calls.Count==2 && selector.Calls.All(call=>ReferenceEquals(call.Container,sheet)),
+        "Selection was duplicated or changed the native Sheet container");
+    Check(retired.Content is null && retired.ContentTemplate is null, "Retired native presenter retained content");
+    sheet.Content="A"; sheet.Measure(new Size(375,812));
+    Check(RenderedTemplate(sheet)=="TemplateA" && retired.Content is null
+        && selector.Calls.Count==3 && selector.Calls.All(call=>ReferenceEquals(call.Container,sheet)),
+        "A retired template selected again or a successor lost the native owner");
+});
+Run("explicit template wins and selector replacement remains live", () => {
+    var (sheet, _, _) = Ready();
+    var a=new DataTemplate { Factory=_=>new ContentWitness(100) { Name="TemplateA" } };
+    var b=new DataTemplate { Factory=_=>new ContentWitness(200) { Name="TemplateB" } };
+    var selector=new TemplateSelectorWitness(a,b);
+    sheet.ContentTemplate=a; sheet.Content="B"; sheet.ContentTemplateSelector=selector;
+    sheet.Measure(new Size(375,812));
+    Check(RenderedTemplate(sheet)=="TemplateA" && selector.Calls.Count==0, "Selector bypassed explicit template precedence");
+    sheet.ContentTemplate=null; sheet.Measure(new Size(375,812));
+    Check(RenderedTemplate(sheet)=="TemplateB", "Clearing explicit template lost the native selection");
+    var next=new TemplateSelectorWitness(b,a);
+    sheet.ContentTemplateSelector=next; sheet.Measure(new Size(375,812));
+    Check(RenderedTemplate(sheet)=="TemplateA", "Changing selector did not replace the selected template");
+});
 Run("content and presentation bindings remain live and retire with the Sheet template", () => {
     var (sheet, _, _) = Ready();
     var content=new ContentWitness(100);
@@ -237,10 +325,10 @@ Run("content and presentation bindings remain live and retire with the Sheet tem
     sheet.Foreground=new(); sheet.FontFamily=new(); sheet.HorizontalContentAlignment=HorizontalAlignment.Right;
     sheet.VerticalContentAlignment=VerticalAlignment.Bottom;
     sheet.Measure(new Size(375,812));
-    var previous=(ContentPresenter)sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").Content!;
+    var previous=Presentation(sheet);
     void Bindings(ContentPresenter presenter) {
         Check(ReferenceEquals(presenter.Content,sheet.Content) && ReferenceEquals(presenter.ContentTemplate,sheet.ContentTemplate)
-            && ReferenceEquals(presenter.ContentTemplateSelector,sheet.ContentTemplateSelector)
+            && presenter.ContentTemplateSelector is null
             && ReferenceEquals(presenter.ContentTransitions,sheet.ContentTransitions)
             && ReferenceEquals(presenter.Foreground,sheet.Foreground) && ReferenceEquals(presenter.FontFamily,sheet.FontFamily)
             && presenter.HorizontalContentAlignment==sheet.HorizontalContentAlignment
@@ -249,7 +337,7 @@ Run("content and presentation bindings remain live and retire with the Sheet tem
     Bindings(previous);
     sheet.FontFamily=new(); Bindings(previous);
     sheet.UseTemplate(new SheetLayers()); sheet.ApplyTemplate(); sheet.Measure(new Size(375,812));
-    var current=(ContentPresenter)sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").Content!;
+    var current=Presentation(sheet);
     Check(!ReferenceEquals(previous,current) && previous.Content is null && previous.ContentTemplate is null,
         "Retired presenter retained consumer or live bindings");
     Bindings(current);
@@ -396,6 +484,10 @@ const fakes = `namespace Microsoft.UI.Xaml {
     public enum VerticalAlignment { Top, Center, Bottom, Stretch }
     public enum HorizontalAlignment { Left, Center, Right, Stretch }
     public sealed class PropertyPath(string path) { public string Path { get; }=path; }
+    public sealed class DataTemplate {
+        public Func<object?,FrameworkElement>? Factory { get; init; }
+        public FrameworkElement LoadContent(object? content) => Factory?.Invoke(content) ?? new FrameworkElement();
+    }
 }
 namespace Microsoft.UI.Xaml.Data {
     public sealed class Binding { public object? Source { get; set; } public Microsoft.UI.Xaml.PropertyPath? Path { get; set; } }
@@ -407,9 +499,23 @@ namespace Microsoft.UI.Xaml.Controls {
         private bool applied;
         public Type? DefaultStyleKey { get; set; }
         public static readonly DependencyProperty ContentProperty=new(new(null));
-        public object? Content { get => ReadBinding(ContentProperty); set { ContentBinding=null; SetValue(ContentProperty,value); } }
-        public object? ContentTemplate { get; set; }
-        public object? ContentTemplateSelector { get; set; }
+        // ContentControl_Partial.cpp:184-205, 213-269, 381-425: selection belongs to this control.
+        public object? Content { get => ReadBinding(ContentProperty); set {
+            ContentBinding=null; SetValue(ContentProperty,value);
+            if(value is not null && ContentTemplate is null) SelectContentTemplate();
+        } }
+        private DataTemplate? contentTemplate;
+        private DataTemplateSelector? contentTemplateSelector;
+        internal DataTemplate? SelectedContentTemplate { get; private set; }
+        private void SelectContentTemplate() => SelectedContentTemplate=ContentTemplateSelector?.SelectTemplate(Content,this);
+        public DataTemplate? ContentTemplate { get => contentTemplate; set {
+            if(ReferenceEquals(contentTemplate,value)) return;
+            contentTemplate=value; if(value is null) SelectContentTemplate();
+        } }
+        public DataTemplateSelector? ContentTemplateSelector { get => contentTemplateSelector; set {
+            if(ReferenceEquals(contentTemplateSelector,value)) return;
+            contentTemplateSelector=value; if(ContentTemplate is null) SelectContentTemplate();
+        } }
         public object? ContentTransitions { get; set; }
         public object? Foreground { get; set; }
         public object? FontFamily { get; set; }
@@ -418,7 +524,11 @@ namespace Microsoft.UI.Xaml.Controls {
         public Func<object?>? ContentBinding { get; set; }
         protected object? CurrentContent => ContentBinding?.Invoke() ?? Content;
         public override IReadOnlyList<DependencyObject> VisualChildren => parts.Values.ToArray();
-        protected void ClearTemplateParts() { parts.Clear(); applied=false; }
+        protected void ClearTemplateParts() {
+            // Control.cpp:49-74 clears the old template subscriptions, retaining their last values.
+            if(parts.GetValueOrDefault("PART_Content") is ContentPresenter presenter) presenter.RetireTemplateBindings();
+            parts.Clear(); applied=false;
+        }
         protected void SetTemplatePart(string name, DependencyObject value) {
             if(value is FrameworkElement element) element.Name=name;
             parts[name]=value; applied=false;
@@ -429,7 +539,9 @@ namespace Microsoft.UI.Xaml.Controls {
             parts["PART_Layers"] = layer; parts["PART_Body"] = new Grid();
             parts["PART_DragArea"] = new Grid(); parts["PART_Indicator"] = new Border();
             var viewport=new ScrollViewer();
-            var presenter=new ContentPresenter { ContentBinding=()=>Content };
+            var presenter=new ContentPresenter();
+            if(this is not LabUI.WinUI.LabSheet || ${wrapsContent ? 'true' : 'false'}) presenter.AttachTemplateOwner(this);
+            if(this is LabUI.WinUI.LabSheet) { ${nativePresentationBindings} }
             ${wrapsContent ? 'viewport.Content=presenter;' : 'viewport.ContentBinding=()=>Content;'}
             parts["PART_ContentViewport"] = viewport; parts["PART_Content"] = presenter; applied = false;
         }
@@ -445,7 +557,11 @@ namespace Microsoft.UI.Xaml.Controls {
             return size;
         }
     }
-    public class Grid : FrameworkElement {
+    public class Panel : FrameworkElement {
+        public List<FrameworkElement> Children { get; }=[];
+        public override IReadOnlyList<DependencyObject> VisualChildren => Children;
+    }
+    public class Grid : Panel {
         public Thickness Padding { get; set; }
         public double RowSpacing { get; set; }
         public Microsoft.UI.Xaml.Media.RectangleGeometry? Clip { get; set; }
@@ -488,8 +604,20 @@ namespace Microsoft.UI.Xaml.Controls {
         public static readonly DependencyProperty FontFamilyProperty=new(new(null));
         public static readonly DependencyProperty HorizontalContentAlignmentProperty=new(new(HorizontalAlignment.Stretch));
         public static readonly DependencyProperty VerticalContentAlignmentProperty=new(new(VerticalAlignment.Stretch));
-        public object? Content { get => ReadBinding(ContentProperty); set => SetValue(ContentProperty,value); }
-        public object? ContentTemplate => ReadBinding(ContentTemplateProperty);
+        private ContentControl? templateOwner;
+        private readonly HashSet<DependencyProperty> presentationBindings=[];
+        internal void AttachTemplateOwner(ContentControl owner) => templateOwner=owner;
+        internal void RetireTemplateBindings() {
+            var content=Content; var template=ContentTemplate;
+            foreach(var property in presentationBindings) SetValue(property,ReadBinding(property));
+            templateOwner=null; ContentBinding=null;
+            SetValue(ContentProperty,content); SetValue(ContentTemplateProperty,template);
+        }
+        public new void SetBinding(DependencyProperty property, Microsoft.UI.Xaml.Data.Binding binding) {
+            presentationBindings.Add(property); base.SetBinding(property,binding);
+        }
+        public object? Content { get => ReadBinding(ContentProperty) ?? templateOwner?.Content; set => SetValue(ContentProperty,value); }
+        public object? ContentTemplate { get => ReadBinding(ContentTemplateProperty) ?? templateOwner?.ContentTemplate; set => SetValue(ContentTemplateProperty,value); }
         public object? ContentTemplateSelector => ReadBinding(ContentTemplateSelectorProperty);
         public object? ContentTransitions => ReadBinding(ContentTransitionsProperty);
         public object? Foreground => ReadBinding(ForegroundProperty);
@@ -499,7 +627,29 @@ namespace Microsoft.UI.Xaml.Controls {
         public double NaturalHeight { get; set; }
         public Func<object?>? ContentBinding { get; set; }
         public Windows.Foundation.Size Available { get; private set; }
-        private FrameworkElement? Child => ContentBinding?.Invoke() as FrameworkElement ?? Content as FrameworkElement;
+        private object? observedTemplate, observedSelector, renderedContent;
+        private DataTemplate? selectedTemplate, renderedTemplate;
+        private FrameworkElement? renderedRoot;
+        private bool presentationObserved;
+        private FrameworkElement? Child {
+            get {
+                // ContentPresenter_Partial.cpp:15-34, 66-83 has no Content-only reselect.
+                // The model observes bound public property changes before layout rather than simulating the DP scheduler.
+                var template=ContentTemplate; var selector=ContentTemplateSelector;
+                if(!presentationObserved || !ReferenceEquals(template,observedTemplate) || !ReferenceEquals(selector,observedSelector)) {
+                    if(template is null) selectedTemplate=(selector as DataTemplateSelector)?.SelectTemplate(Content,this);
+                    presentationObserved=true; observedTemplate=template; observedSelector=selector;
+                }
+                // ContentPresenter.cpp:582-630 forwards the owner's hidden selected template for a native templated presenter.
+                var selected=template as DataTemplate ?? templateOwner?.SelectedContentTemplate ?? selectedTemplate;
+                var content=ContentBinding?.Invoke() ?? Content;
+                if(selected is null) return content as FrameworkElement;
+                if(!ReferenceEquals(selected,renderedTemplate) || !Equals(content,renderedContent)) {
+                    renderedTemplate=selected; renderedContent=content; renderedRoot=selected.LoadContent(content);
+                }
+                return renderedRoot;
+            }
+        }
         public override IReadOnlyList<DependencyObject> VisualChildren => Child is { } child?[child]:[];
         protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
             Available=size;
@@ -517,6 +667,16 @@ namespace Microsoft.UI.Xaml.Controls {
                 child.Arrange(new(x,y,width,height));
             }
             return size;
+        }
+    }
+    public class DataTemplateSelector {
+        public virtual DataTemplate? SelectTemplate(object? item, DependencyObject container) => null;
+    }
+    public sealed class TemplateSelectorWitness(DataTemplate a,DataTemplate b) : DataTemplateSelector {
+        public List<(object Item,DependencyObject Container)> Calls { get; }=[];
+        public override DataTemplate? SelectTemplate(object? item, DependencyObject container) {
+            if(item is null) return null;
+            Calls.Add((item,container)); return Equals(item,"A")?a:b;
         }
     }
     public sealed class RawDesiredWitness(double height) : FrameworkElement {
