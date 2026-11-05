@@ -297,7 +297,7 @@ test('selector counters prove the same owner, reached A/B selections and cumulat
         index >= 2 ? 'content-template' : 'content-layout',
       );
   }
-  for (const index of [1, 2, 3])
+  for (const index of [1, 3])
     rejectMutation(SELECTOR, (v) => {
       const previous = v.steps[index - 1].selector;
       v.steps[index].selector = { ...previous, generatedRootChanged: true };
@@ -319,6 +319,37 @@ test('selector counters prove the same owner, reached A/B selections and cumulat
   const maximum = witness();
   maximum.steps[4].selector = selectorSample(512, 512, 4);
   validatePolicyWitness(maximum, SELECTOR);
+});
+
+test('whole Sheet template accepts cached B selection with new roots and retired parts', () => {
+  const cached = witness(SELECTOR);
+  for (const index of [2, 3, 4])
+    cached.steps[index].selector = selectorSample([1, 2, 2][index - 2], 1, index);
+  assert.equal(validatePolicyWitness(cached, SELECTOR), cached);
+  for (const mutate of [
+    (step) => {
+      step.root.kind = 'a';
+    },
+    (step) => {
+      step.selector.generatedRootChanged = false;
+    },
+    (step) => {
+      step.replacement.contentPresentersDiffer = false;
+    },
+    (step) => {
+      step.replacement.retiredContentCleared = false;
+    },
+    (step) => {
+      step.replacement.retiredViewportLoaded = true;
+    },
+  ]) {
+    const invalid = copy(cached);
+    mutate(invalid.steps[2]);
+    assert.throws(
+      () => validatePolicyWitness(invalid, SELECTOR),
+      (error) => error.code === 'ERR_ASSERTION' && error.sheetPhase === 'content-template',
+    );
+  }
 });
 
 test('generated roots and full Sheet retirement cannot be replaced by identity or stale-part claims', () => {

@@ -28,7 +28,7 @@ const root = (kind, height, measureHeight = height) => ({
 });
 const selector = (index) => {
   const itemACalls = [1, 1, 1, 2, 2][index];
-  const itemBCalls = [0, 1, 2, 2, 2][index];
+  const itemBCalls = [0, 1, 1, 1, 1][index];
   const calls = itemACalls + itemBCalls;
   return {
     calls,

@@ -41,8 +41,9 @@ internal sealed class SheetPolicyProbe
         if (scenario == "selector-retirement")
         {
             selector = new PolicySelector(sheet);
-            sheet.ContentTemplateSelector = selector;
+            // Selector выбирает шаблон сразу; его первый item уже должен быть A.
             sheet.Content = "a";
+            sheet.ContentTemplateSelector = selector;
         }
         else
         {
@@ -151,10 +152,12 @@ internal sealed class SheetPolicyProbe
             var root = GeneratedRoot(parts.presenter);
             return sheet.IsLoaded && sheet.EffectiveMaterial is not null
                 && parts.body is { IsLoaded: true, ActualHeight: > 0 }
-                && parts.viewport is not null && parts.presenter is not null && parts.scrollPresenter is not null
-                && (empty || (root is { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 }
-                    && parts.viewport is { IsLoaded: true, ViewportWidth: > 0, ViewportHeight: > 0 }
-                    && (selector is null || RootMatchesContent(root, parts.presenter))))
+                && parts.viewport is not null && parts.scrollPresenter is not null
+                && (empty
+                    ? sheet.Content is null && parts.viewport.Visibility == Visibility.Collapsed
+                    : parts.presenter is not null && root is { IsLoaded: true, ActualWidth: > 0, ActualHeight: > 0 }
+                        && parts.viewport is { IsLoaded: true, ViewportWidth: > 0, ViewportHeight: > 0 }
+                        && (selector is null || RootMatchesContent(root, parts.presenter)))
                 && (additionalReady?.Invoke() ?? true);
         }, cancellationToken);
         RecordStep();

@@ -207,8 +207,7 @@ export function validatePolicyWitness(value, expected) {
     if (previous) {
       for (const field of COUNTERS)
         require(candidate[field] >= previous[field], 'монотонность selector');
-      if (index === 1 || index === 2)
-        require(candidate.itemBCalls > previous.itemBCalls, 'выбор B');
+      if (index === 1) require(candidate.itemBCalls > previous.itemBCalls, 'выбор B');
       if (index === 3) require(candidate.itemACalls > previous.itemACalls, 'повторный выбор A');
     } else require(candidate.itemACalls > 0 && candidate.itemBCalls === 0, 'начальный выбор A');
   };
