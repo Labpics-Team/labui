@@ -73,6 +73,154 @@ async function disableLengthCSS(
 }
 
 for (const context of [
+  { kind: 'upgrade', owner: 'document', materialClass: false },
+  { kind: 'defined', owner: 'document', materialClass: false },
+  { kind: 'upgrade', owner: 'surface', materialClass: false },
+  { kind: 'defined', owner: 'document', materialClass: true },
+] as const) {
+  for (const missing of ['healthy', 'both'] as const) {
+    test(`поздний render передаёт slot scope: ${context.kind}, ${context.owner}, class=${context.materialClass}, ${missing}`, async ({
+      page,
+    }, info) => {
+      if (missing !== 'healthy') await disableLengthCSS(page, missing);
+      await load(page, '.scope{--lab-veil-strength:0px}');
+      const errors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await page.evaluate(
+        ({ kind, owner, materialClass }) =>
+          window.__veilLength.startLateSlot(kind, 'assigned', owner, materialClass),
+        context,
+      );
+      const read = () => page.evaluate(() => window.__veilLength.lateSlotSnapshot());
+      const radius = async (expected: number) => {
+        await expect
+          .poll(async () => Math.abs((await read()).strength - expected))
+          .toBeLessThanOrEqual(0.02);
+      };
+      await radius(20);
+      const initial = await read();
+      expect(initial).toMatchObject({ native: 'blur(20px)', box: [200, 200] });
+      await settle(page);
+      await page.evaluate(() => window.__veilLength.renderLateSlot());
+      await radius(32);
+      const rendered = await read();
+      expect(rendered).toMatchObject({ native: 'blur(32px)', box: [200, 200] });
+      expect(rendered.order.indexOf('scoped-mounted')).toBeGreaterThan(
+        rendered.order.indexOf('render-complete'),
+      );
+      if (context.kind === 'defined') expect(initial.order[0]).toBe('definition-complete');
+      await page.evaluate(() => window.__veilLength.overlapLateSlot());
+      await settle(page);
+      const overlap = await read();
+      expect(overlap.count).toBe(rendered.count);
+      expect(overlap.children).toBe(rendered.children);
+      expect(overlap.types).toBe(rendered.types);
+      await page.evaluate(() => {
+        window.__veilLength.releaseLateSlot('overlap');
+        window.__veilLength.releaseLateSlot('component');
+        window.__veilLength.lateSlotClass('strong');
+      });
+      await radius(48);
+      const remaining = await read();
+      expect(remaining).toMatchObject({ native: 'blur(48px)', box: [200, 200] });
+      await page.evaluate(() => window.__veilLength.releaseLateSlot('all'));
+      await settle(page);
+      const disposed = await read();
+      expect(disposed).toMatchObject({ count: 0, children: 0, types: 0, rootTypes: 0 });
+      await page.evaluate(() => window.__veilLength.lateSlotClass('invalid'));
+      await settle(page);
+      expect((await read()).count).toBe(0);
+      expect(errors).toEqual([]);
+      await info.attach('late-render-lifecycle.json', {
+        body: JSON.stringify({ initial, rendered, overlap, remaining, disposed, errors }),
+        contentType: 'application/json',
+      });
+    });
+  }
+}
+
+for (const topology of ['assigned', 'descendant', 'nested', 'fallback', 'slot'] as const) {
+  for (const missing of ['healthy', 'both'] as const) {
+    test(`slot scope владеет поверхностями и наблюдением: ${topology}, ${missing}`, async ({
+      page,
+    }, info) => {
+      if (missing !== 'healthy') await disableLengthCSS(page, missing);
+      await load(page, '.scope{--lab-veil-strength:0px}');
+      const errors: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') errors.push(message.text());
+      });
+      await page.evaluate((value) => {
+        window.__veilLength.startLateSlot('defined', value, 'none');
+        window.__veilLength.renderLateSlot();
+      }, topology);
+      const read = () => page.evaluate(() => window.__veilLength.lateSlotSnapshot());
+      const radius = async (expected: number) => {
+        await expect
+          .poll(async () => Math.abs((await read()).strength - expected))
+          .toBeLessThanOrEqual(0.02);
+      };
+      await radius(32);
+      const rendered = await read();
+      expect(rendered).toMatchObject({ native: 'blur(32px)', box: [200, 200], privateCount: 0 });
+      if (topology === 'nested') {
+        expect(rendered).toMatchObject({ privateBox: [200, 200], privateNative: 'blur(32px)' });
+        await page.evaluate(() => window.__veilLength.overlapLateSlot('nested'));
+        await expect.poll(async () => (await read()).privateCount).toBeGreaterThan(0);
+        await page.evaluate(() => window.__veilLength.releaseLateSlot('overlap'));
+        await expect.poll(async () => (await read()).privateCount).toBe(0);
+        await radius(32);
+      }
+      await page.evaluate(() => window.__veilLength.lateSlotClass('strong'));
+      await radius(48);
+      await page.evaluate(() => window.__veilLength.lateSlotClass('invalid'));
+      await radius(0);
+      expect((await read()).count).toBe(0);
+      await expect
+        .poll(() => errors.some((message) => message.includes('--lab-veil-feather')))
+        .toBe(true);
+      await page.evaluate(() => window.__veilLength.lateSlotClass(''));
+      await radius(32);
+      // После ухода последней поверхности назначенный контейнер всё ещё scope:
+      // его новые потомки и их атрибуты не дают slotchange.
+      await page.evaluate(() => window.__veilLength.lateSlotEnable(false));
+      await radius(0);
+      expect((await read()).count).toBe(0);
+      if (topology === 'descendant') {
+        await page.evaluate(() => window.__veilLength.lateSlotReplace());
+      } else {
+        await page.evaluate(() => window.__veilLength.lateSlotEnable(true));
+      }
+      await radius(32);
+      const recovered = await read();
+      expect(recovered.privateCount).toBe(0);
+      await page.evaluate(() => window.__veilLength.lateSlotConnect(false));
+      await settle(page);
+      expect(await read()).toMatchObject({ count: 0, children: 0, types: 0, rootTypes: 0 });
+      await page.evaluate(() => window.__veilLength.lateSlotConnect(true));
+      await radius(32);
+      const reconnected = await read();
+      expect(reconnected.privateCount).toBe(0);
+      const errorCount = errors.length;
+      await page.evaluate(() => {
+        window.__veilLength.releaseLateSlot('all');
+        window.__veilLength.lateSlotClass('invalid');
+      });
+      await settle(page);
+      const disposed = await read();
+      expect(disposed).toMatchObject({ count: 0, children: 0, types: 0, rootTypes: 0 });
+      expect(errors).toHaveLength(errorCount);
+      await info.attach('slot-owner-lifecycle.json', {
+        body: JSON.stringify({ rendered, recovered, reconnected, disposed, errors }),
+        contentType: 'application/json',
+      });
+    });
+  }
+}
+
+for (const context of [
   { name: 'без registration', missing: 'registration', appLevel: true, materialClass: false },
   { name: 'без queries', missing: 'queries', appLevel: true, materialClass: false },
   { name: 'без обеих возможностей', missing: 'both', appLevel: true, materialClass: false },

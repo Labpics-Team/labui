@@ -50,7 +50,10 @@ function engine(mode: string): EngineBinding & { attach: ReturnType<typeof vi.fn
 }
 
 describe('владение эффектом при пересекающихся scope', () => {
-  beforeEach(() => vi.stubGlobal('HTMLElement', Surface));
+  beforeEach(() => {
+    vi.stubGlobal('HTMLElement', Surface);
+    vi.stubGlobal('HTMLSlotElement', class extends Surface {});
+  });
   afterEach(() => vi.unstubAllGlobals());
 
   it.each(['app-first', 'surface-first'])('%s: один attach до последнего release', (order) => {
