@@ -100,8 +100,10 @@ internal sealed class SheetContentProbe
     private async Task Layout(ScrollViewer viewport, CancellationToken cancellationToken)
     {
         if (!await Until(() => Content.IsLoaded && Content.ActualWidth > 0 && Content.ActualHeight > 0
-            && viewport.IsLoaded && viewport.ViewportHeight > 0
-            && (list is null || Find<ScrollViewer>(Content) is { IsLoaded: true, ViewportHeight: > 0 }), cancellationToken))
+            && viewport.IsLoaded && viewport.ViewportHeight > 0 && viewport.ViewportWidth > 0
+            && OwnedPresenter(viewport) is { IsLoaded: true }
+            && (list is null || Find<ScrollViewer>(Content) is { IsLoaded: true, ViewportHeight: > 0, ViewportWidth: > 0 } inner
+                && OwnedPresenter(inner) is { IsLoaded: true }), cancellationToken))
             throw new TimeoutException("Native layout не стал доступен.");
     }
 
@@ -144,7 +146,7 @@ internal sealed class SheetContentProbe
             sample.observedAtUnixMs,
             qualification = Qualify ? new
             {
-                schema = "sheet-content-v1", status, phase, failure, reset, replacement, cycles = cycles.ToArray()
+                schema = "sheet-content-v2", status, phase, failure, reset, replacement, cycles = cycles.ToArray()
             } : null
         };
     }
@@ -171,21 +173,25 @@ internal sealed class SheetContentProbe
         var finalRow = list is null ? ((StackPanel)Content).Children.LastOrDefault() as FrameworkElement
             : list.ContainerFromIndex(999) as FrameworkElement;
         var parent = finalRow is null ? null : VisualTreeHelper.GetParent(finalRow) as UIElement;
+        var presenter = scroller is null ? null : OwnedPresenter(scroller);
         // Слот строки проверяет всю выделенную область, включая свободное место вокруг текста.
-        var bounds = scroller is { IsLoaded: true } && finalRow is { IsLoaded: true } && parent is not null
-            ? parent.TransformToVisual(scroller).TransformBounds(LayoutInformation.GetLayoutSlot(finalRow))
+        // Координаты относятся к content viewport, как размеры ScrollViewer.Viewport*.
+        var bounds = scroller is { IsLoaded: true } && presenter is { IsLoaded: true }
+            && finalRow is { IsLoaded: true } && parent is not null
+            ? parent.TransformToVisual(presenter).TransformBounds(LayoutInformation.GetLayoutSlot(finalRow))
             : (Rect?)null;
         return new(finalRow is { IsLoaded: true }, bounds is { } value
             ? new(Finite(value.X), Finite(value.Y), Finite(value.Width), Finite(value.Height)) : null);
     }
 
     private bool LastRowVisible(ScrollViewer scroller) => ReadLastRow(scroller) is
-        { realized: true, bounds: { y: { } top, height: { } height } }
-        && height > 0 && top >= -0.01 && top + height <= scroller.ViewportHeight + 0.01;
+        { realized: true, bounds: { x: { } left, y: { } top, width: { } width, height: { } height } }
+        && width > 0 && height > 0 && left >= -0.01 && left + width <= scroller.ViewportWidth + 0.01
+        && top >= -0.01 && top + height <= scroller.ViewportHeight + 0.01;
 
     private static double? Finite(double value) => double.IsFinite(value) ? value : null;
     private static ScrollSample? ScrollData(ScrollViewer? viewport) => viewport is null ? null
-        : new(Finite(viewport.ExtentHeight), Finite(viewport.ViewportHeight), Finite(viewport.ScrollableHeight),
+        : new(Finite(viewport.ExtentHeight), Finite(viewport.ViewportHeight), Finite(viewport.ViewportWidth), Finite(viewport.ScrollableHeight),
             Finite(viewport.VerticalOffset), OwnedPresenter(viewport)?.SizesContentToTemplatedParent);
 
     private static string? ErrorType(Exception error) => error.GetType() is { } type
@@ -223,7 +229,7 @@ internal sealed class SheetContentProbe
     private sealed record SizeSample(double? width, double? height);
     private sealed record BoundsSample(double? x, double? y, double? width, double? height);
     private sealed record RowSample(bool realized, BoundsSample? bounds);
-    private sealed record ScrollSample(double? extentHeight, double? viewportHeight, double? scrollableHeight,
+    private sealed record ScrollSample(double? extentHeight, double? viewportHeight, double? viewportWidth, double? scrollableHeight,
         double? verticalOffset, bool? sizesContentToTemplatedParent);
     private sealed record ContentSample(string scenario, string contentType, string alignment, bool heightIsAuto,
         int itemCount, double? rowHeight, SizeSample lastMeasure, bool unboundedWidth, bool unboundedHeight,

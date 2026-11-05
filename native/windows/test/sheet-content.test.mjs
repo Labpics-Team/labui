@@ -64,6 +64,7 @@ function sample(entry, after, observedAtUnixMs) {
     outer: {
       extentHeight: isList ? 358 : 3000,
       viewportHeight: 358,
+      viewportWidth: 343,
       scrollableHeight: isList ? 0 : 2642,
       verticalOffset: !isList && after ? 2642 : 0,
       sizesContentToTemplatedParent: true,
@@ -72,6 +73,7 @@ function sample(entry, after, observedAtUnixMs) {
       ? {
           extentHeight: 40000,
           viewportHeight: 358,
+          viewportWidth: 343,
           scrollableHeight: 39642,
           verticalOffset: after ? 39642 : 0,
           sizesContentToTemplatedParent: false,
@@ -114,7 +116,7 @@ function observation(entry = EXPECTED[0]) {
     contentWitness: {
       ...sample(entry, true, 175),
       qualification: {
-        schema: 'sheet-content-v1',
+        schema: 'sheet-content-v2',
         status: 'complete',
         phase: 'replacement-scroll',
         failure: null,
@@ -176,7 +178,7 @@ const IMAGE = image();
 
 function fixture() {
   const identity = {
-    schema: 'sheet-content-v1',
+    schema: 'sheet-content-v2',
     source: SOURCE,
     cases: {},
     cliVersion: '0.7.1',
@@ -410,6 +412,65 @@ test('ListView rejects a missing or invisible final container at a correct offse
         sheetPhase: 'content-scroll',
       });
     }
+});
+
+test('reached Content rejects a horizontally clipped or invisible final row in every template and final sample', () => {
+  const targets = [
+    (value) => value.contentWitness.qualification.cycles[0].after,
+    (value) => value.contentWitness.qualification.cycles[1].after,
+    (value) => value.contentWitness,
+  ];
+  for (const entry of EXPECTED)
+    for (const target of targets)
+      for (const x of [-400, 343, -1, 1]) {
+        const value = observation(entry);
+        target(value).lastRow.bounds.x = x;
+        assert.throws(() => check(value, entry), {
+          code: 'ERR_ASSERTION',
+          sheetPhase: 'content-scroll',
+        });
+      }
+});
+
+test('Content viewport widths are measured, mandatory and versioned rather than inferred from the finite offer', () => {
+  const targets = [
+    (value) => value.contentWitness.qualification.cycles[0].after,
+    (value) => value.contentWitness.qualification.cycles[1].after,
+    (value) => value.contentWitness,
+  ];
+  const allowed = observation(EXPECTED[2]);
+  for (const target of targets) {
+    target(allowed).inner.viewportWidth = 200;
+    target(allowed).lastRow.bounds.width = 200;
+    target(allowed).lastRow.bounds.x = -0.005;
+  }
+  check(allowed, EXPECTED[2]);
+  for (const target of targets) {
+    const outside = copy(allowed);
+    target(outside).lastRow.bounds = { x: 210, y: 318, width: 20, height: 40 };
+    assert.throws(() => check(outside, EXPECTED[2]), {
+      code: 'ERR_ASSERTION',
+      sheetPhase: 'content-scroll',
+    });
+    for (const invalid of [null, 0, -1, Number.POSITIVE_INFINITY]) {
+      const value = observation(EXPECTED[2]);
+      target(value).inner.viewportWidth = invalid;
+      assert.throws(() => check(value, EXPECTED[2]));
+    }
+    const missing = observation(EXPECTED[2]);
+    target(missing).inner = Object.fromEntries(
+      Object.entries(target(missing).inner).filter(([field]) => field !== 'viewportWidth'),
+    );
+    assert.throws(() => check(missing, EXPECTED[2]));
+  }
+  const legacy = observation(EXPECTED[2]);
+  legacy.contentWitness.qualification.schema = 'sheet-content-v1';
+  assert.throws(() => check(legacy, EXPECTED[2]));
+  const files = fixture();
+  const identity = JSON.parse(files.get('identity.json'));
+  identity.schema = 'sheet-content-v1';
+  files.set('identity.json', json(identity));
+  assert.throws(() => encodeSheetContentEvidence(files, SOURCE));
 });
 
 test('phase samples cannot predate the process, reverse time or follow the final observation', () => {

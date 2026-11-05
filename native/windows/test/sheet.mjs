@@ -7,7 +7,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { png } from './evidence.mjs';
-import { CONTENT_CASES, contentReadback, validateContentWitness } from './sheet-content.mjs';
+import {
+  CONTENT_CASES,
+  CONTENT_SCHEMA,
+  contentReadback,
+  validateContentWitness,
+} from './sheet-content.mjs';
 
 export { CONTENT_CASES } from './sheet-content.mjs';
 
@@ -277,7 +282,7 @@ function validate(files, sourceSha, content = false) {
       ].sort(),
       'sheet content: поля identity',
     );
-    assert.equal(identity.schema, 'sheet-content-v1');
+    assert.equal(identity.schema, CONTENT_SCHEMA);
     assert.match(identity.cliVersion, /^v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]{1,40})?$/);
   }
   for (const field of [
@@ -809,7 +814,7 @@ async function capture(appDirectory, output, receiptPath, sourceSha, content = f
     motion: 'not-qualified',
     performance: 'not-qualified',
   };
-  if (content) identity.schema = 'sheet-content-v1';
+  if (content) identity.schema = CONTENT_SCHEMA;
   for (const [field, file] of Object.entries({
     appSha256: 'Buttons.exe',
     consumerSha256: 'Buttons.dll',

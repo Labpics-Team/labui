@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 
+export const CONTENT_SCHEMA = 'sheet-content-v2';
+
 export const CONTENT_CASES = Object.freeze([
   Object.freeze({
     name: 'Content-Long-Stretch',
@@ -45,6 +47,7 @@ const SAMPLE_FIELDS = [
 const SCROLL_FIELDS = [
   'extentHeight',
   'viewportHeight',
+  'viewportWidth',
   'scrollableHeight',
   'verticalOffset',
   'sizesContentToTemplatedParent',
@@ -91,8 +94,8 @@ const instant = (value, start, end) =>
 
 function scroll(value, finitePolicy) {
   keys(value, SCROLL_FIELDS);
-  for (const field of SCROLL_FIELDS.slice(0, 4)) dimension(value[field]);
-  assert.ok(value.viewportHeight > 0);
+  for (const field of SCROLL_FIELDS.slice(0, -1)) dimension(value[field]);
+  assert.ok(value.viewportHeight > 0 && value.viewportWidth > 0);
   near(value.scrollableHeight, Math.max(0, value.extentHeight - value.viewportHeight));
   assert.ok(value.verticalOffset <= value.scrollableHeight + 0.01);
   assert.equal(value.sizesContentToTemplatedParent, finitePolicy);
@@ -117,6 +120,7 @@ function sample(value, entry, start, end, qualified = false) {
   instant(value.observedAtUnixMs, start, end);
   scroll(value.outer, true);
   near(value.outer.viewportHeight, 358);
+  near(value.outer.viewportWidth, 343);
   if (isList) {
     near(value.outer.extentHeight, 358);
     near(value.outer.verticalOffset, 0);
@@ -124,6 +128,7 @@ function sample(value, entry, start, end, qualified = false) {
     assert.ok(
       value.inner.viewportHeight <= 358.01 && value.inner.extentHeight > value.inner.viewportHeight,
     );
+    assert.ok(value.inner.viewportWidth <= value.outer.viewportWidth + 0.01);
     assert.ok(
       Number.isInteger(value.realizedItems) &&
         value.realizedItems > 0 &&
@@ -169,7 +174,10 @@ function reached(value, entry) {
   assert.equal(value.lastRow.realized, true, 'sheet content: последний контейнер не реализован');
   const bounds = value.lastRow.bounds;
   assert.ok(
-    bounds.y >= -0.01 && bounds.y + bounds.height <= scroller.viewportHeight + 0.01,
+    bounds.x >= -0.01 &&
+      bounds.x + bounds.width <= scroller.viewportWidth + 0.01 &&
+      bounds.y >= -0.01 &&
+      bounds.y + bounds.height <= scroller.viewportHeight + 0.01,
     'sheet content: последняя строка не достигнута',
   );
   return scroller;
@@ -220,7 +228,7 @@ export function validateContentWitness(value, expected) {
     sample(witness, entry, expected.startedAtUnixMs, value.observedAtUnixMs, true);
     const qualification = witness.qualification;
     keys(qualification, ['schema', 'status', 'phase', 'failure', 'reset', 'replacement', 'cycles']);
-    assert.equal(qualification.schema, 'sheet-content-v1');
+    assert.equal(qualification.schema, CONTENT_SCHEMA);
     assert.equal(qualification.status, 'complete');
     assert.equal(qualification.failure, null);
     assert.equal(qualification.phase, 'replacement-scroll');
@@ -326,7 +334,7 @@ export function contentReadback(value) {
   const qualification = value.qualification;
   readback.qualification = object(qualification)
     ? {
-        schema: known(qualification.schema, ['sheet-content-v1']),
+        schema: known(qualification.schema, [CONTENT_SCHEMA]),
         status: known(qualification.status, ['pending', 'complete', 'failed']),
         phase: known(qualification.phase, PHASES),
         failure: object(qualification.failure)
