@@ -413,9 +413,9 @@ public sealed class SheetLayers : Grid
                         if (factoryName == "ghostPair0" && operation == "factory"
                             && graph is CompositeEffect { Mode: CanvasComposite.Add } pair
                             && pair.Sources is { Count: 2 } sources
-                            && sources[0] is AlphaMaskEffect { AlphaMask: Transform2DEffect first }
-                            && sources[1] is AlphaMaskEffect { AlphaMask: Transform2DEffect second })
-                            SheetSourceTopologyProbe.RecordTransforms(primary, compositor, first, second);
+                            && sources[0] is AlphaMaskEffect first
+                            && sources[1] is AlphaMaskEffect second)
+                            SheetSourceTopologyProbe.RecordBranches(primary, compositor, first, second);
                     }
                     catch { }
                     throw;
