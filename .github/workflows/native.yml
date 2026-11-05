@@ -103,6 +103,10 @@ jobs:
       - name: Device-loss boundary
         run: node native/windows/test/device-loss.test.mjs
 
+      - name: Sheet client sizing boundary
+        shell: pwsh
+        run: dotnet run --project native/windows/test/sheet-window-sizing.test.csproj --configuration Release --artifacts-path "$env:RUNNER_TEMP/sheet-window-sizing" -- --sheet
+
       - name: Sheet lifecycle boundary
         run: node native/windows/test/sheet-lifecycle.test.mjs
 

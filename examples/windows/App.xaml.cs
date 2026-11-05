@@ -1,3 +1,4 @@
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System.Text.Json;
 using Windows.UI.ViewManagement;
@@ -22,7 +23,25 @@ public partial class App : Application
         };
         var sheetPage = window.Content as SheetPage;
         if (sheetPage is not null) sheetPage.HostWindow = window;
-        if (sheet) window.AppWindow.ResizeClient(new Windows.Graphics.SizeInt32(375, 812));
+        if (sheet)
+        {
+            var appWindow = window.AppWindow;
+            var requested = new Windows.Graphics.SizeInt32(375, 812);
+            appWindow.ResizeClient(requested);
+            var actual = appWindow.ClientSize;
+            if (actual.Height < requested.Height)
+            {
+                if (appWindow.Presenter is not OverlappedPresenter presenter)
+                    throw new InvalidOperationException("Окно Sheet не поддерживает настройку максимальной высоты.");
+                var nonClientHeight = checked(appWindow.Size.Height - actual.Height);
+                var requiredMaximumHeight = checked(requested.Height + nonClientHeight);
+                if (presenter.PreferredMaximumHeight is not int maximum || maximum < requiredMaximumHeight)
+                {
+                    presenter.PreferredMaximumHeight = requiredMaximumHeight;
+                    appWindow.ResizeClient(requested);
+                }
+            }
+        }
         else window.AppWindow.Resize(new Windows.Graphics.SizeInt32(760, 680));
         if (sheetPage is not null) sheetPage.WindowAfterResize = SheetPage.ReadWindowGeometry(window);
         window.Activate();
