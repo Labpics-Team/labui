@@ -14,25 +14,26 @@ const profile = await readFile(
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
 
-test('Sheet atlas has two brush bindings and a fresh source parameter on each graph edge', () => {
-  const names = [...build.matchAll(/brush\.SetSourceParameter\("([^"]+)"/g)].map(
-    (match) => match[1],
-  );
-  assert.deepEqual(names.sort(), ['atlas', 'backdrop']);
-  const graphNames = [...build.matchAll(/new CompositionEffectSourceParameter\("([^"]+)"\)/g)].map(
-    (match) => match[1],
-  );
-  assert.deepEqual(graphNames.sort(), names);
-  assert.equal([...build.matchAll(/new CompositionEffectSourceParameter\(/g)].length, 2);
+test('Sheet factories share the original backdrop and atlas with fresh source edges', () => {
+  assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
+  assert.equal([...source.matchAll(/compositor\.CreateSpriteVisual\(\)/g)].length, 1);
   assert.match(
     build,
-    /IGraphicsEffectSource Backdrop\(\)\s*=>\s*new CompositionEffectSourceParameter\("backdrop"\)/,
+    /IGraphicsEffectSource Source\(string name\)\s*=>\s*new CompositionEffectSourceParameter\(name\)/,
+  );
+  assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
+  assert.match(
+    build,
+    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
   );
   assert.match(
     build,
-    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = new CompositionEffectSourceParameter\("atlas"\)/,
+    /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
+  assert.match(build, /Brush\(pair, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/);
+  assert.match(build, /Brush\(body, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/);
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
+  assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
 });
 
 test('Sheet virtual atlas uses the original Uniform projection and per-cell updateRect', () => {
@@ -68,6 +69,24 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     /Blur\(Backdrop\(\), SheetBlurProfile\.Levels\[index\] \* Geometry\.SheetGhostBlurRadius \* metrics\.Scale\)/,
   );
   assert.match(build, /Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\)/);
+  assert.match(
+    build,
+    /\(IGraphicsEffect\)graph, Geometry\.SheetGhostBlurRadius \* metrics\.Scale \* RadiusToSigma,\s*Geometry\.SheetBodyBlurRadius \* metrics\.Scale \* RadiusToSigma/,
+  );
+  assert.match(build, /branches\[index\] = Mask\(index == 0 \? Backdrop\(\)/);
+  assert.match(build, /Layer\(ghostMasks\[index\]\)/);
+  assert.match(
+    build,
+    /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\)/,
+  );
+  assert.match(build, /for \(var index = 0; index < branches\.Length; index \+= 2\)/);
+  assert.match(
+    build,
+    /Mode = CanvasComposite\.Add, Sources = \{ branches\[index\], branches\[index \+ 1\] \}/,
+  );
+  assert.match(build, /progressive\.Sources\.Add\(Source\(name\)\)/);
+  assert.match(build, /var progressiveBrush = Brush\(progressive, pairs\.ToArray\(\)\)/);
+  assert.match(build, /Over\(Source\("progressive"\), Paint\(Ghost!\)\)/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
   assert.match(source, /RadiusToSigma = 0\.5;/);
@@ -98,6 +117,10 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   );
   assert.match(build, /var factory = result\.Own\(SheetSourceTopologyProbe\.CreateFactory\(/);
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
+  assert.match(
+    build,
+    /result\.Visual\.Brush = Brush\(graph, \("ghost", ghostBrush\), \("body", bodyBrush\), \("atlas", atlasBrush\)\)/,
+  );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(
     source,
