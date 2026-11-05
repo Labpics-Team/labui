@@ -11,7 +11,7 @@ void Check(bool condition, string message)
     if (!condition) throw new InvalidOperationException(message);
 }
 
-void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected)
+void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected, ReadOnlySpan<float> blurWidths)
 {
     List<IGraphicsEffect> effects = [];
     List<IGraphicsEffectSource> branches = [];
@@ -61,8 +61,8 @@ void CheckGraph(IGraphicsEffect graph, ExpectedGraph expected)
             Check(branch is GaussianBlurEffect, "Подпись blur не соответствует ветви.");
             var blur = (GaussianBlurEffect)branch;
             effects.Add(blur);
-            Check(blur.BlurAmount > 0 && float.IsFinite(blur.BlurAmount) && blur.BorderMode == EffectBorderMode.Hard,
-                "Blur потерял конечную ширину или границу.");
+            Check(blur.BlurAmount == blurWidths[index] && blur.BorderMode == EffectBorderMode.Hard,
+                "Blur потерял выбранную ширину или границу.");
             branch = blur.Source ?? throw new InvalidOperationException("Blur потерял Source.");
         }
         Check(branch is CompositionEffectSourceParameter, "Ветвь содержит лишний эффект либо потеряла источник.");
@@ -93,6 +93,14 @@ ExpectedGraph[] expectedCases =
     new(8, "Add", "shared", true, true, false),
 ];
 
+// Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
+// подстановку постоянной sigma, в том числе штатного Win2D значения 3.
+(double Sigma, float[] Widths)[] expectedBlurSamples =
+[
+    (12, [0, 0.1875f, 0.375f, 0.75f, 1.5f, 3, 6, 12]),
+    (20, [0, 0.3125f, 0.625f, 1.25f, 2.5f, 5, 10, 20]),
+];
+
 var graph = new AlphaMaskEffect
 {
     Source = new CompositionEffectSourceParameter("backdrop"),
@@ -106,6 +114,7 @@ Check(healthy.Graphs.Count == 1 && ReferenceEquals(healthy.Graphs[0], graph),
     "Успешный путь заменил исходный граф.");
 result.Dispose();
 
+foreach (var (sigma, blurWidths) in expectedBlurSamples)
 foreach (var cleanupFault in new[] { false, true })
 {
     Fixture.Created = Fixture.Disposed = 0;
@@ -114,7 +123,7 @@ foreach (var cleanupFault in new[] { false, true })
     primary.Data["unrelated"] = Fixture.Marker;
     var compositor = new Compositor { Primary = primary };
     Exception? failure = null;
-    try { SheetSourceTopologyProbe.CreateFactory(compositor, graph, 12); }
+    try { SheetSourceTopologyProbe.CreateFactory(compositor, graph, sigma); }
     catch (Exception error) { failure = error; }
     Check(ReferenceEquals(primary, failure) && primary.Message == Fixture.Marker &&
         primary.HResult == -2147024809 && (string?)primary.Data["unrelated"] == Fixture.Marker,
@@ -132,7 +141,7 @@ foreach (var cleanupFault in new[] { false, true })
             && (string)row["source"]! == required.Source && (bool)row["named"]! == required.Named
             && (bool)row["blur"]! == required.Blur && (bool)row["mask"]! == required.Mask,
             $"Попытка {index} не выполнила обязательный различитель.");
-        CheckGraph(compositor.Graphs[index + 1], required);
+        CheckGraph(compositor.Graphs[index + 1], required, blurWidths);
     }
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
         "Один cleanup отказ прервал освобождение остальных ресурсов.");
@@ -198,13 +207,13 @@ namespace Windows.Graphics.Effects
 }
 namespace Microsoft.Graphics.Canvas
 {
-    public enum CanvasComposite { Add }
+    public enum CanvasComposite { SourceOver, Add }
 }
 namespace Microsoft.Graphics.Canvas.Effects
 {
     using Windows.Graphics.Effects;
     using Microsoft.Graphics.Canvas;
-    public enum EffectBorderMode { Hard }
+    public enum EffectBorderMode { Soft, Hard }
     public abstract class Effect : IGraphicsEffect, IDisposable
     {
         protected Effect() => Fixture.Created++;
@@ -217,14 +226,14 @@ namespace Microsoft.Graphics.Canvas.Effects
     }
     public sealed class CompositeEffect : Effect
     {
-        public CanvasComposite Mode { get; set; }
+        public CanvasComposite Mode { get; set; } = CanvasComposite.SourceOver;
         public List<IGraphicsEffectSource> Sources { get; } = [];
     }
     public sealed class GaussianBlurEffect : Effect
     {
         public IGraphicsEffectSource? Source { get; set; }
-        public float BlurAmount { get; set; }
-        public EffectBorderMode BorderMode { get; set; }
+        public float BlurAmount { get; set; } = 3;
+        public EffectBorderMode BorderMode { get; set; } = EffectBorderMode.Soft;
     }
     public sealed class AlphaMaskEffect : Effect
     {
@@ -235,7 +244,7 @@ namespace Microsoft.Graphics.Canvas.Effects
     {
         public IGraphicsEffectSource? Source1 { get; set; }
         public IGraphicsEffectSource? Source2 { get; set; }
-        public float MultiplyAmount { get; set; }
+        public float MultiplyAmount { get; set; } = 1;
         public float Source1Amount { get; set; }
         public float Source2Amount { get; set; }
         public float Offset { get; set; }
