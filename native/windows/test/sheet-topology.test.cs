@@ -87,13 +87,17 @@ ExpectedGraph[] expectedCases =
     new(3, "Arithmetic", "shared", true), new(3, "Arithmetic", "distinct", true),
     new(2, "Add", "shared"), new(3, "Add", "shared"),
     new(8, "Add", "shared"), new(8, "Add", "distinct"),
-    new(3, "Add", "shared", true), new(8, "Add", "repeat"),
-    new(8, "Add", "distinct", true),
+    new(3, "Add", "repeat"), new(8, "Add", "repeat"),
+    new(8, "Arithmetic", "repeat"),
     new(8, "Add", "shared", true, false),
     new(8, "Add", "shared", true, true, false),
 ];
 Check(expectedCases[8] with { Source = "repeat" } == expectedCases[11],
     "Matched Add8 отличается от контроля не только идентичностью источников.");
+Check(expectedCases[2] with { Combine = "Add" } == expectedCases[10],
+    "Matched repeat3 отличается от контроля не только оператором суммирования.");
+Check(expectedCases[11] with { Combine = "Arithmetic" } == expectedCases[12],
+    "Matched repeat8 отличается от контроля не только оператором суммирования.");
 
 // Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
 // подстановку постоянной sigma, в том числе штатного Win2D значения 3.

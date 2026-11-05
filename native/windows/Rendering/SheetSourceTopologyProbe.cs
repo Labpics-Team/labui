@@ -20,8 +20,8 @@ internal static class SheetSourceTopologyProbe
         new(3, false, "shared", true), new(3, false, "distinct", true),
         new(2, true, "shared"), new(3, true, "shared"),
         new(8, true, "shared"), new(8, true, "distinct"),
-        new(3, true, "shared", true), new(8, true, "repeat"),
-        new(8, true, "distinct", true),
+        new(3, true, "repeat"), new(8, true, "repeat"),
+        new(8, false, "repeat"),
         new(8, true, "shared", true, false),
         new(8, true, "shared", true, true, false),
     ];
