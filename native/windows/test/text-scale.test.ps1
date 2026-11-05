@@ -17,7 +17,13 @@ function Invoke-SettingsInitializationWitness([string]$Executable, [string]$Comm
             $phaseOwned=$true
             $file.Dispose()
             $path64=[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($phasePath))
-            $Command="`$phasePath=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64'))`n"+$Command
+            # Отделяет вход в Command от настройки Console и командлетов; убрать после RCA и hosted GREEN инициализации.
+            $entry=@'
+try {
+    [IO.File]::WriteAllText($phasePath,'{"phase":"entered-command","elapsedMs":0}',[Text.UTF8Encoding]::new($false))
+} catch { }
+'@
+            $Command="`$phasePath=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$path64'))`n"+$entry+"`n"+$Command
         } catch { $receipt.phaseRead='create-failed' }
         $text=Invoke-TextScaleChild $Executable @('-NoProfile','-NonInteractive','-STA','-Command',$Command) 15000 -Diagnostic $child
     } catch { $failure=$_ } finally {
@@ -33,7 +39,7 @@ function Invoke-SettingsInitializationWitness([string]$Executable, [string]$Comm
                 $info=[IO.FileInfo]::new($phasePath)
                 if (!$info.Exists -or $info.Length -le 0 -or $info.Length -gt 512) { throw 'Файл фазы инициализации отсутствует либо превышает лимит.' }
                 $phase=Get-Content -LiteralPath $phasePath -Raw | ConvertFrom-Json -AsHashtable
-                if ($phase.Count -ne 2 -or $phase.phase -cnotin @('load-uia','compile-native','pin-process') -or
+                if ($phase.Count -ne 2 -or $phase.phase -cnotin @('entered-command','load-uia','compile-native','pin-process') -or
                     ($phase.elapsedMs -isnot [int] -and $phase.elapsedMs -isnot [long]) -or
                     $phase.elapsedMs -lt 0 -or $phase.elapsedMs -gt $receipt.elapsedMs) { throw 'Фаза инициализации нарушила схему.' }
                 $receipt.phase=$phase.phase; $receipt.readerElapsedMs=$phase.elapsedMs; $receipt.phaseRead='observed'
@@ -583,7 +589,7 @@ Assert ($initialization.Trim() -eq 'PS5 reader initialization: native/UIA types 
 Write-Output $initialization.Trim()
 
 # Отказ инертного процесса сохраняет первичную ошибку и фазу; посторонние данные не публикуются.
-foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit','console-primary','console-success')) {
+foreach ($fault in @('none','deadline','entered-command','before-entry','entry-write-failed','malformed','oversized','unconfirmed-exit','console-primary','console-success')) {
     & {
         param($fault)
         $calls=@{child=0}
@@ -598,10 +604,32 @@ foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit
             })[0]
             . ([scriptblock]::Create($pathAssignment.Extent.Text))
             $calls.path=$phasePath
+            $entryStatement=@($commandAst.EndBlock.Statements | Where-Object {
+                $_ -is [Management.Automation.Language.TryStatementAst] -and
+                $_.Extent.Text -match 'entered-command'
+            })
+            Assert ($entryStatement.Count -eq 1) 'Initialization witness потерял единственный маркер входа в Command.'
+            Assert ([Object]::ReferenceEquals($commandAst.EndBlock.Statements[0],$pathAssignment) -and
+                [Object]::ReferenceEquals($commandAst.EndBlock.Statements[1],$entryStatement[0])) 'Маркер входа выполняется после bootstrap.'
+            Assert (@($entryStatement[0].FindAll({param($node)
+                $node -is [Management.Automation.Language.CommandAst]
+            },$true)).Count -eq 0) 'Маркер входа получил зависимость от командлета.'
             $Diagnostic.childStarted=$true; $Diagnostic.childExited=$fault -ne 'unconfirmed-exit'; $Diagnostic.childWaitRemainingMs=14999
-            $operationClock=[pscustomobject]@{ElapsedMilliseconds=0}
-            . ([scriptblock]::Create($phaseWriter))
-            Write-SettingsReaderPhase 'compile-native'
+            $entryLock=$null
+            try {
+                if ($fault -eq 'entry-write-failed') {
+                    $entryLock=[IO.File]::Open($phasePath,[IO.FileMode]::Open,[IO.FileAccess]::Read,[IO.FileShare]::Read)
+                }
+                if ($fault -ne 'before-entry') {
+                    $entryOutput=@(. ([scriptblock]::Create($entryStatement[0].Extent.Text)))
+                    Assert ($entryOutput.Count -eq 0) 'Маркер входа загрязнил stdout.'
+                }
+            } finally { if ($entryLock) { $entryLock.Dispose() } }
+            if ($fault -notin @('entered-command','before-entry','entry-write-failed')) {
+                $operationClock=[pscustomobject]@{ElapsedMilliseconds=0}
+                . ([scriptblock]::Create($phaseWriter))
+                Write-SettingsReaderPhase 'compile-native'
+            }
             if ($fault -eq 'malformed') { [IO.File]::WriteAllText($phasePath,'{"phase":"private UI data","elapsedMs":0,"extra":"foreign"}') }
             if ($fault -eq 'oversized') { [IO.File]::WriteAllText($phasePath,'x'*513) }
             if ($fault -eq 'console-primary') { try { throw $primaryException } catch { $calls.primary=$_; throw } }
@@ -639,10 +667,13 @@ foreach ($fault in @('none','deadline','malformed','oversized','unconfirmed-exit
                     $receipt.cleanup -ceq 'child-exit-unconfirmed' -and [IO.File]::Exists($calls.path)) 'Initialization receipt прочитан/удалён до confirmed exit.'
             } else {
                 Assert ($receipt.childExited -and $receipt.cleanup -ceq 'deleted' -and ![IO.File]::Exists($calls.path)) 'Initialization receipt потерял owned cleanup.'
-                if ($fault -in @('malformed','oversized')) {
+                if ($fault -in @('before-entry','entry-write-failed','malformed','oversized')) {
                     Assert ($receipt.phase -eq $null -and $receipt.readerElapsedMs -eq $null -and $receipt.phaseRead -ceq 'unavailable' -and
                         $lines[0] -notmatch 'private UI data|foreign') 'Initialization receipt доверился неограниченному/чужому payload.'
-                } else { Assert ($receipt.phase -ceq 'compile-native' -and $receipt.readerElapsedMs -eq 0 -and $receipt.phaseRead -ceq 'observed') 'Initialization failure receipt потерял last phase.' }
+                } else {
+                    $expectedPhase=if ($fault -eq 'entered-command') { 'entered-command' } else { 'compile-native' }
+                    Assert ($receipt.phase -ceq $expectedPhase -and $receipt.readerElapsedMs -eq 0 -and $receipt.phaseRead -ceq 'observed') 'Initialization failure receipt потерял last phase.'
+                }
             }
         } finally {
             $capture.Dispose()
