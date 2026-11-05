@@ -203,6 +203,7 @@ export function validateContentWitness(value, expected) {
       'effectiveMaterial',
       'materialReason',
       'error',
+      ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
     ]);
     assert.equal(value.requestedState, 'Half');
     assert.equal(value.geometryScale, 1);

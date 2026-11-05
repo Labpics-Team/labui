@@ -393,6 +393,44 @@ function decode(log, sourceSha, content = false) {
   return files;
 }
 
+function windowGeometryReadback(value) {
+  const object = (entry) => entry !== null && typeof entry === 'object' && !Array.isArray(entry);
+  const coordinate = (entry) =>
+    Number.isSafeInteger(entry) && Math.abs(entry) <= 1e7 ? entry : null;
+  const fields = (entry, names) =>
+    object(entry) ? Object.fromEntries(names.map((name) => [name, coordinate(entry[name])])) : null;
+  const sample = (entry) => {
+    if (!object(entry)) return null;
+    if (entry.status === 'failed')
+      return {
+        status: 'failed',
+        type:
+          typeof entry.type === 'string' && /^[A-Za-z][A-Za-z0-9]{0,79}$/.test(entry.type)
+            ? entry.type
+            : null,
+        hresult: Number.isSafeInteger(entry.hresult) ? entry.hresult : null,
+      };
+    return {
+      status: known(entry.status, ['complete']),
+      client: fields(entry.client, ['width', 'height']),
+      frame: fields(entry.frame, ['x', 'y', 'width', 'height']),
+      workArea: fields(entry.workArea, ['x', 'y', 'width', 'height']),
+      outerBounds: fields(entry.outerBounds, ['x', 'y', 'width', 'height']),
+      presenter: known(entry.presenter, ['Overlapped', 'CompactOverlay', 'FullScreen']),
+      visible: typeof entry.visible === 'boolean' ? entry.visible : null,
+      extendsContentIntoTitleBar:
+        typeof entry.extendsContentIntoTitleBar === 'boolean'
+          ? entry.extendsContentIntoTitleBar
+          : null,
+    };
+  };
+  return object(value)
+    ? Object.fromEntries(
+        ['afterResize', 'afterActivation', 'observed'].map((name) => [name, sample(value[name])]),
+      )
+    : null;
+}
+
 export function sheetFailureLog({
   sourceSha,
   name,
@@ -421,6 +459,9 @@ export function sheetFailureLog({
       observedAtUnixMs: number(observation.observedAtUnixMs),
       theme: known(observation.theme, ['Light', 'Dark', 'Default']),
       rasterizationScale: number(observation.rasterizationScale),
+      ...(Object.hasOwn(observation, 'windowGeometry')
+        ? { windowGeometry: windowGeometryReadback(observation.windowGeometry) }
+        : {}),
       requestedMaterial: known(observation.requestedMaterial, ['Blur', 'Solid']),
       effectiveMaterial: known(observation.effectiveMaterial, ['Blur', 'Solid']),
       materialReason: known(observation.materialReason, [

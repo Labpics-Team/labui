@@ -17,6 +17,8 @@ public sealed partial class SheetPage : Page
     private readonly SheetContentProbe? contentProbe;
     private readonly CancellationTokenSource? contentCancellation;
     internal Window? HostWindow { get; set; }
+    internal object? WindowAfterResize { get; set; }
+    internal object? WindowAfterActivation { get; set; }
 
     public SheetPage(bool dark, bool solid, bool withContent)
     {
@@ -137,6 +139,35 @@ public sealed partial class SheetPage : Page
         return new { x = bounds.X, y = bounds.Y, width = bounds.Width, height = bounds.Height };
     }
 
+    internal static object ReadWindowGeometry(Window window)
+    {
+        try
+        {
+            var appWindow = window.AppWindow;
+            var display = Microsoft.UI.Windowing.DisplayArea.GetFromWindowId(appWindow.Id,
+                Microsoft.UI.Windowing.DisplayAreaFallback.Nearest);
+            return new
+            {
+                status = "complete",
+                client = new { width = appWindow.ClientSize.Width, height = appWindow.ClientSize.Height },
+                frame = new { x = appWindow.Position.X, y = appWindow.Position.Y,
+                    width = appWindow.Size.Width, height = appWindow.Size.Height },
+                workArea = new { x = display.WorkArea.X, y = display.WorkArea.Y,
+                    width = display.WorkArea.Width, height = display.WorkArea.Height },
+                outerBounds = new { x = display.OuterBounds.X, y = display.OuterBounds.Y,
+                    width = display.OuterBounds.Width, height = display.OuterBounds.Height },
+                presenter = appWindow.Presenter.Kind.ToString(),
+                visible = appWindow.IsVisible,
+                extendsContentIntoTitleBar = window.ExtendsContentIntoTitleBar
+            };
+        }
+        catch (Exception exception)
+        {
+            // Ошибка дополнительного readback не подменяет первичный renderer failure.
+            return new { status = "failed", type = exception.GetType().Name, hresult = exception.HResult };
+        }
+    }
+
     private void WriteSnapshot(ObservationError? error)
     {
         if (observationPath is null || snapshotWritten) return;
@@ -150,6 +181,12 @@ public sealed partial class SheetPage : Page
             observedAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
             theme = ActualTheme.ToString(),
             rasterizationScale = XamlRoot?.RasterizationScale,
+            windowGeometry = new
+            {
+                afterResize = WindowAfterResize,
+                afterActivation = WindowAfterActivation,
+                observed = HostWindow is null ? null : ReadWindowGeometry(HostWindow)
+            },
             viewport = Bounds(Sheet),
             body = Bounds(body),
             handle = Bounds(handle),
