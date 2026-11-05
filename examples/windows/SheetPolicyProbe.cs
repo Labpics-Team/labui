@@ -94,7 +94,16 @@ internal sealed class SheetPolicyProbe
         retired = retained;
         sheet.Template = CanonicalSheetTemplate();
         sheet.ApplyTemplate();
-        await LayoutStep(phase, false, cancellationToken);
+        await LayoutStep(phase, false, cancellationToken, () =>
+        {
+            var active = Parts();
+            return !ReferenceEquals(retained.sheetTemplate, sheet.Template)
+                && !ReferenceEquals(retained.viewport, active.viewport)
+                && !ReferenceEquals(retained.presenter, active.presenter)
+                && !ReferenceEquals(retained.scrollPresenter, active.scrollPresenter)
+                && !retained.viewport.IsLoaded && !retained.presenter.IsLoaded
+                && !Contains(sheet, retained.viewport);
+        });
 
         phase = "content-a";
         sheet.Content = "a";
