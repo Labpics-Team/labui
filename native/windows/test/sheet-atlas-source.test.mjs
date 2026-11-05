@@ -56,15 +56,18 @@ test('Sheet virtual atlas uses the original Uniform projection and per-cell upda
   assert.doesNotMatch(build, /new Rect\(0, 0, atlas\.Width, atlas\.Height\)/);
 });
 
-test('Sheet atlas keeps all authored blur levels, weights and paints at the existing owner', () => {
+test('Sheet atlas keeps authored blur levels and paints under the common GeometryScale', () => {
   assert.match(
     profile,
     /levels = \[0, 1f \/ 64, 1f \/ 32, 1f \/ 16, 1f \/ 8, 1f \/ 4, 1f \/ 2, 1\]/,
   );
   assert.match(build, /index < SheetBlurProfile\.Levels\.Length/);
   assert.match(build, /SheetBlurProfile\.Stops\(level\)/);
-  assert.match(build, /SheetBlurProfile\.Levels\[index\] \* Geometry\.SheetGhostBlurRadius/);
-  assert.match(build, /Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius\)/);
+  assert.match(
+    build,
+    /Blur\(Backdrop\(\), SheetBlurProfile\.Levels\[index\] \* Geometry\.SheetGhostBlurRadius \* metrics\.Scale\)/,
+  );
+  assert.match(build, /Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\)/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
   assert.match(source, /RadiusToSigma = 0\.5;/);
