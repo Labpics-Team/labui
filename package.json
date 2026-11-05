@@ -54,6 +54,7 @@
       "@zag-js/aria-hidden@1.41.2": "patches/@zag-js__aria-hidden@1.41.2.patch",
       "@zag-js/dialog@1.41.2": "patches/@zag-js__dialog@1.41.2.patch",
       "@zag-js/popper@1.41.2": "patches/@zag-js__popper@1.41.2.patch",
+      "@zag-js/vanilla@1.41.2": "patches/@zag-js__vanilla@1.41.2.patch",
       "tsup@8.3.6": "patches/tsup@8.3.6.patch"
     }
   }

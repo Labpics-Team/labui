@@ -38,6 +38,9 @@ patchedDependencies:
   '@zag-js/popper@1.41.2':
     hash: 3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5
     path: patches/@zag-js__popper@1.41.2.patch
+  '@zag-js/vanilla@1.41.2':
+    hash: d64014f493ff119ddac9b732e505ddd693de8e25c7d37da75a4ca640a9bd72eb
+    path: patches/@zag-js__vanilla@1.41.2.patch
   tsup@8.3.6:
     hash: bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6
     path: patches/tsup@8.3.6.patch
@@ -276,7 +279,7 @@ importers:
         version: 1.41.2
       '@zag-js/vanilla':
         specifier: 1.41.2
-        version: 1.41.2
+        version: 1.41.2(patch_hash=d64014f493ff119ddac9b732e505ddd693de8e25c7d37da75a4ca640a9bd72eb)
       lit:
         specifier: 3.3.3
         version: 3.3.3
@@ -4934,7 +4937,7 @@ snapshots:
 
   '@zag-js/utils@1.41.2': {}
 
-  '@zag-js/vanilla@1.41.2':
+  '@zag-js/vanilla@1.41.2(patch_hash=d64014f493ff119ddac9b732e505ddd693de8e25c7d37da75a4ca640a9bd72eb)':
     dependencies:
       '@zag-js/core': 1.41.2
       '@zag-js/store': 1.41.2
