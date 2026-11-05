@@ -4,6 +4,12 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import {
+  type DialogFocusContext,
+  completeFailedDialogFocus,
+  composedAncestors,
+  dialogFinalFocusTarget,
+} from './focus.js';
 
 export type ModalRole = 'dialog' | 'alertdialog';
 type DialogSchema = SchemaOf<dialogMachine.Service>;
@@ -56,12 +62,7 @@ export abstract class LabModal extends LabElement {
   protected afterFloatingUpdate(_root: ShadowRoot, _open: boolean): void {}
 
   protected completeFailedDialogFocus(): void {
-    if (!this.isConnected) return;
-    const focus = this.modalFocus();
-    if (focus && this.isIndependentModal(focus.content)) return;
-    // trapFocus создаёт trap на RAF. Ранний отказ отменяет его до активации,
-    // поэтому уже заданная точка finalFocus должна завершиться здесь, до callback.
-    this.finalFocusTarget()?.focus({ preventScroll: true });
+    completeFailedDialogFocus(this.dialogFocusContext());
   }
 
   private readonly machineId = `lab-dialog-${++instanceSequence}`;
@@ -90,49 +91,17 @@ export abstract class LabModal extends LabElement {
       triggerEl: () => this.renderRoot.querySelector<HTMLElement>('.trigger'),
       // Trigger остаётся в другом shadow root. Заг передаёт ссылку focus trap,
       // а не пытается повторно искать её в portal root.
-      finalFocusEl: () => this.finalFocusTarget(),
+      finalFocusEl: () => dialogFinalFocusTarget(this.dialogFocusContext()),
       onOpenChange: (details) => this.onDialogOpenChange(details),
     }));
   }
 
-  private modalFocus(): { active: HTMLElement; content: Element } | undefined {
-    let active = this.ownerDocument.activeElement;
-    while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
-    if (!(active instanceof HTMLElement)) return;
-    let node: Node | null = active;
-    while (node) {
-      if (
-        node instanceof Element &&
-        node.matches('[data-scope="dialog"][data-part="content"][data-state="open"]')
-      )
-        return { active, content: node };
-      if (node instanceof Element && node.assignedSlot) {
-        node = node.assignedSlot;
-        continue;
-      }
-      node = node instanceof ShadowRoot ? node.host : node.parentNode;
-    }
-  }
-
-  private finalFocusTarget(): HTMLElement | null {
-    const focus = this.modalFocus();
-    // Поздний cleanup сохраняет самостоятельный новый modal. Родитель остаётся
-    // допустимым местом возврата: его прежний Sheet trigger снова доступен.
-    if (focus && this.isIndependentModal(focus.content)) return focus.active;
-    const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
-    return this.isConnected &&
-      trigger?.isConnected &&
-      !trigger.matches(':disabled') &&
-      !trigger.closest('[inert]')
-      ? trigger
-      : null;
-  }
-
-  private isIndependentModal(content: Element): boolean {
-    return (
-      content !== this.portalRoot?.querySelector('.content') &&
-      !this.contextAncestors().includes(content)
-    );
+  private dialogFocusContext(): DialogFocusContext {
+    return {
+      owner: this,
+      content: this.portalRoot?.querySelector('.content') ?? null,
+      trigger: this.renderRoot.querySelector<HTMLElement>('.trigger'),
+    };
   }
 
   static override styles = css`
@@ -216,26 +185,10 @@ export abstract class LabModal extends LabElement {
     this.portalRoot = root;
   }
 
-  private contextAncestors(): Element[] {
-    const ancestors: Element[] = [];
-    let node: Node | null = this;
-    while (node) {
-      if (node instanceof Element) {
-        ancestors.push(node);
-        if (node.assignedSlot) {
-          node = node.assignedSlot;
-          continue;
-        }
-      }
-      node = node instanceof ShadowRoot ? node.host : node.parentNode;
-    }
-    return ancestors;
-  }
-
   private syncContext(): void {
     const host = this.portalHost;
     if (!host) return;
-    const ancestors = this.contextAncestors();
+    const ancestors = composedAncestors(this);
     for (const attribute of ['data-theme', 'data-material', 'data-contrast']) {
       const value = ancestors.find((node) => node.hasAttribute(attribute))?.getAttribute(attribute);
       if (value !== null && value !== undefined) host.setAttribute(attribute, value);

@@ -11,15 +11,22 @@ index 91087305f79586a1b8e00be3151fc2005bfc9487..fbfea66e7a61b8b2f034a423975cbd0f
            onInteractOutside(event) {
              prop("onInteractOutside")?.(event);
              if (!prop("closeOnInteractOutside")) {
-@@ -195,6 +195,8 @@ var machine = (0, import_core.createMachine)({
+@@ -195,11 +195,13 @@ var machine = (0, import_core.createMachine)({
            setReturnFocus: (el) => {
              const finalFocusEl = prop("finalFocusEl")?.();
              if (finalFocusEl) return finalFocusEl;
 +            const triggerEl = prop("triggerEl")?.();
-+            if (triggerEl?.isConnected && (0, import_dom_query.isFocusable)(triggerEl)) return triggerEl;
++            if (triggerEl?.isConnected && !triggerEl.matches(':disabled') && (0, import_dom_query.isFocusable)(triggerEl)) return triggerEl;
              const triggerValue = context.get("triggerValue");
              if (triggerValue) {
                const activeTriggerEl = dom.getActiveTriggerEl(scope, triggerValue);
+-              if (activeTriggerEl) return activeTriggerEl;
++              if (activeTriggerEl?.isConnected && !activeTriggerEl.matches(':disabled') && (0, import_dom_query.isFocusable)(activeTriggerEl)) return activeTriggerEl;
+             }
+-            const fallbackTrigger = dom.getTriggerEls(scope)[0];
++            const fallbackTrigger = dom.getTriggerEls(scope).find((trigger) => trigger.isConnected && !trigger.matches(':disabled') && (0, import_dom_query.isFocusable)(trigger));
+             if (fallbackTrigger) return fallbackTrigger;
+             return el;
 diff --git a/dist/dialog.machine.mjs b/dist/dialog.machine.mjs
 index bf7210a727d299e45b101d2b9db44d44b7290730..924e866e9d7bdb4dcfcaa169cd9693f098c40f36 100644
 --- a/dist/dialog.machine.mjs
@@ -42,15 +49,22 @@ index bf7210a727d299e45b101d2b9db44d44b7290730..924e866e9d7bdb4dcfcaa169cd9693f0
            onInteractOutside(event) {
              prop("onInteractOutside")?.(event);
              if (!prop("closeOnInteractOutside")) {
-@@ -161,6 +161,8 @@ var machine = createMachine({
+@@ -161,11 +161,13 @@ var machine = createMachine({
            setReturnFocus: (el) => {
              const finalFocusEl = prop("finalFocusEl")?.();
              if (finalFocusEl) return finalFocusEl;
 +            const triggerEl = prop("triggerEl")?.();
-+            if (triggerEl?.isConnected && isFocusable(triggerEl)) return triggerEl;
++            if (triggerEl?.isConnected && !triggerEl.matches(':disabled') && isFocusable(triggerEl)) return triggerEl;
              const triggerValue = context.get("triggerValue");
              if (triggerValue) {
                const activeTriggerEl = dom.getActiveTriggerEl(scope, triggerValue);
+-              if (activeTriggerEl) return activeTriggerEl;
++              if (activeTriggerEl?.isConnected && !activeTriggerEl.matches(':disabled') && isFocusable(activeTriggerEl)) return activeTriggerEl;
+             }
+-            const fallbackTrigger = dom.getTriggerEls(scope)[0];
++            const fallbackTrigger = dom.getTriggerEls(scope).find((trigger) => trigger.isConnected && !trigger.matches(':disabled') && isFocusable(trigger));
+             if (fallbackTrigger) return fallbackTrigger;
+             return el;
 diff --git a/dist/dialog.props.js b/dist/dialog.props.js
 index b1287803f58d55774b3c7c3dae319c15ac16f9cc..752d644853758488b4e7ae345f51c643199c6c95 100644
 --- a/dist/dialog.props.js

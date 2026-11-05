@@ -112,6 +112,9 @@ const { renderToString } = ${format === 'esm' ? "await import('react-dom/server'
 const warnings = [];
 console.error = (...args) => warnings.push(args.join(' '));
 ${imports}
+const { completeFailedDialogFocus, dialogFinalFocusTarget } = ${format === 'esm' ? "await import('./node_modules/@labpics/ui-core/dist/shared.js')" : "require('@labpics/ui-core/shared')"};
+assert.equal(dialogFinalFocusTarget({owner:null, content:null, trigger:null}), null);
+completeFailedDialogFocus({owner:null, content:null, trigger:null});
 for (const component of [Sheet, RootSheet]) for (const state of [{}, {defaultOpen: true}, {open: true}]) {
   const html = renderToString(createElement(component, {
     ...state, heading: createElement('em', null, 'Heading'),
@@ -150,7 +153,7 @@ process.stdout.write(JSON.stringify({warnings, registered, node: process.version
     async (extension) => {
       const source = `
 import { Sheet, type SheetProps, type LabSheetPosition } from '@labpics/ui-react/sheet';
-import { parseSheetPosition, sheetGeometry, type SheetGeometry } from '@labpics/ui-core/shared';
+import { parseSheetPosition, sheetGeometry, dialogFinalFocusTarget, completeFailedDialogFocus, type DialogFocusContext, type SheetGeometry } from '@labpics/ui-core/shared';
 import { mountSheetMotion, type SheetMotion, type SheetMotionOptions } from '@labpics/ui-core/motion';
 import { createElement } from 'react';
 const position: LabSheetPosition = 'two-thirds';
@@ -165,6 +168,9 @@ const props: SheetProps = {
 createElement(Sheet, props, 'Open');
 const geometry: SheetGeometry = sheetGeometry(812, 32, {full: 776, 'two-thirds': 540, 'one-third': 270, flex: 40});
 parseSheetPosition(position);
+const focusContext: DialogFocusContext = {owner:null, content:null, trigger:null};
+const focusTarget: HTMLElement | null = dialogFinalFocusTarget(focusContext);
+completeFailedDialogFocus(focusContext);
 const mount: (frame: HTMLElement, handle: HTMLElement, observed: readonly Element[], options: SheetMotionOptions) => SheetMotion = mountSheetMotion;
 // @ts-expect-error A percentage is not a LabUI position.
 const invalid: SheetProps = {position: '50%'};

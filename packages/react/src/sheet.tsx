@@ -4,7 +4,14 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import { type SheetMotion, mountSheetMotion } from '@labpics/ui-core/motion';
-import { type LabSheetPosition, parseSheetPosition, sheetGeometry } from '@labpics/ui-core/shared';
+import {
+  type DialogFocusContext,
+  type LabSheetPosition,
+  completeFailedDialogFocus,
+  dialogFinalFocusTarget,
+  parseSheetPosition,
+  sheetGeometry,
+} from '@labpics/ui-core/shared';
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -81,6 +88,7 @@ export function Sheet({
   useEffect(() => setMounted(true), []);
 
   const trigger = useRef<HTMLButtonElement>(null);
+  const dialogContent = useRef<HTMLDivElement>(null);
   const positioner = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
@@ -127,13 +135,23 @@ export function Sheet({
     failedRef.current = true;
     setFailed(true);
     setPresent(false);
-    changeOpen(false);
-    latest.current.onMotionError?.(error);
+    try {
+      completeFailedDialogFocus(dialogFocusContext());
+    } finally {
+      changeOpen(false);
+      latest.current.onMotionError?.(error);
+    }
+  }
+
+  function dialogFocusContext(): DialogFocusContext {
+    return { owner: trigger.current, content: dialogContent.current, trigger: trigger.current };
   }
 
   const hasHeading = heading != null && typeof heading !== 'boolean' && heading !== '';
   const hasDescription =
     description != null && typeof description !== 'boolean' && description !== '';
+  // DOM-контекст остаётся у последнего resolver после очистки React refs на unmount.
+  const finalFocusContext = dialogFocusContext();
   const api = useZag(dialogModule, {
     id: useId(),
     role: 'dialog',
@@ -142,6 +160,7 @@ export function Sheet({
     open: mounted && (effectiveOpen || present),
     'aria-label': ariaLabel ?? (hasHeading ? undefined : 'Панель'),
     triggerEl: () => trigger.current,
+    finalFocusEl: () => dialogFinalFocusTarget(finalFocusContext),
     onOpenChange: (details) => changeOpen(details.open),
   });
 
@@ -270,6 +289,7 @@ export function Sheet({
           />
           <div
             {...contentProps}
+            ref={dialogContent}
             className="lab-sheet-content"
             aria-labelledby={hasHeading ? contentProps['aria-labelledby'] : undefined}
             aria-describedby={hasDescription ? contentProps['aria-describedby'] : undefined}

@@ -48,6 +48,7 @@ const specifications = [
   'sheet-motion-errors.spec.ts',
   'sheet-disconnect-errors.spec.ts',
   'sheet-error-focus.spec.ts',
+  'packed-react-sheet-focus.mjs',
   'dialog.spec.ts',
   'alert-dialog.spec.ts',
 ];
@@ -565,6 +566,10 @@ try {
       join(temporary, 'public', format, 'button-demo.css'),
       css.outputFiles[0].contents,
     );
+    await writeFile(
+      join(temporary, 'public', format, '_fixtures/packed-react-sheet-focus.html'),
+      '<!doctype html><html data-theme="light" data-material="solid"><body><button id="background">Background</button><fieldset id="area"><div id="app"></div></fieldset></body></html>',
+    );
   }
   let activeFormat = 'esm';
   server = createServer(async (request, response) => {
@@ -595,12 +600,14 @@ try {
       config,
       `module.exports = ${JSON.stringify({
         testDir: join(docs, 'tests'),
-        testMatch: (format === 'mixed' ? ['modal-public-composition.spec.ts'] : specifications).map(
-          (name) => `**/${name}`,
-        ),
+        testMatch: (format === 'mixed'
+          ? ['modal-public-composition.spec.ts', 'packed-react-sheet-focus.mjs']
+          : specifications
+        ).map((name) => `**/${name}`),
         fullyParallel: false,
         workers: 1,
         retries: 0,
+        metadata: { packedReactSheetFocus: { consumer, format, evidence } },
         outputDir: join(evidence, `${format}-results`),
         reporter: [['list'], ['json', { outputFile: join(evidence, `${format}-results.json`) }]],
         use: { baseURL: `http://127.0.0.1:${port}`, viewport: { width: 1280, height: 720 } },
@@ -608,7 +615,7 @@ try {
           { name: 'chromium', use: { browserName: 'chromium' } },
           { name: 'webkit', use: { browserName: 'webkit' } },
         ],
-      })};${format === 'mixed' ? '\nmodule.exports.grep = /Controlled закрытие Sheet в shadow root/;' : ''}`,
+      })};${format === 'mixed' ? '\nmodule.exports.grep = /Controlled закрытие Sheet в shadow root|React Sheet final focus/;' : ''}`,
     );
     const cli = createRequire(join(docs, 'package.json')).resolve('@playwright/test/cli');
     await run(process.execPath, [cli, 'test', '--config', config], { cwd: docs });

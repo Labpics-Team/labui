@@ -24,7 +24,7 @@ patchedDependencies:
     hash: abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec
     path: patches/@zag-js__aria-hidden@1.41.2.patch
   '@zag-js/dialog@1.41.2':
-    hash: f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c
+    hash: a76bb209b1d85ac77d178507203c133031b8d89333f93db2d3b9f69bff09be30
     path: patches/@zag-js__dialog@1.41.2.patch
   '@zag-js/dismissable@1.41.2':
     hash: 38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32
@@ -298,7 +298,7 @@ importers:
         version: 1.41.2
       '@zag-js/dialog':
         specifier: 1.41.2
-        version: 1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)
+        version: 1.41.2(patch_hash=a76bb209b1d85ac77d178507203c133031b8d89333f93db2d3b9f69bff09be30)
       '@zag-js/dom-query':
         specifier: 1.41.2
         version: 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
@@ -394,7 +394,7 @@ importers:
         version: 1.41.2
       '@zag-js/dialog':
         specifier: 1.41.2
-        version: 1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)
+        version: 1.41.2(patch_hash=a76bb209b1d85ac77d178507203c133031b8d89333f93db2d3b9f69bff09be30)
       '@zag-js/menu':
         specifier: 1.41.2
         version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)
@@ -4733,7 +4733,7 @@ snapshots:
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/dialog@1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)':
+  '@zag-js/dialog@1.41.2(patch_hash=a76bb209b1d85ac77d178507203c133031b8d89333f93db2d3b9f69bff09be30)':
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/aria-hidden': 1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)
