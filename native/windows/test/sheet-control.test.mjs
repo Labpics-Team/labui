@@ -7,6 +7,7 @@ import path from 'node:path';
 // Полный LabSheet исполняется с управляемыми XAML/renderer границами.
 // Проба проверяет публичные уведомления, factory peer и перенос geometry к частям.
 // Цикл WinUI measure/arrange, живой UIA, GPU и capture требуют hosted исполнения.
+// Модель clipping/extent относится к публичному исходнику baf4916, а не к бинарной WinUI 2.6.4.
 const source = await readFile(new URL('../LabSheet.cs', import.meta.url), 'utf8');
 const template = await readFile(new URL('../Themes/Generic.xaml', import.meta.url), 'utf8');
 const sheetTemplate = template.match(
@@ -140,6 +141,33 @@ Run("fill consumers retain finite measurement and their own viewport", () => {
         Check(viewport.ExtentHeight==layer.LastMetrics?.ContentHeight, $"{state}: outer scroll extent expanded a fill consumer");
     }
 });
+Run("public-source framework clips a raw desired height to the finite offer", () => {
+    var content=new RawDesiredWitness(3000);
+    content.Measure(new Size(343,358));
+    Check(content.DesiredSize.Height==358, "Framework model did not clip raw DesiredSize");
+});
+foreach(var alignment in Enum.GetValues<VerticalAlignment>()) {
+    Run($"public-source ordinary extent distinguishes {alignment}", () => {
+        var (sheet, _, _) = Ready();
+        var content=new ContentWitness(3000) { VerticalAlignment=alignment };
+        sheet.Content=content; sheet.Measure(new Size(375,812));
+        var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+        Check(content.DesiredSize.Height==358, "Finite offer did not clip DesiredSize");
+        Check(viewport.ExtentHeight==(alignment==VerticalAlignment.Stretch?3000:358),
+            "Source-model extent ignored the Stretch-only ActualHeight fallback");
+    });
+}
+foreach(var specified in new[] { "Height", "MinHeight", "MaxHeight" }) Run($"public-source specified {specified} disables the ActualHeight extent fallback", () => {
+    var (sheet, _, _) = Ready();
+    var content=new ContentWitness(3000);
+    if(specified=="Height") content.Height=3000;
+    if(specified=="MinHeight") content.MinHeight=1;
+    if(specified=="MaxHeight") content.MaxHeight=4000;
+    sheet.Content=content;
+    sheet.Measure(new Size(375,812));
+    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==358,
+        "Specified height entered the source-model ActualHeight fallback");
+});
 Run("native template replacement reapplies the finite content policy", () => {
     var viewport=Ready().Sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
     foreach(var _ in new[] { 0, 1 }) {
@@ -230,13 +258,21 @@ const fakes = `namespace Microsoft.UI.Xaml {
         public double ActualHeight { get; private set; } = 812;
         public Visibility Visibility { get; set; }
         public double Height { get; set; } = double.NaN;
+        public double MinHeight { get; set; }
+        public double MaxHeight { get; set; } = double.PositiveInfinity;
+        public VerticalAlignment VerticalAlignment { get; set; } = VerticalAlignment.Stretch;
         public string Name { get; set; } = "";
         public Windows.Foundation.Size DesiredSize { get; private set; }
         public virtual double ProjectedActualHeight => DesiredSize.Height;
         public void InvalidateMeasure() { }
         public void Measure(Windows.Foundation.Size size) {
+            var available=size;
             if(double.IsFinite(Height)) size=new(size.Width, Math.Min(size.Height,Height));
-            DesiredSize=MeasureOverride(size);
+            size=new(size.Width,Math.Min(size.Height,MaxHeight));
+            var desired=MeasureOverride(size);
+            var height=Math.Max(MinHeight,Math.Min(MaxHeight,double.IsFinite(Height)?Height:desired.Height));
+            // framework.cpp 1813-1826: публичный DesiredSize ограничен исходным offer.
+            DesiredSize=new(Math.Max(0,Math.Min(available.Width,desired.Width)),Math.Max(0,Math.Min(available.Height,height)));
         }
         protected virtual Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) => size;
         public void Load() { IsLoaded = true; Loaded?.Invoke(this, new()); }
@@ -247,6 +283,7 @@ const fakes = `namespace Microsoft.UI.Xaml {
         protected virtual Automation.Peers.AutomationPeer? OnCreateAutomationPeer() => null;
     }
     public enum Visibility { Visible, Collapsed }
+    public enum VerticalAlignment { Top, Center, Bottom, Stretch }
 }
 namespace Microsoft.UI.Xaml.Controls {
     public class Control : FrameworkElement { public static readonly DependencyProperty TemplateProperty = new(new(null)); }
@@ -311,7 +348,10 @@ namespace Microsoft.UI.Xaml.Controls {
             var child=CurrentContent as FrameworkElement;
             var childSize=presenter.SizesContentToTemplatedParent?size:new Windows.Foundation.Size(size.Width,double.PositiveInfinity);
             child?.Measure(childSize);
-            ExtentHeight=child?.ProjectedActualHeight??0;
+            // CanUseActualHeightAsExtent: Stretch, без заданных Height/MinHeight/MaxHeight.
+            ExtentHeight=child is null?0:child.VerticalAlignment==VerticalAlignment.Stretch
+                && double.IsNaN(child.Height) && child.MinHeight==0 && double.IsPositiveInfinity(child.MaxHeight)
+                ? child.ProjectedActualHeight:child.DesiredSize.Height;
             return new(size.Width,Math.Min(size.Height,child?.DesiredSize.Height??0));
         }
     }
@@ -326,12 +366,15 @@ namespace Microsoft.UI.Xaml.Controls {
             return new(size.Width, Math.Min(size.Height,NaturalHeight));
         }
     }
+    public sealed class RawDesiredWitness(double height) : FrameworkElement {
+        protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) => new(size.Width,height);
+    }
     public sealed class ContentWitness(double height, bool selfScrolling=false) : FrameworkElement {
         public double NaturalHeight { get; set; } = height;
         public List<Windows.Foundation.Size> Constraints { get; }=[];
         public override double ProjectedActualHeight => selfScrolling?DesiredSize.Height:NaturalHeight;
         protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
-            Constraints.Add(size); return new(size.Width,Math.Min(size.Height,NaturalHeight));
+            Constraints.Add(size); return new(size.Width,selfScrolling?Math.Min(size.Height,NaturalHeight):NaturalHeight);
         }
     }
 }

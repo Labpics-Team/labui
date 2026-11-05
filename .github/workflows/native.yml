@@ -57,7 +57,7 @@ jobs:
           node-version: "24.19.0"
 
       - name: Native projection contract
-        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs
+        run: node --test native/windows/test/generate-theme.test.mjs scripts/ci/evidence-log.test.mjs native/windows/test/evidence.test.mjs native/windows/test/sheet.test.mjs native/windows/test/sheet-content.test.mjs
 
       - name: Native animation capture contract
         shell: pwsh
@@ -150,7 +150,10 @@ jobs:
           $tool | ConvertTo-Json | Set-Content -Encoding utf8 $receipt
           node native/windows/test/sheet.mjs capture "$env:RUNNER_TEMP/labui-native/app" `
             "$env:RUNNER_TEMP/labui-native/sheet" $receipt $source
-          if ($LASTEXITCODE -ne 0) { throw 'Native Sheet capture failed.' }
+          $materialCode = $LASTEXITCODE
+          node native/windows/test/sheet.mjs capture-content "$env:RUNNER_TEMP/labui-native/app" "$env:RUNNER_TEMP/labui-native/sheet-content" $receipt $source
+          $contentCode = $LASTEXITCODE
+          if ($materialCode -ne 0 -or $contentCode -ne 0) { throw 'Native Sheet capture failed.' }
 
       - name: Capture and exercise native Button
         shell: pwsh

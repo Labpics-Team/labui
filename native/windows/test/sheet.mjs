@@ -7,8 +7,12 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { png } from './evidence.mjs';
+import { CONTENT_CASES, contentReadback, validateContentWitness } from './sheet-content.mjs';
+
+export { CONTENT_CASES } from './sheet-content.mjs';
 
 const PREFIX = 'LABUI_SHEET_EVIDENCE';
+const CONTENT_PREFIX = 'LABUI_SHEET_CONTENT_EVIDENCE';
 const MAX_FILE = 4 * 1024 * 1024;
 const MAX_JSON = 64 * 1024;
 export const CASES = Object.freeze(
@@ -21,6 +25,10 @@ export const CASES = Object.freeze(
 const FILES = Object.freeze([
   'identity.json',
   ...CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
+]);
+const CONTENT_FILES = Object.freeze([
+  'identity.json',
+  ...CONTENT_CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
 ]);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const source = (value) => assert.match(value, /^[a-f0-9]{40}$/, 'sheet: source SHA');
@@ -41,6 +49,9 @@ const failurePhases = [
   'capability',
   'readiness',
   'geometry',
+  'content-layout',
+  'content-scroll',
+  'content-template',
   'window-before',
   'screenshot',
   'window-after',
@@ -215,16 +226,23 @@ export function validateObservation(value, expected) {
     }))
       for (const [field, expectedValue] of Object.entries(bounds))
         near(value[part]?.[field], expectedValue);
+    if (expected.scenario !== undefined) validateContentWitness(value, expected);
   } catch (error) {
-    error.sheetPhase = phase;
+    error.sheetPhase ??= phase;
     throw error;
   }
   return value;
 }
 
-function validate(files, sourceSha) {
+function validate(files, sourceSha, content = false) {
+  const cases = content ? CONTENT_CASES : CASES;
+  const expectedFiles = content ? CONTENT_FILES : FILES;
   source(sourceSha);
-  assert.deepEqual([...files.keys()].sort(), [...FILES].sort(), 'sheet: полный набор файлов');
+  assert.deepEqual(
+    [...files.keys()].sort(),
+    [...expectedFiles].sort(),
+    'sheet: полный набор файлов',
+  );
   for (const [file, bytes] of files)
     assert.ok(
       Buffer.isBuffer(bytes) &&
@@ -234,6 +252,29 @@ function validate(files, sourceSha) {
     );
   const identity = parse(files.get('identity.json'));
   assert.equal(identity.source, sourceSha, 'sheet: source identity');
+  if (content) {
+    assert.deepEqual(
+      Object.keys(identity).sort(),
+      [
+        'schema',
+        'source',
+        'cases',
+        'cliVersion',
+        'cliZipSha256',
+        'cliSha256',
+        'appSha256',
+        'consumerSha256',
+        'uiSha256',
+        'motionSha256',
+        'visualReview',
+        'motion',
+        'performance',
+      ].sort(),
+      'sheet content: поля identity',
+    );
+    assert.equal(identity.schema, 'sheet-content-v1');
+    assert.match(identity.cliVersion, /^v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]{1,40})?$/);
+  }
   for (const field of [
     'appSha256',
     'consumerSha256',
@@ -247,9 +288,40 @@ function validate(files, sourceSha) {
   assert.equal(identity.visualReview, 'pending');
   assert.equal(identity.motion, 'not-qualified');
   assert.equal(identity.performance, 'not-qualified');
-  assert.deepEqual(Object.keys(identity.cases).sort(), CASES.map(({ name }) => name).sort());
-  for (const entry of CASES) {
+  assert.deepEqual(Object.keys(identity.cases).sort(), cases.map(({ name }) => name).sort());
+  for (const entry of cases) {
     const owner = identity.cases[entry.name];
+    if (content) {
+      assert.deepEqual(
+        Object.keys(owner).sort(),
+        [
+          'pid',
+          'startedAtUnixMs',
+          'observedUntilUnixMs',
+          'windowHandle',
+          'windowBefore',
+          'windowAfter',
+          'exited',
+          'termination',
+        ].sort(),
+        'sheet content: поля owner',
+      );
+      for (const window of [owner.windowBefore, owner.windowAfter])
+        assert.deepEqual(
+          Object.keys(window).sort(),
+          ['pid', 'windowHandle', 'startedAtUnixMs'].sort(),
+        );
+      assert.deepEqual(Object.keys(owner.termination).sort(), ['code', 'signal']);
+      assert.ok(
+        owner.termination.code === null ||
+          (Number.isInteger(owner.termination.code) &&
+            owner.termination.code >= -2147483648 &&
+            owner.termination.code <= 2147483647),
+      );
+      assert.ok(
+        [null, 'SIGTERM', 'SIGKILL', 'SIGINT', 'SIGBREAK'].includes(owner.termination.signal),
+      );
+    }
     assert.equal(owner.exited, true, 'sheet: собственный процесс не завершён');
     assert.equal(typeof owner.windowHandle, 'string', 'sheet: HWND процесса');
     const observation = validateObservation(parse(files.get(`${entry.name}.json`)), {
@@ -274,30 +346,50 @@ function validate(files, sourceSha) {
 }
 
 export function encodeSheetEvidence(files, sourceSha) {
-  validate(files, sourceSha);
+  return encode(files, sourceSha);
+}
+
+export function encodeSheetContentEvidence(files, sourceSha) {
+  return encode(files, sourceSha, true);
+}
+
+function encode(files, sourceSha, content = false) {
+  validate(files, sourceSha, content);
   return [...files]
-    .map(([file, bytes]) => evidenceLog(bytes, PREFIX, { sourceSha, file }, 'sha256'))
+    .map(([file, bytes]) =>
+      evidenceLog(bytes, content ? CONTENT_PREFIX : PREFIX, { sourceSha, file }, 'sha256'),
+    )
     .join('');
 }
 
 export function decodeSheetEvidence(log, sourceSha) {
+  return decode(log, sourceSha);
+}
+
+export function decodeSheetContentEvidence(log, sourceSha) {
+  return decode(log, sourceSha, true);
+}
+
+function decode(log, sourceSha, content = false) {
+  const expectedFiles = content ? CONTENT_FILES : FILES;
+  const count = content ? CONTENT_CASES.length : CASES.length;
   source(sourceSha);
   assert.ok(Buffer.byteLength(log, 'utf8') <= 32 * 1024 * 1024, 'sheet: размер журнала');
   const files = new Map();
-  for (const { metadata, bytes } of decodeEvidenceLog(log, PREFIX, {
+  for (const { metadata, bytes } of decodeEvidenceLog(log, content ? CONTENT_PREFIX : PREFIX, {
     digestField: 'sha256',
     maxBytes: MAX_FILE,
-    maxPackets: FILES.length,
-    maxTotalBytes: MAX_FILE * 4 + MAX_JSON * 5,
+    maxPackets: expectedFiles.length,
+    maxTotalBytes: MAX_FILE * count + MAX_JSON * (count + 1),
   })) {
     assert.equal(metadata.sourceSha, sourceSha, 'sheet: packet source');
     assert.ok(
-      FILES.includes(metadata.file) && !files.has(metadata.file),
+      expectedFiles.includes(metadata.file) && !files.has(metadata.file),
       'sheet: неизвестный/повторный файл',
     );
     files.set(metadata.file, bytes);
   }
-  validate(files, sourceSha);
+  validate(files, sourceSha, content);
   return files;
 }
 
@@ -313,7 +405,7 @@ export function sheetFailureLog({
 }) {
   source(sourceSha);
   assert.ok(
-    CASES.some((entry) => entry.name === name),
+    [...CASES, ...CONTENT_CASES].some((entry) => entry.name === name),
     'sheet: failure case',
   );
   const number = (value) => (Number.isFinite(value) ? value : null);
@@ -338,6 +430,29 @@ export function sheetFailureLog({
         'EffectsNotFast',
       ]),
       error: observationError(observation.error),
+      ...(CONTENT_CASES.some((entry) => entry.name === name)
+        ? {
+            requestedState: known(observation.requestedState, [
+              'Full',
+              'TwoThirds',
+              'Half',
+              'OneThird',
+              'Flex',
+            ]),
+            geometryScale: number(observation.geometryScale),
+            contentViewport:
+              observation.contentViewport !== null &&
+              typeof observation.contentViewport === 'object'
+                ? Object.fromEntries(
+                    ['x', 'y', 'width', 'height'].map((field) => [
+                      field,
+                      number(observation.contentViewport[field]),
+                    ]),
+                  )
+                : null,
+            contentWitness: contentReadback(observation.contentWitness),
+          }
+        : {}),
     };
     for (const field of ['layoutReady', 'imageLoaded', 'rendererReady'])
       readback[field] = typeof observation[field] === 'boolean' ? observation[field] : null;
@@ -362,6 +477,24 @@ export function sheetFailureLog({
     cleanupError: errorInfo(cleanupError),
     stderrBytes: number(stderrBytes),
   })}\n`;
+}
+
+export function sheetContentCaseLog({ sourceSha, name, pid, windowHandle, exited, observation }) {
+  source(sourceSha);
+  assert.ok(CONTENT_CASES.some((entry) => entry.name === name));
+  assert.ok(Number.isSafeInteger(pid) && pid > 0);
+  assert.match(windowHandle, /^[1-9][0-9]{0,18}$/);
+  assert.equal(exited, true);
+  const payload = JSON.stringify({
+    source: sourceSha,
+    name,
+    pid,
+    windowHandle,
+    exited,
+    contentWitness: contentReadback(observation?.contentWitness),
+  });
+  assert.ok(Buffer.byteLength(payload, 'utf8') <= MAX_JSON);
+  return `LABUI_SHEET_CONTENT_OBSERVATION_JSON ${payload}\n`;
 }
 
 async function within(promise, milliseconds, message) {
@@ -417,6 +550,15 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
     '--sheet',
     ...(entry.theme === 'Dark' ? ['--dark'] : []),
     ...(entry.material === 'Solid' ? ['--solid'] : []),
+    ...(entry.scenario
+      ? [
+          `--sheet-content=${entry.scenario}`,
+          `--sheet-content-alignment=${entry.alignment.toLowerCase()}`,
+          '--sheet-content-qualify',
+          '--sheet-state=half',
+          '--sheet-scale=1',
+        ]
+      : []),
   ];
   const child = spawn(join(appDirectory, 'Buttons.exe'), args, {
     cwd: appDirectory,
@@ -545,10 +687,14 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
     );
     throw new Error('sheet: capture отказал; подробности в LABUI_SHEET_FAILURE_JSON');
   }
+  if (entry.scenario)
+    await writeStdout(
+      sheetContentCaseLog({ sourceSha, name: entry.name, ...result, observation: observed }),
+    );
   return result;
 }
 
-async function capture(appDirectory, output, receiptPath, sourceSha) {
+async function capture(appDirectory, output, receiptPath, sourceSha, content = false) {
   if (
     !(
       process.platform === 'win32' &&
@@ -578,6 +724,7 @@ async function capture(appDirectory, output, receiptPath, sourceSha) {
     motion: 'not-qualified',
     performance: 'not-qualified',
   };
+  if (content) identity.schema = 'sheet-content-v1';
   for (const [field, file] of Object.entries({
     appSha256: 'Buttons.exe',
     consumerSha256: 'Buttons.dll',
@@ -586,29 +733,50 @@ async function capture(appDirectory, output, receiptPath, sourceSha) {
   }))
     identity[field] = hash(await readFile(join(appDirectory, file)));
   await mkdir(output);
-  for (const entry of CASES)
-    identity.cases[entry.name] = await captureCase(
-      appDirectory,
-      output,
-      receipt.path,
-      entry,
-      sourceSha,
-    );
+  let failedCases = 0;
+  for (const entry of content ? CONTENT_CASES : CASES) {
+    try {
+      identity.cases[entry.name] = await captureCase(
+        appDirectory,
+        output,
+        receipt.path,
+        entry,
+        sourceSha,
+      );
+    } catch (error) {
+      if (!content) throw error;
+      failedCases++;
+    }
+  }
+  if (failedCases > 0)
+    throw new Error('sheet: Content witness не прошёл; каждый отказ сохранён отдельно');
   await writeFile(join(output, 'identity.json'), JSON.stringify(identity, null, 2), { flag: 'wx' });
   const files = new Map(
-    await Promise.all(FILES.map(async (file) => [file, await readFile(join(output, file))])),
+    await Promise.all(
+      (content ? CONTENT_FILES : FILES).map(async (file) => [
+        file,
+        await readFile(join(output, file)),
+      ]),
+    ),
   );
-  await writeStdout(encodeSheetEvidence(files, sourceSha));
+  await writeStdout(encode(files, sourceSha, content));
 }
 
 async function main([operation, ...args]) {
-  if (operation === 'capture' && args.length === 4)
-    await capture(resolve(args[0]), resolve(args[1]), resolve(args[2]), args[3]);
-  else if (operation === 'decode' && args.length === 3) {
+  if (['capture', 'capture-content'].includes(operation) && args.length === 4)
+    await capture(
+      resolve(args[0]),
+      resolve(args[1]),
+      resolve(args[2]),
+      args[3],
+      operation === 'capture-content',
+    );
+  else if (['decode', 'decode-content'].includes(operation) && args.length === 3) {
     assert.ok((await lstat(args[0])).size <= 32 * 1024 * 1024, 'sheet: размер журнала');
-    const files = decodeSheetEvidence(
+    const files = decode(
       new TextDecoder('utf8', { fatal: true }).decode(await readFile(args[0])),
       args[1],
+      operation === 'decode-content',
     );
     await mkdir(args[2]);
     for (const [file, bytes] of files) await writeFile(join(args[2], file), bytes, { flag: 'wx' });
@@ -623,7 +791,7 @@ async function main([operation, ...args]) {
     );
   } else
     throw new Error(
-      'Usage: sheet.mjs capture <app-directory> <new-output> <winapp-receipt> <source-sha> | decode <job.log> <source-sha> <new-output>',
+      'Usage: sheet.mjs capture|capture-content <app-directory> <new-output> <winapp-receipt> <source-sha> | decode|decode-content <job.log> <source-sha> <new-output>',
     );
 }
 

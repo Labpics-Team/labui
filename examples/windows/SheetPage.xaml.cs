@@ -15,6 +15,7 @@ public sealed partial class SheetPage : Page
     private bool snapshotQueued;
     private bool snapshotWritten;
     private readonly SheetContentProbe? contentProbe;
+    private readonly CancellationTokenSource? contentCancellation;
     internal Window? HostWindow { get; set; }
 
     public SheetPage(bool dark, bool solid, bool withContent)
@@ -47,7 +48,17 @@ public sealed partial class SheetPage : Page
         const string contentPrefix = "--sheet-content=";
         if (arguments.FirstOrDefault(value => value.StartsWith(contentPrefix, StringComparison.Ordinal)) is { } content)
         {
-            contentProbe = new SheetContentProbe(content[contentPrefix.Length..]);
+            const string alignmentPrefix = "--sheet-content-alignment=";
+            var alignment = arguments.FirstOrDefault(value => value.StartsWith(alignmentPrefix, StringComparison.Ordinal))
+                is { } value ? value[alignmentPrefix.Length..] switch
+                {
+                    "stretch" => VerticalAlignment.Stretch,
+                    "top" => VerticalAlignment.Top,
+                    _ => throw new ArgumentException("Неизвестное выравнивание пробы содержимого.")
+                } : VerticalAlignment.Stretch;
+            var qualify = arguments.Contains("--sheet-content-qualify", StringComparer.Ordinal);
+            contentProbe = new SheetContentProbe(content[contentPrefix.Length..], alignment, qualify);
+            if (qualify) contentCancellation = new();
             Sheet.Content = contentProbe.Content;
         }
         else if (withContent)
@@ -85,6 +96,8 @@ public sealed partial class SheetPage : Page
 
     private void UnloadedPage(object sender, RoutedEventArgs args)
     {
+        contentCancellation?.Cancel();
+        contentCancellation?.Dispose();
         Backdrop.ImageOpened -= ImageOpened;
         Backdrop.ImageFailed -= ImageFailed;
         Sheet.EffectiveMaterialChanged -= MaterialReady;
@@ -97,10 +110,15 @@ public sealed partial class SheetPage : Page
     {
         if (snapshotQueued || snapshotWritten || !IsLoaded || !imageLoaded || Sheet.EffectiveMaterial is null) return;
         snapshotQueued = true;
-        if (!DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, () =>
+        if (!DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low, async () =>
         {
-            snapshotQueued = false;
-            if (IsLoaded) WriteSnapshot(null);
+            try
+            {
+                if (IsLoaded && contentProbe is { Qualify: true })
+                    await contentProbe.CompleteAsync(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer, contentCancellation!.Token);
+                if (IsLoaded) WriteSnapshot(null);
+            }
+            finally { snapshotQueued = false; }
         })) throw new InvalidOperationException("Не удалось запланировать снимок Sheet.");
     }
 
@@ -124,6 +142,7 @@ public sealed partial class SheetPage : Page
         if (observationPath is null || snapshotWritten) return;
         var body = FindPart(Sheet, "PART_Body");
         var handle = FindPart(Sheet, "PART_Indicator");
+        var contentWitness = contentProbe?.Snapshot(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer);
         var observation = new
         {
             pid = Environment.ProcessId,
@@ -141,7 +160,7 @@ public sealed partial class SheetPage : Page
             requestedState = Sheet.State.ToString(),
             geometryScale = Sheet.GeometryScale,
             contentViewport = Bounds(FindPart(Sheet, "PART_ContentViewport")),
-            contentWitness = contentProbe?.Snapshot(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer),
+            contentWitness,
             effectiveMaterial = Sheet.EffectiveMaterial?.ToString(),
             materialReason = Sheet.MaterialReason?.ToString(),
             error
