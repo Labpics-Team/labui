@@ -48,3 +48,11 @@ export {
 } from './components/field/field-a11y.js';
 export { type LabComboboxItem, filterComboboxItems } from './components/combobox/filter.js';
 export { tagsInputTranslations } from './components/tags-input/translations.js';
+export {
+  type LabSheetPosition,
+  type SheetGeometry,
+  sheetPositions,
+  parseSheetPosition,
+  sheetGeometry,
+  closestSheetPosition,
+} from './components/sheet/positions.js';

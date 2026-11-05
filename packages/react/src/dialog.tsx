@@ -23,8 +23,9 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
-import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { DialogPortalPlane } from './components/dialog-portal-plane.js';
 import { useZag } from './use-zag.js';
 import './dialog.css';
 
@@ -53,28 +54,6 @@ export interface DialogProps {
   onOpenChange?: (open: boolean) => void;
   /** The trigger content — wrapped in the accessible trigger button. */
   children?: ReactNode;
-}
-
-/** Плоскость появляется только после mount; layout effect не вызывается при SSR. */
-function DialogPortalPlane({ open, children }: { open: boolean; children: ReactNode }): ReactNode {
-  const portalPlane = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const plane = portalPlane.current;
-    if (!plane) return;
-    plane.popover = 'manual';
-    if (!open) return;
-    // Тот же manual popover, что у Lit: native top layer сохраняет клики
-    // над открытым Sheet, а порядок закрытия и фокус остаются у Zag.
-    plane.showPopover();
-    return () => {
-      if (plane.matches(':popover-open')) plane.hidePopover();
-    };
-  }, [open]);
-  return (
-    <div ref={portalPlane} className="lab-dialog-portal-plane">
-      {children}
-    </div>
-  );
 }
 
 /**
