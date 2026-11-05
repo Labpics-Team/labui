@@ -60,6 +60,7 @@ internal sealed class SheetContentProbe
             reset = await Change(scroller, 0, cancellationToken);
             var previous = OwnedPresenter(viewport)
                 ?? throw new InvalidOperationException("Нет исходного native presenter.");
+            var previousContentPresent = Contains(viewport, Content);
             // Новый native ControlTemplate проверяет callback владельца; production-шаблон не меняется.
             viewport.Template = (ControlTemplate)XamlReader.Load(ReplacementTemplate);
             viewport.ApplyTemplate();
@@ -67,7 +68,7 @@ internal sealed class SheetContentProbe
             await Layout(viewport, cancellationToken);
             var current = OwnedPresenter(viewport)
                 ?? throw new InvalidOperationException("Нет нового native presenter.");
-            replacement = new(!ReferenceEquals(previous, current), ReferenceEquals(viewport.Content, Content),
+            replacement = new(!ReferenceEquals(previous, current), previousContentPresent && Contains(viewport, Content),
                 previous.IsLoaded, previous.SizesContentToTemplatedParent, current.SizesContentToTemplatedParent);
             await Cycle("replaced", viewport, cancellationToken);
             status = "complete";
@@ -154,8 +155,10 @@ internal sealed class SheetContentProbe
         var scroller = list is null ? viewport : inner;
         var finalRow = list is null ? ((StackPanel)Content).Children.LastOrDefault() as FrameworkElement
             : list.ContainerFromIndex(999) as FrameworkElement;
-        var bounds = scroller is not null && scroller.IsLoaded && finalRow is { IsLoaded: true }
-            ? finalRow.TransformToVisual(scroller).TransformBounds(new Rect(0, 0, finalRow.ActualWidth, finalRow.ActualHeight))
+        var parent = finalRow is null ? null : VisualTreeHelper.GetParent(finalRow) as UIElement;
+        // Слот строки проверяет всю выделенную область, включая свободное место вокруг текста.
+        var bounds = scroller is { IsLoaded: true } && finalRow is { IsLoaded: true } && parent is not null
+            ? parent.TransformToVisual(scroller).TransformBounds(LayoutInformation.GetLayoutSlot(finalRow))
             : (Rect?)null;
         return new(scenario, list is null ? "StackPanel" : "ListView", Content.VerticalAlignment.ToString(),
             double.IsNaN(Content.Height), list is null ? ((StackPanel)Content).Children.Count : list.Items.Count,
@@ -195,6 +198,14 @@ internal sealed class SheetContentProbe
         for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
             if (Find<T>(VisualTreeHelper.GetChild(parent, index)) is { } child) return child;
         return null;
+    }
+
+    private static bool Contains(DependencyObject parent, DependencyObject content)
+    {
+        if (ReferenceEquals(parent, content)) return true;
+        for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+            if (Contains(VisualTreeHelper.GetChild(parent, index), content)) return true;
+        return false;
     }
 
     private sealed record SizeSample(double? width, double? height);

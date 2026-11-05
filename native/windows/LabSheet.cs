@@ -2,6 +2,8 @@ using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
 
@@ -54,9 +56,21 @@ public sealed class LabSheet : ContentControl
     private Grid? dragArea;
     private Border? indicator;
     private ScrollViewer? contentViewport;
+    private ContentPresenter? contentPresenter;
     private long? viewportTemplateToken;
     private bool attached;
     private EventHandler? materialForwarder;
+    private static readonly (DependencyProperty Property, string Name)[] ContentBindings =
+    [
+        (ContentPresenter.ContentProperty, nameof(Content)),
+        (ContentPresenter.ContentTemplateProperty, nameof(ContentTemplate)),
+        (ContentPresenter.ContentTemplateSelectorProperty, nameof(ContentTemplateSelector)),
+        (ContentPresenter.ContentTransitionsProperty, nameof(ContentTransitions)),
+        (ContentPresenter.ForegroundProperty, nameof(Foreground)),
+        (ContentPresenter.FontFamilyProperty, nameof(FontFamily)),
+        (ContentPresenter.HorizontalContentAlignmentProperty, nameof(HorizontalContentAlignment)),
+        (ContentPresenter.VerticalContentAlignmentProperty, nameof(VerticalContentAlignment))
+    ];
 
     public LabSheet()
     {
@@ -77,6 +91,8 @@ public sealed class LabSheet : ContentControl
     protected override void OnApplyTemplate()
     {
         DetachParts();
+        if (contentPresenter is not null)
+            foreach (var binding in ContentBindings) contentPresenter.ClearValue(binding.Property);
         if (contentViewport is not null && viewportTemplateToken is { } token)
             contentViewport.UnregisterPropertyChangedCallback(Control.TemplateProperty, token);
         viewportTemplateToken = null;
@@ -86,6 +102,10 @@ public sealed class LabSheet : ContentControl
         dragArea = Part<Grid>("PART_DragArea");
         indicator = Part<Border>("PART_Indicator");
         contentViewport = Part<ScrollViewer>("PART_ContentViewport");
+        contentPresenter = new ContentExtentPresenter();
+        foreach (var binding in ContentBindings)
+            contentPresenter.SetBinding(binding.Property, new Binding { Source = this, Path = new PropertyPath(binding.Name) });
+        contentViewport.Content = contentPresenter;
         ConfigureContentViewport(contentViewport);
         viewportTemplateToken = contentViewport.RegisterPropertyChangedCallback(Control.TemplateProperty,
             static (sender, _) => ConfigureContentViewport((ScrollViewer)sender));
@@ -95,6 +115,25 @@ public sealed class LabSheet : ContentControl
 
     private T Part<T>(string name) where T : DependencyObject => GetTemplateChild(name) as T
         ?? throw new InvalidOperationException($"Шаблон LabSheet требует {name} ({typeof(T).Name}).");
+
+    private sealed class ContentExtentPresenter : ContentPresenter
+    {
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            base.ArrangeOverride(finalSize);
+            if (VisualTreeHelper.GetChildrenCount(this) == 0
+                || VisualTreeHelper.GetChild(this, 0) is not FrameworkElement child) return finalSize;
+            var maximum = Math.Max(child.MinHeight,
+                Math.Min(child.MaxHeight, double.IsNaN(child.Height) ? double.PositiveInfinity : child.Height));
+            var height = Math.Max(0, Math.Min(child.ActualHeight, maximum) + child.Margin.Top + child.Margin.Bottom);
+            if (!double.IsFinite(height)) throw new InvalidOperationException("Содержимое Sheet требует конечный extent.");
+            if (height <= finalSize.Height) return finalSize;
+            // Measure остаётся конечным; Arrange сохраняет extent и снимает внутренний clip переполнения.
+            var slot = LayoutInformation.GetLayoutSlot(child);
+            child.Arrange(new Rect(slot.X, slot.Y, slot.Width, height));
+            return new Size(finalSize.Width, height);
+        }
+    }
 
     private static void ConfigureContentViewport(ScrollViewer viewport)
     {

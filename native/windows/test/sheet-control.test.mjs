@@ -146,27 +146,113 @@ Run("public-source framework clips a raw desired height to the finite offer", ()
     content.Measure(new Size(343,358));
     Check(content.DesiredSize.Height==358, "Framework model did not clip raw DesiredSize");
 });
+Run("ordinary Top content retains its extent without changing its finite offer or properties", () => {
+    var (sheet, _, _) = Ready();
+    var content=new ContentWitness(3000) { VerticalAlignment=VerticalAlignment.Top };
+    sheet.Content=content; sheet.Measure(new Size(375,812));
+    Check(content.Constraints[^1]==new Size(343,358) && double.IsNaN(content.Height)
+        && content.VerticalAlignment==VerticalAlignment.Top, "Consumer's finite offer or properties changed");
+    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==3000,
+        "Ordinary Top content lost its native extent");
+});
 foreach(var alignment in Enum.GetValues<VerticalAlignment>()) {
     Run($"public-source ordinary extent distinguishes {alignment}", () => {
-        var (sheet, _, _) = Ready();
+        var viewport=new ScrollViewer();
+        viewport.TemplatePart<ScrollContentPresenter>("ScrollContentPresenter").SizesContentToTemplatedParent=true;
         var content=new ContentWitness(3000) { VerticalAlignment=alignment };
-        sheet.Content=content; sheet.Measure(new Size(375,812));
-        var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+        viewport.Content=content; viewport.Measure(new Size(343,358));
         Check(content.DesiredSize.Height==358, "Finite offer did not clip DesiredSize");
         Check(viewport.ExtentHeight==(alignment==VerticalAlignment.Stretch?3000:358),
             "Source-model extent ignored the Stretch-only ActualHeight fallback");
     });
+    Run($"ordinary {alignment} content survives both native templates", () => {
+        var (sheet, _, _) = Ready();
+        var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+        var content=new ContentWitness(3000) { VerticalAlignment=alignment };
+        sheet.Content=content;
+        foreach(var replaced in new[] { false, true }) {
+            if(replaced) { viewport.UseNativeTemplate(); viewport.ApplyTemplate(); }
+            sheet.Measure(new Size(375,812));
+            Check(viewport.ExtentHeight==3000, "Ordinary extent depends on the consumer alignment or native template");
+            Check(content.VerticalAlignment==alignment && double.IsNaN(content.Height), "Consumer properties were changed");
+            Check(content.Constraints.All(size=>size==new Size(343,358)), "Consumer lost its finite measure offer");
+            Check(content.LayoutSlot.Height==3000, "Internal layout slot still clips the ordinary content");
+        }
+    });
 }
 foreach(var specified in new[] { "Height", "MinHeight", "MaxHeight" }) Run($"public-source specified {specified} disables the ActualHeight extent fallback", () => {
-    var (sheet, _, _) = Ready();
+    var viewport=new ScrollViewer();
+    viewport.TemplatePart<ScrollContentPresenter>("ScrollContentPresenter").SizesContentToTemplatedParent=true;
     var content=new ContentWitness(3000);
     if(specified=="Height") content.Height=3000;
     if(specified=="MinHeight") content.MinHeight=1;
     if(specified=="MaxHeight") content.MaxHeight=4000;
-    sheet.Content=content;
-    sheet.Measure(new Size(375,812));
-    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==358,
+    viewport.Content=content;
+    viewport.Measure(new Size(343,358));
+    Check(viewport.ExtentHeight==358,
         "Specified height entered the source-model ActualHeight fallback");
+});
+foreach(var (height,min,max,expected) in new[] {
+    (double.NaN,0d,double.PositiveInfinity,3000d), (3000d,0d,double.PositiveInfinity,3000d),
+    (100d,0d,double.PositiveInfinity,358d), (double.NaN,1d,4000d,3000d), (double.NaN,0d,100d,358d)
+}) Run($"consumer height {height}/{min}/{max} stays under consumer control", () => {
+    var (sheet, _, _) = Ready();
+    var content=new ContentWitness(3000) { VerticalAlignment=VerticalAlignment.Top, Height=height, MinHeight=min, MaxHeight=max };
+    sheet.Content=content; sheet.Measure(new Size(375,812));
+    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==expected, "Declared height limits were lost");
+    Check(content.Height.Equals(height) && content.MinHeight==min && content.MaxHeight==max
+        && content.VerticalAlignment==VerticalAlignment.Top, "Owner assigned consumer dimensions or alignment");
+    Check(content.Constraints.All(size=>double.IsFinite(size.Width) && double.IsFinite(size.Height)), "Explicit sizing received infinity");
+});
+Run("actual ink outside an explicit height cannot expand the scroll extent", () => {
+    var (sheet, _, _) = Ready();
+    sheet.Content=new OversizedArrangeWitness() { Height=100 };
+    sheet.Measure(new Size(375,812));
+    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==358, "ActualSize bypassed the declared clip");
+});
+Run("ordinary margins contribute to extent and the internal arrange slot", () => {
+    var (sheet, _, _) = Ready();
+    var content=new ContentWitness(3000) { VerticalAlignment=VerticalAlignment.Top, Margin=new(0,20,0,30) };
+    sheet.Content=content; sheet.Measure(new Size(375,812));
+    Check(sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").ExtentHeight==3050 && content.LayoutSlot.Height==3050,
+        "Margins or the unclipped arrange slot were lost");
+});
+Run("shrinking and replacing content do not retain an earlier ordinary extent", () => {
+    var (sheet, _, _) = Ready();
+    var viewport=sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
+    var content=new ContentWitness(3000) { VerticalAlignment=VerticalAlignment.Top };
+    sheet.Content=content; sheet.Measure(new Size(375,812));
+    Check(viewport.ExtentHeight==3000, "Initial ordinary extent absent");
+    content.NaturalHeight=100; sheet.Measure(new Size(375,812));
+    Check(viewport.ExtentHeight==358, "Shrunk ordinary extent retained the previous size");
+    var fill=new ContentWitness(30000,selfScrolling:true);
+    sheet.Content=fill; sheet.Measure(new Size(375,812));
+    Check(viewport.ExtentHeight==358 && fill.ActualHeight==358 && fill.Constraints.All(size=>size==new Size(343,358)),
+        "A replacement fill consumer inherited an ordinary scroll extent");
+});
+Run("content and presentation bindings remain live and retire with the Sheet template", () => {
+    var (sheet, _, _) = Ready();
+    var content=new ContentWitness(100);
+    sheet.Content=content; sheet.ContentTemplate=new(); sheet.ContentTemplateSelector=new(); sheet.ContentTransitions=new();
+    sheet.Foreground=new(); sheet.FontFamily=new(); sheet.HorizontalContentAlignment=HorizontalAlignment.Right;
+    sheet.VerticalContentAlignment=VerticalAlignment.Bottom;
+    sheet.Measure(new Size(375,812));
+    var previous=(ContentPresenter)sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").Content!;
+    void Bindings(ContentPresenter presenter) {
+        Check(ReferenceEquals(presenter.Content,sheet.Content) && ReferenceEquals(presenter.ContentTemplate,sheet.ContentTemplate)
+            && ReferenceEquals(presenter.ContentTemplateSelector,sheet.ContentTemplateSelector)
+            && ReferenceEquals(presenter.ContentTransitions,sheet.ContentTransitions)
+            && ReferenceEquals(presenter.Foreground,sheet.Foreground) && ReferenceEquals(presenter.FontFamily,sheet.FontFamily)
+            && presenter.HorizontalContentAlignment==sheet.HorizontalContentAlignment
+            && presenter.VerticalContentAlignment==sheet.VerticalContentAlignment, "Presentation binding diverged from the Sheet");
+    }
+    Bindings(previous);
+    sheet.FontFamily=new(); Bindings(previous);
+    sheet.UseTemplate(new SheetLayers()); sheet.ApplyTemplate(); sheet.Measure(new Size(375,812));
+    var current=(ContentPresenter)sheet.TemplatePart<ScrollViewer>("PART_ContentViewport").Content!;
+    Check(!ReferenceEquals(previous,current) && previous.Content is null && previous.ContentTemplate is null,
+        "Retired presenter retained consumer or live bindings");
+    Bindings(current);
 });
 Run("native template replacement reapplies the finite content policy", () => {
     var viewport=Ready().Sheet.TemplatePart<ScrollViewer>("PART_ContentViewport");
@@ -225,6 +311,11 @@ const fakes = `namespace Microsoft.UI.Xaml {
         public virtual IReadOnlyList<DependencyObject> VisualChildren => [];
         public object GetValue(DependencyProperty p) => values.TryGetValue(p, out var value) ? value! : p.Metadata.DefaultValue!;
         public void SetValue(DependencyProperty p, object? value) { values[p] = value; p.Metadata.Changed?.Invoke(this, new()); }
+        public void ClearValue(DependencyProperty p) => values.Remove(p);
+        protected object? ReadBinding(DependencyProperty p) {
+            var value=GetValue(p);
+            return value is Data.Binding binding ? binding.Source?.GetType().GetProperty(binding.Path!.Path)?.GetValue(binding.Source) : value;
+        }
         public long RegisterPropertyChangedCallback(DependencyProperty p, Action<DependencyObject, DependencyProperty> callback) {
             if(!callbacks.TryGetValue(p,out var listeners)) callbacks[p]=listeners=[];
             var token=++nextToken; listeners[token]=callback; return token;
@@ -248,7 +339,10 @@ const fakes = `namespace Microsoft.UI.Xaml {
     public sealed class SizeChangedEventArgs : EventArgs { }
     public delegate void RoutedEventHandler(object sender, RoutedEventArgs args);
     public delegate void SizeChangedEventHandler(object sender, SizeChangedEventArgs args);
-    public readonly record struct Thickness(double L, double T, double R, double B);
+    public readonly record struct Thickness(double L, double T, double R, double B) {
+        public double Top => T;
+        public double Bottom => B;
+    }
     public readonly record struct CornerRadius(double Value);
     public class FrameworkElement : DependencyObject {
         public event RoutedEventHandler? Loaded, Unloaded;
@@ -261,20 +355,36 @@ const fakes = `namespace Microsoft.UI.Xaml {
         public double MinHeight { get; set; }
         public double MaxHeight { get; set; } = double.PositiveInfinity;
         public VerticalAlignment VerticalAlignment { get; set; } = VerticalAlignment.Stretch;
+        public Thickness Margin { get; set; }
+        public Windows.Foundation.Rect LayoutSlot { get; private set; }
+        private Windows.Foundation.Size unclippedDesiredSize;
         public string Name { get; set; } = "";
         public Windows.Foundation.Size DesiredSize { get; private set; }
-        public virtual double ProjectedActualHeight => DesiredSize.Height;
+        public void SetBinding(DependencyProperty property, Data.Binding binding) => SetValue(property,binding);
         public void InvalidateMeasure() { }
         public void Measure(Windows.Foundation.Size size) {
             var available=size;
-            if(double.IsFinite(Height)) size=new(size.Width, Math.Min(size.Height,Height));
-            size=new(size.Width,Math.Min(size.Height,MaxHeight));
+            var maximum=Math.Max(MinHeight,Math.Min(MaxHeight,double.IsNaN(Height)?double.PositiveInfinity:Height));
+            var minimum=Math.Min(maximum,Math.Max(MinHeight,double.IsNaN(Height)?0:Height));
+            size=new(Math.Max(0,size.Width-Margin.L-Margin.R),Math.Max(minimum,Math.Min(Math.Max(0,size.Height-Margin.T-Margin.B),maximum)));
             var desired=MeasureOverride(size);
-            var height=Math.Max(MinHeight,Math.Min(MaxHeight,double.IsFinite(Height)?Height:desired.Height));
+            var height=Math.Max(minimum,Math.Min(maximum,desired.Height));
+            unclippedDesiredSize=new(desired.Width,height);
             // framework.cpp 1813-1826: публичный DesiredSize ограничен исходным offer.
-            DesiredSize=new(Math.Max(0,Math.Min(available.Width,desired.Width)),Math.Max(0,Math.Min(available.Height,height)));
+            DesiredSize=new(Math.Max(0,Math.Min(available.Width,desired.Width+Margin.L+Margin.R)),Math.Max(0,Math.Min(available.Height,height+Margin.T+Margin.B)));
+        }
+        public void Arrange(Windows.Foundation.Rect slot) {
+            LayoutSlot=slot;
+            var height=VerticalAlignment==VerticalAlignment.Stretch
+                ?Math.Max(Math.Max(0,slot.Height-Margin.T-Margin.B),unclippedDesiredSize.Height):unclippedDesiredSize.Height;
+            var maximum=Math.Max(MinHeight,Math.Min(MaxHeight,double.IsNaN(Height)?double.PositiveInfinity:Height));
+            height=Math.Min(height,Math.Max(unclippedDesiredSize.Height,maximum));
+            // framework.cpp 1931-2012: Arrange использует unclipped DesiredSize и публикует return override как ActualSize.
+            var actual=ArrangeOverride(new(Math.Max(Math.Max(0,slot.Width-Margin.L-Margin.R),unclippedDesiredSize.Width),height));
+            ActualWidth=actual.Width; ActualHeight=actual.Height;
         }
         protected virtual Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) => size;
+        protected virtual Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size size) => size;
         public void Load() { IsLoaded = true; Loaded?.Invoke(this, new()); }
         public void Unload() { IsLoaded = false; Unloaded?.Invoke(this, new()); }
         public void Resize(double width=375, double height=812) {
@@ -284,6 +394,11 @@ const fakes = `namespace Microsoft.UI.Xaml {
     }
     public enum Visibility { Visible, Collapsed }
     public enum VerticalAlignment { Top, Center, Bottom, Stretch }
+    public enum HorizontalAlignment { Left, Center, Right, Stretch }
+    public sealed class PropertyPath(string path) { public string Path { get; }=path; }
+}
+namespace Microsoft.UI.Xaml.Data {
+    public sealed class Binding { public object? Source { get; set; } public Microsoft.UI.Xaml.PropertyPath? Path { get; set; } }
 }
 namespace Microsoft.UI.Xaml.Controls {
     public class Control : FrameworkElement { public static readonly DependencyProperty TemplateProperty = new(new(null)); }
@@ -291,7 +406,15 @@ namespace Microsoft.UI.Xaml.Controls {
         private readonly Dictionary<string, DependencyObject> parts = [];
         private bool applied;
         public Type? DefaultStyleKey { get; set; }
-        public object? Content { get; set; }
+        public static readonly DependencyProperty ContentProperty=new(new(null));
+        public object? Content { get => ReadBinding(ContentProperty); set { ContentBinding=null; SetValue(ContentProperty,value); } }
+        public object? ContentTemplate { get; set; }
+        public object? ContentTemplateSelector { get; set; }
+        public object? ContentTransitions { get; set; }
+        public object? Foreground { get; set; }
+        public object? FontFamily { get; set; }
+        public HorizontalAlignment HorizontalContentAlignment { get; set; }=HorizontalAlignment.Stretch;
+        public VerticalAlignment VerticalContentAlignment { get; set; }=VerticalAlignment.Stretch;
         public Func<object?>? ContentBinding { get; set; }
         protected object? CurrentContent => ContentBinding?.Invoke() ?? Content;
         public override IReadOnlyList<DependencyObject> VisualChildren => parts.Values.ToArray();
@@ -324,7 +447,6 @@ namespace Microsoft.UI.Xaml.Controls {
     }
     public class Grid : FrameworkElement {
         public Thickness Padding { get; set; }
-        public Thickness Margin { get; set; }
         public double RowSpacing { get; set; }
         public Microsoft.UI.Xaml.Media.RectangleGeometry? Clip { get; set; }
     }
@@ -348,34 +470,72 @@ namespace Microsoft.UI.Xaml.Controls {
             var child=CurrentContent as FrameworkElement;
             var childSize=presenter.SizesContentToTemplatedParent?size:new Windows.Foundation.Size(size.Width,double.PositiveInfinity);
             child?.Measure(childSize);
+            child?.Arrange(new(0,0,Math.Max(size.Width,child.DesiredSize.Width),Math.Max(size.Height,child.DesiredSize.Height)));
             // CanUseActualHeightAsExtent: Stretch, без заданных Height/MinHeight/MaxHeight.
             ExtentHeight=child is null?0:child.VerticalAlignment==VerticalAlignment.Stretch
                 && double.IsNaN(child.Height) && child.MinHeight==0 && double.IsPositiveInfinity(child.MaxHeight)
-                ? child.ProjectedActualHeight:child.DesiredSize.Height;
+                ? Math.Max(0,child.ActualHeight+child.Margin.T+child.Margin.B):child.DesiredSize.Height;
             return new(size.Width,Math.Min(size.Height,child?.DesiredSize.Height??0));
         }
     }
     public class ScrollContentPresenter : ContentPresenter { public bool SizesContentToTemplatedParent { get; set; } }
     public class ContentPresenter : FrameworkElement {
+        public static readonly DependencyProperty ContentProperty=new(new(null));
+        public static readonly DependencyProperty ContentTemplateProperty=new(new(null));
+        public static readonly DependencyProperty ContentTemplateSelectorProperty=new(new(null));
+        public static readonly DependencyProperty ContentTransitionsProperty=new(new(null));
+        public static readonly DependencyProperty ForegroundProperty=new(new(null));
+        public static readonly DependencyProperty FontFamilyProperty=new(new(null));
+        public static readonly DependencyProperty HorizontalContentAlignmentProperty=new(new(HorizontalAlignment.Stretch));
+        public static readonly DependencyProperty VerticalContentAlignmentProperty=new(new(VerticalAlignment.Stretch));
+        public object? Content { get => ReadBinding(ContentProperty); set => SetValue(ContentProperty,value); }
+        public object? ContentTemplate => ReadBinding(ContentTemplateProperty);
+        public object? ContentTemplateSelector => ReadBinding(ContentTemplateSelectorProperty);
+        public object? ContentTransitions => ReadBinding(ContentTransitionsProperty);
+        public object? Foreground => ReadBinding(ForegroundProperty);
+        public object? FontFamily => ReadBinding(FontFamilyProperty);
+        public HorizontalAlignment HorizontalContentAlignment => (HorizontalAlignment)ReadBinding(HorizontalContentAlignmentProperty)!;
+        public VerticalAlignment VerticalContentAlignment => (VerticalAlignment)ReadBinding(VerticalContentAlignmentProperty)!;
         public double NaturalHeight { get; set; }
         public Func<object?>? ContentBinding { get; set; }
         public Windows.Foundation.Size Available { get; private set; }
+        private FrameworkElement? Child => ContentBinding?.Invoke() as FrameworkElement ?? Content as FrameworkElement;
+        public override IReadOnlyList<DependencyObject> VisualChildren => Child is { } child?[child]:[];
         protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
             Available=size;
-            if(ContentBinding?.Invoke() is FrameworkElement child) { child.Measure(size); return child.DesiredSize; }
+            if(Child is { } child) { child.Measure(size); return child.DesiredSize; }
             return new(size.Width, Math.Min(size.Height,NaturalHeight));
+        }
+        protected override Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size size) {
+            if(Child is { } child) {
+                var width=HorizontalContentAlignment==HorizontalAlignment.Stretch?size.Width:child.DesiredSize.Width;
+                var height=VerticalContentAlignment==VerticalAlignment.Stretch?size.Height:child.DesiredSize.Height;
+                var x=HorizontalContentAlignment==HorizontalAlignment.Center?(size.Width-width)/2:
+                    HorizontalContentAlignment==HorizontalAlignment.Right?size.Width-width:0;
+                var y=VerticalContentAlignment==VerticalAlignment.Center?(size.Height-height)/2:
+                    VerticalContentAlignment==VerticalAlignment.Bottom?size.Height-height:0;
+                child.Arrange(new(x,y,width,height));
+            }
+            return size;
         }
     }
     public sealed class RawDesiredWitness(double height) : FrameworkElement {
         protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) => new(size.Width,height);
     }
+    public sealed class OversizedArrangeWitness : FrameworkElement {
+        protected override Windows.Foundation.Size ArrangeOverride(Windows.Foundation.Size size) => new(size.Width,3000);
+    }
     public sealed class ContentWitness(double height, bool selfScrolling=false) : FrameworkElement {
         public double NaturalHeight { get; set; } = height;
         public List<Windows.Foundation.Size> Constraints { get; }=[];
-        public override double ProjectedActualHeight => selfScrolling?DesiredSize.Height:NaturalHeight;
         protected override Windows.Foundation.Size MeasureOverride(Windows.Foundation.Size size) {
             Constraints.Add(size); return new(size.Width,selfScrolling?Math.Min(size.Height,NaturalHeight):NaturalHeight);
         }
+    }
+}
+namespace Microsoft.UI.Xaml.Controls.Primitives {
+    public static class LayoutInformation {
+        public static Windows.Foundation.Rect GetLayoutSlot(Microsoft.UI.Xaml.FrameworkElement element) => element.LayoutSlot;
     }
 }
 namespace Microsoft.UI.Xaml.Media {
