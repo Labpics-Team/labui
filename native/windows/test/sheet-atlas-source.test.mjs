@@ -23,9 +23,14 @@ test('Sheet graph shares the original backdrop and atlas with cell source edges'
   );
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
   assert.match(build, /string LayerSource\(int index\)\s*=>\s*\$"atlas\{index\}";/);
+  assert.match(build, /IGraphicsEffectSource\[\] layerSources = new IGraphicsEffectSource\[atlas\.CellCount\];/);
   assert.match(
     build,
-    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\(LayerSource\(index\)\)/,
+    /for \(var index = 0; index < layerSources\.Length; index\+\+\) layerSources\[index\] = Source\(LayerSource\(index\)\);/,
+  );
+  assert.match(
+    build,
+    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = layerSources\[index\]/,
   );
   assert.match(
     build,

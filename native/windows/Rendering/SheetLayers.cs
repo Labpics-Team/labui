@@ -326,9 +326,11 @@ public sealed class SheetLayers : Grid
             IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
             string LayerSource(int index) => $"atlas{index}";
+            IGraphicsEffectSource[] layerSources = new IGraphicsEffectSource[atlas.CellCount];
+            for (var index = 0; index < layerSources.Length; index++) layerSources[index] = Source(LayerSource(index));
             IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
             {
-                Source = Source(LayerSource(index)),
+                Source = layerSources[index],
                 TransformMatrix = atlas.Cell(index).EffectTransform,
                 InterpolationMode = CanvasImageInterpolation.Linear,
                 BorderMode = EffectBorderMode.Soft,
