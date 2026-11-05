@@ -8,6 +8,7 @@ internal static class SheetSourceTopology
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
+    internal const string TransformsDataKey = "LabUI.SheetFactoryTransforms";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -62,6 +63,32 @@ internal static class SheetSourceTopology
                 var operation = Known(rawOperation, "factory", "brush", "binding");
                 return name is not null && operation is not null
                     ? new() { ["name"] = name, ["operation"] = operation } : null;
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    // Вместе с borrowed Transform2D sampler удаляется после RCA/owner fix.
+    internal static Dictionary<string, object?>[]? ReadTransforms(Exception? error)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(TransformsDataKey)) continue;
+                if (error.Data[TransformsDataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
+                    return null;
+                var projected = new Dictionary<string, object?>[2];
+                for (var index = 0; index < 2; index++)
+                {
+                    var row = rows[index];
+                    if (row is null || row.Count != 2 || !row.TryGetValue("hresult", out var hresult)
+                        || !row.TryGetValue("cleanupHresult", out var cleanupHresult)
+                        || hresult is not (null or int) || cleanupHresult is not (null or int)) return null;
+                    projected[index] = new() { ["hresult"] = hresult, ["cleanupHresult"] = cleanupHresult };
+                }
+                return projected;
             }
         }
         catch { }

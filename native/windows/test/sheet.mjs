@@ -151,6 +151,29 @@ function factoryInfo(value) {
   const operation = known(value.operation, ['factory', 'brush', 'binding']);
   return name !== null && operation !== null ? { name, operation } : null;
 }
+
+function transformsInfo(value) {
+  if (!Array.isArray(value) || value.length !== 2) return null;
+  const integerOrNull = (input) =>
+    input === null || (Number.isInteger(input) && input >= -2147483648 && input <= 2147483647);
+  const rows = [];
+  for (const row of value) {
+    if (
+      row === null ||
+      typeof row !== 'object' ||
+      Array.isArray(row) ||
+      Object.keys(row).length !== 2 ||
+      !Object.hasOwn(row, 'hresult') ||
+      !Object.hasOwn(row, 'cleanupHresult') ||
+      !integerOrNull(row.hresult) ||
+      !integerOrNull(row.cleanupHresult)
+    )
+      return null;
+    rows.push({ hresult: row.hresult, cleanupHresult: row.cleanupHresult });
+  }
+  return rows;
+}
+
 function observationError(value) {
   if (value === null) return null;
   if (typeof value === 'string') return 'reported';
@@ -232,6 +255,7 @@ function observationError(value) {
       : {}),
     ...(Object.hasOwn(value, 'topology') ? { topology: topologyInfo(value.topology) } : {}),
     ...(Object.hasOwn(value, 'factory') ? { factory: factoryInfo(value.factory) } : {}),
+    ...(Object.hasOwn(value, 'transforms') ? { transforms: transformsInfo(value.transforms) } : {}),
   };
 }
 
