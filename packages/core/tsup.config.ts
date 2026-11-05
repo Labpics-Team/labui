@@ -1,6 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { libraryPreset } from '../../tsup.config.base';
+import packageManifest from './package.json' with { type: 'json' };
 import { discoverComponents } from './scripts/discover-components';
 
 /**
@@ -21,6 +22,9 @@ const behaviorEntries = readdirSync(new URL('./src/behaviors', import.meta.url))
   .sort()
   .map((name) => `src/behaviors/${name}`);
 const configureEsbuild = libraryPreset().esbuildOptions;
+const bundledZagTypes = Object.keys(packageManifest.devDependencies).filter((name) =>
+  name.startsWith('@zag-js/'),
+);
 
 export default libraryPreset({
   entry: [
@@ -38,9 +42,9 @@ export default libraryPreset({
   metafile: true,
   // tsup 8.3.6 теряет основание унаследованных paths при подготовке DTS options.
   dts: {
-    // Dialog — build dependency: runtime и расширенные типы входят в Core.
-    // tsup сохраняет production dependencies внешними также при dts.resolve.
-    resolve: ['@zag-js/dialog'],
+    // Runtime и типы build dependencies входят в Core, включая исправления Popper.
+    // Production/peer dependencies сохраняют canonical Service/Collection identity.
+    resolve: bundledZagTypes,
     compilerOptions: { baseUrl: fileURLToPath(new URL('../../', import.meta.url)) },
   },
   esbuildOptions(options, context) {
@@ -51,5 +55,6 @@ export default libraryPreset({
     }
   },
   external: ['@labpics/ui-core', /^@lit-labs\//, 'lit'],
-  noExternal: [/^@zag-js\//],
+  // Публичные типы Floating UI имеют прямую dependency; JS сохраняет прежний bundle.
+  noExternal: [/^@zag-js\//, '@floating-ui/dom'],
 });

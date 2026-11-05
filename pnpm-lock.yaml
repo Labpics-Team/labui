@@ -35,6 +35,9 @@ patchedDependencies:
   '@zag-js/menu@1.41.2':
     hash: 93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f
     path: patches/@zag-js__menu@1.41.2.patch
+  '@zag-js/popper@1.41.2':
+    hash: 3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5
+    path: patches/@zag-js__popper@1.41.2.patch
   tsup@8.3.6:
     hash: bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6
     path: patches/tsup@8.3.6.patch
@@ -205,6 +208,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@floating-ui/dom':
+        specifier: 1.7.6
+        version: 1.7.6
       '@labpics/motion':
         specifier: 0.5.0
         version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
@@ -226,7 +232,7 @@ importers:
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/combobox':
+      '@zag-js/collection':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/core':
@@ -235,9 +241,6 @@ importers:
       '@zag-js/dismissable':
         specifier: 1.41.2
         version: 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
-      '@zag-js/menu':
-        specifier: 1.41.2
-        version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)
       '@zag-js/number-input':
         specifier: 1.41.2
         version: 1.41.2
@@ -247,16 +250,10 @@ importers:
       '@zag-js/pin-input':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/popover':
-        specifier: 1.41.2
-        version: 1.41.2
       '@zag-js/progress':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/radio-group':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/select':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/slider':
@@ -272,9 +269,6 @@ importers:
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/toggle':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/tooltip':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/types':
@@ -299,9 +293,36 @@ importers:
       '@lit-labs/ssr-client':
         specifier: 1.1.8
         version: 1.1.8
+      '@zag-js/combobox':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/dialog':
         specifier: 1.41.2
         version: 1.41.2(patch_hash=f62a0e546f8acd1801208e965e5d29779b89aa4626577a70ecf3752fd33f105c)
+      '@zag-js/dom-query':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
+      '@zag-js/live-region':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/menu':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)
+      '@zag-js/popover':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/popper':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
+      '@zag-js/rect-utils':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/select':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/tooltip':
+        specifier: 1.41.2
+        version: 1.41.2
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -4703,7 +4724,7 @@ snapshots:
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/focus-visible': 1.41.2
       '@zag-js/live-region': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4756,7 +4777,7 @@ snapshots:
       '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/focus-visible': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/rect-utils': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
@@ -4794,12 +4815,12 @@ snapshots:
       '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/focus-trap': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/remove-scroll': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/popper@1.41.2':
+  '@zag-js/popper@1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)':
     dependencies:
       '@floating-ui/dom': 1.7.6
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
@@ -4845,7 +4866,7 @@ snapshots:
       '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/focus-visible': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4903,7 +4924,7 @@ snapshots:
       '@zag-js/core': 1.41.2
       '@zag-js/dom-query': 1.41.2(patch_hash=55c88034e16932204ae3460d4af5287e421a9ec472eaaf9d2f4ea1b27cfb3eb3)
       '@zag-js/focus-visible': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
