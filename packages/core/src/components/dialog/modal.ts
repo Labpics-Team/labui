@@ -1,5 +1,5 @@
-import * as dialogMachine from '@zag-js/dialog';
 import { type PropertyDeclarations, type TemplateResult, css, html, render } from 'lit';
+import * as dialogMachine from '../../behaviors/dialog.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -13,7 +13,7 @@ let instanceSequence = 0;
 /**
  * Общий владелец модальности Dialog и Sheet. Manual popover сохраняет CSS-предков
  * и выводит поверхность из clipping/transform; Zag владеет закрытием и фокусом.
- * Физически перенесённые узлы остаются в поддереве trap, маркеры — у потребителя.
+ * Слоты сохраняют DOM, стили и обработчики содержимого в дереве потребителя.
  */
 export abstract class LabModal extends LabElement {
   static override properties: PropertyDeclarations = {
@@ -52,7 +52,7 @@ export abstract class LabModal extends LabElement {
     );
   }
 
-  /** Вызывается после переноса контента и применения актуальных Zag props. */
+  /** Вызывается после проекции слотов и применения актуальных Zag props. */
   protected afterFloatingUpdate(_root: ShadowRoot, _open: boolean): void {}
 
   protected completeFailedDialogFocus(): void {
@@ -68,8 +68,6 @@ export abstract class LabModal extends LabElement {
   private readonly machineCtl: ZagController<DialogSchema, dialogMachine.Api>;
   private portalHost?: HTMLElement;
   private portalRoot?: ShadowRoot;
-  private bodyMount?: HTMLElement;
-  private readonly origins = new Map<Element, Comment>();
   private contextObserver?: MutationObserver;
   private contentObserver?: MutationObserver;
 
@@ -92,12 +90,6 @@ export abstract class LabModal extends LabElement {
       // Trigger остаётся в другом shadow root. Заг передаёт ссылку focus trap,
       // а не пытается повторно искать её в portal root.
       finalFocusEl: () => this.finalFocusTarget(),
-      onRequestDismiss: (event) => {
-        // Zag считает вложенными все более поздние слои. Каскад закрывает только
-        // потомка исходного modal с учётом shadow root и slot.
-        const parent = event.detail.targetLayer;
-        if (parent && !this.contextAncestors().includes(parent)) event.preventDefault();
-      },
       onOpenChange: (details) => this.onDialogOpenChange(details),
     }));
   }
@@ -113,6 +105,10 @@ export abstract class LabModal extends LabElement {
         node.matches('[data-scope="dialog"][data-part="content"][data-state="open"]')
       )
         return { active, content: node };
+      if (node instanceof Element && node.assignedSlot) {
+        node = node.assignedSlot;
+        continue;
+      }
       node = node instanceof ShadowRoot ? node.host : node.parentNode;
     }
   }
@@ -176,7 +172,7 @@ export abstract class LabModal extends LabElement {
     super.connectedCallback();
     this.contextObserver = new MutationObserver(() => this.requestUpdate());
     this.contentObserver = new MutationObserver(() => this.requestUpdate());
-    // Удаление origin-маркера не вызывает slotchange: content уже перенесён.
+    // Изменения внутри стабильного slot wrapper тоже меняют содержимое панели.
     this.contentObserver.observe(this, {
       childList: true,
       subtree: true,
@@ -194,16 +190,7 @@ export abstract class LabModal extends LabElement {
     try {
       super.disconnectedCallback();
     } finally {
-      for (const [node, marker] of this.origins) {
-        if (marker.parentNode === this && node.parentNode === this.bodyMount) {
-          marker.replaceWith(node);
-        } else {
-          marker.remove();
-        }
-      }
-      this.origins.clear();
       if (this.portalRoot) render(null, this.portalRoot);
-      this.bodyMount = undefined;
     }
   }
 
@@ -258,31 +245,6 @@ export abstract class LabModal extends LabElement {
     }
   }
 
-  private relocateBody(): void {
-    if (!this.bodyMount) return;
-    for (const [node, marker] of this.origins) {
-      if (
-        marker.parentNode === this &&
-        node.parentNode === this.bodyMount &&
-        node.getAttribute('slot') === 'content'
-      )
-        continue;
-      if (marker.parentNode === this && node.parentNode === this.bodyMount) {
-        marker.replaceWith(node);
-      }
-      if (node.parentNode === this.bodyMount) node.remove();
-      marker.remove();
-      this.origins.delete(node);
-    }
-    for (const node of [...this.children]) {
-      if (node.getAttribute('slot') !== 'content') continue;
-      const marker = this.ownerDocument.createComment('lab-modal-content');
-      node.replaceWith(marker);
-      this.origins.set(node, marker);
-      this.bodyMount.append(node);
-    }
-  }
-
   override updated(): void {
     // Уже поставленный Lit update может исполниться после disconnect.
     if (!this.isConnected) return;
@@ -295,17 +257,6 @@ export abstract class LabModal extends LabElement {
     for (const [attribute, value] of Object.entries(this.portalAttributes)) {
       this.portalHost?.setAttribute(attribute, value);
     }
-    this.bodyMount = root.querySelector<HTMLElement>('.body') ?? undefined;
-    this.relocateBody();
-    if (this.bodyMount) {
-      this.contentObserver?.observe(this.bodyMount, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['slot'],
-      });
-    }
-
     this.machineCtl.clearSpreads();
     const api = this.machineCtl.api;
     const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
@@ -334,8 +285,9 @@ export abstract class LabModal extends LabElement {
   override render(): TemplateResult {
     return html`
       <button class="trigger" type="button" part="trigger"><slot></slot></button>
-      <slot name="content" hidden aria-hidden="true" @slotchange=${this.contentSlotChanged}></slot>
-      <div class="portal-plane" popover="manual"></div>
+      <div class="portal-plane" popover="manual">
+        <slot name="content" slot="content" @slotchange=${this.contentSlotChanged}></slot>
+      </div>
     `;
   }
 

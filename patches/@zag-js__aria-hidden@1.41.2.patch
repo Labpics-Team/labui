@@ -1,0 +1,276 @@
+diff --git a/dist/walk-tree-outside.js b/dist/walk-tree-outside.js
+index 0043f7fb98fcf49a9cfb9f639d90e5c4c2ed9258..90c7f47df711000ab0a507377fb87161854a09b6 100644
+--- a/dist/walk-tree-outside.js
++++ b/dist/walk-tree-outside.js
+@@ -1,4 +1,3 @@
+-"use strict";
+ var __defProp = Object.defineProperty;
+ var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+ var __getOwnPropNames = Object.getOwnPropertyNames;
+@@ -16,20 +15,18 @@ var __copyProps = (to, from, except, desc) => {
+   return to;
+ };
+ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+-
+-// src/walk-tree-outside.ts
+-var walk_tree_outside_exports = {};
+-__export(walk_tree_outside_exports, {
++var stdin_exports = {};
++__export(stdin_exports, {
+   walkTreeOutside: () => walkTreeOutside
+ });
+-module.exports = __toCommonJS(walk_tree_outside_exports);
++module.exports = __toCommonJS(stdin_exports);
+ var import_dom_query = require("@zag-js/dom-query");
+-var counterMap = /* @__PURE__ */ new WeakMap();
+-var uncontrolledNodes = /* @__PURE__ */ new WeakMap();
+-var markerMap = {};
+-var lockCount = 0;
+-var unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
+-var correctTargets = (parent, targets) => targets.map((target) => {
++let counterMap = /* @__PURE__ */ new WeakMap();
++let uncontrolledNodes = /* @__PURE__ */ new WeakMap();
++let markerMap = {};
++let lockCount = 0;
++const unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
++const correctTargets = (parent, targets) => targets.map((target) => {
+   if (parent.contains(target)) return target;
+   const correctedTarget = unwrapHost(target);
+   if (correctedTarget && parent.contains(correctedTarget)) {
+@@ -38,17 +35,19 @@ var correctTargets = (parent, targets) => targets.map((target) => {
+   console.error("[zag-js > ariaHidden] target", target, "in not contained inside", parent, ". Doing nothing");
+   return null;
+ }).filter((x) => Boolean(x));
+-var ignoreableNodes = /* @__PURE__ */ new Set(["script", "output", "status", "next-route-announcer"]);
+-var isIgnoredNode = (node) => {
++const ignoreableNodes = /* @__PURE__ */ new Set(["script", "output", "status", "next-route-announcer"]);
++const isIgnoredNode = (node) => {
+   if (ignoreableNodes.has(node.localName)) return true;
+   if (node.role === "status") return true;
+   if (node.hasAttribute("aria-live")) return true;
+   return node.matches("[data-live-announcer]");
+ };
+-var walkTreeOutside = (originalTarget, props) => {
++const applyAttributeToOthers = (allTargets, props) => {
+   const { parentNode, markerName, controlAttribute, explicitBooleanValue, followControlledElements = true } = props;
+-  const targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
+-  markerMap[markerName] || (markerMap[markerName] = /* @__PURE__ */ new WeakMap());
++  const targets = allTargets.filter((target) => parentNode.contains(target));
++  if (!targets.length) return () => {
++  };
++  markerMap[markerName] ||= /* @__PURE__ */ new WeakMap();
+   const markerCounter = markerMap[markerName];
+   const hiddenNodes = [];
+   const elementsToKeep = /* @__PURE__ */ new Set();
+@@ -63,6 +62,7 @@ var walkTreeOutside = (originalTarget, props) => {
+     if (followControlledElements && (0, import_dom_query.isHTMLElement)(target)) {
+       (0, import_dom_query.findControlledElements)(target, (controlledElement) => {
+         keep(controlledElement);
++        elementsToStop.add(controlledElement);
+       });
+     }
+   });
+@@ -126,7 +126,70 @@ var walkTreeOutside = (originalTarget, props) => {
+     }
+   };
+ };
+-// Annotate the CommonJS export names for ESM import in node:
+-0 && (module.exports = {
+-  walkTreeOutside
+-});
++function createLockStack() {
++  const locks = [];
++  return {
++    add(lock) {
++      locks[locks.length - 1]?.pause();
++      locks.push(lock);
++      lock.resume();
++    },
++    remove(lock) {
++      const index = locks.indexOf(lock);
++      if (index === -1) return;
++      const isTop = index === locks.length - 1;
++      locks.splice(index, 1);
++      if (!isTop) return;
++      lock.pause();
++      locks[locks.length - 1]?.resume();
++    }
++  };
++}
++const lockStacks = /* @__PURE__ */ new WeakMap();
++const getLockStack = (doc) => {
++  let stack = lockStacks.get(doc);
++  if (!stack) {
++    stack = createLockStack();
++    lockStacks.set(doc, stack);
++  }
++  return stack;
++};
++const walkTreeOutside = (originalTarget, props) => {
++  const { parentNode, controlAttribute, explicitBooleanValue, followControlledElements = true } = props;
++  const targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
++  if (!targets.length) return () => {
++  };
++  const hiddenSelector = explicitBooleanValue ? `[${controlAttribute}="true"]` : `[${controlAttribute}]`;
++  let undo;
++  let observer;
++  const apply = () => {
++    const prevUndo = undo;
++    undo = applyAttributeToOthers(targets, props);
++    prevUndo?.();
++  };
++  const release = () => {
++    undo?.();
++    undo = void 0;
++  };
++  const isVisibleController = (record) => !record.target.closest(hiddenSelector);
++  const lock = {
++    pause() {
++      observer?.disconnect();
++      observer = void 0;
++      release();
++    },
++    resume() {
++      apply();
++      if (!followControlledElements) return;
++      const win = parentNode.ownerDocument.defaultView;
++      if (!win?.MutationObserver) return;
++      observer = new win.MutationObserver((records) => {
++        if (records.some(isVisibleController)) apply();
++      });
++      observer.observe(parentNode, { attributes: true, attributeFilter: ["aria-expanded"], subtree: true });
++    }
++  };
++  const lockStack = getLockStack(parentNode.ownerDocument);
++  lockStack.add(lock);
++  return () => lockStack.remove(lock);
++};
+diff --git a/dist/walk-tree-outside.mjs b/dist/walk-tree-outside.mjs
+index a5705a6fc49af7bc9c716a9835ae89a60665b114..b05cdcfe06b5b6c67cc7a0167f9ac47725f85007 100644
+--- a/dist/walk-tree-outside.mjs
++++ b/dist/walk-tree-outside.mjs
+@@ -1,11 +1,10 @@
+-// src/walk-tree-outside.ts
+ import { findControlledElements, isHTMLElement } from "@zag-js/dom-query";
+-var counterMap = /* @__PURE__ */ new WeakMap();
+-var uncontrolledNodes = /* @__PURE__ */ new WeakMap();
+-var markerMap = {};
+-var lockCount = 0;
+-var unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
+-var correctTargets = (parent, targets) => targets.map((target) => {
++let counterMap = /* @__PURE__ */ new WeakMap();
++let uncontrolledNodes = /* @__PURE__ */ new WeakMap();
++let markerMap = {};
++let lockCount = 0;
++const unwrapHost = (node) => node && (node.host || unwrapHost(node.parentNode));
++const correctTargets = (parent, targets) => targets.map((target) => {
+   if (parent.contains(target)) return target;
+   const correctedTarget = unwrapHost(target);
+   if (correctedTarget && parent.contains(correctedTarget)) {
+@@ -14,17 +13,19 @@ var correctTargets = (parent, targets) => targets.map((target) => {
+   console.error("[zag-js > ariaHidden] target", target, "in not contained inside", parent, ". Doing nothing");
+   return null;
+ }).filter((x) => Boolean(x));
+-var ignoreableNodes = /* @__PURE__ */ new Set(["script", "output", "status", "next-route-announcer"]);
+-var isIgnoredNode = (node) => {
++const ignoreableNodes = /* @__PURE__ */ new Set(["script", "output", "status", "next-route-announcer"]);
++const isIgnoredNode = (node) => {
+   if (ignoreableNodes.has(node.localName)) return true;
+   if (node.role === "status") return true;
+   if (node.hasAttribute("aria-live")) return true;
+   return node.matches("[data-live-announcer]");
+ };
+-var walkTreeOutside = (originalTarget, props) => {
++const applyAttributeToOthers = (allTargets, props) => {
+   const { parentNode, markerName, controlAttribute, explicitBooleanValue, followControlledElements = true } = props;
+-  const targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
+-  markerMap[markerName] || (markerMap[markerName] = /* @__PURE__ */ new WeakMap());
++  const targets = allTargets.filter((target) => parentNode.contains(target));
++  if (!targets.length) return () => {
++  };
++  markerMap[markerName] ||= /* @__PURE__ */ new WeakMap();
+   const markerCounter = markerMap[markerName];
+   const hiddenNodes = [];
+   const elementsToKeep = /* @__PURE__ */ new Set();
+@@ -39,6 +40,7 @@ var walkTreeOutside = (originalTarget, props) => {
+     if (followControlledElements && isHTMLElement(target)) {
+       findControlledElements(target, (controlledElement) => {
+         keep(controlledElement);
++        elementsToStop.add(controlledElement);
+       });
+     }
+   });
+@@ -102,6 +104,73 @@ var walkTreeOutside = (originalTarget, props) => {
+     }
+   };
+ };
++function createLockStack() {
++  const locks = [];
++  return {
++    add(lock) {
++      locks[locks.length - 1]?.pause();
++      locks.push(lock);
++      lock.resume();
++    },
++    remove(lock) {
++      const index = locks.indexOf(lock);
++      if (index === -1) return;
++      const isTop = index === locks.length - 1;
++      locks.splice(index, 1);
++      if (!isTop) return;
++      lock.pause();
++      locks[locks.length - 1]?.resume();
++    }
++  };
++}
++const lockStacks = /* @__PURE__ */ new WeakMap();
++const getLockStack = (doc) => {
++  let stack = lockStacks.get(doc);
++  if (!stack) {
++    stack = createLockStack();
++    lockStacks.set(doc, stack);
++  }
++  return stack;
++};
++const walkTreeOutside = (originalTarget, props) => {
++  const { parentNode, controlAttribute, explicitBooleanValue, followControlledElements = true } = props;
++  const targets = correctTargets(parentNode, Array.isArray(originalTarget) ? originalTarget : [originalTarget]);
++  if (!targets.length) return () => {
++  };
++  const hiddenSelector = explicitBooleanValue ? `[${controlAttribute}="true"]` : `[${controlAttribute}]`;
++  let undo;
++  let observer;
++  const apply = () => {
++    const prevUndo = undo;
++    undo = applyAttributeToOthers(targets, props);
++    prevUndo?.();
++  };
++  const release = () => {
++    undo?.();
++    undo = void 0;
++  };
++  const isVisibleController = (record) => !record.target.closest(hiddenSelector);
++  const lock = {
++    pause() {
++      observer?.disconnect();
++      observer = void 0;
++      release();
++    },
++    resume() {
++      apply();
++      if (!followControlledElements) return;
++      const win = parentNode.ownerDocument.defaultView;
++      if (!win?.MutationObserver) return;
++      observer = new win.MutationObserver((records) => {
++        if (records.some(isVisibleController)) apply();
++      });
++      observer.observe(parentNode, { attributes: true, attributeFilter: ["aria-expanded"], subtree: true });
++    }
++  };
++  const lockStack = getLockStack(parentNode.ownerDocument);
++  lockStack.add(lock);
++  return () => lockStack.remove(lock);
++};
+ export {
+   walkTreeOutside
+ };

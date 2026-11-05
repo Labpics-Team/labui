@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 const host = (page: Page, id = 'sheet') => page.getByTestId(id);
 const portal = (page: Page, id = 'sheet') => page.locator(`[data-portal-for="${id}"]`);
@@ -30,9 +31,7 @@ declare global {
 }
 
 async function inside(page: Page, id = 'sheet'): Promise<boolean> {
-  return portal(page, id).evaluate(
-    (element) => element.shadowRoot?.activeElement?.closest('.content') != null,
-  );
+  return (await portal(page, id).evaluate(modalFocus)).inside;
 }
 
 async function setup(page: Page, active = false): Promise<void> {

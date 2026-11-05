@@ -1,0 +1,515 @@
+diff --git a/dist/controller.js b/dist/controller.js
+index 2b584a202243620e2691243e9db346bc2e4aa0ae..664cbdfcf4f401b67a909af14ff1192e98f56b07 100644
+--- a/dist/controller.js
++++ b/dist/controller.js
+@@ -33,55 +33,51 @@ var import_node = require("./node.js");
+ var INTERACTIVE_CONTAINER_ROLE = /* @__PURE__ */ new Set(["menu", "listbox", "dialog", "grid", "tree", "region", "application"]);
+ var isInteractiveContainerRole = (role) => INTERACTIVE_CONTAINER_ROLE.has(role);
+ var getAriaControls = (element) => element.getAttribute("aria-controls")?.split(" ") || [];
+-function isControlledElement(container, element) {
+-  const visitedIds = /* @__PURE__ */ new Set();
+-  const rootNode = (0, import_node.getRootNode)(container);
+-  const checkElement = (searchRoot) => {
+-    const controllingElements = searchRoot.querySelectorAll("[aria-controls]");
+-    for (const controller of controllingElements) {
+-      if (controller.getAttribute("aria-expanded") !== "true") continue;
+-      const controlledIds = getAriaControls(controller);
+-      for (const id of controlledIds) {
+-        if (!id || visitedIds.has(id)) continue;
+-        visitedIds.add(id);
+-        const controlledElement = rootNode.getElementById(id);
+-        if (controlledElement) {
+-          const role = controlledElement.getAttribute("role");
+-          const modal = controlledElement.getAttribute("aria-modal") === "true";
+-          if (role && isInteractiveContainerRole(role) && !modal) {
+-            if (controlledElement === element || controlledElement.contains(element)) {
+-              return true;
+-            }
+-            if (checkElement(controlledElement)) {
+-              return true;
+-            }
+-          }
+-        }
+-      }
++function getControllerTarget(controller, id) {
++  const root = controller.getRootNode();
++  if (root.getElementById) return root.getElementById(id);
++  if (root.id === id) return root;
++  return Array.from(root.querySelectorAll("[id]")).find((element) => element.id === id);
++}
++function getControllerNodes(root) {
++  const controllers = [];
++  const visited = new Set();
++  const visit = (element) => {
++    if (visited.has(element)) return;
++    visited.add(element);
++    if (element.hasAttribute("aria-controls")) controllers.push(element);
++    if (element.localName === "slot") {
++      const assigned = element.assignedElements({ flatten: true });
++      (assigned.length ? assigned : Array.from(element.children)).forEach(visit);
++      return;
+     }
+-    return false;
++    Array.from((element.shadowRoot || element).children).forEach(visit);
+   };
+-  return checkElement(container);
++  Array.from(root.children).forEach(visit);
++  return controllers;
++}
++function isControlledElement(container, element) {
++  let controlled = false;
++  findControlledElements(container, (target) => {
++    if ((0, import_node.contains)(target, element)) controlled = true;
++  });
++  return controlled;
+ }
+ function findControlledElements(searchRoot, callback) {
+-  const rootNode = (0, import_node.getRootNode)(searchRoot);
+-  const visitedIds = /* @__PURE__ */ new Set();
++  const visited = new Set();
+   const findRecursive = (root) => {
+-    const controllingElements = root.querySelectorAll("[aria-controls]");
+-    for (const controller of controllingElements) {
++    for (const controller of getControllerNodes(root)) {
+       if (controller.getAttribute("aria-expanded") !== "true") continue;
+-      const controlledIds = getAriaControls(controller);
+-      for (const id of controlledIds) {
+-        if (!id || visitedIds.has(id)) continue;
+-        visitedIds.add(id);
+-        const controlledElement = rootNode.getElementById(id);
+-        if (controlledElement) {
+-          const role = controlledElement.getAttribute("role");
+-          const modal = controlledElement.getAttribute("aria-modal") === "true";
+-          if (role && INTERACTIVE_CONTAINER_ROLE.has(role) && !modal) {
+-            callback(controlledElement);
+-            findRecursive(controlledElement);
+-          }
++      for (const id of getAriaControls(controller)) {
++        if (!id) continue;
++        const controlledElement = getControllerTarget(controller, id);
++        if (!controlledElement || visited.has(controlledElement)) continue;
++        visited.add(controlledElement);
++        const role = controlledElement.getAttribute("role");
++        const modal = controlledElement.getAttribute("aria-modal") === "true";
++        if (role && INTERACTIVE_CONTAINER_ROLE.has(role) && !modal) {
++          callback(controlledElement);
++          findRecursive(controlledElement);
+         }
+       }
+     }
+@@ -91,7 +87,7 @@ function findControlledElements(searchRoot, callback) {
+ function getControlledElements(container) {
+   const controlledElements = /* @__PURE__ */ new Set();
+   findControlledElements(container, (controlledElement) => {
+-    if (!container.contains(controlledElement)) {
++    if (!(0, import_node.contains)(container, controlledElement)) {
+       controlledElements.add(controlledElement);
+     }
+   });
+@@ -105,16 +101,15 @@ function isControllerElement(element) {
+   return element.hasAttribute("aria-controls") && element.getAttribute("aria-expanded") === "true";
+ }
+ function hasControllerElements(element) {
+-  if (isControllerElement(element)) return true;
+-  return Boolean(element.querySelector?.('[aria-controls][aria-expanded="true"]'));
++  return isControllerElement(element) || getControllerNodes(element).some(isControllerElement);
+ }
+ function isControlledByExpandedController(element) {
+-  if (!element.id) return false;
+-  const rootNode = (0, import_node.getRootNode)(element);
+-  const escapedId = CSS.escape(element.id);
+-  const selector = `[aria-controls~="${escapedId}"][aria-expanded="true"], [aria-controls="${escapedId}"][aria-expanded="true"]`;
+-  const controller = rootNode.querySelector(selector);
+-  return Boolean(controller && isInteractiveContainerElement(element));
++  if (!element.id || !isInteractiveContainerElement(element)) return false;
++  return getControllerNodes(element.getRootNode()).some((controller) =>
++    isControllerElement(controller) && getAriaControls(controller).some((id) =>
++      id && getControllerTarget(controller, id) === element
++    )
++  );
+ }
+ // Annotate the CommonJS export names for ESM import in node:
+ 0 && (module.exports = {
+diff --git a/dist/controller.mjs b/dist/controller.mjs
+index 82ad74643c4454b597435fb49e373ba68564c1bb..4d578b3aeee209f54fe7e1053952648aeeeb5e83 100644
+--- a/dist/controller.mjs
++++ b/dist/controller.mjs
+@@ -3,57 +3,53 @@
+ // src/controller.ts
+-import { getRootNode } from "./node.mjs";
++import { contains } from "./node.mjs";
+ var INTERACTIVE_CONTAINER_ROLE = /* @__PURE__ */ new Set(["menu", "listbox", "dialog", "grid", "tree", "region", "application"]);
+ var isInteractiveContainerRole = (role) => INTERACTIVE_CONTAINER_ROLE.has(role);
+ var getAriaControls = (element) => element.getAttribute("aria-controls")?.split(" ") || [];
+-function isControlledElement(container, element) {
+-  const visitedIds = /* @__PURE__ */ new Set();
+-  const rootNode = getRootNode(container);
+-  const checkElement = (searchRoot) => {
+-    const controllingElements = searchRoot.querySelectorAll("[aria-controls]");
+-    for (const controller of controllingElements) {
+-      if (controller.getAttribute("aria-expanded") !== "true") continue;
+-      const controlledIds = getAriaControls(controller);
+-      for (const id of controlledIds) {
+-        if (!id || visitedIds.has(id)) continue;
+-        visitedIds.add(id);
+-        const controlledElement = rootNode.getElementById(id);
+-        if (controlledElement) {
+-          const role = controlledElement.getAttribute("role");
+-          const modal = controlledElement.getAttribute("aria-modal") === "true";
+-          if (role && isInteractiveContainerRole(role) && !modal) {
+-            if (controlledElement === element || controlledElement.contains(element)) {
+-              return true;
+-            }
+-            if (checkElement(controlledElement)) {
+-              return true;
+-            }
+-          }
+-        }
+-      }
++function getControllerTarget(controller, id) {
++  const root = controller.getRootNode();
++  if (root.getElementById) return root.getElementById(id);
++  if (root.id === id) return root;
++  return Array.from(root.querySelectorAll("[id]")).find((element) => element.id === id);
++}
++function getControllerNodes(root) {
++  const controllers = [];
++  const visited = new Set();
++  const visit = (element) => {
++    if (visited.has(element)) return;
++    visited.add(element);
++    if (element.hasAttribute("aria-controls")) controllers.push(element);
++    if (element.localName === "slot") {
++      const assigned = element.assignedElements({ flatten: true });
++      (assigned.length ? assigned : Array.from(element.children)).forEach(visit);
++      return;
+     }
+-    return false;
++    Array.from((element.shadowRoot || element).children).forEach(visit);
+   };
+-  return checkElement(container);
++  Array.from(root.children).forEach(visit);
++  return controllers;
++}
++function isControlledElement(container, element) {
++  let controlled = false;
++  findControlledElements(container, (target) => {
++    if (contains(target, element)) controlled = true;
++  });
++  return controlled;
+ }
+ function findControlledElements(searchRoot, callback) {
+-  const rootNode = getRootNode(searchRoot);
+-  const visitedIds = /* @__PURE__ */ new Set();
++  const visited = new Set();
+   const findRecursive = (root) => {
+-    const controllingElements = root.querySelectorAll("[aria-controls]");
+-    for (const controller of controllingElements) {
++    for (const controller of getControllerNodes(root)) {
+       if (controller.getAttribute("aria-expanded") !== "true") continue;
+-      const controlledIds = getAriaControls(controller);
+-      for (const id of controlledIds) {
+-        if (!id || visitedIds.has(id)) continue;
+-        visitedIds.add(id);
+-        const controlledElement = rootNode.getElementById(id);
+-        if (controlledElement) {
+-          const role = controlledElement.getAttribute("role");
+-          const modal = controlledElement.getAttribute("aria-modal") === "true";
+-          if (role && INTERACTIVE_CONTAINER_ROLE.has(role) && !modal) {
+-            callback(controlledElement);
+-            findRecursive(controlledElement);
+-          }
++      for (const id of getAriaControls(controller)) {
++        if (!id) continue;
++        const controlledElement = getControllerTarget(controller, id);
++        if (!controlledElement || visited.has(controlledElement)) continue;
++        visited.add(controlledElement);
++        const role = controlledElement.getAttribute("role");
++        const modal = controlledElement.getAttribute("aria-modal") === "true";
++        if (role && INTERACTIVE_CONTAINER_ROLE.has(role) && !modal) {
++          callback(controlledElement);
++          findRecursive(controlledElement);
+         }
+       }
+     }
+@@ -63,7 +59,7 @@ function findControlledElements(searchRoot, callback) {
+ function getControlledElements(container) {
+   const controlledElements = /* @__PURE__ */ new Set();
+   findControlledElements(container, (controlledElement) => {
+-    if (!container.contains(controlledElement)) {
++    if (!contains(container, controlledElement)) {
+       controlledElements.add(controlledElement);
+     }
+   });
+@@ -77,16 +73,15 @@ function isControllerElement(element) {
+   return element.hasAttribute("aria-controls") && element.getAttribute("aria-expanded") === "true";
+ }
+ function hasControllerElements(element) {
+-  if (isControllerElement(element)) return true;
+-  return Boolean(element.querySelector?.('[aria-controls][aria-expanded="true"]'));
++  return isControllerElement(element) || getControllerNodes(element).some(isControllerElement);
+ }
+ function isControlledByExpandedController(element) {
+-  if (!element.id) return false;
+-  const rootNode = getRootNode(element);
+-  const escapedId = CSS.escape(element.id);
+-  const selector = `[aria-controls~="${escapedId}"][aria-expanded="true"], [aria-controls="${escapedId}"][aria-expanded="true"]`;
+-  const controller = rootNode.querySelector(selector);
+-  return Boolean(controller && isInteractiveContainerElement(element));
++  if (!element.id || !isInteractiveContainerElement(element)) return false;
++  return getControllerNodes(element.getRootNode()).some((controller) =>
++    isControllerElement(controller) && getAriaControls(controller).some((id) =>
++      id && getControllerTarget(controller, id) === element
++    )
++  );
+ }
+ export {
+   findControlledElements,
+diff --git a/dist/node.js b/dist/node.js
+index 5458b69ed7138bb61833d3c3c6daecff956aaec3..2733aec46723e95b1de35557bbab3d7492978766 100644
+--- a/dist/node.js
++++ b/dist/node.js
+@@ -101,13 +101,10 @@ function contains(parent, child) {
+   if (!isHTMLElement(parent) || !isNode(child)) return false;
+   if (isHTMLElement(child) && parent === child) return true;
+   if (parent.contains(child)) return true;
+-  const rootNode = child.getRootNode?.();
+-  if (rootNode && isShadowRoot(rootNode)) {
+-    let next = child;
+-    while (next) {
+-      if (parent === next) return true;
+-      next = next.parentNode || next.host;
+-    }
++  let next = child;
++  while (next) {
++    if (parent === next) return true;
++    next = next.assignedSlot || next.parentNode || next.host;
+   }
+   return false;
+ }
+diff --git a/dist/node.mjs b/dist/node.mjs
+index 510ba84a480363cff649c2b24addc0026ceaec8c..c5f7f694c615504f270a643253e7bb3e2cb6b7da 100644
+--- a/dist/node.mjs
++++ b/dist/node.mjs
+@@ -57,13 +57,10 @@ function contains(parent, child) {
+   if (!isHTMLElement(parent) || !isNode(child)) return false;
+   if (isHTMLElement(child) && parent === child) return true;
+   if (parent.contains(child)) return true;
+-  const rootNode = child.getRootNode?.();
+-  if (rootNode && isShadowRoot(rootNode)) {
+-    let next = child;
+-    while (next) {
+-      if (parent === next) return true;
+-      next = next.parentNode || next.host;
+-    }
++  let next = child;
++  while (next) {
++    if (parent === next) return true;
++    next = next.assignedSlot || next.parentNode || next.host;
+   }
+   return false;
+ }
+diff --git a/dist/tabbable.js b/dist/tabbable.js
+index ae495242132d6147f2af8f6b8ccc14bddefc5e4b..3d4410c4a402b76e2b23f7f4aa7132836470914b 100644
+--- a/dist/tabbable.js
++++ b/dist/tabbable.js
+@@ -65,47 +65,30 @@ function getShadowRootForNode(element, getShadowRoot) {
+   const result = getShadowRoot(element);
+   return (result === true ? element.shadowRoot : result) || null;
+ }
+-function collectElementsWithShadowDOM(elements, getShadowRoot, filterFn) {
+-  const allElements = [...elements];
+-  const toProcess = [...elements];
+-  const processed = /* @__PURE__ */ new Set();
+-  const positionMap = /* @__PURE__ */ new Map();
+-  elements.forEach((el, i) => positionMap.set(el, i));
+-  let processIndex = 0;
+-  while (processIndex < toProcess.length) {
+-    const element = toProcess[processIndex++];
+-    if (!element || processed.has(element)) continue;
+-    processed.add(element);
+-    const shadowRoot = getShadowRootForNode(element, getShadowRoot);
+-    if (shadowRoot) {
+-      const shadowElements = Array.from(shadowRoot.querySelectorAll(focusableSelector)).filter(filterFn);
+-      const hostIndex = positionMap.get(element);
+-      if (hostIndex !== void 0) {
+-        const insertPosition = hostIndex + 1;
+-        allElements.splice(insertPosition, 0, ...shadowElements);
+-        shadowElements.forEach((el, i) => {
+-          positionMap.set(el, insertPosition + i);
+-        });
+-        for (let i = insertPosition + shadowElements.length; i < allElements.length; i++) {
+-          positionMap.set(allElements[i], i);
+-        }
+-      } else {
+-        const insertPosition = allElements.length;
+-        allElements.push(...shadowElements);
+-        shadowElements.forEach((el, i) => {
+-          positionMap.set(el, insertPosition + i);
+-        });
+-      }
+-      toProcess.push(...shadowElements);
++function getFocusableCandidates(container, getShadowRoot, tabbable = false) {
++  if (!getShadowRoot) return Array.from(container.querySelectorAll(focusableSelector));
++  const elements = [];
++  function visit(element) {
++    if (element.hasAttribute("inert")) return;
++    if (element.matches(focusableSelector)) elements.push(element);
++    if (element.localName === "slot") {
++      const assigned = element.assignedElements({ flatten: true });
++      const children = assigned.length ? assigned : Array.from(element.children);
++      children.forEach(visit);
++      return;
+     }
++    const shadowRoot = getShadowRootForNode(element, getShadowRoot);
++    if (shadowRoot && tabbable && hasNegativeTabIndex(element)) return;
++    Array.from((shadowRoot || element).children).forEach(visit);
+   }
+-  return allElements;
++  Array.from(container.children).forEach(visit);
++  return elements;
+ }
+ var focusableSelector = "input:not([type='hidden']):not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], button:not([disabled]), [tabindex], iframe, object, embed, area[href], audio[controls], video[controls], [contenteditable]:not([contenteditable='false']), details > summary:first-of-type";
+ var getFocusables = (container, options = {}) => {
+   if (!container) return [];
+   const { includeContainer = false, getShadowRoot } = options;
+-  const elements = Array.from(container.querySelectorAll(focusableSelector));
++  const elements = getFocusableCandidates(container, getShadowRoot);
+   const include = includeContainer == true || includeContainer == "if-empty" && elements.length === 0;
+   if (include && (0, import_node.isHTMLElement)(container) && isFocusable(container)) {
+     elements.unshift(container);
+@@ -120,9 +103,6 @@ var getFocusables = (container, options = {}) => {
+     }
+     focusableElements.push(element);
+   }
+-  if (getShadowRoot) {
+-    return collectElementsWithShadowDOM(focusableElements, getShadowRoot, isFocusable);
+-  }
+   return focusableElements;
+ };
+ function isFocusable(element) {
+@@ -136,7 +116,7 @@ function getFirstFocusable(container, options = {}) {
+ function getTabbables(container, options = {}) {
+   if (!container) return [];
+   const { includeContainer, getShadowRoot } = options;
+-  const elements = Array.from(container.querySelectorAll(focusableSelector));
++  const elements = getFocusableCandidates(container, getShadowRoot, true);
+   if (includeContainer && isTabbable(container)) {
+     elements.unshift(container);
+   }
+@@ -150,13 +130,6 @@ function getTabbables(container, options = {}) {
+     }
+     tabbableElements.push(element);
+   }
+-  if (getShadowRoot) {
+-    const allElements = collectElementsWithShadowDOM(tabbableElements, getShadowRoot, isTabbable);
+-    if (!allElements.length && includeContainer) {
+-      return elements;
+-    }
+-    return allElements;
+-  }
+   if (!tabbableElements.length && includeContainer) {
+     return elements;
+   }
+diff --git a/dist/tabbable.mjs b/dist/tabbable.mjs
+index cf792e73bb3d3095254ad58d5fa062803a1f5ca0..8028e1cf608bc50ed963cd1087b5bf2eb3cc95b0 100644
+--- a/dist/tabbable.mjs
++++ b/dist/tabbable.mjs
+@@ -34,47 +34,30 @@ function getShadowRootForNode(element, getShadowRoot) {
+   const result = getShadowRoot(element);
+   return (result === true ? element.shadowRoot : result) || null;
+ }
+-function collectElementsWithShadowDOM(elements, getShadowRoot, filterFn) {
+-  const allElements = [...elements];
+-  const toProcess = [...elements];
+-  const processed = /* @__PURE__ */ new Set();
+-  const positionMap = /* @__PURE__ */ new Map();
+-  elements.forEach((el, i) => positionMap.set(el, i));
+-  let processIndex = 0;
+-  while (processIndex < toProcess.length) {
+-    const element = toProcess[processIndex++];
+-    if (!element || processed.has(element)) continue;
+-    processed.add(element);
+-    const shadowRoot = getShadowRootForNode(element, getShadowRoot);
+-    if (shadowRoot) {
+-      const shadowElements = Array.from(shadowRoot.querySelectorAll(focusableSelector)).filter(filterFn);
+-      const hostIndex = positionMap.get(element);
+-      if (hostIndex !== void 0) {
+-        const insertPosition = hostIndex + 1;
+-        allElements.splice(insertPosition, 0, ...shadowElements);
+-        shadowElements.forEach((el, i) => {
+-          positionMap.set(el, insertPosition + i);
+-        });
+-        for (let i = insertPosition + shadowElements.length; i < allElements.length; i++) {
+-          positionMap.set(allElements[i], i);
+-        }
+-      } else {
+-        const insertPosition = allElements.length;
+-        allElements.push(...shadowElements);
+-        shadowElements.forEach((el, i) => {
+-          positionMap.set(el, insertPosition + i);
+-        });
+-      }
+-      toProcess.push(...shadowElements);
++function getFocusableCandidates(container, getShadowRoot, tabbable = false) {
++  if (!getShadowRoot) return Array.from(container.querySelectorAll(focusableSelector));
++  const elements = [];
++  function visit(element) {
++    if (element.hasAttribute("inert")) return;
++    if (element.matches(focusableSelector)) elements.push(element);
++    if (element.localName === "slot") {
++      const assigned = element.assignedElements({ flatten: true });
++      const children = assigned.length ? assigned : Array.from(element.children);
++      children.forEach(visit);
++      return;
+     }
++    const shadowRoot = getShadowRootForNode(element, getShadowRoot);
++    if (shadowRoot && tabbable && hasNegativeTabIndex(element)) return;
++    Array.from((shadowRoot || element).children).forEach(visit);
+   }
+-  return allElements;
++  Array.from(container.children).forEach(visit);
++  return elements;
+ }
+ var focusableSelector = "input:not([type='hidden']):not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], button:not([disabled]), [tabindex], iframe, object, embed, area[href], audio[controls], video[controls], [contenteditable]:not([contenteditable='false']), details > summary:first-of-type";
+ var getFocusables = (container, options = {}) => {
+   if (!container) return [];
+   const { includeContainer = false, getShadowRoot } = options;
+-  const elements = Array.from(container.querySelectorAll(focusableSelector));
++  const elements = getFocusableCandidates(container, getShadowRoot);
+   const include = includeContainer == true || includeContainer == "if-empty" && elements.length === 0;
+   if (include && isHTMLElement(container) && isFocusable(container)) {
+     elements.unshift(container);
+@@ -89,9 +72,6 @@ var getFocusables = (container, options = {}) => {
+     }
+     focusableElements.push(element);
+   }
+-  if (getShadowRoot) {
+-    return collectElementsWithShadowDOM(focusableElements, getShadowRoot, isFocusable);
+-  }
+   return focusableElements;
+ };
+ function isFocusable(element) {
+@@ -105,7 +85,7 @@ function getFirstFocusable(container, options = {}) {
+ function getTabbables(container, options = {}) {
+   if (!container) return [];
+   const { includeContainer, getShadowRoot } = options;
+-  const elements = Array.from(container.querySelectorAll(focusableSelector));
++  const elements = getFocusableCandidates(container, getShadowRoot, true);
+   if (includeContainer && isTabbable(container)) {
+     elements.unshift(container);
+   }
+@@ -119,13 +99,6 @@ function getTabbables(container, options = {}) {
+     }
+     tabbableElements.push(element);
+   }
+-  if (getShadowRoot) {
+-    const allElements = collectElementsWithShadowDOM(tabbableElements, getShadowRoot, isTabbable);
+-    if (!allElements.length && includeContainer) {
+-      return elements;
+-    }
+-    return allElements;
+-  }
+   if (!tabbableElements.length && includeContainer) {
+     return elements;
+   }

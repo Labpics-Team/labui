@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 test('отказ Motion dispose не удерживает портал, форму или модальность после disconnect', async ({
   page,
@@ -16,7 +17,7 @@ test('отказ Motion dispose не удерживает портал, форм
   await expect
     .poll(() => portal.locator('.content').evaluate((panel) => panel.getBoundingClientRect().top))
     .toBe(390);
-  await portal.locator('#name').fill('Сохранённая форма');
+  await page.getByTestId('sheet').locator('#name').fill('Сохранённая форма');
 
   const result = await portal.evaluate(async (portal) => {
     const element = document.getElementById('sheet');
@@ -75,15 +76,11 @@ test('отказ Motion dispose не удерживает портал, форм
   await expect.poll(() => pageErrors).toEqual(['Sheet: отказ очистки CSS при disconnect']);
   await expect(portal).toHaveCount(1);
   await expect(portal.locator('.content')).toBeVisible();
-  await expect(portal.locator('#name')).toHaveValue('Сохранённая форма');
+  await expect(page.getByTestId('sheet').locator('#name')).toHaveValue('Сохранённая форма');
   await expect
     .poll(() => portal.locator('.content').evaluate((panel) => panel.getBoundingClientRect().top))
     .toBe(390);
-  await expect
-    .poll(() =>
-      portal.evaluate((element) => element.shadowRoot?.activeElement?.closest('.content') != null),
-    )
-    .toBe(true);
+  await expect.poll(() => portal.evaluate(modalFocus).then((focus) => focus.inside)).toBe(true);
   await page.keyboard.press('Escape');
   await expect(portal.locator('.content')).toBeHidden();
   await expect(host.locator('.trigger')).toBeFocused();

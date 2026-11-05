@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { libraryPreset } from '../../tsup.config.base';
 import { discoverComponents } from './scripts/discover-components';
@@ -9,10 +10,15 @@ import { discoverComponents } from './scripts/discover-components';
  * Относительный импорт соседнего index снова позволит перенести эффект в chunk.
  * Проверка packed consumer охватывает входы и вложенные зависимости.
  *
- * Корень, SSR и hydration остаются отдельными входами. Zag и Lit внешние, поэтому
- * потребитель дедуплицирует их. Новые компоненты обнаруживаются без списка здесь.
+ * Корень, SSR и hydration остаются отдельными входами. Lit внешний. Поведения Zag
+ * входят в Core: поправки владельца доставляются в tarball, а общие chunks дают
+ * всем компонентам и React один dismissable layer и focus trap.
  */
 const componentEntries = discoverComponents().map(({ entry }) => entry);
+const behaviorEntries = readdirSync(new URL('./src/behaviors', import.meta.url))
+  .filter((name) => name.endsWith('.ts') && name !== 'types.ts')
+  .sort()
+  .map((name) => `src/behaviors/${name}`);
 const configureEsbuild = libraryPreset().esbuildOptions;
 
 export default libraryPreset({
@@ -23,8 +29,12 @@ export default libraryPreset({
     'src/hydrate/index.ts',
     'src/motion/index.ts',
     'src/proof/lab-proof.ts',
+    ...behaviorEntries,
     ...componentEntries,
   ],
+  // CJS также разделяет runtime между входами; отдельный bundle создаст второй stack.
+  splitting: true,
+  metafile: true,
   // tsup 8.3.6 теряет основание унаследованных paths при подготовке DTS options.
   dts: {
     compilerOptions: { baseUrl: fileURLToPath(new URL('../../', import.meta.url)) },
@@ -36,5 +46,6 @@ export default libraryPreset({
       options.define = { ...options.define, 'import.meta.url': 'undefined' };
     }
   },
-  external: ['@labpics/ui-core', /^@zag-js\//, /^@lit-labs\//, 'lit'],
+  external: ['@labpics/ui-core', /^@lit-labs\//, 'lit'],
+  noExternal: [/^@zag-js\//],
 });

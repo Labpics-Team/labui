@@ -9,14 +9,10 @@
  * CSS, not a second behaviour.
  *
  * ── The overlay canon (React half) — the trap is REAL here for free ──────────────
- * The floating layer renders into a `createPortal` at `document.body` and the dialog
- * body (`content`) is a React child of the portalled `.content` element. Because
- * React's portal moves the actual DOM into body, the body's focusables physically live
- * inside the content element's subtree that Zag's trap walks — so the modal trap
- * contains them with no caveat. This is exactly what the Lit twin reconstructs by
- * relocating its slotted body into a body portal; React gets it from `createPortal`.
- * The portal is gated on a `mounted` flag so the server emits nothing for it (a dialog
- * is client-only).
+ * React помещает content в document.body через createPortal; controls остаются
+ * потомками модальной поверхности. Lit проецирует consumer subtree через слоты.
+ * Оба рендерера используют поведение и общий focus runtime из Core.
+ * До mounted сервер не выводит клиентскую модальную поверхность.
  *
  * Client Component: a dialog is interactive (open state, focus, scroll-lock). It is a
  * leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
@@ -24,8 +20,8 @@
 'use client';
 
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
-import * as dialogMachine from '@zag-js/dialog';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';

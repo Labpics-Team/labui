@@ -23,7 +23,9 @@ it('отключение и повторное подключение сохра
 
   const firstPortal = dialog.shadowRoot?.querySelector('[data-portal-for="reconnected-dialog"]');
   expect(firstPortal?.isConnected).toBe(true);
-  expect(firstPortal?.shadowRoot?.querySelector('.body')?.firstElementChild).toBe(body);
+  expect(firstPortal?.shadowRoot?.querySelector('.body > slot[name="content"]')).toBeTruthy();
+  expect(body.parentNode).toBe(dialog);
+  expect(dialog.querySelector('input')).toBe(input);
 
   dialog.remove();
   expect(firstPortal?.isConnected).toBe(false);
@@ -37,6 +39,8 @@ it('отключение и повторное подключение сохра
   expect(
     dialog.shadowRoot?.querySelectorAll('[data-portal-for="reconnected-dialog"]'),
   ).toHaveLength(1);
-  expect(secondPortal?.shadowRoot?.querySelector('.body')?.firstElementChild).toBe(body);
+  expect(secondPortal?.shadowRoot?.querySelector('.body > slot[name="content"]')).toBeTruthy();
+  expect(body.parentNode).toBe(dialog);
+  expect(dialog.querySelector('input')).toBe(input);
   expect(input.value).toBe('несохранённый ввод');
 });

@@ -32,6 +32,7 @@
  */
 'use client';
 
+import * as comboboxMachine from '@labpics/ui-core/behaviors/combobox';
 import type {
   LabComboboxItem,
   LabComboboxPlacement,
@@ -48,7 +49,6 @@ import {
   fieldPartIds,
   filterComboboxItems,
 } from '@labpics/ui-core/shared';
-import * as comboboxMachine from '@zag-js/combobox';
 import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';

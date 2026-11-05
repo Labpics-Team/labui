@@ -114,7 +114,7 @@ export const dialogFloatingStyles = css`
     color: ${litVar('--lab-label-secondary')};
   }
 
-  /* The relocated dialog body — the consumer's slot="content" nodes are MOVED here. */
+  /* Содержимое остаётся в дереве потребителя и проецируется нативным slot. */
   .body {
     display: block;
   }
@@ -179,7 +179,7 @@ export class LabDialog extends LabModal {
               ? html`<p class="description" part="description">${this.description}</p>`
               : null
           }
-          <div class="body" part="body"></div>
+          <div class="body" part="body"><slot name="content"></slot></div>
           ${
             this.closable
               ? html`<button class="close" type="button" part="close-trigger" aria-label="Close">×</button>`

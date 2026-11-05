@@ -1,7 +1,7 @@
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import { materialCss } from '@labpics/ui-materials/css';
-import type * as dialogMachine from '@zag-js/dialog';
 import { type TemplateResult, css, html, unsafeCSS } from 'lit';
+import type * as dialogMachine from '../../behaviors/dialog.js';
 import { litVar } from '../../css.js';
 import { type SheetMotion, mountSheetMotion } from '../../motion/sheet.js';
 import { LabModal } from '../dialog/modal.js';
@@ -242,7 +242,7 @@ export class LabSheet extends LabModal {
                 `
                     : null
                 }
-                <div class="body" part="body"></div>
+                <div class="body" part="body"><slot name="content"></slot></div>
               </div>
               ${this.closable ? html`<button class="close" part="close-trigger" type="button" aria-label="Закрыть">×</button>` : null}
             </div>

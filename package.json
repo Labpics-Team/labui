@@ -46,6 +46,12 @@
       "undici@>=8 <8.12.2": "8.12.2",
       "astro@7.2.8>vite": "8.3.3",
       "zod@>=4 <4.6.6": "4.6.7"
+    },
+    "patchedDependencies": {
+      "@zag-js/dom-query@1.41.2": "patches/@zag-js__dom-query@1.41.2.patch",
+      "@zag-js/dismissable@1.41.2": "patches/@zag-js__dismissable@1.41.2.patch",
+      "@zag-js/menu@1.41.2": "patches/@zag-js__menu@1.41.2.patch",
+      "@zag-js/aria-hidden@1.41.2": "patches/@zag-js__aria-hidden@1.41.2.patch"
     }
   }
 }

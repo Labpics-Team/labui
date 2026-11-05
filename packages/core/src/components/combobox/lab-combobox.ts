@@ -7,6 +7,7 @@ import {
   fieldPartIds,
 } from '@labpics/ui-core/shared';
 import { type LabComboboxItem, filterComboboxItems } from '@labpics/ui-core/shared';
+import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
 /**
  * `<lab-combobox>` — a text input with a filterable listbox (autocomplete / typeahead).
  *
@@ -75,8 +76,7 @@ import { type LabComboboxItem, filterComboboxItems } from '@labpics/ui-core/shar
  * SSR (core-CONTRACT §7): a combobox is client-only. The server emits the labelled
  * input and a `hidden` listbox; the machine upgrades it on the client. No flash.
  */
-import * as comboboxMachine from '@zag-js/combobox';
-import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
+import * as comboboxMachine from '../../behaviors/combobox.js';
 import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 const host = (page: Page, id: string) => page.getByTestId(id);
 const portal = (page: Page, id: string) => page.locator(`[data-portal-for="${id}"]`);
@@ -9,9 +10,9 @@ async function open(page: Page, id: string): Promise<void> {
   await expect(content(page, id)).toBeVisible();
   await expect
     .poll(() =>
-      portal(page, id).evaluate(
-        (element) => element.shadowRoot?.activeElement?.closest('.content') != null,
-      ),
+      portal(page, id)
+        .evaluate(modalFocus)
+        .then((focus) => focus.inside),
     )
     .toBe(true);
 }
@@ -44,13 +45,11 @@ for (const id of ['sheet', 'dialog', 'alert']) {
     await expect(content(page, id)).toHaveCSS('font-family', 'monospace');
   });
 
-  test(`${id}: удаление origin через replaceChildren отзывает прежний content`, async ({
-    page,
-  }) => {
+  test(`${id}: replaceChildren отзывает прежнее содержимое потребителя`, async ({ page }) => {
     await open(page, id);
-    await expect(portal(page, id).locator(`#${id}-content`)).toBeVisible();
+    await expect(host(page, id).locator(`#${id}-content`)).toBeVisible();
     await host(page, id).evaluate((element) => element.replaceChildren('Открыть снова'));
-    await expect(portal(page, id).locator(`#${id}-content`)).toHaveCount(0);
+    await expect(host(page, id).locator(`#${id}-content`)).toHaveCount(0);
     if (id === 'sheet') {
       await expect
         .poll(() => content(page, id).evaluate((panel) => panel.getBoundingClientRect().top))
@@ -110,12 +109,12 @@ test('Vue Sheet: пустой именованный slot возвращает F
     .poll(() => content(page, 'vue').evaluate((panel) => panel.getBoundingClientRect().top))
     .toBe(648);
   await page.evaluate(() => window.modalLiveFixture.setVueContent(false));
-  await expect(portal(page, 'vue').locator('#vue-content')).toHaveCount(0);
+  await expect(host(page, 'vue').locator('#vue-content')).toHaveCount(0);
   await expect
     .poll(() => content(page, 'vue').evaluate((panel) => panel.getBoundingClientRect().top))
     .toBe(772);
   await page.evaluate(() => window.modalLiveFixture.setVueContent(true));
-  await expect(portal(page, 'vue').locator('#vue-content')).toBeVisible();
+  await expect(host(page, 'vue').locator('#vue-content')).toBeVisible();
   await expect
     .poll(() => content(page, 'vue').evaluate((panel) => panel.getBoundingClientRect().top))
     .toBe(648);

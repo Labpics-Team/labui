@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 interface SheetMotionErrorProbe {
   readonly primary: unknown;
@@ -22,9 +23,9 @@ const content = (page: Page, id = 'sheet') => portal(page, id).locator('.content
 async function focusedInside(page: Page, id = 'sheet'): Promise<void> {
   await expect
     .poll(() =>
-      portal(page, id).evaluate(
-        (element) => element.shadowRoot?.activeElement?.closest('.content') != null,
-      ),
+      portal(page, id)
+        .evaluate(modalFocus)
+        .then((focus) => focus.inside),
     )
     .toBe(true);
 }

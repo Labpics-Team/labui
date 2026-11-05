@@ -3,7 +3,7 @@ import { html, renderToString } from '../src/ssr/index.js';
 import '../src/components/sheet/index.js';
 
 describe('Sheet SSR', () => {
-  it('доставляет trigger и скрытый content slot без клиентского portal', () => {
+  it('доставляет trigger и content slot в закрытом popover без клиентского floating DOM', () => {
     const output = renderToString(html`
       <lab-sheet position="half" heading="Настройки">
         Открыть
@@ -12,7 +12,8 @@ describe('Sheet SSR', () => {
     `);
     expect(output).toContain('shadowrootmode="open"');
     expect(output).toContain('class="trigger"');
-    expect(output).toMatch(/<slot name="content" hidden aria-hidden="true"/);
+    expect(output).toContain('class="portal-plane" popover="manual"');
+    expect(output).toMatch(/<slot name="content" slot="content"/);
     expect(output).toContain('Исходный ввод');
     expect(output).not.toContain('class="positioner"');
     expect(output).not.toContain('data-lab-sheet-portal');

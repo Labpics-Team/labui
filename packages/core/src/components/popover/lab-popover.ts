@@ -1,3 +1,4 @@
+import { type TemplateResult, css, html } from 'lit';
 /**
  * `<lab-popover>` — the second positioned overlay, and the first DISMISSABLE,
  * FOCUS-MANAGED one. It extends the overlay canon set by `<lab-tooltip>` from a
@@ -6,10 +7,8 @@
  * Axes (the Figma model — Placement × Size × Modal × State):
  *   - placement:  where the panel sits relative to the trigger (Zag popper).
  *   - size:       s | m | l — panel padding and width band.
- *   - modal:      when true the machine traps focus (see the Lit focus-trap caveat
- *                 below), locks scroll and disables outside interaction; a scrim is
- *                 shown. When false it is a lightweight non-modal panel that dismisses
- *                 on outside-click/Esc.
+ *   - modal:      включает focus trap для содержимого, scroll lock и scrim.
+ *                 Non-modal панель закрывается по outside click и Escape.
  *   - closable:   render a built-in close button (the machine wires its handler).
  *
  * Why a machine: a popover is dense interaction state — open on click, focus moved
@@ -28,24 +27,10 @@
  * `portalled:true` and renders into a body portal; the dismiss + focus behaviour is
  * identical because both come from the machine.)
  *
- * ── Focus-trap caveat (Lit half) — READ BEFORE USING modal WITH SLOTTED CONTENT ──
- * Zag's modal trap runs `@zag-js/focus-trap` over the CONTENT element and finds
- * tabbables by walking that element's DOM subtree (`getShadowRoot:true` pierces
- * NESTED shadow roots, not the light DOM). In this Lit element the panel body arrives
- * through `<slot name="content">`, so slotted nodes physically live in the host's
- * LIGHT DOM, OUTSIDE the content's shadow subtree the trap walks. Consequence: a
- * focusable placed in `slot="content"` (e.g. a `<button>` or `<a>` you project in) is
- * NOT part of the trap and Tab can leave the panel through it. Focusables that DO live
- * in the shadow subtree — the built-in `closable` close button, the content element
- * itself (`tabindex=-1`) — ARE trapped, and `aria-modal`/scroll-lock/scrim still apply.
- * So a `modal` Lit popover with ONLY shadow-rendered focusables (the common case:
- * a message + the close button) traps correctly; one whose ONLY interactive controls
- * are slotted does not fully contain Tab.
- * If you need a hard trap around a focusable BODY, either render that control inside
- * the shadow tree (extend the element / use `closable`) or use the React `<Popover>`
- * twin, whose body-portal content lives in the trap's own DOM subtree and is trapped
- * correctly. This is a deliberate consequence of the shadow-DOM, no-portal canon
- * (style encapsulation), not a bug in the machine.
+ * Core поставляет composed DOM-query для общего Zag focus trap. Tab проходит
+ * slotted controls и открытые shadow roots вместе со встроенной кнопкой Close.
+ * Содержимое сохраняет DOM и стили потребителя; закрытие и фокус принадлежат
+ * тому же runtime, который используют Dialog, Sheet и native React.
  *
  * Token contract (core-CONTRACT §2): ONLY semantic `--lab-*` roles. The panel is the
  * raised surface (`--lab-bg-secondary` + `--lab-label-primary`) with a `--lab-
@@ -58,8 +43,7 @@
  * SSR (core-CONTRACT §7): a popover is client-only. The server emits the trigger and
  * a `hidden` panel; the machine upgrades it on the client. No flash, no pre-work.
  */
-import * as popoverMachine from '@zag-js/popover';
-import { type TemplateResult, css, html } from 'lit';
+import * as popoverMachine from '../../behaviors/popover.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
@@ -84,8 +68,7 @@ export class LabPopover extends LabElement {
   static override properties = {
     placement: { reflect: true },
     size: { reflect: true },
-    /** When true: focus trap (over shadow-subtree focusables — see the slotted-content
-     * caveat in the file header) + scroll lock + outside-interaction disabled + scrim. */
+    /** Включает общий focus trap, scroll lock, блокировку внешних действий и scrim. */
     modal: { type: Boolean, reflect: true },
     /** Render a built-in close button wired to the machine. */
     closable: { type: Boolean, reflect: true },

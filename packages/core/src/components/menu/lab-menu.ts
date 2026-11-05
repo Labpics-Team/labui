@@ -1,3 +1,4 @@
+import { type TemplateResult, css, html } from 'lit';
 /**
  * `<lab-menu>` — the second compound + positioned canon: a trigger that opens a
  * positioned action menu of items. Like `<lab-select>` it fuses the keyed-compound
@@ -61,8 +62,7 @@
  * SSR (core-CONTRACT §7): a menu is client-only. The server emits the trigger and a
  * `hidden` menu; the machine upgrades it on the client. No flash, no pre-work.
  */
-import * as menuMachine from '@zag-js/menu';
-import { type TemplateResult, css, html } from 'lit';
+import * as menuMachine from '../../behaviors/menu.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';

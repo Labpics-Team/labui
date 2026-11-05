@@ -20,8 +20,8 @@
 'use client';
 
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as popoverMachine from '@labpics/ui-core/behaviors/popover';
 import type { LabPopoverPlacement, LabPopoverSize } from '@labpics/ui-core/popover';
-import * as popoverMachine from '@zag-js/popover';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';

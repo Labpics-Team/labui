@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 /**
  * Alert-Dialog suite — the stricter dialog, verified on BOTH renderers.
@@ -46,7 +47,8 @@ async function litFocusInDialog(page: Page, testid: string): Promise<void> {
     .poll(() =>
       page
         .locator(PORTAL(testid))
-        .evaluate((host) => host.shadowRoot?.activeElement?.closest('.content') != null),
+        .evaluate(modalFocus)
+        .then((focus) => focus.inside),
     )
     .toBe(true);
 }
@@ -160,9 +162,8 @@ test('scroll-lock: an alert-dialog locks body scroll while open (machine)', asyn
 });
 
 /**
- * REAL focus trap around the decision controls: the slotted confirm + cancel buttons are
- * relocated into the portal body, so they live inside the trap subtree. Tabbing stays in
- * the dialog and reaches the Confirm (Delete) button.
+ * Нативные content slots сохраняют кнопки в потребительском DOM; Zag trap
+ * удерживает Tab в панели и позволяет достичь подтверждения.
  */
 test('focus-trap: Tab stays inside the alert-dialog AND reaches the confirm control (Lit)', async ({
   page,
@@ -173,15 +174,9 @@ test('focus-trap: Tab stays inside the alert-dialog AND reaches the confirm cont
 
   let reachedConfirm = false;
   for (let i = 0; i < 8; i++) {
-    const probe = await page.locator(PORTAL('lit-alert')).evaluate((host) => {
-      const active = host.shadowRoot?.activeElement as HTMLElement | null | undefined;
-      return {
-        inContent: active?.closest('.content') != null,
-        onConfirm: active?.getAttribute('data-testid') === 'lit-alert-confirm',
-      };
-    });
-    expect(probe.inContent, `Tab #${i}: focus stays inside the alert-dialog`).toBe(true);
-    if (probe.onConfirm) reachedConfirm = true;
+    const probe = await page.locator(PORTAL('lit-alert')).evaluate(modalFocus);
+    expect(probe.inside, `Tab #${i}: focus stays inside the alert-dialog`).toBe(true);
+    if (probe.testId === 'lit-alert-confirm') reachedConfirm = true;
     await page.keyboard.press('Tab');
   }
   expect(reachedConfirm, 'the slotted Confirm control IS inside the focus-trap').toBe(true);

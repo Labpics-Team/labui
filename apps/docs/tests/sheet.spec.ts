@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 const host = (page: Page, id = 'sheet') => page.getByTestId(id);
 const portal = (page: Page, id = 'sheet') => page.locator(`[data-portal-for="${id}"]`);
@@ -17,9 +18,9 @@ async function settled(page: Page, expected: number, id = 'sheet'): Promise<void
 async function focusedInside(page: Page, id = 'sheet'): Promise<void> {
   await expect
     .poll(() =>
-      portal(page, id).evaluate(
-        (element) => element.shadowRoot?.activeElement?.closest('.content') != null,
-      ),
+      portal(page, id)
+        .evaluate(modalFocus)
+        .then((focus) => focus.inside),
     )
     .toBe(true);
 }
@@ -86,24 +87,21 @@ test('модальность, достижимая форма и open → close 
   let reachedApply = false;
   for (let index = 0; index < 8; index++) {
     await page.keyboard.press('Tab');
-    const focus = await portal(page).evaluate((element) => {
-      const active = element.shadowRoot?.activeElement;
-      return { inside: active?.closest('.content') != null, id: active?.id };
-    });
+    const focus = await portal(page).evaluate(modalFocus);
     expect(focus.inside).toBe(true);
     reachedInput ||= focus.id === 'name';
     reachedApply ||= focus.id === 'apply';
   }
   expect(reachedInput).toBe(true);
   expect(reachedApply).toBe(true);
-  await portal(page).locator('#name').fill('Несохранённое имя');
+  await host(page).locator('#name').fill('Несохранённое имя');
   await close(page);
   await expect
     .poll(() => page.evaluate(() => getComputedStyle(document.body).overflow))
     .not.toBe('hidden');
   await open(page);
-  await expect(portal(page).locator('#name')).toHaveValue('Несохранённое имя');
-  await portal(page).locator('#apply').click();
+  await expect(host(page).locator('#name')).toHaveValue('Несохранённое имя');
+  await host(page).locator('#apply').click();
   await expect(content(page)).toBeHidden();
 });
 
@@ -307,7 +305,7 @@ test('системный reduced motion завершает уже начатое
 
 test('disconnect отменяет движение, возвращает форму и позволяет reconnect', async ({ page }) => {
   await open(page);
-  await portal(page).locator('#name').fill('Сохранённый узел');
+  await host(page).locator('#name').fill('Сохранённый узел');
   await host(page).evaluate((element) => {
     const record = window as unknown as { detachedSheet: Element; retiredFrame: HTMLElement };
     record.detachedSheet = element;
@@ -334,7 +332,7 @@ test('disconnect отменяет движение, возвращает фор�
   });
   await expect(content(page)).toBeVisible();
   await settled(page, 390);
-  await expect(portal(page).locator('#name')).toHaveValue('Сохранённый узел');
+  await expect(host(page).locator('#name')).toHaveValue('Сохранённый узел');
   await close(page);
 });
 
@@ -403,7 +401,7 @@ test('Flex пересчитывается при добавлении и изм�
     element.append(body);
   });
   await settled(page, 648, 'empty');
-  await portal(page, 'empty')
+  await host(page, 'empty')
     .locator('#dynamic-content')
     .evaluate((element) => {
       (element as HTMLElement).style.height = '180px';

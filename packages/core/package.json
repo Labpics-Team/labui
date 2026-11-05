@@ -69,6 +69,16 @@
         "default": "./dist/proof/lab-proof.cjs"
       }
     },
+    "./behaviors/*": {
+      "import": {
+        "types": "./dist/behaviors/*.d.ts",
+        "default": "./dist/behaviors/*.js"
+      },
+      "require": {
+        "types": "./dist/behaviors/*.d.cts",
+        "default": "./dist/behaviors/*.cjs"
+      }
+    },
     "./*": {
       "import": {
         "types": "./dist/components/*/index.d.ts",
