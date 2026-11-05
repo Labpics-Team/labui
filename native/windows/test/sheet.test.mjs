@@ -267,6 +267,39 @@ test('startup diagnostics distinguish image failure and typed application errors
   assert.equal(readback([marker]), 'invalid');
 });
 
+test('diagnostics retain only known renderer failure sites and keep rejecting failures', () => {
+  const marker = 'PRIVATE_RENDERER_SITE_NOT_FOR_LOG';
+  for (const site of [
+    'Compositor.CreateEffectFactory',
+    'CanvasComposition.CreateDrawingSession',
+    'SheetLayers.BuildFrame',
+    marker,
+  ]) {
+    const error = { origin: 'unhandled', type: 'ArgumentException', hresult: -2147024809, site };
+    const line = sheetFailureLog({
+      sourceSha: SOURCE,
+      name: 'Light-Blur',
+      phase: 'render',
+      pid: 42,
+      observation: { ...observation(), error },
+      error: new Error(marker),
+      stderrBytes: 0,
+    });
+    assert.doesNotMatch(line, new RegExp(marker));
+    const readback = JSON.parse(line.slice('LABUI_SHEET_FAILURE_JSON '.length)).observation.error;
+    assert.deepEqual(readback, { ...error, site: site === marker ? null : site });
+    assert.throws(() => decodeSheetEvidence(line, SOURCE));
+    assert.throws(
+      () =>
+        validateObservation(
+          { ...observation(), error },
+          { ...EXPECTED_CASES[0], ...processIdentity },
+        ),
+      (failure) => failure.sheetPhase === 'render',
+    );
+  }
+});
+
 test('diagnostics classify free-form exceptions and malformed geometry without publishing their text', async (t) => {
   const marker = 'PRIVATE_VALUE_NOT_FOR_LOG';
   for (const [name, change, phase] of [

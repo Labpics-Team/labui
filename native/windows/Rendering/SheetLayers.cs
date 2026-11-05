@@ -301,21 +301,26 @@ public sealed class SheetLayers : Grid
             }
 
             var parameters = new Dictionary<string, CompositionBrush>();
+            T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
+            {
+                result.Own(effect);
+                return effect;
+            }
             IGraphicsEffectSource Source(string name, CompositionBrush brush)
             {
                 parameters.Add(name, brush);
                 return new CompositionEffectSourceParameter(name);
             }
-            IGraphicsEffectSource Paint(SolidColorBrush brush) => result.Own(new OpacityEffect
+            IGraphicsEffectSource Paint(SolidColorBrush brush) => Effect(new OpacityEffect
             {
                 Opacity = (float)brush.Opacity,
-                Source = result.Own(new ColorSourceEffect { Color = brush.Color }),
+                Source = Effect(new ColorSourceEffect { Color = brush.Color }),
             });
             IGraphicsEffectSource Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
-                => result.Own(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
+                => Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
             IGraphicsEffectSource Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
-                => result.Own(new AlphaMaskEffect { Source = source, AlphaMask = mask });
-            IGraphicsEffectSource Blur(IGraphicsEffectSource source, double radius) => result.Own(new GaussianBlurEffect
+                => Effect(new AlphaMaskEffect { Source = source, AlphaMask = mask });
+            IGraphicsEffectSource Blur(IGraphicsEffectSource source, double radius) => Effect(new GaussianBlurEffect
             {
                 Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,
             });
@@ -329,9 +334,11 @@ public sealed class SheetLayers : Grid
                 var backdrop = Source("backdrop", result.Own(compositor.CreateBackdropBrush()));
                 var noise = Source("noise", Surface(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale)));
                 IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
-                    result.Own(new OpacityEffect { Source = noise, Opacity = (float)opacity }));
+                    Effect(new OpacityEffect { Source = noise, Opacity = (float)opacity }));
 
-                IGraphicsEffectSource? progressive = null;
+                // Маски задают неотрицательное разбиение единицы. Add суммирует
+                // premultiplied ветви без перекрытия по правилу SourceOver.
+                var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
                 for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
                 {
                     var level = index;
@@ -344,15 +351,14 @@ public sealed class SheetLayers : Grid
                         drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
                     }));
                     var branch = Mask(index == 0 ? backdrop : Blur(backdrop, SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius), mask);
-                    progressive = progressive is null ? branch : result.Own(new ArithmeticCompositeEffect
-                    { Source1 = progressive, Source2 = branch, MultiplyAmount = 0, Source1Amount = 1, Source2Amount = 1, Offset = 0 });
+                    progressive.Sources.Add(branch);
                 }
                 var ghostMask = Source("ghostMask", Surface(drawing =>
                     drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk)));
                 // Alpha Ghost tint не управляет существованием backdrop/noise.
-                var ghost = Mask(WithNoise(Over(progressive!, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
+                var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), ghostMask);
                 var tinted = Over(Blur(backdrop, Geometry.SheetBodyBlurRadius), Paint(Tint!));
-                var blended = result.Own(new BlendEffect
+                var blended = Effect(new BlendEffect
                 {
                     Background = tinted, Foreground = Paint(Blend!),
                     Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
