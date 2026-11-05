@@ -15,7 +15,9 @@ const sheetTemplate = template.match(
   /<Style\b[^>]*TargetType="local:LabSheet"[^>]*>[\s\S]*?<\/Style>/,
 )?.[0];
 if (!sheetTemplate) throw new Error('Шаблон LabSheet отсутствует.');
-const contentPresenterTag = sheetTemplate.match(/<ContentPresenter\s+x:Name="PART_Content"[^>]*>/)?.[0];
+const contentPresenterTag = sheetTemplate.match(
+  /<ContentPresenter\s+x:Name="PART_Content"[^>]*>/,
+)?.[0];
 const wrapsContent = Boolean(contentPresenterTag);
 const nativePresentationBindings = Array.from(
   contentPresenterTag?.matchAll(/(\w+)="\{TemplateBinding (\w+)\}"/g) ?? [],
