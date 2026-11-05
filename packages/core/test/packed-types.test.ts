@@ -286,6 +286,24 @@ void [html, ifDefined, noChange, unsafeHTML, renderToString, markup];
 `,
   },
   {
+    name: 'core-class-identity',
+    source: `
+import { LabElement } from '@labpics/ui-core';
+import { LabButton } from '@labpics/ui-core/button';
+const constructor: new () => LabElement = LabButton;
+const instance: LabButton = new LabButton();
+const base: LabElement = instance;
+const registered: LabButton = document.createElement('lab-button');
+class Derived extends LabButton {}
+const derived: LabElement = new Derived();
+type PublicButton = { [K in keyof LabButton]: LabButton[K] };
+declare const copy: PublicButton;
+// @ts-expect-error Копия публичных свойств не имеет private identity Core class.
+const invalid: LabButton = copy;
+void [constructor, instance, base, registered, derived, invalid];
+`,
+  },
+  {
     name: 'dialog-behavior',
     source: `
 import * as dialog from '@labpics/ui-core/behaviors/dialog';

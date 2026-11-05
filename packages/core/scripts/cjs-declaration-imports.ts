@@ -1,4 +1,4 @@
-import { dirname, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import ts from 'typescript';
 
 const options: ts.CompilerOptions = {
@@ -38,46 +38,19 @@ export function cjsDeclarationImports(fileName: string, source: string): string 
     identifiers.add(name);
     return ts.factory.createIdentifier(name);
   };
-  const programs = new Map<string, { program: ts.Program; namespace: ts.ImportDeclaration }>();
-  const namespaces = new Set<ts.ImportDeclaration>();
-  const normalize = (name: string) => {
-    const absolute = resolve(name).replaceAll('\\', '/');
-    return ts.sys.useCaseSensitiveFileNames ? absolute : absolute.toLowerCase();
-  };
-  const moduleSymbols = (dependency: ts.ResolvedModuleFull, specifier: ts.StringLiteral) => {
-    let entry = programs.get(dependency.resolvedFileName);
-    if (!entry) {
-      const namespace = ts.factory.createImportDeclaration(
-        undefined,
-        ts.factory.createImportClause(true, undefined, ts.factory.createNamespaceImport(binding())),
-        specifier,
-        attributes,
-      );
-      const host = ts.createCompilerHost(options, true);
-      const getSourceFile = host.getSourceFile.bind(host);
-      // Canonical import даёт compiler имя для generic constraints/defaults вместо пути FS.
-      const contextSource = `${source}\n${printer.printNode(ts.EmitHint.Unspecified, namespace, file)}`;
-      host.getSourceFile = (name, languageVersion, ...rest) =>
-        normalize(name) === normalize(fileName)
-          ? ts.createSourceFile(name, contextSource, languageVersion, true)
-          : getSourceFile(name, languageVersion, ...rest);
-      const program = ts.createProgram(
-        [fileName, dependency.resolvedFileName],
-        { ...options, strict: true },
-        host,
-      );
-      entry = { program, namespace };
-      programs.set(dependency.resolvedFileName, entry);
+  const programs = new Map<string, ts.Program>();
+  const moduleSymbols = (dependency: ts.ResolvedModuleFull) => {
+    let program = programs.get(dependency.resolvedFileName);
+    if (!program) {
+      program = ts.createProgram([dependency.resolvedFileName], { ...options, strict: true });
+      programs.set(dependency.resolvedFileName, program);
     }
-    const { program, namespace } = entry;
     const checker = program.getTypeChecker();
     const declaration = program.getSourceFile(dependency.resolvedFileName);
     const symbol = declaration && checker.getSymbolAtLocation(declaration);
     if (!symbol) throw new Error(`Не найдены exports ${dependency.resolvedFileName}`);
     return {
       checker,
-      namespace,
-      context: program.getSourceFile(fileName),
       exports: new Map(checker.getExportsOfModule(symbol).map((item) => [item.name, item])),
     };
   };
@@ -105,10 +78,7 @@ export function cjsDeclarationImports(fileName: string, source: string): string 
       if (!statement.exportClause || !ts.isNamedExports(statement.exportClause)) {
         throw new Error(`Ожидались именованные ESM re-exports ${name} из ${fileName}`);
       }
-      const { checker, context, exports, namespace } = moduleSymbols(
-        dependency,
-        statement.moduleSpecifier,
-      );
+      const { checker, exports } = moduleSymbols(dependency);
       const declarations: ts.Statement[] = [];
       for (const item of statement.exportClause.elements) {
         const imported = item.propertyName ?? item.name;
@@ -116,7 +86,6 @@ export function cjsDeclarationImports(fileName: string, source: string): string 
         if (!symbol) throw new Error(`Не найден export ${imported.text} из ${name}`);
         const target =
           symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-        for (const declaration of target.declarations ?? []) collectIdentifiers(declaration);
         const hasValue = !!(target.flags & ts.SymbolFlags.Value);
         if (statement.isTypeOnly || item.isTypeOnly || !hasValue) {
           declarations.push(
@@ -132,42 +101,14 @@ export function cjsDeclarationImports(fileName: string, source: string): string 
           );
           continue;
         }
-        if (target.flags & (ts.SymbolFlags.Namespace | ts.SymbolFlags.Enum)) {
-          throw new Error(`Не поддержан namespace re-export ${imported.text} из ${name}`);
+        // Скрытые bounds остаются у producer через export type. Class type/value
+        // требует собственного CJS-пути: resolution-mode относится только к типам.
+        if (target.flags & (ts.SymbolFlags.Type | ts.SymbolFlags.Namespace)) {
+          throw new Error(
+            `Не поддержан ESM re-export с type/value identity ${imported.text} из ${name}: нужна CJS-декларация владельца.`,
+          );
         }
         const value = binding();
-        if (target.flags & ts.SymbolFlags.Type) {
-          const type = binding();
-          const parameters = checker.symbolToTypeParameterDeclarations(
-            target,
-            context,
-            ts.NodeBuilderFlags.NoTruncation | ts.NodeBuilderFlags.UseFullyQualifiedType,
-          );
-          if (parameters?.length) namespaces.add(namespace);
-          declarations.push(
-            ts.factory.createImportDeclaration(
-              undefined,
-              ts.factory.createImportClause(
-                true,
-                undefined,
-                ts.factory.createNamedImports([
-                  ts.factory.createImportSpecifier(false, imported, type),
-                ]),
-              ),
-              statement.moduleSpecifier,
-              attributes,
-            ),
-            ts.factory.createTypeAliasDeclaration(
-              undefined,
-              value,
-              parameters,
-              ts.factory.createTypeReferenceNode(
-                type,
-                parameters?.map((parameter) => ts.factory.createTypeReferenceNode(parameter.name)),
-              ),
-            ),
-          );
-        }
         declarations.push(
           ts.factory.createVariableStatement(
             [ts.factory.createModifier(ts.SyntaxKind.DeclareKeyword)],
@@ -254,14 +195,11 @@ export function cjsDeclarationImports(fileName: string, source: string): string 
         .join('\n'),
     });
   }
-  const declaration = changes
+  return changes
     .reverse()
     .reduce(
       (declaration, change) =>
         declaration.slice(0, change.start) + change.text + declaration.slice(change.end),
       source,
     );
-  return namespaces.size
-    ? `${[...namespaces].map((node) => printer.printNode(ts.EmitHint.Unspecified, node, file)).join('\n')}\n${declaration}`
-    : declaration;
 }
