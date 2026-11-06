@@ -776,35 +776,32 @@ export async function summarize(directory, consumerExitCode) {
     addPacket(visual.path, () =>
       consumerVisualLog(visual.bytes, visual.path, source.pin.sourceCommit, source.uiCommit),
     );
-  if (receipt.outcome === 'passed')
+  if (receipt.outcome === 'passed' && !readbackFailure)
     addPacket('result/receipt.json', () =>
       consumerReceiptLog(receiptBytes, source.pin.sourceCommit, source.uiCommit),
     );
-  for (const packet of packets) await writeStdout(packet);
-  await writeStdout(
-    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify(
-      assertPublicProvenance(
-        {
-          schemaVersion: 1,
-          outcome: receipt.outcome,
-          source,
-          harness: receipt.harness,
-          runner: receipt.runner,
-          archives: receipt.archives,
-          observations: receipt.records?.length,
-          failure: receipt.failure
-            ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
-            : null,
-          files,
-          diagnosticDirectorySha256: hash(root),
-          ...(readbackFailure
-            ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
-            : {}),
-        },
-        'summary',
-      ),
-    )}\n`,
+  const summary = assertPublicProvenance(
+    {
+      schemaVersion: 1,
+      outcome: readbackFailure ? 'failed' : receipt.outcome,
+      source,
+      harness: receipt.harness,
+      runner: receipt.runner,
+      archives: receipt.archives,
+      observations: receipt.records?.length,
+      failure: receipt.failure
+        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+        : null,
+      files,
+      diagnosticDirectorySha256: hash(root),
+      ...(readbackFailure
+        ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
+        : {}),
+    },
+    'summary',
   );
+  for (const packet of packets) await writeStdout(packet);
+  await writeStdout(`LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify(summary)}\n`);
   if (readbackFailure) throw readbackFailure.error;
   assert.equal(receipt.outcome, 'passed');
 }
