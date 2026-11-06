@@ -8,6 +8,7 @@ import { gzipSync } from 'node:zlib';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
 import { assertActionsRunner, stateReferenceContract, validateSubject } from './icons-packed.mjs';
 import {
+  assertPublicCheck,
   assertPublicProvenance,
   assertSourceIdentity,
   parseIconsJson,
@@ -371,8 +372,8 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
 }
 
 export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lockfileSha256) {
-  assert.equal(report?.sourceSha, sourceSha, 'measurement относится к другому source SHA');
-  assert.equal(report.lockfileSha256, lockfileSha256, 'measurement lockfile не совпал');
+  assertPublicCheck(report?.sourceSha === sourceSha, 'MEASUREMENT_SOURCE_MISMATCH');
+  assertPublicCheck(report.lockfileSha256 === lockfileSha256, 'MEASUREMENT_LOCKFILE_MISMATCH');
   assert.ok(Number.isFinite(Date.parse(report.capturedAt)));
   assert.ok(typeof report.environment?.node === 'string');
   assert.deepEqual(
@@ -672,11 +673,14 @@ export async function summarize(directory) {
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
   if (subject.schemaVersion >= 2) {
     const measurement = source.measurement;
-    assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
-    assert.equal(measurement.sourceSha, source.pin.sourceCommit);
+    assertPublicCheck(measurement?.file === 'platform-measurement.json', 'MEASUREMENT_MISSING');
+    assertPublicCheck(
+      measurement.sourceSha === source.pin.sourceCommit,
+      'MEASUREMENT_SOURCE_MISMATCH',
+    );
     const bytes = await readFile(join(root, 'inputs/platform-measurement.json'));
-    assert.equal(hash(bytes), measurement.sha256, 'measurement bytes изменились');
-    assert.equal(bytes.length, measurement.bytes);
+    assertPublicCheck(hash(bytes) === measurement.sha256, 'MEASUREMENT_BYTES_CHANGED');
+    assertPublicCheck(bytes.length === measurement.bytes, 'MEASUREMENT_BYTES_CHANGED');
     const program = source.files.find(
       (item) => item.file === 'scripts/measure-platform-artifacts.mjs',
     );

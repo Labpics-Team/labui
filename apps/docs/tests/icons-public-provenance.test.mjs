@@ -8,6 +8,7 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
+  assertPublicCheck,
   parseIconsJson,
   projectPublicProvenance,
   publicDiagnosticError,
@@ -253,6 +254,33 @@ test('failed API diagnostics retain check and numerical continuity without arbit
   assert.ok(!JSON.stringify(failure).includes(PRIVATE_KEY));
   assert.ok(!String(publicDiagnosticError(error).stack).includes(PRIVATE_KEY));
   assert.ok(!JSON.stringify(publicFailure(new Error(PRIVATE_URL))).includes(PRIVATE_URL));
+});
+
+test('public refusal reasons survive wrapping without reflecting changed messages or private assertion values', () => {
+  assert.doesNotThrow(() => assertPublicCheck(true, 'MEASUREMENT_SOURCE_MISMATCH'));
+  let error;
+  try {
+    assertPublicCheck(false, 'MEASUREMENT_SOURCE_MISMATCH');
+  } catch (caught) {
+    error = caught;
+  }
+  assert.equal(error.code, 'MEASUREMENT_SOURCE_MISMATCH');
+  error.message = PRIVATE_URL;
+  error.stack = PRIVATE_KEY;
+  error.actual = PRIVATE_KEY;
+  error.expected = { fileKey: PRIVATE_KEY };
+  const wrapped = publicDiagnosticError(publicDiagnosticError(error));
+  const result = publicFailure(wrapped);
+  assert.equal(result.code, 'MEASUREMENT_SOURCE_MISMATCH');
+  assert.equal(result.message, 'measurement относится к другому source SHA');
+  assert.ok(!JSON.stringify(result).includes(PRIVATE_KEY));
+  assert.ok(!String(wrapped.stack).includes(PRIVATE_KEY));
+  assert.ok(!Object.hasOwn(wrapped, 'actual') && !Object.hasOwn(wrapped, 'expected'));
+  assert.throws(() => assertPublicCheck(false, PRIVATE_KEY), /invalid public check/);
+  assert.doesNotMatch(
+    publicFailure(new Error('unrelated failure')).message,
+    /measurement относится к другому source SHA/,
+  );
 });
 
 async function summaryFixture(t, receipt) {

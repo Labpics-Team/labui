@@ -1353,6 +1353,40 @@ test('historical schema1 summary does not need a measurement report', async (t) 
   assert.match(stdout, /LABUI_ICONS_CONSUMER_RESULT/);
 });
 
+test('summary diagnostics distinguish missing measurement, changed bytes and wrong lockfile from wrong source', async (t) => {
+  for (const [kind, expected] of [
+    ['descriptor', /measurement отсутствует/],
+    ['bytes', /measurement bytes изменились/],
+    ['lockfile', /measurement lockfile не совпал/],
+  ]) {
+    const fixture = await summaryFixture(t, 3);
+    assert.match(fixture.invoke(), /LABUI_ICONS_CONSUMER_RESULT/);
+    if (kind === 'descriptor') {
+      Reflect.deleteProperty(fixture.source, 'measurement');
+    } else if (kind === 'bytes') {
+      await writeFile(
+        join(fixture.output, 'inputs/platform-measurement.json'),
+        `${JSON.stringify(fixture.report)}\n`,
+      );
+    } else {
+      const changed = JSON.stringify({ ...fixture.report, lockfileSha256: 'b'.repeat(64) });
+      fixture.source.measurement.sha256 = hash(changed);
+      fixture.source.measurement.bytes = Buffer.byteLength(changed);
+      await writeFile(join(fixture.output, 'inputs/platform-measurement.json'), changed);
+    }
+    await writeFile(
+      join(fixture.output, 'inputs/source-receipt.json'),
+      JSON.stringify(fixture.source),
+    );
+    assert.throws(fixture.invoke, (error) => {
+      assert.match(error.message, expected);
+      assert.doesNotMatch(error.message, /measurement относится к другому source SHA/);
+      assert.doesNotMatch(error.message, /SyntheticFigmaAuthorKey01/);
+      return true;
+    });
+  }
+});
+
 test('failed receipt waits for a complete large report through asynchronous stdout backpressure', async (t) => {
   const fixture = await summaryFixture(t, 2);
   fixture.report.diagnosticPadding = Array.from({ length: 4096 }, (_, index) =>

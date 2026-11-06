@@ -219,11 +219,30 @@ export function assertSourceIdentity(source, expected) {
 
 const ERROR_CODES = new Set(['ENOENT', 'EACCES', 'EPERM', 'ETIMEDOUT', 'ERR_ASSERTION']);
 const OPERATORS = new Set(['strictEqual', 'deepStrictEqual', 'match', 'fail', '==']);
+const PUBLIC_REFUSALS = Object.freeze({
+  MEASUREMENT_SOURCE_MISMATCH: 'measurement относится к другому source SHA',
+  MEASUREMENT_LOCKFILE_MISMATCH: 'measurement lockfile не совпал',
+  MEASUREMENT_MISSING: 'measurement отсутствует',
+  MEASUREMENT_BYTES_CHANGED: 'measurement bytes изменились',
+});
+
+// The check supplies a closed reason; raw input and assertion diffs never become text.
+export function assertPublicCheck(condition, reason) {
+  assert.ok(
+    typeof condition === 'boolean' &&
+      typeof reason === 'string' &&
+      Object.hasOwn(PUBLIC_REFUSALS, reason),
+    'icons: invalid public check',
+  );
+  if (!condition) throw Object.assign(new Error(PUBLIC_REFUSALS[reason]), { code: reason });
+}
 
 // Arbitrary error messages/stacks may contain raw API values or captured child output.
 export function publicFailure(error) {
-  const code = ERROR_CODES.has(error?.code) ? error.code : 'CONSUMER_FAILED';
-  const result = { code, message: `icons: ${code}` };
+  const publicReason =
+    typeof error?.code === 'string' && Object.hasOwn(PUBLIC_REFUSALS, error.code);
+  const code = publicReason || ERROR_CODES.has(error?.code) ? error.code : 'CONSUMER_FAILED';
+  const result = { code, message: publicReason ? PUBLIC_REFUSALS[code] : `icons: ${code}` };
   if (OPERATORS.has(error?.operator)) result.comparison = error.operator;
   if (error?.stateContinuity) {
     try {
