@@ -664,20 +664,50 @@ function writeStdout(bytes) {
   });
 }
 
-export function terminalReceipt(receiptBytes, failureBytes) {
+function validateConsumerExitCode(value) {
+  assert.ok(
+    Number.isSafeInteger(value) && value >= 0 && value <= 255,
+    'icons: consumer completion требует exit code 0..255',
+  );
+  return value;
+}
+
+export function parseSummaryInvocation(args) {
+  assert.ok(
+    Array.isArray(args) &&
+      args.length === 4 &&
+      args.every((value) => typeof value === 'string') &&
+      args[0] === '--summarize' &&
+      args[1].length > 0 &&
+      args[2] === '--consumer-exit-code' &&
+      /^(?:0|[1-9]\d{0,2})$/.test(args[3]),
+    'icons: summarize требует directory и --consumer-exit-code',
+  );
+  return { directory: args[1], consumerExitCode: validateConsumerExitCode(Number(args[3])) };
+}
+
+export function terminalReceipt(receiptBytes, failureBytes, consumerExitCode) {
+  validateConsumerExitCode(consumerExitCode);
   // Неудача финализации может оставить ранее записанный PASSED receipt.
   if (failureBytes !== undefined) {
     const failed = assertPublicProvenance(parseIconsJson(failureBytes), 'receipt');
     assert.equal(failed.outcome, 'failed', 'icons: failure artifact требует failed outcome');
     return failed;
   }
-  if (receiptBytes === undefined)
-    throw Object.assign(new Error('icons: ENOENT'), { code: 'ENOENT' });
-  return assertPublicProvenance(parseIconsJson(receiptBytes), 'receipt');
+  try {
+    if (receiptBytes === undefined)
+      throw Object.assign(new Error('icons: ENOENT'), { code: 'ENOENT' });
+    const receipt = assertPublicProvenance(parseIconsJson(receiptBytes), 'receipt');
+    return consumerExitCode === 0 ? receipt : { ...receipt, outcome: 'failed' };
+  } catch (error) {
+    if (consumerExitCode === 0) throw error;
+    return { schemaVersion: 1, outcome: 'failed', records: [] };
+  }
 }
 
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
-export async function summarize(directory) {
+export async function summarize(directory, consumerExitCode) {
+  validateConsumerExitCode(consumerExitCode);
   const root = await realpath(resolve(directory));
   const files = [];
   const visuals = [];
@@ -695,7 +725,7 @@ export async function summarize(directory) {
     }
   }
   assertPublicProvenance(files, 'file-list');
-  const receipt = terminalReceipt(receiptBytes, failureBytes);
+  const receipt = terminalReceipt(receiptBytes, failureBytes, consumerExitCode);
   const source = assertPublicProvenance(
     parseIconsJson(await readFile(join(root, 'inputs/source-receipt.json'))),
     'source-receipt',
@@ -787,7 +817,10 @@ async function main() {
     );
     return;
   }
-  if (args.length === 2 && args[0] === '--summarize') return summarize(args[1]);
+  if (args[0] === '--summarize') {
+    const { directory, consumerExitCode } = parseSummaryInvocation(args);
+    return summarize(directory, consumerExitCode);
+  }
   const required = [
     '--icons-source',
     '--ui-source',

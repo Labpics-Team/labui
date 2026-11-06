@@ -146,7 +146,9 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
         --ui-core-tarball /job/output/ui-core/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
-      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
+      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output --consumer-exit-code "$status" || {
+        if [ "$status" -eq 0 ]; then status=1; fi
+      }
       exit "$status"
     else
       pnpm build

@@ -233,6 +233,14 @@ reload кнопки; schema2 также содержит status-circle и select
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного
 remote receipt не означает пройденную интеграцию.
 
+Вызывающий скрипт передаёт наблюдаемый exit status `icons-packed` через
+`--summarize <directory> --consumer-exit-code <0..255>`; функция `summarize`
+принимает тот же код вторым аргументом. Пропущенный или некорректный код вызывает
+отказ до публикации. PASSED требует кода `0` и успешного receipt без FAILED маркера.
+Ненулевой код задаёт FAILED для диагностического readback даже при ранее записанном
+PASSED receipt или отсутствии маркера. Ошибка summarize не заменяет исходный
+ненулевой статус.
+
 `--summarize` также выводит полный report стандартным
 [gzip](https://nodejs.org/api/zlib.html#zlibgzipsyncbuffer-options) и base64 блоком
 в stdout, без нового Actions artifact storage. `LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN`

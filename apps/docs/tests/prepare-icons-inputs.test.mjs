@@ -1788,6 +1788,8 @@ async function summaryFixture(t, schemaVersion) {
         fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
         '--summarize',
         output,
+        '--consumer-exit-code',
+        '0',
       ],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10_000 },
     );
@@ -1843,6 +1845,8 @@ test('oversized API failure and refused PNG keep the limited continuity RESULT',
         fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
         '--summarize',
         fixture.output,
+        '--consumer-exit-code',
+        '1',
       ],
       { encoding: 'utf8', timeout: 5000 },
     );
@@ -1946,7 +1950,7 @@ test('failed receipt waits for a complete large report through asynchronous stdo
       setTimeout(() => native.write(chunk.subarray(boundary), callback), 25);
     } });
     Object.defineProperty(process, 'stdout', { value: delayed });
-    await summarize(${JSON.stringify(fixture.output)});
+    await summarize(${JSON.stringify(fixture.output)}, 0);
   `;
   for (const outcome of ['passed', 'failed']) {
     await writeFile(
@@ -2032,7 +2036,7 @@ test('stdout write failure keeps its original error and removes the one-shot lis
       callback(Object.assign(new Error('MOCK_STDOUT_WRITE_FAILURE'), { code: 'MOCK_STDOUT_ERROR' }));
     } });
     Object.defineProperty(process, 'stdout', { value: broken });
-    try { await summarize(${JSON.stringify(fixture.output)}); }
+    try { await summarize(${JSON.stringify(fixture.output)}, 0); }
     catch (error) {
       await new Promise(setImmediate);
       native.write(JSON.stringify({ code: error.code, listeners: broken.listenerCount('error') }));
@@ -2090,6 +2094,8 @@ test('failed schema1 and schema2 summaries preserve an optional native continuit
           fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
           '--summarize',
           fixture.output,
+          '--consumer-exit-code',
+          '1',
         ],
         { encoding: 'utf8', timeout: 5000 },
       );
