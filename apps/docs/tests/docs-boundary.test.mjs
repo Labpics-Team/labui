@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, stat } from 'node:fs/promises';
+import { readFile, readdir, stat } from 'node:fs/promises';
 import test from 'node:test';
 
 const src = new URL('../src/', import.meta.url);
@@ -25,7 +25,8 @@ test('retired live color-engine harness cannot re-enter the build graph', async 
 
 // Навигационные адреса остаются действительными при изменении workspace.
 const rootReadme = new URL('../../../README.md', import.meta.url);
-const packageMap = new URL('../../../docs/README.md', import.meta.url);
+const docsRoot = new URL('../../../docs/', import.meta.url);
+const packageMap = new URL('reference/packages.md', docsRoot);
 
 async function checkLinks(markdown, base) {
   for (const [, destination] of markdown.matchAll(/\]\(([^)]+)\)/g)) {
@@ -54,7 +55,7 @@ async function checkLinks(markdown, base) {
 }
 
 async function checkCoreOwner(markdown) {
-  const destination = markdown.match(/\[Ядро\]\(([^)]+)\)/)?.[1];
+  const destination = markdown.match(/\[Core\]\(([^)]+)\)/)?.[1];
   assert.ok(destination, 'package map must identify the core owner');
   const manifest = JSON.parse(
     await readFile(new URL(`${destination}package.json`, packageMap), 'utf8'),
@@ -65,7 +66,15 @@ async function checkCoreOwner(markdown) {
 }
 
 test('documentation entrypoints link to existing local files, directories and headings', async () => {
-  for (const base of [rootReadme, packageMap]) await checkLinks(await readFile(base, 'utf8'), base);
+  const documents = [
+    rootReadme,
+    new URL('CONTRIBUTING.md', rootReadme),
+    new URL('SECURITY.md', rootReadme),
+    ...(await readdir(docsRoot, { recursive: true }))
+      .filter((path) => path.endsWith('.md'))
+      .map((path) => new URL(path.replaceAll('\\', '/'), docsRoot)),
+  ];
+  for (const base of documents) await checkLinks(await readFile(base, 'utf8'), base);
 });
 
 test('package map points to the public core component and SSR owner', async () => {
@@ -74,12 +83,14 @@ test('package map points to the public core component and SSR owner', async () =
 
 test('documentation checks distinguish a broken anchor and an existing wrong owner', async () => {
   const markdown = await readFile(packageMap, 'utf8');
+  const readme = await readFile(rootReadme, 'utf8');
+  await checkLinks(`${readme}\n[Начало работы](#начало-работы)`, rootReadme);
   await assert.rejects(
-    checkLinks(markdown.replace('#открыть-каталог', '#несуществующий-раздел'), packageMap),
+    checkLinks(`${readme}\n[Начало работы](#несуществующий-раздел)`, rootReadme),
     /missing heading/,
   );
   await assert.rejects(
-    checkCoreOwner(markdown.replace('../packages/core/', '../packages/adapter-codegen/')),
+    checkCoreOwner(markdown.replace('../../packages/core/', '../../packages/adapter-codegen/')),
     /@labpics\/ui-core/,
   );
 });

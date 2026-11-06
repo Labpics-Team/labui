@@ -1,55 +1,82 @@
 # Lab UI
 
-Дизайн-система Labpics: компоненты интерфейса, темы и токены. Поведение
-компонентов реализовано в Web Components. Адаптеры связывают их с React,
-Vue, Svelte, Solid и Astro.
+Дизайн-система Labpics: компоненты интерфейса, светлая и тёмная темы,
+семантические токены и материалы Solid, Glass, Acrylic. Веб-компоненты
+и привязки для React, Vue, Svelte, Solid и Astro используют общий контракт.
 
-## Открыть каталог
+[![CI](https://github.com/Labpics-Team/labui/actions/workflows/ci.yml/badge.svg)](https://github.com/Labpics-Team/labui/actions/workflows/ci.yml)
 
-Из корня репозитория нужен pnpm версии, закреплённой в
-[package.json](package.json):
+Визуальный эталон — [Lab UI v2.1 в Figma Community](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1).
+Цвет вычисляет [Lab Colors](https://github.com/Labpics-Team/lab-colors),
+движение исполняет [Lab Motion](https://github.com/Labpics-Team/lab-motion).
+
+## Начало работы
+
+Репозиторий открыт, веб-пакеты пока разрабатываются в workspace: они имеют
+версию `0.0.0` и не публикуются в npm. Для знакомства запустите каталог
+из исходников. Нужны Git, Node.js и pnpm; их версии указаны в
+[package.json](package.json).
 
 ```sh
+git clone https://github.com/Labpics-Team/labui.git
+cd labui
 pnpm install --frozen-lockfile
 pnpm build
 pnpm --filter @labpics/ui-docs dev
 ```
 
-Команда запускает локальный каталог компонентов из `apps/docs`.
-Для отдельной сборки каталога после `pnpm build` используйте
-`pnpm --filter @labpics/ui-docs build`.
+Откройте адрес, который напечатает Vite, и перейдите к **Component documentation**.
+[Первый запуск каталога](docs/tutorials/catalogue.md) объясняет страницы,
+переключение темы и просмотр вариантов компонента.
 
-## Где менять компонент
+## Первый компонент
 
-[Карта пакетов](docs/README.md) показывает владельцев компонентов,
-токенов, адаптеров и каталога примеров.
+В собранном workspace подключите стили и нужный компонент в браузерном модуле:
 
-## Проверить изменение
+```typescript
+import '@labui/colors/contract.css';
+import '@labpics/ui-tokens/tokens.css';
+import '@labpics/ui-core/theme.css';
+import '@labpics/ui-core/button';
+import { setTheme } from '@labpics/ui-core';
 
-```sh
-pnpm build
-pnpm typecheck
-pnpm test
-pnpm check
-pnpm test:e2e
+setTheme(document.documentElement, 'light');
+
+const button = document.createElement('lab-button');
+button.setAttribute('type', 'accent');
+button.setAttribute('kind', 'fill');
+button.textContent = 'Сохранить';
+document.body.append(button);
 ```
 
-`pnpm check` запускает Biome; `pnpm test` выполняет тесты пакетов.
-Пакеты проверяются по очереди; параллельными файлами управляет их
-тестовый раннер. Ошибка одного пакета не скрывает результаты остальных;
-общий запуск остаётся неуспешным.
+[Подключение компонентов](docs/how-to/use-components.md) содержит вариант
+для React, работу со стилями и выбор материала. Свойства, события и примеры
+отдельных компонентов находятся в локальном каталоге.
 
-`pnpm test:e2e` запускает Playwright для каталога. Для первого
-браузерного запуска потребуется установить поддерживаемые браузеры
-Playwright на своей машине.
+## Материалы
 
-В CI выполняются выбранные smoke-сценарии; полный набор браузерных
-проверок запускается отдельно. Их состав определяют
-[настройка Playwright](apps/docs/playwright.config.ts) и
-[smoke-workflow](.github/workflows/ci.yml) и
-[workflow полного прогона](.github/workflows/e2e-full.yml).
+Solid, Glass и Acrylic — общая ось оформления поверхности. Progressive blur
+задаётся отдельно как краевой эффект. Переключение материала сохраняет
+анатомию и взаимодействие компонента; механикой эффектов и их поддержкой
+в браузере владеет пакет Materials.
 
-Для оформления изменения версии используйте существующий
-[Changesets](.changeset/) и команду `pnpm changeset`, если изменение
-затрагивает публикуемый пакет.
+[Темы и материалы](docs/reference/theme-materials.md) ·
+[Инварианты системы](docs/reference/invariants.md).
+
+## Документация и разработка
+
+[Все руководства](docs/README.md) ·
+[Карта пакетов](docs/reference/packages.md) ·
+[Устройство системы](docs/explanation/architecture.md) ·
+[Участие в проекте](CONTRIBUTING.md) ·
+[Сообщить об уязвимости](SECURITY.md).
+
+Нативные SDK входят в замысел Lab UI. Их реализация и квалификация ведутся
+отдельно; наличие веб-компонента не означает готовность соответствующего SDK.
+
+## Лицензии
+
+Для кода пока указано `UNLICENSED` в [package.json](package.json).
+Шрифты Geist и Geist Mono распространяются по [SIL OFL 1.1](packages/fonts/OFL.txt);
+их источники описаны в [PROVENANCE.md](packages/fonts/PROVENANCE.md).
 

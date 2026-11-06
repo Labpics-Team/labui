@@ -2,7 +2,7 @@
   "name": "labui",
   "version": "0.0.0",
   "private": true,
-  "description": "LabUI — high-level design system by Labpics",
+  "description": "Дизайн-система Labpics: компоненты, темы, семантические токены и материалы Solid, Glass, Acrylic.",
   "license": "UNLICENSED",
   "type": "module",
   "engines": {
