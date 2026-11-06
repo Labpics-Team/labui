@@ -25,7 +25,8 @@ function camelSlot(name: string): string {
 
 /** Привязка одного пропа в Lit-шаблоне по его виду. */
 function bindingLine(name: string, attr: string, kind: string): string {
-  if (kind === 'prop') return `      .${name}=\${props.${name}}`;
+  if (kind === 'prop')
+    return `      .${name}=\${props.${name} === undefined ? noChange : props.${name}}`;
   if (kind === 'boolean') {
     return `      .${name}=\${props.${name} === undefined ? noChange : Boolean(props.${name})}`;
   }
@@ -66,7 +67,7 @@ function ssrFile(c: ComponentMeta): string {
   // Условные импорты из единой SSR-поверхности ядра (адаптер зависит только от core,
   // не от lit напрямую). Базовый tsconfig включает noUnusedLocals — берём лишь нужное.
   const usesIfDefined = c.props.some((p) => p.kind === 'string');
-  const usesNoChange = c.props.some((p) => p.kind === 'boolean');
+  const usesNoChange = c.props.some((p) => p.kind === 'boolean' || p.kind === 'prop');
   const usesUnsafeHtml = c.slots.default || c.slots.named.length > 0;
   const coreImports = [
     'html',

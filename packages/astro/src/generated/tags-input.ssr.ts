@@ -35,8 +35,8 @@ export function renderTagsInput(
       .editable=${props.editable === undefined ? noChange : Boolean(props.editable)}
       .addOnPaste=${props.addOnPaste === undefined ? noChange : Boolean(props.addOnPaste)}
       .allowDuplicates=${props.allowDuplicates === undefined ? noChange : Boolean(props.allowDuplicates)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       .readonly=${props.readonly === undefined ? noChange : Boolean(props.readonly)}
       .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       .required=${props.required === undefined ? noChange : Boolean(props.required)}

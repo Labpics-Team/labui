@@ -14,8 +14,8 @@ const byTag = (tag: string): ComponentMeta => {
 };
 
 describe('анализатор ядра → манифест', () => {
-  it('находит ровно 27 элементов, все с тегом lab-*', () => {
-    expect(manifest.components).toHaveLength(27);
+  it('находит ровно 28 элементов, все с тегом lab-*', () => {
+    expect(manifest.components).toHaveLength(28);
     for (const c of manifest.components) expect(c.tag.startsWith('lab-')).toBe(true);
   });
 
@@ -56,13 +56,30 @@ describe('анализатор ядра → манифест', () => {
   it('alert-dialog наследует пропы/события dialog', () => {
     const alert = byTag('lab-alert-dialog');
     expect(alert.props.map((p) => p.name)).toEqual([
-      'size',
       'modal',
       'closable',
       'heading',
       'description',
+      'size',
     ]);
     expect(alert.events).toContain('open-change');
+  });
+
+  it('Sheet наследует modal contract без dialog size и добавляет typed position/open', () => {
+    const sheet = byTag('lab-sheet');
+    expect(sheet.props.map((property) => property.name)).toEqual([
+      'modal',
+      'closable',
+      'heading',
+      'description',
+      'open',
+      'position',
+    ]);
+    expect(sheet.props.find((property) => property.name === 'open')?.kind).toBe('boolean');
+    expect(sheet.props.find((property) => property.name === 'position')?.kind).toBe('prop');
+    expect(sheet.events).toEqual(['motion-error', 'open-change', 'position-change']);
+    expect(sheet.slots.default).toBe(true);
+    expect(sheet.slots.named).toEqual(['content']);
   });
 
   it('события собираются из new CustomEvent', () => {

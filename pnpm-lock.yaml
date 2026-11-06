@@ -19,6 +19,32 @@ overrides:
   astro@7.2.8>vite: 8.3.3
   zod@>=4 <4.6.6: 4.6.7
 
+patchedDependencies:
+  '@zag-js/aria-hidden@1.41.2':
+    hash: abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec
+    path: patches/@zag-js__aria-hidden@1.41.2.patch
+  '@zag-js/dialog@1.41.2':
+    hash: 0f576e110fbe8225aac7120dd40e109a469c1bab0247fb5e623b978b061683fd
+    path: patches/@zag-js__dialog@1.41.2.patch
+  '@zag-js/dismissable@1.41.2':
+    hash: 38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32
+    path: patches/@zag-js__dismissable@1.41.2.patch
+  '@zag-js/dom-query@1.41.2':
+    hash: a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0
+    path: patches/@zag-js__dom-query@1.41.2.patch
+  '@zag-js/menu@1.41.2':
+    hash: 93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f
+    path: patches/@zag-js__menu@1.41.2.patch
+  '@zag-js/popper@1.41.2':
+    hash: 3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5
+    path: patches/@zag-js__popper@1.41.2.patch
+  '@zag-js/vanilla@1.41.2':
+    hash: d64014f493ff119ddac9b732e505ddd693de8e25c7d37da75a4ca640a9bd72eb
+    path: patches/@zag-js__vanilla@1.41.2.patch
+  tsup@8.3.6:
+    hash: bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6
+    path: patches/tsup@8.3.6.patch
+
 importers:
 
   .:
@@ -31,7 +57,7 @@ importers:
         version: 2.27.12
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -53,6 +79,9 @@ importers:
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../../packages/shadow
+      '@labpics/ui-solid':
+        specifier: workspace:*
+        version: link:../../packages/solid
       '@labpics/ui-svelte':
         specifier: workspace:*
         version: link:../../packages/svelte
@@ -65,12 +94,18 @@ importers:
       '@labui/colors':
         specifier: workspace:*
         version: link:../../packages/colors
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
       react:
         specifier: 18.3.1
         version: 18.3.1
       react-dom:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)
+      solid-js:
+        specifier: 1.9.4
+        version: 1.9.4
       svelte:
         specifier: 5.19.0
         version: 5.19.0
@@ -99,6 +134,9 @@ importers:
       '@types/react-dom':
         specifier: 18.3.5
         version: 18.3.5(@types/react@18.3.18)
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -147,7 +185,7 @@ importers:
         version: 21.0.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -173,6 +211,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@floating-ui/dom':
+        specifier: 1.7.6
+        version: 1.7.6
       '@labpics/motion':
         specifier: 0.5.0
         version: 0.5.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))
@@ -188,21 +229,21 @@ importers:
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2
+      '@zag-js/anatomy':
+        specifier: 1.41.2
+        version: 1.41.2
       '@zag-js/checkbox':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/combobox':
+      '@zag-js/collection':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/core':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/dialog':
+      '@zag-js/dismissable':
         specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/menu':
-        specifier: 1.41.2
-        version: 1.41.2
+        version: 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
       '@zag-js/number-input':
         specifier: 1.41.2
         version: 1.41.2
@@ -212,16 +253,10 @@ importers:
       '@zag-js/pin-input':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/popover':
-        specifier: 1.41.2
-        version: 1.41.2
       '@zag-js/progress':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/radio-group':
-        specifier: 1.41.2
-        version: 1.41.2
-      '@zag-js/select':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/slider':
@@ -239,15 +274,12 @@ importers:
       '@zag-js/toggle':
         specifier: 1.41.2
         version: 1.41.2
-      '@zag-js/tooltip':
-        specifier: 1.41.2
-        version: 1.41.2
       '@zag-js/types':
         specifier: 1.41.2
         version: 1.41.2
       '@zag-js/vanilla':
         specifier: 1.41.2
-        version: 1.41.2
+        version: 1.41.2(patch_hash=d64014f493ff119ddac9b732e505ddd693de8e25c7d37da75a4ca640a9bd72eb)
       lit:
         specifier: 3.3.3
         version: 3.3.3
@@ -264,6 +296,36 @@ importers:
       '@lit-labs/ssr-client':
         specifier: 1.1.8
         version: 1.1.8
+      '@zag-js/combobox':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/dialog':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=0f576e110fbe8225aac7120dd40e109a469c1bab0247fb5e623b978b061683fd)
+      '@zag-js/dom-query':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
+      '@zag-js/live-region':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/menu':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)
+      '@zag-js/popover':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/popper':
+        specifier: 1.41.2
+        version: 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
+      '@zag-js/rect-utils':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/select':
+        specifier: 1.41.2
+        version: 1.41.2
+      '@zag-js/tooltip':
+        specifier: 1.41.2
+        version: 1.41.2
       esbuild:
         specifier: 0.28.2
         version: 0.28.2
@@ -272,7 +334,7 @@ importers:
         version: 21.0.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -302,7 +364,7 @@ importers:
         version: 0.28.2
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -335,10 +397,10 @@ importers:
         version: 1.41.2
       '@zag-js/dialog':
         specifier: 1.41.2
-        version: 1.41.2
+        version: 1.41.2(patch_hash=0f576e110fbe8225aac7120dd40e109a469c1bab0247fb5e623b978b061683fd)
       '@zag-js/menu':
         specifier: 1.41.2
-        version: 1.41.2
+        version: 1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)
       '@zag-js/number-input':
         specifier: 1.41.2
         version: 1.41.2
@@ -396,7 +458,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -408,7 +470,7 @@ importers:
         version: 22.10.5
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -436,7 +498,7 @@ importers:
         version: 1.9.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -488,7 +550,7 @@ importers:
         version: 22.10.5
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       tsx:
         specifier: 4.19.2
         version: 4.19.2
@@ -513,7 +575,7 @@ importers:
         version: 21.0.4
       tsup:
         specifier: 8.3.6
-        version: 8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
+        version: 8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3)
       typescript:
         specifier: 5.7.3
         version: 5.7.3
@@ -4629,25 +4691,25 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
   '@zag-js/anatomy@1.41.2': {}
 
-  '@zag-js/aria-hidden@1.41.2':
+  '@zag-js/aria-hidden@1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
 
   '@zag-js/auto-resize@1.41.2':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
 
   '@zag-js/checkbox@1.41.2':
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
@@ -4661,64 +4723,64 @@ snapshots:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/collection': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dismissable': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
       '@zag-js/live-region': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
   '@zag-js/core@1.41.2':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/dialog@1.41.2':
+  '@zag-js/dialog@1.41.2(patch_hash=0f576e110fbe8225aac7120dd40e109a469c1bab0247fb5e623b978b061683fd)':
     dependencies:
       '@zag-js/anatomy': 1.41.2
-      '@zag-js/aria-hidden': 1.41.2
+      '@zag-js/aria-hidden': 1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)
       '@zag-js/core': 1.41.2
-      '@zag-js/dismissable': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-trap': 1.41.2
       '@zag-js/remove-scroll': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/dismissable@1.41.2':
+  '@zag-js/dismissable@1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/interact-outside': 1.41.2
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/dom-query@1.41.2':
+  '@zag-js/dom-query@1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)':
     dependencies:
       '@zag-js/types': 1.41.2
 
   '@zag-js/focus-trap@1.41.2':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
 
   '@zag-js/focus-visible@1.41.2':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
 
   '@zag-js/interact-outside@1.41.2':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/utils': 1.41.2
 
   '@zag-js/live-region@1.41.2': {}
 
-  '@zag-js/menu@1.41.2':
+  '@zag-js/menu@1.41.2(patch_hash=93a9f006fb9ec421e3838464821f5f586b01795b9b5ae62319dd7a35fcea537f)':
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dismissable': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/rect-utils': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
@@ -4728,7 +4790,7 @@ snapshots:
       '@internationalized/number': 3.6.6
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4736,7 +4798,7 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4744,34 +4806,34 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
   '@zag-js/popover@1.41.2':
     dependencies:
       '@zag-js/anatomy': 1.41.2
-      '@zag-js/aria-hidden': 1.41.2
+      '@zag-js/aria-hidden': 1.41.2(patch_hash=abadfedfd7029c0e4643480c7d2a0da0b3db33bbc6469fef10bb9a890df0f9ec)
       '@zag-js/core': 1.41.2
-      '@zag-js/dismissable': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-trap': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/remove-scroll': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
-  '@zag-js/popper@1.41.2':
+  '@zag-js/popper@1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)':
     dependencies:
       '@floating-ui/dom': 1.7.6
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/utils': 1.41.2
 
   '@zag-js/progress@1.41.2':
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4779,7 +4841,7 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
@@ -4797,17 +4859,17 @@ snapshots:
 
   '@zag-js/remove-scroll@1.41.2':
     dependencies:
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
 
   '@zag-js/select@1.41.2':
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/collection': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dismissable': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dismissable': 1.41.2(patch_hash=38741400055570e17d102e68bac7adc45d445cd1d707d8eeb79e5afed5968b32)
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4815,7 +4877,7 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4827,7 +4889,7 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
@@ -4836,7 +4898,7 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4845,7 +4907,7 @@ snapshots:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/auto-resize': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/interact-outside': 1.41.2
       '@zag-js/live-region': 1.41.2
       '@zag-js/types': 1.41.2
@@ -4855,7 +4917,7 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4863,9 +4925,9 @@ snapshots:
     dependencies:
       '@zag-js/anatomy': 1.41.2
       '@zag-js/core': 1.41.2
-      '@zag-js/dom-query': 1.41.2
+      '@zag-js/dom-query': 1.41.2(patch_hash=a45b171031cf13ed44ec981d3a1144a1a7d66bc452670bbbbb7f170570417dc0)
       '@zag-js/focus-visible': 1.41.2
-      '@zag-js/popper': 1.41.2
+      '@zag-js/popper': 1.41.2(patch_hash=3bdf2ea75c88e37cad3de939c452a5258fea28b9aba09f73e4011c95966afce5)
       '@zag-js/types': 1.41.2
       '@zag-js/utils': 1.41.2
 
@@ -4875,7 +4937,7 @@ snapshots:
 
   '@zag-js/utils@1.41.2': {}
 
-  '@zag-js/vanilla@1.41.2':
+  '@zag-js/vanilla@1.41.2(patch_hash=d64014f493ff119ddac9b732e505ddd693de8e25c7d37da75a4ca640a9bd72eb)':
     dependencies:
       '@zag-js/core': 1.41.2
       '@zag-js/store': 1.41.2
@@ -6135,7 +6197,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.3.6(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3):
+  tsup@8.3.6(patch_hash=bdf93cd153b968929fa187ed14c67e8909999bc6114508aad72e5871aecfc0f6)(postcss@8.5.18)(tsx@4.19.2)(typescript@5.7.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.28.2)
       cac: 6.7.14
@@ -6164,7 +6226,7 @@ snapshots:
 
   tsx@4.19.2:
     dependencies:
-      esbuild: 0.25.12
+      esbuild: 0.28.2
       get-tsconfig: 4.14.0
     optionalDependencies:
       fsevents: 2.3.3

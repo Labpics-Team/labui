@@ -69,6 +69,16 @@
         "default": "./dist/proof/lab-proof.cjs"
       }
     },
+    "./behaviors/*": {
+      "import": {
+        "types": "./dist/behaviors/*.d.ts",
+        "default": "./dist/behaviors/*.js"
+      },
+      "require": {
+        "types": "./dist/behaviors/*.d.cts",
+        "default": "./dist/behaviors/*.cjs"
+      }
+    },
     "./*": {
       "import": {
         "types": "./dist/components/*/index.d.ts",
@@ -100,29 +110,27 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@floating-ui/dom": "1.7.6",
     "@labpics/motion": "0.5.0",
     "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-tokens": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
     "@zag-js/accordion": "1.41.2",
+    "@zag-js/anatomy": "1.41.2",
     "@zag-js/checkbox": "1.41.2",
-    "@zag-js/combobox": "1.41.2",
+    "@zag-js/collection": "1.41.2",
     "@zag-js/core": "1.41.2",
-    "@zag-js/dialog": "1.41.2",
-    "@zag-js/menu": "1.41.2",
+    "@zag-js/dismissable": "1.41.2",
     "@zag-js/number-input": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
-    "@zag-js/popover": "1.41.2",
     "@zag-js/pagination": "1.41.2",
     "@zag-js/progress": "1.41.2",
     "@zag-js/radio-group": "1.41.2",
-    "@zag-js/select": "1.41.2",
     "@zag-js/slider": "1.41.2",
     "@zag-js/switch": "1.41.2",
     "@zag-js/tabs": "1.41.2",
     "@zag-js/tags-input": "1.41.2",
     "@zag-js/toggle": "1.41.2",
-    "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.41.2",
     "lit": "3.3.3",
@@ -148,6 +156,16 @@
   "devDependencies": {
     "@lit-labs/ssr": "4.1.0",
     "@lit-labs/ssr-client": "1.1.8",
+    "@zag-js/combobox": "1.41.2",
+    "@zag-js/dialog": "1.41.2",
+    "@zag-js/dom-query": "1.41.2",
+    "@zag-js/live-region": "1.41.2",
+    "@zag-js/menu": "1.41.2",
+    "@zag-js/popover": "1.41.2",
+    "@zag-js/popper": "1.41.2",
+    "@zag-js/rect-utils": "1.41.2",
+    "@zag-js/select": "1.41.2",
+    "@zag-js/tooltip": "1.41.2",
     "esbuild": "0.28.2",
     "happy-dom": "21.0.4",
     "tsup": "8.3.6",

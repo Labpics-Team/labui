@@ -30,8 +30,8 @@
 'use client';
 
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as menuMachine from '@labpics/ui-core/behaviors/menu';
 import type { LabMenuItem, LabMenuPlacement, LabMenuSize } from '@labpics/ui-core/menu';
-import * as menuMachine from '@zag-js/menu';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';

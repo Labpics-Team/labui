@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 /**
  * Popover suite — the first dismissable, focus-managed overlay, verified on BOTH
@@ -34,23 +35,11 @@ function reactOpenContent(page: Page): Locator {
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 
-/**
- * Wait until the machine's autoFocus has moved focus INTO the open dialog. Zag
- * attaches its document-level Escape/outside-click listeners as part of the same
- * open effects, so once focus is inside the panel those dismissers are live — this
- * is the honest gate that removes the open→dismiss race (no arbitrary sleep).
- */
+/** Ожидает autoFocus по реальному composed дереву панели, включая её слот. */
 async function litFocusInDialog(page: Page, testid: string): Promise<void> {
-  // Zag's focus trap focuses the first focusable in the content's shadow subtree
-  // (the close button, or the content itself); shadowRoot.activeElement then sits
-  // inside .content (vs the trigger, which is outside it).
   await expect
-    .poll(() =>
-      litHost(page, testid).evaluate(
-        (h) => (h as HTMLElement).shadowRoot?.activeElement?.closest('.content') != null,
-      ),
-    )
-    .toBe(true);
+    .poll(() => litHost(page, testid).evaluate(modalFocus))
+    .toMatchObject({ inside: true });
 }
 async function reactFocusInDialog(page: Page): Promise<void> {
   await expect
@@ -225,15 +214,7 @@ test('aria: dialog is labelled by its heading and described by its description',
   );
 });
 
-/**
- * Modal contract — the machine sets aria-modal on the dialog only when modal, locks
- * body scroll, and traps focus. The Lit focus-trap caveat is honoured here, not
- * papered over: the trap covers the SHADOW-subtree focusable (the closable close
- * button) — that is what we assert stays focused. The slotted light-DOM `Action`
- * button is deliberately NOT trapped (it lives outside the content's shadow subtree
- * the trap walks), and the final assertion makes that limitation VISIBLE rather than
- * hiding it. See the focus-trap caveat in lab-popover.ts / popover.doc.ts.
- */
+/** Modal включает aria-modal, scroll lock и trap для shadow и slotted controls. */
 test('aria-modal: present+true on the modal dialog, absent on the non-modal one', async ({
   page,
 }) => {
@@ -241,10 +222,7 @@ test('aria-modal: present+true on the modal dialog, absent on the non-modal one'
   await litHost(page, 'lit-pop').locator('.trigger').click();
   await expect(litContent(page, 'lit-pop')).toBeVisible();
   expect(await litContent(page, 'lit-pop').getAttribute('aria-modal')).toBeNull();
-  // Honest gate (same as the other Escape tests): wait until autoFocus has landed
-  // inside the dialog, which is when Zag's document-level Escape listener is live.
-  // Without it, Escape can race the listener, leave lit-pop OPEN, and the next
-  // lit-pop-modal opens on top — leaking scrim + scroll-lock into later specs.
+  // Здесь проверяется обычное закрытие после autoFocus; первый Escape имеет отдельный witness.
   await litFocusInDialog(page, 'lit-pop');
   await page.keyboard.press('Escape');
   await expect(litContent(page, 'lit-pop')).toBeHidden();
@@ -285,37 +263,27 @@ test('scroll-lock: a modal popover locks body scroll while open (machine)', asyn
     .not.toBe('hidden');
 });
 
-test('focus-trap: Tab stays on the shadow-subtree focusable; slotted light-DOM is NOT trapped (Lit caveat)', async ({
+test('focus-trap: Tab и Shift+Tab обходят slotted Action и shadow Close внутри modal', async ({
   page,
 }) => {
-  await litHost(page, 'lit-pop-modal').locator('.trigger').click();
+  const host = litHost(page, 'lit-pop-modal');
+  const action = page.getByTestId('lit-pop-modal-action');
+  const close = host.locator('.close');
+  await host.locator('.trigger').click();
   await expect(litContent(page, 'lit-pop-modal')).toBeVisible();
   await litFocusInDialog(page, 'lit-pop-modal');
+  await action.focus();
+  await expect(action).toBeFocused();
 
-  // Tab repeatedly: the trap recycles focus among the content's SHADOW-subtree
-  // focusables (here the closable close button). shadowRoot.activeElement must
-  // remain inside .content the whole time — that is the trap actually working.
-  for (let i = 0; i < 5; i++) {
-    const inContent = await litHost(page, 'lit-pop-modal').evaluate(
-      (h) => (h as HTMLElement).shadowRoot?.activeElement?.closest('.content') != null,
-    );
-    expect(inContent, `Tab #${i}: focus stays in the shadow content`).toBe(true);
+  // Ожидаемый порядок следует из fixture: слот перед встроенной кнопкой Close.
+  for (const target of [close, action, close, action]) {
     await page.keyboard.press('Tab');
+    await expect(target).toBeFocused();
+    await expect.poll(() => host.evaluate(modalFocus)).toMatchObject({ inside: true });
   }
-
-  // HONESTY GUARD — the documented limitation, asserted: the slotted light-DOM
-  // `Action` button lives OUTSIDE the content's shadow subtree the trap walks, so the
-  // trap never lands on it. If a future change made the Lit trap also cover slotted
-  // light-DOM, this assertion would flip and force the caveat docs to be revisited.
-  const slottedActionFocused = await page.evaluate(
-    () =>
-      document.activeElement?.getAttribute('data-testid') === 'lit-pop-modal-action' ||
-      document.querySelector('[data-testid="lit-pop-modal-action"]')?.matches(':focus') === true,
-  );
-  expect(
-    slottedActionFocused,
-    'slotted light-DOM Action is NOT inside the Lit shadow focus-trap (documented caveat)',
-  ).toBe(false);
+  await page.keyboard.press('Shift+Tab');
+  await expect(close).toBeFocused();
+  await expect.poll(() => host.evaluate(modalFocus)).toMatchObject({ inside: true });
 });
 
 /**

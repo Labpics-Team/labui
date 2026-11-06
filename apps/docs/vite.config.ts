@@ -264,6 +264,13 @@ export default defineConfig({
         'fixture-adapter-slots': resolve(__dirname, 'src/_fixtures/adapter-slots.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-switch-motion': resolve(__dirname, 'src/_fixtures/switch-motion.html'),
+        'fixture-sheet': resolve(__dirname, 'src/_fixtures/sheet.html'),
+        'fixture-modal-live': resolve(__dirname, 'src/_fixtures/modal-live.html'),
+        'fixture-modal-composition': resolve(__dirname, 'src/_fixtures/modal-composition.html'),
+        'fixture-modal-layer-composition': resolve(
+          __dirname,
+          'src/_fixtures/modal-layer-composition.html',
+        ),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),
@@ -298,10 +305,8 @@ export default defineConfig({
         // open/close/positioning/dismiss/keyboard + parity suite.
         tooltip: resolve(__dirname, 'src/tooltip.html'),
         popover: resolve(__dirname, 'src/popover.html'),
-        // Modal-overlay parity fixtures: Lit element (body portal + relocated slotted
-        // body for a real trap) and native-React twin (createPortal body), running the
-        // SAME @zag-js/dialog machine, for the open/dismiss/trap/scroll-lock + parity
-        // suite. Alert-dialog adds the role="alertdialog" no-outside-dismiss contract.
+        // Lit проецирует содержимое через слоты; React использует createPortal.
+        // Оба рендерера разделяют поведение и модальный runtime Core.
         dialog: resolve(__dirname, 'src/dialog.html'),
         'alert-dialog': resolve(__dirname, 'src/alert-dialog.html'),
         // Navigation batch: Tabs (compound, @zag-js/tabs), Breadcrumb

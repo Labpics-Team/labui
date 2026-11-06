@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/tabs';
 import type { LabTabs } from '@labpics/ui-core/tabs';
 
@@ -28,6 +28,6 @@ export function renderTabs(
       activation-mode=${ifDefined(props.activationMode)}
       value=${ifDefined(props.value)}
       default-value=${ifDefined(props.defaultValue)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-tabs>`);
 }

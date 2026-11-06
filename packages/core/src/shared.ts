@@ -47,4 +47,17 @@ export {
   type LabFieldType,
 } from './components/field/field-a11y.js';
 export { type LabComboboxItem, filterComboboxItems } from './components/combobox/filter.js';
+export {
+  type DialogFocusContext,
+  completeFailedDialogFocus,
+  dialogFinalFocusTarget,
+} from './components/dialog/focus.js';
 export { tagsInputTranslations } from './components/tags-input/translations.js';
+export {
+  type LabSheetPosition,
+  type SheetGeometry,
+  sheetPositions,
+  parseSheetPosition,
+  sheetGeometry,
+  closestSheetPosition,
+} from './components/sheet/positions.js';

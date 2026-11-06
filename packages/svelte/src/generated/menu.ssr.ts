@@ -27,6 +27,6 @@ export function renderMenu(
       placement=${ifDefined(props.placement)}
       .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       label=${ifDefined(props.label)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-menu>`);
 }

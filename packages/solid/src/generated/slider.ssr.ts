@@ -29,12 +29,12 @@ export function renderSlider(
       .labelHidden=${props.labelHidden === undefined ? noChange : Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       step=${ifDefined(props.step)}
-      .marks=${props.marks}
+      .marks=${props.marks === undefined ? noChange : props.marks}
       .showValue=${props.showValue === undefined ? noChange : Boolean(props.showValue)}
       .readonly=${props.readonly === undefined ? noChange : Boolean(props.readonly)}
       .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}

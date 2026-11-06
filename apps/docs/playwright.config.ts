@@ -69,6 +69,11 @@ const SMOKE_SPECS = [
   'switch-geometry.spec.ts',
   // Runtime Switch: прерывание, reduced motion и освобождение ресурсов.
   'switch-motion.spec.ts',
+  'sheet.spec.ts',
+  'sheet-motion-errors.spec.ts',
+  'sheet-disconnect-errors.spec.ts',
+  'sheet-error-focus.spec.ts',
+  'modal-live.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
   'pin-input.spec.ts',

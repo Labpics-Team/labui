@@ -30,8 +30,8 @@ export function renderSelect(
       name=${ifDefined(props.name)}
       placeholder=${ifDefined(props.placeholder)}
       label=${ifDefined(props.label)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
-      .items=${props.items}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-select>`);
 }

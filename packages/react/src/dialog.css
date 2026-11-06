@@ -30,6 +30,24 @@
   border-radius: var(--lab-radius-xs, 0.25rem);
 }
 
+.lab-dialog-portal-plane {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: visible;
+  pointer-events: none;
+  font: inherit;
+  color: inherit;
+}
+.lab-dialog-portal-plane::backdrop {
+  pointer-events: none;
+}
+
 /* Modal scrim — rendered only when modal && open (parity with the Lit backdrop).
    pointer-events:auto re-arms scrim hit-testing: a modal locks the page with
    @zag-js/remove-scroll (body { pointer-events: none }), which cascades to this

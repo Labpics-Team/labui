@@ -1,4 +1,4 @@
-import * as tooltipMachine from '@zag-js/tooltip';
+import * as tooltipMachine from '@labpics/ui-core/behaviors/tooltip';
 /**
  * `<lab-tooltip>` — the FIRST positioned-overlay component, and the canon every
  * later overlay (Popover, Menu, Select, Dialog) follows.

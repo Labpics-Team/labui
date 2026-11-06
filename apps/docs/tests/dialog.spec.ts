@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 /**
  * Dialog suite — the first TRUE modal overlay, verified on BOTH renderers.
@@ -14,7 +15,7 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *   6. Outside-click dismiss — clicking the scrim closes a modal dialog.
  *   7. Scroll-lock — body overflow:hidden while a modal dialog is open.
  *   8. REAL focus trap — Tab cycles WITHIN the dialog and the SLOTTED body focusables
- *      ARE reachable/trapped (the dialog portals + relocates its body, unlike popover).
+ *      доступны через нативные слоты без переноса потребительского DOM.
  *   9. Visual parity — Lit and React resolve the SAME panel colour when open.
  *
  * Determinism: every dismiss is gated on the machine having moved focus INTO the dialog
@@ -27,7 +28,7 @@ const PORTAL = (testid: string) => `[data-portal-for="${testid}"]`;
 function litHost(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
-/** The Lit floating content lives in the portal's shadow root (in document.body). */
+/** Floating content находится в shadow root поверхности LabModal. */
 function litContent(page: Page, testid: string): Locator {
   return page.locator(PORTAL(testid)).locator('.content');
 }
@@ -61,7 +62,8 @@ async function litFocusInDialog(page: Page, testid: string): Promise<void> {
     .poll(() =>
       page
         .locator(PORTAL(testid))
-        .evaluate((host) => host.shadowRoot?.activeElement?.closest('.content') != null),
+        .evaluate(modalFocus)
+        .then((focus) => focus.inside),
     )
     .toBe(true);
 }
@@ -253,7 +255,7 @@ test('scroll-lock: a modal dialog locks body scroll while open (machine)', async
 
 /**
  * REAL focus trap — the dialog's defining contract, and the inverse of the popover
- * caveat. The dialog portals its floating layer to <body> and RELOCATES the projected
+ * caveat. The dialog RELOCATES the projected
  * slot="content" body into it, so the slotted focusables (a link + an Action button)
  * physically live inside the content subtree Zag's trap walks. Tabbing must therefore:
  *   - keep focus INSIDE the dialog the whole cycle (never escape to the trigger/body);
@@ -268,18 +270,11 @@ test('focus-trap: Tab stays inside the dialog AND reaches the slotted body (Lit,
   await litFocusInDialog(page, 'lit-dialog');
 
   let reachedSlottedAction = false;
-  // Cycle Tab enough to traverse close + link + action; focus must remain in .content,
-  // and at some point land on the relocated, slotted Action button.
+  // Tab остаётся в панели и достигает действия в потребительском content slot.
   for (let i = 0; i < 8; i++) {
-    const probe = await page.locator(PORTAL('lit-dialog')).evaluate((host) => {
-      const active = host.shadowRoot?.activeElement as HTMLElement | null | undefined;
-      return {
-        inContent: active?.closest('.content') != null,
-        onAction: active?.getAttribute('data-testid') === 'lit-dialog-action',
-      };
-    });
-    expect(probe.inContent, `Tab #${i}: focus stays inside the dialog`).toBe(true);
-    if (probe.onAction) reachedSlottedAction = true;
+    const probe = await page.locator(PORTAL('lit-dialog')).evaluate(modalFocus);
+    expect(probe.inside, `Tab #${i}: focus stays inside the dialog`).toBe(true);
+    if (probe.testId === 'lit-dialog-action') reachedSlottedAction = true;
     await page.keyboard.press('Tab');
   }
   expect(reachedSlottedAction, 'the slotted Action button IS inside the focus-trap').toBe(true);

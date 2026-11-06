@@ -91,6 +91,7 @@ export { Popover, type PopoverProps } from './popover.js';
 // running the SAME `@zag-js/dialog` machine via `useZag`. The floating layer is portalled
 // to <body> so the modal focus-trap contains the dialog body with no caveat.
 export { Dialog, type DialogProps } from './dialog.js';
+export { Sheet, type SheetProps, type LabSheetPosition } from './sheet.js';
 export { AlertDialog, type AlertDialogProps } from './alert-dialog.js';
 // PRODUCTION navigation — native-React twins of the Lit `<lab-tabs>` /
 // `<lab-breadcrumb>` / `<lab-pagination>`. Tabs + Pagination run the SAME Zag

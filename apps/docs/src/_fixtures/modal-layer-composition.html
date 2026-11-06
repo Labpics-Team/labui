@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-material="solid" data-contrast="normal">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Композиция модальных слоёв</title>
+    <link rel="stylesheet" href="../button-demo.css" />
+    <style>
+      .consumer-body { padding: 16px; }
+      .lab-popover-positioner[popover] {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        overflow: visible;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Параметры уведомлений</h1>
+      <button id="background" type="button">Действие на странице</button>
+      <lab-sheet id="sheet" data-testid="sheet" position="half" aria-label="Параметры">
+        Открыть параметры
+        <div id="consumer-body" class="consumer-body" slot="content">
+          <label>Имя <input id="sheet-field" /></label>
+          <div id="react-popup"></div>
+          <div id="react-dialog"></div>
+          <div id="react-alert"></div>
+        </div>
+      </lab-sheet>
+    </main>
+    <script type="module" src="./modal-layer-composition.tsx"></script>
+  </body>
+</html>

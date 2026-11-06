@@ -64,6 +64,7 @@ beforeAll(async () => {
       'radio-group',
       'select',
       'slider',
+      'sheet',
       'switch',
       'tabs',
       'tags-input',

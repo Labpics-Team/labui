@@ -10,7 +10,7 @@ import type { LabAlertDialog } from '@labpics/ui-core/alert-dialog';
 import { type LabComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-alert-dialog>, взятые прямо из класса ядра (LabAlertDialog). */
-export type AlertDialogProps = Pick<LabAlertDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>;
+export type AlertDialogProps = Pick<LabAlertDialog, 'modal' | 'closable' | 'heading' | 'description' | 'size'>;
 
 /**
  * <AlertDialog> — тонкая Vue-обёртка над <lab-alert-dialog>.
@@ -21,11 +21,11 @@ export const AlertDialog: LabComponent<AlertDialogProps, 'open-change'> = create
   'open-change'
 >('lab-alert-dialog', {
   specs: [
-      { name: 'size', attr: 'size', kind: 'string' },
       { name: 'modal', attr: 'modal', kind: 'string' },
       { name: 'closable', attr: 'closable', kind: 'boolean' },
       { name: 'heading', attr: 'heading', kind: 'string' },
       { name: 'description', attr: 'description', kind: 'string' },
+      { name: 'size', attr: 'size', kind: 'string' },
   ],
   events: ['open-change'],
 });

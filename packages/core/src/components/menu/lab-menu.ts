@@ -61,7 +61,7 @@
  * SSR (core-CONTRACT §7): a menu is client-only. The server emits the trigger and a
  * `hidden` menu; the machine upgrades it on the client. No flash, no pre-work.
  */
-import * as menuMachine from '@zag-js/menu';
+import * as menuMachine from '@labpics/ui-core/behaviors/menu';
 import { type TemplateResult, css, html } from 'lit';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';

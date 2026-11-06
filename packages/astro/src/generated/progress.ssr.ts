@@ -24,7 +24,7 @@ export function renderProgress(
 ): string {
   return renderToString(html`<lab-progress
       size=${ifDefined(props.size)}
-      .value=${props.value}
+      .value=${props.value === undefined ? noChange : props.value}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       label=${ifDefined(props.label)}
