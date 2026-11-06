@@ -1,3 +1,4 @@
+import type { SpringParams } from '@labpics/motion';
 /**
  * Build-time bridge to the physical motion owner.
  *
@@ -11,7 +12,6 @@ import {
   easing as motionEasing,
   spring as motionSpring,
 } from '@labpics/motion/tokens';
-import type { SpringParams } from '@labpics/motion';
 
 import type { Provenance } from './model.js';
 

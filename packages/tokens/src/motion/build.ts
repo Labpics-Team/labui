@@ -7,14 +7,14 @@ import type {
 } from './model.js';
 import {
   DURATION_NAMES,
+  type DurationPrimitiveName,
   EASING_NAMES,
+  type EasingPrimitiveName,
   durationPrimitive,
   easingPrimitive,
   springPrimitive,
-  type DurationPrimitiveName,
-  type EasingPrimitiveName,
 } from './primitives.js';
-import { describeSpringPhysics, type SpringPhysics, springLinear } from './spring.js';
+import { type SpringPhysics, describeSpringPhysics, springLinear } from './spring.js';
 
 /**
  * Resolve Lab UI semantic bindings over physical primitives owned by
