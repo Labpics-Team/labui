@@ -7,6 +7,57 @@ export interface DialogFocusContext {
   readonly trigger: HTMLElement | null;
 }
 
+// TypeScript 5.7 lib.dom ещё не содержит стандартную ARIA element reflection.
+// Этот узкий interop проверяется capability и readback, а не приведением типа.
+type AriaControlsElement = Element & {
+  ariaControlsElements: readonly Element[] | null;
+};
+
+function hasAriaControlsElements(element: Element): element is AriaControlsElement {
+  return 'ariaControlsElements' in element;
+}
+
+/** Связь с доступным controlled container; cleanup возвращает прежнее отношение. */
+export function bindDialogTriggerControls(
+  trigger: HTMLButtonElement,
+  controlled: HTMLElement,
+): () => void {
+  const previousAttribute = trigger.getAttribute('aria-controls');
+  const previousReferences = hasAriaControlsElements(trigger) ? trigger.ariaControlsElements : null;
+  const restore = (): void => {
+    if (hasAriaControlsElements(trigger) && !previousAttribute && previousReferences?.length) {
+      trigger.ariaControlsElements = previousReferences;
+    } else if (previousAttribute === null) {
+      trigger.removeAttribute('aria-controls');
+    } else {
+      trigger.setAttribute('aria-controls', previousAttribute);
+    }
+  };
+
+  const root = trigger.getRootNode();
+  if (root === controlled.getRootNode() && controlled.id) {
+    if (
+      !(root instanceof Document || root instanceof ShadowRoot) ||
+      root.getElementById(controlled.id) !== controlled
+    ) {
+      throw new TypeError(
+        'LabModal: controlled container id does not resolve in the trigger root.',
+      );
+    }
+    trigger.setAttribute('aria-controls', controlled.id);
+  } else {
+    if (!hasAriaControlsElements(trigger)) {
+      throw new TypeError('LabModal: this trigger requires Element.ariaControlsElements support.');
+    }
+    trigger.ariaControlsElements = [controlled];
+  }
+  if (hasAriaControlsElements(trigger) && !trigger.ariaControlsElements?.includes(controlled)) {
+    restore();
+    throw new TypeError('LabModal: controlled container is outside the trigger reference scope.');
+  }
+  return restore;
+}
+
 export function composedAncestors(element: Element | null): Element[] {
   const ancestors: Element[] = [];
   let node: Node | null = element;
