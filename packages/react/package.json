@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "React-компоненты Lab UI: DOM-рендеринг с общими типами и поведением из @labpics/ui-core.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

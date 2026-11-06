@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Компоненты Lab UI на Lit, общие типы и поведение, темы, материалы и серверный рендеринг для веб-привязок.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

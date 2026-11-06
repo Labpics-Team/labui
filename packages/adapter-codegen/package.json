@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Генератор тонких обёрток адаптеров (Vue/Svelte/Solid/Astro) из единого манифеста, выведенного из исходников @labpics/ui-core. Только dev-инструмент — не публикуется, в рантайм адаптеров не попадает.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "generate": "tsx src/generate.ts",
