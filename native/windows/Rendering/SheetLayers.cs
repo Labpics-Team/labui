@@ -325,7 +325,7 @@ public sealed class SheetLayers : Grid
             }
             IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
-            IGraphicsEffectSource Layer(int index) => Effect(new Transform2DEffect
+            Transform2DEffect Layer(int index) => Effect(new Transform2DEffect
             {
                 Source = Source("atlas"),
                 TransformMatrix = atlas.Cell(index).EffectTransform,
@@ -390,7 +390,7 @@ public sealed class SheetLayers : Grid
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
-                IGraphicsEffect ghostGraph, IGraphicsEffect bodyGraph,
+                IGraphicsEffect bodySourceGraph, IGraphicsEffect bodyMaskGraph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
@@ -416,14 +416,14 @@ public sealed class SheetLayers : Grid
                             primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
                             { ["name"] = factoryName, ["operation"] = operation };
                             if (operation == "factory")
-                                SheetSourceTopologyProbe.RecordBranches(primary, compositor, ghostGraph, bodyGraph);
+                                SheetSourceTopologyProbe.RecordBranches(primary, compositor, bodySourceGraph, bodyMaskGraph);
                         }
                     }
                     catch { }
                     throw;
                 }
             }
-            IGraphicsEffectSource WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
+            CompositeEffect WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
                 Effect(new OpacityEffect { Source = Layer(noise), Opacity = (float)opacity }));
 
             // Каждый authored уровень сохраняет свою Gaussian-ветвь и маску.
@@ -442,10 +442,12 @@ public sealed class SheetLayers : Grid
                 Background = tinted, Foreground = Paint(Blend!),
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
-            var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
+            var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
+            var bodyAlphaMask = Layer(bodyMask);
+            var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, ghost, body,
+            result.Visual.Brush = Brush("final", graph, bodySource, bodyAlphaMask,
                 ("backdrop", backdropBrush), ("atlas", atlasBrush));
             return result;
         }

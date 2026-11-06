@@ -24,7 +24,7 @@ test('Sheet graph shares the original backdrop and atlas through fresh source ed
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
   assert.match(
     build,
-    /IGraphicsEffectSource Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
+    /Transform2DEffect Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
   );
   assert.match(
     build,
@@ -32,7 +32,7 @@ test('Sheet graph shares the original backdrop and atlas through fresh source ed
   );
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, ghost, body,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\);/,
+    /result\.Visual\.Brush = Brush\("final", graph, bodySource, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\);/,
   );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
@@ -123,7 +123,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, ghost, body,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, bodySource, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(
