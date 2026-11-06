@@ -1,5 +1,7 @@
 /**
- * WCAG 2.1 AA axe-core гейт — все фикстуры core-компонентов.
+ * WCAG 2.1 AA axe-core гейт — все фикстуры core-компонентов в declared more.
+ * Обычный authored normal сохраняет краски, а не обещает AA; его сохранение
+ * отдельно проверяется ниже на настоящей кнопке и в authored-colors.spec.ts.
  *
  * Охватывает ОБА рендерера (Lit web components + нативный React) на каждой
  * фикстурной странице. Axe разрешает CSS custom properties (--lab-* роли)
@@ -18,8 +20,9 @@
  * color-contrast).
  */
 
-import { expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
 import { assertAxeAA, assertLabelContrast } from './support/axe.js';
+import { contrastRatio, normalizeCssColor } from './support/color.js';
 
 // ---------------------------------------------------------------------------
 // Список фикстур core-компонентов
@@ -71,14 +74,55 @@ async function waitForReactIsland(page: import('@playwright/test').Page): Promis
   }
 }
 
+async function selectContrast(page: Page, contrast: 'normal' | 'more'): Promise<void> {
+  const state = await page.locator('html').evaluate(
+    (scope, contrast) =>
+      new Promise<{ state: string; contrast?: string }>((resolve, reject) => {
+        const cleanup = () => {
+          clearTimeout(timeout);
+          scope.removeEventListener('lab-colors-state', listener);
+        };
+        const listener = (event: Event) => {
+          const state = (event as CustomEvent<{ state: string; contrast?: string }>).detail;
+          if (state.contrast === contrast && state.state === 'ready') {
+            cleanup();
+            resolve(state);
+          } else if (
+            ['failed', 'unsatisfied', 'incomplete', 'cancelled', 'disposed'].includes(state.state)
+          ) {
+            cleanup();
+            reject(new Error(`Контраст ${contrast}: ${state.state}`));
+          }
+        };
+        const timeout = setTimeout(() => {
+          cleanup();
+          reject(new Error(`Нет готовой публикации контраста ${contrast}`));
+        }, 10_000);
+        scope.addEventListener('lab-colors-state', listener);
+        scope.setAttribute('data-contrast', contrast);
+      }),
+    contrast,
+  );
+  expect(state).toMatchObject({ state: 'ready', contrast });
+}
+
+async function openAaFixture(page: Page, path: string): Promise<void> {
+  // Проверяем committed краски, не промежуточные кадры CSS transition.
+  // Начальный normal делает последующий more настоящим изменением входа.
+  await page.emulateMedia({ reducedMotion: 'reduce', contrast: 'no-preference' });
+  await page.goto(path);
+  await waitForReactIsland(page);
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
+  await selectContrast(page, 'more');
+}
+
 // ---------------------------------------------------------------------------
-// Основной скан — одна тема (dark, дефолт)
+// Основной скан — одна тема (dark, дефолт), явно declared more
 // ---------------------------------------------------------------------------
 
-for (const { path, label, hasReactIsland } of COMPONENT_FIXTURES) {
+for (const { path, label } of COMPONENT_FIXTURES) {
   test(`axe AA · ${label}`, async ({ page }) => {
-    await page.goto(path);
-    if (hasReactIsland) await waitForReactIsland(page);
+    await openAaFixture(page, path);
     await assertAxeAA(page);
   });
 }
@@ -105,8 +149,7 @@ for (const { path, label } of ANIMATED_FIXTURES) {
     // Эмулируем prefers-reduced-motion: reduce ДО навигации, чтобы CSS
     // transitions были отключены с первого рендера.
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(path);
-    await waitForReactIsland(page);
+    await openAaFixture(page, path);
     await assertAxeAA(page);
   });
 }
@@ -125,8 +168,7 @@ for (const { path, label } of ANIMATED_FIXTURES) {
  */
 test.describe('label-over-own-surface · Button', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/button.html');
-    await waitForReactIsland(page);
+    await openAaFixture(page, '/button.html');
   });
 
   test('Lit accent-fill: белый текст над синей поверхностью ≥ 4.5:1', async ({ page }) => {
@@ -159,6 +201,60 @@ test.describe('label-over-own-surface · Button', () => {
   });
 });
 
+test('normal → more → normal: computed accent доходит до обоих Button без замены white/primary', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce', contrast: 'no-preference' });
+  await page.goto('/button.html');
+  await waitForReactIsland(page);
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
+  const buttons = [
+    page.getByTestId('lit-accent-fill').locator('button'),
+    page.getByTestId('react-accent-fill'),
+  ];
+  const primary = page.getByTestId('button-title');
+  const readTuple = async () => {
+    const values = [];
+    for (const button of buttons) {
+      const css = await button.evaluate((element) => ({
+        fill: getComputedStyle(element).backgroundColor,
+        label: getComputedStyle(element).color,
+      }));
+      const fill = await normalizeCssColor(page, css.fill);
+      const label = await normalizeCssColor(page, css.label);
+      if (!fill || !label) throw new Error('Button не публикует допустимые CSS-краски');
+      values.push({ fill, label });
+    }
+    return {
+      buttons: values,
+      primary: await normalizeCssColor(
+        page,
+        await primary.evaluate((element) => getComputedStyle(element).color),
+      ),
+    };
+  };
+  const normal = await readTuple();
+  for (const button of normal.buttons) {
+    expect(button.fill).toEqual({ r: 74, g: 143, b: 255, a: 1 });
+    expect(button.label).toEqual({ r: 255, g: 255, b: 255, a: 1 });
+    expect(contrastRatio(button.label, button.fill)).toBeLessThan(4.5);
+  }
+  expect(normal.primary).toEqual({ r: 246, g: 248, b: 250, a: 1 });
+  await selectContrast(page, 'more');
+  const more = await readTuple();
+  expect(more.buttons[0]).toEqual(more.buttons[1]);
+  expect(more.primary).toEqual(normal.primary);
+  for (const [index, button] of buttons.entries()) {
+    expect(more.buttons[index]?.label).toEqual(normal.buttons[index]?.label);
+    expect(more.buttons[index]?.fill).not.toEqual(normal.buttons[index]?.fill);
+    // Простая подстановка авторской more-опоры вместо computed target тоже RED.
+    expect(more.buttons[index]?.fill).not.toEqual({ r: 64, g: 156, b: 255, a: 1 });
+    await assertLabelContrast(button, button);
+  }
+  await selectContrast(page, 'normal');
+  expect(await readTuple()).toEqual(normal);
+});
+
 /**
  * label-over-own-surface для Input — критичен для форм.
  * Проверяем, что текст в поле ввода читаем на фоне control-bg поверхности.
@@ -167,8 +263,7 @@ test.describe('label-over-own-surface · Button', () => {
  */
 test.describe('label-over-own-surface · Input', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/input.html');
-    await waitForReactIsland(page);
+    await openAaFixture(page, '/input.html');
   });
 
   test('Lit input: текст в поле над control-bg ≥ 4.5:1', async ({ page }) => {
