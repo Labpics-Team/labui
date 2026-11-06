@@ -69,7 +69,7 @@ Schema2 сохраняет прежний `stateReference` только для s
 | `packages.uiCore` | Архив `@labpics/ui-core` |
 | `packages.uiShadow` | Архив `@labpics/ui-shadow` |
 | Каждый пакет | `name`, `version`, `archiveSha256`, `archiveBytes`, `sourceCommit` |
-| `authorReference` | `fileName`, `fileKey`, `version`, `icons.reload` |
+| `authorReference` | `fileName`, `fileKeySha256`, `version`, `icons.reload` |
 | `icons.reload` | Ровно `outline` и `filled` |
 | Каждый variant | `sourceFile`, `author`, `anatomy`, `viewBox`, `paths`, `parts`, `gesture` |
 | Каждый state reference | `group`, `variant`, `defaultState`, `enclosurePartId`, `enclosure`, `states`, `proof` |
@@ -79,10 +79,17 @@ Schema2 сохраняет прежний `stateReference` только для s
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
-`author` — точный receipt Figma: `kind: "figma"`, `fileKey`, `version`, `nodeId`,
+`author` — публичная проекция проверенного receipt Figma: `kind: "figma"`,
+`fileKeySha256`, `version`, `nodeIdSha256`,
 `nodeSha256`, `masterSha256`, `normalizedSha256`, `pathFingerprintSha256`.
 `anatomy` — точный version-1 receipt принятой авторской аннотации, включая
 `annotationSha256`, `masterSha256`, `pathFingerprintSha256`.
+
+Подготовка читает raw manifest и masters в памяти, сверяет их происхождение
+с закреплённым источником и проверяет геометрию. В публичных JSON и сообщениях
+идентификаторы файла и узла заменены SHA256; хеши исходных файлов и значения
+oracle сохраняются. Повторные decoded JSON keys получают отказ до `JSON.parse`.
+Публичная ссылка на эталон ведёт в Figma Community.
 
 `viewBox` — четыре конечных числа. `paths` — упорядоченные `{d, fillRule}` из
 raw author master. Независимый reader принимает нейтральные группы и явно
