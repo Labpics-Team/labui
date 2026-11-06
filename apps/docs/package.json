@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
-    "test": "node --test tests/docs-boundary.test.mjs"
+    "test": "node --test tests/docs-boundary.test.mjs tests/icons-public-terminal.test.mjs"
   },
   "dependencies": {
     "@labpics/ui-core": "workspace:*",
