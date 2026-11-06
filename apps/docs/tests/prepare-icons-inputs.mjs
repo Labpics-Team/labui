@@ -11,6 +11,13 @@ import {
   stateReferenceContract,
   validateSubject,
 } from './icons-packed.mjs';
+import {
+  assertPublicProvenance,
+  assertSourceIdentity,
+  parseIconsJson,
+  projectPublicProvenance,
+  publicDiagnosticError,
+} from './icons-public-provenance.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -28,17 +35,18 @@ const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbso
 const git = createGitRunner(process.env.LABUI_ICONS_GIT_DIAGNOSTICS);
 
 export function validateSourcePin(pin) {
+  assertPublicProvenance(pin);
   assert.deepEqual(Object.keys(pin).sort(), [
     'figma',
     'repository',
     'schemaVersion',
     'sourceCommit',
   ]);
-  assert.equal(pin.schemaVersion, 1);
+  assert.equal(pin.schemaVersion, 2);
   assert.equal(pin.repository, 'Labpics-Team/lab-icons');
   assert.match(pin.sourceCommit, /^[a-f0-9]{40}$/);
-  assert.deepEqual(Object.keys(pin.figma).sort(), ['fileKey', 'version']);
-  assert.match(pin.figma.fileKey, /^[A-Za-z0-9]+$/);
+  assert.deepEqual(Object.keys(pin.figma).sort(), ['fileKeySha256', 'version']);
+  assert.ok(/^[a-f0-9]{64}$/.test(pin.figma.fileKeySha256), 'pin: source identity digest');
   assert.match(pin.figma.version, /^\d+$/);
   return pin;
 }
@@ -51,7 +59,7 @@ export function assertCheckout(root, expected) {
 
 async function sourceFile(root, commit, file) {
   const bytes = await readFile(join(root, file));
-  assert.deepEqual(bytes, git(root, ['show', `${commit}:${file}`]), `изменён источник: ${file}`);
+  assert.ok(bytes.equals(git(root, ['show', `${commit}:${file}`])), `изменён источник: ${file}`);
   return { file, sha256: hash(bytes), bytes: bytes.length };
 }
 
@@ -151,13 +159,18 @@ export function readCycleMaster(bytes) {
 // Expected binding берётся из raw аннотации, поведение — из cycle.clockwise.
 // Producer constructor, его helpers, glyph и effect не могут изменить oracle.
 export async function authorReference(iconsRoot, pin) {
-  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
-  assert.equal(manifest.source.fileKey, pin.figma.fileKey);
-  assert.equal(manifest.source.version, pin.figma.version);
-  const annotations = JSON.parse(await readFile(join(iconsRoot, 'semantics/author-anatomy.json')));
+  const manifest = parseIconsJson(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  assertSourceIdentity(manifest.source, pin.figma);
+  const annotations = parseIconsJson(
+    await readFile(join(iconsRoot, 'semantics/author-anatomy.json')),
+  );
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(annotations.schemaVersion, 1);
-  assert.deepEqual(annotations.source, { fileKey: pin.figma.fileKey, version: pin.figma.version });
+  assert.ok(
+    Object.keys(annotations.source).sort().join(',') === 'fileKey,version',
+    'anatomy: source fields',
+  );
+  assertSourceIdentity(annotations.source, pin.figma);
   const variants = {};
   for (const variant of ['outline', 'filled']) {
     const record = manifest.icons.reload[variant];
@@ -216,7 +229,7 @@ export async function authorReference(iconsRoot, pin) {
       sourceFile: record.master,
       author: {
         kind: 'figma',
-        fileKey: pin.figma.fileKey,
+        fileKey: manifest.source.fileKey,
         version: pin.figma.version,
         nodeId: record.nodeId,
         nodeSha256: record.nodeSha256,
@@ -238,28 +251,31 @@ export async function authorReference(iconsRoot, pin) {
       gesture,
     };
   }
-  return {
+  return projectPublicProvenance({
     fileName: manifest.source.name,
     fileKey: manifest.source.fileKey,
     version: manifest.source.version,
     icons: { reload: variants },
-  };
+  });
 }
 
 // Отдельный независимый reference: raw masters и публичная semantic декларация,
 // без compiler/glyph/imports производителя. Interior сохраняет исходный порядок.
 export async function stateReference(iconsRoot, pin, name = 'status-circle') {
   const contract = stateReferenceContract(name);
-  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
-  const document = JSON.parse(
+  const manifest = parseIconsJson(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  const document = parseIconsJson(
     await readFile(join(iconsRoot, 'semantics/author-state-groups.json')),
   );
-  const source = { fileKey: pin.figma.fileKey, version: pin.figma.version };
+  const source = { fileKey: manifest.source.fileKey, version: pin.figma.version };
   assert.equal(manifest.schemaVersion, 1);
-  assert.equal(manifest.source.fileKey, source.fileKey);
-  assert.equal(manifest.source.version, source.version);
+  assertSourceIdentity(manifest.source, pin.figma);
   assert.ok([1, 2].includes(document.schemaVersion), 'неподдержанная author-state schema');
-  assert.deepEqual(document.source, source);
+  assert.ok(
+    Object.keys(document.source).sort().join(',') === 'fileKey,version',
+    'states: source fields',
+  );
+  assertSourceIdentity(document.source, pin.figma);
   const group = document.groups[name];
   assert.equal(group.law, 'enclosure.replace');
   assert.equal(group.defaultState, contract.defaultState);
@@ -327,7 +343,7 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
       },
     });
   }
-  return {
+  return projectPublicProvenance({
     group: name,
     variant: 'outline',
     defaultState: group.defaultState,
@@ -369,7 +385,7 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
           }
         : {}),
     },
-  };
+  });
 }
 
 export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lockfileSha256) {
@@ -541,7 +557,7 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
     Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
     'receipt: bytes вне лимита',
   );
-  const receipt = JSON.parse(bytes);
+  const receipt = assertPublicProvenance(parseIconsJson(bytes));
   assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
   assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
   assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
@@ -554,7 +570,7 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
 }
 
 export async function prepareInputs(options) {
-  const pin = validateSourcePin(JSON.parse(await readFile(PIN)));
+  const pin = validateSourcePin(parseIconsJson(await readFile(PIN)));
   const iconsRoot = await realpath(resolve(options.get('--icons-source')));
   const uiRoot = await realpath(resolve(options.get('--ui-source')));
   const uiCommit = options.get('--ui-commit');
@@ -663,10 +679,13 @@ export async function summarize(directory) {
     }
   }
   const receiptBytes = await readFile(join(root, 'result/receipt.json'));
-  const receipt = JSON.parse(receiptBytes);
-  const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
+  const receipt = assertPublicProvenance(parseIconsJson(receiptBytes));
+  const source = assertPublicProvenance(
+    parseIconsJson(await readFile(join(root, 'inputs/source-receipt.json'))),
+  );
+  validateSourcePin(source.pin);
   const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
-  const subject = validateSubject(JSON.parse(subjectBytes));
+  const subject = validateSubject(parseIconsJson(subjectBytes));
   assert.equal(hash(subjectBytes), source.subjectSha256);
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
   if (subject.schemaVersion >= 2) {
@@ -738,7 +757,9 @@ export async function summarize(directory) {
 async function main() {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === '--checkout-ref') {
-    process.stdout.write(`${validateSourcePin(JSON.parse(await readFile(PIN))).sourceCommit}\n`);
+    process.stdout.write(
+      `${validateSourcePin(parseIconsJson(await readFile(PIN))).sourceCommit}\n`,
+    );
     return;
   }
   if (args.length === 2 && args[0] === '--summarize') return summarize(args[1]);
@@ -760,4 +781,7 @@ async function main() {
   return prepareInputs(options);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  await main().catch((error) => {
+    throw publicDiagnosticError(error);
+  });

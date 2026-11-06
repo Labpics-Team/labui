@@ -8,6 +8,13 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import {
+  assertPublicProvenance,
+  parseIconsJson,
+  projectPublicProvenance,
+  publicDiagnosticError,
+  publicFailure,
+} from './icons-public-provenance.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -159,6 +166,7 @@ export function assertSelfHostedRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
+  assertPublicProvenance(subject);
   assert.ok([1, 2, 3].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
@@ -175,7 +183,7 @@ export function validateSubject(subject) {
   }
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
-  assert.match(reference.fileKey, /^[A-Za-z0-9]+$/);
+  assert.match(reference.fileKeySha256, HASH);
   assert.match(reference.version, /^\d+$/);
   assert.deepEqual(Object.keys(reference.icons ?? {}), ['reload']);
   assert.deepEqual(Object.keys(reference.icons.reload).sort(), ['filled', 'outline']);
@@ -186,9 +194,9 @@ export function validateSubject(subject) {
       `masters/figma/${reference.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/reload.svg`,
     );
     assert.equal(item.author?.kind, 'figma');
-    assert.equal(item.author.fileKey, reference.fileKey);
+    assert.equal(item.author.fileKeySha256, reference.fileKeySha256);
     assert.equal(item.author.version, reference.version);
-    assert.match(item.author.nodeId, /^\d+:\d+$/);
+    assert.match(item.author.nodeIdSha256, HASH);
     for (const key of ['nodeSha256', 'masterSha256', 'normalizedSha256', 'pathFingerprintSha256'])
       assert.match(item.author[key], HASH);
     assert.equal(item.anatomy?.version, 1);
@@ -266,12 +274,16 @@ export function validateSubject(subject) {
 }
 
 export function validateStateReference(reference, author, group = 'status-circle') {
+  assertPublicProvenance({ reference, author });
   const contract = stateReferenceContract(group);
   assert.equal(reference?.group, group);
   assert.equal(reference.variant, 'outline');
   assert.equal(reference.defaultState, contract.defaultState);
   assert.equal(reference.enclosurePartId, contract.enclosurePartId);
-  assert.deepEqual(reference.proof?.source, { fileKey: author.fileKey, version: author.version });
+  assert.deepEqual(reference.proof?.source, {
+    fileKeySha256: author.fileKeySha256,
+    version: author.version,
+  });
   assert.equal(reference.proof.law, 'enclosure.replace');
   assert.match(reference.proof.specSha256, HASH);
   assert.match(reference.proof.enclosureSha256, HASH);
@@ -321,9 +333,9 @@ export function validateStateReference(reference, author, group = 'status-circle
     assert.deepEqual(state.viewBox, [0, 0, 24, 24]);
     assert.deepEqual(state.dimensions, [24, 24]);
     assert.equal(state.author.kind, 'figma');
-    assert.equal(state.author.fileKey, author.fileKey);
+    assert.equal(state.author.fileKeySha256, author.fileKeySha256);
     assert.equal(state.author.version, author.version);
-    assert.match(state.author.nodeId, /^\d+:\d+$/);
+    assert.match(state.author.nodeIdSha256, HASH);
     for (const key of ['nodeSha256', 'masterSha256', 'normalizedSha256', 'pathFingerprintSha256'])
       assert.match(state.author[key], HASH);
     assert.ok(state.paths.length >= 2);
@@ -938,14 +950,17 @@ async function browserProof(browser, url, reference, out, records, browserErrors
     });
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
-    page.on('pageerror', (error) => browserErrors.push(error.message));
+    page.on('pageerror', (error) => browserErrors.push(publicFailure(error)));
     try {
       await page.goto(url, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => window.__iconsPacked !== undefined);
       await page.evaluate(() => window.__iconsPacked.ready);
       for (const variant of ['outline', 'filled']) {
         const expected = reference.icons.reload[variant];
-        const read = () => page.evaluate((id) => window.__iconsPacked.read(id), variant);
+        const read = async () =>
+          projectPublicProvenance(
+            await page.evaluate((id) => window.__iconsPacked.read(id), variant),
+          );
         const initial = await read();
         assert.equal(initial.provenance.kind, 'source');
         assert.equal(initial.provenance.file, expected.sourceFile);
@@ -1087,7 +1102,9 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         }
         const current = await read();
         assert.deepEqual(current.paths, initial.paths, 'motion изменил authored contours');
-        const afterOther = await page.evaluate((id) => window.__iconsPacked.read(id), other);
+        const afterOther = projectPublicProvenance(
+          await page.evaluate((id) => window.__iconsPacked.read(id), other),
+        );
         assert.equal(afterOther.svg, untouched.svg, 'экземпляр изменил соседний символ');
         assert.deepEqual(afterOther.events, untouched.events);
         const refusal = await page.evaluate((id) => window.__iconsPacked.refuse(id), variant);
@@ -1263,11 +1280,13 @@ export function assertStateAnatomy(observation, reference) {
 }
 
 async function stateBrowserProof(page, reference, reducedMotion, records) {
-  const evaluate = (operation, ...args) =>
-    page.evaluate(
-      ({ group, operation, args }) =>
-        window.__iconsPacked.stateConsumers[group][operation](...args),
-      { group: reference.group, operation, args },
+  const evaluate = async (operation, ...args) =>
+    projectPublicProvenance(
+      await page.evaluate(
+        ({ group, operation, args }) =>
+          window.__iconsPacked.stateConsumers[group][operation](...args),
+        { group: reference.group, operation, args },
+      ),
     );
   const read = () => evaluate('readState');
   const contract = stateReferenceContract(reference.group);
@@ -1477,7 +1496,7 @@ export async function main(args = process.argv.slice(2)) {
   let phase = 'subject';
   try {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
-    const subject = validateSubject(JSON.parse(subjectBytes));
+    const subject = validateSubject(parseIconsJson(subjectBytes));
     const fixture = consumerFixture(subject.schemaVersion);
     const requiredEntries = consumerPublicEntries(subject.schemaVersion);
     receipt.subject = subject;
@@ -1693,16 +1712,15 @@ export async function main(args = process.argv.slice(2)) {
     receipt.failure = {
       phase,
       browserErrors,
-      message: String(error?.stack ?? error),
-      ...(error?.stateContinuity ? { stateContinuity: error.stateContinuity } : {}),
+      ...publicFailure(error),
     };
-    failure = error;
+    failure = publicDiagnosticError(error);
   } finally {
     clearTimeout(proofTimer);
     try {
       await browser?.close();
     } catch (error) {
-      cleanupErrors.push(String(error));
+      cleanupErrors.push(publicFailure(error));
     }
     try {
       if (server)
@@ -1710,7 +1728,7 @@ export async function main(args = process.argv.slice(2)) {
           server.close((error) => (error ? reject(error) : resolve())),
         );
     } catch (error) {
-      cleanupErrors.push(String(error));
+      cleanupErrors.push(publicFailure(error));
     }
     try {
       if (consumer) {
@@ -1720,21 +1738,25 @@ export async function main(args = process.argv.slice(2)) {
         await rm(resolved, { recursive: true, force: true });
       }
     } catch (error) {
-      cleanupErrors.push(String(error));
+      cleanupErrors.push(publicFailure(error));
     }
     if (cleanupErrors.length) {
       receipt.outcome = 'failed';
       receipt.cleanupErrors = cleanupErrors;
     }
     receipt.completed = new Date().toISOString();
-    await writeFile(join(out, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+    const publicReceipt = projectPublicProvenance(receipt);
+    await writeFile(join(out, 'receipt.json'), `${JSON.stringify(publicReceipt, null, 2)}\n`);
     if (receipt.outcome === 'failed')
-      await writeFile(join(out, 'failure.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+      await writeFile(join(out, 'failure.json'), `${JSON.stringify(publicReceipt, null, 2)}\n`);
     if (receipt.outcome === 'passed')
       process.stdout.write(`icons-packed: passed, ${records.length} observations\n`);
   }
   if (failure) throw failure;
-  if (cleanupErrors.length) throw new Error(`icons-packed cleanup: ${cleanupErrors.join('; ')}`);
+  if (cleanupErrors.length) throw new Error('icons-packed cleanup failed');
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  await main().catch((error) => {
+    throw publicDiagnosticError(error);
+  });

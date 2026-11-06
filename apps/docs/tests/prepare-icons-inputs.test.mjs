@@ -8,33 +8,35 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
-  authorReference,
-  readAuthorMaster,
-  readCycleMaster,
-  stateReference,
-  platformMeasurementLog,
-  consumerVisualLog,
-  consumerReceiptLog,
-  validatePlatformMeasurement,
-  validateSourcePin,
-} from './prepare-icons-inputs.mjs';
-import {
   assertStateAnatomy,
+  stateCapabilitiesReference,
   staticStatePathsReference,
   subjectStateReferences,
-  stateCapabilitiesReference,
   validateStateReference,
   validateSubject,
 } from './icons-packed.mjs';
+import {
+  authorReference,
+  consumerReceiptLog,
+  consumerVisualLog,
+  platformMeasurementLog,
+  readAuthorMaster,
+  readCycleMaster,
+  stateReference,
+  validatePlatformMeasurement,
+  validateSourcePin,
+} from './prepare-icons-inputs.mjs';
 
 // Заморожены raw SVG и строки reload из Git a31c881e335d9e5b4d0d4c690931a6cf444e52ce.
 // Это witness потребителя; producer helpers и generated glyph не формируют expected.
+const RAW_FILE_KEY = 'SyntheticFigmaAuthorKey01';
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const PIN = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   repository: 'Labpics-Team/lab-icons',
   sourceCommit: 'a31c881e335d9e5b4d0d4c690931a6cf444e52ce',
   figma: {
-    fileKey: 'LuaiBd4anRi4DMZayKAnY2',
+    fileKeySha256: hash(RAW_FILE_KEY),
     version: '2416636003859748575',
   },
 };
@@ -44,7 +46,7 @@ const MANIFEST = {
   source: {
     kind: 'figma',
     name: '🧪Lab UI (v2.1)',
-    fileKey: 'LuaiBd4anRi4DMZayKAnY2',
+    fileKey: RAW_FILE_KEY,
     version: '2416636003859748575',
     lastModified: '2026-11-01T01:18:02Z',
     pageId: '4045:632',
@@ -90,7 +92,7 @@ const MANIFEST = {
 const ANNOTATIONS = {
   schemaVersion: 1,
   source: {
-    fileKey: 'LuaiBd4anRi4DMZayKAnY2',
+    fileKey: RAW_FILE_KEY,
     version: '2416636003859748575',
   },
   icons: {
@@ -141,10 +143,9 @@ const MASTERS = {
 };
 
 const RECEIPTS = {
-  outline: '1a1fb97986966df057cf0a50e67872e82ac3e4f9ed562e830bb9b61bfc022d5c',
-  filled: '0be0aa7b6b29ca6ee7763e212664f219fdc7d02bcc75206f977b329ba652865c',
+  outline: 'ab0a24b5a6f67c8ce5b264aa102bae704e463c0962b222b5713fcab19fe11f74',
+  filled: '157c4e6842639651634bcf36424acb1553a5e69def0afaee4a18ee313842d05f',
 };
-const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const wholePath = (variant) => MASTERS[variant].match(/\bd="([^"]+)"/)[1];
 const expectedGesture = {
   id: 'reload.cycle',
@@ -192,7 +193,7 @@ async function rawFixture(t) {
 
 function assertReference(reference) {
   assert.equal(reference.fileName, '🧪Lab UI (v2.1)');
-  assert.equal(reference.fileKey, PIN.figma.fileKey);
+  assert.equal(reference.fileKeySha256, PIN.figma.fileKeySha256);
   assert.equal(reference.version, PIN.figma.version);
   assert.deepEqual(Object.keys(reference.icons), ['reload']);
   assert.deepEqual(Object.keys(reference.icons.reload).sort(), ['filled', 'outline']);
@@ -220,9 +221,9 @@ function assertReference(reference) {
     assert.equal(item.sourceFile, record.master);
     assert.deepEqual(item.author, {
       kind: 'figma',
-      fileKey: PIN.figma.fileKey,
+      fileKeySha256: PIN.figma.fileKeySha256,
       version: PIN.figma.version,
-      nodeId: record.nodeId,
+      nodeIdSha256: hash(record.nodeId),
       nodeSha256: record.nodeSha256,
       masterSha256: record.sha256,
       normalizedSha256: record.normalizedSource.sha256,
@@ -237,7 +238,11 @@ test('current pin retains the frozen author identity and both masters remain who
   );
   assert.equal(actualPin.schemaVersion, PIN.schemaVersion);
   assert.equal(actualPin.repository, PIN.repository);
-  assert.deepEqual(actualPin.figma, PIN.figma);
+  assert.deepEqual(actualPin.figma, {
+    fileKeySha256: '0462b63eb5318980a5797205910d6e29fec02227f7eef140a8d1e97b6670016b',
+    version: PIN.figma.version,
+  });
+  assert.equal(actualPin.sourceCommit, 'dc04d50903c658c29782f900da33a83c9a3fcb93');
   for (const variant of ['outline', 'filled']) {
     const bytes = Buffer.from(MASTERS[variant]);
     assert.equal(bytes.length, MANIFEST.icons.reload[variant].bytes);
@@ -314,7 +319,7 @@ test('a producer role mutant cannot redefine the expected control part', async (
       master: record.master,
       author: {
         kind: 'figma',
-        fileKey: PIN.figma.fileKey,
+        fileKey: RAW_FILE_KEY,
         version: PIN.figma.version,
         nodeId: record.nodeId,
         nodeSha256: record.nodeSha256,
@@ -391,7 +396,7 @@ async function stateFixture(t, schemaVersion = 1) {
   const manifest = structuredClone(MANIFEST);
   const document = {
     schemaVersion,
-    source: structuredClone(PIN.figma),
+    source: { fileKey: RAW_FILE_KEY, version: PIN.figma.version },
     groups: {
       'status-circle': {
         law: 'enclosure.replace',
