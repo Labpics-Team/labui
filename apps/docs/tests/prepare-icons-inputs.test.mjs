@@ -1824,6 +1824,71 @@ test('summary transmits successful raw observations and PNG authenticated agains
   }
 });
 
+for (const refusal of ['refused PNG', 'oversized PASSED receipt'])
+  test(`a passed consumer with ${refusal} cannot publish successful evidence qualification`, async (t) => {
+    const fixture = await summaryFixture(t, 1);
+    const record = {
+      name: 'author-observation',
+      opacity: 0.375,
+      ...(refusal === 'oversized PASSED receipt'
+        ? { paths: [{ d: 'M0 0L1 0L1 1Z '.repeat(1024), fillRule: 'nonzero' }] }
+        : {}),
+    };
+    const receipt = {
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: refusal === 'refused PNG' ? [record] : Array(320).fill(record),
+    };
+    assert.equal(assertPublicProvenance(receipt, 'receipt'), receipt);
+    const receiptBytes = Buffer.from(JSON.stringify(receipt));
+    await writeFile(join(fixture.output, 'result/receipt.json'), receiptBytes);
+    await writeFile(join(fixture.output, 'result/no-preference.png'), PNG_WITNESS);
+    if (refusal === 'refused PNG') {
+      assert.doesNotThrow(() =>
+        consumerReceiptLog(receiptBytes, PIN.sourceCommit, PIN.sourceCommit),
+      );
+      await writeFile(join(fixture.output, 'result/reduce.png'), 'not a PNG');
+    } else {
+      assert.ok(receiptBytes.length > 4 * 1024 * 1024);
+      assert.throws(() => consumerReceiptLog(receiptBytes, PIN.sourceCommit, PIN.sourceCommit));
+    }
+    const result = spawnSync(
+      process.execPath,
+      [
+        fileURLToPath(new URL('./prepare-icons-inputs.mjs', import.meta.url)),
+        '--summarize',
+        fixture.output,
+        '--consumer-exit-code',
+        '0',
+      ],
+      { encoding: 'utf8', timeout: 10_000 },
+    );
+    assert.equal(result.error, undefined);
+    assert.equal(result.status, 1);
+    const summary = JSON.parse(result.stdout.split('LABUI_ICONS_CONSUMER_RESULT ')[1]);
+    assert.equal(
+      summary.outcome,
+      'failed',
+      `evidence refusal must fail qualification; PASSED packet: ${/LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/.test(result.stdout)}`,
+    );
+    assert.doesNotMatch(result.stdout, /LABUI_ICONS_CONSUMER_RECEIPT_BEGIN/);
+    assert.deepEqual(summary.readbackFailure, {
+      code: 'EVIDENCE_REFUSED',
+      file: refusal === 'refused PNG' ? 'result/reduce.png' : 'result/receipt.json',
+    });
+    const { metadata, bytes } = decodeConsumerEvidence(
+      result.stdout,
+      'LABUI_ICONS_CONSUMER_VISUAL',
+      'pngSha256',
+      'result/no-preference.png',
+    );
+    assert.deepEqual(bytes, PNG_WITNESS);
+    assert.equal(metadata.pngSha256, hash(PNG_WITNESS));
+    assert.equal(metadata.sourceSha, fixture.source.pin.sourceCommit);
+    assert.equal(metadata.uiCommit, fixture.source.uiCommit);
+    assert.deepEqual(await readFile(join(fixture.output, 'result/receipt.json')), receiptBytes);
+  });
+
 test('oversized API failure and refused PNG keep the limited continuity RESULT', async (t) => {
   const fixture = await summaryFixture(t, 1);
   const stateContinuity = { differences: [{ partId: 'smile-mouth', before: 0.375, after: 0.25 }] };

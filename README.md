@@ -41,6 +41,7 @@ import '@labui/colors/contract.css';
 import '@labpics/ui-tokens/tokens.css';
 import '@labpics/ui-tokens/motion.css';
 import '@labpics/ui-core/theme.css';
+import '@labpics/ui-core/shadow.css';
 import '@labpics/ui-core/button';
 import { setTheme } from '@labpics/ui-core';
 
