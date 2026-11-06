@@ -12,8 +12,10 @@ import {
   assertPublicProvenance,
   assertSourceIdentity,
   parseIconsJson,
+  projectPlatformMeasurement,
   projectPublicProvenance,
   publicDiagnosticError,
+  validateMeasurementShape,
   validateSourcePin,
 } from './icons-public-provenance.mjs';
 
@@ -234,12 +236,15 @@ export async function authorReference(iconsRoot, pin) {
       gesture,
     };
   }
-  return projectPublicProvenance({
-    fileName: manifest.source.name,
-    fileKey: manifest.source.fileKey,
-    version: manifest.source.version,
-    icons: { reload: variants },
-  });
+  return projectPublicProvenance(
+    {
+      fileName: manifest.source.name,
+      fileKey: manifest.source.fileKey,
+      version: manifest.source.version,
+      icons: { reload: variants },
+    },
+    'author-reference',
+  );
 }
 
 // Отдельный независимый reference: raw masters и публичная semantic декларация,
@@ -326,54 +331,60 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
       },
     });
   }
-  return projectPublicProvenance({
-    group: name,
-    variant: 'outline',
-    defaultState: group.defaultState,
-    enclosurePartId: group.enclosurePartId,
-    ...(document.schemaVersion === 2
-      ? {
-          sharedPartIds: sharedParts.map((part) => part.id),
-          ...(name === 'expression-face' ? { sharedParts } : {}),
-        }
-      : {}),
-    enclosure,
-    states,
-    proof: {
-      law: group.law,
-      source,
-      enclosureSha256: hash(
-        stableJSON({
-          ...enclosure,
-          paint: { kind: 'fill', fill: 'currentColor' },
-          viewBox: [0, 0, 24, 24],
-          dimensions: [24, 24],
-          placement: 'after-content',
-        }),
-      ),
-      specSha256: hash(stableJSON({ schemaVersion: document.schemaVersion, source, name, group })),
+  return projectPublicProvenance(
+    {
+      group: name,
+      variant: 'outline',
+      defaultState: group.defaultState,
+      enclosurePartId: group.enclosurePartId,
       ...(document.schemaVersion === 2
         ? {
-            sharedPartsSha256: hash(
-              stableJSON({
-                parts: sharedParts.map((part) => ({
-                  ...part,
-                  paint: { kind: 'fill', fill: 'currentColor' },
-                })),
-                viewBox: [0, 0, 24, 24],
-                dimensions: [24, 24],
-                placement: 'after-content',
-              }),
-            ),
+            sharedPartIds: sharedParts.map((part) => part.id),
+            ...(name === 'expression-face' ? { sharedParts } : {}),
           }
         : {}),
+      enclosure,
+      states,
+      proof: {
+        law: group.law,
+        source,
+        enclosureSha256: hash(
+          stableJSON({
+            ...enclosure,
+            paint: { kind: 'fill', fill: 'currentColor' },
+            viewBox: [0, 0, 24, 24],
+            dimensions: [24, 24],
+            placement: 'after-content',
+          }),
+        ),
+        specSha256: hash(
+          stableJSON({ schemaVersion: document.schemaVersion, source, name, group }),
+        ),
+        ...(document.schemaVersion === 2
+          ? {
+              sharedPartsSha256: hash(
+                stableJSON({
+                  parts: sharedParts.map((part) => ({
+                    ...part,
+                    paint: { kind: 'fill', fill: 'currentColor' },
+                  })),
+                  viewBox: [0, 0, 24, 24],
+                  dimensions: [24, 24],
+                  placement: 'after-content',
+                }),
+              ),
+            }
+          : {}),
+      },
     },
-  });
+    'state-reference',
+  );
 }
 
 export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lockfileSha256) {
   assertPublicCheck(report?.sourceSha === sourceSha, 'MEASUREMENT_SOURCE_MISMATCH');
   assertPublicCheck(report.lockfileSha256 === lockfileSha256, 'MEASUREMENT_LOCKFILE_MISMATCH');
+  validateMeasurementShape(report);
   assert.ok(Number.isFinite(Date.parse(report.capturedAt)));
   assert.ok(typeof report.environment?.node === 'string');
   assert.deepEqual(
@@ -407,10 +418,6 @@ export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lo
   }
   for (const measured of Object.values(report.artifacts))
     assert.match(measured.sha256, /^[a-f0-9]{64}$/);
-  assert.ok(
-    Array.isArray(report.policyViolations) &&
-      report.policyViolations.every((item) => typeof item === 'string' && item.length > 0),
-  );
   return report;
 }
 
@@ -439,7 +446,7 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   execFileSync(process.execPath, [join(iconsRoot, program.file), '--output', join(out, file)], {
     cwd: iconsRoot,
     timeout: 600_000,
-    stdio: ['ignore', 'inherit', 'inherit'],
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   assertCheckout(iconsRoot, sourceSha);
   for (const material of materials)
@@ -447,19 +454,24 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   const bytes = await readFile(join(out, file));
   const lockfileSha256 = materials.find((item) => item.file === 'pnpm-lock.yaml').sha256;
   const report = validatePlatformMeasurement(
-    JSON.parse(bytes),
+    parseIconsJson(bytes),
     sourceSha,
     artifactFiles,
     lockfileSha256,
   );
+  const published = projectPlatformMeasurement(report);
+  const publishedBytes = Buffer.from(`${JSON.stringify(published, null, 2)}\n`);
+  await writeFile(join(out, file), publishedBytes);
   return {
     file,
     sourceSha,
-    sha256: hash(bytes),
-    bytes: bytes.length,
+    sha256: hash(publishedBytes),
+    bytes: publishedBytes.length,
+    rawSha256: hash(bytes),
+    rawBytes: bytes.length,
     program,
     lockfileSha256,
-    artifactFiles,
+    artifactFiles: artifactFiles.map(hash),
     artifactCount: artifactFiles.length,
     consumerCount: Object.keys(report.consumers).length,
     policyViolations: report.policyViolations.length,
@@ -488,6 +500,8 @@ function evidenceLog(bytes, prefix, identity, digestField) {
 }
 
 export function platformMeasurementLog(bytes, sourceSha) {
+  const report = assertPublicProvenance(parseIconsJson(bytes), 'measurement');
+  assertPublicCheck(report.sourceSha === sourceSha, 'MEASUREMENT_SOURCE_MISMATCH');
   return evidenceLog(bytes, 'LABUI_ICONS_PLATFORM_MEASUREMENT', { sourceSha }, 'reportSha256');
 }
 
@@ -540,7 +554,7 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
     Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
     'receipt: bytes вне лимита',
   );
-  const receipt = assertPublicProvenance(parseIconsJson(bytes));
+  const receipt = assertPublicProvenance(parseIconsJson(bytes), 'receipt');
   assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
   assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
   assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
@@ -615,11 +629,14 @@ export async function prepareInputs(options) {
   // Raw references и их source receipts уже зафиксированы до чтения dist artifacts.
   const measurement = await measurePlatformArtifacts(iconsRoot, pin.sourceCommit, out, files);
   assertCheckout(uiRoot, uiCommit);
-  await writeFile(
-    join(out, 'source-receipt.json'),
-    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement }, null, 2)}\n`,
-    { flag: 'wx', mode: 0o600 },
+  const source = assertPublicProvenance(
+    { schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement },
+    'source-receipt',
   );
+  await writeFile(join(out, 'source-receipt.json'), `${JSON.stringify(source, null, 2)}\n`, {
+    flag: 'wx',
+    mode: 0o600,
+  });
   process.stdout.write(
     `icons-inputs: ${JSON.stringify({ subjectSha256: hash(bytes), packages })}\n`,
   );
@@ -662,9 +679,11 @@ export async function summarize(directory) {
     }
   }
   const receiptBytes = await readFile(join(root, 'result/receipt.json'));
-  const receipt = assertPublicProvenance(parseIconsJson(receiptBytes));
+  assertPublicProvenance(files, 'file-list');
+  const receipt = assertPublicProvenance(parseIconsJson(receiptBytes), 'receipt');
   const source = assertPublicProvenance(
     parseIconsJson(await readFile(join(root, 'inputs/source-receipt.json'))),
+    'source-receipt',
   );
   validateSourcePin(source.pin);
   const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
@@ -692,7 +711,7 @@ export async function summarize(directory) {
     const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
     assert.equal(lockfile.sha256, measurement.lockfileSha256);
     validatePlatformMeasurement(
-      JSON.parse(bytes),
+      parseIconsJson(bytes),
       source.pin.sourceCommit,
       measurement.artifactFiles,
       measurement.lockfileSha256,
@@ -718,23 +737,28 @@ export async function summarize(directory) {
     );
   for (const packet of packets) await writeStdout(packet);
   await writeStdout(
-    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
-      schemaVersion: 1,
-      outcome: receipt.outcome,
-      source,
-      harness: receipt.harness,
-      runner: receipt.runner,
-      archives: receipt.archives,
-      observations: receipt.records?.length,
-      failure: receipt.failure
-        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
-        : null,
-      files,
-      diagnosticDirectory: root,
-      ...(readbackFailure
-        ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
-        : {}),
-    })}\n`,
+    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify(
+      assertPublicProvenance(
+        {
+          schemaVersion: 1,
+          outcome: receipt.outcome,
+          source,
+          harness: receipt.harness,
+          runner: receipt.runner,
+          archives: receipt.archives,
+          observations: receipt.records?.length,
+          failure: receipt.failure
+            ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+            : null,
+          files,
+          diagnosticDirectorySha256: hash(root),
+          ...(readbackFailure
+            ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
+            : {}),
+        },
+        'summary',
+      ),
+    )}\n`,
   );
   if (readbackFailure) throw readbackFailure.error;
   assert.equal(receipt.outcome, 'passed');

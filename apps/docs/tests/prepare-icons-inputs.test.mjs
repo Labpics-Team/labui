@@ -16,6 +16,13 @@ import {
   validateSubject,
 } from './icons-packed.mjs';
 import {
+  assertPublicProvenance,
+  projectPlatformMeasurement,
+  projectPublicProvenance,
+  publicApiRefusal,
+  publicFailure,
+} from './icons-public-provenance.mjs';
+import {
   authorReference,
   consumerReceiptLog,
   consumerVisualLog,
@@ -985,24 +992,449 @@ test('schema3 requires both independent state references and dispatches every gr
 });
 
 function measurementFixture() {
+  const packageMethod = 'fflate@0.8.2 gzipSync level=9 mtime=0 after pnpm build';
+  const consumerMethod =
+    'esbuild@0.25.12 bundle+minify+treeshake es2022 browser; fflate@0.8.2 gzipSync level=9 mtime=0';
   return {
     sourceSha: PIN.sourceCommit,
     lockfileSha256: 'c'.repeat(64),
     capturedAt: '2026-11-01T15:00:00Z',
     environment: { node: 'v24.10.0' },
-    packageMeasurement: 'frozen-package-method',
-    consumerMeasurement: 'frozen-consumer-method',
+    packageMeasurement: packageMethod,
+    consumerMeasurement: consumerMethod,
     artifacts: {
       'dist/example.js': { bytes: 100, gzipBytes: 75, brotliBytes: 65, sha256: 'd'.repeat(64) },
     },
     consumers: { 'state-control': { bytes: 120, gzipBytes: 80, brotliBytes: 70 } },
     candidatePolicies: {
-      package: { measurement: 'frozen-package-method', artifacts: { 'dist/example.js': {} } },
-      consumer: { measurement: 'frozen-consumer-method', scenarios: { 'state-control': {} } },
+      package: {
+        measurement: packageMethod,
+        artifacts: {
+          'dist/example.js': {
+            baselineBytes: 90,
+            baselineGzipBytes: 60,
+            maxBytes: 90,
+            maxGzipBytes: 60,
+            allowedModules: [],
+            forbiddenNeedles: [],
+          },
+        },
+      },
+      consumer: {
+        measurement: consumerMethod,
+        scenarios: {
+          'state-control': {
+            entry: 'src/state-control.ts',
+            baselineBytes: 120,
+            baselineGzipBytes: 80,
+            maxBytes: 120,
+            maxGzipBytes: 80,
+          },
+        },
+      },
     },
-    policyViolations: ['dist/example.js: diagnostic budget refusal'],
+    policyViolations: ['dist/example.js: budget 90 B / 60 B gzip; measured 100 B / 75 B gzip'],
   };
 }
+
+test('typed measurement preserves producer numbers and projects every opaque identity and refusal', () => {
+  const raw = measurementFixture();
+  const artifact = 'dist/example.js';
+  const metric = raw.artifacts[artifact];
+  const policy = raw.candidatePolicies.package.artifacts[artifact];
+  raw.environment = {
+    node: process.version,
+    versions: { ...process.versions, libffi: '3.5.0', lief: '0.17.0' },
+    platform: process.platform,
+    arch: process.arch,
+    cpu: RAW_FILE_KEY,
+    cpuCount: 2,
+    totalMemory: 1024,
+  };
+  raw.brotliMeasurement = 'node:zlib brotliCompressSync quality=11; environment.versions.brotli';
+  raw.candidatePolicies.package.version = 1;
+  raw.candidatePolicies.consumer.version = 1;
+  metric.modules = [RAW_FILE_KEY];
+  policy.allowedModules = ['src/checked.ts'];
+  policy.forbiddenNeedles = [RAW_FILE_KEY];
+  policy.identicalTo = 'dist/counterpart.js';
+  raw.candidatePolicies.consumer.scenarios['state-control'].entry =
+    `import '${RAW_FILE_KEY}';\nconsole.log('consumer');\n`;
+  raw.candidatePolicies.consumer.scenarios['state-control'].maxBytes = 100;
+  raw.candidatePolicies.consumer.scenarios['state-control'].maxGzipBytes = 70;
+  raw.policyViolations.push(
+    'state-control: consumer budget 100 B / 70 B gzip; measured 120 B / 80 B gzip',
+    `${artifact}: module inclusion drift; expected [src/checked.ts], actual [${RAW_FILE_KEY}]`,
+    `${artifact}: forbidden marker ${RAW_FILE_KEY}`,
+    'dist/removed.js: previous artifact отсутствует в release contract',
+    'removed-state: previous consumer scenario отсутствует в measurement',
+    `${artifact}: identicalTo dist/counterpart.js обязан быть byte-identical`,
+  );
+  const before = structuredClone(raw);
+  const published = projectPlatformMeasurement(raw);
+  assert.deepEqual(raw, before, 'projection must retain the raw diagnostic source');
+  assert.equal(assertPublicProvenance(published, 'measurement'), published);
+  assert.equal(published.representation, 'public-identities/1');
+  assert.equal(published.environment.cpuSha256, hash(RAW_FILE_KEY));
+  assert.deepEqual(published.environment.versions, raw.environment.versions);
+  assert.deepEqual(published.artifacts[hash(artifact)], {
+    ...metric,
+    modules: [hash(RAW_FILE_KEY)],
+  });
+  assert.deepEqual(published.consumers[hash('state-control')], raw.consumers['state-control']);
+  assert.equal(
+    published.candidatePolicies.consumer.scenarios[hash('state-control')].entrySha256,
+    hash(raw.candidatePolicies.consumer.scenarios['state-control'].entry),
+  );
+  assert.deepEqual(
+    published.policyViolations.map((item) => item.code),
+    [
+      'ARTIFACT_BUDGET',
+      'CONSUMER_BUDGET',
+      'MODULE_DRIFT',
+      'FORBIDDEN_MARKER',
+      'ARTIFACT_MISSING',
+      'SCENARIO_MISSING',
+      'IDENTICAL_BYTES_REQUIRED',
+    ],
+  );
+  assert.deepEqual(published.policyViolations[0], {
+    code: 'ARTIFACT_BUDGET',
+    subjectSha256: hash(artifact),
+    sourceMessageSha256: hash(raw.policyViolations[0]),
+    maxBytes: 90,
+    maxGzipBytes: 60,
+    measuredBytes: 100,
+    measuredGzipBytes: 75,
+  });
+  assert.ok(!JSON.stringify(published).includes(RAW_FILE_KEY));
+  assert.throws(() => platformMeasurementLog(Buffer.from(JSON.stringify(raw)), PIN.sourceCommit));
+  for (const mutate of [
+    (value) => {
+      value.environment.notes = Buffer.from(RAW_FILE_KEY).toString('base64');
+    },
+    (value) => {
+      value.candidatePolicies.package.artifacts[artifact].notes = { copied: RAW_FILE_KEY };
+    },
+    (value) => {
+      value.policyViolations.push(RAW_FILE_KEY);
+    },
+    (value) => {
+      value.policyViolations[0] = `${artifact}: budget 91 B / 60 B gzip; measured 100 B / 75 B gzip`;
+    },
+    (value) => {
+      value.artifacts[artifact].modules = [{ fileKey: RAW_FILE_KEY }];
+    },
+  ]) {
+    const changed = structuredClone(raw);
+    mutate(changed);
+    assert.throws(() => projectPlatformMeasurement(changed));
+  }
+  const changed = structuredClone(published);
+  changed.environment.versions.notes = Buffer.from(RAW_FILE_KEY).toString('base64');
+  assert.throws(() =>
+    platformMeasurementLog(Buffer.from(JSON.stringify(changed)), PIN.sourceCommit),
+  );
+});
+
+test('typed measurement preserves Node 26 dependency versions and refuses opaque replacements', () => {
+  const raw = measurementFixture();
+  raw.environment = {
+    node: 'v26.13.0',
+    versions: { nghttp3: '', ngtcp2: '', zlib: '1.3.2.1-motley-123abcd' },
+  };
+  const published = projectPlatformMeasurement(raw);
+  assert.deepEqual(published.environment.versions, raw.environment.versions);
+  assert.equal(assertPublicProvenance(published, 'measurement'), published);
+  for (const [name, value] of [
+    ['node', ''],
+    ['ares', ''],
+    ['nghttp3', Buffer.from(RAW_FILE_KEY).toString('base64')],
+    ['ngtcp2', RAW_FILE_KEY],
+    ['zlib', `1.3.2.1-${RAW_FILE_KEY}-123abcd`],
+  ]) {
+    const changed = structuredClone(raw);
+    changed.environment.versions[name] = value;
+    assert.throws(() => projectPlatformMeasurement(changed));
+  }
+});
+
+test('every producer record kind preserves cycle, state and native witnesses through the receipt sink', async (t) => {
+  const { root } = await expressionFixture(t);
+  const author = await authorReference(root, PIN);
+  const references = await Promise.all([
+    stateReference(root, PIN),
+    stateReference(root, PIN, 'expression-face'),
+  ]);
+  const records = [];
+  const matrix = [[1, 0, 0, 1, 0.125, -0.25]];
+  const apiRefusal = (code) =>
+    publicApiRefusal({ ok: false, reason: { code, message: RAW_FILE_KEY } });
+  for (const mode of ['no-preference', 'reduce']) {
+    const duration = mode === 'reduce' ? 0 : 600;
+    for (const variant of ['outline', 'filled']) {
+      const reference = author.icons.reload[variant];
+      const effect = {
+        version: 1,
+        icon: 'reload',
+        variant,
+        gesture: 'reload.cycle',
+        from: 0,
+        to: 1,
+        options: { duration, easing: 'linear', fill: 'both' },
+        viewport: { overflow: 'visible' },
+        unchangedPartIds: [],
+        targets: reference.gesture.tracks.map((track) => ({
+          partId: track.partId,
+          rotation: { from: track.from, to: track.to, unit: 'degrees' },
+          style: {
+            transformBox: 'view-box',
+            transformOrigin: `${track.anchor[0] * 100}% ${track.anchor[1] * 100}%`,
+          },
+          keyframes: [
+            { offset: 0, transform: `rotate(${track.from}deg)` },
+            { offset: 1, transform: `rotate(${track.to}deg)` },
+          ],
+        })),
+      };
+      if (mode === 'no-preference') {
+        records.push({
+          name: `${variant}:forward-complete`,
+          terminal: matrix,
+          completionStatuses: ['finished'],
+        });
+        records.push({
+          name: `${variant}:interrupt-reverse`,
+          effect,
+          before: matrix,
+          after: matrix,
+          terminal: matrix,
+        });
+      } else records.push({ name: `${variant}:reduced-motion`, effect });
+      const point = { x: 10.5, y: 12.25 };
+      records.push({
+        name: `${variant}:${mode}:real-button`,
+        target: {
+          width: 48,
+          height: 48,
+          name: 'Обновить',
+          type: 'button',
+          iconHidden: 'true',
+          slotHidden: 'true',
+        },
+        pointerControl: {
+          point,
+          coverage: {
+            width: 1280,
+            height: 900,
+            left: 0,
+            top: 0,
+            right: 1280.5,
+            bottom: 900.5,
+            point,
+            pointHit: true,
+          },
+          events: ['pointerdown', 'pointerup', 'click'].map((type) => ({
+            type,
+            trusted: true,
+            target: true,
+            button: 0,
+            x: point.x,
+            y: point.y,
+          })),
+        },
+        events: [
+          {
+            trusted: true,
+            composed: true,
+            native: true,
+            initialize: false,
+            before: matrix,
+            after: matrix,
+            effect,
+          },
+        ],
+        provenance: {
+          kind: 'source',
+          file: reference.sourceFile,
+          author: reference.author,
+          anatomy: reference.anatomy,
+        },
+        refusal: { axis: 'AUTHOR_PARITY_REQUIRED', motion: apiRefusal('GESTURE_UNSUPPORTED') },
+      });
+    }
+    for (const reference of references) {
+      const pose = reference.states.map((state, index) => ({
+        partId: state.partId,
+        value: index === 0 ? 0.375 : 0,
+      }));
+      const witness = {
+        sampledAt: 123.5,
+        timelineTime: 123.25,
+        playback: 'running',
+        readStartedAt: 123.125,
+        readCompletedAt: 123.75,
+        opacity: pose,
+        partTimes: pose.map(({ partId }) => ({
+          partId,
+          readStartedAt: 123.125,
+          readCompletedAt: 123.75,
+        })),
+        inlineOpacity: pose.map(({ partId, value }) => ({ partId, value: String(value) })),
+        animations: [
+          {
+            partId: reference.states[0].partId,
+            sampledAt: 123.5,
+            currentTime: 75.25,
+            startTime: 48.25,
+            playState: 'running',
+            pending: false,
+            firstKeyframe: {
+              opacity: '0',
+              offset: 0,
+              computedOffset: 0,
+              easing: 'linear',
+              composite: 'auto',
+            },
+            lastKeyframe: {
+              opacity: '1',
+              offset: 1,
+              computedOffset: 1,
+              easing: 'linear',
+              composite: 'auto',
+            },
+          },
+        ],
+      };
+      const continuity = {
+        before: witness,
+        admitted: { ...witness, previousPlayback: 'paused' },
+        after: witness,
+      };
+      const effect = (targetState) => ({
+        contract: 'labpics.symbol-state-effect/1',
+        version: 1,
+        kind: 'enclosure-replacement',
+        group: reference.group,
+        variant: 'outline',
+        targetState,
+        stages: reference.states.map((state) => ({
+          partId: state.partId,
+          property: 'opacity',
+          to: Number(state.id === targetState),
+          at: 0,
+          duration,
+        })),
+        unchangedPartIds: reference.sharedPartIds ?? [reference.enclosurePartId],
+        options: { duration, easing: 'linear', fill: 'both' },
+      });
+      const change = {
+        effect: effect(reference.defaultState),
+        before: pose,
+        after: pose,
+        generation: 3,
+        continuity,
+      };
+      records.push({
+        name: `${reference.group}:${mode}:trusted-activation`,
+        events: [
+          {
+            trusted: true,
+            composed: true,
+            native: true,
+            before: pose,
+            after: pose,
+            effect: change.effect,
+            continuity,
+          },
+        ],
+      });
+      for (const state of reference.states)
+        records.push({
+          name: `${reference.group}:${state.id}:${mode}`,
+          source: state.author,
+          effect: effect(state.id),
+          terminal: pose,
+          identity: true,
+          sharedParts: (
+            reference.sharedParts ?? [
+              { ...reference.enclosure, id: reference.enclosurePartId, role: 'container' },
+            ]
+          ).map(({ id, role, d, fillRule }) => ({
+            d,
+            fillRule,
+            fill: 'currentColor',
+            partId: id,
+            role,
+            count: 1,
+            opacity: 1,
+            transform: 'matrix(1, 0, 0, 1, 0, 0)',
+            inStateGroup: false,
+            ancestorsUnchanged: true,
+            identity: true,
+          })),
+        });
+      if (mode === 'no-preference')
+        records.push({
+          name: `${reference.group}:paused-reverse-newer-state`,
+          paused: pose,
+          reverse: change,
+          newer: change,
+          mixture: pose,
+          latest: change,
+        });
+      if (reference.group === 'expression-face')
+        records.push({
+          name: `${reference.group}:${mode}:author-size-samples`,
+          samples: reference.states.flatMap((state) =>
+            [16, 24, 48].map((size) => ({
+              state: state.id,
+              size,
+              width: size,
+              height: size,
+              viewBox: state.viewBox,
+              paths: staticStatePathsReference(reference, state),
+            })),
+          ),
+        });
+      records.push({
+        name: `${reference.group}:${mode}:public-refusals`,
+        refusal: {
+          filled: apiRefusal('VARIANT_UNSUPPORTED'),
+          nullRequest: apiRefusal('INVALID_REQUEST'),
+          unknown: apiRefusal('STATE_UNSUPPORTED'),
+          exports: [apiRefusal('FORMAT_UNSUPPORTED')],
+          web: { ok: true, effect: change.effect },
+        },
+      });
+      records.push({
+        name: `${reference.group}:${mode}:dispose`,
+        connected: false,
+        completionStatus: mode === 'reduce' ? 'finished' : 'stopped',
+        playback: 'stopped',
+      });
+    }
+  }
+  assert.equal(records.length, 44);
+  const receipt = { schemaVersion: 1, outcome: 'passed', records };
+  const published = projectPublicProvenance(receipt, 'receipt');
+  assert.deepEqual(published, receipt, 'every approved observation must stay exact');
+  const bytes = Buffer.from(JSON.stringify(published));
+  assert.deepEqual(
+    decodeConsumerEvidence(
+      consumerReceiptLog(bytes, PIN.sourceCommit, PIN.sourceCommit),
+      'LABUI_ICONS_CONSUMER_RECEIPT',
+      'receiptSha256',
+    ).bytes,
+    bytes,
+  );
+  for (const record of records) {
+    assert.deepEqual(projectPublicProvenance(record, 'record'), record);
+    const changed = structuredClone(record);
+    changed.notes = { nested: Buffer.from(RAW_FILE_KEY).toString('base64') };
+    assert.throws(() => projectPublicProvenance(changed, 'record'));
+  }
+});
 
 test('complete measurement remains diagnostic and refuses stale or incomplete source evidence', () => {
   const report = measurementFixture();
@@ -1046,11 +1478,11 @@ test('complete measurement remains diagnostic and refuses stale or incomplete so
 });
 
 test('log block reconstructs exact report bytes with bounded indexed lines and a digest', () => {
-  const bytes = Buffer.concat(
-    Array.from({ length: 256 }, (_, index) =>
-      createHash('sha256').update(`independent-packet-${index}`).digest(),
-    ),
+  const report = measurementFixture();
+  report.artifacts['dist/example.js'].modules = Array.from({ length: 256 }, (_, index) =>
+    hash(`independent-packet-${index}`),
   );
+  const bytes = Buffer.from(JSON.stringify(projectPlatformMeasurement(report)));
   const lines = platformMeasurementLog(bytes, PIN.sourceCommit).trim().split('\n');
   const metadata = JSON.parse(lines[0].slice('LABUI_ICONS_PLATFORM_MEASUREMENT_BEGIN '.length));
   assert.equal(metadata.sourceSha, PIN.sourceCommit);
@@ -1203,7 +1635,7 @@ async function summaryFixture(t, schemaVersion) {
       : {}),
   };
   const subjectBytes = JSON.stringify(subject);
-  const report = measurementFixture();
+  const report = projectPlatformMeasurement(measurementFixture());
   const reportBytes = JSON.stringify(report);
   const program = {
     file: 'scripts/measure-platform-artifacts.mjs',
@@ -1233,7 +1665,7 @@ async function summaryFixture(t, schemaVersion) {
             bytes: Buffer.byteLength(reportBytes),
             program,
             lockfileSha256: report.lockfileSha256,
-            artifactFiles: ['dist/example.js'],
+            artifactFiles: [hash('dist/example.js')],
           },
         }
       : {}),
@@ -1267,7 +1699,7 @@ test('summary transmits successful raw observations and PNG authenticated agains
   const receipt = {
     schemaVersion: 1,
     outcome: 'passed',
-    records: [{ name: 'expression-face:synthetic-witness', opacity: 0.375 }],
+    records: [{ name: 'author-observation', opacity: 0.375 }],
   };
   const receiptBytes = Buffer.from(JSON.stringify(receipt));
   await writeFile(join(fixture.output, 'result/receipt.json'), receiptBytes);
@@ -1290,16 +1722,17 @@ test('summary transmits successful raw observations and PNG authenticated agains
   }
 });
 
-test('oversized raw failure and refused PNG keep the limited continuity RESULT', async (t) => {
+test('oversized API failure and refused PNG keep the limited continuity RESULT', async (t) => {
   const fixture = await summaryFixture(t, 1);
-  const stateContinuity = { differences: [{ partId: 'mouth', before: 0.375, after: 0.25 }] };
+  const stateContinuity = { differences: [{ partId: 'smile-mouth', before: 0.375, after: 0.25 }] };
+  const error = Object.assign(new Error('x'.repeat(4 * 1024 * 1024)), { stateContinuity });
   await writeFile(
     join(fixture.output, 'result/receipt.json'),
     JSON.stringify({
       schemaVersion: 1,
       outcome: 'failed',
       records: [],
-      failure: { phase: 'browser', stateContinuity, message: 'x'.repeat(4 * 1024 * 1024) },
+      failure: { phase: 'browser', ...publicFailure(error) },
     }),
   );
   for (const invalidVisual of [false, true]) {
@@ -1389,8 +1822,9 @@ test('summary diagnostics distinguish missing measurement, changed bytes and wro
 
 test('failed receipt waits for a complete large report through asynchronous stdout backpressure', async (t) => {
   const fixture = await summaryFixture(t, 2);
-  fixture.report.diagnosticPadding = Array.from({ length: 4096 }, (_, index) =>
-    createHash('sha256').update(`transport-only-${index}`).digest('hex'),
+  fixture.report.artifacts[hash('dist/example.js')].modules = Array.from(
+    { length: 4096 },
+    (_, index) => createHash('sha256').update(`transport-only-${index}`).digest('hex'),
   );
   const bytes = Buffer.from(JSON.stringify(fixture.report));
   fixture.source.measurement.sha256 = hash(bytes);
@@ -1421,7 +1855,7 @@ test('failed receipt waits for a complete large report through asynchronous stdo
         schemaVersion: 1,
         outcome,
         records: [],
-        ...(outcome === 'failed' ? { failure: { phase: 'mock-continuity' } } : {}),
+        ...(outcome === 'failed' ? { failure: { phase: 'browser' } } : {}),
       }),
     );
     const result = await new Promise((resolve, reject) => {
@@ -1542,10 +1976,13 @@ test('failed schema1 and schema2 summaries preserve an optional native continuit
   for (const schemaVersion of [1, 2]) {
     const fixture = await summaryFixture(t, schemaVersion);
     for (const witness of [undefined, stateContinuity]) {
-      const failure = { phase: 'browser', message: 'private stack', stateContinuity: witness };
+      const failure = {
+        phase: 'browser',
+        ...publicFailure(Object.assign(new Error('private stack'), { stateContinuity: witness })),
+      };
       await writeFile(
         join(fixture.output, 'result/receipt.json'),
-        JSON.stringify({ outcome: 'failed', records: [], failure }),
+        JSON.stringify({ schemaVersion: 1, outcome: 'failed', records: [], failure }),
       );
       const result = spawnSync(
         process.execPath,

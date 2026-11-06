@@ -9,8 +9,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
   assertPublicCheck,
+  assertPublicProvenance,
   parseIconsJson,
   projectPublicProvenance,
+  publicApiRefusal,
   publicDiagnosticError,
   publicFailure,
 } from './icons-public-provenance.mjs';
@@ -44,6 +46,7 @@ test('publication preserves exact Community and geometry evidence bytes', () => 
       outcome: 'passed',
       records: [
         {
+          name: 'author-observation',
           link: COMMUNITY,
           paths: [{ d: 'M0 0L1 0L1 1Z', fillRule: 'nonzero' }],
           masterSha256: 'c'.repeat(64),
@@ -184,8 +187,9 @@ test('source JSON refuses repeated decoded member names before identity collecti
   await assert.rejects(authorReference(root, pin));
 });
 
-test('public observation projection preserves binding and lawful metadata without changing geometry', () => {
+test('public observation projection preserves binding and owned metadata without changing geometry', () => {
   const raw = {
+    name: 'author-observation',
     author: {
       kind: 'figma',
       fileKey: PRIVATE_KEY,
@@ -196,10 +200,8 @@ test('public observation projection preserves binding and lawful metadata withou
     proof: { source: { fileKey: PRIVATE_KEY, version: '1' }, specSha256: 'd'.repeat(64) },
     paths: [{ d: 'M0 0L1 0L1 1Z', fillRule: 'nonzero' }],
     link: COMMUNITY,
-    first: { notes: 'public author metadata' },
-    second: { notes: 'public author metadata' },
   };
-  const projected = projectPublicProvenance(raw);
+  const projected = projectPublicProvenance(raw, 'author-observation');
   assert.ok(!JSON.stringify(projected).includes(PRIVATE_KEY));
   assert.equal(projected.author.fileKeySha256, hash(PRIVATE_KEY));
   assert.equal(projected.author.nodeIdSha256, hash('10:20'));
@@ -208,16 +210,16 @@ test('public observation projection preserves binding and lawful metadata withou
   assert.equal(projected.author.masterSha256, raw.author.masterSha256);
   assert.equal(projected.proof.specSha256, raw.proof.specSha256);
   assert.equal(projected.link, COMMUNITY);
-  assert.deepEqual(projected.first, projected.second);
+  assert.notEqual(projected.paths, raw.paths);
   assert.equal(
     raw.author.fileKey,
     PRIVATE_KEY,
     'projection must not mutate the verified raw source',
   );
   const special = parseIconsJson(
-    '{"__proto__":{"notes":"public"},"author":{"fileKey":"SyntheticFigmaAuthorKey01"}}',
+    '{"__proto__":{"notes":"public"},"name":"author-observation","author":{"kind":"figma","fileKey":"SyntheticFigmaAuthorKey01","version":"1","nodeId":"10:20"}}',
   );
-  assert.ok(Object.hasOwn(projectPublicProvenance(special), '__proto__'));
+  assert.throws(() => projectPublicProvenance(special, 'author-observation'));
 });
 
 test('copied, encoded and conflicting private identities refuse at observation projection', () => {
@@ -229,12 +231,16 @@ test('copied, encoded and conflicting private identities refuse at observation p
       .join(''),
     PRIVATE_URL,
   ])
-    assert.throws(() => projectPublicProvenance({ author: { fileKey: PRIVATE_KEY }, notes }));
+    assert.throws(() =>
+      projectPublicProvenance({ name: 'author-observation', notes }, 'author-observation'),
+    );
+  const rawAuthor = { kind: 'figma', fileKey: PRIVATE_KEY, nodeId: '10:20', version: '1' };
+  assert.doesNotThrow(() => projectPublicProvenance(rawAuthor, 'author'));
   assert.throws(() =>
-    projectPublicProvenance({ author: { fileKey: PRIVATE_KEY, fileKeySha256: hash(PRIVATE_KEY) } }),
+    projectPublicProvenance({ ...rawAuthor, fileKeySha256: hash(PRIVATE_KEY) }, 'author'),
   );
-  assert.throws(() => projectPublicProvenance({ author: { fileKey: 'invalid key' } }));
-  assert.throws(() => projectPublicProvenance({ author: { nodeId: 'invalid-node' } }));
+  assert.throws(() => projectPublicProvenance({ ...rawAuthor, fileKey: 'invalid key' }, 'author'));
+  assert.throws(() => projectPublicProvenance({ ...rawAuthor, nodeId: 'invalid-node' }, 'author'));
 });
 
 test('failed API diagnostics retain check and numerical continuity without arbitrary text or error properties', () => {
@@ -336,7 +342,9 @@ test('public stdout summary and its gzip receipt retain exact Community observat
   const receipt = {
     schemaVersion: 1,
     outcome: 'passed',
-    records: [{ link: COMMUNITY, masterSha256: 'c'.repeat(64), opacity: 0.375 }],
+    records: [
+      { name: 'author-observation', link: COMMUNITY, masterSha256: 'c'.repeat(64), opacity: 0.375 },
+    ],
   };
   const fixture = await summaryFixture(t, receipt);
   const result = fixture.invoke();
@@ -444,17 +452,21 @@ test('missing privacy context refuses bare and nested copies at the real publica
     { nested: [PRIVATE_KEY] },
     { [`prefix${PRIVATE_KEY}suffix`]: 'copied key' },
   ]) {
-    const receipt = { schemaVersion: 1, outcome: 'passed', records: [{ notes }] };
+    const receipt = {
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: [{ name: 'author-observation', notes }],
+    };
     const bytes = Buffer.from(JSON.stringify(receipt));
     assert.throws(() => inputs.consumerReceiptLog(bytes, SOURCE_SHA, UI_SHA));
-    assert.throws(() => privacy.assertPublicProvenance(receipt));
+    assert.throws(() => privacy.assertPublicProvenance(receipt, 'receipt'));
     assert.throws(() => privacy.assertPublicProvenance(receipt, new Set()));
   }
   const lawful = Buffer.from(
     JSON.stringify({
       schemaVersion: 1,
       outcome: 'passed',
-      records: [{ notes: 'Readable public observation', link: COMMUNITY, opacity: 0.375 }],
+      records: [{ name: 'author-observation', link: COMMUNITY, opacity: 0.375 }],
     }),
   );
   assert.match(inputs.consumerReceiptLog(lawful, SOURCE_SHA, UI_SHA), /_BEGIN /);
@@ -487,7 +499,12 @@ test('private Figma document URLs refuse independently of their document route',
       JSON.stringify({
         schemaVersion: 1,
         outcome: 'passed',
-        records: [{ notes: `https://www.figma.com/${path}/${PRIVATE_KEY}/fixture` }],
+        records: [
+          {
+            name: 'author-observation',
+            link: `https://www.figma.com/${path}/${PRIVATE_KEY}/fixture`,
+          },
+        ],
       }),
     );
     assert.throws(() => consumerReceiptLog(bytes, SOURCE_SHA, UI_SHA));
@@ -499,7 +516,13 @@ test('private Figma document URLs refuse independently of their document route',
   ])
     assert.throws(() =>
       consumerReceiptLog(
-        Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ link }] })),
+        Buffer.from(
+          JSON.stringify({
+            schemaVersion: 1,
+            outcome: 'passed',
+            records: [{ name: 'author-observation', link }],
+          }),
+        ),
         SOURCE_SHA,
         UI_SHA,
       ),
@@ -541,13 +564,19 @@ test('valid escape segments cannot hide private identity beside a literal percen
   ]) {
     assert.throws(() =>
       inputs.consumerReceiptLog(
-        Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ notes }] })),
+        Buffer.from(
+          JSON.stringify({
+            schemaVersion: 1,
+            outcome: 'passed',
+            records: [{ name: 'author-observation', notes }],
+          }),
+        ),
         SOURCE_SHA,
         UI_SHA,
       ),
     );
     assert.throws(() =>
-      privacy.projectPublicProvenance({ author: { fileKey: PRIVATE_KEY }, notes }),
+      privacy.projectPublicProvenance({ name: 'author-observation', notes }, 'author-observation'),
     );
     const error = new Error('consumer check failed');
     error.stateContinuity = { notes };
@@ -559,7 +588,8 @@ test('valid escape segments cannot hide private identity beside a literal percen
       outcome: 'passed',
       records: [
         {
-          notes: '50% complete; readable public observation',
+          name: 'author-observation',
+          opacity: 0.5,
           link: COMMUNITY,
           paths: [{ d: 'M0 0L1 0L1 1Z', fillRule: 'nonzero' }],
           masterSha256: 'c'.repeat(64),
@@ -581,14 +611,18 @@ test('valid escape segments cannot hide private identity beside a literal percen
 test('ambiguous or excessive provenance encoding refuses instead of leaving an unchecked tail', async (t) => {
   const { inputs } = await publicationFixture(t);
   for (const [notes, reason] of [
-    [percentLayers(PRIVATE_KEY, 12), /encoding depth refused/],
-    ['literal byte %F0', /ambiguous encoded provenance refused/],
+    [percentLayers(PRIVATE_KEY, 12), /public contract refused/],
+    ['literal byte %F0', /public contract refused/],
   ]) {
     assert.throws(
       () =>
         inputs.consumerReceiptLog(
           Buffer.from(
-            JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ notes }] }),
+            JSON.stringify({
+              schemaVersion: 1,
+              outcome: 'passed',
+              records: [{ name: 'author-observation', notes }],
+            }),
           ),
           SOURCE_SHA,
           UI_SHA,
@@ -629,4 +663,126 @@ test('raw summary inputs cannot publish private copies in source, receipt or fai
     assert.equal(result.stdout, '');
     assert.ok(!result.stderr.includes(PRIVATE_KEY));
   }
+});
+
+test('typed publication refuses unowned encoded fields across receipt and continuity sinks', async (t) => {
+  const { inputs, privacy } = await publicationFixture(t);
+  const representations = {
+    base64: Buffer.from(PRIVATE_KEY).toString('base64'),
+    entities: [...PRIVATE_KEY].map((character) => `&#${character.charCodeAt(0)};`).join(''),
+    nested: { nested: { copied: Buffer.from(PRIVATE_KEY).toString('base64') } },
+    key: { [Buffer.from(PRIVATE_KEY).toString('base64')]: 0.375 },
+  };
+  for (const [name, notes] of Object.entries(representations)) {
+    await t.test(`${name}: receipt`, () => {
+      const bytes = Buffer.from(
+        JSON.stringify({
+          schemaVersion: 1,
+          outcome: 'passed',
+          records: [{ name: 'author-observation', notes }],
+        }),
+      );
+      assert.throws(() => inputs.consumerReceiptLog(bytes, SOURCE_SHA, UI_SHA));
+    });
+    await t.test(`${name}: observation`, () => {
+      assert.throws(() =>
+        privacy.projectPublicProvenance(
+          { name: 'author-observation', notes },
+          'author-observation',
+        ),
+      );
+    });
+    await t.test(`${name}: continuity`, () => {
+      const error = new Error('consumer check failed');
+      error.stateContinuity = {
+        differences: [{ partId: 'state-question', before: 0.3, after: 0.5, delta: 0.2 }],
+        witness: { notes },
+      };
+      assert.equal(privacy.publicFailure(error).stateContinuityRefused, true);
+    });
+  }
+});
+
+test('URL publication classifies the WHATWG-normalized Figma host before its document route', async (t) => {
+  const { privacy } = await publicationFixture(t);
+  assert.deepEqual(privacy.projectPublicProvenance({ link: COMMUNITY }, 'community-reference'), {
+    link: COMMUNITY,
+  });
+  for (const [name, host] of [
+    ['ASCII tab', 'fi\tgma.com'],
+    ['DNS root dot', 'figma.com.'],
+  ]) {
+    await t.test(name, () => {
+      assert.deepEqual(
+        privacy.projectPublicProvenance(
+          {
+            link: `https://${host}/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1`,
+          },
+          'community-reference',
+        ),
+        { link: COMMUNITY },
+      );
+      assert.throws(() =>
+        privacy.projectPublicProvenance(
+          { link: `https://${host}/design/UnlistedDocumentReference02/fixture` },
+          'community-reference',
+        ),
+      );
+    });
+  }
+});
+
+test('API refusal publication derives a fixed message from the validated code and refuses extra members', () => {
+  const messages = {
+    GESTURE_UNSUPPORTED: 'Жест не поддерживается.',
+    VARIANT_UNSUPPORTED: 'Вариант не поддерживается.',
+    INVALID_REQUEST: 'Запрос не соответствует контракту.',
+    STATE_UNSUPPORTED: 'Состояние не поддерживается.',
+    FORMAT_UNSUPPORTED: 'Формат не поддерживается.',
+  };
+  for (const [code, message] of Object.entries(messages)) {
+    const raw = {
+      ok: false,
+      reason: { code, message: Buffer.from(PRIVATE_URL).toString('base64') },
+    };
+    const published = publicApiRefusal(raw);
+    assert.deepEqual(published, { ok: false, reason: { code, message } });
+    assert.equal(assertPublicProvenance(published, 'api-refusal'), published);
+    assert.ok(!JSON.stringify(published).includes(raw.reason.message));
+    assert.throws(() => publicApiRefusal({ ...raw, notes: { copied: PRIVATE_KEY } }));
+    assert.throws(() =>
+      publicApiRefusal({ ...raw, reason: { ...raw.reason, notes: PRIVATE_KEY } }),
+    );
+    const changed = {
+      ok: false,
+      reason: { code, message: Object.values(messages).find((item) => item !== message) },
+    };
+    assert.throws(() => assertPublicProvenance(changed, 'api-refusal'));
+  }
+  assert.throws(() =>
+    publicApiRefusal({ ok: false, reason: { code: PRIVATE_KEY, message: PRIVATE_URL } }),
+  );
+});
+
+test('projection refuses hidden fields and accessors before invoking untrusted object properties', () => {
+  const lawful = { name: 'author-observation', link: COMMUNITY, opacity: 0.375 };
+  assert.deepEqual(projectPublicProvenance(lawful, 'record'), lawful);
+  for (const make of [
+    () => Object.defineProperty({ ...lawful }, 'notes', { value: PRIVATE_KEY }),
+    () => ({ ...lawful, [Symbol('notes')]: PRIVATE_KEY }),
+    () => Object.assign(Object.create({ notes: PRIVATE_KEY }), lawful),
+  ])
+    assert.throws(() => projectPublicProvenance(make(), 'record'));
+  let reads = 0;
+  const untrusted = Object.defineProperty({ ...lawful }, 'link', {
+    enumerable: true,
+    get() {
+      reads++;
+      return COMMUNITY;
+    },
+  });
+  assert.throws(() => projectPublicProvenance(untrusted, 'record'));
+  assert.equal(reads, 0);
+  assert.throws(() => projectPublicProvenance(lawful));
+  assert.throws(() => projectPublicProvenance(lawful, 'unowned-report'));
 });

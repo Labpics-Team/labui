@@ -9,9 +9,14 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } 
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
 import {
+  PUBLIC_ENTRIES,
+  PUBLIC_QUALIFICATION,
+  PUBLIC_SCENARIO,
+  PUBLIC_STATE_GROUPS,
   assertPublicProvenance,
   parseIconsJson,
   projectPublicProvenance,
+  publicApiRefusal,
   publicDiagnosticError,
   publicFailure,
 } from './icons-public-provenance.mjs';
@@ -22,44 +27,10 @@ const HASH = /^[a-f0-9]{64}$/;
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-const REQUIRED_PUBLIC_ENTRIES = [
-  '@labpics/ui-core/button',
-  '@labpics/icons/symbols/reload',
-  '@labpics/motion',
-];
-const STATE_ENTRY = '@labpics/icons/states/status-circle';
-const EXPRESSION_ENTRY = '@labpics/icons/states/expression-face';
-const STATE_GROUPS = {
-  'status-circle': {
-    defaultState: 'question',
-    enclosurePartId: 'status-enclosure',
-    states: ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'],
-    sharedParts: [{ id: 'status-enclosure', role: 'container' }],
-    buttonLabel: 'Сменить знак',
-    selectLabel: 'Состояние знака',
-    labels: {
-      attention: 'Внимание',
-      confirmation: 'Подтверждение',
-      decrease: 'Уменьшение',
-      dismissal: 'Закрытие',
-      increase: 'Увеличение',
-      question: 'Вопрос',
-    },
-  },
-  'expression-face': {
-    defaultState: 'aloof',
-    enclosurePartId: 'face-enclosure',
-    states: ['aloof', 'sad', 'smile'],
-    sharedParts: [
-      { id: 'face-left-eye', role: 'content' },
-      { id: 'face-right-eye', role: 'content' },
-      { id: 'face-enclosure', role: 'container' },
-    ],
-    buttonLabel: 'Сменить выражение',
-    selectLabel: 'Выражение лица',
-    labels: { aloof: 'Спокойствие', sad: 'Грусть', smile: 'Улыбка' },
-  },
-};
+const REQUIRED_PUBLIC_ENTRIES = PUBLIC_ENTRIES.slice(0, 3);
+const STATE_ENTRY = PUBLIC_ENTRIES[3];
+const EXPRESSION_ENTRY = PUBLIC_ENTRIES[4];
+const STATE_GROUPS = PUBLIC_STATE_GROUPS;
 
 export function stateReferenceContract(group) {
   assert.ok(Object.hasOwn(STATE_GROUPS, group), 'consumer не запрашивал такую state group');
@@ -166,7 +137,7 @@ export function assertActionsRunner(env = process.env) {
 }
 
 export function validateSubject(subject) {
-  assertPublicProvenance(subject);
+  assertPublicProvenance(subject, 'subject');
   assert.ok([1, 2, 3].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
@@ -274,7 +245,10 @@ export function validateSubject(subject) {
 }
 
 export function validateStateReference(reference, author, group = 'status-circle') {
-  assertPublicProvenance({ reference, author });
+  assertPublicProvenance(
+    { reference, source: { fileKeySha256: author?.fileKeySha256, version: author?.version } },
+    'reference-binding',
+  );
   const contract = stateReferenceContract(group);
   assert.equal(reference?.group, group);
   assert.equal(reference.variant, 'outline');
@@ -957,15 +931,15 @@ async function browserProof(browser, url, reference, out, records, browserErrors
       await page.evaluate(() => window.__iconsPacked.ready);
       for (const variant of ['outline', 'filled']) {
         const expected = reference.icons.reload[variant];
-        const read = async () =>
-          projectPublicProvenance(
-            await page.evaluate((id) => window.__iconsPacked.read(id), variant),
-          );
+        const read = () => page.evaluate((id) => window.__iconsPacked.read(id), variant);
         const initial = await read();
         assert.equal(initial.provenance.kind, 'source');
         assert.equal(initial.provenance.file, expected.sourceFile);
         assert.equal(initial.composition, 'layers');
-        assert.deepEqual(initial.provenance.author, expected.author);
+        assert.deepEqual(
+          projectPublicProvenance(initial.provenance.author, 'author'),
+          expected.author,
+        );
         assert.deepEqual(initial.provenance.anatomy, expected.anatomy);
         assert.deepEqual(initial.parts, expected.parts);
         assert.deepEqual(initial.viewBox, expected.viewBox);
@@ -977,7 +951,10 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           initial.paths.map(({ id, role }) => ({ id, role })),
           expected.parts.map(({ id, role }) => ({ id, role })),
         );
-        assert.deepEqual(initial.capabilities.author, expected.author);
+        assert.deepEqual(
+          projectPublicProvenance(initial.capabilities.author, 'author'),
+          expected.author,
+        );
         assert.deepEqual(initial.capabilities.anatomy, expected.anatomy);
         assert.deepEqual(initial.capabilities.motion.gestures, [expected.gesture]);
         assert.deepEqual(initial.capabilities.supportedAxes, []);
@@ -1102,9 +1079,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         }
         const current = await read();
         assert.deepEqual(current.paths, initial.paths, 'motion изменил authored contours');
-        const afterOther = projectPublicProvenance(
-          await page.evaluate((id) => window.__iconsPacked.read(id), other),
-        );
+        const afterOther = await page.evaluate((id) => window.__iconsPacked.read(id), other);
         assert.equal(afterOther.svg, untouched.svg, 'экземпляр изменил соседний символ');
         assert.deepEqual(afterOther.events, untouched.events);
         const refusal = await page.evaluate((id) => window.__iconsPacked.refuse(id), variant);
@@ -1119,7 +1094,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           pointerControl,
           events: activated.events,
           provenance: initial.provenance,
-          refusal,
+          refusal: { axis: refusal.axis, motion: publicApiRefusal(refusal.motion) },
         });
       }
       for (const stateReference of Object.values(reference.states))
@@ -1139,7 +1114,10 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           disposed.completionStatus,
           reducedMotion === 'reduce' ? 'finished' : 'stopped',
         );
-        records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
+        records.push({
+          name: `${group}:${reducedMotion}:dispose`,
+          ...projectPublicProvenance(disposed, 'state-disposal'),
+        });
       }
     } catch (error) {
       await page
@@ -1280,13 +1258,11 @@ export function assertStateAnatomy(observation, reference) {
 }
 
 async function stateBrowserProof(page, reference, reducedMotion, records) {
-  const evaluate = async (operation, ...args) =>
-    projectPublicProvenance(
-      await page.evaluate(
-        ({ group, operation, args }) =>
-          window.__iconsPacked.stateConsumers[group][operation](...args),
-        { group: reference.group, operation, args },
-      ),
+  const evaluate = (operation, ...args) =>
+    page.evaluate(
+      ({ group, operation, args }) =>
+        window.__iconsPacked.stateConsumers[group][operation](...args),
+      { group: reference.group, operation, args },
     );
   const read = () => evaluate('readState');
   const contract = stateReferenceContract(reference.group);
@@ -1294,8 +1270,11 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   const [first, second] = alternatives;
   const selectedTarget = alternatives.at(-1).id;
   const initial = await read();
-  assert.deepEqual(initial.capabilities, stateCapabilitiesReference(reference));
   assertStateAnatomy(initial, reference);
+  assert.deepEqual(
+    projectPublicProvenance(initial.capabilities, 'state-capabilities'),
+    stateCapabilitiesReference(reference),
+  );
   const oneHot = (observation, target) => {
     assert.equal(observation.targetState, target);
     assert.equal(observation.selected, target);
@@ -1342,7 +1321,16 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
       reducedMotion === 'reduce' ? 0 : 600,
     );
     if (reducedMotion === 'no-preference')
-      sameStateOpacity(event.before, event.after, { eventIndex: index, ...event });
+      sameStateOpacity(event.before, event.after, {
+        eventIndex: index,
+        trusted: event.trusted,
+        composed: event.composed,
+        native: event.native,
+        before: event.before,
+        after: event.after,
+        effect: event.effect,
+        continuity: event.continuity,
+      });
   }
   await page.getByRole('combobox', { name: contract.selectLabel }).selectOption(selectedTarget);
   oneHot(await evaluate('settleState'), selectedTarget);
@@ -1409,10 +1397,10 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     records.push({
       name: `${reference.group}:paused-reverse-newer-state`,
       paused: paused.opacity,
-      reverse,
-      newer,
+      reverse: projectPublicProvenance(reverse, 'state-change'),
+      newer: projectPublicProvenance(newer, 'state-change'),
       mixture: mixture.opacity,
-      latest,
+      latest: projectPublicProvenance(latest, 'state-change'),
     });
   }
   if (reference.group === 'expression-face') {
@@ -1445,7 +1433,16 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   }
   assert.equal(refusal.web.ok, true);
   stateEffect(refusal.web.effect, reference, reference.states[1].id, 240);
-  records.push({ name: `${reference.group}:${reducedMotion}:public-refusals`, refusal });
+  records.push({
+    name: `${reference.group}:${reducedMotion}:public-refusals`,
+    refusal: {
+      filled: publicApiRefusal(refusal.filled),
+      nullRequest: publicApiRefusal(refusal.nullRequest),
+      unknown: publicApiRefusal(refusal.unknown),
+      exports: refusal.exports.map(publicApiRefusal),
+      web: { ok: refusal.web.ok, effect: refusal.web.effect },
+    },
+  });
   const disposing = await evaluate('changeState', selectedTarget, 1000);
   stateEffect(disposing.effect, reference, selectedTarget, reducedMotion === 'reduce' ? 0 : 1000);
   if (reducedMotion === 'no-preference')
@@ -1517,7 +1514,7 @@ export async function main(args = process.argv.slice(2)) {
       runId: process.env.GITHUB_RUN_ID,
       runAttempt: process.env.GITHUB_RUN_ATTEMPT,
       environment: process.env.RUNNER_ENVIRONMENT,
-      name: process.env.RUNNER_NAME,
+      nameSha256: process.env.RUNNER_NAME ? hash(process.env.RUNNER_NAME) : undefined,
       os: process.env.RUNNER_OS,
     };
     phase = 'archive snapshots';
@@ -1534,7 +1531,11 @@ export async function main(args = process.argv.slice(2)) {
       );
     }
     receipt.archives = archives.map(({ path, ...archive }) => ({
-      ...archive,
+      key: archive.key,
+      inputNameSha256: hash(archive.inputName),
+      archiveSha256: archive.archiveSha256,
+      archiveBytes: archive.archiveBytes,
+      integrity: archive.integrity,
       snapshot: relative(consumer, path).replaceAll('\\', '/'),
     }));
     await writeFile(
@@ -1594,7 +1595,7 @@ export async function main(args = process.argv.slice(2)) {
         version: manifest.version,
         manifestSha256: hash(bytes),
         lockIntegrity: locked.integrity ?? null,
-        lockResolved: locked.resolved ?? null,
+        lockResolvedSha256: typeof locked.resolved === 'string' ? hash(locked.resolved) : null,
       });
     }
     await writeFile(join(consumer, 'index.html'), HTML);
@@ -1636,7 +1637,7 @@ export async function main(args = process.argv.slice(2)) {
             for (const item of Object.values(output)) {
               const bytes = Buffer.from(item.type === 'chunk' ? item.code : item.source);
               bundles.push({
-                file: item.fileName,
+                fileSha256: hash(item.fileName),
                 sha256: hash(bytes),
                 raw: bytes.length,
                 gzip: gzipSync(bytes).length,
@@ -1664,13 +1665,12 @@ export async function main(args = process.argv.slice(2)) {
       publicEntries: Object.fromEntries(
         Object.entries(publicEntries).map(([specifier, id]) => [
           specifier,
-          relative(consumer, id).replaceAll('\\', '/'),
+          hash(relative(consumer, id).replaceAll('\\', '/')),
         ]),
       ),
-      moduleGraph,
+      moduleGraph: moduleGraph.map(hash),
       bundles,
-      scenario:
-        'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim',
+      scenario: PUBLIC_SCENARIO,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -1705,8 +1705,7 @@ export async function main(args = process.argv.slice(2)) {
       receipt.harness.sourceSha256,
     );
     receipt.outcome = 'passed';
-    receipt.qualification =
-      'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
+    receipt.qualification = PUBLIC_QUALIFICATION;
   } catch (error) {
     receipt.outcome = 'failed';
     receipt.failure = {
@@ -1745,7 +1744,7 @@ export async function main(args = process.argv.slice(2)) {
       receipt.cleanupErrors = cleanupErrors;
     }
     receipt.completed = new Date().toISOString();
-    const publicReceipt = projectPublicProvenance(receipt);
+    const publicReceipt = projectPublicProvenance(receipt, 'receipt');
     await writeFile(join(out, 'receipt.json'), `${JSON.stringify(publicReceipt, null, 2)}\n`);
     if (receipt.outcome === 'failed')
       await writeFile(join(out, 'failure.json'), `${JSON.stringify(publicReceipt, null, 2)}\n`);
