@@ -390,7 +390,7 @@ public sealed class SheetLayers : Grid
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
-                AlphaMaskEffect bodyGraph,
+                AlphaMaskEffect bodyGraph, Transform2DEffect bodyMaskGraph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
@@ -417,13 +417,27 @@ public sealed class SheetLayers : Grid
                             { ["name"] = factoryName, ["operation"] = operation };
                             if (operation == "factory")
                             {
-                                // SourceIn: destination alpha умножает source RGBA независимо от RGB маски.
-                                var sourceIn = result.Own(new CompositeEffect
+                                // Оба root, mask и leaf свежие; различается только имя источника.
+                                AlphaMaskEffect BodyMaskControl(string sourceName)
                                 {
-                                    Mode = CanvasComposite.SourceIn,
-                                    Sources = { bodyGraph.AlphaMask, bodyGraph.Source },
-                                });
-                                SheetSourceTopologyProbe.RecordBranches(primary, compositor, bodyGraph, sourceIn);
+                                    var mask = result.Own(new Transform2DEffect
+                                    {
+                                        Name = bodyMaskGraph.Name,
+                                        Source = new CompositionEffectSourceParameter(sourceName),
+                                        TransformMatrix = bodyMaskGraph.TransformMatrix,
+                                        InterpolationMode = bodyMaskGraph.InterpolationMode,
+                                        BorderMode = bodyMaskGraph.BorderMode,
+                                        Sharpness = bodyMaskGraph.Sharpness,
+                                    });
+                                    return result.Own(new AlphaMaskEffect
+                                    {
+                                        Name = bodyGraph.Name,
+                                        Source = bodyGraph.Source,
+                                        AlphaMask = mask,
+                                    });
+                                }
+                                SheetSourceTopologyProbe.RecordBranches(primary, compositor,
+                                    BodyMaskControl("atlas"), BodyMaskControl("bodyMaskAtlas"));
                             }
                         }
                     }
@@ -455,7 +469,7 @@ public sealed class SheetLayers : Grid
             var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, body,
+            result.Visual.Brush = Brush("final", graph, body, bodyAlphaMask,
                 ("backdrop", backdropBrush), ("atlas", atlasBrush));
             return result;
         }
