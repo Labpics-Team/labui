@@ -30,7 +30,7 @@ internal static class SheetSourceTopologyProbe
         new(1, false, "repeat", Mask: false, LevelStart: 7),
         new(1, false, "repeat", Mask: false, Body: true),
         new(2, true, "repeat", LevelStart: 6),
-        new(8, true, "repeat", Blur: false),
+        new(8, true, "repeat", Blur: false, Mask: false),
     ];
 
     internal static CompositionEffectFactory CreateFactory(Compositor compositor,

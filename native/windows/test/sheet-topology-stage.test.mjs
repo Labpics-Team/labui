@@ -136,7 +136,7 @@ test('topology accepts all twenty cases and rejects an oversized diagnostic with
       sigmas: [64],
     },
     { ...sample, index: 18, inputs: 2, stage: 'factory', levelStart: 6, sigmas: [6, 12] },
-    { ...sample, index: 19, blur: false, stage: 'factory' },
+    { ...sample, index: 19, blur: false, mask: false, stage: 'factory' },
   );
   assert.deepEqual(readback(rows), rows);
   assert.equal(readback([...rows, sample]), null);

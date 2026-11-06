@@ -122,7 +122,7 @@ ExpectedGraph[] expectedCases =
     new(1, "Gaussian", "repeat", Mask: false, LevelStart: 7),
     new(1, "Gaussian", "repeat", Mask: false, Body: true),
     new(2, "Add", "repeat", LevelStart: 6),
-    new(8, "Add", "repeat", Blur: false),
+    new(8, "Add", "repeat", Blur: false, Mask: false),
 ];
 Check(expectedCases[8] with { Source = "repeat" } == expectedCases[11],
     "Matched Add8 отличается от контроля не только идентичностью источников.");
@@ -132,8 +132,8 @@ Check(expectedCases[11] with { Combine = "Arithmetic" } == expectedCases[12],
     "Matched repeat8 отличается от контроля не только оператором суммирования.");
 Check(expectedCases[11] with { Combine = "BalancedAdd" } == expectedCases[15],
     "Matched BalancedAdd8 отличается от контроля не только формой суммирования.");
-Check(expectedCases[11] with { Blur = false } == expectedCases[19],
-    "Matched no-blur repeat8 отличается от контроля не только наличием blur.");
+Check(expectedCases[11] with { Blur = false, Mask = false } == expectedCases[19],
+    "Чистый fan-in отличается от восьмивходового Add не только blur и масками.");
 
 // Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
 // подстановку постоянной sigma, в том числе штатного Win2D значения 3.
@@ -200,7 +200,8 @@ foreach (var cleanupFault in new[] { false, true })
     Check(Fixture.Created == Fixture.Disposed && compositor.Factories.All(factory => factory.Disposed),
         "Один cleanup отказ прервал освобождение остальных ресурсов.");
     Check(rows!.Select(row => (int)row["index"]!).SequenceEqual(Enumerable.Range(0, 20)), "Порядок матрицы потерян.");
-    Check(rows.All(row => (bool)row["blur"]! || (bool)row["mask"]!), "Случай потерял исследуемую ветвь.");
+    Check(rows.Take(19).All(row => (bool)row["blur"]! || (bool)row["mask"]!),
+        "Случай до чистого fan-in потерял исследуемую ветвь.");
     Check(rows.Any(row => (int)row["hresult"]! != 0) && rows.Any(row => (int)row["hresult"]! == 0),
         "Диагностика не различает собственный успех и отказ.");
     Check(rows.Any(row => row["stage"] is "factory" && row["hresult"] is -2147024809),
