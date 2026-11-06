@@ -131,11 +131,54 @@ for (const renderer of ['lit', 'react'] as const) {
         'css-comment',
         'css-escaped-string',
         'css-nested',
+        'css-line-lf',
+        'css-line-crlf',
+        'css-line-cr',
+        'css-line-ff',
+        'css-empty-var',
+        'css-empty-env',
+        'css-empty-attr',
+        'css-empty-if',
+        'css-hex-lf',
+        'css-hex-crlf',
+        'css-hex-cr',
+        'css-hex-ff',
+        'css-nested-invalid-var',
+        'css-invalid-env-index',
+        'css-invalid-attr-name',
+        'css-invalid-if-condition',
+        'css-nested-invalid-function',
+        'css-url-token',
+        'css-dimension-token',
+        'css-hash-token',
+        'css-at-token',
+        'css-invalid-attr-type',
+        'css-invalid-attr-url',
+        'css-invalid-braces',
+        'css-all-display',
+        'css-all-visibility',
+        'css-all-content-visibility',
         'idref-text',
         'role-text',
       ]) {
         await expect(control(page, renderer, id)).toHaveAccessibleName('Leading Trailing');
       }
+      for (const id of [
+        'css-calc-substitution',
+        'css-opaque-substitution',
+        'css-eof-substitution',
+        'css-percent-substitution',
+        'css-attr-substitution',
+      ]) {
+        const input = control(page, renderer, id);
+        await expect(input).toHaveAccessibleName('Wi-Fi');
+        await expect(input).not.toHaveAttribute('aria-labelledby');
+        expect((await labelGeometry(input)).labels).toBe(1);
+      }
+      if (renderer === 'lit')
+        await expect(control(page, renderer, 'css-at-rule')).toHaveAccessibleName(
+          'Leading Trailing',
+        );
       await expect(control(page, renderer, 'css-escaped-hidden')).toHaveAccessibleName('Wi-Fi');
       await expect(control(page, renderer, 'css-escaped-hidden')).not.toHaveAttribute(
         'aria-labelledby',
@@ -156,11 +199,49 @@ for (const renderer of ['lit', 'react'] as const) {
       'css-comment',
       'css-escaped-string',
       'css-nested',
+      'css-line-lf',
+      'css-line-crlf',
+      'css-line-cr',
+      'css-line-ff',
+      'css-empty-var',
+      'css-empty-env',
+      'css-empty-attr',
+      'css-empty-if',
+      'css-hex-lf',
+      'css-hex-crlf',
+      'css-hex-cr',
+      'css-hex-ff',
+      'css-nested-invalid-var',
+      'css-invalid-env-index',
+      'css-invalid-attr-name',
+      'css-invalid-if-condition',
+      'css-nested-invalid-function',
+      'css-url-token',
+      'css-dimension-token',
+      'css-hash-token',
+      'css-at-token',
+      'css-invalid-attr-type',
+      'css-invalid-attr-url',
+      'css-invalid-braces',
+      'css-all-display',
+      'css-all-visibility',
+      'css-all-content-visibility',
       'idref-text',
       'role-text',
     ]) {
       await expect(control(page, renderer, id)).toHaveAccessibleName('Leading Trailing');
     }
+    for (const id of [
+      'css-calc-substitution',
+      'css-opaque-substitution',
+      'css-eof-substitution',
+      'css-percent-substitution',
+      'css-attr-substitution',
+    ]) {
+      await expect(control(page, renderer, id)).toHaveAccessibleName('Trailing');
+    }
+    if (renderer === 'lit')
+      await expect(control(page, renderer, 'css-at-rule')).toHaveAccessibleName('Leading Trailing');
     await expect(control(page, renderer, 'css-escaped-hidden')).toHaveAccessibleName('Wi-Fi');
     await expect(control(page, renderer, 'css-escaped-hidden')).not.toHaveAttribute(
       'aria-labelledby',

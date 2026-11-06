@@ -113,6 +113,50 @@ describe('Switch SSR: подписи и имя существуют до hydrati
     '<span style="display:none!important;display:inline !/**/IMPORTANT">Trailing</span>',
     '<span style="visibility:hidden;visibility:initial">Trailing</span>',
     '<span style="display:none;display:flow-root list-item">Trailing</span>',
+    ...['\n', '\r\n', '\r', '\f'].map(
+      (newline) => `<span style='font-family:"a\\${newline};display:none; b"'>Trailing</span>`,
+    ),
+    ...[
+      'var()',
+      'env()',
+      'attr()',
+      'if()',
+      'var(/**/)',
+      'var(,inline)',
+      'var(foo)',
+      'var(--,inline)',
+      'var(--caption-display extra)',
+      'env(,inline)',
+      'attr(,inline)',
+      'if(:inline)',
+      'var(--x,var())',
+      'env(name second)',
+      'attr("data-display")',
+      'if(foo:inline)',
+      'foo(var())',
+      'url(var(--x))',
+      '1var(--x)',
+      '#var(--x)',
+      '@var(--x)',
+      'attr(data-display type(type(*)))',
+      'attr(data-display url(length))',
+      'var(--x) {}',
+      'attr(data-display type(< length >))',
+      'attr(data-display type(<length> +))',
+    ].map(
+      (value) =>
+        `<span style="display:inline;display:${value.replaceAll('"', '&quot;')}">Trailing</span>`,
+    ),
+    '<span style="display:none;@media{}display:inline">Trailing</span>',
+    ...['display:none', 'visibility:hidden', 'content-visibility:hidden'].map(
+      (hidden) => `<span style="${hidden};all:initial">Trailing</span>`,
+    ),
+    ...['display:none', 'visibility:hidden', 'content-visibility:hidden'].map(
+      (hidden) => `<span style="all:initial!important;${hidden}">Trailing</span>`,
+    ),
+    ...['\n', '\r\n', '\r', '\f'].map(
+      (newline) => `<span style='font-family:"\\61${newline};display:none; b"'>Trailing</span>`,
+    ),
     '<span aria-labelledby="outside">Trailing</span>',
     '<span role="none">Trailing</span>',
     '<span role="img">Trailing</span>',
@@ -150,12 +194,38 @@ describe('Switch SSR: подписи и имя существуют до hydrati
     String.raw`<span style="di\73 play:n\6f ne">Trailing</span>`,
     String.raw`<span style="visibility:h\69 dden">Trailing</span>`,
     '<span style="display:none;display:inline flex grid">Trailing</span>',
+    ...['display:none', 'visibility:hidden', 'content-visibility:hidden'].map(
+      (hidden) => `<span style="${hidden}!important;all:initial">Trailing</span>`,
+    ),
+    '<span style="all:initial;display:none">Trailing</span>',
+    '<span style="display:none;all:bogus">Trailing</span>',
+    '<span style="display:none;all:none">Trailing</span>',
+    ...[
+      'var(--x,var())',
+      'env(name second)',
+      'attr("data-display")',
+      'if(foo:inline)',
+      'foo(var())',
+      'url(var(--x))',
+      '1var(--x)',
+      '#var(--x)',
+      '@var(--x)',
+      'attr(data-display type(type(*)))',
+      'attr(data-display url(length))',
+      'var(--x) {}',
+      'attr(data-display type(< length >))',
+      'attr(data-display type(<length> +))',
+    ].map(
+      (value) =>
+        `<span style="display:none;display:${value.replaceAll('"', '&quot;')}">Trailing</span>`,
+    ),
   ])('скрытый caption %j сохраняет fallback без пустого IDREF', (content) => {
     const output = renderToString(
       html`<lab-switch aria-label="Wi-Fi">${unsafeHTML(content)}</lab-switch>`,
     );
     expect(attr(input(output), 'aria-labelledby')).toBeUndefined();
     expect(attr(input(output), 'aria-label')).toBe('Wi-Fi');
+    expect(visibleLabelIds(output)).toHaveLength(0);
   });
 
   it.each([
@@ -168,6 +238,20 @@ describe('Switch SSR: подписи и имя существуют до hydrati
     '<span style="display:none;display:block ruby">Trailing</span>',
     '<span style="display:none;display:run-in">Trailing</span>',
     '<span style="display:none;display:ruby-base">Trailing</span>',
+    '<span style="display:var(--caption-display,)">Trailing</span>',
+    '<span style="display:env(safe-area-inset-left)">Trailing</span>',
+    '<span style="display:env(viewport-segment-width 0 0)">Trailing</span>',
+    '<span style="display:attr(data-display type(&lt;custom-ident&gt;))">Trailing</span>',
+    '<span style="display:if(else: inline)">Trailing</span>',
+    '<span style="display:none;display:calc(var(--x))">Trailing</span>',
+    '<span style="display:none;display:foo(var(--x))">Trailing</span>',
+    '<span style="display:none;display:foo(var(--x)">Trailing</span>',
+    '<span style="display:none;display:1%var(--x)">Trailing</span>',
+    '<span style="display:none;display:{var(--x)}">Trailing</span>',
+    '<span style="display:none;display:attr(data-display &lt;custom-ident&gt;)">Trailing</span>',
+    '<span style="display:none;display:attr(data-display &quot;&lt;custom-ident&gt;&quot;)">Trailing</span>',
+    '<span style="display:none;all:var(--reset)">Trailing</span>',
+    '<span style="visibility:hidden;all:inherit">Trailing</span>',
   ])('unknown default %j сохраняется с fallback вместо пустого IDREF', (content) => {
     const output = renderToString(
       html`<lab-switch aria-label="Wi-Fi">${unsafeHTML(content)}</lab-switch>`,

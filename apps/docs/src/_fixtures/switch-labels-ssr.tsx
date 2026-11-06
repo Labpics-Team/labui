@@ -63,6 +63,73 @@ export function renderSwitchLabelExamples(): string {
       content: String.raw`<span style="display:n\6f ne">Trailing</span>`,
     },
     { id: 'css-vendor', content: '<span style="display:-webkit-box">Trailing</span>' },
+    ...[
+      { id: 'css-line-lf', newline: '\n' },
+      { id: 'css-line-crlf', newline: '\r\n' },
+      { id: 'css-line-cr', newline: '\r' },
+      { id: 'css-line-ff', newline: '\f' },
+    ].map(({ id, newline }) => ({
+      id,
+      labelStart: 'Leading',
+      content: `<span style='font-family:"a\\${newline};display:none; b"'>Trailing</span>`,
+    })),
+    ...['var', 'env', 'attr', 'if'].map((name) => ({
+      id: `css-empty-${name}`,
+      labelStart: 'Leading',
+      content: `<span style="display:inline;display:${name}()">Trailing</span>`,
+    })),
+    ...[
+      { id: 'css-hex-lf', newline: '\n' },
+      { id: 'css-hex-crlf', newline: '\r\n' },
+      { id: 'css-hex-cr', newline: '\r' },
+      { id: 'css-hex-ff', newline: '\f' },
+    ].map(({ id, newline }) => ({
+      id,
+      labelStart: 'Leading',
+      content: `<span style='font-family:"\\61${newline};display:none; b"'>Trailing</span>`,
+    })),
+    ...(
+      [
+        ['css-nested-invalid-var', 'var(--x,var())'],
+        ['css-invalid-env-index', 'env(name second)'],
+        ['css-invalid-attr-name', 'attr("data-display")'],
+        ['css-invalid-if-condition', 'if(foo:inline)'],
+        ['css-nested-invalid-function', 'foo(var())'],
+        ['css-url-token', 'url(var(--x))'],
+        ['css-dimension-token', '1var(--x)'],
+        ['css-hash-token', '#var(--x)'],
+        ['css-at-token', '@var(--x)'],
+        ['css-invalid-attr-type', 'attr(data-display type(type(*)))'],
+        ['css-invalid-attr-url', 'attr(data-display url(length))'],
+        ['css-invalid-braces', 'var(--x) {}'],
+      ] as const
+    ).map(([id, display]) => ({
+      id,
+      labelStart: 'Leading',
+      content: `<span style="display:inline;display:${display.replaceAll('"', '&quot;')}">Trailing</span>`,
+    })),
+    ...(
+      [
+        ['css-calc-substitution', 'calc(var(--x))'],
+        ['css-opaque-substitution', 'foo(var(--x))'],
+        ['css-eof-substitution', 'foo(var(--x)'],
+        ['css-percent-substitution', '1%var(--x)'],
+        ['css-attr-substitution', 'attr(data-display type(<custom-ident>))'],
+      ] as const
+    ).map(([id, display]) => ({
+      id,
+      content: `<span style="display:${display}">Trailing</span>`,
+    })),
+    {
+      id: 'css-at-rule',
+      labelStart: 'Leading',
+      content: '<span style="display:none;@media{}display:inline">Trailing</span>',
+    },
+    ...['display:none', 'visibility:hidden', 'content-visibility:hidden'].map((hidden) => ({
+      id: `css-all-${hidden.split(':')[0]}`,
+      labelStart: 'Leading',
+      content: `<span style="${hidden};all:initial">Trailing</span>`,
+    })),
     {
       id: 'idref-text',
       labelStart: 'Leading',

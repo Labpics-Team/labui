@@ -128,6 +128,78 @@ export function ReactSwitchLabels(): ReactNode {
       children: <span style={{ display: String.raw`n\6f ne` }}>Trailing</span>,
     },
     { id: 'css-vendor', children: <span style={{ display: '-webkit-box' }}>Trailing</span> },
+    ...[
+      { id: 'css-line-lf', newline: '\n' },
+      { id: 'css-line-crlf', newline: '\r\n' },
+      { id: 'css-line-cr', newline: '\r' },
+      { id: 'css-line-ff', newline: '\f' },
+    ].map(({ id, newline }) => ({
+      id,
+      props: { labelStart: 'Leading' },
+      children: <span style={{ fontFamily: `"a\\${newline};display:none; b"` }}>Trailing</span>,
+    })),
+    ...['var', 'env', 'attr', 'if'].map((name) => ({
+      id: `css-empty-${name}`,
+      props: { labelStart: 'Leading' },
+      children: <span style={{ display: `${name}()` }}>Trailing</span>,
+    })),
+    ...[
+      { id: 'css-hex-lf', newline: '\n' },
+      { id: 'css-hex-crlf', newline: '\r\n' },
+      { id: 'css-hex-cr', newline: '\r' },
+      { id: 'css-hex-ff', newline: '\f' },
+    ].map(({ id, newline }) => ({
+      id,
+      props: { labelStart: 'Leading' },
+      children: <span style={{ fontFamily: `"\\61${newline};display:none; b"` }}>Trailing</span>,
+    })),
+    ...(
+      [
+        ['css-nested-invalid-var', 'var(--x,var())'],
+        ['css-invalid-env-index', 'env(name second)'],
+        ['css-invalid-attr-name', 'attr("data-display")'],
+        ['css-invalid-if-condition', 'if(foo:inline)'],
+        ['css-nested-invalid-function', 'foo(var())'],
+        ['css-url-token', 'url(var(--x))'],
+        ['css-dimension-token', '1var(--x)'],
+        ['css-hash-token', '#var(--x)'],
+        ['css-at-token', '@var(--x)'],
+        ['css-invalid-attr-type', 'attr(data-display type(type(*)))'],
+        ['css-invalid-attr-url', 'attr(data-display url(length))'],
+        ['css-invalid-braces', 'var(--x) {}'],
+      ] as const
+    ).map(([id, display]) => ({
+      id,
+      props: { labelStart: 'Leading' },
+      children: <span style={{ display }}>Trailing</span>,
+    })),
+    ...(
+      [
+        ['css-calc-substitution', 'calc(var(--x))'],
+        ['css-opaque-substitution', 'foo(var(--x))'],
+        ['css-eof-substitution', 'foo(var(--x)'],
+        ['css-percent-substitution', '1%var(--x)'],
+        ['css-attr-substitution', 'attr(data-display type(<custom-ident>))'],
+      ] as const
+    ).map(([id, display]) => ({
+      id,
+      children: <span style={{ display }}>Trailing</span>,
+    })),
+    {
+      id: 'css-all-display',
+      props: { labelStart: 'Leading' },
+      children: <span style={{ display: 'none', all: 'initial' }}>Trailing</span>,
+    },
+    {
+      id: 'css-all-visibility',
+      props: { labelStart: 'Leading' },
+      children: <span style={{ visibility: 'hidden', all: 'initial' }}>Trailing</span>,
+    },
+    {
+      id: 'css-all-content-visibility',
+      props: { labelStart: 'Leading' },
+      children: <span style={{ contentVisibility: 'hidden', all: 'initial' }}>Trailing</span>,
+    },
     {
       id: 'idref-text',
       props: { labelStart: 'Leading' },
