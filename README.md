@@ -32,11 +32,14 @@ pnpm --filter @labpics/ui-docs dev
 
 ## Первый компонент
 
-В собранном workspace подключите стили и нужный компонент в браузерном модуле:
+Пример рассчитан на приложение в собранном workspace с зависимостями
+`workspace:*` и сборщиком, который поддерживает импорт CSS, например Vite.
+Подключите стили и нужный компонент в модуле приложения:
 
 ```typescript
 import '@labui/colors/contract.css';
 import '@labpics/ui-tokens/tokens.css';
+import '@labpics/ui-tokens/motion.css';
 import '@labpics/ui-core/theme.css';
 import '@labpics/ui-core/button';
 import { setTheme } from '@labpics/ui-core';

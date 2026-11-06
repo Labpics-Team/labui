@@ -8,12 +8,15 @@
 
 ## Подключить стили
 
-Загрузите семантические цвета, геометрию и стили темы один раз на уровне приложения:
+Загрузите семантические цвета, геометрию, движение, тему и тени
+один раз на уровне приложения:
 
 ```typescript
 import '@labui/colors/contract.css';
 import '@labpics/ui-tokens/tokens.css';
+import '@labpics/ui-tokens/motion.css';
 import '@labpics/ui-core/theme.css';
+import '@labpics/ui-core/shadow.css';
 ```
 
 Цветовой CSS-контракт в этой версии workspace экспортирует пакет
@@ -42,9 +45,37 @@ import '@labpics/ui-core/button';
 ```
 
 `type` задаёт смысл действия, `kind` — оформление, `size` — размер.
-Для отправки формы задайте `html-type="submit"`; по умолчанию кнопка
-имеет поведение `button`. Кнопке без видимого текста нужен `aria-label`.
+`html-type` задаёт тип внутренней HTML-кнопки; по умолчанию это `button`.
+Внутренняя кнопка находится в Shadow DOM и не отправляет внешнюю форму
+автоматически. Кнопке без видимого текста нужен `aria-label`.
 Полный набор свойств и состояний находится на странице Button в каталоге.
+
+Для отправки внешней формы оставьте тип `button` и вызовите
+`requestSubmit()` из обработчика нажатия:
+
+```html
+<form id="profile">
+  <lab-button type="accent" kind="fill">Сохранить</lab-button>
+</form>
+```
+
+```typescript
+const form = document.querySelector('#profile');
+const save = form?.querySelector('lab-button');
+if (!(form instanceof HTMLFormElement) || !save) {
+  throw new Error('Форма profile и её кнопка должны быть смонтированы');
+}
+
+const submit = () => form.requestSubmit();
+save.addEventListener('click', submit);
+
+export const disposeForm = () => {
+  save.removeEventListener('click', submit);
+};
+```
+
+`requestSubmit()` сохраняет проверку полей и событие `submit`.
+При удалении формы вызовите `disposeForm()`, чтобы снять обработчик.
 
 ## Использовать React
 
@@ -65,6 +96,8 @@ export function SaveAction() {
 
 Стили самого Button входят в его модуль. Для интерактивного обработчика
 используйте `onClick` и обычную границу client-компонента своего фреймворка.
+React Button рисует нативный `<button>`, поэтому `htmlType="submit"`
+работает непосредственно внутри формы.
 В Vue, Svelte, Solid и Astro используйте соответствующий
 [пакет привязки](../reference/packages.md) и его публичные входы.
 
