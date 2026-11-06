@@ -2,7 +2,7 @@
   "name": "@labpics/ui-react",
   "version": "0.0.0",
   "private": true,
-  "description": "Native React / Next renderer for LabUI (ADR-0001, A-prime). Thin React components over the SAME Zag behaviors as the Lit base — no Lit in the React path. Shared types come from @labpics/ui-core.",
+  "description": "React-компоненты Lab UI: DOM-рендеринг с общими типами и поведением из @labpics/ui-core.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",

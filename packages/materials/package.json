@@ -2,7 +2,7 @@
   "name": "@labpics/ui-materials",
   "version": "0.0.0",
   "private": true,
-  "description": "LabUI material mode axis — data-material solid|glass|blur scope over the --lab-* contract, with the α-boundary label guarantee and deterministic degradations.",
+  "description": "Материалы Lab UI: Solid, Glass, Acrylic, краевой progressive blur и runtime поверх семантических --lab-* ролей.",
   "license": "UNLICENSED",
   "type": "module",
   "main": "./dist/index.cjs",
