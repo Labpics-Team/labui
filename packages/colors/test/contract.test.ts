@@ -21,7 +21,7 @@ const roles = JSON.parse(readFileSync(resolve(pkgRoot, 'roles.json'), 'utf8')) a
 
 const allRoles = Object.values(roles.groups).flat();
 
-// Конечные карты из общего CSS binding; браузерный cascade/no-JS проверяет contrast.spec.ts.
+// Конечные карты из общего CSS binding; живой браузерный путь проверяет colors-live.spec.ts.
 const lightBody = themeVars(css, 'light');
 const darkBody = themeVars(css, 'dark');
 const mediaBody = darkBody;
