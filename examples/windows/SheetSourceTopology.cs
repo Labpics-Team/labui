@@ -2,6 +2,8 @@ using System.Collections;
 
 namespace LabUI.Buttons;
 
+internal sealed record SheetFactoryDiagnostic(string stage, int hresult, int? cleanupHresult);
+
 // Временный wire-проектор диагностических случаев. Произвольные Data/Message
 // не сериализуются; ошибки диагностики не меняют исходный отказ приложения.
 internal static class SheetSourceTopology
@@ -11,6 +13,7 @@ internal static class SheetSourceTopology
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
     internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
     internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
+    internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -93,6 +96,28 @@ internal static class SheetSourceTopology
                 var stage = Known(rawStage, "build", "factory");
                 return stage is not null
                     ? new() { ["stage"] = stage, ["hresult"] = hresult, ["cleanupHresult"] = cleanupHresult }
+                    : null;
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    internal static SheetFactoryDiagnostic? ReadActualLayer(Exception? error)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(ActualLayerDataKey)) continue;
+                if (error.Data[ActualLayerDataKey] is not Dictionary<string, object?> row
+                    || row.Count != 3 || !row.TryGetValue("stage", out var rawStage)
+                    || !row.TryGetValue("hresult", out var rawHresult)
+                    || !row.TryGetValue("cleanupHresult", out var rawCleanupHresult)
+                    || rawHresult is not int hresult || rawCleanupHresult is not (null or int)) return null;
+                var stage = Known(rawStage, "build", "factory");
+                return stage is not null
+                    ? new(stage, hresult, rawCleanupHresult is int cleanupHresult ? cleanupHresult : null)
                     : null;
             }
         }

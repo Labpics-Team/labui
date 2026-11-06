@@ -432,6 +432,8 @@ public sealed class SheetLayers : Grid
                                         .Select(index => $"ghostBlur{index}.BlurAmount"));
                                 SheetSourceTopologyProbe.RecordActualThree(primary, compositor,
                                     progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
+                                SheetSourceTopologyProbe.RecordActualLayer(primary, compositor,
+                                    progressiveBranches[0]);
                             }
                         }
                     }

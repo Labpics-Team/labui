@@ -379,6 +379,16 @@ function assertGraphSource(producer, profile) {
 }
 
 function assertSamplingSource(sampling) {
+  includesSource(
+    sampling,
+    `internal static SheetFactoryOutcome CaptureBorrowed<T>(Func<T> borrow, Func<T, IDisposable> create)
+    where T : class => Capture(_ => {
+      var input = borrow();
+      ArgumentNullException.ThrowIfNull(input);
+      return input;
+    }, create);`,
+    'borrowed sampling must validate the same input without exposing registration or owning it',
+  );
   const capture = enclosed(sampling, 'internal static SheetFactoryOutcome Capture<T>(');
   includesSource(
     capture,
@@ -534,18 +544,105 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
   includesSource(failure, 'throw;', 'actual-three success must not admit the primary failure');
   includesSource(
     page,
-    'SheetSourceTopology.ReadSigma(args.Exception), SheetSourceTopology.ReadActualThree(args.Exception)));',
+    'SheetSourceTopology.ReadSigma(args.Exception), SheetSourceTopology.ReadActualThree(args.Exception),',
     'actual-three must pass through the existing exception observation',
   );
   includesSource(
     page,
-    'object? sigma = null, object? actualThree = null);',
+    'object? sigma = null, object? actualThree = null,',
     'actual-three absence must remain an optional observation field',
   );
   includesSource(
     codec,
-    `...(Object.hasOwn(value, 'actualThree') ? { actualThree: actualThreeInfo(value.actualThree) } : {}),`,
+    `...(Object.hasOwn(value, 'actualThree') ? { actualThree: factoryOutcomeInfo(value.actualThree) } : {}),`,
     'actual-three must preserve legacy absence instead of inventing PASS',
+  );
+}
+
+function assertActualLayerSource(producer, renderer, projector, codec, page) {
+  for (const source of [producer, projector])
+    includesSource(
+      source,
+      'internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";',
+      'actual-layer producer/projector key differs',
+    );
+  includesSource(
+    producer,
+    `internal static void RecordActualLayer(Exception primary, Compositor compositor,
+    IGraphicsEffectSource branch0)`,
+    'actual-layer must borrow the existing first AlphaMask branch',
+  );
+  assert.deepEqual(
+    enclosed(producer, 'internal static void RecordActualLayer('),
+    tokens(`try {
+      var outcome = SheetFactorySampling.CaptureBorrowed(
+        () => (Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask,
+        graph => compositor.CreateEffectFactory(graph));
+      primary.Data[ActualLayerDataKey] = new Dictionary<string, object?> {
+        ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+        ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+      };
+    } catch { }`),
+    'Sheet: actual-layer must read the existing AlphaMask Layer unchanged, own only its factory and preserve primary failure',
+  );
+  includesSource(
+    renderer,
+    `Transform2DEffect Layer(int index, string sourceName = "atlas") => Effect(new Transform2DEffect {
+      Source = Source(sourceName),
+      TransformMatrix = atlas.Cell(index).EffectTransform,
+      InterpolationMode = CanvasImageInterpolation.Linear,
+      BorderMode = EffectBorderMode.Soft,
+    });`,
+    'actual-layer must retain actual atlas transforms, Linear interpolation and Soft border mode',
+  );
+  includesSource(
+    renderer,
+    `AlphaMaskEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
+    => Effect(new AlphaMaskEffect { Source = source, AlphaMask = mask });`,
+    'actual-layer must remain the Frame-owned AlphaMask input',
+  );
+  const failure = enclosed(
+    enclosed(renderer, 'CompositionEffectBrush Brush('),
+    'catch (Exception primary)',
+  );
+  const finalFailure = enclosed(
+    failure,
+    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
+  );
+  includesSource(
+    enclosed(finalFailure, 'if (operation == "factory")'),
+    'SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, progressiveBranches[0]);',
+    'actual-layer must observe actual index 0 only after final factory failure',
+  );
+  assert.equal(
+    tokens(renderer).filter((token) => token === 'RecordActualLayer').length,
+    1,
+    'Sheet: actual-layer must have one failure-only call site',
+  );
+  includesSource(
+    projector,
+    'internal sealed record SheetFactoryDiagnostic(string stage, int hresult, int? cleanupHresult);',
+    'actual-layer DTO must retain signed-int32 and independent nullable cleanup HRESULT',
+  );
+  includesSource(
+    projector,
+    'internal static SheetFactoryDiagnostic? ReadActualLayer(Exception? error)',
+    'actual-layer must pass through the real typed projector',
+  );
+  includesSource(
+    page,
+    'SheetSourceTopology.ReadActualLayer(args.Exception)));',
+    'actual-layer must pass through the existing exception observation',
+  );
+  includesSource(
+    page,
+    'SheetFactoryDiagnostic? actualLayer = null);',
+    'actual-layer absence must remain a nullable typed observation field',
+  );
+  includesSource(
+    codec,
+    `...(Object.hasOwn(value, 'actualLayer') ? { actualLayer: factoryOutcomeInfo(value.actualLayer) } : {}),`,
+    'actual-layer must preserve legacy absence instead of inventing PASS',
   );
 }
 
@@ -563,6 +660,7 @@ function assertSheetSourceProjection(
   assertGraphSource(producer, profile);
   assertSamplingSource(sampling);
   assertActualThreeSource(producer, renderer, projector, codec, page);
+  assertActualLayerSource(producer, renderer, projector, codec, page);
   const csharp = argumentsOf(enclosed(projector, '["source"] = Known', '(', ')'))
     .slice(1)
     .map(literal);
@@ -689,6 +787,58 @@ test('source gate rejects replacing an actual branch with a constructed substitu
   assert.throws(
     () => assertSheetSourceProjection(...files),
     /own only a temporary Add root and borrow all three inputs unchanged/,
+  );
+});
+
+test('source gate rejects sampling the Source instead of the existing AlphaMask Layer', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    '(Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask',
+    '(Transform2DEffect)((AlphaMaskEffect)branch0).Source',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /read the existing AlphaMask Layer unchanged/,
+  );
+});
+
+test('source gate rejects constructing a substitute for the actual Layer', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    '() => (Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask',
+    '() => new Transform2DEffect { Source = new CompositionEffectSourceParameter("atlas") }',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /read the existing AlphaMask Layer unchanged/,
+  );
+});
+
+test('source gate rejects registration of the borrowed input', async () => {
+  const files = await topologySources();
+  files[3] = sourceCounterexample(
+    files[3],
+    '=> Capture(_ => { var input = borrow(); ArgumentNullException.ThrowIfNull(input); return input; }, create);',
+    '=> Capture(register => { var input = borrow(); ArgumentNullException.ThrowIfNull(input); if (input is IDisposable resource) register(resource); return input; }, create);',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /without exposing registration or owning it/,
+  );
+});
+
+test('source gate rejects sampling a different actual Layer index', async () => {
+  const files = await topologySources();
+  files[5] = sourceCounterexample(
+    files[5],
+    'SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, progressiveBranches[0]);',
+    'SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, progressiveBranches[1]);',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /actual index 0 only after final factory failure/,
   );
 });
 

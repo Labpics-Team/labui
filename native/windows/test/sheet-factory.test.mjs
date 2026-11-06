@@ -156,19 +156,24 @@ test('borrowed factory pairs reject unknown fields, malformed integers and parti
       assert.equal(readback(factory, rows, field, field), null);
 });
 
-test('actual-three retains raw build/factory and cleanup outcomes while the primary renderer still fails', () => {
+test('actual factory diagnostics retain raw build/factory and cleanup outcomes while the primary renderer still fails', () => {
   const factory = { name: 'final', operation: 'factory' };
-  for (const stage of ['build', 'factory'])
-    for (const hresult of [-2147483648, -2147024809, 0, 2147483647])
-      for (const cleanupHresult of [null, -2147483648, 2147483647]) {
-        const actualThree = { stage, hresult, cleanupHresult };
-        const error = errorReadback({ factory, actualThree });
-        assert.deepEqual(error.factory, factory);
-        assert.deepEqual(error.actualThree, actualThree);
-      }
+  for (const field of ['actualThree', 'actualLayer'])
+    for (const stage of ['build', 'factory'])
+      for (const hresult of [-2147483648, -2147024809, 0, 2147483647])
+        for (const cleanupHresult of [null, -2147483648, 2147483647]) {
+          const outcome = { stage, hresult, cleanupHresult };
+          const error = errorReadback({ factory, [field]: outcome });
+          assert.deepEqual(error.factory, factory);
+          assert.deepEqual(error[field], outcome);
+          assert.equal(
+            Object.hasOwn(error, field === 'actualThree' ? 'actualLayer' : 'actualThree'),
+            false,
+          );
+        }
 });
 
-test('actual-three rejects unknown fields, private text and missing measurement instead of inventing PASS', () => {
+test('actual factory diagnostics reject unknown fields, private text and missing measurement instead of inventing PASS', () => {
   const factory = { name: 'final', operation: 'factory' };
   const actualThree = { stage: 'factory', hresult: 0, cleanupHresult: null };
   for (const value of [
@@ -181,6 +186,8 @@ test('actual-three rejects unknown fields, private text and missing measurement 
     { stage: 'factory', hresult: 0 },
     { ...actualThree, stage: null },
     { ...actualThree, stage: 'Factory' },
+    { ...actualThree, stage: 'brush' },
+    { ...actualThree, stage: 'binding' },
     { ...actualThree, stage: 'PRIVATE_BRANCH_VALUE' },
     { ...actualThree, hresult: null },
     { ...actualThree, hresult: undefined },
@@ -197,7 +204,8 @@ test('actual-three rejects unknown fields, private text and missing measurement 
     { ...actualThree, cleanupHresult: -2147483649 },
     { ...actualThree, message: 'PRIVATE_BRANCH_VALUE' },
   ])
-    assert.equal(errorReadback({ factory, actualThree: value }).actualThree, null);
+    for (const field of ['actualThree', 'actualLayer'])
+      assert.equal(errorReadback({ factory, [field]: value })[field], null);
 });
 
 test('legacy factory, branch and sigma shapes survive without an actual-three field', () => {
@@ -211,6 +219,7 @@ test('legacy factory, branch and sigma shapes survive without an actual-three fi
   assert.deepEqual(legacy.branches, pair);
   assert.deepEqual(legacy.sigma, pair);
   assert.equal(Object.hasOwn(legacy, 'actualThree'), false);
+  assert.equal(Object.hasOwn(legacy, 'actualLayer'), false);
   const measured = errorReadback({
     factory,
     branches: pair,
@@ -221,4 +230,26 @@ test('legacy factory, branch and sigma shapes survive without an actual-three fi
     ...legacy,
     actualThree: { stage: 'factory', hresult: 0, cleanupHresult: null },
   });
+  assert.equal(Object.hasOwn(measured, 'actualLayer'), false);
+  const actualLayer = { stage: 'factory', hresult: -2147024809, cleanupHresult: -2147467259 };
+  assert.deepEqual(
+    errorReadback({
+      factory,
+      branches: pair,
+      sigma: pair,
+      actualThree: measured.actualThree,
+      actualLayer,
+    }),
+    { ...measured, actualLayer },
+  );
+  assert.deepEqual(
+    errorReadback({
+      factory,
+      branches: pair,
+      sigma: pair,
+      actualThree: measured.actualThree,
+      actualLayer: {},
+    }),
+    { ...measured, actualLayer: null },
+  );
 });

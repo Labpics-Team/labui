@@ -174,7 +174,7 @@ function branchesInfo(value) {
   return rows;
 }
 
-function actualThreeInfo(value) {
+function factoryOutcomeInfo(value) {
   if (
     value === null ||
     typeof value !== 'object' ||
@@ -283,7 +283,10 @@ function observationError(value) {
     ...(Object.hasOwn(value, 'clamping') ? { clamping: branchesInfo(value.clamping) } : {}),
     ...(Object.hasOwn(value, 'sigma') ? { sigma: branchesInfo(value.sigma) } : {}),
     ...(Object.hasOwn(value, 'actualThree')
-      ? { actualThree: actualThreeInfo(value.actualThree) }
+      ? { actualThree: factoryOutcomeInfo(value.actualThree) }
+      : {}),
+    ...(Object.hasOwn(value, 'actualLayer')
+      ? { actualLayer: factoryOutcomeInfo(value.actualLayer) }
       : {}),
   };
 }

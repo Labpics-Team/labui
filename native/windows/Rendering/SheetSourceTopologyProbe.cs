@@ -13,6 +13,7 @@ internal static class SheetSourceTopologyProbe
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
     internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
     internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
+    internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -73,6 +74,25 @@ internal static class SheetSourceTopologyProbe
                 return root;
             }, graph => compositor.CreateEffectFactory(graph));
             primary.Data[ActualThreeDataKey] = new Dictionary<string, object?>
+            {
+                ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+            };
+        }
+        catch { }
+    }
+
+    // Первая Ghost AlphaMask содержит уже созданный Frame-owned Layer.
+    // Заимствуется тот же Transform2D; sampler освобождает только свою factory.
+    internal static void RecordActualLayer(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0)
+    {
+        try
+        {
+            var outcome = SheetFactorySampling.CaptureBorrowed(
+                () => (Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask,
+                graph => compositor.CreateEffectFactory(graph));
+            primary.Data[ActualLayerDataKey] = new Dictionary<string, object?>
             {
                 ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
                 ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,

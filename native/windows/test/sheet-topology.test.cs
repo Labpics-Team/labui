@@ -153,6 +153,71 @@ var nullRegistration = SheetFactorySampling.Capture<object>(register =>
 Check(nullRegistration.Stage == SheetFactoryStage.Build && nullRegistration.HResult != 0 && factoryCalls == 0,
     "Null owned ресурс допущен до factory.");
 
+foreach (var createFails in new[] { false, true })
+    foreach (var cleanupFails in new[] { false, true })
+    {
+        released.Clear();
+        factoryCalls = 0;
+        var borrowedOutcome = SheetFactorySampling.CaptureBorrowed(() => borrowed, input =>
+        {
+            factoryCalls++;
+            Check(ReferenceEquals(input, borrowed), "Borrowed callback получил другой вход.");
+            if (createFails) throw new TestFailure(FactoryFailure, Marker);
+            return new CallbackResource(() =>
+            {
+                released.Add("factory");
+                if (cleanupFails) throw new TestFailure(CleanupFailure, Marker);
+            });
+        });
+        Check(borrowedOutcome.Stage == SheetFactoryStage.Factory
+            && borrowedOutcome.HResult == (createFails ? FactoryFailure : 0)
+            && borrowedOutcome.CleanupHResult == (!createFails && cleanupFails ? CleanupFailure : null)
+            && factoryCalls == 1 && released.SequenceEqual(createFails ? Array.Empty<string>() : new[] { "factory" }),
+            "Borrowed callback освободил вход или смешал основной и cleanup HRESULT.");
+    }
+foreach (var returnNull in new[] { false, true })
+{
+    released.Clear();
+    factoryCalls = 0;
+    var borrowFailure = SheetFactorySampling.CaptureBorrowed<object>(() =>
+    {
+        if (returnNull) return null!;
+        throw new TestFailure(BuildFailure, Marker);
+    }, _ =>
+    {
+        factoryCalls++;
+        return borrowed;
+    });
+    Check(borrowFailure.Stage == SheetFactoryStage.Build
+        && borrowFailure.HResult == (returnNull ? new ArgumentNullException().HResult : BuildFailure)
+        && borrowFailure.CleanupHResult is null && factoryCalls == 0 && released.Count == 0,
+        "Неудачное заимствование дошло до factory либо присвоило владение входом.");
+}
+released.Clear();
+var borrowedNullFactory = SheetFactorySampling.CaptureBorrowed(() => borrowed, _ => null!);
+Check(borrowedNullFactory.Stage == SheetFactoryStage.Factory
+    && borrowedNullFactory.HResult == new InvalidOperationException().HResult
+    && borrowedNullFactory.CleanupHResult is null && released.Count == 0,
+    "Null factory стала успехом либо освободила borrowed вход.");
+released.Clear();
+SheetFactoryOutcome? retainedBorrowedOutcome = null;
+var unavailableBorrowedRetained = FailureFrom(() => SheetFactorySampling.PreservePrimary<object>(
+    () => throw unavailable, error =>
+    {
+        retainedBorrowedOutcome = SheetFactorySampling.CaptureBorrowed(() => borrowed,
+            _ => new CallbackResource(() =>
+            {
+                released.Add("factory");
+                throw new TestFailure(CleanupFailure, Marker);
+            }));
+        error.Data[SheetSourceTopology.ActualLayerDataKey] = 42;
+    }));
+Check(ReferenceEquals(unavailableBorrowedRetained, unavailable)
+    && unavailableBorrowedRetained?.HResult == BuildFailure
+    && retainedBorrowedOutcome is { Stage: SheetFactoryStage.Factory, HResult: 0, CleanupHResult: CleanupFailure }
+    && released.SequenceEqual(new[] { "factory" }),
+    "Borrowed cleanup либо запись Data заменила исходное исключение.");
+
 float[] expectedLevels = [0, 1f / 64, 1f / 32, 1f / 16, 1f / 8, 1f / 4, 1f / 2, 1];
 Check(SheetBlurProfile.Levels.SequenceEqual(expectedLevels), "Восемь sigma уровней потеряли линейный диапазон.");
 float Weight((float Position, float Weight)[] stops, float position)
@@ -315,10 +380,56 @@ foreach (var invalid in new object?[] { null, 42, Marker, Array.Empty<object>(),
     new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0,
         ["cleanupHresult"] = null, ["message"] = Marker } })
     Check(ReadActualThree(invalid) is null, "Actual-three приняла отсутствие измерения, чужую форму или private text как outcome.");
+
+SheetFactoryDiagnostic? ReadActualLayer(object? value)
+    => SheetSourceTopology.ReadActualLayer(new AggregateException(WithData(SheetSourceTopology.ActualLayerDataKey, value)));
+foreach (var stage in new[] { "build", "factory" })
+    foreach (var hresult in new[] { int.MinValue, BuildFailure, 0, int.MaxValue })
+        foreach (var cleanup in new int?[] { null, int.MinValue, int.MaxValue })
+        {
+            var row = ActualThreeRow(stage, hresult, cleanup);
+            var projected = ReadActualLayer(row);
+            Check(projected is not null && projected.stage == stage && projected.hresult == hresult
+                && projected.cleanupHresult == cleanup,
+                "Actual-layer потеряла типизированные stage/HRESULT и отдельный cleanup outcome.");
+            row["hresult"] = 99;
+            Check(projected!.hresult == hresult, "Actual-layer сохранила mutable row alias.");
+            PrivateTextAbsent(projected);
+            var wire = JsonSerializer.SerializeToElement(projected);
+            Check(wire.EnumerateObject().Count() == 3 && wire.GetProperty("stage").GetString() == stage
+                && wire.GetProperty("hresult").GetInt32() == hresult
+                && (cleanup is null ? wire.GetProperty("cleanupHresult").ValueKind == JsonValueKind.Null
+                    : wire.GetProperty("cleanupHresult").GetInt32() == cleanup),
+                "Actual-layer DTO изменила wire shape либо signed-int32/null границы.");
+        }
+foreach (var invalid in new object?[] { null, 42, Marker, Array.Empty<object>(),
+    new[] { ActualThreeRow("factory", 0, null) },
+    ActualThreeRow(null, 0, null), ActualThreeRow("Factory", 0, null), ActualThreeRow("brush", 0, null),
+    ActualThreeRow("binding", 0, null), ActualThreeRow(Marker, 0, null),
+    ActualThreeRow("factory", null, null), ActualThreeRow("factory", 0L, null),
+    ActualThreeRow("factory", -2147483649L, null), ActualThreeRow("factory", 2147483648L, null),
+    ActualThreeRow("factory", double.NaN, null), ActualThreeRow("factory", Marker, null),
+    ActualThreeRow("factory", 0, 0L), ActualThreeRow("factory", 0, double.PositiveInfinity),
+    ActualThreeRow("factory", 0, Marker),
+    new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0 },
+    new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0,
+        ["cleanupHresult"] = null, ["message"] = Marker } })
+    Check(ReadActualLayer(invalid) is null, "Actual-layer приняла отсутствие измерения, чужую форму или private text как outcome.");
+Exception nestedLayer = WithData(SheetSourceTopology.ActualLayerDataKey, ActualThreeRow("factory", FactoryFailure, null));
+for (var depth = 0; depth < 7; depth++) nestedLayer = new AggregateException(nestedLayer);
+Check(SheetSourceTopology.ReadActualLayer(nestedLayer)?.hresult == FactoryFailure
+    && SheetSourceTopology.ReadActualLayer(new AggregateException(nestedLayer)) is null,
+    "Actual-layer потеряла допустимую глубину либо вышла за bounded exception readback.");
+var malformedOuter = new AggregateException(WithData(SheetSourceTopology.ActualLayerDataKey, ActualThreeRow("factory", 0, null)));
+malformedOuter.Data[SheetSourceTopology.ActualLayerDataKey] = Marker;
+Check(SheetSourceTopology.ReadActualLayer(malformedOuter) is null,
+    "Malformed actual-layer скрыта успехом из вложенной ошибки.");
 Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exception()) is null
     && SheetSourceTopology.ReadBranches(unavailable) is null && SheetSourceTopology.ReadSigma(unavailable) is null
     && SheetSourceTopology.ReadActualThree(null) is null && SheetSourceTopology.ReadActualThree(new Exception()) is null
-    && SheetSourceTopology.ReadActualThree(unavailable) is null,
+    && SheetSourceTopology.ReadActualThree(unavailable) is null
+    && SheetSourceTopology.ReadActualLayer(null) is null && SheetSourceTopology.ReadActualLayer(new Exception()) is null
+    && SheetSourceTopology.ReadActualLayer(unavailable) is null,
     "Диагностика появилась без доступных данных.");
 Console.WriteLine("Sheet topology: System-only production callbacks, blur profile and actual DTO projectors PASS.");
 

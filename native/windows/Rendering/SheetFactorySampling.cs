@@ -18,6 +18,15 @@ internal static class SheetFactorySampling
         }
     }
 
+    internal static SheetFactoryOutcome CaptureBorrowed<T>(Func<T> borrow, Func<T, IDisposable> create)
+        where T : class
+        => Capture(_ =>
+        {
+            var input = borrow();
+            ArgumentNullException.ThrowIfNull(input);
+            return input;
+        }, create);
+
     internal static SheetFactoryOutcome Capture<T>(Func<Func<IDisposable, int>, T> build,
         Func<T, IDisposable> create)
     {
