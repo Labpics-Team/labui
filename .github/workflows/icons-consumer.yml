@@ -79,7 +79,7 @@ jobs:
 
       - name: Проверить независимый oracle и владение browser lifecycle
         shell: bash
-        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/scripts/ci/icons-browser-contract.test.mjs
+        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/scripts/ci/icons-browser-contract.test.mjs
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser
