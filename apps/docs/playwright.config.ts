@@ -55,6 +55,8 @@ const SMOKE_SPECS = [
   // класс критического пути, что materials-flag.
   'acrylic-live.spec.ts',
   'button.spec.ts',
+  'authored-colors.spec.ts',
+  'colors-live.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
   'pin-input.spec.ts',

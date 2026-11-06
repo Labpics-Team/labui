@@ -11,6 +11,6 @@
  * declarative shadow DOM in the delivered HTML, before any JS runs.
  */
 import '@labpics/ui-core/proof';
-import { wireThemeSwitch } from '../theme-switch.js';
+import { wireAuthoredThemeSwitch } from '../theme-switch.js';
 
-wireThemeSwitch();
+wireAuthoredThemeSwitch();

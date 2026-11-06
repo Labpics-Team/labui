@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-contrast="normal">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Живая цветовая тема — проверка потребителя</title>
+    <style>
+      body { margin: 24px; font: 16px system-ui; }
+      .backdrop { padding: 20px; background-color: rgb(255 255 255); }
+      #nested-backdrop { background-color: rgb(0 0 0); }
+      .color-scope { padding: 16px; background: var(--lab-bg-primary); color: var(--lab-label-primary); }
+      .tone { padding: 12px; background: var(--lab-bg-secondary); }
+      h2::selection { background: var(--lab-fill-accent); color: var(--lab-label-on-accent); }
+    </style>
+  </head>
+  <body>
+    <div id="root-backdrop" class="backdrop">
+      <main id="colors-root" class="lab-scope color-scope" data-theme="light">
+        <h2>Внешняя область</h2>
+        <p class="tone">Фоновый тон</p>
+        <div id="nested-backdrop" class="backdrop">
+          <section id="colors-nested" class="lab-scope color-scope" data-theme="dark">
+            <h2>Вложенная область</h2>
+            <p class="tone">Свой независимый фон</p>
+          </section>
+        </div>
+        <div id="colors-shadow-host" data-theme="dark"></div>
+      </main>
+    </div>
+    <script type="module" src="./colors-live.ts"></script>
+  </body>
+</html>

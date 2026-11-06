@@ -53,7 +53,9 @@ function reactControl(page: Page, testid: string): Locator {
 const borderColor = (el: HTMLElement) => getComputedStyle(el).borderTopColor;
 
 test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/pin-input.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('delivered HTML carries the Lit element (React island mounts client-side)', async ({

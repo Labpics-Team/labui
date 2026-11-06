@@ -32,7 +32,7 @@ export const avatarDoc: ComponentDoc = {
     'A circular avatar with an honest image→initials→default fallback and an optional status dot. Three sizes, six initials-colour families, and four presence states — built only on semantic --lab-* roles, identical on the Lit and native-React renderers.',
   status: {
     kind: 'beta',
-    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The colour axis covers the six families the role contract exposes; the full Figma 10-accent set (adding teal/mint/indigo/purple/pink) lights up automatically when @labpics/colors ships their semantic roles — no API change. PROVISIONAL where the solid neutral fill the offline dot pairs is owner-pending.',
+    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The colour axis covers six families from the LabUI role contract. Adding teal/mint/indigo/purple/pink requires the LabUI owner to declare their paints and component bindings. PROVISIONAL where the solid neutral fill the offline dot pairs is owner-pending.',
   },
 
   statesMatrix: {
