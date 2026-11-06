@@ -13,7 +13,10 @@ import {
   parseIconsJson,
   projectPublicProvenance,
   publicDiagnosticError,
+  validateSourcePin,
 } from './icons-public-provenance.mjs';
+
+export { validateSourcePin };
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -29,23 +32,6 @@ const stableJSON = (value) =>
   );
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const git = createGitRunner(process.env.LABUI_ICONS_GIT_DIAGNOSTICS);
-
-export function validateSourcePin(pin) {
-  assertPublicProvenance(pin);
-  assert.deepEqual(Object.keys(pin).sort(), [
-    'figma',
-    'repository',
-    'schemaVersion',
-    'sourceCommit',
-  ]);
-  assert.equal(pin.schemaVersion, 2);
-  assert.equal(pin.repository, 'Labpics-Team/lab-icons');
-  assert.match(pin.sourceCommit, /^[a-f0-9]{40}$/);
-  assert.deepEqual(Object.keys(pin.figma).sort(), ['fileKeySha256', 'version']);
-  assert.ok(/^[a-f0-9]{64}$/.test(pin.figma.fileKeySha256), 'pin: source identity digest');
-  assert.match(pin.figma.version, /^\d+$/);
-  return pin;
-}
 
 export function assertCheckout(root, expected) {
   assert.match(expected, /^[a-f0-9]{40}$/);

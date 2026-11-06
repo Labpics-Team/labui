@@ -36,6 +36,7 @@ const PIN = {
   repository: 'Labpics-Team/lab-icons',
   sourceCommit: 'a31c881e335d9e5b4d0d4c690931a6cf444e52ce',
   figma: {
+    fileKeyLength: RAW_FILE_KEY.length,
     fileKeySha256: hash(RAW_FILE_KEY),
     version: '2416636003859748575',
   },
@@ -239,6 +240,7 @@ test('current pin retains the frozen author identity and both masters remain who
   assert.equal(actualPin.schemaVersion, PIN.schemaVersion);
   assert.equal(actualPin.repository, PIN.repository);
   assert.deepEqual(actualPin.figma, {
+    fileKeyLength: 22,
     fileKeySha256: '0462b63eb5318980a5797205910d6e29fec02227f7eef140a8d1e97b6670016b',
     version: PIN.figma.version,
   });

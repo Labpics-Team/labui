@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 const HASH = /^[a-f0-9]{64}$/;
 const PRIVATE_FIELDS = new Set(['fileKey', 'nodeId']);
@@ -33,27 +34,110 @@ export function parseIconsJson(bytes) {
 }
 
 function decodedText(value) {
-  let result = value.replace(/\\u([a-f0-9]{4})/gi, (_, code) =>
-    String.fromCharCode(Number.parseInt(code, 16)),
+  let result = value;
+  // Decode valid segments, so an ordinary "50%" cannot hide a neighboring escape.
+  // Every supported layer is inspected within eight passes; deeper input refuses.
+  for (let count = 0; count < 8; count++) {
+    const unicode = result.replace(/\\u([a-f0-9]{4})/gi, (_, code) =>
+      String.fromCharCode(Number.parseInt(code, 16)),
+    );
+    const decoded = unicode.replace(/(?:%[a-f0-9]{2})+/gi, (segment) => {
+      try {
+        return decodeURIComponent(segment);
+      } catch {
+        throw new Error('icons: ambiguous encoded provenance refused');
+      }
+    });
+    if (decoded === result) return result;
+    result = decoded;
+  }
+  assert.ok(
+    !/\\u[a-f0-9]{4}|%[a-f0-9]{2}/i.test(result),
+    'icons: provenance encoding depth refused',
   );
-  for (let count = 0; count < 2; count++) {
+  return result;
+}
+
+function sourcePinFields(pin) {
+  assert.ok(pin && typeof pin === 'object' && !Array.isArray(pin), 'pin: source object');
+  assert.ok(
+    Object.keys(pin).sort().join(',') === 'figma,repository,schemaVersion,sourceCommit',
+    'pin: source fields',
+  );
+  assert.ok(pin.schemaVersion === 2, 'pin: public schema required');
+  assert.ok(pin.repository === 'Labpics-Team/lab-icons', 'pin: source repository');
+  assert.ok(/^[a-f0-9]{40}$/.test(pin.sourceCommit), 'pin: immutable source commit');
+  assert.ok(
+    Object.keys(pin.figma ?? {})
+      .sort()
+      .join(',') === 'fileKeyLength,fileKeySha256,version',
+    'icons: publication identity policy incomplete',
+  );
+  assert.ok(HASH.test(pin.figma.fileKeySha256), 'icons: publication identity digest invalid');
+  assert.ok(
+    Number.isSafeInteger(pin.figma.fileKeyLength) && pin.figma.fileKeyLength > 0,
+    'icons: publication identity length invalid',
+  );
+  assert.ok(/^\d+$/.test(pin.figma.version), 'pin: source version');
+  return pin;
+}
+
+function publicationPolicy() {
+  let pin;
+  try {
+    pin = sourcePinFields(
+      parseIconsJson(readFileSync(new URL('./icons-consumer-source.json', import.meta.url))),
+    );
+  } catch {
+    throw new Error('icons: publication policy unavailable or invalid');
+  }
+  return Object.freeze({ digest: pin.figma.fileKeySha256, length: pin.figma.fileKeyLength });
+}
+
+const PUBLICATION_POLICY = publicationPolicy();
+
+function assertPublicFigmaReferences(text) {
+  const candidates = text.matchAll(
+    /(?<![a-z0-9.-])(?:[a-z][a-z0-9+.-]*:\/\/)?(?:[a-z0-9-]+\.)*figma\.com(?=[/:?#\\\s]|$)[^\s<>"'`()\[\]{}]*|figma:\/\/[^\s<>"'`()\[\]{}]+/gi,
+  );
+  for (const [candidate] of candidates) {
+    let url;
     try {
-      result = decodeURIComponent(result);
+      url = new URL(candidate.includes('://') ? candidate : `https://${candidate}`);
     } catch {
-      break;
+      throw new Error('icons: unresolved Figma reference refused');
+    }
+    const community =
+      url.protocol === 'https:' &&
+      ['figma.com', 'www.figma.com'].includes(url.hostname) &&
+      url.username === '' &&
+      url.password === '' &&
+      url.port === '' &&
+      /^\/community\/file\/\d+(?:\/[^/]+)?\/?$/.test(url.pathname);
+    assert.ok(community, 'icons: Figma reference has no public Community identity');
+  }
+}
+
+function assertNoPinnedIdentity(text) {
+  const { length, digest } = PUBLICATION_POLICY;
+  // The pinned ASCII identity can be copied inside a longer word or object key.
+  for (const [token] of text.matchAll(/[a-z0-9]+/gi)) {
+    let previous;
+    for (let index = 0; index + length <= token.length; index++) {
+      const candidate = token.slice(index, index + length);
+      if (candidate !== previous)
+        assert.ok(hash(candidate) !== digest, 'icons: copied pinned private identity refused');
+      previous = candidate;
     }
   }
-  return result;
 }
 
 export function assertPublicProvenance(value, privateIdentities = new Set()) {
   const inspect = (item) => {
     if (typeof item === 'string') {
       const decoded = decodedText(item);
-      assert.ok(
-        !/(?:https?:\/\/)?(?:www\.)?figma\.com\/(?:file|design|proto|board)\//i.test(decoded),
-        'icons: private Figma URL refused',
-      );
+      assertPublicFigmaReferences(decoded);
+      assertNoPinnedIdentity(decoded);
       for (const identity of privateIdentities)
         assert.ok(!decoded.includes(identity), 'icons: copied private provenance refused');
     } else if (Array.isArray(item)) item.forEach(inspect);
@@ -67,6 +151,11 @@ export function assertPublicProvenance(value, privateIdentities = new Set()) {
   };
   inspect(value);
   return value;
+}
+
+export function validateSourcePin(pin) {
+  assertPublicProvenance(pin);
+  return sourcePinFields(pin);
 }
 
 // Verification retains source bytes in memory; only this explicit projection leaves it.
@@ -117,6 +206,10 @@ export function assertSourceIdentity(source, expected) {
     'icons: malformed source identity',
   );
   assert.ok(HASH.test(expected?.fileKeySha256), 'icons: missing public source identity');
+  assert.ok(
+    source.fileKey.length === expected.fileKeyLength,
+    'icons: source identity length differs from pin',
+  );
   assert.ok(
     hash(source.fileKey) === expected.fileKeySha256,
     'icons: source identity differs from pin',

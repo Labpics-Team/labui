@@ -5,7 +5,7 @@ import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promi
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
 import {
   parseIconsJson,
@@ -129,7 +129,7 @@ async function sourceFixture(t) {
       schemaVersion: 2,
       repository: 'Labpics-Team/lab-icons',
       sourceCommit: SOURCE_SHA,
-      figma: { fileKeySha256: hash(PRIVATE_KEY), version: '1' },
+      figma: { fileKeyLength: PRIVATE_KEY.length, fileKeySha256: hash(PRIVATE_KEY), version: '1' },
     },
   };
 }
@@ -377,4 +377,228 @@ test('summary failure path refuses private error URLs and preserves lawful numer
   assert.deepEqual(summary.failure.stateContinuity, continuity);
   assert.ok(!failed.stdout.includes(PRIVATE_KEY));
   assert.ok(!failed.stderr.includes(PRIVATE_KEY));
+});
+
+async function publicationFixture(t, mutatePin = () => {}) {
+  const { root } = await sourceFixture(t);
+  const modules = join(root, 'publication');
+  await mkdir(modules);
+  // Exact source copies exercise the real public entry with its own synthetic pin.
+  // No runner identity or environment is supplied, and no install/build/GUI entry runs.
+  for (const name of [
+    'prepare-icons-inputs.mjs',
+    'icons-packed.mjs',
+    'icons-public-provenance.mjs',
+    'icons-git-diagnostics.mjs',
+  ]) {
+    await writeFile(join(modules, name), await readFile(new URL(name, import.meta.url)));
+  }
+  const pin = parseIconsJson(
+    await readFile(new URL('./icons-consumer-source.json', import.meta.url)),
+  );
+  pin.figma.fileKeySha256 = hash(PRIVATE_KEY);
+  pin.figma.fileKeyLength = PRIVATE_KEY.length;
+  mutatePin(pin);
+  await writeFile(join(modules, 'icons-consumer-source.json'), JSON.stringify(pin));
+  return {
+    modules,
+    inputs: await import(pathToFileURL(join(modules, 'prepare-icons-inputs.mjs'))),
+    privacy: await import(pathToFileURL(join(modules, 'icons-public-provenance.mjs'))),
+  };
+}
+
+test('missing privacy context refuses bare and nested copies at the real publication entry', async (t) => {
+  const { inputs, privacy } = await publicationFixture(t);
+  for (const notes of [
+    PRIVATE_KEY,
+    `note:${PRIVATE_KEY}:end`,
+    `prefix${PRIVATE_KEY}suffix`,
+    { nested: [PRIVATE_KEY] },
+    { [`prefix${PRIVATE_KEY}suffix`]: 'copied key' },
+  ]) {
+    const receipt = { schemaVersion: 1, outcome: 'passed', records: [{ notes }] };
+    const bytes = Buffer.from(JSON.stringify(receipt));
+    assert.throws(() => inputs.consumerReceiptLog(bytes, SOURCE_SHA, UI_SHA));
+    assert.throws(() => privacy.assertPublicProvenance(receipt));
+    assert.throws(() => privacy.assertPublicProvenance(receipt, new Set()));
+  }
+  const lawful = Buffer.from(
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: [{ notes: 'Readable public observation', link: COMMUNITY, opacity: 0.375 }],
+    }),
+  );
+  assert.match(inputs.consumerReceiptLog(lawful, SOURCE_SHA, UI_SHA), /_BEGIN /);
+});
+
+test('publication cannot initialize from missing or invalid owned identity policy', async (t) => {
+  for (const mutatePin of [
+    (pin) => {
+      Reflect.deleteProperty(pin.figma, 'fileKeyLength');
+    },
+    (pin) => {
+      Reflect.deleteProperty(pin.figma, 'fileKeySha256');
+    },
+    (pin) => {
+      pin.figma.fileKeyLength = 0;
+    },
+    (pin) => {
+      pin.figma.fileKeySha256 = PRIVATE_KEY;
+    },
+  ])
+    await assert.rejects(
+      publicationFixture(t, mutatePin),
+      /publication policy unavailable or invalid/,
+    );
+});
+
+test('private Figma document URLs refuse independently of their document route', () => {
+  for (const path of ['slides', 'design', 'file', 'proto', 'board', 'unknown-document-kind']) {
+    const bytes = Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        outcome: 'passed',
+        records: [{ notes: `https://www.figma.com/${path}/${PRIVATE_KEY}/fixture` }],
+      }),
+    );
+    assert.throws(() => consumerReceiptLog(bytes, SOURCE_SHA, UI_SHA));
+  }
+  for (const link of [
+    `figma://slides/${PRIVATE_KEY}/fixture`,
+    `https://api.figma.com/v1/files/${PRIVATE_KEY}`,
+    'https://www.figma.com:444/community/file/1527814209910933331',
+  ])
+    assert.throws(() =>
+      consumerReceiptLog(
+        Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ link }] })),
+        SOURCE_SHA,
+        UI_SHA,
+      ),
+    );
+});
+
+test('failure diagnostics refuse private witness copies without an optional privacy context', async (t) => {
+  const { privacy } = await publicationFixture(t);
+  const error = new Error('consumer check failed');
+  error.stateContinuity = {
+    notes: PRIVATE_KEY,
+    differences: [{ partId: 'state-question', before: 0.3, after: 0.5, delta: 0.2 }],
+  };
+  const refused = privacy.publicFailure(error);
+  assert.equal(refused.stateContinuityRefused, true);
+  assert.ok(!JSON.stringify(refused).includes(PRIVATE_KEY));
+  assert.ok(!String(privacy.publicDiagnosticError(error).stack).includes(PRIVATE_KEY));
+  error.stateContinuity = {
+    differences: [{ partId: 'state-question', before: 0.3, after: 0.5, delta: 0.2 }],
+    witness: { at: 20 },
+  };
+  assert.deepEqual(privacy.publicFailure(error).stateContinuity, error.stateContinuity);
+});
+
+function percentLayers(text, count) {
+  let encoded = [...text].map((character) => `%${character.charCodeAt(0).toString(16)}`).join('');
+  for (let layer = 1; layer < count; layer++) encoded = encodeURIComponent(encoded);
+  return encoded;
+}
+
+test('valid escape segments cannot hide private identity beside a literal percent sign', async (t) => {
+  const { inputs, privacy } = await publicationFixture(t);
+  for (const notes of [
+    `50% complete; ${percentLayers(PRIVATE_KEY, 1)}`,
+    percentLayers(PRIVATE_KEY, 3),
+    [...PRIVATE_KEY]
+      .map((character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`)
+      .join(''),
+  ]) {
+    assert.throws(() =>
+      inputs.consumerReceiptLog(
+        Buffer.from(JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ notes }] })),
+        SOURCE_SHA,
+        UI_SHA,
+      ),
+    );
+    assert.throws(() =>
+      privacy.projectPublicProvenance({ author: { fileKey: PRIVATE_KEY }, notes }),
+    );
+    const error = new Error('consumer check failed');
+    error.stateContinuity = { notes };
+    assert.equal(privacy.publicFailure(error).stateContinuityRefused, true);
+  }
+  const lawful = Buffer.from(
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: [
+        {
+          notes: '50% complete; readable public observation',
+          link: COMMUNITY,
+          paths: [{ d: 'M0 0L1 0L1 1Z', fillRule: 'nonzero' }],
+          masterSha256: 'c'.repeat(64),
+        },
+      ],
+    }),
+  );
+  const packet = inputs.consumerReceiptLog(lawful, SOURCE_SHA, UI_SHA);
+  const chunks = packet
+    .split('\n')
+    .filter((line) => line.startsWith('LABUI_ICONS_CONSUMER_RECEIPT_CHUNK '));
+  assert.ok(
+    gunzipSync(Buffer.from(chunks.map((line) => line.split(' ')[2]).join(''), 'base64')).equals(
+      lawful,
+    ),
+  );
+});
+
+test('ambiguous or excessive provenance encoding refuses instead of leaving an unchecked tail', async (t) => {
+  const { inputs } = await publicationFixture(t);
+  for (const [notes, reason] of [
+    [percentLayers(PRIVATE_KEY, 12), /encoding depth refused/],
+    ['literal byte %F0', /ambiguous encoded provenance refused/],
+  ]) {
+    assert.throws(
+      () =>
+        inputs.consumerReceiptLog(
+          Buffer.from(
+            JSON.stringify({ schemaVersion: 1, outcome: 'passed', records: [{ notes }] }),
+          ),
+          SOURCE_SHA,
+          UI_SHA,
+        ),
+      reason,
+    );
+  }
+});
+
+test('raw summary inputs cannot publish private copies in source, receipt or failed witness', async (t) => {
+  const publication = await publicationFixture(t);
+  for (const target of ['source', 'receipt', 'failure']) {
+    const fixture = await summaryFixture(t, { schemaVersion: 1, outcome: 'passed', records: [] });
+    if (target === 'source') {
+      fixture.source.notes = { nested: `prefix${PRIVATE_KEY}suffix` };
+      await writeFile(
+        join(fixture.output, 'inputs/source-receipt.json'),
+        JSON.stringify(fixture.source),
+      );
+    } else {
+      const receipt =
+        target === 'receipt'
+          ? { schemaVersion: 1, outcome: 'passed', records: [{ notes: { nested: PRIVATE_KEY } }] }
+          : {
+              schemaVersion: 1,
+              outcome: 'failed',
+              records: [],
+              failure: { phase: 'browser', stateContinuity: { notes: PRIVATE_KEY } },
+            };
+      await writeFile(join(fixture.output, 'result/receipt.json'), JSON.stringify(receipt));
+    }
+    const result = spawnSync(
+      process.execPath,
+      [join(publication.modules, 'prepare-icons-inputs.mjs'), '--summarize', fixture.output],
+      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 10_000 },
+    );
+    assert.notEqual(result.status, 0);
+    assert.equal(result.stdout, '');
+    assert.ok(!result.stderr.includes(PRIVATE_KEY));
+  }
 });
