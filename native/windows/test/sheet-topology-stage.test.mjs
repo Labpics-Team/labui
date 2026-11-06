@@ -631,18 +631,106 @@ function assertActualLayerSource(producer, renderer, projector, codec, page) {
   );
   includesSource(
     page,
-    'SheetSourceTopology.ReadActualLayer(args.Exception)));',
+    'SheetSourceTopology.ReadActualLayer(args.Exception),',
     'actual-layer must pass through the existing exception observation',
   );
   includesSource(
     page,
-    'SheetFactoryDiagnostic? actualLayer = null);',
+    'SheetFactoryDiagnostic? actualLayer = null,',
     'actual-layer absence must remain a nullable typed observation field',
   );
   includesSource(
     codec,
     `...(Object.hasOwn(value, 'actualLayer') ? { actualLayer: factoryOutcomeInfo(value.actualLayer) } : {}),`,
     'actual-layer must preserve legacy absence instead of inventing PASS',
+  );
+}
+
+function assertActualComponentsSource(producer, renderer, projector, codec, page) {
+  for (const source of [producer, projector])
+    includesSource(
+      source,
+      'internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";',
+      'actual-components producer/projector key differs',
+    );
+  includesSource(
+    producer,
+    `internal static void RecordActualComponents(Exception primary, Compositor compositor,
+    IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)`,
+    'actual-components must borrow the existing three component roots',
+  );
+  assert.deepEqual(
+    enclosed(producer, 'internal static void RecordActualComponents('),
+    tokens(`try {
+      Dictionary<string, object?> SampleComponent(IGraphicsEffectSource branch) {
+        var outcome = SheetFactorySampling.CaptureBorrowed(() => (IGraphicsEffect)branch,
+          graph => compositor.CreateEffectFactory(graph));
+        return new() {
+          ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+          ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+        };
+      }
+      primary.Data[ActualComponentsDataKey] = new[] {
+        SampleComponent(branch0), SampleComponent(branch1), SampleComponent(branch2),
+      };
+    } catch { }`),
+    'Sheet: actual-components must independently sample the same roots in order 0/1/2 without new graphs or borrowed cleanup',
+  );
+  const failure = enclosed(
+    enclosed(renderer, 'CompositionEffectBrush Brush('),
+    'catch (Exception primary)',
+  );
+  const finalFailure = enclosed(
+    failure,
+    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
+  );
+  includesSource(
+    enclosed(finalFailure, 'if (operation == "factory")'),
+    `SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
+    'actual-components must receive actual indices 0/1/2 after final factory failure',
+  );
+  assert.equal(
+    tokens(renderer).filter((token) => token === 'RecordActualComponents').length,
+    1,
+    'Sheet: actual-components must have one failure-only call site',
+  );
+  includesSource(
+    projector,
+    'internal static SheetFactoryDiagnostic[]? ReadActualComponents(Exception? error)',
+    'actual-components must pass through the real typed triplet projector',
+  );
+  includesSource(
+    projector,
+    'Dictionary<string, object?>[] { Length: 3 } rows',
+    'actual-components must reject partial or oversized arrays without truncation',
+  );
+  includesSource(
+    page,
+    'SheetSourceTopology.ReadActualComponents(args.Exception)));',
+    'actual-components must pass through the existing exception observation',
+  );
+  includesSource(
+    page,
+    'SheetFactoryDiagnostic[]? actualComponents = null);',
+    'actual-components absence must remain a nullable typed observation field',
+  );
+  includesSource(
+    codec,
+    `...(Object.hasOwn(value, 'actualComponents') ? { actualComponents: componentsInfo(value.actualComponents) } : {}),`,
+    'actual-components must preserve legacy absence instead of inventing PASS',
+  );
+  assert.deepEqual(
+    enclosed(codec, 'function componentsInfo('),
+    tokens(`if (!Array.isArray(value) || value.length !== 3) return null;
+    const rows = [];
+    for (const component of value) {
+      const row = factoryOutcomeInfo(component);
+      if (row === null) return null;
+      rows.push(row);
+    }
+    return rows;`),
+    'Sheet: actual-components JS must retain the complete ordered triplet or reject the whole field',
   );
 }
 
@@ -661,6 +749,7 @@ function assertSheetSourceProjection(
   assertSamplingSource(sampling);
   assertActualThreeSource(producer, renderer, projector, codec, page);
   assertActualLayerSource(producer, renderer, projector, codec, page);
+  assertActualComponentsSource(producer, renderer, projector, codec, page);
   const csharp = argumentsOf(enclosed(projector, '["source"] = Known', '(', ')'))
     .slice(1)
     .map(literal);
@@ -839,6 +928,56 @@ test('source gate rejects sampling a different actual Layer index', async () => 
   assert.throws(
     () => assertSheetSourceProjection(...files),
     /actual index 0 only after final factory failure/,
+  );
+});
+
+test('source gate rejects repeating a component instead of measuring all three roots', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(files[0], 'SampleComponent(branch1)', 'SampleComponent(branch0)');
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /independently sample the same roots in order 0\/1\/2/,
+  );
+});
+
+test('source gate rejects measuring a component mask instead of its whole existing root', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    'CaptureBorrowed(() => (IGraphicsEffect)branch,',
+    'CaptureBorrowed(() => (IGraphicsEffect)((AlphaMaskEffect)branch).AlphaMask,',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /independently sample the same roots in order 0\/1\/2/,
+  );
+});
+
+test('source gate rejects omitting an actual component at the failure-only call site', async () => {
+  const files = await topologySources();
+  files[5] = sourceCounterexample(
+    files[5],
+    `SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
+    `SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[1]);`,
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /receive actual indices 0\/1\/2 after final factory failure/,
+  );
+});
+
+test('source gate rejects admitting an oversized component triplet by truncation', async () => {
+  const files = await topologySources();
+  files[1] = sourceCounterexample(
+    files[1],
+    'Dictionary<string, object?>[] { Length: 3 } rows',
+    'Dictionary<string, object?>[] { Length: >= 3 } rows',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /reject partial or oversized arrays without truncation/,
   );
 });
 

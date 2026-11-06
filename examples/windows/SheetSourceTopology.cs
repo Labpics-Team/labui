@@ -14,6 +14,7 @@ internal static class SheetSourceTopology
     internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
     internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
     internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
+    internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -110,19 +111,47 @@ internal static class SheetSourceTopology
             for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
             {
                 if (!error.Data.Contains(ActualLayerDataKey)) continue;
-                if (error.Data[ActualLayerDataKey] is not Dictionary<string, object?> row
-                    || row.Count != 3 || !row.TryGetValue("stage", out var rawStage)
-                    || !row.TryGetValue("hresult", out var rawHresult)
-                    || !row.TryGetValue("cleanupHresult", out var rawCleanupHresult)
-                    || rawHresult is not int hresult || rawCleanupHresult is not (null or int)) return null;
-                var stage = Known(rawStage, "build", "factory");
-                return stage is not null
-                    ? new(stage, hresult, rawCleanupHresult is int cleanupHresult ? cleanupHresult : null)
-                    : null;
+                return Diagnostic(error.Data[ActualLayerDataKey]);
             }
         }
         catch { }
         return null;
+    }
+
+    internal static SheetFactoryDiagnostic[]? ReadActualComponents(Exception? error)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(ActualComponentsDataKey)) continue;
+                if (error.Data[ActualComponentsDataKey] is not Dictionary<string, object?>[] { Length: 3 } rows)
+                    return null;
+                var projected = new SheetFactoryDiagnostic[3];
+                for (var index = 0; index < 3; index++)
+                {
+                    var result = Diagnostic(rows[index]);
+                    if (result is null) return null;
+                    projected[index] = result;
+                }
+                return projected;
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private static SheetFactoryDiagnostic? Diagnostic(object? value)
+    {
+        if (value is not Dictionary<string, object?> row
+            || row.Count != 3 || !row.TryGetValue("stage", out var rawStage)
+            || !row.TryGetValue("hresult", out var rawHresult)
+            || !row.TryGetValue("cleanupHresult", out var rawCleanupHresult)
+            || rawHresult is not int hresult || rawCleanupHresult is not (null or int)) return null;
+        var stage = Known(rawStage, "build", "factory");
+        return stage is not null
+            ? new(stage, hresult, rawCleanupHresult is int cleanupHresult ? cleanupHresult : null)
+            : null;
     }
 
     private static Dictionary<string, object?>[]? ReadPair(Exception? error, string dataKey)

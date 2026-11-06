@@ -434,6 +434,8 @@ public sealed class SheetLayers : Grid
                                     progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
                                 SheetSourceTopologyProbe.RecordActualLayer(primary, compositor,
                                     progressiveBranches[0]);
+                                SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
+                                    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
                             }
                         }
                     }

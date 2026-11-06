@@ -208,6 +208,87 @@ test('actual factory diagnostics reject unknown fields, private text and missing
       assert.equal(errorReadback({ factory, [field]: value })[field], null);
 });
 
+test('actual components retain each ordered stage, signed HRESULT and separate cleanup outcome', () => {
+  const factory = { name: 'final', operation: 'factory' };
+  const healthy = { stage: 'factory', hresult: 0, cleanupHresult: null };
+  for (let index = 0; index < 3; index++)
+    for (const stage of ['build', 'factory'])
+      for (const hresult of [-2147483648, -2147024809, 0, 2147483647])
+        for (const cleanupHresult of [null, -2147483648, 2147483647]) {
+          const actualComponents = [healthy, healthy, healthy];
+          actualComponents[index] = { stage, hresult, cleanupHresult };
+          const error = errorReadback({ factory, actualComponents });
+          assert.deepEqual(error.factory, factory);
+          assert.deepEqual(error.actualComponents, actualComponents);
+        }
+});
+
+test('actual components reject incomplete triplets and every malformed slot instead of inventing PASS', () => {
+  const factory = { name: 'final', operation: 'factory' };
+  const row = { stage: 'factory', hresult: 0, cleanupHresult: null };
+  for (const value of [
+    null,
+    undefined,
+    [],
+    {},
+    row,
+    42,
+    'PRIVATE_BRANCH_VALUE',
+    [row],
+    [row, row],
+    [row, row, row, row],
+    new Array(3),
+  ])
+    assert.equal(errorReadback({ factory, actualComponents: value }).actualComponents, null);
+  for (let index = 0; index < 3; index++)
+    for (const malformed of [
+      null,
+      undefined,
+      {},
+      { stage: 'factory', hresult: 0 },
+      { ...row, stage: 'Factory' },
+      { ...row, stage: 'brush' },
+      { ...row, stage: 'PRIVATE_BRANCH_VALUE' },
+      { ...row, hresult: null },
+      { ...row, hresult: 2147483648 },
+      { ...row, hresult: -2147483649 },
+      { ...row, hresult: Number.NaN },
+      { ...row, cleanupHresult: 2147483648 },
+      { ...row, cleanupHresult: -2147483649 },
+      { ...row, cleanupHresult: 'PRIVATE_BRANCH_VALUE' },
+      { ...row, message: 'PRIVATE_BRANCH_VALUE' },
+    ]) {
+      const actualComponents = [row, row, row];
+      actualComponents[index] = malformed;
+      assert.equal(errorReadback({ factory, actualComponents }).actualComponents, null);
+    }
+});
+
+test('component diagnostics preserve legacy absence and the prior factory observations', () => {
+  const row = { stage: 'factory', hresult: 0, cleanupHresult: null };
+  const fields = {
+    factory: { name: 'final', operation: 'factory' },
+    branches: [
+      { hresult: -2147024809, cleanupHresult: null },
+      { hresult: 0, cleanupHresult: null },
+    ],
+    sigma: [
+      { hresult: -2147024809, cleanupHresult: null },
+      { hresult: -2147024809, cleanupHresult: -2147467259 },
+    ],
+    actualThree: { ...row, hresult: -2147024809 },
+    actualLayer: row,
+  };
+  const legacy = errorReadback(fields);
+  assert.equal(Object.hasOwn(legacy, 'actualComponents'), false);
+  const actualComponents = [row, { ...row, hresult: -2147024809 }, row];
+  assert.deepEqual(errorReadback({ ...fields, actualComponents }), { ...legacy, actualComponents });
+  assert.deepEqual(errorReadback({ ...fields, actualComponents: [row, null, row] }), {
+    ...legacy,
+    actualComponents: null,
+  });
+});
+
 test('legacy factory, branch and sigma shapes survive without an actual-three field', () => {
   const factory = { name: 'final', operation: 'factory' };
   const pair = [
@@ -220,6 +301,7 @@ test('legacy factory, branch and sigma shapes survive without an actual-three fi
   assert.deepEqual(legacy.sigma, pair);
   assert.equal(Object.hasOwn(legacy, 'actualThree'), false);
   assert.equal(Object.hasOwn(legacy, 'actualLayer'), false);
+  assert.equal(Object.hasOwn(legacy, 'actualComponents'), false);
   const measured = errorReadback({
     factory,
     branches: pair,

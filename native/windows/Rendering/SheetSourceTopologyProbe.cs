@@ -14,6 +14,7 @@ internal static class SheetSourceTopologyProbe
     internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
     internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
     internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
+    internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -96,6 +97,31 @@ internal static class SheetSourceTopologyProbe
             {
                 ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
                 ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+            };
+        }
+        catch { }
+    }
+
+    // Слоты 0/1/2 совпадают с компонентами actualThree; каждый root заимствуется.
+    // Отказ одного factory не прерывает остальные; Frame-owned ветви не освобождаются.
+    internal static void RecordActualComponents(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)
+    {
+        try
+        {
+            Dictionary<string, object?> SampleComponent(IGraphicsEffectSource branch)
+            {
+                var outcome = SheetFactorySampling.CaptureBorrowed(() => (IGraphicsEffect)branch,
+                    graph => compositor.CreateEffectFactory(graph));
+                return new()
+                {
+                    ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                    ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+                };
+            }
+            primary.Data[ActualComponentsDataKey] = new[]
+            {
+                SampleComponent(branch0), SampleComponent(branch1), SampleComponent(branch2),
             };
         }
         catch { }

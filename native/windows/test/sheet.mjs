@@ -198,6 +198,17 @@ function factoryOutcomeInfo(value) {
   return { stage: value.stage, hresult: value.hresult, cleanupHresult: value.cleanupHresult };
 }
 
+function componentsInfo(value) {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const rows = [];
+  for (const component of value) {
+    const row = factoryOutcomeInfo(component);
+    if (row === null) return null;
+    rows.push(row);
+  }
+  return rows;
+}
+
 function observationError(value) {
   if (value === null) return null;
   if (typeof value === 'string') return 'reported';
@@ -287,6 +298,9 @@ function observationError(value) {
       : {}),
     ...(Object.hasOwn(value, 'actualLayer')
       ? { actualLayer: factoryOutcomeInfo(value.actualLayer) }
+      : {}),
+    ...(Object.hasOwn(value, 'actualComponents')
+      ? { actualComponents: componentsInfo(value.actualComponents) }
       : {}),
   };
 }

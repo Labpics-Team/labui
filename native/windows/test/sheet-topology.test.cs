@@ -424,12 +424,81 @@ var malformedOuter = new AggregateException(WithData(SheetSourceTopology.ActualL
 malformedOuter.Data[SheetSourceTopology.ActualLayerDataKey] = Marker;
 Check(SheetSourceTopology.ReadActualLayer(malformedOuter) is null,
     "Malformed actual-layer скрыта успехом из вложенной ошибки.");
+
+SheetFactoryDiagnostic[]? ReadActualComponents(object? value)
+    => SheetSourceTopology.ReadActualComponents(new AggregateException(WithData(SheetSourceTopology.ActualComponentsDataKey, value)));
+var componentRows = new[]
+{
+    ActualThreeRow("factory", 0, null),
+    ActualThreeRow("build", BuildFailure, FactoryFailure),
+    ActualThreeRow("factory", int.MinValue, int.MaxValue),
+};
+var componentCopy = ReadActualComponents(componentRows);
+Check(componentCopy is { Length: 3 } && componentCopy.SequenceEqual(new[]
+{
+    new SheetFactoryDiagnostic("factory", 0, null),
+    new SheetFactoryDiagnostic("build", BuildFailure, FactoryFailure),
+    new SheetFactoryDiagnostic("factory", int.MinValue, int.MaxValue),
+}), "Actual-components потеряла порядок или независимые HRESULT трёх слотов.");
+componentRows[0]["hresult"] = 99;
+componentRows[1] = ActualThreeRow("factory", 99, null);
+Check(componentCopy![0].hresult == 0 && componentCopy[1].stage == "build" && componentCopy[1].hresult == BuildFailure,
+    "Actual-components сохранила mutable array/row alias.");
+PrivateTextAbsent(componentCopy);
+var componentWire = JsonSerializer.SerializeToElement(componentCopy);
+Check(componentWire.GetArrayLength() == 3 && componentWire.EnumerateArray().All(row => row.EnumerateObject().Count() == 3),
+    "Actual-components DTO изменила exact triplet/three-field wire shape.");
+for (var index = 0; index < 3; index++)
+    foreach (var stage in new[] { "build", "factory" })
+        foreach (var hresult in new[] { int.MinValue, BuildFailure, 0, int.MaxValue })
+            foreach (var cleanup in new int?[] { null, int.MinValue, int.MaxValue })
+            {
+                var rows = Enumerable.Range(0, 3).Select(_ => ActualThreeRow("factory", 0, null)).ToArray();
+                rows[index] = ActualThreeRow(stage, hresult, cleanup);
+                var projected = ReadActualComponents(rows);
+                Check(projected is { Length: 3 } && projected[index] == new SheetFactoryDiagnostic(stage, hresult, cleanup)
+                    && projected.Where((_, slot) => slot != index).All(row => row == new SheetFactoryDiagnostic("factory", 0, null)),
+                    "Actual-components смешала слоты или signed-int32/cleanup границы.");
+            }
+foreach (var invalid in new object?[] { null, 42, Marker, new object(), Array.Empty<object>(),
+    ActualThreeRow("factory", 0, null),
+    new[] { ActualThreeRow("factory", 0, null), ActualThreeRow("factory", 0, null) },
+    Enumerable.Range(0, 4).Select(_ => ActualThreeRow("factory", 0, null)).ToArray(),
+    new Dictionary<string, object?>[3],
+    new object[] { ActualThreeRow("factory", 0, null), ActualThreeRow("factory", 0, null), ActualThreeRow("factory", 0, null) } })
+    Check(ReadActualComponents(invalid) is null, "Actual-components допустила неполный/oversized triplet или чужую форму.");
+for (var index = 0; index < 3; index++)
+    foreach (var malformed in new Dictionary<string, object?>?[] { null,
+        ActualThreeRow("Factory", 0, null), ActualThreeRow("brush", 0, null), ActualThreeRow(Marker, 0, null),
+        ActualThreeRow("factory", null, null), ActualThreeRow("factory", 0L, null),
+        ActualThreeRow("factory", -2147483649L, null), ActualThreeRow("factory", 2147483648L, null),
+        ActualThreeRow("factory", double.NaN, null), ActualThreeRow("factory", 0, Marker),
+        ActualThreeRow("factory", 0, 0L), ActualThreeRow("factory", 0, -2147483649L),
+        ActualThreeRow("factory", 0, 2147483648L),
+        new() { ["stage"] = "factory", ["hresult"] = 0 },
+        new() { ["stage"] = "factory", ["hresult"] = 0, ["cleanupHresult"] = null, ["message"] = Marker } })
+    {
+        var rows = Enumerable.Range(0, 3).Select(_ => ActualThreeRow("factory", 0, null)).ToArray();
+        rows[index] = malformed!;
+        Check(ReadActualComponents(rows) is null, "Actual-components выдала malformed слот за полный triplet или PASS.");
+    }
+Exception nestedComponents = WithData(SheetSourceTopology.ActualComponentsDataKey, componentRows);
+for (var depth = 0; depth < 7; depth++) nestedComponents = new AggregateException(nestedComponents);
+Check(SheetSourceTopology.ReadActualComponents(nestedComponents) is { Length: 3 }
+    && SheetSourceTopology.ReadActualComponents(new AggregateException(nestedComponents)) is null,
+    "Actual-components потеряла допустимую глубину либо вышла за bounded readback.");
+var malformedComponentsOuter = new AggregateException(WithData(SheetSourceTopology.ActualComponentsDataKey, componentRows));
+malformedComponentsOuter.Data[SheetSourceTopology.ActualComponentsDataKey] = Marker;
+Check(SheetSourceTopology.ReadActualComponents(malformedComponentsOuter) is null,
+    "Malformed actual-components скрыта полным triplet из вложенной ошибки.");
 Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exception()) is null
     && SheetSourceTopology.ReadBranches(unavailable) is null && SheetSourceTopology.ReadSigma(unavailable) is null
     && SheetSourceTopology.ReadActualThree(null) is null && SheetSourceTopology.ReadActualThree(new Exception()) is null
     && SheetSourceTopology.ReadActualThree(unavailable) is null
     && SheetSourceTopology.ReadActualLayer(null) is null && SheetSourceTopology.ReadActualLayer(new Exception()) is null
-    && SheetSourceTopology.ReadActualLayer(unavailable) is null,
+    && SheetSourceTopology.ReadActualLayer(unavailable) is null
+    && SheetSourceTopology.ReadActualComponents(null) is null && SheetSourceTopology.ReadActualComponents(new Exception()) is null
+    && SheetSourceTopology.ReadActualComponents(unavailable) is null,
     "Диагностика появилась без доступных данных.");
 Console.WriteLine("Sheet topology: System-only production callbacks, blur profile and actual DTO projectors PASS.");
 
