@@ -156,8 +156,6 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     pnpm install --frozen-lockfile --store-dir /job/pnpm-store
     if [ "$LABUI_BROWSER_WORKLOAD" = colors-consumer ]; then
       node scripts/ci/colors-consumer-input.mjs installed /job/core-input /job/source/packages/colors/node_modules/@labpics/colors
-      pnpm --filter @labui/colors typecheck
-      pnpm --filter @labui/colors test
     fi
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
       # Corepack выбирает packageManager каждого checkout; stores не пересекаются.
@@ -183,6 +181,10 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
       exit "$status"
     else
       pnpm build
+      if [ "$LABUI_BROWSER_WORKLOAD" = colors-consumer ]; then
+        pnpm --filter @labui/colors typecheck
+        pnpm --filter @labui/colors test
+      fi
       pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
       pnpm --filter @labui/colors fx:render
       pnpm test:e2e
