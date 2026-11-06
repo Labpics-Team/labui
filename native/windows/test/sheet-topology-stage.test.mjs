@@ -113,6 +113,7 @@ test('topology accepts all twenty cases and rejects an oversized diagnostic with
     ...sample,
     index,
     combine: index === 15 ? 'BalancedAdd' : 'Add',
+    mask: index !== 14,
     stage: 'factory',
   }));
   rows.push(

@@ -117,7 +117,7 @@ ExpectedGraph[] expectedCases =
     new(3, "Add", "repeat"), new(8, "Add", "repeat"),
     new(8, "Arithmetic", "repeat"),
     new(8, "Add", "shared", true, false),
-    new(8, "Add", "shared", true, true, false),
+    new(8, "Add", "repeat", Mask: false),
     new(8, "BalancedAdd", "repeat"),
     new(1, "Gaussian", "repeat", Mask: false, LevelStart: 7),
     new(1, "Gaussian", "repeat", Mask: false, Body: true),
@@ -134,6 +134,10 @@ Check(expectedCases[11] with { Combine = "BalancedAdd" } == expectedCases[15],
     "Matched BalancedAdd8 отличается от контроля не только формой суммирования.");
 Check(expectedCases[11] with { Blur = false, Mask = false } == expectedCases[19],
     "Чистый fan-in отличается от восьмивходового Add не только blur и масками.");
+Check(expectedCases[11] with { Mask = false } == expectedCases[14],
+    "Gaussian-only Add отличается от восьмивходового Add не только масками.");
+Check(expectedCases[19] with { Blur = true } == expectedCases[14],
+    "Gaussian-only Add отличается от чистого fan-in не только blur.");
 
 // Ожидаемые ширины независимы от построителя и его Levels; второй вход ловит
 // подстановку постоянной sigma, в том числе штатного Win2D значения 3.

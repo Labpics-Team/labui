@@ -25,7 +25,7 @@ internal static class SheetSourceTopologyProbe
         new(3, true, "repeat"), new(8, true, "repeat"),
         new(8, false, "repeat"),
         new(8, true, "shared", true, false),
-        new(8, true, "shared", true, true, false),
+        new(8, true, "repeat", Mask: false),
         new(8, true, "repeat", Balanced: true),
         new(1, false, "repeat", Mask: false, LevelStart: 7),
         new(1, false, "repeat", Mask: false, Body: true),
