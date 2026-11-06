@@ -7,6 +7,7 @@ import { basename, dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { gunzipSync } from 'node:zlib';
+import { finalizeReceipt } from './icons-packed.mjs';
 import {
   assertPublicCheck,
   assertPublicProvenance,
@@ -25,6 +26,261 @@ const hash = (value) => createHash('sha256').update(value).digest('hex');
 const PRIVATE_URL = `https://www.figma.com/design/${PRIVATE_KEY}/fixture`;
 const SOURCE_SHA = 'a'.repeat(40);
 const UI_SHA = 'b'.repeat(40);
+
+test('receipt finalization preserves the original error when public projection refuses', async () => {
+  const failure = publicDiagnosticError(Object.assign(new Error(PRIVATE_URL), { code: 'ENOENT' }));
+  const rejected = {
+    schemaVersion: 1,
+    outcome: 'failed',
+    records: [{ name: 'author-observation', unowned: PRIVATE_KEY }],
+    failure: { phase: 'browser', ...publicFailure(failure) },
+  };
+  const written = new Map();
+  await assert.rejects(
+    finalizeReceipt(rejected, {
+      out: 'memory',
+      phase: 'browser',
+      failure,
+      write: async (path, bytes) => written.set(basename(path), bytes),
+    }),
+    (error) => error === failure,
+  );
+  assert.deepEqual([...written.keys()], ['receipt.json', 'failure.json']);
+  const receipt = assertPublicProvenance(
+    parseIconsJson(Buffer.from(written.get('receipt.json'))),
+    'receipt',
+  );
+  assert.deepEqual(receipt, {
+    schemaVersion: 1,
+    outcome: 'failed',
+    records: [],
+    failure: {
+      phase: 'browser',
+      code: 'PUBLIC_CONTRACT_REFUSED',
+      message: 'icons: PUBLIC_CONTRACT_REFUSED',
+    },
+  });
+  assert.ok(!written.get('receipt.json').includes(PRIVATE_KEY));
+  assert.equal(written.get('failure.json'), written.get('receipt.json'));
+});
+
+test('receipt finalization preserves lawful Community and geometry bytes', async () => {
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [
+      {
+        name: 'author-observation',
+        link: COMMUNITY,
+        opacity: 0.375,
+        paths: [{ d: 'M0 0L1 0L1 1Z', fillRule: 'nonzero' }],
+        masterSha256: 'c'.repeat(64),
+      },
+    ],
+  };
+  const written = new Map();
+  await finalizeReceipt(receipt, {
+    out: 'memory',
+    phase: 'browser',
+    write: async (path, bytes) => written.set(basename(path), bytes),
+  });
+  assert.deepEqual([...written.keys()], ['receipt.json']);
+  assert.equal(written.get('receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+});
+
+test('receipt finalization preserves lawful failed evidence bytes and the captured error', async () => {
+  const failure = publicDiagnosticError(new Error(PRIVATE_URL));
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'failed',
+    records: [
+      { name: 'author-observation', link: COMMUNITY, opacity: 0.375, masterSha256: 'c'.repeat(64) },
+    ],
+    failure: { phase: 'browser', ...publicFailure(failure) },
+  };
+  const written = new Map();
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      failure,
+      write: async (path, bytes) => written.set(basename(path), bytes),
+    }),
+    (error) => error === failure,
+  );
+  const expected = `${JSON.stringify(receipt, null, 2)}\n`;
+  assert.deepEqual(
+    [...written.entries()],
+    [
+      ['receipt.json', expected],
+      ['failure.json', expected],
+    ],
+  );
+});
+
+test('receipt finalization refuses unsafe evidence without an earlier error', async () => {
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [{ name: 'author-observation', link: PRIVATE_URL }],
+  };
+  const written = new Map();
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      write: async (path, bytes) => written.set(basename(path), bytes),
+    }),
+    (error) => {
+      assert.equal(error.code, 'PUBLIC_CONTRACT_REFUSED');
+      assert.equal(error.message, 'icons: PUBLIC_CONTRACT_REFUSED');
+      assert.ok(!String(error.stack).includes(PRIVATE_KEY));
+      return true;
+    },
+  );
+  assert.equal(receipt.outcome, 'passed', 'verified source stays unchanged');
+  assert.equal(JSON.parse(written.get('receipt.json')).outcome, 'failed');
+  assert.equal(written.get('failure.json'), written.get('receipt.json'));
+  assert.ok(!written.get('receipt.json').includes(PRIVATE_KEY));
+});
+
+test('receipt finalization preserves the captured error across artifact write refusals', async (t) => {
+  for (const refused of ['receipt.json', 'failure.json', 'both']) {
+    await t.test(refused, async () => {
+      const failure = publicDiagnosticError(
+        Object.assign(new Error(PRIVATE_URL), { code: 'ENOENT' }),
+      );
+      const receipt = {
+        schemaVersion: 1,
+        outcome: 'failed',
+        records: [{ name: 'author-observation', link: COMMUNITY, opacity: 0.375 }],
+        failure: { phase: 'browser', ...publicFailure(failure) },
+      };
+      const attempts = [];
+      const written = new Map();
+      await assert.rejects(
+        finalizeReceipt(receipt, {
+          out: 'memory',
+          phase: 'browser',
+          failure,
+          write: async (path, bytes) => {
+            const name = basename(path);
+            attempts.push([name, bytes]);
+            if (refused === 'both' || name === refused)
+              throw Object.assign(new Error(PRIVATE_URL), { code: 'EACCES' });
+            written.set(name, bytes);
+          },
+        }),
+        (error) => error === failure,
+      );
+      if (refused === 'failure.json') {
+        assert.deepEqual(
+          attempts.map(([name]) => name),
+          ['receipt.json', 'failure.json'],
+        );
+        assert.equal(written.get('receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+      } else {
+        assert.deepEqual(
+          attempts.map(([name]) => name),
+          ['receipt.json', 'receipt.json', 'failure.json'],
+        );
+        const recovered = JSON.parse(attempts[1][1]);
+        assert.deepEqual(recovered.records, []);
+        assert.equal(recovered.failure.code, 'EACCES');
+        assert.ok(attempts[1][1].length < attempts[0][1].length);
+        assert.equal(attempts[2][1], attempts[1][1]);
+        assert.equal(written.has('failure.json'), refused === 'receipt.json');
+      }
+    });
+  }
+});
+
+test('receipt finalization reports a failed full write even when the minimal receipt succeeds', async () => {
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [{ name: 'author-observation', link: COMMUNITY, opacity: 0.375 }],
+  };
+  const attempts = [];
+  const written = new Map();
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      write: async (path, bytes) => {
+        const name = basename(path);
+        attempts.push(name);
+        if (attempts.length === 1) throw Object.assign(new Error(PRIVATE_URL), { code: 'EACCES' });
+        written.set(name, bytes);
+      },
+    }),
+    (error) => {
+      assert.equal(error.code, 'EACCES');
+      assert.equal(error.message, 'icons: EACCES');
+      assert.ok(!String(error.stack).includes(PRIVATE_KEY));
+      return true;
+    },
+  );
+  assert.deepEqual(attempts, ['receipt.json', 'receipt.json', 'failure.json']);
+  const recovered = assertPublicProvenance(
+    parseIconsJson(Buffer.from(written.get('receipt.json'))),
+    'receipt',
+  );
+  assert.equal(recovered.outcome, 'failed');
+  assert.equal(recovered.failure.code, 'EACCES');
+  assert.deepEqual(recovered.records, []);
+  assert.equal(written.get('failure.json'), written.get('receipt.json'));
+});
+
+test('receipt finalization reports failure artifact refusal without an earlier error', async () => {
+  const receipt = { schemaVersion: 1, outcome: 'failed', records: [] };
+  const written = new Map();
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      write: async (path, bytes) => {
+        if (basename(path) === 'failure.json')
+          throw Object.assign(new Error(PRIVATE_URL), { code: 'EPERM' });
+        written.set(basename(path), bytes);
+      },
+    }),
+    (error) => {
+      assert.equal(error.code, 'EPERM');
+      assert.equal(error.message, 'icons: EPERM');
+      return true;
+    },
+  );
+  assert.equal(written.get('receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+});
+
+test('receipt finalization attempts each minimal artifact once when projection and writes refuse', async () => {
+  const failure = publicDiagnosticError(Object.assign(new Error(PRIVATE_URL), { code: 'ENOENT' }));
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'failed',
+    records: [{ name: 'author-observation', unowned: PRIVATE_KEY }],
+  };
+  const attempts = [];
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      failure,
+      write: async (path, bytes) => {
+        attempts.push([basename(path), bytes]);
+        throw Object.assign(new Error(PRIVATE_URL), { code: 'EACCES' });
+      },
+    }),
+    (error) => error === failure,
+  );
+  assert.deepEqual(
+    attempts.map(([name]) => name),
+    ['receipt.json', 'failure.json'],
+  );
+  assert.equal(JSON.parse(attempts[0][1]).failure.code, 'PUBLIC_CONTRACT_REFUSED');
+  assert.equal(attempts[1][1], attempts[0][1]);
+});
 
 test('publication refuses raw private provenance before gzip encodes the receipt', () => {
   for (const record of [

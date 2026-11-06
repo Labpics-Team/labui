@@ -1449,6 +1449,52 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assertStateAnatomy(await evaluate('pauseState', 200), reference);
 }
 
+export async function finalizeReceipt(receipt, { out, phase, failure, write = writeFile }) {
+  let publicationFailure;
+  try {
+    let publicReceipt;
+    let recovered = false;
+    const recover = (error) => {
+      recovered = true;
+      publicationFailure ??= publicDiagnosticError(error);
+      publicReceipt = projectPublicProvenance(
+        {
+          schemaVersion: 1,
+          outcome: 'failed',
+          records: [],
+          failure: { phase, ...publicFailure(publicationFailure) },
+        },
+        'receipt',
+      );
+    };
+    try {
+      publicReceipt = projectPublicProvenance(receipt, 'receipt');
+    } catch (error) {
+      recover(error);
+    }
+    const persist = async (name) => {
+      try {
+        await write(join(out, name), `${JSON.stringify(publicReceipt, null, 2)}\n`);
+        return true;
+      } catch (error) {
+        publicationFailure ??= publicDiagnosticError(error);
+        return false;
+      }
+    };
+    // После отказа полной записи пробуем минимальный FAILED receipt на том же пути.
+    if (!(await persist('receipt.json')) && !recovered) {
+      recover(publicationFailure);
+      await persist('receipt.json');
+    }
+    if (publicReceipt.outcome === 'failed') await persist('failure.json');
+  } catch (error) {
+    if (failure) throw failure;
+    throw publicDiagnosticError(error);
+  }
+  if (failure) throw failure;
+  if (publicationFailure) throw publicationFailure;
+}
+
 export async function main(args = process.argv.slice(2)) {
   assertActionsRunner();
   const options = new Map();
@@ -1744,14 +1790,10 @@ export async function main(args = process.argv.slice(2)) {
       receipt.cleanupErrors = cleanupErrors;
     }
     receipt.completed = new Date().toISOString();
-    const publicReceipt = projectPublicProvenance(receipt, 'receipt');
-    await writeFile(join(out, 'receipt.json'), `${JSON.stringify(publicReceipt, null, 2)}\n`);
-    if (receipt.outcome === 'failed')
-      await writeFile(join(out, 'failure.json'), `${JSON.stringify(publicReceipt, null, 2)}\n`);
+    await finalizeReceipt(receipt, { out, phase, failure });
     if (receipt.outcome === 'passed')
       process.stdout.write(`icons-packed: passed, ${records.length} observations\n`);
   }
-  if (failure) throw failure;
   if (cleanupErrors.length) throw new Error('icons-packed cleanup failed');
 }
 
