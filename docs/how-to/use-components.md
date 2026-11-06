@@ -88,9 +88,13 @@ import { mountMaterialRuntime } from '@labpics/ui-materials';
 
 const disposeMaterials = mountMaterialRuntime();
 
-// При удалении приложения или завершении его клиентской области:
-disposeMaterials();
+export function disposeApp() {
+  disposeMaterials();
+}
 ```
+
+Вызовите `disposeApp()` при удалении приложения или завершении его
+клиентской области.
 
 Поверхности обозначаются классом `lab-material`. Runtime выбирает эффект
 по ближайшей области `data-material` и возможностям браузера.
