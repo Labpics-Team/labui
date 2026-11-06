@@ -49,6 +49,7 @@ export {
 export { type LabComboboxItem, filterComboboxItems } from './components/combobox/filter.js';
 export {
   type DialogFocusContext,
+  bindDialogTriggerControls,
   completeFailedDialogFocus,
   dialogFinalFocusTarget,
 } from './components/dialog/focus.js';
