@@ -325,9 +325,9 @@ public sealed class SheetLayers : Grid
             }
             IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
-            Transform2DEffect Layer(int index) => Effect(new Transform2DEffect
+            Transform2DEffect Layer(int index, string sourceName = "atlas") => Effect(new Transform2DEffect
             {
-                Source = Source("atlas"),
+                Source = Source(sourceName),
                 TransformMatrix = atlas.Cell(index).EffectTransform,
                 InterpolationMode = CanvasImageInterpolation.Linear,
                 BorderMode = EffectBorderMode.Soft,
@@ -465,12 +465,12 @@ public sealed class SheetLayers : Grid
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
             var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
-            var bodyAlphaMask = Layer(bodyMask);
+            var bodyAlphaMask = Layer(bodyMask, "bodyMaskAtlas");
             var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
             result.Visual.Brush = Brush("final", graph, body, bodyAlphaMask,
-                ("backdrop", backdropBrush), ("atlas", atlasBrush));
+                ("backdrop", backdropBrush), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));
             return result;
         }
         catch (Exception error)

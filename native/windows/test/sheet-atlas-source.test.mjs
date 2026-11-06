@@ -14,7 +14,7 @@ const profile = await readFile(
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
 
-test('Sheet graph shares the original backdrop and atlas through fresh source edges', () => {
+test('Sheet graph shares the original atlas with a separate fresh Body mask input', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assert.equal([...source.matchAll(/compositor\.CreateSpriteVisual\(\)/g)].length, 1);
   assert.match(
@@ -24,15 +24,17 @@ test('Sheet graph shares the original backdrop and atlas through fresh source ed
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
   assert.match(
     build,
-    /Transform2DEffect Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
+    /Transform2DEffect Layer\(int index, string sourceName = "atlas"\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\(sourceName\)/,
   );
+  assert.match(build, /var bodyAlphaMask = Layer\(bodyMask, "bodyMaskAtlas"\);/);
+  assert.equal([...build.matchAll(/compositor\.CreateSurfaceBrush\(atlasSurface\)/g)].length, 1);
   assert.match(
     build,
     /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, body, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\);/,
+    /result\.Visual\.Brush = Brush\("final", graph, body, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
   );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
@@ -123,7 +125,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, body, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, body, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(
