@@ -212,6 +212,16 @@ describe('ordinary: стейт-оверлеи сохраняют авторск�
   }
 });
 describe('стейт-оверлеи #109: RED-proof детекторов', () => {
+  it('пинн сохраняет оба стейт-оверлея акцентной заливки с чёрным тинтом', () => {
+    const overlays = expectedOverlays();
+    for (const state of ['hover', 'pressed']) {
+      expect(overlays.get(`accent/fill/${state}/background-color`)).toEqual({
+        role: '--lab-fill-accent',
+        tint: 'black',
+      });
+    }
+  });
+
   it('оракул движка ловит пару ниже пола и не слеп в обе стороны', async () => {
     // Оракул обязан работать даже до реализации токенов — грузим движок напрямую.
     await createLabuiEngine();
