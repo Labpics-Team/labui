@@ -11,11 +11,21 @@ on:
     - cron: "0 3 * * *"
   workflow_dispatch:
     inputs:
-      artifact_access_probe:
-        description: Проверить доступ к public artifact без запуска E2E
-        type: boolean
+      core_run_id:
+        description: Exact public Core producer run ID for candidate qualification
+        type: string
         required: false
-        default: false
+        default: ''
+      core_artifact_id:
+        description: Exact public Core package artifact ID from that run
+        type: string
+        required: false
+        default: ''
+      core_source_sha:
+        description: Full Core source SHA bound by that artifact
+        type: string
+        required: false
+        default: ''
 
 # Least privilege: read-only, как в ci.yml. Ни один шаг не пишет в репозиторий.
 permissions:
@@ -38,86 +48,14 @@ env:
   DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
 
 jobs:
-  artifact-access-probe:
-    name: public artifact access only
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_access_probe }}
-    runs-on: self-hosted
-    timeout-minutes: 5
-    permissions:
-      actions: read
-    env:
-      PROBE_ARTIFACT_ID: "13466839275"
-      PROBE_RUN_ID: "42140643760"
-      PROBE_SOURCE_SHA: "fa8409d6e563ab560ccd037b41f5e8b6a7775539"
-      PROBE_REPOSITORY_ID: "1221255339"
-    steps:
-      - name: Select this probe directory
-        shell: bash
-        run: |
-          printf 'PROBE_DIR=%s/public-artifact-probe-%s-%s\n' "$RUNNER_TEMP" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
-      - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22'
-      - name: Verify public producer artifact metadata
-        shell: bash
-        env:
-          GH_READ_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          node --input-type=module <<'NODE'
-          import assert from 'node:assert/strict';
-          const response = await fetch(
-            `${process.env.GITHUB_API_URL}/repos/Labpics-Team/lab-colors/actions/artifacts/${process.env.PROBE_ARTIFACT_ID}`,
-            {
-              headers: {
-                Accept: 'application/vnd.github+json',
-                Authorization: `Bearer ${process.env.GH_READ_TOKEN}`,
-                'X-GitHub-Api-Version': '2022-11-28',
-              },
-            },
-          );
-          assert.equal(response.status, 200, `Artifact metadata HTTP ${response.status}`);
-          const artifact = await response.json();
-          assert.equal(String(artifact.id), process.env.PROBE_ARTIFACT_ID);
-          assert.equal(artifact.expired, false);
-          assert.equal(String(artifact.workflow_run.id), process.env.PROBE_RUN_ID);
-          assert.equal(artifact.workflow_run.head_sha, process.env.PROBE_SOURCE_SHA);
-          assert.equal(String(artifact.workflow_run.repository_id), process.env.PROBE_REPOSITORY_ID);
-          assert.equal(String(artifact.workflow_run.head_repository_id), process.env.PROBE_REPOSITORY_ID);
-          console.log(`Verified public artifact metadata: ${artifact.id}`);
-          NODE
-      - name: Download public producer artifact with this job token
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          repository: Labpics-Team/lab-colors
-          run-id: ${{ env.PROBE_RUN_ID }}
-          artifact-ids: ${{ env.PROBE_ARTIFACT_ID }}
-          github-token: ${{ github.token }}
-          path: ${{ env.PROBE_DIR }}
-          skip-decompress: true
-      - name: Report access-only result
-        shell: bash
-        run: |
-          printf '%s\n' 'Public artifact downloaded with the LabUI job token. Access probe only; package and runtime were not qualified.' >> "$GITHUB_STEP_SUMMARY"
-      - name: Remove probe files
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "${PROBE_DIR:-}" ]; then exit 0; fi
-          case "$PROBE_DIR" in
-            "$RUNNER_TEMP"/public-artifact-probe-*) ;;
-            *) exit 1 ;;
-          esac
-          rm -rf -- "$PROBE_DIR"
-
   e2e-full:
     name: playwright full (chromium + webkit)
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.artifact_access_probe }}
     runs-on: self-hosted
     # Полный набор длиннее smoke; на нагруженном пуле даём запас, но не бесконечный.
     timeout-minutes: 40
+    permissions:
+      contents: read
+      actions: read
     steps:
       # Тот же root-контейнерный clean, что и во всех job'ах ci.yml: self-hosted
       # раннеры делят _work, docker-as-root шаги (Playwright) оставляют root-owned
@@ -135,12 +73,68 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Select optional exact Core package input
+        id: core
+        shell: bash
+        env:
+          CORE_RUN_ID: ${{ inputs.core_run_id }}
+          CORE_ARTIFACT_ID: ${{ inputs.core_artifact_id }}
+          CORE_SOURCE_SHA: ${{ inputs.core_source_sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CORE_RUN_ID$CORE_ARTIFACT_ID$CORE_SOURCE_SHA" ]; then exit 0; fi
+          if ! [[ "$CORE_RUN_ID" =~ ^[1-9][0-9]{0,19}$ && "$CORE_ARTIFACT_ID" =~ ^[1-9][0-9]{0,19}$ && "$CORE_SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo '::error::Provide all three exact Core identifiers or leave all three empty.' >&2
+            exit 1
+          fi
+          directory="$(mktemp -d "$RUNNER_TEMP/labui-colors-inputs.XXXXXX")"
+          printf 'CORE_TEMP_DIR=%s\nCORE_DOWNLOAD_DIR=%s/download\nCORE_INPUT_DIR=%s/verified\n' "$directory" "$directory" "$directory" >> "$GITHUB_ENV"
+          printf 'CORE_RUN_ID=%s\nCORE_ARTIFACT_ID=%s\nCORE_SOURCE_SHA=%s\nUI_SOURCE_COMMIT=%s\n' "$CORE_RUN_ID" "$CORE_ARTIFACT_ID" "$CORE_SOURCE_SHA" "$GITHUB_SHA" >> "$GITHUB_ENV"
+          printf 'requested=true\n' >> "$GITHUB_OUTPUT"
+      - name: Setup Node for exact Core metadata validation
+        if: ${{ steps.core.outputs.requested == 'true' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Verify exact public Core run and artifact metadata
+        if: ${{ steps.core.outputs.requested == 'true' }}
+        shell: bash
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: node scripts/ci/colors-consumer-input.mjs metadata
+      - name: Download exact public Core package with this job token
+        if: ${{ steps.core.outputs.requested == 'true' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          repository: Labpics-Team/lab-colors
+          run-id: ${{ inputs.core_run_id }}
+          artifact-ids: ${{ inputs.core_artifact_id }}
+          github-token: ${{ github.token }}
+          path: ${{ env.CORE_DOWNLOAD_DIR }}
+          merge-multiple: true
+      - name: Verify exact Core manifest, tarball and packed runtime WASM
+        if: ${{ steps.core.outputs.requested == 'true' }}
+        shell: bash
+        run: node scripts/ci/colors-consumer-input.mjs verify "$CORE_DOWNLOAD_DIR" "$CORE_INPUT_DIR"
+
       - name: Run FULL e2e suite in pinned Playwright runtime
         id: browser
         shell: bash
         env:
           E2E_SMOKE: "0"
         run: bash .github/scripts/browser-check.sh
+
+      - name: Remove this run's Core package inputs
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${CORE_TEMP_DIR:-}" ]; then exit 0; fi
+          case "$CORE_TEMP_DIR" in
+            "$RUNNER_TEMP"/labui-colors-inputs.*) ;;
+            *) exit 1 ;;
+          esac
+          rm -rf -- "$CORE_TEMP_DIR"
 
       - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
         # Это дополнительное восстановление: сбой виден, следующая первичная очистка обязательна.

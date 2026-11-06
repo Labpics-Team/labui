@@ -4,14 +4,36 @@ set -euo pipefail
 exec 2>&1
 
 root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+# Workflow keeps one unconditional browser owner; an exact optional input selects its workload.
+if [ "$#" -eq 0 ] && [ -n "${CORE_INPUT_DIR:-}" ]; then
+  exec bash "${BASH_SOURCE[0]}" --colors-consumer "$CORE_INPUT_DIR"
+fi
 image='mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c'
 workload=e2e
 source_options=()
 if [ "$#" -ne 0 ]; then
-  if [ "$#" -ne 2 ] || [ "$1" != --icons-consumer ]; then
-    echo '::error::Expected no arguments or --icons-consumer <checkout>.' >&2
+  if [ "$#" -ne 2 ] || { [ "$1" != --icons-consumer ] && [ "$1" != --colors-consumer ]; }; then
+    echo '::error::Expected no arguments, --icons-consumer <checkout>, or --colors-consumer <verified input>.' >&2
     exit 2
   fi
+  if [ "$1" = --colors-consumer ]; then
+    colors_root="$(cd -- "$2" && pwd -P)"
+    runner_root="$(cd -- "$RUNNER_TEMP" && pwd -P)"
+    if ! { [[ "$colors_root" = "$runner_root"/labui-colors-inputs.*/verified ]] &&
+      [ -e "$root/.git" ] && [ "${GITHUB_ACTIONS:-}" = true ] &&
+      [ "${RUNNER_ENVIRONMENT:-}" = self-hosted ] && [[ "${GITHUB_RUN_ID:-}" =~ ^[0-9]+$ ]] &&
+      [[ "${CORE_RUN_ID:-}" =~ ^[1-9][0-9]{0,19}$ ]] && [[ "${CORE_ARTIFACT_ID:-}" =~ ^[1-9][0-9]{0,19}$ ]] &&
+      [[ "${CORE_SOURCE_SHA:-}" =~ ^[0-9a-f]{40}$ ]] && [[ "${UI_SOURCE_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]] &&
+      [[ "$(id -u)" =~ ^[1-9][0-9]*$ ]]; }; then
+      echo '::error::Colors consumer requires this run own verified input and a non-root self-hosted Actions identity.' >&2
+      exit 1
+    fi
+    workload=colors-consumer
+    source_options+=(--mount "type=bind,source=${colors_root},target=/colors-input,readonly")
+    for variable in CORE_RUN_ID CORE_ARTIFACT_ID CORE_SOURCE_SHA UI_SOURCE_COMMIT; do
+      source_options+=(--env "$variable")
+    done
+  else
   icons_root="$(cd -- "$2" && pwd -P)"
   if ! { [ "$icons_root" != "$root" ] && [ -d "$icons_root/.git" ] && [ -d "$root/.git" ] &&
     [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_ENVIRONMENT:-}" = self-hosted ] &&
@@ -29,6 +51,7 @@ if [ "$#" -ne 0 ]; then
   for variable in GITHUB_ACTIONS GITHUB_RUN_ID GITHUB_RUN_ATTEMPT RUNNER_ENVIRONMENT RUNNER_NAME RUNNER_OS UI_SOURCE_COMMIT; do
     source_options+=(--env "$variable")
   done
+  fi
 fi
 job="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/labui-browser.XXXXXX")"
 commands_paused=false
@@ -125,7 +148,17 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
     cd /job/source
     export COREPACK_HOME=/job/corepack PATH="/job/bin:$PATH"
     corepack enable --install-directory /job/bin
+    if [ "$LABUI_BROWSER_WORKLOAD" = colors-consumer ]; then
+      node scripts/ci/colors-consumer-input.mjs verify /colors-input /job/core-input
+      tarball="$(node scripts/ci/colors-consumer-input.mjs path /job/core-input)"
+      pnpm --filter @labui/colors add "@labpics/colors@${tarball}" --lockfile-only --ignore-scripts --store-dir "/job/pnpm-store"
+    fi
     pnpm install --frozen-lockfile --store-dir /job/pnpm-store
+    if [ "$LABUI_BROWSER_WORKLOAD" = colors-consumer ]; then
+      node scripts/ci/colors-consumer-input.mjs installed /job/core-input /job/source/packages/colors/node_modules/@labpics/colors
+      pnpm --filter @labui/colors typecheck
+      pnpm --filter @labui/colors test
+    fi
     if [ "$LABUI_BROWSER_WORKLOAD" = icons-consumer ]; then
       # Corepack выбирает packageManager каждого checkout; stores не пересекаются.
       cd /job/icons
