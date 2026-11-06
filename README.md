@@ -5,6 +5,7 @@
 и привязки для React, Vue, Svelte, Solid и Astro используют общий контракт.
 
 [![CI](https://github.com/Labpics-Team/labui/actions/workflows/ci.yml/badge.svg)](https://github.com/Labpics-Team/labui/actions/workflows/ci.yml)
+[![Код: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE)
 
 Визуальный эталон — [Lab UI v2.1 в Figma Community](https://www.figma.com/community/file/1527814209910933331/lab-ui-components-icons-guides-lab-ui-v2-1).
 Цвет вычисляет [Lab Colors](https://github.com/Labpics-Team/lab-colors),
@@ -76,7 +77,7 @@ Solid, Glass и Acrylic — общая ось оформления поверх�
 
 ## Лицензии
 
-Для кода пока указано `UNLICENSED` в [package.json](package.json).
-Шрифты Geist и Geist Mono распространяются по [SIL OFL 1.1](packages/fonts/OFL.txt);
+Код и документация: [MIT](LICENSE). Labpics.
+Шрифты Geist и Geist Mono: [SIL OFL 1.1](packages/fonts/OFL.txt);
 их источники описаны в [PROVENANCE.md](packages/fonts/PROVENANCE.md).
 

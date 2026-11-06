@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Lab UI dimension, typography, z-index and semantic motion tokens.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

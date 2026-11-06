@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "LabUI documentation site + Playwright smoke fixtures.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
