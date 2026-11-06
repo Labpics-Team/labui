@@ -52,7 +52,7 @@ internal static class SheetSourceTopologyProbe
         }
     }
 
-    // Borrowed входы Body AlphaMask: первый Source, второй AlphaMask; удалить после RCA/owner fix.
+    // Текущий Body AlphaMask и SourceIn-контроль; оба root принадлежат Frame, не sampler.
     internal static void RecordBranches(Exception primary, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second)
     {

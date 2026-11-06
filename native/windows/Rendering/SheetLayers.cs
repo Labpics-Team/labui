@@ -390,7 +390,7 @@ public sealed class SheetLayers : Grid
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
-                IGraphicsEffect bodySourceGraph, IGraphicsEffect bodyMaskGraph,
+                AlphaMaskEffect bodyGraph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
@@ -416,7 +416,15 @@ public sealed class SheetLayers : Grid
                             primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
                             { ["name"] = factoryName, ["operation"] = operation };
                             if (operation == "factory")
-                                SheetSourceTopologyProbe.RecordBranches(primary, compositor, bodySourceGraph, bodyMaskGraph);
+                            {
+                                // SourceIn: destination alpha умножает source RGBA независимо от RGB маски.
+                                var sourceIn = result.Own(new CompositeEffect
+                                {
+                                    Mode = CanvasComposite.SourceIn,
+                                    Sources = { bodyGraph.AlphaMask, bodyGraph.Source },
+                                });
+                                SheetSourceTopologyProbe.RecordBranches(primary, compositor, bodyGraph, sourceIn);
+                            }
                         }
                     }
                     catch { }
@@ -447,7 +455,7 @@ public sealed class SheetLayers : Grid
             var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, bodySource, bodyAlphaMask,
+            result.Visual.Brush = Brush("final", graph, body,
                 ("backdrop", backdropBrush), ("atlas", atlasBrush));
             return result;
         }
