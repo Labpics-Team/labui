@@ -184,11 +184,7 @@ test('tokens: re-pointing --lab-fill-accent re-skins the Vue-mounted element, ma
 
   const sentinel = 'rgb(1, 2, 3)';
   await page.evaluate((value) => {
-    for (const id of ['lit-accent-fill', 'vue-accent-fill']) {
-      const consumer = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
-      if (!consumer) throw new Error(`Не найден потребитель ${id}`);
-      consumer.style.setProperty('--lab-fill-accent', value);
-    }
+    document.documentElement.style.setProperty('--lab-fill-accent', value);
   }, sentinel);
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');
