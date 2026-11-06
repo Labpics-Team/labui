@@ -12,12 +12,14 @@ function context(model, abi) {
 /** Добавляет фоновые композиции в тот же Program, который решает остальные роли. */
 export function addBackgroundTones(
   builder,
-  { sourcePaint, backdrop, alphas, viewingContext, reportCriterion },
+  { sourcePaint, backdrop, alphas, viewingContext, reportCriterion, names },
   allocate,
 ) {
   const results = new Map();
   const shared = new Map();
   for (const [index, alpha] of alphas.entries()) {
+    const name = `bg-tone-${index + 2}`;
+    if (names && !names.has(name)) continue;
     let result = shared.get(alpha);
     if (!result) {
       const opacity = allocate();
@@ -34,13 +36,45 @@ export function addBackgroundTones(
       result = { root, occurrence, paint };
       shared.set(alpha, result);
     }
-    results.set(`bg-tone-${index + 2}`, result);
+    results.set(name, result);
   }
   return results;
 }
 
+/** Один inline-вход заменяет одну роль, сохраняя остальные авторские связи. */
+export function withRoleOverrides(model, selected, overrides = []) {
+  if (!Array.isArray(overrides)) throw new Error('overrides: ожидается массив');
+  if (!overrides.length) return { model, selected };
+  const sources = { ...model.sources };
+  const paints = new Map(selected.paints);
+  const composites = new Map(selected.composites);
+  const aliases = new Map(selected.aliases);
+  const seen = new Set();
+  for (const { name, source: rgb, opacity } of overrides) {
+    if (seen.has(name) || (!paints.has(name) && !composites.has(name) && !aliases.has(name))) {
+      throw new Error(`overrides: неизвестная или повторная роль ${name}`);
+    }
+    const value = paintValue(rgb, opacity);
+    seen.add(name);
+    let source = `inline-role/${name}`;
+    while (Object.hasOwn(sources, source)) source = `_${source}`;
+    sources[source] = value.rgb;
+    paints.set(name, { source, opacity: value.opacity });
+    composites.delete(name);
+    aliases.delete(name);
+  }
+  return {
+    model: { ...model, sources },
+    selected: { ...selected, paints, composites, aliases },
+  };
+}
+
 export function compileTheme(abi, model, selected) {
-  const Builder = selected.computed.size ? abi.ProgramWireBuilderV3 : abi.ProgramWireBuilderV1;
+  const usedSources = new Set([...selected.paints.values()].map(({ source }) => source));
+  usedSources.add(selected.tone.source);
+  const Builder = [...usedSources].some((source) => selected.computed.has(source))
+    ? abi.ProgramWireBuilderV3
+    : abi.ProgramWireBuilderV1;
   const builder = new Builder().surfaceInputPort(1).inputSurface(2, 1);
   let serial = 10;
   const allocate = () => serial++;
@@ -86,7 +120,6 @@ export function compileTheme(abi, model, selected) {
     return paint;
   };
   for (const [name, paint] of selected.paints) roles.set(name, paintFor(paint));
-  if (assignmentTargets.length) builder.assignment(assignmentTargets);
   const resolveAlias = (name) => {
     let target = name;
     while (selected.aliases.has(target)) target = selected.aliases.get(target);
@@ -135,9 +168,11 @@ export function compileTheme(abi, model, selected) {
       alphas: selected.tone.alpha,
       viewingContext: context(model, abi),
       reportCriterion: abi.WCAG22_SC143_TEXT_DEFAULT_V1,
+      names: selected.composites,
     },
     allocate,
   );
+  if (assignmentTargets.length) builder.assignment(assignmentTargets);
   const backdropOccurrence = (name) => {
     const composite = composites.get(resolveAlias(name));
     const paint = composite ? composite.paint : rolePaint(name);

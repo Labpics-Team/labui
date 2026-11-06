@@ -172,7 +172,9 @@ for (const [state, reason] of [
     assert.equal(result.outputCount, 0);
     assert.equal(h.installed(), false);
     assert.equal(callbacks.at(-1), result);
-    assert.ok(h.operations.some(([kind, operation]) => kind === 'install' && operation === 'revokeAll'));
+    assert.ok(
+      h.operations.some(([kind, operation]) => kind === 'install' && operation === 'revokeAll'),
+    );
     h.runtime.dispose();
   });
 }
@@ -525,6 +527,27 @@ test('смена declaration отзывает полный старый lease д
   assert.ok(events.indexOf('external-revoke') < events.indexOf('dispose'));
   assert.ok(events.indexOf('dispose') < events.indexOf('free'));
   assert.equal(h.operations.filter(([kind]) => kind === 'attach').length, 2);
+  h.runtime.dispose();
+});
+
+test('одиночный override меняет binding; повтор идемпотентен, удаление восстанавливает alias', async () => {
+  const h = harness();
+  await h.runtime.refresh();
+  h.inputs({ overrides: [{ name: 'label', source: [1, 2, 3], opacity: 0.5 }] });
+  const changed = await h.runtime.refresh();
+  assert.equal(changed.state, 'ready');
+  assert.equal(h.operations.filter(([kind]) => kind === 'attach').length, 2);
+  assert.equal(h.abi.instances.length, 2);
+  const count = h.abi.instances[1].rows.filter(([kind]) => kind === 'source').length;
+  assert.equal(count, h.abi.instances[0].rows.filter(([kind]) => kind === 'source').length + 1);
+  await h.runtime.refresh();
+  assert.equal(h.runtime.state.revision, changed.revision);
+  assert.equal(h.runtime.state.snapshotVersion, changed.snapshotVersion);
+  assert.equal(h.operations.filter(([kind]) => kind === 'attach').length, 2);
+  h.inputs({ overrides: [] });
+  assert.equal((await h.runtime.refresh()).state, 'ready');
+  assert.equal(h.operations.filter(([kind]) => kind === 'attach').length, 3);
+  assert.equal(h.abi.instances[2].rows.filter(([kind]) => kind === 'source').length, count - 1);
   h.runtime.dispose();
 });
 

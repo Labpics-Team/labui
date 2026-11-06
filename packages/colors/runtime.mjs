@@ -1,5 +1,5 @@
 import { prepareEngineConfig } from './prepare-config.mjs';
-import { compileTheme } from './program.mjs';
+import { compileTheme, withRoleOverrides } from './program.mjs';
 
 const revisionLimit = (1n << 64n) - 1n;
 
@@ -141,25 +141,36 @@ export function createThemeRuntime({
     try {
       const inputs = read();
       if (!current(requestedGeneration)) return state;
-      const { theme, contrast, observation } = inputs;
+      const { theme, contrast, observation, overrides = [] } = inputs;
       if (!['light', 'dark'].includes(theme) || !['normal', 'more'].includes(contrast)) {
         throw new Error('неизвестная тема или режим контраста');
       }
-      const key = `${theme}/${contrast}`;
+      const baseKey = `${theme}/${contrast}`;
+      const overridesKey = JSON.stringify(overrides);
+      const key = `${baseKey}/${overridesKey}`;
       if (!models.has(contrast)) models.set(contrast, prepare(input, contrast));
       if (!current(requestedGeneration)) return state;
-      const model = models.get(contrast);
-      const selected = model.themes[theme];
-      if (selected.pending.length) throw new Error(selected.pending.join('; '));
-      if (!programs.has(key)) programs.set(key, compileTheme(loaded.abi, model, selected));
+      const baseModel = models.get(contrast);
+      let cached = programs.get(baseKey);
+      if (cached?.overridesKey !== overridesKey) {
+        const { model, selected } = withRoleOverrides(
+          baseModel,
+          baseModel.themes[theme],
+          overrides,
+        );
+        if (selected.pending.length) throw new Error(selected.pending.join('; '));
+        cached = { overridesKey, selected, program: compileTheme(loaded.abi, model, selected) };
+        // Один вариант на тему/контраст ограничивает память при авторских изменениях.
+        programs.set(baseKey, cached);
+      }
       if (!current(requestedGeneration)) return state;
-      const program = programs.get(key);
+      const { program, selected } = cached;
       const observedKey = observationKey(observation);
       if (!current(requestedGeneration)) return state;
       if (active?.key !== key || (active && !active.host.isCurrent())) {
         retire();
         if (!current(requestedGeneration)) return state;
-        const host = makeHost(program, selected);
+        const host = makeHost(program, selected, overrides);
         const attached = {
           attachment: undefined,
           host,
