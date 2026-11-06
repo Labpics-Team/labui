@@ -1169,7 +1169,7 @@ const publishedFile = literal(
   'result/reduce-failure.png',
   'result/no-preference-failure.png',
 );
-const summary = object(
+const summaryFields = object(
   {
     schemaVersion: literal(1),
     outcome: literal('passed', 'failed'),
@@ -1186,6 +1186,11 @@ const summary = object(
     readbackFailure: object({ code: literal('EVIDENCE_REFUSED'), file: publishedFile }),
   },
 );
+const summary = (value, mode) => {
+  const result = summaryFields(value, mode);
+  contractAssert(result.outcome !== 'passed' || result.readbackFailure === undefined);
+  return result;
+};
 const codecs = Object.freeze({
   pin,
   'author-reference': authorReference,

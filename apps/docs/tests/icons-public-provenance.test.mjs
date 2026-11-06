@@ -32,6 +32,39 @@ const PRIVATE_URL = `https://www.figma.com/design/${PRIVATE_KEY}/fixture`;
 const SOURCE_SHA = 'a'.repeat(40);
 const UI_SHA = 'b'.repeat(40);
 
+test('public summary rejects successful qualification after evidence refusal', async () => {
+  const pin = parseIconsJson(
+    await readFile(new URL('./icons-consumer-source.json', import.meta.url)),
+  );
+  const passed = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    source: {
+      schemaVersion: 1,
+      pin,
+      uiCommit: UI_SHA,
+      subjectSha256: hash('subject'),
+      files: [],
+    },
+    observations: 0,
+    failure: null,
+    files: [],
+    diagnosticDirectorySha256: hash('diagnostic-directory'),
+  };
+  for (const file of ['result/reduce.png', 'result/receipt.json']) {
+    const refused = {
+      ...passed,
+      readbackFailure: { code: 'EVIDENCE_REFUSED', file },
+    };
+    const failed = { ...refused, outcome: 'failed' };
+    for (const validate of [assertPublicProvenance, projectPublicProvenance]) {
+      assert.deepEqual(validate(passed, 'summary'), passed);
+      assert.deepEqual(validate(failed, 'summary'), failed);
+      assert.throws(() => validate(refused, 'summary'), { code: 'PUBLIC_CONTRACT_REFUSED' });
+    }
+  }
+});
+
 test('receipt finalization preserves the original error when public projection refuses', async () => {
   const failure = publicDiagnosticError(Object.assign(new Error(PRIVATE_URL), { code: 'ENOENT' }));
   const rejected = {

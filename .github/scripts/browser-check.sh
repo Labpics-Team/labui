@@ -75,30 +75,49 @@ cleanup() {
   artifacts_safe=true
   trap - EXIT
   if [ -s "${job}/container.id" ]; then
-    container="$(cat "${job}/container.id")"
-    if ! docker rm --force "$container" >/dev/null; then
-      echo '::error::Container removal failed; artifact export and directory cleanup are unsafe.' >&2
-      resume_commands
-      exit 1
+    if ! container="$(cat "${job}/container.id")" || ! docker rm --force "$container" >/dev/null; then
+      if [ "$status" -eq 0 ]; then status=1; fi
+      if ! echo '::error::Container cleanup failed; artifact export and directory cleanup are unsafe.' >&2; then
+        if [ "$status" -eq 0 ]; then status=1; fi
+      fi
+      if ! resume_commands; then
+        if [ "$status" -eq 0 ]; then status=1; fi
+      fi
+      exit "$status"
     fi
   fi
   # После удаления контейнера содержимое стабильно; ссылки не переносятся на хост.
   if [ "$workload" = icons-consumer ]; then
     # Прерванная подготовка может оставить raw Trace2; argv и config не экспортируются.
     if ! rm -f -- "${job}/work/output/.git-trace2.raw"; then
-      status=1; artifacts_safe=false
+      if [ "$status" -eq 0 ]; then status=1; fi
+      artifacts_safe=false
     elif ! copy_artifact apps/docs/test-results/icons-consumer icons_ready output; then
-      status=1; artifacts_safe=false
+      if [ "$status" -eq 0 ]; then status=1; fi
+      artifacts_safe=false
     fi
   else
-    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then status=1; artifacts_safe=false; fi
-    if ! copy_artifact apps/docs/playwright-report report_ready; then status=1; artifacts_safe=false; fi
+    if ! copy_artifact packages/colors/artifacts/fx-render fx_ready; then
+      if [ "$status" -eq 0 ]; then status=1; fi
+      artifacts_safe=false
+    fi
+    if ! copy_artifact apps/docs/playwright-report report_ready; then
+      if [ "$status" -eq 0 ]; then status=1; fi
+      artifacts_safe=false
+    fi
   fi
-  if ! rm -rf -- "$job"; then status=1; artifacts_safe=false; fi
+  if ! rm -rf -- "$job"; then
+    if [ "$status" -eq 0 ]; then status=1; fi
+    artifacts_safe=false
+  fi
   if [ "$artifacts_safe" = true ] && [ "${#artifact_outputs[@]}" -gt 0 ] && [ -n "${GITHUB_OUTPUT:-}" ]; then
-    if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then status=1; fi
+    if ! printf '%s\n' "${artifact_outputs[@]}" >> "$GITHUB_OUTPUT"; then
+      if [ "$status" -eq 0 ]; then status=1; fi
+    fi
   fi
-  if ! resume_commands; then status=1; fi
+  if ! resume_commands; then
+    if [ "$status" -eq 0 ]; then status=1; fi
+  fi
   exit "$status"
 }
 trap cleanup EXIT
