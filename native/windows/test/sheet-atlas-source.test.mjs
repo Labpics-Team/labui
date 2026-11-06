@@ -96,7 +96,7 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
   assert.match(build, /SheetBlurProfile\.Stops\(level\)/);
   assert.match(
     build,
-    /Blur\(Backdrop\(\), SheetBlurProfile\.Levels\[index\] \* Geometry\.SheetGhostBlurRadius \* metrics\.Scale\)/,
+    /Blur\(Backdrop\(\), SheetBlurProfile\.Levels\[index\] \* Geometry\.SheetGhostBlurRadius \* metrics\.Scale,\s*\$"ghostBlur\{index\}"\)/,
   );
   assert.match(build, /Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\)/);
   assert.match(

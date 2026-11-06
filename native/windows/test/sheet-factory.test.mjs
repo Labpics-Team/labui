@@ -108,7 +108,7 @@ test('actual AlphaMask factory outcomes retain both branch slots and the primary
   assert.equal(readback(factory, null, 'branches'), null);
 });
 
-test('identity clamp pair retains raw outcomes without admitting the failed renderer', () => {
+test('actual factory pairs retain raw outcomes without admitting the failed renderer', () => {
   const factory = { name: 'final', operation: 'factory' };
   for (const rows of [
     [
@@ -124,7 +124,8 @@ test('identity clamp pair retains raw outcomes without admitting the failed rend
       { hresult: null, cleanupHresult: null },
     ],
   ])
-    assert.deepEqual(readback(factory, rows, 'clamping', 'clamping'), rows);
+    for (const field of ['clamping', 'sigma'])
+      assert.deepEqual(readback(factory, rows, field, field), rows);
 });
 
 test('borrowed factory pairs reject unknown fields, malformed integers and partial arrays', () => {
@@ -145,6 +146,6 @@ test('borrowed factory pairs reject unknown fields, malformed integers and parti
     [row, { ...row, cleanupHresult: {} }],
     [row, { ...row, hresult: undefined }],
   ])
-    for (const field of ['branches', 'clamping'])
+    for (const field of ['branches', 'clamping', 'sigma'])
       assert.equal(readback(factory, rows, field, field), null);
 });

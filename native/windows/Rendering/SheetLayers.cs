@@ -341,10 +341,15 @@ public sealed class SheetLayers : Grid
                 => Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
             AlphaMaskEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
                 => Effect(new AlphaMaskEffect { Source = source, AlphaMask = mask });
-            IGraphicsEffectSource Blur(IGraphicsEffectSource source, double radius) => Effect(new GaussianBlurEffect
+            GaussianBlurEffect Blur(IGraphicsEffectSource source, double radius, string? name = null)
             {
-                Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,
-            });
+                var blur = Effect(new GaussianBlurEffect
+                {
+                    Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,
+                });
+                if (name is not null) blur.Name = name;
+                return blur;
+            }
 
             // Белая структурная маска не является краской поверхности.
             var maskInk = Color.FromArgb(255, 255, 255, 255);
@@ -420,17 +425,10 @@ public sealed class SheetLayers : Grid
                                 // Исходные progressive и Ghost до внешней маски принадлежат Frame.
                                 SheetSourceTopologyProbe.RecordBranches(primary, compositor,
                                     progressiveGraph, ghostSourceGraph);
-                                ColorMatrixEffect Identity(bool clamp)
-                                {
-                                    var identity = Effect(new ColorMatrixEffect());
-                                    identity.Source = progressiveGraph;
-                                    identity.ColorMatrix = new Matrix5x4 { M11 = 1, M22 = 1, M33 = 1, M44 = 1 };
-                                    identity.AlphaMode = CanvasAlphaMode.Premultiplied;
-                                    identity.ClampOutput = clamp;
-                                    return identity;
-                                }
-                                SheetSourceTopologyProbe.RecordClamping(primary, compositor,
-                                    Identity(false), Identity(true));
+                                // Оба factory читают один actual graph: sigma константны либо доступны по имени.
+                                SheetSourceTopologyProbe.RecordSigmaFactories(primary, compositor,
+                                    progressiveGraph, Enumerable.Range(1, SheetBlurProfile.Levels.Length - 1)
+                                        .Select(index => $"ghostBlur{index}.BlurAmount"));
                             }
                         }
                     }
@@ -445,7 +443,8 @@ public sealed class SheetLayers : Grid
             IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
             for (var index = 0; index < branches.Length; index++)
                 branches[index] = Mask(index == 0 ? Backdrop()
-                    : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale), Layer(ghostMasks[index]));
+                    : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
+                        $"ghostBlur{index}"), Layer(ghostMasks[index]));
             var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
             for (var index = 0; index < branches.Length; index++)
                 progressive.Sources.Add(branches[index]);

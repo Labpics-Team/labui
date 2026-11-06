@@ -257,6 +257,7 @@ function observationError(value) {
     ...(Object.hasOwn(value, 'factory') ? { factory: factoryInfo(value.factory) } : {}),
     ...(Object.hasOwn(value, 'branches') ? { branches: branchesInfo(value.branches) } : {}),
     ...(Object.hasOwn(value, 'clamping') ? { clamping: branchesInfo(value.clamping) } : {}),
+    ...(Object.hasOwn(value, 'sigma') ? { sigma: branchesInfo(value.sigma) } : {}),
   };
 }
 

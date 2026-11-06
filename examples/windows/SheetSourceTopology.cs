@@ -9,7 +9,7 @@ internal static class SheetSourceTopology
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
-    internal const string ClampingDataKey = "LabUI.SheetIdentityClamp";
+    internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -74,8 +74,8 @@ internal static class SheetSourceTopology
     internal static Dictionary<string, object?>[]? ReadBranches(Exception? error)
         => ReadPair(error, BranchesDataKey);
 
-    internal static Dictionary<string, object?>[]? ReadClamping(Exception? error)
-        => ReadPair(error, ClampingDataKey);
+    internal static Dictionary<string, object?>[]? ReadSigma(Exception? error)
+        => ReadPair(error, SigmaDataKey);
 
     private static Dictionary<string, object?>[]? ReadPair(Exception? error, string dataKey)
     {

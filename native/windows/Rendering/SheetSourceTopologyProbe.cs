@@ -11,7 +11,7 @@ internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
-    internal const string ClampingDataKey = "LabUI.SheetIdentityClamp";
+    internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -59,19 +59,19 @@ internal static class SheetSourceTopologyProbe
         IGraphicsEffect first, IGraphicsEffect second)
         => RecordPair(primary, BranchesDataKey, compositor, first, second);
 
-    // Слоты: identity ColorMatrix без clamping; тот же actual progressive с clamping.
-    // Матрицы и входы принадлежат Frame; результаты не допускают исходный renderer.
-    internal static void RecordClamping(Exception primary, Compositor compositor,
-        IGraphicsEffect unclamped, IGraphicsEffect clamped)
-        => RecordPair(primary, ClampingDataKey, compositor, unclamped, clamped);
+    // Слоты: baked sigma; dynamic sigma. Один actual progressive принадлежит Frame.
+    // Имена и значения узлов одинаковы; успех sampler не допускает исходный renderer.
+    internal static void RecordSigmaFactories(Exception primary, Compositor compositor,
+        IGraphicsEffect progressive, IEnumerable<string> dynamicProperties)
+        => RecordPair(primary, SigmaDataKey, compositor, progressive, progressive, dynamicProperties);
 
     private static void RecordPair(Exception primary, string dataKey, Compositor compositor,
-        IGraphicsEffect first, IGraphicsEffect second)
+        IGraphicsEffect first, IGraphicsEffect second, IEnumerable<string>? secondProperties = null)
     {
         try
         {
             var firstResult = SampleFactory(compositor, first);
-            var secondResult = SampleFactory(compositor, second);
+            var secondResult = SampleFactory(compositor, second, secondProperties);
             primary.Data[dataKey] = new Dictionary<string, object?>[]
             {
                 new() { ["hresult"] = firstResult.HResult, ["cleanupHresult"] = firstResult.CleanupHResult },
@@ -82,14 +82,15 @@ internal static class SheetSourceTopologyProbe
     }
 
     private static (int? HResult, int? CleanupHResult) SampleFactory(Compositor compositor,
-        IGraphicsEffect graph)
+        IGraphicsEffect graph, IEnumerable<string>? dynamicProperties = null)
     {
         CompositionEffectFactory? factory = null;
         int? hresult = null;
         int? cleanupHresult = null;
         try
         {
-            factory = compositor.CreateEffectFactory(graph);
+            factory = dynamicProperties is null ? compositor.CreateEffectFactory(graph)
+                : compositor.CreateEffectFactory(graph, dynamicProperties);
             hresult = 0;
         }
         catch (Exception error) { hresult = error.HResult; }
