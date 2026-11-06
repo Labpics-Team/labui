@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "description": "Astro adapter for LabUI (ADR-0001, A-prime): thin .astro wrappers that SSR the shared Lit Web Components (<lab-button>, …) to declarative shadow DOM via @labpics/ui-core and hydrate them on the client. Astro consumes the custom elements — it does not re-implement them. @astrojs/lit is deprecated on Astro 5, so this uses the manual Lit SSR recipe.",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/ssr.js",
   "module": "./dist/ssr.js",

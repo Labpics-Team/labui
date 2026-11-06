@@ -122,7 +122,7 @@ export const buttonDoc: ComponentDoc = {
     dos: [
       'Use one accent fill as the primary action in a view; step secondary actions down to tinted, border, or ghost.',
       'Use type="danger" for destructive actions (delete, remove) so the intent reads before the label does.',
-      'Set loading while an action is in flight — it blocks double-submits and keeps the button size fixed.',
+      'Set loading while an action is in flight — it blocks repeated button activation and keeps the button size fixed.',
       'Give icon-only buttons an accessible name (aria-label) — the square icon carries no text for a screen reader.',
     ],
     donts: [
@@ -221,7 +221,7 @@ export const buttonDoc: ComponentDoc = {
         type: "'button' | 'submit' | 'reset'",
         default: "'button'",
         description:
-          'The native button behaviour inside a form. Named to avoid clashing with the type axis.',
+          'HTML button type. React uses a native button; Lit sets the type inside Shadow DOM and does not submit or reset an outer form automatically.',
       },
     ],
     events: [

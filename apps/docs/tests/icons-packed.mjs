@@ -8,6 +8,18 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { brotliCompressSync, gzipSync } from 'node:zlib';
+import {
+  PUBLIC_ENTRIES,
+  PUBLIC_QUALIFICATION,
+  PUBLIC_SCENARIO,
+  PUBLIC_STATE_GROUPS,
+  assertPublicProvenance,
+  parseIconsJson,
+  projectPublicProvenance,
+  publicApiRefusal,
+  publicDiagnosticError,
+  publicFailure,
+} from './icons-public-provenance.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '../../..');
@@ -15,44 +27,10 @@ const HASH = /^[a-f0-9]{64}$/;
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-const REQUIRED_PUBLIC_ENTRIES = [
-  '@labpics/ui-core/button',
-  '@labpics/icons/symbols/reload',
-  '@labpics/motion',
-];
-const STATE_ENTRY = '@labpics/icons/states/status-circle';
-const EXPRESSION_ENTRY = '@labpics/icons/states/expression-face';
-const STATE_GROUPS = {
-  'status-circle': {
-    defaultState: 'question',
-    enclosurePartId: 'status-enclosure',
-    states: ['attention', 'confirmation', 'decrease', 'dismissal', 'increase', 'question'],
-    sharedParts: [{ id: 'status-enclosure', role: 'container' }],
-    buttonLabel: 'Сменить знак',
-    selectLabel: 'Состояние знака',
-    labels: {
-      attention: 'Внимание',
-      confirmation: 'Подтверждение',
-      decrease: 'Уменьшение',
-      dismissal: 'Закрытие',
-      increase: 'Увеличение',
-      question: 'Вопрос',
-    },
-  },
-  'expression-face': {
-    defaultState: 'aloof',
-    enclosurePartId: 'face-enclosure',
-    states: ['aloof', 'sad', 'smile'],
-    sharedParts: [
-      { id: 'face-left-eye', role: 'content' },
-      { id: 'face-right-eye', role: 'content' },
-      { id: 'face-enclosure', role: 'container' },
-    ],
-    buttonLabel: 'Сменить выражение',
-    selectLabel: 'Выражение лица',
-    labels: { aloof: 'Спокойствие', sad: 'Грусть', smile: 'Улыбка' },
-  },
-};
+const REQUIRED_PUBLIC_ENTRIES = PUBLIC_ENTRIES.slice(0, 3);
+const STATE_ENTRY = PUBLIC_ENTRIES[3];
+const EXPRESSION_ENTRY = PUBLIC_ENTRIES[4];
+const STATE_GROUPS = PUBLIC_STATE_GROUPS;
 
 export function stateReferenceContract(group) {
   assert.ok(Object.hasOwn(STATE_GROUPS, group), 'consumer не запрашивал такую state group');
@@ -148,17 +126,18 @@ const stableJSON = (value) =>
   );
 
 // Импорт harness не устанавливает пакеты и не запускает browser/build.
-export function assertSelfHostedRunner(env = process.env) {
+export function assertActionsRunner(env = process.env) {
   assert.ok(
     env.GITHUB_ACTIONS === 'true' &&
       env.CI === 'true' &&
       /^\d+$/.test(env.GITHUB_RUN_ID ?? '') &&
-      env.RUNNER_ENVIRONMENT === 'self-hosted',
-    'icons-packed: install/build/browser разрешены только self-hosted GitHub Actions runner',
+      ['github-hosted', 'self-hosted'].includes(env.RUNNER_ENVIRONMENT),
+    'icons-packed: install/build/browser разрешены только в GitHub Actions с официальной runner identity',
   );
 }
 
 export function validateSubject(subject) {
+  assertPublicProvenance(subject, 'subject');
   assert.ok([1, 2, 3].includes(subject?.schemaVersion));
   assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
   for (const [key, name] of [
@@ -175,7 +154,7 @@ export function validateSubject(subject) {
   }
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
-  assert.match(reference.fileKey, /^[A-Za-z0-9]+$/);
+  assert.match(reference.fileKeySha256, HASH);
   assert.match(reference.version, /^\d+$/);
   assert.deepEqual(Object.keys(reference.icons ?? {}), ['reload']);
   assert.deepEqual(Object.keys(reference.icons.reload).sort(), ['filled', 'outline']);
@@ -186,9 +165,9 @@ export function validateSubject(subject) {
       `masters/figma/${reference.version}/${variant === 'outline' ? 'Outline' : 'Filled'}/reload.svg`,
     );
     assert.equal(item.author?.kind, 'figma');
-    assert.equal(item.author.fileKey, reference.fileKey);
+    assert.equal(item.author.fileKeySha256, reference.fileKeySha256);
     assert.equal(item.author.version, reference.version);
-    assert.match(item.author.nodeId, /^\d+:\d+$/);
+    assert.match(item.author.nodeIdSha256, HASH);
     for (const key of ['nodeSha256', 'masterSha256', 'normalizedSha256', 'pathFingerprintSha256'])
       assert.match(item.author[key], HASH);
     assert.equal(item.anatomy?.version, 1);
@@ -266,12 +245,19 @@ export function validateSubject(subject) {
 }
 
 export function validateStateReference(reference, author, group = 'status-circle') {
+  assertPublicProvenance(
+    { reference, source: { fileKeySha256: author?.fileKeySha256, version: author?.version } },
+    'reference-binding',
+  );
   const contract = stateReferenceContract(group);
   assert.equal(reference?.group, group);
   assert.equal(reference.variant, 'outline');
   assert.equal(reference.defaultState, contract.defaultState);
   assert.equal(reference.enclosurePartId, contract.enclosurePartId);
-  assert.deepEqual(reference.proof?.source, { fileKey: author.fileKey, version: author.version });
+  assert.deepEqual(reference.proof?.source, {
+    fileKeySha256: author.fileKeySha256,
+    version: author.version,
+  });
   assert.equal(reference.proof.law, 'enclosure.replace');
   assert.match(reference.proof.specSha256, HASH);
   assert.match(reference.proof.enclosureSha256, HASH);
@@ -321,9 +307,9 @@ export function validateStateReference(reference, author, group = 'status-circle
     assert.deepEqual(state.viewBox, [0, 0, 24, 24]);
     assert.deepEqual(state.dimensions, [24, 24]);
     assert.equal(state.author.kind, 'figma');
-    assert.equal(state.author.fileKey, author.fileKey);
+    assert.equal(state.author.fileKeySha256, author.fileKeySha256);
     assert.equal(state.author.version, author.version);
-    assert.match(state.author.nodeId, /^\d+:\d+$/);
+    assert.match(state.author.nodeIdSha256, HASH);
     for (const key of ['nodeSha256', 'masterSha256', 'normalizedSha256', 'pathFingerprintSha256'])
       assert.match(state.author[key], HASH);
     assert.ok(state.paths.length >= 2);
@@ -938,7 +924,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
     });
     const page = await context.newPage();
     page.setDefaultTimeout(20_000);
-    page.on('pageerror', (error) => browserErrors.push(error.message));
+    page.on('pageerror', (error) => browserErrors.push(publicFailure(error)));
     try {
       await page.goto(url, { waitUntil: 'networkidle' });
       await page.waitForFunction(() => window.__iconsPacked !== undefined);
@@ -950,7 +936,10 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.equal(initial.provenance.kind, 'source');
         assert.equal(initial.provenance.file, expected.sourceFile);
         assert.equal(initial.composition, 'layers');
-        assert.deepEqual(initial.provenance.author, expected.author);
+        assert.deepEqual(
+          projectPublicProvenance(initial.provenance.author, 'author'),
+          expected.author,
+        );
         assert.deepEqual(initial.provenance.anatomy, expected.anatomy);
         assert.deepEqual(initial.parts, expected.parts);
         assert.deepEqual(initial.viewBox, expected.viewBox);
@@ -962,7 +951,10 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           initial.paths.map(({ id, role }) => ({ id, role })),
           expected.parts.map(({ id, role }) => ({ id, role })),
         );
-        assert.deepEqual(initial.capabilities.author, expected.author);
+        assert.deepEqual(
+          projectPublicProvenance(initial.capabilities.author, 'author'),
+          expected.author,
+        );
         assert.deepEqual(initial.capabilities.anatomy, expected.anatomy);
         assert.deepEqual(initial.capabilities.motion.gestures, [expected.gesture]);
         assert.deepEqual(initial.capabilities.supportedAxes, []);
@@ -1102,7 +1094,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           pointerControl,
           events: activated.events,
           provenance: initial.provenance,
-          refusal,
+          refusal: { axis: refusal.axis, motion: publicApiRefusal(refusal.motion) },
         });
       }
       for (const stateReference of Object.values(reference.states))
@@ -1122,7 +1114,10 @@ async function browserProof(browser, url, reference, out, records, browserErrors
           disposed.completionStatus,
           reducedMotion === 'reduce' ? 'finished' : 'stopped',
         );
-        records.push({ name: `${group}:${reducedMotion}:dispose`, ...disposed });
+        records.push({
+          name: `${group}:${reducedMotion}:dispose`,
+          ...projectPublicProvenance(disposed, 'state-disposal'),
+        });
       }
     } catch (error) {
       await page
@@ -1275,8 +1270,11 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   const [first, second] = alternatives;
   const selectedTarget = alternatives.at(-1).id;
   const initial = await read();
-  assert.deepEqual(initial.capabilities, stateCapabilitiesReference(reference));
   assertStateAnatomy(initial, reference);
+  assert.deepEqual(
+    projectPublicProvenance(initial.capabilities, 'state-capabilities'),
+    stateCapabilitiesReference(reference),
+  );
   const oneHot = (observation, target) => {
     assert.equal(observation.targetState, target);
     assert.equal(observation.selected, target);
@@ -1323,7 +1321,16 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
       reducedMotion === 'reduce' ? 0 : 600,
     );
     if (reducedMotion === 'no-preference')
-      sameStateOpacity(event.before, event.after, { eventIndex: index, ...event });
+      sameStateOpacity(event.before, event.after, {
+        eventIndex: index,
+        trusted: event.trusted,
+        composed: event.composed,
+        native: event.native,
+        before: event.before,
+        after: event.after,
+        effect: event.effect,
+        continuity: event.continuity,
+      });
   }
   await page.getByRole('combobox', { name: contract.selectLabel }).selectOption(selectedTarget);
   oneHot(await evaluate('settleState'), selectedTarget);
@@ -1390,10 +1397,10 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     records.push({
       name: `${reference.group}:paused-reverse-newer-state`,
       paused: paused.opacity,
-      reverse,
-      newer,
+      reverse: projectPublicProvenance(reverse, 'state-change'),
+      newer: projectPublicProvenance(newer, 'state-change'),
       mixture: mixture.opacity,
-      latest,
+      latest: projectPublicProvenance(latest, 'state-change'),
     });
   }
   if (reference.group === 'expression-face') {
@@ -1426,15 +1433,70 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
   }
   assert.equal(refusal.web.ok, true);
   stateEffect(refusal.web.effect, reference, reference.states[1].id, 240);
-  records.push({ name: `${reference.group}:${reducedMotion}:public-refusals`, refusal });
+  records.push({
+    name: `${reference.group}:${reducedMotion}:public-refusals`,
+    refusal: {
+      filled: publicApiRefusal(refusal.filled),
+      nullRequest: publicApiRefusal(refusal.nullRequest),
+      unknown: publicApiRefusal(refusal.unknown),
+      exports: refusal.exports.map(publicApiRefusal),
+      web: { ok: refusal.web.ok, effect: refusal.web.effect },
+    },
+  });
   const disposing = await evaluate('changeState', selectedTarget, 1000);
   stateEffect(disposing.effect, reference, selectedTarget, reducedMotion === 'reduce' ? 0 : 1000);
   if (reducedMotion === 'no-preference')
     assertStateAnatomy(await evaluate('pauseState', 200), reference);
 }
 
+export async function finalizeReceipt(receipt, { out, phase, failure, write = writeFile }) {
+  let publicationFailure;
+  try {
+    let publicReceipt;
+    let recovered = false;
+    const recover = (error) => {
+      recovered = true;
+      publicationFailure ??= publicDiagnosticError(error);
+      publicReceipt = projectPublicProvenance(
+        {
+          schemaVersion: 1,
+          outcome: 'failed',
+          records: [],
+          failure: { phase, ...publicFailure(publicationFailure) },
+        },
+        'receipt',
+      );
+    };
+    try {
+      publicReceipt = projectPublicProvenance(receipt, 'receipt');
+    } catch (error) {
+      recover(error);
+    }
+    const persist = async (name) => {
+      try {
+        await write(join(out, name), `${JSON.stringify(publicReceipt, null, 2)}\n`);
+        return true;
+      } catch (error) {
+        publicationFailure ??= publicDiagnosticError(error);
+        return false;
+      }
+    };
+    // После отказа полной записи пробуем минимальный FAILED receipt на том же пути.
+    if (!(await persist('receipt.json')) && !recovered) {
+      recover(publicationFailure);
+      await persist('receipt.json');
+    }
+    if (publicReceipt.outcome === 'failed') await persist('failure.json');
+  } catch (error) {
+    if (failure) throw failure;
+    throw publicDiagnosticError(error);
+  }
+  if (failure) throw failure;
+  if (publicationFailure) throw publicationFailure;
+}
+
 export async function main(args = process.argv.slice(2)) {
-  assertSelfHostedRunner();
+  assertActionsRunner();
   const options = new Map();
   for (let index = 0; index < args.length; index += 2) {
     assert.ok(
@@ -1477,7 +1539,7 @@ export async function main(args = process.argv.slice(2)) {
   let phase = 'subject';
   try {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
-    const subject = validateSubject(JSON.parse(subjectBytes));
+    const subject = validateSubject(parseIconsJson(subjectBytes));
     const fixture = consumerFixture(subject.schemaVersion);
     const requiredEntries = consumerPublicEntries(subject.schemaVersion);
     receipt.subject = subject;
@@ -1498,7 +1560,7 @@ export async function main(args = process.argv.slice(2)) {
       runId: process.env.GITHUB_RUN_ID,
       runAttempt: process.env.GITHUB_RUN_ATTEMPT,
       environment: process.env.RUNNER_ENVIRONMENT,
-      name: process.env.RUNNER_NAME,
+      nameSha256: process.env.RUNNER_NAME ? hash(process.env.RUNNER_NAME) : undefined,
       os: process.env.RUNNER_OS,
     };
     phase = 'archive snapshots';
@@ -1515,7 +1577,11 @@ export async function main(args = process.argv.slice(2)) {
       );
     }
     receipt.archives = archives.map(({ path, ...archive }) => ({
-      ...archive,
+      key: archive.key,
+      inputNameSha256: hash(archive.inputName),
+      archiveSha256: archive.archiveSha256,
+      archiveBytes: archive.archiveBytes,
+      integrity: archive.integrity,
       snapshot: relative(consumer, path).replaceAll('\\', '/'),
     }));
     await writeFile(
@@ -1575,7 +1641,7 @@ export async function main(args = process.argv.slice(2)) {
         version: manifest.version,
         manifestSha256: hash(bytes),
         lockIntegrity: locked.integrity ?? null,
-        lockResolved: locked.resolved ?? null,
+        lockResolvedSha256: typeof locked.resolved === 'string' ? hash(locked.resolved) : null,
       });
     }
     await writeFile(join(consumer, 'index.html'), HTML);
@@ -1617,7 +1683,7 @@ export async function main(args = process.argv.slice(2)) {
             for (const item of Object.values(output)) {
               const bytes = Buffer.from(item.type === 'chunk' ? item.code : item.source);
               bundles.push({
-                file: item.fileName,
+                fileSha256: hash(item.fileName),
                 sha256: hash(bytes),
                 raw: bytes.length,
                 gzip: gzipSync(bytes).length,
@@ -1645,13 +1711,12 @@ export async function main(args = process.argv.slice(2)) {
       publicEntries: Object.fromEntries(
         Object.entries(publicEntries).map(([specifier, id]) => [
           specifier,
-          relative(consumer, id).replaceAll('\\', '/'),
+          hash(relative(consumer, id).replaceAll('\\', '/')),
         ]),
       ),
-      moduleGraph,
+      moduleGraph: moduleGraph.map(hash),
       bundles,
-      scenario:
-        'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim',
+      scenario: PUBLIC_SCENARIO,
     };
     await writeFile(join(out, 'module-graph.json'), `${JSON.stringify(moduleGraph, null, 2)}\n`);
     await writeFile(join(out, 'bundle-sizes.json'), `${JSON.stringify(bundles, null, 2)}\n`);
@@ -1686,23 +1751,21 @@ export async function main(args = process.argv.slice(2)) {
       receipt.harness.sourceSha256,
     );
     receipt.outcome = 'passed';
-    receipt.qualification =
-      'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
+    receipt.qualification = PUBLIC_QUALIFICATION;
   } catch (error) {
     receipt.outcome = 'failed';
     receipt.failure = {
       phase,
       browserErrors,
-      message: String(error?.stack ?? error),
-      ...(error?.stateContinuity ? { stateContinuity: error.stateContinuity } : {}),
+      ...publicFailure(error),
     };
-    failure = error;
+    failure = publicDiagnosticError(error);
   } finally {
     clearTimeout(proofTimer);
     try {
       await browser?.close();
     } catch (error) {
-      cleanupErrors.push(String(error));
+      cleanupErrors.push(publicFailure(error));
     }
     try {
       if (server)
@@ -1710,7 +1773,7 @@ export async function main(args = process.argv.slice(2)) {
           server.close((error) => (error ? reject(error) : resolve())),
         );
     } catch (error) {
-      cleanupErrors.push(String(error));
+      cleanupErrors.push(publicFailure(error));
     }
     try {
       if (consumer) {
@@ -1720,21 +1783,21 @@ export async function main(args = process.argv.slice(2)) {
         await rm(resolved, { recursive: true, force: true });
       }
     } catch (error) {
-      cleanupErrors.push(String(error));
+      cleanupErrors.push(publicFailure(error));
     }
     if (cleanupErrors.length) {
       receipt.outcome = 'failed';
       receipt.cleanupErrors = cleanupErrors;
     }
     receipt.completed = new Date().toISOString();
-    await writeFile(join(out, 'receipt.json'), `${JSON.stringify(receipt, null, 2)}\n`);
-    if (receipt.outcome === 'failed')
-      await writeFile(join(out, 'failure.json'), `${JSON.stringify(receipt, null, 2)}\n`);
+    await finalizeReceipt(receipt, { out, phase, failure });
     if (receipt.outcome === 'passed')
       process.stdout.write(`icons-packed: passed, ${records.length} observations\n`);
   }
-  if (failure) throw failure;
-  if (cleanupErrors.length) throw new Error(`icons-packed cleanup: ${cleanupErrors.join('; ')}`);
+  if (cleanupErrors.length) throw new Error('icons-packed cleanup failed');
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  await main().catch((error) => {
+    throw publicDiagnosticError(error);
+  });

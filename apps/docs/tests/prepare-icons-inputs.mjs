@@ -6,11 +6,20 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
+import { assertActionsRunner, stateReferenceContract, validateSubject } from './icons-packed.mjs';
 import {
-  assertSelfHostedRunner,
-  stateReferenceContract,
-  validateSubject,
-} from './icons-packed.mjs';
+  assertPublicCheck,
+  assertPublicProvenance,
+  assertSourceIdentity,
+  parseIconsJson,
+  projectPlatformMeasurement,
+  projectPublicProvenance,
+  publicDiagnosticError,
+  validateMeasurementShape,
+  validateSourcePin,
+} from './icons-public-provenance.mjs';
+
+export { validateSourcePin };
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -27,22 +36,6 @@ const stableJSON = (value) =>
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const git = createGitRunner(process.env.LABUI_ICONS_GIT_DIAGNOSTICS);
 
-export function validateSourcePin(pin) {
-  assert.deepEqual(Object.keys(pin).sort(), [
-    'figma',
-    'repository',
-    'schemaVersion',
-    'sourceCommit',
-  ]);
-  assert.equal(pin.schemaVersion, 1);
-  assert.equal(pin.repository, 'Labpics-Team/lab-icons');
-  assert.match(pin.sourceCommit, /^[a-f0-9]{40}$/);
-  assert.deepEqual(Object.keys(pin.figma).sort(), ['fileKey', 'version']);
-  assert.match(pin.figma.fileKey, /^[A-Za-z0-9]+$/);
-  assert.match(pin.figma.version, /^\d+$/);
-  return pin;
-}
-
 export function assertCheckout(root, expected) {
   assert.match(expected, /^[a-f0-9]{40}$/);
   assert.equal(git(root, ['rev-parse', 'HEAD']).toString().trim(), expected);
@@ -51,7 +44,7 @@ export function assertCheckout(root, expected) {
 
 async function sourceFile(root, commit, file) {
   const bytes = await readFile(join(root, file));
-  assert.deepEqual(bytes, git(root, ['show', `${commit}:${file}`]), `изменён источник: ${file}`);
+  assert.ok(bytes.equals(git(root, ['show', `${commit}:${file}`])), `изменён источник: ${file}`);
   return { file, sha256: hash(bytes), bytes: bytes.length };
 }
 
@@ -151,13 +144,18 @@ export function readCycleMaster(bytes) {
 // Expected binding берётся из raw аннотации, поведение — из cycle.clockwise.
 // Producer constructor, его helpers, glyph и effect не могут изменить oracle.
 export async function authorReference(iconsRoot, pin) {
-  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
-  assert.equal(manifest.source.fileKey, pin.figma.fileKey);
-  assert.equal(manifest.source.version, pin.figma.version);
-  const annotations = JSON.parse(await readFile(join(iconsRoot, 'semantics/author-anatomy.json')));
+  const manifest = parseIconsJson(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  assertSourceIdentity(manifest.source, pin.figma);
+  const annotations = parseIconsJson(
+    await readFile(join(iconsRoot, 'semantics/author-anatomy.json')),
+  );
   assert.equal(manifest.schemaVersion, 1);
   assert.equal(annotations.schemaVersion, 1);
-  assert.deepEqual(annotations.source, { fileKey: pin.figma.fileKey, version: pin.figma.version });
+  assert.ok(
+    Object.keys(annotations.source).sort().join(',') === 'fileKey,version',
+    'anatomy: source fields',
+  );
+  assertSourceIdentity(annotations.source, pin.figma);
   const variants = {};
   for (const variant of ['outline', 'filled']) {
     const record = manifest.icons.reload[variant];
@@ -216,7 +214,7 @@ export async function authorReference(iconsRoot, pin) {
       sourceFile: record.master,
       author: {
         kind: 'figma',
-        fileKey: pin.figma.fileKey,
+        fileKey: manifest.source.fileKey,
         version: pin.figma.version,
         nodeId: record.nodeId,
         nodeSha256: record.nodeSha256,
@@ -238,28 +236,34 @@ export async function authorReference(iconsRoot, pin) {
       gesture,
     };
   }
-  return {
-    fileName: manifest.source.name,
-    fileKey: manifest.source.fileKey,
-    version: manifest.source.version,
-    icons: { reload: variants },
-  };
+  return projectPublicProvenance(
+    {
+      fileName: manifest.source.name,
+      fileKey: manifest.source.fileKey,
+      version: manifest.source.version,
+      icons: { reload: variants },
+    },
+    'author-reference',
+  );
 }
 
 // Отдельный независимый reference: raw masters и публичная semantic декларация,
 // без compiler/glyph/imports производителя. Interior сохраняет исходный порядок.
 export async function stateReference(iconsRoot, pin, name = 'status-circle') {
   const contract = stateReferenceContract(name);
-  const manifest = JSON.parse(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
-  const document = JSON.parse(
+  const manifest = parseIconsJson(await readFile(join(iconsRoot, 'semantics/figma-baseline.json')));
+  const document = parseIconsJson(
     await readFile(join(iconsRoot, 'semantics/author-state-groups.json')),
   );
-  const source = { fileKey: pin.figma.fileKey, version: pin.figma.version };
+  const source = { fileKey: manifest.source.fileKey, version: pin.figma.version };
   assert.equal(manifest.schemaVersion, 1);
-  assert.equal(manifest.source.fileKey, source.fileKey);
-  assert.equal(manifest.source.version, source.version);
+  assertSourceIdentity(manifest.source, pin.figma);
   assert.ok([1, 2].includes(document.schemaVersion), 'неподдержанная author-state schema');
-  assert.deepEqual(document.source, source);
+  assert.ok(
+    Object.keys(document.source).sort().join(',') === 'fileKey,version',
+    'states: source fields',
+  );
+  assertSourceIdentity(document.source, pin.figma);
   const group = document.groups[name];
   assert.equal(group.law, 'enclosure.replace');
   assert.equal(group.defaultState, contract.defaultState);
@@ -327,54 +331,60 @@ export async function stateReference(iconsRoot, pin, name = 'status-circle') {
       },
     });
   }
-  return {
-    group: name,
-    variant: 'outline',
-    defaultState: group.defaultState,
-    enclosurePartId: group.enclosurePartId,
-    ...(document.schemaVersion === 2
-      ? {
-          sharedPartIds: sharedParts.map((part) => part.id),
-          ...(name === 'expression-face' ? { sharedParts } : {}),
-        }
-      : {}),
-    enclosure,
-    states,
-    proof: {
-      law: group.law,
-      source,
-      enclosureSha256: hash(
-        stableJSON({
-          ...enclosure,
-          paint: { kind: 'fill', fill: 'currentColor' },
-          viewBox: [0, 0, 24, 24],
-          dimensions: [24, 24],
-          placement: 'after-content',
-        }),
-      ),
-      specSha256: hash(stableJSON({ schemaVersion: document.schemaVersion, source, name, group })),
+  return projectPublicProvenance(
+    {
+      group: name,
+      variant: 'outline',
+      defaultState: group.defaultState,
+      enclosurePartId: group.enclosurePartId,
       ...(document.schemaVersion === 2
         ? {
-            sharedPartsSha256: hash(
-              stableJSON({
-                parts: sharedParts.map((part) => ({
-                  ...part,
-                  paint: { kind: 'fill', fill: 'currentColor' },
-                })),
-                viewBox: [0, 0, 24, 24],
-                dimensions: [24, 24],
-                placement: 'after-content',
-              }),
-            ),
+            sharedPartIds: sharedParts.map((part) => part.id),
+            ...(name === 'expression-face' ? { sharedParts } : {}),
           }
         : {}),
+      enclosure,
+      states,
+      proof: {
+        law: group.law,
+        source,
+        enclosureSha256: hash(
+          stableJSON({
+            ...enclosure,
+            paint: { kind: 'fill', fill: 'currentColor' },
+            viewBox: [0, 0, 24, 24],
+            dimensions: [24, 24],
+            placement: 'after-content',
+          }),
+        ),
+        specSha256: hash(
+          stableJSON({ schemaVersion: document.schemaVersion, source, name, group }),
+        ),
+        ...(document.schemaVersion === 2
+          ? {
+              sharedPartsSha256: hash(
+                stableJSON({
+                  parts: sharedParts.map((part) => ({
+                    ...part,
+                    paint: { kind: 'fill', fill: 'currentColor' },
+                  })),
+                  viewBox: [0, 0, 24, 24],
+                  dimensions: [24, 24],
+                  placement: 'after-content',
+                }),
+              ),
+            }
+          : {}),
+      },
     },
-  };
+    'state-reference',
+  );
 }
 
 export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lockfileSha256) {
-  assert.equal(report?.sourceSha, sourceSha, 'measurement относится к другому source SHA');
-  assert.equal(report.lockfileSha256, lockfileSha256, 'measurement lockfile не совпал');
+  assertPublicCheck(report?.sourceSha === sourceSha, 'MEASUREMENT_SOURCE_MISMATCH');
+  assertPublicCheck(report.lockfileSha256 === lockfileSha256, 'MEASUREMENT_LOCKFILE_MISMATCH');
+  validateMeasurementShape(report);
   assert.ok(Number.isFinite(Date.parse(report.capturedAt)));
   assert.ok(typeof report.environment?.node === 'string');
   assert.deepEqual(
@@ -408,17 +418,13 @@ export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lo
   }
   for (const measured of Object.values(report.artifacts))
     assert.match(measured.sha256, /^[a-f0-9]{64}$/);
-  assert.ok(
-    Array.isArray(report.policyViolations) &&
-      report.policyViolations.every((item) => typeof item === 'string' && item.length > 0),
-  );
   return report;
 }
 
 // Это диагностический запуск producer, не принятие candidatePolicies.
 // Guard срабатывает до child process; --update не является допустимым параметром.
 async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
-  assertSelfHostedRunner();
+  assertActionsRunner();
   const materialFiles = [
     'scripts/measure-platform-artifacts.mjs',
     'scripts/check-package-size.js',
@@ -440,7 +446,7 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   execFileSync(process.execPath, [join(iconsRoot, program.file), '--output', join(out, file)], {
     cwd: iconsRoot,
     timeout: 600_000,
-    stdio: ['ignore', 'inherit', 'inherit'],
+    stdio: ['ignore', 'pipe', 'pipe'],
   });
   assertCheckout(iconsRoot, sourceSha);
   for (const material of materials)
@@ -448,19 +454,24 @@ async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
   const bytes = await readFile(join(out, file));
   const lockfileSha256 = materials.find((item) => item.file === 'pnpm-lock.yaml').sha256;
   const report = validatePlatformMeasurement(
-    JSON.parse(bytes),
+    parseIconsJson(bytes),
     sourceSha,
     artifactFiles,
     lockfileSha256,
   );
+  const published = projectPlatformMeasurement(report);
+  const publishedBytes = Buffer.from(`${JSON.stringify(published, null, 2)}\n`);
+  await writeFile(join(out, file), publishedBytes);
   return {
     file,
     sourceSha,
-    sha256: hash(bytes),
-    bytes: bytes.length,
+    sha256: hash(publishedBytes),
+    bytes: publishedBytes.length,
+    rawSha256: hash(bytes),
+    rawBytes: bytes.length,
     program,
     lockfileSha256,
-    artifactFiles,
+    artifactFiles: artifactFiles.map(hash),
     artifactCount: artifactFiles.length,
     consumerCount: Object.keys(report.consumers).length,
     policyViolations: report.policyViolations.length,
@@ -489,6 +500,8 @@ function evidenceLog(bytes, prefix, identity, digestField) {
 }
 
 export function platformMeasurementLog(bytes, sourceSha) {
+  const report = assertPublicProvenance(parseIconsJson(bytes), 'measurement');
+  assertPublicCheck(report.sourceSha === sourceSha, 'MEASUREMENT_SOURCE_MISMATCH');
   return evidenceLog(bytes, 'LABUI_ICONS_PLATFORM_MEASUREMENT', { sourceSha }, 'reportSha256');
 }
 
@@ -541,7 +554,7 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
     Buffer.isBuffer(bytes) && bytes.length > 0 && bytes.length <= CONSUMER_MAX_EVIDENCE_BYTES,
     'receipt: bytes вне лимита',
   );
-  const receipt = JSON.parse(bytes);
+  const receipt = assertPublicProvenance(parseIconsJson(bytes), 'receipt');
   assert.equal(receipt.schemaVersion, 1, 'receipt: schemaVersion');
   assert.equal(receipt.outcome, 'passed', 'receipt: raw packet требует passed outcome');
   assert.ok(Array.isArray(receipt.records), 'receipt: records отсутствуют');
@@ -554,7 +567,7 @@ export function consumerReceiptLog(bytes, sourceSha, uiCommit) {
 }
 
 export async function prepareInputs(options) {
-  const pin = validateSourcePin(JSON.parse(await readFile(PIN)));
+  const pin = validateSourcePin(parseIconsJson(await readFile(PIN)));
   const iconsRoot = await realpath(resolve(options.get('--icons-source')));
   const uiRoot = await realpath(resolve(options.get('--ui-source')));
   const uiCommit = options.get('--ui-commit');
@@ -616,11 +629,14 @@ export async function prepareInputs(options) {
   // Raw references и их source receipts уже зафиксированы до чтения dist artifacts.
   const measurement = await measurePlatformArtifacts(iconsRoot, pin.sourceCommit, out, files);
   assertCheckout(uiRoot, uiCommit);
-  await writeFile(
-    join(out, 'source-receipt.json'),
-    `${JSON.stringify({ schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement }, null, 2)}\n`,
-    { flag: 'wx', mode: 0o600 },
+  const source = assertPublicProvenance(
+    { schemaVersion: 1, pin, uiCommit, subjectSha256: hash(bytes), files, measurement },
+    'source-receipt',
   );
+  await writeFile(join(out, 'source-receipt.json'), `${JSON.stringify(source, null, 2)}\n`, {
+    flag: 'wx',
+    mode: 0o600,
+  });
   process.stdout.write(
     `icons-inputs: ${JSON.stringify({ subjectSha256: hash(bytes), packages })}\n`,
   );
@@ -648,34 +664,87 @@ function writeStdout(bytes) {
   });
 }
 
+function validateConsumerExitCode(value) {
+  assert.ok(
+    Number.isSafeInteger(value) && value >= 0 && value <= 255,
+    'icons: consumer completion требует exit code 0..255',
+  );
+  return value;
+}
+
+export function parseSummaryInvocation(args) {
+  assert.ok(
+    Array.isArray(args) &&
+      args.length === 4 &&
+      args.every((value) => typeof value === 'string') &&
+      args[0] === '--summarize' &&
+      args[1].length > 0 &&
+      args[2] === '--consumer-exit-code' &&
+      /^(?:0|[1-9]\d{0,2})$/.test(args[3]),
+    'icons: summarize требует directory и --consumer-exit-code',
+  );
+  return { directory: args[1], consumerExitCode: validateConsumerExitCode(Number(args[3])) };
+}
+
+export function terminalReceipt(receiptBytes, failureBytes, consumerExitCode) {
+  validateConsumerExitCode(consumerExitCode);
+  // Неудача финализации может оставить ранее записанный PASSED receipt.
+  if (failureBytes !== undefined) {
+    const failed = assertPublicProvenance(parseIconsJson(failureBytes), 'receipt');
+    assert.equal(failed.outcome, 'failed', 'icons: failure artifact требует failed outcome');
+    return failed;
+  }
+  try {
+    if (receiptBytes === undefined)
+      throw Object.assign(new Error('icons: ENOENT'), { code: 'ENOENT' });
+    const receipt = assertPublicProvenance(parseIconsJson(receiptBytes), 'receipt');
+    return consumerExitCode === 0 ? receipt : { ...receipt, outcome: 'failed' };
+  } catch (error) {
+    if (consumerExitCode === 0) throw error;
+    return { schemaVersion: 1, outcome: 'failed', records: [] };
+  }
+}
+
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
-export async function summarize(directory) {
+export async function summarize(directory, consumerExitCode) {
+  validateConsumerExitCode(consumerExitCode);
   const root = await realpath(resolve(directory));
   const files = [];
   const visuals = [];
+  let receiptBytes;
+  let failureBytes;
   for (const name of ['inputs', 'result']) {
     for (const entry of await readdir(join(root, name), { withFileTypes: true })) {
       if (!entry.isFile() || !/\.(?:json|png)$/.test(entry.name)) continue;
       const path = `${name}/${entry.name}`;
       const bytes = await readFile(join(root, path));
       files.push({ path, sha256: hash(bytes), bytes: bytes.length });
+      if (path === 'result/receipt.json') receiptBytes = bytes;
+      if (path === 'result/failure.json') failureBytes = bytes;
       if (name === 'result' && entry.name.endsWith('.png')) visuals.push({ path, bytes });
     }
   }
-  const receiptBytes = await readFile(join(root, 'result/receipt.json'));
-  const receipt = JSON.parse(receiptBytes);
-  const source = JSON.parse(await readFile(join(root, 'inputs/source-receipt.json')));
+  assertPublicProvenance(files, 'file-list');
+  const receipt = terminalReceipt(receiptBytes, failureBytes, consumerExitCode);
+  const source = assertPublicProvenance(
+    parseIconsJson(await readFile(join(root, 'inputs/source-receipt.json'))),
+    'source-receipt',
+  );
+  validateSourcePin(source.pin);
   const subjectBytes = await readFile(join(root, 'inputs/subject.json'));
-  const subject = validateSubject(JSON.parse(subjectBytes));
+  const subject = validateSubject(parseIconsJson(subjectBytes));
   assert.equal(hash(subjectBytes), source.subjectSha256);
   assert.equal(subject.packages.icons.sourceCommit, source.pin.sourceCommit);
   if (subject.schemaVersion >= 2) {
     const measurement = source.measurement;
-    assert.equal(measurement?.file, 'platform-measurement.json', 'measurement отсутствует');
-    assert.equal(measurement.sourceSha, source.pin.sourceCommit);
+    assertPublicCheck(measurement?.file === 'platform-measurement.json', 'MEASUREMENT_MISSING');
+    assertPublicCheck(
+      measurement.sourceSha === source.pin.sourceCommit,
+      'MEASUREMENT_SOURCE_MISMATCH',
+    );
     const bytes = await readFile(join(root, 'inputs/platform-measurement.json'));
-    assert.equal(hash(bytes), measurement.sha256, 'measurement bytes изменились');
-    assert.equal(bytes.length, measurement.bytes);
+    assertPublicCheck(hash(bytes) === measurement.sha256, 'MEASUREMENT_BYTES_CHANGED');
+    assertPublicCheck(bytes.length === measurement.bytes, 'MEASUREMENT_BYTES_CHANGED');
     const program = source.files.find(
       (item) => item.file === 'scripts/measure-platform-artifacts.mjs',
     );
@@ -687,7 +756,7 @@ export async function summarize(directory) {
     const lockfile = source.files.find((item) => item.file === 'pnpm-lock.yaml');
     assert.equal(lockfile.sha256, measurement.lockfileSha256);
     validatePlatformMeasurement(
-      JSON.parse(bytes),
+      parseIconsJson(bytes),
       source.pin.sourceCommit,
       measurement.artifactFiles,
       measurement.lockfileSha256,
@@ -713,23 +782,28 @@ export async function summarize(directory) {
     );
   for (const packet of packets) await writeStdout(packet);
   await writeStdout(
-    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify({
-      schemaVersion: 1,
-      outcome: receipt.outcome,
-      source,
-      harness: receipt.harness,
-      runner: receipt.runner,
-      archives: receipt.archives,
-      observations: receipt.records?.length,
-      failure: receipt.failure
-        ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
-        : null,
-      files,
-      diagnosticDirectory: root,
-      ...(readbackFailure
-        ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
-        : {}),
-    })}\n`,
+    `LABUI_ICONS_CONSUMER_RESULT ${JSON.stringify(
+      assertPublicProvenance(
+        {
+          schemaVersion: 1,
+          outcome: receipt.outcome,
+          source,
+          harness: receipt.harness,
+          runner: receipt.runner,
+          archives: receipt.archives,
+          observations: receipt.records?.length,
+          failure: receipt.failure
+            ? { phase: receipt.failure.phase, stateContinuity: receipt.failure.stateContinuity }
+            : null,
+          files,
+          diagnosticDirectorySha256: hash(root),
+          ...(readbackFailure
+            ? { readbackFailure: { code: 'EVIDENCE_REFUSED', file: readbackFailure.file } }
+            : {}),
+        },
+        'summary',
+      ),
+    )}\n`,
   );
   if (readbackFailure) throw readbackFailure.error;
   assert.equal(receipt.outcome, 'passed');
@@ -738,10 +812,15 @@ export async function summarize(directory) {
 async function main() {
   const args = process.argv.slice(2);
   if (args.length === 1 && args[0] === '--checkout-ref') {
-    process.stdout.write(`${validateSourcePin(JSON.parse(await readFile(PIN))).sourceCommit}\n`);
+    process.stdout.write(
+      `${validateSourcePin(parseIconsJson(await readFile(PIN))).sourceCommit}\n`,
+    );
     return;
   }
-  if (args.length === 2 && args[0] === '--summarize') return summarize(args[1]);
+  if (args[0] === '--summarize') {
+    const { directory, consumerExitCode } = parseSummaryInvocation(args);
+    return summarize(directory, consumerExitCode);
+  }
   const required = [
     '--icons-source',
     '--ui-source',
@@ -760,4 +839,7 @@ async function main() {
   return prepareInputs(options);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url))
+  await main().catch((error) => {
+    throw publicDiagnosticError(error);
+  });
