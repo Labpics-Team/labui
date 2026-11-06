@@ -70,7 +70,9 @@ async function reactFocusInContent(page: Page): Promise<void> {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/select.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('delivered HTML carries the Lit element (React island mounts client-side)', async ({

@@ -51,7 +51,9 @@ function reactThumb(page: Page, testid: string): Locator {
 const bgColor = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 
 test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/slider.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('delivered HTML carries the Lit element (React island mounts client-side)', async ({

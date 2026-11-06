@@ -183,6 +183,7 @@
   },
   "contrast": {
     "more": {
+      "labelAlpha": { "secondary": 1, "tertiary": 1 },
       "staticLabelAlpha": { "secondary": 1 },
       "sources": {
         "brand-light": "#0040DD",
