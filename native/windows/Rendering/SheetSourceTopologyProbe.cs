@@ -36,22 +36,11 @@ internal static class SheetSourceTopologyProbe
 
     internal static CompositionEffectFactory CreateFactory(Compositor compositor,
         IGraphicsEffect graph, double ghostSigma, double bodySigma)
-    {
-        try { return compositor.CreateEffectFactory(graph); }
-        catch (Exception primary)
+        => SheetFactorySampling.PreservePrimary(() => compositor.CreateEffectFactory(graph), primary =>
         {
-            try
-            {
-                primary.Data[DataKey] = cases.Select((spec, index) =>
-                    Sample(compositor, spec, index, ghostSigma, bodySigma)).ToArray();
-            }
-            catch
-            {
-                // Диагностика не отзывает исходный exception или место его throw.
-            }
-            throw;
-        }
-    }
+            primary.Data[DataKey] = cases.Select((spec, index) =>
+                Sample(compositor, spec, index, ghostSigma, bodySigma)).ToArray();
+        });
 
     // Слоты: исходный progressive; тот же progressive с Ghost paint/noise до внешней маски.
     // Графы принадлежат Frame; sampler закрывает только свои factory.
@@ -84,32 +73,15 @@ internal static class SheetSourceTopologyProbe
     private static (int? HResult, int? CleanupHResult) SampleFactory(Compositor compositor,
         IGraphicsEffect graph, IEnumerable<string>? dynamicProperties = null)
     {
-        CompositionEffectFactory? factory = null;
-        int? hresult = null;
-        int? cleanupHresult = null;
-        try
-        {
-            factory = dynamicProperties is null ? compositor.CreateEffectFactory(graph)
-                : compositor.CreateEffectFactory(graph, dynamicProperties);
-            hresult = 0;
-        }
-        catch (Exception error) { hresult = error.HResult; }
-        finally
-        {
-            if (factory is not null)
-            {
-                try { factory.Dispose(); }
-                catch (Exception cleanup) { cleanupHresult = cleanup.HResult; }
-            }
-        }
-        return (hresult, cleanupHresult);
+        var outcome = SheetFactorySampling.Capture(_ => graph,
+            input => dynamicProperties is null ? compositor.CreateEffectFactory(input)
+                : compositor.CreateEffectFactory(input, dynamicProperties));
+        return (outcome.HResult, outcome.CleanupHResult);
     }
 
     private static Dictionary<string, object?> Sample(Compositor compositor,
         Case spec, int index, double ghostSigma, double bodySigma)
     {
-        List<IDisposable> owned = [];
-        CompositionEffectFactory? factory = null;
         var sample = new Dictionary<string, object?>
         {
             ["index"] = index, ["inputs"] = spec.Inputs,
@@ -120,7 +92,7 @@ internal static class SheetSourceTopologyProbe
             ["stage"] = "build",
             ["hresult"] = 0, ["cleanupHresult"] = null,
         };
-        try
+        var outcome = SheetFactorySampling.Capture(register =>
         {
             float[]? sigmas = null;
             if (spec.Inputs == 1 || spec.LevelStart > 0)
@@ -133,8 +105,8 @@ internal static class SheetSourceTopologyProbe
             }
             T Own<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
-                owned.Add(effect);
-                if (spec.Named) effect.Name = $"probe{owned.Count}";
+                var position = register(effect);
+                if (spec.Named) effect.Name = $"probe{position}";
                 return effect;
             }
             var shared = new CompositionEffectSourceParameter("backdrop");
@@ -185,20 +157,11 @@ internal static class SheetSourceTopologyProbe
                 sum = balanced[0];
             }
             var graph = (IGraphicsEffect)(add ?? sum!);
-            sample["stage"] = "factory";
-            factory = compositor.CreateEffectFactory(graph);
-        }
-        catch (Exception error) { sample["hresult"] = error.HResult; }
-        finally
-        {
-            void Dispose(IDisposable value)
-            {
-                try { value.Dispose(); }
-                catch (Exception error) { sample["cleanupHresult"] ??= error.HResult; }
-            }
-            if (factory is not null) Dispose(factory);
-            for (var resource = owned.Count - 1; resource >= 0; resource--) Dispose(owned[resource]);
-        }
+            return graph;
+        }, input => compositor.CreateEffectFactory(input));
+        sample["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory";
+        sample["hresult"] = outcome.HResult;
+        sample["cleanupHresult"] = outcome.CleanupHResult;
         return sample;
     }
 }

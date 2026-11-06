@@ -8,7 +8,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../Rendering/SheetSourceTopologyProbe.cs" Link="SheetSourceTopologyProbe.cs" />
+    <Compile Include="../Rendering/SheetFactorySampling.cs" Link="SheetFactorySampling.cs" />
     <Compile Include="../Rendering/SheetBlurProfile.cs" Link="SheetBlurProfile.cs" />
     <Compile Include="../../../examples/windows/SheetSourceTopology.cs" Link="SheetSourceTopology.cs" />
     <Compile Include="sheet-topology.test.cs" />
