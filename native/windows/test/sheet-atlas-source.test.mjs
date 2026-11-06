@@ -32,7 +32,7 @@ test('Sheet graph shares the original backdrop and atlas through fresh source ed
   );
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\);/,
+    /result\.Visual\.Brush = Brush\("final", graph, ghost, body,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\);/,
   );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
@@ -79,7 +79,7 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
   assert.match(build, /Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\)/);
   assert.match(
     build,
-    /\(IGraphicsEffect\)graph, Geometry\.SheetGhostBlurRadius \* metrics\.Scale \* RadiusToSigma,\s*Geometry\.SheetBodyBlurRadius \* metrics\.Scale \* RadiusToSigma/,
+    /graph, Geometry\.SheetGhostBlurRadius \* metrics\.Scale \* RadiusToSigma,\s*Geometry\.SheetBodyBlurRadius \* metrics\.Scale \* RadiusToSigma/,
   );
   assert.match(build, /branches\[index\] = Mask\(index == 0 \? Backdrop\(\)/);
   assert.match(build, /Layer\(ghostMasks\[index\]\)/);
@@ -123,7 +123,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, \("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, ghost, body,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(

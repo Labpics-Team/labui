@@ -52,7 +52,7 @@ internal static class SheetSourceTopologyProbe
         }
     }
 
-    // Borrowed AlphaMask-ветви реальной ghostPair0; удалить после RCA/owner fix.
+    // Borrowed подсхемы реального Sheet: первая Ghost, вторая Body; удалить после RCA/owner fix.
     internal static void RecordBranches(Exception primary, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second)
     {

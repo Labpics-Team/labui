@@ -337,9 +337,9 @@ public sealed class SheetLayers : Grid
                 Opacity = (float)brush.Opacity,
                 Source = Effect(new ColorSourceEffect { Color = brush.Color }),
             });
-            IGraphicsEffectSource Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
+            CompositeEffect Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
                 => Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
-            IGraphicsEffectSource Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
+            AlphaMaskEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
                 => Effect(new AlphaMaskEffect { Source = source, AlphaMask = mask });
             IGraphicsEffectSource Blur(IGraphicsEffectSource source, double radius) => Effect(new GaussianBlurEffect
             {
@@ -389,14 +389,15 @@ public sealed class SheetLayers : Grid
             atlasBrush.Scale = atlas.BrushScale;
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
-            CompositionEffectBrush Brush(string factoryName, IGraphicsEffectSource graph,
+            CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
+                IGraphicsEffect ghostGraph, IGraphicsEffect bodyGraph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
                 try
                 {
                     var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
-                        (IGraphicsEffect)graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma,
+                        graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma,
                         Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma));
                     operation = "brush";
                     var brush = result.Own(factory.CreateBrush());
@@ -411,8 +412,12 @@ public sealed class SheetLayers : Grid
                     {
                         if (factoryName == "final"
                             && operation is ("factory" or "brush" or "binding"))
+                        {
                             primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
                             { ["name"] = factoryName, ["operation"] = operation };
+                            if (operation == "factory")
+                                SheetSourceTopologyProbe.RecordBranches(primary, compositor, ghostGraph, bodyGraph);
+                        }
                     }
                     catch { }
                     throw;
@@ -440,7 +445,8 @@ public sealed class SheetLayers : Grid
             var body = Mask(WithNoise(blended, Geometry.SheetBodyNoiseOpacity), Layer(bodyMask));
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, ("backdrop", backdropBrush), ("atlas", atlasBrush));
+            result.Visual.Brush = Brush("final", graph, ghost, body,
+                ("backdrop", backdropBrush), ("atlas", atlasBrush));
             return result;
         }
         catch (Exception error)
