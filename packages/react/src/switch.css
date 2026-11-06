@@ -54,6 +54,10 @@
   --_lab-sw-weight: var(--lab-font-weight-medium, 500);
 }
 
+[data-lab-switch] .lab-switch-label[hidden] {
+  display: none;
+}
+
 [data-lab-switch] .lab-switch-control {
   box-sizing: border-box;
   position: relative;

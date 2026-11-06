@@ -54,6 +54,13 @@ export {
 } from './components/dialog/focus.js';
 export { tagsInputTranslations } from './components/tags-input/translations.js';
 export {
+  type SwitchLabelContent,
+  switchLabelContents,
+  switchLabelElementContent,
+  switchLabelDomContent,
+  observeSwitchLabelContent,
+} from './components/switch/label-content.js';
+export {
   type LabSheetPosition,
   type SheetGeometry,
   sheetPositions,

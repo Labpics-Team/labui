@@ -11,8 +11,8 @@ import * as switchMachine from '@zag-js/switch';
  *   - disabled: non-interactive
  *
  * Why a machine here, when Button opted out: a Switch HAS interaction state a
- * state machine owns — a `checked` lifecycle, `role="switch"` + `aria-checked`,
- * Space/Enter activation, focus management, and a hidden form input. Hand-rolling
+ * state machine owns — a `checked` lifecycle, Space activation, focus management,
+ * and the checkbox input's accessibility and form props. Hand-rolling
  * those is exactly the "machinery the platform/Zag ships" Button declined to
  * rebuild. So this element runs `@zag-js/switch` through `ZagController`: the
  * машина задаёт переходы, клавиатуру, фокус и ARIA; текущее значение хранит элемент
@@ -29,12 +29,18 @@ import * as switchMachine from '@zag-js/switch';
  * in `updated()`), so `@lit-labs/ssr` emits a meaningful, styled control in the
  * declarative shadow DOM before any JS upgrades it.
  */
-import { type TemplateResult, css, html } from 'lit';
+import { type TemplateResult, css, html, nothing } from 'lit';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
 import { type SwitchMotion, mountSwitchMotion } from '../../motion/index.js';
+import {
+  type SwitchLabelContent,
+  observeSwitchLabelContent,
+  switchLabelDomContent,
+} from './label-content.js';
 
 /** Semantic intent of the switch's ON state. */
 export type LabSwitchType = 'accent' | 'neutral' | 'danger';
@@ -51,6 +57,10 @@ type SwitchApi = switchMachine.Api;
  * with no casts — the SAME pattern the proof used for `@zag-js/toggle`.
  */
 const switchModule: MachineModule<SwitchSchema, SwitchApi> = switchMachine;
+
+function isLabelElement(node: Node): node is Element {
+  return node.nodeType === Node.ELEMENT_NODE;
+}
 
 export class LabSwitch extends LabElement {
   static override properties = {
@@ -69,6 +79,11 @@ export class LabSwitch extends LabElement {
     ariaLabel: { attribute: 'aria-label', reflect: true },
     /** Native form field name for the hidden input (form participation). */
     name: { reflect: true },
+    /** Подпись перед дорожкой; default slot сохраняет подпись после неё. */
+    labelStart: { attribute: 'label-start', reflect: true },
+    /** Скрытая сторона не занимает место и не участвует в доступном имени. */
+    hideLabelStart: { type: Boolean, attribute: 'hide-label-start', reflect: true },
+    hideLabelEnd: { type: Boolean, attribute: 'hide-label-end', reflect: true },
   };
 
   declare type: LabSwitchType;
@@ -77,10 +92,43 @@ export class LabSwitch extends LabElement {
   declare disabled: boolean;
   declare ariaLabel: string | null;
   declare name: string | null;
+  declare labelStart: string;
+  declare hideLabelStart: boolean;
+  declare hideLabelEnd: boolean;
 
   private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;
   private thumbMotion?: SwitchMotion;
   private checkedValue: boolean | undefined;
+  private stopLabelObservation?: () => void;
+  private labelSlot?: HTMLSlotElement;
+
+  private get labelStartId(): string {
+    return `${this.uid}-label-start`;
+  }
+
+  private get labelEndId(): string {
+    return `${this.uid}-label-end`;
+  }
+
+  private labelEndContent(): SwitchLabelContent {
+    const slot = this.renderRoot?.querySelector<HTMLSlotElement>('.label-end > slot');
+    if (slot) return switchLabelDomContent([slot], undefined, slot.parentElement ?? undefined);
+    const nodes = this.childNodes as ArrayLike<Node> & { [Symbol.iterator]?: unknown };
+    // Lit SSR не предоставляет light DOM; итоговая SSR-проекция видит назначение.
+    if (typeof nodes?.[Symbol.iterator] !== 'function') return 'unknown';
+    return switchLabelDomContent(
+      [...this.childNodes].filter(
+        (node) => !isLabelElement(node) || !(node.getAttribute('slot') ?? ''),
+      ),
+    );
+  }
+
+  private visibleLabelIds(): string[] {
+    return [
+      !this.hideLabelStart && this.labelStart?.trim() ? this.labelStartId : undefined,
+      !this.hideLabelEnd && this.labelEndContent() === 'present' ? this.labelEndId : undefined,
+    ].filter((id): id is string => id !== undefined);
+  }
 
   get checked(): boolean {
     return this.checkedValue ?? false;
@@ -99,6 +147,9 @@ export class LabSwitch extends LabElement {
   override disconnectedCallback(): void {
     this.thumbMotion?.dispose();
     this.thumbMotion = undefined;
+    this.stopLabelObservation?.();
+    this.stopLabelObservation = undefined;
+    this.labelSlot = undefined;
     super.disconnectedCallback();
   }
 
@@ -110,6 +161,9 @@ export class LabSwitch extends LabElement {
     this.disabled = false;
     this.ariaLabel = null;
     this.name = null;
+    this.labelStart = '';
+    this.hideLabelStart = false;
+    this.hideLabelEnd = false;
     // Значение всегда принадлежит элементу. Отражённый checked — проекция для
     // CSS, а не признак смены владельца: false тоже передаётся машине явно.
     // `id` is a stable per-instance value (mirrors React's `useId`) so the
@@ -188,6 +242,11 @@ export class LabSwitch extends LabElement {
       line-height: var(--_line);
       color: ${litVar('--lab-label-primary')};
       cursor: pointer;
+    }
+
+    .label[hidden],
+    .label-start[hidden] {
+      display: none;
     }
 
     /* The track — the Zag control element. OFF surface is a neutral tint. */
@@ -295,25 +354,45 @@ export class LabSwitch extends LabElement {
   `;
 
   override updated(): void {
-    // Apply the machine's connect props onto the real shadow nodes (role,
-    // aria-checked, click/keyboard handlers, hidden input). Clear prior spreads
+    // Apply the machine's connect props onto the real shadow nodes (ARIA,
+    // click/keyboard handlers, hidden input). Clear prior spreads
     // first to avoid stacking listeners across renders.
     this.machineCtl.clearSpreads();
     const api = this.machineCtl.api;
     const root = this.renderRoot.querySelector<HTMLElement>('.root');
     const control = this.renderRoot.querySelector<HTMLElement>('.control');
     const thumb = this.renderRoot.querySelector<HTMLElement>('.thumb');
-    const label = this.renderRoot.querySelector<HTMLElement>('.label');
+    const labelStart = this.renderRoot.querySelector<HTMLElement>('.label-start');
+    const labelEnd = this.renderRoot.querySelector<HTMLElement>('.label-end');
     const input = this.renderRoot.querySelector<HTMLInputElement>('input');
+    const slot = labelEnd?.querySelector<HTMLSlotElement>('slot');
+    if (slot && this.isConnected && slot !== this.labelSlot) {
+      this.stopLabelObservation?.();
+      this.labelSlot = slot;
+      this.stopLabelObservation = observeSwitchLabelContent(
+        slot,
+        this.requestLabelUpdate,
+        labelEnd ?? undefined,
+      );
+    }
     if (root) this.machineCtl.spread(root, api.getRootProps());
     if (control) this.machineCtl.spread(control, api.getControlProps());
     if (thumb) this.machineCtl.spread(thumb, api.getThumbProps());
-    // Spread the label part so the id the machine's `aria-labelledby` targets
-    // actually exists — without this the reference dangles and the name is lost.
-    if (label) this.machineCtl.spread(label, api.getLabelProps());
+    // Поведение остаётся у Zag; двумя существующими сторонами и их ID владеет Switch.
+    if (labelStart) {
+      this.machineCtl.spread(labelStart, { ...api.getLabelProps(), id: this.labelStartId });
+    }
+    if (labelEnd) {
+      this.machineCtl.spread(labelEnd, { ...api.getLabelProps(), id: this.labelEndId });
+    }
     if (input) {
-      this.machineCtl.spread(input, api.getHiddenInputProps());
-      this.nameHiddenInput(input);
+      const ids = this.visibleLabelIds();
+      this.machineCtl.spread(input, {
+        ...api.getHiddenInputProps(),
+        // null удаляет SSR-атрибут даже при первом spread; undefined не меняет его.
+        'aria-labelledby': ids.length ? ids.join(' ') : null,
+        'aria-label': ids.length ? null : this.ariaLabel,
+      });
     }
     if (control && thumb && this.isConnected) {
       this.thumbMotion ??= mountSwitchMotion(this.renderRoot, control, thumb, api.checked);
@@ -321,41 +400,36 @@ export class LabSwitch extends LabElement {
     }
   }
 
-  /**
-   * Reconcile the input's accessible name. With a visible label the machine's
-   * `aria-labelledby` (→ the `.label` part) names it. With NO visible label, that
-   * reference would resolve to empty and (per ARIA) outrank `aria-label`, leaving
-   * the control unnamed — so drop the dangling reference and apply `aria-label`.
-   */
-  private nameHiddenInput(input: HTMLInputElement): void {
-    if (this.hasDefaultSlotContent()) {
-      input.removeAttribute('aria-label');
-      return;
-    }
-    input.removeAttribute('aria-labelledby');
-    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);
-    else input.removeAttribute('aria-label');
-  }
-
   override render(): TemplateResult {
     const checked = this.checked;
-    // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is
+    const ids = this.visibleLabelIds();
+    // Structure only; behavior (input props, keyboard, focus) is
     // spread in `updated()` from the machine. SSR emits this real markup so first
     // paint is meaningful before any JS upgrades the element. The hidden input is
     // a SIBLING of the (aria-hidden) control — NOT a descendant — so it stays in
     // the accessibility tree (an aria-hidden ancestor would erase it).
     return html`
-      <label class="root" data-state=${checked ? 'checked' : 'unchecked'}>
-        <input type="checkbox" ?checked=${checked} />
+      <label class="root" data-state=${checked ? 'checked' : 'unchecked'} data-lab-switch>
+        <span class="label-start" id=${this.labelStartId}
+          ?hidden=${this.hideLabelStart || !this.labelStart?.trim()}>${this.labelStart || nothing}</span>
+        <input type="checkbox" ?checked=${checked} ?disabled=${this.disabled}
+          name=${ifDefined(this.name ?? undefined)}
+          aria-labelledby=${ifDefined(ids.length ? ids.join(' ') : undefined)}
+          aria-label=${ifDefined(this.ariaLabel ?? undefined)} />
         <span class="control">
           <span class="icon icon-on" aria-hidden="true"><slot name="icon-on"></slot></span>
           <span class="icon icon-off" aria-hidden="true"><slot name="icon-off"></slot></span>
           <span class="thumb"></span>
         </span>
-        <span class="label"><slot></slot></span>
+        <span class="label label-end" id=${this.labelEndId}
+          ?hidden=${this.hideLabelEnd || this.labelEndContent() === 'empty'}><slot></slot></span>
       </label>
     `;
   }
+
+  private readonly requestLabelUpdate = (): void => {
+    this.requestUpdate();
+  };
 }
 
 declare global {

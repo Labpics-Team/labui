@@ -17,6 +17,9 @@
     defaultChecked?: LabSwitch['defaultChecked'];
     disabled?: LabSwitch['disabled'];
     name?: LabSwitch['name'];
+    labelStart?: LabSwitch['labelStart'];
+    hideLabelStart?: LabSwitch['hideLabelStart'];
+    hideLabelEnd?: LabSwitch['hideLabelEnd'];
     onCheckedChange?: (event: CustomEvent) => void;
     iconOff?: Snippet;
     iconOn?: Snippet;
@@ -24,7 +27,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, checked, defaultChecked, disabled, name, onCheckedChange, children, iconOff, iconOn, ...rest }: Props = $props();
+  let { type, size, checked, defaultChecked, disabled, name, labelStart, hideLabelStart, hideLabelEnd, onCheckedChange, children, iconOff, iconOn, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -33,6 +36,9 @@
     { name: 'defaultChecked', attr: 'default-checked', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'labelStart', attr: 'label-start', kind: 'string' },
+    { name: 'hideLabelStart', attr: 'hide-label-start', kind: 'boolean' },
+    { name: 'hideLabelEnd', attr: 'hide-label-end', kind: 'boolean' },
   ];
 
   let el: HTMLElement | undefined = $state();
@@ -41,12 +47,12 @@
   // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
   const initialBooleans: Record<string, boolean> = {};
   $effect.pre(() => {
-    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, checked, defaultChecked, disabled, name })));
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, checked, defaultChecked, disabled, name, labelStart, hideLabelStart, hideLabelEnd })));
   });
 
 
   $effect(() => {
-    forwardDeclared(el, specs, { type, size, checked, defaultChecked, disabled, name });
+    forwardDeclared(el, specs, { type, size, checked, defaultChecked, disabled, name, labelStart, hideLabelStart, hideLabelEnd });
   });
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>

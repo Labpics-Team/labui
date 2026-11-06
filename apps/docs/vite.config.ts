@@ -23,6 +23,7 @@ import { Switch } from '@labpics/ui-react/switch';
 import { StrictMode, createElement } from 'react';
 import { renderToString as renderReactToString } from 'react-dom/server';
 import { renderCardAnatomy } from './src/_fixtures/card-anatomy-ssr';
+import { renderSwitchLabelExamples } from './src/_fixtures/switch-labels-ssr';
 
 // Documentation pages and browser evidence share one Vite build, but their
 // topology is explicit: user-facing docs live at the root; isolated browser
@@ -42,6 +43,9 @@ function ssrProofPlugin(): Plugin {
   return {
     name: 'labui-ssr-proof',
     async transformIndexHtml(html, ctx) {
+      if (ctx.path.endsWith('switch-labels.html')) {
+        return html.replace('<!-- @@SSR_SWITCH_LABELS@@ -->', renderSwitchLabelExamples());
+      }
       if (ctx.path.endsWith('card-anatomy.html')) {
         return html.replace('<!-- @@SSR_CARD_ANATOMY@@ -->', await renderCardAnatomy());
       }
@@ -264,6 +268,7 @@ export default defineConfig({
         'fixture-adapter-slots': resolve(__dirname, 'src/_fixtures/adapter-slots.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-switch-motion': resolve(__dirname, 'src/_fixtures/switch-motion.html'),
+        'fixture-switch-labels': resolve(__dirname, 'src/_fixtures/switch-labels.html'),
         'fixture-sheet': resolve(__dirname, 'src/_fixtures/sheet.html'),
         'fixture-modal-live': resolve(__dirname, 'src/_fixtures/modal-live.html'),
         'fixture-modal-composition': resolve(__dirname, 'src/_fixtures/modal-composition.html'),

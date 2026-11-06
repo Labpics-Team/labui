@@ -12,7 +12,7 @@ if (!import.meta.env.LABUI_HYDRATE) {
   throw new Error('LabUI SSR: добавьте hydrate() из @labpics/ui-astro/hydrate в integrations в astro.config.');
 }
 
-const dsd = renderSwitch(Astro.props, {
+const dsd = renderSwitch({ ...Astro.props, ariaLabel: Astro.props['aria-label'] ?? Astro.props.ariaLabel }, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
   iconOff: Astro.slots.has('icon-off') ? await Astro.slots.render('icon-off') : undefined,
   iconOn: Astro.slots.has('icon-on') ? await Astro.slots.render('icon-on') : undefined,

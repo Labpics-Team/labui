@@ -1398,6 +1398,21 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "labelStart",
+          "attr": "label-start",
+          "kind": "string"
+        },
+        {
+          "name": "hideLabelStart",
+          "attr": "hide-label-start",
+          "kind": "boolean"
+        },
+        {
+          "name": "hideLabelEnd",
+          "attr": "hide-label-end",
+          "kind": "boolean"
         }
       ],
       "events": [

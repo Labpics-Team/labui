@@ -16,6 +16,7 @@ import { type LitElement, type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { shapeCardRegions } from '../components/card/ssr.js';
+import { shapeSwitchLabels } from '../components/switch/ssr.js';
 import { booleanSnapshotAttribute, serializeBooleanSnapshot } from '../lit/boolean-snapshot.js';
 
 class LabElementRenderer extends LitElementRenderer {
@@ -47,9 +48,11 @@ class LabElementRenderer extends LitElementRenderer {
  * to embed via any framework's raw-HTML slot.
  */
 export function renderToString(template: TemplateResult): string {
-  return shapeCardRegions(
-    collectResultSync(
-      render(template, { elementRenderers: [LabElementRenderer, LitElementRenderer] }),
+  return shapeSwitchLabels(
+    shapeCardRegions(
+      collectResultSync(
+        render(template, { elementRenderers: [LabElementRenderer, LitElementRenderer] }),
+      ),
     ),
   );
 }

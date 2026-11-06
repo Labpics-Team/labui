@@ -31,6 +31,59 @@ function run(consumer: string, source: string) {
 
 describe('собранные SSR-входы: регистрация без предварительных импортов', () => {
   for (const adapter of ['vue', 'solid', 'svelte', 'astro']) {
+    it(`${adapter}: Switch SSR доставляет независимые подписи и fallback на input`, () => {
+      const result = run(
+        adapter,
+        `import { renderSwitch } from '@labpics/ui-${adapter}/ssr';
+const read = (props, slots) => {
+  const markup = renderSwitch(props, slots);
+  const input = /<input\\b([^>]*)>/.exec(markup)?.[1] ?? '';
+  const labels = [...markup.matchAll(/<span class="(?:label )?label-(start|end)"([^>]*)>/g)];
+  const visible = labels.filter(([, , attrs]) => !/\\shidden(?:[\\s=]|$)/.test(attrs));
+  const ids = visible.map(([, , attrs]) => /id="([^"]+)"/.exec(attrs)?.[1]);
+  return {
+    visible: visible.map(([, side]) => side),
+    references: /aria-labelledby="([^"]+)"/.exec(input)?.[1] ?? null,
+    ids: ids.join(' '),
+    fallback: /aria-label="([^"]*)"/.exec(input)?.[1] ?? null,
+    dsd: markup.includes('shadowrootmode'),
+    escaped: markup.includes('&lt;b&gt;Left &amp; right&lt;/b&gt;'),
+  };
+};
+console.log(JSON.stringify([
+  ...[[false, false], [true, false], [false, true], [true, true]].map(([hideLabelStart, hideLabelEnd]) =>
+    read({labelStart: 'Left', hideLabelStart, hideLabelEnd, ariaLabel: 'Wi-Fi'}, {default: 'Right'})),
+  read({ariaLabel: 'Wi-Fi'}, {iconOn: '<svg></svg>'}),
+  read({labelStart: '<b>Left & right</b>'}, {}),
+  read({ariaLabel: 'Wi-Fi'}, {default: '<span><em> </em></span>'}),
+  read({ariaLabel: 'Wi-Fi'}, {default: '<span><strong>Legacy</strong> label</span>'}),
+  read({ariaLabel: 'Wi-Fi'}, {default: '<img alt="Network">'}),
+  read({ariaLabel: 'Wi-Fi'}, {default: '<unknown-switch-label></unknown-switch-label>'}),
+]));`,
+      );
+      const expected = [
+        ['start', 'end'],
+        ['end'],
+        ['start'],
+        [],
+        [],
+        ['start'],
+        [],
+        ['end'],
+        ['end'],
+        ['end'],
+      ];
+      for (const [index, entry] of result.entries()) {
+        expect(entry.visible).toEqual(expected[index]);
+        expect(entry.dsd).toBe(true);
+        expect(entry.references).toBe(index === 9 ? null : entry.ids || null);
+        expect(entry.fallback).toBe(
+          index === 3 || index === 4 || index === 6 || index === 9 ? 'Wi-Fi' : null,
+        );
+      }
+      expect(result[5].escaped).toBe(true);
+    });
+
     it(`${adapter}: Sheet сохраняет пропущенную position и доставляет content при явном open`, () => {
       const result = run(
         adapter,

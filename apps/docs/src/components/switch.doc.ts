@@ -121,14 +121,16 @@ export const switchDoc: ComponentDoc = {
   },
 
   liveExample: {
-    make: () => makeSwitch({ checked: true }),
+    make: () => makeSwitch({ checked: true, 'label-start': 'Сеть' }),
     // Honest live controls. `disabled` is reflected and re-renders the machine;
     // `size` and `checked` are reflected attributes the machine reads on update,
     // so flipping them really drives the element. Clicking the switch itself runs
-    // the Zag machine (Space/Enter/click) — that is the primary interaction.
+    // the Zag machine (Space/click) — that is the primary interaction.
     controls: [
       { kind: 'toggle', label: 'Checked', attribute: 'checked' },
       { kind: 'toggle', label: 'Disabled', attribute: 'disabled' },
+      { kind: 'toggle', label: 'Hide left label', attribute: 'hide-label-start' },
+      { kind: 'toggle', label: 'Hide right label', attribute: 'hide-label-end' },
       {
         kind: 'select',
         label: 'Size',
@@ -186,6 +188,34 @@ export const switchDoc: ComponentDoc = {
         default: 'false',
         description: 'Whether the switch is non-interactive. Reflected for styling and a11y.',
       },
+      {
+        name: 'label-start',
+        type: 'string',
+        default: "''",
+        description:
+          'Подпись перед дорожкой. В React используйте labelStart; подпись после дорожки передаётся через children или default slot.',
+      },
+      {
+        name: 'hide-label-start',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Скрывает левую подпись, исключая её из геометрии и доступного имени. React: hideLabelStart.',
+      },
+      {
+        name: 'hide-label-end',
+        type: 'boolean',
+        default: 'false',
+        description:
+          'Скрывает правую подпись, исключая её из геометрии и доступного имени. React: hideLabelEnd.',
+      },
+      {
+        name: 'aria-label',
+        type: 'string',
+        default: 'undefined',
+        description:
+          'Имя input, когда обе подписи скрыты или пусты. Показанные подписи имеют приоритет и читаются слева направо. В SSR-функциях используйте ariaLabel.',
+      },
     ],
     events: [
       {
@@ -195,7 +225,11 @@ export const switchDoc: ComponentDoc = {
       },
     ],
     slots: [
-      { name: '(default)', description: 'The label text projected next to the track.' },
+      {
+        name: '(default)',
+        description:
+          'Подпись после дорожки. Пустой или пробельный текст и именованные icon slots не создают label box.',
+      },
       { name: 'icon-on', description: 'Optional icon shown inside the track when ON.' },
       { name: 'icon-off', description: 'Optional icon shown inside the track when OFF.' },
     ],

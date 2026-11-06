@@ -34,11 +34,17 @@ function bindingLine(name: string, attr: string, kind: string): string {
 }
 
 function ssrFile(c: ComponentMeta): string {
-  const propNames = c.props.map((p) => p.name);
+  // В клиенте ARIA доходит через нативный fall-through. У SSR-функции его нет;
+  // Switch использует свой существующий ariaLabel для имени без показанных подписей.
+  const props =
+    c.tag === 'lab-switch'
+      ? [...c.props, { name: 'ariaLabel', attr: 'aria-label', kind: 'string' }]
+      : c.props;
+  const propNames = props.map((p) => p.name);
   const pickKeys = propNames.map((n) => `'${n}'`).join(' | ');
   const propsType =
     propNames.length > 0 ? `Partial<Pick<${c.className}, ${pickKeys}>>` : 'Record<never, never>';
-  const bindings = c.props.map((p) => bindingLine(p.name, p.attr, p.kind)).join('\n');
+  const bindings = props.map((p) => bindingLine(p.name, p.attr, p.kind)).join('\n');
 
   const slotKeys = [
     ...(c.slots.default ? ['default'] : []),
@@ -66,8 +72,8 @@ function ssrFile(c: ComponentMeta): string {
 
   // Условные импорты из единой SSR-поверхности ядра (адаптер зависит только от core,
   // не от lit напрямую). Базовый tsconfig включает noUnusedLocals — берём лишь нужное.
-  const usesIfDefined = c.props.some((p) => p.kind === 'string');
-  const usesNoChange = c.props.some((p) => p.kind === 'boolean' || p.kind === 'prop');
+  const usesIfDefined = props.some((p) => p.kind === 'string');
+  const usesNoChange = props.some((p) => p.kind === 'boolean' || p.kind === 'prop');
   const usesUnsafeHtml = c.slots.default || c.slots.named.length > 0;
   const coreImports = [
     'html',

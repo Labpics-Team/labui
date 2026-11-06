@@ -4,8 +4,8 @@
  * Same axes, same `@zag-js/switch` machine through the SAME Behaviors seam — here
  * via `useZag` (the React side) instead of the Lit `ZagController`. No Lit in this
  * path; Next's shallow WC-SSR never touches React. The machine owns checked-state,
- * keyboard (Space/Enter), focus, `role="switch"` + `aria-checked`, and the hidden
- * form input — the component only spreads the machine's prop-getters onto native
+ * keyboard (Space), focus, and the hidden checkbox's accessibility and form
+ * participation — the component only spreads the machine's prop-getters onto native
  * elements and paints with the SAME --lab-* roles, so parity is CSS, not a second
  * behaviour implementation.
  *
@@ -20,8 +20,25 @@
 import type { LabSwitchSize, LabSwitchType } from '@labpics/ui-core';
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import { type SwitchMotion, mountSwitchMotion } from '@labpics/ui-core/motion';
+import {
+  type SwitchLabelContent,
+  observeSwitchLabelContent,
+  switchLabelContents,
+  switchLabelElementContent,
+} from '@labpics/ui-core/shared';
 import * as switchMachine from '@zag-js/switch';
-import { type ReactNode, useEffect, useId, useLayoutEffect, useRef } from 'react';
+import {
+  type CSSProperties,
+  Children,
+  Fragment,
+  type ReactNode,
+  isValidElement,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useZag } from './use-zag.js';
 import './switch.css';
 
@@ -32,6 +49,57 @@ const switchModule: MachineModule<SwitchSchema, SwitchApi> = switchMachine;
 
 // Сервер отдаёт CSS-позу. В браузере scope подключается до первого paint.
 const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
+function labelInputNodes(children: ReactNode): ReactNode[] {
+  return Children.toArray(children).flatMap((child): ReactNode[] => {
+    if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment)
+      return labelInputNodes(child.props.children);
+    return [child];
+  });
+}
+
+function labelInputContent(children: ReactNode): SwitchLabelContent {
+  return switchLabelContents(
+    labelInputNodes(children).map((child): SwitchLabelContent => {
+      if (typeof child === 'string') return child.trim() ? 'present' : 'empty';
+      if (typeof child === 'number') return 'present';
+      if (
+        isValidElement<{
+          children?: ReactNode;
+          'aria-label'?: string;
+          'aria-labelledby'?: string;
+          title?: string;
+          role?: string;
+          alt?: string;
+          className?: string;
+          style?: CSSProperties;
+          hidden?: boolean;
+          'aria-hidden'?: boolean | 'true' | 'false';
+          dangerouslySetInnerHTML?: { __html: string };
+        }>(child)
+      ) {
+        if (typeof child.type === 'string' && !child.props.dangerouslySetInnerHTML) {
+          return switchLabelElementContent(
+            child.type,
+            () => labelInputContent(child.props.children),
+            (name) => (name === 'class' ? child.props.className : child.props[name]),
+            () => {
+              if (child.type !== 'svg') return 'unknown';
+              const title = labelInputNodes(child.props.children).find(
+                (node) => isValidElement(node) && node.type === 'title',
+              );
+              return isValidElement<{ children?: ReactNode }>(title)
+                ? labelInputContent(title.props.children)
+                : 'empty';
+            },
+          );
+        }
+      }
+      // Opaque components/HTML сохраняют прежний children-контракт.
+      return 'unknown';
+    }),
+  );
+}
 
 export interface SwitchProps {
   /** Semantic intent of the switch's ON state. */
@@ -48,6 +116,11 @@ export interface SwitchProps {
   onCheckedChange?: (checked: boolean) => void;
   /** Native form field name for the hidden input. */
   name?: string;
+  /** Подпись перед дорожкой; children сохраняет подпись после неё. */
+  labelStart?: string;
+  /** Скрытая сторона не занимает место и не участвует в доступном имени. */
+  hideLabelStart?: boolean;
+  hideLabelEnd?: boolean;
   /** Icon shown inside the track when ON (parity with the Lit `icon-on` slot). */
   iconOn?: ReactNode;
   /** Icon shown inside the track when OFF (parity with the Lit `icon-off` slot). */
@@ -70,13 +143,17 @@ export function Switch({
   disabled = false,
   onCheckedChange,
   name,
+  labelStart = '',
+  hideLabelStart = false,
+  hideLabelEnd = false,
   iconOn,
   iconOff,
   'aria-label': ariaLabel,
   children,
 }: SwitchProps): ReactNode {
+  const id = useId();
   const api = useZag(switchModule, {
-    id: useId(),
+    id,
     checked,
     defaultChecked,
     disabled,
@@ -84,11 +161,19 @@ export function Switch({
     onCheckedChange: onCheckedChange ? (details) => onCheckedChange(details.checked) : undefined,
   });
   const rootRef = useRef<HTMLLabelElement>(null);
+  const labelEndRef = useRef<HTMLSpanElement>(null);
+  const [labelEndContent, setLabelEndContent] = useState(() => labelInputContent(children));
   const trackRef = useRef<HTMLSpanElement>(null);
   const thumbRef = useRef<HTMLSpanElement>(null);
   const motionRef = useRef<SwitchMotion>();
   const checkedRef = useRef(api.checked);
   checkedRef.current = api.checked;
+
+  useClientLayoutEffect(() => {
+    const label = labelEndRef.current;
+    if (!label) return;
+    return observeSwitchLabelContent(label, setLabelEndContent, label);
+  }, [children]);
 
   useClientLayoutEffect(() => {
     const root = rootRef.current;
@@ -107,15 +192,19 @@ export function Switch({
     motionRef.current?.update(api.checked);
   });
 
-  // The machine sets `aria-labelledby` on the hidden input pointing at the label
-  // part. With a visible label that resolves and names the control; with NO
-  // visible label it would dangle (and per ARIA outrank `aria-label`), so we drop
-  // it and name the input via `aria-label` instead — exactly one real name source.
-  const hasVisibleLabel = children != null;
-  const hiddenInputProps = api.getHiddenInputProps();
-  const inputProps = hasVisibleLabel
-    ? hiddenInputProps
-    : { ...hiddenInputProps, 'aria-labelledby': undefined, 'aria-label': ariaLabel };
+  const labelChildren = Children.toArray(children);
+  const hasStart = !hideLabelStart && Boolean(labelStart?.trim());
+  const hasEnd = !hideLabelEnd && labelEndContent === 'present';
+  const labelStartId = `${id}-label-start`;
+  const labelEndId = `${id}-label-end`;
+  const ids = [hasStart ? labelStartId : undefined, hasEnd ? labelEndId : undefined].filter(
+    Boolean,
+  );
+  const inputProps = {
+    ...api.getHiddenInputProps(),
+    'aria-labelledby': ids.length ? ids.join(' ') : undefined,
+    'aria-label': ids.length ? undefined : ariaLabel,
+  };
 
   return (
     <label
@@ -127,6 +216,16 @@ export function Switch({
       data-checked={api.checked || undefined}
       data-disabled={api.disabled || undefined}
     >
+      {hasStart && (
+        <span
+          {...api.getLabelProps()}
+          id={labelStartId}
+          className="lab-switch-label lab-switch-label-start"
+        >
+          {labelStart}
+        </span>
+      )}
+      <input {...inputProps} />
       <span {...api.getControlProps()} ref={trackRef} className="lab-switch-control">
         <span className="lab-switch-icon lab-switch-icon-on" aria-hidden="true">
           {iconOn}
@@ -136,14 +235,15 @@ export function Switch({
         </span>
         <span {...api.getThumbProps()} ref={thumbRef} className="lab-switch-thumb" />
       </span>
-      {/* The hidden input is a SIBLING of the (aria-hidden) control, NOT a
-          descendant, so it stays in the accessibility tree. */}
-      <input {...inputProps} />
-      {hasVisibleLabel && (
-        <span {...api.getLabelProps()} className="lab-switch-label">
-          {children}
-        </span>
-      )}
+      <span
+        {...api.getLabelProps()}
+        ref={labelEndRef}
+        id={labelEndId}
+        className="lab-switch-label lab-switch-label-end"
+        hidden={hideLabelEnd || labelEndContent === 'empty'}
+      >
+        {labelChildren}
+      </span>
     </label>
   );
 }

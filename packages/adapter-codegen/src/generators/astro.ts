@@ -34,6 +34,10 @@ function astroFile(c: ComponentMeta): string {
     )
     .join('\n');
   const slotsArg = slotEntries.length > 0 ? `{\n${slotLines}\n}` : '{}';
+  const propsArg =
+    c.tag === 'lab-switch'
+      ? "{ ...Astro.props, ariaLabel: Astro.props['aria-label'] ?? Astro.props.ariaLabel }"
+      : 'Astro.props';
 
   return `---
 ${generatedHeader()}
@@ -43,7 +47,7 @@ if (!import.meta.env.LABUI_HYDRATE) {
   throw new Error('LabUI SSR: добавьте hydrate() из @labpics/ui-astro/hydrate в integrations в astro.config.');
 }
 
-const dsd = render${c.pascal}(Astro.props, ${slotsArg});
+const dsd = render${c.pascal}(${propsArg}, ${slotsArg});
 ---
 <Fragment set:html={dsd} />
 <script>
