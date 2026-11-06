@@ -46,7 +46,9 @@ const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
 const flexDirection = (el: HTMLElement) => getComputedStyle(el).flexDirection;
 
 test.beforeEach(async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/radio-group.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('delivered HTML carries the Lit element (React island mounts client-side)', async ({
@@ -302,28 +304,34 @@ test('theme: flipping [data-theme] re-skins both renderers with zero edits', asy
   // the same colour, not merely "each one changes".
   expect(reactDark, 'neutral ring parity in dark theme').toBe(litDark);
 
-  await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
-
-  // Wait for the flip to SETTLE on BOTH renderers before comparing, then assert
-  // parity — in one poll, so the comparison can never read a half-settled frame.
-  // The light colour resolves through the same chain on each engine but not always
-  // in the same tick after the attribute flip; a direct snapshot once raced and
-  // caught lit=…0.173 vs react=…0.165 (same role, mid-transition alpha). Polling a
-  // single object keeps every guarantee the two snapshots had — BOTH changed from
-  // dark AND both converged to the SAME light colour — without weakening any of
-  // them, and without a fixed sleep.
-  await expect
-    .poll(
-      async () => {
-        const litLight = await litRing.evaluate(borderColor);
-        const reactLight = await reactRing.evaluate(borderColor);
-        return {
-          litChanged: litLight !== litDark,
-          reactChanged: reactLight !== reactDark,
-          parity: reactLight === litLight,
-        };
-      },
-      { message: 'neutral ring re-skins BOTH renderers to the same light colour' },
-    )
-    .toEqual({ litChanged: true, reactChanged: true, parity: true });
+  // Subscribe before changing the input; ready for this theme is the commit signal.
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        const root = document.documentElement;
+        const timeout = window.setTimeout(() => {
+          root.removeEventListener('lab-colors-state', settled);
+          reject(new Error('Colors did not settle the light theme'));
+        }, 10_000);
+        function settled(event: Event) {
+          const state = (event as CustomEvent<{ state: string; theme?: string }>).detail;
+          if (state.state !== 'ready' || state.theme !== 'light') return;
+          window.clearTimeout(timeout);
+          root.removeEventListener('lab-colors-state', settled);
+          resolve();
+        }
+        root.addEventListener('lab-colors-state', settled);
+        root.setAttribute('data-theme', 'light');
+      }),
+  );
+  const litLight = await litRing.evaluate(borderColor);
+  const reactLight = await reactRing.evaluate(borderColor);
+  expect(
+    {
+      litChanged: litLight !== litDark,
+      reactChanged: reactLight !== reactDark,
+      parity: reactLight === litLight,
+    },
+    'neutral ring re-skins BOTH renderers to the same light colour',
+  ).toEqual({ litChanged: true, reactChanged: true, parity: true });
 });

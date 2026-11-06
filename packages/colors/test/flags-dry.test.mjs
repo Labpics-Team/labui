@@ -8,6 +8,30 @@ import { THEMES, readyTheme } from './labui-program-shared.mjs';
 const LEVELS = ['primary', 'secondary', 'tertiary', 'quaternary'];
 
 describe('единые авторские источники static/inverted', () => {
+  it('more делает helper-label непрозрачным и требует AA на каждой фоновой ступени', () => {
+    const normal = prepareEngineConfig(config);
+    const more = prepareEngineConfig(config, 'more');
+    for (const theme of THEMES) {
+      for (const role of ['secondary', 'tertiary']) {
+        expect(normal.themes[theme].paints.get(`label-${role}`).opacity).toBe(
+          config.authored.labelAlpha[role],
+        );
+        expect(more.themes[theme].paints.get(`label-${role}`)).toEqual({
+          source: config.themes[theme].muted,
+          opacity: 1,
+        });
+        for (const level of [1, 2, 3]) {
+          expect(more.themes[theme].constraints).toContainEqual({
+            foreground: `label-${role}`,
+            background: `bg-tone-${level}`,
+            criterion: 'text',
+            hard: true,
+          });
+        }
+      }
+    }
+  });
+
   it('одна ссылка static-стороны питает все уровни и компонентную заливку', () => {
     const model = prepareEngineConfig(config);
     for (const theme of THEMES) {

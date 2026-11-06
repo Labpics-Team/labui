@@ -41,9 +41,14 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
     ]),
   );
   let assignment;
+  let labelAlpha = authored.labelAlpha;
   let staticLabelAlpha = authored.labelAlpha;
   if (contrast === 'more') {
     const more = record(record(config.contrast, 'contrast').more, 'contrast.more');
+    labelAlpha = {
+      ...record(authored.labelAlpha, 'authored.labelAlpha'),
+      ...record(more.labelAlpha, 'contrast.more.labelAlpha'),
+    };
     staticLabelAlpha = {
       ...record(authored.labelAlpha, 'authored.labelAlpha'),
       ...record(more.staticLabelAlpha, 'contrast.more.staticLabelAlpha'),
@@ -114,7 +119,7 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
         add(
           `${prefix}-${level}`,
           level === 'primary' ? primary : muted,
-          sharedAlpha(authored.labelAlpha, level, 'authored.labelAlpha'),
+          sharedAlpha(labelAlpha, level, 'labelAlpha'),
         );
     };
     const fillFamily = (prefix, paintSource, table, path) => {
@@ -280,6 +285,8 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
       paints.set('border-base', { source: selected.primary, opacity: 1 });
       for (const level of [1, 2, 3]) {
         const background = `bg-tone-${level}`;
+        floor('label-secondary', background, 'text', true);
+        floor('label-tertiary', background, 'text', true);
         floor('label-accent', background, 'text', true);
         floor('border-focus', background, 'ui', true);
         floor('border-base', background, 'ui', true);
