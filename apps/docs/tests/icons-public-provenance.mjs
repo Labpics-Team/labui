@@ -415,20 +415,37 @@ const stateReference = object(
     sharedParts: array(object({ id: partId, role, d: pathData, fillRule })),
   },
 );
-const packageIdentity = object({
-  name: literal('@labpics/icons', '@labpics/ui-core', '@labpics/ui-shadow'),
+const packageFields = {
   version,
   archiveSha256: digest,
   archiveBytes: integer,
   sourceCommit: commit,
+};
+const packageNames = Object.freeze({
+  icons: '@labpics/icons',
+  uiCore: '@labpics/ui-core',
+  uiMaterials: '@labpics/ui-materials',
+  uiTokens: '@labpics/ui-tokens',
+  uiShadow: '@labpics/ui-shadow',
 });
-const subject = object(
+const runtimePackageName = text(/^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/);
+const runtimeRangePart =
+  '[~^<>=]{0,2}\\s*(?:\\d+|[xX*])(?:\\.(?:\\d+|[xX*])){0,2}(?:-(?:alpha|beta|rc)(?:\\.\\d+)?)?';
+const runtimeRange = text(
+  new RegExp(`^${runtimeRangePart}(?:(?:\\s+|\\s*\\|\\|\\s*|\\s+-\\s+)${runtimeRangePart})*$`),
+);
+const runtimeDependencies = object({
+  dependencies: dictionary(runtimePackageName, runtimeRange),
+  optionalDependencies: dictionary(runtimePackageName, runtimeRange),
+  peerDependencies: dictionary(runtimePackageName, runtimeRange),
+});
+const historicalSubject = object(
   {
     schemaVersion: literal(1, 2, 3),
     packages: object({
-      icons: packageIdentity,
-      uiCore: packageIdentity,
-      uiShadow: packageIdentity,
+      icons: object({ name: literal(packageNames.icons), ...packageFields }),
+      uiCore: object({ name: literal(packageNames.uiCore), ...packageFields }),
+      uiShadow: object({ name: literal(packageNames.uiShadow), ...packageFields }),
     }),
     authorReference,
   },
@@ -437,6 +454,27 @@ const subject = object(
     stateReferences: object({ 'status-circle': stateReference, 'expression-face': stateReference }),
   },
 );
+const closureSubject = object({
+  schemaVersion: literal(4),
+  packages: object(
+    Object.fromEntries(
+      Object.entries(packageNames).map(([key, name]) => [
+        key,
+        object({ name: literal(name), ...packageFields, runtimeDependencies }),
+      ]),
+    ),
+  ),
+  authorReference,
+  stateReferences: object({ 'status-circle': stateReference, 'expression-face': stateReference }),
+});
+const subject = (value, mode) => {
+  const result = union(historicalSubject, closureSubject)(value, mode);
+  if (result.schemaVersion === 4)
+    for (const [key, item] of Object.entries(result.packages))
+      if (key !== 'icons')
+        contractAssert(item.sourceCommit === result.packages.uiCore.sourceCommit);
+  return result;
+};
 const pin = object({
   schemaVersion: literal(2),
   repository: literal('Labpics-Team/lab-icons'),
@@ -848,15 +886,15 @@ const runner = object(
 );
 const harness = object({ commit, sourceSha256: digest, dirty: boolean, diffSha256: digest });
 const archive = object({
-  key: literal('icons', 'uiCore', 'uiShadow'),
+  key: literal(...Object.keys(packageNames)),
   inputNameSha256: digest,
   archiveSha256: digest,
   archiveBytes: integer,
   integrity: text(/^sha512-[A-Za-z0-9+/]{86}==$/),
-  snapshot: literal('archives/icons.tgz', 'archives/uiCore.tgz', 'archives/uiShadow.tgz'),
+  snapshot: literal(...Object.keys(packageNames).map((key) => `archives/${key}.tgz`)),
 });
 const installed = object({
-  name: literal('@labpics/icons', '@labpics/ui-core', '@labpics/ui-shadow', '@labpics/motion'),
+  name: literal(...Object.values(packageNames), '@labpics/motion'),
   version,
   manifestSha256: digest,
   lockIntegrity: nullable(text(/^sha(?:1-[A-Za-z0-9+/]{27}=|512-[A-Za-z0-9+/]{86}==)$/)),
@@ -901,6 +939,8 @@ const sourceMaterial = object(
       literal(
         'package.json',
         'packages/core/package.json',
+        'packages/materials/package.json',
+        'packages/tokens/package.json',
         'packages/shadow/package.json',
         'semantics/figma-baseline.json',
         'semantics/author-anatomy.json',

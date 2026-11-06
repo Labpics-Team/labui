@@ -991,6 +991,106 @@ test('schema3 requires both independent state references and dispatches every gr
   }
 });
 
+test('public publication preserves schema3 and schema4 package headers exactly', async (t) => {
+  const fixture = await summaryFixture(t, 3);
+  const v3 = JSON.parse(await readFile(join(fixture.output, 'inputs/subject.json'), 'utf8'));
+  const v4 = structuredClone(v3);
+  v4.schemaVersion = 4;
+  for (const [key, name] of [
+    ['uiMaterials', '@labpics/ui-materials'],
+    ['uiTokens', '@labpics/ui-tokens'],
+  ])
+    v4.packages[key] = { ...v4.packages.uiCore, name };
+  for (const item of Object.values(v4.packages))
+    item.runtimeDependencies = { dependencies: {}, optionalDependencies: {}, peerDependencies: {} };
+  v4.packages.uiCore.runtimeDependencies.dependencies = {
+    '@labpics/ui-materials': '0.1.0',
+    '@labpics/ui-tokens': '^0.1.0',
+    '@labpics/ui-shadow': '~0.1.0',
+    '@labpics/motion': '0.5.0',
+  };
+  v4.packages.uiCore.runtimeDependencies.peerDependencies = { typescript: '>=5' };
+
+  for (const input of [v3, v4]) {
+    assert.deepEqual(projectPublicProvenance(input, 'subject'), input);
+    const header = {
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: [],
+      subject: input,
+      subjectSha256: hash(JSON.stringify(input)),
+      archives: Object.entries(input.packages).map(([key, item]) => ({
+        key,
+        inputNameSha256: hash(`${key}.tgz`),
+        archiveSha256: item.archiveSha256,
+        archiveBytes: item.archiveBytes,
+        integrity: `sha512-${Buffer.alloc(64).toString('base64')}`,
+        snapshot: `archives/${key}.tgz`,
+      })),
+      installed: [
+        ...Object.values(input.packages),
+        { name: '@labpics/motion', version: '0.5.0' },
+      ].map((item) => ({
+        name: item.name,
+        version: item.version,
+        manifestSha256: 'a'.repeat(64),
+        lockIntegrity: null,
+        lockResolvedSha256: null,
+      })),
+    };
+    const published = projectPublicProvenance(header, 'receipt');
+    assert.deepEqual(published, header);
+    const bytes = Buffer.from(JSON.stringify(published));
+    const block = consumerReceiptLog(bytes, PIN.sourceCommit, PIN.sourceCommit);
+    const decoded = decodeConsumerEvidence(block, 'LABUI_ICONS_CONSUMER_RECEIPT', 'receiptSha256');
+    assert.deepEqual(decoded.bytes, bytes);
+    assert.deepEqual(JSON.parse(decoded.bytes).subject, input);
+    assert.equal(decoded.metadata.sourceSha, PIN.sourceCommit);
+    assert.equal(decoded.metadata.uiCommit, PIN.sourceCommit);
+  }
+  const source = structuredClone(fixture.source);
+  source.files.push(
+    ...['materials', 'tokens'].map((name) => ({
+      repository: 'Labpics-Team/labui',
+      file: `packages/${name}/package.json`,
+      sha256: 'a'.repeat(64),
+      bytes: 10,
+    })),
+  );
+  assert.deepEqual(projectPublicProvenance(source, 'source-receipt'), source);
+  for (const mutate of [
+    (value) => {
+      value.schemaVersion = 3;
+    },
+    (value) => {
+      Reflect.deleteProperty(value.packages, 'uiMaterials');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.packages.uiTokens, 'runtimeDependencies');
+    },
+    (value) => {
+      value.packages.uiTokens.sourceCommit = 'b'.repeat(40);
+    },
+    (value) => {
+      value.packages.uiCore.runtimeDependencies.notes = RAW_FILE_KEY;
+    },
+    (value) => {
+      value.packages.uiCore.runtimeDependencies.dependencies['@labpics/ui-tokens'] = 'workspace:*';
+    },
+    (value) => {
+      value.packages.uiCore.runtimeDependencies.dependencies['@labpics/ui-tokens'] =
+        Buffer.from(RAW_FILE_KEY).toString('base64');
+    },
+  ]) {
+    const changed = structuredClone(v4);
+    mutate(changed);
+    assert.throws(() => projectPublicProvenance(changed, 'subject'));
+  }
+  const oldWithNewFields = structuredClone(v3);
+  oldWithNewFields.packages.uiCore.runtimeDependencies = v4.packages.uiCore.runtimeDependencies;
+  assert.throws(() => projectPublicProvenance(oldWithNewFields, 'subject'));
+});
+
 function measurementFixture() {
   const packageMethod = 'fflate@0.8.2 gzipSync level=9 mtime=0 after pnpm build';
   const consumerMethod =
