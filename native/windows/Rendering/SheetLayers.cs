@@ -424,7 +424,7 @@ public sealed class SheetLayers : Grid
                                 {
                                     var identity = Effect(new ColorMatrixEffect());
                                     identity.Source = progressiveGraph;
-                                    identity.ColorMatrix = Matrix5x4.Identity;
+                                    identity.ColorMatrix = new Matrix5x4 { M11 = 1, M22 = 1, M33 = 1, M44 = 1 };
                                     identity.AlphaMode = CanvasAlphaMode.Premultiplied;
                                     identity.ClampOutput = clamp;
                                     return identity;
