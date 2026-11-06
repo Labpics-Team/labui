@@ -44,7 +44,7 @@ jobs:
   #      Это defence-in-depth: возвращает владение uid раннера сразу после job'а.
   # При добавлении нового root-контейнерного job'а — добавь такой chown-back.
   security:
-    runs-on: self-hosted
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || 'self-hosted' }}
     # Защита от fork-PR: НЕ гоняем недоверенный код форков на своей инфре.
     # Форк-PR пропускается (job skipped, раннер не выделяется); push в main
     # и same-repo PR (коллаборатор) — гоняются как прежде.
@@ -94,7 +94,7 @@ jobs:
 
   quality:
     name: lint · typecheck · build
-    runs-on: self-hosted
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || 'self-hosted' }}
     # Защита от fork-PR — см. комментарий в job `security` выше.
     if: >-
       github.event_name != 'pull_request' ||
@@ -196,7 +196,7 @@ jobs:
 
   e2e:
     name: playwright smoke (critical path)
-    runs-on: self-hosted
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || 'self-hosted' }}
     # Защита от fork-PR — см. комментарий в job `security` выше.
     if: >-
       github.event_name != 'pull_request' ||
@@ -261,7 +261,7 @@ jobs:
       - quality
       - e2e
     if: ${{ always() }}
-    runs-on: self-hosted
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || 'self-hosted' }}
     timeout-minutes: 5
     permissions: {}
     steps:

@@ -29,7 +29,7 @@ concurrency:
 jobs:
   packed:
     name: Авторский символ в установленном Lab UI
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || fromJSON('["self-hosted", "Linux", "X64"]') }}
     # Тот же допуск collaborator-кода, что и у основного CI Lab UI.
     if: >-
       github.event_name != 'pull_request' ||
@@ -43,7 +43,10 @@ jobs:
         shell: bash
         run: |
           test "$GITHUB_ACTIONS" = true
-          test "$RUNNER_ENVIRONMENT" = self-hosted
+          case "$RUNNER_ENVIRONMENT" in
+            github-hosted|self-hosted) ;;
+            *) exit 1 ;;
+          esac
 
       - name: Получить точный head Lab UI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

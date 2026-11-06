@@ -155,13 +155,13 @@ const stableJSON = (value) =>
   );
 
 // Импорт harness не устанавливает пакеты и не запускает browser/build.
-export function assertSelfHostedRunner(env = process.env) {
+export function assertActionsRunner(env = process.env) {
   assert.ok(
     env.GITHUB_ACTIONS === 'true' &&
       env.CI === 'true' &&
       /^\d+$/.test(env.GITHUB_RUN_ID ?? '') &&
-      env.RUNNER_ENVIRONMENT === 'self-hosted',
-    'icons-packed: install/build/browser разрешены только self-hosted GitHub Actions runner',
+      ['github-hosted', 'self-hosted'].includes(env.RUNNER_ENVIRONMENT),
+    'icons-packed: install/build/browser разрешены только в GitHub Actions с официальной runner identity',
   );
 }
 
@@ -1453,7 +1453,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
 }
 
 export async function main(args = process.argv.slice(2)) {
-  assertSelfHostedRunner();
+  assertActionsRunner();
   const options = new Map();
   for (let index = 0; index < args.length; index += 2) {
     assert.ok(
