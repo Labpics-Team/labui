@@ -14,9 +14,9 @@ if [ "$#" -ne 0 ]; then
   fi
   icons_root="$(cd -- "$2" && pwd -P)"
   if ! { [ "$icons_root" != "$root" ] && [ -d "$icons_root/.git" ] && [ -d "$root/.git" ] &&
-    [ "${GITHUB_ACTIONS:-}" = true ] && [ "${RUNNER_ENVIRONMENT:-}" = self-hosted ] &&
+    [ "${GITHUB_ACTIONS:-}" = true ] && [[ "${RUNNER_ENVIRONMENT:-}" =~ ^(github-hosted|self-hosted)$ ]] &&
     [[ "${GITHUB_RUN_ID:-}" =~ ^[0-9]+$ ]] && [[ "${UI_SOURCE_COMMIT:-}" =~ ^[0-9a-f]{40}$ ]]; }; then
-    echo '::error::Icons consumer requires distinct checkouts and a self-hosted Actions identity.' >&2
+    echo '::error::Icons consumer requires distinct checkouts and an official Actions runner identity.' >&2
     exit 1
   fi
   icons_uid="$(id -u)"
@@ -154,7 +154,9 @@ docker create --cidfile "${job}/container.id" --init --user "$(id -u):$(id -g)" 
         --ui-tokens-tarball /job/output/ui-tokens/*.tgz \
         --ui-shadow-tarball /job/output/ui-shadow/*.tgz \
         --subject /job/output/inputs/subject.json --out /job/output/result || status=$?
-      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output || status=1
+      node apps/docs/tests/prepare-icons-inputs.mjs --summarize /job/output --consumer-exit-code "$status" || {
+        if [ "$status" -eq 0 ]; then status=1; fi
+      }
       exit "$status"
     else
       pnpm --filter "@labpics/ui-docs^..." build

@@ -46,7 +46,7 @@ export type LabButtonType = 'accent' | 'neutral' | 'danger';
 export type LabButtonKind = 'fill' | 'tinted' | 'border' | 'ghost';
 /** Control size. */
 export type LabButtonSize = 's' | 'm' | 'l';
-/** Native button behaviour inside a form. */
+/** HTML type of the internal button in Shadow DOM. */
 export type LabButtonHtmlType = 'button' | 'submit' | 'reset';
 
 export class LabButton extends LabElement {

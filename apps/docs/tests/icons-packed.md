@@ -17,11 +17,13 @@ Harness принимает пять готовых архивов и незав�
 
 ## Запуск
 
-Запускайте в self-hosted GitHub Actions job Lab UI с Node ≥22.19, установленными
-зависимостями `apps/docs` и Chromium для Playwright. Harness проверяет официальные
-`GITHUB_ACTIONS`, `CI`, `GITHUB_RUN_ID` и `RUNNER_ENVIRONMENT=self-hosted` **до**
-установки пакетов, импорта Vite и запуска браузера. Не подменяйте эти переменные для
-локального запуска. Синтаксическая проверка и импорт функций допускаются локально.
+Запускайте в GitHub Actions job Lab UI с Node ≥22.19, установленными зависимостями
+`apps/docs` и Chromium для Playwright. Для публичного репозитория workflow выбирает
+стандартный `ubuntu-24.04`; для приватного — self-hosted runner с labels `Linux`,
+`X64`. Harness проверяет официальные `GITHUB_ACTIONS`, `CI`, `GITHUB_RUN_ID` и
+`RUNNER_ENVIRONMENT` (`github-hosted` или `self-hosted`) **до** установки пакетов,
+импорта Vite и запуска браузера. Не подменяйте эти переменные для локального
+запуска. Синтаксическая проверка и импорт функций допускаются локально.
 
 ```sh
 node apps/docs/tests/icons-packed.mjs \
@@ -36,8 +38,8 @@ node apps/docs/tests/icons-packed.mjs \
 
 `--out` должен быть новым каталогом вне checkout; его родитель уже существует.
 Необязательный `--browser-channel chrome` выбирает установленный browser channel.
-По умолчанию используется Chromium Playwright. Тяжёлый запуск не добавлен в CI
-Icons: доступ к приватному Lab UI и проверка его пакетов принадлежат Lab UI.
+По умолчанию используется Chromium Playwright. Проверка установленных пакетов
+Lab UI исполняется в CI Lab UI.
 
 Штатный workflow Lab UI `icons-consumer.yml` получает точный head Lab UI и
 публичный Icons commit из `icons-consumer-source.json`. Затем вызывает
@@ -52,8 +54,9 @@ Inputs и результат находятся вне копий исходни
 helper переносит только обычные файлы без ссылок в
 `apps/docs/test-results/icons-consumer`, затем удаляет собственную временную
 директорию. Ошибка удаления контейнера запрещает перенос нестабильной диагностики.
-Workflow не загружает архивы в Actions storage. Локальные тесты oracle и lifecycle
-проверяют вызовы Docker через recorder и не запускают контейнерный workload.
+Workflow не загружает архивы в Actions storage. Проверки oracle и lifecycle
+с Docker recorder исполняются в этом workflow; локальная проверка ограничена
+синтаксисом и тестами, которые не имитируют Actions runtime.
 
 ## Входной reference
 
@@ -71,7 +74,7 @@ Schema3 сохраняет прежний набор из трёх архиво�
 | `packages.uiTokens` | Архив `@labpics/ui-tokens` |
 | `packages.uiShadow` | Архив `@labpics/ui-shadow` |
 | Каждый пакет | `name`, `version`, `archiveSha256`, `archiveBytes`, `sourceCommit`; в schema4 также `runtimeDependencies` |
-| `authorReference` | `fileName`, `fileKey`, `version`, `icons.reload` |
+| `authorReference` | `fileName`, `fileKeySha256`, `version`, `icons.reload` |
 | `icons.reload` | Ровно `outline` и `filled` |
 | Каждый variant | `sourceFile`, `author`, `anatomy`, `viewBox`, `paths`, `parts`, `gesture` |
 | Каждый state reference | `group`, `variant`, `defaultState`, `enclosurePartId`, `enclosure`, `states`, `proof` |
@@ -90,10 +93,17 @@ Manifest каждого snapshot-архива сверяется до npm instal
 
 `fileName` указывает текущий Lab UI v2.1. `sourceFile` имеет вид
 `masters/figma/<version>/Outline/reload.svg` или `Filled/reload.svg`.
-`author` — точный receipt Figma: `kind: "figma"`, `fileKey`, `version`, `nodeId`,
+`author` — публичная проекция проверенного receipt Figma: `kind: "figma"`,
+`fileKeySha256`, `version`, `nodeIdSha256`,
 `nodeSha256`, `masterSha256`, `normalizedSha256`, `pathFingerprintSha256`.
 `anatomy` — точный version-1 receipt принятой авторской аннотации, включая
 `annotationSha256`, `masterSha256`, `pathFingerprintSha256`.
+
+Подготовка читает raw manifest и masters в памяти, сверяет их происхождение
+с закреплённым источником и проверяет геометрию. В публичных JSON и сообщениях
+идентификаторы файла и узла заменены SHA256; хеши исходных файлов и значения
+oracle сохраняются. Повторные decoded JSON keys получают отказ до `JSON.parse`.
+Публичная ссылка на эталон ведёт в Figma Community.
 
 `viewBox` — четыре конечных числа. `paths` — упорядоченные `{d, fillRule}` из
 raw author master. Независимый reader принимает нейтральные группы и явно
@@ -124,7 +134,8 @@ receipt добавляет hash semantic spec и каждого прочитан
 
 После фиксации raw references и `subject.json` та же prepare-inputs граница
 запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
-штатного pack. Запуск разрешён только self-hosted runner. `--update` не передаётся:
+штатного pack. Запуск разрешён только в GitHub Actions с официальной runner identity.
+`--update` не передаётся:
 candidate policies и `policyViolations` остаются диагностикой, принятие лимитов
 принадлежит Icons. Отчёт `inputs/platform-measurement.json` содержит полный
 release contract census, raw/gzip/brotli и hashes artifacts, consumer metrics,
@@ -235,6 +246,14 @@ reload кнопки; schema2 также содержит status-circle и select
 публикацию npm или оптическую приёмку всего корпуса. Для этих утверждений нужны
 соответствующие producer/benchmark/visual evidence. Наличие harness без успешного
 remote receipt не означает пройденную интеграцию.
+
+Вызывающий скрипт передаёт наблюдаемый exit status `icons-packed` через
+`--summarize <directory> --consumer-exit-code <0..255>`; функция `summarize`
+принимает тот же код вторым аргументом. Пропущенный или некорректный код вызывает
+отказ до публикации. PASSED требует кода `0` и успешного receipt без FAILED маркера.
+Ненулевой код задаёт FAILED для диагностического readback даже при ранее записанном
+PASSED receipt или отсутствии маркера. Ошибка summarize не заменяет исходный
+ненулевой статус.
 
 `--summarize` также выводит полный report стандартным
 [gzip](https://nodejs.org/api/zlib.html#zlibgzipsyncbuffer-options) и base64 блоком

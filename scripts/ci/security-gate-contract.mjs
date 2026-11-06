@@ -35,10 +35,13 @@ const canonical = [
   'source .github/scripts/secret-scan-contract.sh',
 ];
 
+const runnerSelection =
+  "    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || 'self-hosted' }}";
+
 // Job security: защита от fork-PR, чистый воркспейс, checkout кандидата и каноничный шаг.
 const securityJob = [
   '  security:',
-  '    runs-on: self-hosted',
+  runnerSelection,
   '    if: >-',
   "      github.event_name != 'pull_request' ||",
   '      github.event.pull_request.head.repo.full_name == github.repository',
@@ -67,7 +70,7 @@ const aggregateJob = [
   '    needs:',
   '      - <jobs>',
   '    if: ${{ always() }}',
-  '    runs-on: self-hosted',
+  runnerSelection,
   '    timeout-minutes: <n>',
   '    permissions: {}',
   '    steps:',
@@ -88,7 +91,7 @@ const requiredNeeds = ['security', 'quality', 'e2e'];
 const e2eHeader = [
   '  e2e:',
   '    name: playwright smoke (critical path)',
-  '    runs-on: self-hosted',
+  runnerSelection,
   '    if: >-',
   "      github.event_name != 'pull_request' ||",
   '      github.event.pull_request.head.repo.full_name == github.repository',

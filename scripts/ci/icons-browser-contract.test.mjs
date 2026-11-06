@@ -52,7 +52,11 @@ test('each local runtime archive is packed and supplied to both input and instal
 });
 
 test('Icons workflow delegates the workload and preserves source-read failure', () => {
-  assert.match(workflow, /runs-on: \[self-hosted, Linux, X64\]/);
+  assert.ok(
+    workflow.includes(
+      'runs-on: ${{ github.event.repository.visibility == \'public\' && \'ubuntu-24.04\' || fromJSON(\'["self-hosted", "Linux", "X64"]\') }}',
+    ),
+  );
   assert.match(
     workflow,
     /sha="\$\(node ui\/apps\/docs\/tests\/prepare-icons-inputs\.mjs --checkout-ref\)"\n\s+printf/,
