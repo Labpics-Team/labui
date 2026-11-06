@@ -245,9 +245,6 @@ export const REST_ROLES = {
 export function expectedOverlays() {
   const keys = new Map();
   for (const [combo, props] of Object.entries(REST_ROLES)) {
-    // Accent fill сохраняет base и меняет авторские gradient/inset/glow.
-    // Реальную композицию проверяет apps/docs/tests/button-effects.spec.ts.
-    if (combo === 'accent/fill') continue;
     for (const [prop, role] of Object.entries(props)) {
       for (const state of ['hover', 'pressed']) {
         keys.set(`${combo}/${state}/${prop}`, { role, tint: tintFor(role) });
