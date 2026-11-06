@@ -12,10 +12,13 @@ test('public docs never link browser fixtures', async () => {
   assert.doesNotMatch(index, /_fixtures\//u);
 });
 
-test('docs do not depend on the Lab Colors runtime engine', async () => {
+test('docs obtain the live color boundary through its LabUI owner', async () => {
   const pkg = JSON.parse(await read(app, 'package.json'));
   assert.equal(pkg.dependencies?.['@labpics/colors'], undefined);
   assert.equal(pkg.dependencies?.['@labui/colors'], 'workspace:*');
+  const bridge = await read(src, 'colors-runtime.ts');
+  assert.match(bridge, /from '@labui\/colors\/runtime'/u);
+  assert.doesNotMatch(bridge, /@labpics\/colors/u);
 });
 
 test('retired live color-engine harness cannot re-enter the build graph', async () => {

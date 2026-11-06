@@ -11,6 +11,10 @@
     "./roles.json": "./roles.json",
     "./labui.config.json": "./labui.config.json",
     "./prepare-config.mjs": "./prepare-config.mjs",
+    "./runtime": {
+      "types": "./browser.d.mts",
+      "import": "./browser.mjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -18,7 +22,14 @@
     "contract.min.css",
     "roles.json",
     "labui.config.json",
-    "prepare-config.mjs"
+    "prepare-config.mjs",
+    "prepare-config.d.mts",
+    "program.mjs",
+    "runtime.mjs",
+    "browser.mjs",
+    "browser.d.mts",
+    "README.md",
+    "CONTRAST.md"
   ],
   "scripts": {
     "generate": "node generate-contract.mjs",

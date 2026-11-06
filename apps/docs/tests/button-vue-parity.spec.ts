@@ -42,6 +42,7 @@ const fg = (el: HTMLElement) => getComputedStyle(el).color;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/button.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('fixture: the delivered HTML carries the Lit reference and a Vue mount node', async ({
@@ -183,7 +184,11 @@ test('tokens: re-pointing --lab-fill-accent re-skins the Vue-mounted element, ma
 
   const sentinel = 'rgb(1, 2, 3)';
   await page.evaluate((value) => {
-    document.documentElement.style.setProperty('--lab-fill-accent', value);
+    for (const id of ['lit-accent-fill', 'vue-accent-fill']) {
+      const consumer = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+      if (!consumer) throw new Error(`Не найден потребитель ${id}`);
+      consumer.style.setProperty('--lab-fill-accent', value);
+    }
   }, sentinel);
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');

@@ -29,6 +29,7 @@ const fg = (el: HTMLElement) => getComputedStyle(el).color;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/button.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('delivered HTML carries the Lit element (React island mounts on the client)', async ({
@@ -242,7 +243,11 @@ test('tokens: re-pointing --lab-fill-accent re-skins BOTH renderers', async ({ p
 
   const sentinel = 'rgb(1, 2, 3)';
   await page.evaluate((value) => {
-    document.documentElement.style.setProperty('--lab-fill-accent', value);
+    for (const id of ['lit-accent-fill', 'react-accent-fill']) {
+      const consumer = document.querySelector<HTMLElement>(`[data-testid="${id}"]`);
+      if (!consumer) throw new Error(`Не найден потребитель ${id}`);
+      consumer.style.setProperty('--lab-fill-accent', value);
+    }
   }, sentinel);
 
   await expect.poll(() => lit.evaluate(bg)).toBe('rgb(1, 2, 3)');

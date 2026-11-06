@@ -30,7 +30,7 @@ export const badgeDoc: ComponentDoc = {
     'A small pill that labels or counts, carrying a sentiment. Eight colour families across two surface kinds (fill / tinted) plus a disabled state, with an optional leading dot — built only on semantic --lab-* roles, identical on the Lit and native-React renderers.',
   status: {
     kind: 'beta',
-    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The colour axis covers the families the role contract exposes (neutral + 5 sentiments + 2 static); the remaining Figma accents (teal/mint/indigo/purple/pink) light up automatically when @labpics/colors ships their semantic roles — no API change. PROVISIONAL where the solid neutral fill it pairs is owner-pending.',
+    note: 'API and behaviour are production-frozen and rendered identically on Lit + React. The colour axis covers the LabUI role families (neutral + 5 sentiments + 2 static). Adding teal/mint/indigo/purple/pink requires the LabUI owner to declare their paints and component bindings. PROVISIONAL where the solid neutral fill it pairs is owner-pending.',
   },
 
   statesMatrix: {
