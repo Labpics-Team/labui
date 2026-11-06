@@ -160,8 +160,12 @@ export const PUBLIC_ENTRIES = Object.freeze([
   '@labpics/icons/states/expression-face',
 ]);
 export const PUBLIC_SCENARIO =
-  'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim';
+  'Кнопки LabUI с иконками и сценариями из subject, публичный Lab Motion; размер полного consumer без утверждения об ускорении.';
 export const PUBLIC_QUALIFICATION =
+  'Заданные архивы и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
+const LEGACY_SCENARIO =
+  'LabUI icon-only buttons, reload Outline/Filled и status-circle при schema2, публичный Lab Motion; размер полного consumer без baseline speedup claim';
+const LEGACY_QUALIFICATION =
   'Три заданных архива и публичный Motion установлены в отдельный consumer. Producer sourceCommit — входное утверждение; публикация и полная оптическая приёмка этим запуском не доказаны.';
 const COMMUNITY_ID = '1527814209910933331';
 const COMMUNITY_SLUG = 'lab-ui-components-icons-guides-lab-ui-v2-1';
@@ -913,9 +917,18 @@ const consumer = object({
   publicEntries: dictionary(literal(...PUBLIC_ENTRIES), digest),
   moduleGraph: array(digest),
   bundles: array(bundle),
-  scenario: literal(PUBLIC_SCENARIO),
+  scenario: literal(PUBLIC_SCENARIO, LEGACY_SCENARIO),
 });
-const receipt = object(
+function requireConsistentOutcome(value) {
+  if (value.outcome === 'passed')
+    contractAssert(
+      (value.failure === undefined || value.failure === null) &&
+        (value.cleanupErrors === undefined || value.cleanupErrors.length === 0) &&
+        value.readbackFailure === undefined,
+    );
+  return value;
+}
+const receiptFields = object(
   { schemaVersion: literal(1), outcome: literal('passed', 'failed'), records: array(publicRecord) },
   {
     started: timestamp,
@@ -928,11 +941,24 @@ const receipt = object(
     lockfileSha256: digest,
     installed: array(installed),
     consumer,
-    qualification: literal(PUBLIC_QUALIFICATION),
+    qualification: literal(PUBLIC_QUALIFICATION, LEGACY_QUALIFICATION),
     failure,
     cleanupErrors: array(diagnostic),
   },
 );
+const receipt = (value, mode) => {
+  const result = requireConsistentOutcome(receiptFields(value, mode));
+  const packageCounts = [
+    ...(result.subject ? [Object.keys(result.subject.packages).length] : []),
+    ...(result.archives ? [result.archives.length] : []),
+  ];
+  contractAssert(
+    (packageCounts.length > 0 && packageCounts.every((count) => count === 3)) ||
+      (result.qualification !== LEGACY_QUALIFICATION &&
+        result.consumer?.scenario !== LEGACY_SCENARIO),
+  );
+  return result;
+};
 const sourceMaterial = object(
   {
     file: union(
@@ -1186,11 +1212,7 @@ const summaryFields = object(
     readbackFailure: object({ code: literal('EVIDENCE_REFUSED'), file: publishedFile }),
   },
 );
-const summary = (value, mode) => {
-  const result = summaryFields(value, mode);
-  contractAssert(result.outcome !== 'passed' || result.readbackFailure === undefined);
-  return result;
-};
+const summary = (value, mode) => requireConsistentOutcome(summaryFields(value, mode));
 const codecs = Object.freeze({
   pin,
   'author-reference': authorReference,
