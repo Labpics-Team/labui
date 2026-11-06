@@ -29,4 +29,5 @@ export const Sheet: LabComponent<SheetProps, 'motion-error' | 'open-change' | 'p
       { name: 'position', attr: 'position', kind: 'prop' },
   ],
   events: ['motion-error', 'open-change', 'position-change'],
+  directSlots: ['trigger'],
 });

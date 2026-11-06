@@ -76,6 +76,28 @@ Progressive blur остаётся самостоятельным краевым 
 [жизненный цикл Materials](../../packages/materials/test/engine-lifetime.test.ts)
 и [Native workflow](../../.github/workflows/native.yml).
 
+## Кнопка открытия модальной поверхности
+
+**Закон.** У Sheet, Dialog и Alert Dialog один настоящий native control открывает
+поверхность, получает её события и ARIA и служит актуальной точкой возврата фокуса.
+Замена control прекращает влияние прежних callbacks. Варианты, loading, disabled
+и оформление кнопки сохраняются у Button.
+
+**Область и владелец.** Веб-Core и React, а также адаптеры Core. Button предоставляет
+readonly interaction target; Modal владеет binding и его жизненным циклом.
+Именованный trigger принимает один настоящий Button или native button.
+Встроенная кнопка принимает неинтерактивную подпись.
+
+**Код и проверка.** [Button](../../packages/core/src/components/button/lab-button.ts),
+[Modal](../../packages/core/src/components/dialog/modal.ts),
+[ARIA и фокус](../../packages/core/src/components/dialog/focus.ts),
+[проекция адаптеров](../../packages/adapter-codegen/),
+[parser contract](../../packages/core/test/modal-trigger-markup.test.ts)
+и [сценарий настроек](../../apps/docs/src/components/card.doc.ts).
+Scope ARIA reference сверяется отдельно от наличия атрибута; браузерная и AX
+приёмка относится к фактическому hosted consumer текущей версии.
+Причины границы описаны в [композиции модальных поверхностей](../architecture/modal-composition.md#кнопка-открытия).
+
 ## Публичный потребитель
 
 **Закон.** Установленный пакет сохраняет согласованный контракт типов,

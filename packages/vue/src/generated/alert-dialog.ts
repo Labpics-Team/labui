@@ -28,4 +28,5 @@ export const AlertDialog: LabComponent<AlertDialogProps, 'open-change'> = create
       { name: 'size', attr: 'size', kind: 'string' },
   ],
   events: ['open-change'],
+  directSlots: ['trigger'],
 });

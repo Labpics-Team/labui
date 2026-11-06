@@ -21,11 +21,12 @@
     onOpenChange?: (event: CustomEvent) => void;
     onPositionChange?: (event: CustomEvent) => void;
     content?: Snippet;
+    trigger?: Snippet<[{ readonly slot: 'trigger' }]>;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { modal, closable, heading, description, open, position, onMotionError, onOpenChange, onPositionChange, children, content, ...rest }: Props = $props();
+  let { modal, closable, heading, description, open, position, onMotionError, onOpenChange, onPositionChange, children, content, trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'modal', attr: 'modal', kind: 'string' },
@@ -55,4 +56,5 @@
 <lab-sheet bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if content}<div slot="content" style="display:contents">{@render content()}</div>{/if}
+  {#if trigger}{@render trigger({ slot: 'trigger' })}{/if}
 </lab-sheet>

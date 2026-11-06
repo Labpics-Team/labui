@@ -95,9 +95,13 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "content",
+          "trigger"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "direct": [
+          "trigger"
+        ]
       }
     },
     {
@@ -538,9 +542,13 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "content",
+          "trigger"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "direct": [
+          "trigger"
+        ]
       }
     },
     {
@@ -1256,9 +1264,13 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "content",
+          "trigger"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "direct": [
+          "trigger"
+        ]
       }
     },
     {

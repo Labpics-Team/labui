@@ -33,11 +33,18 @@ interface RawSlots {
   named: Set<string>;
   dynamic: boolean;
   fill: Set<string>;
+  direct: Set<string>;
 }
 
 /** Пустые слоты — стартовое значение при слиянии. */
 function emptySlots(): RawSlots {
-  return { default: false, named: new Set<string>(), dynamic: false, fill: new Set<string>() };
+  return {
+    default: false,
+    named: new Set<string>(),
+    dynamic: false,
+    fill: new Set<string>(),
+    direct: new Set<string>(),
+  };
 }
 
 /** kebab → PascalCase: 'alert-dialog' → 'AlertDialog'. */
@@ -164,6 +171,7 @@ function extractSlots(cls: ts.ClassDeclaration): RawSlots {
     if (named?.[1]) {
       slots.named.add(named[1]);
       if (/data-sizing\s*=\s*"fill"/.test(attrs)) slots.fill.add(named[1]);
+      if (/data-projection\s*=\s*"direct"/.test(attrs)) slots.direct.add(named[1]);
     } else if (/name\s*=\s*\$\{/.test(attrs)) slots.dynamic = true;
     else if (!/name\s*=/.test(attrs)) slots.default = true;
     match = re.exec(text);
@@ -371,6 +379,10 @@ export function analyzeCore(componentsDir: string): Manifest {
         named: new Set<string>([...base.slots.named, ...raw.slots.named]),
         dynamic: base.slots.dynamic || raw.slots.dynamic,
         fill: new Set<string>([...(raw.mayRenderBase ? base.slots.fill : []), ...raw.slots.fill]),
+        direct: new Set<string>([
+          ...(raw.mayRenderBase ? base.slots.direct : []),
+          ...raw.slots.direct,
+        ]),
       },
     };
     resolved.set(classSymbol, merged);
@@ -389,6 +401,7 @@ export function analyzeCore(componentsDir: string): Manifest {
         named: [...meta.slots.named].sort(),
         dynamic: meta.slots.dynamic,
         ...(meta.slots.fill.size ? { fill: [...meta.slots.fill].sort() } : {}),
+        ...(meta.slots.direct.size ? { direct: [...meta.slots.direct].sort() } : {}),
       };
       return {
         tag,

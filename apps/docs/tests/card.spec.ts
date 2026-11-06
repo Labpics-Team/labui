@@ -59,6 +59,80 @@ test('render: both renderers paint an <article> surface', async ({ page }) => {
   }
 });
 
+test('catalogue: Card → Sheet применяет настройки и возвращает focus настоящему Button', async ({
+  page,
+}) => {
+  await page.goto('/components.html?component=card');
+  const card = page.locator('#sec-live').getByTestId('notification-settings');
+  const trigger = card.getByRole('button', { name: 'Настроить', exact: true });
+  await expect(trigger).toBeVisible();
+  await expect(card.getByRole('button')).toHaveCount(1);
+  const relation = await trigger.evaluate((element) => {
+    const root = element.getRootNode();
+    const controlled = root instanceof ShadowRoot ? root.host.parentElement : null;
+    const references = 'ariaControlsElements' in element ? element.ariaControlsElements : null;
+    return {
+      native: element instanceof HTMLButtonElement,
+      controlledTag: controlled?.localName,
+      resolved: Array.isArray(references) && references.includes(controlled),
+    };
+  });
+  expect(relation).toEqual({ native: true, controlledTag: 'lab-sheet', resolved: true });
+  await trigger.click();
+  const panel = page.getByRole('dialog', { name: 'Настройки уведомлений', exact: true });
+  await expect(panel).toBeVisible();
+  const comments = card.getByTestId('comments-enabled').getByRole('switch');
+  await expect(comments).toBeChecked();
+  await comments.click();
+  await expect(comments).not.toBeChecked();
+  await card.getByTestId('settings-done').getByRole('button').click();
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(
+    card.getByText('Уведомления включены. Комментарии выключены.', { exact: true }),
+  ).toBeVisible();
+
+  await card.getByTestId('notification-enabled').getByRole('switch').click();
+  await expect(card.getByText('Уведомления выключены.', { exact: true })).toBeVisible();
+  await trigger.click();
+  await expect(comments).toBeDisabled();
+  await expect(comments).not.toBeChecked();
+  await card.getByTestId('settings-done').getByRole('button').click();
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+});
+
+test('catalogue: замена Button открытого Sheet меняет актуальный final-focus target', async ({
+  page,
+}) => {
+  await page.goto('/components.html?component=card');
+  const card = page.locator('#sec-live').getByTestId('notification-settings');
+  await card.getByRole('button', { name: 'Настроить', exact: true }).click();
+  const panel = page.getByRole('dialog', { name: 'Настройки уведомлений', exact: true });
+  await expect(panel).toBeVisible();
+  await card.getByTestId('settings-trigger').evaluate((host) => {
+    const replacement = document.createElement('lab-button');
+    replacement.slot = 'trigger';
+    replacement.type = 'neutral';
+    replacement.kind = 'border';
+    replacement.dataset.material = 'solid';
+    replacement.textContent = 'Другие настройки';
+    host.replaceWith(replacement);
+  });
+  const replacement = card.getByRole('button', { name: 'Другие настройки', exact: true });
+  const done = card.getByTestId('settings-done').getByRole('button');
+  await done.focus();
+  await expect(done).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(replacement).toBeFocused();
+  await replacement.click();
+  await expect(panel).toBeVisible();
+  await done.click();
+  await expect(panel).toBeHidden();
+  await expect(replacement).toBeFocused();
+});
+
 test('composition: header и footer сохраняют содержимое и порядок в обоих renderers', async ({
   page,
 }) => {

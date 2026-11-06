@@ -52,9 +52,11 @@ function ssrFile(c: ComponentMeta): string {
   const hasSlots = slotKeys.length > 0;
   const namedSlotParts = c.slots.named
     .map((s) =>
-      c.slots.fill?.includes(s)
-        ? `\${slots.${camelSlot(s)} ? html\`<span slot="${s}" data-lab-slot-fill style="display:inline-flex">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`
-        : `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
+      c.slots.direct?.includes(s)
+        ? `\${unsafeHTML(projectSingleSlot(slots.${camelSlot(s)}, '${s}'))}`
+        : c.slots.fill?.includes(s)
+          ? `\${slots.${camelSlot(s)} ? html\`<span slot="${s}" data-lab-slot-fill style="display:inline-flex">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`
+          : `\${slots.${camelSlot(s)} ? html\`<span slot="${s}">\${unsafeHTML(slots.${camelSlot(s)})}</span>\` : ''}`,
     )
     .join('');
   const defaultSlotPart = c.slots.default ? "${unsafeHTML(slots.default ?? '')}" : '';
@@ -75,6 +77,7 @@ function ssrFile(c: ComponentMeta): string {
     usesIfDefined ? 'ifDefined' : '',
     usesNoChange ? 'noChange' : '',
     usesUnsafeHtml ? 'unsafeHTML' : '',
+    c.slots.direct?.length ? 'projectSingleSlot' : '',
   ].filter(Boolean);
 
   return `${generatedHeader()}

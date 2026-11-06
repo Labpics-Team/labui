@@ -24,11 +24,16 @@
  * `@labpics/ui-core/<subpath>`, поэтому обёртка приносит элемент с собой.
  */
 import {
+  Comment,
   type DefineComponent,
+  Fragment,
+  Text,
   type VNode,
+  cloneVNode,
   defineComponent,
   h,
   inject,
+  isVNode,
   mergeProps,
   ssrContextKey,
 } from 'vue';
@@ -55,6 +60,38 @@ export interface LabComponentSpec {
   readonly events: readonly string[];
   /** Слоты, коробку которых задаёт ядро; содержимое заполняет только эту коробку. */
   readonly fillSlots?: readonly string[];
+  /** Один настоящий элемент, чья native interaction target принадлежит компоненту. */
+  readonly directSlots?: readonly string[];
+}
+
+function projectDirectSlot(nodes: readonly VNode[], name: string): VNode {
+  const elements: VNode[] = [];
+  const visit = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const child of value) visit(child);
+      return;
+    }
+    if (!isVNode(value)) {
+      if (value === null || value === undefined || (typeof value === 'string' && !value.trim()))
+        return;
+      throw new TypeError('LabUI Vue: direct slot requires one element.');
+    }
+    if (value.type === Comment) return;
+    if (value.type === Text && typeof value.children === 'string' && !value.children.trim()) return;
+    if (value.type === Fragment) visit(value.children);
+    else if (value.type === Text)
+      throw new TypeError('LabUI Vue: direct slot requires one element.');
+    else elements.push(value);
+  };
+  visit(nodes);
+  const element = elements[0];
+  if (elements.length !== 1 || !element) {
+    throw new TypeError('LabUI Vue: direct slot requires exactly one element.');
+  }
+  if (element.props?.slot !== undefined && element.props.slot !== name) {
+    throw new TypeError('LabUI Vue: direct slot element already belongs to another slot.');
+  }
+  return cloneVNode(element, { slot: name });
 }
 
 /** kebab → PascalCase на уровне типов: 'value-change' → 'ValueChange'. */
@@ -137,7 +174,9 @@ export function createLabComponent<Props, Events extends string>(
         for (const [name, slotFn] of Object.entries(slots)) {
           if (!slotFn) continue;
           if (name === 'default') children.push(slotFn());
-          else if (spec.fillSlots?.includes(name)) {
+          else if (spec.directSlots?.includes(name)) {
+            children.push(projectDirectSlot(slotFn(), name));
+          } else if (spec.fillSlots?.includes(name)) {
             children.push(
               h(
                 'span',

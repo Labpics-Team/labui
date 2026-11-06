@@ -18,11 +18,12 @@
     size?: LabDialog['size'];
     onOpenChange?: (event: CustomEvent) => void;
     content?: Snippet;
+    trigger?: Snippet<[{ readonly slot: 'trigger' }]>;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { modal, closable, heading, description, size, onOpenChange, children, content, ...rest }: Props = $props();
+  let { modal, closable, heading, description, size, onOpenChange, children, content, trigger, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'modal', attr: 'modal', kind: 'string' },
@@ -51,4 +52,5 @@
 <lab-dialog bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if content}<div slot="content" style="display:contents">{@render content()}</div>{/if}
+  {#if trigger}{@render trigger({ slot: 'trigger' })}{/if}
 </lab-dialog>

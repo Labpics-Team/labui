@@ -56,6 +56,51 @@ CommonJS проверяется по фактическому consumer bundle о
 неизменёнными registry packages; исправленный runtime уже находится в Core.
 Потребительские patches и install hooks для исправления зависимостей не нужны.
 
+## Кнопка открытия
+
+Core принимает один `lab-button` или native `button type="button"` в
+`slot="trigger"`. Слот заменяет встроенную кнопку целиком. Без именованного
+trigger сохраняется прежняя кнопка с неинтерактивной подписью в default slot.
+Обёртки и вложенные controls отвергаются. Button сохраняет свои варианты,
+доступное имя, native type, loading и disabled; Modal получает только readonly
+interaction-target port и владеет событиями и возвратом фокуса.
+
+Binding ждёт upgrade и render Button, перепривязывается при замене слота и
+освобождается при disconnect. Assignment generation прекращает влияние позднего
+callback. `triggerEl`, event props и final focus читают одну актуальную native
+цель. Dismissable exclusion разрешает её при каждом outside event. Другой
+самостоятельный modal сохраняет текущий фокус при позднем cleanup.
+
+Метаданные `data-projection="direct"` выводятся в существующий манифест
+адаптеров. Vue проецирует один VNode; Svelte передаёт direct snippet аргумент
+`{ slot: 'trigger' }`, который snippet назначает своему Button. SSR и Astro
+назначают slot одному исходному HTML-элементу с сохранением hydration markers.
+Обычные именованные слоты сохраняют прежние коробки.
+
+ARIA связывает native цель с доступным controlled container:
+
+| Renderer | Controlled element |
+|---|---|
+| Core, встроенная кнопка | Собственный portal host в том же shadow root. |
+| Core, slotted Button | Modal host в root потребителя, доступном из root native кнопки. |
+| React | Настоящий content в document portal; document является своим или родительским root для native кнопки. |
+
+Внутренний `role="dialog"` остаётся на content. Строковый IDREF разрешается
+только в своём root. `Element.ariaControlsElements` допускает ссылки в свой и
+родительские roots, но исключает sibling и descendant roots. Общий
+`bindDialogTriggerControls` проверяет scope readback и возвращает прежнее
+отношение при cleanup. Недоступная cross-root capability даёт явную ошибку.
+DOM readback не удостоверяет представление связи в AX tree; его проверяет
+genuine hosted browser consumer.
+
+Первичные источники сверены 7 ноября 2026 года:
+[MDN reflected element reference scope](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Reflected_attributes#reflected_element_reference_scope),
+[WAI-ARIA aria-controls](https://www.w3.org/TR/wai-aria/#aria-controls)
+и [MDN browser compatibility data](https://github.com/mdn/browser-compat-data/blob/main/api/Element.json).
+Property поддерживается Chromium 135, Firefox 136 и Safari 16.4 и новее.
+TypeScript 5.7.3 lib.dom ещё не содержит его; owner использует узкую проверяемую
+структурную capability. Experimental `referenceTarget` не требуется.
+
 ## Поправки существующего DOM и layer owner
 
 В закреплённом Zag 1.41.2 поиск focusables через querySelectorAll не проходит

@@ -79,7 +79,8 @@ describe('анализатор ядра → манифест', () => {
     expect(sheet.props.find((property) => property.name === 'position')?.kind).toBe('prop');
     expect(sheet.events).toEqual(['motion-error', 'open-change', 'position-change']);
     expect(sheet.slots.default).toBe(true);
-    expect(sheet.slots.named).toEqual(['content']);
+    expect(sheet.slots.named).toEqual(['content', 'trigger']);
+    expect(sheet.slots.direct).toEqual(['trigger']);
   });
 
   it('события собираются из new CustomEvent', () => {
@@ -99,6 +100,18 @@ describe('анализатор ядра → манифест', () => {
     expect(byTag('lab-badge').slots.fill).toEqual(['dot', 'leading', 'trailing']);
     expect(byTag('lab-button').slots.fill).toBeUndefined();
     expect(byTag('lab-card').slots.fill).toBeUndefined();
+  });
+
+  it('direct projection наследуется от Modal только тремя модальными владельцами', () => {
+    expect(
+      manifest.components
+        .filter((component) => component.slots.direct?.length)
+        .map((component) => component.tag),
+    ).toEqual(['lab-alert-dialog', 'lab-dialog', 'lab-sheet']);
+    for (const tag of ['lab-alert-dialog', 'lab-dialog', 'lab-sheet']) {
+      expect(byTag(tag).slots.direct).toEqual(['trigger']);
+      expect(byTag(tag).slots.named).toEqual(['content', 'trigger']);
+    }
   });
 
   it('pascal/subpath выведены из тега', () => {

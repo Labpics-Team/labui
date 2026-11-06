@@ -28,4 +28,5 @@ export const Dialog: LabComponent<DialogProps, 'open-change'> = createLabCompone
       { name: 'size', attr: 'size', kind: 'string' },
   ],
   events: ['open-change'],
+  directSlots: ['trigger'],
 });

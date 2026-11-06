@@ -7,7 +7,7 @@ index 91087305f79586a1b8e00be3151fc2005bfc9487..f4efd78546fb742a455fc0588c48096c
            pointerBlocking: prop("modal"),
            layerStyleTargets: [() => dom.getBackdropEl(scope), () => dom.getPositionerEl(scope)],
 -          exclude: [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
-+          exclude: [prop("triggerEl")?.(), dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
++          exclude: () => [prop("triggerEl")?.(), dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
            onInteractOutside(event) {
              prop("onInteractOutside")?.(event);
              if (!prop("closeOnInteractOutside")) {
@@ -51,7 +51,7 @@ index bf7210a727d299e45b101d2b9db44d44b7290730..d81f09f9e34f0c1c7fc3b74a5a85e754
            pointerBlocking: prop("modal"),
            layerStyleTargets: [() => dom.getBackdropEl(scope), () => dom.getPositionerEl(scope)],
 -          exclude: [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
-+          exclude: [prop("triggerEl")?.(), dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
++          exclude: () => [prop("triggerEl")?.(), dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
            onInteractOutside(event) {
              prop("onInteractOutside")?.(event);
              if (!prop("closeOnInteractOutside")) {

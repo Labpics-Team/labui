@@ -5,14 +5,14 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML, projectSingleSlot } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/sheet';
 import type { LabSheet } from '@labpics/ui-core/sheet';
 
 /** SSR-пропы <lab-sheet> (атрибуты/свойства), взяты из класса ядра (LabSheet). */
 export type SheetSsrProps = Partial<Pick<LabSheet, 'modal' | 'closable' | 'heading' | 'description' | 'open' | 'position'>>;
 /** SSR-слоты <lab-sheet> — предрендеренные строки контента. */
-export type SheetSsrSlots = { default?: string; content?: string };
+export type SheetSsrSlots = { default?: string; content?: string; trigger?: string };
 
 /**
  * Рендерит <lab-sheet> со стилями и Declarative Shadow DOM. Включите строку в
@@ -30,5 +30,5 @@ export function renderSheet(
       description=${ifDefined(props.description)}
       .open=${props.open === undefined ? noChange : Boolean(props.open)}
       .position=${props.position === undefined ? noChange : props.position}
-    >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-sheet>`);
+    >${slots.content ? html`<span slot="content">${unsafeHTML(slots.content)}</span>` : ''}${unsafeHTML(projectSingleSlot(slots.trigger, 'trigger'))}${unsafeHTML(slots.default ?? '')}</lab-sheet>`);
 }

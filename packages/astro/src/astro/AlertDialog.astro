@@ -15,6 +15,7 @@ if (!import.meta.env.LABUI_HYDRATE) {
 const dsd = renderAlertDialog(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
   content: Astro.slots.has('content') ? await Astro.slots.render('content') : undefined,
+  trigger: Astro.slots.has('trigger') ? await Astro.slots.render('trigger') : undefined,
 });
 ---
 <Fragment set:html={dsd} />

@@ -16,6 +16,7 @@ import { type LitElement, type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
 import { shapeCardRegions } from '../components/card/ssr.js';
+import { assertModalTriggerMarkup } from '../components/dialog/ssr.js';
 import { booleanSnapshotAttribute, serializeBooleanSnapshot } from '../lit/boolean-snapshot.js';
 
 class LabElementRenderer extends LitElementRenderer {
@@ -47,11 +48,13 @@ class LabElementRenderer extends LitElementRenderer {
  * to embed via any framework's raw-HTML slot.
  */
 export function renderToString(template: TemplateResult): string {
-  return shapeCardRegions(
+  const source = shapeCardRegions(
     collectResultSync(
       render(template, { elementRenderers: [LabElementRenderer, LitElementRenderer] }),
     ),
   );
+  assertModalTriggerMarkup(source);
+  return source;
 }
 
 /**
@@ -62,4 +65,5 @@ export function renderToString(template: TemplateResult): string {
  * операции через одну SSR-поверхность и не зависят от Lit напрямую.
  */
 export { html, ifDefined, noChange, unsafeHTML };
+export { projectSingleSlot } from './slot-projection.js';
 export type { TemplateResult };

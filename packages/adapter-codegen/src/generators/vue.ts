@@ -52,6 +52,7 @@ ${specs}
   ],
   events: ${tsStringArray(c.events)},
 ${c.slots.fill?.length ? `  fillSlots: ${tsStringArray(c.slots.fill)},\n` : ''}\
+${c.slots.direct?.length ? `  directSlots: ${tsStringArray(c.slots.direct)},\n` : ''}\
 });
 `;
 }

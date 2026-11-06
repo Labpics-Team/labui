@@ -148,11 +148,18 @@ test('aria: trigger advertises the dialog, and labelledby/describedby resolve to
   await expect(litContent(page, 'lit-dialog')).toBeVisible();
 
   const triggerWiring = await litHost(page, 'lit-dialog').evaluate((host) => {
-    const sr = (host as HTMLElement).shadowRoot;
+    const sr = host.shadowRoot;
     const trigger = sr?.querySelector('.trigger');
+    const portal = sr?.querySelector('.portal-plane');
+    const references =
+      trigger && 'ariaControlsElements' in trigger ? trigger.ariaControlsElements : null;
+    const controls = trigger?.getAttribute('aria-controls') ?? null;
     return {
       haspopup: trigger?.getAttribute('aria-haspopup') ?? null,
-      controls: trigger?.getAttribute('aria-controls') ?? null,
+      controls,
+      portalId: portal?.id ?? null,
+      resolves: controls !== null && sr?.getElementById(controls) === portal,
+      reflected: Array.isArray(references) && references.includes(portal),
     };
   });
   const contentWiring = await page.locator(PORTAL('lit-dialog')).evaluate((host) => {
@@ -170,9 +177,12 @@ test('aria: trigger advertises the dialog, and labelledby/describedby resolve to
   });
   expect(triggerWiring.haspopup).toBe('dialog');
   expect(contentWiring.contentId, 'content has an id').toBeTruthy();
-  expect(triggerWiring.controls, 'trigger aria-controls → content id').toBe(
-    contentWiring.contentId,
+  expect(triggerWiring.portalId, 'controlled portal host has an id').toBeTruthy();
+  expect(triggerWiring.controls, 'trigger aria-controls → same-root portal container').toBe(
+    triggerWiring.portalId,
   );
+  expect(triggerWiring.resolves, 'IDREF resolves to the actual controlled container').toBe(true);
+  expect(triggerWiring.reflected, 'ARIA property returns the controlled container').toBe(true);
   expect(contentWiring.headingId, 'heading has an id').toBeTruthy();
   expect(contentWiring.descriptionId, 'description has an id').toBeTruthy();
   expect(contentWiring.labelledby, 'aria-labelledby → heading id').toBe(contentWiring.headingId);

@@ -46,6 +46,8 @@ export interface SlotMeta {
    * коробки заполняет его. Имена/размеры не выводятся из назначения компонента.
    */
   readonly fill?: readonly string[];
+  /** <slot data-projection="direct"> принимает один настоящий элемент без коробки адаптера. */
+  readonly direct?: readonly string[];
 }
 
 /** Один компонент ядра, представленный кастом-элементом `<lab-*>`. */

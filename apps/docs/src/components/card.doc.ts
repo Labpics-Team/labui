@@ -1,4 +1,7 @@
 import '@labpics/ui-core/card';
+import '@labpics/ui-core/button';
+import '@labpics/ui-core/sheet';
+import '@labpics/ui-core/switch';
 import type { ComponentDoc } from '../template/component-doc.js';
 
 function makeCard(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
@@ -9,6 +12,64 @@ function makeCard(attrs: Readonly<Record<string, string | boolean>>): HTMLElemen
   for (const [key, value] of Object.entries(attrs)) {
     if (value !== false) card.setAttribute(key, value === true ? '' : value);
   }
+  return card;
+}
+
+function makeNotificationSettings(): HTMLElement {
+  const card = document.createElement('lab-card');
+  card.heading = 'Уведомления';
+  card.description = 'Выберите, какие новости проекта получать.';
+  card.dataset.testid = 'notification-settings';
+
+  const enabled = document.createElement('lab-switch');
+  enabled.checked = true;
+  enabled.textContent = 'Получать уведомления';
+  enabled.dataset.material = 'solid';
+  enabled.dataset.testid = 'notification-enabled';
+
+  const sheet = document.createElement('lab-sheet');
+  sheet.slot = 'footer';
+  sheet.position = 'flex';
+  sheet.heading = 'Настройки уведомлений';
+  const trigger = document.createElement('lab-button');
+  trigger.slot = 'trigger';
+  trigger.type = 'neutral';
+  trigger.kind = 'border';
+  trigger.textContent = 'Настроить';
+  trigger.dataset.material = 'solid';
+  trigger.dataset.testid = 'settings-trigger';
+
+  const body = document.createElement('div');
+  body.slot = 'content';
+  body.style.cssText = 'display:grid;gap:var(--lab-space-sheet-gap);margin:0';
+  const comments = document.createElement('lab-switch');
+  comments.checked = true;
+  comments.textContent = 'Сообщать о комментариях';
+  comments.dataset.material = 'solid';
+  comments.dataset.testid = 'comments-enabled';
+  const done = document.createElement('lab-button');
+  done.textContent = 'Готово';
+  done.dataset.material = 'solid';
+  done.dataset.testid = 'settings-done';
+  done.addEventListener('click', () => {
+    sheet.open = false;
+  });
+
+  const updateSettings = (): void => {
+    comments.disabled = !enabled.checked;
+    sheet.description = enabled.checked
+      ? 'Изменения применяются сразу.'
+      : 'Сначала включите уведомления в карточке.';
+    card.lowerCaption = enabled.checked
+      ? `Уведомления включены. Комментарии ${comments.checked ? 'включены' : 'выключены'}.`
+      : 'Уведомления выключены.';
+  };
+  enabled.addEventListener('checked-change', updateSettings);
+  comments.addEventListener('checked-change', updateSettings);
+  updateSettings();
+  body.append(comments, done);
+  sheet.append(trigger, body);
+  card.append(enabled, sheet);
   return card;
 }
 
@@ -78,7 +139,7 @@ export const cardDoc: ComponentDoc = {
     ],
   },
   liveExample: {
-    make: () => makeCard({}),
+    make: makeNotificationSettings,
     controls: [
       { kind: 'select', label: 'Вариант', attribute: 'variant', options: variants },
       { kind: 'select', label: 'Отступ', attribute: 'padding', options: paddings },

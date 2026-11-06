@@ -53,7 +53,13 @@ function componentFile(c: ComponentMeta): string {
 
   const propDecls = c.props.map((p) => `    ${p.name}?: ${c.className}['${p.name}'];`).join('\n');
   const eventDecls = handlerNames.map((h) => `    ${h}?: (event: CustomEvent) => void;`).join('\n');
-  const slotDecls = namedSlots.map((s) => `    ${s.prop}?: Snippet;`).join('\n');
+  const slotDecls = namedSlots
+    .map((s) =>
+      c.slots.direct?.includes(s.slot)
+        ? `    ${s.prop}?: Snippet<[{ readonly slot: '${s.slot}' }]>;`
+        : `    ${s.prop}?: Snippet;`,
+    )
+    .join('\n');
 
   // children деструктурируем ВСЕГДA (иначе Snippet ушёл бы в ...rest и спреднулся
   // атрибутом); рендерим только при наличии default/динамического слота.
@@ -75,9 +81,11 @@ function componentFile(c: ComponentMeta): string {
 
   const namedSlotMarkup = namedSlots
     .map((s) =>
-      c.slots.fill?.includes(s.slot)
-        ? `  {#if ${s.prop}}<span slot="${s.slot}" data-lab-slot-fill style="display:inline-flex">{@render ${s.prop}()}</span>{/if}`
-        : `  {#if ${s.prop}}<div slot="${s.slot}" style="display:contents">{@render ${s.prop}()}</div>{/if}`,
+      c.slots.direct?.includes(s.slot)
+        ? `  {#if ${s.prop}}{@render ${s.prop}({ slot: '${s.slot}' })}{/if}`
+        : c.slots.fill?.includes(s.slot)
+          ? `  {#if ${s.prop}}<span slot="${s.slot}" data-lab-slot-fill style="display:inline-flex">{@render ${s.prop}()}</span>{/if}`
+          : `  {#if ${s.prop}}<div slot="${s.slot}" style="display:contents">{@render ${s.prop}()}</div>{/if}`,
     )
     .join('\n');
   const renderChildren = c.slots.default || c.slots.dynamic;

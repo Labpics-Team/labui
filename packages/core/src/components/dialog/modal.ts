@@ -4,8 +4,10 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
+import type { LabButton } from '../button/lab-button.js';
 import {
   type DialogFocusContext,
+  bindDialogTriggerControls,
   completeFailedDialogFocus,
   composedAncestors,
   dialogFinalFocusTarget,
@@ -15,6 +17,39 @@ export type ModalRole = 'dialog' | 'alertdialog';
 type DialogSchema = SchemaOf<dialogMachine.Service>;
 const dialogModule: MachineModule<DialogSchema, dialogMachine.Api> = dialogMachine;
 let instanceSequence = 0;
+
+function hasButtonTargetPort(
+  element: HTMLElement,
+): element is HTMLElement & Pick<LabButton, 'interactionTarget'> {
+  if (element.localName !== 'lab-button' || !('interactionTarget' in element)) return false;
+  const port = element.interactionTarget;
+  return (
+    typeof port === 'object' &&
+    port !== null &&
+    'current' in port &&
+    'subscribe' in port &&
+    typeof port.subscribe === 'function'
+  );
+}
+
+function assertTriggerLabel(nodes: readonly Node[]): void {
+  const pending = [...nodes];
+  while (pending.length) {
+    const node = pending.pop();
+    if (!(node instanceof Element)) continue;
+    if (
+      node.localName.includes('-') ||
+      node.matches(
+        'button, a[href], input, select, textarea, summary, iframe, object, embed, ' +
+          'audio[controls], video[controls], [tabindex], [contenteditable]:not([contenteditable="false"]), ' +
+          '[role="button"], [role="link"], [role="checkbox"], [role="switch"]',
+      )
+    ) {
+      throw new TypeError('LabModal: interactive children require one button in slot="trigger".');
+    }
+    pending.push(...node.childNodes);
+  }
+}
 
 /**
  * Общий владелец модальности Dialog и Sheet. Manual popover сохраняет CSS-предков
@@ -71,6 +106,13 @@ export abstract class LabModal extends LabElement {
   private portalRoot?: ShadowRoot;
   private contextObserver?: MutationObserver;
   private contentObserver?: MutationObserver;
+  private triggerSource: HTMLElement | null = null;
+  private triggerTarget: HTMLButtonElement | null = null;
+  private triggerGeneration = 0;
+  private waitingForUpgrade = -1;
+  private stopTriggerSubscription?: () => void;
+  private restoreTriggerControls?: () => void;
+  private readonly triggerAttributes = new Map<string, string | null>();
 
   private get isModal(): boolean {
     return this.modal !== 'false';
@@ -88,7 +130,7 @@ export abstract class LabModal extends LabElement {
       role: this.dialogRole,
       modal: this.isModal,
       getRootNode: () => this.portalRoot ?? document,
-      triggerEl: () => this.renderRoot.querySelector<HTMLElement>('.trigger'),
+      triggerEl: () => this.currentTriggerTarget(),
       // Trigger остаётся в другом shadow root. Заг передаёт ссылку focus trap,
       // а не пытается повторно искать её в portal root.
       finalFocusEl: () => dialogFinalFocusTarget(this.dialogFocusContext()),
@@ -100,8 +142,198 @@ export abstract class LabModal extends LabElement {
     return {
       owner: this,
       content: this.portalRoot?.querySelector('.content') ?? null,
-      trigger: this.renderRoot.querySelector<HTMLElement>('.trigger'),
+      trigger: this.currentTriggerTarget(),
     };
+  }
+
+  private currentTriggerTarget(): HTMLButtonElement | null {
+    return this.triggerSource && this.matchesTriggerAssignment(this.triggerSource)
+      ? this.triggerTarget
+      : null;
+  }
+
+  private matchesTriggerAssignment(source: HTMLElement): boolean {
+    if (!this.isConnected || !source.isConnected) return false;
+    const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot[name="trigger"]');
+    const assigned = slot?.assignedNodes() ?? [];
+    return assigned.length
+      ? assigned.length === 1 && assigned[0] === source
+      : source === this.renderRoot.querySelector('.trigger');
+  }
+
+  private selectTriggerSource(): HTMLElement | null {
+    const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot[name="trigger"]');
+    if (!slot) return null;
+    const label = this.renderRoot.querySelector<HTMLSlotElement>('.trigger > slot');
+    if (label) assertTriggerLabel(label.assignedNodes({ flatten: true }));
+    const assigned = slot.assignedNodes();
+    if (assigned.length) {
+      const source = assigned[0];
+      if (
+        assigned.length !== 1 ||
+        !(source instanceof HTMLElement) ||
+        (source.localName !== 'lab-button' && !(source instanceof HTMLButtonElement))
+      ) {
+        throw new TypeError(
+          'LabModal: slot="trigger" accepts exactly one LabButton or native button.',
+        );
+      }
+      if (source instanceof HTMLButtonElement) assertTriggerLabel([...source.childNodes]);
+      return source;
+    }
+    return this.renderRoot.querySelector<HTMLButtonElement>('.trigger');
+  }
+
+  private clearTriggerBinding(): void {
+    const previous = this.triggerTarget;
+    this.triggerTarget = null;
+    this.machineCtl.clearSpreads();
+    this.restoreTriggerControls?.();
+    this.restoreTriggerControls = undefined;
+    if (previous) {
+      for (const [attribute, value] of this.triggerAttributes) {
+        if (value === null) previous.removeAttribute(attribute);
+        else previous.setAttribute(attribute, value);
+      }
+    }
+    this.triggerAttributes.clear();
+  }
+
+  private releaseTrigger(): void {
+    this.triggerGeneration++;
+    this.triggerSource = null;
+    this.waitingForUpgrade = -1;
+    const stop = this.stopTriggerSubscription;
+    this.stopTriggerSubscription = undefined;
+    try {
+      stop?.();
+    } finally {
+      this.clearTriggerBinding();
+    }
+  }
+
+  private acceptTriggerTarget(
+    source: HTMLElement,
+    generation: number,
+    target: HTMLButtonElement | null,
+  ): void {
+    if (
+      generation !== this.triggerGeneration ||
+      source !== this.triggerSource ||
+      !this.matchesTriggerAssignment(source)
+    ) {
+      return;
+    }
+    if (target !== null) {
+      if (!(target instanceof HTMLButtonElement) || target.type !== 'button') {
+        this.clearTriggerBinding();
+        throw new TypeError('LabModal: trigger must own a native button with type="button".');
+      }
+      const targetRoot = target.getRootNode();
+      if (
+        source !== target &&
+        (!(targetRoot instanceof ShadowRoot) || targetRoot.host !== source)
+      ) {
+        this.clearTriggerBinding();
+        throw new TypeError('LabModal: LabButton interaction target belongs to another owner.');
+      }
+    }
+    if (target === this.triggerTarget) return;
+    this.clearTriggerBinding();
+    if (target) {
+      // Custom Button и floating plane находятся в разных shadow roots.
+      // Modal host доступен из родительского root; content role остаётся внутри.
+      const controlled = target.getRootNode() === this.renderRoot ? this.portalHost : this;
+      if (!controlled) return;
+      this.restoreTriggerControls = bindDialogTriggerControls(target, controlled);
+      this.triggerTarget = target;
+    }
+    this.requestUpdate();
+  }
+
+  private syncTrigger(): void {
+    let source: HTMLElement | null;
+    try {
+      source = this.selectTriggerSource();
+    } catch (error) {
+      this.releaseTrigger();
+      throw error;
+    }
+    if (source !== this.triggerSource) {
+      this.releaseTrigger();
+      this.triggerSource = source;
+    }
+    if (!source) return;
+    const generation = this.triggerGeneration;
+    if (source instanceof HTMLButtonElement) {
+      this.acceptTriggerTarget(source, generation, source);
+      return;
+    }
+    if (this.stopTriggerSubscription) return;
+    const registry = this.ownerDocument.defaultView?.customElements;
+    if (!registry) throw new TypeError('LabModal: custom element registry is unavailable.');
+    if (!registry.get('lab-button')) {
+      if (this.waitingForUpgrade === generation) return;
+      this.waitingForUpgrade = generation;
+      void registry.whenDefined('lab-button').then(() => {
+        if (
+          generation === this.triggerGeneration &&
+          source === this.triggerSource &&
+          this.matchesTriggerAssignment(source)
+        ) {
+          this.requestUpdate();
+        }
+      });
+      return;
+    }
+    registry.upgrade(source);
+    if (!hasButtonTargetPort(source)) {
+      this.releaseTrigger();
+      throw new TypeError('LabModal: LabButton does not provide its interaction target.');
+    }
+    const stop = source.interactionTarget.subscribe((target) => {
+      this.acceptTriggerTarget(source, generation, target);
+    });
+    // subscribe может вызвать callback немедленно; callback мог заменить slot.
+    if (
+      generation === this.triggerGeneration &&
+      source === this.triggerSource &&
+      this.matchesTriggerAssignment(source)
+    ) {
+      this.stopTriggerSubscription = stop;
+    } else {
+      stop();
+    }
+  }
+
+  private spreadTrigger(api: dialogMachine.Api): void {
+    const source = this.triggerSource;
+    const target = this.currentTriggerTarget();
+    if (!source || !target) return;
+    const generation = this.triggerGeneration;
+    const { type: _type, 'aria-controls': _controls, onClick, ...props } = api.getTriggerProps();
+    for (const attribute of Object.keys(props)) {
+      if (!attribute.startsWith('on') && !this.triggerAttributes.has(attribute)) {
+        this.triggerAttributes.set(attribute, target.getAttribute(attribute));
+      }
+    }
+    this.machineCtl.spread(target, {
+      ...props,
+      onClick: (event: Event) => {
+        if (
+          generation !== this.triggerGeneration ||
+          target !== this.currentTriggerTarget() ||
+          source !== this.selectTriggerSource()
+        ) {
+          return;
+        }
+        if (target.type !== 'button') {
+          this.clearTriggerBinding();
+          throw new TypeError('LabModal: trigger must keep native type="button".');
+        }
+        if (!target.disabled && typeof onClick === 'function') onClick(event);
+      },
+    });
   }
 
   static override styles = css`
@@ -148,13 +380,27 @@ export abstract class LabModal extends LabElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.contextObserver = new MutationObserver(() => this.requestUpdate());
-    this.contentObserver = new MutationObserver(() => this.requestUpdate());
+    this.contentObserver = new MutationObserver(() => {
+      if (this.triggerSource && !this.matchesTriggerAssignment(this.triggerSource)) {
+        this.releaseTrigger();
+      }
+      this.requestUpdate();
+    });
     // Изменения внутри стабильного slot wrapper тоже меняют содержимое панели.
     this.contentObserver.observe(this, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['slot'],
+      attributeFilter: [
+        'slot',
+        'type',
+        'html-type',
+        'href',
+        'tabindex',
+        'contenteditable',
+        'role',
+        'controls',
+      ],
     });
     this.requestUpdate();
   }
@@ -165,9 +411,13 @@ export abstract class LabModal extends LabElement {
     this.contentObserver?.disconnect();
     this.contentObserver = undefined;
     try {
-      super.disconnectedCallback();
+      this.releaseTrigger();
     } finally {
-      if (this.portalRoot) render(null, this.portalRoot);
+      try {
+        super.disconnectedCallback();
+      } finally {
+        if (this.portalRoot) render(null, this.portalRoot);
+      }
     }
   }
 
@@ -176,6 +426,7 @@ export abstract class LabModal extends LabElement {
     // Lit владеет стабильным host; отдельный shadow root не затрагивается render.
     const host = this.renderRoot.querySelector<HTMLElement>('.portal-plane');
     if (!host) return;
+    host.id = `${this.machineId}-portal`;
     host.setAttribute(this.portalAttribute, this.machineId);
     const ownTestId = this.getAttribute('data-testid');
     if (ownTestId) host.setAttribute('data-portal-for', ownTestId);
@@ -212,6 +463,7 @@ export abstract class LabModal extends LabElement {
     this.ensurePortal();
     const root = this.portalRoot;
     if (!root) return;
+    this.syncTrigger();
     this.syncContext();
     render(this.floatingTemplate(), root);
     this.portalHost?.setAttribute('data-modal', String(this.isModal));
@@ -220,8 +472,7 @@ export abstract class LabModal extends LabElement {
     }
     this.machineCtl.clearSpreads();
     const api = this.machineCtl.api;
-    const trigger = this.renderRoot.querySelector<HTMLElement>('.trigger');
-    if (trigger) this.machineCtl.spread(trigger, api.getTriggerProps());
+    this.spreadTrigger(api);
     for (const [selector, props] of [
       ['.backdrop', api.getBackdropProps()],
       ['.positioner', api.getPositionerProps()],
@@ -245,7 +496,9 @@ export abstract class LabModal extends LabElement {
 
   override render(): TemplateResult {
     return html`
-      <button class="trigger" type="button" part="trigger"><slot></slot></button>
+      <slot name="trigger" data-projection="direct" @slotchange=${this.triggerSlotChanged}>
+        <button class="trigger" type="button" part="trigger"><slot @slotchange=${this.triggerSlotChanged}></slot></button>
+      </slot>
       <div class="portal-plane" popover="manual">
         <slot name="content" slot="content" @slotchange=${this.contentSlotChanged}></slot>
       </div>
@@ -254,5 +507,11 @@ export abstract class LabModal extends LabElement {
 
   private contentSlotChanged(): void {
     if (this.isConnected) this.requestUpdate();
+  }
+
+  private triggerSlotChanged(): void {
+    if (!this.isConnected) return;
+    this.releaseTrigger();
+    this.requestUpdate();
   }
 }
