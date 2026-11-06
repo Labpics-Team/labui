@@ -286,8 +286,39 @@ foreach (var key in new[] { SheetSourceTopology.BranchesDataKey, SheetSourceTopo
         Check(ReadPair(invalid) is null, "Pair projector принял чужую форму либо произвольный текст.");
     PrivateTextAbsent(pairCopy);
 }
+
+Dictionary<string, object?> ActualThreeRow(object? stage, object? hresult, object? cleanup) => new()
+    { ["stage"] = stage, ["hresult"] = hresult, ["cleanupHresult"] = cleanup };
+Dictionary<string, object?>? ReadActualThree(object? value)
+    => SheetSourceTopology.ReadActualThree(new AggregateException(WithData(SheetSourceTopology.ActualThreeDataKey, value)));
+foreach (var stage in new[] { "build", "factory" })
+    foreach (var hresult in new[] { int.MinValue, BuildFailure, 0, int.MaxValue })
+        foreach (var cleanup in new int?[] { null, int.MinValue, int.MaxValue })
+        {
+            var row = ActualThreeRow(stage, hresult, cleanup);
+            var projected = ReadActualThree(row);
+            Check(projected is { Count: 3 } && Equals(projected["stage"], stage)
+                && Equals(projected["hresult"], hresult) && Equals(projected["cleanupHresult"], cleanup),
+                "Actual-three потеряла raw stage/HRESULT либо отдельный cleanup outcome.");
+            row["hresult"] = 99;
+            Check(Equals(projected!["hresult"], hresult), "Actual-three сохранила mutable row alias.");
+            PrivateTextAbsent(projected);
+        }
+foreach (var invalid in new object?[] { null, 42, Marker, Array.Empty<object>(),
+    new[] { ActualThreeRow("factory", 0, null) },
+    ActualThreeRow(null, 0, null), ActualThreeRow("Factory", 0, null), ActualThreeRow(Marker, 0, null),
+    ActualThreeRow("factory", null, null), ActualThreeRow("factory", 0L, null),
+    ActualThreeRow("factory", -2147483649L, null), ActualThreeRow("factory", 2147483648L, null),
+    ActualThreeRow("factory", Marker, null), ActualThreeRow("factory", 0, 0L),
+    ActualThreeRow("factory", 0, Marker),
+    new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0 },
+    new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0,
+        ["cleanupHresult"] = null, ["message"] = Marker } })
+    Check(ReadActualThree(invalid) is null, "Actual-three приняла отсутствие измерения, чужую форму или private text как outcome.");
 Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exception()) is null
-    && SheetSourceTopology.ReadBranches(unavailable) is null && SheetSourceTopology.ReadSigma(unavailable) is null,
+    && SheetSourceTopology.ReadBranches(unavailable) is null && SheetSourceTopology.ReadSigma(unavailable) is null
+    && SheetSourceTopology.ReadActualThree(null) is null && SheetSourceTopology.ReadActualThree(new Exception()) is null
+    && SheetSourceTopology.ReadActualThree(unavailable) is null,
     "Диагностика появилась без доступных данных.");
 Console.WriteLine("Sheet topology: System-only production callbacks, blur profile and actual DTO projectors PASS.");
 

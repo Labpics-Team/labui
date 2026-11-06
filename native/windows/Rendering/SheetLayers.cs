@@ -396,6 +396,7 @@ public sealed class SheetLayers : Grid
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
                 IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,
+                IGraphicsEffectSource[] progressiveBranches,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
@@ -429,6 +430,8 @@ public sealed class SheetLayers : Grid
                                 SheetSourceTopologyProbe.RecordSigmaFactories(primary, compositor,
                                     progressiveGraph, Enumerable.Range(1, SheetBlurProfile.Levels.Length - 1)
                                         .Select(index => $"ghostBlur{index}.BlurAmount"));
+                                SheetSourceTopologyProbe.RecordActualThree(primary, compositor,
+                                    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
                             }
                         }
                     }
@@ -462,7 +465,7 @@ public sealed class SheetLayers : Grid
             var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, progressive, ghostSource,
+            result.Visual.Brush = Brush("final", graph, progressive, ghostSource, branches,
                 ("backdrop", backdropBrush), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));
             return result;
         }

@@ -10,6 +10,7 @@ internal static class SheetSourceTopology
     internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
     internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
+    internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -76,6 +77,28 @@ internal static class SheetSourceTopology
 
     internal static Dictionary<string, object?>[]? ReadSigma(Exception? error)
         => ReadPair(error, SigmaDataKey);
+
+    internal static Dictionary<string, object?>? ReadActualThree(Exception? error)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(ActualThreeDataKey)) continue;
+                if (error.Data[ActualThreeDataKey] is not Dictionary<string, object?> row
+                    || row.Count != 3 || !row.TryGetValue("stage", out var rawStage)
+                    || !row.TryGetValue("hresult", out var hresult)
+                    || !row.TryGetValue("cleanupHresult", out var cleanupHresult)
+                    || hresult is not int || cleanupHresult is not (null or int)) return null;
+                var stage = Known(rawStage, "build", "factory");
+                return stage is not null
+                    ? new() { ["stage"] = stage, ["hresult"] = hresult, ["cleanupHresult"] = cleanupHresult }
+                    : null;
+            }
+        }
+        catch { }
+        return null;
+    }
 
     private static Dictionary<string, object?>[]? ReadPair(Exception? error, string dataKey)
     {

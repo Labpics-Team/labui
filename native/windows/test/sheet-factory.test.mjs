@@ -7,6 +7,13 @@ const SOURCE = 'a'.repeat(40);
 // Только инертная проекция значений; эти данные не обозначают native outcome.
 function readback(factory, ...pairs) {
   const [branches, field = 'factory', pairField = 'branches'] = pairs;
+  return errorReadback({
+    factory,
+    ...(pairs.length > 0 ? { [pairField]: branches } : {}),
+  })[field];
+}
+
+function errorReadback(fields) {
   const observation = {
     pid: 42,
     windowHandle: '17',
@@ -19,8 +26,7 @@ function readback(factory, ...pairs) {
       type: 'ArgumentException',
       hresult: -2147024809,
       site: 'Compositor.CreateEffectFactory',
-      factory,
-      ...(pairs.length > 0 ? { [pairField]: branches } : {}),
+      ...fields,
     },
   };
   const line = sheetFailureLog({
@@ -48,7 +54,7 @@ function readback(factory, ...pairs) {
   const result = JSON.parse(line.slice('LABUI_SHEET_FAILURE_JSON '.length));
   assert.equal(result.observation.rendererReady, false);
   assert.equal(result.observation.error.hresult, -2147024809);
-  return result.observation.error[field];
+  return result.observation.error;
 }
 
 test('factory failure identifies the actual call without admitting the failed renderer', () => {
@@ -148,4 +154,71 @@ test('borrowed factory pairs reject unknown fields, malformed integers and parti
   ])
     for (const field of ['branches', 'clamping', 'sigma'])
       assert.equal(readback(factory, rows, field, field), null);
+});
+
+test('actual-three retains raw build/factory and cleanup outcomes while the primary renderer still fails', () => {
+  const factory = { name: 'final', operation: 'factory' };
+  for (const stage of ['build', 'factory'])
+    for (const hresult of [-2147483648, -2147024809, 0, 2147483647])
+      for (const cleanupHresult of [null, -2147483648, 2147483647]) {
+        const actualThree = { stage, hresult, cleanupHresult };
+        const error = errorReadback({ factory, actualThree });
+        assert.deepEqual(error.factory, factory);
+        assert.deepEqual(error.actualThree, actualThree);
+      }
+});
+
+test('actual-three rejects unknown fields, private text and missing measurement instead of inventing PASS', () => {
+  const factory = { name: 'final', operation: 'factory' };
+  const actualThree = { stage: 'factory', hresult: 0, cleanupHresult: null };
+  for (const value of [
+    null,
+    [],
+    [actualThree],
+    42,
+    'PRIVATE_BRANCH_VALUE',
+    {},
+    { stage: 'factory', hresult: 0 },
+    { ...actualThree, stage: null },
+    { ...actualThree, stage: 'Factory' },
+    { ...actualThree, stage: 'PRIVATE_BRANCH_VALUE' },
+    { ...actualThree, hresult: null },
+    { ...actualThree, hresult: undefined },
+    { ...actualThree, hresult: 1.5 },
+    { ...actualThree, hresult: 2147483648 },
+    { ...actualThree, hresult: -2147483649 },
+    { ...actualThree, hresult: Number.NaN },
+    { ...actualThree, hresult: Number.POSITIVE_INFINITY },
+    { ...actualThree, hresult: 'PRIVATE_BRANCH_VALUE' },
+    { ...actualThree, cleanupHresult: undefined },
+    { ...actualThree, cleanupHresult: {} },
+    { ...actualThree, cleanupHresult: 1.5 },
+    { ...actualThree, cleanupHresult: 2147483648 },
+    { ...actualThree, cleanupHresult: -2147483649 },
+    { ...actualThree, message: 'PRIVATE_BRANCH_VALUE' },
+  ])
+    assert.equal(errorReadback({ factory, actualThree: value }).actualThree, null);
+});
+
+test('legacy factory, branch and sigma shapes survive without an actual-three field', () => {
+  const factory = { name: 'final', operation: 'factory' };
+  const pair = [
+    { hresult: -2147024809, cleanupHresult: null },
+    { hresult: 0, cleanupHresult: null },
+  ];
+  const legacy = errorReadback({ factory, branches: pair, sigma: pair });
+  assert.deepEqual(legacy.factory, factory);
+  assert.deepEqual(legacy.branches, pair);
+  assert.deepEqual(legacy.sigma, pair);
+  assert.equal(Object.hasOwn(legacy, 'actualThree'), false);
+  const measured = errorReadback({
+    factory,
+    branches: pair,
+    sigma: pair,
+    actualThree: { stage: 'factory', hresult: 0, cleanupHresult: null },
+  });
+  assert.deepEqual(measured, {
+    ...legacy,
+    actualThree: { stage: 'factory', hresult: 0, cleanupHresult: null },
+  });
 });

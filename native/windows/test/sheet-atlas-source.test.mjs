@@ -34,7 +34,7 @@ test('Sheet graph shares the original atlas with a separate fresh Body mask inpu
   );
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
+    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource, branches,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
   );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
@@ -149,7 +149,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource, branches,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(

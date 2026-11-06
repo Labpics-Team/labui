@@ -12,6 +12,7 @@ internal static class SheetSourceTopologyProbe
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
     internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
+    internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -53,6 +54,32 @@ internal static class SheetSourceTopologyProbe
     internal static void RecordSigmaFactories(Exception primary, Compositor compositor,
         IGraphicsEffect progressive, IEnumerable<string> dynamicProperties)
         => RecordPair(primary, SigmaDataKey, compositor, progressive, progressive, dynamicProperties);
+
+    // Ровно три actual ветви принадлежат Frame; sampler владеет только Add root/factory.
+    // Sigma, имена и Layer transforms заимствуются без перестроения или изменения.
+    internal static void RecordActualThree(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)
+    {
+        try
+        {
+            var outcome = SheetFactorySampling.Capture(register =>
+            {
+                var root = new CompositeEffect();
+                register(root);
+                root.Mode = CanvasComposite.Add;
+                root.Sources.Add(branch0);
+                root.Sources.Add(branch1);
+                root.Sources.Add(branch2);
+                return root;
+            }, graph => compositor.CreateEffectFactory(graph));
+            primary.Data[ActualThreeDataKey] = new Dictionary<string, object?>
+            {
+                ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+            };
+        }
+        catch { }
+    }
 
     private static void RecordPair(Exception primary, string dataKey, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second, IEnumerable<string>? secondProperties = null)

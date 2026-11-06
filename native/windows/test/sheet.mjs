@@ -174,6 +174,30 @@ function branchesInfo(value) {
   return rows;
 }
 
+function actualThreeInfo(value) {
+  if (
+    value === null ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.keys(value).length !== 3 ||
+    !Object.hasOwn(value, 'stage') ||
+    !Object.hasOwn(value, 'hresult') ||
+    !Object.hasOwn(value, 'cleanupHresult') ||
+    !['build', 'factory'].includes(value.stage) ||
+    !Number.isInteger(value.hresult) ||
+    value.hresult < -2147483648 ||
+    value.hresult > 2147483647 ||
+    !(
+      value.cleanupHresult === null ||
+      (Number.isInteger(value.cleanupHresult) &&
+        value.cleanupHresult >= -2147483648 &&
+        value.cleanupHresult <= 2147483647)
+    )
+  )
+    return null;
+  return { stage: value.stage, hresult: value.hresult, cleanupHresult: value.cleanupHresult };
+}
+
 function observationError(value) {
   if (value === null) return null;
   if (typeof value === 'string') return 'reported';
@@ -258,6 +282,9 @@ function observationError(value) {
     ...(Object.hasOwn(value, 'branches') ? { branches: branchesInfo(value.branches) } : {}),
     ...(Object.hasOwn(value, 'clamping') ? { clamping: branchesInfo(value.clamping) } : {}),
     ...(Object.hasOwn(value, 'sigma') ? { sigma: branchesInfo(value.sigma) } : {}),
+    ...(Object.hasOwn(value, 'actualThree')
+      ? { actualThree: actualThreeInfo(value.actualThree) }
+      : {}),
   };
 }
 

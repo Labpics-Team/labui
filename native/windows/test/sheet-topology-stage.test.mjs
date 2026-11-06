@@ -454,11 +454,115 @@ function assertSamplingSource(sampling) {
   );
 }
 
+function assertActualThreeSource(producer, renderer, projector, codec, page) {
+  for (const source of [producer, projector])
+    includesSource(
+      source,
+      'internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";',
+      'actual-three producer/projector key differs',
+    );
+  includesSource(
+    producer,
+    `internal static void RecordActualThree(Exception primary, Compositor compositor,
+    IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)`,
+    'actual-three borrowed inputs changed',
+  );
+  const sampler = enclosed(producer, 'internal static void RecordActualThree(');
+  assert.deepEqual(
+    enclosed(sampler, 'var outcome = SheetFactorySampling.Capture(register =>'),
+    tokens(`var root = new CompositeEffect();
+    register(root);
+    root.Mode = CanvasComposite.Add;
+    root.Sources.Add(branch0);
+    root.Sources.Add(branch1);
+    root.Sources.Add(branch2);
+    return root;`),
+    'Sheet: actual-three must own only a temporary Add root and borrow all three inputs unchanged',
+  );
+  includesSource(
+    sampler,
+    '}, graph => compositor.CreateEffectFactory(graph));',
+    'actual-three factory must use its root and the supplied Compositor',
+  );
+  includesSource(
+    sampler,
+    `primary.Data[ActualThreeDataKey] = new Dictionary<string, object?> {
+    ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+    ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+  };`,
+    'actual-three outcome must preserve build/factory and separate cleanup HRESULT',
+  );
+  includesSource(
+    renderer,
+    `IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
+    for (var index = 0; index < branches.Length; index++)
+      branches[index] = Mask(index == 0 ? Backdrop()
+        : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
+          $"ghostBlur{index}"), Layer(ghostMasks[index]));`,
+    'actual-three must use the authored branches with their sigma, names and Layer transforms',
+  );
+  includesSource(
+    renderer,
+    `result.Visual.Brush = Brush("final", graph, progressive, ghostSource, branches,
+    ("backdrop", backdropBrush), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));`,
+    'actual-three must receive the same branches as the production graph',
+  );
+  includesSource(
+    renderer,
+    `IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,
+    IGraphicsEffectSource[] progressiveBranches,
+    params (string Name, CompositionBrush Source)[] bindings)`,
+    'actual-three source array is disconnected from Brush',
+  );
+  const brush = enclosed(renderer, 'CompositionEffectBrush Brush(');
+  const failure = enclosed(brush, 'catch (Exception primary)');
+  const finalFailure = enclosed(
+    failure,
+    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
+  );
+  includesSource(
+    enclosed(finalFailure, 'if (operation == "factory")'),
+    `SheetSourceTopologyProbe.RecordActualThree(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
+    'actual-three must observe exactly actual indices 0/1/2 only after final factory failure',
+  );
+  assert.equal(
+    tokens(renderer).filter((token) => token === 'RecordActualThree').length,
+    1,
+    'Sheet: actual-three must have one failure-only call site',
+  );
+  includesSource(failure, 'throw;', 'actual-three success must not admit the primary failure');
+  includesSource(
+    page,
+    'SheetSourceTopology.ReadSigma(args.Exception), SheetSourceTopology.ReadActualThree(args.Exception)));',
+    'actual-three must pass through the existing exception observation',
+  );
+  includesSource(
+    page,
+    'object? sigma = null, object? actualThree = null);',
+    'actual-three absence must remain an optional observation field',
+  );
+  includesSource(
+    codec,
+    `...(Object.hasOwn(value, 'actualThree') ? { actualThree: actualThreeInfo(value.actualThree) } : {}),`,
+    'actual-three must preserve legacy absence instead of inventing PASS',
+  );
+}
+
 // Source-only: настоящий producer, owner и оба настоящих wire-проектора.
-function assertSheetSourceProjection(producer, projector, codec, sampling, profile) {
+function assertSheetSourceProjection(
+  producer,
+  projector,
+  codec,
+  sampling,
+  profile,
+  renderer,
+  page,
+) {
   const signatures = caseSignatures(producer);
   assertGraphSource(producer, profile);
   assertSamplingSource(sampling);
+  assertActualThreeSource(producer, renderer, projector, codec, page);
   const csharp = argumentsOf(enclosed(projector, '["source"] = Known', '(', ')'))
     .slice(1)
     .map(literal);
@@ -492,6 +596,8 @@ function topologySources() {
     readFile(new URL('./sheet.mjs', import.meta.url), 'utf8'),
     readFile(new URL('../Rendering/SheetFactorySampling.cs', import.meta.url), 'utf8'),
     readFile(new URL('../Rendering/SheetBlurProfile.cs', import.meta.url), 'utf8'),
+    readFile(new URL('../Rendering/SheetLayers.cs', import.meta.url), 'utf8'),
+    readFile(new URL('../../../examples/windows/SheetPage.xaml.cs', import.meta.url), 'utf8'),
   ]);
 }
 
@@ -512,7 +618,7 @@ test('actual Sheet graph, owner and twenty ordered cases survive both real wire 
 
 test('source gate accepts harmless C# spacing and comments', async () => {
   const files = await topologySources();
-  for (const index of [0, 1, 3, 4])
+  for (const index of [0, 1, 3, 4, 5, 6])
     files[index] =
       `// Healthy formatting control\n${tokens(files[index]).join(' \n\t')}\n/* End */`;
   assertSheetSourceProjection(...files);
@@ -520,7 +626,11 @@ test('source gate accepts harmless C# spacing and comments', async () => {
 
 test('source gate rejects a non-Add operator in the actual flat combiner', async () => {
   const files = await topologySources();
-  files[0] = sourceCounterexample(files[0], 'CanvasComposite.Add', 'CanvasComposite.SourceOver');
+  files[0] = sourceCounterexample(
+    files[0],
+    'var add = spec.Add && !spec.Balanced ? Own(new CompositeEffect { Mode = CanvasComposite.Add }) : null;',
+    'var add = spec.Add && !spec.Balanced ? Own(new CompositeEffect { Mode = CanvasComposite.SourceOver }) : null;',
+  );
   assert.throws(() => assertSheetSourceProjection(...files), /actual flat Add combiner changed/);
 });
 
@@ -547,6 +657,38 @@ test('source gate rejects removal of owned reverse cleanup', async () => {
   assert.throws(
     () => assertSheetSourceProjection(...files),
     /factory-first and reverse-owned cleanup missing/,
+  );
+});
+
+test('source gate rejects repeating an input instead of actual branch 2', async () => {
+  const files = await topologySources();
+  files[5] = sourceCounterexample(files[5], 'progressiveBranches[2]', 'progressiveBranches[1]');
+  assert.throws(() => assertSheetSourceProjection(...files), /exactly actual indices 0\/1\/2/);
+});
+
+test('source gate rejects registering a borrowed actual branch for cleanup', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    'register(root);',
+    'register(root); register(branch0);',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /own only a temporary Add root and borrow all three inputs unchanged/,
+  );
+});
+
+test('source gate rejects replacing an actual branch with a constructed substitute', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    'root.Sources.Add(branch2);',
+    'root.Sources.Add(new CompositionEffectSourceParameter("backdrop"));',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /own only a temporary Add root and borrow all three inputs unchanged/,
   );
 });
 
