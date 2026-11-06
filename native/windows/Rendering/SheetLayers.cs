@@ -390,7 +390,7 @@ public sealed class SheetLayers : Grid
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
-                AlphaMaskEffect bodyGraph, Transform2DEffect bodyMaskGraph,
+                IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
@@ -417,27 +417,9 @@ public sealed class SheetLayers : Grid
                             { ["name"] = factoryName, ["operation"] = operation };
                             if (operation == "factory")
                             {
-                                // Оба root, mask и leaf свежие; различается только имя источника.
-                                AlphaMaskEffect BodyMaskControl(string sourceName)
-                                {
-                                    var mask = result.Own(new Transform2DEffect
-                                    {
-                                        Name = bodyMaskGraph.Name,
-                                        Source = new CompositionEffectSourceParameter(sourceName),
-                                        TransformMatrix = bodyMaskGraph.TransformMatrix,
-                                        InterpolationMode = bodyMaskGraph.InterpolationMode,
-                                        BorderMode = bodyMaskGraph.BorderMode,
-                                        Sharpness = bodyMaskGraph.Sharpness,
-                                    });
-                                    return result.Own(new AlphaMaskEffect
-                                    {
-                                        Name = bodyGraph.Name,
-                                        Source = bodyGraph.Source,
-                                        AlphaMask = mask,
-                                    });
-                                }
+                                // Исходные progressive и Ghost до внешней маски принадлежат Frame.
                                 SheetSourceTopologyProbe.RecordBranches(primary, compositor,
-                                    BodyMaskControl("atlas"), BodyMaskControl("bodyMaskAtlas"));
+                                    progressiveGraph, ghostSourceGraph);
                             }
                         }
                     }
@@ -457,7 +439,8 @@ public sealed class SheetLayers : Grid
             for (var index = 0; index < branches.Length; index++)
                 progressive.Sources.Add(branches[index]);
             // Alpha Ghost tint не управляет существованием backdrop/noise.
-            var ghost = Mask(WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity), Layer(ghostMask));
+            var ghostSource = WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity);
+            var ghost = Mask(ghostSource, Layer(ghostMask));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!));
             var blended = Effect(new BlendEffect
             {
@@ -469,7 +452,7 @@ public sealed class SheetLayers : Grid
             var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, body, bodyAlphaMask,
+            result.Visual.Brush = Brush("final", graph, progressive, ghostSource,
                 ("backdrop", backdropBrush), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));
             return result;
         }

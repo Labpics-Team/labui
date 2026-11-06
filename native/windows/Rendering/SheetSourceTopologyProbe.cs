@@ -52,8 +52,8 @@ internal static class SheetSourceTopologyProbe
         }
     }
 
-    // Свежие Body-mask controls: прежнее имя atlas и отдельное bodyMaskAtlas.
-    // Root и mask принадлежат Frame; sampler закрывает только свои factory.
+    // Слоты: исходный progressive; тот же progressive с Ghost paint/noise до внешней маски.
+    // Графы принадлежат Frame; sampler закрывает только свои factory.
     internal static void RecordBranches(Exception primary, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second)
     {

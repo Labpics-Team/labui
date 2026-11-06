@@ -34,7 +34,7 @@ test('Sheet graph shares the original atlas with a separate fresh Body mask inpu
   );
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, body, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
+    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
   );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
@@ -44,6 +44,26 @@ test('Sheet graph shares the original atlas with a separate fresh Body mask inpu
   );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
   assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
+});
+
+test('Sheet factory slots observe actual progressive and Ghost input before its structural mask', () => {
+  assert.match(
+    build,
+    /CompositionEffectBrush Brush\(string factoryName, IGraphicsEffect graph,\s*IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,/,
+  );
+  const failure = build.slice(
+    build.indexOf('catch (Exception primary)'),
+    build.indexOf('CompositeEffect WithNoise('),
+  );
+  assert.match(
+    failure,
+    /if \(operation == "factory"\)\s*\{[^{}]*SheetSourceTopologyProbe\.RecordBranches\(primary, compositor,\s*progressiveGraph, ghostSourceGraph\);/,
+  );
+  assert.equal([...failure.matchAll(/SheetSourceTopologyProbe\.RecordBranches\(/g)].length, 1);
+  assert.doesNotMatch(
+    failure,
+    /BodyMaskControl|new (AlphaMaskEffect|Transform2DEffect|CompositionEffectSourceParameter)\b/,
+  );
 });
 
 test('Sheet virtual atlas uses the original Uniform projection and per-cell updateRect', () => {
@@ -91,7 +111,11 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
   );
   assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
   assert.match(build, /progressive\.Sources\.Add\(branches\[index\]\)/);
-  assert.match(build, /Over\(progressive, Paint\(Ghost!\)\)/);
+  assert.match(
+    build,
+    /var ghostSource = WithNoise\(Over\(progressive, Paint\(Ghost!\)\), Geometry\.SheetGhostNoiseOpacity\);/,
+  );
+  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
   assert.match(build, /var sheet = Over\(Over\(ghost, Layer\(outer\)\), body\)/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
@@ -125,7 +149,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assert.match(
     build,
-    /result\.Visual\.Brush = Brush\("final", graph, body, bodyAlphaMask,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)/,
+    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)/,
   );
   assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
   assert.match(
