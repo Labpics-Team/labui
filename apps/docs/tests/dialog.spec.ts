@@ -42,7 +42,7 @@ function reactWrap(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
 function reactTrigger(page: Page, testid: string): Locator {
-  return reactWrap(page, testid).locator('.lab-dialog-trigger');
+  return reactWrap(page, testid).locator('[data-scope="dialog"][data-part="trigger"]');
 }
 function reactOpenContent(page: Page): Locator {
   return page.locator('.lab-dialog-content[data-state="open"]');
@@ -99,6 +99,20 @@ test('delivered HTML carries the Lit element (React island mounts client-side)',
   const body = await (await request.get('/dialog.html')).text();
   expect(body).toMatch(/<lab-dialog/i);
   expect(body).toContain('id="react-root"');
+});
+
+test('React: a custom Button is the only opener and preserves its owner attributes', async ({
+  page,
+}) => {
+  const trigger = reactTrigger(page, 'react-dialog');
+  await expect(reactWrap(page, 'react-dialog').locator('button')).toHaveCount(1);
+  await expect(trigger).toHaveCount(1);
+  await expect(trigger).toHaveAttribute('data-lab-button', '');
+  await expect(trigger).toHaveAttribute('data-type', 'neutral');
+  await expect(trigger).toHaveAttribute('data-kind', 'tinted');
+  await expect(trigger).toHaveAttribute('type', 'button');
+  await expect(trigger).not.toHaveClass(/\blab-dialog-trigger\b/);
+  await expect(reactTrigger(page, 'react-dialog-nonmodal')).toHaveClass('lab-dialog-trigger');
 });
 
 test('open on click: the Zag machine opens the dialog on both renderers', async ({ page }) => {
@@ -186,6 +200,24 @@ test('aria: trigger advertises the dialog, and labelledby/describedby resolve to
   // React — content portalled to <body>.
   await reactTrigger(page, 'react-dialog').click();
   await expect(reactOpenContent(page)).toBeVisible();
+  const reactTriggerWiring = await reactTrigger(page, 'react-dialog').evaluate((trigger) => {
+    const root = trigger.getRootNode();
+    const controls = trigger.getAttribute('aria-controls');
+    const controlled =
+      controls && (root instanceof Document || root instanceof ShadowRoot)
+        ? root.getElementById(controls)
+        : null;
+    return {
+      haspopup: trigger.getAttribute('aria-haspopup'),
+      controls,
+      role: controlled?.getAttribute('role'),
+      content: controlled?.classList.contains('lab-dialog-content') ?? false,
+    };
+  });
+  await expect(reactOpenContent(page)).toHaveAttribute('id', reactTriggerWiring.controls ?? '');
+  expect(reactTriggerWiring.haspopup).toBe('dialog');
+  expect(reactTriggerWiring.role).toBe('dialog');
+  expect(reactTriggerWiring.content, 'react aria-controls resolves to the actual panel').toBe(true);
   const reactWiring = await reactOpenContent(page).evaluate((content) => {
     const root = content.getRootNode() as Document | ShadowRoot;
     const labelledby = content.getAttribute('aria-labelledby');

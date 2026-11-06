@@ -5,7 +5,6 @@ import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import { type SheetMotion, mountSheetMotion } from '@labpics/ui-core/motion';
 import {
-  type DialogFocusContext,
   type LabSheetPosition,
   completeFailedDialogFocus,
   dialogFinalFocusTarget,
@@ -17,10 +16,12 @@ import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } f
 import { createPortal } from 'react-dom';
 import '@labpics/ui-materials/material.css';
 import { DialogPortalPlane } from './components/dialog-portal-plane.js';
+import { type ModalTrigger, useModalTrigger } from './components/modal-trigger.js';
 import { useZag } from './use-zag.js';
 import './sheet.css';
 
 export type { LabSheetPosition } from '@labpics/ui-core/shared';
+export type { ModalTrigger, ModalTriggerProps } from './components/modal-trigger.js';
 
 type DialogSchema = SchemaOf<dialogMachine.Service>;
 const dialogModule: MachineModule<DialogSchema, dialogMachine.Api> = dialogMachine;
@@ -46,7 +47,9 @@ export interface SheetProps {
   onOpenChange?: (open: boolean) => void;
   onPositionChange?: (position: LabSheetPosition) => void;
   onMotionError?: (error: unknown) => void;
-  /** Содержимое доступной кнопки открытия, как у Dialog. */
+  /** Одна настоящая Button/native button вместо встроенной кнопки; передайте ей props/ref. */
+  trigger?: ModalTrigger;
+  /** Подпись встроенной кнопки открытия. Для готовой Button используйте trigger. */
   children?: ReactNode;
 }
 
@@ -64,6 +67,7 @@ export function Sheet({
   onOpenChange,
   onPositionChange,
   onMotionError,
+  trigger: customTrigger,
   children,
 }: SheetProps): ReactNode {
   if (open !== undefined && typeof open !== 'boolean') {
@@ -87,8 +91,11 @@ export function Sheet({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const trigger = useRef<HTMLButtonElement>(null);
-  const dialogContent = useRef<HTMLDivElement>(null);
+  const { trigger, contentRef, focusContext, renderTrigger } = useModalTrigger(
+    'LabSheet',
+    customTrigger,
+    children,
+  );
   const positioner = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const surface = useRef<HTMLDivElement>(null);
@@ -136,22 +143,16 @@ export function Sheet({
     setFailed(true);
     setPresent(false);
     try {
-      completeFailedDialogFocus(dialogFocusContext());
+      completeFailedDialogFocus(focusContext.current);
     } finally {
       changeOpen(false);
       latest.current.onMotionError?.(error);
     }
   }
 
-  function dialogFocusContext(): DialogFocusContext {
-    return { owner: trigger.current, content: dialogContent.current, trigger: trigger.current };
-  }
-
   const hasHeading = heading != null && typeof heading !== 'boolean' && heading !== '';
   const hasDescription =
     description != null && typeof description !== 'boolean' && description !== '';
-  // DOM-контекст остаётся у последнего resolver после очистки React refs на unmount.
-  const finalFocusContext = dialogFocusContext();
   const api = useZag(dialogModule, {
     id: useId(),
     role: 'dialog',
@@ -160,7 +161,7 @@ export function Sheet({
     open: mounted && (effectiveOpen || present),
     'aria-label': ariaLabel ?? (hasHeading ? undefined : 'Панель'),
     triggerEl: () => trigger.current,
-    finalFocusEl: () => dialogFinalFocusTarget(finalFocusContext),
+    finalFocusEl: () => dialogFinalFocusTarget(focusContext.current),
     onOpenChange: (details) => changeOpen(details.open),
   });
 
@@ -289,7 +290,7 @@ export function Sheet({
           />
           <div
             {...contentProps}
-            ref={dialogContent}
+            ref={contentRef}
             className="lab-sheet-content"
             aria-labelledby={hasHeading ? contentProps['aria-labelledby'] : undefined}
             aria-describedby={hasDescription ? contentProps['aria-describedby'] : undefined}
@@ -346,9 +347,7 @@ export function Sheet({
 
   return (
     <>
-      <button ref={trigger} type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
-        {children}
-      </button>
+      {renderTrigger(api.getTriggerProps(), mounted)}
       {mounted && createPortal(floating, document.body)}
     </>
   );

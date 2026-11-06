@@ -23,11 +23,15 @@
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { dialogFinalFocusTarget } from '@labpics/ui-core/shared';
+import { type ReactNode, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { DialogPortalPlane } from './components/dialog-portal-plane.js';
+import { type ModalTrigger, useModalTrigger } from './components/modal-trigger.js';
 import { useZag } from './use-zag.js';
 import './dialog.css';
+
+export type { ModalTrigger, ModalTriggerProps } from './components/modal-trigger.js';
 
 type DialogSchema = SchemaOf<dialogMachine.Service>;
 type DialogApi = dialogMachine.Api;
@@ -52,7 +56,9 @@ export interface DialogProps {
   role?: LabDialogRole;
   /** Fires when the machine opens or closes (machine is the source of truth). */
   onOpenChange?: (open: boolean) => void;
-  /** The trigger content — wrapped in the accessible trigger button. */
+  /** Одна настоящая Button/native button вместо встроенной кнопки; передайте ей props/ref. */
+  trigger?: ModalTrigger;
+  /** Подпись встроенной кнопки открытия. Для готовой Button используйте trigger. */
   children?: ReactNode;
 }
 
@@ -71,14 +77,20 @@ export function Dialog({
   closable = true,
   role = 'dialog',
   onOpenChange,
+  trigger: customTrigger,
   children,
 }: DialogProps): ReactNode {
-  const trigger = useRef<HTMLButtonElement>(null);
+  const { trigger, contentRef, focusContext, renderTrigger } = useModalTrigger(
+    'LabDialog',
+    customTrigger,
+    children,
+  );
   const api = useZag(dialogModule, {
     id: useId(),
     role,
     modal,
     triggerEl: () => trigger.current,
+    finalFocusEl: () => dialogFinalFocusTarget(focusContext.current),
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
@@ -95,7 +107,12 @@ export function Dialog({
         data-open={api.open || undefined}
         data-modal={modal || undefined}
       >
-        <div {...api.getContentProps()} className="lab-dialog-content" data-size={size}>
+        <div
+          {...api.getContentProps()}
+          ref={contentRef}
+          className="lab-dialog-content"
+          data-size={size}
+        >
           {heading != null && (
             <h2 {...api.getTitleProps()} className="lab-dialog-heading">
               {heading}
@@ -119,9 +136,7 @@ export function Dialog({
 
   return (
     <>
-      <button ref={trigger} type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
-        {children}
-      </button>
+      {renderTrigger(api.getTriggerProps(), mounted)}
       {mounted && createPortal(floating, document.body)}
     </>
   );
