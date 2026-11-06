@@ -5,7 +5,8 @@ import { decodeSheetEvidence, sheetFailureLog, validateObservation } from './she
 const SOURCE = 'a'.repeat(40);
 
 // Только инертная проекция значений; эти данные не обозначают native outcome.
-function readback(factory, branches, field = 'factory') {
+function readback(factory, ...pairs) {
+  const [branches, field = 'factory', pairField = 'branches'] = pairs;
   const observation = {
     pid: 42,
     windowHandle: '17',
@@ -19,7 +20,7 @@ function readback(factory, branches, field = 'factory') {
       hresult: -2147024809,
       site: 'Compositor.CreateEffectFactory',
       factory,
-      ...(arguments.length > 1 ? { branches } : {}),
+      ...(pairs.length > 0 ? { [pairField]: branches } : {}),
     },
   };
   const line = sheetFailureLog({
@@ -107,7 +108,26 @@ test('actual AlphaMask factory outcomes retain both branch slots and the primary
   assert.equal(readback(factory, null, 'branches'), null);
 });
 
-test('actual branch observation rejects unknown fields, malformed integers and partial arrays', () => {
+test('identity clamp pair retains raw outcomes without admitting the failed renderer', () => {
+  const factory = { name: 'final', operation: 'factory' };
+  for (const rows of [
+    [
+      { hresult: 0, cleanupHresult: null },
+      { hresult: -2147024809, cleanupHresult: null },
+    ],
+    [
+      { hresult: -2147024809, cleanupHresult: null },
+      { hresult: 0, cleanupHresult: -2147467259 },
+    ],
+    [
+      { hresult: null, cleanupHresult: null },
+      { hresult: null, cleanupHresult: null },
+    ],
+  ])
+    assert.deepEqual(readback(factory, rows, 'clamping', 'clamping'), rows);
+});
+
+test('borrowed factory pairs reject unknown fields, malformed integers and partial arrays', () => {
   const factory = { name: 'ghostPair0', operation: 'factory' };
   const row = { hresult: 0, cleanupHresult: null };
   for (const rows of [
@@ -125,5 +145,6 @@ test('actual branch observation rejects unknown fields, malformed integers and p
     [row, { ...row, cleanupHresult: {} }],
     [row, { ...row, hresult: undefined }],
   ])
-    assert.equal(readback(factory, rows, 'branches'), null);
+    for (const field of ['branches', 'clamping'])
+      assert.equal(readback(factory, rows, field, field), null);
 });

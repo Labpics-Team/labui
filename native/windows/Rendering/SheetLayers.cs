@@ -3,6 +3,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Geometry;
+using Microsoft.Graphics.Canvas.Numerics;
 using Microsoft.Graphics.Canvas.UI.Composition;
 using Microsoft.Graphics.DirectX;
 using Microsoft.UI.Composition;
@@ -420,6 +421,17 @@ public sealed class SheetLayers : Grid
                                 // Исходные progressive и Ghost до внешней маски принадлежат Frame.
                                 SheetSourceTopologyProbe.RecordBranches(primary, compositor,
                                     progressiveGraph, ghostSourceGraph);
+                                ColorMatrixEffect Identity(bool clamp)
+                                {
+                                    var identity = Effect(new ColorMatrixEffect());
+                                    identity.Source = progressiveGraph;
+                                    identity.ColorMatrix = Matrix5x4.Identity;
+                                    identity.AlphaMode = CanvasAlphaMode.Premultiplied;
+                                    identity.ClampOutput = clamp;
+                                    return identity;
+                                }
+                                SheetSourceTopologyProbe.RecordClamping(primary, compositor,
+                                    Identity(false), Identity(true));
                             }
                         }
                     }

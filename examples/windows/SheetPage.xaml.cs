@@ -87,10 +87,11 @@ public sealed partial class SheetPage : Page
     private void Unhandled(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs args)
         => WriteSnapshot(new("unhandled", ErrorType(args.Exception), args.Exception?.HResult,
             SheetFailureSite.Read(args.Exception), SheetSourceTopology.Read(args.Exception),
-            SheetSourceTopology.ReadFactory(args.Exception), SheetSourceTopology.ReadBranches(args.Exception)));
+            SheetSourceTopology.ReadFactory(args.Exception), SheetSourceTopology.ReadBranches(args.Exception),
+            SheetSourceTopology.ReadClamping(args.Exception)));
 
     private sealed record ObservationError(string origin, string? type, int? hresult, string? site = null,
-        object? topology = null, object? factory = null, object? branches = null);
+        object? topology = null, object? factory = null, object? branches = null, object? clamping = null);
 
     private static string? ErrorType(Exception? error)
     {

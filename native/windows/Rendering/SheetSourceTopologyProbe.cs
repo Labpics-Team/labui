@@ -11,6 +11,7 @@ internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
+    internal const string ClampingDataKey = "LabUI.SheetIdentityClamp";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -56,12 +57,22 @@ internal static class SheetSourceTopologyProbe
     // Графы принадлежат Frame; sampler закрывает только свои factory.
     internal static void RecordBranches(Exception primary, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second)
+        => RecordPair(primary, BranchesDataKey, compositor, first, second);
+
+    // Слоты: identity ColorMatrix без clamping; тот же actual progressive с clamping.
+    // Матрицы и входы принадлежат Frame; результаты не допускают исходный renderer.
+    internal static void RecordClamping(Exception primary, Compositor compositor,
+        IGraphicsEffect unclamped, IGraphicsEffect clamped)
+        => RecordPair(primary, ClampingDataKey, compositor, unclamped, clamped);
+
+    private static void RecordPair(Exception primary, string dataKey, Compositor compositor,
+        IGraphicsEffect first, IGraphicsEffect second)
     {
         try
         {
             var firstResult = SampleFactory(compositor, first);
             var secondResult = SampleFactory(compositor, second);
-            primary.Data[BranchesDataKey] = new Dictionary<string, object?>[]
+            primary.Data[dataKey] = new Dictionary<string, object?>[]
             {
                 new() { ["hresult"] = firstResult.HResult, ["cleanupHresult"] = firstResult.CleanupHResult },
                 new() { ["hresult"] = secondResult.HResult, ["cleanupHresult"] = secondResult.CleanupHResult },

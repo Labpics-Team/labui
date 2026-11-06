@@ -256,6 +256,7 @@ function observationError(value) {
     ...(Object.hasOwn(value, 'topology') ? { topology: topologyInfo(value.topology) } : {}),
     ...(Object.hasOwn(value, 'factory') ? { factory: factoryInfo(value.factory) } : {}),
     ...(Object.hasOwn(value, 'branches') ? { branches: branchesInfo(value.branches) } : {}),
+    ...(Object.hasOwn(value, 'clamping') ? { clamping: branchesInfo(value.clamping) } : {}),
   };
 }
 

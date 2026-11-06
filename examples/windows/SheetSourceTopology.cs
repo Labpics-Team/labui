@@ -9,6 +9,7 @@ internal static class SheetSourceTopology
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
+    internal const string ClampingDataKey = "LabUI.SheetIdentityClamp";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -71,13 +72,19 @@ internal static class SheetSourceTopology
 
     // Вместе с borrowed AlphaMask sampler удаляется после RCA/owner fix.
     internal static Dictionary<string, object?>[]? ReadBranches(Exception? error)
+        => ReadPair(error, BranchesDataKey);
+
+    internal static Dictionary<string, object?>[]? ReadClamping(Exception? error)
+        => ReadPair(error, ClampingDataKey);
+
+    private static Dictionary<string, object?>[]? ReadPair(Exception? error, string dataKey)
     {
         try
         {
             for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
             {
-                if (!error.Data.Contains(BranchesDataKey)) continue;
-                if (error.Data[BranchesDataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
+                if (!error.Data.Contains(dataKey)) continue;
+                if (error.Data[dataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
                     return null;
                 var projected = new Dictionary<string, object?>[2];
                 for (var index = 0; index < 2; index++)
