@@ -17,7 +17,7 @@ import {
   publicDiagnosticError,
   publicFailure,
 } from './icons-public-provenance.mjs';
-import { authorReference, consumerReceiptLog } from './prepare-icons-inputs.mjs';
+import { authorReference, consumerReceiptLog, terminalReceipt } from './prepare-icons-inputs.mjs';
 
 const PRIVATE_KEY = 'SyntheticFigmaAuthorKey01';
 const COMMUNITY =
@@ -280,6 +280,157 @@ test('receipt finalization attempts each minimal artifact once when projection a
   );
   assert.equal(JSON.parse(attempts[0][1]).failure.code, 'PUBLIC_CONTRACT_REFUSED');
   assert.equal(attempts[1][1], attempts[0][1]);
+});
+
+test('terminal publication rejects stale PASSED evidence after an effect-then-error write', async () => {
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [{ name: 'author-observation', link: COMMUNITY, opacity: 0.375 }],
+  };
+  const written = new Map();
+  const attempts = [];
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      write: async (path, bytes) => {
+        const name = basename(path);
+        attempts.push(name);
+        if (name === 'receipt.json') {
+          if (attempts.length === 1) written.set(name, bytes);
+          throw Object.assign(new Error(PRIVATE_URL), { code: 'EACCES' });
+        }
+        written.set(name, bytes);
+      },
+    }),
+    (error) => error.code === 'EACCES',
+  );
+  assert.deepEqual(attempts, ['receipt.json', 'receipt.json', 'failure.json']);
+  const receiptBytes = Buffer.from(written.get('receipt.json'));
+  const failureBytes = Buffer.from(written.get('failure.json'));
+  assert.equal(parseIconsJson(receiptBytes).outcome, 'passed');
+  assert.equal(parseIconsJson(failureBytes).outcome, 'failed');
+  assert.equal(terminalReceipt(receiptBytes, failureBytes).outcome, 'failed');
+});
+
+test('terminal publication preserves lawful PASSED receipt without a failure marker', () => {
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'passed',
+    records: [
+      {
+        name: 'author-observation',
+        link: COMMUNITY,
+        opacity: 0.375,
+        paths: [{ d: 'M0 0L1 0L1 1Z', fillRule: 'nonzero' }],
+        masterSha256: 'c'.repeat(64),
+      },
+    ],
+  };
+  const receiptBytes = Buffer.from(JSON.stringify(receipt));
+  assert.deepEqual(terminalReceipt(receiptBytes), receipt);
+  assert.match(
+    consumerReceiptLog(receiptBytes, SOURCE_SHA, UI_SHA),
+    /^LABUI_ICONS_CONSUMER_RECEIPT_BEGIN /m,
+  );
+});
+
+test('terminal publication retains primary error identity after effect-then-error writes', async () => {
+  const failure = publicDiagnosticError(Object.assign(new Error(PRIVATE_URL), { code: 'ENOENT' }));
+  const receipt = {
+    schemaVersion: 1,
+    outcome: 'failed',
+    records: [{ name: 'author-observation', link: COMMUNITY, opacity: 0.375 }],
+    failure: { phase: 'browser', ...publicFailure(failure) },
+  };
+  const written = new Map();
+  let receiptAttempts = 0;
+  await assert.rejects(
+    finalizeReceipt(receipt, {
+      out: 'memory',
+      phase: 'browser',
+      failure,
+      write: async (path, bytes) => {
+        const name = basename(path);
+        if (name === 'receipt.json') {
+          if (++receiptAttempts === 1) written.set(name, bytes);
+          throw Object.assign(new Error(PRIVATE_URL), { code: 'EACCES' });
+        }
+        written.set(name, bytes);
+      },
+    }),
+    (error) => error === failure,
+  );
+  const selected = terminalReceipt(
+    Buffer.from(written.get('receipt.json')),
+    Buffer.from(written.get('failure.json')),
+  );
+  assert.equal(selected.outcome, 'failed');
+  assert.ok(!JSON.stringify(selected).includes(PRIVATE_KEY));
+});
+
+test('terminal publication accepts a valid FAILED marker when the receipt is absent or unusable', () => {
+  const failed = {
+    schemaVersion: 1,
+    outcome: 'failed',
+    records: [],
+    failure: { phase: 'browser', code: 'EACCES', message: 'icons: EACCES' },
+  };
+  const failureBytes = Buffer.from(JSON.stringify(failed));
+  for (const receiptBytes of [
+    undefined,
+    Buffer.from('{'),
+    Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        outcome: 'passed',
+        records: [{ name: 'author-observation', link: PRIVATE_URL }],
+      }),
+    ),
+    Buffer.from(JSON.stringify(failed)),
+  ]) {
+    assert.deepEqual(terminalReceipt(receiptBytes, failureBytes), failed);
+    assert.equal(failureBytes.toString(), JSON.stringify(failed));
+  }
+});
+
+test('terminal publication refuses invalid failure markers beside a lawful PASSED receipt', () => {
+  const receiptBytes = Buffer.from(
+    JSON.stringify({
+      schemaVersion: 1,
+      outcome: 'passed',
+      records: [{ name: 'author-observation', link: COMMUNITY, opacity: 0.375 }],
+    }),
+  );
+  for (const failureBytes of [
+    receiptBytes,
+    Buffer.from('{'),
+    Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        outcome: 'failed',
+        records: [{ name: 'author-observation', link: PRIVATE_URL }],
+      }),
+    ),
+    Buffer.from(
+      JSON.stringify({ schemaVersion: 1, outcome: 'failed', records: [], unowned: PRIVATE_KEY }),
+    ),
+    Buffer.from('{"schemaVersion":1,"outcome":"failed","records":[],"outcome":"passed"}'),
+  ]) {
+    assert.throws(
+      () => terminalReceipt(receiptBytes, failureBytes),
+      (error) => {
+        assert.ok(!String(error.stack).includes(PRIVATE_KEY));
+        return true;
+      },
+    );
+  }
+});
+
+test('terminal publication refuses absent or malformed receipt without a failure marker', () => {
+  assert.throws(() => terminalReceipt(), { code: 'ENOENT' });
+  assert.throws(() => terminalReceipt(Buffer.from('{')), /icons: invalid JSON/);
 });
 
 test('publication refuses raw private provenance before gzip encodes the receipt', () => {

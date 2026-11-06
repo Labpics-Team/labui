@@ -664,23 +664,38 @@ function writeStdout(bytes) {
   });
 }
 
+export function terminalReceipt(receiptBytes, failureBytes) {
+  // Неудача финализации может оставить ранее записанный PASSED receipt.
+  if (failureBytes !== undefined) {
+    const failed = assertPublicProvenance(parseIconsJson(failureBytes), 'receipt');
+    assert.equal(failed.outcome, 'failed', 'icons: failure artifact требует failed outcome');
+    return failed;
+  }
+  if (receiptBytes === undefined)
+    throw Object.assign(new Error('icons: ENOENT'), { code: 'ENOENT' });
+  return assertPublicProvenance(parseIconsJson(receiptBytes), 'receipt');
+}
+
 // Контракт Lab UI сохраняет диагностику локально; Actions storage не участвует.
 export async function summarize(directory) {
   const root = await realpath(resolve(directory));
   const files = [];
   const visuals = [];
+  let receiptBytes;
+  let failureBytes;
   for (const name of ['inputs', 'result']) {
     for (const entry of await readdir(join(root, name), { withFileTypes: true })) {
       if (!entry.isFile() || !/\.(?:json|png)$/.test(entry.name)) continue;
       const path = `${name}/${entry.name}`;
       const bytes = await readFile(join(root, path));
       files.push({ path, sha256: hash(bytes), bytes: bytes.length });
+      if (path === 'result/receipt.json') receiptBytes = bytes;
+      if (path === 'result/failure.json') failureBytes = bytes;
       if (name === 'result' && entry.name.endsWith('.png')) visuals.push({ path, bytes });
     }
   }
-  const receiptBytes = await readFile(join(root, 'result/receipt.json'));
   assertPublicProvenance(files, 'file-list');
-  const receipt = assertPublicProvenance(parseIconsJson(receiptBytes), 'receipt');
+  const receipt = terminalReceipt(receiptBytes, failureBytes);
   const source = assertPublicProvenance(
     parseIconsJson(await readFile(join(root, 'inputs/source-receipt.json'))),
     'source-receipt',
