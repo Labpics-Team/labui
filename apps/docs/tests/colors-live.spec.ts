@@ -143,6 +143,160 @@ test('смена независимого фона пересчитывает co
   expect(replay?.properties).toEqual(after.properties);
 });
 
+test('inline роль проходит через Program, сохраняет бренд и возвращает alias после удаления', async ({
+  page,
+}) => {
+  await fixture(page);
+  const before = await page.evaluate(() => window.__labColorsLive?.read('root'));
+  if (!before) throw new Error('Нет исходного результата');
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.setProperty('--lab-fill-accent', 'rgb(1, 2, 3)');
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__labColorsLive?.read('root').properties['--lab-fill-accent']),
+    )
+    .toBe('rgb(1 2 3)');
+  const changed = await page.evaluate(() => window.__labColorsLive?.read('root'));
+  if (!changed) throw new Error('Нет пересчитанного результата');
+  expect(changed.state).toBe('ready');
+  expect(changed.populated).toBe(changed.propertyCount);
+  expect(changed.outputCount).toBeGreaterThan(before.outputCount ?? 0);
+  for (const name of [
+    '--lab-badge-fill-brand',
+    '--lab-fill-brand-primary',
+    '--lab-label-brand-primary',
+    '--lab-border-brand-strong',
+  ]) {
+    expect(changed.properties[name]).toBe(before.properties[name]);
+  }
+  const repeated = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+  expect(repeated?.revision).toBe(changed.revision);
+  expect(repeated?.snapshotVersion).toBe(changed.snapshotVersion);
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.setProperty('--lab-fill-accent', 'rgb(10 20 30 / 0.5)');
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(() => window.__labColorsLive?.read('root').properties['--lab-fill-accent']),
+    )
+    .toBe('rgb(10 20 30 / 0.5)');
+  const actual = await page.locator('#colors-root').evaluate((scope) => {
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--lab-fill-accent)';
+    scope.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  });
+  expect(actual).toBe('rgba(10, 20, 30, 0.5)');
+  for (const value of [
+    '#123',
+    '#1238',
+    '#0A141E',
+    '#0A141E80',
+    'rgba(10, 20, 30, 0.5)',
+    'rgb(10 20 30 / 50%)',
+    'transparent',
+  ]) {
+    await page.locator('#colors-root').evaluate((scope, value) => {
+      (scope as HTMLElement).style.setProperty('--lab-fill-accent', value);
+    }, value);
+    const committed = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+    expect(committed?.state).toBe('ready');
+    const compared = await page.locator('#colors-root').evaluate((scope, value) => {
+      const actual = document.createElement('span');
+      const reference = document.createElement('span');
+      actual.style.color = 'var(--lab-fill-accent)';
+      reference.style.color = value;
+      scope.append(actual, reference);
+      const result = {
+        actual: getComputedStyle(actual).color,
+        expected: getComputedStyle(reference).color,
+      };
+      actual.remove();
+      reference.remove();
+      return result;
+    }, value);
+    expect(compared.actual, value).toBe(compared.expected);
+  }
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.removeProperty('--lab-fill-accent');
+  });
+  await expect
+    .poll(() => page.evaluate(() => window.__labColorsLive?.read('root').properties))
+    .toEqual(before.properties);
+  expect(await page.evaluate(() => window.__labColorsLive?.partialFrames)).toEqual([]);
+});
+
+test('неподдержанный inline !important отзывает подтверждение и допускает восстановление', async ({
+  page,
+}) => {
+  await fixture(page);
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.setProperty('--lab-label-primary', 'rgb(1 2 3)', 'important');
+  });
+  await expect(page.locator('#colors-root')).toHaveAttribute('data-lab-colors-state', 'failed');
+  const refused = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+  expect(refused?.state).toBe('failed');
+  expect(refused?.reason).toBe('unsupported_role_override');
+  expect(refused?.revision).toBeNull();
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.removeProperty('--lab-label-primary');
+  });
+  await expect(page.locator('#colors-root')).toHaveAttribute('data-lab-colors-state', 'ready');
+  const restored = await page.evaluate(() => window.__labColorsLive?.read('root'));
+  expect(restored?.populated).toBe(restored?.propertyCount);
+});
+
+test('more: override единственной computed краски даёт готовую fixed тему и восстанавливается', async ({
+  page,
+}) => {
+  await fixture(page);
+  await page
+    .locator('#colors-root')
+    .evaluate((scope) => scope.setAttribute('data-contrast', 'more'));
+  const adaptive = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+  if (!adaptive) throw new Error('Нет результата повышенного контраста');
+  expect(adaptive.state).toBe('ready');
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.setProperty('--lab-badge-fill-brand', 'rgb(1, 2, 3)');
+  });
+  const fixed = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+  if (!fixed) throw new Error('Нет fixed результата');
+  expect(fixed.state).toBe('ready');
+  expect(fixed.properties['--lab-badge-fill-brand']).toBe('rgb(1 2 3)');
+  expect(fixed.properties['--lab-fill-accent']).toBe('rgb(1 2 3)');
+  expect(fixed.properties['--lab-label-brand-primary']).toBe(
+    adaptive.properties['--lab-label-brand-primary'],
+  );
+  expect(fixed.populated).toBe(fixed.propertyCount);
+  const replay = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+  expect(replay?.revision).toBe(fixed.revision);
+  expect(replay?.snapshotVersion).toBe(fixed.snapshotVersion);
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.removeProperty('--lab-badge-fill-brand');
+  });
+  const restored = await page.evaluate(() => window.__labColorsLive?.refresh('root'));
+  expect(restored?.state).toBe('ready');
+  expect(restored?.properties).toEqual(adaptive.properties);
+});
+
+test('неподдержанное CSS-выражение не становится произвольной краской', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.setProperty('--lab-fill-accent', 'color(display-p3 1 0 0)');
+  });
+  await expect(page.locator('#colors-root')).toHaveAttribute('data-lab-colors-state', 'failed');
+  const refused = await page.evaluate(() => window.__labColorsLive?.read('root'));
+  expect(refused?.reason).toBe('unsupported_role_override');
+  expect(refused?.populated).toBe(0);
+  await page.locator('#colors-root').evaluate((scope) => {
+    (scope as HTMLElement).style.removeProperty('--lab-fill-accent');
+  });
+  await expect(page.locator('#colors-root')).toHaveAttribute('data-lab-colors-state', 'ready');
+});
+
 test('initial mask, unsupported фон, cancel и восстановление охватывают всю тему', async ({
   page,
 }) => {

@@ -14,6 +14,68 @@ const scopeSelector = (id) => `[${scopeAttribute}="${id}"]`;
 const maskText = (id, names) =>
   `${scopeSelector(id)}{${names.map((name) => `${name}:initial!important;`).join('')}}`;
 
+function roleDeclarations(scope, names) {
+  const managed = new Set(names);
+  return [...scope.style]
+    .filter((name) => managed.has(name))
+    .sort()
+    .map((name) => ({
+      name: name.slice('--lab-'.length),
+      declaration: scope.style.getPropertyValue(name).trim(),
+      priority: scope.style.getPropertyPriority(name),
+    }));
+}
+
+function parseInlineColor({ name, declaration, priority }) {
+  const unsupported = () => {
+    const error = new Error(`--lab-${name}: нужен явный sRGB8 цвет без !important`);
+    error.code = 'unsupported_role_override';
+    return error;
+  };
+  if (priority) throw unsupported();
+  if (declaration.toLowerCase() === 'transparent') return { source: [0, 0, 0], opacity: 0 };
+  const hex = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/iu.exec(declaration);
+  if (hex) {
+    const digits = hex[1].length < 5 ? [...hex[1]].map((digit) => digit + digit).join('') : hex[1];
+    const source = [0, 2, 4].map((offset) => Number.parseInt(digits.slice(offset, offset + 2), 16));
+    return {
+      source,
+      opacity: digits.length === 8 ? Number.parseInt(digits.slice(6), 16) / 255 : 1,
+    };
+  }
+  const rgb = /^rgba?\(([^()]+)\)$/iu.exec(declaration);
+  if (!rgb) throw unsupported();
+  let channels;
+  let alpha;
+  if (rgb[1].includes(',')) {
+    const values = rgb[1].split(',').map((value) => value.trim());
+    if (![3, 4].includes(values.length)) throw unsupported();
+    channels = values.slice(0, 3);
+    alpha = values[3];
+  } else {
+    const values = rgb[1].split('/').map((value) => value.trim());
+    if (![1, 2].includes(values.length)) throw unsupported();
+    channels = values[0].split(/\s+/u);
+    alpha = values[1];
+  }
+  if (channels.length !== 3 || channels.some((value) => !/^\d+$/u.test(value))) throw unsupported();
+  const source = channels.map(Number);
+  if (source.some((value) => !Number.isInteger(value) || value < 0 || value > 255))
+    throw unsupported();
+  if (alpha !== undefined && !/^(?:\d+(?:\.\d*)?|\.\d+)%?$/u.test(alpha)) throw unsupported();
+  const opacity =
+    alpha === undefined ? 1 : Number.parseFloat(alpha) / (alpha.endsWith('%') ? 100 : 1);
+  if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) throw unsupported();
+  return { source, opacity };
+}
+
+function readRoleOverrides(scope, names) {
+  return roleDeclarations(scope, names).map((declaration) => ({
+    ...declaration,
+    ...parseInlineColor(declaration),
+  }));
+}
+
 function prepareCss(view, text, names) {
   const candidate = new view.CSSStyleSheet();
   candidate.replaceSync(text);
@@ -87,8 +149,11 @@ function pointSignature(points, composites) {
   return JSON.stringify([paints, roots]);
 }
 
-function createAtomicHost({ scope, styleRoot, sheet, id, program, selected }) {
+function createAtomicHost({ scope, styleRoot, sheet, id, program, selected, overrides }) {
   const names = themePropertyNames(selected);
+  const declarations = JSON.stringify(
+    overrides.map(({ name, declaration, priority }) => ({ name, declaration, priority })),
+  );
   const expectedScope = program.bindings.emissions
     .map(({ sinkOutput }) => sinkOutput)
     .sort((a, b) => a - b);
@@ -111,6 +176,7 @@ function createAtomicHost({ scope, styleRoot, sheet, id, program, selected }) {
     scope.getRootNode() === styleRoot &&
     scope.getAttribute(scopeAttribute) === id &&
     styleRoot.adoptedStyleSheets.includes(sheet);
+  const inputsCurrent = () => JSON.stringify(roleDeclarations(scope, names)) === declarations;
   const replace = (text) => {
     if (!belongs()) throw new Error('CSS lease утрачен');
     const preparedText = prepareCss(scope.ownerDocument.defaultView, text, names);
@@ -120,11 +186,11 @@ function createAtomicHost({ scope, styleRoot, sheet, id, program, selected }) {
   replace(masking);
   return {
     isCurrent() {
-      return belongs() && cssText(sheet) === installedText;
+      return belongs() && cssText(sheet) === installedText && inputsCurrent();
     },
     install(intent) {
       try {
-        if (!belongs() || cssText(sheet) !== installedText) return false;
+        if (!belongs() || cssText(sheet) !== installedText || !inputsCurrent()) return false;
         const { operation, bindingEpoch, expectedSequence, desiredSequence } = intent;
         if (
           typeof bindingEpoch !== 'bigint' ||
@@ -283,7 +349,13 @@ export function attachLabuiColors({
     const theme = nearestMode(scope, 'data-theme', ['light', 'dark'], scheme);
     const mode = nearestMode(scope, 'data-contrast', ['normal', 'more'], contrast);
     canvasInput?.select(theme, mode);
-    return { theme, contrast: mode, observation: readBackdrop() };
+    const names = themePropertyNames(modelFor(source, mode).themes[theme]);
+    return {
+      theme,
+      contrast: mode,
+      observation: readBackdrop(),
+      overrides: readRoleOverrides(scope, names),
+    };
   };
   scope.setAttribute(scopeAttribute, id);
   styleRoot.adoptedStyleSheets = [...styleRoot.adoptedStyleSheets, sheet];
@@ -300,8 +372,8 @@ export function attachLabuiColors({
   const runtime = createThemeRuntime({
     config: source,
     readInputs: inputs,
-    makeHost(program, selected) {
-      const host = createAtomicHost({ scope, styleRoot, sheet, id, program, selected });
+    makeHost(program, selected, overrides) {
+      const host = createAtomicHost({ scope, styleRoot, sheet, id, program, selected, overrides });
       currentHost = host;
       return {
         ...host,
