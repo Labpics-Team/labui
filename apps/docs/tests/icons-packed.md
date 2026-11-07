@@ -16,11 +16,11 @@ Harness принимает три готовых архива и независ�
 
 ## Запуск
 
-Запускайте в self-hosted GitHub Actions job Lab UI с Node ≥22.19, установленными
-зависимостями `apps/docs` и Chromium для Playwright. Harness проверяет официальные
-`GITHUB_ACTIONS`, `CI`, `GITHUB_RUN_ID` и `RUNNER_ENVIRONMENT=self-hosted` **до**
-установки пакетов, импорта Vite и запуска браузера. Не подменяйте эти переменные для
-локального запуска. Синтаксическая проверка и импорт функций допускаются локально.
+Штатный workflow `icons-consumer.yml` запускает проверку на `ubuntu-latest`
+в закреплённом Playwright-контейнере. Для вызова harness нужны Node ≥22.19,
+зависимости `apps/docs` и Chromium Playwright. Harness сверяет официальные переменные
+GitHub Actions до установки пакетов, импорта Vite и запуска браузера.
+Синтаксическая проверка и импорт функций доступны локально.
 
 ```sh
 node apps/docs/tests/icons-packed.mjs \
@@ -33,24 +33,18 @@ node apps/docs/tests/icons-packed.mjs \
 
 `--out` должен быть новым каталогом вне checkout; его родитель уже существует.
 Необязательный `--browser-channel chrome` выбирает установленный browser channel.
-По умолчанию используется Chromium Playwright. Тяжёлый запуск не добавлен в CI
-Icons: доступ к приватному Lab UI и проверка его пакетов принадлежат Lab UI.
+По умолчанию используется Chromium Playwright. Проверку установленных пакетов
+Lab UI запускает репозиторий Lab UI.
 
 Штатный workflow Lab UI `icons-consumer.yml` получает точный head Lab UI и
 публичный Icons commit из `icons-consumer-source.json`. Затем вызывает
-`browser-check.sh --icons-consumer <icons-checkout>`. Этот же helper владеет
-Playwright image, host UID/GID, отдельным контейнером, CID и очисткой обычного E2E.
-Фиксированный Icons workload копирует оба checkout с Git metadata в изолированную
-директорию; Corepack читает их собственные `packageManager`, а pnpm stores разделены.
-Icons проходит обычный `pack` с `prepack`; Lab UI собирает и упаковывает core/shadow.
-Исходные mounts доступны только для чтения.
+`browser-check.sh --icons-consumer <icons-checkout>`. Corepack читает
+`packageManager` каждого checkout. Icons проходит обычный `pack` с `prepack`;
+Lab UI собирает и упаковывает core/shadow.
 
-Inputs и результат находятся вне копий исходников. После удаления контейнера
-helper переносит только обычные файлы без ссылок в
-`apps/docs/test-results/icons-consumer`, затем удаляет собственную временную
-директорию. Ошибка удаления контейнера запрещает перенос нестабильной диагностики.
-Workflow не загружает архивы в Actions storage. Локальные тесты oracle и lifecycle
-проверяют вызовы Docker через recorder и не запускают контейнерный workload.
+Архивы, inputs и результаты находятся в отдельном каталоге `RUNNER_TEMP`.
+Helper выводит report в job log через существующий `--summarize` и сохраняет
+исходный exit code потребителя. Workflow не загружает архивы в Actions storage.
 
 ## Входной reference
 
@@ -110,7 +104,7 @@ receipt добавляет hash semantic spec и каждого прочитан
 
 После фиксации raw references и `subject.json` та же prepare-inputs граница
 запускает producer `scripts/measure-platform-artifacts.mjs --output ...` после
-штатного pack. Запуск разрешён только self-hosted runner. `--update` не передаётся:
+штатного pack в GitHub Actions. `--update` не передаётся:
 candidate policies и `policyViolations` остаются диагностикой, принятие лимитов
 принадлежит Icons. Отчёт `inputs/platform-measurement.json` содержит полный
 release contract census, raw/gzip/brotli и hashes artifacts, consumer metrics,
