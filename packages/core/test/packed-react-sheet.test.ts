@@ -7,7 +7,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'esbuild';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { litModules, packPackage, ssrModules } from './packed-consumer.js';
+import { litModules, npmCli, packPackage, ssrModules } from './packed-consumer.js';
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 const evidence = process.env.LABUI_PACKED_REACT_SHEET_EVIDENCE;
@@ -58,11 +58,12 @@ beforeAll(async () => {
     }),
   );
   const install = ['install', '--ignore-scripts', '--no-audit', '--no-fund', '--global=false'];
-  execFileSync(
-    process.platform === 'win32' ? 'cmd.exe' : 'npm',
-    process.platform === 'win32' ? ['/d', '/s', '/c', `npm.cmd ${install.join(' ')}`] : install,
-    { cwd: consumer, encoding: 'utf8', windowsHide: true, timeout: 60_000 },
-  );
+  execFileSync(process.execPath, [await npmCli(), ...install], {
+    cwd: consumer,
+    encoding: 'utf8',
+    windowsHide: true,
+    timeout: 60_000,
+  });
   for (const name of [
     '@labpics/ui-core',
     '@labpics/ui-react',

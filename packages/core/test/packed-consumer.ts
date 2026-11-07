@@ -1,7 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, readdir, realpath, symlink, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import {
+  access,
+  cp,
+  mkdir,
+  readFile,
+  readdir,
+  realpath,
+  symlink,
+  writeFile,
+} from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
 import { build } from 'esbuild';
 import { Window } from 'happy-dom';
 import { expect } from 'vitest';
@@ -9,6 +18,21 @@ import { expect } from 'vitest';
 export interface PackedPackage {
   readonly directory: string;
   readonly archive?: string;
+}
+
+export async function npmCli(): Promise<string> {
+  const binary = dirname(process.execPath);
+  for (const candidate of [
+    join(binary, 'node_modules/npm/bin/npm-cli.js'),
+    resolve(binary, '../lib/node_modules/npm/bin/npm-cli.js'),
+    resolve(binary, '../share/nodejs/npm/bin/npm-cli.js'),
+  ]) {
+    try {
+      await access(candidate);
+      return candidate;
+    } catch {}
+  }
+  throw new Error('Для проверки установленного пакета нужен npm из установки Node.');
 }
 
 export async function packPackage(directory: string, destination: string): Promise<string> {

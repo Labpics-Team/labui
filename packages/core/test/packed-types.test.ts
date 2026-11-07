@@ -1,6 +1,6 @@
 import { execFile, execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { access, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { type Server, createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import ts from 'typescript';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { packPackage } from './packed-consumer.js';
+import { npmCli, packPackage } from './packed-consumer.js';
 
 const core = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const react = resolve(core, '../react');
@@ -28,21 +28,6 @@ let temporary: string;
 let registry: Server | undefined;
 const installed: Consumer[] = [];
 const roots = ['@labpics/ui-core', '@labpics/ui-react'];
-
-async function npmCli(): Promise<string> {
-  const binary = dirname(process.execPath);
-  for (const candidate of [
-    join(binary, 'node_modules/npm/bin/npm-cli.js'),
-    resolve(binary, '../lib/node_modules/npm/bin/npm-cli.js'),
-    resolve(binary, '../share/nodejs/npm/bin/npm-cli.js'),
-  ]) {
-    try {
-      await access(candidate);
-      return candidate;
-    } catch {}
-  }
-  throw new Error('Для проверки установленного пакета нужен npm из установки Node.');
-}
 
 async function declarationFiles(directory: string): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -185,8 +170,10 @@ beforeAll(async () => {
             'install',
             '--ignore-scripts',
             '--no-frozen-lockfile',
-            '--store-dir',
-            join(temporary, 'pnpm-store'),
+            // Reused localhost ports must not reuse unpublished-version metadata.
+            // Immutable tarball content can still use the ordinary pnpm store.
+            '--cache-dir',
+            join(temporary, 'pnpm-cache'),
           ],
       { cwd: directory, encoding: 'utf8', timeout: 30_000, windowsHide: true },
     );
