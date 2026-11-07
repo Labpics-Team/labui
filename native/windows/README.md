@@ -71,9 +71,16 @@ Geist включён под OFL; версия, внутреннее имя и х
 отступа, на 48 DIP от верха Body. Header и Controls по умолчанию отсутствуют.
 
 ```xml
-<lab:LabSheet xmlns:lab="using:LabUI.WinUI" State="Flex" Material="Blur" GeometryScale="1">
-  <TextBlock Text="Содержимое панели" />
-</lab:LabSheet>
+<lab:LabSheetHost xmlns:lab="using:LabUI.WinUI">
+  <lab:LabSheetHost.Content>
+    <TextBlock Text="Содержимое страницы за панелью" />
+  </lab:LabSheetHost.Content>
+  <lab:LabSheetHost.Sheet>
+    <lab:LabSheet State="Flex" Material="Blur" GeometryScale="1">
+      <TextBlock Text="Содержимое панели" />
+    </lab:LabSheet>
+  </lab:LabSheetHost.Sheet>
+</lab:LabSheetHost>
 ```
 
 `State` принимает `Full`, `TwoThirds`, `Half`, `OneThird`, `Flex`. В эталоне
@@ -99,8 +106,17 @@ Flex измеряет содержимое при конечной доступ�
 Контрол не устанавливает modal focus, закрытие по Escape или блокировку фона:
 эти свойства ещё требуют полноценного сценария Sheet.
 
-`Material` принимает `Blur` и `Solid`. Blur строит единый Composition effect graph:
-ветви Ghost и Body читают один исходный in-app backdrop. В Light применяется
+`LabSheetHost.Content` содержит живую сцену, а `LabSheetHost.Sheet` — панель.
+Host размещает их в соседних поддеревьях одного viewport. Ghost и Body читают
+одну CompositionVisualSurface сцены: захват не содержит панель, её содержимое
+и уже нарисованные эффекты. Потребитель не передаёт приватный Composition Visual.
+При замене шаблона, сцены или панели прежний capture отсоединяется от источника.
+До загрузки и измерения сцены Blur остаётся неготовым и восстанавливается по
+событиям сцены; он не превращается в Solid. Отдельный Solid не требует host.
+Сцена и панель используют один XamlRoot; поддержаны осевые viewport без отражения.
+
+`Material` принимает `Blur` и `Solid`. Blur использует графы нативных эффектов
+с общим источником и итоговым LayerVisual. В Light применяется
 ColorDodge, в Dark — Overlay. Все краски, включая noise, приходят из LabColors;
 размеры — из токенов LabUI, тени — из существующей ступени Shadow XL.
 При выключенной Transparency или недостаточных возможностях Composition выбирается
@@ -115,6 +131,25 @@ Gaussian-ветвей аппроксимируют Ghost с пространст
 один sample на физический пиксель. Эти решения не подтверждают точность Figma
 noise size 0.2, непрерывного progressive blur или бюджет GPU. Внешние WebView2,
 MediaPlayerElement и SwapChainPanel не входят в поддержанный источник backdrop.
+
+Ghost рисуется семью неперекрывающимися интервалами между исходными уровнями.
+Внутри каждого интервала Add складывает две соседние Gaussian-ветви. Одна
+общая нативная gradient-маска задаёт веса через DestinationOut и DestinationIn,
+поэтому их сумма остаётся единицей, включая прозрачную сцену. Градиент задан
+в координатах viewport и не проходит через растровый atlas. Идеальный профиль сохраняет исходные восемь уровней;
+точность его растровой аппроксимации проверяется отдельно.
+Кисти используют координаты всего viewport, а hard clips разделяют интервалы.
+Общий прямоугольный предел Ghost задаёт clip всей группы с мягким краем;
+только сложная форма Body требует растровой alpha-маски.
+Промежуточного захвата нарисованных эффектов нет: каждый читает ту же исходную
+сцену. Полосы повторяют внутренние blur-уровни в соседних графах; отсутствие
+швов при fractional DPI и стоимость GPU требуют проверки реальным рендером.
+
+Источник — корень сцены, поскольку [CompositionVisualSurface.SourceVisual](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.composition.compositionvisualsurface.sourcevisual)
+задаёт захватываемое поддерево. Кисть BackdropBrush читает окружение за SpriteVisual;
+захват отдельного визуала с такой кистью не переносит его окружение в surface.
+Парный native PNG проверяет, что изменение сцены действительно распространяется
+на соседние пиксели Ghost и Body; успешного создания effect factory недостаточно.
 
 После сборки пример запускается как `Buttons.exe --sheet`; `--dark`, `--solid`
 и `--content` выбирают тему, материал и пример содержимого.

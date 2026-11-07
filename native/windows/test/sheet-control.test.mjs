@@ -720,6 +720,7 @@ namespace Microsoft.UI.Xaml.Automation.Peers {
         protected virtual AutomationControlType GetAutomationControlTypeCore() => AutomationControlType.Pane;
     }
 }
+namespace LabUI.WinUI { public sealed class LabSheetHost { } }
 namespace LabUI.WinUI.Rendering {
     public sealed class SheetLayers : Microsoft.UI.Xaml.Controls.Grid {
         public event EventHandler? EffectiveMaterialChanged;
@@ -728,6 +729,8 @@ namespace LabUI.WinUI.Rendering {
         public LabSheetMaterialReason? MaterialReason { get; private set; }
         public Exception? AttachError { get; set; }
         internal SheetMetrics? LastMetrics { get; private set; }
+        internal void SetScene(Microsoft.UI.Xaml.FrameworkElement? source) { }
+        internal void SceneGeometryChanged() { }
         internal void SetMetrics(SheetMetrics metrics) => LastMetrics=metrics;
         internal void Attach(LabSheetMaterial material) {
             if(AttachError is { } error) throw error;

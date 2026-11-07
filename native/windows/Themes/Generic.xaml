@@ -49,6 +49,24 @@
       </Setter.Value>
     </Setter>
   </Style>
+  <Style TargetType="local:LabSheetHost">
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="IsTabStop" Value="False" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="local:LabSheetHost">
+          <Grid>
+            <Grid x:Name="PART_Scene" Background="{TemplateBinding Background}">
+              <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}"
+                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+            </Grid>
+            <ContentPresenter x:Name="PART_Sheet" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
   <Style TargetType="local:LabSheet">
     <Setter Property="FontFamily" Value="ms-appx:///LabUI.WinUI/Assets/Fonts/Geist-Variable.ttf#Geist" />
     <Setter Property="Foreground" Value="{ThemeResource LabLabelPrimaryBrush}" />

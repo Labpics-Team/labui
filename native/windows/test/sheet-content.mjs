@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { validateMaterialCapabilities } from './sheet-material-capabilities.mjs';
 import { validateWindowGeometry } from './sheet-window-geometry.mjs';
 
 export const CONTENT_SCHEMA = 'sheet-content-v2';
@@ -212,11 +213,17 @@ export function validateContentWitness(value, expected) {
       'materialReason',
       'error',
       ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
+      ...(Object.hasOwn(value, 'materialCapabilities') ? ['materialCapabilities'] : []),
     ]);
     if (Object.hasOwn(value, 'windowGeometry')) {
       const descriptor = Object.getOwnPropertyDescriptor(value, 'windowGeometry');
       assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet content: windowGeometry JSON');
       validateWindowGeometry(descriptor.value);
+    }
+    if (Object.hasOwn(value, 'materialCapabilities')) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, 'materialCapabilities');
+      assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet content: materialCapabilities JSON');
+      validateMaterialCapabilities(descriptor.value);
     }
     assert.equal(value.requestedState, 'Half');
     assert.equal(value.geometryScale, 1);

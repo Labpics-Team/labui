@@ -2,401 +2,471 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
-// Только чтение исходников: тест не загружает WinUI/Win2D и не запускает UI.
+// Source guards и чистая математика. WinUI/Win2D не загружаются; пиксели не моделируются.
 const source = await readFile(new URL('../Rendering/SheetLayers.cs', import.meta.url), 'utf8');
-const build = source.slice(
-  source.indexOf('private Frame BuildFrame('),
-  source.indexOf('private CanvasGeometry BodyShape('),
-);
 const profile = await readFile(
   new URL('../Rendering/SheetBlurProfile.cs', import.meta.url),
   'utf8',
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
+const levels = [0, 1 / 64, 1 / 32, 1 / 16, 1 / 8, 1 / 4, 1 / 2, 1];
 
-function assertSurfaceStages(candidate) {
-  const frame = candidate.slice(
-    candidate.indexOf('private Frame BuildFrame('),
-    candidate.indexOf('private CanvasGeometry BodyShape('),
-  );
-  assert.match(
-    frame,
-    /var seedGraph = Effect\(new OpacityEffect \{ Source = Backdrop\(\), Opacity = 1 \}\);/,
-  );
-  assert.match(
-    frame,
-    /var seed = stages\.CreateVisual\(Brush\("progressiveSeed", seedGraph,\s*\("backdrop", backdropBrush\)\)\);/,
-  );
-  assert.match(
-    frame,
-    /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*var capturedBackdrop = stages\.Capture\(seed\);\s*seed\.Opacity = 0;/,
-  );
-  assert.match(frame, /var progressiveSources = new CompositionSurfaceBrush\[branches\.Length\];/);
-  assert.match(
-    frame,
-    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*progressiveSources\[index\] = stages\.Capture\(leaf\);\s*\}/,
-  );
-  assert.match(
-    frame,
-    /for \(var count = progressiveSources\.Length; count > 1; count \/= 2\)\s*for \(var index = 0; index < count; index \+= 2\)\s*\{\s*var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\);\s*var sum = stages\.CreateVisual\(Brush\("progressiveSum", pair,\s*\("left", progressiveSources\[index\]\), \("right", progressiveSources\[index \+ 1\]\)\)\);\s*progressiveSources\[index \/ 2\] = stages\.Capture\(sum\);\s*\}\s*var capturedProgressive = progressiveSources\[0\];/,
-  );
-  assert.match(frame, /var ghostBackdrop = stages\.CreateVisual\(capturedProgressive\);/);
-  assert.match(
-    frame,
-    /var ghostTint = stages\.CreateVisual\(ghostPaint, \(float\)Ghost!\.Opacity\);/,
-  );
-  assert.match(
-    frame,
-    /var noiseBrush = Brush\("ghost", Layer\(noise\), \("atlas", atlasBrush\)\);\s*var ghostNoise = stages\.CreateVisual\(noiseBrush, \(float\)Geometry\.SheetGhostNoiseOpacity\);/,
-  );
-  assert.match(
-    frame,
-    /var ghostVisual = stages\.CreateLayer\(ghostBackdrop, ghostTint, ghostNoise\);\s*ghostVisual\.Effect = MaskBrush\("ghost", ghostMask\);/,
-  );
-  assert.match(
-    frame,
-    /CompositionEffectBrush MaskBrush\(string factoryName, int index\) =>\s*Brush\(factoryName, Mask\(Source\("Backdrop"\), Layer\(index\)\), \("atlas", atlasBrush\)\);/,
-  );
-  assert.match(
-    frame,
-    /var bodyBackdrop = stages\.CreateVisual\(Brush\("body",\s*Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\), \("backdrop", capturedBackdrop\)\)\);\s*var bodyTint = stages\.CreateVisual\(tintPaint, \(float\)Tint!\.Opacity\);\s*var tinted = stages\.CreateLayer\(bodyBackdrop, bodyTint\);/,
-  );
-  assert.match(
-    frame,
-    /var blended = Effect\(new BlendEffect\s*\{\s*Background = Source\("Backdrop"\), Foreground = Paint\(Blend!, "blendPaint"\),\s*Mode = ActualTheme == ElementTheme\.Dark \? BlendEffectMode\.Overlay : BlendEffectMode\.ColorDodge,\s*\}\);\s*tinted\.Effect = Brush\("body", blended, \("blendPaint", blendPaint\)\);/,
-  );
-  assert.match(
-    frame,
-    /var bodyNoise = stages\.CreateVisual\(noiseBrush, \(float\)Geometry\.SheetBodyNoiseOpacity\);\s*var bodyVisual = stages\.CreateLayer\(tinted, bodyNoise\);\s*bodyVisual\.Effect = MaskBrush\("body", bodyMask\);/,
-  );
-  assert.match(
-    frame,
-    /var outerVisual = stages\.CreateVisual\(Brush\("outer", Layer\(outer\),\s*\("atlas", atlasBrush\)\)\);\s*var borderVisual = stages\.CreateVisual\(Brush\("border", Layer\(border\),\s*\("atlas", atlasBrush\)\)\);/,
-  );
-  assert.match(
-    frame,
-    /var output = stages\.CreateLayer\(ghostVisual, outerVisual, bodyVisual, borderVisual\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
-  );
-  assert.doesNotMatch(frame, /Brush\("final",|var graph = Over\(/);
-  assert.equal([...frame.matchAll(/stages\.CreateLayer\(/g)].length, 4);
-  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 1);
-  assert.doesNotMatch(frame, /void Output\(|^\s*Output\(/m);
-  assert.deepEqual(
-    [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
-    ['seed', 'leaf', 'sum'],
-  );
-  assert.match(
-    candidate,
-    /internal SpriteVisual CreateVisual\(CompositionBrush brush, float opacity = 1\)\s*\{\s*var visual = frame\.Own\(compositor\.CreateSpriteVisual\(\)\);\s*visuals\.Add\(visual\);\s*visual\.Size = frame\.Visual\.Size;\s*visual\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*visual\.Opacity = opacity;\s*visual\.Brush = brush;\s*return visual;/,
-  );
-  assert.match(
-    candidate,
-    /internal LayerVisual CreateLayer\(params Visual\[\] children\)\s*\{\s*var layer = frame\.Own\(compositor\.CreateLayerVisual\(\)\);\s*layers\.Add\(layer\);\s*layer\.Size = frame\.Visual\.Size;\s*layer\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*foreach \(var child in children\) layer\.Children\.InsertAtTop\(child\);\s*return layer;/,
-  );
-  assert.match(
-    candidate,
-    /var surface = frame\.Own\(compositor\.CreateVisualSurface\(\)\);\s*surfaces\.Add\(surface\);\s*surface\.SourceVisual = visual;\s*surface\.SourceOffset = Vector2\.Zero;\s*surface\.SourceSize = visual\.Size;\s*var brush = frame\.Own\(compositor\.CreateSurfaceBrush\(surface\)\);\s*brush\.Stretch = CompositionStretch\.Fill;\s*brush\.HorizontalAlignmentRatio = 0;\s*brush\.VerticalAlignmentRatio = 0;\s*return brush;/,
-  );
-  const stages = candidate.slice(
-    candidate.indexOf('private sealed class SurfaceStages('),
-    candidate.indexOf('private sealed class Frame : IDisposable'),
-  );
-  assert.match(
-    stages,
-    /if \(visuals\.Count == 0 && surfaces\.Count == 0 && layers\.Count == 0\) return;/,
-  );
-  assert.match(stages, /var flattened = layers\.ToArray\(\);/);
-  assert.match(stages, /surfaces\.Clear\(\);\s*visuals\.Clear\(\);\s*layers\.Clear\(\);/);
-  assert.match(stages, /frame\.Visual\.Children\.RemoveAll\(\)/);
-  assert.match(stages, /surface\.SourceVisual = null;/);
-  assert.match(
-    stages,
-    /foreach \(var layer in flattened\)\s*\{\s*try \{ layer\.Effect = null; \}\s*catch \(Exception error\) \{ errors\.Add\(error\); \}\s*try \{ layer\.Children\.RemoveAll\(\); \}\s*catch \(Exception error\) \{ errors\.Add\(error\); \}\s*\}/,
-  );
-  assert.match(stages, /visual\.Brush = null;/);
-  assert.match(stages, /Frame\.ThrowCleanup\(errors\);/);
-  assert.ok(
-    stages.indexOf('frame.Visual.Children.RemoveAll()') <
-      stages.indexOf('surface.SourceVisual = null'),
-  );
-  assert.ok(
-    stages.indexOf('surface.SourceVisual = null') < stages.indexOf('layer.Children.RemoveAll()'),
-  );
-  assert.ok(stages.indexOf('layer.Children.RemoveAll()') < stages.indexOf('visual.Brush = null'));
-  assert.doesNotMatch(stages, /\.Dispose\(|\.Close\(|CanvasDevice/);
-  const failure = frame.slice(frame.lastIndexOf('catch (Exception error)'));
-  assert.match(failure, /List<Exception> errors = \[error\];/);
-  assert.match(failure, /stages\?\.Dispose\(\)/);
-  assert.match(failure, /result\.Dispose\(\)/);
-  assert.ok(failure.indexOf('stages?.Dispose()') < failure.indexOf('result.Dispose()'));
-  assert.match(
-    failure,
-    /throw new AggregateException\("Ошибка создания и освобождения Sheet\.", errors\)/,
-  );
-  assert.match(failure, /throw;/);
+// Лексические фрагменты не зависят от отступов и комментариев. Это не C# executor.
+function code(text) {
+  return (
+    text.match(
+      /\/\/[^\r\n]*|\/\*[\s\S]*?\*\/|\$?"(?:\\.|[^"\\])*"|[A-Za-z_]\w*|\d+(?:\.\d+)?[fFdD]?|[^\s]/g,
+    ) ?? []
+  )
+    .filter((token) => !token.startsWith('//') && !token.startsWith('/*'))
+    .join(' ');
 }
 
-test('Sheet native layers preserve Ghost and Body effects before raster masks and ancestor opacity', () => {
-  assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
-  assertSurfaceStages(source);
-  assert.match(
-    build,
-    /IGraphicsEffectSource Source\(string name\)\s*=>\s*new CompositionEffectSourceParameter\(name\)/,
+function includes(actual, ...snippets) {
+  const normalized = ` ${code(actual)} `;
+  for (const snippet of snippets)
+    assert.ok(normalized.includes(` ${code(snippet)} `), `Sheet source law missing: ${snippet}`);
+}
+
+function section(candidate, start, end) {
+  const first = candidate.indexOf(start);
+  const last = candidate.indexOf(end, first);
+  assert.ok(first >= 0 && last > first, `Sheet section missing: ${start}`);
+  return candidate.slice(first, last);
+}
+
+const frameOf = (candidate) =>
+  section(candidate, 'private Frame BuildFrame(', 'private CanvasGeometry BodyShape(');
+const stagesOf = (candidate) =>
+  section(
+    candidate,
+    'private sealed class SurfaceStages(',
+    'private sealed class Frame : IDisposable',
   );
-  assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
-  assert.match(
-    build,
-    /Transform2DEffect Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
+const build = frameOf(source);
+
+function rejectsChanges(check, changes) {
+  check(source); // Не допускаем vacuous mutants: исправный исходник обязан пройти тот же измеритель.
+  for (const [before, after] of changes) {
+    assert.ok(source.includes(before), `Mutation target missing: ${before}`);
+    assert.throws(
+      () => check(source.replace(before, after)),
+      undefined,
+      `Accepted mutation: ${after}`,
+    );
+  }
+}
+
+function assertProgressive(candidate) {
+  const frame = frameOf(candidate);
+  includes(
+    frame,
+    'IGraphicsEffectSource Branch(int index) => index == 0 ? Backdrop() : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale, $"ghostBlur{index}");',
+    'var intervals = new Visual[SheetBlurProfile.Levels.Length - 1];',
+    'for (var index = 0; index < intervals.Length; index++)',
+    'var ramp = result.Own(compositor.CreateLinearGradientBrush());',
+    'ramp.MappingMode = CompositionMappingMode.Absolute;',
+    'ramp.ExtendMode = CompositionGradientExtendMode.Clamp;',
+    'ramp.StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index]);',
+    'ramp.EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1]);',
+    'ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(0, Color.FromArgb(0, 255, 255, 255))));',
+    'ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(1, maskInk)));',
+    'Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Source("mask") }',
+    'var upper = Mask(Branch(index + 1), Source("mask"));',
+    'Mode = CanvasComposite.Add, Sources = { lower, upper }',
+    'Brush($"progressiveInterval{index}", pair, ("backdrop", capturedBackdrop), ("mask", ramp))',
+    'var clip = result.Own(compositor.CreateRectangleClip());',
+    'clip.Left = 0;',
+    'clip.Right = result.Visual.Size.X;',
+    'clip.Top = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index];',
+    'clip.Bottom = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1];',
+    'interval.BorderMode = CompositionBorderMode.Hard;',
+    'interval.Clip = clip;',
+    'intervals[index] = interval;',
+    'var ghostBackdrop = stages.CreateLayer(intervals);',
   );
-  assert.equal([...build.matchAll(/compositor\.CreateSurfaceBrush\(atlasSurface\)/g)].length, 1);
-  assert.match(
-    build,
-    /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
+  // Единственный live input — сцена. Эффект не захватывает собственный результат.
+  assert.deepEqual(
+    [...code(frame).matchAll(/stages \. Capture \( (\w+)/g)].map((match) => match[1]),
+    ['sceneVisual'],
   );
-  assert.equal([...build.matchAll(/stages\.CreateLayer\(/g)].length, 4);
-  assert.doesNotMatch(build, /CompositeEffect Over\(|CompositeEffect WithNoise\(|var bodySource =/);
-  assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
   assert.doesNotMatch(
-    build,
-    /ghostPair|pairs|progressiveBrush|ghostBrush|bodyBrush|Source\("progressive"\)/,
+    code(frame),
+    /CreateBackdropBrush|progressiveSources|capturedProgressive|ghostMasks|CanvasLinearGradientBrush/,
   );
-  assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
-  assert.doesNotMatch(build, /compositor\.Create(?:VisualSurface|SpriteVisual|LayerVisual)\(/);
-});
+  const intervals = section(frame, 'var intervals =', 'var ghostPaint =');
+  assert.doesNotMatch(code(intervals), /\bLayer \(|\batlasBrush\b/);
+}
 
-test('Sheet capture source guard rejects a root capture, repeated seed and bypassed leaf binding', () => {
-  for (const [original, replacement] of [
-    ['surface.SourceVisual = visual;', 'surface.SourceVisual = frame.Visual;'],
-    ['stages.Capture(leaf)', 'stages.Capture(seed)'],
-    ['stages.Capture(sum)', 'stages.Capture(seed)'],
-    ['("right", progressiveSources[index + 1])', '("right", progressiveSources[index])'],
-    ['MaskBrush("ghost", ghostMask)', 'MaskBrush("ghost", bodyMask)'],
-    ['MaskBrush("body", bodyMask)', 'MaskBrush("body", ghostMask)'],
-    [
-      'stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity)',
-      'stages.CreateVisual(ghostPaint, (float)Ghost!.Color.A / 255)',
-    ],
-    [
-      'stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity)',
-      'stages.CreateVisual(noiseBrush, (float)(Geometry.SheetGhostNoiseOpacity * Ghost!.Opacity))',
-    ],
-    ['Mask(Source("Backdrop"), Layer(index))', 'Mask(Layer(index), Source("Backdrop"))'],
-    [
-      'stages.CreateVisual(tintPaint, (float)Tint!.Opacity)',
-      'stages.CreateVisual(tintPaint, (float)Tint!.Color.A / 255)',
-    ],
-    [
-      'stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity)',
-      'stages.CreateVisual(noiseBrush, (float)(Geometry.SheetBodyNoiseOpacity * Tint!.Opacity))',
-    ],
-  ]) {
-    assert.ok(source.includes(original));
-    assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
-  }
-});
-
-test('Sheet material source guard rejects a plain output container, bypassed grouping and changed SourceOver order', () => {
-  for (const [original, replacement] of [
-    ['compositor.CreateLayerVisual()', 'compositor.CreateContainerVisual()'],
-    [
-      'result.Visual.Children.InsertAtTop(output);',
-      'result.Visual.Children.InsertAtTop(ghostVisual);',
-    ],
-    [
-      'stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise)',
-      'stages.CreateLayer(ghostBackdrop, ghostNoise, ghostTint)',
-    ],
-    ['stages.CreateLayer(bodyBackdrop, bodyTint)', 'stages.CreateLayer(bodyTint, bodyBackdrop)'],
-    ['stages.CreateLayer(tinted, bodyNoise)', 'stages.CreateLayer(bodyNoise, tinted)'],
-    ['stages.CreateLayer(tinted, bodyNoise)', 'stages.CreateLayer(bodyBackdrop, bodyNoise)'],
-    ['ghostVisual.Effect = MaskBrush(', 'output.Effect = MaskBrush('],
-    ['bodyVisual.Effect = MaskBrush(', 'tinted.Effect = MaskBrush('],
-    [
-      'Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint")',
-      'Foreground = Source("Backdrop"), Background = Paint(Blend!, "blendPaint")',
-    ],
-    [
-      'BlendEffectMode.Overlay : BlendEffectMode.ColorDodge',
-      'BlendEffectMode.ColorDodge : BlendEffectMode.Overlay',
-    ],
-    [
-      'layer.CompositeMode = CompositionCompositeMode.SourceOver;',
-      'layer.CompositeMode = CompositionCompositeMode.MinBlend;',
-    ],
-    [
-      'visual.CompositeMode = CompositionCompositeMode.SourceOver;',
-      'visual.CompositeMode = CompositionCompositeMode.MinBlend;',
-    ],
-    ['visual.Opacity = opacity;', 'visual.Opacity = 1;'],
-    [
-      'foreach (var child in children) layer.Children.InsertAtTop(child);',
-      'foreach (var child in children.Reverse()) layer.Children.InsertAtTop(child);',
-    ],
-    [
-      'stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual)',
-      'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',
-    ],
-  ]) {
-    assert.ok(source.includes(original));
-    assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
-  }
-});
-
-test('Sheet surface source guard rejects changed coordinates and a SourceOver progressive sum', () => {
-  for (const [original, replacement] of [
-    ['surface.SourceOffset = Vector2.Zero;', 'surface.SourceOffset = Vector2.One;'],
-    ['surface.SourceSize = visual.Size;', 'surface.SourceSize = visual.Size / 2;'],
-    [
-      'Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") }',
-      'Mode = CanvasComposite.SourceOver, Sources = { Source("left"), Source("right") }',
-    ],
-  ]) {
-    assert.ok(source.includes(original));
-    assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
-  }
-});
-
-test('Sheet surface source guard rejects retained capture links and swallowed unlink errors', () => {
-  for (const [original, replacement, owner] of [
-    ['surface.SourceVisual = null;', '', 'private sealed class SurfaceStages('],
-    ['layer.Children.RemoveAll();', '', 'private sealed class SurfaceStages('],
-    ['layer.Effect = null;', '', 'private sealed class SurfaceStages('],
-    ['Frame.ThrowCleanup(errors);', '', 'private sealed class SurfaceStages('],
-    ['stages?.Dispose();', '', 'private Frame BuildFrame('],
-  ]) {
-    const start = source.indexOf(owner);
-    assert.ok(start >= 0 && source.slice(start).includes(original));
-    const candidate = source.slice(0, start) + source.slice(start).replace(original, replacement);
-    assert.throws(() => assertSurfaceStages(candidate));
-  }
-});
-
-test('Sheet factories retain active failure metadata without the retired final graph diagnostics', () => {
-  assert.match(
-    build,
-    /CompositionEffectBrush Brush\(string factoryName, IGraphicsEffect graph,\s*params \(string Name, CompositionBrush Source\)\[\] bindings\)/,
+function assertSceneOwnership(candidate) {
+  const frame = frameOf(candidate);
+  const stages = stagesOf(candidate);
+  includes(
+    frame,
+    'var sceneVisual = ElementCompositionPreview.GetElementVisual(scene!);',
+    'if (!ReferenceEquals(sceneVisual.Compositor, compositor) || !ReferenceEquals(scene!.XamlRoot, XamlRoot))',
+    'var transform = TransformToVisual(scene);',
+    'var origin = transform.TransformPoint(new Point(0, 0));',
+    'var right = transform.TransformPoint(new Point(metrics.Width, 0));',
+    'var bottom = transform.TransformPoint(new Point(0, metrics.Height));',
+    'var capturedBackdrop = stages.Capture(sceneVisual, new Vector2((float)origin.X, (float)origin.Y), new Vector2((float)(right.X - origin.X), (float)(bottom.Y - origin.Y)));',
+    'Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), ("backdrop", capturedBackdrop)',
   );
-  const start = build.indexOf('catch (Exception primary)');
-  const end = build.indexOf('CompositionEffectBrush MaskBrush(');
-  assert.ok(start >= 0 && end > start);
-  const failure = build.slice(start, end);
-  assert.match(
-    failure,
-    /primary\.Data\["LabUI\.SheetFactoryFailure"\] = new Dictionary<string, object\?>\s*\{ \["name"\] = factoryName, \["operation"\] = operation \};/,
+  includes(
+    stages,
+    'var surface = frame.Own(compositor.CreateVisualSurface());',
+    'surfaces.Add(surface);',
+    'surface.SourceVisual = visual;',
+    'surface.SourceOffset = offset;',
+    'surface.SourceSize = size;',
+    'var brush = frame.Own(compositor.CreateSurfaceBrush(surface));',
+    'brush.Stretch = CompositionStretch.Fill;',
+    'brush.HorizontalAlignmentRatio = 0;',
+    'brush.VerticalAlignmentRatio = 0;',
+    'var visual = frame.Own(compositor.CreateSpriteVisual());',
+    'visuals.Add(visual);',
+    'visual.Size = frame.Visual.Size;',
+    'visual.CompositeMode = CompositionCompositeMode.SourceOver;',
+    'visual.Opacity = opacity;',
+    'visual.Brush = brush;',
   );
-  assert.match(failure, /catch \{ \}\s*throw;/);
   assert.doesNotMatch(
-    build,
-    /inlineProgressive|progressiveGraph|ghostSourceGraph|progressiveBranches|SheetSourceTopologyProbe\.Record(?:Branches|SigmaFactories|Actual\w+)\(/,
+    code(frame),
+    /Own \( sceneVisual \)|CreateVisualSurface|CreateSpriteVisual|CreateLayerVisual/,
   );
-});
+}
 
-test('Sheet virtual atlas uses the original Uniform projection and per-cell updateRect', () => {
-  assert.match(build, /TransformMatrix = atlas\.Cell\(index\)\.EffectTransform/);
-  assert.match(build, /atlasBrush\.Stretch = CompositionStretch\.None;/);
-  assert.match(build, /atlasBrush\.HorizontalAlignmentRatio = 0;/);
-  assert.match(build, /atlasBrush\.VerticalAlignmentRatio = 0;/);
-  assert.match(build, /atlasBrush\.Scale = atlas\.BrushScale;/);
-  assert.match(build, /atlasBrush\.Offset = atlas\.BrushOffset;/);
-  assert.match(
-    build,
-    /void DrawAtlasCell\(int index\)\s*\{\s*var cell = atlas\.Cell\(index\);\s*using var drawing = CanvasComposition\.CreateDrawingSession\(atlasSurface,\s*new Rect\(cell\.PixelX, cell\.PixelY, pixelWidth, pixelHeight\), \(float\)\(96 \* scale\)\);/,
-  );
-  assert.match(
-    build,
-    /for \(var index = 0; index < atlasDrawings\.Count; index\+\+\) DrawAtlasCell\(index\);/,
-  );
-  assert.match(build, /drawing\.Clear\(Color\.FromArgb\(0, 0, 0, 0\)\);/);
-  assert.match(build, /atlasDrawings\[index\]\(drawing\);/);
-  assert.doesNotMatch(build, /drawing\.Transform|DrawingOffset|MaximumBitmapSizeInPixels/);
-  assert.doesNotMatch(build, /new Rect\(0, 0, atlas\.Width, atlas\.Height\)/);
-});
-
-test('Sheet atlas keeps authored blur levels and paints under the common GeometryScale', () => {
-  assert.match(
-    profile,
-    /levels = \[0, 1f \/ 64, 1f \/ 32, 1f \/ 16, 1f \/ 8, 1f \/ 4, 1f \/ 2, 1\]/,
-  );
-  assert.match(build, /index < SheetBlurProfile\.Levels\.Length/);
-  assert.match(build, /SheetBlurProfile\.Stops\(level\)/);
-  assert.match(
-    build,
-    /Blur\(Backdrop\(\), SheetBlurProfile\.Levels\[index\] \* Geometry\.SheetGhostBlurRadius \* metrics\.Scale,\s*\$"ghostBlur\{index\}"\)/,
-  );
-  assert.match(build, /Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\)/);
-  assert.match(
-    build,
-    /graph, Geometry\.SheetGhostBlurRadius \* metrics\.Scale \* RadiusToSigma,\s*Geometry\.SheetBodyBlurRadius \* metrics\.Scale \* RadiusToSigma/,
-  );
-  assert.match(build, /branches\[index\] = Mask\(index == 0 \? Backdrop\(\)/);
-  assert.match(build, /Layer\(ghostMasks\[index\]\)/);
-  assert.match(
-    build,
-    /var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\)/,
-  );
-  assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
-  assert.match(build, /stages\.CreateVisual\(ghostPaint, \(float\)Ghost!\.Opacity\)/);
-  assert.match(
-    build,
-    /stages\.CreateVisual\(noiseBrush, \(float\)Geometry\.SheetGhostNoiseOpacity\)/,
-  );
-  assert.match(build, /ghostVisual\.Effect = MaskBrush\("ghost", ghostMask\);/);
-  assert.match(build, /bodyVisual\.Effect = MaskBrush\("body", bodyMask\);/);
-  assert.doesNotMatch(build, /ghostSource|Source\("progressiveSurface"\)|Paint\(Ghost!/);
-  assert.match(geometry, /SheetGhostBlurRadius = 24;/);
-  assert.match(geometry, /SheetBodyBlurRadius = 128;/);
-  assert.match(source, /RadiusToSigma = 0\.5;/);
-  assert.match(build, /Paint\(Blend!, "blendPaint"\)/);
-  assert.match(build, /DrawShadows\(drawing, metrics, bodyShape\)/);
-  assert.match(build, /DrawNoise\(drawing, pixelWidth, pixelHeight, scale\)/);
-  assert.match(build, /Mode = CanvasComposite\.Add/);
-  assert.doesNotMatch(
-    build,
-    /new (AtlasEffect|PixelShaderEffect|CropEffect|ScaleEffect|ConvolveMatrixEffect)\b/,
-  );
-});
-
-test('Sheet native paints retain original Color alpha and separate float opacity', () => {
-  assert.match(
-    build,
-    /IGraphicsEffectSource Paint\(SolidColorBrush brush, string sourceName\) => Effect\(new OpacityEffect\s*\{\s*Opacity = \(float\)brush\.Opacity,\s*Source = Source\(sourceName\),\s*\}\);/,
+function assertMaterials(candidate) {
+  const frame = frameOf(candidate);
+  const stages = stagesOf(candidate);
+  includes(
+    frame,
+    'Mode = CanvasComposite.DestinationIn, Sources = { source, mask }',
+    'Mask(Source("Backdrop"), Layer(index))',
+    'var ghostTint = stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity);',
+    'var ghostNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity);',
+    'var ghostVisual = stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise);',
+    'var ghostClip = result.Own(compositor.CreateRectangleClip());',
+    'ghostClip.Left = 0;',
+    'ghostClip.Top = 0;',
+    'ghostClip.Right = result.Visual.Size.X;',
+    'ghostClip.Bottom = (float)metrics.GhostHeight;',
+    'ghostVisual.BorderMode = CompositionBorderMode.Soft;',
+    'ghostVisual.Clip = ghostClip;',
+    'var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);',
+    'var tinted = stages.CreateLayer(bodyBackdrop, bodyTint);',
+    'Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),',
+    'Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,',
+    'tinted.Effect = Brush("body", blended, ("blendPaint", blendPaint));',
+    'var bodyNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity);',
+    'var bodyVisual = stages.CreateLayer(tinted, bodyNoise);',
+    'bodyVisual.Effect = MaskBrush("body", bodyMask);',
+    'var output = stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual);',
+    'result.Visual.Children.InsertAtTop(output);',
+    'IGraphicsEffectSource Paint(SolidColorBrush brush, string sourceName) => Effect(new OpacityEffect { Opacity = (float)brush.Opacity, Source = Source(sourceName), });',
   );
   for (const [paint, name] of [
     ['Ghost', 'ghostPaint'],
     ['Tint', 'tintPaint'],
     ['Blend', 'blendPaint'],
   ])
-    assert.match(
-      build,
-      new RegExp(
-        `var ${name} = result\\.Own\\(compositor\\.CreateColorBrush\\(${paint}!\\.Color\\)\\);`,
-      ),
+    includes(frame, `var ${name} = result.Own(compositor.CreateColorBrush(${paint}!.Color));`);
+  includes(
+    stages,
+    'var layer = frame.Own(compositor.CreateLayerVisual());',
+    'layers.Add(layer);',
+    'layer.Size = frame.Visual.Size;',
+    'layer.CompositeMode = CompositionCompositeMode.SourceOver;',
+    'foreach (var child in children) layer.Children.InsertAtTop(child);',
+  );
+}
+
+function assertCleanup(candidate) {
+  const stages = stagesOf(candidate);
+  includes(
+    stages,
+    'var captured = surfaces.ToArray();',
+    'var rendered = visuals.ToArray();',
+    'var flattened = layers.ToArray();',
+    'surfaces.Clear(); visuals.Clear(); layers.Clear();',
+    'Frame.ThrowCleanup(errors);',
+  );
+  const unlink = [
+    'frame.Visual.Children.RemoveAll()',
+    'surface.SourceVisual = null',
+    'layer.Clip = null',
+    'layer.Effect = null',
+    'layer.Children.RemoveAll()',
+    'visual.Clip = null',
+    'visual.Brush = null',
+  ];
+  for (const action of unlink)
+    includes(stages, `try { ${action}; } catch (Exception error) { errors.Add(error); }`);
+  for (let index = 1; index < unlink.length; index++)
+    assert.ok(
+      stages.indexOf(unlink[index - 1]) < stages.indexOf(unlink[index]),
+      'Unlink before releasing dependent resources',
     );
-  assert.equal([...build.matchAll(/compositor\.CreateColorBrush\(/g)].length, 3);
-  assert.doesNotMatch(build, /new ColorSourceEffect\b/);
+  assert.doesNotMatch(code(stages), /\. (?:Dispose|Close) \(/);
+  const frame = frameOf(candidate);
+  const failure = frame.slice(frame.lastIndexOf('catch (Exception error)'));
+  includes(
+    failure,
+    'List<Exception> errors = [error];',
+    'try { stages?.Dispose(); } catch (Exception cleanup) { errors.Add(cleanup); }',
+    'try { result.Dispose(); } catch (Exception cleanup) { errors.Add(cleanup); }',
+    'if (errors.Count > 1) throw new AggregateException("Ошибка создания и освобождения Sheet.", errors);',
+    'throw;',
+  );
+  assert.ok(failure.indexOf('stages?.Dispose()') < failure.indexOf('result.Dispose()'));
+  includes(frame, 'result.Own(stages);');
+  includes(candidate, 'for (var index = resources.Length - 1; index >= 0; index--)');
+}
+
+test('Sheet preserves eight authored levels and four raster cells beside native interval ramps', () => {
+  const literals = profile.match(/levels\s*=\s*\[([^\]]+)\]/)?.[1];
+  assert.ok(literals, 'Authored levels missing');
+  const actual = literals.split(',').map((literal) => {
+    const fraction = literal.trim().match(/^(\d+)f?(?:\s*\/\s*(\d+))?$/);
+    assert.ok(fraction, 'Unexpected level expression');
+    return Number(fraction[1]) / Number(fraction[2] ?? 1);
+  });
+  assert.deepEqual(actual, levels);
+  includes(
+    profile,
+    'if (index > 1) stops.Add((0, 0));',
+    'if (index > 0) stops.Add((levels[index - 1], 0));',
+    'stops.Add((levels[index], 1));',
+    'if (index + 1 < levels.Length) stops.Add((levels[index + 1], 0));',
+    'if (index + 2 < levels.Length) stops.Add((1, 0));',
+  );
+  includes(
+    build,
+    'SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 4)',
+    'Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,',
+    'graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma, Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma',
+  );
+  includes(geometry, 'SheetGhostBlurRadius = 24;', 'SheetBodyBlurRadius = 128;');
+  includes(source, 'RadiusToSigma = 0.5;');
 });
 
-test('Sheet atlas preserves frame ownership and cleans failed candidates', () => {
-  assert.match(build, /var atlasSurface = result\.Own\(graphics!\.CreateVirtualDrawingSurface\(/);
-  assert.match(
+// Идеальные кусочно-линейные веса; не утверждение о native raster seams/quantization.
+function weight(index, position) {
+  const center = levels[index];
+  if (position === center) return 1;
+  const neighbor = levels[index + (position < center ? -1 : 1)];
+  if (neighbor === undefined) return 0;
+  return Math.max(0, 1 - Math.abs((position - center) / (neighbor - center)));
+}
+const add = (left, right) => left.map((value, index) => value + right[index]);
+const scale = (rgba, factor) => rgba.map((value) => value * factor);
+const over = (front, back) => add(front, scale(back, 1 - front[3]));
+const close = (actual, expected) =>
+  actual.forEach((value, index) => assert.ok(Math.abs(value - expected[index]) < 1e-12));
+
+test('Adjacent pair weights partition unity, retain knots and equal the full eight-level premultiplied sum', () => {
+  const samples = levels.map((_, index) => {
+    const alpha = (index + 1) / 9;
+    return [(alpha * index) / 8, alpha / 3, (alpha * (8 - index)) / 8, alpha];
+  });
+  for (let interval = 0; interval < levels.length - 1; interval++) {
+    for (const fraction of [0, 1 / 64, 1 / 4, 1 / 2, 3 / 4, 63 / 64, 1]) {
+      const position = levels[interval] + fraction * (levels[interval + 1] - levels[interval]);
+      const weights = levels.map((_, index) => weight(index, position));
+      close([weights.reduce((sum, value) => sum + value, 0)], [1]);
+      close([weights.reduce((sum, value, index) => sum + value * levels[index], 0)], [position]);
+      assert.ok(
+        weights.every(
+          (value, index) => value === 0 || index === interval || index === interval + 1,
+        ),
+      );
+      close([weights[interval], weights[interval + 1]], [1 - fraction, fraction]);
+      const all = samples.reduce(
+        (sum, rgba, index) => add(sum, scale(rgba, weights[index])),
+        [0, 0, 0, 0],
+      );
+      const pair = add(
+        scale(samples[interval], 1 - fraction),
+        scale(samples[interval + 1], fraction),
+      );
+      close(pair, all);
+    }
+  }
+});
+
+test('A shared ramp preserves alpha where filtered triangle masks lose a third contribution at fractional DPI', () => {
+  // Линейная реконструкция масок при прежней atlas-проекции 375x812, Half, 125%.
+  // Это различающий математический пример, не модель native Gaussian или PNG.
+  const dpi = 1.25;
+  const ghostHeight = 422;
+  const brushScale = Math.min(375 / Math.ceil(375 * dpi), 812 / Math.ceil(812 * dpi));
+  const offset = (812 - Math.ceil(812 * dpi) * brushScale) / 2;
+  const y = 16.5 / dpi;
+  const sourceY = (y - offset) / brushScale - 0.5;
+  const row = Math.floor(sourceY);
+  const fraction = sourceY - row;
+  const sample = (read) =>
+    (1 - fraction) * read((row + 0.5) / dpi / ghostHeight) +
+    fraction * read((row + 1.5) / dpi / ghostHeight);
+  const weights = levels.map((_, index) => sample((position) => weight(index, position)));
+  assert.ok(y >= ghostHeight * levels[2] && y < ghostHeight * levels[3]);
+  close([weights.reduce((sum, value) => sum + value, 0)], [1]);
+  assert.ok(weights[1] > 0.03, 'filtered third branch must make the old pair fail');
+  assert.ok(weights[2] + weights[3] < 0.97, 'two independent triangle masks lose alpha');
+
+  const m = sample((position) =>
+    Math.max(0, Math.min(1, (position - levels[2]) / (levels[3] - levels[2]))),
+  );
+  for (const value of [0, m, Math.round(m * 255) / 255, 1]) {
+    const lower = [0.5, 0, 0, 0.5];
+    const upper = [0, 0, 0.25, 0.25];
+    close(add(scale(lower, 1 - value), scale(upper, value)), [
+      0.5 * (1 - value),
+      0,
+      0.25 * value,
+      0.5 * (1 - value) + 0.25 * value,
+    ]);
+    close(add(scale([1, 1, 1, 1], 1 - value), scale([1, 1, 1, 1], value)), [1, 1, 1, 1]);
+  }
+});
+
+test('Add retains transparent premultiplied interpolation; SourceOver attenuates color and alpha', () => {
+  // W3C Compositing 1 §§5.1, 9.1.4, 9.1.13: https://www.w3.org/TR/compositing-1/
+  const red = [0.5, 0, 0, 0.5];
+  const blue = [0, 0, 0.25, 0.25];
+  close(add(scale(red, 0.5), scale(blue, 0.5)), [0.25, 0, 0.125, 0.375]);
+  close(over(scale(red, 0.5), scale(blue, 0.5)), [0.25, 0, 0.09375, 0.34375]);
+  assert.notDeepEqual(
+    over(scale(red, 0.5), scale(blue, 0.5)),
+    over(scale(blue, 0.5), scale(red, 0.5)),
+  );
+  for (const rgba of [[0, 0, 0, 0], red, [0.2, 0.4, 0.8, 1]])
+    for (const factor of [0, 0.25, 0.5, 0.75, 1])
+      close(add(scale(rgba, factor), scale(rgba, 1 - factor)), rgba);
+});
+
+test('Sheet uses seven clipped Add intervals over one borrowed live scene', () => {
+  assertProgressive(source);
+  assertSceneOwnership(source);
+});
+
+test('Sheet guards reject a different pair, composition operator, interval coverage or capture source', () => {
+  rejectsChanges(assertProgressive, [
+    [
+      'CanvasComposite.Add, Sources = { lower, upper }',
+      'CanvasComposite.SourceOver, Sources = { lower, upper }',
+    ],
+    ['Mask(Branch(index + 1), Source("mask"))', 'Mask(Branch(index), Source("mask"))'],
+    ['CanvasComposite.DestinationOut', 'CanvasComposite.DestinationIn'],
+    ['Mask(Branch(index + 1), Source("mask"))', 'Mask(Branch(index + 1), Source("otherMask"))'],
+    [
+      'ramp.MappingMode = CompositionMappingMode.Absolute;',
+      'ramp.MappingMode = CompositionMappingMode.Relative;',
+    ],
+    [
+      'ramp.ExtendMode = CompositionGradientExtendMode.Clamp;',
+      'ramp.ExtendMode = CompositionGradientExtendMode.Wrap;',
+    ],
+    ['("mask", ramp)', '("mask", atlasBrush)'],
+    [
+      'result.Own(compositor.CreateLinearGradientBrush())',
+      'compositor.CreateLinearGradientBrush()',
+    ],
+    [
+      'new Visual[SheetBlurProfile.Levels.Length - 1]',
+      'new Visual[SheetBlurProfile.Levels.Length - 2]',
+    ],
+    ['clip.Top = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index];', 'clip.Top = 0;'],
+    [
+      'clip.Bottom = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1];',
+      'clip.Bottom = result.Visual.Size.Y - (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1];',
+    ],
+    [
+      'interval.BorderMode = CompositionBorderMode.Hard;',
+      'interval.BorderMode = CompositionBorderMode.Soft;',
+    ],
+    ['interval.Clip = clip;', ''],
+    ['stages.Capture(sceneVisual,', 'stages.Capture(result.Visual,'],
+  ]);
+  rejectsChanges(assertSceneOwnership, [
+    ['surface.SourceVisual = visual;', 'surface.SourceVisual = frame.Visual;'],
+    ['surface.SourceOffset = offset;', 'surface.SourceOffset = Vector2.Zero;'],
+    ['surface.SourceSize = size;', 'surface.SourceSize = size / 2;'],
+    ['visual.Size = frame.Visual.Size;', 'visual.Size = Vector2.One;'],
+  ]);
+});
+
+test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authored SourceOver order', () => {
+  assertMaterials(source);
+  rejectsChanges(assertMaterials, [
+    [
+      'stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise)',
+      'stages.CreateLayer(ghostBackdrop, ghostNoise, ghostTint)',
+    ],
+    ['stages.CreateLayer(tinted, bodyNoise)', 'stages.CreateLayer(bodyBackdrop, bodyNoise)'],
+    [
+      'stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual)',
+      'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',
+    ],
+    ['ghostVisual.Clip = ghostClip;', 'ghostBackdrop.Clip = ghostClip;'],
+    [
+      'ghostClip.Bottom = (float)metrics.GhostHeight;',
+      'ghostClip.Bottom = (float)metrics.BodyTop;',
+    ],
+    ['Mask(Source("Backdrop"), Layer(index))', 'Mask(Layer(index), Source("Backdrop"))'],
+    [
+      'stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity)',
+      'stages.CreateVisual(ghostPaint, (float)Ghost!.Color.A / 255)',
+    ],
+    [
+      'stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity)',
+      'stages.CreateVisual(noiseBrush, (float)(Geometry.SheetBodyNoiseOpacity * Tint!.Opacity))',
+    ],
+    [
+      'layer.CompositeMode = CompositionCompositeMode.SourceOver;',
+      'layer.CompositeMode = CompositionCompositeMode.MinBlend;',
+    ],
+    ['Opacity = (float)brush.Opacity,', 'Opacity = 1,'],
+  ]);
+});
+
+test('Atlas retains viewport projection, per-cell writes and owned resources', () => {
+  includes(
     build,
-    /new Windows\.Graphics\.SizeInt32 \{ Width = atlas\.Width, Height = atlas\.Height \}/,
+    'var atlasSurface = result.Own(graphics!.CreateVirtualDrawingSurface(',
+    'new Windows.Graphics.SizeInt32 { Width = atlas.Width, Height = atlas.Height }',
+    'DirectXAlphaMode.Premultiplied',
+    'TransformMatrix = atlas.Cell(index).EffectTransform,',
+    'var atlasBrush = result.Own(compositor.CreateSurfaceBrush(atlasSurface));',
+    'atlasBrush.Stretch = CompositionStretch.None;',
+    'atlasBrush.HorizontalAlignmentRatio = 0;',
+    'atlasBrush.VerticalAlignmentRatio = 0;',
+    'atlasBrush.Scale = atlas.BrushScale;',
+    'atlasBrush.Offset = atlas.BrushOffset;',
+    'new Rect(cell.PixelX, cell.PixelY, pixelWidth, pixelHeight), (float)(96 * scale)',
+    'drawing.Clear(Color.FromArgb(0, 0, 0, 0));',
+    'atlasDrawings[index](drawing);',
+    'for (var index = 0; index < atlasDrawings.Count; index++) DrawAtlasCell(index);',
+    'DrawShadows(drawing, metrics, bodyShape)',
+    'DrawNoise(drawing, pixelWidth, pixelHeight, scale)',
+    'var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(',
+    'var brush = result.Own(factory.CreateBrush());',
+    'foreach (var (name, source) in bindings) brush.SetSourceParameter(name, source);',
+    'primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?> { ["name"] = factoryName, ["operation"] = operation };',
   );
-  assert.match(
-    build,
-    /var atlasBrush = result\.Own\(compositor\.CreateSurfaceBrush\(atlasSurface\)\)/,
-  );
-  assert.match(build, /var backdropBrush = result\.Own\(compositor\.CreateBackdropBrush\(\)\)/);
-  assert.ok(
-    build.indexOf('compositor.CreateBackdropBrush()') < build.indexOf('factory.CreateBrush()'),
-  );
-  assert.match(build, /var factory = result\.Own\(SheetSourceTopologyProbe\.CreateFactory\(/);
-  assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
-  assertSurfaceStages(source);
-  assert.match(
-    source,
-    /ElementCompositionPreview\.SetElementChildVisual\(this, candidate\.Visual\)/,
-  );
-  assert.match(source, /Render\(recreate: true\)/);
-  assert.match(source, /for \(var index = resources\.Length - 1; index >= 0; index--\)/);
+  assert.doesNotMatch(code(build), /drawing \. Transform|DrawingOffset|MaximumBitmapSizeInPixels/);
+  includes(source, 'ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual)');
+});
+
+test('Frame unlinks captures, layers, clips and brushes before reverse resource disposal, including failure', () => {
+  assertCleanup(source);
+  rejectsChanges(assertCleanup, [
+    ['surface.SourceVisual = null;', ''],
+    ['layer.Clip = null;', ''],
+    ['layer.Effect = null;', ''],
+    ['layer.Children.RemoveAll();', ''],
+    ['visual.Clip = null;', ''],
+    ['visual.Brush = null;', ''],
+    ['stages?.Dispose();', ''],
+  ]);
 });

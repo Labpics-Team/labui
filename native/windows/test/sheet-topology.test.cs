@@ -56,7 +56,9 @@ Check(ReferenceEquals(unavailableRetained, unavailable) && unavailableRetained?.
 foreach (var name in new[] { "ghostPair0", "ghostPair1", "ghostPair2", "ghostPair3",
     "progressive", "progressiveSeed", "progressiveLeaf0", "progressiveLeaf1",
     "progressiveLeaf2", "progressiveLeaf3", "progressiveLeaf4", "progressiveLeaf5",
-    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum", "ghost", "body", "outer", "border", "final" })
+    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum",
+    "progressiveInterval0", "progressiveInterval1", "progressiveInterval2", "progressiveInterval3",
+    "progressiveInterval4", "progressiveInterval5", "progressiveInterval6", "ghost", "body", "outer", "border", "final" })
     foreach (var operation in new[] { "factory", "brush", "binding" })
     {
         var primary = new TestFailure(BuildFailure, Marker);
@@ -70,7 +72,8 @@ foreach (var name in new[] { "ghostPair0", "ghostPair1", "ghostPair2", "ghostPai
     }
 Check(SheetSourceTopology.ReadFactory(new TestFailure(BuildFailure, Marker)) is null,
     "Отсутствующий factory получил выдуманную identity.");
-foreach (var name in new[] { "progressiveLeaf-1", "progressiveLeaf8", "progressiveLeaf00", Marker })
+foreach (var name in new[] { "progressiveLeaf-1", "progressiveLeaf8", "progressiveLeaf00",
+    "progressiveInterval-1", "progressiveInterval7", "progressiveInterval00", Marker })
 {
     var primary = new TestFailure(BuildFailure, Marker);
     primary.Data[SheetSourceTopology.FactoryDataKey] = new Dictionary<string, object?>

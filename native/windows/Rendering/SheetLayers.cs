@@ -15,7 +15,12 @@ using Windows.Graphics.Effects;
 using Windows.UI;
 using Windows.UI.ViewManagement;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Buttons")]
+
 namespace LabUI.WinUI.Rendering;
+
+internal readonly record struct SheetMaterialCapabilities(bool? AdvancedEffectsEnabled,
+    bool? AreEffectsSupported, bool? AreEffectsFast);
 
 // Ghost и Body используют один captured backdrop и один итоговый LayerVisual.
 public sealed class SheetLayers : Grid
@@ -38,6 +43,7 @@ public sealed class SheetLayers : Grid
 
     internal LabSheetMaterial? EffectiveMaterial => frame?.Material;
     internal LabSheetMaterialReason? MaterialReason => frame?.Reason;
+    internal SheetMaterialCapabilities? MaterialCapabilities => frame?.Capabilities;
     internal event EventHandler? EffectiveMaterialChanged;
 
     private readonly List<(DependencyObject Owner, DependencyProperty Property, long Token)> paintCallbacks = [];
@@ -46,6 +52,7 @@ public sealed class SheetLayers : Grid
     private Frame? frame;
     private SheetMetrics? geometry;
     private XamlRoot? root;
+    private FrameworkElement? scene;
     private UISettings? settings;
     private CompositionCapabilities? capabilities;
     private LabSheetMaterial requested;
@@ -60,6 +67,21 @@ public sealed class SheetLayers : Grid
     internal const double RadiusToSigma = 0.5;
     // Дискретные Gaussian-ветви с линейными весами, не маска одного сильного blur.
     // Число ветвей и зерно требуют визуальной и GPU-квалификации.
+
+    internal void SetScene(FrameworkElement? source)
+    {
+        if (ReferenceEquals(scene, source)) return;
+        scene = source;
+        SceneGeometryChanged();
+    }
+
+    internal void SceneGeometryChanged()
+    {
+        var current = ++generation;
+        queued = false;
+        ReleaseGraphics();
+        if (current == generation) QueueRedraw();
+    }
 
     internal void Attach(LabSheetMaterial material)
     {
@@ -101,6 +123,7 @@ public sealed class SheetLayers : Grid
         active = false;
         generation++;
         queued = false;
+        scene = null;
         SizeChanged -= Resized;
         ActualThemeChanged -= ThemeChanged;
         if (root is not null) root.Changed -= RootChanged;
@@ -166,14 +189,23 @@ public sealed class SheetLayers : Grid
         })) queued = false;
     }
 
-    private (LabSheetMaterial Material, LabSheetMaterialReason Reason) ResolveMaterial()
+    private (LabSheetMaterial Material, LabSheetMaterialReason Reason, SheetMaterialCapabilities Capabilities) ResolveMaterial()
+    {
+        var facts = new SheetMaterialCapabilities(settings?.AdvancedEffectsEnabled,
+            capabilities?.AreEffectsSupported(), capabilities?.AreEffectsFast());
+        var resolved = ResolveMaterial(requested, facts);
+        return (resolved.Material, resolved.Reason, facts);
+    }
+
+    private static (LabSheetMaterial Material, LabSheetMaterialReason Reason) ResolveMaterial(
+        LabSheetMaterial requested, SheetMaterialCapabilities facts)
     {
         if (requested == LabSheetMaterial.Solid) return (requested, LabSheetMaterialReason.Requested);
-        if (settings?.AdvancedEffectsEnabled == false)
+        if (facts.AdvancedEffectsEnabled == false)
             return (LabSheetMaterial.Solid, LabSheetMaterialReason.TransparencyDisabled);
-        if (capabilities?.AreEffectsSupported() != true)
+        if (facts.AreEffectsSupported != true)
             return (LabSheetMaterial.Solid, LabSheetMaterialReason.EffectsUnsupported);
-        if (!capabilities.AreEffectsFast()) return (LabSheetMaterial.Solid, LabSheetMaterialReason.EffectsNotFast);
+        // Fast — наблюдаемый сигнал стоимости; поддержанный Blur требует отдельной квалификации.
         return (LabSheetMaterial.Blur, LabSheetMaterialReason.Requested);
     }
 
@@ -193,6 +225,14 @@ public sealed class SheetLayers : Grid
                 // Уведомление об утрате готовности может выгрузить или переподключить контрол.
                 if (!active || current != generation) return;
             }
+            var resolved = ResolveMaterial();
+            // Отсутствие сцены во время Loaded/retemplate — ожидание, не отказ GPU.
+            if (resolved.Material == LabSheetMaterial.Blur
+                && (scene is null || !scene.IsLoaded || scene.ActualWidth <= 0 || scene.ActualHeight <= 0))
+            {
+                ReleaseGraphics();
+                return;
+            }
             var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
             if (device is null)
             {
@@ -200,8 +240,7 @@ public sealed class SheetLayers : Grid
                 device.DeviceLost += DeviceLost;
                 graphics = CanvasComposition.CreateCompositionGraphicsDevice(compositor, device);
             }
-            var resolved = ResolveMaterial();
-            var candidate = BuildFrame(compositor, metrics, resolved.Material, resolved.Reason);
+            var candidate = BuildFrame(compositor, metrics, resolved.Material, resolved.Reason, resolved.Capabilities);
             try { ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual); }
             catch (Exception error)
             {
@@ -264,9 +303,10 @@ public sealed class SheetLayers : Grid
         Frame.ThrowCleanup(errors);
     }
 
-    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material, LabSheetMaterialReason reason)
+    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material,
+        LabSheetMaterialReason reason, SheetMaterialCapabilities capabilities)
     {
-        var result = new Frame(compositor, material, reason);
+        var result = new Frame(compositor, material, reason, capabilities);
         SurfaceStages? stages = null;
         try
         {
@@ -309,8 +349,7 @@ public sealed class SheetLayers : Grid
                 return result;
             }
 
-            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale,
-                SheetBlurProfile.Levels.Length + 5);
+            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 4);
             List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
@@ -355,21 +394,6 @@ public sealed class SheetLayers : Grid
             var bodyMask = AddLayer(drawing => drawing.FillGeometry(bodyShape, maskInk));
             var outer = AddLayer(drawing => DrawShadows(drawing, metrics, bodyShape));
             var noise = AddLayer(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale));
-            int[] ghostMasks = new int[SheetBlurProfile.Levels.Length];
-            for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
-            {
-                var level = index;
-                ghostMasks[index] = AddLayer(drawing =>
-                {
-                    var stops = SheetBlurProfile.Stops(level).Select(stop => new CanvasGradientStop
-                    { Position = stop.Position, Color = Color.FromArgb((byte)(stop.Weight * 255), maskInk.R, maskInk.G, maskInk.B) }).ToArray();
-                    using var gradient = new CanvasLinearGradientBrush(device, stops)
-                    { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
-                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
-                });
-            }
-            var ghostMask = AddLayer(drawing =>
-                drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk));
             var border = AddLayer(DrawBorder);
             if (atlasDrawings.Count != atlas.CellCount)
                 throw new InvalidOperationException("Sheet atlas требует все authored raster-слои.");
@@ -392,7 +416,6 @@ public sealed class SheetLayers : Grid
             atlasBrush.VerticalAlignmentRatio = 0;
             atlasBrush.Scale = atlas.BrushScale;
             atlasBrush.Offset = atlas.BrushOffset;
-            var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
@@ -422,48 +445,79 @@ public sealed class SheetLayers : Grid
             CompositionEffectBrush MaskBrush(string factoryName, int index) =>
                 Brush(factoryName, Mask(Source("Backdrop"), Layer(index)), ("atlas", atlasBrush));
 
-            // Каждый authored уровень сохраняет свою Gaussian-ветвь и маску.
-            IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
-            for (var index = 0; index < branches.Length; index++)
-                branches[index] = Mask(index == 0 ? Backdrop()
+            // Каждый граф получает собственные узлы двух соседних authored уровней.
+            IGraphicsEffectSource Branch(int index) => index == 0 ? Backdrop()
                     : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
-                        $"ghostBlur{index}"), Layer(ghostMasks[index]));
+                        $"ghostBlur{index}");
             stages = new SurfaceStages(result, compositor);
-            var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
-            var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph, ("backdrop", backdropBrush)));
-            result.Visual.Children.InsertAtBottom(seed);
-            var capturedBackdrop = stages.Capture(seed);
-            seed.Opacity = 0;
+            var sceneVisual = ElementCompositionPreview.GetElementVisual(scene!);
+            if (!ReferenceEquals(sceneVisual.Compositor, compositor) || !ReferenceEquals(scene!.XamlRoot, XamlRoot))
+                throw new InvalidOperationException("Sheet и сцена требуют один XamlRoot и compositor.");
+            // Захватывается сама живая сцена, а не кисть, окружение которой вне SourceVisual.
+            var transform = TransformToVisual(scene);
+            var origin = transform.TransformPoint(new Point(0, 0));
+            var right = transform.TransformPoint(new Point(metrics.Width, 0));
+            var bottom = transform.TransformPoint(new Point(0, metrics.Height));
+            if (!double.IsFinite(origin.X) || !double.IsFinite(origin.Y)
+                || !double.IsFinite(right.X) || !double.IsFinite(right.Y)
+                || !double.IsFinite(bottom.X) || !double.IsFinite(bottom.Y)
+                || Math.Abs(right.Y - origin.Y) > 0.001 || Math.Abs(bottom.X - origin.X) > 0.001
+                || right.X <= origin.X || bottom.Y <= origin.Y)
+                throw new InvalidOperationException("Sheet требует осевой viewport без отражения.");
+            var capturedBackdrop = stages.Capture(sceneVisual,
+                new Vector2((float)origin.X, (float)origin.Y),
+                new Vector2((float)(right.X - origin.X), (float)(bottom.Y - origin.Y)));
 
-            var progressiveSources = new CompositionSurfaceBrush[branches.Length];
-            for (var index = 0; index < branches.Length; index++)
+            // На каждом интервале только два исходных веса ненулевые. Add сохраняет
+            // premultiplied RGBA, в том числе для прозрачной сцены. Все полосы читают
+            // исходный backdrop напрямую, без capture результата другого effect graph.
+            var intervals = new Visual[SheetBlurProfile.Levels.Length - 1];
+            for (var index = 0; index < intervals.Length; index++)
             {
-                var leaf = stages.CreateVisual(Brush($"progressiveLeaf{index}", (IGraphicsEffect)branches[index],
-                    ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
-                progressiveSources[index] = stages.Capture(leaf);
+                // Нативный градиент работает в координатах viewport: без atlas resampling
+                // и дополнительных Transform2D узлов в графе двух Gaussian-ветвей.
+                var ramp = result.Own(compositor.CreateLinearGradientBrush());
+                ramp.MappingMode = CompositionMappingMode.Absolute;
+                ramp.ExtendMode = CompositionGradientExtendMode.Clamp;
+                ramp.StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index]);
+                ramp.EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1]);
+                ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(0, Color.FromArgb(0, 255, 255, 255))));
+                ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(1, maskInk)));
+                var lower = Effect(new CompositeEffect
+                { Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Source("mask") } });
+                var upper = Mask(Branch(index + 1), Source("mask"));
+                var pair = Effect(new CompositeEffect
+                { Mode = CanvasComposite.Add, Sources = { lower, upper } });
+                var interval = stages.CreateVisual(Brush($"progressiveInterval{index}", pair,
+                    ("backdrop", capturedBackdrop), ("mask", ramp)));
+                var clip = result.Own(compositor.CreateRectangleClip());
+                clip.Left = 0;
+                clip.Right = result.Visual.Size.X;
+                clip.Top = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index];
+                clip.Bottom = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1];
+                // Смежные hard clips выбирают один интервал без двойной alpha на шве.
+                // Кисть сохраняет размер и координаты всего viewport, не растягивается в полосу.
+                interval.BorderMode = CompositionBorderMode.Hard;
+                interval.Clip = clip;
+                intervals[index] = interval;
             }
-            // Бинарные Add материализуются перед следующим уровнем суммы.
-            for (var count = progressiveSources.Length; count > 1; count /= 2)
-                for (var index = 0; index < count; index += 2)
-                {
-                    var pair = Effect(new CompositeEffect
-                    { Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") } });
-                    var sum = stages.CreateVisual(Brush("progressiveSum", pair,
-                        ("left", progressiveSources[index]), ("right", progressiveSources[index + 1])));
-                    progressiveSources[index / 2] = stages.Capture(sum);
-                }
-            var capturedProgressive = progressiveSources[0];
             // Alpha Color и float Opacity остаются раздельными входами LabColors.
             var ghostPaint = result.Own(compositor.CreateColorBrush(Ghost!.Color));
             var tintPaint = result.Own(compositor.CreateColorBrush(Tint!.Color));
             var blendPaint = result.Own(compositor.CreateColorBrush(Blend!.Color));
             // Маска применяется к сведённым Ghost слоям; alpha tint не ослабляет backdrop/noise.
-            var ghostBackdrop = stages.CreateVisual(capturedProgressive);
+            var ghostBackdrop = stages.CreateLayer(intervals);
             var ghostTint = stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity);
             var noiseBrush = Brush("ghost", Layer(noise), ("atlas", atlasBrush));
             var ghostNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity);
             var ghostVisual = stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise);
-            ghostVisual.Effect = MaskBrush("ghost", ghostMask);
+            var ghostClip = result.Own(compositor.CreateRectangleClip());
+            ghostClip.Left = 0;
+            ghostClip.Top = 0;
+            ghostClip.Right = result.Visual.Size.X;
+            ghostClip.Bottom = (float)metrics.GhostHeight;
+            ghostVisual.BorderMode = CompositionBorderMode.Soft;
+            ghostVisual.Clip = ghostClip;
             var bodyBackdrop = stages.CreateVisual(Brush("body",
                 Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), ("backdrop", capturedBackdrop)));
             var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
@@ -589,13 +643,13 @@ public sealed class SheetLayers : Grid
             return layer;
         }
 
-        internal CompositionSurfaceBrush Capture(SpriteVisual visual)
+        internal CompositionSurfaceBrush Capture(Visual visual, Vector2 offset, Vector2 size)
         {
             var surface = frame.Own(compositor.CreateVisualSurface());
             surfaces.Add(surface);
             surface.SourceVisual = visual;
-            surface.SourceOffset = Vector2.Zero;
-            surface.SourceSize = visual.Size;
+            surface.SourceOffset = offset;
+            surface.SourceSize = size;
             var brush = frame.Own(compositor.CreateSurfaceBrush(surface));
             brush.Stretch = CompositionStretch.Fill;
             brush.HorizontalAlignmentRatio = 0;
@@ -620,14 +674,20 @@ public sealed class SheetLayers : Grid
                 catch (Exception error) { errors.Add(error); }
             foreach (var layer in flattened)
             {
+                try { layer.Clip = null; }
+                catch (Exception error) { errors.Add(error); }
                 try { layer.Effect = null; }
                 catch (Exception error) { errors.Add(error); }
                 try { layer.Children.RemoveAll(); }
                 catch (Exception error) { errors.Add(error); }
             }
             foreach (var visual in rendered)
+            {
+                try { visual.Clip = null; }
+                catch (Exception error) { errors.Add(error); }
                 try { visual.Brush = null; }
                 catch (Exception error) { errors.Add(error); }
+            }
             Frame.ThrowCleanup(errors);
         }
     }
@@ -639,10 +699,13 @@ public sealed class SheetLayers : Grid
         internal SpriteVisual Visual { get; }
         internal LabSheetMaterial Material { get; }
         internal LabSheetMaterialReason Reason { get; }
-        internal Frame(Compositor compositor, LabSheetMaterial material, LabSheetMaterialReason reason)
+        internal SheetMaterialCapabilities Capabilities { get; }
+        internal Frame(Compositor compositor, LabSheetMaterial material, LabSheetMaterialReason reason,
+            SheetMaterialCapabilities capabilities)
         {
             Material = material;
             Reason = reason;
+            Capabilities = capabilities;
             Visual = Own(compositor.CreateSpriteVisual());
         }
         internal T Own<T>(T value) where T : IDisposable { owned.Add(value); return value; }
