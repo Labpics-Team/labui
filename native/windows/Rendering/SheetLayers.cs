@@ -15,7 +15,12 @@ using Windows.Graphics.Effects;
 using Windows.UI;
 using Windows.UI.ViewManagement;
 
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Buttons")]
+
 namespace LabUI.WinUI.Rendering;
+
+internal readonly record struct SheetMaterialCapabilities(bool? AdvancedEffectsEnabled,
+    bool? AreEffectsSupported, bool? AreEffectsFast);
 
 // Ghost и Body используют один captured backdrop и один итоговый LayerVisual.
 public sealed class SheetLayers : Grid
@@ -38,6 +43,7 @@ public sealed class SheetLayers : Grid
 
     internal LabSheetMaterial? EffectiveMaterial => frame?.Material;
     internal LabSheetMaterialReason? MaterialReason => frame?.Reason;
+    internal SheetMaterialCapabilities? MaterialCapabilities => frame?.Capabilities;
     internal event EventHandler? EffectiveMaterialChanged;
 
     private readonly List<(DependencyObject Owner, DependencyProperty Property, long Token)> paintCallbacks = [];
@@ -166,14 +172,23 @@ public sealed class SheetLayers : Grid
         })) queued = false;
     }
 
-    private (LabSheetMaterial Material, LabSheetMaterialReason Reason) ResolveMaterial()
+    private (LabSheetMaterial Material, LabSheetMaterialReason Reason, SheetMaterialCapabilities Capabilities) ResolveMaterial()
+    {
+        var facts = new SheetMaterialCapabilities(settings?.AdvancedEffectsEnabled,
+            capabilities?.AreEffectsSupported(), capabilities?.AreEffectsFast());
+        var resolved = ResolveMaterial(requested, facts);
+        return (resolved.Material, resolved.Reason, facts);
+    }
+
+    private static (LabSheetMaterial Material, LabSheetMaterialReason Reason) ResolveMaterial(
+        LabSheetMaterial requested, SheetMaterialCapabilities facts)
     {
         if (requested == LabSheetMaterial.Solid) return (requested, LabSheetMaterialReason.Requested);
-        if (settings?.AdvancedEffectsEnabled == false)
+        if (facts.AdvancedEffectsEnabled == false)
             return (LabSheetMaterial.Solid, LabSheetMaterialReason.TransparencyDisabled);
-        if (capabilities?.AreEffectsSupported() != true)
+        if (facts.AreEffectsSupported != true)
             return (LabSheetMaterial.Solid, LabSheetMaterialReason.EffectsUnsupported);
-        if (!capabilities.AreEffectsFast()) return (LabSheetMaterial.Solid, LabSheetMaterialReason.EffectsNotFast);
+        // Fast — наблюдаемый сигнал стоимости; поддержанный Blur требует отдельной квалификации.
         return (LabSheetMaterial.Blur, LabSheetMaterialReason.Requested);
     }
 
@@ -201,7 +216,7 @@ public sealed class SheetLayers : Grid
                 graphics = CanvasComposition.CreateCompositionGraphicsDevice(compositor, device);
             }
             var resolved = ResolveMaterial();
-            var candidate = BuildFrame(compositor, metrics, resolved.Material, resolved.Reason);
+            var candidate = BuildFrame(compositor, metrics, resolved.Material, resolved.Reason, resolved.Capabilities);
             try { ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual); }
             catch (Exception error)
             {
@@ -264,9 +279,10 @@ public sealed class SheetLayers : Grid
         Frame.ThrowCleanup(errors);
     }
 
-    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material, LabSheetMaterialReason reason)
+    private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material,
+        LabSheetMaterialReason reason, SheetMaterialCapabilities capabilities)
     {
-        var result = new Frame(compositor, material, reason);
+        var result = new Frame(compositor, material, reason, capabilities);
         SurfaceStages? stages = null;
         try
         {
@@ -432,8 +448,9 @@ public sealed class SheetLayers : Grid
             var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
             var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph, ("backdrop", backdropBrush)));
             result.Visual.Children.InsertAtBottom(seed);
+            // Источник остаётся видимым pass-through под общим material LayerVisual.
+            // Действие его capture на Ghost и Body проверяется по native PNG.
             var capturedBackdrop = stages.Capture(seed);
-            seed.Opacity = 0;
 
             var progressiveSources = new CompositionSurfaceBrush[branches.Length];
             for (var index = 0; index < branches.Length; index++)
@@ -639,10 +656,13 @@ public sealed class SheetLayers : Grid
         internal SpriteVisual Visual { get; }
         internal LabSheetMaterial Material { get; }
         internal LabSheetMaterialReason Reason { get; }
-        internal Frame(Compositor compositor, LabSheetMaterial material, LabSheetMaterialReason reason)
+        internal SheetMaterialCapabilities Capabilities { get; }
+        internal Frame(Compositor compositor, LabSheetMaterial material, LabSheetMaterialReason reason,
+            SheetMaterialCapabilities capabilities)
         {
             Material = material;
             Reason = reason;
+            Capabilities = capabilities;
             Visual = Own(compositor.CreateSpriteVisual());
         }
         internal T Own<T>(T value) where T : IDisposable { owned.Add(value); return value; }

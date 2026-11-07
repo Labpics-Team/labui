@@ -141,6 +141,200 @@ test('all four materials retain exact bytes and source through the common log co
   assert.throws(() => decodeSheetEvidence(rawPackets(files), 'c'.repeat(40)));
 });
 
+test('material capability facts preserve false and null while effective Blur remains mandatory', () => {
+  const facts = { advancedEffectsEnabled: true, areEffectsSupported: true, areEffectsFast: false };
+  const expected = { ...CASES[0], ...processIdentity };
+  const value = { ...observation(), materialCapabilities: facts };
+  assert.equal(validateObservation(value, expected), value);
+  assert.throws(
+    () => validateObservation({ ...value, effectiveMaterial: 'Solid' }, expected),
+    (error) => error.sheetPhase === 'capability',
+  );
+  const files = fixture();
+  for (const entry of CASES) {
+    const value = JSON.parse(files.get(`${entry.name}.json`));
+    value.materialCapabilities = {
+      advancedEffectsEnabled: entry.material === 'Blur',
+      areEffectsSupported: true,
+      areEffectsFast: entry.theme === 'Dark' ? null : false,
+    };
+    files.set(`${entry.name}.json`, json(value));
+  }
+  assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(files, SOURCE), SOURCE), files);
+  assert.throws(
+    () => validateObservation({ ...observation(), materialCapabilities: null }, expected),
+    (error) => error.sheetPhase === 'capability',
+  );
+});
+
+test('material capability admission binds ready Frame facts across validate and both real codecs', () => {
+  // Инертные JSON/PNG DTO: нет env fixtures, Native API или запуска capture.
+  const accepted = {
+    readyWithoutFacts: 0,
+    blurWithTransparencyDisabled: 0,
+    blurWithUnsupportedFalse: 0,
+    blurWithUnsupportedNull: 0,
+  };
+  let positiveCases = 0;
+  const filesFor = (entry, value) => {
+    const files = fixture();
+    files.set(`${entry.name}.json`, json(value));
+    return files;
+  };
+  const reject = (entry, value, condition) => {
+    const files = filesFor(entry, value);
+    for (const boundary of [
+      () => validateObservation(value, { ...entry, ...processIdentity }),
+      () => encodeSheetEvidence(files, SOURCE),
+      () => decodeSheetEvidence(rawPackets(files), SOURCE),
+    ]) {
+      try {
+        boundary();
+        accepted[condition]++;
+      } catch (error) {
+        assert.equal(error.sheetPhase, 'capability');
+      }
+    }
+  };
+  const admit = (entry, value) => {
+    assert.equal(validateObservation(value, { ...entry, ...processIdentity }), value);
+    const files = filesFor(entry, value);
+    assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(files, SOURCE), SOURCE), files);
+    positiveCases++;
+  };
+  for (const entry of CASES) {
+    reject(
+      entry,
+      { ...observation(entry.theme, entry.material), materialCapabilities: null },
+      'readyWithoutFacts',
+    );
+    if (entry.material === 'Solid') {
+      admit(entry, {
+        ...observation(entry.theme, entry.material),
+        materialCapabilities: {
+          advancedEffectsEnabled: false,
+          areEffectsSupported: null,
+          areEffectsFast: null,
+        },
+      });
+      continue;
+    }
+    for (const advancedEffectsEnabled of [true, false, null])
+      for (const areEffectsSupported of [true, false, null])
+        for (const areEffectsFast of [true, false, null]) {
+          const value = {
+            ...observation(entry.theme, entry.material),
+            materialCapabilities: { advancedEffectsEnabled, areEffectsSupported, areEffectsFast },
+          };
+          if (advancedEffectsEnabled === false)
+            reject(entry, value, 'blurWithTransparencyDisabled');
+          else if (areEffectsSupported !== true)
+            reject(
+              entry,
+              value,
+              areEffectsSupported === false
+                ? 'blurWithUnsupportedFalse'
+                : 'blurWithUnsupportedNull',
+            );
+          else admit(entry, value);
+        }
+  }
+  assert.equal(positiveCases, 14, 'supported Fast=false/null and explicit Solid remain admitted');
+  const legacy = fixture();
+  assert.equal(legacy.size, 9);
+  assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(legacy, SOURCE), SOURCE), legacy);
+  assert.deepEqual(
+    accepted,
+    {
+      readyWithoutFacts: 0,
+      blurWithTransparencyDisabled: 0,
+      blurWithUnsupportedFalse: 0,
+      blurWithUnsupportedNull: 0,
+    },
+    'inconsistent ready facts were admitted by real validate/encode/decode',
+  );
+});
+
+test('material capability publication rejects open fields and never evaluates getters', () => {
+  const facts = { advancedEffectsEnabled: true, areEffectsSupported: true, areEffectsFast: false };
+  const expected = { ...CASES[0], ...processIdentity };
+  const marker = 'MATERIAL_PRIVATE_SENTINEL';
+  let getters = 0;
+  const accessors = ['advancedEffectsEnabled', 'areEffectsSupported', 'areEffectsFast'].map(
+    (field) =>
+      Object.defineProperty({ ...facts }, field, {
+        enumerable: true,
+        get() {
+          getters++;
+          return marker;
+        },
+      }),
+  );
+  const accessor = accessors[2];
+  const symbolic = { ...facts, [Symbol('privateDetail')]: marker };
+  for (const malformed of [
+    marker,
+    [],
+    {},
+    { ...facts, privateDetail: marker },
+    { ...facts, areEffectsFast: marker },
+    { ...facts, areEffectsSupported: 1 },
+    { ...facts, advancedEffectsEnabled: undefined },
+    symbolic,
+    Object.create(facts),
+    ...accessors,
+  ]) {
+    const value = { ...observation(), materialCapabilities: malformed };
+    assert.throws(() => validateObservation(value, expected));
+    if (!accessors.includes(malformed) && malformed !== symbolic) {
+      const files = fixture();
+      files.set('Light-Blur.json', json(value));
+      assert.throws(() => encodeSheetEvidence(files, SOURCE));
+      assert.throws(() => decodeSheetEvidence(rawPackets(files), SOURCE));
+    }
+  }
+  const log = (value) =>
+    sheetFailureLog({
+      sourceSha: SOURCE,
+      name: 'Light-Blur',
+      phase: 'capability',
+      pid: 42,
+      observation: value,
+      error: null,
+      cleanupError: null,
+      stderrBytes: 0,
+    });
+  const readback = (value) =>
+    JSON.parse(log(value).slice('LABUI_SHEET_FAILURE_JSON '.length)).observation;
+  assert.deepEqual(
+    readback({ ...observation(), materialCapabilities: facts }).materialCapabilities,
+    facts,
+  );
+  assert.equal(Object.hasOwn(readback(observation()), 'materialCapabilities'), false);
+  assert.equal(
+    readback({ ...observation(), materialCapabilities: marker }).materialCapabilities,
+    null,
+  );
+  assert.deepEqual(
+    readback({ ...observation(), materialCapabilities: accessor }).materialCapabilities,
+    { ...facts, areEffectsFast: null },
+  );
+  const topAccessor = Object.defineProperty(observation(), 'materialCapabilities', {
+    enumerable: true,
+    get() {
+      getters++;
+      return marker;
+    },
+  });
+  assert.throws(() => validateObservation(topAccessor, expected));
+  assert.equal(readback(topAccessor).materialCapabilities, null);
+  assert.doesNotMatch(
+    log({ ...observation(), materialCapabilities: { ...facts, privateDetail: marker } }),
+    /MATERIAL_PRIVATE_SENTINEL|privateDetail/,
+  );
+  assert.equal(getters, 0);
+});
+
 test('failed capture preserves bounded source and capability diagnostics without becoming evidence', () => {
   const observed = {
     ...observation(),

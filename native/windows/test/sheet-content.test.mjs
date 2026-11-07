@@ -646,6 +646,36 @@ test('Content evidence roundtrips exact files and source independently of the ma
   assert.throws(() => decodeSheetEvidence(log, SOURCE));
 });
 
+test('Content and policy series retain closed material capability facts at both wire boundaries', () => {
+  const facts = { advancedEffectsEnabled: false, areEffectsSupported: true, areEffectsFast: false };
+  const healthy = fixture();
+  for (const entry of CONTENT_CASES) {
+    const value = JSON.parse(healthy.get(`${entry.name}.json`));
+    value.materialCapabilities = { ...facts };
+    check(value, entry);
+    healthy.set(`${entry.name}.json`, json(value));
+  }
+  assert.deepEqual(
+    decodeSheetContentEvidence(encodeSheetContentEvidence(healthy, SOURCE), SOURCE),
+    healthy,
+  );
+  for (const entry of CONTENT_CASES) {
+    for (const malformed of [
+      'MATERIAL_PRIVATE_SENTINEL',
+      { ...facts, privateDetail: 'MATERIAL_PRIVATE_SENTINEL' },
+      { ...facts, areEffectsFast: 'MATERIAL_PRIVATE_SENTINEL' },
+    ]) {
+      const value = JSON.parse(healthy.get(`${entry.name}.json`));
+      value.materialCapabilities = malformed;
+      assert.throws(() => check(value, entry));
+      const files = new Map(healthy);
+      files.set(`${entry.name}.json`, json(value));
+      assert.throws(() => encodeSheetContentEvidence(files, SOURCE));
+      assert.throws(() => decodeSheetContentEvidence(packets(files), SOURCE));
+    }
+  }
+});
+
 test('Content window geometry rejects foreign data at observation and both publication boundaries', () => {
   const sample = (visible) => ({
     status: 'complete',

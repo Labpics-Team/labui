@@ -1,0 +1,25 @@
+{
+  "schema": "labui.sheet.material-neighbor.v1",
+  "assets": {
+    "A": {
+      "file": "SheetBackdrop.png",
+      "sha256": "df0d29601d3863f9f2375e1c4fa928365515732da40ba33876a25a3734638f99"
+    },
+    "B": {
+      "file": "SheetBackdropNeighbor.png",
+      "sha256": "8656fe1cf3930c98d8179b3bfcc85b11d8e037d87cd3968c129deb5f851a9745"
+    }
+  },
+  "sourcePixels": {
+    "width": 1733,
+    "height": 4096
+  },
+  "changedSourceRect": {
+    "x": 1120,
+    "y": 1480,
+    "width": 260,
+    "height": 620
+  },
+  "replacementRgba": [0, 0, 0, 255],
+  "resamplingMargin": 4
+}

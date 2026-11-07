@@ -29,7 +29,11 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*var capturedBackdrop = stages\.Capture\(seed\);\s*seed\.Opacity = 0;/,
+    /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*(?:(?:\/\/[^\n]*\n)\s*)*var capturedBackdrop = stages\.Capture\(seed\);/,
+  );
+  assert.ok(
+    !/(?:seed|leaf|sum)\.(?:Opacity|IsVisible)\s*=\s*(?:0|false)\s*;/.test(frame),
+    'Captured Sheet sources must remain visible; this is a source guard, not native pixel evidence',
   );
   assert.match(frame, /var progressiveSources = new CompositionSurfaceBrush\[branches\.Length\];/);
   assert.match(
@@ -162,6 +166,29 @@ test('Sheet native layers preserve Ghost and Body effects before raster masks an
   );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
   assert.doesNotMatch(build, /compositor\.Create(?:VisualSurface|SpriteVisual|LayerVisual)\(/);
+});
+
+test('Sheet captured backdrop stays scene-connected and visible before both material consumers', () => {
+  assert.match(build, /result\.Visual\.Children\.InsertAtBottom\(seed\);/);
+  assert.ok(!/seed\.(?:Opacity|IsVisible)\s*=\s*(?:0|false)\s*;/.test(build));
+  assert.match(build, /\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)/);
+  assert.match(build, /\("backdrop", capturedBackdrop\)\)\);\s*var bodyTint/);
+  assert.ok(build.indexOf('stages.Capture(seed)') < build.indexOf('var progressiveSources'));
+  assert.ok(build.indexOf('stages.Capture(seed)') < build.indexOf('var bodyBackdrop'));
+});
+
+test('Sheet capture source guard rejects hiding the scene seed or intermediate pure-effect sources', () => {
+  for (const name of ['seed', 'leaf', 'sum'])
+    for (const hidden of ['Opacity = 0', 'IsVisible = false']) {
+      const capture = `stages.Capture(${name});`;
+      assert.ok(source.includes(capture));
+      const candidate = source.replace(capture, `${capture}\n            ${name}.${hidden};`);
+      assert.throws(() => assertSurfaceStages(candidate));
+    }
+  for (const connection of ['', 'result.Visual.Children.Remove(seed);']) {
+    const candidate = source.replace('result.Visual.Children.InsertAtBottom(seed);', connection);
+    assert.throws(() => assertSurfaceStages(candidate));
+  }
 });
 
 test('Sheet capture source guard rejects a root capture, repeated seed and bypassed leaf binding', () => {

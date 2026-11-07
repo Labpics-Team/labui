@@ -45,6 +45,86 @@ internal sealed class SpaceProbe : IDisposable
     private MotionObservation? latest;
     private Sample? firstDiscarded;
 
+    // Временный private witness. Удалить вместе с Motion diagnostic pin после локализации.
+    private sealed record IncomingIdleReceipt(long Sequence, long TimestampTicks, int CallbackRequestId,
+        int? CurrentRequestId, long? Operation, bool Disposed, bool Interacting, string Disposition);
+    private sealed record IncomingIdleNativeSnapshot(int SchemaVersion, long CallbackCount, long CapturedTicks,
+        long ClockFrequency, IncomingIdleReceipt[] Receipts);
+    private sealed record IncomingIdleError(string Type, int Hresult);
+    private sealed record IncomingIdleDiagnostic(string Status, long? BaselineCount,
+        IncomingIdleNativeSnapshot? NativeSnapshot, string? Reason, IncomingIdleError? Error);
+    private IncomingIdleDiagnostic? incomingIdleBaseline;
+
+    private static object? IncomingIdleProperty(object value, string name) =>
+        (value.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public)
+            ?? throw new InvalidOperationException("Нет поля private Idle witness.")).GetValue(value);
+
+    private static T IncomingIdleValue<T>(object value, string name) =>
+        IncomingIdleProperty(value, name) is T result ? result
+            : throw new InvalidOperationException("Неверный тип поля private Idle witness.");
+
+    private static T? IncomingIdleNullable<T>(object value, string name) where T : struct =>
+        IncomingIdleProperty(value, name) switch
+        {
+            null => null,
+            T result => result,
+            _ => throw new InvalidOperationException("Неверный тип nullable поля private Idle witness.")
+        };
+
+    private static IncomingIdleNativeSnapshot ReadIncomingIdleSnapshot(object value)
+    {
+        var schema = IncomingIdleValue<int>(value, "schemaVersion");
+        var callbacks = IncomingIdleValue<long>(value, "callbackCount");
+        var captured = IncomingIdleValue<long>(value, "capturedTicks");
+        var frequency = IncomingIdleValue<long>(value, "clockFrequency");
+        var rows = IncomingIdleValue<Array>(value, "receipts");
+        if (schema != 1 || callbacks < 0 || captured < 0 || frequency != Stopwatch.Frequency
+            || rows.Length > 8 || rows.Length != Math.Min(callbacks, 8))
+            throw new InvalidOperationException("Неверная граница private Idle witness.");
+        var receipts = new IncomingIdleReceipt[rows.Length];
+        for (var index = 0; index < rows.Length; index++)
+        {
+            var row = rows.GetValue(index) ?? throw new InvalidOperationException("Нет private Idle receipt.");
+            var sequence = IncomingIdleValue<long>(row, "Sequence");
+            var timestamp = IncomingIdleValue<long>(row, "TimestampTicks");
+            var disposition = IncomingIdleValue<string>(row, "Disposition");
+            if (sequence != callbacks - rows.Length + index + 1 || timestamp < 0 || timestamp > captured
+                || disposition is not ("disposed" or "input" or "mismatch" or "accepted"))
+                throw new InvalidOperationException("Неверный private Idle receipt.");
+            receipts[index] = new(sequence, timestamp, IncomingIdleValue<int>(row, "CallbackRequestId"),
+                IncomingIdleNullable<int>(row, "CurrentRequestId"), IncomingIdleNullable<long>(row, "Operation"),
+                IncomingIdleValue<bool>(row, "Disposed"), IncomingIdleValue<bool>(row, "Interacting"), disposition);
+        }
+        return new(schema, callbacks, captured, frequency, receipts);
+    }
+
+    private IncomingIdleDiagnostic CaptureIncomingIdle(bool baseline = false)
+    {
+        var baselineCount = baseline ? null : incomingIdleBaseline?.BaselineCount;
+        var reason = "capture-error";
+        try
+        {
+            var capture = typeof(ScalarMotion).GetMethod("CaptureIncomingIdle", BindingFlags.Instance | BindingFlags.NonPublic,
+                null, Type.EmptyTypes, null);
+            if (capture is null) return new("unavailable", baselineCount, null, "missing-method", null);
+            var value = capture.Invoke(channel, null) ?? throw new InvalidOperationException("Нет private Idle snapshot.");
+            reason = "invalid-snapshot";
+            var native = ReadIncomingIdleSnapshot(value);
+            if (baseline) return new("available", native.CallbackCount, native, null, null);
+            if (incomingIdleBaseline is not { Status: "available", BaselineCount: { } start, NativeSnapshot: { } initial })
+                return new("failed", baselineCount, native, "baseline-unavailable", incomingIdleBaseline?.Error);
+            if (native.CallbackCount < start || native.CapturedTicks < initial.CapturedTicks)
+                throw new InvalidOperationException("Private Idle witness сменил baseline.");
+            return new("available", start, native, null, null);
+        }
+        catch (Exception error)
+        {
+            var cause = error is TargetInvocationException { InnerException: { } inner } ? inner : error;
+            var type = cause.GetType().Name;
+            return new("failed", baselineCount, null, reason, new(type[..Math.Min(type.Length, 128)], cause.HResult));
+        }
+    }
+
     internal SpaceProbe(UIElement parent, LabButton button, Func<int> count)
     {
         this.parent = parent;
@@ -96,6 +176,7 @@ internal sealed class SpaceProbe : IDisposable
         if (button.ActualTheme.ToString() != requestedTheme || (generation == 0 ? "Light" : "Dark") != requestedTheme)
             throw new InvalidOperationException("Неверный порядок тем Space.");
         channel = Current();
+        incomingIdleBaseline = CaptureIncomingIdle(true);
         theme = requestedTheme;
         animationsEnabled = new UISettings().AnimationsEnabled;
         countBefore = count();
@@ -270,7 +351,7 @@ internal sealed class SpaceProbe : IDisposable
             animationsEnabled, countBefore, countAfter = count(), overflow, failure,
             clock = "app-stopwatch-ms", clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture),
             clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events = events.ToArray(), observations,
-            firstDiscarded = discarded };
+            firstDiscarded = discarded, incomingIdle = CaptureIncomingIdle() };
     }
 
     private void Detach()
