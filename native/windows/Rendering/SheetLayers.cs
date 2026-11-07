@@ -326,9 +326,9 @@ public sealed class SheetLayers : Grid
             }
             IGraphicsEffectSource Source(string name) => new CompositionEffectSourceParameter(name);
             IGraphicsEffectSource Backdrop() => Source("backdrop");
-            Transform2DEffect Layer(int index, string sourceName = "atlas") => Effect(new Transform2DEffect
+            Transform2DEffect Layer(int index) => Effect(new Transform2DEffect
             {
-                Source = Source(sourceName),
+                Source = Source("atlas"),
                 TransformMatrix = atlas.Cell(index).EffectTransform,
                 InterpolationMode = CanvasImageInterpolation.Linear,
                 BorderMode = EffectBorderMode.Soft,
@@ -468,26 +468,26 @@ public sealed class SheetLayers : Grid
             var capturedBackdrop = stages.Capture(seed);
             seed.Opacity = 0;
 
-            var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
-            List<(string Name, CompositionBrush Source)> progressiveBindings = [];
+            var progressiveSources = new CompositionSurfaceBrush[branches.Length];
             for (var index = 0; index < branches.Length; index++)
             {
                 var leaf = stages.CreateVisual(Brush($"progressiveLeaf{index}", (IGraphicsEffect)branches[index],
                     inlineProgressive, inlineProgressive, branches,
                     ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
-                var capturedLeaf = stages.Capture(leaf);
-                var name = $"progressive{index}";
-                if (progressive.Sources.Count == 2)
-                    progressive = Effect(new CompositeEffect
-                    { Mode = CanvasComposite.Add, Sources = { progressive, Source(name) } });
-                else
-                    progressive.Sources.Add(Source(name));
-                progressiveBindings.Add((name, capturedLeaf));
+                progressiveSources[index] = stages.Capture(leaf);
             }
-            // Полная Add-сумма остаётся эффектом; surface отделяет её от paints и внешнего SourceOver.
-            var sum = stages.CreateVisual(Brush("progressiveSum", progressive,
-                inlineProgressive, inlineProgressive, branches, progressiveBindings.ToArray()));
-            var capturedProgressive = stages.Capture(sum);
+            // Бинарные Add материализуются перед следующим уровнем суммы.
+            for (var count = progressiveSources.Length; count > 1; count /= 2)
+                for (var index = 0; index < count; index += 2)
+                {
+                    var pair = Effect(new CompositeEffect
+                    { Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") } });
+                    var sum = stages.CreateVisual(Brush("progressiveSum", pair,
+                        inlineProgressive, inlineProgressive, branches,
+                        ("left", progressiveSources[index]), ("right", progressiveSources[index + 1])));
+                    progressiveSources[index / 2] = stages.Capture(sum);
+                }
+            var capturedProgressive = progressiveSources[0];
             // Alpha Color и float Opacity остаются раздельными входами LabColors.
             var ghostPaint = result.Own(compositor.CreateColorBrush(Ghost!.Color));
             var tintPaint = result.Own(compositor.CreateColorBrush(Tint!.Color));
@@ -495,7 +495,7 @@ public sealed class SheetLayers : Grid
             // Alpha Ghost tint не управляет существованием backdrop/noise.
             var ghostSource = WithNoise(Over(Source("progressiveSurface"), Paint(Ghost!, "ghostPaint")),
                 Geometry.SheetGhostNoiseOpacity);
-            var ghost = Mask(ghostSource, Layer(ghostMask, "ghostMaskAtlas"));
+            var ghost = Mask(ghostSource, Layer(ghostMask));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!, "tintPaint"));
             var blended = Effect(new BlendEffect
             {
@@ -503,7 +503,7 @@ public sealed class SheetLayers : Grid
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
             var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
-            var bodyAlphaMask = Layer(bodyMask, "bodyMaskAtlas");
+            var bodyAlphaMask = Layer(bodyMask);
             var body = Mask(bodySource, bodyAlphaMask);
             // Внешний SourceOver вычисляется до opacity предков: один final SpriteVisual.
             var sheet = Over(Over(ghost, Layer(outer)), body);
@@ -511,7 +511,7 @@ public sealed class SheetLayers : Grid
             var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
                 ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
                 ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
-                ("atlas", atlasBrush), ("ghostMaskAtlas", atlasBrush), ("bodyMaskAtlas", atlasBrush)));
+                ("atlas", atlasBrush)));
             result.Visual.Children.InsertAtTop(output);
             result.Own(stages);
             return result;

@@ -31,18 +31,19 @@ function assertSurfaceStages(candidate) {
     frame,
     /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*var capturedBackdrop = stages\.Capture\(seed\);\s*seed\.Opacity = 0;/,
   );
-  assert.match(frame, /List<\(string Name, CompositionBrush Source\)> progressiveBindings = \[\];/);
+  assert.match(frame, /var progressiveSources = new CompositionSurfaceBrush\[branches\.Length\];/);
   assert.match(
     frame,
-    /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\);/,
+    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*progressiveSources\[index\] = stages\.Capture\(leaf\);\s*\}/,
   );
   assert.match(
     frame,
-    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*if \(progressive\.Sources\.Count == 2\)\s*progressive = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ progressive, Source\(name\) \} \}\);\s*else\s*progressive\.Sources\.Add\(Source\(name\)\);\s*progressiveBindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
+    /for \(var count = progressiveSources\.Length; count > 1; count \/= 2\)\s*for \(var index = 0; index < count; index \+= 2\)\s*\{\s*var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\);\s*var sum = stages\.CreateVisual\(Brush\("progressiveSum", pair,\s*inlineProgressive, inlineProgressive, branches,\s*\("left", progressiveSources\[index\]\), \("right", progressiveSources\[index \+ 1\]\)\)\);\s*progressiveSources\[index \/ 2\] = stages\.Capture\(sum\);\s*\}\s*var capturedProgressive = progressiveSources\[0\];/,
   );
+  assert.match(frame, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
   assert.match(
     frame,
-    /var sum = stages\.CreateVisual\(Brush\("progressiveSum", progressive,\s*inlineProgressive, inlineProgressive, branches, progressiveBindings\.ToArray\(\)\)\);\s*var capturedProgressive = stages\.Capture\(sum\);/,
+    /var bodyAlphaMask = Layer\(bodyMask\);\s*var body = Mask\(bodySource, bodyAlphaMask\);/,
   );
   assert.match(
     frame,
@@ -50,7 +51,7 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\),\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\), \("ghostMaskAtlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
+    /var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\),\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\)\)\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
   );
   assert.equal([...frame.matchAll(/Brush\("final",/g)].length, 1);
   assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 1);
@@ -105,10 +106,8 @@ test('Sheet final graph flattens outer SourceOver before ancestor opacity', () =
   assert.match(build, /IGraphicsEffectSource Backdrop\(\)\s*=>\s*Source\("backdrop"\)/);
   assert.match(
     build,
-    /Transform2DEffect Layer\(int index, string sourceName = "atlas"\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\(sourceName\)/,
+    /Transform2DEffect Layer\(int index\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\("atlas"\)/,
   );
-  assert.match(build, /var bodyAlphaMask = Layer\(bodyMask, "bodyMaskAtlas"\);/);
-  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask, "ghostMaskAtlas"\)\);/);
   assert.equal([...build.matchAll(/compositor\.CreateSurfaceBrush\(atlasSurface\)/g)].length, 1);
   assert.match(
     build,
@@ -129,7 +128,9 @@ test('Sheet capture source guard rejects a root capture, repeated seed and bypas
     ['surface.SourceVisual = visual;', 'surface.SourceVisual = frame.Visual;'],
     ['stages.Capture(leaf)', 'stages.Capture(seed)'],
     ['stages.Capture(sum)', 'stages.Capture(seed)'],
-    ['progressive.Sources.Add(Source(name));', 'progressive.Sources.Add(Backdrop());'],
+    ['("right", progressiveSources[index + 1])', '("right", progressiveSources[index])'],
+    ['Layer(ghostMask)', 'Layer(bodyMask)'],
+    ['Mask(bodySource, bodyAlphaMask)', 'Mask(bodyAlphaMask, bodySource)'],
   ]) {
     assert.ok(source.includes(original));
     assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
@@ -141,8 +142,8 @@ test('Sheet surface source guard rejects changed coordinates and a SourceOver pr
     ['surface.SourceOffset = Vector2.Zero;', 'surface.SourceOffset = Vector2.One;'],
     ['surface.SourceSize = visual.Size;', 'surface.SourceSize = visual.Size / 2;'],
     [
-      'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });',
-      'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver });',
+      'Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") }',
+      'Mode = CanvasComposite.SourceOver, Sources = { Source("left"), Source("right") }',
     ],
   ]) {
     assert.ok(source.includes(original));
@@ -224,7 +225,7 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
   assert.match(build, /Layer\(ghostMasks\[index\]\)/);
   assert.match(
     build,
-    /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\)/,
+    /var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\)/,
   );
   assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
   assert.match(build, /inlineProgressive\.Sources\.Add\(branches\[index\]\)/);
@@ -232,7 +233,7 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     build,
     /var ghostSource = WithNoise\(Over\(Source\("progressiveSurface"\), Paint\(Ghost!, "ghostPaint"\)\),\s*Geometry\.SheetGhostNoiseOpacity\);/,
   );
-  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask, "ghostMaskAtlas"\)\);/);
+  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
   assert.match(source, /RadiusToSigma = 0\.5;/);

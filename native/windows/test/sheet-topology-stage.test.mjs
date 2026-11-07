@@ -516,7 +516,7 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
     `var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
     ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
     ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
-    ("atlas", atlasBrush), ("ghostMaskAtlas", atlasBrush), ("bodyMaskAtlas", atlasBrush)));`,
+    ("atlas", atlasBrush)));`,
     'actual-three must receive the same branches as the production graph',
   );
   includesSource(
@@ -589,8 +589,8 @@ function assertActualLayerSource(producer, renderer, projector, codec, page) {
   );
   includesSource(
     renderer,
-    `Transform2DEffect Layer(int index, string sourceName = "atlas") => Effect(new Transform2DEffect {
-      Source = Source(sourceName),
+    `Transform2DEffect Layer(int index) => Effect(new Transform2DEffect {
+      Source = Source("atlas"),
       TransformMatrix = atlas.Cell(index).EffectTransform,
       InterpolationMode = CanvasImageInterpolation.Linear,
       BorderMode = EffectBorderMode.Soft,
