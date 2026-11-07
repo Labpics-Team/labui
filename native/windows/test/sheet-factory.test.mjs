@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { decodeSheetEvidence, sheetFailureLog, validateObservation } from './sheet.mjs';
 
 const SOURCE = 'a'.repeat(40);
+const FACTORY_OUTCOME_FIELDS = ['actualThree', 'actualLayer', 'actualBinaryThree'];
 
 // Только инертная проекция значений; эти данные не обозначают native outcome.
 function readback(factory, ...pairs) {
@@ -158,7 +159,7 @@ test('borrowed factory pairs reject unknown fields, malformed integers and parti
 
 test('actual factory diagnostics retain raw build/factory and cleanup outcomes while the primary renderer still fails', () => {
   const factory = { name: 'final', operation: 'factory' };
-  for (const field of ['actualThree', 'actualLayer'])
+  for (const field of FACTORY_OUTCOME_FIELDS)
     for (const stage of ['build', 'factory'])
       for (const hresult of [-2147483648, -2147024809, 0, 2147483647])
         for (const cleanupHresult of [null, -2147483648, 2147483647]) {
@@ -166,10 +167,8 @@ test('actual factory diagnostics retain raw build/factory and cleanup outcomes w
           const error = errorReadback({ factory, [field]: outcome });
           assert.deepEqual(error.factory, factory);
           assert.deepEqual(error[field], outcome);
-          assert.equal(
-            Object.hasOwn(error, field === 'actualThree' ? 'actualLayer' : 'actualThree'),
-            false,
-          );
+          for (const absent of FACTORY_OUTCOME_FIELDS.filter((name) => name !== field))
+            assert.equal(Object.hasOwn(error, absent), false);
         }
 });
 
@@ -204,7 +203,7 @@ test('actual factory diagnostics reject unknown fields, private text and missing
     { ...actualThree, cleanupHresult: -2147483649 },
     { ...actualThree, message: 'PRIVATE_BRANCH_VALUE' },
   ])
-    for (const field of ['actualThree', 'actualLayer'])
+    for (const field of FACTORY_OUTCOME_FIELDS)
       assert.equal(errorReadback({ factory, [field]: value })[field], null);
 });
 
@@ -289,6 +288,32 @@ test('component diagnostics preserve legacy absence and the prior factory observ
   });
 });
 
+test('binary-three diagnostics preserve missing measurement and every prior observation', () => {
+  const row = { stage: 'factory', hresult: 0, cleanupHresult: null };
+  const fields = {
+    factory: { name: 'final', operation: 'factory' },
+    actualThree: { ...row, hresult: -2147024809 },
+    actualLayer: row,
+    actualComponents: [row, row, row],
+  };
+  const legacy = errorReadback(fields);
+  assert.equal(Object.hasOwn(legacy, 'actualBinaryThree'), false);
+  for (const actualBinaryThree of [
+    row,
+    { ...row, hresult: -2147024809 },
+    { ...row, cleanupHresult: -2147467259 },
+    { stage: 'build', hresult: -2147024809, cleanupHresult: -2147467259 },
+  ])
+    assert.deepEqual(errorReadback({ ...fields, actualBinaryThree }), {
+      ...legacy,
+      actualBinaryThree,
+    });
+  assert.deepEqual(errorReadback({ ...fields, actualBinaryThree: {} }), {
+    ...legacy,
+    actualBinaryThree: null,
+  });
+});
+
 test('legacy factory, branch and sigma shapes survive without an actual-three field', () => {
   const factory = { name: 'final', operation: 'factory' };
   const pair = [
@@ -302,6 +327,7 @@ test('legacy factory, branch and sigma shapes survive without an actual-three fi
   assert.equal(Object.hasOwn(legacy, 'actualThree'), false);
   assert.equal(Object.hasOwn(legacy, 'actualLayer'), false);
   assert.equal(Object.hasOwn(legacy, 'actualComponents'), false);
+  assert.equal(Object.hasOwn(legacy, 'actualBinaryThree'), false);
   const measured = errorReadback({
     factory,
     branches: pair,

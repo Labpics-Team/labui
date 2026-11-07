@@ -90,12 +90,13 @@ public sealed partial class SheetPage : Page
             SheetSourceTopology.ReadFactory(args.Exception), SheetSourceTopology.ReadBranches(args.Exception),
             SheetSourceTopology.ReadSigma(args.Exception), SheetSourceTopology.ReadActualThree(args.Exception),
             SheetSourceTopology.ReadActualLayer(args.Exception),
-            SheetSourceTopology.ReadActualComponents(args.Exception)));
+            SheetSourceTopology.ReadActualComponents(args.Exception),
+            SheetSourceTopology.ReadActualBinaryThree(args.Exception)));
 
     private sealed record ObservationError(string origin, string? type, int? hresult, string? site = null,
         object? topology = null, object? factory = null, object? branches = null, object? sigma = null,
         object? actualThree = null, SheetFactoryDiagnostic? actualLayer = null,
-        SheetFactoryDiagnostic[]? actualComponents = null);
+        SheetFactoryDiagnostic[]? actualComponents = null, SheetFactoryDiagnostic? actualBinaryThree = null);
 
     private static string? ErrorType(Exception? error)
     {

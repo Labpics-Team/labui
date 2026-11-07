@@ -707,12 +707,12 @@ function assertActualComponentsSource(producer, renderer, projector, codec, page
   );
   includesSource(
     page,
-    'SheetSourceTopology.ReadActualComponents(args.Exception)));',
+    'SheetSourceTopology.ReadActualComponents(args.Exception),',
     'actual-components must pass through the existing exception observation',
   );
   includesSource(
     page,
-    'SheetFactoryDiagnostic[]? actualComponents = null);',
+    'SheetFactoryDiagnostic[]? actualComponents = null,',
     'actual-components absence must remain a nullable typed observation field',
   );
   includesSource(
@@ -734,6 +734,84 @@ function assertActualComponentsSource(producer, renderer, projector, codec, page
   );
 }
 
+function assertActualBinaryThreeSource(producer, renderer, projector, codec, page) {
+  for (const source of [producer, projector])
+    includesSource(
+      source,
+      'internal const string ActualBinaryThreeDataKey = "LabUI.SheetActualBinaryThreeFactory";',
+      'actual-binary-three producer/projector key differs',
+    );
+  includesSource(
+    producer,
+    `internal static void RecordActualBinaryThree(Exception primary, Compositor compositor,
+    IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)`,
+    'actual-binary-three must borrow the same three actual inputs',
+  );
+  assert.deepEqual(
+    enclosed(producer, 'internal static void RecordActualBinaryThree('),
+    tokens(`try {
+      var outcome = SheetFactorySampling.Capture(register => {
+        var pair = new CompositeEffect();
+        register(pair);
+        pair.Mode = CanvasComposite.Add;
+        pair.Sources.Add(branch0);
+        pair.Sources.Add(branch1);
+        var root = new CompositeEffect();
+        register(root);
+        root.Mode = CanvasComposite.Add;
+        root.Sources.Add(pair);
+        root.Sources.Add(branch2);
+        return root;
+      }, graph => compositor.CreateEffectFactory(graph));
+      primary.Data[ActualBinaryThreeDataKey] = new Dictionary<string, object?> {
+        ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+        ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+      };
+    } catch { }`),
+    'Sheet: actual-binary-three must own only two registered Add joins and combine unchanged inputs as (0 Add 1) Add 2',
+  );
+  const failure = enclosed(
+    enclosed(renderer, 'CompositionEffectBrush Brush('),
+    'catch (Exception primary)',
+  );
+  const finalFailure = enclosed(
+    failure,
+    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
+  );
+  includesSource(
+    enclosed(finalFailure, 'if (operation == "factory")'),
+    `SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
+    'actual-binary-three must receive actual indices 0/1/2 only after final factory failure',
+  );
+  assert.equal(
+    tokens(renderer).filter((token) => token === 'RecordActualBinaryThree').length,
+    1,
+    'Sheet: actual-binary-three must have one failure-only call site',
+  );
+  includesSource(
+    projector,
+    `internal static SheetFactoryDiagnostic? ReadActualBinaryThree(Exception? error)
+    => ReadDiagnostic(error, ActualBinaryThreeDataKey);`,
+    'actual-binary-three must use the real bounded typed scalar projector and its own key',
+  );
+  includesSource(
+    page,
+    'SheetSourceTopology.ReadActualBinaryThree(args.Exception)));',
+    'actual-binary-three must pass through the existing exception observation',
+  );
+  includesSource(
+    page,
+    'SheetFactoryDiagnostic? actualBinaryThree = null);',
+    'actual-binary-three absence must remain a nullable typed observation field',
+  );
+  includesSource(
+    codec,
+    `...(Object.hasOwn(value, 'actualBinaryThree') ? { actualBinaryThree: factoryOutcomeInfo(value.actualBinaryThree) } : {}),`,
+    'actual-binary-three must preserve legacy absence instead of inventing PASS',
+  );
+}
+
 // Source-only: настоящий producer, owner и оба настоящих wire-проектора.
 function assertSheetSourceProjection(
   producer,
@@ -750,6 +828,7 @@ function assertSheetSourceProjection(
   assertActualThreeSource(producer, renderer, projector, codec, page);
   assertActualLayerSource(producer, renderer, projector, codec, page);
   assertActualComponentsSource(producer, renderer, projector, codec, page);
+  assertActualBinaryThreeSource(producer, renderer, projector, codec, page);
   const csharp = argumentsOf(enclosed(projector, '["source"] = Known', '(', ')'))
     .slice(1)
     .map(literal);
@@ -978,6 +1057,51 @@ test('source gate rejects admitting an oversized component triplet by truncation
   assert.throws(
     () => assertSheetSourceProjection(...files),
     /reject partial or oversized arrays without truncation/,
+  );
+});
+
+test('source gate rejects a different operator in the binary join', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    'pair.Mode = CanvasComposite.Add;',
+    'pair.Mode = CanvasComposite.SourceOver;',
+  );
+  assert.throws(() => assertSheetSourceProjection(...files), /own only two registered Add joins/);
+});
+
+test('source gate rejects registering a Frame-owned descendant in the binary sampler', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    'register(pair);',
+    'register(pair); if (branch0 is IDisposable resource) register(resource);',
+  );
+  assert.throws(() => assertSheetSourceProjection(...files), /own only two registered Add joins/);
+});
+
+test('source gate rejects constructing a binary root without registering it before setters', async () => {
+  const files = await topologySources();
+  files[0] = sourceCounterexample(
+    files[0],
+    'var root = new CompositeEffect(); register(root); root.Mode = CanvasComposite.Add; root.Sources.Add(pair);',
+    'var root = new CompositeEffect(); root.Mode = CanvasComposite.Add; root.Sources.Add(pair);',
+  );
+  assert.throws(() => assertSheetSourceProjection(...files), /own only two registered Add joins/);
+});
+
+test('source gate rejects replacing the third actual input at the binary call site', async () => {
+  const files = await topologySources();
+  files[5] = sourceCounterexample(
+    files[5],
+    `SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
+    `SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
+    progressiveBranches[0], progressiveBranches[1], progressiveBranches[1]);`,
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /receive actual indices 0\/1\/2 only after final factory failure/,
   );
 });
 

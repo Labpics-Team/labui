@@ -15,6 +15,7 @@ internal static class SheetSourceTopology
     internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
     internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
     internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";
+    internal const string ActualBinaryThreeDataKey = "LabUI.SheetActualBinaryThreeFactory";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -105,13 +106,19 @@ internal static class SheetSourceTopology
     }
 
     internal static SheetFactoryDiagnostic? ReadActualLayer(Exception? error)
+        => ReadDiagnostic(error, ActualLayerDataKey);
+
+    internal static SheetFactoryDiagnostic? ReadActualBinaryThree(Exception? error)
+        => ReadDiagnostic(error, ActualBinaryThreeDataKey);
+
+    private static SheetFactoryDiagnostic? ReadDiagnostic(Exception? error, string dataKey)
     {
         try
         {
             for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
             {
-                if (!error.Data.Contains(ActualLayerDataKey)) continue;
-                return Diagnostic(error.Data[ActualLayerDataKey]);
+                if (!error.Data.Contains(dataKey)) continue;
+                return Diagnostic(error.Data[dataKey]);
             }
         }
         catch { }

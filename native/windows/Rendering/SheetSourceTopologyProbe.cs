@@ -15,6 +15,7 @@ internal static class SheetSourceTopologyProbe
     internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
     internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
     internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";
+    internal const string ActualBinaryThreeDataKey = "LabUI.SheetActualBinaryThreeFactory";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -122,6 +123,36 @@ internal static class SheetSourceTopologyProbe
             primary.Data[ActualComponentsDataKey] = new[]
             {
                 SampleComponent(branch0), SampleComponent(branch1), SampleComponent(branch2),
+            };
+        }
+        catch { }
+    }
+
+    // Те же actual 0/1/2 и Add, но два binary join вместо одного flat join.
+    // Принадлежат sampler только pair/root и factory; descendants остаются у Frame.
+    internal static void RecordActualBinaryThree(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)
+    {
+        try
+        {
+            var outcome = SheetFactorySampling.Capture(register =>
+            {
+                var pair = new CompositeEffect();
+                register(pair);
+                pair.Mode = CanvasComposite.Add;
+                pair.Sources.Add(branch0);
+                pair.Sources.Add(branch1);
+                var root = new CompositeEffect();
+                register(root);
+                root.Mode = CanvasComposite.Add;
+                root.Sources.Add(pair);
+                root.Sources.Add(branch2);
+                return root;
+            }, graph => compositor.CreateEffectFactory(graph));
+            primary.Data[ActualBinaryThreeDataKey] = new Dictionary<string, object?>
+            {
+                ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
             };
         }
         catch { }

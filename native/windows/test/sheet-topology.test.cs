@@ -491,6 +491,43 @@ var malformedComponentsOuter = new AggregateException(WithData(SheetSourceTopolo
 malformedComponentsOuter.Data[SheetSourceTopology.ActualComponentsDataKey] = Marker;
 Check(SheetSourceTopology.ReadActualComponents(malformedComponentsOuter) is null,
     "Malformed actual-components скрыта полным triplet из вложенной ошибки.");
+
+SheetFactoryDiagnostic? ReadActualBinaryThree(object? value)
+    => SheetSourceTopology.ReadActualBinaryThree(new AggregateException(WithData(SheetSourceTopology.ActualBinaryThreeDataKey, value)));
+foreach (var stage in new[] { "build", "factory" })
+    foreach (var hresult in new[] { int.MinValue, BuildFailure, 0, int.MaxValue })
+        foreach (var cleanup in new int?[] { null, int.MinValue, int.MaxValue })
+        {
+            var row = ActualThreeRow(stage, hresult, cleanup);
+            var projected = ReadActualBinaryThree(row);
+            Check(projected == new SheetFactoryDiagnostic(stage, hresult, cleanup),
+                "Actual-binary-three потеряла typed stage/HRESULT и независимый cleanup outcome.");
+            row["hresult"] = 99;
+            Check(projected!.hresult == hresult, "Actual-binary-three сохранила mutable row alias.");
+            PrivateTextAbsent(projected);
+        }
+foreach (var invalid in new object?[] { null, 42, Marker, Array.Empty<object>(),
+    new[] { ActualThreeRow("factory", 0, null) },
+    ActualThreeRow("Factory", 0, null), ActualThreeRow("brush", 0, null), ActualThreeRow(Marker, 0, null),
+    ActualThreeRow("factory", null, null), ActualThreeRow("factory", 0L, null),
+    ActualThreeRow("factory", -2147483649L, null), ActualThreeRow("factory", 2147483648L, null),
+    ActualThreeRow("factory", double.NaN, null), ActualThreeRow("factory", 0, Marker),
+    ActualThreeRow("factory", 0, -2147483649L), ActualThreeRow("factory", 0, 2147483648L),
+    new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0 },
+    new Dictionary<string, object?> { ["stage"] = "factory", ["hresult"] = 0,
+        ["cleanupHresult"] = null, ["message"] = Marker } })
+    Check(ReadActualBinaryThree(invalid) is null,
+        "Actual-binary-three допустила отсутствие измерения, malformed outcome или private text как PASS.");
+Exception nestedBinary = WithData(SheetSourceTopology.ActualBinaryThreeDataKey, ActualThreeRow("factory", FactoryFailure, null));
+for (var depth = 0; depth < 7; depth++) nestedBinary = new AggregateException(nestedBinary);
+Check(SheetSourceTopology.ReadActualBinaryThree(nestedBinary)?.hresult == FactoryFailure
+    && SheetSourceTopology.ReadActualBinaryThree(new AggregateException(nestedBinary)) is null,
+    "Actual-binary-three потеряла допустимую глубину либо вышла за bounded readback.");
+var malformedBinaryOuter = new AggregateException(WithData(SheetSourceTopology.ActualBinaryThreeDataKey, ActualThreeRow("factory", 0, null)));
+malformedBinaryOuter.Data[SheetSourceTopology.ActualBinaryThreeDataKey] = Marker;
+Check(SheetSourceTopology.ReadActualBinaryThree(malformedBinaryOuter) is null
+    && SheetSourceTopology.ReadActualBinaryThree(WithData(SheetSourceTopology.ActualThreeDataKey, ActualThreeRow("factory", 0, null))) is null,
+    "Actual-binary-three скрыла malformed/absent значение чужим результатом.");
 Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exception()) is null
     && SheetSourceTopology.ReadBranches(unavailable) is null && SheetSourceTopology.ReadSigma(unavailable) is null
     && SheetSourceTopology.ReadActualThree(null) is null && SheetSourceTopology.ReadActualThree(new Exception()) is null
@@ -498,7 +535,9 @@ Check(SheetSourceTopology.Read(null) is null && SheetSourceTopology.Read(new Exc
     && SheetSourceTopology.ReadActualLayer(null) is null && SheetSourceTopology.ReadActualLayer(new Exception()) is null
     && SheetSourceTopology.ReadActualLayer(unavailable) is null
     && SheetSourceTopology.ReadActualComponents(null) is null && SheetSourceTopology.ReadActualComponents(new Exception()) is null
-    && SheetSourceTopology.ReadActualComponents(unavailable) is null,
+    && SheetSourceTopology.ReadActualComponents(unavailable) is null
+    && SheetSourceTopology.ReadActualBinaryThree(null) is null && SheetSourceTopology.ReadActualBinaryThree(new Exception()) is null
+    && SheetSourceTopology.ReadActualBinaryThree(unavailable) is null,
     "Диагностика появилась без доступных данных.");
 Console.WriteLine("Sheet topology: System-only production callbacks, blur profile and actual DTO projectors PASS.");
 

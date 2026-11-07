@@ -302,6 +302,9 @@ function observationError(value) {
     ...(Object.hasOwn(value, 'actualComponents')
       ? { actualComponents: componentsInfo(value.actualComponents) }
       : {}),
+    ...(Object.hasOwn(value, 'actualBinaryThree')
+      ? { actualBinaryThree: factoryOutcomeInfo(value.actualBinaryThree) }
+      : {}),
   };
 }
 
