@@ -512,39 +512,6 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
     'actual-three must use the authored branches with their sigma, names and Layer transforms',
   );
   includesSource(
-    renderer,
-    `var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
-    ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
-    ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
-    ("atlas", atlasBrush)));`,
-    'actual-three must receive the same branches as the production graph',
-  );
-  includesSource(
-    renderer,
-    `IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,
-    IGraphicsEffectSource[] progressiveBranches,
-    params (string Name, CompositionBrush Source)[] bindings)`,
-    'actual-three source array is disconnected from Brush',
-  );
-  const brush = enclosed(renderer, 'CompositionEffectBrush Brush(');
-  const failure = enclosed(brush, 'catch (Exception primary)');
-  const finalFailure = enclosed(
-    failure,
-    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
-  );
-  includesSource(
-    enclosed(finalFailure, 'if (operation == "factory")'),
-    `SheetSourceTopologyProbe.RecordActualThree(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
-    'actual-three must observe exactly actual indices 0/1/2 only after final factory failure',
-  );
-  assert.equal(
-    tokens(renderer).filter((token) => token === 'RecordActualThree').length,
-    1,
-    'Sheet: actual-three must have one failure-only call site',
-  );
-  includesSource(failure, 'throw;', 'actual-three success must not admit the primary failure');
-  includesSource(
     page,
     'SheetSourceTopology.ReadSigma(args.Exception), SheetSourceTopology.ReadActualThree(args.Exception),',
     'actual-three must pass through the existing exception observation',
@@ -603,24 +570,6 @@ function assertActualLayerSource(producer, renderer, projector, codec, page) {
     => Effect(new CompositeEffect { Mode = CanvasComposite.DestinationIn, Sources = { source, mask } });`,
     'DestinationIn must retain the Frame-owned destination image first and mask second',
   );
-  const failure = enclosed(
-    enclosed(renderer, 'CompositionEffectBrush Brush('),
-    'catch (Exception primary)',
-  );
-  const finalFailure = enclosed(
-    failure,
-    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
-  );
-  includesSource(
-    enclosed(finalFailure, 'if (operation == "factory")'),
-    'SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, progressiveBranches[0]);',
-    'actual-layer must observe actual index 0 only after final factory failure',
-  );
-  assert.equal(
-    tokens(renderer).filter((token) => token === 'RecordActualLayer').length,
-    1,
-    'Sheet: actual-layer must have one failure-only call site',
-  );
   includesSource(
     projector,
     'internal sealed record SheetFactoryDiagnostic(string stage, int hresult, int? cleanupHresult);',
@@ -648,7 +597,7 @@ function assertActualLayerSource(producer, renderer, projector, codec, page) {
   );
 }
 
-function assertActualComponentsSource(producer, renderer, projector, codec, page) {
+function assertActualComponentsSource(producer, projector, codec, page) {
   for (const source of [producer, projector])
     includesSource(
       source,
@@ -677,25 +626,6 @@ function assertActualComponentsSource(producer, renderer, projector, codec, page
       };
     } catch { }`),
     'Sheet: actual-components must independently sample the same roots in order 0/1/2 without new graphs or borrowed cleanup',
-  );
-  const failure = enclosed(
-    enclosed(renderer, 'CompositionEffectBrush Brush('),
-    'catch (Exception primary)',
-  );
-  const finalFailure = enclosed(
-    failure,
-    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
-  );
-  includesSource(
-    enclosed(finalFailure, 'if (operation == "factory")'),
-    `SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
-    'actual-components must receive actual indices 0/1/2 after final factory failure',
-  );
-  assert.equal(
-    tokens(renderer).filter((token) => token === 'RecordActualComponents').length,
-    1,
-    'Sheet: actual-components must have one failure-only call site',
   );
   includesSource(
     projector,
@@ -736,7 +666,7 @@ function assertActualComponentsSource(producer, renderer, projector, codec, page
   );
 }
 
-function assertActualBinaryThreeSource(producer, renderer, projector, codec, page) {
+function assertActualBinaryThreeSource(producer, projector, codec, page) {
   for (const source of [producer, projector])
     includesSource(
       source,
@@ -772,25 +702,6 @@ function assertActualBinaryThreeSource(producer, renderer, projector, codec, pag
     } catch { }`),
     'Sheet: actual-binary-three must own only two registered Add joins and combine unchanged inputs as (0 Add 1) Add 2',
   );
-  const failure = enclosed(
-    enclosed(renderer, 'CompositionEffectBrush Brush('),
-    'catch (Exception primary)',
-  );
-  const finalFailure = enclosed(
-    failure,
-    'if (factoryName == "final" && operation is ("factory" or "brush" or "binding"))',
-  );
-  includesSource(
-    enclosed(finalFailure, 'if (operation == "factory")'),
-    `SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
-    'actual-binary-three must receive actual indices 0/1/2 only after final factory failure',
-  );
-  assert.equal(
-    tokens(renderer).filter((token) => token === 'RecordActualBinaryThree').length,
-    1,
-    'Sheet: actual-binary-three must have one failure-only call site',
-  );
   includesSource(
     projector,
     `internal static SheetFactoryDiagnostic? ReadActualBinaryThree(Exception? error)
@@ -814,7 +725,57 @@ function assertActualBinaryThreeSource(producer, renderer, projector, codec, pag
   );
 }
 
-// Source-only: настоящий producer, owner и оба настоящих wire-проектора.
+function assertActiveRendererSource(renderer) {
+  const retiredNames = [
+    'inlineProgressive',
+    'progressiveGraph',
+    'ghostSourceGraph',
+    'progressiveBranches',
+    'RecordBranches',
+    'RecordSigmaFactories',
+    'RecordActualThree',
+    'RecordActualLayer',
+    'RecordActualComponents',
+    'RecordActualBinaryThree',
+  ];
+  assert.ok(
+    !tokens(renderer).some((token) => retiredNames.includes(token)),
+    'Sheet: retired final diagnostic path or graph is present in the renderer',
+  );
+  includesSource(
+    renderer,
+    `CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
+      params (string Name, CompositionBrush Source)[] bindings)`,
+    'active Brush must take only its actual graph and bindings',
+  );
+  const brush = enclosed(renderer, 'CompositionEffectBrush Brush(');
+  includesSource(
+    brush,
+    `var operation = "factory";
+    try {
+      var factory = result.Own(SheetSourceTopologyProbe.CreateFactory(compositor,
+        graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma,
+        Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma));
+      operation = "brush";
+      var brush = result.Own(factory.CreateBrush());
+      operation = "binding";
+      foreach (var (name, source) in bindings) brush.SetSourceParameter(name, source);
+      return brush;
+    }`,
+    'active factory must keep the measured operation and actual graph',
+  );
+  assert.deepEqual(
+    enclosed(brush, 'catch (Exception primary)'),
+    tokens(`try {
+      primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
+        { ["name"] = factoryName, ["operation"] = operation };
+    } catch { }
+    throw;`),
+    'Sheet: active factory must retain name/operation and rethrow the primary failure',
+  );
+}
+
+// Source-only: текущий renderer, historical producer и оба настоящих wire-проектора.
 function assertSheetSourceProjection(
   producer,
   projector,
@@ -827,10 +788,11 @@ function assertSheetSourceProjection(
   const signatures = caseSignatures(producer);
   assertGraphSource(producer, profile);
   assertSamplingSource(sampling);
+  assertActiveRendererSource(renderer);
   assertActualThreeSource(producer, renderer, projector, codec, page);
   assertActualLayerSource(producer, renderer, projector, codec, page);
-  assertActualComponentsSource(producer, renderer, projector, codec, page);
-  assertActualBinaryThreeSource(producer, renderer, projector, codec, page);
+  assertActualComponentsSource(producer, projector, codec, page);
+  assertActualBinaryThreeSource(producer, projector, codec, page);
   const csharp = argumentsOf(enclosed(projector, '["source"] = Known', '(', ')'))
     .slice(1)
     .map(literal);
@@ -930,8 +892,15 @@ test('source gate rejects removal of owned reverse cleanup', async () => {
 
 test('source gate rejects repeating an input instead of actual branch 2', async () => {
   const files = await topologySources();
-  files[5] = sourceCounterexample(files[5], 'progressiveBranches[2]', 'progressiveBranches[1]');
-  assert.throws(() => assertSheetSourceProjection(...files), /exactly actual indices 0\/1\/2/);
+  files[0] = sourceCounterexample(
+    files[0],
+    'root.Sources.Add(branch2);',
+    'root.Sources.Add(branch1);',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /own only a temporary Add root and borrow all three inputs unchanged/,
+  );
 });
 
 test('source gate rejects registering a borrowed actual branch for cleanup', async () => {
@@ -1012,16 +981,16 @@ test('source gate rejects registration of the borrowed input', async () => {
   );
 });
 
-test('source gate rejects sampling a different actual Layer index', async () => {
+test('source gate rejects restoring retired actual-layer renderer sampling', async () => {
   const files = await topologySources();
   files[5] = sourceCounterexample(
     files[5],
-    'SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, progressiveBranches[0]);',
-    'SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, progressiveBranches[1]);',
+    'catch (Exception primary) {',
+    'catch (Exception primary) { SheetSourceTopologyProbe.RecordActualLayer(primary, compositor, branches[0]);',
   );
   assert.throws(
     () => assertSheetSourceProjection(...files),
-    /actual index 0 only after final factory failure/,
+    /retired final diagnostic path or graph is present/,
   );
 });
 
@@ -1047,18 +1016,18 @@ test('source gate rejects measuring a component mask instead of its whole existi
   );
 });
 
-test('source gate rejects omitting an actual component at the failure-only call site', async () => {
+test('source gate rejects recreating the unused inline progressive graph', async () => {
   const files = await topologySources();
   files[5] = sourceCounterexample(
     files[5],
-    `SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
-    `SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[1]);`,
+    'stages = new SurfaceStages(result, compositor);',
+    `var inlineProgressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
+    foreach (var branch in branches) inlineProgressive.Sources.Add(branch);
+    stages = new SurfaceStages(result, compositor);`,
   );
   assert.throws(
     () => assertSheetSourceProjection(...files),
-    /receive actual indices 0\/1\/2 after final factory failure/,
+    /retired final diagnostic path or graph is present/,
   );
 });
 
@@ -1105,18 +1074,28 @@ test('source gate rejects constructing a binary root without registering it befo
   assert.throws(() => assertSheetSourceProjection(...files), /own only two registered Add joins/);
 });
 
-test('source gate rejects replacing the third actual input at the binary call site', async () => {
+test('source gate rejects suppressing the active primary factory failure', async () => {
   const files = await topologySources();
   files[5] = sourceCounterexample(
     files[5],
-    `SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);`,
-    `SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
-    progressiveBranches[0], progressiveBranches[1], progressiveBranches[1]);`,
+    `catch (Exception primary) {
+      try {
+        primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
+          { ["name"] = factoryName, ["operation"] = operation };
+      } catch { }
+      throw;
+    }`,
+    `catch (Exception primary) {
+      try {
+        primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
+          { ["name"] = factoryName, ["operation"] = operation };
+      } catch { }
+      return null!;
+    }`,
   );
   assert.throws(
     () => assertSheetSourceProjection(...files),
-    /receive actual indices 0\/1\/2 only after final factory failure/,
+    /retain name\/operation and rethrow the primary failure/,
   );
 });
 

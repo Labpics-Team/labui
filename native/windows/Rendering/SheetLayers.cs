@@ -396,8 +396,6 @@ public sealed class SheetLayers : Grid
             atlasBrush.Offset = atlas.BrushOffset;
             var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
-                IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,
-                IGraphicsEffectSource[] progressiveBranches,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
                 var operation = "factory";
@@ -414,33 +412,10 @@ public sealed class SheetLayers : Grid
                 }
                 catch (Exception primary)
                 {
-                    // Удалить временное имя отказа после RCA и проверенного owner fix.
                     try
                     {
                         primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
                         { ["name"] = factoryName, ["operation"] = operation };
-                        if (factoryName == "final"
-                            && operation is ("factory" or "brush" or "binding"))
-                        {
-                            if (operation == "factory")
-                            {
-                                // Исходные progressive и Ghost до внешней маски принадлежат Frame.
-                                SheetSourceTopologyProbe.RecordBranches(primary, compositor,
-                                    progressiveGraph, ghostSourceGraph);
-                                // Оба factory читают один actual graph: sigma константны либо доступны по имени.
-                                SheetSourceTopologyProbe.RecordSigmaFactories(primary, compositor,
-                                    progressiveGraph, Enumerable.Range(1, SheetBlurProfile.Levels.Length - 1)
-                                        .Select(index => $"ghostBlur{index}.BlurAmount"));
-                                SheetSourceTopologyProbe.RecordActualThree(primary, compositor,
-                                    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
-                                SheetSourceTopologyProbe.RecordActualLayer(primary, compositor,
-                                    progressiveBranches[0]);
-                                SheetSourceTopologyProbe.RecordActualComponents(primary, compositor,
-                                    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
-                                SheetSourceTopologyProbe.RecordActualBinaryThree(primary, compositor,
-                                    progressiveBranches[0], progressiveBranches[1], progressiveBranches[2]);
-                            }
-                        }
                     }
                     catch { }
                     throw;
@@ -455,15 +430,9 @@ public sealed class SheetLayers : Grid
                 branches[index] = Mask(index == 0 ? Backdrop()
                     : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
                         $"ghostBlur{index}"), Layer(ghostMasks[index]));
-            // Тот же Add descriptor остаётся для failure-only sampler исходных ветвей.
-            var inlineProgressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
-            for (var index = 0; index < branches.Length; index++)
-                inlineProgressive.Sources.Add(branches[index]);
-
             stages = new SurfaceStages(result, compositor);
             var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
-            var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph,
-                inlineProgressive, inlineProgressive, branches, ("backdrop", backdropBrush)));
+            var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph, ("backdrop", backdropBrush)));
             result.Visual.Children.InsertAtBottom(seed);
             var capturedBackdrop = stages.Capture(seed);
             seed.Opacity = 0;
@@ -472,7 +441,6 @@ public sealed class SheetLayers : Grid
             for (var index = 0; index < branches.Length; index++)
             {
                 var leaf = stages.CreateVisual(Brush($"progressiveLeaf{index}", (IGraphicsEffect)branches[index],
-                    inlineProgressive, inlineProgressive, branches,
                     ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
                 progressiveSources[index] = stages.Capture(leaf);
             }
@@ -483,7 +451,6 @@ public sealed class SheetLayers : Grid
                     var pair = Effect(new CompositeEffect
                     { Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") } });
                     var sum = stages.CreateVisual(Brush("progressiveSum", pair,
-                        inlineProgressive, inlineProgressive, branches,
                         ("left", progressiveSources[index]), ("right", progressiveSources[index + 1])));
                     progressiveSources[index / 2] = stages.Capture(sum);
                 }
@@ -496,7 +463,7 @@ public sealed class SheetLayers : Grid
             var ghostSource = WithNoise(Over(Source("progressiveSurface"), Paint(Ghost!, "ghostPaint")),
                 Geometry.SheetGhostNoiseOpacity);
             var ghost = Mask(ghostSource, Layer(ghostMask));
-            var ghostVisual = stages.CreateVisual(Brush("ghost", ghost, inlineProgressive, ghostSource, branches,
+            var ghostVisual = stages.CreateVisual(Brush("ghost", ghost,
                 ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint), ("atlas", atlasBrush)));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!, "tintPaint"));
             var blended = Effect(new BlendEffect
@@ -507,12 +474,12 @@ public sealed class SheetLayers : Grid
             var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
             var bodyAlphaMask = Layer(bodyMask);
             var body = Mask(bodySource, bodyAlphaMask);
-            var bodyVisual = stages.CreateVisual(Brush("body", body, inlineProgressive, ghostSource, branches,
+            var bodyVisual = stages.CreateVisual(Brush("body", body,
                 ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
                 ("atlas", atlasBrush)));
-            var outerVisual = stages.CreateVisual(Brush("outer", Layer(outer), inlineProgressive, ghostSource, branches,
+            var outerVisual = stages.CreateVisual(Brush("outer", Layer(outer),
                 ("atlas", atlasBrush)));
-            var borderVisual = stages.CreateVisual(Brush("border", Layer(border), inlineProgressive, ghostSource, branches,
+            var borderVisual = stages.CreateVisual(Brush("border", Layer(border),
                 ("atlas", atlasBrush)));
             // Штатный LayerVisual сводит SourceOver четырёх слоёв до opacity предков.
             // Дополнительные captures Ghost/Body и общий inline effect graph не нужны.

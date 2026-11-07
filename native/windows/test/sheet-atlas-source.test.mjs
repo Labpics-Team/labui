@@ -25,7 +25,7 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /var seed = stages\.CreateVisual\(Brush\("progressiveSeed", seedGraph,\s*inlineProgressive, inlineProgressive, branches, \("backdrop", backdropBrush\)\)\);/,
+    /var seed = stages\.CreateVisual\(Brush\("progressiveSeed", seedGraph,\s*\("backdrop", backdropBrush\)\)\);/,
   );
   assert.match(
     frame,
@@ -34,16 +34,16 @@ function assertSurfaceStages(candidate) {
   assert.match(frame, /var progressiveSources = new CompositionSurfaceBrush\[branches\.Length\];/);
   assert.match(
     frame,
-    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*progressiveSources\[index\] = stages\.Capture\(leaf\);\s*\}/,
+    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*progressiveSources\[index\] = stages\.Capture\(leaf\);\s*\}/,
   );
   assert.match(
     frame,
-    /for \(var count = progressiveSources\.Length; count > 1; count \/= 2\)\s*for \(var index = 0; index < count; index \+= 2\)\s*\{\s*var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\);\s*var sum = stages\.CreateVisual\(Brush\("progressiveSum", pair,\s*inlineProgressive, inlineProgressive, branches,\s*\("left", progressiveSources\[index\]\), \("right", progressiveSources\[index \+ 1\]\)\)\);\s*progressiveSources\[index \/ 2\] = stages\.Capture\(sum\);\s*\}\s*var capturedProgressive = progressiveSources\[0\];/,
+    /for \(var count = progressiveSources\.Length; count > 1; count \/= 2\)\s*for \(var index = 0; index < count; index \+= 2\)\s*\{\s*var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\);\s*var sum = stages\.CreateVisual\(Brush\("progressiveSum", pair,\s*\("left", progressiveSources\[index\]\), \("right", progressiveSources\[index \+ 1\]\)\)\);\s*progressiveSources\[index \/ 2\] = stages\.Capture\(sum\);\s*\}\s*var capturedProgressive = progressiveSources\[0\];/,
   );
   assert.match(frame, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
   assert.match(
     frame,
-    /var ghostVisual = stages\.CreateVisual\(Brush\("ghost", ghost, inlineProgressive, ghostSource, branches,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\), \("atlas", atlasBrush\)\)\);/,
+    /var ghostVisual = stages\.CreateVisual\(Brush\("ghost", ghost,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\), \("atlas", atlasBrush\)\)\);/,
   );
   assert.match(
     frame,
@@ -51,11 +51,11 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /var bodyVisual = stages\.CreateVisual\(Brush\("body", body, inlineProgressive, ghostSource, branches,\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\)\)\);/,
+    /var bodyVisual = stages\.CreateVisual\(Brush\("body", body,\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\)\)\);/,
   );
   assert.match(
     frame,
-    /var outerVisual = stages\.CreateVisual\(Brush\("outer", Layer\(outer\), inlineProgressive, ghostSource, branches,\s*\("atlas", atlasBrush\)\)\);\s*var borderVisual = stages\.CreateVisual\(Brush\("border", Layer\(border\), inlineProgressive, ghostSource, branches,\s*\("atlas", atlasBrush\)\)\);/,
+    /var outerVisual = stages\.CreateVisual\(Brush\("outer", Layer\(outer\),\s*\("atlas", atlasBrush\)\)\);\s*var borderVisual = stages\.CreateVisual\(Brush\("border", Layer\(border\),\s*\("atlas", atlasBrush\)\)\);/,
   );
   assert.match(
     frame,
@@ -215,10 +215,10 @@ test('Sheet surface source guard rejects retained capture links and swallowed un
   }
 });
 
-test('Sheet factory slots observe actual progressive and Ghost input before its structural mask', () => {
+test('Sheet factories retain active failure metadata without the retired final graph diagnostics', () => {
   assert.match(
     build,
-    /CompositionEffectBrush Brush\(string factoryName, IGraphicsEffect graph,\s*IGraphicsEffect progressiveGraph, IGraphicsEffect ghostSourceGraph,/,
+    /CompositionEffectBrush Brush\(string factoryName, IGraphicsEffect graph,\s*params \(string Name, CompositionBrush Source\)\[\] bindings\)/,
   );
   const failure = build.slice(
     build.indexOf('catch (Exception primary)'),
@@ -226,12 +226,12 @@ test('Sheet factory slots observe actual progressive and Ghost input before its 
   );
   assert.match(
     failure,
-    /if \(operation == "factory"\)\s*\{[^{}]*SheetSourceTopologyProbe\.RecordBranches\(primary, compositor,\s*progressiveGraph, ghostSourceGraph\);/,
+    /primary\.Data\["LabUI\.SheetFactoryFailure"\] = new Dictionary<string, object\?>\s*\{ \["name"\] = factoryName, \["operation"\] = operation \};/,
   );
-  assert.equal([...failure.matchAll(/SheetSourceTopologyProbe\.RecordBranches\(/g)].length, 1);
+  assert.match(failure, /catch \{ \}\s*throw;/);
   assert.doesNotMatch(
-    failure,
-    /BodyMaskControl|new (AlphaMaskEffect|Transform2DEffect|CompositionEffectSourceParameter)\b/,
+    build,
+    /inlineProgressive|progressiveGraph|ghostSourceGraph|progressiveBranches|SheetSourceTopologyProbe\.Record(?:Branches|SigmaFactories|Actual\w+)\(/,
   );
 });
 
@@ -279,7 +279,6 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     /var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\)/,
   );
   assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
-  assert.match(build, /inlineProgressive\.Sources\.Add\(branches\[index\]\)/);
   assert.match(
     build,
     /var ghostSource = WithNoise\(Over\(Source\("progressiveSurface"\), Paint\(Ghost!, "ghostPaint"\)\),\s*Geometry\.SheetGhostNoiseOpacity\);/,
