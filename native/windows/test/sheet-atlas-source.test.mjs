@@ -40,10 +40,19 @@ function assertSurfaceStages(candidate) {
     frame,
     /for \(var count = progressiveSources\.Length; count > 1; count \/= 2\)\s*for \(var index = 0; index < count; index \+= 2\)\s*\{\s*var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\);\s*var sum = stages\.CreateVisual\(Brush\("progressiveSum", pair,\s*\("left", progressiveSources\[index\]\), \("right", progressiveSources\[index \+ 1\]\)\)\);\s*progressiveSources\[index \/ 2\] = stages\.Capture\(sum\);\s*\}\s*var capturedProgressive = progressiveSources\[0\];/,
   );
-  assert.match(frame, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
+  assert.match(frame, /var ghostVisual = stages\.CreateLayer\(\);/);
+  assert.match(frame, /var ghostBackdrop = stages\.CreateVisual\(capturedProgressive\);/);
   assert.match(
     frame,
-    /var ghostVisual = stages\.CreateVisual\(Brush\("ghost", ghost,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\), \("atlas", atlasBrush\)\)\);/,
+    /var ghostTint = stages\.CreateVisual\(ghostPaint\);\s*ghostTint\.Opacity = \(float\)Ghost!\.Opacity;/,
+  );
+  assert.match(
+    frame,
+    /var ghostNoise = stages\.CreateVisual\(Brush\("ghost", Layer\(noise\),\s*\("atlas", atlasBrush\)\)\);\s*ghostNoise\.Opacity = \(float\)Geometry\.SheetGhostNoiseOpacity;/,
+  );
+  assert.match(
+    frame,
+    /ghostVisual\.Children\.InsertAtTop\(ghostBackdrop\);\s*ghostVisual\.Children\.InsertAtTop\(ghostTint\);\s*ghostVisual\.Children\.InsertAtTop\(ghostNoise\);\s*ghostVisual\.Effect = Brush\("ghost", Mask\(Source\("Backdrop"\), Layer\(ghostMask\)\),\s*\("atlas", atlasBrush\)\);/,
   );
   assert.match(
     frame,
@@ -62,8 +71,8 @@ function assertSurfaceStages(candidate) {
     /var output = stages\.CreateLayer\(\);\s*output\.Children\.InsertAtTop\(ghostVisual\);\s*output\.Children\.InsertAtTop\(outerVisual\);\s*output\.Children\.InsertAtTop\(bodyVisual\);\s*output\.Children\.InsertAtTop\(borderVisual\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
   );
   assert.doesNotMatch(frame, /Brush\("final",|var graph = Over\(/);
-  assert.equal([...frame.matchAll(/stages\.CreateLayer\(/g)].length, 1);
-  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 5);
+  assert.equal([...frame.matchAll(/stages\.CreateLayer\(/g)].length, 2);
+  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 8);
   assert.doesNotMatch(frame, /void Output\(|^\s*Output\(/m);
   assert.deepEqual(
     [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
@@ -95,7 +104,7 @@ function assertSurfaceStages(candidate) {
   assert.match(stages, /surface\.SourceVisual = null;/);
   assert.match(
     stages,
-    /foreach \(var layer in flattened\)\s*try \{ layer\.Children\.RemoveAll\(\); \}\s*catch \(Exception error\) \{ errors\.Add\(error\); \}/,
+    /foreach \(var layer in flattened\)\s*\{\s*try \{ layer\.Effect = null; \}\s*catch \(Exception error\) \{ errors\.Add\(error\); \}\s*try \{ layer\.Children\.RemoveAll\(\); \}\s*catch \(Exception error\) \{ errors\.Add\(error\); \}\s*\}/,
   );
   assert.match(stages, /visual\.Brush = null;/);
   assert.match(stages, /Frame\.ThrowCleanup\(errors\);/);
@@ -120,7 +129,7 @@ function assertSurfaceStages(candidate) {
   assert.match(failure, /throw;/);
 }
 
-test('Sheet LayerVisual combines Ghost, shadow, Body and border before ancestor opacity', () => {
+test('Sheet native layers combine Ghost paints before its raster mask and the final ancestor opacity', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assertSurfaceStages(source);
   assert.match(
@@ -137,7 +146,7 @@ test('Sheet LayerVisual combines Ghost, shadow, Body and border before ancestor 
     build,
     /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
-  assert.equal([...build.matchAll(/stages\.CreateLayer\(/g)].length, 1);
+  assert.equal([...build.matchAll(/stages\.CreateLayer\(/g)].length, 2);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
   assert.doesNotMatch(
     build,
@@ -155,6 +164,15 @@ test('Sheet capture source guard rejects a root capture, repeated seed and bypas
     ['("right", progressiveSources[index + 1])', '("right", progressiveSources[index])'],
     ['Layer(ghostMask)', 'Layer(bodyMask)'],
     ['Mask(bodySource, bodyAlphaMask)', 'Mask(bodyAlphaMask, bodySource)'],
+    [
+      'ghostTint.Opacity = (float)Ghost!.Opacity;',
+      'ghostTint.Opacity = (float)Ghost!.Color.A / 255;',
+    ],
+    [
+      'ghostNoise.Opacity = (float)Geometry.SheetGhostNoiseOpacity;',
+      'ghostNoise.Opacity = (float)(Geometry.SheetGhostNoiseOpacity * Ghost!.Opacity);',
+    ],
+    ['Mask(Source("Backdrop"), Layer(ghostMask))', 'Mask(Layer(ghostMask), Source("Backdrop"))'],
   ]) {
     assert.ok(source.includes(original));
     assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
@@ -169,6 +187,12 @@ test('Sheet material source guard rejects a plain output container, bypassed gro
       'result.Visual.Children.InsertAtTop(ghostVisual);',
     ],
     ['output.Children.InsertAtTop(bodyVisual);', 'result.Visual.Children.InsertAtTop(bodyVisual);'],
+    ['ghostVisual.Children.InsertAtTop(ghostTint);', 'output.Children.InsertAtTop(ghostTint);'],
+    ['ghostVisual.Effect = Brush(', 'output.Effect = Brush('],
+    [
+      'ghostVisual.Children.InsertAtTop(ghostTint);\n            ghostVisual.Children.InsertAtTop(ghostNoise);',
+      'ghostVisual.Children.InsertAtTop(ghostNoise);\n            ghostVisual.Children.InsertAtTop(ghostTint);',
+    ],
     [
       'layer.CompositeMode = CompositionCompositeMode.SourceOver;',
       'layer.CompositeMode = CompositionCompositeMode.MinBlend;',
@@ -205,6 +229,7 @@ test('Sheet surface source guard rejects retained capture links and swallowed un
   for (const [original, replacement, owner] of [
     ['surface.SourceVisual = null;', '', 'private sealed class SurfaceStages('],
     ['layer.Children.RemoveAll();', '', 'private sealed class SurfaceStages('],
+    ['layer.Effect = null;', '', 'private sealed class SurfaceStages('],
     ['Frame.ThrowCleanup(errors);', '', 'private sealed class SurfaceStages('],
     ['stages?.Dispose();', '', 'private Frame BuildFrame('],
   ]) {
@@ -279,15 +304,17 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     /var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\)/,
   );
   assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
+  assert.match(build, /ghostTint\.Opacity = \(float\)Ghost!\.Opacity;/);
+  assert.match(build, /ghostNoise\.Opacity = \(float\)Geometry\.SheetGhostNoiseOpacity;/);
   assert.match(
     build,
-    /var ghostSource = WithNoise\(Over\(Source\("progressiveSurface"\), Paint\(Ghost!, "ghostPaint"\)\),\s*Geometry\.SheetGhostNoiseOpacity\);/,
+    /ghostVisual\.Effect = Brush\("ghost", Mask\(Source\("Backdrop"\), Layer\(ghostMask\)\),\s*\("atlas", atlasBrush\)\);/,
   );
-  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
+  assert.doesNotMatch(build, /ghostSource|Source\("progressiveSurface"\)|Paint\(Ghost!/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
   assert.match(source, /RadiusToSigma = 0\.5;/);
-  for (const paint of ['Ghost', 'Tint', 'Blend'])
+  for (const paint of ['Tint', 'Blend'])
     assert.match(build, new RegExp(`Paint\\(${paint}!, "${paint.toLowerCase()}Paint"\\)`));
   assert.match(build, /DrawShadows\(drawing, metrics, bodyShape\)/);
   assert.match(build, /DrawNoise\(drawing, pixelWidth, pixelHeight, scale\)/);

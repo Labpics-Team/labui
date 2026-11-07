@@ -459,12 +459,19 @@ public sealed class SheetLayers : Grid
             var ghostPaint = result.Own(compositor.CreateColorBrush(Ghost!.Color));
             var tintPaint = result.Own(compositor.CreateColorBrush(Tint!.Color));
             var blendPaint = result.Own(compositor.CreateColorBrush(Blend!.Color));
-            // Alpha Ghost tint не управляет существованием backdrop/noise.
-            var ghostSource = WithNoise(Over(Source("progressiveSurface"), Paint(Ghost!, "ghostPaint")),
-                Geometry.SheetGhostNoiseOpacity);
-            var ghost = Mask(ghostSource, Layer(ghostMask));
-            var ghostVisual = stages.CreateVisual(Brush("ghost", ghost,
-                ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint), ("atlas", atlasBrush)));
+            // Маска применяется к сведённым Ghost слоям; alpha tint не ослабляет backdrop/noise.
+            var ghostVisual = stages.CreateLayer();
+            var ghostBackdrop = stages.CreateVisual(capturedProgressive);
+            var ghostTint = stages.CreateVisual(ghostPaint);
+            ghostTint.Opacity = (float)Ghost!.Opacity;
+            var ghostNoise = stages.CreateVisual(Brush("ghost", Layer(noise),
+                ("atlas", atlasBrush)));
+            ghostNoise.Opacity = (float)Geometry.SheetGhostNoiseOpacity;
+            ghostVisual.Children.InsertAtTop(ghostBackdrop);
+            ghostVisual.Children.InsertAtTop(ghostTint);
+            ghostVisual.Children.InsertAtTop(ghostNoise);
+            ghostVisual.Effect = Brush("ghost", Mask(Source("Backdrop"), Layer(ghostMask)),
+                ("atlas", atlasBrush));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!, "tintPaint"));
             var blended = Effect(new BlendEffect
             {
@@ -621,8 +628,12 @@ public sealed class SheetLayers : Grid
                 try { surface.SourceVisual = null; }
                 catch (Exception error) { errors.Add(error); }
             foreach (var layer in flattened)
+            {
+                try { layer.Effect = null; }
+                catch (Exception error) { errors.Add(error); }
                 try { layer.Children.RemoveAll(); }
                 catch (Exception error) { errors.Add(error); }
+            }
             foreach (var visual in rendered)
                 try { visual.Brush = null; }
                 catch (Exception error) { errors.Add(error); }
