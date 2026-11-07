@@ -46,25 +46,15 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /void Output\(IGraphicsEffect graph, params \(string Name, CompositionBrush Source\)\[\] bindings\)\s*\{\s*var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*bindings\)\);\s*output\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*\}/,
-  );
-  assert.deepEqual(
-    [...frame.matchAll(/^\s*Output\(([^,]+),/gm)].map((match) => match[1]),
-    ['ghost', 'Layer(outer)', 'body', 'Layer(border)'],
+    /var sheet = Over\(Over\(ghost, Layer\(outer\)\), body\);\s*var graph = Over\(sheet, Layer\(border\)\);/,
   );
   assert.match(
     frame,
-    /Output\(ghost, \("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\),\s*\("atlas", atlasBrush\), \("ghostMaskAtlas", atlasBrush\)\);/,
+    /var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\),\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\), \("ghostMaskAtlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
   );
-  assert.match(
-    frame,
-    /Output\(body, \("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
-  );
-  assert.match(frame, /Output\(Layer\(outer\), \("atlas", atlasBrush\)\);/);
-  assert.match(
-    frame,
-    /Output\(Layer\(border\), \("atlas", atlasBrush\)\);\s*result\.Own\(stages\);\s*return result;/,
-  );
+  assert.equal([...frame.matchAll(/Brush\("final",/g)].length, 1);
+  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 1);
+  assert.doesNotMatch(frame, /void Output\(|^\s*Output\(/m);
   assert.deepEqual(
     [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
     ['seed', 'leaf', 'sum'],
@@ -105,7 +95,7 @@ function assertSurfaceStages(candidate) {
   assert.match(failure, /throw;/);
 }
 
-test('Sheet output layers share the original atlas with separate Ghost and Body mask inputs', () => {
+test('Sheet final graph flattens outer SourceOver before ancestor opacity', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assertSurfaceStages(source);
   assert.match(
@@ -150,10 +140,6 @@ test('Sheet surface source guard rejects changed coordinates and a SourceOver pr
   for (const [original, replacement] of [
     ['surface.SourceOffset = Vector2.Zero;', 'surface.SourceOffset = Vector2.One;'],
     ['surface.SourceSize = visual.Size;', 'surface.SourceSize = visual.Size / 2;'],
-    [
-      'output.CompositeMode = CompositionCompositeMode.SourceOver;',
-      'output.CompositeMode = CompositionCompositeMode.Inherit;',
-    ],
     [
       'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });',
       'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver });',

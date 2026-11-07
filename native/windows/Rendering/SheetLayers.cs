@@ -17,7 +17,7 @@ using Windows.UI.ViewManagement;
 
 namespace LabUI.WinUI.Rendering;
 
-// Ghost и Body используют один captured backdrop; итоговые слои сохраняют authored SourceOver.
+// Ghost и Body используют один captured backdrop и один итоговый SpriteVisual.
 public sealed class SheetLayers : Grid
 {
     public static readonly DependencyProperty TintProperty = PaintProperty(nameof(Tint));
@@ -501,21 +501,14 @@ public sealed class SheetLayers : Grid
             var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
             var bodyAlphaMask = Layer(bodyMask, "bodyMaskAtlas");
             var body = Mask(bodySource, bodyAlphaMask);
-            void Output(IGraphicsEffect graph, params (string Name, CompositionBrush Source)[] bindings)
-            {
-                var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
-                    bindings));
-                output.CompositeMode = CompositionCompositeMode.SourceOver;
-                result.Visual.Children.InsertAtTop(output);
-            }
-            // Только внешние SourceOver-операции переходят в порядок SpriteVisual.
-            // Gaussian-ветви Ghost по-прежнему складываются Add до capture.
-            Output(ghost, ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
-                ("atlas", atlasBrush), ("ghostMaskAtlas", atlasBrush));
-            Output(Layer(outer), ("atlas", atlasBrush));
-            Output(body, ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
-                ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));
-            Output(Layer(border), ("atlas", atlasBrush));
+            // Внешний SourceOver вычисляется до opacity предков: один final SpriteVisual.
+            var sheet = Over(Over(ghost, Layer(outer)), body);
+            var graph = Over(sheet, Layer(border));
+            var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
+                ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
+                ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
+                ("atlas", atlasBrush), ("ghostMaskAtlas", atlasBrush), ("bodyMaskAtlas", atlasBrush)));
+            result.Visual.Children.InsertAtTop(output);
             result.Own(stages);
             return result;
         }
