@@ -448,8 +448,9 @@ public sealed class SheetLayers : Grid
             var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
             var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph, ("backdrop", backdropBrush)));
             result.Visual.Children.InsertAtBottom(seed);
+            // Источник остаётся видимым pass-through под общим material LayerVisual.
+            // Действие его capture на Ghost и Body проверяется по native PNG.
             var capturedBackdrop = stages.Capture(seed);
-            seed.Opacity = 0;
 
             var progressiveSources = new CompositionSurfaceBrush[branches.Length];
             for (var index = 0; index < branches.Length; index++)
