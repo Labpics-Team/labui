@@ -53,9 +53,10 @@ internal sealed class SpaceBoundaryPage : Page
             witnessVisual.Brush = brush;
             ElementCompositionPreview.SetElementChildVisual(this, witnessVisual);
             // x(t) = v0*t*exp(-omega*t): the boundary cases approach their target from outside.
-            var lower = await Capture("lower", 0, -1f);
-            var interior = await Capture("interior", .5f, -1f);
-            var upper = await Capture("upper", 1, 1f);
+            var retarget = Environment.GetEnvironmentVariable("LABUI_SPACE_BOUNDARY_RETARGET") == "true";
+            var lower = await Capture("lower", 0, -1f, retarget ? .5f : null);
+            var interior = await Capture("interior", .5f, -1f, retarget ? .75f : null);
+            var upper = await Capture("upper", 1, 1f, retarget ? .5f : null);
             passed = lower && interior && upper;
         }
         catch (Exception error) { failure = error.GetType().Name; }
@@ -88,16 +89,20 @@ internal sealed class SpaceBoundaryPage : Page
         }
     }
 
-    private async Task<bool> Capture(string name, float target, float velocity)
+    private async Task<bool> Capture(string name, float target, float velocity, float? retargetTo)
     {
         var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
         using var motion = ScalarMotion.CreateProgress(compositor, target);
         using var binding = motion.Bind(witnessVisual!, ScalarProperty.OffsetX, 64, 64);
         var initial = new TaskCompletionSource<MotionObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
         var overflow = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var departed = new TaskCompletionSource<MotionObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
         var trace = new List<MotionObservation>();
         MotionObservation? firstDiscarded = null;
         MotionResult? outcome = null;
+        MotionResult? replacedOutcome = null;
+        MotionObservation? departureObservation = null;
+        float? retargetReadback = null;
         long armedTicks = 0;
         string? failure = null;
         MotionObservation? initialObservation = null;
@@ -114,6 +119,7 @@ internal sealed class SpaceBoundaryPage : Page
                 overflow.TrySetResult(true);
             }
             else trace.Add(value);
+            if (value.Phase == "value" && Math.Abs(value.Position - target) > .005f) departed.TrySetResult(value);
         };
         try
         {
@@ -122,7 +128,24 @@ internal sealed class SpaceBoundaryPage : Page
                 throw new InvalidOperationException("Native initial position was not admitted.");
             armedTicks = Stopwatch.GetTimestamp();
             var operation = motion.AnimateTo(target, Smooth, velocity);
-            var completed = await Task.WhenAny(operation, overflow.Task).WaitAsync(Deadline);
+            if (retargetTo is { } nextTarget)
+            {
+                var departure = await Task.WhenAny(departed.Task, operation, overflow.Task).WaitAsync(Deadline);
+                if (departure != departed.Task) throw new InvalidOperationException("Native departure was not observed before retarget.");
+                departureObservation = await departed.Task;
+                retargetReadback = motion.Position;
+                if (Math.Abs(retargetReadback.Value - target) <= .005f ||
+                    Math.Sign(retargetReadback.Value - target) != Math.Sign(velocity))
+                    throw new InvalidOperationException("Native departure was not present at retarget.");
+                var previous = operation;
+                operation = motion.AnimateTo(nextTarget, Smooth);
+                replacedOutcome = await previous;
+                if (replacedOutcome is not { End: MotionEnd.Stopped, Reason: "replaced" })
+                    throw new InvalidOperationException("Retarget did not replace the previous operation.");
+            }
+            var remaining = Deadline - Stopwatch.GetElapsedTime(armedTicks);
+            if (remaining <= TimeSpan.Zero) throw new TimeoutException();
+            var completed = await Task.WhenAny(operation, overflow.Task).WaitAsync(remaining);
             if (completed == overflow.Task) failure = "overflow";
             else outcome = await operation;
         }
@@ -133,12 +156,13 @@ internal sealed class SpaceBoundaryPage : Page
         var last = trace.LastOrDefault();
         var passed = failure is null && outcome is { End: MotionEnd.Finished, Reason: "settled" } end &&
             last.Phase == "idle" && last.Operation == end.Operation &&
-            float.IsFinite(position) && Math.Abs(position - target) <= EndpointTolerance &&
+            float.IsFinite(position) && Math.Abs(position - (retargetTo ?? target)) <= EndpointTolerance &&
             incomingIdle is { Status: "available", CompleteSinceArm: true } &&
             incomingIdle.NativeSnapshot!.Receipts.Any(receipt => receipt.TimestampTicks >= armedTicks &&
                 receipt.CallbackRequestId == last.NativeRequestId && receipt.Operation == last.Operation &&
                 receipt.Disposition == "accepted");
-        results.Add(new { name, initial = target, target, velocity, spring = Smooth, initialObservation,
+        results.Add(new { name, initial = target, target = retargetTo ?? target, velocity, spring = Smooth, initialObservation,
+            departureObservation, retargetReadback, replacedOutcome,
             armedTicks, outcome, position, passed, failure,
             outsideRangeObserved = trace.Any(value => value.Position < 0 || value.Position > 1),
             incomingIdle, trace, firstDiscarded });

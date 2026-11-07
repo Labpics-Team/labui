@@ -55,5 +55,5 @@ jobs:
             -ApplicationDirectory "$env:RUNNER_TEMP/labui-space-diagnosis/app" `
             -OutputPath "$env:RUNNER_TEMP/labui-space-diagnosis/boundaries.json" `
             -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
-            -Source $source
+            -Source $source -Retarget
           if ($LASTEXITCODE -ne 0) { throw 'Native boundary diagnosis failed; evidence is retained above.' }
