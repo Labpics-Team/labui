@@ -1,6 +1,6 @@
 // Гейт регенерационной дисциплины: contract.css на диске обязан быть
-// байт-в-байт тем, что генерирует движок СЕЙЧАС (опубликованный пакет +
-// паспорт + Figma-якорь). Дрейф любого из трёх источников без регенерации —
+// байт-в-байт тем, что генерируют установленный пакет и авторские входы.
+// Дрейф этих источников без регенерации —
 // красный тест, а не тихое расхождение файла с движком.
 //
 // Независимость истины не теряется: золотая сверка (golden-parity) меряет
@@ -11,7 +11,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { RETIRED_ROLES, generateContract } from '../generate-contract.mjs';
+import { generateContract } from '../generate-contract.mjs';
+import { RETIRED_REFERENCE_ROLES } from './authored-reference.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contractPath = join(here, '..', 'contract.css');
@@ -28,7 +29,7 @@ describe('сгенерированный контракт', () => {
     const names = (css) => new Set([...css.matchAll(/(--lab-[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
     const anchor = names(await readFile(referencePath, 'utf8'));
     const contract = names(await readFile(contractPath, 'utf8'));
-    const lost = [...anchor].filter((n) => !contract.has(n) && !RETIRED_ROLES.has(n)); // снятые с контракта роли (ADR-0007) легально отсутствуют
+    const lost = [...anchor].filter((n) => !contract.has(n) && !RETIRED_REFERENCE_ROLES.has(n));
     expect(lost, 'переменные якоря, потерянные генерацией').toEqual([]);
   });
 });

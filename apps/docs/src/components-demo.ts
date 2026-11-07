@@ -1,3 +1,4 @@
+import { bootColors } from './colors-runtime.js';
 import { el } from './template/dom.js';
 /*
  * Components docs entry — boots the reusable component-doc template.
@@ -13,6 +14,8 @@ import { el } from './template/dom.js';
  */
 import { REGISTRY, defaultSlug, findDoc } from './template/registry.js';
 import { renderComponentPage } from './template/render-page.js';
+
+bootColors();
 
 const mount = document.querySelector<HTMLElement>('[data-testid="component-root"]');
 if (!mount) {

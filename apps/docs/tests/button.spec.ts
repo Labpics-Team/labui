@@ -29,6 +29,7 @@ const fg = (el: HTMLElement) => getComputedStyle(el).color;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/button.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('delivered HTML carries the Lit element (React island mounts on the client)', async ({

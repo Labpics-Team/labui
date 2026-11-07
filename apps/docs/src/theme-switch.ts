@@ -4,6 +4,8 @@
  * root, so a single page carries both renderers under one theme and the parity
  * suite can prove a theme flip re-skins both with zero element edits.
  */
+import { bootColors } from './colors-runtime.js';
+
 const THEMES = ['dark', 'light'] as const;
 type Theme = (typeof THEMES)[number];
 
@@ -12,6 +14,7 @@ function isTheme(value: string): value is Theme {
 }
 
 export function wireThemeSwitch(): void {
+  bootColors();
   const root = document.documentElement;
   const select = document.querySelector<HTMLSelectElement>('[data-testid="theme-select"]');
   if (!select) return;
