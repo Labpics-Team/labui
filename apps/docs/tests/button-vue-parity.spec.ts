@@ -42,6 +42,7 @@ const fg = (el: HTMLElement) => getComputedStyle(el).color;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/button.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('fixture: the delivered HTML carries the Lit reference and a Vue mount node', async ({

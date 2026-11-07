@@ -13,7 +13,7 @@ const css = fs.readFileSync(contractPath, 'utf8');
 // контракта (основной выигрыш к gz даёт именно срез прозы). Прежняя
 // «амбициозная» ветка была мертва: её regex /:root\s*\{/ не матчился на
 // селекторный список ':root,\n[data-theme="light"]' в contract.css.
-const min = css.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+const min = css.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[\t ]+$/gm, '').trim();
 
 fs.writeFileSync(minPath, `${min}\n`);
 
