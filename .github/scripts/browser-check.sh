@@ -30,7 +30,6 @@ fi
 corepack_dir="$RUNNER_TEMP/labui-corepack"
 npm install --global --prefix "$corepack_dir" --ignore-scripts --no-audit --no-fund corepack@0.36.0
 export PATH="$corepack_dir/bin:$PATH"
-corepack enable --install-directory "$corepack_dir/bin"
 pnpm install --frozen-lockfile
 if [ "$#" -ne 0 ]; then
   output="$(mktemp -d "$RUNNER_TEMP/labui-icons.XXXXXX")"

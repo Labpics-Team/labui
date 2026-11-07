@@ -84,7 +84,7 @@ test('the browser helper scopes diagnostics and preserves the consumer exit stat
   assert.match(helper, /import \{ assertActionsRunner \}.*assertActionsRunner\(\)/);
   assert.match(helper, /exec 2>&1/);
   assert.match(helper, /trap 'printf "::%s::\\n" "\$resume_token"' EXIT/);
-  assert.ok(helper.indexOf('::stop-commands::') < helper.indexOf('corepack enable'));
+  assert.ok(helper.indexOf('::stop-commands::') < helper.indexOf('npm install --global'));
   assert.ok(helper.indexOf('::stop-commands::') < helper.indexOf('node --input-type=module'));
   assert.match(
     helper,
