@@ -25,7 +25,12 @@ export function createInlineAuthority(scope, names) {
     // Один cssText присваивает полный слой; несвязанные inline свойства остаются текущими.
     const prepared = scope.ownerDocument.createElement('div').style;
     prepared.cssText = scope.style.cssText;
-    for (const name of names) prepared.setProperty(name, values.get(name), 'important');
+    for (const name of names) {
+      // WebKit не заменяет important custom property обычным setProperty.
+      // Подготовка вне DOM сохраняет один атомарный эффект и доступность новых drafts.
+      prepared.removeProperty(name);
+      prepared.setProperty(name, values.get(name));
+    }
     scope.style.cssText = prepared.cssText;
     for (const name of names) installed.set(name, read(name));
   };
@@ -70,8 +75,8 @@ export function createInlineAuthority(scope, names) {
       for (const name of names) {
         if (!equal(read(name), installed.get(name))) continue;
         const draft = drafts.get(name);
+        prepared.removeProperty(name);
         if (draft?.declaration) prepared.setProperty(name, draft.declaration, draft.priority);
-        else prepared.removeProperty(name);
       }
       scope.style.cssText = prepared.cssText;
       if (scope.getAttribute(scopeAttribute) === id) scope.removeAttribute(scopeAttribute);

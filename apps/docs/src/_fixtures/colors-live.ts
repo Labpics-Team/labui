@@ -147,6 +147,52 @@ async function runScenario<Control>(
 }
 
 const hooks = {
+  rootOverrides: () =>
+    runScenario(async (attach) => {
+      const scope = document.documentElement;
+      const previousStyle = scope.style.cssText;
+      const previousTheme = scope.getAttribute('data-theme');
+      const container = document.createElement('div');
+      const light = document.createElement('span');
+      const host = document.createElement('div');
+      const shadow = document.createElement('span');
+      for (const sample of [light, shadow])
+        sample.style.cssText =
+          'display:block;width:8px;height:8px;background:var(--lab-fill-accent)';
+      host.attachShadow({ mode: 'open' }).append(shadow);
+      container.append(light, host);
+      document.body.append(container);
+      const colors = () =>
+        [light, shadow].map((sample) => getComputedStyle(sample).backgroundColor);
+      const attachment = attach({
+        scope,
+        observe: () => ({ kind: 'observed', surface: [255, 255, 255] }),
+        wasmUrl: '/core.wasm',
+      });
+      try {
+        await attachment.ready;
+        const initial = colors();
+        scope.style.setProperty('--lab-fill-accent', 'rgb(1, 2, 3)');
+        await attachment.refresh();
+        const overridden = colors();
+        scope.setAttribute('data-theme', 'dark');
+        await attachment.refresh();
+        const themed = colors();
+        scope.setAttribute('data-theme', 'light');
+        scope.style.removeProperty('--lab-fill-accent');
+        await attachment.refresh();
+        const removed = colors();
+        scope.style.setProperty('--lab-fill-accent', 'rgb(41, 42, 43)');
+        attachment.dispose();
+        return [{ initial, overridden, themed, removed, disposed: colors() }];
+      } finally {
+        attachment.dispose();
+        scope.style.cssText = previousStyle;
+        if (previousTheme === null) scope.removeAttribute('data-theme');
+        else scope.setAttribute('data-theme', previousTheme);
+        container.remove();
+      }
+    }),
   ownership: () => browserOwnershipScenarios(attachLabuiColors),
   authority: () => runScenario(browserAuthorityScenarios),
   cleanup: () => runScenario(browserCleanupScenarios),

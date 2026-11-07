@@ -8,7 +8,7 @@
 
 Авторские normal inline declarations сохраняются в локальном draft ledger. Наблюдаемое внешнее изменение, отличающееся от последнего installed value/priority, становится новым draft; outputs не парсятся обратно как inputs. При dispose восстанавливаются только всё ещё принадлежащие владельцу declarations. Несвязанные свойства и внешние изменения сохраняются. Удаление authored declaration является новым входом.
 
-Inline `!important` не является допустимым authored input. Начальный и live отказ заменяет управляемые outputs inline `initial!important`, поэтому unsupported value не выигрывает author cascade и не раскрывается унаследованный static contract. Ошибка отзыва передается как `cleanup_failed`, не подавляется callback-обработчиком состояния.
+Inline `!important` не является допустимым authored input. Начальный и live отказ заменяет управляемые outputs обычным inline `initial`, поэтому исходная важная декларация удаляется и не раскрывается унаследованный static contract. Публикация и отзыв сохраняют normal priority: обычный `style.setProperty()` может задать следующий draft и в WebKit, где замена важного custom property обычным значением [была сломана](https://bugs.webkit.org/show_bug.cgi?id=327174). Удаление прежней декларации происходит в подготовленном блоке до единственного присваивания `cssText`. Ошибка отзыва передается как `cleanup_failed`, не подавляется callback-обработчиком состояния.
 
 Marker и style root входят в свежесть lease, но не в механизм отзыва. Их изменение сохраняет прежние Core outputs до обработки и затем требует свежего observation и нового attachment. Unknown observation снимает outputs; восстановление не возвращает старый CSS snapshot. Удаление `adoptedStyleSheets` не удаляет публикацию, поскольку этот adapter не владеет stylesheet.
 
@@ -21,6 +21,8 @@ Marker и style root входят в свежесть lease, но не в мех
 ## Граница обещания
 
 Это кооперативный CSS host, не hostile-DOM sandbox. Посторонний код с доступом к DOM может переписывать inline declarations; такие изменения наблюдаются на refresh/frame и снимаются либо принимаются как новые normal inputs. Между внешней записью и наблюдением нет синхронной изоляции. Совпадающая с installed value/priority повторная запись неразличима по CSSOM и не объявляется новым draft. Отдельные declarations на дочернем consumer принадлежат его CSS-владельцу и не покрываются обещанием scope authority.
+
+Stylesheet `!important` на управляемых ролях самого scope находится вне этого контракта: например, `#scope { --lab-label-primary: red !important }` выигрывает normal inline публикацию и отзыв. Такие правила нельзя использовать на scope runtime. Важная декларация предка не мешает: собственная inline роль scope заменяет унаследованное значение. `ready` подтверждает публикацию в согласованном CSS host, а не изоляцию от чужих правил с более высоким приоритетом.
 
 ## Проверка
 

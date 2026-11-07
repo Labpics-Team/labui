@@ -159,6 +159,21 @@ test('Colors authority: refusal, withdrawal, observation, recovery and dispose',
   }
 });
 
+test('Colors root: normal CSSOM overrides reach light and shadow consumers', async ({ page }) => {
+  const report = await page.evaluate(() => window.__labColorsLive.rootOverrides());
+  expectHistories(report, 1, 1);
+  const control = report.controls[0];
+  const recorded = report.histories[0];
+  if (!control || !recorded) throw new Error('Root scenario must include its public history');
+  expect(control.initial[0]).not.toBe('rgb(1, 2, 3)');
+  expect(control.initial[1]).toBe(control.initial[0]);
+  expect(control.overridden).toEqual(['rgb(1, 2, 3)', 'rgb(1, 2, 3)']);
+  expect(control.themed).toEqual(control.overridden);
+  expect(control.removed).toEqual(control.initial);
+  expect(control.disposed).toEqual(['rgb(41, 42, 43)', 'rgb(41, 42, 43)']);
+  expect(recorded.history.every(({ reason }) => reason === null)).toBe(true);
+});
+
 test('Colors scope retains one owner across marker loss and releases it after dispose', async ({
   page,
 }) => {
