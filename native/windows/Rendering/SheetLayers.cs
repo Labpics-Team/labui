@@ -17,7 +17,7 @@ using Windows.UI.ViewManagement;
 
 namespace LabUI.WinUI.Rendering;
 
-// Ghost и Body используют один captured backdrop и один итоговый SpriteVisual.
+// Ghost и Body используют один captured backdrop и один итоговый LayerVisual.
 public sealed class SheetLayers : Grid
 {
     public static readonly DependencyProperty TintProperty = PaintProperty(nameof(Tint));
@@ -496,6 +496,8 @@ public sealed class SheetLayers : Grid
             var ghostSource = WithNoise(Over(Source("progressiveSurface"), Paint(Ghost!, "ghostPaint")),
                 Geometry.SheetGhostNoiseOpacity);
             var ghost = Mask(ghostSource, Layer(ghostMask));
+            var ghostVisual = stages.CreateVisual(Brush("ghost", ghost, inlineProgressive, ghostSource, branches,
+                ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint), ("atlas", atlasBrush)));
             var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!, "tintPaint"));
             var blended = Effect(new BlendEffect
             {
@@ -505,13 +507,20 @@ public sealed class SheetLayers : Grid
             var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
             var bodyAlphaMask = Layer(bodyMask);
             var body = Mask(bodySource, bodyAlphaMask);
-            // Внешний SourceOver вычисляется до opacity предков: один final SpriteVisual.
-            var sheet = Over(Over(ghost, Layer(outer)), body);
-            var graph = Over(sheet, Layer(border));
-            var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
-                ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
+            var bodyVisual = stages.CreateVisual(Brush("body", body, inlineProgressive, ghostSource, branches,
                 ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
                 ("atlas", atlasBrush)));
+            var outerVisual = stages.CreateVisual(Brush("outer", Layer(outer), inlineProgressive, ghostSource, branches,
+                ("atlas", atlasBrush)));
+            var borderVisual = stages.CreateVisual(Brush("border", Layer(border), inlineProgressive, ghostSource, branches,
+                ("atlas", atlasBrush)));
+            // Штатный LayerVisual сводит SourceOver четырёх слоёв до opacity предков.
+            // Дополнительные captures Ghost/Body и общий inline effect graph не нужны.
+            var output = stages.CreateLayer();
+            output.Children.InsertAtTop(ghostVisual);
+            output.Children.InsertAtTop(outerVisual);
+            output.Children.InsertAtTop(bodyVisual);
+            output.Children.InsertAtTop(borderVisual);
             result.Visual.Children.InsertAtTop(output);
             result.Own(stages);
             return result;
@@ -594,14 +603,25 @@ public sealed class SheetLayers : Grid
     {
         private readonly List<SpriteVisual> visuals = [];
         private readonly List<CompositionVisualSurface> surfaces = [];
+        private readonly List<LayerVisual> layers = [];
 
         internal SpriteVisual CreateVisual(CompositionBrush brush)
         {
             var visual = frame.Own(compositor.CreateSpriteVisual());
             visuals.Add(visual);
             visual.Size = frame.Visual.Size;
+            visual.CompositeMode = CompositionCompositeMode.SourceOver;
             visual.Brush = brush;
             return visual;
+        }
+
+        internal LayerVisual CreateLayer()
+        {
+            var layer = frame.Own(compositor.CreateLayerVisual());
+            layers.Add(layer);
+            layer.Size = frame.Visual.Size;
+            layer.CompositeMode = CompositionCompositeMode.SourceOver;
+            return layer;
         }
 
         internal CompositionSurfaceBrush Capture(SpriteVisual visual)
@@ -620,16 +640,21 @@ public sealed class SheetLayers : Grid
 
         public void Dispose()
         {
-            if (visuals.Count == 0 && surfaces.Count == 0) return;
+            if (visuals.Count == 0 && surfaces.Count == 0 && layers.Count == 0) return;
             var captured = surfaces.ToArray();
             var rendered = visuals.ToArray();
+            var flattened = layers.ToArray();
             surfaces.Clear();
             visuals.Clear();
+            layers.Clear();
             List<Exception> errors = [];
             try { frame.Visual.Children.RemoveAll(); }
             catch (Exception error) { errors.Add(error); }
             foreach (var surface in captured)
                 try { surface.SourceVisual = null; }
+                catch (Exception error) { errors.Add(error); }
+            foreach (var layer in flattened)
+                try { layer.Children.RemoveAll(); }
                 catch (Exception error) { errors.Add(error); }
             foreach (var visual in rendered)
                 try { visual.Brush = null; }

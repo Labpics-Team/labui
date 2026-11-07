@@ -43,18 +43,27 @@ function assertSurfaceStages(candidate) {
   assert.match(frame, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
   assert.match(
     frame,
+    /var ghostVisual = stages\.CreateVisual\(Brush\("ghost", ghost, inlineProgressive, ghostSource, branches,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\), \("atlas", atlasBrush\)\)\);/,
+  );
+  assert.match(
+    frame,
     /var bodyAlphaMask = Layer\(bodyMask\);\s*var body = Mask\(bodySource, bodyAlphaMask\);/,
   );
   assert.match(
     frame,
-    /var sheet = Over\(Over\(ghost, Layer\(outer\)\), body\);\s*var graph = Over\(sheet, Layer\(border\)\);/,
+    /var bodyVisual = stages\.CreateVisual\(Brush\("body", body, inlineProgressive, ghostSource, branches,\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\)\)\);/,
   );
   assert.match(
     frame,
-    /var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*\("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\),\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\)\)\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
+    /var outerVisual = stages\.CreateVisual\(Brush\("outer", Layer\(outer\), inlineProgressive, ghostSource, branches,\s*\("atlas", atlasBrush\)\)\);\s*var borderVisual = stages\.CreateVisual\(Brush\("border", Layer\(border\), inlineProgressive, ghostSource, branches,\s*\("atlas", atlasBrush\)\)\);/,
   );
-  assert.equal([...frame.matchAll(/Brush\("final",/g)].length, 1);
-  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 1);
+  assert.match(
+    frame,
+    /var output = stages\.CreateLayer\(\);\s*output\.Children\.InsertAtTop\(ghostVisual\);\s*output\.Children\.InsertAtTop\(outerVisual\);\s*output\.Children\.InsertAtTop\(bodyVisual\);\s*output\.Children\.InsertAtTop\(borderVisual\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
+  );
+  assert.doesNotMatch(frame, /Brush\("final",|var graph = Over\(/);
+  assert.equal([...frame.matchAll(/stages\.CreateLayer\(/g)].length, 1);
+  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 5);
   assert.doesNotMatch(frame, /void Output\(|^\s*Output\(/m);
   assert.deepEqual(
     [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
@@ -62,7 +71,11 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     candidate,
-    /var visual = frame\.Own\(compositor\.CreateSpriteVisual\(\)\);\s*visuals\.Add\(visual\);\s*visual\.Size = frame\.Visual\.Size;\s*visual\.Brush = brush;\s*return visual;/,
+    /var visual = frame\.Own\(compositor\.CreateSpriteVisual\(\)\);\s*visuals\.Add\(visual\);\s*visual\.Size = frame\.Visual\.Size;\s*visual\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*visual\.Brush = brush;\s*return visual;/,
+  );
+  assert.match(
+    candidate,
+    /var layer = frame\.Own\(compositor\.CreateLayerVisual\(\)\);\s*layers\.Add\(layer\);\s*layer\.Size = frame\.Visual\.Size;\s*layer\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*return layer;/,
   );
   assert.match(
     candidate,
@@ -72,17 +85,28 @@ function assertSurfaceStages(candidate) {
     candidate.indexOf('private sealed class SurfaceStages('),
     candidate.indexOf('private sealed class Frame : IDisposable'),
   );
-  assert.match(stages, /if \(visuals\.Count == 0 && surfaces\.Count == 0\) return;/);
-  assert.match(stages, /surfaces\.Clear\(\);\s*visuals\.Clear\(\);/);
+  assert.match(
+    stages,
+    /if \(visuals\.Count == 0 && surfaces\.Count == 0 && layers\.Count == 0\) return;/,
+  );
+  assert.match(stages, /var flattened = layers\.ToArray\(\);/);
+  assert.match(stages, /surfaces\.Clear\(\);\s*visuals\.Clear\(\);\s*layers\.Clear\(\);/);
   assert.match(stages, /frame\.Visual\.Children\.RemoveAll\(\)/);
   assert.match(stages, /surface\.SourceVisual = null;/);
+  assert.match(
+    stages,
+    /foreach \(var layer in flattened\)\s*try \{ layer\.Children\.RemoveAll\(\); \}\s*catch \(Exception error\) \{ errors\.Add\(error\); \}/,
+  );
   assert.match(stages, /visual\.Brush = null;/);
   assert.match(stages, /Frame\.ThrowCleanup\(errors\);/);
   assert.ok(
     stages.indexOf('frame.Visual.Children.RemoveAll()') <
       stages.indexOf('surface.SourceVisual = null'),
   );
-  assert.ok(stages.indexOf('surface.SourceVisual = null') < stages.indexOf('visual.Brush = null'));
+  assert.ok(
+    stages.indexOf('surface.SourceVisual = null') < stages.indexOf('layer.Children.RemoveAll()'),
+  );
+  assert.ok(stages.indexOf('layer.Children.RemoveAll()') < stages.indexOf('visual.Brush = null'));
   assert.doesNotMatch(stages, /\.Dispose\(|\.Close\(|CanvasDevice/);
   const failure = frame.slice(frame.lastIndexOf('catch (Exception error)'));
   assert.match(failure, /List<Exception> errors = \[error\];/);
@@ -96,7 +120,7 @@ function assertSurfaceStages(candidate) {
   assert.match(failure, /throw;/);
 }
 
-test('Sheet final graph flattens outer SourceOver before ancestor opacity', () => {
+test('Sheet LayerVisual combines Ghost, shadow, Body and border before ancestor opacity', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assertSurfaceStages(source);
   assert.match(
@@ -113,14 +137,14 @@ test('Sheet final graph flattens outer SourceOver before ancestor opacity', () =
     build,
     /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
-  assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
+  assert.equal([...build.matchAll(/stages\.CreateLayer\(/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
   assert.doesNotMatch(
     build,
     /ghostPair|pairs|progressiveBrush|ghostBrush|bodyBrush|Source\("progressive"\)/,
   );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
-  assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|LayerVisual/);
+  assert.doesNotMatch(build, /compositor\.Create(?:VisualSurface|SpriteVisual|LayerVisual)\(/);
 });
 
 test('Sheet capture source guard rejects a root capture, repeated seed and bypassed leaf binding', () => {
@@ -131,6 +155,32 @@ test('Sheet capture source guard rejects a root capture, repeated seed and bypas
     ['("right", progressiveSources[index + 1])', '("right", progressiveSources[index])'],
     ['Layer(ghostMask)', 'Layer(bodyMask)'],
     ['Mask(bodySource, bodyAlphaMask)', 'Mask(bodyAlphaMask, bodySource)'],
+  ]) {
+    assert.ok(source.includes(original));
+    assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
+  }
+});
+
+test('Sheet material source guard rejects a plain output container, bypassed grouping and changed SourceOver order', () => {
+  for (const [original, replacement] of [
+    ['compositor.CreateLayerVisual()', 'compositor.CreateContainerVisual()'],
+    [
+      'result.Visual.Children.InsertAtTop(output);',
+      'result.Visual.Children.InsertAtTop(ghostVisual);',
+    ],
+    ['output.Children.InsertAtTop(bodyVisual);', 'result.Visual.Children.InsertAtTop(bodyVisual);'],
+    [
+      'layer.CompositeMode = CompositionCompositeMode.SourceOver;',
+      'layer.CompositeMode = CompositionCompositeMode.MinBlend;',
+    ],
+    [
+      'visual.CompositeMode = CompositionCompositeMode.SourceOver;',
+      'visual.CompositeMode = CompositionCompositeMode.MinBlend;',
+    ],
+    [
+      'output.Children.InsertAtTop(outerVisual);\n            output.Children.InsertAtTop(bodyVisual);',
+      'output.Children.InsertAtTop(bodyVisual);\n            output.Children.InsertAtTop(outerVisual);',
+    ],
   ]) {
     assert.ok(source.includes(original));
     assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
@@ -154,6 +204,7 @@ test('Sheet surface source guard rejects changed coordinates and a SourceOver pr
 test('Sheet surface source guard rejects retained capture links and swallowed unlink errors', () => {
   for (const [original, replacement, owner] of [
     ['surface.SourceVisual = null;', '', 'private sealed class SurfaceStages('],
+    ['layer.Children.RemoveAll();', '', 'private sealed class SurfaceStages('],
     ['Frame.ThrowCleanup(errors);', '', 'private sealed class SurfaceStages('],
     ['stages?.Dispose();', '', 'private Frame BuildFrame('],
   ]) {

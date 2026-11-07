@@ -77,6 +77,8 @@ test('factory failure preserves each finite call identity without admitting the 
     'progressiveSum',
     'ghost',
     'body',
+    'outer',
+    'border',
     'final',
   ])
     for (const operation of ['factory', 'brush', 'binding'])

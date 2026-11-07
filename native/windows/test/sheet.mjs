@@ -156,6 +156,8 @@ function factoryInfo(value) {
     'progressiveSum',
     'ghost',
     'body',
+    'outer',
+    'border',
     'final',
   ]);
   const operation = known(value.operation, ['factory', 'brush', 'binding']);
