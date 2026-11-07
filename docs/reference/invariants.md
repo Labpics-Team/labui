@@ -110,6 +110,10 @@ runtime, SSR и hydration. Серверный HTML и подключённый �
 **Область и владелец.** Компонент владеет поведением; адаптер — его представлением
 в своём фреймворке; упаковка — согласованностью опубликованных входов.
 
+Vite SSR загружает Core через Node и при workspace linking: ESM и CommonJS
+используют один behavior runtime. Общий hydration plugin сохраняет эту границу
+через `ssr.external`; браузерные модули продолжают проходить Vite transform.
+
 **Код и проверка.** [Публичные входы](packages.md),
 [SSR и hydration](../ssr.md), [генератор адаптеров](../../packages/adapter-codegen/)
 и [потребительские сценарии](../../apps/docs/tests/).

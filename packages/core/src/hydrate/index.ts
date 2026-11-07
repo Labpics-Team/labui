@@ -23,6 +23,9 @@ export default function hydrate() {
     name: '@labpics/ui-core/hydrate',
     enforce: 'pre',
     config: () => ({
+      // Node загружает общий ESM/CJS runtime Core и единый реестр Lit.
+      // Linked workspace package иначе попадает в Vite ESM evaluator вместе с require().
+      ssr: { external: ['@labpics/ui-core'] },
       // Dev optimizer не должен спрятать LitElement внутри предварительного bundle
       // или отделить его directives от общего экземпляра lit-html.
       optimizeDeps: {
