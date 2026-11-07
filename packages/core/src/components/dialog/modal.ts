@@ -320,7 +320,9 @@ export abstract class LabModal extends LabElement {
     const target = this.currentTriggerTarget();
     if (!source || !target) return;
     const generation = this.triggerGeneration;
-    const { type: _type, 'aria-controls': _controls, onClick, ...props } = api.getTriggerProps();
+    // ZagController уже применил vanilla normalizeProps: события имеют lower case.
+    // Извлекаем реальный listener, чтобы до проверки не остался второй путь открытия.
+    const { type: _type, 'aria-controls': _controls, onclick, ...props } = api.getTriggerProps();
     for (const attribute of Object.keys(props)) {
       if (!attribute.startsWith('on') && !this.triggerAttributes.has(attribute)) {
         this.triggerAttributes.set(attribute, target.getAttribute(attribute));
@@ -330,7 +332,7 @@ export abstract class LabModal extends LabElement {
       target,
       {
         ...props,
-        onClick: (event: Event) => {
+        onclick: (event: Event) => {
           if (
             generation !== this.triggerGeneration ||
             source !== this.triggerSource ||
@@ -348,7 +350,7 @@ export abstract class LabModal extends LabElement {
             this.releaseTrigger();
             throw error;
           }
-          if (!target.disabled && typeof onClick === 'function') onClick(event);
+          if (!target.disabled && typeof onclick === 'function') onclick(event);
         },
       },
       this.machineId,

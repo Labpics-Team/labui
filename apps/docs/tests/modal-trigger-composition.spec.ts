@@ -1,4 +1,4 @@
-import { type Page, expect, test } from '@playwright/test';
+import { type ElementHandle, type Page, expect, test } from '@playwright/test';
 
 type Consumer =
   | 'core'
@@ -17,6 +17,29 @@ const opener = (page: Page) =>
     .locator('#app')
     .getByRole('button', { name: /Настроить цвет/, includeHidden: true })
     .first();
+
+async function retainFocusedOpener(page: Page): Promise<ElementHandle<HTMLElement | SVGElement>> {
+  const target = await opener(page).elementHandle();
+  if (!target) throw new Error('Не найден исходный opener');
+  await target.focus();
+  // Проверяем тот же измеритель на положительном случае до отзыва.
+  expect(await target.evaluate((node) => node.matches(':focus'))).toBe(true);
+  return target;
+}
+
+async function expectRevokedOpenerUnfocused(target: ElementHandle<HTMLElement | SVGElement>) {
+  // role у подписи меняет accessible name. Проверяем сохранённую DOM-цель,
+  // а не заново ищем её по прежнему имени; исчезновение кнопки не считается успехом.
+  // Deactivation возвращает фокус в timer task; ждём её после кадра закрытия.
+  await expect
+    .poll(() =>
+      target.evaluate(async (node) => {
+        await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+        return { connected: node.isConnected, focused: node.matches(':focus') };
+      }),
+    )
+    .toEqual({ connected: true, focused: false });
+}
 
 async function load(page: Page, consumer: Consumer, parameters = '') {
   const errors: string[] = [];
@@ -108,7 +131,7 @@ for (const consumer of ['core', 'native', 'vue', 'solid', 'react'] as const) {
   });
 }
 
-for (const consumer of ['core', 'react'] as const) {
+for (const consumer of ['core', 'native', 'react'] as const) {
   for (const [part, kind] of [
     ['default', 'role'],
     ['icon', 'input'],
@@ -129,9 +152,12 @@ for (const consumer of ['core', 'react'] as const) {
       await recoverAndUse(page);
     });
   }
+}
 
+for (const consumer of ['core', 'react'] as const) {
   test(`${consumer}: отозванный opener не возвращается через captured focus`, async ({ page }) => {
     const errors = await load(page, consumer);
+    const originalOpener = await retainFocusedOpener(page);
     await opener(page).click();
     await expect(page.locator('#field')).toBeVisible();
     // Изменяется атрибут существующей подписи, а не assignment/тип/кнопка.
@@ -141,7 +167,7 @@ for (const consumer of ['core', 'react'] as const) {
     await assertRefusal(page, errors);
     await page.keyboard.press('Escape');
     await expect(page.locator('#field')).toBeHidden();
-    await expect(opener(page)).not.toBeFocused();
+    await expectRevokedOpenerUnfocused(originalOpener);
     expect((await state(page)).events).toEqual([true, false]);
     await page
       .locator('#app [data-trigger-part="default"]')
@@ -154,13 +180,14 @@ for (const consumer of ['core', 'react'] as const) {
   }) => {
     const errors = await load(page, consumer);
     await expect.poll(async () => (await state(page)).controls).toBe(1);
+    const originalOpener = await retainFocusedOpener(page);
     await page.evaluate(() => window.modalTriggerComposition.openAndRevoke());
     await assertRefusal(page, errors);
     await expect(page.locator('#field')).toBeVisible();
     await expect(page.locator(consumer === 'core' ? '#app .handle' : '#field')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(page.locator('#field')).toBeHidden();
-    await expect(opener(page)).not.toBeFocused();
+    await expectRevokedOpenerUnfocused(originalOpener);
     expect((await state(page)).events).toEqual([true, false]);
     await page
       .locator('#app [data-trigger-part="default"]')
@@ -196,6 +223,22 @@ for (const consumer of ['core', 'react'] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+test('Core native: same-turn смена type отзывает opener и допускает recovery', async ({ page }) => {
+  const errors = await load(page, 'native');
+  await expect.poll(async () => (await state(page)).controls).toBe(1);
+  await opener(page).evaluate((target) => {
+    if (!(target instanceof HTMLButtonElement)) throw new Error('Не найден native opener');
+    target.type = 'submit';
+    target.click();
+  });
+  expect((await state(page)).events).toEqual([]);
+  await expect(page.locator('#field')).toBeHidden();
+  await expect.poll(async () => (await state(page)).controls).toBe(0);
+  await expect.poll(() => errors.some((error) => /native .*type="button"/.test(error))).toBe(true);
+  await opener(page).evaluate((target) => target.setAttribute('type', 'button'));
+  await recoverAndUse(page);
+});
 
 for (const replaced of [false, true]) {
   test(`Core ждёт настоящий lazy upgrade${replaced ? ' и отменяет старое assignment' : ''}`, async ({
@@ -311,14 +354,22 @@ for (const consumer of ['behavior', 'behavior-null'] as const) {
     const errors = await load(page, consumer, '&nonmodal=1');
     await page.evaluate(() => window.modalTriggerComposition.openControlled());
     await expect(page.locator('#field')).toBeVisible();
-    await opener(page).click();
+    // Реальное нажатие разделено: outside pointerdown не подменяется click → TOGGLE.
+    await opener(page).hover();
+    await page.mouse.down();
+    expect((await state(page)).clicks).toBe(0);
     if (consumer === 'behavior') {
       await expect(page.locator('#field')).toBeVisible();
       expect((await state(page)).events).toEqual([true]);
-      await page.keyboard.press('Escape');
+      // Завершение обычного click того же trigger закрывает окно ровно один раз.
+      await page.mouse.up();
+      await expect(page.locator('#field')).toBeHidden();
+      expect((await state(page)).events).toEqual([true, false]);
+      expect((await state(page)).clicks).toBe(1);
     } else {
       await expect(page.locator('#field')).toBeHidden();
       expect((await state(page)).events).toEqual([true, false]);
+      await page.mouse.up();
     }
     expect(errors).toEqual([]);
   });
