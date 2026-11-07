@@ -6,7 +6,7 @@
     Background="{ThemeResource LabPageBrush}">
   <Grid>
     <Image x:Name="Backdrop" AutomationProperties.AutomationId="SheetViewport"
-        Source="ms-appx:///Assets/SheetBackdrop.png" Stretch="UniformToFill" />
+        Source="{x:Bind BackdropSource}" Stretch="UniformToFill" />
     <lab:LabSheet x:Name="Sheet" AutomationProperties.Name="Нижняя панель"
         AutomationProperties.AutomationId="Sheet" />
   </Grid>

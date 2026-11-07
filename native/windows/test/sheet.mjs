@@ -5,14 +5,26 @@ import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { decodePng } from '../../../packages/colors/test/fx-render/fx-render.mjs';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { png } from './evidence.mjs';
+import {
+  BACKDROP_FIXTURE,
+  BACKDROP_FIXTURE_HASH,
+  backdropAssets,
+  validateBackdropWitness,
+} from './sheet-backdrop-fixture.mjs';
 import {
   CONTENT_SCHEMA,
   CONTENT_CASES as SCROLL_CONTENT_CASES,
   contentReadback,
   validateContentWitness,
 } from './sheet-content.mjs';
+import {
+  materialCapabilitiesReadback,
+  validateMaterialCapabilities,
+} from './sheet-material-capabilities.mjs';
+import { sheetMaterialPixelFailures, sheetMaterialPixels } from './sheet-material-pixels.mjs';
 import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
 import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-geometry.mjs';
 
@@ -29,6 +41,17 @@ export const CASES = Object.freeze(
     ),
   ),
 );
+export const CAPTURE_CASES = Object.freeze([
+  ...CASES.map((entry) => Object.freeze({ ...entry, backdrop: 'A' })),
+  ...['Light', 'Dark'].map((theme) =>
+    Object.freeze({
+      name: `${theme}-Blur-Neighbor`,
+      theme,
+      material: 'Blur',
+      backdrop: 'B',
+    }),
+  ),
+]);
 const FILES = Object.freeze([
   'identity.json',
   ...CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
@@ -36,6 +59,10 @@ const FILES = Object.freeze([
 const CONTENT_FILES = Object.freeze([
   'identity.json',
   ...CONTENT_CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
+]);
+const CAPTURE_FILES = Object.freeze([
+  'identity.json',
+  ...CAPTURE_CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
 ]);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const source = (value) => assert.match(value, /^[a-f0-9]{40}$/, 'sheet: source SHA');
@@ -350,6 +377,26 @@ export function validateObservation(value, expected) {
     assert.equal(value.rendererReady, true, 'sheet: rendererReady');
     phase = 'capability';
     assert.equal(value.effectiveMaterial, expected.material, 'sheet: исполненный материал');
+    if (expected.backdrop)
+      assert.ok(Object.hasOwn(value, 'materialCapabilities'), 'sheet: capture capability facts');
+    if (Object.hasOwn(value, 'materialCapabilities')) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, 'materialCapabilities');
+      assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet: materialCapabilities JSON');
+      const facts = validateMaterialCapabilities(descriptor.value);
+      assert.notEqual(facts, null, 'sheet: готовый Frame требует capability facts');
+      if (value.effectiveMaterial === 'Blur') {
+        assert.equal(
+          Object.getOwnPropertyDescriptor(facts, 'areEffectsSupported').value,
+          true,
+          'sheet: Blur требует поддержанные эффекты',
+        );
+        assert.notEqual(
+          Object.getOwnPropertyDescriptor(facts, 'advancedEffectsEnabled').value,
+          false,
+          'sheet: Blur требует включённую прозрачность',
+        );
+      }
+    }
     phase = 'readiness';
     for (const field of ['layoutReady', 'imageLoaded'])
       assert.equal(value[field], true, `sheet: ${field}`);
@@ -377,6 +424,8 @@ export function validateObservation(value, expected) {
         'contentViewport',
         'contentWitness',
         'windowGeometry',
+        'materialCapabilities',
+        'backdropWitness',
       ];
       assert.deepEqual(
         Object.keys(value).sort(),
@@ -403,6 +452,17 @@ export function validateObservation(value, expected) {
       if (Object.hasOwn(value, 'requestedState')) assert.equal(value.requestedState, 'Half');
       if (Object.hasOwn(value, 'geometryScale')) assert.equal(value.geometryScale, 1);
       if (Object.hasOwn(value, 'contentWitness')) assert.equal(value.contentWitness, null);
+      if (expected.backdrop) {
+        assert.equal(value.requestedState, 'Half');
+        assert.equal(value.geometryScale, 1);
+        assert.equal(value.contentWitness, null);
+        assert.ok(Object.hasOwn(value, 'backdropWitness'), 'sheet: backdrop witness required');
+      }
+      if (Object.hasOwn(value, 'backdropWitness')) {
+        const descriptor = Object.getOwnPropertyDescriptor(value, 'backdropWitness');
+        assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet: backdrop witness JSON');
+        validateBackdropWitness(descriptor.value, expected.backdrop ?? 'A');
+      }
       if (Object.hasOwn(value, 'contentViewport')) {
         assert.deepEqual(Object.keys(value.contentViewport).sort(), ['height', 'width', 'x', 'y']);
         for (const [field, expectedValue] of Object.entries({
@@ -439,6 +499,7 @@ export function validateObservation(value, expected) {
           'materialReason',
           'error',
           ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
+          ...(Object.hasOwn(value, 'materialCapabilities') ? ['materialCapabilities'] : []),
         ].sort(),
         'sheet policy: поля наблюдения',
       );
@@ -476,9 +537,10 @@ export function validateObservation(value, expected) {
   return value;
 }
 
-function validate(files, sourceSha, content = false) {
-  const cases = content ? CONTENT_CASES : CASES;
-  const expectedFiles = content ? CONTENT_FILES : FILES;
+function validate(files, sourceSha, content = false, requireWitness = false) {
+  const witness = !content && (requireWitness || files.size > FILES.length);
+  const cases = content ? CONTENT_CASES : witness ? CAPTURE_CASES : CASES;
+  const expectedFiles = content ? CONTENT_FILES : witness ? CAPTURE_FILES : FILES;
   source(sourceSha);
   assert.deepEqual(
     [...files.keys()].sort(),
@@ -497,7 +559,8 @@ function validate(files, sourceSha, content = false) {
   assert.deepEqual(
     Object.keys(identity).sort(),
     [
-      ...(content ? ['schema'] : []),
+      ...(content || witness ? ['schema'] : []),
+      ...(witness ? ['backdropFixtureSha256'] : []),
       'source',
       'cases',
       'cliVersion',
@@ -516,6 +579,10 @@ function validate(files, sourceSha, content = false) {
   assert.match(identity.cliVersion, /^v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]{1,40})?$/);
   if (content) {
     assert.equal(identity.schema, CONTENT_SCHEMA);
+  }
+  if (witness) {
+    assert.equal(identity.schema, BACKDROP_FIXTURE.schema);
+    assert.equal(identity.backdropFixtureSha256, BACKDROP_FIXTURE_HASH);
   }
   for (const field of [
     'appSha256',
@@ -595,8 +662,40 @@ export function encodeSheetContentEvidence(files, sourceSha) {
   return encode(files, sourceSha, true);
 }
 
+export function encodeSheetCaptureEvidence(files, sourceSha) {
+  validate(files, sourceSha, false, true);
+  backdropAssets();
+  for (const { name, theme, backdrop } of CAPTURE_CASES) {
+    if (backdrop !== 'B') continue;
+    const original = parse(files.get(`${theme}-Blur.json`));
+    const neighbor = parse(files.get(`${name}.json`));
+    for (const field of [
+      'viewport',
+      'body',
+      'handle',
+      'rasterizationScale',
+      'geometryScale',
+      'requestedState',
+    ])
+      assert.deepEqual(original[field], neighbor[field], `sheet: ${theme} pair ${field}`);
+    decodePng(files.get(`${theme}-Solid.png`));
+    const report = sheetMaterialPixels(
+      decodePng(files.get(`${theme}-Blur.png`)),
+      decodePng(files.get(`${name}.png`)),
+      { A: original.backdropWitness, B: neighbor.backdropWitness },
+    );
+    const failures = sheetMaterialPixelFailures(report);
+    assert.equal(failures.length, 0, `sheet: ${theme} PNG: ${failures.join('; ')}`);
+  }
+  return packets(files, sourceSha);
+}
+
 function encode(files, sourceSha, content = false) {
   validate(files, sourceSha, content);
+  return packets(files, sourceSha, content);
+}
+
+function packets(files, sourceSha, content = false) {
   return [...files]
     .map(([file, bytes]) =>
       evidenceLog(bytes, content ? CONTENT_PREFIX : PREFIX, { sourceSha, file }, 'sha256'),
@@ -613,10 +712,13 @@ export function decodeSheetContentEvidence(log, sourceSha) {
 }
 
 function decode(log, sourceSha, content = false) {
-  const expectedFiles = content ? CONTENT_FILES : FILES;
-  const count = content ? CONTENT_CASES.length : CASES.length;
+  const expectedFiles = content ? CONTENT_FILES : CAPTURE_FILES;
+  const count = content ? CONTENT_CASES.length : CAPTURE_CASES.length;
   source(sourceSha);
-  assert.ok(Buffer.byteLength(log, 'utf8') <= 32 * 1024 * 1024, 'sheet: размер журнала');
+  assert.ok(
+    Buffer.byteLength(log, 'utf8') <= (content ? 32 : 48) * 1024 * 1024,
+    'sheet: размер журнала',
+  );
   const files = new Map();
   for (const { metadata, bytes } of decodeEvidenceLog(log, content ? CONTENT_PREFIX : PREFIX, {
     digestField: 'sha256',
@@ -648,12 +750,13 @@ export function sheetFailureLog({
 }) {
   source(sourceSha);
   assert.ok(
-    [...CASES, ...CONTENT_CASES].some((entry) => entry.name === name),
+    [...CAPTURE_CASES, ...CONTENT_CASES].some((entry) => entry.name === name),
     'sheet: failure case',
   );
   const number = (value) => (Number.isFinite(value) ? value : null);
   let readback = null;
   if (observation !== null && typeof observation === 'object') {
+    const capabilityField = Object.getOwnPropertyDescriptor(observation, 'materialCapabilities');
     readback = {
       pid: number(observation.pid),
       windowHandle:
@@ -675,6 +778,9 @@ export function sheetFailureLog({
         'EffectsUnsupported',
         'EffectsNotFast',
       ]),
+      ...(capabilityField
+        ? { materialCapabilities: materialCapabilitiesReadback(capabilityField.value) }
+        : {}),
       error: observationError(observation.error),
       ...(CONTENT_CASES.some((entry) => entry.name === name)
         ? {
@@ -820,6 +926,7 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
     '--sheet',
     ...(entry.theme === 'Dark' ? ['--dark'] : []),
     ...(entry.material === 'Solid' ? ['--solid'] : []),
+    ...(entry.backdrop ? [`--sheet-backdrop-witness=${entry.backdrop}`] : []),
     ...(entry.scenario
       ? [
           `--sheet-content=${entry.scenario}`,
@@ -1013,6 +1120,16 @@ async function capture(appDirectory, output, receiptPath, sourceSha, content = f
     performance: 'not-qualified',
   };
   if (content) identity.schema = CONTENT_SCHEMA;
+  else {
+    identity.schema = BACKDROP_FIXTURE.schema;
+    identity.backdropFixtureSha256 = BACKDROP_FIXTURE_HASH;
+    assert.equal(
+      hash(await readFile(join(appDirectory, 'Assets', 'SheetBackdropWitness.json'))),
+      BACKDROP_FIXTURE_HASH,
+    );
+    for (const asset of Object.values(BACKDROP_FIXTURE.assets))
+      assert.equal(hash(await readFile(join(appDirectory, 'Assets', asset.file))), asset.sha256);
+  }
   for (const [field, file] of Object.entries({
     appSha256: 'Buttons.exe',
     consumerSha256: 'Buttons.dll',
@@ -1022,7 +1139,7 @@ async function capture(appDirectory, output, receiptPath, sourceSha, content = f
     identity[field] = hash(await readFile(join(appDirectory, file)));
   await mkdir(output);
   let failedCases = 0;
-  for (const entry of content ? CONTENT_CASES : CASES) {
+  for (const entry of content ? CONTENT_CASES : CAPTURE_CASES) {
     try {
       identity.cases[entry.name] = await captureCase(
         appDirectory,
@@ -1041,13 +1158,15 @@ async function capture(appDirectory, output, receiptPath, sourceSha, content = f
   await writeFile(join(output, 'identity.json'), JSON.stringify(identity, null, 2), { flag: 'wx' });
   const files = new Map(
     await Promise.all(
-      (content ? CONTENT_FILES : FILES).map(async (file) => [
+      (content ? CONTENT_FILES : CAPTURE_FILES).map(async (file) => [
         file,
         await readFile(join(output, file)),
       ]),
     ),
   );
-  await writeStdout(encode(files, sourceSha, content));
+  await writeStdout(
+    content ? encode(files, sourceSha, true) : encodeSheetCaptureEvidence(files, sourceSha),
+  );
 }
 
 async function main([operation, ...args]) {
@@ -1060,7 +1179,10 @@ async function main([operation, ...args]) {
       operation === 'capture-content',
     );
   else if (['decode', 'decode-content'].includes(operation) && args.length === 3) {
-    assert.ok((await lstat(args[0])).size <= 32 * 1024 * 1024, 'sheet: размер журнала');
+    assert.ok(
+      (await lstat(args[0])).size <= (operation === 'decode-content' ? 32 : 48) * 1024 * 1024,
+      'sheet: размер журнала',
+    );
     const files = decode(
       new TextDecoder('utf8', { fatal: true }).decode(await readFile(args[0])),
       args[1],
