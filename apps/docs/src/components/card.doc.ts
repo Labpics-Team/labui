@@ -61,8 +61,8 @@ function makeNotificationSettings(): HTMLElement {
       ? 'Изменения применяются сразу.'
       : 'Сначала включите уведомления в карточке.';
     card.lowerCaption = enabled.checked
-      ? `Уведомления включены. Комментарии ${comments.checked ? 'включены' : 'выключены'}.`
-      : 'Уведомления выключены.';
+      ? `Комментарии ${comments.checked ? 'включены' : 'выключены'}`
+      : 'Без уведомлений';
   };
   enabled.addEventListener('checked-change', updateSettings);
   comments.addEventListener('checked-change', updateSettings);

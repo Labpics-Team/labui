@@ -91,12 +91,10 @@ test('catalogue: Card → Sheet применяет настройки и воз�
   await card.getByTestId('settings-done').getByRole('button').click();
   await expect(panel).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(
-    card.getByText('Уведомления включены. Комментарии выключены.', { exact: true }),
-  ).toBeVisible();
+  await expect(card.getByText('Комментарии выключены', { exact: true })).toBeVisible();
 
   await card.getByTestId('notification-enabled').locator('.label-end').click();
-  await expect(card.getByText('Уведомления выключены.', { exact: true })).toBeVisible();
+  await expect(card.getByText('Без уведомлений', { exact: true })).toBeVisible();
   await trigger.click();
   await expect(comments).toBeDisabled();
   await expect(comments).not.toBeChecked();
