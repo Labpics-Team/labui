@@ -3,7 +3,9 @@ param(
     [Parameter(Mandatory)][string]$OutputPath,
     [Parameter(Mandatory)][string]$AnimationSettingsPath,
     [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{40}$')][string]$Source,
-    [switch]$Retarget
+    [ValidateSet('none', 'interior', 'opposite', 'same')][string]$Retarget = 'none',
+    [switch]$Late,
+    [switch]$SetTarget
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -27,7 +29,9 @@ try {
     $start.ArgumentList.Add('--space-boundary')
     $start.Environment['LABUI_SPACE_BOUNDARY_OUTPUT'] = [IO.Path]::GetFullPath($OutputPath)
     $start.Environment['LABUI_SPACE_BOUNDARY_SOURCE'] = $Source
-    $start.Environment['LABUI_SPACE_BOUNDARY_RETARGET'] = $Retarget.IsPresent.ToString().ToLowerInvariant()
+    $start.Environment['LABUI_SPACE_BOUNDARY_RETARGET'] = $Retarget
+    $start.Environment['LABUI_SPACE_BOUNDARY_LATE'] = $Late.IsPresent.ToString().ToLowerInvariant()
+    $start.Environment['LABUI_SPACE_BOUNDARY_SETTER'] = $SetTarget.IsPresent.ToString().ToLowerInvariant()
     $process = [Diagnostics.Process]::Start($start)
     # Existing 20s startup budget plus three initial/terminal pairs of 5s.
     if (!$process.WaitForExit(20000 + 3 * 2 * 5000)) { throw 'Boundary process did not finish in its bounded budget.' }

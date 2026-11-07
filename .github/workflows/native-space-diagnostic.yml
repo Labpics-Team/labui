@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Labpics-Team/lab-motion
-          ref: 67f249a6131c95099461bf9f4442a4a198c69ec8
+          ref: 763beccad852af791a0515b208550e0c8274c943
           path: .native-deps/motion
           persist-credentials: false
       - name: Setup Node
@@ -51,9 +51,24 @@ jobs:
         run: |
           $source = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
+          $failed = $false
+          foreach ($target in @('none', 'interior', 'opposite', 'same')) {
+            $timings = if ($target -eq 'none') { @($false) } else { @($false, $true) }
+            foreach ($late in $timings) {
+              $arguments = @('-NoProfile', '-File', './native/windows/test/space-boundary-diagnostic.ps1',
+                '-ApplicationDirectory', "$env:RUNNER_TEMP/labui-space-diagnosis/app",
+                '-OutputPath', "$env:RUNNER_TEMP/labui-space-diagnosis/$target-$late.json",
+                '-AnimationSettingsPath', "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs",
+                '-Source', $source, '-Retarget', $target)
+              if ($late) { $arguments += '-Late' }
+              pwsh @arguments
+              if ($LASTEXITCODE -ne 0) { $failed = $true }
+            }
+          }
           pwsh -NoProfile -File ./native/windows/test/space-boundary-diagnostic.ps1 `
             -ApplicationDirectory "$env:RUNNER_TEMP/labui-space-diagnosis/app" `
-            -OutputPath "$env:RUNNER_TEMP/labui-space-diagnosis/boundaries.json" `
+            -OutputPath "$env:RUNNER_TEMP/labui-space-diagnosis/setter.json" `
             -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
-            -Source $source -Retarget
-          if ($LASTEXITCODE -ne 0) { throw 'Native boundary diagnosis failed; evidence is retained above.' }
+            -Source $source -Retarget interior -SetTarget
+          if ($LASTEXITCODE -ne 0) { $failed = $true }
+          if ($failed) { throw 'Native boundary diagnosis failed; evidence is retained above.' }
