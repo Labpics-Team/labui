@@ -59,6 +59,8 @@ const authorityLifecycles: Record<string, LifecycleStep[]> = {
 };
 
 function followsLifecycle(history: ColorsStateDelivery[], steps: LifecycleStep[]): boolean {
+  const terminal = history.findIndex(({ state }) => state === 'disposed');
+  if (terminal !== -1 && terminal !== history.length - 1) return false;
   const fields = [
     'state',
     'reason',
