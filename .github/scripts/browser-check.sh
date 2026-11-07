@@ -46,7 +46,11 @@ if [ "$#" -ne 0 ] && [ "$1" = --colors-consumer ]; then
 fi
 if [ "$#" -eq 0 ] || [ "$1" = --colors-consumer ]; then
   pnpm build
-  pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
+  if [ "$#" -ne 0 ] && [ "$1" = --colors-consumer ]; then
+    pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium webkit
+  else
+    pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
+  fi
   pnpm --filter @labui/colors fx:render
   pnpm test:e2e
 else

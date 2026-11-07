@@ -131,6 +131,11 @@ test('browser owner preserves ordinary and icons commands and qualifies only ver
       const result = run(['--colors-consumer', input], { E2E_EXIT: status });
       assert.equal(result.status, Number(status), result.stdout + result.stderr);
       assert.ok(readFileSync(capture, 'utf8').includes('smoke:0\n'));
+      assert.ok(
+        readFileSync(capture, 'utf8').includes(
+          'pnpm:--filter @labpics/ui-docs exec playwright install --with-deps chromium webkit\n',
+        ),
+      );
       assert.deepEqual(readFileSync(packageFile), originalPackage);
       assert.deepEqual(readFileSync(lockFile), originalLock);
       rmSync(capture);
