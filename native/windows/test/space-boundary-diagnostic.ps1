@@ -5,7 +5,8 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^[a-f0-9]{40}$')][string]$Source,
     [ValidateSet('none', 'interior', 'opposite', 'same')][string]$Retarget = 'none',
     [switch]$Late,
-    [switch]$SetTarget
+    [switch]$SetTarget,
+    [ValidateSet('progress', 'raw-x', 'raw-y')][string]$Coordinates = 'progress'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -32,6 +33,7 @@ try {
     $start.Environment['LABUI_SPACE_BOUNDARY_RETARGET'] = $Retarget
     $start.Environment['LABUI_SPACE_BOUNDARY_LATE'] = $Late.IsPresent.ToString().ToLowerInvariant()
     $start.Environment['LABUI_SPACE_BOUNDARY_SETTER'] = $SetTarget.IsPresent.ToString().ToLowerInvariant()
+    $start.Environment['LABUI_SPACE_BOUNDARY_COORDINATES'] = $Coordinates
     $process = [Diagnostics.Process]::Start($start)
     # Existing 20s startup budget plus three initial/terminal pairs of 5s.
     if (!$process.WaitForExit(20000 + 3 * 2 * 5000)) { throw 'Boundary process did not finish in its bounded budget.' }

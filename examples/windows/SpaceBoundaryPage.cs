@@ -83,6 +83,7 @@ internal sealed class SpaceBoundaryPage : Page
                 schemaVersion = 1, source = Environment.GetEnvironmentVariable("LABUI_SPACE_BOUNDARY_SOURCE"),
                 pid = Environment.ProcessId, visible, handle, passed, failure,
                 expected = new { minimum = 0, maximum = 1, endpointTolerance = EndpointTolerance,
+                    coordinates = "consumer progress q; native vectors retain executor units",
                     sampleLimit = SampleLimit, deadlineMs = Deadline.TotalMilliseconds,
                     animationEnd = "Finished/settled", setTargetEnd = "Stopped/target-changed", idle = "matching native request",
                     inertiaMayLeaveRange = true },
@@ -99,8 +100,18 @@ internal sealed class SpaceBoundaryPage : Page
     private async Task<bool> Capture(string name, float target, float velocity, float? retargetTo, bool late, bool setter)
     {
         var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
-        using var motion = ScalarMotion.CreateProgress(compositor, target);
-        using var binding = motion.Bind(witnessVisual!, ScalarProperty.OffsetX, 64, 64);
+        var coordinates = Environment.GetEnvironmentVariable("LABUI_SPACE_BOUNDARY_COORDINATES") ?? "progress";
+        var unitsPerProgress = coordinates == "progress" ? 1 : 320f;
+        using var motion = coordinates switch
+        {
+            "progress" => ScalarMotion.CreateProgress(compositor, target),
+            "raw-x" => new ScalarMotion(compositor, ScalarAxis.X, 0, unitsPerProgress, target * unitsPerProgress,
+                endpointAccuracy: EndpointTolerance * unitsPerProgress),
+            "raw-y" => new ScalarMotion(compositor, ScalarAxis.Y, 0, unitsPerProgress, target * unitsPerProgress,
+                endpointAccuracy: EndpointTolerance * unitsPerProgress),
+            _ => throw new InvalidOperationException("Unknown coordinate owner.")
+        };
+        using var binding = motion.Bind(witnessVisual!, ScalarProperty.OffsetX, 64 / unitsPerProgress, 64);
         var initial = new TaskCompletionSource<MotionObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
         var overflow = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var departed = new TaskCompletionSource<MotionObservation>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -118,8 +129,12 @@ internal sealed class SpaceBoundaryPage : Page
         long armedTicks = 0;
         string? failure = null;
         MotionObservation? initialObservation = null;
-        motion.Observed += value =>
+        motion.Observed += original =>
         {
+            // Compare the consumer's q coordinate; native vectors preserve original units.
+            var value = original with { Position = original.Position / unitsPerProgress,
+                ReadbackPosition = original.ReadbackPosition / unitsPerProgress,
+                NativeVelocity = original.NativeVelocity / unitsPerProgress };
             if (armedTicks == 0)
             {
                 if (value.Origin == MotionOrigin.Initial && value.Phase is "value" or "idle") initial.TrySetResult(value);
@@ -138,12 +153,12 @@ internal sealed class SpaceBoundaryPage : Page
             if (setter && value.Phase == "inertia" && ++inertias == (target is 0 or 1 ? 2 : 1))
             {
                 departureObservation = value;
-                retargetReadback = motion.Position;
+                retargetReadback = motion.Position / unitsPerProgress;
                 if (target is 0 or 1 && !(retargetReadback < 0 || retargetReadback > 1))
                     failure = "Native correction was not outside before SetTarget.";
                 else
                 {
-                    try { motion.SetTarget(retargetTo!.Value, Smooth); setterApplied = true; }
+                    try { motion.SetTarget(retargetTo!.Value * unitsPerProgress, Smooth); setterApplied = true; }
                     catch (Exception error) { failure = error.GetType().Name; }
                 }
                 setterTrigger.TrySetResult(true);
@@ -153,10 +168,10 @@ internal sealed class SpaceBoundaryPage : Page
         try
         {
             initialObservation = await initial.Task.WaitAsync(Deadline);
-            if (initialObservation.Value.Position != target || motion.Position != target)
+            if (initialObservation.Value.Position != target || motion.Position / unitsPerProgress != target)
                 throw new InvalidOperationException("Native initial position was not admitted.");
             armedTicks = Stopwatch.GetTimestamp();
-            var operation = motion.AnimateTo(target, Smooth, velocity);
+            var operation = motion.AnimateTo(target * unitsPerProgress, Smooth, velocity * unitsPerProgress);
             if (setter)
             {
                 await setterTrigger.Task.WaitAsync(Deadline);
@@ -171,13 +186,13 @@ internal sealed class SpaceBoundaryPage : Page
                 var departure = await Task.WhenAny(trigger, operation, overflow.Task).WaitAsync(Deadline);
                 if (departure != trigger) throw new InvalidOperationException("Native departure was not observed before retarget.");
                 departureObservation = await trigger;
-                retargetReadback = motion.Position;
+                retargetReadback = motion.Position / unitsPerProgress;
                 if ((!late && Math.Abs(retargetReadback.Value - target) <= .005f) ||
                     (late && Math.Abs(retargetReadback.Value - target) >= EndpointTolerance / 4) ||
                     Math.Sign(retargetReadback.Value - target) != Math.Sign(velocity))
                     throw new InvalidOperationException("Native departure was not present at retarget.");
                 var previous = operation;
-                operation = motion.AnimateTo(nextTarget, Smooth);
+                operation = motion.AnimateTo(nextTarget * unitsPerProgress, Smooth);
                 replacedOutcome = await previous;
                 if (replacedOutcome is not { End: MotionEnd.Stopped, Reason: "replaced" })
                     throw new InvalidOperationException("Retarget did not replace the previous operation.");
@@ -191,7 +206,7 @@ internal sealed class SpaceBoundaryPage : Page
         }
         catch (TimeoutException) { failure = "timeout"; }
         catch (Exception error) { failure = error.GetType().Name; }
-        var position = motion.Position;
+        var position = motion.Position / unitsPerProgress;
         var incomingIdle = SpaceProbe.CaptureIncomingIdle(motion, armedTicks);
         var last = trace.LastOrDefault();
         var terminalValid = setter ? outcome is { End: MotionEnd.Stopped, Reason: "target-changed" }
@@ -203,7 +218,7 @@ internal sealed class SpaceBoundaryPage : Page
             incomingIdle.NativeSnapshot!.Receipts.Any(receipt => receipt.TimestampTicks >= armedTicks &&
                 receipt.CallbackRequestId == last.NativeRequestId && receipt.Operation == last.Operation &&
                 receipt.Disposition == "accepted");
-        results.Add(new { name, initial = target, target = retargetTo ?? target, velocity, spring = Smooth, initialObservation,
+        results.Add(new { name, coordinates, unitsPerProgress, initial = target, target = retargetTo ?? target, velocity, spring = Smooth, initialObservation,
             late, setter, setterApplied, departureObservation, retargetReadback, replacedOutcome,
             armedTicks, outcome, position, passed, failure,
             outsideRangeObserved = trace.Any(value => value.Position < 0 || value.Position > 1),

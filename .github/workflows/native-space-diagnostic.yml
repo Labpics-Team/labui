@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Labpics-Team/lab-motion
-          ref: 763beccad852af791a0515b208550e0c8274c943
+          ref: 2e999ea01b9b0d04eaca948f655bf2e5ffde71a5
           path: .native-deps/motion
           persist-credentials: false
       - name: Setup Node
@@ -38,6 +38,14 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: "10.0.403"
+      - name: Qualify Motion lifecycle boundaries
+        shell: pwsh
+        run: |
+          dotnet build .native-deps/motion/test/windows/lifecycle.csproj --configuration Release `
+            --output "$env:RUNNER_TEMP/labui-space-diagnosis/lifecycle" --verbosity minimal
+          if ($LASTEXITCODE -ne 0) { throw 'Motion lifecycle build failed.' }
+          dotnet "$env:RUNNER_TEMP/labui-space-diagnosis/lifecycle/lifecycle.dll"
+          if ($LASTEXITCODE -ne 0) { throw 'Motion lifecycle qualification failed.' }
       - name: Build existing Button consumer
         shell: pwsh
         run: |
@@ -71,4 +79,12 @@ jobs:
             -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
             -Source $source -Retarget interior -SetTarget
           if ($LASTEXITCODE -ne 0) { $failed = $true }
+          foreach ($coordinates in @('raw-x', 'raw-y')) {
+            pwsh -NoProfile -File ./native/windows/test/space-boundary-diagnostic.ps1 `
+              -ApplicationDirectory "$env:RUNNER_TEMP/labui-space-diagnosis/app" `
+              -OutputPath "$env:RUNNER_TEMP/labui-space-diagnosis/$coordinates.json" `
+              -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
+              -Source $source -Coordinates $coordinates
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+          }
           if ($failed) { throw 'Native boundary diagnosis failed; evidence is retained above.' }
