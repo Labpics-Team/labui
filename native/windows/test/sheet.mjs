@@ -31,6 +31,7 @@ import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-g
 export const CONTENT_CASES = Object.freeze([...SCROLL_CONTENT_CASES, ...POLICY_CASES]);
 
 const PREFIX = 'LABUI_SHEET_EVIDENCE';
+const DIAGNOSTIC_PREFIX = 'LABUI_SHEET_DIAGNOSTIC_EVIDENCE';
 const CONTENT_PREFIX = 'LABUI_SHEET_CONTENT_EVIDENCE';
 const MAX_FILE = 4 * 1024 * 1024;
 const MAX_JSON = 64 * 1024;
@@ -103,6 +104,7 @@ function errorInfo(value) {
     code: known(value.code, [
       'ERR_ASSERTION',
       'SHEET_HOST_REQUIRED',
+      'SHEET_PIXEL_REJECTED',
       'ETIMEDOUT',
       'ENOENT',
       'EACCES',
@@ -663,8 +665,14 @@ export function encodeSheetContentEvidence(files, sourceSha) {
 }
 
 export function encodeSheetCaptureEvidence(files, sourceSha) {
+  assertPixelQualification(capturePixelFailures(files, sourceSha));
+  return packets(files, sourceSha);
+}
+
+function capturePixelFailures(files, sourceSha) {
   validate(files, sourceSha, false, true);
   backdropAssets();
+  const rejected = [];
   for (const { name, theme, backdrop } of CAPTURE_CASES) {
     if (backdrop !== 'B') continue;
     const original = parse(files.get(`${theme}-Blur.json`));
@@ -685,21 +693,50 @@ export function encodeSheetCaptureEvidence(files, sourceSha) {
       { A: original.backdropWitness, B: neighbor.backdropWitness },
     );
     const failures = sheetMaterialPixelFailures(report);
-    assert.equal(failures.length, 0, `sheet: ${theme} PNG: ${failures.join('; ')}`);
+    if (failures.length) rejected.push({ name, theme, failures });
   }
-  return packets(files, sourceSha);
+  return rejected;
+}
+
+function assertPixelQualification(rejected) {
+  if (!rejected.length) return;
+  const { theme, failures } = rejected[0];
+  throw Object.assign(
+    new assert.AssertionError({ message: `sheet: ${theme} PNG: ${failures.join('; ')}` }),
+    { code: 'SHEET_PIXEL_REJECTED' },
+  );
+}
+
+export async function publishSheetCaptureEvidence(files, sourceSha, write = writeStdout) {
+  // Все шесть PNG и identity проверяются до публикации даже при отказе первого материала.
+  const rejected = capturePixelFailures(files, sourceSha);
+  if (rejected.length) {
+    const verdict = rejected
+      .map(
+        ({ name, failures }) =>
+          `LABUI_SHEET_FAILURE_JSON ${JSON.stringify({
+            source: sourceSha,
+            name,
+            phase: 'material-pixels',
+            verdict: 'failed',
+            failures,
+          })}\n`,
+      )
+      .join('');
+    await write(verdict + packets(files, sourceSha, DIAGNOSTIC_PREFIX));
+    assertPixelQualification(rejected);
+  }
+  await write(packets(files, sourceSha));
 }
 
 function encode(files, sourceSha, content = false) {
   validate(files, sourceSha, content);
-  return packets(files, sourceSha, content);
+  return packets(files, sourceSha, content ? CONTENT_PREFIX : PREFIX);
 }
 
-function packets(files, sourceSha, content = false) {
+function packets(files, sourceSha, prefix = PREFIX) {
   return [...files]
-    .map(([file, bytes]) =>
-      evidenceLog(bytes, content ? CONTENT_PREFIX : PREFIX, { sourceSha, file }, 'sha256'),
-    )
+    .map(([file, bytes]) => evidenceLog(bytes, prefix, { sourceSha, file }, 'sha256'))
     .join('');
 }
 
@@ -711,7 +748,13 @@ export function decodeSheetContentEvidence(log, sourceSha) {
   return decode(log, sourceSha, true);
 }
 
-function decode(log, sourceSha, content = false) {
+export function decodeSheetDiagnosticEvidence(log, sourceSha) {
+  const files = decode(log, sourceSha, false, DIAGNOSTIC_PREFIX);
+  capturePixelFailures(files, sourceSha);
+  return files;
+}
+
+function decode(log, sourceSha, content = false, prefix = content ? CONTENT_PREFIX : PREFIX) {
   const expectedFiles = content ? CONTENT_FILES : CAPTURE_FILES;
   const count = content ? CONTENT_CASES.length : CAPTURE_CASES.length;
   source(sourceSha);
@@ -720,7 +763,7 @@ function decode(log, sourceSha, content = false) {
     'sheet: размер журнала',
   );
   const files = new Map();
-  for (const { metadata, bytes } of decodeEvidenceLog(log, content ? CONTENT_PREFIX : PREFIX, {
+  for (const { metadata, bytes } of decodeEvidenceLog(log, prefix, {
     digestField: 'sha256',
     maxBytes: MAX_FILE,
     maxPackets: expectedFiles.length,
@@ -1164,9 +1207,8 @@ async function capture(appDirectory, output, receiptPath, sourceSha, content = f
       ]),
     ),
   );
-  await writeStdout(
-    content ? encode(files, sourceSha, true) : encodeSheetCaptureEvidence(files, sourceSha),
-  );
+  if (content) await writeStdout(encode(files, sourceSha, true));
+  else await publishSheetCaptureEvidence(files, sourceSha);
 }
 
 async function main([operation, ...args]) {
@@ -1178,16 +1220,19 @@ async function main([operation, ...args]) {
       args[3],
       operation === 'capture-content',
     );
-  else if (['decode', 'decode-content'].includes(operation) && args.length === 3) {
+  else if (
+    ['decode', 'decode-content', 'decode-diagnostic'].includes(operation) &&
+    args.length === 3
+  ) {
     assert.ok(
       (await lstat(args[0])).size <= (operation === 'decode-content' ? 32 : 48) * 1024 * 1024,
       'sheet: размер журнала',
     );
-    const files = decode(
-      new TextDecoder('utf8', { fatal: true }).decode(await readFile(args[0])),
-      args[1],
-      operation === 'decode-content',
-    );
+    const log = new TextDecoder('utf8', { fatal: true }).decode(await readFile(args[0]));
+    const files =
+      operation === 'decode-diagnostic'
+        ? decodeSheetDiagnosticEvidence(log, args[1])
+        : decode(log, args[1], operation === 'decode-content');
     await mkdir(args[2]);
     for (const [file, bytes] of files) await writeFile(join(args[2], file), bytes, { flag: 'wx' });
     await writeFile(
@@ -1201,7 +1246,7 @@ async function main([operation, ...args]) {
     );
   } else
     throw new Error(
-      'Usage: sheet.mjs capture|capture-content <app-directory> <new-output> <winapp-receipt> <source-sha> | decode|decode-content <job.log> <source-sha> <new-output>',
+      'Usage: sheet.mjs capture|capture-content <app-directory> <new-output> <winapp-receipt> <source-sha> | decode|decode-content|decode-diagnostic <job.log> <source-sha> <new-output>',
     );
 }
 

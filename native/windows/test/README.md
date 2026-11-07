@@ -3,7 +3,7 @@
 `sheet.mjs` снимает Half в сочетаниях Light/Dark и Blur/Solid перед вводом Button
 в обычном Windows job. Проверка запускается только на GitHub-hosted Windows,
 использует закреплённый `winapp.ps1` и закрывает только созданные ею процессы.
-Четыре PNG 375×812, четыре наблюдения приложения и `identity.json` передаются
+Шесть PNG 375×812, шесть наблюдений приложения и `identity.json` передаются
 через существующий log-кодек с маркером `LABUI_SHEET_EVIDENCE`.
 Чтобы восстановить полный набор из скачанного журнала:
 
@@ -23,6 +23,21 @@ PID, время, HWND, фактические тема/материал, гот�
 ошибка renderer и геометрия различаются; подмена Blur на Solid остаётся отказом.
 Произвольные поля и содержимое stderr не публикуются. Такая диагностика не заменяет
 полный успешный набор evidence.
+
+Если полный захват прошёл проверки принадлежности, структуры и декодирования PNG,
+но проверка реакции материала на соседний backdrop отвергла пиксели, снимки
+сохраняются под `LABUI_SHEET_DIAGNOSTIC_EVIDENCE`. `LABUI_SHEET_FAILURE_JSON`
+с фазой `material-pixels` и `verdict=failed` содержит фиксированные причины отказа;
+capture продолжает завершаться с кодом 1. Обычный `decode` этот канал не принимает.
+Для визуальной диагностики используйте:
+
+```sh
+node native/windows/test/sheet.mjs decode-diagnostic job.log <executed-merge-sha> <new-directory>
+node native/windows/test/sheet-material-pixels.mjs <new-directory>
+```
+
+Вторая команда повторяет проверку пикселей и сохраняет её отрицательный verdict.
+Диагностические изображения не подтверждают качество материала.
 
 Поле `materialCapabilities` содержит `advancedEffectsEnabled`, `areEffectsSupported`
 и `areEffectsFast` из неизменяемого снимка опубликованного Frame; запись наблюдения
