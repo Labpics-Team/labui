@@ -409,7 +409,10 @@ test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authore
       'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',
     ],
     ['ghostVisual.Clip = ghostClip;', 'ghostBackdrop.Clip = ghostClip;'],
-    ['ghostClip.Bottom = (float)metrics.GhostHeight;', 'ghostClip.Bottom = (float)metrics.BodyTop;'],
+    [
+      'ghostClip.Bottom = (float)metrics.GhostHeight;',
+      'ghostClip.Bottom = (float)metrics.BodyTop;',
+    ],
     ['Mask(Source("Backdrop"), Layer(index))', 'Mask(Layer(index), Source("Backdrop"))'],
     [
       'stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity)',
