@@ -17,7 +17,7 @@ using Windows.UI.ViewManagement;
 
 namespace LabUI.WinUI.Rendering;
 
-// Ghost и Body используют один captured backdrop и один итоговый SpriteVisual.
+// Ghost и Body используют один captured backdrop; итоговые слои сохраняют authored SourceOver.
 public sealed class SheetLayers : Grid
 {
     public static readonly DependencyProperty TintProperty = PaintProperty(nameof(Tint));
@@ -333,10 +333,10 @@ public sealed class SheetLayers : Grid
                 InterpolationMode = CanvasImageInterpolation.Linear,
                 BorderMode = EffectBorderMode.Soft,
             });
-            IGraphicsEffectSource Paint(SolidColorBrush brush) => Effect(new OpacityEffect
+            IGraphicsEffectSource Paint(SolidColorBrush brush, string sourceName) => Effect(new OpacityEffect
             {
                 Opacity = (float)brush.Opacity,
-                Source = Effect(new ColorSourceEffect { Color = brush.Color }),
+                Source = Source(sourceName),
             });
             CompositeEffect Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
                 => Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
@@ -469,10 +469,7 @@ public sealed class SheetLayers : Grid
             seed.Opacity = 0;
 
             var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
-            List<(string Name, CompositionBrush Source)> bindings =
-            [
-                ("backdrop", capturedBackdrop), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush),
-            ];
+            List<(string Name, CompositionBrush Source)> progressiveBindings = [];
             for (var index = 0; index < branches.Length; index++)
             {
                 var leaf = stages.CreateVisual(Brush("progressive", (IGraphicsEffect)branches[index],
@@ -481,25 +478,44 @@ public sealed class SheetLayers : Grid
                 var capturedLeaf = stages.Capture(leaf);
                 var name = $"progressive{index}";
                 progressive.Sources.Add(Source(name));
-                bindings.Add((name, capturedLeaf));
+                progressiveBindings.Add((name, capturedLeaf));
             }
+            // Полная Add-сумма остаётся эффектом; surface отделяет её от paints и внешнего SourceOver.
+            var sum = stages.CreateVisual(Brush("progressive", progressive,
+                inlineProgressive, inlineProgressive, branches, progressiveBindings.ToArray()));
+            var capturedProgressive = stages.Capture(sum);
+            // Alpha Color и float Opacity остаются раздельными входами LabColors.
+            var ghostPaint = result.Own(compositor.CreateColorBrush(Ghost!.Color));
+            var tintPaint = result.Own(compositor.CreateColorBrush(Tint!.Color));
+            var blendPaint = result.Own(compositor.CreateColorBrush(Blend!.Color));
             // Alpha Ghost tint не управляет существованием backdrop/noise.
-            var ghostSource = WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity);
-            var ghost = Mask(ghostSource, Layer(ghostMask));
-            var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!));
+            var ghostSource = WithNoise(Over(Source("progressiveSurface"), Paint(Ghost!, "ghostPaint")),
+                Geometry.SheetGhostNoiseOpacity);
+            var ghost = Mask(ghostSource, Layer(ghostMask, "ghostMaskAtlas"));
+            var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!, "tintPaint"));
             var blended = Effect(new BlendEffect
             {
-                Background = tinted, Foreground = Paint(Blend!),
+                Background = tinted, Foreground = Paint(Blend!, "blendPaint"),
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
             var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
             var bodyAlphaMask = Layer(bodyMask, "bodyMaskAtlas");
             var body = Mask(bodySource, bodyAlphaMask);
-            var sheet = Over(Over(ghost, Layer(outer)), body);
-            var graph = Over(sheet, Layer(border));
-            var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
-                bindings.ToArray()));
-            result.Visual.Children.InsertAtTop(output);
+            void Output(IGraphicsEffect graph, params (string Name, CompositionBrush Source)[] bindings)
+            {
+                var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
+                    bindings));
+                output.CompositeMode = CompositionCompositeMode.SourceOver;
+                result.Visual.Children.InsertAtTop(output);
+            }
+            // Только внешние SourceOver-операции переходят в порядок SpriteVisual.
+            // Gaussian-ветви Ghost по-прежнему складываются Add до capture.
+            Output(ghost, ("progressiveSurface", capturedProgressive), ("ghostPaint", ghostPaint),
+                ("atlas", atlasBrush), ("ghostMaskAtlas", atlasBrush));
+            Output(Layer(outer), ("atlas", atlasBrush));
+            Output(body, ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
+                ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));
+            Output(Layer(border), ("atlas", atlasBrush));
             result.Own(stages);
             return result;
         }

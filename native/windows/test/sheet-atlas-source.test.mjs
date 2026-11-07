@@ -31,25 +31,43 @@ function assertSurfaceStages(candidate) {
     frame,
     /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*var capturedBackdrop = stages\.Capture\(seed\);\s*seed\.Opacity = 0;/,
   );
-  assert.match(
-    frame,
-    /List<\(string Name, CompositionBrush Source\)> bindings =\s*\[\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\),\s*\];/,
-  );
+  assert.match(frame, /List<\(string Name, CompositionBrush Source\)> progressiveBindings = \[\];/);
   assert.match(
     frame,
     /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\);/,
   );
   assert.match(
     frame,
-    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\("progressive", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*progressive\.Sources\.Add\(Source\(name\)\);\s*bindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
+    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\("progressive", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*progressive\.Sources\.Add\(Source\(name\)\);\s*progressiveBindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
   );
   assert.match(
     frame,
-    /var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*bindings\.ToArray\(\)\)\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
+    /var sum = stages\.CreateVisual\(Brush\("progressive", progressive,\s*inlineProgressive, inlineProgressive, branches, progressiveBindings\.ToArray\(\)\)\);\s*var capturedProgressive = stages\.Capture\(sum\);/,
+  );
+  assert.match(
+    frame,
+    /void Output\(IGraphicsEffect graph, params \(string Name, CompositionBrush Source\)\[\] bindings\)\s*\{\s*var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*bindings\)\);\s*output\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*\}/,
+  );
+  assert.deepEqual(
+    [...frame.matchAll(/^\s*Output\(([^,]+),/gm)].map((match) => match[1]),
+    ['ghost', 'Layer(outer)', 'body', 'Layer(border)'],
+  );
+  assert.match(
+    frame,
+    /Output\(ghost, \("progressiveSurface", capturedProgressive\), \("ghostPaint", ghostPaint\),\s*\("atlas", atlasBrush\), \("ghostMaskAtlas", atlasBrush\)\);/,
+  );
+  assert.match(
+    frame,
+    /Output\(body, \("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
+  );
+  assert.match(frame, /Output\(Layer\(outer\), \("atlas", atlasBrush\)\);/);
+  assert.match(
+    frame,
+    /Output\(Layer\(border\), \("atlas", atlasBrush\)\);\s*result\.Own\(stages\);\s*return result;/,
   );
   assert.deepEqual(
     [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
-    ['seed', 'leaf'],
+    ['seed', 'leaf', 'sum'],
   );
   assert.match(
     candidate,
@@ -70,7 +88,8 @@ function assertSurfaceStages(candidate) {
   assert.match(stages, /visual\.Brush = null;/);
   assert.match(stages, /Frame\.ThrowCleanup\(errors\);/);
   assert.ok(
-    stages.indexOf('frame.Visual.Children.RemoveAll()') < stages.indexOf('surface.SourceVisual = null'),
+    stages.indexOf('frame.Visual.Children.RemoveAll()') <
+      stages.indexOf('surface.SourceVisual = null'),
   );
   assert.ok(stages.indexOf('surface.SourceVisual = null') < stages.indexOf('visual.Brush = null'));
   assert.doesNotMatch(stages, /\.Dispose\(|\.Close\(|CanvasDevice/);
@@ -79,11 +98,14 @@ function assertSurfaceStages(candidate) {
   assert.match(failure, /stages\?\.Dispose\(\)/);
   assert.match(failure, /result\.Dispose\(\)/);
   assert.ok(failure.indexOf('stages?.Dispose()') < failure.indexOf('result.Dispose()'));
-  assert.match(failure, /throw new AggregateException\("Ошибка создания и освобождения Sheet\.", errors\)/);
+  assert.match(
+    failure,
+    /throw new AggregateException\("Ошибка создания и освобождения Sheet\.", errors\)/,
+  );
   assert.match(failure, /throw;/);
 }
 
-test('Sheet graph shares the original atlas with a separate fresh Body mask input', () => {
+test('Sheet output layers share the original atlas with separate Ghost and Body mask inputs', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assertSurfaceStages(source);
   assert.match(
@@ -96,6 +118,7 @@ test('Sheet graph shares the original atlas with a separate fresh Body mask inpu
     /Transform2DEffect Layer\(int index, string sourceName = "atlas"\)\s*=>\s*Effect\(new Transform2DEffect\s*\{\s*Source = Source\(sourceName\)/,
   );
   assert.match(build, /var bodyAlphaMask = Layer\(bodyMask, "bodyMaskAtlas"\);/);
+  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask, "ghostMaskAtlas"\)\);/);
   assert.equal([...build.matchAll(/compositor\.CreateSurfaceBrush\(atlasSurface\)/g)].length, 1);
   assert.match(
     build,
@@ -115,6 +138,7 @@ test('Sheet capture source guard rejects a root capture, repeated seed and bypas
   for (const [original, replacement] of [
     ['surface.SourceVisual = visual;', 'surface.SourceVisual = frame.Visual;'],
     ['stages.Capture(leaf)', 'stages.Capture(seed)'],
+    ['stages.Capture(sum)', 'stages.Capture(seed)'],
     ['progressive.Sources.Add(Source(name));', 'progressive.Sources.Add(Backdrop());'],
   ]) {
     assert.ok(source.includes(original));
@@ -126,6 +150,10 @@ test('Sheet surface source guard rejects changed coordinates and a SourceOver pr
   for (const [original, replacement] of [
     ['surface.SourceOffset = Vector2.Zero;', 'surface.SourceOffset = Vector2.One;'],
     ['surface.SourceSize = visual.Size;', 'surface.SourceSize = visual.Size / 2;'],
+    [
+      'output.CompositeMode = CompositionCompositeMode.SourceOver;',
+      'output.CompositeMode = CompositionCompositeMode.Inherit;',
+    ],
     [
       'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });',
       'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver });',
@@ -216,15 +244,14 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
   assert.match(build, /inlineProgressive\.Sources\.Add\(branches\[index\]\)/);
   assert.match(
     build,
-    /var ghostSource = WithNoise\(Over\(progressive, Paint\(Ghost!\)\), Geometry\.SheetGhostNoiseOpacity\);/,
+    /var ghostSource = WithNoise\(Over\(Source\("progressiveSurface"\), Paint\(Ghost!, "ghostPaint"\)\),\s*Geometry\.SheetGhostNoiseOpacity\);/,
   );
-  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask\)\);/);
-  assert.match(build, /var sheet = Over\(Over\(ghost, Layer\(outer\)\), body\)/);
+  assert.match(build, /var ghost = Mask\(ghostSource, Layer\(ghostMask, "ghostMaskAtlas"\)\);/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
   assert.match(source, /RadiusToSigma = 0\.5;/);
   for (const paint of ['Ghost', 'Tint', 'Blend'])
-    assert.match(build, new RegExp(`Paint\\(${paint}!\\)`));
+    assert.match(build, new RegExp(`Paint\\(${paint}!, "${paint.toLowerCase()}Paint"\\)`));
   assert.match(build, /DrawShadows\(drawing, metrics, bodyShape\)/);
   assert.match(build, /DrawNoise\(drawing, pixelWidth, pixelHeight, scale\)/);
   assert.match(build, /Mode = CanvasComposite\.Add/);
@@ -232,6 +259,26 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     build,
     /new (AtlasEffect|PixelShaderEffect|CropEffect|ScaleEffect|ConvolveMatrixEffect)\b/,
   );
+});
+
+test('Sheet native paints retain original Color alpha and separate float opacity', () => {
+  assert.match(
+    build,
+    /IGraphicsEffectSource Paint\(SolidColorBrush brush, string sourceName\) => Effect\(new OpacityEffect\s*\{\s*Opacity = \(float\)brush\.Opacity,\s*Source = Source\(sourceName\),\s*\}\);/,
+  );
+  for (const [paint, name] of [
+    ['Ghost', 'ghostPaint'],
+    ['Tint', 'tintPaint'],
+    ['Blend', 'blendPaint'],
+  ])
+    assert.match(
+      build,
+      new RegExp(
+        `var ${name} = result\\.Own\\(compositor\\.CreateColorBrush\\(${paint}!\\.Color\\)\\);`,
+      ),
+    );
+  assert.equal([...build.matchAll(/compositor\.CreateColorBrush\(/g)].length, 3);
+  assert.doesNotMatch(build, /new ColorSourceEffect\b/);
 });
 
 test('Sheet atlas preserves frame ownership and cleans failed candidates', () => {

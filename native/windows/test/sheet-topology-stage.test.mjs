@@ -514,7 +514,7 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
   includesSource(
     renderer,
     `var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
-    bindings.ToArray()));`,
+    bindings));`,
     'actual-three must receive the same branches as the production graph',
   );
   includesSource(
