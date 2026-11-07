@@ -68,6 +68,7 @@ export const cardSpecs: CardSpec[] = [
     footer: true,
   },
   { id: 'media', props: { ...text }, media: true },
+  { id: 'media-whitespace', props: { ...text, media: ' \t\n\r ' } },
   { id: 'tight', height: 64, props: { ...text, ...picture }, footer: true },
   {
     id: 'long',

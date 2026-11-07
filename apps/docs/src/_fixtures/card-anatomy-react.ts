@@ -16,7 +16,7 @@ export function reactCard(spec: CardSpec) {
         : undefined,
       media: spec.media
         ? createElement('div', { 'data-probe': 'media' }, 'Своя медиа-область')
-        : undefined,
+        : spec.props?.media,
       footer: spec.footer ? createElement(Button, footerProps, 'Открыть') : undefined,
     },
     spec.body ? createElement('div', { 'data-probe': 'body' }, 'Своё содержимое') : undefined,

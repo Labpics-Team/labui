@@ -157,6 +157,7 @@ export class LabCard extends LabElement {
         object-fit: cover;
       }
       slot { display: contents; }
+      .media-region { display: contents; }
       ::slotted([slot='media']) {
         position: relative;
         display: block;
@@ -169,7 +170,14 @@ export class LabCard extends LabElement {
         flex-direction: column;
         gap: ${litVar('--lab-space-md', '1rem')};
         padding: var(--_pad);
-        border-radius: 0;
+        /* Backdrop clipping belongs to this painted surface, including in a
+         * scrollable ancestor. Only an actual media region makes a square seam. */
+        border-radius: inherit;
+      }
+      .image + .content,
+      .media-region:not([hidden]) + .content {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
       }
       .region { min-inline-size: 0; }
       .region[hidden] { display: none; }
@@ -315,7 +323,7 @@ export class LabCard extends LabElement {
           <img class="underlay" src=${this.imageSrc} alt="" aria-hidden="true" />
           <img class="image" src=${this.imageSrc} alt=${this.imageAlt} />
         `
-            : html`<slot name="media"></slot>`
+            : html`<div class="region media-region"><slot name="media" @slotchange=${this.updateRegions}></slot></div>`
         }
         <div
           class=${this.variant === 'elevated' ? 'content lab-material lab-material--elevated' : 'content'}

@@ -6,9 +6,13 @@ import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 
 type Pattern = 'A' | 'B';
+type MediaKind = 'none' | 'slot' | 'image' | 'whitespace';
 declare global {
   interface Window {
-    cardImageFixture: { setImage: (pattern: Pattern) => Promise<void> };
+    cardImageFixture: {
+      setImage: (pattern: Pattern) => Promise<void>;
+      setMedia: (kind: MediaKind) => Promise<void>;
+    };
   }
 }
 
@@ -41,7 +45,7 @@ function source(pattern: Pattern): string {
   return result;
 }
 
-function render(imageSrc = ''): void {
+function render(imageSrc = '', media: boolean | 'whitespace' = false): void {
   flushSync(() =>
     root.render(
       createElement(
@@ -51,6 +55,12 @@ function render(imageSrc = ''): void {
           variant: 'elevated',
           imageSrc,
           imageAlt: 'Полосы',
+          media:
+            media === 'whitespace'
+              ? ' \t\n\r '
+              : media
+                ? createElement('div', { className: 'media-sample' })
+                : undefined,
           'aria-label': 'React Card',
         },
         createElement('div', { className: 'sample', 'aria-hidden': true }),
@@ -74,7 +84,22 @@ async function setImage(pattern: Pattern): Promise<void> {
   await Promise.all(images.map((image) => image.decode()));
 }
 
-window.cardImageFixture = { setImage };
+async function setMedia(kind: MediaKind): Promise<void> {
+  if (!core) throw new Error('Нет Core Card');
+  core.querySelector('[slot="media"]')?.remove();
+  if (kind === 'image') return setImage('A');
+  core.imageSrc = '';
+  if (kind === 'slot') {
+    const media = document.createElement('div');
+    media.slot = 'media';
+    media.className = 'media-sample';
+    core.prepend(media);
+  }
+  render('', kind === 'whitespace' ? 'whitespace' : kind === 'slot');
+  await core.updateComplete;
+}
+
+window.cardImageFixture = { setImage, setMedia };
 if (document.documentElement.hasAttribute('data-image-fixture')) {
   void setImage('A').then(() => {
     document.documentElement.dataset.imageReady = 'true';

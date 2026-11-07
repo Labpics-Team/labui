@@ -262,6 +262,17 @@ test('первый SSR paint сохраняет source геометрию и т�
       const auto = await geometry(page, renderer, 'intrinsic');
       near(auto.image.height, 250, 'intrinsic ratio 16:10');
       near(auto.card.height, 344, 'intrinsic + HUG');
+      for (const [id, radius] of [
+        ['media-whitespace', '16px'],
+        ['media', '0px'],
+        ['master', '0px'],
+      ] as const) {
+        const surface = card(page, renderer, id).locator(
+          renderer === 'core' ? '.card > .content' : '.lab-card-content',
+        );
+        await expect(surface).toHaveCSS('border-top-left-radius', radius);
+        await expect(surface).toHaveCSS('border-bottom-left-radius', '16px');
+      }
     }
   } finally {
     await context.close();

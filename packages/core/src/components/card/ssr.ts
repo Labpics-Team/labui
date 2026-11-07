@@ -72,14 +72,17 @@ export function shapeCardRegions(source: string): string {
     );
     if (!content) throw new Error('Card SSR: отсутствует собственный Content');
 
-    for (const [region, name] of [
-      ['header', 'header'],
-      ['body', ''],
-      ['footer', 'footer'],
+    for (const [parent, region, name] of [
+      [article, 'media', 'media'],
+      [content, 'header', 'header'],
+      [content, 'body', ''],
+      [content, 'footer', 'footer'],
     ] as const) {
-      const wrapper = content.childNodes.find(
+      const wrapper = parent.childNodes.find(
         (child): child is Element => isHtmlElement(child) && hasClass(child, `${region}-region`),
       );
+      // imageSrc renders images directly; it has no caller media region.
+      if (!wrapper && region === 'media') continue;
       const slot = wrapper?.childNodes.find(
         (child): child is Element =>
           isHtmlElement(child) &&

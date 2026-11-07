@@ -113,7 +113,14 @@
   flex-direction: column;
   gap: var(--lab-space-md, 1rem);
   padding: var(--_pad);
-  border-radius: 0;
+  /* Match the painted boundary; backdrop clipping does not inherit the
+   * ancestor's rounded shape through every scroll-container composition. */
+  border-radius: inherit;
+}
+.lab-card-image + .lab-card-content,
+.lab-card-media:not(:empty) + .lab-card-content {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 .lab-card-text-group {
   display: flex;

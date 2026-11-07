@@ -12,6 +12,18 @@ function regions(output: string) {
 }
 
 describe('Card SSR: собственные регионы и native slot assignment', () => {
+  it('первый paint отличает пустой media от назначенного и imageSrc', () => {
+    const empty = renderToString(html`<lab-card heading="Heading"></lab-card>`);
+    expect(empty).toMatch(/class="region media-region"[^>]*hidden/);
+    const assigned = renderToString(html`<lab-card><div slot="media">Media</div></lab-card>`);
+    expect(assigned).toMatch(/class="region media-region">/);
+    const image = renderToString(
+      html`<lab-card .imageSrc=${'image.png'}><div slot="media">Media</div></lab-card>`,
+    );
+    expect(image).not.toContain('class="region media-region"');
+    expect(image).toContain('class="image"');
+  });
+
   it.each(['', ' \t\n\f\r ', '<!-- comment -->', ' <!--lit-part x--> <!--/lit-part--> '])(
     'пустой default %j не создаёт регион между header/footer',
     (body) => {
@@ -97,9 +109,9 @@ describe('Card SSR: собственные регионы и native slot assignm
     const template = html`🧪${unsafeHTML('<style>/* <lab-card> */</style><!-- <lab-card> --><script>"<lab-card>"</script>')}<lab-card .heading=${'Heading'}>${unsafeHTML('<svg viewBox="0 0 2 2"><path d="M0 0 1 1"/></svg>')}</lab-card>`;
     const baseline = collectResultSync(render(template));
     const shaped = shapeCardRegions(baseline);
-    expect(shaped.replace(/(class="region (?:header|body|footer)-region") hidden/g, '$1')).toBe(
-      baseline,
-    );
+    expect(
+      shaped.replace(/(class="region (?:media|header|body|footer)-region") hidden/g, '$1'),
+    ).toBe(baseline);
     expect(regions(shaped)).toEqual([
       ['header', true],
       ['body', true],
@@ -144,9 +156,9 @@ describe('Card SSR: собственные регионы и native slot assignm
     const baseline = collectResultSync(render(template));
     const output = shapeCardRegions(baseline);
     expect(output).toContain(content);
-    expect(output.replace(/(class="region (?:header|body|footer)-region") hidden/g, '$1')).toBe(
-      baseline,
-    );
+    expect(
+      output.replace(/(class="region (?:media|header|body|footer)-region") hidden/g, '$1'),
+    ).toBe(baseline);
     expect(regions(output)).toEqual([
       ['header', true],
       ['body', false],
@@ -181,9 +193,9 @@ describe('Card SSR: собственные регионы и native slot assignm
           : `${card}<template>${children}</template>`;
       const output = shapeCardRegions(baseline);
       expect(output).toContain(children);
-      expect(output.replace(/(class="region (?:header|body|footer)-region") hidden/g, '$1')).toBe(
-        baseline,
-      );
+      expect(
+        output.replace(/(class="region (?:media|header|body|footer)-region") hidden/g, '$1'),
+      ).toBe(baseline);
       expect(regions(output)).toEqual([
         ['header', true],
         ['body', false],

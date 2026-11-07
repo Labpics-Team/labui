@@ -108,6 +108,8 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
       | 'h6';
   const hasTitle = Boolean(heading || titleHint || badge);
   const hasText = Boolean(caption || hasTitle || description || lowerCaption);
+  // Collapsible whitespace alone creates no media box. Preserve caller nodes.
+  const mediaContent = typeof media === 'string' && !/[^\t\n\f\r ]/.test(media) ? null : media;
 
   return (
     <article
@@ -125,7 +127,7 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
           <img className="lab-card-image" src={imageSrc} alt={imageAlt} />
         </>
       ) : (
-        <div className="lab-card-media">{media}</div>
+        <div className="lab-card-media">{mediaContent}</div>
       )}
       <div
         ref={contentRef}
