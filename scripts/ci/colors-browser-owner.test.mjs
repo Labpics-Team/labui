@@ -130,9 +130,11 @@ test('browser owner preserves ordinary and icons commands and qualifies only ver
     for (const status of ['0', '31']) {
       const result = run(['--colors-consumer', input], { E2E_EXIT: status });
       assert.equal(result.status, Number(status), result.stdout + result.stderr);
-      assert.ok(readFileSync(capture, 'utf8').includes('smoke:0\n'));
+      const calls = readFileSync(capture, 'utf8');
+      assert.ok(calls.includes('smoke:0\n'));
+      assert.ok(calls.includes('pnpm:build\npnpm:typecheck\npnpm:test\n'));
       assert.ok(
-        readFileSync(capture, 'utf8').includes(
+        calls.includes(
           'pnpm:--filter @labpics/ui-docs exec playwright install --with-deps chromium webkit\n',
         ),
       );

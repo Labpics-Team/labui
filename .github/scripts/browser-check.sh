@@ -41,12 +41,12 @@ fi
 pnpm install --frozen-lockfile
 if [ "$#" -ne 0 ] && [ "$1" = --colors-consumer ]; then
   node scripts/ci/colors-consumer-input.mjs installed "$colors_root" "$root/packages/colors/node_modules/@labpics/colors"
-  pnpm typecheck
-  pnpm test
 fi
 if [ "$#" -eq 0 ] || [ "$1" = --colors-consumer ]; then
   pnpm build
   if [ "$#" -ne 0 ] && [ "$1" = --colors-consumer ]; then
+    pnpm typecheck
+    pnpm test
     pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium webkit
   else
     pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
