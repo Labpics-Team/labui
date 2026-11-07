@@ -18,7 +18,7 @@ internal sealed class SheetBackdropProbe
     private sealed record PixelSize(int width, int height);
     private sealed record PixelRect(int x, int y, int width, int height);
     private sealed record Fixture(string schema, Dictionary<string, Asset> assets,
-        PixelSize sourcePixels, PixelRect changedSourceRect, byte[] replacementRgba, int resamplingMargin);
+        PixelSize sourcePixels, PixelRect changedSourceRect, int[] replacementRgba, int resamplingMargin);
 
     private readonly Fixture fixture;
     private readonly string variant;
