@@ -13,6 +13,10 @@ import {
   contentReadback,
   validateContentWitness,
 } from './sheet-content.mjs';
+import {
+  materialCapabilitiesReadback,
+  validateMaterialCapabilities,
+} from './sheet-material-capabilities.mjs';
 import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
 import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-geometry.mjs';
 
@@ -350,6 +354,11 @@ export function validateObservation(value, expected) {
     assert.equal(value.rendererReady, true, 'sheet: rendererReady');
     phase = 'capability';
     assert.equal(value.effectiveMaterial, expected.material, 'sheet: исполненный материал');
+    if (Object.hasOwn(value, 'materialCapabilities')) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, 'materialCapabilities');
+      assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet: materialCapabilities JSON');
+      validateMaterialCapabilities(descriptor.value);
+    }
     phase = 'readiness';
     for (const field of ['layoutReady', 'imageLoaded'])
       assert.equal(value[field], true, `sheet: ${field}`);
@@ -377,6 +386,7 @@ export function validateObservation(value, expected) {
         'contentViewport',
         'contentWitness',
         'windowGeometry',
+        'materialCapabilities',
       ];
       assert.deepEqual(
         Object.keys(value).sort(),
@@ -439,6 +449,7 @@ export function validateObservation(value, expected) {
           'materialReason',
           'error',
           ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
+          ...(Object.hasOwn(value, 'materialCapabilities') ? ['materialCapabilities'] : []),
         ].sort(),
         'sheet policy: поля наблюдения',
       );
@@ -654,6 +665,7 @@ export function sheetFailureLog({
   const number = (value) => (Number.isFinite(value) ? value : null);
   let readback = null;
   if (observation !== null && typeof observation === 'object') {
+    const capabilityField = Object.getOwnPropertyDescriptor(observation, 'materialCapabilities');
     readback = {
       pid: number(observation.pid),
       windowHandle:
@@ -675,6 +687,9 @@ export function sheetFailureLog({
         'EffectsUnsupported',
         'EffectsNotFast',
       ]),
+      ...(capabilityField
+        ? { materialCapabilities: materialCapabilitiesReadback(capabilityField.value) }
+        : {}),
       error: observationError(observation.error),
       ...(CONTENT_CASES.some((entry) => entry.name === name)
         ? {

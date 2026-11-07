@@ -141,6 +141,109 @@ test('all four materials retain exact bytes and source through the common log co
   assert.throws(() => decodeSheetEvidence(rawPackets(files), 'c'.repeat(40)));
 });
 
+test('material capability facts preserve false and null while effective Blur remains mandatory', () => {
+  const facts = { advancedEffectsEnabled: true, areEffectsSupported: true, areEffectsFast: false };
+  const expected = { ...CASES[0], ...processIdentity };
+  const value = { ...observation(), materialCapabilities: facts };
+  assert.equal(validateObservation(value, expected), value);
+  assert.throws(
+    () => validateObservation({ ...value, effectiveMaterial: 'Solid' }, expected),
+    (error) => error.sheetPhase === 'capability',
+  );
+  const files = fixture();
+  for (const entry of CASES) {
+    const value = JSON.parse(files.get(`${entry.name}.json`));
+    value.materialCapabilities = {
+      advancedEffectsEnabled: entry.material === 'Blur',
+      areEffectsSupported: true,
+      areEffectsFast: entry.theme === 'Dark' ? null : false,
+    };
+    files.set(`${entry.name}.json`, json(value));
+  }
+  assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(files, SOURCE), SOURCE), files);
+  assert.equal(
+    validateObservation({ ...observation(), materialCapabilities: null }, expected)
+      .materialCapabilities,
+    null,
+  );
+});
+
+test('material capability publication rejects open fields and never evaluates getters', () => {
+  const facts = { advancedEffectsEnabled: true, areEffectsSupported: true, areEffectsFast: false };
+  const expected = { ...CASES[0], ...processIdentity };
+  const marker = 'MATERIAL_PRIVATE_SENTINEL';
+  let getters = 0;
+  const accessor = Object.defineProperty({ ...facts }, 'areEffectsFast', {
+    enumerable: true,
+    get() {
+      getters++;
+      return marker;
+    },
+  });
+  const symbolic = { ...facts, [Symbol('privateDetail')]: marker };
+  for (const malformed of [
+    marker,
+    [],
+    {},
+    { ...facts, privateDetail: marker },
+    { ...facts, areEffectsFast: marker },
+    { ...facts, areEffectsSupported: 1 },
+    { ...facts, advancedEffectsEnabled: undefined },
+    symbolic,
+    Object.create(facts),
+    accessor,
+  ]) {
+    const value = { ...observation(), materialCapabilities: malformed };
+    assert.throws(() => validateObservation(value, expected));
+    if (malformed !== accessor && malformed !== symbolic) {
+      const files = fixture();
+      files.set('Light-Blur.json', json(value));
+      assert.throws(() => encodeSheetEvidence(files, SOURCE));
+      assert.throws(() => decodeSheetEvidence(rawPackets(files), SOURCE));
+    }
+  }
+  const log = (value) =>
+    sheetFailureLog({
+      sourceSha: SOURCE,
+      name: 'Light-Blur',
+      phase: 'capability',
+      pid: 42,
+      observation: value,
+      error: null,
+      cleanupError: null,
+      stderrBytes: 0,
+    });
+  const readback = (value) =>
+    JSON.parse(log(value).slice('LABUI_SHEET_FAILURE_JSON '.length)).observation;
+  assert.deepEqual(
+    readback({ ...observation(), materialCapabilities: facts }).materialCapabilities,
+    facts,
+  );
+  assert.equal(Object.hasOwn(readback(observation()), 'materialCapabilities'), false);
+  assert.equal(
+    readback({ ...observation(), materialCapabilities: marker }).materialCapabilities,
+    null,
+  );
+  assert.deepEqual(
+    readback({ ...observation(), materialCapabilities: accessor }).materialCapabilities,
+    { ...facts, areEffectsFast: null },
+  );
+  const topAccessor = Object.defineProperty(observation(), 'materialCapabilities', {
+    enumerable: true,
+    get() {
+      getters++;
+      return marker;
+    },
+  });
+  assert.throws(() => validateObservation(topAccessor, expected));
+  assert.equal(readback(topAccessor).materialCapabilities, null);
+  assert.doesNotMatch(
+    log({ ...observation(), materialCapabilities: { ...facts, privateDetail: marker } }),
+    /MATERIAL_PRIVATE_SENTINEL|privateDetail/,
+  );
+  assert.equal(getters, 0);
+});
+
 test('failed capture preserves bounded source and capability diagnostics without becoming evidence', () => {
   const observed = {
     ...observation(),

@@ -1,4 +1,5 @@
 using LabUI.WinUI;
+using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -190,6 +191,7 @@ public sealed partial class SheetPage : Page
         if (observationPath is null || snapshotWritten) return;
         var body = FindPart(Sheet, "PART_Body");
         var handle = FindPart(Sheet, "PART_Indicator");
+        var capabilities = (FindPart(Sheet, "PART_Layers") as SheetLayers)?.MaterialCapabilities;
         var contentWitness = policyProbe?.Snapshot()
             ?? contentProbe?.Snapshot(FindPart(Sheet, "PART_ContentViewport") as ScrollViewer);
         var observation = new
@@ -218,6 +220,12 @@ public sealed partial class SheetPage : Page
             contentWitness,
             effectiveMaterial = Sheet.EffectiveMaterial?.ToString(),
             materialReason = Sheet.MaterialReason?.ToString(),
+            materialCapabilities = capabilities is { } facts ? new
+            {
+                advancedEffectsEnabled = facts.AdvancedEffectsEnabled,
+                areEffectsSupported = facts.AreEffectsSupported,
+                areEffectsFast = facts.AreEffectsFast
+            } : null,
             error
         };
         using (var stream = new FileStream(observationPath + ".tmp", FileMode.CreateNew, FileAccess.Write))
