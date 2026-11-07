@@ -25,6 +25,7 @@ export interface ColorsLiveAction {
   history: ColorsStateDelivery[];
   returned: ColorsStateResult | null;
   retained: boolean;
+  matchedReturn: boolean;
 }
 
 export interface ColorsLiveReport<Control> {
@@ -49,12 +50,18 @@ async function runScenario<Control>(
   const attach: typeof attachLabuiColors = (options) => {
     const history: ColorsStateDelivery[] = [];
     const actions: ColorsLiveAction[] = [];
-    const active = new Set<ColorsLiveAction>();
+    const active = new Map<ColorsLiveAction, WeakSet<LabuiColorsState>>();
     histories.push({ history, actions });
     const invoke = <Result>(call: ColorsLiveAction['call'], operation: () => Result) => {
-      const action: ColorsLiveAction = { call, history: [], returned: null, retained: false };
+      const action: ColorsLiveAction = {
+        call,
+        history: [],
+        returned: null,
+        retained: false,
+        matchedReturn: false,
+      };
       actions.push(action);
-      active.add(action);
+      active.set(action, new WeakSet<LabuiColorsState>());
       try {
         return { action, result: operation() };
       } catch (error) {
@@ -70,6 +77,7 @@ async function runScenario<Control>(
       action.returned = summarizeState(state);
       // Только возврат исходного snapshot допускает отсутствие новой публикации.
       action.retained = state === previous;
+      action.matchedReturn = active.get(action)?.has(state) ?? false;
       active.delete(action);
     };
     const observe = (
@@ -96,7 +104,10 @@ async function runScenario<Control>(
             marker: options.scope.hasAttribute('data-lab-colors-scope'),
           };
           history.push(delivery);
-          for (const action of active) action.history.push(delivery);
+          for (const [action, snapshots] of active) {
+            action.history.push(delivery);
+            snapshots.add(state);
+          }
           options.onState?.(state);
         },
       }),
