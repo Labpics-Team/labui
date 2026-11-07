@@ -570,20 +570,20 @@ function assertActualLayerSource(producer, renderer, projector, codec, page) {
     producer,
     `internal static void RecordActualLayer(Exception primary, Compositor compositor,
     IGraphicsEffectSource branch0)`,
-    'actual-layer must borrow the existing first AlphaMask branch',
+    'actual-layer must borrow the existing first DestinationIn branch',
   );
   assert.deepEqual(
     enclosed(producer, 'internal static void RecordActualLayer('),
     tokens(`try {
       var outcome = SheetFactorySampling.CaptureBorrowed(
-        () => (Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask,
+        () => (Transform2DEffect)((CompositeEffect)branch0).Sources[1],
         graph => compositor.CreateEffectFactory(graph));
       primary.Data[ActualLayerDataKey] = new Dictionary<string, object?> {
         ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
         ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
       };
     } catch { }`),
-    'Sheet: actual-layer must read the existing AlphaMask Layer unchanged, own only its factory and preserve primary failure',
+    'Sheet: actual-layer must read the existing DestinationIn mask Layer unchanged, own only its factory and preserve primary failure',
   );
   includesSource(
     renderer,
@@ -597,9 +597,9 @@ function assertActualLayerSource(producer, renderer, projector, codec, page) {
   );
   includesSource(
     renderer,
-    `AlphaMaskEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
-    => Effect(new AlphaMaskEffect { Source = source, AlphaMask = mask });`,
-    'actual-layer must remain the Frame-owned AlphaMask input',
+    `CompositeEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
+    => Effect(new CompositeEffect { Mode = CanvasComposite.DestinationIn, Sources = { source, mask } });`,
+    'DestinationIn must retain the Frame-owned destination image first and mask second',
   );
   const failure = enclosed(
     enclosed(renderer, 'CompositionEffectBrush Brush('),
@@ -958,16 +958,29 @@ test('source gate rejects replacing an actual branch with a constructed substitu
   );
 });
 
-test('source gate rejects sampling the Source instead of the existing AlphaMask Layer', async () => {
+test('source gate rejects sampling the destination image instead of the existing DestinationIn mask Layer', async () => {
   const files = await topologySources();
   files[0] = sourceCounterexample(
     files[0],
-    '(Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask',
-    '(Transform2DEffect)((AlphaMaskEffect)branch0).Source',
+    '(Transform2DEffect)((CompositeEffect)branch0).Sources[1]',
+    '(Transform2DEffect)((CompositeEffect)branch0).Sources[0]',
   );
   assert.throws(
     () => assertSheetSourceProjection(...files),
-    /read the existing AlphaMask Layer unchanged/,
+    /read the existing DestinationIn mask Layer unchanged/,
+  );
+});
+
+test('source gate rejects reversed DestinationIn image and mask inputs', async () => {
+  const files = await topologySources();
+  files[5] = sourceCounterexample(
+    files[5],
+    'Sources = { source, mask }',
+    'Sources = { mask, source }',
+  );
+  assert.throws(
+    () => assertSheetSourceProjection(...files),
+    /destination image first and mask second/,
   );
 });
 
@@ -975,12 +988,12 @@ test('source gate rejects constructing a substitute for the actual Layer', async
   const files = await topologySources();
   files[0] = sourceCounterexample(
     files[0],
-    '() => (Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask',
+    '() => (Transform2DEffect)((CompositeEffect)branch0).Sources[1]',
     '() => new Transform2DEffect { Source = new CompositionEffectSourceParameter("atlas") }',
   );
   assert.throws(
     () => assertSheetSourceProjection(...files),
-    /read the existing AlphaMask Layer unchanged/,
+    /read the existing DestinationIn mask Layer unchanged/,
   );
 });
 
@@ -1024,7 +1037,7 @@ test('source gate rejects measuring a component mask instead of its whole existi
   files[0] = sourceCounterexample(
     files[0],
     'CaptureBorrowed(() => (IGraphicsEffect)branch,',
-    'CaptureBorrowed(() => (IGraphicsEffect)((AlphaMaskEffect)branch).AlphaMask,',
+    'CaptureBorrowed(() => (IGraphicsEffect)((CompositeEffect)branch).Sources[1],',
   );
   assert.throws(
     () => assertSheetSourceProjection(...files),

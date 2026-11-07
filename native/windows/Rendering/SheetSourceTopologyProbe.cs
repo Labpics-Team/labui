@@ -84,7 +84,7 @@ internal static class SheetSourceTopologyProbe
         catch { }
     }
 
-    // Первая Ghost AlphaMask содержит уже созданный Frame-owned Layer.
+    // Первая Ghost DestinationIn содержит уже созданный Frame-owned Layer.
     // Заимствуется тот же Transform2D; sampler освобождает только свою factory.
     internal static void RecordActualLayer(Exception primary, Compositor compositor,
         IGraphicsEffectSource branch0)
@@ -92,7 +92,7 @@ internal static class SheetSourceTopologyProbe
         try
         {
             var outcome = SheetFactorySampling.CaptureBorrowed(
-                () => (Transform2DEffect)((AlphaMaskEffect)branch0).AlphaMask,
+                () => (Transform2DEffect)((CompositeEffect)branch0).Sources[1],
                 graph => compositor.CreateEffectFactory(graph));
             primary.Data[ActualLayerDataKey] = new Dictionary<string, object?>
             {

@@ -339,8 +339,8 @@ public sealed class SheetLayers : Grid
             });
             CompositeEffect Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
                 => Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
-            AlphaMaskEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
-                => Effect(new AlphaMaskEffect { Source = source, AlphaMask = mask });
+            CompositeEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
+                => Effect(new CompositeEffect { Mode = CanvasComposite.DestinationIn, Sources = { source, mask } });
             GaussianBlurEffect Blur(IGraphicsEffectSource source, double radius, string? name = null)
             {
                 var blur = Effect(new GaussianBlurEffect
