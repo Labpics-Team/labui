@@ -207,7 +207,7 @@ export function createGitRunner(
     try {
       const report = {
         schemaVersion: 1,
-        source: basename(root) === 'icons' ? 'icons' : basename(root) === 'source' ? 'ui' : 'other',
+        source: basename(root) === 'icons' ? 'icons' : basename(root) === 'ui' ? 'ui' : 'other',
         operation: COMMANDS.has(args[0]) ? args[0] : 'other',
         deadlineMs: GIT_DEADLINE_MS,
         outcome: failure ? 'failed' : 'passed',

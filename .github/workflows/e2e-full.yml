@@ -1,54 +1,29 @@
 name: E2E Full
 
-# Полный e2e-набор (ВСЕ спеки × chromium+webkit, ~319 × 2 ≈ 638 тестов) — ДОРОГОЙ
-# и склонный к голоданию/флаку на нагруженном self-hosted пуле, поэтому НЕ висит на
-# каждом PR. Здесь он гоняется по расписанию (ночью) и по кнопке (workflow_dispatch).
-# Полное покрытие НЕ потеряно относительно прежнего CI — оно просто перенесено сюда;
-# per-PR остаётся быстрый smoke-подмножество критического пути (см. ci.yml, job e2e).
 on:
   schedule:
-    # 03:00 UTC = 06:00 MSK — вне пиковой нагрузки раннеров.
     - cron: "0 3 * * *"
   workflow_dispatch:
 
-# Least privilege: read-only, как в ci.yml. Ни один шаг не пишет в репозиторий.
 permissions:
   contents: read
 
-# Отдельная от ci.yml группа: ночной прогон не конфликтует с PR-ным CI и с ручным
-# dispatch. Долгий полный прогон не отменяем на лету (cancel-in-progress: false).
 concurrency:
   group: e2e-full-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  # ROOT-контейнер busybox для очистки воркспейса и возврата владения на self-hosted
-  # раннерах — тот же паттерн и тот же пин (тег + дайджест), что в ci.yml. Бампить
-  # ОБА поля вместе и синхронно с ci.yml. Дайджест — OCI-индекс busybox:1.36 (multi-arch).
-  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
-  # Анонимный job-локальный docker-конфиг: credsStore=desktop из ~/.docker ломает
-  # пуллы, когда docker-credential-desktop.exe вне PATH systemd-сервиса (после
-  # рестарта дистро). Синхронно с ci.yml.
-  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
-
 jobs:
   e2e-full:
     name: playwright full (chromium + webkit)
-    runs-on: self-hosted
-    # Полный набор длиннее smoke; на нагруженном пуле даём запас, но не бесконечный.
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c
+      options: --init
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 40
     steps:
-      # Тот же root-контейнерный clean, что и во всех job'ах ci.yml: self-hosted
-      # раннеры делят _work, docker-as-root шаги (Playwright) оставляют root-owned
-      # файлы, а daniel (uid 1000) без passwordless sudo их не удалит обычным `rm`.
-      # ROOT-контейнер busybox сносит содержимое воркспейса независимо от истории
-      # раннера и возвращает владение каталогом раннеру (`id -u`) для checkout'а.
-      - name: Чистый воркспейс (self-hosted)
-        shell: bash
-        run: |
-          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -60,16 +35,3 @@ jobs:
         env:
           E2E_SMOKE: "0"
         run: bash .github/scripts/browser-check.sh
-
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
-        # Это дополнительное восстановление: сбой виден, следующая первичная очистка обязательна.
-        # Тот же defence-in-depth chown-back, что и в e2e-job ci.yml: возвращаем
-        # владение раннеру (`id -u`) через ROOT-контейнер busybox, чтобы clean-шаг
-        # следующего job'а на этом раннере не спотыкался о root-owned файлы.
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          if ! docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R "$(id -u):$(id -g)" /workspace; then
-            printf '::warning::Workspace ownership restore failed; mandatory cleanup runs before the next checkout.\n' >&2
-          fi

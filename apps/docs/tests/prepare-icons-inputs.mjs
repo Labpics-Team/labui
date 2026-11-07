@@ -6,11 +6,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import { createGitRunner } from './icons-git-diagnostics.mjs';
-import {
-  assertSelfHostedRunner,
-  stateReferenceContract,
-  validateSubject,
-} from './icons-packed.mjs';
+import { assertActionsRunner, stateReferenceContract, validateSubject } from './icons-packed.mjs';
 
 const PIN = new URL('./icons-consumer-source.json', import.meta.url);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -418,7 +414,7 @@ export function validatePlatformMeasurement(report, sourceSha, artifactFiles, lo
 // Это диагностический запуск producer, не принятие candidatePolicies.
 // Guard срабатывает до child process; --update не является допустимым параметром.
 async function measurePlatformArtifacts(iconsRoot, sourceSha, out, files) {
-  assertSelfHostedRunner();
+  assertActionsRunner();
   const materialFiles = [
     'scripts/measure-platform-artifacts.mjs',
     'scripts/check-package-size.js',
