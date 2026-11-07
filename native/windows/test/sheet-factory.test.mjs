@@ -58,19 +58,33 @@ function errorReadback(fields) {
   return result.observation.error;
 }
 
-test('factory failure identifies the actual call without admitting the failed renderer', () => {
+test('factory failure preserves each finite call identity without admitting the failed renderer', () => {
   for (const name of [
     'ghostPair0',
     'ghostPair1',
     'ghostPair2',
     'ghostPair3',
     'progressive',
+    'progressiveSeed',
+    'progressiveLeaf0',
+    'progressiveLeaf1',
+    'progressiveLeaf2',
+    'progressiveLeaf3',
+    'progressiveLeaf4',
+    'progressiveLeaf5',
+    'progressiveLeaf6',
+    'progressiveLeaf7',
+    'progressiveSum',
     'ghost',
     'body',
     'final',
   ])
     for (const operation of ['factory', 'brush', 'binding'])
       assert.deepEqual(readback({ name, operation }), { name, operation });
+});
+
+test('legacy factory absence remains absent without inventing a call identity', () => {
+  assert.equal(Object.hasOwn(errorReadback({}), 'factory'), false);
 });
 
 test('factory failure rejects private names, unknown fields and malformed values', () => {
@@ -86,6 +100,10 @@ test('factory failure rejects private names, unknown fields and malformed values
     { ...factory, name: 'PRIVATE_FACTORY_VALUE' },
     { ...factory, operation: 'PRIVATE_FACTORY_VALUE' },
     { ...factory, name: 'GhostPair0' },
+    { ...factory, name: 'progressiveLeaf-1' },
+    { ...factory, name: 'progressiveLeaf8' },
+    { ...factory, name: 'progressiveLeaf00' },
+    { ...factory, name: 'progressiveLeaf0PRIVATE_FACTORY_VALUE' },
     { ...factory, operation: 'Factory' },
     { ...factory, name: ['ghostPair0'] },
     { ...factory, operation: ['factory'] },

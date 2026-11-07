@@ -25,7 +25,7 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /var seed = stages\.CreateVisual\(Brush\("progressive", seedGraph,\s*inlineProgressive, inlineProgressive, branches, \("backdrop", backdropBrush\)\)\);/,
+    /var seed = stages\.CreateVisual\(Brush\("progressiveSeed", seedGraph,\s*inlineProgressive, inlineProgressive, branches, \("backdrop", backdropBrush\)\)\);/,
   );
   assert.match(
     frame,
@@ -38,11 +38,11 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\("progressive", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*progressive\.Sources\.Add\(Source\(name\)\);\s*progressiveBindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
+    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*progressive\.Sources\.Add\(Source\(name\)\);\s*progressiveBindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
   );
   assert.match(
     frame,
-    /var sum = stages\.CreateVisual\(Brush\("progressive", progressive,\s*inlineProgressive, inlineProgressive, branches, progressiveBindings\.ToArray\(\)\)\);\s*var capturedProgressive = stages\.Capture\(sum\);/,
+    /var sum = stages\.CreateVisual\(Brush\("progressiveSum", progressive,\s*inlineProgressive, inlineProgressive, branches, progressiveBindings\.ToArray\(\)\)\);\s*var capturedProgressive = stages\.Capture\(sum\);/,
   );
   assert.match(
     frame,

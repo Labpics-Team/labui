@@ -462,7 +462,7 @@ public sealed class SheetLayers : Grid
 
             stages = new SurfaceStages(result, compositor);
             var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
-            var seed = stages.CreateVisual(Brush("progressive", seedGraph,
+            var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph,
                 inlineProgressive, inlineProgressive, branches, ("backdrop", backdropBrush)));
             result.Visual.Children.InsertAtBottom(seed);
             var capturedBackdrop = stages.Capture(seed);
@@ -472,7 +472,7 @@ public sealed class SheetLayers : Grid
             List<(string Name, CompositionBrush Source)> progressiveBindings = [];
             for (var index = 0; index < branches.Length; index++)
             {
-                var leaf = stages.CreateVisual(Brush("progressive", (IGraphicsEffect)branches[index],
+                var leaf = stages.CreateVisual(Brush($"progressiveLeaf{index}", (IGraphicsEffect)branches[index],
                     inlineProgressive, inlineProgressive, branches,
                     ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
                 var capturedLeaf = stages.Capture(leaf);
@@ -481,7 +481,7 @@ public sealed class SheetLayers : Grid
                 progressiveBindings.Add((name, capturedLeaf));
             }
             // Полная Add-сумма остаётся эффектом; surface отделяет её от paints и внешнего SourceOver.
-            var sum = stages.CreateVisual(Brush("progressive", progressive,
+            var sum = stages.CreateVisual(Brush("progressiveSum", progressive,
                 inlineProgressive, inlineProgressive, branches, progressiveBindings.ToArray()));
             var capturedProgressive = stages.Capture(sum);
             // Alpha Color и float Opacity остаются раздельными входами LabColors.

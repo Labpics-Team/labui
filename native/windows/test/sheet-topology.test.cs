@@ -53,6 +53,31 @@ Check(ReferenceEquals(unavailableRetained, unavailable) && unavailableRetained?.
     && SheetSourceTopology.Read(unavailableRetained) is null,
     "Недоступные Data заменили исходный отказ.");
 
+foreach (var name in new[] { "progressive", "progressiveSeed", "progressiveLeaf0", "progressiveLeaf1",
+    "progressiveLeaf2", "progressiveLeaf3", "progressiveLeaf4", "progressiveLeaf5",
+    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum" })
+    foreach (var operation in new[] { "factory", "brush", "binding" })
+    {
+        var primary = new TestFailure(BuildFailure, Marker);
+        primary.Data[SheetSourceTopology.FactoryDataKey] = new Dictionary<string, object?>
+        { ["name"] = name, ["operation"] = operation };
+        var projected = SheetSourceTopology.ReadFactory(primary);
+        Check(projected is { Count: 2 } && Equals(projected["name"], name)
+            && Equals(projected["operation"], operation) && primary.HResult == BuildFailure,
+            "Проектор потерял конечную identity factory либо заменил исходный HRESULT.");
+        PrivateTextAbsent(projected);
+    }
+Check(SheetSourceTopology.ReadFactory(new TestFailure(BuildFailure, Marker)) is null,
+    "Отсутствующий factory получил выдуманную identity.");
+foreach (var name in new[] { "progressiveLeaf-1", "progressiveLeaf8", "progressiveLeaf00", Marker })
+{
+    var primary = new TestFailure(BuildFailure, Marker);
+    primary.Data[SheetSourceTopology.FactoryDataKey] = new Dictionary<string, object?>
+    { ["name"] = name, ["operation"] = "factory" };
+    Check(SheetSourceTopology.ReadFactory(primary) is null,
+        "Проектор пропустил неизвестную factory identity.");
+}
+
 // Непрозрачные значения и обычные IDisposable callbacks: Native API здесь нет.
 List<string> released = [];
 var borrowed = new CallbackResource(() => released.Add("borrowed"));
