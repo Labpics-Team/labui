@@ -68,7 +68,7 @@ internal static class SheetSourceTopology
                 var name = Known(rawName, "ghostPair0", "ghostPair1", "ghostPair2", "ghostPair3",
                     "progressive", "progressiveSeed", "progressiveLeaf0", "progressiveLeaf1",
                     "progressiveLeaf2", "progressiveLeaf3", "progressiveLeaf4", "progressiveLeaf5",
-                    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum", "ghost", "body", "final");
+                    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum", "ghost", "body", "outer", "border", "final");
                 var operation = Known(rawOperation, "factory", "brush", "binding");
                 return name is not null && operation is not null
                     ? new() { ["name"] = name, ["operation"] = operation } : null;

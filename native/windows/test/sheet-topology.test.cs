@@ -53,9 +53,10 @@ Check(ReferenceEquals(unavailableRetained, unavailable) && unavailableRetained?.
     && SheetSourceTopology.Read(unavailableRetained) is null,
     "Недоступные Data заменили исходный отказ.");
 
-foreach (var name in new[] { "progressive", "progressiveSeed", "progressiveLeaf0", "progressiveLeaf1",
+foreach (var name in new[] { "ghostPair0", "ghostPair1", "ghostPair2", "ghostPair3",
+    "progressive", "progressiveSeed", "progressiveLeaf0", "progressiveLeaf1",
     "progressiveLeaf2", "progressiveLeaf3", "progressiveLeaf4", "progressiveLeaf5",
-    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum" })
+    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum", "ghost", "body", "outer", "border", "final" })
     foreach (var operation in new[] { "factory", "brush", "binding" })
     {
         var primary = new TestFailure(BuildFailure, Marker);
