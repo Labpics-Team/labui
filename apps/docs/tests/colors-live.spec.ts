@@ -85,12 +85,7 @@ function followsLifecycle(history: ColorsStateDelivery[], steps: LifecycleStep[]
 
 function followsResult(action: ColorsLiveAction): boolean {
   if (action.returned === null) return false;
-  // Reentry и повторный dispose могут вернуть уже опубликованное состояние.
-  return (
-    action.call === 'cancel' ||
-    action.call === 'dispose' ||
-    followsLifecycle(action.history, [action.returned])
-  );
+  return action.retained || followsLifecycle(action.history, [action.returned]);
 }
 
 function followsActions(actions: ColorsLiveAction[], steps: ActionStep[]): boolean {

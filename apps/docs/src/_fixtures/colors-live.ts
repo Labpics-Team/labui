@@ -24,6 +24,7 @@ export interface ColorsLiveAction {
   call: 'attach' | 'refresh' | 'cancel' | 'dispose';
   history: ColorsStateDelivery[];
   returned: ColorsStateResult | null;
+  retained: boolean;
 }
 
 export interface ColorsLiveReport<Control> {
@@ -51,7 +52,7 @@ async function runScenario<Control>(
     const active = new Set<ColorsLiveAction>();
     histories.push({ history, actions });
     const invoke = <Result>(call: ColorsLiveAction['call'], operation: () => Result) => {
-      const action: ColorsLiveAction = { call, history: [], returned: null };
+      const action: ColorsLiveAction = { call, history: [], returned: null, retained: false };
       actions.push(action);
       active.add(action);
       try {
@@ -61,14 +62,24 @@ async function runScenario<Control>(
         throw error;
       }
     };
-    const complete = (action: ColorsLiveAction, state: LabuiColorsState) => {
+    const complete = (
+      action: ColorsLiveAction,
+      state: LabuiColorsState,
+      previous?: LabuiColorsState,
+    ) => {
       action.returned = summarizeState(state);
+      // Только возврат исходного snapshot допускает отсутствие новой публикации.
+      action.retained = state === previous;
       active.delete(action);
     };
-    const observe = (action: ColorsLiveAction, promise: Promise<LabuiColorsState>) => {
+    const observe = (
+      action: ColorsLiveAction,
+      promise: Promise<LabuiColorsState>,
+      previous?: LabuiColorsState,
+    ) => {
       // Наблюдаем до продолжения сценария, сохраняя исходный публичный Promise.
       void promise.then(
-        (state) => complete(action, state),
+        (state) => complete(action, state, previous),
         () => active.delete(action),
       );
       return promise;
@@ -91,8 +102,9 @@ async function runScenario<Control>(
       }),
     );
     const sync = (call: 'cancel' | 'dispose') => {
+      const previous = attachment.state;
       const { action, result } = invoke(call, () => attachment[call]());
-      complete(action, result);
+      complete(action, result, previous);
       return result;
     };
     return {
@@ -101,8 +113,9 @@ async function runScenario<Control>(
         return attachment.state;
       },
       refresh() {
+        const previous = attachment.state;
         const { action, result } = invoke('refresh', () => attachment.refresh());
-        return observe(action, result);
+        return observe(action, result, previous);
       },
       cancel: () => sync('cancel'),
       dispose: () => sync('dispose'),
