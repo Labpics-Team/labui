@@ -1,8 +1,13 @@
 import { expect, test } from '@playwright/test';
-import type { ColorsLiveReport, ColorsStateDelivery } from '../src/_fixtures/colors-live';
+import type {
+  ColorsLiveAction,
+  ColorsLiveReport,
+  ColorsStateDelivery,
+} from '../src/_fixtures/colors-live';
 
 type LifecycleStep = Pick<ColorsStateDelivery, 'state' | 'reason'> &
-  Partial<Pick<ColorsStateDelivery, 'role' | 'marker' | 'cleanupCause'>>;
+  Partial<Pick<ColorsStateDelivery, 'theme' | 'role' | 'marker' | 'outputCount' | 'cleanupCause'>>;
+type ActionStep = LifecycleStep & Pick<ColorsLiveAction, 'call'>;
 
 const ready: LifecycleStep = { state: 'ready', reason: null };
 const withdrawn: LifecycleStep = { state: 'waiting', reason: null, role: '' };
@@ -14,6 +19,22 @@ const rejected: LifecycleStep = {
   role: '',
 };
 
+const normalThemeActions: ActionStep[] = [
+  { call: 'attach', ...ready, theme: 'light' },
+  { call: 'refresh', ...ready, theme: 'light', role: 'rgb(31 32 33)' },
+  { call: 'refresh', ...ready, theme: 'dark', role: 'rgb(31 32 33)' },
+  { call: 'dispose', ...disposed, role: 'rgb(41 42 43)' },
+];
+const sheetRemovalActions: ActionStep[] = [
+  { call: 'attach', ...ready, theme: 'light' },
+  { call: 'refresh', ...ready, theme: 'light' },
+  { call: 'dispose', ...disposed },
+];
+const authorityActions: Record<string, ActionStep[]> = {
+  'normal-theme-dispose': normalThemeActions,
+  'sheet-removed': sheetRemovalActions,
+};
+
 const authorityLifecycles: Record<string, LifecycleStep[]> = {
   'initial-important': [rejected, { ...disposed, role: 'rgb(255 0 0)' }],
   'live-important-recovery': [
@@ -22,14 +43,10 @@ const authorityLifecycles: Record<string, LifecycleStep[]> = {
     { ...ready, role: 'rgb(21 22 23)' },
     { ...disposed, role: 'rgb(21 22 23)' },
   ],
-  'normal-theme-dispose': [
-    ready,
-    { ...ready, role: 'rgb(31 32 33)' },
-    { ...disposed, role: 'rgb(41 42 43)' },
-  ],
+  'normal-theme-dispose': normalThemeActions,
   'marker-changed': [ready, withdrawn, ready, disposed],
   'marker-removed': [ready, withdrawn, ready, disposed],
-  'sheet-removed': [ready, disposed],
+  'sheet-removed': sheetRemovalActions,
   'document-shadow-document': [ready, withdrawn, ready, withdrawn, ready, disposed],
   'cancel-recovery': [ready, cancelled, ready, disposed],
   'host-failure-recovery': [
@@ -42,7 +59,15 @@ const authorityLifecycles: Record<string, LifecycleStep[]> = {
 };
 
 function followsLifecycle(history: ColorsStateDelivery[], steps: LifecycleStep[]): boolean {
-  const fields = ['state', 'reason', 'role', 'marker', 'cleanupCause'] as const;
+  const fields = [
+    'state',
+    'reason',
+    'theme',
+    'role',
+    'marker',
+    'outputCount',
+    'cleanupCause',
+  ] as const;
   let next = 0;
   for (const delivery of history) {
     const step = steps[next];
@@ -56,14 +81,38 @@ function followsLifecycle(history: ColorsStateDelivery[], steps: LifecycleStep[]
   return next === steps.length;
 }
 
+function followsResult(action: ColorsLiveAction): boolean {
+  if (action.returned === null) return false;
+  // Reentry и повторный dispose могут вернуть уже опубликованное состояние.
+  return (
+    action.call === 'cancel' ||
+    action.call === 'dispose' ||
+    followsLifecycle(action.history, [action.returned])
+  );
+}
+
+function followsActions(actions: ColorsLiveAction[], steps: ActionStep[]): boolean {
+  return (
+    actions.length === steps.length &&
+    actions.every((action, index) => {
+      const step = steps[index];
+      return step && action.call === step.call && followsLifecycle(action.history, [step]);
+    })
+  );
+}
+
 function expectHistories(report: ColorsLiveReport<unknown>, attachments: number, healthy: number) {
   expect(report.histories).toHaveLength(attachments);
   expect(report.histories.map(({ control }) => control)).toEqual(report.controls);
   expect(
     report.histories.filter(({ history }) => history.some(({ state }) => state === 'ready')),
   ).toHaveLength(healthy);
-  for (const { history } of report.histories) {
+  for (const { history, actions } of report.histories) {
     expect(history.length).toBeGreaterThan(0);
+    expect(actions[0]?.call).toBe('attach');
+    for (const [index, action] of actions.entries()) {
+      expect(followsResult(action), `public result/onState ${action.call} ${index}`).toBe(true);
+    }
     for (const delivery of history) {
       expect(delivery.reported).toBe(delivery.state);
       if (delivery.state === 'ready') {
@@ -101,10 +150,13 @@ test('Colors authority: refusal, withdrawal, observation, recovery and dispose',
     'host-failure-recovery',
   ]);
   expectHistories(report, 9, 8);
-  for (const { control, history } of report.histories) {
+  for (const { control, history, actions } of report.histories) {
     const steps = authorityLifecycles[control];
     if (!steps) throw new Error(`Missing public lifecycle for ${control}`);
     expect(followsLifecycle(history, steps), `public onState: ${control}`).toBe(true);
+    const actionSteps = authorityActions[control];
+    if (actionSteps)
+      expect(followsActions(actions, actionSteps), `public onState actions: ${control}`).toBe(true);
   }
 });
 
