@@ -19,20 +19,11 @@ function assertSurfaceStages(candidate) {
     candidate.indexOf('private Frame BuildFrame('),
     candidate.indexOf('private CanvasGeometry BodyShape('),
   );
-  assert.match(
-    frame,
-    /var seedGraph = Effect\(new OpacityEffect \{ Source = Backdrop\(\), Opacity = 1 \}\);/,
-  );
-  assert.match(
-    frame,
-    /var seed = stages\.CreateVisual\(Brush\("progressiveSeed", seedGraph,\s*\("backdrop", backdropBrush\)\)\);/,
-  );
-  assert.match(
-    frame,
-    /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*(?:(?:\/\/[^\n]*\n)\s*)*var capturedBackdrop = stages\.Capture\(seed\);/,
-  );
+  assert.doesNotMatch(frame, /CreateBackdropBrush|progressiveSeed/);
+  assert.match(frame, /var sceneVisual = ElementCompositionPreview\.GetElementVisual\(scene!\);/);
+  assert.match(frame, /var capturedBackdrop = stages\.Capture\(sceneVisual,/);
   assert.ok(
-    !/(?:seed|leaf|sum)\.(?:Opacity|IsVisible)\s*=\s*(?:0|false)\s*;/.test(frame),
+    !/(?:leaf|sum)\.(?:Opacity|IsVisible)\s*=\s*(?:0|false)\s*;/.test(frame),
     'Captured Sheet sources must remain visible; this is a source guard, not native pixel evidence',
   );
   assert.match(frame, /var progressiveSources = new CompositionSurfaceBrush\[branches\.Length\];/);
@@ -86,8 +77,8 @@ function assertSurfaceStages(candidate) {
   assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 1);
   assert.doesNotMatch(frame, /void Output\(|^\s*Output\(/m);
   assert.deepEqual(
-    [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
-    ['seed', 'leaf', 'sum'],
+    [...frame.matchAll(/stages\.Capture\((\w+)/g)].map((match) => match[1]),
+    ['sceneVisual', 'leaf', 'sum'],
   );
   assert.match(
     candidate,
@@ -99,7 +90,7 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     candidate,
-    /var surface = frame\.Own\(compositor\.CreateVisualSurface\(\)\);\s*surfaces\.Add\(surface\);\s*surface\.SourceVisual = visual;\s*surface\.SourceOffset = Vector2\.Zero;\s*surface\.SourceSize = visual\.Size;\s*var brush = frame\.Own\(compositor\.CreateSurfaceBrush\(surface\)\);\s*brush\.Stretch = CompositionStretch\.Fill;\s*brush\.HorizontalAlignmentRatio = 0;\s*brush\.VerticalAlignmentRatio = 0;\s*return brush;/,
+    /var surface = frame\.Own\(compositor\.CreateVisualSurface\(\)\);\s*surfaces\.Add\(surface\);\s*surface\.SourceVisual = visual;\s*surface\.SourceOffset = offset;\s*surface\.SourceSize = size;\s*var brush = frame\.Own\(compositor\.CreateSurfaceBrush\(surface\)\);\s*brush\.Stretch = CompositionStretch\.Fill;\s*brush\.HorizontalAlignmentRatio = 0;\s*brush\.VerticalAlignmentRatio = 0;\s*return brush;/,
   );
   const stages = candidate.slice(
     candidate.indexOf('private sealed class SurfaceStages('),
@@ -141,7 +132,7 @@ function assertSurfaceStages(candidate) {
 }
 
 test('Sheet native layers preserve Ghost and Body effects before raster masks and ancestor opacity', () => {
-  assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
+  assert.doesNotMatch(build, /compositor\.CreateBackdropBrush\(\)/);
   assertSurfaceStages(source);
   assert.match(
     build,
@@ -168,34 +159,29 @@ test('Sheet native layers preserve Ghost and Body effects before raster masks an
   assert.doesNotMatch(build, /compositor\.Create(?:VisualSurface|SpriteVisual|LayerVisual)\(/);
 });
 
-test('Sheet captured backdrop stays scene-connected and visible before both material consumers', () => {
-  assert.match(build, /result\.Visual\.Children\.InsertAtBottom\(seed\);/);
-  assert.ok(!/seed\.(?:Opacity|IsVisible)\s*=\s*(?:0|false)\s*;/.test(build));
+test('Sheet materials share the host scene without recapturing their own backdrop brush', () => {
+  assert.doesNotMatch(build, /CreateBackdropBrush|progressiveSeed|Own\(sceneVisual\)/);
   assert.match(build, /\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)/);
   assert.match(build, /\("backdrop", capturedBackdrop\)\)\);\s*var bodyTint/);
-  assert.ok(build.indexOf('stages.Capture(seed)') < build.indexOf('var progressiveSources'));
-  assert.ok(build.indexOf('stages.Capture(seed)') < build.indexOf('var bodyBackdrop'));
+  assert.ok(build.indexOf('stages.Capture(sceneVisual,') < build.indexOf('var progressiveSources'));
+  assert.ok(build.indexOf('stages.Capture(sceneVisual,') < build.indexOf('var bodyBackdrop'));
 });
 
-test('Sheet capture source guard rejects hiding the scene seed or intermediate pure-effect sources', () => {
-  for (const name of ['seed', 'leaf', 'sum'])
+test('Sheet capture source guard rejects hiding intermediate pure-effect sources', () => {
+  for (const name of ['leaf', 'sum'])
     for (const hidden of ['Opacity = 0', 'IsVisible = false']) {
       const capture = `stages.Capture(${name});`;
       assert.ok(source.includes(capture));
       const candidate = source.replace(capture, `${capture}\n            ${name}.${hidden};`);
       assert.throws(() => assertSurfaceStages(candidate));
     }
-  for (const connection of ['', 'result.Visual.Children.Remove(seed);']) {
-    const candidate = source.replace('result.Visual.Children.InsertAtBottom(seed);', connection);
-    assert.throws(() => assertSurfaceStages(candidate));
-  }
 });
 
-test('Sheet capture source guard rejects a root capture, repeated seed and bypassed leaf binding', () => {
+test('Sheet capture source guard rejects a root capture, repeated scene and bypassed leaf binding', () => {
   for (const [original, replacement] of [
     ['surface.SourceVisual = visual;', 'surface.SourceVisual = frame.Visual;'],
-    ['stages.Capture(leaf)', 'stages.Capture(seed)'],
-    ['stages.Capture(sum)', 'stages.Capture(seed)'],
+    ['stages.Capture(leaf)', 'stages.Capture(sceneVisual)'],
+    ['stages.Capture(sum)', 'stages.Capture(sceneVisual)'],
     ['("right", progressiveSources[index + 1])', '("right", progressiveSources[index])'],
     ['MaskBrush("ghost", ghostMask)', 'MaskBrush("ghost", bodyMask)'],
     ['MaskBrush("body", bodyMask)', 'MaskBrush("body", ghostMask)'],
@@ -271,8 +257,8 @@ test('Sheet material source guard rejects a plain output container, bypassed gro
 
 test('Sheet surface source guard rejects changed coordinates and a SourceOver progressive sum', () => {
   for (const [original, replacement] of [
-    ['surface.SourceOffset = Vector2.Zero;', 'surface.SourceOffset = Vector2.One;'],
-    ['surface.SourceSize = visual.Size;', 'surface.SourceSize = visual.Size / 2;'],
+    ['surface.SourceOffset = offset;', 'surface.SourceOffset = Vector2.Zero;'],
+    ['surface.SourceSize = size;', 'surface.SourceSize = size / 2;'],
     [
       'Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") }',
       'Mode = CanvasComposite.SourceOver, Sources = { Source("left"), Source("right") }',
@@ -413,10 +399,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
     build,
     /var atlasBrush = result\.Own\(compositor\.CreateSurfaceBrush\(atlasSurface\)\)/,
   );
-  assert.match(build, /var backdropBrush = result\.Own\(compositor\.CreateBackdropBrush\(\)\)/);
-  assert.ok(
-    build.indexOf('compositor.CreateBackdropBrush()') < build.indexOf('factory.CreateBrush()'),
-  );
+  assert.doesNotMatch(build, /Own\(sceneVisual\)/);
   assert.match(build, /var factory = result\.Own\(SheetSourceTopologyProbe\.CreateFactory\(/);
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
   assertSurfaceStages(source);

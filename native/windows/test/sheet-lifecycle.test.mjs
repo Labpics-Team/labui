@@ -209,6 +209,8 @@ sealed class Probe {
     private CompositionGraphicsDevice? graphics;
     private Frame? frame;
     private SheetMetrics? geometry = SheetMetrics.Half(375,812);
+    // Существующая resource-проба получает готовый вход; live scene проверяется hosted capture.
+    private SceneInput? scene = new();
     private bool active = true, queued, recovering, recoveryFailed;
     private long generation = 1;
     public double ActualWidth => 375; public double ActualHeight => 812;
@@ -259,6 +261,7 @@ enum LabSheetMaterial { Blur, Solid }
 enum LabSheetMaterialReason { Requested, TransparencyDisabled, EffectsUnsupported }
 ${capabilities}
 record struct SheetMetrics { public static SheetMetrics Half(double width, double height) => new(); }
+sealed class SceneInput { public bool IsLoaded = true; public double ActualWidth = 375, ActualHeight = 812; }
 sealed class FakePaint { public double Opacity = 1; public FakeColor Color = new(); }
 sealed class FakeColor { public byte A = 255; }
 class Resource : IDisposable {

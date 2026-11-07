@@ -52,6 +52,7 @@ public sealed class SheetLayers : Grid
     private Frame? frame;
     private SheetMetrics? geometry;
     private XamlRoot? root;
+    private FrameworkElement? scene;
     private UISettings? settings;
     private CompositionCapabilities? capabilities;
     private LabSheetMaterial requested;
@@ -66,6 +67,21 @@ public sealed class SheetLayers : Grid
     internal const double RadiusToSigma = 0.5;
     // Дискретные Gaussian-ветви с линейными весами, не маска одного сильного blur.
     // Число ветвей и зерно требуют визуальной и GPU-квалификации.
+
+    internal void SetScene(FrameworkElement? source)
+    {
+        if (ReferenceEquals(scene, source)) return;
+        scene = source;
+        SceneGeometryChanged();
+    }
+
+    internal void SceneGeometryChanged()
+    {
+        var current = ++generation;
+        queued = false;
+        ReleaseGraphics();
+        if (current == generation) QueueRedraw();
+    }
 
     internal void Attach(LabSheetMaterial material)
     {
@@ -107,6 +123,7 @@ public sealed class SheetLayers : Grid
         active = false;
         generation++;
         queued = false;
+        scene = null;
         SizeChanged -= Resized;
         ActualThemeChanged -= ThemeChanged;
         if (root is not null) root.Changed -= RootChanged;
@@ -208,6 +225,14 @@ public sealed class SheetLayers : Grid
                 // Уведомление об утрате готовности может выгрузить или переподключить контрол.
                 if (!active || current != generation) return;
             }
+            var resolved = ResolveMaterial();
+            // Отсутствие сцены во время Loaded/retemplate — ожидание, не отказ GPU.
+            if (resolved.Material == LabSheetMaterial.Blur
+                && (scene is null || !scene.IsLoaded || scene.ActualWidth <= 0 || scene.ActualHeight <= 0))
+            {
+                ReleaseGraphics();
+                return;
+            }
             var compositor = ElementCompositionPreview.GetElementVisual(this).Compositor;
             if (device is null)
             {
@@ -215,7 +240,6 @@ public sealed class SheetLayers : Grid
                 device.DeviceLost += DeviceLost;
                 graphics = CanvasComposition.CreateCompositionGraphicsDevice(compositor, device);
             }
-            var resolved = ResolveMaterial();
             var candidate = BuildFrame(compositor, metrics, resolved.Material, resolved.Reason, resolved.Capabilities);
             try { ElementCompositionPreview.SetElementChildVisual(this, candidate.Visual); }
             catch (Exception error)
@@ -408,7 +432,6 @@ public sealed class SheetLayers : Grid
             atlasBrush.VerticalAlignmentRatio = 0;
             atlasBrush.Scale = atlas.BrushScale;
             atlasBrush.Offset = atlas.BrushOffset;
-            var backdropBrush = result.Own(compositor.CreateBackdropBrush());
             CompositionEffectBrush Brush(string factoryName, IGraphicsEffect graph,
                 params (string Name, CompositionBrush Source)[] bindings)
             {
@@ -445,12 +468,23 @@ public sealed class SheetLayers : Grid
                     : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
                         $"ghostBlur{index}"), Layer(ghostMasks[index]));
             stages = new SurfaceStages(result, compositor);
-            var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
-            var seed = stages.CreateVisual(Brush("progressiveSeed", seedGraph, ("backdrop", backdropBrush)));
-            result.Visual.Children.InsertAtBottom(seed);
-            // Источник остаётся видимым pass-through под общим material LayerVisual.
-            // Действие его capture на Ghost и Body проверяется по native PNG.
-            var capturedBackdrop = stages.Capture(seed);
+            var sceneVisual = ElementCompositionPreview.GetElementVisual(scene!);
+            if (!ReferenceEquals(sceneVisual.Compositor, compositor) || !ReferenceEquals(scene!.XamlRoot, XamlRoot))
+                throw new InvalidOperationException("Sheet и сцена требуют один XamlRoot и compositor.");
+            // Захватывается сама живая сцена, а не кисть, окружение которой вне SourceVisual.
+            var transform = TransformToVisual(scene);
+            var origin = transform.TransformPoint(new Point(0, 0));
+            var right = transform.TransformPoint(new Point(metrics.Width, 0));
+            var bottom = transform.TransformPoint(new Point(0, metrics.Height));
+            if (!double.IsFinite(origin.X) || !double.IsFinite(origin.Y)
+                || !double.IsFinite(right.X) || !double.IsFinite(right.Y)
+                || !double.IsFinite(bottom.X) || !double.IsFinite(bottom.Y)
+                || Math.Abs(right.Y - origin.Y) > 0.001 || Math.Abs(bottom.X - origin.X) > 0.001
+                || right.X <= origin.X || bottom.Y <= origin.Y)
+                throw new InvalidOperationException("Sheet требует осевой viewport без отражения.");
+            var capturedBackdrop = stages.Capture(sceneVisual,
+                new Vector2((float)origin.X, (float)origin.Y),
+                new Vector2((float)(right.X - origin.X), (float)(bottom.Y - origin.Y)));
 
             var progressiveSources = new CompositionSurfaceBrush[branches.Length];
             for (var index = 0; index < branches.Length; index++)
@@ -606,13 +640,16 @@ public sealed class SheetLayers : Grid
             return layer;
         }
 
-        internal CompositionSurfaceBrush Capture(SpriteVisual visual)
+        internal CompositionSurfaceBrush Capture(Visual visual)
+            => Capture(visual, Vector2.Zero, visual.Size);
+
+        internal CompositionSurfaceBrush Capture(Visual visual, Vector2 offset, Vector2 size)
         {
             var surface = frame.Own(compositor.CreateVisualSurface());
             surfaces.Add(surface);
             surface.SourceVisual = visual;
-            surface.SourceOffset = Vector2.Zero;
-            surface.SourceSize = visual.Size;
+            surface.SourceOffset = offset;
+            surface.SourceSize = size;
             var brush = frame.Own(compositor.CreateSurfaceBrush(surface));
             brush.Stretch = CompositionStretch.Fill;
             brush.HorizontalAlignmentRatio = 0;
