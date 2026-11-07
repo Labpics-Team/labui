@@ -146,7 +146,13 @@ function assertMaterials(candidate) {
     'var ghostTint = stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity);',
     'var ghostNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity);',
     'var ghostVisual = stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise);',
-    'ghostVisual.Effect = MaskBrush("ghost", ghostMask);',
+    'var ghostClip = result.Own(compositor.CreateRectangleClip());',
+    'ghostClip.Left = 0;',
+    'ghostClip.Top = 0;',
+    'ghostClip.Right = result.Visual.Size.X;',
+    'ghostClip.Bottom = (float)metrics.GhostHeight;',
+    'ghostVisual.BorderMode = CompositionBorderMode.Soft;',
+    'ghostVisual.Clip = ghostClip;',
     'var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);',
     'var tinted = stages.CreateLayer(bodyBackdrop, bodyTint);',
     'Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),',
@@ -188,6 +194,7 @@ function assertCleanup(candidate) {
   const unlink = [
     'frame.Visual.Children.RemoveAll()',
     'surface.SourceVisual = null',
+    'layer.Clip = null',
     'layer.Effect = null',
     'layer.Children.RemoveAll()',
     'visual.Clip = null',
@@ -216,7 +223,7 @@ function assertCleanup(candidate) {
   includes(candidate, 'for (var index = resources.Length - 1; index >= 0; index--)');
 }
 
-test('Sheet preserves eight authored levels and five raster cells beside native interval ramps', () => {
+test('Sheet preserves eight authored levels and four raster cells beside native interval ramps', () => {
   const literals = profile.match(/levels\s*=\s*\[([^\]]+)\]/)?.[1];
   assert.ok(literals, 'Authored levels missing');
   const actual = literals.split(',').map((literal) => {
@@ -235,7 +242,7 @@ test('Sheet preserves eight authored levels and five raster cells beside native 
   );
   includes(
     build,
-    'SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 5)',
+    'SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 4)',
     'Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,',
     'graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma, Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma',
   );
@@ -401,7 +408,8 @@ test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authore
       'stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual)',
       'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',
     ],
-    ['MaskBrush("ghost", ghostMask)', 'MaskBrush("ghost", bodyMask)'],
+    ['ghostVisual.Clip = ghostClip;', 'ghostBackdrop.Clip = ghostClip;'],
+    ['ghostClip.Bottom = (float)metrics.GhostHeight;', 'ghostClip.Bottom = (float)metrics.BodyTop;'],
     ['Mask(Source("Backdrop"), Layer(index))', 'Mask(Layer(index), Source("Backdrop"))'],
     [
       'stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity)',
@@ -451,6 +459,7 @@ test('Frame unlinks captures, layers, clips and brushes before reverse resource 
   assertCleanup(source);
   rejectsChanges(assertCleanup, [
     ['surface.SourceVisual = null;', ''],
+    ['layer.Clip = null;', ''],
     ['layer.Effect = null;', ''],
     ['layer.Children.RemoveAll();', ''],
     ['visual.Clip = null;', ''],

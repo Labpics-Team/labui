@@ -349,7 +349,7 @@ public sealed class SheetLayers : Grid
                 return result;
             }
 
-            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 5);
+            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 4);
             List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
@@ -394,8 +394,6 @@ public sealed class SheetLayers : Grid
             var bodyMask = AddLayer(drawing => drawing.FillGeometry(bodyShape, maskInk));
             var outer = AddLayer(drawing => DrawShadows(drawing, metrics, bodyShape));
             var noise = AddLayer(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale));
-            var ghostMask = AddLayer(drawing =>
-                drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk));
             var border = AddLayer(DrawBorder);
             if (atlasDrawings.Count != atlas.CellCount)
                 throw new InvalidOperationException("Sheet atlas требует все authored raster-слои.");
@@ -513,7 +511,13 @@ public sealed class SheetLayers : Grid
             var noiseBrush = Brush("ghost", Layer(noise), ("atlas", atlasBrush));
             var ghostNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity);
             var ghostVisual = stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise);
-            ghostVisual.Effect = MaskBrush("ghost", ghostMask);
+            var ghostClip = result.Own(compositor.CreateRectangleClip());
+            ghostClip.Left = 0;
+            ghostClip.Top = 0;
+            ghostClip.Right = result.Visual.Size.X;
+            ghostClip.Bottom = (float)metrics.GhostHeight;
+            ghostVisual.BorderMode = CompositionBorderMode.Soft;
+            ghostVisual.Clip = ghostClip;
             var bodyBackdrop = stages.CreateVisual(Brush("body",
                 Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), ("backdrop", capturedBackdrop)));
             var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
@@ -670,6 +674,8 @@ public sealed class SheetLayers : Grid
                 catch (Exception error) { errors.Add(error); }
             foreach (var layer in flattened)
             {
+                try { layer.Clip = null; }
+                catch (Exception error) { errors.Add(error); }
                 try { layer.Effect = null; }
                 catch (Exception error) { errors.Add(error); }
                 try { layer.Children.RemoveAll(); }
