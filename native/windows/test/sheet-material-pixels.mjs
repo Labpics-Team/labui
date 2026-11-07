@@ -63,21 +63,23 @@ export function sheetMaterialPixels(original, neighbor, bindings) {
     ghost: reaction(regions.ghost),
     ghostFurther: reaction(regions.ghostFurther),
     body: reaction(regions.body),
+    bodyOpposite: reaction(regions.bodyOpposite),
     control: reaction(regions.control),
   };
 }
 
 export function sheetMaterialPixelFailures(report) {
   const failures = [];
-  for (const [name, reaction] of [
-    ['Ghost', report.ghost],
-    ['Body', report.body],
+  // Authored Light ColorDodge может насытить одну сторону до белого.
+  // Обе области вне изменённого source: нужен отклик хотя бы одной и ни одного осветления.
+  for (const [name, reactions] of [
+    ['Ghost', [report.ghost]],
+    ['Body', [report.body, report.bodyOpposite]],
   ])
     if (
       !(
-        reaction.changedPixels > 0 &&
-        reaction.brightenedChannels === 0 &&
-        reaction.meanDarkening > 0
+        reactions.some((reaction) => reaction.changedPixels > 0 && reaction.meanDarkening > 0) &&
+        reactions.every((reaction) => reaction.brightenedChannels === 0)
       )
     )
       failures.push(`${name} has no coherent neighbor response outside changed source footprint`);

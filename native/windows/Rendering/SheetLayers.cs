@@ -350,7 +350,7 @@ public sealed class SheetLayers : Grid
             }
 
             var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale,
-                SheetBlurProfile.Levels.Length + 5);
+                SheetBlurProfile.Levels.Length + 4);
             List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
@@ -395,17 +395,21 @@ public sealed class SheetLayers : Grid
             var bodyMask = AddLayer(drawing => drawing.FillGeometry(bodyShape, maskInk));
             var outer = AddLayer(drawing => DrawShadows(drawing, metrics, bodyShape));
             var noise = AddLayer(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale));
-            int[] ghostMasks = new int[SheetBlurProfile.Levels.Length];
-            for (var index = 0; index < SheetBlurProfile.Levels.Length; index++)
+            int[] ghostMasks = new int[SheetBlurProfile.Levels.Length - 1];
+            for (var index = 0; index < ghostMasks.Length; index++)
             {
                 var level = index;
                 ghostMasks[index] = AddLayer(drawing =>
                 {
-                    var stops = SheetBlurProfile.Stops(level).Select(stop => new CanvasGradientStop
-                    { Position = stop.Position, Color = Color.FromArgb((byte)(stop.Weight * 255), maskInk.R, maskInk.G, maskInk.B) }).ToArray();
-                    using var gradient = new CanvasLinearGradientBrush(device, stops)
-                    { StartPoint = Vector2.Zero, EndPoint = new(0, (float)metrics.GhostHeight) };
-                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);
+                    // Один clamp-ramp задаёт m и 1-m для обеих ветвей после raster filtering.
+                    // Две раздельные треугольные маски теряют часть веса возле fractional knots.
+                    using var gradient = new CanvasLinearGradientBrush(device,
+                        Color.FromArgb(0, maskInk.R, maskInk.G, maskInk.B), maskInk)
+                    {
+                        StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[level]),
+                        EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[level + 1]),
+                    };
+                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.Height), gradient);
                 });
             }
             var ghostMask = AddLayer(drawing =>
@@ -461,12 +465,10 @@ public sealed class SheetLayers : Grid
             CompositionEffectBrush MaskBrush(string factoryName, int index) =>
                 Brush(factoryName, Mask(Source("Backdrop"), Layer(index)), ("atlas", atlasBrush));
 
-            // Каждый authored уровень сохраняет свою Gaussian-ветвь и маску.
-            IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
-            for (var index = 0; index < branches.Length; index++)
-                branches[index] = Mask(index == 0 ? Backdrop()
+            // Каждый граф получает собственные узлы двух соседних authored уровней.
+            IGraphicsEffectSource Branch(int index) => index == 0 ? Backdrop()
                     : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
-                        $"ghostBlur{index}"), Layer(ghostMasks[index]));
+                        $"ghostBlur{index}");
             stages = new SurfaceStages(result, compositor);
             var sceneVisual = ElementCompositionPreview.GetElementVisual(scene!);
             if (!ReferenceEquals(sceneVisual.Compositor, compositor) || !ReferenceEquals(scene!.XamlRoot, XamlRoot))
@@ -486,30 +488,36 @@ public sealed class SheetLayers : Grid
                 new Vector2((float)origin.X, (float)origin.Y),
                 new Vector2((float)(right.X - origin.X), (float)(bottom.Y - origin.Y)));
 
-            var progressiveSources = new CompositionSurfaceBrush[branches.Length];
-            for (var index = 0; index < branches.Length; index++)
+            // На каждом интервале только два исходных веса ненулевые. Add сохраняет
+            // premultiplied RGBA, в том числе для прозрачной сцены. Все полосы читают
+            // исходный backdrop напрямую, без capture результата другого effect graph.
+            var intervals = new Visual[SheetBlurProfile.Levels.Length - 1];
+            for (var index = 0; index < intervals.Length; index++)
             {
-                var leaf = stages.CreateVisual(Brush($"progressiveLeaf{index}", (IGraphicsEffect)branches[index],
+                var lower = Effect(new CompositeEffect
+                { Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Layer(ghostMasks[index]) } });
+                var upper = Mask(Branch(index + 1), Layer(ghostMasks[index]));
+                var pair = Effect(new CompositeEffect
+                { Mode = CanvasComposite.Add, Sources = { lower, upper } });
+                var interval = stages.CreateVisual(Brush($"progressiveInterval{index}", pair,
                     ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
-                progressiveSources[index] = stages.Capture(leaf);
+                var clip = result.Own(compositor.CreateRectangleClip());
+                clip.Left = 0;
+                clip.Right = result.Visual.Size.X;
+                clip.Top = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index];
+                clip.Bottom = (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1];
+                // Смежные hard clips выбирают один интервал без двойной alpha на шве.
+                // Кисть сохраняет размер и координаты всего viewport, не растягивается в полосу.
+                interval.BorderMode = CompositionBorderMode.Hard;
+                interval.Clip = clip;
+                intervals[index] = interval;
             }
-            // Бинарные Add материализуются перед следующим уровнем суммы.
-            for (var count = progressiveSources.Length; count > 1; count /= 2)
-                for (var index = 0; index < count; index += 2)
-                {
-                    var pair = Effect(new CompositeEffect
-                    { Mode = CanvasComposite.Add, Sources = { Source("left"), Source("right") } });
-                    var sum = stages.CreateVisual(Brush("progressiveSum", pair,
-                        ("left", progressiveSources[index]), ("right", progressiveSources[index + 1])));
-                    progressiveSources[index / 2] = stages.Capture(sum);
-                }
-            var capturedProgressive = progressiveSources[0];
             // Alpha Color и float Opacity остаются раздельными входами LabColors.
             var ghostPaint = result.Own(compositor.CreateColorBrush(Ghost!.Color));
             var tintPaint = result.Own(compositor.CreateColorBrush(Tint!.Color));
             var blendPaint = result.Own(compositor.CreateColorBrush(Blend!.Color));
             // Маска применяется к сведённым Ghost слоям; alpha tint не ослабляет backdrop/noise.
-            var ghostBackdrop = stages.CreateVisual(capturedProgressive);
+            var ghostBackdrop = stages.CreateLayer(intervals);
             var ghostTint = stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity);
             var noiseBrush = Brush("ghost", Layer(noise), ("atlas", atlasBrush));
             var ghostNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity);
@@ -640,9 +648,6 @@ public sealed class SheetLayers : Grid
             return layer;
         }
 
-        internal CompositionSurfaceBrush Capture(Visual visual)
-            => Capture(visual, Vector2.Zero, visual.Size);
-
         internal CompositionSurfaceBrush Capture(Visual visual, Vector2 offset, Vector2 size)
         {
             var surface = frame.Own(compositor.CreateVisualSurface());
@@ -680,8 +685,12 @@ public sealed class SheetLayers : Grid
                 catch (Exception error) { errors.Add(error); }
             }
             foreach (var visual in rendered)
+            {
+                try { visual.Clip = null; }
+                catch (Exception error) { errors.Add(error); }
                 try { visual.Brush = null; }
                 catch (Exception error) { errors.Add(error); }
+            }
             Frame.ThrowCleanup(errors);
         }
     }
