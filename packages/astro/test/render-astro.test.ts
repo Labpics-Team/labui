@@ -15,7 +15,26 @@ import Input from '../src/astro/Input.astro';
 
 const compiled = import.meta.glob('../src/astro/*.astro', { eager: true });
 
+// Два независимых SSR-render создают разные instance IDs. Сохраняем части
+// label-start/label-end и все их ссылки, сравнивая остальной фрагмент целиком.
+function canonicalInstanceIds(markup: string): string {
+  const instances = new Map<string, string>();
+  return markup.replace(/\blab-[0-9a-z]+(?=-label-(?:start|end)\b)/g, (prefix) => {
+    const canonical = instances.get(prefix) ?? `lab-instance-${instances.size}`;
+    instances.set(prefix, canonical);
+    return canonical;
+  });
+}
+
 describe('Astro .astro-компоненты (Container API)', () => {
+  it('SSR-сравнение сохраняет связь ID и ссылки при смене instance prefix', () => {
+    const first = '<span id="lab-0-label-start"></span><input aria-labelledby="lab-0-label-start">';
+    const renamed = first.replaceAll('lab-0', 'lab-9');
+    const dangling = first.replace('aria-labelledby="lab-0', 'aria-labelledby="lab-9');
+    expect(canonicalInstanceIds(first)).toBe(canonicalInstanceIds(renamed));
+    expect(canonicalInstanceIds(first)).not.toBe(canonicalInstanceIds(dangling));
+  });
+
   it('boolean: публичные .astro сохраняют тот же SSR-фрагмент для current=false и defaults', async () => {
     const container = await AstroContainer.create();
     for (const [component, render, props] of [
@@ -26,7 +45,7 @@ describe('Astro .astro-компоненты (Container API)', () => {
     ] as const) {
       const markup = await container.renderToString(component, { props });
       // Публичный Astro-мост должен сохранить именно фрагмент общего SSR-входа.
-      expect(markup).toContain(render(props));
+      expect(canonicalInstanceIds(markup)).toContain(canonicalInstanceIds(render(props)));
       expect(markup).toMatch(/<script[^>]*type="module"/);
       const host = markup.match(/<lab-(?:switch|checkbox)\b[^>]*>/)?.[0];
       expect(host).toBeDefined();

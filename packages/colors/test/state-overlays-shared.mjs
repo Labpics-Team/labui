@@ -5,7 +5,7 @@
 // 1:1 из accent-substrate-legality.test.mjs — инструкция владельца #109:
 // переиспользовать её, а не заводить вторую копию правды.
 //
-// ФОРМА оверлея (решение владельца, финальное, не переоткрывать):
+// ФОРМА оверлея для комбо с рецептом D:
 //   состояние = color-mix(in oklab, <роль покоя>, <тинт> var(--lab-state-*)),
 //   hover 8% / pressed 14%; disabled = opacity; focus = ring (вне гейтов).
 // РЕЦЕПТ D — тинт по классу поверхности:
@@ -20,6 +20,8 @@
 //   L=0, микс даёт L·(1−p) ⇒ k^(1/3) = 1−p. Для класса A совпадение точное при
 //   ЛЮБОЙ базе; для класса B — ближайшая одноконстантная аппроксимация
 //   (задокументировано в docs/vocabulary.md, раздел стейт-оверлеев).
+// Accent/fill Button сохраняет исходную заливку: состояния принадлежат отдельным
+// sheen/shade/glow слоям (docs/reference/design-baseline.md, чтение 2026-11-01).
 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -223,7 +225,7 @@ export function readStateFractions(tokensCss) {
 
 /**
  * Роли покоя интерактивных комбо кнопки — ПИНН спецификации оверлея:
- * каждая цветовая декларация покоя получает hover/pressed-оверлей той же роли.
+ * роли покоя общие для recipe-D и отдельной композиции accent/fill.
  * (Дрейф-гард в гейте сверяет эту таблицу с фактическими базовыми правилами.)
  */
 export const REST_ROLES = {
@@ -241,10 +243,11 @@ export const REST_ROLES = {
   'danger/ghost': { color: '--lab-label-danger' },
 };
 
-/** Ожидаемый набор оверлеев из REST_ROLES × {hover, pressed} + рецепт D. */
+/** Recipe-D overlays. Accent/fill has its own authored-paint gate. */
 export function expectedOverlays() {
   const keys = new Map();
   for (const [combo, props] of Object.entries(REST_ROLES)) {
+    if (combo === 'accent/fill') continue;
     for (const [prop, role] of Object.entries(props)) {
       for (const state of ['hover', 'pressed']) {
         keys.set(`${combo}/${state}/${prop}`, { role, tint: tintFor(role) });
@@ -306,6 +309,48 @@ const OVERLAY_DECL_RE = new RegExp(
  */
 function flattenWhitespace(css) {
   return css.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+}
+
+/** Paint declarations for the authored accent/fill surface and its effect layers. */
+export function extractAccentFillPaints(cssText, flavor) {
+  const out = {};
+  const effectClass = flavor === 'react' ? '.lab-button-effects' : '.effects';
+  const root =
+    flavor === 'react'
+      ? '[data-lab-button][data-type="accent"][data-kind="fill"]'
+      : ":host([type='accent'][kind='fill']) button";
+  const css = flattenWhitespace(cssText.replace(/\/\*[\s\S]*?\*\//g, ''));
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selector = rule[1].trim();
+    const combo = COMBO_RE[flavor].exec(selector);
+    if (combo && (combo[1] !== 'accent' || combo[2] !== 'fill')) continue;
+    if (combo && selector.includes(`:not(${combo[0]}`)) continue;
+    const state = /:active\b/.test(selector)
+      ? 'pressed'
+      : /:hover\b/.test(selector)
+        ? 'hover'
+        : 'default';
+    let target;
+    if (selector.endsWith(`${effectClass}::before`)) target = 'sheen';
+    else if (selector.endsWith(`${effectClass}::after`)) target = 'glow';
+    else if (selector.endsWith(effectClass)) target = 'effects';
+    else if (selector.startsWith(root)) {
+      const suffix = selector.slice(root.length);
+      if (!/^(?::hover|:active)?(?::not\(:disabled\))?(?:::after)?$/.test(suffix)) continue;
+      target = suffix.endsWith('::after') ? 'shadow' : 'surface';
+    } else if (
+      /^(?:\[data-lab-button\]|button)(?::hover|:active)(?::not\(:disabled\))?$/.test(selector)
+    ) {
+      // A generic state rule applies to accent/fill too unless it excludes the combo.
+      target = 'surface';
+    } else continue;
+    for (const declaration of rule[2].matchAll(
+      /(?:^|;)\s*(color|background(?:-color|-image)?|opacity|box-shadow|filter|display)\s*:\s*([^;]+)(?=;|$)/g,
+    )) {
+      out[`${state}/${target}/${declaration[1]}`] = declaration[2].trim();
+    }
+  }
+  return out;
 }
 
 /**

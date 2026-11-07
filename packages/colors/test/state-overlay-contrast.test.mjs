@@ -9,6 +9,8 @@
 //      оверлей в @supports (color: color-mix(in oklab, red, blue)); тинт — по
 //      рецепту D; brightness-fallback живёт ТОЛЬКО в @supports not (…) и
 //      ΔL-эквивалентен миксу: k = (1−p)^3 (вывод в state-overlays-shared.mjs).
+//      Accent/fill uses the independently checked authored sheen/shade/glow;
+//      its base paint stays unchanged (design-baseline.md, 2026-11-01).
 //   3. Каждая ordinary-пара сохраняет авторский reference и его Core assessment.
 //      Композиция пары (var()-резолв, премультиплицированный oklab-микс,
 //      гамма-композит альфы) — переиспользованная математика
@@ -35,6 +37,7 @@ import {
   THEME_BG,
   TOKENS_CSS_PATH,
   expectedOverlays,
+  extractAccentFillPaints,
   extractFallbackBrightness,
   extractOverlays,
   extractRestRoles,
@@ -51,6 +54,28 @@ import {
 
 const hexToLinColor = (hex) => parseColor(hex);
 const BLACK = { lin: [0, 0, 0], alpha: 1 };
+
+// Authored normal-state paints, independent of the renderer's class names.
+// The real browser test remains apps/docs/tests/button-effects.spec.ts.
+const ACCENT_FILL_PAINTS = {
+  'default/surface/background-color': 'var(--lab-fill-accent)',
+  'default/surface/color': 'var(--lab-label-on-accent)',
+  'default/effects/display': 'block',
+  'default/sheen/color': 'var(--_lab-button-sheen-color, var(--lab-bg-static-light))',
+  'default/sheen/background-image': 'linear-gradient(180deg, currentColor, transparent)',
+  'default/sheen/opacity': 'var(--_lab-button-sheen-opacity, var(--lab-opacity-button-sheen, 0.2))',
+  'default/glow/background-color': 'var(--lab-bg-static-light)',
+  'default/glow/filter': 'blur(var(--lab-size-button-glow-blur, 1.125rem))',
+  'default/glow/opacity': '0',
+  'default/shadow/box-shadow': 'var(--lab-shadow-button)',
+  'hover/sheen/opacity':
+    'var(--_lab-button-sheen-hover-opacity, var(--lab-opacity-button-sheen-hover, 0.32))',
+  'pressed/sheen/color': 'var(--lab-bg-static-dark)',
+  'pressed/sheen/opacity': 'var(--lab-opacity-button-shade-pressed, 0.12)',
+  'pressed/glow/opacity':
+    'var(--_lab-button-glow-pressed-opacity, calc(var(--lab-opacity-button-glow, 0.32) * var(--lab-opacity-button-glow-fill, 0.52)))',
+  'pressed/shadow/box-shadow': 'var(--lab-shadow-button-pressed)',
+};
 
 /** Ленивая загрузка всего контекста гейта (движок + контракт + токены + оба близнеца). */
 const reference = await authoredReference();
@@ -123,6 +148,11 @@ describe('стейт-оверлеи #109: токены и паттерн', () =>
       expect(problems, problems.join('\n')).toEqual([]);
       // Ничего лишнего: оверлеи только из пинна (немой дрейф в обе стороны).
       expect([...got.keys()].sort()).toEqual([...expectedOverlays().keys()].sort());
+    });
+
+    it(`${twin}: accent/fill keeps the base paint and the authored effect states`, async () => {
+      const { twins } = await ctx();
+      expect(extractAccentFillPaints(twins[twin], twin)).toEqual(ACCENT_FILL_PAINTS);
     });
 
     it(`${twin}: brightness живёт ТОЛЬКО в @supports not и ΔL-эквивалентен миксу (k = (1−p)^3)`, async () => {
@@ -212,15 +242,51 @@ describe('ordinary: стейт-оверлеи сохраняют авторск�
   }
 });
 describe('стейт-оверлеи #109: RED-proof детекторов', () => {
-  it('пинн сохраняет оба стейт-оверлея акцентной заливки с чёрным тинтом', () => {
+  it('recipe-D keeps both neighbour fills while accent/fill belongs to the effect layers', () => {
     const overlays = expectedOverlays();
     for (const state of ['hover', 'pressed']) {
-      expect(overlays.get(`accent/fill/${state}/background-color`)).toEqual({
-        role: '--lab-fill-accent',
-        tint: 'black',
-      });
+      expect(overlays.has(`accent/fill/${state}/background-color`)).toBe(false);
+      for (const type of ['neutral', 'danger'])
+        expect(overlays.get(`${type}/fill/${state}/background-color`)).toEqual({
+          role: `--lab-fill-${type}`,
+          tint: 'black',
+        });
     }
   });
+
+  for (const twin of ['react', 'lit']) {
+    it(`${twin}: authored-paint gate rejects a missing effect and an added base recolour`, async () => {
+      const { twins } = await ctx();
+      const source = twins[twin];
+      // Positive control uses the same detector and the unmodified real source.
+      expect(extractAccentFillPaints(source, twin)).toEqual(ACCENT_FILL_PAINTS);
+      const noHover = source.replace(
+        /opacity:\s*var\(--_lab-button-sheen-hover-opacity,[^;]+;/,
+        '',
+      );
+      expect(extractAccentFillPaints(noHover, twin)).not.toEqual(ACCENT_FILL_PAINTS);
+      const noGlow = source.replace(
+        /opacity:\s*var\(\s*--_lab-button-glow-pressed-opacity,[^;]+;/,
+        '',
+      );
+      expect(extractAccentFillPaints(noGlow, twin)).not.toEqual(ACCENT_FILL_PAINTS);
+      const selector =
+        twin === 'react'
+          ? '[data-lab-button][data-type="accent"][data-kind="fill"]:hover:not(:disabled)'
+          : ":host([type='accent'][kind='fill']) button:hover:not(:disabled)";
+      const recoloured = `${source}\n${selector} {
+        background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover, 8%));
+      }`;
+      expect(extractAccentFillPaints(recoloured, twin)).not.toEqual(ACCENT_FILL_PAINTS);
+      const generic = twin === 'react' ? '[data-lab-button]' : 'button';
+      expect(
+        extractAccentFillPaints(
+          `${source}\n${generic}:hover { filter: brightness(0.7787); }`,
+          twin,
+        ),
+      ).not.toEqual(ACCENT_FILL_PAINTS);
+    });
+  }
 
   it('оракул движка ловит пару ниже пола и не слеп в обе стороны', async () => {
     // Оракул обязан работать даже до реализации токенов — грузим движок напрямую.

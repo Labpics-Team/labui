@@ -121,6 +121,10 @@ export const defaultConfig: TokensConfig = {
       'sheet-indicator-x': 0.03125,
       'sheet-body-blur': 8,
       'sheet-ghost-blur': 1.5,
+      // Fixed authored presets; Half and Flex remain derived from live geometry.
+      'sheet-body-full': 48.5,
+      'sheet-body-two-thirds': 33.75,
+      'sheet-body-one-third': 16.875,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,

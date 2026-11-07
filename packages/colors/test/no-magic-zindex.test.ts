@@ -135,13 +135,20 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   // underlay ПОД modal-панелью, tooltip НАД всем. Детерминированно, без флака.
   it('preserves the intended stacking order of the layers components actually use', () => {
     const consumed = consumedZLevels();
-    // Ровно четыре слоя потребляются сегодня (остальные 11 — headroom шкалы).
+    // Card uses secondary; Sheet shares the modal panel and underlay layers.
     expect([...consumed.keys()].sort()).toEqual(
-      ['--lab-z-dropdown', '--lab-z-modal', '--lab-z-modal-underlay', '--lab-z-tooltip'].sort(),
+      [
+        '--lab-z-secondary',
+        '--lab-z-dropdown',
+        '--lab-z-modal',
+        '--lab-z-modal-underlay',
+        '--lab-z-tooltip',
+      ].sort(),
     );
     const v = (name: string) => consumed.get(name) as number;
     // Порядок «как сейчас»: dropdown (900) ПОД модалом; скрим (underlay 1100) ПОД
     // панелью (modal 1200); tooltip (1400) НАД всем.
+    expect(v('--lab-z-secondary')).toBeLessThan(v('--lab-z-dropdown'));
     expect(v('--lab-z-dropdown')).toBeLessThan(v('--lab-z-modal-underlay'));
     expect(v('--lab-z-modal-underlay')).toBeLessThan(v('--lab-z-modal'));
     expect(v('--lab-z-modal')).toBeLessThan(v('--lab-z-tooltip'));
@@ -151,15 +158,29 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
   // слой в обоих рендерерах — иначе Lit и React разъедутся по стеку.
   it('each component uses the SAME z-layers on the Lit and React renderers', () => {
     const { core, react } = zLevelsByComponent();
-    const shared = [...core.keys()].filter((name) => react.has(name)).sort();
-    // Сегодня z-index кладут dialog, popover, menu, select, combobox, tooltip —
-    // все шесть присутствуют на ОБОИХ рендерерах.
-    expect(shared).toEqual(['combobox', 'dialog', 'menu', 'popover', 'select', 'tooltip']);
-    for (const name of shared) {
+    const components = [
+      'card',
+      'combobox',
+      'dialog',
+      'menu',
+      'popover',
+      'select',
+      'sheet',
+      'tooltip',
+    ];
+    // Compare both full sets: an absent renderer must not disappear in an intersection.
+    expect([...core.keys()].sort()).toEqual(components);
+    expect([...react.keys()].sort()).toEqual(components);
+    for (const name of components) {
       const coreSet = [...(core.get(name) as Set<string>)].sort();
       const reactSet = [...(react.get(name) as Set<string>)].sort();
       expect(reactSet, `${name}: z-layer parity core↔react`).toEqual(coreSet);
     }
+    expect([...(core.get('card') as Set<string>)]).toEqual(['--lab-z-secondary']);
+    expect([...(core.get('sheet') as Set<string>)].sort()).toEqual([
+      '--lab-z-modal',
+      '--lab-z-modal-underlay',
+    ]);
   });
 
   // ── (7) Доказательство скоупа — поверхность накрывает реальные компонент-файлы

@@ -64,6 +64,9 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'sheet-indicator-x': 0.5,
     'sheet-body-blur': 128,
     'sheet-ghost-blur': 24,
+    'sheet-body-full': 776,
+    'sheet-body-two-thirds': 540,
+    'sheet-body-one-third': 270,
     // Loader: толщина штриха спиннера (DECLARED).
     'loader-stroke-s': 2,
     'loader-stroke-m': 3,
@@ -109,6 +112,7 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
       ['control-s', 'control-m', 'control-l', 'control-xl'],
       ['control-h-s', 'control-h-m', 'control-h-l'],
       ['button-h-s', 'button-h-m', 'button-h-l'],
+      ['sheet-body-one-third', 'sheet-body-two-thirds', 'sheet-body-full'],
       ['switch-track-s', 'switch-track-m', 'switch-track-l'],
       ['switch-track-h-s', 'switch-track-h-m', 'switch-track-h-l'],
       ['switch-thumb-s', 'switch-thumb-m', 'switch-thumb-l'],
@@ -147,6 +151,15 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
       size: Record<string, { $value: { value: number; unit: string } }>;
     };
     expect(doc.size['control-s']?.$value).toEqual({ value: 12, unit: 'px' });
+    for (const [name, px] of Object.entries({
+      'sheet-body-full': 776,
+      'sheet-body-two-thirds': 540,
+      'sheet-body-one-third': 270,
+    })) {
+      expect(css).toContain(`--lab-size-${name}: ${px / 16}rem;`);
+      expect(ts).toContain(`'${name}': 'var(--lab-size-${name})'`);
+      expect(doc.size[name]?.$value).toEqual({ value: px, unit: 'px' });
+    }
   });
 
   it('rejects an alias pointing at a missing step (config is validated, not trusted)', () => {

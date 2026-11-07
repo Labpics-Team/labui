@@ -68,7 +68,7 @@
 [data-lab-button][data-size="s"] {
   --_lab-btn-radius: var(--lab-radius-full, 9999px);
   --_lab-btn-font: var(--lab-font-size-button-label-s, 0.875rem);
-  --_lab-btn-line: var(--lab-line-height-button-label-s, 0.8571);
+  --_lab-btn-line: var(--lab-line-height-button-label-s, 0.8571428571428571);
   --_lab-btn-tracking: var(--lab-letter-spacing-button-label-s, 0em);
   --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
   --_lab-btn-content: var(--lab-size-button-content-s, 1.25rem);

@@ -78,6 +78,22 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
   });
 
+  it('classifies the exact public Veil controls without accepting an unknown neighbour', () => {
+    const veilSource = readFileSync(
+      resolve(repoRoot, 'packages/materials/src/engine/veil.ts'),
+      'utf8',
+    );
+    const controls = [
+      ...new Set([...veilSource.matchAll(/'(--lab-veil-[\w-]+)'/g)].map((m) => m[1])),
+    ];
+    expect(controls).toHaveLength(6);
+    expect(controls).toContain('--lab-veil-strength');
+    expect(controls).toContain('--lab-veil-feather');
+    for (const name of controls) expect(classify(name as string), name).toBe('local-or-gap');
+    expect(classify('--lab-veil-unknown')).toBe('unclassified');
+    expect(classify('--lab-veil-strength-extra')).toBe('unclassified');
+  });
+
   // ── (0) Provenance guard — test files and `_`-prefixed scratch files must NEVER
   // appear in the consumer surface. A raw-text scan cannot distinguish a probe token
   // inside a JS string literal from a real `var(--lab-x)` usage; including test files

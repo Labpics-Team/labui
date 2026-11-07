@@ -76,6 +76,9 @@
   --lab-size-sheet-indicator-x: 0.0313rem;
   --lab-size-sheet-body-blur: 8rem;
   --lab-size-sheet-ghost-blur: 1.5rem;
+  --lab-size-sheet-body-full: 48.5rem;
+  --lab-size-sheet-body-two-thirds: 33.75rem;
+  --lab-size-sheet-body-one-third: 16.875rem;
   --lab-size-loader-stroke-s: 0.125rem;
   --lab-size-loader-stroke-m: 0.1875rem;
   --lab-size-loader-stroke-l: 0.25rem;

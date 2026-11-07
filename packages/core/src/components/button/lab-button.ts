@@ -181,7 +181,7 @@ export class LabButton extends LabElement {
     :host([size='s']) {
       --_radius: ${litVar('--lab-radius-full', '9999px')};
       --_font: ${litVar('--lab-font-size-button-label-s', '0.875rem')};
-      --_line: ${litVar('--lab-line-height-button-label-s', '0.8571')};
+      --_line: ${litVar('--lab-line-height-button-label-s', '0.8571428571428571')};
       --_tracking: ${litVar('--lab-letter-spacing-button-label-s', '0em')};
       --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
       --_content: ${litVar('--lab-size-button-content-s', '1.25rem')};
