@@ -180,6 +180,12 @@ export function backdropProbeRegions(witness) {
     ghost: { x: left - 11, y: Math.ceil(footprint.y) + 16, width: 6, height: 8 },
     ghostFurther: { x: left - 41, y: Math.ceil(footprint.y) + 16, width: 6, height: 8 },
     body: { x: left - 11, y: Math.ceil(footprint.y + footprint.height) + 16, width: 6, height: 8 },
+    bodyOpposite: {
+      x: Math.ceil(footprint.x + footprint.width) + 16,
+      y: Math.ceil(footprint.y + footprint.height) + 16,
+      width: 6,
+      height: 8,
+    },
     control: { x: 20, y: 20, width: 335, height: 104 },
   };
   const margin = BACKDROP_FIXTURE.resamplingMargin;
@@ -192,11 +198,14 @@ export function backdropProbeRegions(witness) {
     );
     assert.ok(
       region.x + region.width <= footprint.x - margin ||
-        region.y + region.height <= footprint.y - margin,
+        region.x >= footprint.x + footprint.width + margin ||
+        region.y + region.height <= footprint.y - margin ||
+        region.y >= footprint.y + footprint.height + margin,
     );
   }
   assert.ok(regions.ghost.y + regions.ghost.height < 380);
   assert.ok(regions.body.y >= 438);
+  assert.ok(regions.bodyOpposite.y >= 438);
   return { footprint, margin, ...regions };
 }
 

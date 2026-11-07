@@ -504,12 +504,21 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
   );
   includesSource(
     renderer,
-    `IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
-    for (var index = 0; index < branches.Length; index++)
-      branches[index] = Mask(index == 0 ? Backdrop()
+    `IGraphicsEffectSource Branch(int index) => index == 0 ? Backdrop()
         : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
-          $"ghostBlur{index}"), Layer(ghostMasks[index]));`,
-    'actual-three must use the authored branches with their sigma, names and Layer transforms',
+          $"ghostBlur{index}");`,
+    'current branch must retain authored sigma and names for historical diagnostics',
+  );
+  includesSource(
+    renderer,
+    `var lower = Effect(new CompositeEffect {
+        Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Source("mask") }
+    });
+    var upper = Mask(Branch(index + 1), Source("mask"));
+    var pair = Effect(new CompositeEffect {
+        Mode = CanvasComposite.Add, Sources = { lower, upper }
+    });`,
+    'current pair must share one bound mask through complementary DestinationOut/In weights',
   );
   includesSource(
     page,

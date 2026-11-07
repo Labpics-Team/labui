@@ -241,10 +241,18 @@ test('probe regions stay outside the resampling margin for observed top-left ima
     const regions = backdropProbeRegions(witness);
     assert.ok(regions.ghost.y + regions.ghost.height < 380);
     assert.ok(regions.body.y >= 438);
-    for (const region of [regions.ghost, regions.ghostFurther, regions.body, regions.control])
+    for (const region of [
+      regions.ghost,
+      regions.ghostFurther,
+      regions.body,
+      regions.bodyOpposite,
+      regions.control,
+    ])
       assert.ok(
         region.x + region.width <= regions.footprint.x - regions.margin ||
-          region.y + region.height <= regions.footprint.y - regions.margin,
+          region.x >= regions.footprint.x + regions.footprint.width + regions.margin ||
+          region.y + region.height <= regions.footprint.y - regions.margin ||
+          region.y >= regions.footprint.y + regions.footprint.height + regions.margin,
       );
   }
 });
@@ -354,6 +362,125 @@ test('actual inert convolutions respond independently in Ghost and Body outside 
   }
 });
 
+test('authored Body paints retain a sensitive opposite sample when Light ColorDodge clips the left sample', async () => {
+  // Математическая калибровка областей на настоящем asset и опубликованных красках.
+  // Она не исполняет native renderer и не квалифицирует его Gaussian/Figma fidelity.
+  const resources = await readFile(
+    new URL('../generated/ThemeResources.g.xaml', import.meta.url),
+    'utf8',
+  );
+  const assets = backdropAssets();
+  const images = [fixtureRgba(assets.A), fixtureRgba(assets.B)];
+  const sigma = 64;
+  const radius = 3 * sigma;
+  const kernel = Array.from({ length: 2 * radius + 1 }, (_, i) =>
+    Math.exp(-((i - radius) ** 2) / (2 * sigma * sigma)),
+  );
+  const mass = kernel.reduce((sum, value) => sum + value, 0);
+  for (let i = 0; i < kernel.length; i++) kernel[i] /= mass;
+  for (const theme of ['Light', 'Dark']) {
+    const dictionary = resources.match(
+      new RegExp(`<ResourceDictionary x:Key="${theme}">([\\s\\S]*?)</ResourceDictionary>`),
+    )?.[1];
+    assert.ok(dictionary);
+    const paint = (name) => {
+      const match = dictionary.match(
+        new RegExp(`x:Key="${name}" Color="#([A-F0-9]{6})" Opacity="([0-9.]+)"`),
+      );
+      assert.ok(match, name);
+      return {
+        rgb: match[1].match(/../g).map((part) => Number.parseInt(part, 16)),
+        opacity: Number(match[2]),
+      };
+    };
+    const page = paint('LabPageBrush');
+    const tint = paint('LabSheetTintBrush');
+    const blend = paint('LabSheetBlendBrush');
+    const noise = paint('LabSheetNoiseBrush');
+    const mapped = images.map((image) => {
+      const rgb = new Float64Array(375 * 812 * 3);
+      for (let y = 0; y < 812; y++)
+        for (let x = 0; x < 375; x++) {
+          const sx = (x + 0.5) / BINDINGS.A.fit.scale - 0.5;
+          const sy = (y + 0.5) / BINDINGS.A.fit.scale - 0.5;
+          const x0 = Math.max(0, Math.min(image.width - 2, Math.floor(sx)));
+          const y0 = Math.max(0, Math.min(image.height - 2, Math.floor(sy)));
+          for (let dy = 0; dy < 2; dy++)
+            for (let dx = 0; dx < 2; dx++) {
+              const weight = (dx ? sx - x0 : 1 - (sx - x0)) * (dy ? sy - y0 : 1 - (sy - y0));
+              const offset = ((y0 + dy) * image.width + x0 + dx) * 4;
+              const alpha = image.rgba[offset + 3] / 255;
+              for (let c = 0; c < 3; c++)
+                rgb[(y * 375 + x) * 3 + c] +=
+                  weight * (alpha * image.rgba[offset + c] + (1 - alpha) * page.rgb[c]);
+            }
+        }
+      return rgb;
+    });
+    const convolve = (data, x, y) => {
+      const value = [0, 0, 0];
+      for (let dy = -radius; dy <= radius; dy++)
+        for (let dx = -radius; dx <= radius; dx++) {
+          const offset =
+            (Math.max(0, Math.min(811, y + dy)) * 375 + Math.max(0, Math.min(374, x + dx))) * 3;
+          const weight = kernel[dy + radius] * kernel[dx + radius];
+          for (let c = 0; c < 3; c++) value[c] += weight * data[offset + c];
+        }
+      return value;
+    };
+    const applyPaint = (value, x, y) =>
+      value.map((channel, c) => {
+        const background = (tint.rgb[c] * tint.opacity + channel * (1 - tint.opacity)) / 255;
+        const foreground = blend.rgb[c] / 255;
+        const blended =
+          theme === 'Light'
+            ? Math.min(1, background / (1 - foreground))
+            : background <= 0.5
+              ? 2 * background * foreground
+              : 1 - 2 * (1 - background) * (1 - foreground);
+        const painted = 255 * (blended * blend.opacity + background * (1 - blend.opacity));
+        const noiseAlpha = (0.04 * noise.opacity * ((x * 7 + y * 11) % 13)) / 12;
+        return clampByte(painted * (1 - noiseAlpha) + noise.rgb[c] * noiseAlpha);
+      });
+    for (const mode of ['convolution', 'sharp']) {
+      const base = materialPair();
+      const pair = Object.fromEntries(
+        ['original', 'neighbor'].map((name, variant) => {
+          const image = { ...base[name], rgb: Uint8Array.from(base[name].rgb) };
+          for (const region of [REGIONS.body, REGIONS.bodyOpposite])
+            for (let y = region.y; y < region.y + region.height; y++)
+              for (let x = region.x; x < region.x + region.width; x++) {
+                const offset = (y * 375 + x) * 3;
+                const value =
+                  mode === 'convolution'
+                    ? convolve(mapped[variant], x, y)
+                    : [...mapped[variant].subarray(offset, offset + 3)];
+                image.rgb.set(applyPaint(value, x, y), offset);
+              }
+          return [name, image];
+        }),
+      );
+      const report = reportFor(pair);
+      if (mode === 'convolution') {
+        assert.deepEqual(sheetMaterialPixelFailures(report), [], theme);
+        assert.ok(report.bodyOpposite.changedPixels > 0, theme);
+        if (theme === 'Light')
+          assert.equal(
+            report.body.changedPixels,
+            0,
+            'actual Light paint clips the former lone sample',
+          );
+      } else {
+        assert.equal(report.body.changedPixels, 0);
+        assert.equal(report.bodyOpposite.changedPixels, 0);
+        assert.deepEqual(sheetMaterialPixelFailures(report), [
+          'Body has no coherent neighbor response outside changed source footprint',
+        ]);
+      }
+    }
+  }
+});
+
 test('linear and confirmed sigmoid pointwise Ghost veils have no neighbor response', () => {
   for (const ghost of ['linear-0', 'linear-127', 'linear-255', 'sigmoid']) {
     const report = reportFor(materialPair({ ghost }));
@@ -378,6 +505,25 @@ test('confirmed sharp colored Body copy fails independently of healthy Ghost con
   assert.ok(!failures.some((failure) => failure.startsWith('Ghost')));
 });
 
+test('either Body side may clip while the other retains a coherent response', () => {
+  const positive = materialPair();
+  for (const name of ['body', 'bodyOpposite']) {
+    const rgb = Uint8Array.from(positive.neighbor.rgb);
+    const region = REGIONS[name];
+    for (let y = region.y; y < region.y + region.height; y++)
+      for (let x = region.x; x < region.x + region.width; x++) {
+        const offset = (y * 375 + x) * 3;
+        rgb.set(positive.original.rgb.subarray(offset, offset + 3), offset);
+      }
+    const report = reportFor({
+      original: positive.original,
+      neighbor: { ...positive.neighbor, rgb },
+    });
+    assert.equal(report[name].changedPixels, 0);
+    assert.deepEqual(sheetMaterialPixelFailures(report), []);
+  }
+});
+
 test('fresh noise and unrelated global frame changes cannot masquerade as neighbor response', () => {
   const positive = materialPair();
   for (const change of ['fresh-noise', -1, 1]) {
@@ -399,7 +545,7 @@ test('fresh noise and unrelated global frame changes cannot masquerade as neighb
 
 test('black intervention must darken coherently and Ghost response must decay with distance', () => {
   const positive = materialPair();
-  for (const name of ['ghost', 'body']) {
+  for (const name of ['ghost', 'body', 'bodyOpposite']) {
     const region = REGIONS[name];
     const rgb = Uint8Array.from(positive.neighbor.rgb);
     const offset = (region.y * 375 + region.x) * 3;
