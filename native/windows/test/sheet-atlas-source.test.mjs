@@ -40,27 +40,34 @@ function assertSurfaceStages(candidate) {
     frame,
     /for \(var count = progressiveSources\.Length; count > 1; count \/= 2\)\s*for \(var index = 0; index < count; index \+= 2\)\s*\{\s*var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\);\s*var sum = stages\.CreateVisual\(Brush\("progressiveSum", pair,\s*\("left", progressiveSources\[index\]\), \("right", progressiveSources\[index \+ 1\]\)\)\);\s*progressiveSources\[index \/ 2\] = stages\.Capture\(sum\);\s*\}\s*var capturedProgressive = progressiveSources\[0\];/,
   );
-  assert.match(frame, /var ghostVisual = stages\.CreateLayer\(\);/);
   assert.match(frame, /var ghostBackdrop = stages\.CreateVisual\(capturedProgressive\);/);
   assert.match(
     frame,
-    /var ghostTint = stages\.CreateVisual\(ghostPaint\);\s*ghostTint\.Opacity = \(float\)Ghost!\.Opacity;/,
+    /var ghostTint = stages\.CreateVisual\(ghostPaint, \(float\)Ghost!\.Opacity\);/,
   );
   assert.match(
     frame,
-    /var ghostNoise = stages\.CreateVisual\(Brush\("ghost", Layer\(noise\),\s*\("atlas", atlasBrush\)\)\);\s*ghostNoise\.Opacity = \(float\)Geometry\.SheetGhostNoiseOpacity;/,
+    /var noiseBrush = Brush\("ghost", Layer\(noise\), \("atlas", atlasBrush\)\);\s*var ghostNoise = stages\.CreateVisual\(noiseBrush, \(float\)Geometry\.SheetGhostNoiseOpacity\);/,
   );
   assert.match(
     frame,
-    /ghostVisual\.Children\.InsertAtTop\(ghostBackdrop\);\s*ghostVisual\.Children\.InsertAtTop\(ghostTint\);\s*ghostVisual\.Children\.InsertAtTop\(ghostNoise\);\s*ghostVisual\.Effect = Brush\("ghost", Mask\(Source\("Backdrop"\), Layer\(ghostMask\)\),\s*\("atlas", atlasBrush\)\);/,
+    /var ghostVisual = stages\.CreateLayer\(ghostBackdrop, ghostTint, ghostNoise\);\s*ghostVisual\.Effect = MaskBrush\("ghost", ghostMask\);/,
   );
   assert.match(
     frame,
-    /var bodyAlphaMask = Layer\(bodyMask\);\s*var body = Mask\(bodySource, bodyAlphaMask\);/,
+    /CompositionEffectBrush MaskBrush\(string factoryName, int index\) =>\s*Brush\(factoryName, Mask\(Source\("Backdrop"\), Layer\(index\)\), \("atlas", atlasBrush\)\);/,
   );
   assert.match(
     frame,
-    /var bodyVisual = stages\.CreateVisual\(Brush\("body", body,\s*\("backdrop", capturedBackdrop\), \("tintPaint", tintPaint\), \("blendPaint", blendPaint\),\s*\("atlas", atlasBrush\)\)\);/,
+    /var bodyBackdrop = stages\.CreateVisual\(Brush\("body",\s*Blur\(Backdrop\(\), Geometry\.SheetBodyBlurRadius \* metrics\.Scale\), \("backdrop", capturedBackdrop\)\)\);\s*var bodyTint = stages\.CreateVisual\(tintPaint, \(float\)Tint!\.Opacity\);\s*var tinted = stages\.CreateLayer\(bodyBackdrop, bodyTint\);/,
+  );
+  assert.match(
+    frame,
+    /var blended = Effect\(new BlendEffect\s*\{\s*Background = Source\("Backdrop"\), Foreground = Paint\(Blend!, "blendPaint"\),\s*Mode = ActualTheme == ElementTheme\.Dark \? BlendEffectMode\.Overlay : BlendEffectMode\.ColorDodge,\s*\}\);\s*tinted\.Effect = Brush\("body", blended, \("blendPaint", blendPaint\)\);/,
+  );
+  assert.match(
+    frame,
+    /var bodyNoise = stages\.CreateVisual\(noiseBrush, \(float\)Geometry\.SheetBodyNoiseOpacity\);\s*var bodyVisual = stages\.CreateLayer\(tinted, bodyNoise\);\s*bodyVisual\.Effect = MaskBrush\("body", bodyMask\);/,
   );
   assert.match(
     frame,
@@ -68,11 +75,11 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /var output = stages\.CreateLayer\(\);\s*output\.Children\.InsertAtTop\(ghostVisual\);\s*output\.Children\.InsertAtTop\(outerVisual\);\s*output\.Children\.InsertAtTop\(bodyVisual\);\s*output\.Children\.InsertAtTop\(borderVisual\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
+    /var output = stages\.CreateLayer\(ghostVisual, outerVisual, bodyVisual, borderVisual\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
   );
   assert.doesNotMatch(frame, /Brush\("final",|var graph = Over\(/);
-  assert.equal([...frame.matchAll(/stages\.CreateLayer\(/g)].length, 2);
-  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 8);
+  assert.equal([...frame.matchAll(/stages\.CreateLayer\(/g)].length, 4);
+  assert.equal([...frame.matchAll(/\.Children\.InsertAtTop\(/g)].length, 1);
   assert.doesNotMatch(frame, /void Output\(|^\s*Output\(/m);
   assert.deepEqual(
     [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
@@ -80,11 +87,11 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     candidate,
-    /var visual = frame\.Own\(compositor\.CreateSpriteVisual\(\)\);\s*visuals\.Add\(visual\);\s*visual\.Size = frame\.Visual\.Size;\s*visual\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*visual\.Brush = brush;\s*return visual;/,
+    /internal SpriteVisual CreateVisual\(CompositionBrush brush, float opacity = 1\)\s*\{\s*var visual = frame\.Own\(compositor\.CreateSpriteVisual\(\)\);\s*visuals\.Add\(visual\);\s*visual\.Size = frame\.Visual\.Size;\s*visual\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*visual\.Opacity = opacity;\s*visual\.Brush = brush;\s*return visual;/,
   );
   assert.match(
     candidate,
-    /var layer = frame\.Own\(compositor\.CreateLayerVisual\(\)\);\s*layers\.Add\(layer\);\s*layer\.Size = frame\.Visual\.Size;\s*layer\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*return layer;/,
+    /internal LayerVisual CreateLayer\(params Visual\[\] children\)\s*\{\s*var layer = frame\.Own\(compositor\.CreateLayerVisual\(\)\);\s*layers\.Add\(layer\);\s*layer\.Size = frame\.Visual\.Size;\s*layer\.CompositeMode = CompositionCompositeMode\.SourceOver;\s*foreach \(var child in children\) layer\.Children\.InsertAtTop\(child\);\s*return layer;/,
   );
   assert.match(
     candidate,
@@ -129,7 +136,7 @@ function assertSurfaceStages(candidate) {
   assert.match(failure, /throw;/);
 }
 
-test('Sheet native layers combine Ghost paints before its raster mask and the final ancestor opacity', () => {
+test('Sheet native layers preserve Ghost and Body effects before raster masks and ancestor opacity', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
   assertSurfaceStages(source);
   assert.match(
@@ -146,7 +153,8 @@ test('Sheet native layers combine Ghost paints before its raster mask and the fi
     build,
     /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
-  assert.equal([...build.matchAll(/stages\.CreateLayer\(/g)].length, 2);
+  assert.equal([...build.matchAll(/stages\.CreateLayer\(/g)].length, 4);
+  assert.doesNotMatch(build, /CompositeEffect Over\(|CompositeEffect WithNoise\(|var bodySource =/);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
   assert.doesNotMatch(
     build,
@@ -162,17 +170,25 @@ test('Sheet capture source guard rejects a root capture, repeated seed and bypas
     ['stages.Capture(leaf)', 'stages.Capture(seed)'],
     ['stages.Capture(sum)', 'stages.Capture(seed)'],
     ['("right", progressiveSources[index + 1])', '("right", progressiveSources[index])'],
-    ['Layer(ghostMask)', 'Layer(bodyMask)'],
-    ['Mask(bodySource, bodyAlphaMask)', 'Mask(bodyAlphaMask, bodySource)'],
+    ['MaskBrush("ghost", ghostMask)', 'MaskBrush("ghost", bodyMask)'],
+    ['MaskBrush("body", bodyMask)', 'MaskBrush("body", ghostMask)'],
     [
-      'ghostTint.Opacity = (float)Ghost!.Opacity;',
-      'ghostTint.Opacity = (float)Ghost!.Color.A / 255;',
+      'stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity)',
+      'stages.CreateVisual(ghostPaint, (float)Ghost!.Color.A / 255)',
     ],
     [
-      'ghostNoise.Opacity = (float)Geometry.SheetGhostNoiseOpacity;',
-      'ghostNoise.Opacity = (float)(Geometry.SheetGhostNoiseOpacity * Ghost!.Opacity);',
+      'stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity)',
+      'stages.CreateVisual(noiseBrush, (float)(Geometry.SheetGhostNoiseOpacity * Ghost!.Opacity))',
     ],
-    ['Mask(Source("Backdrop"), Layer(ghostMask))', 'Mask(Layer(ghostMask), Source("Backdrop"))'],
+    ['Mask(Source("Backdrop"), Layer(index))', 'Mask(Layer(index), Source("Backdrop"))'],
+    [
+      'stages.CreateVisual(tintPaint, (float)Tint!.Opacity)',
+      'stages.CreateVisual(tintPaint, (float)Tint!.Color.A / 255)',
+    ],
+    [
+      'stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity)',
+      'stages.CreateVisual(noiseBrush, (float)(Geometry.SheetBodyNoiseOpacity * Tint!.Opacity))',
+    ],
   ]) {
     assert.ok(source.includes(original));
     assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
@@ -186,12 +202,22 @@ test('Sheet material source guard rejects a plain output container, bypassed gro
       'result.Visual.Children.InsertAtTop(output);',
       'result.Visual.Children.InsertAtTop(ghostVisual);',
     ],
-    ['output.Children.InsertAtTop(bodyVisual);', 'result.Visual.Children.InsertAtTop(bodyVisual);'],
-    ['ghostVisual.Children.InsertAtTop(ghostTint);', 'output.Children.InsertAtTop(ghostTint);'],
-    ['ghostVisual.Effect = Brush(', 'output.Effect = Brush('],
     [
-      'ghostVisual.Children.InsertAtTop(ghostTint);\n            ghostVisual.Children.InsertAtTop(ghostNoise);',
-      'ghostVisual.Children.InsertAtTop(ghostNoise);\n            ghostVisual.Children.InsertAtTop(ghostTint);',
+      'stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise)',
+      'stages.CreateLayer(ghostBackdrop, ghostNoise, ghostTint)',
+    ],
+    ['stages.CreateLayer(bodyBackdrop, bodyTint)', 'stages.CreateLayer(bodyTint, bodyBackdrop)'],
+    ['stages.CreateLayer(tinted, bodyNoise)', 'stages.CreateLayer(bodyNoise, tinted)'],
+    ['stages.CreateLayer(tinted, bodyNoise)', 'stages.CreateLayer(bodyBackdrop, bodyNoise)'],
+    ['ghostVisual.Effect = MaskBrush(', 'output.Effect = MaskBrush('],
+    ['bodyVisual.Effect = MaskBrush(', 'tinted.Effect = MaskBrush('],
+    [
+      'Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint")',
+      'Foreground = Source("Backdrop"), Background = Paint(Blend!, "blendPaint")',
+    ],
+    [
+      'BlendEffectMode.Overlay : BlendEffectMode.ColorDodge',
+      'BlendEffectMode.ColorDodge : BlendEffectMode.Overlay',
     ],
     [
       'layer.CompositeMode = CompositionCompositeMode.SourceOver;',
@@ -201,9 +227,14 @@ test('Sheet material source guard rejects a plain output container, bypassed gro
       'visual.CompositeMode = CompositionCompositeMode.SourceOver;',
       'visual.CompositeMode = CompositionCompositeMode.MinBlend;',
     ],
+    ['visual.Opacity = opacity;', 'visual.Opacity = 1;'],
     [
-      'output.Children.InsertAtTop(outerVisual);\n            output.Children.InsertAtTop(bodyVisual);',
-      'output.Children.InsertAtTop(bodyVisual);\n            output.Children.InsertAtTop(outerVisual);',
+      'foreach (var child in children) layer.Children.InsertAtTop(child);',
+      'foreach (var child in children.Reverse()) layer.Children.InsertAtTop(child);',
+    ],
+    [
+      'stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual)',
+      'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',
     ],
   ]) {
     assert.ok(source.includes(original));
@@ -245,10 +276,10 @@ test('Sheet factories retain active failure metadata without the retired final g
     build,
     /CompositionEffectBrush Brush\(string factoryName, IGraphicsEffect graph,\s*params \(string Name, CompositionBrush Source\)\[\] bindings\)/,
   );
-  const failure = build.slice(
-    build.indexOf('catch (Exception primary)'),
-    build.indexOf('CompositeEffect WithNoise('),
-  );
+  const start = build.indexOf('catch (Exception primary)');
+  const end = build.indexOf('CompositionEffectBrush MaskBrush(');
+  assert.ok(start >= 0 && end > start);
+  const failure = build.slice(start, end);
   assert.match(
     failure,
     /primary\.Data\["LabUI\.SheetFactoryFailure"\] = new Dictionary<string, object\?>\s*\{ \["name"\] = factoryName, \["operation"\] = operation \};/,
@@ -304,18 +335,18 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     /var pair = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ Source\("left"\), Source\("right"\) \} \}\)/,
   );
   assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
-  assert.match(build, /ghostTint\.Opacity = \(float\)Ghost!\.Opacity;/);
-  assert.match(build, /ghostNoise\.Opacity = \(float\)Geometry\.SheetGhostNoiseOpacity;/);
+  assert.match(build, /stages\.CreateVisual\(ghostPaint, \(float\)Ghost!\.Opacity\)/);
   assert.match(
     build,
-    /ghostVisual\.Effect = Brush\("ghost", Mask\(Source\("Backdrop"\), Layer\(ghostMask\)\),\s*\("atlas", atlasBrush\)\);/,
+    /stages\.CreateVisual\(noiseBrush, \(float\)Geometry\.SheetGhostNoiseOpacity\)/,
   );
+  assert.match(build, /ghostVisual\.Effect = MaskBrush\("ghost", ghostMask\);/);
+  assert.match(build, /bodyVisual\.Effect = MaskBrush\("body", bodyMask\);/);
   assert.doesNotMatch(build, /ghostSource|Source\("progressiveSurface"\)|Paint\(Ghost!/);
   assert.match(geometry, /SheetGhostBlurRadius = 24;/);
   assert.match(geometry, /SheetBodyBlurRadius = 128;/);
   assert.match(source, /RadiusToSigma = 0\.5;/);
-  for (const paint of ['Tint', 'Blend'])
-    assert.match(build, new RegExp(`Paint\\(${paint}!, "${paint.toLowerCase()}Paint"\\)`));
+  assert.match(build, /Paint\(Blend!, "blendPaint"\)/);
   assert.match(build, /DrawShadows\(drawing, metrics, bodyShape\)/);
   assert.match(build, /DrawNoise\(drawing, pixelWidth, pixelHeight, scale\)/);
   assert.match(build, /Mode = CanvasComposite\.Add/);

@@ -338,8 +338,6 @@ public sealed class SheetLayers : Grid
                 Opacity = (float)brush.Opacity,
                 Source = Source(sourceName),
             });
-            CompositeEffect Over(IGraphicsEffectSource background, IGraphicsEffectSource foreground)
-                => Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { background, foreground } });
             CompositeEffect Mask(IGraphicsEffectSource source, IGraphicsEffectSource mask)
                 => Effect(new CompositeEffect { Mode = CanvasComposite.DestinationIn, Sources = { source, mask } });
             GaussianBlurEffect Blur(IGraphicsEffectSource source, double radius, string? name = null)
@@ -421,8 +419,8 @@ public sealed class SheetLayers : Grid
                     throw;
                 }
             }
-            CompositeEffect WithNoise(IGraphicsEffectSource source, double opacity) => Over(source,
-                Effect(new OpacityEffect { Source = Layer(noise), Opacity = (float)opacity }));
+            CompositionEffectBrush MaskBrush(string factoryName, int index) =>
+                Brush(factoryName, Mask(Source("Backdrop"), Layer(index)), ("atlas", atlasBrush));
 
             // Каждый authored уровень сохраняет свою Gaussian-ветвь и маску.
             IGraphicsEffectSource[] branches = new IGraphicsEffectSource[SheetBlurProfile.Levels.Length];
@@ -460,41 +458,32 @@ public sealed class SheetLayers : Grid
             var tintPaint = result.Own(compositor.CreateColorBrush(Tint!.Color));
             var blendPaint = result.Own(compositor.CreateColorBrush(Blend!.Color));
             // Маска применяется к сведённым Ghost слоям; alpha tint не ослабляет backdrop/noise.
-            var ghostVisual = stages.CreateLayer();
             var ghostBackdrop = stages.CreateVisual(capturedProgressive);
-            var ghostTint = stages.CreateVisual(ghostPaint);
-            ghostTint.Opacity = (float)Ghost!.Opacity;
-            var ghostNoise = stages.CreateVisual(Brush("ghost", Layer(noise),
-                ("atlas", atlasBrush)));
-            ghostNoise.Opacity = (float)Geometry.SheetGhostNoiseOpacity;
-            ghostVisual.Children.InsertAtTop(ghostBackdrop);
-            ghostVisual.Children.InsertAtTop(ghostTint);
-            ghostVisual.Children.InsertAtTop(ghostNoise);
-            ghostVisual.Effect = Brush("ghost", Mask(Source("Backdrop"), Layer(ghostMask)),
-                ("atlas", atlasBrush));
-            var tinted = Over(Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), Paint(Tint!, "tintPaint"));
+            var ghostTint = stages.CreateVisual(ghostPaint, (float)Ghost!.Opacity);
+            var noiseBrush = Brush("ghost", Layer(noise), ("atlas", atlasBrush));
+            var ghostNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetGhostNoiseOpacity);
+            var ghostVisual = stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise);
+            ghostVisual.Effect = MaskBrush("ghost", ghostMask);
+            var bodyBackdrop = stages.CreateVisual(Brush("body",
+                Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), ("backdrop", capturedBackdrop)));
+            var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
+            var tinted = stages.CreateLayer(bodyBackdrop, bodyTint);
             var blended = Effect(new BlendEffect
             {
-                Background = tinted, Foreground = Paint(Blend!, "blendPaint"),
+                Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),
                 Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
             });
-            var bodySource = WithNoise(blended, Geometry.SheetBodyNoiseOpacity);
-            var bodyAlphaMask = Layer(bodyMask);
-            var body = Mask(bodySource, bodyAlphaMask);
-            var bodyVisual = stages.CreateVisual(Brush("body", body,
-                ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint),
-                ("atlas", atlasBrush)));
+            tinted.Effect = Brush("body", blended, ("blendPaint", blendPaint));
+            var bodyNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity);
+            var bodyVisual = stages.CreateLayer(tinted, bodyNoise);
+            bodyVisual.Effect = MaskBrush("body", bodyMask);
             var outerVisual = stages.CreateVisual(Brush("outer", Layer(outer),
                 ("atlas", atlasBrush)));
             var borderVisual = stages.CreateVisual(Brush("border", Layer(border),
                 ("atlas", atlasBrush)));
             // Штатный LayerVisual сводит SourceOver четырёх слоёв до opacity предков.
             // Дополнительные captures Ghost/Body и общий inline effect graph не нужны.
-            var output = stages.CreateLayer();
-            output.Children.InsertAtTop(ghostVisual);
-            output.Children.InsertAtTop(outerVisual);
-            output.Children.InsertAtTop(bodyVisual);
-            output.Children.InsertAtTop(borderVisual);
+            var output = stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual);
             result.Visual.Children.InsertAtTop(output);
             result.Own(stages);
             return result;
@@ -579,22 +568,24 @@ public sealed class SheetLayers : Grid
         private readonly List<CompositionVisualSurface> surfaces = [];
         private readonly List<LayerVisual> layers = [];
 
-        internal SpriteVisual CreateVisual(CompositionBrush brush)
+        internal SpriteVisual CreateVisual(CompositionBrush brush, float opacity = 1)
         {
             var visual = frame.Own(compositor.CreateSpriteVisual());
             visuals.Add(visual);
             visual.Size = frame.Visual.Size;
             visual.CompositeMode = CompositionCompositeMode.SourceOver;
+            visual.Opacity = opacity;
             visual.Brush = brush;
             return visual;
         }
 
-        internal LayerVisual CreateLayer()
+        internal LayerVisual CreateLayer(params Visual[] children)
         {
             var layer = frame.Own(compositor.CreateLayerVisual());
             layers.Add(layer);
             layer.Size = frame.Visual.Size;
             layer.CompositeMode = CompositionCompositeMode.SourceOver;
+            foreach (var child in children) layer.Children.InsertAtTop(child);
             return layer;
         }
 
