@@ -349,8 +349,7 @@ public sealed class SheetLayers : Grid
                 return result;
             }
 
-            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale,
-                SheetBlurProfile.Levels.Length + 4);
+            var atlas = SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 5);
             List<Action<CanvasDrawingSession>> atlasDrawings = [];
             T Effect<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
@@ -395,23 +394,6 @@ public sealed class SheetLayers : Grid
             var bodyMask = AddLayer(drawing => drawing.FillGeometry(bodyShape, maskInk));
             var outer = AddLayer(drawing => DrawShadows(drawing, metrics, bodyShape));
             var noise = AddLayer(drawing => DrawNoise(drawing, pixelWidth, pixelHeight, scale));
-            int[] ghostMasks = new int[SheetBlurProfile.Levels.Length - 1];
-            for (var index = 0; index < ghostMasks.Length; index++)
-            {
-                var level = index;
-                ghostMasks[index] = AddLayer(drawing =>
-                {
-                    // Один clamp-ramp задаёт m и 1-m для обеих ветвей после raster filtering.
-                    // Две раздельные треугольные маски теряют часть веса возле fractional knots.
-                    using var gradient = new CanvasLinearGradientBrush(device,
-                        Color.FromArgb(0, maskInk.R, maskInk.G, maskInk.B), maskInk)
-                    {
-                        StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[level]),
-                        EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[level + 1]),
-                    };
-                    drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.Height), gradient);
-                });
-            }
             var ghostMask = AddLayer(drawing =>
                 drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), maskInk));
             var border = AddLayer(DrawBorder);
@@ -494,13 +476,22 @@ public sealed class SheetLayers : Grid
             var intervals = new Visual[SheetBlurProfile.Levels.Length - 1];
             for (var index = 0; index < intervals.Length; index++)
             {
+                // Нативный градиент работает в координатах viewport: без atlas resampling
+                // и дополнительных Transform2D узлов в графе двух Gaussian-ветвей.
+                var ramp = result.Own(compositor.CreateLinearGradientBrush());
+                ramp.MappingMode = CompositionMappingMode.Absolute;
+                ramp.ExtendMode = CompositionGradientExtendMode.Clamp;
+                ramp.StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index]);
+                ramp.EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1]);
+                ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(0, Color.FromArgb(0, 255, 255, 255))));
+                ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(1, maskInk)));
                 var lower = Effect(new CompositeEffect
-                { Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Layer(ghostMasks[index]) } });
-                var upper = Mask(Branch(index + 1), Layer(ghostMasks[index]));
+                { Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Source("mask") } });
+                var upper = Mask(Branch(index + 1), Source("mask"));
                 var pair = Effect(new CompositeEffect
                 { Mode = CanvasComposite.Add, Sources = { lower, upper } });
                 var interval = stages.CreateVisual(Brush($"progressiveInterval{index}", pair,
-                    ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
+                    ("backdrop", capturedBackdrop), ("mask", ramp)));
                 var clip = result.Own(compositor.CreateRectangleClip());
                 clip.Left = 0;
                 clip.Right = result.Visual.Size.X;

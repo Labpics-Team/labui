@@ -512,13 +512,13 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
   includesSource(
     renderer,
     `var lower = Effect(new CompositeEffect {
-        Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Layer(ghostMasks[index]) }
+        Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Source("mask") }
     });
-    var upper = Mask(Branch(index + 1), Layer(ghostMasks[index]));
+    var upper = Mask(Branch(index + 1), Source("mask"));
     var pair = Effect(new CompositeEffect {
         Mode = CanvasComposite.Add, Sources = { lower, upper }
     });`,
-    'current pair must share a sampled ramp through complementary DestinationOut/In weights',
+    'current pair must share one bound mask through complementary DestinationOut/In weights',
   );
   includesSource(
     page,

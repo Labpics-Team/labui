@@ -62,18 +62,19 @@ function assertProgressive(candidate) {
   includes(
     frame,
     'IGraphicsEffectSource Branch(int index) => index == 0 ? Backdrop() : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale, $"ghostBlur{index}");',
-    'int[] ghostMasks = new int[SheetBlurProfile.Levels.Length - 1];',
-    'for (var index = 0; index < ghostMasks.Length; index++)',
-    'new CanvasLinearGradientBrush(device, Color.FromArgb(0, maskInk.R, maskInk.G, maskInk.B), maskInk)',
-    'StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[level]),',
-    'EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[level + 1]),',
-    'drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.Height), gradient);',
     'var intervals = new Visual[SheetBlurProfile.Levels.Length - 1];',
     'for (var index = 0; index < intervals.Length; index++)',
-    'Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Layer(ghostMasks[index]) }',
-    'var upper = Mask(Branch(index + 1), Layer(ghostMasks[index]));',
+    'var ramp = result.Own(compositor.CreateLinearGradientBrush());',
+    'ramp.MappingMode = CompositionMappingMode.Absolute;',
+    'ramp.ExtendMode = CompositionGradientExtendMode.Clamp;',
+    'ramp.StartPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index]);',
+    'ramp.EndPoint = new(0, (float)metrics.GhostHeight * SheetBlurProfile.Levels[index + 1]);',
+    'ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(0, Color.FromArgb(0, 255, 255, 255))));',
+    'ramp.ColorStops.Add(result.Own(compositor.CreateColorGradientStop(1, maskInk)));',
+    'Mode = CanvasComposite.DestinationOut, Sources = { Branch(index), Source("mask") }',
+    'var upper = Mask(Branch(index + 1), Source("mask"));',
     'Mode = CanvasComposite.Add, Sources = { lower, upper }',
-    'Brush($"progressiveInterval{index}", pair, ("backdrop", capturedBackdrop), ("atlas", atlasBrush))',
+    'Brush($"progressiveInterval{index}", pair, ("backdrop", capturedBackdrop), ("mask", ramp))',
     'var clip = result.Own(compositor.CreateRectangleClip());',
     'clip.Left = 0;',
     'clip.Right = result.Visual.Size.X;',
@@ -89,7 +90,12 @@ function assertProgressive(candidate) {
     [...code(frame).matchAll(/stages \. Capture \( (\w+)/g)].map((match) => match[1]),
     ['sceneVisual'],
   );
-  assert.doesNotMatch(code(frame), /CreateBackdropBrush|progressiveSources|capturedProgressive/);
+  assert.doesNotMatch(
+    code(frame),
+    /CreateBackdropBrush|progressiveSources|capturedProgressive|ghostMasks|CanvasLinearGradientBrush/,
+  );
+  const intervals = section(frame, 'var intervals =', 'var ghostPaint =');
+  assert.doesNotMatch(code(intervals), /\bLayer \(|\batlasBrush\b/);
 }
 
 function assertSceneOwnership(candidate) {
@@ -210,7 +216,7 @@ function assertCleanup(candidate) {
   includes(candidate, 'for (var index = resources.Length - 1; index >= 0; index--)');
 }
 
-test('Sheet preserves all eight authored levels and seven shared interval ramps', () => {
+test('Sheet preserves eight authored levels and five raster cells beside native interval ramps', () => {
   const literals = profile.match(/levels\s*=\s*\[([^\]]+)\]/)?.[1];
   assert.ok(literals, 'Authored levels missing');
   const actual = literals.split(',').map((literal) => {
@@ -229,7 +235,7 @@ test('Sheet preserves all eight authored levels and seven shared interval ramps'
   );
   includes(
     build,
-    'SheetBlurProfile.Levels.Length + 4',
+    'SheetAtlasLayout.Create(pixelWidth, pixelHeight, result.Visual.Size, scale, 5)',
     'Source = source, BlurAmount = (float)(radius * RadiusToSigma), BorderMode = EffectBorderMode.Hard,',
     'graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma, Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma',
   );
@@ -343,18 +349,21 @@ test('Sheet guards reject a different pair, composition operator, interval cover
       'CanvasComposite.Add, Sources = { lower, upper }',
       'CanvasComposite.SourceOver, Sources = { lower, upper }',
     ],
-    [
-      'Mask(Branch(index + 1), Layer(ghostMasks[index]))',
-      'Mask(Branch(index), Layer(ghostMasks[index]))',
-    ],
+    ['Mask(Branch(index + 1), Source("mask"))', 'Mask(Branch(index), Source("mask"))'],
     ['CanvasComposite.DestinationOut', 'CanvasComposite.DestinationIn'],
+    ['Mask(Branch(index + 1), Source("mask"))', 'Mask(Branch(index + 1), Source("otherMask"))'],
     [
-      'Mask(Branch(index + 1), Layer(ghostMasks[index]))',
-      'Mask(Branch(index + 1), Layer(ghostMasks[index + 1]))',
+      'ramp.MappingMode = CompositionMappingMode.Absolute;',
+      'ramp.MappingMode = CompositionMappingMode.Relative;',
     ],
     [
-      'drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.Height), gradient);',
-      'drawing.FillRectangle(new Rect(0, 0, metrics.Width, metrics.GhostHeight), gradient);',
+      'ramp.ExtendMode = CompositionGradientExtendMode.Clamp;',
+      'ramp.ExtendMode = CompositionGradientExtendMode.Wrap;',
+    ],
+    ['("mask", ramp)', '("mask", atlasBrush)'],
+    [
+      'result.Own(compositor.CreateLinearGradientBrush())',
+      'compositor.CreateLinearGradientBrush()',
     ],
     [
       'new Visual[SheetBlurProfile.Levels.Length - 1]',
