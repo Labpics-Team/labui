@@ -1,5 +1,6 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { modalFocus } from './helpers/modal-focus.js';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Popover suite — the first dismissable, focus-managed overlay, verified on BOTH
@@ -125,10 +126,17 @@ test('modal: the scrim is shown when modal, on both renderers', async ({ page })
 });
 
 test('visual parity: Lit and React resolve the same panel colour when open', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-pop').locator('.trigger'),
+    reactTrigger(page, 'react-pop'),
+  );
   await litHost(page, 'lit-pop').locator('.trigger').click();
+  await waitForThemePaint(page, litContent(page, 'lit-pop'));
   const litPanelBg = await litContent(page, 'lit-pop').evaluate(bg);
 
   await reactTrigger(page, 'react-pop').click();
+  await waitForThemePaint(page, reactOpenContent(page));
   const reactPanelBg = await reactOpenContent(page).evaluate(bg);
 
   expect(reactPanelBg, 'popover panel background parity').toBe(litPanelBg);

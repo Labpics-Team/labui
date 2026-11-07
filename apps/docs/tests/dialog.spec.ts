@@ -1,5 +1,6 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
 import { modalFocus } from './helpers/modal-focus.js';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Dialog suite — the first TRUE modal overlay, verified on BOTH renderers.
@@ -346,8 +347,10 @@ test('focus-trap: Tab stays inside the dialog AND reaches the slotted body (Reac
 });
 
 test('visual parity: Lit and React resolve the same panel colour when open', async ({ page }) => {
+  await waitForThemePaint(page, litTrigger(page, 'lit-dialog'), reactTrigger(page, 'react-dialog'));
   await litTrigger(page, 'lit-dialog').click();
   await expect(litContent(page, 'lit-dialog')).toBeVisible();
+  await waitForThemePaint(page, litContent(page, 'lit-dialog'));
   const litPanelBg = await litContent(page, 'lit-dialog').evaluate(bg);
 
   // Close the Lit modal before the React renderer (its scrim would block the click).
@@ -355,6 +358,7 @@ test('visual parity: Lit and React resolve the same panel colour when open', asy
 
   await reactTrigger(page, 'react-dialog').click();
   await expect(reactOpenContent(page)).toBeVisible();
+  await waitForThemePaint(page, reactOpenContent(page));
   const reactPanelBg = await reactOpenContent(page).evaluate(bg);
 
   expect(reactPanelBg, 'dialog panel background parity').toBe(litPanelBg);

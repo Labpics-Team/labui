@@ -63,7 +63,10 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
       ...record(more.staticLabelAlpha, 'contrast.more.staticLabelAlpha'),
     };
     for (const [name, value] of Object.entries(record(more.sources, 'contrast.more.sources'))) {
-      if (!Object.hasOwn(sources, name))
+      const fillSource = FAMILIES.some((family) =>
+        ['light', 'dark'].some((theme) => name === `${family}-fill-${theme}`),
+      );
+      if (!Object.hasOwn(sources, name) && !fillSource)
         throw new Error(`contrast.more.sources.${name}: неизвестный источник`);
       sources[name] = sourceRgb(value, `contrast.more.sources.${name}`);
     }
@@ -280,15 +283,28 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
       );
     }
     if (contrast === 'more') {
-      // Подпись/индикатор остаются на авторской опоре. Общая заливка получает
-      // отдельную цель Core, потому что белая надпись задаёт другую связь.
-      const fillSource = `brand-fill-${theme}`;
-      sources[fillSource] = [...sources[`brand-${theme}`]];
-      paints.set('badge-fill-brand', { source: fillSource, opacity: 1 });
-      computed.set(fillSource, {
-        domain: { kind: 'box', lower: [0, 0, 0], upper: [255, 255, 255] },
-        maxDelta: assignment.maxDelta,
-      });
+      // Текст на canvas/tinted и белая подпись на fill задают разные связи.
+      // More-опоры принадлежат LabUI. Core сохраняет допустимую заливку либо
+      // назначает её в общей задаче; normal читает только authored sources.
+      for (const family of FAMILIES) {
+        const labelSource = `${family}-${theme}`;
+        const fillSource = `${family}-fill-${theme}`;
+        sources[fillSource] ??= [...sources[labelSource]];
+        paints.set(`badge-fill-${family}`, { source: fillSource, opacity: 1 });
+        computed.set(fillSource, {
+          domain: { kind: 'box', lower: [0, 0, 0], upper: [255, 255, 255] },
+          maxDelta: assignment.maxDelta,
+        });
+        for (const level of [1, 2, 3]) {
+          const background = `bg-tone-${level}`;
+          for (const label of ['primary', 'secondary', 'tertiary'])
+            floor(`label-${family}-${label}`, background, 'text', true);
+          floor(`border-${family}-strong`, background, 'ui', true);
+        }
+        floor(`label-${family}-primary`, `fill-${family}-primary`, 'text', true);
+        floor(`badge-label-on-${family}`, `badge-fill-${family}`, 'text', true);
+        floor('label-static-light-secondary', `badge-fill-${family}`, 'text', true);
+      }
       // Декоративный border-base в ordinary недостаточен как единственный
       // признак пустого control. IC использует уже существующий primary.
       paints.set('border-base', { source: selected.primary, opacity: 1 });

@@ -44,3 +44,11 @@ h1 {
   gap: var(--lab-space-4, 1rem);
   align-items: center;
 }
+
+/* Static-light сохраняет белую подпись в любой теме и требует тёмной подложки. */
+.specimen-on-dark {
+  display: inline-flex;
+  padding: var(--lab-space-2);
+  border-radius: var(--lab-radius-s);
+  background: var(--lab-bg-static-dark);
+}

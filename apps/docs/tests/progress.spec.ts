@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Progress suite — a component that CONSUMES the @zag-js/progress machine through
@@ -191,6 +192,11 @@ test('root data-state mirrors the machine on both renderers', async ({ page }) =
 });
 
 test('visual parity: Lit and React resolve the same track colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litTrack(page, 'lit-determinate'),
+    reactTrack(page, 'react-determinate'),
+  );
   const litBg = await litTrack(page, 'lit-determinate').evaluate(bg);
   const reactBg = await reactTrack(page, 'react-determinate').evaluate(bg);
   expect(reactBg).toBe(litBg);

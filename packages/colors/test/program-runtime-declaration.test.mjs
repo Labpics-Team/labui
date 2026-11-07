@@ -172,7 +172,7 @@ function publicEncoding(model, selected) {
   return { calls, version, wire };
 }
 
-test('sole-computed override не создаёт V3 без assignment; удаление восстанавливает исходный wire', () => {
+test('override всех computed не создаёт V3 без assignment; удаление восстанавливает исходный wire', () => {
   const ordinary = prepareEngineConfig(config);
   assert.deepEqual(publicEncoding(ordinary, ordinary.themes.light).calls, {
     computed: 0,
@@ -183,12 +183,26 @@ test('sole-computed override не создаёт V3 без assignment; удал�
   const selected = original.themes.light;
   const adaptive = publicEncoding(original, selected);
   assert.equal(adaptive.version, 3);
-  assert.deepEqual(adaptive.calls, { computed: 1, assignments: 1 });
-  const changed = withRoleOverrides(original, selected, [
+  const computedCount = selected.computed.size;
+  assert.ok(computedCount > 1);
+  assert.deepEqual(adaptive.calls, { computed: computedCount, assignments: 1 });
+  const partial = withRoleOverrides(original, selected, [
     { name: 'badge-fill-brand', source: [1, 2, 3], opacity: 1 },
   ]);
+  assert.equal(publicEncoding(partial.model, partial.selected).version, 3);
+  assert.deepEqual(publicEncoding(partial.model, partial.selected).calls, {
+    computed: computedCount - 1,
+    assignments: 1,
+  });
+  const changed = withRoleOverrides(
+    original,
+    selected,
+    [...selected.paints]
+      .filter(([, paint]) => selected.computed.has(paint.source))
+      .map(([name]) => ({ name, source: [1, 2, 3], opacity: 1 })),
+  );
   // Объявленная возможность остаётся для восстановления, но больше не является целью.
-  assert.equal(changed.selected.computed.size, 1);
+  assert.equal(changed.selected.computed.size, computedCount);
   const fixed = publicEncoding(changed.model, changed.selected);
   assert.equal(fixed.version, 1);
   assert.deepEqual(fixed.calls, { computed: 0, assignments: 0 });
@@ -197,7 +211,7 @@ test('sole-computed override не создаёт V3 без assignment; удал�
   ]);
   assert.equal(publicEncoding(other.model, other.selected).version, 3);
   assert.deepEqual(publicEncoding(other.model, other.selected).calls, {
-    computed: 1,
+    computed: computedCount,
     assignments: 1,
   });
   const restored = withRoleOverrides(original, selected, []);

@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
@@ -332,6 +333,11 @@ test('disabled: the machine blocks the toggle on both renderers', async ({ page 
 });
 
 test('visual parity: Lit and React resolve the same ON track colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litTrack(page, 'lit-accent-on'),
+    reactTrack(page, 'react-accent-on'),
+  );
   await expect(reactSwitch(page, 'react-accent-on')).toBeVisible();
 
   for (const variant of ['accent-on', 'neutral-on', 'danger-on'] as const) {

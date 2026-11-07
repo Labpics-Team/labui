@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Tags Input suite — a MACHINE-DRIVEN tokenized text field, verified on BOTH renderers
@@ -312,6 +313,11 @@ test('disabled: the input is non-interactive on both renderers', async ({ page }
 test('control-surface parity: the control box surface matches React (no double-paint)', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-neutral'),
+    reactControl(page, 'react-neutral'),
+  );
   const readSurface = (el: Element) => {
     const cs = getComputedStyle(el as HTMLElement);
     return {
@@ -343,12 +349,22 @@ test('control-surface parity: the control box surface matches React (no double-p
 });
 
 test('visual parity: Lit and React resolve the same control border colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-neutral'),
+    reactControl(page, 'react-neutral'),
+  );
   const litB = await litControl(page, 'lit-neutral').evaluate(borderColor);
   const reactB = await reactControl(page, 'react-neutral').evaluate(borderColor);
   expect(reactB, 'tags-input control border parity').toBe(litB);
 });
 
 test('visual parity: the danger sentiment re-points the border identically', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-invalid'),
+    reactControl(page, 'react-invalid'),
+  );
   const litB = await litControl(page, 'lit-invalid').evaluate(borderColor);
   const reactB = await reactControl(page, 'react-invalid').evaluate(borderColor);
   expect(reactB, 'danger control border parity').toBe(litB);

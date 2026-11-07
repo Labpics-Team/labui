@@ -7,6 +7,7 @@
  */
 import '@labpics/ui-core/badge';
 import { Badge } from '@labpics/ui-react';
+import { Button as VueButton } from '@labpics/ui-vue';
 import { Badge as VueBadge } from '@labpics/ui-vue/badge';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -35,9 +36,11 @@ createRoot(mount).render(
     <Badge data-testid="react-static-dark-fill" color="static-dark" type="fill">
       Dark
     </Badge>
-    <Badge data-testid="react-static-light-tinted" color="static-light" type="tinted">
-      Light
-    </Badge>
+    <span className="specimen-on-dark">
+      <Badge data-testid="react-static-light-tinted" color="static-light" type="tinted">
+        Light
+      </Badge>
+    </span>
     <Badge data-testid="react-disabled" color="brand" type="fill" disabled>
       Off
     </Badge>
@@ -64,14 +67,17 @@ createApp({
     ),
     h(VueBadge, { 'data-testid': 'vue-bare' }, () => 'Badge'),
     h(
-      'button',
+      VueButton,
       {
         'data-testid': 'vue-toggle',
+        type: 'neutral',
+        kind: 'tinted',
+        size: 's',
         onClick: () => {
           showIcon.value = !showIcon.value;
         },
       },
-      'Переключить иконку',
+      () => 'Переключить иконку',
     ),
   ],
 }).mount(vueMount);

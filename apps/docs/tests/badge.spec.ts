@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Badge suite — a presentational primitive, verified on BOTH renderers.
@@ -62,6 +63,11 @@ test('delivered HTML carries the Lit element (React island mounts on the client)
 });
 
 test('visual parity: Lit and React resolve the same surface + label colours', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litBadge(page, 'lit-brand-fill'),
+    reactBadge(page, 'react-brand-fill'),
+  );
   await expect(reactBadge(page, 'react-brand-fill')).toBeVisible();
 
   for (const variant of [

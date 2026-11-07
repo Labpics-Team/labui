@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { type Locator, type Page, type TestInfo, expect, test } from '@playwright/test';
 import { decodePng } from '../../../packages/colors/test/fx-render/fx-render.mjs';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 import { normalizeCssColor } from './support/color.js';
 
 type Rgb = [number, number, number];
@@ -326,9 +327,12 @@ for (const renderer of ['lit', 'react'] as const)
     await expect(button).toHaveCSS('background-color', 'rgb(0, 122, 255)');
     await page.locator('#local-contrast').evaluate((e) => e.setAttribute('data-contrast', 'more'));
     await expect(button).toHaveCSS('background-color', 'rgb(0, 64, 221)');
+    const accentLabel = () =>
+      button.evaluate((e) => getComputedStyle(e).getPropertyValue('--lab-label-accent').trim());
+    expect(rgb(await accentLabel())).toEqual([0, 64, 221]);
     await page.locator('#local-contrast').evaluate((e) => e.removeAttribute('data-theme'));
-    const changed = await button.evaluate((e) => getComputedStyle(e).backgroundColor);
-    expect(rgb(changed)).not.toEqual([0, 64, 221]);
+    // More fill может совпадать в темах; theme-sensitive роль доказывает наследование.
+    await expect.poll(async () => rgb(await accentLabel())).toEqual([64, 156, 255]);
     await expect(button).toHaveCSS('color', 'rgb(255, 255, 255)');
     await page
       .locator('#local-contrast')
@@ -375,7 +379,7 @@ for (const renderer of ['lit', 'react'] as const)
       for (const value of ['unchecked', 'checked', 'mixed']) {
         const host = page.getByTestId(`${renderer}-${value}`);
         const control = host.locator(renderer === 'lit' ? '.control' : '.lab-checkbox-control');
-        await expect(control).toBeVisible();
+        await waitForThemePaint(page, control);
         const paints = await control.evaluate((e) => {
           const s = getComputedStyle(e);
           return {
@@ -387,7 +391,7 @@ for (const renderer of ['lit', 'react'] as const)
         });
         expect(
           contrast(rgb(paints.border), rgb(paints.bg)),
-          `${value}: граница`,
+          `${value}: граница ${JSON.stringify(paints)}`,
         ).toBeGreaterThanOrEqual(3);
         if (value !== 'unchecked') {
           const glyph = control.locator(
@@ -440,6 +444,7 @@ for (const renderer of ['lit', 'react'] as const)
         await host.scrollIntoViewIfNeeded();
         const track = host.locator(renderer === 'lit' ? '.control' : '.lab-switch-control');
         const thumb = host.locator(renderer === 'lit' ? '.thumb' : '.lab-switch-thumb');
+        await waitForThemePaint(page, track, thumb);
         const paints = await track.evaluate((e) => {
           const s = getComputedStyle(e);
           return {

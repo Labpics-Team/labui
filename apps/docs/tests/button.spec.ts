@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Button suite — the first PRODUCTION component, verified on BOTH renderers.
@@ -44,6 +45,11 @@ test('delivered HTML carries the Lit element (React island mounts on the client)
 });
 
 test('visual parity: Lit and React resolve the same fill colours', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litButton(page, 'lit-accent-fill'),
+    reactButton(page, 'react-accent-fill'),
+  );
   // Wait for the React island to mount.
   await expect(reactButton(page, 'react-accent-fill')).toBeVisible();
 

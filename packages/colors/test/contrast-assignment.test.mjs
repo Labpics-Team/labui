@@ -6,6 +6,7 @@ import config from '../labui.config.json' with { type: 'json' };
 import { pairPixels, rgbHex } from './core-observation.mjs';
 
 const themes = ['light', 'dark'];
+const families = ['brand', 'danger', 'warning', 'success', 'info'];
 const get = (result, role) => result.paints.get(`--lab-${role}`);
 const ready = (engine, theme, contrast = 'more') => {
   const result = engine.resolve(theme, contrast);
@@ -13,7 +14,7 @@ const ready = (engine, theme, contrast = 'more') => {
   return result;
 };
 
-describe('IC: назначение общей акцентной заливки', () => {
+describe('IC: семантические подписи и заливки', () => {
   it('сохраняет допустимую опору; отделяет тёмную заливку от акцентной подписи', async () => {
     const engine = await createLabuiEngine();
     const light = ready(engine, 'light');
@@ -24,6 +25,50 @@ describe('IC: назначение общей акцентной заливки'
     expect(get(dark, 'fill-accent').rgb).not.toEqual(get(dark, 'label-accent').rgb);
     expect(get(dark, 'bg-primary').rgb).toEqual([0, 0, 0]);
   });
+
+  it.each(themes)(
+    '%s: все semantic families читаются на canvas, tinted и fill во всех трёх тонах',
+    async (theme) => {
+      const result = ready(await createLabuiEngine(), theme);
+      for (const family of families) {
+        for (const level of [1, 2, 3]) {
+          const background = get(result, `bg-tone-${level}`);
+          const assertPair = (foregroundRole, surfaceRole, criterion) => {
+            const observed = pairPixels(
+              get(result, surfaceRole),
+              get(result, foregroundRole),
+              background.rgb,
+            );
+            expect(
+              evaluateWcag22(rgbHex(observed.foreground), rgbHex(observed.background), criterion)
+                .decision,
+              `${theme}: ${foregroundRole} over ${surfaceRole} on tone ${level}`,
+            ).toBe('pass');
+          };
+          for (const label of ['primary', 'secondary', 'tertiary']) {
+            assertPair(`label-${family}-${label}`, `bg-tone-${level}`, 'sc-1.4.3-text-default');
+            for (const tint of ['primary', 'secondary', 'tertiary', 'quaternary'])
+              assertPair(
+                `label-${family}-${label}`,
+                `fill-${family}-${tint}`,
+                'sc-1.4.3-text-default',
+              );
+          }
+          for (const label of ['primary', 'secondary'])
+            assertPair(
+              `label-static-light-${label}`,
+              `badge-fill-${family}`,
+              'sc-1.4.3-text-default',
+            );
+          assertPair(
+            `border-${family}-strong`,
+            `bg-tone-${level}`,
+            'sc-1.4.11-ui-component-or-state',
+          );
+        }
+      }
+    },
+  );
 
   it.each(themes)(
     '%s: white и secondary проходят на готовой заливке, необходимые cues — на трёх тонах',
@@ -67,6 +112,7 @@ describe('IC: назначение общей акцентной заливки'
 
   it('невыполнимое ограничение IC не возвращает прежние цвета или частичный набор', async () => {
     const changed = structuredClone(config);
+    changed.contrast.more.sources['brand-fill-dark'] = '#409CFF';
     changed.contrast.more.assignment.maxDelta = 0;
     const engine = await createLabuiEngine({ config: changed });
     ready(engine, 'dark', 'normal');
@@ -75,6 +121,18 @@ describe('IC: назначение общей акцентной заливки'
     expect(result.vars).toBeNull();
     expect(result.paints).toBeNull();
     expect(() => engine.resolve('light', 'unknown')).toThrow();
+  });
+
+  it.each(families)('%s: недопустимая more-подпись отвергается целиком', async (family) => {
+    const changed = structuredClone(config);
+    changed.contrast.more.sources[`${family}-light`] = '#FFFFFF';
+    const engine = await createLabuiEngine({ config: changed });
+    const normal = ready(engine, 'light', 'normal');
+    const result = engine.resolve('light', 'more');
+    expect(result.state).toBe('unsatisfied');
+    expect(result.vars).toBeNull();
+    expect(result.paints).toBeNull();
+    expect(ready(engine, 'light', 'normal').paints).toEqual(normal.paints);
   });
 
   it('отложенное разрешение IC сохраняет входы, принятые при создании engine', async () => {

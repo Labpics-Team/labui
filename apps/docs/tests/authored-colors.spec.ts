@@ -95,7 +95,7 @@ test('authored colors: Dialog scrim consumes the page theme at its portal root',
       await page.goto(`/dialog.html?theme=${root}`);
       await setTheme(page, root);
       const host = page.getByTestId(`${renderer}-dialog`);
-      await host.locator(renderer === 'lit' ? '.trigger' : '.lab-dialog-trigger').click();
+      await host.getByRole('button', { name: 'Open', exact: true }).click();
       const scrim =
         renderer === 'lit'
           ? page.locator('[data-portal-for="lit-dialog"]').locator('.backdrop')

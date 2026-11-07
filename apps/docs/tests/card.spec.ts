@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Card suite — a PRESENTATIONAL component that OPTS OUT of the Zag seam (like
@@ -63,7 +64,9 @@ test('catalogue: Card → Sheet применяет настройки и воз�
   page,
 }) => {
   await page.goto('/components.html?component=card');
-  const card = page.locator('#sec-live').getByTestId('notification-settings');
+  const card = page
+    .getByRole('region', { name: 'Live example', exact: true })
+    .getByTestId('notification-settings');
   const trigger = card.getByRole('button', { name: 'Настроить', exact: true });
   await expect(trigger).toBeVisible();
   await expect(card.getByRole('button')).toHaveCount(1);
@@ -81,9 +84,9 @@ test('catalogue: Card → Sheet применяет настройки и воз�
   await trigger.click();
   const panel = page.getByRole('dialog', { name: 'Настройки уведомлений', exact: true });
   await expect(panel).toBeVisible();
-  const comments = card.getByTestId('comments-enabled').getByRole('switch');
+  const comments = card.getByTestId('comments-enabled').getByRole('checkbox');
   await expect(comments).toBeChecked();
-  await comments.click();
+  await card.getByTestId('comments-enabled').locator('.label-end').click();
   await expect(comments).not.toBeChecked();
   await card.getByTestId('settings-done').getByRole('button').click();
   await expect(panel).toBeHidden();
@@ -92,7 +95,7 @@ test('catalogue: Card → Sheet применяет настройки и воз�
     card.getByText('Уведомления включены. Комментарии выключены.', { exact: true }),
   ).toBeVisible();
 
-  await card.getByTestId('notification-enabled').getByRole('switch').click();
+  await card.getByTestId('notification-enabled').locator('.label-end').click();
   await expect(card.getByText('Уведомления выключены.', { exact: true })).toBeVisible();
   await trigger.click();
   await expect(comments).toBeDisabled();
@@ -106,7 +109,9 @@ test('catalogue: замена Button открытого Sheet меняет ак�
   page,
 }) => {
   await page.goto('/components.html?component=card');
-  const card = page.locator('#sec-live').getByTestId('notification-settings');
+  const card = page
+    .getByRole('region', { name: 'Live example', exact: true })
+    .getByTestId('notification-settings');
   await card.getByRole('button', { name: 'Настроить', exact: true }).click();
   const panel = page.getByRole('dialog', { name: 'Настройки уведомлений', exact: true });
   await expect(panel).toBeVisible();
@@ -200,6 +205,7 @@ test('variants: elevated / outlined / filled resolve distinct surfaces (both ren
 });
 
 test('visual parity: Lit and React resolve the same elevated surface colour', async ({ page }) => {
+  await waitForThemePaint(page, elevatedContent(page, 'lit'), elevatedContent(page, 'react'));
   const litBg = await elevatedContent(page, 'lit').evaluate(bg);
   const reactBg = await elevatedContent(page, 'react').evaluate(bg);
   expect(reactBg).toBe(litBg);

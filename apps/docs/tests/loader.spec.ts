@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Loader suite — a presentational primitive, verified on BOTH renderers.
@@ -49,6 +50,7 @@ test('a11y: both renderers announce a busy status with a hidden label', async ({
 test('visual parity: the ring follows currentColor identically on both renderers', async ({
   page,
 }) => {
+  await waitForThemePaint(page, litRing(page, 'lit-m'), reactRing(page, 'react-m'));
   const lit = litRing(page, 'lit-m');
   const react = reactRing(page, 'react-m');
   await expect(page.getByTestId('react-m')).toBeVisible();

@@ -187,7 +187,20 @@
       "staticLabelAlpha": { "secondary": 1 },
       "sources": {
         "brand-light": "#0040DD",
+        "danger-light": "#B80014",
+        "warning-light": "#875600",
+        "success-light": "#146C2E",
+        "info-light": "#0040DD",
         "brand-dark": "#409CFF",
+        "danger-dark": "#FF6961",
+        "warning-dark": "#FFB340",
+        "success-dark": "#30DB5B",
+        "info-dark": "#409CFF",
+        "brand-fill-dark": "#0040DD",
+        "danger-fill-dark": "#B80014",
+        "warning-fill-dark": "#875600",
+        "success-fill-dark": "#146C2E",
+        "info-fill-dark": "#0040DD",
         "shade": "#000000"
       },
       "assignment": {

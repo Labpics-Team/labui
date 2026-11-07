@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Radio Group suite — the FIRST COMPOUND component, CONSUMING the
@@ -264,6 +265,11 @@ test('event contract: selecting an item fires the public value-change with the n
 test('visual parity: Lit and React resolve the same checked ring + dot per type', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    litCheckedControl(page, 'lit-accent'),
+    reactCheckedControl(page, 'react-accent'),
+  );
   await expect(reactCheckedControl(page, 'react-accent')).toBeVisible();
 
   for (const variant of ['accent', 'neutral', 'danger'] as const) {

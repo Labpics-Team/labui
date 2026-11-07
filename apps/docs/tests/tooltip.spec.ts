@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Tooltip suite — the FIRST positioned overlay, verified on BOTH renderers.
@@ -87,10 +88,17 @@ test('disabled: the machine never opens on either renderer', async ({ page }) =>
 });
 
 test('visual parity: Lit and React resolve the same surface colour when open', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-tt-bottom'),
+    reactTrigger(page, 'react-tt-bottom'),
+  );
   await litHost(page, 'lit-tt-bottom').hover();
+  await waitForThemePaint(page, litContent(page, 'lit-tt-bottom'));
   const litBg = await litContent(page, 'lit-tt-bottom').evaluate(bg);
 
   await reactTrigger(page, 'react-tt-bottom').hover();
+  await waitForThemePaint(page, reactOpenContent(page));
   const reactBg = await reactOpenContent(page).evaluate(bg);
 
   expect(reactBg, 'tooltip surface background parity').toBe(litBg);

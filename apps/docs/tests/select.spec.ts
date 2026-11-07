@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Select suite — the COMPOUND + POSITIONED canon (keyed-compound group machine ⊕
@@ -196,6 +197,7 @@ test('value text: the trigger shows the default-value label (Banana) on both ren
 test('placeholder tint: an unselected trigger paints the value-text in the tertiary role on both renderers', async ({
   page,
 }) => {
+  await waitForThemePaint(page, litTrigger(page, 'lit-select'), reactTrigger(page, 'react-select'));
   // Resolve the two label roles through the SAME getComputedStyle serialization the
   // value-text colour will use, so the comparison is value-equality, not string-format
   // luck (a token reads `rgb(a b c / .5)` but computed `color` serializes to `rgba(...)`).
@@ -533,10 +535,13 @@ test('positioning: the open listbox is anchored at the trigger (bottom-start)', 
 });
 
 test('visual parity: Lit and React resolve the same listbox colour when open', async ({ page }) => {
+  await waitForThemePaint(page, litTrigger(page, 'lit-select'), reactTrigger(page, 'react-select'));
   await litTrigger(page, 'lit-select').click();
+  await waitForThemePaint(page, litContent(page, 'lit-select'));
   const litBg = await litContent(page, 'lit-select').evaluate(bg);
 
   await reactTrigger(page, 'react-select').click();
+  await waitForThemePaint(page, reactOpenContent(page));
   const reactBg = await reactOpenContent(page).evaluate(bg);
 
   expect(reactBg, 'select listbox background parity').toBe(litBg);

@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Textarea suite — a PRESENTATIONAL multi-line form field that OPTS OUT of the Zag
@@ -158,6 +159,11 @@ test('auto-resize: the control grows to fit content on input (both renderers)', 
 });
 
 test('visual parity: Lit and React resolve the same resting border colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-neutral'),
+    reactControl(page, 'react-neutral'),
+  );
   await expect(reactControl(page, 'react-neutral')).toBeVisible();
   for (const variant of ['neutral', 'warning', 'success', 'invalid'] as const) {
     const litBorder = await litControl(page, `lit-${variant}`).evaluate(borderColor);

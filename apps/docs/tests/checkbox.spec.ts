@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
@@ -384,6 +385,11 @@ test('disabled: the machine blocks the toggle on both renderers', async ({ page 
 });
 
 test('visual parity: Lit and React resolve the same checked box colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-checked'),
+    reactControl(page, 'react-checked'),
+  );
   await expect(reactBox(page, 'react-checked')).toBeVisible();
 
   for (const variant of ['checked', 'neutral', 'danger', 'mixed'] as const) {

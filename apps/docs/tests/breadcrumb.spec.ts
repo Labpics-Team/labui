@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Breadcrumb suite — a PRESENTATIONAL navigation primitive (no machine), verified
@@ -145,6 +146,7 @@ test('keyboard: link crumbs are Tab-reachable and keyboard-focusable with focus-
 });
 
 test('visual parity: Lit and React resolve the same current-crumb colour', async ({ page }) => {
+  await waitForThemePaint(page, litCurrent(page), reactCurrent(page));
   await expect(reactCurrent(page)).toBeVisible();
   expect(await reactCurrent(page).evaluate(color)).toBe(await litCurrent(page).evaluate(color));
 });

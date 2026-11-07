@@ -2,7 +2,7 @@
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@2.0.0, source a48b4eb0703d37cabe2cab83f3f5a7679e3cebbe.
 WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
-Авторские входы: labui.config.json, SHA256 61019afe78489d6716229cb36f642ef39035f845eb99c8f4e6c7234c0a8248c3.
+Авторские входы: labui.config.json, SHA256 a469bfad0229807e02645b821cb9bb73c22c992421e98fd1f07b3211f37bce05.
 Краски и alpha получены из готового Program; aliases принадлежат LabUI.
 Регенерация: node packages/colors/generate-contract.mjs
 */
@@ -77,14 +77,14 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-label-brand-quaternary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.322)) var(--_lab-dark, rgb(74 143 255 / 0.322))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.322)) var(--_lab-dark, rgb(64 156 255 / 0.322)));
   --lab-label-brand-secondary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.722)) var(--_lab-dark, rgb(74 143 255 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
   --lab-label-brand-tertiary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.522)) var(--_lab-dark, rgb(74 143 255 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
-  --lab-label-danger-primary: var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58));
-  --lab-label-danger-quaternary: var(--_lab-light, rgb(255 59 48 / 0.322)) var(--_lab-dark, rgb(255 58 58 / 0.322));
-  --lab-label-danger-secondary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.722)) var(--_lab-dark, rgb(255 58 58 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58)));
-  --lab-label-danger-tertiary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.522)) var(--_lab-dark, rgb(255 58 58 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58)));
-  --lab-label-info-primary: var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255));
-  --lab-label-info-quaternary: var(--_lab-light, rgb(62 135 255 / 0.322)) var(--_lab-dark, rgb(86 150 255 / 0.322));
-  --lab-label-info-secondary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.722)) var(--_lab-dark, rgb(86 150 255 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255)));
-  --lab-label-info-tertiary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.522)) var(--_lab-dark, rgb(86 150 255 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255)));
+  --lab-label-danger-primary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58))) var(--_lab-more, var(--_lab-light, rgb(184 0 20)) var(--_lab-dark, rgb(255 105 97)));
+  --lab-label-danger-quaternary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.322)) var(--_lab-dark, rgb(255 58 58 / 0.322))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.322)) var(--_lab-dark, rgb(255 105 97 / 0.322)));
+  --lab-label-danger-secondary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.722)) var(--_lab-dark, rgb(255 58 58 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(184 0 20)) var(--_lab-dark, rgb(255 105 97)));
+  --lab-label-danger-tertiary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.522)) var(--_lab-dark, rgb(255 58 58 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(184 0 20)) var(--_lab-dark, rgb(255 105 97)));
+  --lab-label-info-primary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
+  --lab-label-info-quaternary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.322)) var(--_lab-dark, rgb(86 150 255 / 0.322))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.322)) var(--_lab-dark, rgb(64 156 255 / 0.322)));
+  --lab-label-info-secondary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.722)) var(--_lab-dark, rgb(86 150 255 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
+  --lab-label-info-tertiary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.522)) var(--_lab-dark, rgb(86 150 255 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
   --lab-label-inverted-primary: var(--_lab-normal, var(--_lab-light, rgb(255 255 255)) var(--_lab-dark, rgb(16 16 18))) var(--_lab-more, var(--_lab-light, rgb(255 255 255)) var(--_lab-dark, rgb(0 0 0)));
   --lab-label-inverted-quaternary: var(--_lab-light, rgb(176 176 185 / 0.322)) var(--_lab-dark, rgb(60 60 67 / 0.322));
   --lab-label-inverted-secondary: var(--_lab-normal, var(--_lab-light, rgb(176 176 185 / 0.722)) var(--_lab-dark, rgb(60 60 67 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(176 176 185)) var(--_lab-dark, rgb(60 60 67)));
@@ -101,28 +101,28 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-label-static-light-quaternary: rgb(255 255 255 / 0.322);
   --lab-label-static-light-secondary: var(--_lab-normal, rgb(255 255 255 / 0.722)) var(--_lab-more, rgb(255 255 255));
   --lab-label-static-light-tertiary: rgb(255 255 255 / 0.522);
-  --lab-label-success-primary: var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88));
-  --lab-label-success-quaternary: var(--_lab-light, rgb(52 199 89 / 0.322)) var(--_lab-dark, rgb(48 209 88 / 0.322));
-  --lab-label-success-secondary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.722)) var(--_lab-dark, rgb(48 209 88 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88)));
-  --lab-label-success-tertiary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.522)) var(--_lab-dark, rgb(48 209 88 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88)));
-  --lab-label-warning-primary: var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8));
-  --lab-label-warning-quaternary: var(--_lab-light, rgb(255 161 0 / 0.322)) var(--_lab-dark, rgb(255 144 8 / 0.322));
-  --lab-label-warning-secondary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.722)) var(--_lab-dark, rgb(255 144 8 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8)));
-  --lab-label-warning-tertiary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8)));
+  --lab-label-success-primary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88))) var(--_lab-more, var(--_lab-light, rgb(20 108 46)) var(--_lab-dark, rgb(48 219 91)));
+  --lab-label-success-quaternary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.322)) var(--_lab-dark, rgb(48 209 88 / 0.322))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.322)) var(--_lab-dark, rgb(48 219 91 / 0.322)));
+  --lab-label-success-secondary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.722)) var(--_lab-dark, rgb(48 209 88 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(20 108 46)) var(--_lab-dark, rgb(48 219 91)));
+  --lab-label-success-tertiary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.522)) var(--_lab-dark, rgb(48 209 88 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(20 108 46)) var(--_lab-dark, rgb(48 219 91)));
+  --lab-label-warning-primary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8))) var(--_lab-more, var(--_lab-light, rgb(135 86 0)) var(--_lab-dark, rgb(255 179 64)));
+  --lab-label-warning-quaternary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.322)) var(--_lab-dark, rgb(255 144 8 / 0.322))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.322)) var(--_lab-dark, rgb(255 179 64 / 0.322)));
+  --lab-label-warning-secondary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.722)) var(--_lab-dark, rgb(255 144 8 / 0.722))) var(--_lab-more, var(--_lab-light, rgb(135 86 0)) var(--_lab-dark, rgb(255 179 64)));
+  --lab-label-warning-tertiary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(135 86 0)) var(--_lab-dark, rgb(255 179 64)));
 
   /* Fills */
   --lab-fill-brand-primary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.122)) var(--_lab-dark, rgb(74 143 255 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.122)) var(--_lab-dark, rgb(64 156 255 / 0.122)));
   --lab-fill-brand-quaternary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.02)) var(--_lab-dark, rgb(74 143 255 / 0.02))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.02)) var(--_lab-dark, rgb(64 156 255 / 0.02)));
   --lab-fill-brand-secondary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.078)) var(--_lab-dark, rgb(74 143 255 / 0.078))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.078)) var(--_lab-dark, rgb(64 156 255 / 0.078)));
   --lab-fill-brand-tertiary: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.039)) var(--_lab-dark, rgb(74 143 255 / 0.039))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.039)) var(--_lab-dark, rgb(64 156 255 / 0.039)));
-  --lab-fill-danger-primary: var(--_lab-light, rgb(255 59 48 / 0.122)) var(--_lab-dark, rgb(255 58 58 / 0.122));
-  --lab-fill-danger-quaternary: var(--_lab-light, rgb(255 59 48 / 0.02)) var(--_lab-dark, rgb(255 58 58 / 0.02));
-  --lab-fill-danger-secondary: var(--_lab-light, rgb(255 59 48 / 0.078)) var(--_lab-dark, rgb(255 58 58 / 0.078));
-  --lab-fill-danger-tertiary: var(--_lab-light, rgb(255 59 48 / 0.039)) var(--_lab-dark, rgb(255 58 58 / 0.039));
-  --lab-fill-info-primary: var(--_lab-light, rgb(62 135 255 / 0.122)) var(--_lab-dark, rgb(86 150 255 / 0.122));
-  --lab-fill-info-quaternary: var(--_lab-light, rgb(62 135 255 / 0.02)) var(--_lab-dark, rgb(86 150 255 / 0.02));
-  --lab-fill-info-secondary: var(--_lab-light, rgb(62 135 255 / 0.078)) var(--_lab-dark, rgb(86 150 255 / 0.078));
-  --lab-fill-info-tertiary: var(--_lab-light, rgb(62 135 255 / 0.039)) var(--_lab-dark, rgb(86 150 255 / 0.039));
+  --lab-fill-danger-primary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.122)) var(--_lab-dark, rgb(255 58 58 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.122)) var(--_lab-dark, rgb(255 105 97 / 0.122)));
+  --lab-fill-danger-quaternary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.02)) var(--_lab-dark, rgb(255 58 58 / 0.02))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.02)) var(--_lab-dark, rgb(255 105 97 / 0.02)));
+  --lab-fill-danger-secondary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.078)) var(--_lab-dark, rgb(255 58 58 / 0.078))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.078)) var(--_lab-dark, rgb(255 105 97 / 0.078)));
+  --lab-fill-danger-tertiary: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.039)) var(--_lab-dark, rgb(255 58 58 / 0.039))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.039)) var(--_lab-dark, rgb(255 105 97 / 0.039)));
+  --lab-fill-info-primary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.122)) var(--_lab-dark, rgb(86 150 255 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.122)) var(--_lab-dark, rgb(64 156 255 / 0.122)));
+  --lab-fill-info-quaternary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.02)) var(--_lab-dark, rgb(86 150 255 / 0.02))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.02)) var(--_lab-dark, rgb(64 156 255 / 0.02)));
+  --lab-fill-info-secondary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.078)) var(--_lab-dark, rgb(86 150 255 / 0.078))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.078)) var(--_lab-dark, rgb(64 156 255 / 0.078)));
+  --lab-fill-info-tertiary: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.039)) var(--_lab-dark, rgb(86 150 255 / 0.039))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.039)) var(--_lab-dark, rgb(64 156 255 / 0.039)));
   --lab-fill-none: rgb(120 120 128 / 0);
   --lab-fill-primary: var(--_lab-light, rgb(120 120 128 / 0.2)) var(--_lab-dark, rgb(120 120 128 / 0.361));
   --lab-fill-quaternary: var(--_lab-light, rgb(120 120 128 / 0.078)) var(--_lab-dark, rgb(120 120 128 / 0.161));
@@ -136,25 +136,25 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-fill-static-light-secondary: rgb(120 120 128 / 0.161);
   --lab-fill-static-light-tertiary: rgb(120 120 128 / 0.122);
   --lab-fill-tertiary: var(--_lab-light, rgb(120 120 128 / 0.122)) var(--_lab-dark, rgb(120 120 128 / 0.239));
-  --lab-fill-success-primary: var(--_lab-light, rgb(52 199 89 / 0.122)) var(--_lab-dark, rgb(48 209 88 / 0.122));
-  --lab-fill-success-quaternary: var(--_lab-light, rgb(52 199 89 / 0.02)) var(--_lab-dark, rgb(48 209 88 / 0.02));
-  --lab-fill-success-secondary: var(--_lab-light, rgb(52 199 89 / 0.078)) var(--_lab-dark, rgb(48 209 88 / 0.078));
-  --lab-fill-success-tertiary: var(--_lab-light, rgb(52 199 89 / 0.039)) var(--_lab-dark, rgb(48 209 88 / 0.039));
-  --lab-fill-warning-primary: var(--_lab-light, rgb(255 161 0 / 0.122)) var(--_lab-dark, rgb(255 144 8 / 0.122));
-  --lab-fill-warning-quaternary: var(--_lab-light, rgb(255 161 0 / 0.02)) var(--_lab-dark, rgb(255 144 8 / 0.02));
-  --lab-fill-warning-secondary: var(--_lab-light, rgb(255 161 0 / 0.078)) var(--_lab-dark, rgb(255 144 8 / 0.078));
-  --lab-fill-warning-tertiary: var(--_lab-light, rgb(255 161 0 / 0.039)) var(--_lab-dark, rgb(255 144 8 / 0.039));
+  --lab-fill-success-primary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.122)) var(--_lab-dark, rgb(48 209 88 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.122)) var(--_lab-dark, rgb(48 219 91 / 0.122)));
+  --lab-fill-success-quaternary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.02)) var(--_lab-dark, rgb(48 209 88 / 0.02))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.02)) var(--_lab-dark, rgb(48 219 91 / 0.02)));
+  --lab-fill-success-secondary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.078)) var(--_lab-dark, rgb(48 209 88 / 0.078))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.078)) var(--_lab-dark, rgb(48 219 91 / 0.078)));
+  --lab-fill-success-tertiary: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.039)) var(--_lab-dark, rgb(48 209 88 / 0.039))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.039)) var(--_lab-dark, rgb(48 219 91 / 0.039)));
+  --lab-fill-warning-primary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.122)) var(--_lab-dark, rgb(255 144 8 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.122)) var(--_lab-dark, rgb(255 179 64 / 0.122)));
+  --lab-fill-warning-quaternary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.02)) var(--_lab-dark, rgb(255 144 8 / 0.02))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.02)) var(--_lab-dark, rgb(255 179 64 / 0.02)));
+  --lab-fill-warning-secondary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.078)) var(--_lab-dark, rgb(255 144 8 / 0.078))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.078)) var(--_lab-dark, rgb(255 179 64 / 0.078)));
+  --lab-fill-warning-tertiary: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.039)) var(--_lab-dark, rgb(255 144 8 / 0.039))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.039)) var(--_lab-dark, rgb(255 179 64 / 0.039)));
 
   /* Border */
   --lab-border-brand-base: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.2)) var(--_lab-dark, rgb(74 143 255 / 0.2))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.2)) var(--_lab-dark, rgb(64 156 255 / 0.2)));
   --lab-border-brand-soft: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.122)) var(--_lab-dark, rgb(74 143 255 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.122)) var(--_lab-dark, rgb(64 156 255 / 0.122)));
   --lab-border-brand-strong: var(--_lab-normal, var(--_lab-light, rgb(0 122 255)) var(--_lab-dark, rgb(74 143 255))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
-  --lab-border-danger-base: var(--_lab-light, rgb(255 59 48 / 0.2)) var(--_lab-dark, rgb(255 58 58 / 0.2));
-  --lab-border-danger-soft: var(--_lab-light, rgb(255 59 48 / 0.122)) var(--_lab-dark, rgb(255 58 58 / 0.122));
-  --lab-border-danger-strong: var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58));
-  --lab-border-info-base: var(--_lab-light, rgb(62 135 255 / 0.2)) var(--_lab-dark, rgb(86 150 255 / 0.2));
-  --lab-border-info-soft: var(--_lab-light, rgb(62 135 255 / 0.122)) var(--_lab-dark, rgb(86 150 255 / 0.122));
-  --lab-border-info-strong: var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255));
+  --lab-border-danger-base: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.2)) var(--_lab-dark, rgb(255 58 58 / 0.2))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.2)) var(--_lab-dark, rgb(255 105 97 / 0.2)));
+  --lab-border-danger-soft: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.122)) var(--_lab-dark, rgb(255 58 58 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.122)) var(--_lab-dark, rgb(255 105 97 / 0.122)));
+  --lab-border-danger-strong: var(--_lab-normal, var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58))) var(--_lab-more, var(--_lab-light, rgb(184 0 20)) var(--_lab-dark, rgb(255 105 97)));
+  --lab-border-info-base: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.2)) var(--_lab-dark, rgb(86 150 255 / 0.2))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.2)) var(--_lab-dark, rgb(64 156 255 / 0.2)));
+  --lab-border-info-soft: var(--_lab-normal, var(--_lab-light, rgb(62 135 255 / 0.122)) var(--_lab-dark, rgb(86 150 255 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.122)) var(--_lab-dark, rgb(64 156 255 / 0.122)));
+  --lab-border-info-strong: var(--_lab-normal, var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(64 156 255)));
   --lab-border-base: var(--_lab-normal, var(--_lab-light, rgb(120 120 128 / 0.161)) var(--_lab-dark, rgb(120 120 128 / 0.2))) var(--_lab-more, var(--_lab-light, rgb(0 0 0)) var(--_lab-dark, rgb(246 248 250)));
   --lab-border-inverted: var(--_lab-normal, var(--_lab-light, rgb(255 255 255)) var(--_lab-dark, rgb(16 16 18))) var(--_lab-more, var(--_lab-light, rgb(255 255 255)) var(--_lab-dark, rgb(0 0 0)));
   --lab-border-none: rgb(120 120 128 / 0);
@@ -166,12 +166,12 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-border-static-light-soft: rgb(120 120 128 / 0.078);
   --lab-border-static-light-strong: rgb(255 255 255);
   --lab-border-strong: var(--_lab-normal, var(--_lab-light, rgb(16 16 18)) var(--_lab-dark, rgb(246 248 250))) var(--_lab-more, var(--_lab-light, rgb(0 0 0)) var(--_lab-dark, rgb(246 248 250)));
-  --lab-border-success-base: var(--_lab-light, rgb(52 199 89 / 0.2)) var(--_lab-dark, rgb(48 209 88 / 0.2));
-  --lab-border-success-soft: var(--_lab-light, rgb(52 199 89 / 0.122)) var(--_lab-dark, rgb(48 209 88 / 0.122));
-  --lab-border-success-strong: var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88));
-  --lab-border-warning-base: var(--_lab-light, rgb(255 161 0 / 0.2)) var(--_lab-dark, rgb(255 144 8 / 0.2));
-  --lab-border-warning-soft: var(--_lab-light, rgb(255 161 0 / 0.122)) var(--_lab-dark, rgb(255 144 8 / 0.122));
-  --lab-border-warning-strong: var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8));
+  --lab-border-success-base: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.2)) var(--_lab-dark, rgb(48 209 88 / 0.2))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.2)) var(--_lab-dark, rgb(48 219 91 / 0.2)));
+  --lab-border-success-soft: var(--_lab-normal, var(--_lab-light, rgb(52 199 89 / 0.122)) var(--_lab-dark, rgb(48 209 88 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(20 108 46 / 0.122)) var(--_lab-dark, rgb(48 219 91 / 0.122)));
+  --lab-border-success-strong: var(--_lab-normal, var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88))) var(--_lab-more, var(--_lab-light, rgb(20 108 46)) var(--_lab-dark, rgb(48 219 91)));
+  --lab-border-warning-base: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.2)) var(--_lab-dark, rgb(255 144 8 / 0.2))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.2)) var(--_lab-dark, rgb(255 179 64 / 0.2)));
+  --lab-border-warning-soft: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.122)) var(--_lab-dark, rgb(255 144 8 / 0.122))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.122)) var(--_lab-dark, rgb(255 179 64 / 0.122)));
+  --lab-border-warning-strong: var(--_lab-normal, var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8))) var(--_lab-more, var(--_lab-light, rgb(135 86 0)) var(--_lab-dark, rgb(255 179 64)));
 
   /* FX */
   --lab-fx-focus-ring-brand: var(--lab-label-brand-primary);
@@ -181,10 +181,10 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-fx-focus-ring-success: var(--lab-label-success-primary);
   --lab-fx-focus-ring-warning: var(--lab-label-warning-primary);
   --lab-fx-glow-brand: var(--_lab-normal, var(--_lab-light, rgb(0 122 255 / 0.522)) var(--_lab-dark, rgb(74 143 255 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(0 64 221 / 0.522)) var(--_lab-dark, rgb(64 156 255 / 0.522)));
-  --lab-fx-glow-danger: var(--_lab-light, rgb(255 59 48 / 0.522)) var(--_lab-dark, rgb(255 58 58 / 0.522));
+  --lab-fx-glow-danger: var(--_lab-normal, var(--_lab-light, rgb(255 59 48 / 0.522)) var(--_lab-dark, rgb(255 58 58 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(184 0 20 / 0.522)) var(--_lab-dark, rgb(255 105 97 / 0.522)));
   --lab-fx-glow-inverted: var(--_lab-light, rgb(176 176 185)) var(--_lab-dark, rgb(60 60 67));
   --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
-  --lab-fx-glow-warning: var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522));
+  --lab-fx-glow-warning: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.522)) var(--_lab-dark, rgb(255 179 64 / 0.522)));
   --lab-fx-skeleton-highlight: var(--_lab-light, rgb(255 255 255 / 0.078)) var(--_lab-dark, rgb(255 255 255 / 0.161));
 
   /* Misc */
@@ -206,15 +206,15 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-border-accent: var(--lab-border-brand-strong);
   --lab-border-danger: var(--lab-border-danger-strong);
   --lab-border-focus: var(--lab-fx-focus-ring-brand);
-  --lab-badge-fill-brand: var(--_lab-normal, var(--_lab-light, rgb(0 122 255)) var(--_lab-dark, rgb(74 143 255))) var(--_lab-more, var(--_lab-light, rgb(0 64 221)) var(--_lab-dark, rgb(43 116 223)));
+  --lab-badge-fill-brand: var(--_lab-normal, var(--_lab-light, rgb(0 122 255)) var(--_lab-dark, rgb(74 143 255))) var(--_lab-more, rgb(0 64 221));
   --lab-badge-label-on-brand: var(--lab-label-static-light-primary);
-  --lab-badge-fill-danger: var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58));
+  --lab-badge-fill-danger: var(--_lab-normal, var(--_lab-light, rgb(255 59 48)) var(--_lab-dark, rgb(255 58 58))) var(--_lab-more, rgb(184 0 20));
   --lab-badge-label-on-danger: var(--lab-label-static-light-primary);
-  --lab-badge-fill-warning: var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8));
+  --lab-badge-fill-warning: var(--_lab-normal, var(--_lab-light, rgb(255 161 0)) var(--_lab-dark, rgb(255 144 8))) var(--_lab-more, rgb(135 86 0));
   --lab-badge-label-on-warning: var(--lab-label-static-light-primary);
-  --lab-badge-fill-success: var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88));
+  --lab-badge-fill-success: var(--_lab-normal, var(--_lab-light, rgb(52 199 89)) var(--_lab-dark, rgb(48 209 88))) var(--_lab-more, rgb(20 108 46));
   --lab-badge-label-on-success: var(--lab-label-static-light-primary);
-  --lab-badge-fill-info: var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255));
+  --lab-badge-fill-info: var(--_lab-normal, var(--_lab-light, rgb(62 135 255)) var(--_lab-dark, rgb(86 150 255))) var(--_lab-more, rgb(0 64 221));
   --lab-badge-label-on-info: var(--lab-label-static-light-primary);
   --lab-badge-fill-static-dark: var(--_lab-normal, rgb(16 16 18)) var(--_lab-more, rgb(0 0 0));
   --lab-badge-label-on-static-dark: var(--lab-label-static-light-primary);

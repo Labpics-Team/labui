@@ -187,7 +187,14 @@ export async function assertLabelContrast(
     throw new Error(`assertLabelContrast: не удалось распознать цвет лейбла.\n  fg="${fgRaw}"`);
   }
 
-  const ratio = contrastRatio(fgRgb, bgRgb);
+  // WCAG оценивает видимую краску текста, а не RGB до применения его alpha.
+  const visibleForeground: Srgb = {
+    r: fgRgb.r * fgRgb.a + bgRgb.r * (1 - fgRgb.a),
+    g: fgRgb.g * fgRgb.a + bgRgb.g * (1 - fgRgb.a),
+    b: fgRgb.b * fgRgb.a + bgRgb.b * (1 - fgRgb.a),
+    a: 1,
+  };
+  const ratio = contrastRatio(visibleForeground, bgRgb);
   const threshold = isLargeText ? 3.0 : 4.5;
 
   expect(
