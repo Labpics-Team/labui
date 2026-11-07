@@ -22,4 +22,6 @@ Marker и style root входят в свежесть lease, но не в мех
 
 ## Проверка
 
-`test/browser-authority-scenarios.mjs` исполняется в настоящем браузере с настоящим Core WASM и generated contract.css. Fixture ожидает `lab-colors-state` через одноразовую подписку с bounded timeout до действия; sleeps и polling отсутствуют. `test/browser-withdrawal.test.mjs` различает подавленную и наблюдаемую ошибку отзыва до создания host. Полная framework-квалификация принадлежит delivery/CI владельцу.
+`apps/docs/tests/colors-live.spec.ts` подключает `test/browser-authority-scenarios.mjs`, `test/browser-cleanup-scenarios.mjs`, `test/browser-replacement-scenarios.mjs` и `test/browser-failure-listener-scenarios.mjs` через `apps/docs/src/_fixtures/colors-live.html` к существующему full Playwright suite (Chromium и WebKit). Fixture использует публичный `@labui/colors/runtime`, generated contract.css и Core WASM из установленного `@labpics/colors`; Vite публикует эти же bytes как `/core.wasm`. Сценарии проверяют DOM events, а fixture сохраняет истории публичного `onState`, включая видимый CSS и восстановление владельца до `disposed`.
+
+Fixture ожидает `lab-colors-state` через подписку с bounded timeout до действия; sleeps и polling отсутствуют. `test/browser-withdrawal.test.mjs` различает подавленную и наблюдаемую ошибку отзыва до создания host. Полная framework-квалификация принадлежит delivery/CI владельцу.

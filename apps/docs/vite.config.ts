@@ -1,4 +1,6 @@
-import { resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
 import { type Plugin, defineConfig } from 'vite';
 
 // Documentation pages and browser evidence share one Vite build, but their
@@ -32,9 +34,25 @@ function ssrProofPlugin(): Plugin {
   };
 }
 
+function colorsWasmPlugin(): Plugin {
+  const require = createRequire(resolve(__dirname, '../../packages/colors/package.json'));
+  return {
+    name: 'labui-colors-wasm',
+    apply: 'build',
+    async buildStart() {
+      const installed = dirname(require.resolve('@labpics/colors'));
+      this.emitFile({
+        type: 'asset',
+        fileName: 'core.wasm',
+        source: await readFile(resolve(installed, 'pkg/labcolors_bg.wasm')),
+      });
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
-  plugins: [ssrProofPlugin()],
+  plugins: [ssrProofPlugin(), colorsWasmPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.
@@ -52,6 +70,7 @@ export default defineConfig({
         // measurement harness from masquerading as documentation.
         'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),
         'fixture-acrylic-live': resolve(__dirname, 'src/_fixtures/acrylic-live.html'),
+        'fixture-colors-live': resolve(__dirname, 'src/_fixtures/colors-live.html'),
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
