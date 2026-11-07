@@ -12,6 +12,8 @@ Inline `!important` не является допустимым authored input. �
 
 Marker и style root входят в свежесть lease, но не в механизм отзыва. Их изменение сохраняет прежние Core outputs до обработки и затем требует свежего observation и нового attachment. Unknown observation снимает outputs; восстановление не возвращает старый CSS snapshot. Удаление `adoptedStyleSheets` не удаляет публикацию, поскольку этот adapter не владеет stylesheet.
 
+Живой владелец scope учитывается отдельно от DOM marker. Его удаление не разрешает второй runtime; scope освобождается после завершения всего dispose, включая восстановление canvas. Темы объявляют одинаковый набор материалов: различаются краски, но весь набор CSS-ролей остаётся управляемым при переключении. Неполная топология отвергается до изменения DOM.
+
 ## Завершение cleanup
 
 `disposed` публикуется только после отзыва outputs, безопасного выхода из Core, успешных `attachment.dispose/free`, восстановления authored role declarations и canvas. Ошибка любой незавершённой фазы наблюдаема как `failed/cleanup_failed`; owner и текущая фаза сохраняются для повторного public cancel/dispose. Успешный Core dispose не повторяется при retry free/finalize. Во время Core callback запрос завершения сообщает `waiting/cleanup_pending`, а terminal появляется после unwind. При retry browser restoration уже восстановленный inline owner не маскируется заново; listeners снимаются только после завершения browser owners.

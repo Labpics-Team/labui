@@ -13,6 +13,7 @@ import { createThemeRuntime } from './runtime.mjs';
 
 export { readOpaqueBackdrop } from './browser-inputs.mjs';
 const scopeAttribute = 'data-lab-colors-scope';
+const attachedScopes = new WeakSet();
 
 /** Подключает один полный Program к одному CSS scope и явному независимому backdrop. */
 export function attachLabuiColors({
@@ -29,7 +30,8 @@ export function attachLabuiColors({
   if (!view?.CSSStyleSheet || !scope.isConnected) {
     throw new Error('контекст не поддерживает атомарный CSS scope');
   }
-  if (scope.hasAttribute(scopeAttribute)) throw new Error('CSS scope уже имеет владельца');
+  if (attachedScopes.has(scope) || scope.hasAttribute(scopeAttribute))
+    throw new Error('CSS scope уже имеет владельца');
   if (!backdrop && !observe)
     throw new Error('нужна явная независимая подложка или observation provider');
   if (canvas !== undefined && canvas !== 'authored')
@@ -48,9 +50,24 @@ export function attachLabuiColors({
   const initialMode = nearestMode(scope, 'data-contrast', ['normal', 'more'], contrast);
   const initialNames = themePropertyNames(modelFor(source, initialMode).themes[initialTheme]);
   const authority = createInlineAuthority(scope, initialNames);
-  authority.acquire();
-  const canvasInput =
-    canvas === 'authored' ? authoredCanvas({ scope, backdrop, config: source, modelFor }) : null;
+  let canvasInput = null;
+  attachedScopes.add(scope);
+  try {
+    authority.acquire();
+    if (canvas === 'authored')
+      canvasInput = authoredCanvas({ scope, backdrop, config: source, modelFor });
+  } catch (error) {
+    try {
+      authority.dispose();
+    } catch (cleanup) {
+      throw new AggregateError([error, cleanup], 'не удалось восстановить CSS scope', {
+        cause: error,
+      });
+    } finally {
+      attachedScopes.delete(scope);
+    }
+    throw error;
+  }
   const inputs = () => {
     const theme = nearestMode(scope, 'data-theme', ['light', 'dark'], scheme);
     const mode = nearestMode(scope, 'data-contrast', ['normal', 'more'], contrast);
@@ -100,6 +117,7 @@ export function attachLabuiColors({
       view.removeEventListener('pagehide', suspend);
       view.removeEventListener('pageshow', resume);
       closed = true;
+      attachedScopes.delete(scope);
     },
     onState(state) {
       if (state.state !== 'waiting' || state.reason !== 'loading') resolveReady(state);

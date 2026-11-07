@@ -159,6 +159,18 @@ test('Colors authority: refusal, withdrawal, observation, recovery and dispose',
   }
 });
 
+test('Colors scope retains one owner across marker loss and releases it after dispose', async ({
+  page,
+}) => {
+  expect(await page.evaluate(() => window.__labColorsLive.ownership())).toEqual([
+    'invalid-topology',
+    'startup-rollback',
+    'marker-removal',
+    'cancel-preserves-owner',
+    'dispose-releases-owner',
+  ]);
+});
+
 test('Colors cleanup: transient failures restore owners before onState disposed', async ({
   page,
 }) => {

@@ -3,6 +3,7 @@ import { type LabuiColorsState, attachLabuiColors } from '@labui/colors/runtime'
 import { browserAuthorityScenarios } from '../../../../packages/colors/test/browser-authority-scenarios.mjs';
 import { browserCleanupScenarios } from '../../../../packages/colors/test/browser-cleanup-scenarios.mjs';
 import { browserFailureListenerScenarios } from '../../../../packages/colors/test/browser-failure-listener-scenarios.mjs';
+import { browserOwnershipScenarios } from '../../../../packages/colors/test/browser-ownership-scenarios.mjs';
 import { browserReplacementScenarios } from '../../../../packages/colors/test/browser-replacement-scenarios.mjs';
 
 export interface ColorsStateResult {
@@ -146,6 +147,7 @@ async function runScenario<Control>(
 }
 
 const hooks = {
+  ownership: () => browserOwnershipScenarios(attachLabuiColors),
   authority: () => runScenario(browserAuthorityScenarios),
   cleanup: () => runScenario(browserCleanupScenarios),
   replacement: () => runScenario(browserReplacementScenarios),

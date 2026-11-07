@@ -34,6 +34,15 @@ export function prepareEngineConfig(parsed, contrast = 'normal') {
   const config = record(parsed, 'config');
   if (config.schemaVersion !== 1) throw new Error('config.schemaVersion: поддержана версия 1');
   const authored = record(config.authored, 'authored');
+  const materials = record(authored.materials, 'authored.materials');
+  const materialNames = ['light', 'dark'].map((theme) =>
+    Object.keys(record(materials[theme], `authored.materials.${theme}`)).sort(),
+  );
+  if (
+    materialNames[0].length !== materialNames[1].length ||
+    materialNames[0].some((name, index) => name !== materialNames[1][index])
+  )
+    throw new Error('authored.materials: темы должны объявлять одинаковый набор материалов');
   const sources = Object.fromEntries(
     Object.entries(record(authored.sources, 'authored.sources')).map(([name, value]) => [
       name,

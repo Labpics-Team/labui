@@ -9,7 +9,9 @@ export function createInlineAuthority(scope, names) {
     priority: scope.style.getPropertyPriority(name),
   });
   const equal = (left, right) =>
-    left.declaration === right.declaration && left.priority === right.priority;
+    right !== undefined &&
+    left.declaration === right.declaration &&
+    left.priority === right.priority;
   let restored = false;
   const capture = () => {
     for (const name of names) {
