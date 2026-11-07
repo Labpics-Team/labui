@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-material="solid" data-contrast="normal">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sheet: настройки</title>
+    <link rel="stylesheet" href="../button-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Настройки</h1>
+      <button id="background" type="button">Действие на странице</button>
+      <output id="background-count">0</output>
+      <div id="local-context">
+        <lab-sheet id="sheet" data-testid="sheet" heading="Контакт" description="Имя для уведомлений">
+          Изменить контакт
+          <form slot="content" style="display:grid;gap:var(--lab-space-sheet-gap);margin:0">
+            <label>Имя <input id="name" name="name" value="Даниил" /></label>
+            <button id="apply" type="submit">Сохранить</button>
+          </form>
+        </lab-sheet>
+        <lab-sheet id="empty" data-testid="empty" aria-label="Размер панели">Позиции</lab-sheet>
+      </div>
+    </main>
+    <script type="module" src="./sheet.ts"></script>
+  </body>
+</html>

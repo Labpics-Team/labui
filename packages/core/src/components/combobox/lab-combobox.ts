@@ -66,12 +66,7 @@
  * SSR (core-CONTRACT §7): a combobox is client-only. The server emits the labelled
  * input and a `hidden` listbox; the machine upgrades it on the client. No flash.
  */
-import * as comboboxMachine from '@zag-js/combobox';
-import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
-import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
-import { litVar } from '../../css.js';
-import { LabElement } from '../../lit/lab-element.js';
-import type { ZagController } from '../../lit/zag-controller.js';
+import * as comboboxMachine from '@labpics/ui-core/behaviors/combobox';
 import {
   type FieldA11yInput,
   type LabFieldSize,
@@ -79,8 +74,16 @@ import {
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
-} from '../field/field-a11y.js';
+} from '@labpics/ui-core/shared';
+import { type LabComboboxItem, filterComboboxItems } from '@labpics/ui-core/shared';
+import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
+import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
+import { litVar } from '../../css.js';
+import { LabElement } from '../../lit/lab-element.js';
+import type { ZagController } from '../../lit/zag-controller.js';
 import { fieldStyles } from '../field/field-styles.js';
+
+export { type LabComboboxItem, filterComboboxItems } from '@labpics/ui-core/shared';
 
 /** Field sentiment — the `type` axis, shared with the other form controls. */
 export type LabComboboxType = LabFieldType;
@@ -90,21 +93,6 @@ export type LabComboboxSize = LabFieldSize;
 export type LabComboboxPlacement = NonNullable<
   NonNullable<comboboxMachine.Props['positioning']>['placement']
 >;
-
-/**
- * One combobox option. The COMPOUND unit: the element renders one option per VISIBLE
- * entry and spreads the machine's per-item getters onto its parts. Shared with the
- * React twin so both renderers describe an option the same way and cannot drift. The
- * collection's `itemToValue` / `itemToString` read these exact fields.
- */
-export interface LabComboboxItem {
-  /** The value submitted/selected when this option is chosen. Unique in the list. */
-  readonly value: string;
-  /** The visible label text of the option (and what the input shows on select). */
-  readonly label: string;
-  /** Whether THIS option is non-interactive (independent of the control's `disabled`). */
-  readonly disabled?: boolean;
-}
 
 /**
  * The combobox machine's schema, parameterized by OUR item type — the same shape the
@@ -123,20 +111,6 @@ const comboboxModule: MachineModule<ComboboxSchema, ComboboxApi> = comboboxMachi
 /** Per-instance machine id source. Overlays are client-only, so a client counter is
  * SSR-safe; an explicit id keeps the machine's element ids deterministic. */
 let comboboxInstanceSeq = 0;
-
-/**
- * The default filter: case-insensitive label substring match. An empty query shows
- * EVERY item (no narrowing until the user types). Extracted so the React twin matches
- * it exactly (parity is one rule, not two implementations).
- */
-export function filterComboboxItems(
-  items: readonly LabComboboxItem[],
-  query: string,
-): LabComboboxItem[] {
-  const q = query.trim().toLowerCase();
-  if (q === '') return [...items];
-  return items.filter((item) => item.label.toLowerCase().includes(q));
-}
 
 export class LabCombobox extends LabElement {
   static override properties = {
@@ -368,7 +342,7 @@ export class LabCombobox extends LabElement {
          <lab-input>; the trigger button overlaps its right padding. */
       .input.control {
         flex: 1 1 auto;
-        padding-right: var(--lab-size-switch-track-s, 2.25rem);
+      padding-right: var(--lab-size-combobox-trigger, 2.25rem);
       }
 
       /* The disclosure trigger — a real <button> the machine wires to toggle the
@@ -381,7 +355,7 @@ export class LabCombobox extends LabElement {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: var(--lab-size-switch-track-s, 2.25rem);
+      width: var(--lab-size-combobox-trigger, 2.25rem);
         height: 100%;
         margin: 0;
         padding: 0;
@@ -648,9 +622,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-combobox': LabCombobox;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-combobox')) {
-  customElements.define('lab-combobox', LabCombobox);
 }

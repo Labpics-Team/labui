@@ -12,7 +12,9 @@
  */
 @import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
+@import "@labpics/ui-tokens/motion.css";
 @import "@labpics/ui-core/theme.css";
+@import "@labpics/ui-core/shadow.css";
 @import "@labpics/ui-core/selection.css";
 
 body {
@@ -48,5 +50,22 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: var(--lab-space-4, 1rem);
+  align-items: center;
+}
+
+.geometry {
+  font-family: var(--lab-font-family);
+}
+
+.geometry-grid {
+  display: grid;
+  gap: var(--lab-space-md);
+  justify-items: start;
+}
+
+.geometry-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--lab-space-sm);
   align-items: center;
 }

@@ -1,0 +1,330 @@
+diff --git a/dist/dismissable-layer.js b/dist/dismissable-layer.js
+index 3275b7e3ef438f4af26b3abf1e4cf0e029628d60..a95c387d43716f4a86a1f7858acdf978ece1ee4f 100644
+--- a/dist/dismissable-layer.js
++++ b/dist/dismissable-layer.js
+@@ -48,7 +48,12 @@ function trackDismissableElementImpl(node, options) {
+     type = "dialog",
+     layerStyleTargets
+   } = options;
++  const resolveContainers = () => {
++    const containers = typeof excludeContainers === "function" ? excludeContainers() : excludeContainers;
++    return Array.isArray(containers) ? Array.from(containers) : [containers];
++  };
+   const layer = {
++    origins: [node, ...resolveContainers().filter(import_dom_query.isHTMLElement)],
+     dismiss: onDismiss,
+     node,
+     type,
+@@ -90,8 +95,7 @@ function trackDismissableElementImpl(node, options) {
+   }
+   function exclude(target) {
+     if (!node) return false;
+-    const containers = typeof excludeContainers === "function" ? excludeContainers() : excludeContainers;
+-    const _containers = Array.isArray(containers) ? containers : [containers];
++    const _containers = resolveContainers();
+     const persistentElements = options.persistentElements?.map((fn) => fn()).filter(import_dom_query.isHTMLElement);
+     if (persistentElements) _containers.push(...persistentElements);
+     return _containers.some((node2) => (0, import_dom_query.contains)(node2, target)) || import_layer_stack.layerStack.isInNestedLayer(node, target);
+@@ -109,15 +113,26 @@ function trackDismissableElementImpl(node, options) {
+   };
+ }
+ function trackDismissableElement(nodeOrFn, options) {
+-  const { defer } = options;
+-  const func = defer ? import_dom_query.raf : (v) => v();
++  const getNode = () => typeof nodeOrFn === "function" ? nodeOrFn() : nodeOrFn;
+   const cleanups = [];
+-  cleanups.push(
+-    func(() => {
+-      const node = (0, import_utils.isFunction)(nodeOrFn) ? nodeOrFn() : nodeOrFn;
+-      cleanups.push(trackDismissableElementImpl(node, options));
+-    })
+-  );
++  const setup = (node) => cleanups.push(trackDismissableElementImpl(node, options));
++  if (!options.defer) {
++    setup(getNode());
++  } else {
++    let cancelled = false;
++    cleanups.push(() => { cancelled = true; });
++    queueMicrotask(() => {
++      if (cancelled) return;
++      const committed = getNode();
++      if (committed) {
++        setup(committed);
++        return;
++      }
++      cleanups.push((0, import_dom_query.raf)(() => {
++        if (!cancelled) setup(getNode());
++      }));
++    });
++  }
+   return () => {
+     cleanups.forEach((fn) => fn?.());
+   };
+diff --git a/dist/dismissable-layer.mjs b/dist/dismissable-layer.mjs
+index 3bb2e97c04e2f6810a863d18305b6553312d9fe3..f9f44bef1799539458d09a97a0da5efde90c101d 100644
+--- a/dist/dismissable-layer.mjs
++++ b/dist/dismissable-layer.mjs
+@@ -25,7 +25,12 @@ function trackDismissableElementImpl(node, options) {
+     type = "dialog",
+     layerStyleTargets
+   } = options;
++  const resolveContainers = () => {
++    const containers = typeof excludeContainers === "function" ? excludeContainers() : excludeContainers;
++    return Array.isArray(containers) ? Array.from(containers) : [containers];
++  };
+   const layer = {
++    origins: [node, ...resolveContainers().filter(isHTMLElement)],
+     dismiss: onDismiss,
+     node,
+     type,
+@@ -67,8 +72,7 @@ function trackDismissableElementImpl(node, options) {
+   }
+   function exclude(target) {
+     if (!node) return false;
+-    const containers = typeof excludeContainers === "function" ? excludeContainers() : excludeContainers;
+-    const _containers = Array.isArray(containers) ? containers : [containers];
++    const _containers = resolveContainers();
+     const persistentElements = options.persistentElements?.map((fn) => fn()).filter(isHTMLElement);
+     if (persistentElements) _containers.push(...persistentElements);
+     return _containers.some((node2) => contains(node2, target)) || layerStack.isInNestedLayer(node, target);
+@@ -86,15 +90,26 @@ function trackDismissableElementImpl(node, options) {
+   };
+ }
+ function trackDismissableElement(nodeOrFn, options) {
+-  const { defer } = options;
+-  const func = defer ? raf : (v) => v();
++  const getNode = () => typeof nodeOrFn === "function" ? nodeOrFn() : nodeOrFn;
+   const cleanups = [];
+-  cleanups.push(
+-    func(() => {
+-      const node = isFunction(nodeOrFn) ? nodeOrFn() : nodeOrFn;
+-      cleanups.push(trackDismissableElementImpl(node, options));
+-    })
+-  );
++  const setup = (node) => cleanups.push(trackDismissableElementImpl(node, options));
++  if (!options.defer) {
++    setup(getNode());
++  } else {
++    let cancelled = false;
++    cleanups.push(() => { cancelled = true; });
++    queueMicrotask(() => {
++      if (cancelled) return;
++      const committed = getNode();
++      if (committed) {
++        setup(committed);
++        return;
++      }
++      cleanups.push(raf(() => {
++        if (!cancelled) setup(getNode());
++      }));
++    });
++  }
+   return () => {
+     cleanups.forEach((fn) => fn?.());
+   };
+diff --git a/dist/layer-stack.js b/dist/layer-stack.js
+index 80321b2502f519f3b36acb6659acff00a66371ea..b56e6ce40d61a10ce2a4976823251b3dacd0ba7b 100644
+--- a/dist/layer-stack.js
++++ b/dist/layer-stack.js
+@@ -51,20 +51,41 @@ var layerStack = {
+     return layer?.node === node;
+   },
+   getNestedLayers(node) {
+-    return Array.from(this.layers).slice(this.indexOf(node) + 1);
++    if (this.indexOf(node) < 0) return [];
++    const children = new Map();
++    for (const layer of this.layers) {
++      if (!layer.parent) continue;
++      const group = children.get(layer.parent) || [];
++      group.push(layer);
++      children.set(layer.parent, group);
++    }
++    const nested = new Set([node]);
++    const pending = [node];
++    for (let index = 0; index < pending.length; index++) {
++      for (const child of children.get(pending[index]) || []) {
++        if (nested.has(child.node)) continue;
++        nested.add(child.node);
++        pending.push(child.node);
++      }
++    }
++    return this.layers.filter((layer) => layer.node !== node && nested.has(layer.node));
+   },
+   getLayersByType(type) {
+     return this.layers.filter((layer) => layer.type === type);
+   },
+   getNestedLayersByType(node, type) {
+-    const index = this.indexOf(node);
+-    if (index === -1) return [];
+-    return this.layers.slice(index + 1).filter((layer) => layer.type === type);
++    return this.getNestedLayers(node).filter((layer) => layer.type === type);
+   },
+   getParentLayerOfType(node, type) {
+-    const index = this.indexOf(node);
+-    if (index <= 0) return void 0;
+-    return this.layers.slice(0, index).reverse().find((layer) => layer.type === type);
++    const visited = new Set([node]);
++    let parent = this.layers[this.indexOf(node)]?.parent;
++    while (parent && !visited.has(parent)) {
++      visited.add(parent);
++      const layer = this.layers[this.indexOf(parent)];
++      if (!layer) return;
++      if (layer.type === type) return layer;
++      parent = layer.parent;
++    }
+   },
+   countNestedLayersOfType(node, type) {
+     return this.getNestedLayersByType(node, type).length;
+@@ -81,11 +102,20 @@ var layerStack = {
+   add(layer) {
+     const existingIndex = this.indexOf(layer.node);
+     if (existingIndex !== -1) {
++      // Повторная регистрация меняет порядок, сохраняя владельца открытого слоя.
++      layer.parent = this.layers[existingIndex].parent;
+       this.layers.splice(existingIndex, 1);
++    } else {
++      layer.parent = this.getParentNode(layer);
+     }
+     this.layers.push(layer);
+     this.syncLayers();
+   },
++  getParentNode(layer) {
++    const origins = layer.origins?.filter(Boolean);
++    if (!origins?.length) return this.layers[this.count() - 1]?.node;
++    return [...this.layers].reverse().find(({ node }) => origins.some((origin) => (0, import_dom_query.contains)(node, origin)))?.node;
++  },
+   addBranch(node) {
+     this.branches.push(node);
+   },
+@@ -101,11 +131,14 @@ var layerStack = {
+     });
+     this.recentlyRemoved.add(node);
+     (0, import_dom_query.nextTick)(() => this.recentlyRemoved.delete(node));
+-    if (index < this.count() - 1) {
+-      const _layers = this.getNestedLayers(node);
+-      _layers.forEach((layer2) => layerStack.dismiss(layer2.node, node));
+-    }
+-    this.layers.splice(index, 1);
++    this.getNestedLayers(node).forEach((child) => layerStack.dismiss(child.node, node));
++    // Veto и отложенный cleanup сохраняют связь surviving child с живым ancestor.
++    this.layers.forEach((child) => {
++      if (child.parent === node) child.parent = layer.parent;
++    });
++    // Callback дочернего слоя может синхронно сдвинуть исходный index.
++    const currentIndex = this.indexOf(node);
++    if (currentIndex !== -1) this.layers.splice(currentIndex, 1);
+     this.syncLayers();
+   },
+   removeBranch(node) {
+@@ -146,7 +179,7 @@ var layerStack = {
+     this.syncLayers();
+   },
+   clear() {
+-    this.remove(this.layers[0].node);
++    while (this.count() > 0) this.remove(this.layers[0].node);
+   }
+ };
+ function applyLayerStackMetadata(layer, index, el) {
+diff --git a/dist/layer-stack.mjs b/dist/layer-stack.mjs
+index 4e31d3c0a5f70d9a4251a641675191af299e8f7a..724e2572c94ca5e08a8291b252c4bb174e05c068 100644
+--- a/dist/layer-stack.mjs
++++ b/dist/layer-stack.mjs
+@@ -27,20 +27,41 @@ var layerStack = {
+     return layer?.node === node;
+   },
+   getNestedLayers(node) {
+-    return Array.from(this.layers).slice(this.indexOf(node) + 1);
++    if (this.indexOf(node) < 0) return [];
++    const children = new Map();
++    for (const layer of this.layers) {
++      if (!layer.parent) continue;
++      const group = children.get(layer.parent) || [];
++      group.push(layer);
++      children.set(layer.parent, group);
++    }
++    const nested = new Set([node]);
++    const pending = [node];
++    for (let index = 0; index < pending.length; index++) {
++      for (const child of children.get(pending[index]) || []) {
++        if (nested.has(child.node)) continue;
++        nested.add(child.node);
++        pending.push(child.node);
++      }
++    }
++    return this.layers.filter((layer) => layer.node !== node && nested.has(layer.node));
+   },
+   getLayersByType(type) {
+     return this.layers.filter((layer) => layer.type === type);
+   },
+   getNestedLayersByType(node, type) {
+-    const index = this.indexOf(node);
+-    if (index === -1) return [];
+-    return this.layers.slice(index + 1).filter((layer) => layer.type === type);
++    return this.getNestedLayers(node).filter((layer) => layer.type === type);
+   },
+   getParentLayerOfType(node, type) {
+-    const index = this.indexOf(node);
+-    if (index <= 0) return void 0;
+-    return this.layers.slice(0, index).reverse().find((layer) => layer.type === type);
++    const visited = new Set([node]);
++    let parent = this.layers[this.indexOf(node)]?.parent;
++    while (parent && !visited.has(parent)) {
++      visited.add(parent);
++      const layer = this.layers[this.indexOf(parent)];
++      if (!layer) return;
++      if (layer.type === type) return layer;
++      parent = layer.parent;
++    }
+   },
+   countNestedLayersOfType(node, type) {
+     return this.getNestedLayersByType(node, type).length;
+@@ -57,11 +78,20 @@ var layerStack = {
+   add(layer) {
+     const existingIndex = this.indexOf(layer.node);
+     if (existingIndex !== -1) {
++      // Повторная регистрация меняет порядок, сохраняя владельца открытого слоя.
++      layer.parent = this.layers[existingIndex].parent;
+       this.layers.splice(existingIndex, 1);
++    } else {
++      layer.parent = this.getParentNode(layer);
+     }
+     this.layers.push(layer);
+     this.syncLayers();
+   },
++  getParentNode(layer) {
++    const origins = layer.origins?.filter(Boolean);
++    if (!origins?.length) return this.layers[this.count() - 1]?.node;
++    return [...this.layers].reverse().find(({ node }) => origins.some((origin) => contains(node, origin)))?.node;
++  },
+   addBranch(node) {
+     this.branches.push(node);
+   },
+@@ -77,11 +107,14 @@ var layerStack = {
+     });
+     this.recentlyRemoved.add(node);
+     nextTick(() => this.recentlyRemoved.delete(node));
+-    if (index < this.count() - 1) {
+-      const _layers = this.getNestedLayers(node);
+-      _layers.forEach((layer2) => layerStack.dismiss(layer2.node, node));
+-    }
+-    this.layers.splice(index, 1);
++    this.getNestedLayers(node).forEach((child) => layerStack.dismiss(child.node, node));
++    // Veto и отложенный cleanup сохраняют связь surviving child с живым ancestor.
++    this.layers.forEach((child) => {
++      if (child.parent === node) child.parent = layer.parent;
++    });
++    // Callback дочернего слоя может синхронно сдвинуть исходный index.
++    const currentIndex = this.indexOf(node);
++    if (currentIndex !== -1) this.layers.splice(currentIndex, 1);
+     this.syncLayers();
+   },
+   removeBranch(node) {
+@@ -122,7 +155,7 @@ var layerStack = {
+     this.syncLayers();
+   },
+   clear() {
+-    this.remove(this.layers[0].node);
++    while (this.count() > 0) this.remove(this.layers[0].node);
+   }
+ };
+ function applyLayerStackMetadata(layer, index, el) {

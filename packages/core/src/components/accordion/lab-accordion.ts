@@ -395,8 +395,3 @@ declare global {
     'lab-accordion': LabAccordion;
   }
 }
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-accordion')) {
-  customElements.define('lab-accordion', LabAccordion);
-}

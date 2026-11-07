@@ -6,7 +6,7 @@
  * into the stable 25-point CSS linear() representation already shipped by the
  * design system.
  */
-import { type SpringParams, spring as evaluateSpring } from '@labpics/motion';
+import { type SpringParams, spring as evaluateSpring } from '@labpics/motion/driver';
 
 /** Default sample count for linear(): 24 segments to 25 evenly-spaced points. */
 const DEFAULT_STEPS = 24;

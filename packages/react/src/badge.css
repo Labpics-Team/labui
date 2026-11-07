@@ -1,23 +1,10 @@
-/*
- * <Badge> (React) styles — the visual PARITY twin of the Lit <lab-badge>.
- *
- * The Lit element scopes its CSS in a shadow root via :host([type][color]); React
- * is native (no shadow DOM), so this sheet mirrors those exact selectors against
- * [data-lab-badge] + data-* attributes the component sets. Same roles, same
- * structure, same states => same paint.
- *
- * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
- * every dimension a --lab-* token. ZERO hex, ZERO primitive. The lab-badge-
- * prefix keeps these scoped without a shadow boundary (craft-frontend P8).
- *
- * Ships as a side-effect import from the component module (injectStyle), so
- * consuming <Badge> brings its styles with it.
- */
+/* Общая с Core анатомия Badge и роли Colors; без локальной палитры. */
 
 [data-lab-badge] {
   --_lab-badge-radius: var(--lab-radius-full, 9999px);
-  --_lab-badge-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-badge-tracking: var(--lab-letter-spacing-xs, -0.0009em);
+  --_lab-badge-font: var(--lab-font-size-badge-label, 0.75rem);
+  --_lab-badge-tracking: var(--lab-letter-spacing-badge-label, 0em);
+  --_lab-badge-icon-size: var(--lab-size-control-s, 0.75rem);
   --_lab-badge-pad-x: var(--lab-space-sm, 0.5rem);
   --_lab-badge-pad-y: var(--lab-space-xs, 0.25rem);
   --_lab-badge-gap: var(--lab-space-xs, 0.25rem);
@@ -34,11 +21,29 @@
   font: inherit;
   font-size: var(--_lab-badge-font);
   letter-spacing: var(--_lab-badge-tracking);
-  line-height: var(--lab-line-height-md, 1.5);
-  font-weight: var(--lab-font-weight-semibold, 600);
+  line-height: var(--lab-line-height-badge-label, 1);
+  font-weight: var(--lab-font-weight-medium, 500);
   white-space: nowrap;
   background-color: transparent;
   color: var(--lab-label-primary);
+}
+
+[data-lab-badge] .lab-badge-icon {
+  display: inline-flex;
+  inline-size: var(--_lab-badge-icon-size);
+  block-size: var(--_lab-badge-icon-size);
+  flex: none;
+  color: inherit;
+}
+
+[data-lab-badge] .lab-badge-icon > * {
+  inline-size: 100%;
+  block-size: 100%;
+}
+
+[data-lab-badge] .lab-badge-icon:empty,
+[data-lab-badge] .lab-badge-dot:empty {
+  display: none;
 }
 
 [data-lab-badge] .lab-badge-dot {
@@ -52,8 +57,8 @@
 
 /* ── type=fill: opaque sentiment surface + contrast label ──────────────────── */
 [data-lab-badge][data-type="fill"][data-color="neutral"] {
-  background-color: var(--lab-fill-neutral);
-  color: var(--lab-label-on-neutral);
+  background-color: var(--lab-bg-inverted);
+  color: var(--lab-label-inverted-primary);
 }
 [data-lab-badge][data-type="fill"][data-color="brand"] {
   background-color: var(--lab-badge-fill-brand);

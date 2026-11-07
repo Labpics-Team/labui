@@ -9,7 +9,8 @@
  *
  * Tokens follow the three-language split: primitives -> semantic aliases ->
  * components consume semantics only. Every scale defines an explicit zero token,
- * and typography is a continuous fluid gradient (clamp, no media queries).
+ * Типографика сочетает плавную шкалу (clamp без media queries) и фиксированные
+ * роли подписей компонентов, сохраняющие rem-масштаб независимо от viewport.
  */
 
 // Config: the single source of truth + override mechanism.
@@ -37,9 +38,7 @@ export {
 // Generated typed tokens: `var(--lab-*)` references with literal-union types.
 export * from './generated/tokens.js';
 
-// Motion runtime surface: committed static references only. Physical primitives
-// are consumed from @labpics/motion at build time and never become a runtime
-// dependency of @labpics/ui-tokens.
+// Статические CSS-ссылки и runtime-проекция калибровки; токены не загружают движок.
 export * from './generated/motion.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';

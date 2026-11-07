@@ -32,7 +32,7 @@ export const checkboxDoc: ComponentDoc = {
   tag: 'lab-checkbox',
   title: 'Checkbox',
   summary:
-    'A tri-state selection control: checked, unchecked, or the honest indeterminate (mixed) state. Runs the @zag-js/checkbox machine through the LabUI seam: the machine owns checked/indeterminate, keyboard, focus and aria-checked (including "mixed").',
+    'Контрол выбора с включённым, выключенным и смешанным состояниями. Элемент хранит checked и indeterminate, а машина взаимодействия обрабатывает ввод, клавиатуру, фокус и доступность.',
   status: { kind: 'stable' },
 
   statesMatrix: {
@@ -124,7 +124,7 @@ export const checkboxDoc: ComponentDoc = {
     dos: [
       'Use for multi-select lists and staged form choices that a Save action commits.',
       'Use the honest indeterminate state for a parent that summarises a partial child selection.',
-      'Let the machine own the tri-state — read checked-change, never re-implement aria-checked="mixed".',
+      'Читайте checked-change и меняйте checked/indeterminate через свойства или атрибуты; доступное состояние синхронизируется автоматически.',
     ],
     donts: [
       "Don't use it for an immediate, self-applying setting — that is a Switch.",
@@ -175,26 +175,29 @@ export const checkboxDoc: ComponentDoc = {
         name: 'checked',
         type: 'boolean',
         default: 'false',
-        description: 'Controlled checked state. Reflected for CSS + SSR.',
+        description:
+          'Текущее состояние. Обновляется вводом и присваиванием свойства, отражается для CSS и SSR. Явный false учитывается; удаление атрибута выключает checked.',
       },
       {
         name: 'indeterminate',
         type: 'boolean',
         default: 'false',
         description:
-          'The honest third state. When set, the machine carries "indeterminate" and aria-checked is "mixed". Reflected for styling and SSR.',
+          'Текущее смешанное состояние. Имеет приоритет над checked и синхронизируется с нативным input.indeterminate. Отражается для CSS и SSR.',
       },
       {
         name: 'default-checked',
         type: 'boolean',
         default: 'false',
-        description: 'Uncontrolled initial checked state — read once by the machine at init.',
+        description:
+          'Начальное значение перед первым render, если ни checked, ни indeterminate ещё не заданы. Явный false также отменяет defaults. Последующие изменения и переподключение не сбрасывают текущее состояние. Свойство не отражается в атрибут; SSR-адаптеры сохраняют вычисленное состояние.',
       },
       {
         name: 'default-indeterminate',
         type: 'boolean',
         default: 'false',
-        description: 'Uncontrolled initial indeterminate state — read once at init.',
+        description:
+          'Начальное смешанное состояние; применяется вместе с default-checked один раз, только если текущие checked/indeterminate ещё не заданы. Свойство не отражается в атрибут.',
       },
       {
         name: 'disabled',
@@ -207,7 +210,7 @@ export const checkboxDoc: ComponentDoc = {
       {
         name: 'checked-change',
         description:
-          'CustomEvent<{ checked: boolean | "indeterminate" }> fired when the Zag machine changes the tri-state value. The machine is the source of truth.',
+          'CustomEvent<{ checked: boolean | "indeterminate" }> после пользовательского изменения. Свойства уже обновлены; обработчик может присвоить другое состояние. Программное присваивание события не создаёт.',
       },
     ],
     slots: [{ name: '(default)', description: 'The label text projected next to the box.' }],

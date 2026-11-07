@@ -6,10 +6,10 @@ import * as checkboxMachine from '@zag-js/checkbox';
  * Axes (the Figma model — Type × Toggle(true/false/MIXED) × Size × State):
  *   - type:  accent | neutral | danger   (semantic intent of the CHECKED box)
  *   - size:  tiny | s | m | l
- *   - checked: machine-owned (reflected for CSS + SSR)
+ *   - checked: текущее состояние элемента, отражённое для CSS и SSR
  *   - indeterminate: the HONEST third machine state (aria-checked="mixed") — NOT
  *     a faked visual; the machine carries `"indeterminate"` as a real value
- *   - defaultChecked: uncontrolled initial state (boolean | "indeterminate")
+ *   - defaultChecked/defaultIndeterminate: начальное состояние до первого render
  *   - disabled: non-interactive
  *
  * Why a machine here, when Button opted out: a checkbox has THREE-state checked
@@ -50,7 +50,7 @@ export class LabCheckbox extends LabElement {
   static override properties = {
     type: { reflect: true },
     size: { reflect: true },
-    /** Controlled checked state. When the attribute is present, consumer owns it. */
+    /** Текущее состояние; обновляется вводом и присваиванием свойства. */
     checked: { type: Boolean, reflect: true },
     /**
      * The honest third state. Reflected so `:host([indeterminate])` styling and
@@ -58,13 +58,12 @@ export class LabCheckbox extends LabElement {
      * is `"indeterminate"` (aria-checked="mixed").
      */
     indeterminate: { type: Boolean, reflect: true },
-    /** Uncontrolled initial state — read once by the machine at init. */
-    defaultChecked: { type: Boolean, attribute: 'default-checked', reflect: true },
-    /** Uncontrolled initial indeterminate — read once at init. */
+    /** Начальные входы; обычные атрибуты отражают только текущее состояние. */
+    defaultChecked: { type: Boolean, attribute: 'default-checked' },
+    /** Начальное смешанное состояние, применяемое до первого render. */
     defaultIndeterminate: {
       type: Boolean,
       attribute: 'default-indeterminate',
-      reflect: true,
     },
     disabled: { type: Boolean, reflect: true },
     /**
@@ -79,8 +78,6 @@ export class LabCheckbox extends LabElement {
 
   declare type: LabCheckboxType;
   declare size: LabCheckboxSize;
-  declare checked: boolean;
-  declare indeterminate: boolean;
   declare defaultChecked: boolean;
   declare defaultIndeterminate: boolean;
   declare disabled: boolean;
@@ -88,30 +85,43 @@ export class LabCheckbox extends LabElement {
   declare name: string | null;
 
   private readonly checkbox: ZagController<CheckboxSchema, CheckboxApi>;
+  private checkedValue: boolean | undefined;
+  private indeterminateValue: boolean | undefined;
+
+  get checked(): boolean {
+    return this.checkedValue ?? false;
+  }
+
+  set checked(value: boolean) {
+    this.checkedValue = value;
+  }
+
+  get indeterminate(): boolean {
+    return this.indeterminateValue ?? false;
+  }
+
+  set indeterminate(value: boolean) {
+    this.indeterminateValue = value;
+  }
 
   constructor() {
     super();
     this.type = 'accent';
     this.size = 'm';
-    this.checked = false;
-    this.indeterminate = false;
     this.defaultChecked = false;
     this.defaultIndeterminate = false;
     this.disabled = false;
     this.ariaLabel = null;
     this.name = null;
-    // Wire the Zag checkbox behavior. The tri-state value is folded into one
-    // `CheckedState`: indeterminate wins, else the boolean. Controlled only when
-    // a `checked`/`indeterminate` attribute is present; otherwise the machine
-    // owns it from the defaults (uncontrolled). Honest two-mode contract.
+    // Текущее значение принадлежит элементу; indeterminate имеет приоритет.
+    // Отражённые атрибуты не переключают машину между разными владельцами.
     // `id` is a stable per-instance value (mirrors React's `useId`) so the
     // machine's scoped ids — including the label id the input references — are
     // unique and real, never the colliding `checkbox:undefined:*`.
     this.checkbox = this.runMachine(checkboxModule, () => ({
       id: this.uid,
       name: this.name ?? undefined,
-      defaultChecked: this.resolveDefault(),
-      checked: this.resolveControlled(),
+      checked: this.indeterminate ? 'indeterminate' : this.checked,
       disabled: this.disabled,
       onCheckedChange: (details: checkboxMachine.CheckedChangeDetails) => {
         this.indeterminate = details.checked === 'indeterminate';
@@ -127,17 +137,14 @@ export class LabCheckbox extends LabElement {
     }));
   }
 
-  /** The uncontrolled initial state, folded into the machine's tri-state value. */
-  private resolveDefault(): LabCheckboxChecked {
-    if (this.defaultIndeterminate) return 'indeterminate';
-    return this.defaultChecked;
-  }
-
-  /** The controlled state, or undefined when this checkbox is uncontrolled. */
-  private resolveControlled(): LabCheckboxChecked | undefined {
-    if (this.hasAttribute('indeterminate') && this.indeterminate) return 'indeterminate';
-    if (this.hasAttribute('checked')) return this.checked;
-    return undefined;
+  protected override willUpdate(): void {
+    // Значения до upgrade уже восстановлены Lit. Любая явно заданная текущая
+    // ось, включая false, имеет приоритет над defaults всей тройки состояний.
+    const useDefaults = this.checkedValue === undefined && this.indeterminateValue === undefined;
+    if (this.checkedValue === undefined) this.checked = useDefaults ? this.defaultChecked : false;
+    if (this.indeterminateValue === undefined) {
+      this.indeterminate = useDefaults ? this.defaultIndeterminate : false;
+    }
   }
 
   static override styles = css`
@@ -236,9 +243,9 @@ export class LabCheckbox extends LabElement {
       display: none;
     }
 
-    /* The input is now a SIBLING of the (aria-hidden) control so it stays in the
-       a11y tree; match focus-visible from the shared root, not as a descendant. */
-    .root:has(input:focus-visible) .control {
+    /* Прямой сосед обновляет кольцо при focus/blur и в WebKit Shadow DOM.
+       Input остаётся вне aria-hidden control и сохраняется в a11y tree. */
+    input:focus-visible + .control {
       outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
       outline-offset: ${litVar('--lab-focus-ring-offset')};
     }
@@ -312,6 +319,7 @@ export class LabCheckbox extends LabElement {
     // it, removing the checkbox role entirely).
     return html`
       <label class="root">
+        <input type="checkbox" />
         <span class="control">
           ${svg`<svg class="glyph glyph-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M3.5 8.5l3 3 6-6.5" stroke="currentColor" stroke-width="2"
@@ -321,7 +329,6 @@ export class LabCheckbox extends LabElement {
             <path d="M3.5 8h9" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>`}
         </span>
-        <input type="checkbox" />
         <span class="label"><slot></slot></span>
       </label>
     `;
@@ -332,9 +339,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-checkbox': LabCheckbox;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-checkbox')) {
-  customElements.define('lab-checkbox', LabCheckbox);
 }

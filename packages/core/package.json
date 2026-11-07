@@ -10,32 +10,93 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./shared": {
+      "import": {
+        "types": "./dist/shared.d.ts",
+        "default": "./dist/shared.js"
+      },
+      "require": {
+        "types": "./dist/shared.d.cts",
+        "default": "./dist/shared.cjs"
+      }
     },
     "./ssr": {
-      "types": "./dist/ssr/index.d.ts",
-      "import": "./dist/ssr/index.js",
-      "require": "./dist/ssr/index.cjs"
+      "import": {
+        "types": "./dist/ssr/index.d.ts",
+        "default": "./dist/ssr/index.js"
+      },
+      "require": {
+        "types": "./dist/ssr/index.d.cts",
+        "default": "./dist/ssr/index.cjs"
+      }
+    },
+    "./hydrate": {
+      "import": {
+        "types": "./dist/hydrate/index.d.ts",
+        "default": "./dist/hydrate/index.js"
+      },
+      "require": {
+        "types": "./types/hydrate.d.cts",
+        "default": "./dist/hydrate/index.cjs"
+      }
+    },
+    "./motion": {
+      "import": {
+        "types": "./dist/motion/index.d.ts",
+        "default": "./dist/motion/index.js"
+      },
+      "require": {
+        "types": "./dist/motion/index.d.cts",
+        "default": "./dist/motion/index.cjs"
+      }
     },
     "./proof": {
-      "types": "./dist/proof/lab-proof.d.ts",
-      "import": "./dist/proof/lab-proof.js",
-      "require": "./dist/proof/lab-proof.cjs"
+      "import": {
+        "types": "./dist/proof/lab-proof.d.ts",
+        "default": "./dist/proof/lab-proof.js"
+      },
+      "require": {
+        "types": "./dist/proof/lab-proof.d.cts",
+        "default": "./dist/proof/lab-proof.cjs"
+      }
+    },
+    "./behaviors/*": {
+      "import": {
+        "types": "./dist/behaviors/*.d.ts",
+        "default": "./dist/behaviors/*.js"
+      },
+      "require": {
+        "types": "./dist/behaviors/*.d.cts",
+        "default": "./dist/behaviors/*.cjs"
+      }
     },
     "./*": {
-      "types": "./dist/components/*/index.d.ts",
-      "import": "./dist/components/*/index.js",
-      "require": "./dist/components/*/index.cjs"
+      "import": {
+        "types": "./dist/components/*/index.d.ts",
+        "default": "./dist/components/*/index.js"
+      },
+      "require": {
+        "types": "./dist/components/*/index.d.cts",
+        "default": "./dist/components/*/index.cjs"
+      }
     },
     "./theme.css": "./dist/theme.css",
     "./selection.css": "./dist/selection.css",
     "./shadow.css": "./dist/shadow.css",
     "./package.json": "./package.json"
   },
-  "files": ["dist"],
+  "files": ["dist", "types"],
   "sideEffects": [
+    "./src/components/*/index.ts",
     "./dist/theme.css",
     "./dist/selection.css",
     "./dist/shadow.css",
@@ -45,47 +106,73 @@
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --skipLibCheck false",
     "test": "vitest run"
   },
   "dependencies": {
+    "@floating-ui/dom": "1.7.6",
+    "@labpics/motion": "0.5.0",
+    "@labpics/ui-materials": "workspace:*",
+    "@labpics/ui-tokens": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
     "@zag-js/accordion": "1.41.2",
+    "@zag-js/anatomy": "1.41.2",
     "@zag-js/checkbox": "1.41.2",
-    "@zag-js/combobox": "1.41.2",
+    "@zag-js/collection": "1.41.2",
     "@zag-js/core": "1.41.2",
-    "@zag-js/dialog": "1.41.2",
-    "@zag-js/menu": "1.41.2",
+    "@zag-js/dismissable": "1.41.2",
     "@zag-js/number-input": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
-    "@zag-js/popover": "1.41.2",
     "@zag-js/pagination": "1.41.2",
     "@zag-js/progress": "1.41.2",
     "@zag-js/radio-group": "1.41.2",
-    "@zag-js/select": "1.41.2",
     "@zag-js/slider": "1.41.2",
     "@zag-js/switch": "1.41.2",
     "@zag-js/tabs": "1.41.2",
     "@zag-js/tags-input": "1.41.2",
     "@zag-js/toggle": "1.41.2",
-    "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.41.2",
-    "lit": "3.3.3"
+    "lit": "3.3.3",
+    "magic-string": "0.30.21",
+    "parse5": "7.3.0"
   },
   "peerDependencies": {
-    "@lit-labs/ssr": "^4.1.0"
+    "@lit-labs/ssr": "^4.1.0",
+    "@lit-labs/ssr-client": "^1.1.8",
+    "vite": ">=5"
   },
   "peerDependenciesMeta": {
     "@lit-labs/ssr": {
       "optional": true
+    },
+    "@lit-labs/ssr-client": {
+      "optional": true
+    },
+    "vite": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@types/node": "22.15.3",
     "@lit-labs/ssr": "4.1.0",
+    "@lit-labs/ssr-client": "1.1.8",
+    "@zag-js/combobox": "1.41.2",
+    "@zag-js/dialog": "1.41.2",
+    "@zag-js/dom-query": "1.41.2",
+    "@zag-js/live-region": "1.41.2",
+    "@zag-js/menu": "1.41.2",
+    "@zag-js/popover": "1.41.2",
+    "@zag-js/popper": "1.41.2",
+    "@zag-js/rect-utils": "1.41.2",
+    "@zag-js/select": "1.41.2",
+    "@zag-js/tooltip": "1.41.2",
+    "esbuild": "0.28.2",
+    "happy-dom": "21.0.4",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
     "typescript": "5.7.3",
-    "vitest": "3.2.6"
+    "vitest": "3.2.6",
+    "vite": "6.4.4"
   }
 }

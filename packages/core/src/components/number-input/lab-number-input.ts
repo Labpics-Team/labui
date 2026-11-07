@@ -1,3 +1,11 @@
+import {
+  type FieldA11yInput,
+  type LabFieldSize,
+  type LabFieldType,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+} from '@labpics/ui-core/shared';
 import * as numberInputMachine from '@zag-js/number-input';
 /**
  * `<lab-number-input>` — a numeric form field: a real `<input role="spinbutton">`
@@ -41,14 +49,6 @@ import type { MachineModule, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
 import { LabElement } from '../../lit/lab-element.js';
 import type { ZagController } from '../../lit/zag-controller.js';
-import {
-  type FieldA11yInput,
-  type LabFieldSize,
-  type LabFieldType,
-  fieldControlAria,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
 
 export type { LabFieldSize as LabNumberInputSize, LabFieldType as LabNumberInputType };
@@ -438,9 +438,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-number-input': LabNumberInput;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-number-input')) {
-  customElements.define('lab-number-input', LabNumberInput);
 }

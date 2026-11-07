@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/menu';
 import type { LabMenu } from '@labpics/ui-core/menu';
 
@@ -15,9 +15,9 @@ export type MenuSsrProps = Partial<Pick<LabMenu, 'size' | 'placement' | 'disable
 export type MenuSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-menu> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-menu> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderMenu(
   props: MenuSsrProps = {},
@@ -25,8 +25,8 @@ export function renderMenu(
   return renderToString(html`<lab-menu
       size=${ifDefined(props.size)}
       placement=${ifDefined(props.placement)}
-      ?disabled=${Boolean(props.disabled)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       label=${ifDefined(props.label)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-menu>`);
 }

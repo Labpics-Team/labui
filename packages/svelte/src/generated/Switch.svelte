@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/switch';
   import type { LabSwitch } from '@labpics/ui-core/switch';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-switch> — типы взяты прямо из класса ядра (LabSwitch). */
   interface Props {
@@ -17,6 +17,9 @@
     defaultChecked?: LabSwitch['defaultChecked'];
     disabled?: LabSwitch['disabled'];
     name?: LabSwitch['name'];
+    labelStart?: LabSwitch['labelStart'];
+    hideLabelStart?: LabSwitch['hideLabelStart'];
+    hideLabelEnd?: LabSwitch['hideLabelEnd'];
     onCheckedChange?: (event: CustomEvent) => void;
     iconOff?: Snippet;
     iconOn?: Snippet;
@@ -24,7 +27,7 @@
     [key: string]: unknown;
   }
 
-  let { type, size, checked, defaultChecked, disabled, name, onCheckedChange, children, iconOff, iconOn, ...rest }: Props = $props();
+  let { type, size, checked, defaultChecked, disabled, name, labelStart, hideLabelStart, hideLabelEnd, onCheckedChange, children, iconOff, iconOn, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -33,17 +36,28 @@
     { name: 'defaultChecked', attr: 'default-checked', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'labelStart', attr: 'label-start', kind: 'string' },
+    { name: 'hideLabelStart', attr: 'hide-label-start', kind: 'boolean' },
+    { name: 'hideLabelEnd', attr: 'hide-label-end', kind: 'boolean' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, checked, defaultChecked, disabled, name, labelStart, hideLabelStart, hideLabelEnd })));
+  });
+
+
   $effect(() => {
-    forwardDeclared(el, specs, { type, size, checked, defaultChecked, disabled, name });
+    forwardDeclared(el, specs, { type, size, checked, defaultChecked, disabled, name, labelStart, hideLabelStart, hideLabelEnd });
   });
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-switch bind:this={el} {...rest}>
+<lab-switch bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
   {#if iconOff}<div slot="icon-off" style="display:contents">{@render iconOff()}</div>{/if}
   {#if iconOn}<div slot="icon-on" style="display:contents">{@render iconOn()}</div>{/if}

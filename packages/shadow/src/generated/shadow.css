@@ -65,6 +65,10 @@
   --lab-elevation-overlay: var(--lab-shadow-l);
   --lab-elevation-modal: var(--lab-shadow-xl);
 
+
+  /* Button: внутренний край меняет направление при нажатии. */
+  --lab-shadow-button: inset 0 -0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 12%, transparent);
+  --lab-shadow-button-pressed: inset 0 0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 12%, transparent);
 }
 
 /* Size classes — set box-shadow directly so an opt-in --lab-surface-shadow-tint
@@ -134,6 +138,10 @@
   --lab-shadow-alpha-s2: 0.04;
   --lab-shadow-alpha-s3: 0.02;
   --lab-shadow-alpha-s4: 0.01;
+
+  /* Button: внутренний край меняет направление при нажатии. */
+  --lab-shadow-button: inset 0 -0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 12%, transparent);
+  --lab-shadow-button-pressed: inset 0 0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 12%, transparent);
 }
 
 [data-theme="dark"] {
@@ -142,6 +150,10 @@
   --lab-shadow-alpha-s2: 0.04;
   --lab-shadow-alpha-s3: 0.02;
   --lab-shadow-alpha-s4: 0.01;
+
+  /* Button: внутренний край меняет направление при нажатии. */
+  --lab-shadow-button: inset 0 -0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 20%, transparent);
+  --lab-shadow-button-pressed: inset 0 0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 20%, transparent);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -151,5 +163,9 @@
     --lab-shadow-alpha-s2: 0.04;
     --lab-shadow-alpha-s3: 0.02;
     --lab-shadow-alpha-s4: 0.01;
+
+    /* Button: внутренний край меняет направление при нажатии. */
+    --lab-shadow-button: inset 0 -0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 20%, transparent);
+    --lab-shadow-button-pressed: inset 0 0.0625rem 0.0625rem 0 color-mix(in srgb, var(--lab-bg-static-dark) 20%, transparent);
   }
 }

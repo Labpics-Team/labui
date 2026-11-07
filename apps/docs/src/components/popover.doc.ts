@@ -124,18 +124,17 @@ export const popoverDoc: ComponentDoc = {
 
   meaning: {
     purpose:
-      'A popover is an interactive panel that opens from a trigger on click and can hold real content — text, links, a few controls. It is dismissed by Escape or by clicking outside, and on close focus returns to the trigger. Set modal when the task must be finished or cancelled before anything else (it locks scroll, dims the page and traps focus — in the Lit element the trap covers shadow-rendered focusables; content projected through slot="content" stays in light DOM and is not trapped, so keep modal controls in the shadow tree via closable or use the React twin). Use it for a compact, contextual task next to its trigger. It is NOT a tooltip (a passive hover hint with no interactive content) and NOT a full dialog (which owns the whole screen for a blocking task).',
+      'Popover открывает компактную задачу рядом с кнопкой: пояснение, ссылки или несколько элементов управления. Escape и нажатие снаружи закрывают панель; фокус возвращается на кнопку открытия. Modal блокирует внешние действия и прокрутку страницы, удерживая Tab внутри панели. Этот режим охватывает содержимое slot="content", открытые shadow roots и встроенную кнопку закрытия в Lit, а также содержимое native React.',
     dos: [
       'Use for a small, contextual cluster of content or controls tied to a trigger.',
       'Let the machine own focus — it moves focus into the panel on open and restores it on close.',
       'Reach for modal only when outside interaction must be blocked; keep the default non-modal otherwise.',
-      'For a modal panel with a focusable control, render that control inside the shadow tree (e.g. closable) so the focus-trap contains it — or use the React <Popover> twin.',
+      'Передавайте элементы управления Lit-панели через slot="content": они сохраняют стили и события своего DOM-дерева и участвуют в modal focus trap.',
     ],
     donts: [
       "Don't pour a whole form or a long flow into it — that is a dialog or a page.",
       "Don't re-implement dismiss or focus return by hand; the machine owns Escape, outside-click and restore-focus.",
       "Don't use it for a passive label — a tooltip is lighter and correct there.",
-      'Don\'t rely on a hard focus-trap around content you project through slot="content" in the LIT element: that content lives in the host\'s light DOM, outside the shadow subtree the trap walks, so Tab can leave the panel through a slotted focusable. The shadow-rendered close button and the panel itself ARE trapped; for a slotted focusable body, use closable / a shadow control or the React <Popover> twin.',
     ],
   },
 
@@ -189,7 +188,7 @@ export const popoverDoc: ComponentDoc = {
         type: 'boolean',
         default: 'false',
         description:
-          'When true: focus trap + scroll lock + outside-interaction disabled + scrim shown. Lit caveat: the trap contains focusables in the panel shadow subtree (the close button, the panel itself); a focusable you project through slot="content" lives in light DOM and is NOT trapped — render such controls in the shadow tree (closable) or use the React <Popover> twin for a hard trap.',
+          'Включает focus trap, блокировку прокрутки и внешних действий, показывает scrim. Tab охватывает slotted controls и открытые shadow roots Lit-панели, а также содержимое native React.',
       },
       {
         name: 'closable',

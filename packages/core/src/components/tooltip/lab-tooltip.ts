@@ -1,4 +1,4 @@
-import * as tooltipMachine from '@zag-js/tooltip';
+import * as tooltipMachine from '@labpics/ui-core/behaviors/tooltip';
 /**
  * `<lab-tooltip>` — the FIRST positioned-overlay component, and the canon every
  * later overlay (Popover, Menu, Select, Dialog) follows.
@@ -260,9 +260,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-tooltip': LabTooltip;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-tooltip')) {
-  customElements.define('lab-tooltip', LabTooltip);
 }

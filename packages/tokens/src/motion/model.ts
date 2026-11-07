@@ -1,10 +1,8 @@
 /**
  * Domain model for Lab UI motion roles.
  *
- * Physical motion primitives are owned by @labpics/motion and imported only at
- * build time. Lab UI owns the semantic binding layer: which primitive spring is
- * exposed, what fallback it uses, how entrance/exit/transition/emphasis map onto
- * primitives, and the reduced-motion policy.
+ * LabUI владеет характером и калибровкой движения. LabMotion предоставляет
+ * физическую модель и исполнение; готовые пресеты остаются допустимым выбором.
  */
 
 export type ProvenanceClass = 'b' | 'e';
@@ -18,17 +16,19 @@ export interface Provenance {
 export type SpringCategory = 'spatial' | 'effects';
 
 export type MotionSpringPrimitive = 'smooth' | 'expressive';
-/**
- * A Lab UI binding to a physical spring primitive owned by @labpics/motion.
- * There are deliberately no duration, bounce, stiffness or damping fields here.
- */
-export interface SpringSpec {
+interface SpringRole {
   readonly name: string;
-  readonly primitive: MotionSpringPrimitive;
   readonly category: SpringCategory;
   readonly fallbackEasing: string;
   readonly description?: string;
 }
+
+/** Response в миллисекундах, как в runtime LabMotion; bounce безразмерный. */
+export type SpringSpec = SpringRole &
+  (
+    | { readonly primitive: MotionSpringPrimitive }
+    | { readonly response: number; readonly bounce: number; readonly provenance: Provenance }
+  );
 
 /** A semantic UI role referencing physical primitive names. */
 export interface SemanticSpec {
@@ -44,7 +44,7 @@ export interface SemanticSpec {
   readonly description?: string;
 }
 
-/** Lab UI owns bindings only; physical numeric tiers cannot be injected here. */
+/** Семантика и калибровка LabUI без собственного solver. */
 export interface MotionConfig {
   readonly springs: readonly SpringSpec[];
   readonly semantics: readonly SemanticSpec[];

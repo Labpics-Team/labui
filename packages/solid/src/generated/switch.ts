@@ -10,7 +10,7 @@ import type { LabSwitch } from '@labpics/ui-core/switch';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-switch>, взятые прямо из класса ядра (LabSwitch). */
-export type SwitchProps = Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'disabled' | 'name'>;
+export type SwitchProps = Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'disabled' | 'name' | 'labelStart' | 'hideLabelStart' | 'hideLabelEnd'>;
 
 /** <Switch> — тонкая Solid-обёртка над <lab-switch>. */
 export const Switch: LabSolidComponent<SwitchProps, 'checked-change'> = createLabComponent<
@@ -24,6 +24,9 @@ export const Switch: LabSolidComponent<SwitchProps, 'checked-change'> = createLa
     { name: 'defaultChecked', attr: 'default-checked', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'labelStart', attr: 'label-start', kind: 'string' },
+    { name: 'hideLabelStart', attr: 'hide-label-start', kind: 'boolean' },
+    { name: 'hideLabelEnd', attr: 'hide-label-end', kind: 'boolean' },
   ],
   events: ['checked-change'],
 });

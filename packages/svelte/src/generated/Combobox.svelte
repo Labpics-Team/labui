@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/combobox';
   import type { LabCombobox } from '@labpics/ui-core/combobox';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-combobox> — типы взяты прямо из класса ядра (LabCombobox). */
   interface Props {
@@ -59,11 +59,19 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, size, placement, multiple, disabled, readonly, required, invalid, name, placeholder, label, labelHidden, helper, error, value, defaultValue, items });
   });
   $effect(() => forwardEvents(el, { 'input-value-change': onInputValueChange, 'open-change': onOpenChange, 'value-change': onValueChange }));
 </script>
 
-<lab-combobox bind:this={el} {...rest}>
+<lab-combobox bind:this={el} {...rest} {...initialBooleans}>
 </lab-combobox>

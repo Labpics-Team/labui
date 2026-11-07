@@ -63,6 +63,11 @@ export const defaultConfig: TokensConfig = {
       // альфа свечения живут в оси fx-glow контракта @labpics/colors.
       'glow-core': '2', //  8px — радиус размытия ядра свечения
       'glow-halo': '8', // 32px — радиус размытия ореола свечения
+      'switch-label-gap-l': '3', // 12px между треком и подписью Switch L.
+      'button-inset': '3', // 12px внешнего отступа Button S/M.
+      'sheet-inset': '4',
+      'sheet-gap': '6',
+      'sheet-overlap': '8',
     },
   },
 
@@ -83,18 +88,39 @@ export const defaultConfig: TokensConfig = {
       // kbd m, loader m. СТАТУС: DECLARED — ось Size в Figma сегодня биндит
       // только 12/16/20; при появлении px/9-якоря сверить и заземлить.
       'control-xl': 1.5, // 24px — глиф-бокс XL (ADR-0006 §1)
-      // DESIGN-CHOICE per ADR-0006 §2 (micro not snapping 4px grid w/o visible shift):
-      // switch tracks, loader strokes 3px, checkbox tiny=14px. Added to reach
-      // MIGRATED=27/27 + no-magic guard while keeping exact values (E1).
-      'switch-track-s': 2.25,
-      'switch-track-m': 2.75,
-      'switch-track-l': 3.25,
-      'switch-track-h-s': 1.25,
-      'switch-track-h-m': 1.5,
-      'switch-track-h-l': 1.75,
-      'switch-thumb-s': 0.875,
-      'switch-thumb-m': 1.125,
-      'switch-thumb-l': 1.375,
+      // Switch при Unit 100%: docs/reference/design-baseline.md (2026-10-30).
+      // Отступ бегунка выводится из высоты трека и диаметра: (h − d) / 2.
+      'switch-track-s': 1.75,
+      'switch-track-m': 2.25,
+      'switch-track-l': 2.75,
+      'switch-track-h-s': 1,
+      'switch-track-h-m': 1.25,
+      'switch-track-h-l': 1.5,
+      'switch-thumb-s': 0.75,
+      'switch-thumb-m': 1,
+      'switch-thumb-l': 1.25,
+      'switch-row': 1.5,
+      // Сохраняет прежние 36px кнопки Combobox независимо от размеров Switch.
+      'combobox-trigger': 2.25,
+      // Button: read-only эталон 2026-10-31, docs/reference/design-baseline.md.
+      'button-h-s': 2.25,
+      'button-h-m': 3,
+      'button-h-l': 3.5,
+      'button-content-s': 1.25,
+      'button-content': 1.5,
+      // Pressed glow: Desktop 96px, Gaussian sigma 18px в экспортном фильтре.
+      'button-glow': 6,
+      'button-glow-blur': 1.125,
+      'button-glow-shift-s': 0.0625,
+      'button-glow-shift-l': 0.1875,
+      // Sheet Half: read-only эталон от 2026-11-04, Unit 100%.
+      'sheet-drag-area': 1.5,
+      'sheet-indicator-w': 2.25,
+      'sheet-indicator-h': 0.25,
+      'sheet-indicator-y': 0.875,
+      'sheet-indicator-x': 0.03125,
+      'sheet-body-blur': 8,
+      'sheet-ghost-blur': 1.5,
       'loader-stroke-s': 0.125,
       'loader-stroke-m': 0.1875,
       'loader-stroke-l': 0.25,
@@ -160,8 +186,10 @@ export const defaultConfig: TokensConfig = {
     fullPx: 9999,
     aliases: {
       none: '0',
-      control: 'm', //  8px — inputs, buttons
+      control: 'm', //  8px — поля ввода и общие контролы.
+      button: 'xl', // 16px — Button M/L; S использует capsule.
       card: 'xl', // 16px — cards, panels
+      sheet: '5xl', // 32px — только верхние углы Sheet.
       pill: 'full',
       circle: 'full',
       // Floor of the concentric-radius law: an inner radius derived as
@@ -229,6 +257,19 @@ export const defaultConfig: TokensConfig = {
       semibold: 600,
       bold: 700,
     },
+    // Проверенные роли Switch, Button, Card и Badge: docs/reference/design-baseline.md.
+    // Это роли компонента; viewport не меняет кегль выбранного размера.
+    fixedRoles: {
+      'switch-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
+      'switch-label-l': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
+      'button-label-s': { fontSizeRem: 0.875, lineHeight: 12 / 14, letterSpacingEm: 0 },
+      'button-label': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: 0 },
+      'button-description': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
+      'card-title': { fontSizeRem: 1.25, lineHeight: 1, letterSpacingEm: -0.0165 },
+      'card-description': { fontSizeRem: 1, lineHeight: 1.5, letterSpacingEm: -0.015625 },
+      'card-caption': { fontSizeRem: 0.875, lineHeight: 12 / 14, letterSpacingEm: 0 },
+      'badge-label': { fontSizeRem: 0.75, lineHeight: 1, letterSpacingEm: 0 },
+    },
     // Гарнитура ДС — Geist / Geist Mono (пакет @labpics/fonts self-host'ит
     // вариативные woff2). Первым — фирменный шрифт, дальше метрически близкие
     // системные фолбэки и аварийный дженерик в хвосте, чтобы текст читался и без
@@ -294,12 +335,25 @@ export const defaultConfig: TokensConfig = {
   opacity: {
     steps: {
       '0': 0, //    прозрачно — явный нулевой токен
+      '4': 0.04,
+      '6': 0.06,
+      '12': 0.12,
+      '20': 0.2,
+      '32': 0.32,
       '45': 0.45, // disabled-состояние (доминирующий литерал компонентов)
       '50': 0.5, //  muted / placeholder
+      '52': 0.52,
       '100': 1, //   полная непрозрачность — явный верхний край
     },
     aliases: {
       none: '0',
+      'button-sheen': '20',
+      'button-sheen-hover': '32',
+      'button-shade-pressed': '12',
+      'button-glow': '32',
+      'button-glow-fill': '52',
+      'sheet-body-noise': '4',
+      'sheet-ghost-noise': '6',
       disabled: '45', // задизейбленный контрол целиком
       muted: '50', //    вторичный/приглушённый текст, плейсхолдеры
       full: '100',

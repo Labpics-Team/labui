@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { modalFocus } from './helpers/modal-focus.js';
 
 /**
  * Dialog suite — the first TRUE modal overlay, verified on BOTH renderers.
@@ -14,7 +15,7 @@ import { type Locator, type Page, expect, test } from '@playwright/test';
  *   6. Outside-click dismiss — clicking the scrim closes a modal dialog.
  *   7. Scroll-lock — body overflow:hidden while a modal dialog is open.
  *   8. REAL focus trap — Tab cycles WITHIN the dialog and the SLOTTED body focusables
- *      ARE reachable/trapped (the dialog portals + relocates its body, unlike popover).
+ *      доступны через нативные слоты без переноса потребительского DOM.
  *   9. Visual parity — Lit and React resolve the SAME panel colour when open.
  *
  * Determinism: every dismiss is gated on the machine having moved focus INTO the dialog
@@ -27,7 +28,7 @@ const PORTAL = (testid: string) => `[data-portal-for="${testid}"]`;
 function litHost(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
-/** The Lit floating content lives in the portal's shadow root (in document.body). */
+/** Floating content находится в shadow root поверхности LabModal. */
 function litContent(page: Page, testid: string): Locator {
   return page.locator(PORTAL(testid)).locator('.content');
 }
@@ -41,7 +42,7 @@ function reactWrap(page: Page, testid: string): Locator {
   return page.getByTestId(testid);
 }
 function reactTrigger(page: Page, testid: string): Locator {
-  return reactWrap(page, testid).locator('.lab-dialog-trigger');
+  return reactWrap(page, testid).locator('[data-scope="dialog"][data-part="trigger"]');
 }
 function reactOpenContent(page: Page): Locator {
   return page.locator('.lab-dialog-content[data-state="open"]');
@@ -61,7 +62,8 @@ async function litFocusInDialog(page: Page, testid: string): Promise<void> {
     .poll(() =>
       page
         .locator(PORTAL(testid))
-        .evaluate((host) => host.shadowRoot?.activeElement?.closest('.content') != null),
+        .evaluate(modalFocus)
+        .then((focus) => focus.inside),
     )
     .toBe(true);
 }
@@ -97,6 +99,20 @@ test('delivered HTML carries the Lit element (React island mounts client-side)',
   const body = await (await request.get('/dialog.html')).text();
   expect(body).toMatch(/<lab-dialog/i);
   expect(body).toContain('id="react-root"');
+});
+
+test('React: a custom Button is the only opener and preserves its owner attributes', async ({
+  page,
+}) => {
+  const trigger = reactTrigger(page, 'react-dialog');
+  await expect(reactWrap(page, 'react-dialog').locator('button')).toHaveCount(1);
+  await expect(trigger).toHaveCount(1);
+  await expect(trigger).toHaveAttribute('data-lab-button', '');
+  await expect(trigger).toHaveAttribute('data-type', 'neutral');
+  await expect(trigger).toHaveAttribute('data-kind', 'tinted');
+  await expect(trigger).toHaveAttribute('type', 'button');
+  await expect(trigger).not.toHaveClass(/\blab-dialog-trigger\b/);
+  await expect(reactTrigger(page, 'react-dialog-nonmodal')).toHaveClass('lab-dialog-trigger');
 });
 
 test('open on click: the Zag machine opens the dialog on both renderers', async ({ page }) => {
@@ -146,11 +162,18 @@ test('aria: trigger advertises the dialog, and labelledby/describedby resolve to
   await expect(litContent(page, 'lit-dialog')).toBeVisible();
 
   const triggerWiring = await litHost(page, 'lit-dialog').evaluate((host) => {
-    const sr = (host as HTMLElement).shadowRoot;
+    const sr = host.shadowRoot;
     const trigger = sr?.querySelector('.trigger');
+    const portal = sr?.querySelector('.portal-plane');
+    const references =
+      trigger && 'ariaControlsElements' in trigger ? trigger.ariaControlsElements : null;
+    const controls = trigger?.getAttribute('aria-controls') ?? null;
     return {
       haspopup: trigger?.getAttribute('aria-haspopup') ?? null,
-      controls: trigger?.getAttribute('aria-controls') ?? null,
+      controls,
+      portalId: portal?.id ?? null,
+      resolves: controls !== null && sr?.getElementById(controls) === portal,
+      reflected: Array.isArray(references) && references.includes(portal),
     };
   });
   const contentWiring = await page.locator(PORTAL('lit-dialog')).evaluate((host) => {
@@ -168,9 +191,12 @@ test('aria: trigger advertises the dialog, and labelledby/describedby resolve to
   });
   expect(triggerWiring.haspopup).toBe('dialog');
   expect(contentWiring.contentId, 'content has an id').toBeTruthy();
-  expect(triggerWiring.controls, 'trigger aria-controls → content id').toBe(
-    contentWiring.contentId,
+  expect(triggerWiring.portalId, 'controlled portal host has an id').toBeTruthy();
+  expect(triggerWiring.controls, 'trigger aria-controls → same-root portal container').toBe(
+    triggerWiring.portalId,
   );
+  expect(triggerWiring.resolves, 'IDREF resolves to the actual controlled container').toBe(true);
+  expect(triggerWiring.reflected, 'ARIA property returns the controlled container').toBe(true);
   expect(contentWiring.headingId, 'heading has an id').toBeTruthy();
   expect(contentWiring.descriptionId, 'description has an id').toBeTruthy();
   expect(contentWiring.labelledby, 'aria-labelledby → heading id').toBe(contentWiring.headingId);
@@ -184,6 +210,24 @@ test('aria: trigger advertises the dialog, and labelledby/describedby resolve to
   // React — content portalled to <body>.
   await reactTrigger(page, 'react-dialog').click();
   await expect(reactOpenContent(page)).toBeVisible();
+  const reactTriggerWiring = await reactTrigger(page, 'react-dialog').evaluate((trigger) => {
+    const root = trigger.getRootNode();
+    const controls = trigger.getAttribute('aria-controls');
+    const controlled =
+      controls && (root instanceof Document || root instanceof ShadowRoot)
+        ? root.getElementById(controls)
+        : null;
+    return {
+      haspopup: trigger.getAttribute('aria-haspopup'),
+      controls,
+      role: controlled?.getAttribute('role'),
+      content: controlled?.classList.contains('lab-dialog-content') ?? false,
+    };
+  });
+  await expect(reactOpenContent(page)).toHaveAttribute('id', reactTriggerWiring.controls ?? '');
+  expect(reactTriggerWiring.haspopup).toBe('dialog');
+  expect(reactTriggerWiring.role).toBe('dialog');
+  expect(reactTriggerWiring.content, 'react aria-controls resolves to the actual panel').toBe(true);
   const reactWiring = await reactOpenContent(page).evaluate((content) => {
     const root = content.getRootNode() as Document | ShadowRoot;
     const labelledby = content.getAttribute('aria-labelledby');
@@ -253,7 +297,7 @@ test('scroll-lock: a modal dialog locks body scroll while open (machine)', async
 
 /**
  * REAL focus trap — the dialog's defining contract, and the inverse of the popover
- * caveat. The dialog portals its floating layer to <body> and RELOCATES the projected
+ * caveat. The dialog RELOCATES the projected
  * slot="content" body into it, so the slotted focusables (a link + an Action button)
  * physically live inside the content subtree Zag's trap walks. Tabbing must therefore:
  *   - keep focus INSIDE the dialog the whole cycle (never escape to the trigger/body);
@@ -268,18 +312,11 @@ test('focus-trap: Tab stays inside the dialog AND reaches the slotted body (Lit,
   await litFocusInDialog(page, 'lit-dialog');
 
   let reachedSlottedAction = false;
-  // Cycle Tab enough to traverse close + link + action; focus must remain in .content,
-  // and at some point land on the relocated, slotted Action button.
+  // Tab остаётся в панели и достигает действия в потребительском content slot.
   for (let i = 0; i < 8; i++) {
-    const probe = await page.locator(PORTAL('lit-dialog')).evaluate((host) => {
-      const active = host.shadowRoot?.activeElement as HTMLElement | null | undefined;
-      return {
-        inContent: active?.closest('.content') != null,
-        onAction: active?.getAttribute('data-testid') === 'lit-dialog-action',
-      };
-    });
-    expect(probe.inContent, `Tab #${i}: focus stays inside the dialog`).toBe(true);
-    if (probe.onAction) reachedSlottedAction = true;
+    const probe = await page.locator(PORTAL('lit-dialog')).evaluate(modalFocus);
+    expect(probe.inside, `Tab #${i}: focus stays inside the dialog`).toBe(true);
+    if (probe.testId === 'lit-dialog-action') reachedSlottedAction = true;
     await page.keyboard.press('Tab');
   }
   expect(reachedSlottedAction, 'the slotted Action button IS inside the focus-trap').toBe(true);

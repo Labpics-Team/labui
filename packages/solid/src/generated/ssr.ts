@@ -26,6 +26,7 @@ export { renderPopover, type PopoverSsrProps, type PopoverSsrSlots } from './pop
 export { renderProgress, type ProgressSsrProps, type ProgressSsrSlots } from './progress.ssr.js';
 export { renderRadioGroup, type RadioGroupSsrProps, type RadioGroupSsrSlots } from './radio-group.ssr.js';
 export { renderSelect, type SelectSsrProps, type SelectSsrSlots } from './select.ssr.js';
+export { renderSheet, type SheetSsrProps, type SheetSsrSlots } from './sheet.ssr.js';
 export { renderSlider, type SliderSsrProps, type SliderSsrSlots } from './slider.ssr.js';
 export { renderSwitch, type SwitchSsrProps, type SwitchSsrSlots } from './switch.ssr.js';
 export { renderTabs, type TabsSsrProps, type TabsSsrSlots } from './tabs.ssr.js';

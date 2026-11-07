@@ -14,8 +14,8 @@ const byTag = (tag: string): ComponentMeta => {
 };
 
 describe('анализатор ядра → манифест', () => {
-  it('находит ровно 27 элементов, все с тегом lab-*', () => {
-    expect(manifest.components).toHaveLength(27);
+  it('находит ровно 28 элементов, все с тегом lab-*', () => {
+    expect(manifest.components).toHaveLength(28);
     for (const c of manifest.components) expect(c.tag.startsWith('lab-')).toBe(true);
   });
 
@@ -23,24 +23,18 @@ describe('анализатор ядра → манифест', () => {
     expect(manifest.components.find((c) => c.tag === 'lab-field')).toBeUndefined();
   });
 
-  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+icon', () => {
+  it('button: публичные пропы, без ariaLabel; события пусты; слоты default+icon+end', () => {
     const btn = byTag('lab-button');
-    expect(btn.props.map((p) => p.name)).toEqual([
-      'type',
-      'kind',
-      'size',
-      'icon',
-      'loading',
-      'disabled',
-      'htmlType',
-    ]);
+    expect(btn.props.map((p) => p.name).sort()).toEqual(
+      ['type', 'kind', 'size', 'icon', 'loading', 'disabled', 'htmlType', 'description'].sort(),
+    );
     // ariaLabel исключён (aria-* проходит нативным fall-through).
     expect(btn.props.find((p) => p.name === 'ariaLabel')).toBeUndefined();
     // htmlType маппится на атрибут html-type.
     expect(btn.props.find((p) => p.name === 'htmlType')?.attr).toBe('html-type');
     expect(btn.events).toEqual([]);
     expect(btn.slots.default).toBe(true);
-    expect(btn.slots.named).toEqual(['icon']);
+    expect(btn.slots.named).toEqual(['end', 'icon']);
   });
 
   it('классификация видов: булев / строка / prop (массивы через converter/attribute:false)', () => {
@@ -62,13 +56,31 @@ describe('анализатор ядра → манифест', () => {
   it('alert-dialog наследует пропы/события dialog', () => {
     const alert = byTag('lab-alert-dialog');
     expect(alert.props.map((p) => p.name)).toEqual([
-      'size',
       'modal',
       'closable',
       'heading',
       'description',
+      'size',
     ]);
     expect(alert.events).toContain('open-change');
+  });
+
+  it('Sheet наследует modal contract без dialog size и добавляет typed position/open', () => {
+    const sheet = byTag('lab-sheet');
+    expect(sheet.props.map((property) => property.name)).toEqual([
+      'modal',
+      'closable',
+      'heading',
+      'description',
+      'open',
+      'position',
+    ]);
+    expect(sheet.props.find((property) => property.name === 'open')?.kind).toBe('boolean');
+    expect(sheet.props.find((property) => property.name === 'position')?.kind).toBe('prop');
+    expect(sheet.events).toEqual(['motion-error', 'open-change', 'position-change']);
+    expect(sheet.slots.default).toBe(true);
+    expect(sheet.slots.named).toEqual(['content', 'trigger']);
+    expect(sheet.slots.direct).toEqual(['trigger']);
   });
 
   it('события собираются из new CustomEvent', () => {
@@ -82,6 +94,24 @@ describe('анализатор ядра → манифест', () => {
     expect(byTag('lab-accordion').slots.dynamic).toBe(true);
     expect(byTag('lab-card').slots.named).toEqual(['footer', 'header', 'media']);
     expect(byTag('lab-switch').slots.named).toEqual(['icon-off', 'icon-on']);
+  });
+
+  it('размерное заполнение выводится из явного контракта слота, а не его имени', () => {
+    expect(byTag('lab-badge').slots.fill).toEqual(['dot', 'leading', 'trailing']);
+    expect(byTag('lab-button').slots.fill).toBeUndefined();
+    expect(byTag('lab-card').slots.fill).toBeUndefined();
+  });
+
+  it('direct projection наследуется от Modal только тремя модальными владельцами', () => {
+    expect(
+      manifest.components
+        .filter((component) => component.slots.direct?.length)
+        .map((component) => component.tag),
+    ).toEqual(['lab-alert-dialog', 'lab-dialog', 'lab-sheet']);
+    for (const tag of ['lab-alert-dialog', 'lab-dialog', 'lab-sheet']) {
+      expect(byTag(tag).slots.direct).toEqual(['trigger']);
+      expect(byTag(tag).slots.named).toEqual(['content', 'trigger']);
+    }
   });
 
   it('pascal/subpath выведены из тега', () => {

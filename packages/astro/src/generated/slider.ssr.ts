@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/slider';
 import type { LabSlider } from '@labpics/ui-core/slider';
 
@@ -15,9 +15,9 @@ export type SliderSsrProps = Partial<Pick<LabSlider, 'size' | 'orientation' | 'l
 export type SliderSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-slider> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-slider> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderSlider(
   props: SliderSsrProps = {},
@@ -26,19 +26,19 @@ export function renderSlider(
       size=${ifDefined(props.size)}
       orientation=${ifDefined(props.orientation)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       step=${ifDefined(props.step)}
-      .marks=${props.marks}
-      ?show-value=${Boolean(props.showValue)}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?invalid=${Boolean(props.invalid)}
+      .marks=${props.marks === undefined ? noChange : props.marks}
+      .showValue=${props.showValue === undefined ? noChange : Boolean(props.showValue)}
+      .readonly=${props.readonly === undefined ? noChange : Boolean(props.readonly)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
+      .invalid=${props.invalid === undefined ? noChange : Boolean(props.invalid)}
       name=${ifDefined(props.name)}
     ></lab-slider>`);
 }

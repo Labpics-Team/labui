@@ -149,6 +149,20 @@ export interface TypographyConfig {
    */
   readonly weights: Readonly<Record<string, number>>;
   /**
+   * Фиксированные роли компонентов: кегль в rem, интерлиньяж множителем,
+   * трекинг в em. Не меняют плавную шкалу и растут с пользовательским шрифтом.
+   */
+  readonly fixedRoles?: Readonly<
+    Record<
+      string,
+      {
+        readonly fontSizeRem: number;
+        readonly lineHeight: number;
+        readonly letterSpacingEm: number;
+      }
+    >
+  >;
+  /**
    * Семейства шрифта как фолбэк-стеки (первым — фирменная гарнитура). Это
    * КЛИЕНТСКАЯ ручка (ребренд = один оверрайд), а не выводимое значение:
    * `sans` → токен `--lab-font-family`, `mono` → `--lab-font-family-mono`.

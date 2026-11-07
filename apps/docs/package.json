@@ -12,26 +12,36 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
+    "test:packed-modal": "node tests/packed-modal-consumer.mjs",
     "test": "node --test tests/docs-boundary.test.mjs tests/icons-public-terminal.test.mjs"
   },
   "dependencies": {
+    "@labpics/fonts": "workspace:*",
     "@labpics/ui-core": "workspace:*",
     "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-react": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
+    "@labpics/ui-solid": "workspace:*",
+    "@labpics/ui-svelte": "workspace:*",
     "@labpics/ui-tokens": "workspace:*",
     "@labpics/ui-vue": "workspace:*",
     "@labui/colors": "workspace:*",
+    "lit": "3.3.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
+    "solid-js": "1.9.4",
+    "svelte": "5.19.0",
     "vue": "3.5.42"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.12.1",
-    "@playwright/test": "1.55.1",
-    "@types/node": "22.10.5",
+    "@lit-labs/ssr-client": "1.1.8",
+    "@playwright/test": "1.64.1",
+    "@sveltejs/vite-plugin-svelte": "5.0.3",
+    "@types/node": "22.15.3",
     "@types/react": "18.3.18",
     "@types/react-dom": "18.3.5",
+    "esbuild": "0.28.2",
     "typescript": "5.7.3",
     "vite": "6.4.4"
   }

@@ -14,14 +14,19 @@
  * constant.
  */
 
-/** Attribute that selects the colour theme. Default (absent) resolves to light. */
+/** Тема области; отсутствие на корне следует ОС, внутри — ближайшему предку. */
 export const THEME_ATTR = 'data-theme';
 
 /** Attribute that selects the material mode. Default (absent) resolves to solid. */
 export const MATERIAL_ATTR = 'data-material';
 
-/** The colour themes a root may declare. */
-export const THEMES = ['light', 'dark'] as const;
+/** Независимый режим контраста. Без атрибута наследуется ближайшая область. */
+export const CONTRAST_ATTR = 'data-contrast';
+export const CONTRASTS = ['auto', 'normal', 'more'] as const;
+export type Contrast = (typeof CONTRASTS)[number];
+
+/** auto начинает новую область от настройки ОС. */
+export const THEMES = ['auto', 'light', 'dark'] as const;
 export type Theme = (typeof THEMES)[number];
 
 /**
@@ -55,4 +60,9 @@ export function setTheme(root: Element, theme: Theme): void {
 /** Set the material mode on a root element. JS enhancement only. */
 export function setMaterial(root: Element, material: Material): void {
   root.setAttribute(MATERIAL_ATTR, material);
+}
+
+/** auto следует ОС; normal явно сохраняет эталон даже при системном more. */
+export function setContrast(root: Element, contrast: Contrast): void {
+  root.setAttribute(CONTRAST_ATTR, contrast);
 }

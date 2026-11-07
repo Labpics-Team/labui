@@ -259,8 +259,3 @@ declare global {
     'lab-avatar': LabAvatar;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7).
-if (typeof customElements !== 'undefined' && !customElements.get('lab-avatar')) {
-  customElements.define('lab-avatar', LabAvatar);
-}

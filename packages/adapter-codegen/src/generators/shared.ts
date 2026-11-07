@@ -5,6 +5,21 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+/**
+ * Размер остаётся у ::slotted в ядре; адаптер переносит его только на прямого ребёнка.
+ * Маркер ставится лишь для data-sizing="fill". Стиль уходит в незанятый именованный
+ * слот, поэтому не меняет default-контент и не мешает :empty у коробки иконки.
+ */
+export const slotFillCss =
+  ':where([data-lab-slot-fill]) > *{inline-size:100%;block-size:100%}[data-lab-slot-fill]:empty{display:none!important}';
+
+export const slotFillMarkup = `<style slot="_lab-style">${slotFillCss}</style>`;
+
+/** Один источник CSS для runtime-обёрток и строкового SSR. */
+export function slotProjectionFile(): string {
+  return `${generatedHeader()}\nexport const slotFillCss =\n  ${tsStringLiteral(slotFillCss)};\nexport const slotFillMarkup = \`<style slot="_lab-style">\${slotFillCss}</style>\`;\n`;
+}
+
 /** Заголовок-предупреждение для каждого сгенерированного файла (RU, с «почему»). */
 export function generatedHeader(commentSyntax: 'block' | 'line' = 'block'): string {
   const lines = [

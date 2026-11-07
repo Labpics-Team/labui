@@ -2,8 +2,8 @@
  * Генератор Astro-компонентов. `@astrojs/lit` УСТАРЕЛ на Astro 5 (офиц. доки), поэтому
  * используем ручной рецепт Lit SSR: `.astro` серверно рендерит DSD через общую
  * SSR-функцию `renderX` (см. generators/ssr.ts) и внедряет её `set:html`; клиентский
- * `<script>` подключает hydrate-support и регистрирует элемент — LitElement сам
- * гидрируется из declarative shadow DOM.
+ * `<script>` регистрирует элемент. Интеграция @labpics/ui-astro/hydrate заранее
+ * устанавливает поддержку гидратации на уровне документа.
  *
  * SSR-функции живут в `@labpics/ui-astro/ssr` (общий ssr-генератор), здесь — только
  * тонкие `.astro`-обёртки над ними.
@@ -34,18 +34,23 @@ function astroFile(c: ComponentMeta): string {
     )
     .join('\n');
   const slotsArg = slotEntries.length > 0 ? `{\n${slotLines}\n}` : '{}';
+  const propsArg =
+    c.tag === 'lab-switch'
+      ? "{ ...Astro.props, ariaLabel: Astro.props['aria-label'] ?? Astro.props.ariaLabel }"
+      : 'Astro.props';
 
   return `---
 ${generatedHeader()}
 import { render${c.pascal} } from '@labpics/ui-astro/ssr';
 
-const dsd = render${c.pascal}(Astro.props, ${slotsArg});
+if (!import.meta.env.LABUI_HYDRATE) {
+  throw new Error('LabUI SSR: добавьте hydrate() из @labpics/ui-astro/hydrate в integrations в astro.config.');
+}
+
+const dsd = render${c.pascal}(${propsArg}, ${slotsArg});
 ---
 <Fragment set:html={dsd} />
 <script>
-  // Порядок важен: hydrate-support ДО lit; затем регистрация элемента — LitElement
-  // сам гидрируется из declarative shadow DOM.
-  import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
   import '@labpics/ui-core/${c.subpath}';
 </script>
 `;

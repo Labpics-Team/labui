@@ -19,10 +19,20 @@
       "import": "./dist/ssr.js",
       "require": "./dist/ssr.cjs"
     },
+    "./hydrate": {
+      "import": {
+        "types": "./dist/hydrate.d.ts",
+        "default": "./dist/hydrate.js"
+      },
+      "require": {
+        "types": "./types/hydrate.d.cts",
+        "default": "./dist/hydrate.cjs"
+      }
+    },
     "./*.astro": "./src/astro/*.astro",
     "./package.json": "./package.json"
   },
-  "files": ["dist", "src/astro"],
+  "files": ["dist", "src/astro", "types"],
   "sideEffects": ["**/*.astro", "**/*.css"],
   "scripts": {
     "build": "tsup",

@@ -1,0 +1,74 @@
+diff --git a/dist/middleware.d.mts b/dist/middleware.d.mts
+--- a/dist/middleware.d.mts
++++ b/dist/middleware.d.mts
+@@ -3,23 +3,23 @@ import { Middleware } from '@floating-ui/dom';
+ declare const cssVars: {
+     arrowSize: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-size";
++        reference: "var(--arrow-size)";
+     };
+     arrowSizeHalf: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-size-half";
++        reference: "var(--arrow-size-half)";
+     };
+     arrowBg: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-background";
++        reference: "var(--arrow-background)";
+     };
+     transformOrigin: {
+-        variable: string;
+-        reference: string;
++        variable: "--transform-origin";
++        reference: "var(--transform-origin)";
+     };
+     arrowOffset: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-offset";
++        reference: "var(--arrow-offset)";
+     };
+ };
+ declare function createTransformOriginMiddleware(opts: {
+diff --git a/dist/middleware.d.ts b/dist/middleware.d.ts
+--- a/dist/middleware.d.ts
++++ b/dist/middleware.d.ts
+@@ -3,23 +3,23 @@ import { Middleware } from '@floating-ui/dom';
+ declare const cssVars: {
+     arrowSize: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-size";
++        reference: "var(--arrow-size)";
+     };
+     arrowSizeHalf: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-size-half";
++        reference: "var(--arrow-size-half)";
+     };
+     arrowBg: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-background";
++        reference: "var(--arrow-background)";
+     };
+     transformOrigin: {
+-        variable: string;
+-        reference: string;
++        variable: "--transform-origin";
++        reference: "var(--transform-origin)";
+     };
+     arrowOffset: {
+-        variable: string;
+-        reference: string;
++        variable: "--arrow-offset";
++        reference: "var(--arrow-offset)";
+     };
+ };
+ declare function createTransformOriginMiddleware(opts: {

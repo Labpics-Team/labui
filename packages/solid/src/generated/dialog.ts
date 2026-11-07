@@ -10,7 +10,7 @@ import type { LabDialog } from '@labpics/ui-core/dialog';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-dialog>, взятые прямо из класса ядра (LabDialog). */
-export type DialogProps = Pick<LabDialog, 'size' | 'modal' | 'closable' | 'heading' | 'description'>;
+export type DialogProps = Pick<LabDialog, 'modal' | 'closable' | 'heading' | 'description' | 'size'>;
 
 /** <Dialog> — тонкая Solid-обёртка над <lab-dialog>. */
 export const Dialog: LabSolidComponent<DialogProps, 'open-change'> = createLabComponent<
@@ -18,11 +18,11 @@ export const Dialog: LabSolidComponent<DialogProps, 'open-change'> = createLabCo
   'open-change'
 >('lab-dialog', {
   specs: [
-    { name: 'size', attr: 'size', kind: 'string' },
     { name: 'modal', attr: 'modal', kind: 'string' },
     { name: 'closable', attr: 'closable', kind: 'boolean' },
     { name: 'heading', attr: 'heading', kind: 'string' },
     { name: 'description', attr: 'description', kind: 'string' },
+    { name: 'size', attr: 'size', kind: 'string' },
   ],
   events: ['open-change'],
 });

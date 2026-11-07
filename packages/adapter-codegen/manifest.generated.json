@@ -64,11 +64,6 @@
       "className": "LabAlertDialog",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
-          "kind": "string"
-        },
-        {
           "name": "modal",
           "attr": "modal",
           "kind": "string"
@@ -87,6 +82,11 @@
           "name": "description",
           "attr": "description",
           "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
         }
       ],
       "events": [
@@ -95,9 +95,13 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "content",
+          "trigger"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "direct": [
+          "trigger"
+        ]
       }
     },
     {
@@ -165,9 +169,16 @@
       "slots": {
         "default": true,
         "named": [
-          "dot"
+          "dot",
+          "leading",
+          "trailing"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "fill": [
+          "dot",
+          "leading",
+          "trailing"
+        ]
       }
     },
     {
@@ -221,6 +232,11 @@
           "kind": "string"
         },
         {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
           "name": "icon",
           "attr": "icon",
           "kind": "boolean"
@@ -245,6 +261,7 @@
       "slots": {
         "default": true,
         "named": [
+          "end",
           "icon"
         ],
         "dynamic": false
@@ -270,6 +287,51 @@
           "name": "interactive",
           "attr": "interactive",
           "kind": "boolean"
+        },
+        {
+          "name": "imageSrc",
+          "attr": "image-src",
+          "kind": "string"
+        },
+        {
+          "name": "imageAlt",
+          "attr": "image-alt",
+          "kind": "string"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "headingLevel",
+          "attr": "heading-level",
+          "kind": "string"
+        },
+        {
+          "name": "caption",
+          "attr": "caption",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "lowerCaption",
+          "attr": "lower-caption",
+          "kind": "string"
+        },
+        {
+          "name": "titleHint",
+          "attr": "title-hint",
+          "kind": "string"
+        },
+        {
+          "name": "badge",
+          "attr": "badge",
+          "kind": "string"
         }
       ],
       "events": [],
@@ -449,11 +511,6 @@
       "className": "LabDialog",
       "props": [
         {
-          "name": "size",
-          "attr": "size",
-          "kind": "string"
-        },
-        {
           "name": "modal",
           "attr": "modal",
           "kind": "string"
@@ -472,6 +529,11 @@
           "name": "description",
           "attr": "description",
           "kind": "string"
+        },
+        {
+          "name": "size",
+          "attr": "size",
+          "kind": "string"
         }
       ],
       "events": [
@@ -480,9 +542,13 @@
       "slots": {
         "default": true,
         "named": [
-          "content"
+          "content",
+          "trigger"
         ],
-        "dynamic": false
+        "dynamic": false,
+        "direct": [
+          "trigger"
+        ]
       }
     },
     {
@@ -1154,6 +1220,60 @@
       }
     },
     {
+      "tag": "lab-sheet",
+      "subpath": "sheet",
+      "pascal": "Sheet",
+      "className": "LabSheet",
+      "props": [
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "string"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "position",
+          "attr": "position",
+          "kind": "prop"
+        }
+      ],
+      "events": [
+        "motion-error",
+        "open-change",
+        "position-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content",
+          "trigger"
+        ],
+        "dynamic": false,
+        "direct": [
+          "trigger"
+        ]
+      }
+    },
+    {
       "tag": "lab-slider",
       "subpath": "slider",
       "pascal": "Slider",
@@ -1290,6 +1410,21 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "labelStart",
+          "attr": "label-start",
+          "kind": "string"
+        },
+        {
+          "name": "hideLabelStart",
+          "attr": "hide-label-start",
+          "kind": "boolean"
+        },
+        {
+          "name": "hideLabelEnd",
+          "attr": "hide-label-end",
+          "kind": "boolean"
         }
       ],
       "events": [

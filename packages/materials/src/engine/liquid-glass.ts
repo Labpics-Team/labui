@@ -68,7 +68,7 @@
 // engine simply re-imports those exact symbols — the runtime is byte-identical;
 // only the definition site moved.
 import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
-import { ensureHiddenDefs, supportsBackdropFilterUrl } from './mount';
+import { createHiddenDefs, supportsBackdropFilterUrl } from './mount';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -129,6 +129,7 @@ interface RenderParams {
 }
 
 interface EngineState extends LiquidGlassHandle {
+  restore(): void;
   el: HTMLElement;
   id: string;
   filter: SVGFilterElement;
@@ -154,10 +155,6 @@ interface EngineState extends LiquidGlassHandle {
 const SVGNS = 'http://www.w3.org/2000/svg';
 const registry = new WeakMap<Element, EngineState>(); // host element → state (no DOM expando)
 let uid = 0;
-
-/** Скрытый defs-хост линзы — общий примитив (./mount), делится с acrylic-движком
- *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
-const ensureDefs = (): SVGDefsElement => ensureHiddenDefs('lab-lg-defs');
 
 /** The package-private state class: while the engine holds a surface,
  *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
@@ -874,9 +871,16 @@ function render(state: EngineState): void {
  */
 export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHandle {
   registry.get(el)?.destroy();
-  ensureDefs();
+  let disposed = false;
+  const wasLensed = el.classList.contains(LENSED_CLASS);
+  const baseline = ['backdrop-filter', '-webkit-backdrop-filter'].map((property) => ({
+    property,
+    value: el.style.getPropertyValue(property),
+    priority: el.style.getPropertyPriority(property),
+  }));
+  const { svg, defs, restore } = createHiddenDefs(el, 'lab-lg-defs');
   const id = `lab-lg-${++uid}`;
-  const filter = document.createElementNS(SVGNS, 'filter');
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
   // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
@@ -885,10 +889,13 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // (primitiveUnits is intentionally NOT set: no primitive here carries a
   // primitiveUnits-sensitive length, so it would be a no-op.)
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  ensureDefs().appendChild(filter);
+  defs.appendChild(filter);
 
   const { onPerf, ...params } = opts;
   const state: EngineState = {
+    restore: () => {
+      if (!disposed) restore();
+    },
     el,
     id,
     filter,
@@ -910,7 +917,9 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     destroy: () => {},
   };
 
-  const update = () => render(state);
+  const update = () => {
+    if (!disposed) render(state);
+  };
   // The ResizeObserver / window-resize storm fires many sub-pixel callbacks while
   // a layout settles; a trailing-edge rAF collapses a burst into ONE build at the
   // final size. The final geometry — and thus the rendered map — is identical to
@@ -918,7 +927,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // update()/refresh() stay immediate.
   let rafId = 0;
   const debouncedUpdate = () => {
-    if (rafId) return;
+    if (disposed || rafId) return;
     rafId = requestAnimationFrame(() => {
       rafId = 0;
       update();
@@ -941,15 +950,20 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     update();
   };
   state.destroy = () => {
+    if (disposed) return;
+    disposed = true;
     state.gen++; // supersede any in-flight async stamp so it can't fire post-destroy
     ro.disconnect();
     if (rafId) cancelAnimationFrame(rafId);
+    rafId = 0;
     window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
-    filter.remove();
-    setBackdrop(el, '', state);
-    el.classList.remove(LENSED_CLASS);
+    svg.remove();
+    for (const { property, value, priority } of baseline) {
+      el.style.setProperty(property, value, priority);
+    }
+    if (!wasLensed) el.classList.remove(LENSED_CLASS);
     if (registry.get(el) === state) registry.delete(el);
   };
 

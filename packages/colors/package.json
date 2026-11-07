@@ -46,7 +46,7 @@
     "@labpics/colors": "0.6.2"
   },
   "devDependencies": {
-    "@types/node": "22.10.5",
+    "@types/node": "22.15.3",
     "typescript": "5.7.3",
     "vitest": "3.2.6"
   }

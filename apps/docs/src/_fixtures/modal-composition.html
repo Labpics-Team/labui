@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-material="solid" data-contrast="normal">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Содержимое потребителя Sheet</title>
+    <link rel="stylesheet" href="../button-demo.css" />
+    <style id="consumer-rules">
+      .consumer-body {
+        background: rgb(12 123 45);
+        min-height: 144px;
+        padding: 16px;
+        border: 3px solid rgb(22 33 44);
+      }
+      .consumer-scope lab-sheet .consumer-body { margin-top: 11px; }
+      .consumer-body[data-v-consumer] { border-bottom-width: 7px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Настройки уведомлений</h1>
+      <button id="background" type="button">Действие на странице</button>
+      <div class="consumer-scope" id="lit-app"></div>
+      <div class="consumer-scope" id="vue-app"></div>
+      <div class="consumer-scope" id="solid-app"></div>
+      <div class="consumer-scope" id="react-app"></div>
+    </main>
+    <script type="module" src="./modal-composition.ts"></script>
+  </body>
+</html>

@@ -240,7 +240,7 @@ function assertReference(reference) {
   }
 }
 
-test('current pin retains the frozen author identity and both masters remain whole', async () => {
+test('current source pin validates and synthetic-reference masters remain whole', async () => {
   const actualPin = validateSourcePin(
     JSON.parse(await readFile(new URL('./icons-consumer-source.json', import.meta.url))),
   );
@@ -959,6 +959,38 @@ test('schema3 requires both independent state references and dispatches every gr
     stateReferences: { 'status-circle': status, 'expression-face': expression },
   };
   assert.equal(validateSubject(subject), subject);
+  const complete = structuredClone(subject);
+  complete.schemaVersion = 4;
+  for (const [key, name] of [
+    ['uiMaterials', '@labpics/ui-materials'],
+    ['uiTokens', '@labpics/ui-tokens'],
+  ])
+    complete.packages[key] = { ...complete.packages.uiCore, name };
+  for (const item of Object.values(complete.packages))
+    item.runtimeDependencies = { dependencies: {}, optionalDependencies: {}, peerDependencies: {} };
+  assert.equal(validateSubject(complete), complete);
+  assert.deepEqual(subjectStateReferences(complete), subjectStateReferences(subject));
+  for (const mutate of [
+    (value) => {
+      Reflect.deleteProperty(value.packages, 'uiMaterials');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.packages, 'uiTokens');
+    },
+    (value) => {
+      Reflect.deleteProperty(value.packages.uiCore, 'runtimeDependencies');
+    },
+    (value) => {
+      value.packages.uiTokens.sourceCommit = 'f'.repeat(40);
+    },
+    (value) => {
+      value.packages.uiCore.runtimeDependencies.dependencies['@labpics/ui-tokens'] = 'workspace:*';
+    },
+  ]) {
+    const changed = structuredClone(complete);
+    mutate(changed);
+    assert.throws(() => validateSubject(changed));
+  }
   assert.equal(subjectStateReferences(subject), subject.stateReferences);
   assert.deepEqual(subjectStateReferences({ schemaVersion: 2, stateReference: status }), {
     'status-circle': status,
@@ -1701,7 +1733,7 @@ test('consumer readback refuses unrelated files, unbounded PNG and incomplete re
 });
 
 async function summaryFixture(t, schemaVersion) {
-  const { root } = schemaVersion === 3 ? await expressionFixture(t) : await stateFixture(t);
+  const { root } = schemaVersion >= 3 ? await expressionFixture(t) : await stateFixture(t);
   const author = await authorReference(root, PIN);
   const states = await stateReference(root, PIN);
   const packages = Object.fromEntries(
@@ -1720,12 +1752,25 @@ async function summaryFixture(t, schemaVersion) {
       },
     ]),
   );
+  if (schemaVersion >= 4) {
+    for (const [key, name] of [
+      ['uiMaterials', '@labpics/ui-materials'],
+      ['uiTokens', '@labpics/ui-tokens'],
+    ])
+      packages[key] = { ...packages.uiCore, name };
+    for (const item of Object.values(packages))
+      item.runtimeDependencies = {
+        dependencies: {},
+        optionalDependencies: {},
+        peerDependencies: {},
+      };
+  }
   const subject = {
     schemaVersion,
     packages,
     authorReference: author,
     ...(schemaVersion === 2 ? { stateReference: states } : {}),
-    ...(schemaVersion === 3
+    ...(schemaVersion >= 3
       ? {
           stateReferences: {
             'status-circle': states,
@@ -1928,7 +1973,7 @@ test('oversized API failure and refused PNG keep the limited continuity RESULT',
   }
 });
 
-for (const schema of [2, 3])
+for (const schema of [2, 3, 4])
   test(`schema${schema} summary publishes the authenticated report and rejects missing or wrong-source output`, async (t) => {
     const fixture = await summaryFixture(t, schema);
     const stdout = fixture.invoke();

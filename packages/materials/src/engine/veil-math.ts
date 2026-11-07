@@ -177,11 +177,14 @@ export function parseStops(str: string): Stop[] {
   }
   if (cur.trim()) parts.push(cur);
   const stops = parts.map((raw): Stop => {
-    const m = /^\s*(-?[\d.]+%?)\s+(-?[\d.]+)px\s*(.*)$/.exec(raw);
+    const m =
+      /^\s*([+-]?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?%?)\s+([+-]?(?:\d+|\d*\.\d+)(?:e[+-]?\d+)?)px\s*(.*)$/i.exec(
+        raw,
+      );
     if (!m) throw new Error(`lab-veil: unparseable stop "${raw.trim()}"`);
     const atRaw = m[1] ?? '';
-    let at = atRaw.endsWith('%') ? Number.parseFloat(atRaw) / 100 : Number.parseFloat(atRaw);
-    const blur = Number.parseFloat(m[2] ?? '');
+    let at = atRaw.endsWith('%') ? Number(atRaw.slice(0, -1)) / 100 : Number(atRaw);
+    const blur = Number(m[2]);
     if (!Number.isFinite(at) || !Number.isFinite(blur) || blur < 0) {
       throw new Error(`lab-veil: invalid stop "${raw.trim()}"`);
     }

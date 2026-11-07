@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/menu';
   import type { LabMenu } from '@labpics/ui-core/menu';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-menu> — типы взяты прямо из класса ядра (LabMenu). */
   interface Props {
@@ -34,11 +34,19 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { size, placement, disabled, label, items })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { size, placement, disabled, label, items });
   });
   $effect(() => forwardEvents(el, { 'open-change': onOpenChange, 'select': onSelect }));
 </script>
 
-<lab-menu bind:this={el} {...rest}>
+<lab-menu bind:this={el} {...rest} {...initialBooleans}>
 </lab-menu>

@@ -48,7 +48,7 @@ describe('фикс инвертированного флюида — суб-ба
   it('суб-базовые эмитятся чистым rem (без вырожденного clamp), база тоже', () => {
     const { fontSizes } = buildTypography(ty);
     for (const t of fontSizes) {
-      const step = t.fluid?.step ?? Number.NaN;
+      const step = t.fluid?.step ?? 0;
       if (step <= 0) {
         expect(t.cssValue, t.name).toMatch(/^[\d.]+rem$/);
       } else {

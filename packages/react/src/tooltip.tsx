@@ -27,8 +27,8 @@
 'use client';
 
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as tooltipMachine from '@labpics/ui-core/behaviors/tooltip';
 import type { LabTooltipPlacement, LabTooltipSize } from '@labpics/ui-core/tooltip';
-import * as tooltipMachine from '@zag-js/tooltip';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';

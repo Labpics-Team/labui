@@ -25,6 +25,7 @@
  */
 'use client';
 
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import {
   type LabFieldSize,
   type LabFieldType,
@@ -32,8 +33,7 @@ import {
   fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
-} from '@labpics/ui-core';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+} from '@labpics/ui-core/shared';
 import * as numberInputMachine from '@zag-js/number-input';
 import { type ReactNode, useId } from 'react';
 import { useZag } from './use-zag.js';

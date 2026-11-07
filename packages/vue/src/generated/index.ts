@@ -26,6 +26,7 @@ export { Popover, type PopoverProps } from './popover.js';
 export { Progress, type ProgressProps } from './progress.js';
 export { RadioGroup, type RadioGroupProps } from './radio-group.js';
 export { Select, type SelectProps } from './select.js';
+export { Sheet, type SheetProps } from './sheet.js';
 export { Slider, type SliderProps } from './slider.js';
 export { Switch, type SwitchProps } from './switch.js';
 export { Tabs, type TabsProps } from './tabs.js';

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <title>Card: материал через Shadow DOM и SSR</title>
+    <style>
+      @import "@labui/colors/contract.css";
+      @import "@labpics/ui-materials/material.css";
+      html, body { margin: 0; }
+      main { display: grid; grid-template-columns: repeat(3, 280px); gap: 8px; }
+      .stage { width: 240px; min-height: 128px; padding: 16px; background: rgb(0 0 0); }
+      lab-card, lab-shadow-consumer { display: block; width: 240px; }
+    </style>
+  </head>
+  <body>
+    <main><!-- @@SSR_CARD_MATERIALS@@ --></main>
+    <script type="module" src="./card-material-shadow.ts"></script>
+  </body>
+</html>

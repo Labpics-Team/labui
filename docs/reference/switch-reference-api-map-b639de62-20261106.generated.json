@@ -1,0 +1,2229 @@
+{
+  "schemaVersion": 1,
+  "observedOn": "2026-11-06",
+  "scope": "Read-only recovery of the Lab UI v2.1 Switch property definitions, complete actual variant-property tuples and comparison with pinned Core/React public Switch API for Card+Switch+Button.",
+  "sourceCode": {
+    "checkout": "D:\\AgentWork\\labui-web-sheet-st01a1a7a8",
+    "branch": "feat/web-sheet-st01a1a7a8",
+    "commit": "b639de62572901faf8a2501f8ecbbfdbc1df1a73",
+    "repository": "Labpics-Team/labui",
+    "contextPullRequest": 224
+  },
+  "reference": {
+    "logicalSource": "Lab UI v2.1 / Switch",
+    "access": "Authorized existing official Figma read-only route. Source pointer was verified against previously executed Figma read arguments in the coordinator-supplied private continuation session.",
+    "revision": "No exact Figma revision identifier was returned; the captured payload is pinned by this artifact hash.",
+    "privacy": "Source file URLs, file/node identifiers and the source document root are omitted. Private property-name identifier suffixes are removed; semantic names and actual values are retained."
+  },
+  "primaryCapture": {
+    "definitionSource": "componentPropertyDefinitions on the resolved Switch COMPONENT_SET",
+    "tupleSource": "variantProperties on every direct COMPONENT child, not parsed names",
+    "definitions": [
+      {
+        "name": "Left-label",
+        "type": "TEXT",
+        "defaultValue": "Label",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": null,
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Right-label",
+        "type": "TEXT",
+        "defaultValue": "Label",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": null,
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Show left-label",
+        "type": "BOOLEAN",
+        "defaultValue": true,
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": null,
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Show right-label",
+        "type": "BOOLEAN",
+        "defaultValue": true,
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": null,
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Type",
+        "type": "VARIANT",
+        "defaultValue": "neutral",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": [
+          "neutral",
+          "accent",
+          "danger"
+        ],
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Toggle",
+        "type": "VARIANT",
+        "defaultValue": "false",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": [
+          "false",
+          "true"
+        ],
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Size",
+        "type": "VARIANT",
+        "defaultValue": "small",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": [
+          "small",
+          "medium",
+          "large"
+        ],
+        "preferredValueTypes": null
+      },
+      {
+        "name": "State",
+        "type": "VARIANT",
+        "defaultValue": "default",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": [
+          "default",
+          "hover",
+          "pressed",
+          "focus",
+          "disabled"
+        ],
+        "preferredValueTypes": null
+      },
+      {
+        "name": "Icon",
+        "type": "VARIANT",
+        "defaultValue": "false",
+        "defaultValueIsPrivateComponentReference": false,
+        "variantOptions": [
+          "false",
+          "true"
+        ],
+        "preferredValueTypes": null
+      }
+    ],
+    "axes": [
+      "Type",
+      "Toggle",
+      "Size",
+      "State",
+      "Icon"
+    ],
+    "actualTuples": [
+      {
+        "ordinal": 1,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "disabled",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 2,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "disabled",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 3,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "disabled",
+          "false"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 4,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "disabled",
+          "true"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 5,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "disabled",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 6,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "disabled",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 7,
+        "values": [
+          "neutral",
+          "true",
+          "small",
+          "disabled",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 8,
+        "values": [
+          "neutral",
+          "true",
+          "small",
+          "disabled",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 9,
+        "values": [
+          "neutral",
+          "true",
+          "medium",
+          "disabled",
+          "false"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 10,
+        "values": [
+          "neutral",
+          "true",
+          "medium",
+          "disabled",
+          "true"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 11,
+        "values": [
+          "neutral",
+          "true",
+          "large",
+          "disabled",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 12,
+        "values": [
+          "neutral",
+          "true",
+          "large",
+          "disabled",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 13,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "default",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 14,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "default",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 15,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "default",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 16,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "default",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 17,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "default",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 18,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "default",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 19,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "hover",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 20,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "hover",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 21,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "hover",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 22,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "hover",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 23,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "hover",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 24,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "hover",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 25,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "pressed",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 26,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "pressed",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 27,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "pressed",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 28,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "pressed",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 29,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "pressed",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 30,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "pressed",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 31,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "focus",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 32,
+        "values": [
+          "neutral",
+          "false",
+          "small",
+          "focus",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 33,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "focus",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 34,
+        "values": [
+          "neutral",
+          "false",
+          "medium",
+          "focus",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 35,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "focus",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 36,
+        "values": [
+          "neutral",
+          "false",
+          "large",
+          "focus",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 37,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "default",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 38,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "default",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 39,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "default",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 40,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "hover",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 41,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "hover",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 42,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "hover",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 43,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "pressed",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 44,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "pressed",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 45,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "pressed",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 46,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "focus",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 47,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "focus",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 48,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "focus",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 49,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "default",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 50,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "default",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 51,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "default",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 52,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "hover",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 53,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "hover",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 54,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "hover",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 55,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "pressed",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 56,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "pressed",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 57,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "pressed",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 58,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "focus",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 59,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "focus",
+          "false"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 60,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "focus",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 61,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "default",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 62,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "default",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 63,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "default",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 64,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "hover",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 65,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "hover",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 66,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "hover",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 67,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "pressed",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 68,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "pressed",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 69,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "pressed",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 70,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "focus",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 71,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "focus",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 72,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "focus",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 73,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "default",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 74,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "default",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 75,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "default",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 76,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "hover",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 77,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "hover",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 78,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "hover",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 79,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "pressed",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 80,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "pressed",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 81,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "pressed",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 82,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "focus",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 83,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "focus",
+          "true"
+        ],
+        "width": 134,
+        "height": 24
+      },
+      {
+        "ordinal": 84,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "focus",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 85,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "disabled",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 86,
+        "values": [
+          "danger",
+          "false",
+          "small",
+          "disabled",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 87,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "disabled",
+          "false"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 88,
+        "values": [
+          "danger",
+          "false",
+          "medium",
+          "disabled",
+          "true"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 89,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "disabled",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 90,
+        "values": [
+          "danger",
+          "false",
+          "large",
+          "disabled",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 91,
+        "values": [
+          "danger",
+          "true",
+          "small",
+          "disabled",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 92,
+        "values": [
+          "danger",
+          "true",
+          "small",
+          "disabled",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 93,
+        "values": [
+          "danger",
+          "true",
+          "medium",
+          "disabled",
+          "false"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 94,
+        "values": [
+          "danger",
+          "true",
+          "medium",
+          "disabled",
+          "true"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 95,
+        "values": [
+          "danger",
+          "true",
+          "large",
+          "disabled",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 96,
+        "values": [
+          "danger",
+          "true",
+          "large",
+          "disabled",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 97,
+        "values": [
+          "accent",
+          "false",
+          "small",
+          "disabled",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 98,
+        "values": [
+          "accent",
+          "false",
+          "small",
+          "disabled",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 99,
+        "values": [
+          "accent",
+          "false",
+          "medium",
+          "disabled",
+          "false"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 100,
+        "values": [
+          "accent",
+          "false",
+          "medium",
+          "disabled",
+          "true"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 101,
+        "values": [
+          "accent",
+          "false",
+          "large",
+          "disabled",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 102,
+        "values": [
+          "accent",
+          "false",
+          "large",
+          "disabled",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 103,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "disabled",
+          "false"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 104,
+        "values": [
+          "accent",
+          "true",
+          "small",
+          "disabled",
+          "true"
+        ],
+        "width": 126,
+        "height": 24
+      },
+      {
+        "ordinal": 105,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "disabled",
+          "false"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 106,
+        "values": [
+          "accent",
+          "true",
+          "medium",
+          "disabled",
+          "true"
+        ],
+        "width": 125,
+        "height": 24
+      },
+      {
+        "ordinal": 107,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "disabled",
+          "false"
+        ],
+        "width": 172,
+        "height": 24
+      },
+      {
+        "ordinal": 108,
+        "values": [
+          "accent",
+          "true",
+          "large",
+          "disabled",
+          "true"
+        ],
+        "width": 172,
+        "height": 24
+      }
+    ],
+    "actualVariantPropertiesPresentForEveryTuple": true,
+    "observedStateCoverage": {
+      "neutral": {
+        "disabled": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ],
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ],
+        "default": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "hover": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "pressed": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "focus": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ]
+      },
+      "accent": {
+        "default": [
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ],
+        "hover": [
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ],
+        "pressed": [
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ],
+        "focus": [
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ],
+        "disabled": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ],
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ]
+      },
+      "danger": {
+        "default": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "hover": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "pressed": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "focus": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ]
+        ],
+        "disabled": [
+          [
+            "false",
+            "small",
+            "false"
+          ],
+          [
+            "false",
+            "small",
+            "true"
+          ],
+          [
+            "false",
+            "medium",
+            "false"
+          ],
+          [
+            "false",
+            "medium",
+            "true"
+          ],
+          [
+            "false",
+            "large",
+            "false"
+          ],
+          [
+            "false",
+            "large",
+            "true"
+          ],
+          [
+            "true",
+            "small",
+            "false"
+          ],
+          [
+            "true",
+            "small",
+            "true"
+          ],
+          [
+            "true",
+            "medium",
+            "false"
+          ],
+          [
+            "true",
+            "medium",
+            "true"
+          ],
+          [
+            "true",
+            "large",
+            "false"
+          ],
+          [
+            "true",
+            "large",
+            "true"
+          ]
+        ]
+      }
+    },
+    "labelAnatomy": {
+      "selectedActualVariantProperties": {
+        "Type": "neutral",
+        "Toggle": "false",
+        "Size": "medium",
+        "State": "default",
+        "Icon": "false"
+      },
+      "tree": {
+        "name": "Type=neutral, Toggle=false, Size=medium, State=default, Icon=false",
+        "type": "COMPONENT",
+        "visible": true,
+        "width": 134,
+        "height": 24,
+        "layoutMode": "HORIZONTAL",
+        "propertyReferences": {},
+        "children": [
+          {
+            "name": "Label",
+            "type": "TEXT",
+            "visible": true,
+            "x": 0,
+            "y": 0,
+            "width": 41,
+            "height": 24,
+            "text": "Label",
+            "propertyReferences": {
+              "visible": "Show left-label",
+              "characters": "Left-label"
+            }
+          },
+          {
+            "name": "switch-container",
+            "type": "FRAME",
+            "visible": true,
+            "x": 49,
+            "y": 0,
+            "width": 36,
+            "height": 24,
+            "layoutMode": "VERTICAL",
+            "propertyReferences": {},
+            "children": [
+              {
+                "name": "switch",
+                "type": "FRAME",
+                "visible": true,
+                "x": 0,
+                "y": 2,
+                "width": 36,
+                "height": 20,
+                "layoutMode": "HORIZONTAL",
+                "propertyReferences": {},
+                "children": [
+                  {
+                    "name": "thumb",
+                    "type": "ELLIPSE",
+                    "visible": true,
+                    "x": 2,
+                    "y": 2,
+                    "width": 16,
+                    "height": 16,
+                    "propertyReferences": {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Label",
+            "type": "TEXT",
+            "visible": true,
+            "x": 93,
+            "y": 0,
+            "width": 41,
+            "height": 24,
+            "text": "Label",
+            "propertyReferences": {
+              "visible": "Show right-label",
+              "characters": "Right-label"
+            }
+          }
+        ]
+      }
+    },
+    "labelAnatomyScope": "One existing neutral/false/medium/default/false variant was read for spatial ordering and property-reference bindings. No instances were created or properties changed."
+  },
+  "matrixInterpretation": "The 108 rows are read from actual variantProperties, not parsed component names or an expanded Cartesian product. Text/visibility definitions are independent component properties; their arbitrary content combinations are not additional enumerated variants.",
+  "apiMap": [
+    {
+      "reference": "Type",
+      "referenceValues": [
+        "neutral",
+        "accent",
+        "danger"
+      ],
+      "core": "type: LabSwitchType",
+      "react": "type?: LabSwitchType",
+      "status": "Existing public value mapping; paint not qualified."
+    },
+    {
+      "reference": "Toggle",
+      "referenceValues": [
+        "false",
+        "true"
+      ],
+      "core": "checked / defaultChecked; checked-change",
+      "react": "checked / defaultChecked; onCheckedChange(boolean)",
+      "status": "Existing public value/state ownership mapping."
+    },
+    {
+      "reference": "Size",
+      "referenceValues": [
+        "small",
+        "medium",
+        "large"
+      ],
+      "core": "size: s / m / l",
+      "react": "size?: s / m / l",
+      "valueMapping": {
+        "small": "s",
+        "medium": "m",
+        "large": "l"
+      },
+      "status": "Existing explicit value mapping; scaling/render parity not qualified here."
+    },
+    {
+      "reference": "State",
+      "referenceValues": [
+        "default",
+        "hover",
+        "pressed",
+        "focus",
+        "disabled"
+      ],
+      "core": "disabled property; input focus-visible; ordinary pointer interaction",
+      "react": "disabled property; input focus-visible; ordinary pointer interaction",
+      "status": "Disabled/focus inputs are present. Exact hover/pressed and all-state paint correspondence remains unqualified; no new state API is asserted necessary."
+    },
+    {
+      "reference": "Icon",
+      "referenceValues": [
+        "false",
+        "true"
+      ],
+      "core": "icon-on / icon-off slots",
+      "react": "iconOn / iconOff ReactNode",
+      "status": "Existing content-presence route; exact glyph/render correspondence not qualified."
+    },
+    {
+      "reference": "Left-label",
+      "type": "TEXT",
+      "core": "One default-slot label is rendered after control; no independent leading-label region in the inspected Switch.",
+      "react": "One children label is rendered after control; no independent leading-label content parameter.",
+      "status": "Confirmed two-sided-label anatomy/API gap."
+    },
+    {
+      "reference": "Right-label",
+      "type": "TEXT",
+      "core": "Default-slot label after control",
+      "react": "children label after control",
+      "status": "Single trailing label route exists; it does not represent both independent sides."
+    },
+    {
+      "reference": "Show left-label",
+      "type": "BOOLEAN",
+      "core": "No independent leading label region/visibility control in inspected Switch.",
+      "react": "No independent leading label region/visibility control in inspected Switch.",
+      "status": "Same confirmed two-sided-label gap."
+    },
+    {
+      "reference": "Show right-label",
+      "type": "BOOLEAN",
+      "core": "Presence of default slot controls supplied text content.",
+      "react": "children != null controls the single label's presence.",
+      "status": "Single trailing label visibility route only."
+    }
+  ],
+  "sourceDefaults": {
+    "reference": {
+      "type": "neutral",
+      "toggle": "false",
+      "size": "small",
+      "state": "default",
+      "icon": "false",
+      "leftLabel": "Label",
+      "rightLabel": "Label",
+      "showLeftLabel": true,
+      "showRightLabel": true
+    },
+    "react": {
+      "type": "accent",
+      "size": "m",
+      "disabled": false
+    },
+    "interpretation": "Available explicit type/size props can select reference values. These defaults are recorded without asserting default or visual parity."
+  },
+  "finding": {
+    "subject": "Two independently controlled labels on opposite sides of the Switch control",
+    "status": "Confirmed in inspected Core/React public Switch anatomy/API at the pinned commit.",
+    "referenceEvidence": "Two TEXT definitions and two BOOLEAN visibility definitions. Actual spatial tree binds the left text to Left-label/Show left-label and the right text to Right-label/Show right-label.",
+    "referenceOrder": [
+      "left label",
+      "control",
+      "right label"
+    ],
+    "codeEvidence": "Core renders only one default-slot label after the control. React SwitchProps has children and renders that one label after the control. Two strings placed into that single region do not reproduce the two-sided reference anatomy.",
+    "owner": "LabUI Switch component/anatomy and corresponding Core/React adapter owners.",
+    "remediation": "No remedy or new public API selected by this read-only task."
+  },
+  "primarySourceAnchors": [
+    "packages/core/src/components/switch/lab-switch.ts:56",
+    "packages/core/src/components/switch/lab-switch.ts:272",
+    "packages/core/src/components/switch/lab-switch.ts:348",
+    "packages/core/src/components/switch/lab-switch.ts:355",
+    "packages/react/src/switch.tsx:36",
+    "packages/react/src/switch.tsx:62",
+    "packages/react/src/switch.tsx:114",
+    "packages/react/src/switch.tsx:143",
+    "packages/react/src/switch.css:134"
+  ],
+  "publicSourceExcerpts": "b639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-52- */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-53-const switchModule: MachineModule<SwitchSchema, SwitchApi> = switchMachine;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-54-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-55-export class LabSwitch extends LabElement {\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:56:  static override properties = {\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-57-    type: { reflect: true },\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-58-    size: { reflect: true },\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-59-    /** Текущее состояние; обновляется вводом и присваиванием свойства. */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-60-    checked: { type: Boolean, reflect: true },\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-75-  declare size: LabSwitchSize;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-76-  declare defaultChecked: boolean;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-77-  declare disabled: boolean;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-78-  declare ariaLabel: string | null;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:79:  declare name: string | null;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-80-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-81-  private readonly machineCtl: ZagController<SwitchSchema, SwitchApi>;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-82-  private thumbMotion?: SwitchMotion;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-83-  private checkedValue: boolean | undefined;\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-268-    }\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-269-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-270-    /* Прямой соседний селектор обновляет кольцо при focus/blur в Shadow DOM.\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-271-       Input остаётся снаружи aria-hidden control и сохраняет доступность. */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:272:    input:focus-visible + .control {\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-273-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-274-      outline-offset: ${litVar('--lab-focus-ring-offset')};\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-275-    }\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-276-\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-336-    if (this.ariaLabel) input.setAttribute('aria-label', this.ariaLabel);\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-337-    else input.removeAttribute('aria-label');\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-338-  }\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-339-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:340:  override render(): TemplateResult {\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-341-    const checked = this.checked;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-342-    // Structure only; behavior (role=switch, aria-checked, keyboard, focus) is\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-343-    // spread in `updated()` from the machine. SSR emits this real markup so first\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-344-    // paint is meaningful before any JS upgrades the element. The hidden input is\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-347-    return html`\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-348-      <label class=\"root\" data-state=${checked ? 'checked' : 'unchecked'}>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-349-        <input type=\"checkbox\" ?checked=${checked} />\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-350-        <span class=\"control\">\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:351:          <span class=\"icon icon-on\" aria-hidden=\"true\"><slot name=\"icon-on\"></slot></span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:352:          <span class=\"icon icon-off\" aria-hidden=\"true\"><slot name=\"icon-off\"></slot></span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-353-          <span class=\"thumb\"></span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-354-        </span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts:355:        <span class=\"label\"><slot></slot></span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-356-      </label>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-357-    `;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-358-  }\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/core/src/components/switch/lab-switch.ts-359-}\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-129-  opacity: 1;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-130-}\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-131-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-132-/* The input is now a SIBLING of the control (so it stays in the a11y tree), so\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css:133:   match focus-visible from the root, not as a descendant of the control. */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css:134:[data-lab-switch]:has(input:focus-visible) .lab-switch-control {\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-135-  outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-136-  outline-offset: var(--lab-focus-ring-offset);\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-137-}\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.css-138-\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-32-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-33-// Сервер отдаёт CSS-позу. В браузере scope подключается до первого paint.\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-34-const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-35-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx:36:export interface SwitchProps {\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-37-  /** Semantic intent of the switch's ON state. */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-38-  type?: LabSwitchType;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-39-  /** Control size. */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-40-  size?: LabSwitchSize;\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-58-   * over it via the machine's `aria-labelledby`.\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-59-   */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-60-  'aria-label'?: string;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-61-  /** Label content (parity with the Lit default slot). */\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx:62:  children?: ReactNode;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-63-}\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-64-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-65-export function Switch({\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-66-  type = 'accent',\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-110-  // The machine sets `aria-labelledby` on the hidden input pointing at the label\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-111-  // part. With a visible label that resolves and names the control; with NO\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-112-  // visible label it would dangle (and per ARIA outrank `aria-label`), so we drop\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-113-  // it and name the input via `aria-label` instead — exactly one real name source.\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx:114:  const hasVisibleLabel = children != null;\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-115-  const hiddenInputProps = api.getHiddenInputProps();\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx:116:  const inputProps = hasVisibleLabel\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-117-    ? hiddenInputProps\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-118-    : { ...hiddenInputProps, 'aria-labelledby': undefined, 'aria-label': ariaLabel };\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-119-\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-120-  return (\n--\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-138-      </span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-139-      {/* The hidden input is a SIBLING of the (aria-hidden) control, NOT a\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-140-          descendant, so it stays in the accessibility tree. */}\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-141-      <input {...inputProps} />\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx:142:      {hasVisibleLabel && (\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx:143:        <span {...api.getLabelProps()} className=\"lab-switch-label\">\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-144-          {children}\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-145-        </span>\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-146-      )}\nb639de62572901faf8a2501f8ecbbfdbc1df1a73:packages/react/src/switch.tsx-147-    </label>\n",
+  "checks": {
+    "actualDefinitions": 9,
+    "actualTuples": 108,
+    "uniqueTuples": 108,
+    "missingTupleValues": 0,
+    "referenceMethod": "Two official read-only Figma calls: complete definitions/variantProperties, then the selected variant's label bindings/order.",
+    "codeMethod": "Pinned source reads only. No code/runtime/Figma modifications or native probes.",
+    "deliveryBoundary": "This artifact restores the reference/property matrix and records one source-backed API gap. It does not close U-01/full-census or establish runtime/visual/native acceptance."
+  }
+}

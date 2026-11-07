@@ -14,6 +14,16 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
+    "./css": {
+      "import": {
+        "types": "./dist/css.d.ts",
+        "default": "./dist/css.js"
+      },
+      "require": {
+        "types": "./dist/css.d.cts",
+        "default": "./dist/css.cjs"
+      }
+    },
     "./material.css": "./dist/material.css",
     "./package.json": "./package.json"
   },
@@ -22,13 +32,15 @@
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "test": "vitest run",
+    "test": "vitest run && pnpm test:package",
+    "test:package": "pnpm build && tsx scripts/check-css-package.ts",
     "test:watch": "vitest",
     "check-generated": "tsx scripts/build-acrylic-noise.ts && git diff --exit-code src/materials/acrylic.css",
     "bench": "tsx bench/field-build.bench.ts"
   },
   "devDependencies": {
-    "@types/node": "22.10.5",
+    "@types/node": "22.15.3",
+    "esbuild": "0.28.2",
     "tsup": "8.3.6",
     "tsx": "4.19.2",
     "typescript": "5.7.3",

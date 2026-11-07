@@ -1,150 +1,57 @@
-/*
- * @labpics/ui-materials — base.css (общая механика поверхности)
- *
- * The MATERIAL axis as a scope attribute: `data-material="solid|glass|acrylic"`
- * sits beside `data-theme` and re-skins every `.lab-material` surface below it
- * with ZERO markup change — the owner's hard requirement (design ch6, §Модель).
- *
- * ── Файлы-материалы (ADR-0009) ────────────────────────────────────────────
- *   Каждый материал живёт в СВОЁМ файле; дистрибутив — один material.css,
- *   склеенный по закону порядка src/materials/order.ts:
- *     base.css         — этот файл: переменные, единое paint-правило, рим, tiers
- *     glass.css        — GLASS (рефракция; линзу несёт движок liquid-glass.ts)
- *     acrylic.css      — ACRYLIC (диффузия Fluent; v2-конвейер несёт acrylic.ts)
- *     engine-held.css  — состояния, пока поверхность держит движок
- *     solid.css        — SOLID-оверрайд (канон и escape hatch — всегда бьёт моды)
- *     degradations.css — честные деградации (бьют всё)
- *     veil.css         — lab-veil (прогрессивный блюр, эффект-поверхность)
- *
- * This file lives STRICTLY ON TOP of the `--lab-*` contract. It invents no
- * colour: every tint and base is a `--lab-bg-material-*` emission from
- * @labpics/colors (which already rebinds per `data-theme`, so a tier token
- * auto-adapts light↔dark with no branching here). All package mechanics are
- * PRIVATE custom properties (`--_*`) so nothing new enters the `--lab-*`
- * contract surface.
- *
- * ── Tint pair (Figma two-layer Materials fill → web) ──────────────────────
- *   `--lab-bg-material-<tier>-01`  translucent tint layer; its alpha is the
- *                                   glass density (base ≈ dense, subtle ≈ sheer).
- *   `--lab-bg-material-<tier>-02`  opaque base layer that backs the solid canon.
- *   SOLID canon  = 01 painted over 02, opaque (also the universal fallback).
- *   GLASS/ACRYLIC = 01 alone (translucent) over a live backdrop + backdrop-filter.
- *
- * ── Guarantee ─────────────────────────────────────────────────────────────
- *   Legibility of a label on GLASS is proven by the α-boundary math in this
- *   package's TS domain (see material-guarantee.ts + test/alpha-boundary.test).
- *   With the current PROVISIONAL Figma-anchor alphas, several sheer tiers do
- *   NOT hold their label across the whole backdrop range — see README
- *   "Unguaranteed pairs". Solid always holds (opaque), which is why every
- *   degradation below collapses to it. ACRYLIC v2 clamps the reachable band
- *   (luminosity-зажим — src/acrylic-corridor.ts) and holds MORE pairs.
- *
- * ── Blur radius: ONE rung for every live material (ADR-0009) ──────────────
- *   `--_blur-live: 48px` — the Figma BG-blur Base rung, shared by glass AND
- *   acrylic. Одноуровневость — это закон структуры: живые материалы стоят на
- *   ОДНОЙ ступени лестницы размытия и различаются АНАТОМИЕЙ (линза/зажим/зерно),
- *   не силой фроста; частотный вывод в ADR-0009 показывает, что luminosity-зажим
- *   не требует компенсации радиуса. Literals in `-webkit-backdrop-filter`
- *   because it cannot follow var() on Safari ≤18.2; the unprefixed property
- *   uses the var().
- */
-
+/* Поверхность разрешает цветовые токены и геометрию локально. Контекст материала
+ * передаёт только режим и физические параметры: CSS-наследование пересекает
+ * Shadow DOM и следует slot, поэтому до запуска JS работает та же модель. */
 .lab-material {
-  /* Tier fill — default tier is `base`; a `.lab-material--<tier>` modifier
-   * re-points these. Colour comes only from the contract. */
   --_tint: var(--lab-bg-material-base-01);
   --_base: var(--lab-bg-material-base-02);
-
-  /* Mechanics constants (effect params, not colour). */
   --_blur-live: 48px;
   --_saturate-on: 180%;
 
-  /* Engine knobs (ADR-0003) — read by the refraction engine
-     (engine/liquid-glass.ts) as unitless numbers / filter factors. Inert for
-     the pure-CSS stack: the paint rule below never references them, so
-     non-refracting browsers pay nothing. */
   --_lg-refraction: 1;
   --_lg-depth: 40;
   --_lg-dispersion: 0.4;
   --_lg-brightness: 1.05;
   --_lg-contrast: 1.2;
 
-  /* Mode-driven knobs — default = SOLID (the canon + universal fallback). */
-  --_base-paint: var(--_base); /* opaque base under the tint */
-  --_blur: 0px;
-  --_saturate: 100%;
+  /* Необъявленный контекст даёт Solid. Вложенный явный Solid сбрасывает live,
+   * поэтому параметры внешней поверхности не превращают его в прозрачный. */
+  /* Контраст разрешается на самой поверхности: явный normal потомка может
+   * восстановить материал, даже когда у предка выбран more. */
+  --_material-active: var(--_lab-normal, var(--_material-live, 0)) var(--_lab-more, 0);
+  --_blur: calc(var(--_material-active) * var(--_blur-live));
+  --_saturate: calc(100% + var(--_material-active) * (var(--_saturate-on) - 100%));
 
-  /* ── SPECULAR RIM (Стекло v2, слайс B) ────────────────────────────────────
-   * 1px внутренняя градиентная обводка: свет, пойманный кромкой стекла — ярко
-   * сверху, гаснет вниз. Приватная ручка `--_rim` (unset по умолчанию, как
-   * `--_noise`): моды пере-биндят ЕЁ, единое paint-правило не трогается. Ринг
-   * живёт на `::before` (mask-composite) — уважает `border-radius`, ноль
-   * изменения разметки.
-   *
-   * PROVENANCE цвета: спекуляр АХРОМАТИЧЕН — белый свет отражается кромкой белым
-   * независимо от тинта поверхности (физика зеркального отражения, не бренд-
-   * цвет). Источник — тема-инвариантные статик-фоновые токены контракта
-   * `--lab-bg-static-light` (белый) / `--lab-bg-static-dark` (почти-чёрный),
-   * через идиом `color-mix(in srgb, transparent, <токен> α)` (тот же, что у
-   * shadow-движка; gard no-hardcoded-colour пропускает color-mix над токенами,
-   * но не сырой rgb()). Ноль литеральных цветов в material.css.
-   *
-   * PROVENANCE альф — DECLARED, визуально откалибровано (скриншоты в PR):
-   *   light: белый α .50 (верх) → .05 (низ) — заметный блик на светлом фоне;
-   *   dark:  белый блик α .12 (верх) → едва тёмный низ (bg-static-dark α .04):
-   *          на тёмной поверхности резкий белый штрих был бы жёстким, низ —
-   *          намёк на глубину кромки.
-   * Тема ребиндит `--_rim-active` (светлая — дефолт; тёмный оверрайд ниже),
-   * ноль хардкода темы — система остаётся динамичной. */
-  --_rim-light: linear-gradient(
+  /* Тема наследует только доли. Цвета разрешаются здесь, включая локальную
+   * замену семантических static-токенов на вложенной поверхности. */
+  --_rim: linear-gradient(
     to bottom,
-    color-mix(in srgb, transparent, var(--lab-bg-static-light) 50%),
-    color-mix(in srgb, transparent, var(--lab-bg-static-light) 5%)
+    color-mix(in srgb, transparent, var(--lab-bg-static-light) var(--_rim-top, 50%)),
+    color-mix(
+      in srgb,
+      transparent,
+      color-mix(
+          in srgb,
+          var(--lab-bg-static-light),
+          var(--lab-bg-static-dark) var(--_rim-bottom-dark, 0%)
+        )
+        var(--_rim-bottom, 5%)
+    )
   );
-  --_rim-dark: linear-gradient(
-    to bottom,
-    color-mix(in srgb, transparent, var(--lab-bg-static-light) 12%),
-    color-mix(in srgb, transparent, var(--lab-bg-static-dark) 4%)
-  );
-  --_rim-active: var(--_rim-light);
-
-  /* ACRYLIC grain: `--_noise` здесь НЕ объявлен — `var(--_noise, none)` в
-   * paint-правиле красит ничего для всех мод, кроме acrylic. Сам ассет зерна
-   * (`--_acrylic-noise`, генерируемый data-URI + image-set плотностей) живёт
-   * в acrylic.css — у материала, которому принадлежит. */
 
   position: relative;
   isolation: isolate;
   border-radius: var(--lab-radius-card, 1rem);
-
-  /* ONE paint rule for every mode. Solid: tint over opaque base. Glass/acrylic:
-   * tint over `transparent` (base dropped) so the blurred live backdrop reads.
-   * The topmost layer is the acrylic grain (`none` unless acrylic) — it tiles at
-   * the PNG's intrinsic size (default repeat + size:auto, no magic px), sits
-   * ABOVE the tint and BELOW content. Byte-identical to `gradient, base` for
-   * every non-acrylic mode (a `none` layer paints zero pixels). */
-  background: var(--_noise, none), linear-gradient(var(--_tint), var(--_tint)), var(--_base-paint);
-  backdrop-filter: blur(var(--_blur)) saturate(var(--_saturate));
-  -webkit-backdrop-filter: none; /* solid default; each mode restates literally */
+  background: var(--_lab-normal, var(--_noise, none)) var(--_lab-more, none),
+    linear-gradient(var(--_tint), var(--_tint)),
+    var(--_lab-normal, var(--_base-paint, var(--_base))) var(--_lab-more, var(--_base));
+  backdrop-filter: var(--_lab-normal, blur(var(--_blur)) saturate(var(--_saturate)))
+    var(--_lab-more, none);
+  -webkit-backdrop-filter: var(--_lab-normal, blur(var(--_blur)) saturate(var(--_saturate)))
+    var(--_lab-more, none);
 }
 
-/* ── SPECULAR RIM RING (::before) ──────────────────────────────────────────
- * The 1px light-catching edge. Painted on a pseudo-element (ZERO markup change —
- * the owner's law), so it respects the surface's `border-radius: inherit` where
- * a `border-image` gradient would square the corners and a single `box-shadow`
- * inset cannot carry a vertical gradient. The `mask-composite` pair punches out
- * the interior, leaving only the 1px padding-box ring.
- *
- * OFF by default: `var(--_rim, none)` paints nothing until glass/acrylic bind
- * `--_rim` — so for solid the ring is an empty, pixel-identical layer.
- * `z-index: -1` sits it ABOVE the tint but BELOW the label (the surface owns the
- * light, the text stays on top); `pointer-events: none` keeps the edge inert.
- * `-webkit-mask*` literals mirror the `-webkit-backdrop-filter` discipline for
- * Safari ≤18.2 (the standard `mask`/`mask-composite` drives modern engines).
- * The mask fill is `currentColor` (an ALLOWED keyword — no literal colour in
- * material.css): only its ALPHA is read (mask-mode match-source), and label
- * `color` is opaque in the contract, so the ring is a clean full 1px band; its
- * hue is irrelevant — the ring's colour comes from `--_rim`, not the mask. */
+/* Рим сохраняет прежнюю геометрию: внутренний 1px, свет над заливкой и под
+ * содержимым. Нулевая физическая opacity выключает его у Solid и без контекста. */
 .lab-material::before {
   content: "";
   position: absolute;
@@ -153,6 +60,7 @@
   border-radius: inherit;
   padding: 1px;
   background: var(--_rim, none);
+  opacity: var(--_material-active, 0);
   -webkit-mask: linear-gradient(currentColor 0 0) content-box, linear-gradient(currentColor 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(currentColor 0 0) content-box, linear-gradient(currentColor 0 0);
@@ -160,7 +68,6 @@
   pointer-events: none;
 }
 
-/* ── Tier modifiers — re-point the fill only (mode-agnostic). ─────────────── */
 .lab-material--base {
   --_tint: var(--lab-bg-material-base-01);
   --_base: var(--lab-bg-material-base-02);
@@ -178,14 +85,28 @@
   --_base: var(--lab-bg-material-subtle-02);
 }
 .lab-material--elevated {
-  --_tint: var(--lab-bg-material-elevated-01);
-  --_base: var(--lab-bg-material-elevated-02);
+  /* В Solid цвет полностью задаёт непрозрачная база Grouped/Secondary.
+   * Прозрачный tint исключает повторную растеризацию того же цвета градиентом;
+   * live=1 сохраняет исходный tint стекла и размытия. */
+  --_tint: color-mix(
+    in srgb,
+    transparent,
+    var(--lab-bg-material-elevated-01) calc(var(--_material-active, 0) * 100%)
+  );
+  --_base: var(--lab-bg-grouped-secondary);
 }
 
-/* ── Theme rebind of the specular rim (asymmetry: light bright / dark subtle) ──
- * (0,2,0) — attribute + class, like the mode blocks — so it beats the base
- * `.lab-material` (0,1,0). Only rebinds the private `--_rim-active` handle. */
-[data-theme="dark"] .lab-material,
-[data-theme="dark"].lab-material {
-  --_rim-active: var(--_rim-dark);
+/* Каждый явный theme начинает новый контекст; ближайший светлый останавливает
+ * тёмный даже внутри чужого ShadowRoot. Неизвестная тема использует светлый рим. */
+:host([data-theme]),
+[data-theme] {
+  --_rim-top: 50%;
+  --_rim-bottom: 5%;
+  --_rim-bottom-dark: 0%;
+}
+:host([data-theme="dark"]),
+[data-theme="dark"] {
+  --_rim-top: 12%;
+  --_rim-bottom: 4%;
+  --_rim-bottom-dark: 100%;
 }

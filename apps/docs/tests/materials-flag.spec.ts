@@ -282,21 +282,19 @@ test('placement: no live-blur-on-live-blur nesting on the page (glass/acrylic)',
   }
 });
 
-/** The `::before` rim ring's resolved `background-image` (the specular gradient,
- * or `none` when `--_rim` is unset). Reading the pseudo-element is the only way
- * to observe the ring in a real browser. */
+/** Видимый градиент рима. Нулевая opacity выключает отрисовку, даже если
+ * браузер сохраняет вычисленный background-image псевдоэлемента. */
 function readRimBackground(page: Page, testId: string): Promise<string> {
-  return page
-    .getByTestId(testId)
-    .evaluate((el) => getComputedStyle(el, '::before').backgroundImage);
+  return page.getByTestId(testId).evaluate((el) => {
+    const rim = getComputedStyle(el, '::before');
+    return Number(rim.opacity) > 0 ? rim.backgroundImage : 'none';
+  });
 }
 
 /** A live rim is a gradient painted into the `::before`; `none` means no rim. */
 const hasRim = (bg: string): boolean => bg !== 'none' && /gradient/i.test(bg);
 
-test('specular rim: ON for glass + acrylic, OFF for solid (::before gradient)', async ({
-  page,
-}) => {
+test('specular rim: ON for glass + acrylic, OFF for solid (::before paint)', async ({ page }) => {
   // Solid default paints no rim — the ::before is an empty, pixel-identical layer.
   expect(hasRim(await readRimBackground(page, 'surface-card')), 'no rim on solid').toBe(false);
 

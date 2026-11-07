@@ -125,8 +125,3 @@ declare global {
     'lab-loader': LabLoader;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7).
-if (typeof customElements !== 'undefined' && !customElements.get('lab-loader')) {
-  customElements.define('lab-loader', LabLoader);
-}

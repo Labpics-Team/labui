@@ -1,11 +1,9 @@
-import type { SpringParams } from '@labpics/motion';
+import type { SpringParams } from '@labpics/motion/driver';
 /**
  * Build-time bridge to the physical motion owner.
  *
- * Lab UI selects a deliberately small primitive vocabulary, but never copies
- * its numeric values. @labpics/motion owns durations, easing coordinates,
- * spring parameters and the spring solver. This module translates that public
- * owner contract into the representation needed by the Lab UI token generator.
+ * Сохранённые пресеты импортируются по публичному API LabMotion. Собственные
+ * калибровки LabUI задаются в config; solver всегда остаётся у LabMotion.
  */
 import {
   duration as motionDuration,

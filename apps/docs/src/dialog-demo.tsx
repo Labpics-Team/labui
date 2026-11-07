@@ -1,13 +1,14 @@
 /*
  * Dialog parity demo — the React half.
  *
- * Mounts the native-React <Dialog> with the SAME specimens as the Lit `<lab-dialog>`
+ * Mounts the native-React <Dialog> with the same panel content as the Lit `<lab-dialog>`
  * markup in dialog.html, so the Playwright suite can drive each renderer's machine
  * (open on click, focus management, Escape / outside-click dismiss, modal trap +
  * scroll-lock) and read both panels' computed styles (visual parity, ADR-0001).
  */
 import '@labpics/ui-core/dialog';
 // Per-component subpath (the tree-shaking seam): no edit to the React barrel.
+import { Button } from '@labpics/ui-react/button';
 import { Dialog } from '@labpics/ui-react/dialog';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -18,8 +19,7 @@ wireThemeSwitch();
 const mount = document.querySelector<HTMLElement>('#react-root');
 if (!mount) throw new Error('Missing #react-root mount node in dialog.html');
 
-// The testid rides on a wrapper; the spec targets `.lab-dialog-trigger` inside each
-// wrapper and the portalled `.lab-dialog-content` in <body>.
+// The testid rides on a wrapper; both trigger paths carry the same native ARIA binding.
 createRoot(mount).render(
   <StrictMode>
     <span data-testid="react-dialog">
@@ -27,6 +27,11 @@ createRoot(mount).render(
         heading="Settings"
         description="Choose how this dialog behaves."
         closable
+        trigger={({ props, ref }) => (
+          <Button {...props} ref={ref} type="neutral" kind="tinted">
+            Open
+          </Button>
+        )}
         content={
           <>
             <p>
@@ -40,9 +45,7 @@ createRoot(mount).render(
             </button>
           </>
         }
-      >
-        Open
-      </Dialog>
+      />
     </span>
     <span data-testid="react-dialog-nonmodal">
       <Dialog

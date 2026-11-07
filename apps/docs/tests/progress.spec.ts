@@ -67,23 +67,20 @@ test('accessible NAME (Chromium AX tree): the progressbar is named by its visibl
   page,
   browserName,
 }) => {
-  // WCAG 4.1.2 (Name, Role, Value). @zag-js/progress@1.41.2 names the track via
-  // `aria-label` set to the formatted VALUE ("60%" determinate / "loading..."
-  // indeterminate) and emits NO `aria-labelledby`, so the visible task label
-  // ("Uploading") is NOT the progressbar's accessible name. The component overrides
-  // this: it points `aria-labelledby` at the label part's id and drops the value
-  // `aria-label`. We assert the COMPUTED accessible name from the real AX tree — the
-  // name a screen reader announces — equals the visible label on BOTH renderers.
-  test.skip(browserName !== 'chromium', 'page.accessibility.snapshot is Chromium-only');
+  // Сохраняем проверку настоящего AX tree после удаления page.accessibility.
+  // Имя должен вычислить браузер из видимого label, а не из значения «60%».
+  test.skip(browserName !== 'chromium', 'CDP Accessibility доступен в Chromium');
 
-  const snapshot = await page.accessibility.snapshot({ interestingOnly: false });
-  const names: string[] = [];
-  const walk = (node: { role?: string; name?: string; children?: unknown[] } | null): void => {
-    if (!node) return;
-    if (node.role === 'progressbar') names.push(node.name ?? '');
-    for (const child of node.children ?? []) walk(child as typeof node);
-  };
-  walk(snapshot as never);
+  const session = await page.context().newCDPSession(page);
+  let names: string[];
+  try {
+    const { nodes } = await session.send('Accessibility.getFullAXTree');
+    names = nodes
+      .filter((node) => !node.ignored && node.role?.value === 'progressbar')
+      .map((node) => String(node.name?.value ?? ''));
+  } finally {
+    await session.detach();
+  }
 
   // 8 progressbars (4 Lit + 4 React), each named by its visible label — NOT by a value
   // string. The label set appears once per renderer ⇒ Lit/React resolve the SAME names.
