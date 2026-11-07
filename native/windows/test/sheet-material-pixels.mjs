@@ -1,136 +1,96 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodePng } from '../../../packages/colors/test/fx-render/fx-render.mjs';
 import { png } from './evidence.mjs';
+import {
+  backdropHash,
+  backdropProbeRegions,
+  validateBackdropWitness,
+} from './sheet-backdrop-fixture.mjs';
 
-// Инертное чтение Half PNG: признаки действия материала, без допуска к Figma fidelity.
-// Один и тот же checker backdrop сравнивается внутри каждой Light/Dark пары.
-export function sheetMaterialPixels(blur, solid) {
-  for (const image of [blur, solid]) {
+// Парная причинная проверка; входные RGBA вне R+margin одинаковы.
+// Она доказывает соседскую зависимость, но не точный Gaussian или Figma fidelity.
+export function sheetMaterialPixels(original, neighbor, bindings) {
+  for (const image of [original, neighbor]) {
     assert.equal(image.width, 375);
     assert.equal(image.height, 812);
     assert.equal(image.rgb.length, image.width * image.height * 3);
   }
-  const at = (image, x, y, channel) => image.rgb[(y * image.width + x) * 3 + channel];
-  const columns = [34, 109, 187, 266, 341];
-  function edge(image, x, seam, channel) {
-    const sample = (offset) => {
-      let total = 0;
-      for (let column = x - 2; column <= x + 2; column++)
-        total += at(image, column, seam + offset, channel);
-      return total / 5;
-    };
-    const shoulder = (first, last) => {
-      let sumX = 0;
-      let sumY = 0;
-      let sumXY = 0;
-      let sumXX = 0;
-      const count = last - first + 1;
-      for (let offset = first; offset <= last; offset++) {
-        const value = sample(offset);
-        sumX += offset;
-        sumY += value;
-        sumXY += offset * value;
-        sumXX += offset * offset;
-      }
-      const slope = (count * sumXY - sumX * sumY) / (count * sumXX - sumX * sumX);
-      return { slope, center: (sumY - slope * sumX) / count - slope / 2 };
-    };
-    const left = shoulder(-12, -9);
-    const right = shoulder(9, 12);
-    const amplitude = Math.abs(right.center - left.center);
-    const slope = (left.slope + right.slope) / 2;
-    let peak = 0;
-    for (let offset = -8; offset <= 8; offset++)
-      peak = Math.max(peak, Math.abs(sample(offset) - sample(offset - 1) - slope));
-    // ESF amplitude / LSF peak gives an equivalent width in raster samples.
-    // Local plateau slopes remove a progressive veil; its pointwise contrast cancels.
-    return { amplitude, width: amplitude > 1 && peak > 0 ? amplitude / peak : 0 };
-  }
-  const edges = [];
-  for (const x of columns)
-    for (const seam of [297, 324, 351]) {
-      const sourceEdges = [0, 1, 2].map((channel) => edge(solid, x, seam, channel));
-      const channel = sourceEdges.reduce(
-        (strongest, value, index) =>
-          value.amplitude > sourceEdges[strongest].amplitude ? index : strongest,
-        0,
-      );
-      const sharp = sourceEdges[channel];
-      assert.ok(sharp.width > 0, 'Sheet PNG needs the known checker seams');
-      edges.push({ sharp: sharp.width, blur: edge(blur, x, seam, channel).width });
-    }
-  const median = (values) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
-  function detail(image, first, last) {
-    let total = 0;
-    let samples = 0;
-    for (const x of columns)
-      for (let y = first + 1; y < last; y++)
+  for (const variant of ['A', 'B']) validateBackdropWitness(bindings[variant], variant);
+  assert.deepEqual(bindings.A.fit, bindings.B.fit, 'backdrop pair fit differs');
+  assert.deepEqual(bindings.A.paints, bindings.B.paints, 'backdrop pair paints differ');
+  for (const field of [
+    'bitmapPixels',
+    'bounds',
+    'stretch',
+    'horizontalAlignment',
+    'verticalAlignment',
+  ])
+    assert.deepEqual(
+      bindings.A.image[field],
+      bindings.B.image[field],
+      `backdrop pair image ${field} differs`,
+    );
+  const regions = backdropProbeRegions(bindings.A);
+  function reaction(region) {
+    let changedPixels = 0;
+    let brightenedChannels = 0;
+    const delta = [0, 0, 0];
+    for (let y = region.y; y < region.y + region.height; y++)
+      for (let x = region.x; x < region.x + region.width; x++) {
+        let changed = false;
         for (let channel = 0; channel < 3; channel++) {
-          total += (at(image, x, y, channel) - at(image, x, y - 1, channel)) ** 2;
-          samples++;
+          const offset = (y * original.width + x) * 3 + channel;
+          const difference = neighbor.rgb[offset] - original.rgb[offset];
+          changed ||= difference !== 0;
+          brightenedChannels += difference > 0 ? 1 : 0;
+          delta[channel] += difference;
         }
-    return total / samples;
+        changedPixels += changed ? 1 : 0;
+      }
+    const samples = region.width * region.height;
+    return {
+      changedPixels,
+      brightenedChannels,
+      meanRgbDelta: delta.map((value) => value / samples),
+      meanDarkening: -delta.reduce((sum, value) => sum + value, 0) / (samples * 3),
+    };
   }
-  let ghostChangedPixels = 0;
-  for (let y = 0; y < 380; y++)
-    for (let x = 10; x < 365; x++) {
-      const offset = (y * blur.width + x) * 3;
-      if (
-        blur.rgb[offset] !== solid.rgb[offset] ||
-        blur.rgb[offset + 1] !== solid.rgb[offset + 1] ||
-        blur.rgb[offset + 2] !== solid.rgb[offset + 2]
-      )
-        ghostChangedPixels++;
-    }
-  const sharpTop = detail(solid, 20, 125);
-  const sharpBottom = detail(solid, 275, 380);
-  assert.ok(sharpTop > 0 && sharpBottom > 0, 'Sheet PNG needs a detailed source backdrop');
-  const bands = columns.map((x) => {
-    const mean = [0, 0, 0];
-    let samples = 0;
-    for (const row of [450, 600, 780])
-      for (let y = row - 5; y <= row + 5; y++)
-        for (let column = x - 5; column <= x + 5; column++) {
-          for (let channel = 0; channel < 3; channel++)
-            mean[channel] += at(blur, column, y, channel);
-          samples++;
-        }
-    return mean.map((channel) => channel / samples);
-  });
   return {
-    ghostChangedPixels,
-    ghostTopDetailRatio: detail(blur, 20, 125) / sharpTop,
-    ghostBottomDetailRatio: detail(blur, 275, 380) / sharpBottom,
-    ghostBottomEdgeSpreadPixels: median(edges.map(({ blur }) => blur)),
-    ghostSolidBottomEdgeSpreadPixels: median(edges.map(({ sharp }) => sharp)),
-    ghostBottomEdgeSpreadGainPixels: median(edges.map(({ blur, sharp }) => blur - sharp)),
-    bodyBandRgb: bands,
-    bodyChroma: Math.max(...bands.map((band) => Math.max(...band) - Math.min(...band))),
-    bodySpread: Math.max(
-      ...[0, 1, 2].map((channel) => {
-        const values = bands.map((band) => band[channel]);
-        return Math.max(...values) - Math.min(...values);
-      }),
-    ),
+    regions,
+    ghost: reaction(regions.ghost),
+    ghostFurther: reaction(regions.ghostFurther),
+    body: reaction(regions.body),
+    control: reaction(regions.control),
   };
 }
 
 export function sheetMaterialPixelFailures(report) {
   const failures = [];
-  if (!(report.ghostChangedPixels > 0)) failures.push('Ghost is byte-identical to Solid backdrop');
-  if (!(report.ghostBottomDetailRatio < 1)) failures.push('Ghost keeps the sharp lower backdrop');
-  if (!(report.ghostBottomDetailRatio < report.ghostTopDetailRatio))
-    failures.push('Ghost has no progressive detail loss');
-  // Один дополнительный raster sample проверяет spatial spread, не Figma fidelity.
-  if (!(report.ghostBottomEdgeSpreadGainPixels >= 1))
-    failures.push('Ghost has no spatial checker-edge spread');
-  // Разница больше одного RGB code выявляет цветной backdrop, не квалифицирует fidelity.
-  if (!(report.bodyChroma > 1 && report.bodySpread > 1))
-    failures.push('Body loses the colored source backdrop');
+  for (const [name, reaction] of [
+    ['Ghost', report.ghost],
+    ['Body', report.body],
+  ])
+    if (
+      !(
+        reaction.changedPixels > 0 &&
+        reaction.brightenedChannels === 0 &&
+        reaction.meanDarkening > 0
+      )
+    )
+      failures.push(`${name} has no coherent neighbor response outside changed source footprint`);
+  if (
+    !(
+      report.ghost.meanDarkening > report.ghostFurther.meanDarkening &&
+      report.ghostFurther.brightenedChannels === 0
+    )
+  )
+    failures.push('Ghost response does not decay away from changed source footprint');
+  // Top Ghost находится за support всех Ghost ветвей; Body far control не требуется.
+  if (report.control.changedPixels !== 0)
+    failures.push('Unchanged far backdrop control reacted: noise or unrelated frame change');
   return failures;
 }
 
@@ -147,23 +107,28 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   let failed = false;
   for (const theme of ['Light', 'Dark']) {
     const images = {};
+    const observations = {};
     const hashes = {};
-    for (const material of ['Blur', 'Solid']) {
-      const name = `${theme}-${material}`;
+    for (const suffix of ['Blur', 'Solid', 'Blur-Neighbor']) {
+      const name = `${theme}-${suffix}`;
+      const bytes = await readFile(resolve(directory, `${name}.png`));
+      assert.deepEqual(png(bytes), { width: 375, height: 812 });
       const observation = JSON.parse(await readFile(resolve(directory, `${name}.json`), 'utf8'));
       assert.equal(observation.theme, theme);
-      assert.equal(observation.requestedMaterial, material);
-      assert.equal(observation.effectiveMaterial, material);
+      assert.equal(observation.requestedMaterial, suffix === 'Solid' ? 'Solid' : 'Blur');
+      assert.equal(observation.effectiveMaterial, observation.requestedMaterial);
       assert.equal(observation.rendererReady, true);
       assert.equal(observation.requestedState, 'Half');
       assert.equal(observation.body.y, 390);
       assert.equal(observation.rasterizationScale, 1);
-      const bytes = await readFile(resolve(directory, `${name}.png`));
-      assert.deepEqual(png(bytes), { width: 375, height: 812 });
-      images[material] = decodePng(bytes);
-      hashes[material] = createHash('sha256').update(bytes).digest('hex');
+      images[suffix] = decodePng(bytes);
+      observations[suffix] = observation;
+      hashes[suffix] = backdropHash(bytes);
     }
-    const report = sheetMaterialPixels(images.Blur, images.Solid);
+    const report = sheetMaterialPixels(images.Blur, images['Blur-Neighbor'], {
+      A: observations.Blur.backdropWitness,
+      B: observations['Blur-Neighbor'].backdropWitness,
+    });
     const missing = sheetMaterialPixelFailures(report);
     failed ||= missing.length > 0;
     reports.push({

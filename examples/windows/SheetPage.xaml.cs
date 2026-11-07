@@ -3,6 +3,7 @@ using LabUI.WinUI.Rendering;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System.Globalization;
 using System.Text.Json;
 using Windows.Foundation;
@@ -18,16 +19,20 @@ public sealed partial class SheetPage : Page
     private readonly SheetContentProbe? contentProbe;
     private readonly SheetPolicyProbe? policyProbe;
     private readonly CancellationTokenSource? contentCancellation;
+    private readonly SheetBackdropProbe? backdropProbe;
+    public ImageSource BackdropSource { get; }
     internal Window? HostWindow { get; set; }
     internal object? WindowAfterResize { get; set; }
     internal object? WindowAfterActivation { get; set; }
 
     public SheetPage(bool dark, bool solid, bool withContent)
     {
+        var arguments = Environment.GetCommandLineArgs();
+        backdropProbe = SheetBackdropProbe.Create(arguments, observationPath is not null);
+        BackdropSource = backdropProbe?.Source ?? new BitmapImage(new Uri("ms-appx:///Assets/SheetBackdrop.png"));
         InitializeComponent();
         RequestedTheme = dark ? ElementTheme.Dark : ElementTheme.Light;
         Sheet.Material = solid ? LabSheetMaterial.Solid : LabSheetMaterial.Blur;
-        var arguments = Environment.GetCommandLineArgs();
         if (arguments.FirstOrDefault(value => value.StartsWith("--sheet-state=", StringComparison.Ordinal)) is { } state)
             Sheet.State = state[14..] switch
             {
@@ -228,8 +233,12 @@ public sealed partial class SheetPage : Page
             } : null,
             error
         };
+        var snapshot = JsonSerializer.SerializeToNode(observation)!.AsObject();
+        if (backdropProbe is not null && error is null)
+            snapshot["backdropWitness"] = JsonSerializer.SerializeToNode(
+                backdropProbe.Read(this, Backdrop, FindPart(Sheet, "PART_Layers") as SheetLayers));
         using (var stream = new FileStream(observationPath + ".tmp", FileMode.CreateNew, FileAccess.Write))
-            JsonSerializer.Serialize(stream, observation);
+            JsonSerializer.Serialize(stream, snapshot);
         File.Move(observationPath + ".tmp", observationPath);
         snapshotWritten = true;
     }
