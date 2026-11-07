@@ -8,6 +8,9 @@ if [ "$#" -ne 0 ] && { [ "$#" -ne 2 ] || [ "$1" != --icons-consumer ]; }; then
   echo '::error::Expected no arguments or --icons-consumer <checkout>.' >&2
   exit 2
 fi
+if [ "$#" -ne 0 ]; then
+  node --input-type=module -e 'import { assertActionsRunner } from "./apps/docs/tests/icons-packed.mjs"; assertActionsRunner();'
+fi
 
 # Вывод проверяемого кода не должен исполнять команды GitHub Actions.
 resume_token="$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')"
