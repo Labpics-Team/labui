@@ -513,8 +513,8 @@ function assertActualThreeSource(producer, renderer, projector, codec, page) {
   );
   includesSource(
     renderer,
-    `result.Visual.Brush = Brush("final", graph, progressive, ghostSource, branches,
-    ("backdrop", backdropBrush), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));`,
+    `var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
+    bindings.ToArray()));`,
     'actual-three must receive the same branches as the production graph',
   );
   includesSource(

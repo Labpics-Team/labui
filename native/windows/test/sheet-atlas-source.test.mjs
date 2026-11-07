@@ -14,9 +14,78 @@ const profile = await readFile(
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
 
+function assertSurfaceStages(candidate) {
+  const frame = candidate.slice(
+    candidate.indexOf('private Frame BuildFrame('),
+    candidate.indexOf('private CanvasGeometry BodyShape('),
+  );
+  assert.match(
+    frame,
+    /var seedGraph = Effect\(new OpacityEffect \{ Source = Backdrop\(\), Opacity = 1 \}\);/,
+  );
+  assert.match(
+    frame,
+    /var seed = stages\.CreateVisual\(Brush\("progressive", seedGraph,\s*inlineProgressive, inlineProgressive, branches, \("backdrop", backdropBrush\)\)\);/,
+  );
+  assert.match(
+    frame,
+    /result\.Visual\.Children\.InsertAtBottom\(seed\);\s*var capturedBackdrop = stages\.Capture\(seed\);\s*seed\.Opacity = 0;/,
+  );
+  assert.match(
+    frame,
+    /List<\(string Name, CompositionBrush Source\)> bindings =\s*\[\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\),\s*\];/,
+  );
+  assert.match(
+    frame,
+    /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\);/,
+  );
+  assert.match(
+    frame,
+    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\("progressive", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*progressive\.Sources\.Add\(Source\(name\)\);\s*bindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
+  );
+  assert.match(
+    frame,
+    /var output = stages\.CreateVisual\(Brush\("final", graph, inlineProgressive, ghostSource, branches,\s*bindings\.ToArray\(\)\)\);\s*result\.Visual\.Children\.InsertAtTop\(output\);\s*result\.Own\(stages\);\s*return result;/,
+  );
+  assert.deepEqual(
+    [...frame.matchAll(/stages\.Capture\(([^)]+)\)/g)].map((match) => match[1]),
+    ['seed', 'leaf'],
+  );
+  assert.match(
+    candidate,
+    /var visual = frame\.Own\(compositor\.CreateSpriteVisual\(\)\);\s*visuals\.Add\(visual\);\s*visual\.Size = frame\.Visual\.Size;\s*visual\.Brush = brush;\s*return visual;/,
+  );
+  assert.match(
+    candidate,
+    /var surface = frame\.Own\(compositor\.CreateVisualSurface\(\)\);\s*surfaces\.Add\(surface\);\s*surface\.SourceVisual = visual;\s*surface\.SourceOffset = Vector2\.Zero;\s*surface\.SourceSize = visual\.Size;\s*var brush = frame\.Own\(compositor\.CreateSurfaceBrush\(surface\)\);\s*brush\.Stretch = CompositionStretch\.Fill;\s*brush\.HorizontalAlignmentRatio = 0;\s*brush\.VerticalAlignmentRatio = 0;\s*return brush;/,
+  );
+  const stages = candidate.slice(
+    candidate.indexOf('private sealed class SurfaceStages('),
+    candidate.indexOf('private sealed class Frame : IDisposable'),
+  );
+  assert.match(stages, /if \(visuals\.Count == 0 && surfaces\.Count == 0\) return;/);
+  assert.match(stages, /surfaces\.Clear\(\);\s*visuals\.Clear\(\);/);
+  assert.match(stages, /frame\.Visual\.Children\.RemoveAll\(\)/);
+  assert.match(stages, /surface\.SourceVisual = null;/);
+  assert.match(stages, /visual\.Brush = null;/);
+  assert.match(stages, /Frame\.ThrowCleanup\(errors\);/);
+  assert.ok(
+    stages.indexOf('frame.Visual.Children.RemoveAll()') < stages.indexOf('surface.SourceVisual = null'),
+  );
+  assert.ok(stages.indexOf('surface.SourceVisual = null') < stages.indexOf('visual.Brush = null'));
+  assert.doesNotMatch(stages, /\.Dispose\(|\.Close\(|CanvasDevice/);
+  const failure = frame.slice(frame.lastIndexOf('catch (Exception error)'));
+  assert.match(failure, /List<Exception> errors = \[error\];/);
+  assert.match(failure, /stages\?\.Dispose\(\)/);
+  assert.match(failure, /result\.Dispose\(\)/);
+  assert.ok(failure.indexOf('stages?.Dispose()') < failure.indexOf('result.Dispose()'));
+  assert.match(failure, /throw new AggregateException\("Ошибка создания и освобождения Sheet\.", errors\)/);
+  assert.match(failure, /throw;/);
+}
+
 test('Sheet graph shares the original atlas with a separate fresh Body mask input', () => {
   assert.equal([...build.matchAll(/compositor\.CreateBackdropBrush\(\)/g)].length, 1);
-  assert.equal([...source.matchAll(/compositor\.CreateSpriteVisual\(\)/g)].length, 1);
+  assertSurfaceStages(source);
   assert.match(
     build,
     /IGraphicsEffectSource Source\(string name\)\s*=>\s*new CompositionEffectSourceParameter\(name\)/,
@@ -32,10 +101,6 @@ test('Sheet graph shares the original atlas with a separate fresh Body mask inpu
     build,
     /foreach \(var \(name, source\) in bindings\) brush\.SetSourceParameter\(name, source\);/,
   );
-  assert.match(
-    build,
-    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource, branches,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\);/,
-  );
   assert.equal([...build.matchAll(/Brush\("final", graph,/g)].length, 1);
   assert.doesNotMatch(build, /LayerSource|LayerBinding|layerSources/);
   assert.doesNotMatch(
@@ -43,7 +108,45 @@ test('Sheet graph shares the original atlas with a separate fresh Body mask inpu
     /ghostPair|pairs|progressiveBrush|ghostBrush|bodyBrush|Source\("progressive"\)/,
   );
   assert.doesNotMatch(build, /var backdrop\s*=|Source = noise\b|parameters\.Add\(/);
-  assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|InsertAtTop/);
+  assert.doesNotMatch(build, /CreateVisualSurface|CreateSpriteVisual|LayerVisual/);
+});
+
+test('Sheet capture source guard rejects a root capture, repeated seed and bypassed leaf binding', () => {
+  for (const [original, replacement] of [
+    ['surface.SourceVisual = visual;', 'surface.SourceVisual = frame.Visual;'],
+    ['stages.Capture(leaf)', 'stages.Capture(seed)'],
+    ['progressive.Sources.Add(Source(name));', 'progressive.Sources.Add(Backdrop());'],
+  ]) {
+    assert.ok(source.includes(original));
+    assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
+  }
+});
+
+test('Sheet surface source guard rejects changed coordinates and a SourceOver progressive sum', () => {
+  for (const [original, replacement] of [
+    ['surface.SourceOffset = Vector2.Zero;', 'surface.SourceOffset = Vector2.One;'],
+    ['surface.SourceSize = visual.Size;', 'surface.SourceSize = visual.Size / 2;'],
+    [
+      'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });',
+      'var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver });',
+    ],
+  ]) {
+    assert.ok(source.includes(original));
+    assert.throws(() => assertSurfaceStages(source.replace(original, replacement)));
+  }
+});
+
+test('Sheet surface source guard rejects retained capture links and swallowed unlink errors', () => {
+  for (const [original, replacement, owner] of [
+    ['surface.SourceVisual = null;', '', 'private sealed class SurfaceStages('],
+    ['Frame.ThrowCleanup(errors);', '', 'private sealed class SurfaceStages('],
+    ['stages?.Dispose();', '', 'private Frame BuildFrame('],
+  ]) {
+    const start = source.indexOf(owner);
+    assert.ok(start >= 0 && source.slice(start).includes(original));
+    const candidate = source.slice(0, start) + source.slice(start).replace(original, replacement);
+    assert.throws(() => assertSurfaceStages(candidate));
+  }
 });
 
 test('Sheet factory slots observe actual progressive and Ghost input before its structural mask', () => {
@@ -110,7 +213,7 @@ test('Sheet atlas keeps authored blur levels and paints under the common Geometr
     /var progressive = Effect\(new CompositeEffect \{ Mode = CanvasComposite\.Add \}\)/,
   );
   assert.match(build, /for \(var index = 0; index < branches\.Length; index\+\+\)/);
-  assert.match(build, /progressive\.Sources\.Add\(branches\[index\]\)/);
+  assert.match(build, /inlineProgressive\.Sources\.Add\(branches\[index\]\)/);
   assert.match(
     build,
     /var ghostSource = WithNoise\(Over\(progressive, Paint\(Ghost!\)\), Geometry\.SheetGhostNoiseOpacity\);/,
@@ -147,11 +250,7 @@ test('Sheet atlas preserves frame ownership and cleans failed candidates', () =>
   );
   assert.match(build, /var factory = result\.Own\(SheetSourceTopologyProbe\.CreateFactory\(/);
   assert.match(build, /var brush = result\.Own\(factory\.CreateBrush\(\)\)/);
-  assert.match(
-    build,
-    /result\.Visual\.Brush = Brush\("final", graph, progressive, ghostSource, branches,\s*\("backdrop", backdropBrush\), \("atlas", atlasBrush\), \("bodyMaskAtlas", atlasBrush\)\)/,
-  );
-  assert.match(build, /catch \(Exception error\)\s*\{\s*try \{ result\.Dispose\(\); \}/);
+  assertSurfaceStages(source);
   assert.match(
     source,
     /ElementCompositionPreview\.SetElementChildVisual\(this, candidate\.Visual\)/,

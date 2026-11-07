@@ -17,7 +17,7 @@ using Windows.UI.ViewManagement;
 
 namespace LabUI.WinUI.Rendering;
 
-// Ghost и Body используют одну backdrop-кисть и один итоговый SpriteVisual.
+// Ghost и Body используют один captured backdrop и один итоговый SpriteVisual.
 public sealed class SheetLayers : Grid
 {
     public static readonly DependencyProperty TintProperty = PaintProperty(nameof(Tint));
@@ -267,6 +267,7 @@ public sealed class SheetLayers : Grid
     private Frame BuildFrame(Compositor compositor, SheetMetrics metrics, LabSheetMaterial material, LabSheetMaterialReason reason)
     {
         var result = new Frame(compositor, material, reason);
+        SurfaceStages? stages = null;
         try
         {
             var scale = XamlRoot?.RasterizationScale ?? 1;
@@ -416,11 +417,11 @@ public sealed class SheetLayers : Grid
                     // Удалить временное имя отказа после RCA и проверенного owner fix.
                     try
                     {
+                        primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
+                        { ["name"] = factoryName, ["operation"] = operation };
                         if (factoryName == "final"
                             && operation is ("factory" or "brush" or "binding"))
                         {
-                            primary.Data["LabUI.SheetFactoryFailure"] = new Dictionary<string, object?>
-                            { ["name"] = factoryName, ["operation"] = operation };
                             if (operation == "factory")
                             {
                                 // Исходные progressive и Ghost до внешней маски принадлежат Frame.
@@ -454,9 +455,34 @@ public sealed class SheetLayers : Grid
                 branches[index] = Mask(index == 0 ? Backdrop()
                     : Blur(Backdrop(), SheetBlurProfile.Levels[index] * Geometry.SheetGhostBlurRadius * metrics.Scale,
                         $"ghostBlur{index}"), Layer(ghostMasks[index]));
-            var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
+            // Тот же Add descriptor остаётся для failure-only sampler исходных ветвей.
+            var inlineProgressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
             for (var index = 0; index < branches.Length; index++)
-                progressive.Sources.Add(branches[index]);
+                inlineProgressive.Sources.Add(branches[index]);
+
+            stages = new SurfaceStages(result, compositor);
+            var seedGraph = Effect(new OpacityEffect { Source = Backdrop(), Opacity = 1 });
+            var seed = stages.CreateVisual(Brush("progressive", seedGraph,
+                inlineProgressive, inlineProgressive, branches, ("backdrop", backdropBrush)));
+            result.Visual.Children.InsertAtBottom(seed);
+            var capturedBackdrop = stages.Capture(seed);
+            seed.Opacity = 0;
+
+            var progressive = Effect(new CompositeEffect { Mode = CanvasComposite.Add });
+            List<(string Name, CompositionBrush Source)> bindings =
+            [
+                ("backdrop", capturedBackdrop), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush),
+            ];
+            for (var index = 0; index < branches.Length; index++)
+            {
+                var leaf = stages.CreateVisual(Brush("progressive", (IGraphicsEffect)branches[index],
+                    inlineProgressive, inlineProgressive, branches,
+                    ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
+                var capturedLeaf = stages.Capture(leaf);
+                var name = $"progressive{index}";
+                progressive.Sources.Add(Source(name));
+                bindings.Add((name, capturedLeaf));
+            }
             // Alpha Ghost tint не управляет существованием backdrop/noise.
             var ghostSource = WithNoise(Over(progressive, Paint(Ghost!)), Geometry.SheetGhostNoiseOpacity);
             var ghost = Mask(ghostSource, Layer(ghostMask));
@@ -471,14 +497,20 @@ public sealed class SheetLayers : Grid
             var body = Mask(bodySource, bodyAlphaMask);
             var sheet = Over(Over(ghost, Layer(outer)), body);
             var graph = Over(sheet, Layer(border));
-            result.Visual.Brush = Brush("final", graph, progressive, ghostSource, branches,
-                ("backdrop", backdropBrush), ("atlas", atlasBrush), ("bodyMaskAtlas", atlasBrush));
+            var output = stages.CreateVisual(Brush("final", graph, inlineProgressive, ghostSource, branches,
+                bindings.ToArray()));
+            result.Visual.Children.InsertAtTop(output);
+            result.Own(stages);
             return result;
         }
         catch (Exception error)
         {
+            List<Exception> errors = [error];
+            try { stages?.Dispose(); }
+            catch (Exception cleanup) { errors.Add(cleanup); }
             try { result.Dispose(); }
-            catch (Exception cleanup) { throw new AggregateException("Ошибка создания и освобождения Sheet.", error, cleanup); }
+            catch (Exception cleanup) { errors.Add(cleanup); }
+            if (errors.Count > 1) throw new AggregateException("Ошибка создания и освобождения Sheet.", errors);
             throw;
         }
     }
@@ -542,6 +574,55 @@ public sealed class SheetLayers : Grid
         using var bitmap = CanvasBitmap.CreateFromBytes(device, pixels, width, height,
             Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized, (float)(96 * scale), CanvasAlphaMode.Premultiplied);
         drawing.DrawImage(bitmap);
+    }
+
+    // Один unlink owner разрывает capture/tree ссылки перед Frame-owned COM cleanup.
+    private sealed class SurfaceStages(Frame frame, Compositor compositor) : IDisposable
+    {
+        private readonly List<SpriteVisual> visuals = [];
+        private readonly List<CompositionVisualSurface> surfaces = [];
+
+        internal SpriteVisual CreateVisual(CompositionBrush brush)
+        {
+            var visual = frame.Own(compositor.CreateSpriteVisual());
+            visuals.Add(visual);
+            visual.Size = frame.Visual.Size;
+            visual.Brush = brush;
+            return visual;
+        }
+
+        internal CompositionSurfaceBrush Capture(SpriteVisual visual)
+        {
+            var surface = frame.Own(compositor.CreateVisualSurface());
+            surfaces.Add(surface);
+            surface.SourceVisual = visual;
+            surface.SourceOffset = Vector2.Zero;
+            surface.SourceSize = visual.Size;
+            var brush = frame.Own(compositor.CreateSurfaceBrush(surface));
+            brush.Stretch = CompositionStretch.Fill;
+            brush.HorizontalAlignmentRatio = 0;
+            brush.VerticalAlignmentRatio = 0;
+            return brush;
+        }
+
+        public void Dispose()
+        {
+            if (visuals.Count == 0 && surfaces.Count == 0) return;
+            var captured = surfaces.ToArray();
+            var rendered = visuals.ToArray();
+            surfaces.Clear();
+            visuals.Clear();
+            List<Exception> errors = [];
+            try { frame.Visual.Children.RemoveAll(); }
+            catch (Exception error) { errors.Add(error); }
+            foreach (var surface in captured)
+                try { surface.SourceVisual = null; }
+                catch (Exception error) { errors.Add(error); }
+            foreach (var visual in rendered)
+                try { visual.Brush = null; }
+                catch (Exception error) { errors.Add(error); }
+            Frame.ThrowCleanup(errors);
+        }
     }
 
     // Снимок владеет каждым COM/effect ресурсом, в том числе при частичном построении.
