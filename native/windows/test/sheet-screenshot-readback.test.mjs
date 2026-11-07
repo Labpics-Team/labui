@@ -17,9 +17,11 @@ import { sheetMaterialPixelFailures, sheetMaterialPixels } from './sheet-materia
 import {
   CAPTURE_CASES,
   CASES,
+  decodeSheetDiagnosticEvidence,
   decodeSheetEvidence,
   encodeSheetCaptureEvidence,
   encodeSheetEvidence,
+  publishSheetCaptureEvidence,
   sheetFailureLog,
 } from './sheet.mjs';
 
@@ -583,6 +585,73 @@ test('publication rejects pointwise and absent effects in each theme while struc
   }
 });
 
+test('rejected pixels remain available only as failed diagnostics and publication still rejects', async () => {
+  for (const theme of ['Light', 'Dark']) {
+    const files = materialFiles({ [theme]: { ghost: 'sigmoid' } });
+    let log = '';
+    let writeCompleted = false;
+    await assert.rejects(
+      publishSheetCaptureEvidence(files, SOURCE, async (value) => {
+        await new Promise((resolve) => setImmediate(resolve));
+        log += value;
+        writeCompleted = true;
+      }),
+      { code: 'SHEET_PIXEL_REJECTED' },
+    );
+    assert.equal(writeCompleted, true, 'failure must wait for the diagnostic bytes');
+    assert.deepEqual(decodeSheetDiagnosticEvidence(log, SOURCE), files);
+    assert.throws(() => decodeSheetEvidence(log, SOURCE));
+    assert.ok(!log.includes('LABUI_SHEET_EVIDENCE'));
+    const verdict = JSON.parse(log.split('\n')[0].slice('LABUI_SHEET_FAILURE_JSON '.length));
+    assert.deepEqual(verdict, {
+      source: SOURCE,
+      name: `${theme}-Blur-Neighbor`,
+      phase: 'material-pixels',
+      verdict: 'failed',
+      failures: [
+        'Ghost has no coherent neighbor response outside changed source footprint',
+        'Ghost response does not decay away from changed source footprint',
+      ],
+    });
+  }
+  const positive = materialFiles();
+  let log = '';
+  await publishSheetCaptureEvidence(positive, SOURCE, async (value) => {
+    log += value;
+  });
+  assert.equal(log, encodeSheetCaptureEvidence(positive, SOURCE));
+  assert.deepEqual(decodeSheetEvidence(log, SOURCE), positive);
+  assert.throws(() => decodeSheetDiagnosticEvidence(log, SOURCE));
+});
+
+test('pixel failure cannot publish invalid identity or malformed later PNGs as diagnostics', async () => {
+  const rejected = materialFiles({ Light: { ghost: 'sigmoid' } });
+  const invalid = [
+    mutateJson(rejected, 'identity.json', (identity) => {
+      identity.private = 'PRIVATE_CAPTURE_TEXT';
+    }),
+    ...CAPTURE_CASES.map(({ name }) =>
+      new Map(rejected).set(`${name}.png`, materialPng(rasterSources[0], 5)),
+    ),
+  ];
+  for (const files of invalid) {
+    let log = '';
+    await assert.rejects(
+      publishSheetCaptureEvidence(files, SOURCE, async (value) => {
+        log += value;
+      }),
+    );
+    assert.equal(log, '', 'an earlier pixel rejection must not bypass later admission');
+  }
+  for (const files of invalid.slice(1)) {
+    const log = encodeSheetEvidence(files, SOURCE).replaceAll(
+      'LABUI_SHEET_EVIDENCE',
+      'LABUI_SHEET_DIAGNOSTIC_EVIDENCE',
+    );
+    assert.throws(() => decodeSheetDiagnosticEvidence(log, SOURCE), /неизвестный фильтр 5/);
+  }
+});
+
 test('Fast true false and null cannot bypass causal Blur PNG assertions', () => {
   for (const areEffectsFast of [true, false, null]) {
     const positive = materialFiles({ areEffectsFast });
@@ -883,7 +952,7 @@ test('material capture gathers six cases and thirteen files before the productio
     assert.match(candidate, /const files = new Map\(\s*await Promise\.all\(/);
     assert.match(
       candidate,
-      /await writeStdout\(\s*content\s*\? encode\(files, sourceSha, true\)\s*:\s*encodeSheetCaptureEvidence\(files, sourceSha\),?\s*\);/,
+      /if \(content\) await writeStdout\(encode\(files, sourceSha, true\)\);\s*else await publishSheetCaptureEvidence\(files, sourceSha\);/,
     );
     assert.ok(
       candidate.indexOf('const files = new Map(') < candidate.indexOf('await writeStdout('),
@@ -892,7 +961,10 @@ test('material capture gathers six cases and thirteen files before the productio
   assertPublication(capture);
   assert.throws(() =>
     assertPublication(
-      capture.replace('encodeSheetCaptureEvidence(files, sourceSha)', 'encode(files, sourceSha)'),
+      capture.replace(
+        'publishSheetCaptureEvidence(files, sourceSha)',
+        'writeStdout(encode(files, sourceSha))',
+      ),
     ),
   );
 });
