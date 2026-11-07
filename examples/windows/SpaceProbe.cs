@@ -51,9 +51,9 @@ internal sealed class SpaceProbe : IDisposable
     private sealed record IncomingIdleNativeSnapshot(int SchemaVersion, long CallbackCount, long CapturedTicks,
         long ClockFrequency, IncomingIdleReceipt[] Receipts);
     private sealed record IncomingIdleError(string Type, int Hresult);
-    private sealed record IncomingIdleDiagnostic(string Status, long? BaselineCount,
-        IncomingIdleNativeSnapshot? NativeSnapshot, string? Reason, IncomingIdleError? Error);
-    private IncomingIdleDiagnostic? incomingIdleBaseline;
+    private sealed record IncomingIdleDiagnostic(string Status, long ArmedTicks,
+        bool? CompleteSinceArm, IncomingIdleNativeSnapshot? NativeSnapshot, string? Reason, IncomingIdleError? Error);
+    private long armedTicks;
 
     private static object? IncomingIdleProperty(object value, string name) =>
         (value.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public)
@@ -89,6 +89,7 @@ internal sealed class SpaceProbe : IDisposable
             var timestamp = IncomingIdleValue<long>(row, "TimestampTicks");
             var disposition = IncomingIdleValue<string>(row, "Disposition");
             if (sequence != callbacks - rows.Length + index + 1 || timestamp < 0 || timestamp > captured
+                || index > 0 && timestamp < receipts[index - 1].TimestampTicks
                 || disposition is not ("disposed" or "input" or "mismatch" or "accepted"))
                 throw new InvalidOperationException("Неверный private Idle receipt.");
             receipts[index] = new(sequence, timestamp, IncomingIdleValue<int>(row, "CallbackRequestId"),
@@ -98,30 +99,28 @@ internal sealed class SpaceProbe : IDisposable
         return new(schema, callbacks, captured, frequency, receipts);
     }
 
-    private IncomingIdleDiagnostic CaptureIncomingIdle(bool baseline = false)
+    private IncomingIdleDiagnostic CaptureIncomingIdle()
     {
-        var baselineCount = baseline ? null : incomingIdleBaseline?.BaselineCount;
         var reason = "capture-error";
         try
         {
             var capture = typeof(ScalarMotion).GetMethod("CaptureIncomingIdle", BindingFlags.Instance | BindingFlags.NonPublic,
                 null, Type.EmptyTypes, null);
-            if (capture is null) return new("unavailable", baselineCount, null, "missing-method", null);
+            if (capture is null) return new("unavailable", armedTicks, null, null, "missing-method", null);
             var value = capture.Invoke(channel, null) ?? throw new InvalidOperationException("Нет private Idle snapshot.");
             reason = "invalid-snapshot";
             var native = ReadIncomingIdleSnapshot(value);
-            if (baseline) return new("available", native.CallbackCount, native, null, null);
-            if (incomingIdleBaseline is not { Status: "available", BaselineCount: { } start, NativeSnapshot: { } initial })
-                return new("failed", baselineCount, native, "baseline-unavailable", incomingIdleBaseline?.Error);
-            if (native.CallbackCount < start || native.CapturedTicks < initial.CapturedTicks)
-                throw new InvalidOperationException("Private Idle witness сменил baseline.");
-            return new("available", start, native, null, null);
+            if (armedTicks <= 0 || native.CapturedTicks < armedTicks)
+                throw new InvalidOperationException("Private Idle witness предшествует подготовке ввода.");
+            var complete = native.CallbackCount == native.Receipts.Length ||
+                native.Receipts[0].TimestampTicks < armedTicks;
+            return new("available", armedTicks, complete, native, null, null);
         }
         catch (Exception error)
         {
             var cause = error is TargetInvocationException { InnerException: { } inner } ? inner : error;
             var type = cause.GetType().Name;
-            return new("failed", baselineCount, null, reason, new(type[..Math.Min(type.Length, 128)], cause.HResult));
+            return new("failed", armedTicks, null, null, reason, new(type[..Math.Min(type.Length, 128)], cause.HResult));
         }
     }
 
@@ -176,7 +175,9 @@ internal sealed class SpaceProbe : IDisposable
         if (button.ActualTheme.ToString() != requestedTheme || (generation == 0 ? "Light" : "Dark") != requestedTheme)
             throw new InvalidOperationException("Неверный порядок тем Space.");
         channel = Current();
-        incomingIdleBaseline = CaptureIncomingIdle(true);
+        // До ввода нет reflection, снимков и блокировок witness. Монотонный ring
+        // читается после сценария; последний receipt до armedTicks означает отсутствие нового Idle.
+        armedTicks = Stopwatch.GetTimestamp();
         theme = requestedTheme;
         animationsEnabled = new UISettings().AnimationsEnabled;
         countBefore = count();
