@@ -53,9 +53,9 @@ internal sealed class SpaceBoundaryPage : Page
             witnessVisual.Brush = brush;
             ElementCompositionPreview.SetElementChildVisual(this, witnessVisual);
             // x(t) = v0*t*exp(-omega*t): the boundary cases approach their target from outside.
-            var lower = await Capture("lower", 0, -.0002f);
-            var interior = await Capture("interior", .5f, -.0002f);
-            var upper = await Capture("upper", 1, .0002f);
+            var lower = await Capture("lower", 0, -1f);
+            var interior = await Capture("interior", .5f, -1f);
+            var upper = await Capture("upper", 1, 1f);
             passed = lower && interior && upper;
         }
         catch (Exception error) { failure = error.GetType().Name; }
