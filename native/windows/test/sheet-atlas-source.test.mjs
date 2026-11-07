@@ -38,7 +38,7 @@ function assertSurfaceStages(candidate) {
   );
   assert.match(
     frame,
-    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*progressive\.Sources\.Add\(Source\(name\)\);\s*progressiveBindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
+    /for \(var index = 0; index < branches\.Length; index\+\+\)\s*\{\s*var leaf = stages\.CreateVisual\(Brush\(\$"progressiveLeaf\{index\}", \(IGraphicsEffect\)branches\[index\],\s*inlineProgressive, inlineProgressive, branches,\s*\("backdrop", capturedBackdrop\), \("atlas", atlasBrush\)\)\);\s*var capturedLeaf = stages\.Capture\(leaf\);\s*var name = \$"progressive\{index\}";\s*if \(progressive\.Sources\.Count == 2\)\s*progressive = Effect\(new CompositeEffect\s*\{ Mode = CanvasComposite\.Add, Sources = \{ progressive, Source\(name\) \} \}\);\s*else\s*progressive\.Sources\.Add\(Source\(name\)\);\s*progressiveBindings\.Add\(\(name, capturedLeaf\)\);\s*\}/,
   );
   assert.match(
     frame,

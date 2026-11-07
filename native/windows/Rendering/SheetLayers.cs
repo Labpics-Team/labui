@@ -477,7 +477,11 @@ public sealed class SheetLayers : Grid
                     ("backdrop", capturedBackdrop), ("atlas", atlasBrush)));
                 var capturedLeaf = stages.Capture(leaf);
                 var name = $"progressive{index}";
-                progressive.Sources.Add(Source(name));
+                if (progressive.Sources.Count == 2)
+                    progressive = Effect(new CompositeEffect
+                    { Mode = CanvasComposite.Add, Sources = { progressive, Source(name) } });
+                else
+                    progressive.Sources.Add(Source(name));
                 progressiveBindings.Add((name, capturedLeaf));
             }
             // Полная Add-сумма остаётся эффектом; surface отделяет её от paints и внешнего SourceOver.
