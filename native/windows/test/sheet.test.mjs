@@ -161,10 +161,97 @@ test('material capability facts preserve false and null while effective Blur rem
     files.set(`${entry.name}.json`, json(value));
   }
   assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(files, SOURCE), SOURCE), files);
-  assert.equal(
-    validateObservation({ ...observation(), materialCapabilities: null }, expected)
-      .materialCapabilities,
-    null,
+  assert.throws(
+    () => validateObservation({ ...observation(), materialCapabilities: null }, expected),
+    (error) => error.sheetPhase === 'capability',
+  );
+});
+
+test('material capability admission binds ready Frame facts across validate and both real codecs', () => {
+  // Инертные JSON/PNG DTO: нет env fixtures, Native API или запуска capture.
+  const accepted = {
+    readyWithoutFacts: 0,
+    blurWithTransparencyDisabled: 0,
+    blurWithUnsupportedFalse: 0,
+    blurWithUnsupportedNull: 0,
+  };
+  let positiveCases = 0;
+  const filesFor = (entry, value) => {
+    const files = fixture();
+    files.set(`${entry.name}.json`, json(value));
+    return files;
+  };
+  const reject = (entry, value, condition) => {
+    const files = filesFor(entry, value);
+    for (const boundary of [
+      () => validateObservation(value, { ...entry, ...processIdentity }),
+      () => encodeSheetEvidence(files, SOURCE),
+      () => decodeSheetEvidence(rawPackets(files), SOURCE),
+    ]) {
+      try {
+        boundary();
+        accepted[condition]++;
+      } catch (error) {
+        assert.equal(error.sheetPhase, 'capability');
+      }
+    }
+  };
+  const admit = (entry, value) => {
+    assert.equal(validateObservation(value, { ...entry, ...processIdentity }), value);
+    const files = filesFor(entry, value);
+    assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(files, SOURCE), SOURCE), files);
+    positiveCases++;
+  };
+  for (const entry of CASES) {
+    reject(
+      entry,
+      { ...observation(entry.theme, entry.material), materialCapabilities: null },
+      'readyWithoutFacts',
+    );
+    if (entry.material === 'Solid') {
+      admit(entry, {
+        ...observation(entry.theme, entry.material),
+        materialCapabilities: {
+          advancedEffectsEnabled: false,
+          areEffectsSupported: null,
+          areEffectsFast: null,
+        },
+      });
+      continue;
+    }
+    for (const advancedEffectsEnabled of [true, false, null])
+      for (const areEffectsSupported of [true, false, null])
+        for (const areEffectsFast of [true, false, null]) {
+          const value = {
+            ...observation(entry.theme, entry.material),
+            materialCapabilities: { advancedEffectsEnabled, areEffectsSupported, areEffectsFast },
+          };
+          if (advancedEffectsEnabled === false)
+            reject(entry, value, 'blurWithTransparencyDisabled');
+          else if (areEffectsSupported !== true)
+            reject(
+              entry,
+              value,
+              areEffectsSupported === false
+                ? 'blurWithUnsupportedFalse'
+                : 'blurWithUnsupportedNull',
+            );
+          else admit(entry, value);
+        }
+  }
+  assert.equal(positiveCases, 14, 'supported Fast=false/null and explicit Solid remain admitted');
+  const legacy = fixture();
+  assert.equal(legacy.size, 9);
+  assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(legacy, SOURCE), SOURCE), legacy);
+  assert.deepEqual(
+    accepted,
+    {
+      readyWithoutFacts: 0,
+      blurWithTransparencyDisabled: 0,
+      blurWithUnsupportedFalse: 0,
+      blurWithUnsupportedNull: 0,
+    },
+    'inconsistent ready facts were admitted by real validate/encode/decode',
   );
 });
 
@@ -173,13 +260,17 @@ test('material capability publication rejects open fields and never evaluates ge
   const expected = { ...CASES[0], ...processIdentity };
   const marker = 'MATERIAL_PRIVATE_SENTINEL';
   let getters = 0;
-  const accessor = Object.defineProperty({ ...facts }, 'areEffectsFast', {
-    enumerable: true,
-    get() {
-      getters++;
-      return marker;
-    },
-  });
+  const accessors = ['advancedEffectsEnabled', 'areEffectsSupported', 'areEffectsFast'].map(
+    (field) =>
+      Object.defineProperty({ ...facts }, field, {
+        enumerable: true,
+        get() {
+          getters++;
+          return marker;
+        },
+      }),
+  );
+  const accessor = accessors[2];
   const symbolic = { ...facts, [Symbol('privateDetail')]: marker };
   for (const malformed of [
     marker,
@@ -191,11 +282,11 @@ test('material capability publication rejects open fields and never evaluates ge
     { ...facts, advancedEffectsEnabled: undefined },
     symbolic,
     Object.create(facts),
-    accessor,
+    ...accessors,
   ]) {
     const value = { ...observation(), materialCapabilities: malformed };
     assert.throws(() => validateObservation(value, expected));
-    if (malformed !== accessor && malformed !== symbolic) {
+    if (!accessors.includes(malformed) && malformed !== symbolic) {
       const files = fixture();
       files.set('Light-Blur.json', json(value));
       assert.throws(() => encodeSheetEvidence(files, SOURCE));

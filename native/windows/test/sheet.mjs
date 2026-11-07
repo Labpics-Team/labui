@@ -357,7 +357,20 @@ export function validateObservation(value, expected) {
     if (Object.hasOwn(value, 'materialCapabilities')) {
       const descriptor = Object.getOwnPropertyDescriptor(value, 'materialCapabilities');
       assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet: materialCapabilities JSON');
-      validateMaterialCapabilities(descriptor.value);
+      const facts = validateMaterialCapabilities(descriptor.value);
+      assert.notEqual(facts, null, 'sheet: готовый Frame требует capability facts');
+      if (value.effectiveMaterial === 'Blur') {
+        assert.equal(
+          Object.getOwnPropertyDescriptor(facts, 'areEffectsSupported').value,
+          true,
+          'sheet: Blur требует поддержанные эффекты',
+        );
+        assert.notEqual(
+          Object.getOwnPropertyDescriptor(facts, 'advancedEffectsEnabled').value,
+          false,
+          'sheet: Blur требует включённую прозрачность',
+        );
+      }
     }
     phase = 'readiness';
     for (const field of ['layoutReady', 'imageLoaded'])
