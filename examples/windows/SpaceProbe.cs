@@ -46,12 +46,12 @@ internal sealed class SpaceProbe : IDisposable
     private Sample? firstDiscarded;
 
     // Временный private witness. Удалить вместе с Motion diagnostic pin после локализации.
-    private sealed record IncomingIdleReceipt(long Sequence, long TimestampTicks, int CallbackRequestId,
+    internal sealed record IncomingIdleReceipt(long Sequence, long TimestampTicks, int CallbackRequestId,
         int? CurrentRequestId, long? Operation, bool Disposed, bool Interacting, string Disposition);
-    private sealed record IncomingIdleNativeSnapshot(int SchemaVersion, long CallbackCount, long CapturedTicks,
+    internal sealed record IncomingIdleNativeSnapshot(int SchemaVersion, long CallbackCount, long CapturedTicks,
         long ClockFrequency, IncomingIdleReceipt[] Receipts);
-    private sealed record IncomingIdleError(string Type, int Hresult);
-    private sealed record IncomingIdleDiagnostic(string Status, long ArmedTicks,
+    internal sealed record IncomingIdleError(string Type, int Hresult);
+    internal sealed record IncomingIdleDiagnostic(string Status, long ArmedTicks,
         bool? CompleteSinceArm, IncomingIdleNativeSnapshot? NativeSnapshot, string? Reason, IncomingIdleError? Error);
     private long armedTicks;
 
@@ -99,7 +99,7 @@ internal sealed class SpaceProbe : IDisposable
         return new(schema, callbacks, captured, frequency, receipts);
     }
 
-    private IncomingIdleDiagnostic CaptureIncomingIdle()
+    internal static IncomingIdleDiagnostic CaptureIncomingIdle(ScalarMotion channel, long armedTicks)
     {
         var reason = "capture-error";
         try
@@ -352,7 +352,7 @@ internal sealed class SpaceProbe : IDisposable
             animationsEnabled, countBefore, countAfter = count(), overflow, failure,
             clock = "app-stopwatch-ms", clockOriginTicks = origin.ToString(CultureInfo.InvariantCulture),
             clockFrequency = Stopwatch.Frequency, elapsedMs = Elapsed, positionKind = "asynchronous-readback", events = events.ToArray(), observations,
-            firstDiscarded = discarded, incomingIdle = CaptureIncomingIdle() };
+            firstDiscarded = discarded, incomingIdle = CaptureIncomingIdle(channel!, armedTicks) };
     }
 
     private void Detach()

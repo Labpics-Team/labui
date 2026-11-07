@@ -46,28 +46,14 @@ jobs:
             --output "$env:RUNNER_TEMP/labui-space-diagnosis/app" --verbosity minimal
           if ($LASTEXITCODE -ne 0) { throw 'Native diagnostic build failed.' }
       # Temporary failure capture. This does not replace or qualify the Native workflow.
-      - name: Capture three unchanged Button histories
+      - name: Capture native spring boundaries and interior control
         shell: pwsh
         run: |
           $source = git rev-parse HEAD
           if ($LASTEXITCODE -ne 0) { throw 'Source identity unavailable.' }
-          $failures = 0
-          foreach ($attempt in 1..3) {
-            $evidence = "$env:RUNNER_TEMP/labui-space-diagnosis/attempt-$attempt"
-            Write-Output "LABUI_SPACE_ATTEMPT_BEGIN $attempt source=$source"
-            try {
-              pwsh -NoProfile -File ./native/windows/test/smoke.ps1 `
-                -ApplicationDirectory "$env:RUNNER_TEMP/labui-space-diagnosis/app" `
-                -OutputDirectory $evidence `
-                -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs"
-              if ($LASTEXITCODE -ne 0) { throw 'Native Button history failed.' }
-              node native/windows/test/evidence.mjs export $evidence $source interaction
-              if ($LASTEXITCODE -ne 0) { throw 'Native diagnostic evidence export failed.' }
-              Write-Output "LABUI_SPACE_ATTEMPT_END $attempt passed"
-            } catch {
-              $failures++
-              Write-Output "LABUI_SPACE_ATTEMPT_END $attempt failed"
-              Write-Output $_
-            }
-          }
-          if ($failures -ne 0) { throw "$failures native Button histories failed; diagnostics are retained above." }
+          pwsh -NoProfile -File ./native/windows/test/space-boundary-diagnostic.ps1 `
+            -ApplicationDirectory "$env:RUNNER_TEMP/labui-space-diagnosis/app" `
+            -OutputPath "$env:RUNNER_TEMP/labui-space-diagnosis/boundaries.json" `
+            -AnimationSettingsPath "$env:GITHUB_WORKSPACE/.native-deps/motion/test/windows/animation-settings.cs" `
+            -Source $source
+          if ($LASTEXITCODE -ne 0) { throw 'Native boundary diagnosis failed; evidence is retained above.' }
