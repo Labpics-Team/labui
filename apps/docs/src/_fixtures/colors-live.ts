@@ -16,14 +16,14 @@ export interface ColorsStateDelivery {
   cleanupCause: string | null;
 }
 
-export interface ColorsLiveReport<Controls> {
-  controls: Controls;
-  histories: ColorsStateDelivery[][];
+export interface ColorsLiveReport<Control> {
+  controls: Control[];
+  histories: { control: Control; history: ColorsStateDelivery[] }[];
 }
 
-async function runScenario<Controls>(
-  scenario: (attach: typeof attachLabuiColors) => Promise<Controls>,
-): Promise<ColorsLiveReport<Controls>> {
+async function runScenario<Control>(
+  scenario: (attach: typeof attachLabuiColors) => Promise<Control[]>,
+): Promise<ColorsLiveReport<Control>> {
   const histories: ColorsStateDelivery[][] = [];
   const attach: typeof attachLabuiColors = (options) => {
     const history: ColorsStateDelivery[] = [];
@@ -46,7 +46,16 @@ async function runScenario<Controls>(
     });
   };
   const controls = await scenario(attach);
-  return { controls, histories };
+  if (controls.length !== histories.length)
+    throw new Error('Colors controls and attachment histories must correspond');
+  return {
+    controls,
+    histories: controls.map((control, index) => {
+      const history = histories[index];
+      if (!history) throw new Error(`Colors control ${index} has no attachment history`);
+      return { control, history };
+    }),
+  };
 }
 
 const hooks = {
