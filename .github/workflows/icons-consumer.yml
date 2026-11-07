@@ -6,7 +6,6 @@ on:
     paths: &consumer-paths
       - '.github/workflows/icons-consumer.yml'
       - '.github/scripts/browser-check.sh'
-      - 'scripts/ci/*icons*'
       - 'apps/docs/tests/icons-*'
       - 'apps/docs/tests/prepare-icons-inputs*.mjs'
       - 'packages/core/**'
@@ -29,36 +28,24 @@ concurrency:
 jobs:
   packed:
     name: Авторский символ в установленном Lab UI
-    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-24.04' || fromJSON('["self-hosted", "Linux", "X64"]') }}
-    # Тот же допуск collaborator-кода, что и у основного CI Lab UI.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c
+      options: --init
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 45
     env:
       CI: 'true'
       UI_SOURCE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - name: Проверить среду исполнения
-        shell: bash
-        run: |
-          test "$GITHUB_ACTIONS" = true
-          case "$RUNNER_ENVIRONMENT" in
-            github-hosted|self-hosted) ;;
-            *) exit 1 ;;
-          esac
-
       - name: Получить точный head Lab UI
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           ref: ${{ env.UI_SOURCE_COMMIT }}
           path: ui
           persist-credentials: false
-
-      - name: Установить Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '24'
 
       - name: Прочитать закреплённый Icons SHA
         id: source
@@ -68,7 +55,6 @@ jobs:
           sha="$(node ui/apps/docs/tests/prepare-icons-inputs.mjs --checkout-ref)"
           printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
 
-      # Публичный producer не требует credential приватного соседнего repo.
       - name: Получить точный источник Icons
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -79,7 +65,7 @@ jobs:
 
       - name: Проверить независимый oracle и владение browser lifecycle
         shell: bash
-        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-public-terminal.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/scripts/ci/icons-browser-contract.test.mjs
+        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-public-terminal.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/apps/docs/tests/icons-git-diagnostics.test.mjs
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser

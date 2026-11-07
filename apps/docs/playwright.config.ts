@@ -62,12 +62,6 @@ const SMOKE_SPECS = [
 
 const smoke = process.env.E2E_SMOKE === '1';
 
-/**
- * Порт preview-сервера. 8 self-hosted раннеров делят один хост (одно сетевое
- * пространство WSL-дистро), поэтому фиксированный порт коллидирует между
- * конкурентными job'ами и с осиротевшим сервером убитого прогона. CI задаёт
- * PW_PORT детерминированно per-runner (см. ci.yml); локально — дефолт 4321.
- */
 const PORT = Number(process.env.PW_PORT ?? 4321);
 
 export default defineConfig({
