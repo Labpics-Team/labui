@@ -16,6 +16,54 @@ export function sheetMaterialPixels(blur, solid) {
   }
   const at = (image, x, y, channel) => image.rgb[(y * image.width + x) * 3 + channel];
   const columns = [34, 109, 187, 266, 341];
+  function edge(image, x, seam, channel) {
+    const sample = (offset) => {
+      let total = 0;
+      for (let column = x - 2; column <= x + 2; column++)
+        total += at(image, column, seam + offset, channel);
+      return total / 5;
+    };
+    const shoulder = (first, last) => {
+      let sumX = 0;
+      let sumY = 0;
+      let sumXY = 0;
+      let sumXX = 0;
+      const count = last - first + 1;
+      for (let offset = first; offset <= last; offset++) {
+        const value = sample(offset);
+        sumX += offset;
+        sumY += value;
+        sumXY += offset * value;
+        sumXX += offset * offset;
+      }
+      const slope = (count * sumXY - sumX * sumY) / (count * sumXX - sumX * sumX);
+      return { slope, center: (sumY - slope * sumX) / count - slope / 2 };
+    };
+    const left = shoulder(-12, -9);
+    const right = shoulder(9, 12);
+    const amplitude = Math.abs(right.center - left.center);
+    const slope = (left.slope + right.slope) / 2;
+    let peak = 0;
+    for (let offset = -8; offset <= 8; offset++)
+      peak = Math.max(peak, Math.abs(sample(offset) - sample(offset - 1) - slope));
+    // ESF amplitude / LSF peak gives an equivalent width in raster samples.
+    // Local plateau slopes remove a progressive veil; its pointwise contrast cancels.
+    return { amplitude, width: amplitude > 1 && peak > 0 ? amplitude / peak : 0 };
+  }
+  const edges = [];
+  for (const x of columns)
+    for (const seam of [297, 324, 351]) {
+      const sourceEdges = [0, 1, 2].map((channel) => edge(solid, x, seam, channel));
+      const channel = sourceEdges.reduce(
+        (strongest, value, index) =>
+          value.amplitude > sourceEdges[strongest].amplitude ? index : strongest,
+        0,
+      );
+      const sharp = sourceEdges[channel];
+      assert.ok(sharp.width > 0, 'Sheet PNG needs the known checker seams');
+      edges.push({ sharp: sharp.width, blur: edge(blur, x, seam, channel).width });
+    }
+  const median = (values) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)];
   function detail(image, first, last) {
     let total = 0;
     let samples = 0;
@@ -57,6 +105,9 @@ export function sheetMaterialPixels(blur, solid) {
     ghostChangedPixels,
     ghostTopDetailRatio: detail(blur, 20, 125) / sharpTop,
     ghostBottomDetailRatio: detail(blur, 275, 380) / sharpBottom,
+    ghostBottomEdgeSpreadPixels: median(edges.map(({ blur }) => blur)),
+    ghostSolidBottomEdgeSpreadPixels: median(edges.map(({ sharp }) => sharp)),
+    ghostBottomEdgeSpreadGainPixels: median(edges.map(({ blur, sharp }) => blur - sharp)),
     bodyBandRgb: bands,
     bodyChroma: Math.max(...bands.map((band) => Math.max(...band) - Math.min(...band))),
     bodySpread: Math.max(
@@ -74,6 +125,9 @@ export function sheetMaterialPixelFailures(report) {
   if (!(report.ghostBottomDetailRatio < 1)) failures.push('Ghost keeps the sharp lower backdrop');
   if (!(report.ghostBottomDetailRatio < report.ghostTopDetailRatio))
     failures.push('Ghost has no progressive detail loss');
+  // Один дополнительный raster sample проверяет spatial spread, не Figma fidelity.
+  if (!(report.ghostBottomEdgeSpreadGainPixels >= 1))
+    failures.push('Ghost has no spatial checker-edge spread');
   // Разница больше одного RGB code выявляет цветной backdrop, не квалифицирует fidelity.
   if (!(report.bodyChroma > 1 && report.bodySpread > 1))
     failures.push('Body loses the colored source backdrop');

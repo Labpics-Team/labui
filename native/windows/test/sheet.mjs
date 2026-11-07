@@ -5,6 +5,7 @@ import { lstat, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { decodePng } from '../../../packages/colors/test/fx-render/fx-render.mjs';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { png } from './evidence.mjs';
 import {
@@ -17,6 +18,7 @@ import {
   materialCapabilitiesReadback,
   validateMaterialCapabilities,
 } from './sheet-material-capabilities.mjs';
+import { sheetMaterialPixelFailures, sheetMaterialPixels } from './sheet-material-pixels.mjs';
 import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
 import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-geometry.mjs';
 
@@ -619,8 +621,26 @@ export function encodeSheetContentEvidence(files, sourceSha) {
   return encode(files, sourceSha, true);
 }
 
+export function encodeSheetCaptureEvidence(files, sourceSha) {
+  validate(files, sourceSha);
+  for (const { name, theme, material } of CASES) {
+    if (material !== 'Blur') continue;
+    const report = sheetMaterialPixels(
+      decodePng(files.get(`${name}.png`)),
+      decodePng(files.get(`${theme}-Solid.png`)),
+    );
+    const failures = sheetMaterialPixelFailures(report);
+    assert.equal(failures.length, 0, `sheet: ${theme} PNG: ${failures.join('; ')}`);
+  }
+  return packets(files, sourceSha);
+}
+
 function encode(files, sourceSha, content = false) {
   validate(files, sourceSha, content);
+  return packets(files, sourceSha, content);
+}
+
+function packets(files, sourceSha, content = false) {
   return [...files]
     .map(([file, bytes]) =>
       evidenceLog(bytes, content ? CONTENT_PREFIX : PREFIX, { sourceSha, file }, 'sha256'),
@@ -1075,7 +1095,9 @@ async function capture(appDirectory, output, receiptPath, sourceSha, content = f
       ]),
     ),
   );
-  await writeStdout(encode(files, sourceSha, content));
+  await writeStdout(
+    content ? encode(files, sourceSha, true) : encodeSheetCaptureEvidence(files, sourceSha),
+  );
 }
 
 async function main([operation, ...args]) {
