@@ -1,4 +1,4 @@
-<!-- СГЕНЕРИРОВАНО. Не править вручную. normal; Colors source 1bf6e9b94684f2bd51685222cd313c5cf5dd95a2; WASM 17d338d4bdf783b861191d121d6171481fbc9e48b397fd19dcbade77ed2d147e; input 7841011caa311f7435e53790ba6bf02f8e566bb9b4c2217b91a1c1f780175ecc; geometry 2b26f1e3331eb6ca3afc1ee60d6ffdf4d2bd8c263d6fe1c68d58672771a05de1 -->
+<!-- СГЕНЕРИРОВАНО. Не править вручную. normal; Colors source e91c2f44386c87e927b4745cfc08a42b2be5f437; WASM 0cb29f4c2ffd4e9ae42216d05edcda63284521069425d3912fff920f3471a750; input 7841011caa311f7435e53790ba6bf02f8e566bb9b4c2217b91a1c1f780175ecc; geometry d2529067e528362397a511ec4726d837b79b49bfa94dd2205adcac98f39a5187 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <ResourceDictionary.ThemeDictionaries>

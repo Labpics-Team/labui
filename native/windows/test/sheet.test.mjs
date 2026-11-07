@@ -73,6 +73,7 @@ function fixture() {
   const identity = {
     source: SOURCE,
     cases: {},
+    cliVersion: '0.7.1',
     visualReview: 'pending',
     motion: 'not-qualified',
     performance: 'not-qualified',

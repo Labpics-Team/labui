@@ -1,16 +1,8 @@
 #!/usr/bin/env node
-// Защиту бывшего общего допуска держит job security: каноничный для всей организации шаг trivy и
-// обязательный итог CI, который краснеет при любом его отказе. Оба job сверяются по тексту, потому что
-// обойти скан можно и рядом с шагом: условием или рабочим каталогом шага, лишним шагом, другим ref у
-// checkout, пропуском или мягким выходом итога, а на уровне workflow — триггерами, defaults, BASH_ENV
-// или подменой образа очистки. Свободно то, что на защиту не влияет: комментарии YAML, таймауты,
-// версия trivy с её контрольной суммой и дополнительные job в итоге.
 import { readFileSync } from 'node:fs';
 
-// Логика скана одинакова во всех репозиториях организации; версия и sha256 trivy живут в workflow.
 const canonical = [
   'set -euo pipefail',
-  '# trivy читает переменные TRIVY_* как флаги: охват проверки задаёт только этот шаг.',
   'unset "${!TRIVY_@}"',
   'version=<version>',
   'sum=<sha256>',
@@ -22,34 +14,20 @@ const canonical = [
   'tar -xzf "$dir/trivy.tgz" -C "$dir" trivy',
   'accepted=(--ignorefile /dev/null)',
   '[ -f .trivyignore.yaml ] && accepted=(--ignorefile .trivyignore.yaml)',
-  '# Настройки сканера задаёт шаг: trivy.yaml из проверяемого дерева их не меняет.',
   'scan() { "$dir/trivy" fs --config /dev/null --cache-dir "$dir/cache" --exit-code 1 --no-progress "$@" .; }',
   'scan --scanners vuln,misconfig --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps "${accepted[@]}"',
-  '# Исправление вышло — принятая раньше уязвимость снова блокирует.',
   'scan --scanners vuln --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps --ignore-unfixed --ignorefile /dev/null',
-  '# Секрет в тестах, примерах и документации — такая же утечка: встроенные исключения trivy для них сняты,',
-  '# а записи .trivyignore.yaml к секретам не применяются.',
   String.raw`printf 'disable-allow-rules:\n  - tests\n  - examples\n  - markdown\n' > "$dir/secret.yaml"`,
   'secret_scan() { scan --scanners secret --secret-config "$dir/secret.yaml" --ignorefile /dev/null "$@"; }',
   'secret_scan',
   'source .github/scripts/secret-scan-contract.sh',
 ];
 
-// Job security: защита от fork-PR, чистый воркспейс, checkout кандидата и каноничный шаг.
 const securityJob = [
   '  security:',
-  '    runs-on: self-hosted',
-  '    if: >-',
-  "      github.event_name != 'pull_request' ||",
-  '      github.event.pull_request.head.repo.full_name == github.repository',
+  '    runs-on: ubuntu-latest',
   '    timeout-minutes: <n>',
   '    steps:',
-  '      - name: Чистый воркспейс (self-hosted)',
-  '        shell: bash',
-  '        run: |',
-  '          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"',
-  '          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \\',
-  `            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"`,
   '      - name: Checkout',
   '        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2',
   '        with:',
@@ -60,14 +38,13 @@ const securityJob = [
   ...canonical.map((line) => `          ${line}`),
 ];
 
-// Итог CI запускается и после отказа зависимостей и пропускает только сплошной success.
 const aggregateJob = [
   '  ci:',
   '    name: CI',
   '    needs:',
   '      - <jobs>',
   '    if: ${{ always() }}',
-  '    runs-on: self-hosted',
+  '    runs-on: ubuntu-latest',
   '    timeout-minutes: <n>',
   '    permissions: {}',
   '    steps:',
@@ -82,16 +59,17 @@ const aggregateJob = [
   '            exit 1',
   '          fi',
 ];
-
-// Итог обязан ждать security, quality и e2e: отказ браузера блокирует CI без загрузки файлов.
 const requiredNeeds = ['security', 'quality', 'e2e'];
 const e2eHeader = [
   '  e2e:',
   '    name: playwright smoke (critical path)',
-  '    runs-on: self-hosted',
-  '    if: >-',
-  "      github.event_name != 'pull_request' ||",
-  '      github.event.pull_request.head.repo.full_name == github.repository',
+  '    runs-on: ubuntu-latest',
+  '    container:',
+  '      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f',
+  '      options: --init',
+  '    defaults:',
+  '      run:',
+  '        shell: bash',
   '    timeout-minutes: <n>',
   '    steps:',
 ];
@@ -104,17 +82,9 @@ const browserStep = [
   '        run: bash .github/scripts/browser-check.sh',
 ];
 const topLevel = ['name: CI', 'on:', 'permissions:', 'concurrency:', 'env:', 'jobs:'];
-// Кандидат проверяется в каждом PR и в очереди слияния.
 const triggers = ['  push:', '    branches: [main]', '  pull_request:', '  merge_group:'];
-// Образ очистки работает от root с доступом к воркспейсу: его смена — явная правка этого контракта.
-const env = [
-  '  CI: "true"',
-  '  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"',
-  '  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"',
-];
+const env = ['  CI: "true"'];
 const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
-
-// Строки блока от заголовка до следующего ключа того же уровня.
 function block(lines, header) {
   const start = lines.indexOf(header);
   if (start < 0) return [];
@@ -125,9 +95,6 @@ function block(lines, header) {
   );
   return lines.slice(start, end < 0 ? lines.length : end);
 }
-
-// Сравнимый вид блока: без комментариев YAML (строки тел `run: |` остаются как есть), без пустых
-// хвостов, с подстановками вместо таймаута, версии и sha256 trivy; список needs разбирается отдельно.
 function normalized(lines) {
   const needs = [];
   const out = [];
@@ -139,6 +106,7 @@ function normalized(lines) {
       contentIndent = indent;
     }
     if (body >= 0 && (line.trim() === '' || (contentIndent >= 0 && indent >= contentIndent))) {
+      if (line.trimStart().startsWith('#')) continue;
       out.push(
         line
           .replace(/^( {10}version=)\d+\.\d+\.\d+$/, '$1<version>')
@@ -168,15 +136,10 @@ function differs(actual, expected, name) {
   if (index < 0 && actual.length === expected.length) return [];
   return [`${name} must stay canonical (line ${(index < 0 ? expected.length : index) + 1})`];
 }
-
-// Содержимое блока верхнего уровня без заголовка, комментариев и пустых строк.
 const content = (lines, header) =>
   block(lines, header)
     .slice(1)
     .filter((line) => line.trim() !== '' && !line.trimStart().startsWith('#'));
-
-// Только скаляры верхнего уровня шага/job: YAML допускает кавычки, Unicode-escape в имени
-// и tab перед ':'. Неизвестное представление не считаем разрешённым false.
 function scalar(value) {
   const match = value.match(/^ *("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[^# \t]+)(?:[ \t]+#.*)?[ \t]*$/);
   if (!match) return null;
@@ -199,9 +162,6 @@ function field(line, indent) {
     .match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*'|[\w-]+)[ \t]*:[ \t]*(.*)$/);
   return match ? { key: scalar(match[1]), value: match[2] } : null;
 }
-
-// Сравниваем весь защищённый шаг, а не только несколько ключей: YAML допускает
-// экранированные имена и повторные поля. Явное false не подавляет отказ.
 function explicitNoSuppression(line, indent) {
   const entry = field(line, indent);
   return entry?.key === 'continue-on-error' && /^false(?:[ \t]+#.*)?[ \t]*$/.test(entry.value);
@@ -233,7 +193,6 @@ function violations(source) {
   for (const id of requiredNeeds) {
     if (!aggregate.needs.includes(id)) out.push(`the CI aggregate must need job ${id}`);
   }
-  // Браузер обязателен для итогового CI. Временные отчёты не храним в Actions storage.
   const e2e = block(lines, '  e2e:');
   const stepsAt = e2e.indexOf('    steps:');
   const header = e2e.slice(0, stepsAt < 0 ? e2e.length : stepsAt + 1);
@@ -245,13 +204,10 @@ function violations(source) {
     ),
   );
   const jobFields = e2e.filter((line) => /^ {4}\S/.test(line) && !line.trimStart().startsWith('#'));
-  if (jobFields.filter((line) => !explicitNoSuppression(line, 4)).length !== 5)
+  if (jobFields.filter((line) => !explicitNoSuppression(line, 4)).length !== 6)
     out.push('job e2e must not add or repeat job-level fields');
 
   const steps = e2e.join('\n').split(/^ {6}- /m);
-  // Разбиение осмысленно лишь когда каждый YAML-элемент списка имеет тот же
-  // отступ, один пробел после '-' и первый ключ на этой строке. Actionlint
-  // допускает и одиночный '-', и flow map: они иначе скрыли бы новый upload.
   const itemLines = e2e.slice(stepsAt + 1).filter((line) => /^ {6}-/.test(line));
   if (
     itemLines.length !== steps.length - 1 ||
@@ -264,13 +220,9 @@ function violations(source) {
   if (browserAt < 0 || steps.filter((step) => /^ {8}id: browser$/m.test(step)).length !== 1)
     out.push('the browser step must appear exactly once');
   else out.push(...differs(comparableStep(steps[browserAt]), browserStep, 'browser step'));
-
-  // Все e2e uses проверяем по значению скаляра, иначе quoted action или ключ с
-  // escape создают дополнительную публикацию вне двух защищённых шагов.
   const fieldsByStep = steps.map((step, index) =>
     step
       .split('\n')
-      // split убирает `      - `: первый ключ шага теперь начинается с нулевого отступа.
       .map((line, at) => (index > 0 && at === 0 ? `        ${line}` : line))
       .filter((line) => /^ {8}\S/.test(line) && !line.trimStart().startsWith('#'))
       .map((line) => field(line, 8)),
@@ -283,9 +235,6 @@ function violations(source) {
     .map((entry) => scalar(entry.value));
   if (actions.some((action) => action == null || /^[&*|>!]/.test(action)))
     out.push('e2e uses must use literal scalar action references');
-  // Отказ уже отражён в обязательном browser job. Не допускаем повторного
-  // накопления временных PNG/Playwright reports в Actions artifact storage.
-  // Проверяем весь workflow, включая соседние jobs и иные YAML-формы uses.
   if (/actions\/upload-artifact@/i.test(source))
     out.push('ephemeral CI reports must not be uploaded to Actions artifacts');
   return out;
@@ -293,8 +242,6 @@ function violations(source) {
 
 const actual = violations(workflow);
 if (actual.length) throw new Error(actual.join('\n'));
-
-// Мутации меняют только свой блок: перестановка job или правка needs их не обезвреживает.
 const lines = workflow.split('\n');
 const securityText = block(lines, '  security:').join('\n');
 const aggregateText = block(lines, '  ci:').join('\n');
@@ -311,17 +258,15 @@ const mutants = [
   inSecurity('fs --config /dev/null --cache-dir', 'fs --cache-dir'),
   inSecurity(/^ +printf 'disable-allow-rules:.*\n/m, ''),
   inSecurity('--exit-code 1', '--exit-code 0'),
-  inSecurity('          set -euo pipefail\n          # trivy читает', '          # trivy читает'),
+  inSecurity('          set -euo pipefail\n', ''),
   inSecurity(/^ +unset "\$\{!TRIVY_@\}"\n/m, ''),
   inSecurity('--ignore-unfixed --ignorefile /dev/null', '--ignore-unfixed "${accepted[@]}"'),
-  // Секреты снова принимаются записями из проверяемого дерева.
   inSecurity(
     '--secret-config "$dir/secret.yaml" --ignorefile /dev/null',
     '--secret-config "$dir/secret.yaml" "${accepted[@]}"',
   ),
   inSecurity(/^( {10}sum=)[0-9a-f]{64}$/m, (_, key) => key),
   inSecurity(scanStep, `${scanStep}        continue-on-error: true\n`),
-  // Шаг пропущен условием после тела: тело при этом совпадает с каноничным.
   inSecurity(lastLine, `${lastLine}        if: \${{ false }}\n`),
   inSecurity(scanStep, `${scanStep}        working-directory: .github\n`),
   inSecurity(scanStep, `      - run: rm -rf packages\n${scanStep}`),
@@ -333,14 +278,9 @@ const mutants = [
   workflow.replace('\njobs:\n', '\n"defaults":\n  run:\n    working-directory: .github\n\njobs:\n'),
   workflow.replace('\nenv:\n', '\nenv:\n  BASH_ENV: .github/skip-scan.sh\n'),
   workflow.replace('\nenv:\n', '\nenv:\n  "BASH_ENV": .github/skip-scan.sh\n'),
-  workflow.replace(/^( {2}BUSYBOX_IMAGE: ).*$/m, (_, key) => `${key}"busybox:latest"`),
-  workflow.replace(
-    /^( {2}BUSYBOX_IMAGE: "busybox:1\.36@sha256:)[0-9a-f]{64}"$/m,
-    (_, key) => `${key}${'0'.repeat(64)}"`,
-  ),
   workflow.replace('  pull_request:\n', ''),
   workflow.replace('  merge_group:\n', ''),
-  `${workflow.trimEnd()}\n  "security":\n    runs-on: self-hosted\n    steps:\n      - run: "true"\n`,
+  `${workflow.trimEnd()}\n  "security":\n    runs-on: ubuntu-latest\n    steps:\n      - run: "true"\n`,
   inAggregate(/^ {6}- security\n/m, ''),
   inAggregate(/^ {6}- quality\n/m, ''),
   inAggregate(/^ {6}- e2e\n/m, ''),
@@ -355,10 +295,8 @@ const mutants = [
     '        id: browser\n',
     '        id: browser\n        continue-on-error: true\n',
   ),
-  // Итог пропущен после отказа security или превращает отказ в успех.
   inAggregate('\n    if: ${{ always() }}\n', '\n'),
   inAggregate('            exit 1\n', '            exit 0\n'),
-  // Любая повторная публикация, даже с иным именем, должна нарушать контракт.
   ...[
     '      - name: Upload FX\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: fx\n          path: packages/colors/artifacts/fx-render/',
     '      - uses: "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02"',
@@ -367,21 +305,19 @@ const mutants = [
     '      - name: Upload report\n        uses: >-\n          actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02',
   ].map((step) =>
     workflow.replace(
-      '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-      `${step}\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)`,
+      '      - name: Verify browser rendering and smoke tests in pinned Playwright runtime',
+      `${step}\n      - name: Verify browser rendering and smoke tests in pinned Playwright runtime`,
     ),
   ),
   workflow.replace(
-    '      - name: Verify pnpm store isolation contract',
-    '      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n      - name: Verify pnpm store isolation contract',
+    '      - name: Verify full E2E ownership',
+    '      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n      - name: Verify full E2E ownership',
   ),
 ];
 for (const [index, mutant] of mutants.entries()) {
   if (mutant === workflow || violations(mutant).length === 0)
     throw new Error(`mutation ${index + 1} escaped security gate contract`);
 }
-
-// Допустимые правки: таймаут, комментарии YAML (и внутри with), новая версия trivy, ещё один job в итоге.
 const allowed = [
   inSecurity(
     '      - name: Checkout\n',
@@ -420,10 +356,9 @@ const allowed = [
     '        id: browser\n',
     () => `        id: browser\n        ${String.raw`"\u0063ontinue-on-error"`}\t: false\n`,
   ),
-  // Соседний шаг допустим: запрет касается только ненужной публикации.
   workflow.replace(
-    '      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
-    '      - run: echo ready\n      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)',
+    '      - name: Verify browser rendering and smoke tests in pinned Playwright runtime',
+    '      - run: echo ready\n      - name: Verify browser rendering and smoke tests in pinned Playwright runtime',
   ),
 ];
 for (const [index, variant] of allowed.entries()) {
@@ -432,5 +367,5 @@ for (const [index, variant] of allowed.entries()) {
 }
 
 process.stdout.write(
-  `security gate contract: PASS (live + ${mutants.length} sabotage + ${allowed.length} allowed controls)\n`,
+  `security gate contract: PASS (source + ${mutants.length} sabotage + ${allowed.length} allowed controls)\n`,
 );

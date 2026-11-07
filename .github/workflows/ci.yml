@@ -6,7 +6,6 @@ on:
   pull_request:
   merge_group:
 
-# Least privilege: read-only by default. No job needs write here.
 permissions:
   contents: read
 
@@ -16,50 +15,12 @@ concurrency:
 
 env:
   CI: "true"
-  # busybox используется как ROOT-контейнер для очистки воркспейса и возврата
-  # владения на self-hosted раннерах (см. блок «ИНВАРИАНТ root-docker» ниже).
-  # Пинится по тегу И дайджесту (immutable identity); бампить оба поля вместе.
-  # Дайджест — OCI-индекс busybox:1.36 (multi-arch).
-  BUSYBOX_IMAGE: "busybox:1.36@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662"
-  # Job-локальный docker-конфиг БЕЗ credsStore: у Docker Desktop в WSL
-  # ~/.docker/config.json указывает credsStore=desktop → docker pull зовёт
-  # docker-credential-desktop.exe, которого нет в PATH systemd-сервиса раннера
-  # после рестарта дистро → пулл пиненых образов падает (exit 127). Пустой
-  # DOCKER_CONFIG = анонимные пуллы публичных образов без хелпера — CI не
-  # зависит от состояния хоста/Desktop-интеграции ни при каком рестарте.
-  DOCKER_CONFIG: "/tmp/labui-ci-docker-anon"
 
 jobs:
-  # ── ИНВАРИАНТ root-docker ───────────────────────────────────────────────────
-  # Self-hosted раннеры делят _work между job'ами. docker-as-root job'ы
-  # (Playwright) оставляют в чекауте ROOT-owned файлы, а daniel (uid 1000)
-  # без passwordless sudo не может их ни удалить (`rm` → Permission denied), ни
-  # chown'ить (нет CAP_CHOWN). Раньше это краснило невиновные PR.
-  # ЗАЩИТА В ДВА СЛОЯ, оба через ROOT-контейнер busybox (${BUSYBOX_IMAGE}):
-  #   1) clean-шаг КАЖДОГО job'а чистит содержимое воркспейса root-контейнером —
-  #      root снесёт что угодно; clean больше не зависит от того, кто наоставлял
-  #      файлов и отработал ли chown-back. Это первичная защита.
-  #   2) КАЖДЫЙ root-docker job (e2e) завершается шагом «Вернуть владение
-  #      воркспейса раннеру» (if: always()) — тоже root-контейнером busybox.
-  #      Это defence-in-depth: возвращает владение uid раннера сразу после job'а.
-  # При добавлении нового root-контейнерного job'а — добавь такой chown-back.
   security:
-    runs-on: self-hosted
-    # Защита от fork-PR: НЕ гоняем недоверенный код форков на своей инфре.
-    # Форк-PR пропускается (job skipped, раннер не выделяется); push в main
-    # и same-repo PR (коллаборатор) — гоняются как прежде.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      # Тот же clean-шаг, что у каждого job'а (см. «ИНВАРИАНТ root-docker» выше).
-      - name: Чистый воркспейс (self-hosted)
-        shell: bash
-        run: |
-          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -68,7 +29,6 @@ jobs:
       - name: Scan dependencies, configuration and secrets
         run: |
           set -euo pipefail
-          # trivy читает переменные TRIVY_* как флаги: охват проверки задаёт только этот шаг.
           unset "${!TRIVY_@}"
           version=0.74.0
           sum=2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
@@ -80,13 +40,9 @@ jobs:
           tar -xzf "$dir/trivy.tgz" -C "$dir" trivy
           accepted=(--ignorefile /dev/null)
           [ -f .trivyignore.yaml ] && accepted=(--ignorefile .trivyignore.yaml)
-          # Настройки сканера задаёт шаг: trivy.yaml из проверяемого дерева их не меняет.
           scan() { "$dir/trivy" fs --config /dev/null --cache-dir "$dir/cache" --exit-code 1 --no-progress "$@" .; }
           scan --scanners vuln,misconfig --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps "${accepted[@]}"
-          # Исправление вышло — принятая раньше уязвимость снова блокирует.
           scan --scanners vuln --severity UNKNOWN,HIGH,CRITICAL --include-dev-deps --ignore-unfixed --ignorefile /dev/null
-          # Секрет в тестах, примерах и документации — такая же утечка: встроенные исключения trivy для них сняты,
-          # а записи .trivyignore.yaml к секретам не применяются.
           printf 'disable-allow-rules:\n  - tests\n  - examples\n  - markdown\n' > "$dir/secret.yaml"
           secret_scan() { scan --scanners secret --secret-config "$dir/secret.yaml" --ignorefile /dev/null "$@"; }
           secret_scan
@@ -94,28 +50,9 @@ jobs:
 
   quality:
     name: lint · typecheck · build
-    runs-on: self-hosted
-    # Защита от fork-PR — см. комментарий в job `security` выше.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
-      # (Playwright) оставляют в чекауте ROOT-owned файлы
-      # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
-      # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
-      # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
-      # что угодно, независимо от того, кто наоставлял файлов и отработал ли
-      # chown-back. Заодно возвращаем владение самим каталогом раннеру (`id -u`),
-      # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
-      # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
-      - name: Чистый воркспейс (self-hosted)
-        shell: bash
-        run: |
-          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -123,21 +60,14 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
-        with:
-          # per-job dest: дефолт ~/setup-pnpm ОБЩИЙ для 8 раннеров (один /home/daniel)
-          # -> параллельные job'ы гоняются на temp-файлах (ENOENT unlink). runner.temp
-          # изолирован per-job — класс shared-home гонок закрыт для установки pnpm.
-          dest: ${{ runner.temp }}/setup-pnpm
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
-          # GitHub cache service не используется: required CI должен быть
-          # независим от внешнего cache API и от store соседнего job/repository.
 
-      - name: Verify pnpm store isolation contract
-        run: node scripts/ci/pnpm-store-contract.mjs
+      - name: Verify full E2E ownership
+        run: node scripts/ci/full-e2e-contract.mjs
 
       - name: Keep browser verification independent of artifact storage
         run: node --test scripts/ci/artifact-storage-contract.mjs
@@ -145,13 +75,8 @@ jobs:
       - name: Verify the security gate stays canonical
         run: node scripts/ci/security-gate-contract.mjs
 
-      - name: Install from isolated pnpm store
-        shell: bash
-        run: |
-          set -euo pipefail
-          store="$RUNNER_TEMP/pnpm-store-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB"
-          rm -rf -- "$store"
-          pnpm install --frozen-lockfile --store-dir "$store"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Verify accepted advisories stay on their reviewed paths
         run: node scripts/ci/accepted-advisories-contract.mjs
@@ -166,26 +91,12 @@ jobs:
         run: pnpm typecheck
 
       - name: Assert generated artifact is not stale (shadow)
-        # Re-runs the generator from source, then asserts `git diff --exit-code`
-        # on the committed artifact. If the committed shadow.css diverges from the
-        # source, this step fails BEFORE the Build step can silently overwrite it.
-        # Without this guard the build would regenerate the file, masking a stale
-        # committed artifact as a false green.
         run: pnpm --filter @labpics/ui-shadow check-generated
 
       - name: Assert generated artifact is not stale (tokens)
-        # Тот же инвариант для SSOT-размеров (spacing/radii/z-index/typography):
-        # генератор перегоняется из конфига, `git diff --exit-code` на
-        # committed tokens.css/dtcg. Без этого гейта изменение конфига без
-        # регенерации оставило бы СТАРЫЙ канон tokens.css — а именно его читают
-        # drift-гарды (no-magic-dimension) как истину: молчаливо сверяли бы всё
-        # против устаревшей шкалы. Стоит ДО Build, который иначе перегенерировал
-        # бы файл и замаскировал протухший коммит ложным зелёным.
         run: pnpm --filter @labpics/ui-tokens check-generated
 
       - name: Assert generated artifact is not stale (materials)
-        # Тот же инвариант для инлайна acrylic-noise в acrylic.css: без этого
-        # шага протухший артефакт валил юнит-тест inline-seal уже ПОСЛЕ мержа.
         run: pnpm --filter @labpics/ui-materials check-generated
 
       - name: Build
@@ -196,37 +107,15 @@ jobs:
 
   e2e:
     name: playwright smoke (critical path)
-    runs-on: self-hosted
-    # Защита от fork-PR — см. комментарий в job `security` выше.
-    if: >-
-      github.event_name != 'pull_request' ||
-      github.event.pull_request.head.repo.full_name == github.repository
-    # Smoke и полный ночной набор используют один закреплённый Playwright runtime.
-    # browser-check.sh владеет отдельными процессами, сетью, файлами и cleanup.
-    #
-    # ── ЭТО SMOKE-ПОДМНОЖЕСТВО, НЕ ВЕСЬ НАБОР ────────────────────────────────
-    # Per-PR гоняется только критический путь (E2E_SMOKE=1 → curated список в
-    # apps/docs/playwright.config.ts): ~55 тестов × chromium+webkit вместо всех
-    # ~319 × 2. Короче окно = меньше голодания/флака на нагруженном self-hosted
-    # пуле, и гейт остаётся быстрым и блокирующим. ПОЛНОЕ покрытие НЕ потеряно —
-    # весь набор гоняется по расписанию в `.github/workflows/e2e-full.yml`.
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:2f05f8a734509a7b3f26a912639488ee08f58a7b292d14d62271bcff9038768f
+      options: --init
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 25
     steps:
-      # Self-hosted раннеры делят _work между job'ами, и docker-as-root job'ы
-      # (Playwright) оставляют в чекауте ROOT-owned файлы
-      # (apps/docs/dist/*, .git/*). daniel (uid 1000) без passwordless sudo не
-      # может удалить их обычным `rm` → 'Permission denied' краснит невиновные PR.
-      # Поэтому чистим содержимое воркспейса ROOT-контейнером busybox: root снесёт
-      # что угодно, независимо от того, кто наоставлял файлов и отработал ли
-      # chown-back. Заодно возвращаем владение самим каталогом раннеру (`id -u`),
-      # чтобы checkout (от daniel) писал в свой каталог. Клон — заново checkout'ом
-      # (fetch-depth:1, быстро). Детерминированно и не зависит от истории раннера.
-      - name: Чистый воркспейс (self-hosted)
-        shell: bash
-        run: |
-          mkdir -p "${GITHUB_WORKSPACE}" "${DOCKER_CONFIG}"
-          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            sh -c 'rm -rf /workspace/* /workspace/.[!.]* /workspace/..?* 2>/dev/null || true; chown "$1:$2" /workspace' sh "$(id -u)" "$(id -g)"
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -239,21 +128,6 @@ jobs:
           E2E_SMOKE: "1"
         run: bash .github/scripts/browser-check.sh
 
-      - name: Вернуть владение воркспейса раннеру (self-hosted cleanup)
-        # Это дополнительное восстановление: сбой виден, следующая первичная очистка обязательна.
-        # e2e собирает пакеты и артефакты в чекауте; если шаг (сейчас или в
-        # будущем, напр. Playwright-контейнер) отработает как root, останутся
-        # root-owned файлы. daniel (uid 1000) не может их chown'ить — возвращаем
-        # владение раннеру через ROOT-контейнер busybox, чтобы clean-шаг
-        # следующего job'а на этом раннере не спотыкался о root-owned файлы.
-        if: ${{ always() }}
-        shell: bash
-        run: |
-          if ! docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" "${BUSYBOX_IMAGE}" \
-            chown -R "$(id -u):$(id -g)" /workspace; then
-            printf '::warning::Workspace ownership restore failed; mandatory cleanup runs before the next checkout.\n' >&2
-          fi
-
   ci:
     name: CI
     needs:
@@ -261,7 +135,7 @@ jobs:
       - quality
       - e2e
     if: ${{ always() }}
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     steps:

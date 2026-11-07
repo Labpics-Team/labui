@@ -62,21 +62,40 @@ pressed. Включение reduced motion должно завершать уж�
 Geist включён под OFL; версия, внутреннее имя и хеши находятся в
 `Assets/Fonts/PROVENANCE.md`. Win2D 1.4.0 используется под MIT.
 
-## Sheet Half
+## Sheet
 
 `LabSheet` занимает выделенный ему конечный viewport и размещает `Content` в
-нижней поверхности. При 375×812 DIP верх Body находится на 390 DIP, высота —
-422 DIP. Верхние углы — 32 DIP; содержимое начинается после drag area и
+нижней поверхности. По умолчанию используется `Half`: при 375×812 DIP верх Body
+находится на 390 DIP, высота — 422 DIP. Верхние углы — 32 DIP;
+содержимое начинается после drag area и
 отступа, на 48 DIP от верха Body. Header и Controls по умолчанию отсутствуют.
 
 ```xml
-<lab:LabSheet xmlns:lab="using:LabUI.WinUI" Material="Blur">
+<lab:LabSheet xmlns:lab="using:LabUI.WinUI" State="Flex" Material="Blur" GeometryScale="1">
   <TextBlock Text="Содержимое панели" />
 </lab:LabSheet>
 ```
 
-Это статический срез для проверки материала. Перетаскивание, Flex и остальные
-положения пока не реализованы. Движение следующего среза должен исполнять LabMotion.
+`State` принимает `Full`, `TwoThirds`, `Half`, `OneThird`, `Flex`. В эталоне
+от 2026-11-04 высоты Body для Full, TwoThirds и OneThird фиксированы:
+776, 540 и 270 DIP при масштабе 1. Half делит высоту с Ghost поровну с
+перекрытием 32 DIP. Flex измеряет содержимое при ширине окна минус боковые
+отступы; пустая поверхность имеет высоту 40 DIP. При наличии Content добавляются
+его высота и отступ 24 DIP. Длинное содержимое доступно через штатный ScrollViewer.
+Его ScrollContentPresenter передаёт содержимому конечный размер: ListView и другие
+контролы сохраняют собственную область прокрутки без обязательного `Height`.
+Обычная панель может иметь большую фактическую высоту; её прокрутку учитывает WinUI.
+Каждая поверхность ограничена высотой viewport и остаётся у его нижнего края.
+Верх Full на 36 DIP относится к окну высотой 812 DIP; это не постоянный верхний отступ.
+
+`GeometryScale` умножает токены размеров, включая фиксированные высоты,
+перекрытие, отступы и индикатор. Он не меняет размер viewport и не умножает
+уже измеренную высоту Content. Системные DPI и масштаб текста применяются отдельно.
+Flex измеряет содержимое при конечной доступной высоте. Используются
+[Measure WinUI](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.uielement.measure) и
+[SizesContentToTemplatedParent](https://learn.microsoft.com/en-us/windows/windows-app-sdk/api/winrt/microsoft.ui.xaml.controls.scrollcontentpresenter.sizescontenttotemplatedparent).
+
+Состояния меняются статически. Перетаскивание и движение должен исполнять LabMotion.
 Контрол не устанавливает modal focus, закрытие по Escape или блокировку фона:
 эти свойства ещё требуют полноценного сценария Sheet.
 
@@ -98,7 +117,9 @@ noise size 0.2, непрерывного progressive blur или бюджет GP
 MediaPlayerElement и SwapChainPanel не входят в поддержанный источник backdrop.
 
 После сборки пример запускается как `Buttons.exe --sheet`; `--dark`, `--solid`
-и `--content` выбирают тему, материал и пример содержимого. Для исходной пробы
+и `--content` выбирают тему, материал и пример содержимого.
+`--sheet-state=full|two-thirds|half|one-third|flex` и `--sheet-scale=1.5` выбирают
+состояние и геометрический масштаб. Для исходной пробы
 нужны клиентская область 375×812 и DPI 100%. Фон находится в
 `examples/windows/Assets/SheetBackdrop.png`: это исходная текстура, а не снимок
 готового Sheet. Обычный запуск без `--sheet` сохраняет пример Buttons.
@@ -107,6 +128,15 @@ MediaPlayerElement и SwapChainPanel не входят в поддержанны
 фактической геометрией, темой, загрузкой изображения и состоянием renderer.
 `rendererReady` подтверждает построение графики; визуальное соответствие
 проверяется отдельно по захваченным пикселям.
+
+`--sheet-content=list|long|short` включает пассивную пробу содержимого: ListView
+из 1000 элементов без `Height`, панель высотой 3000 DIP или панель высотой 100 DIP.
+Поле JSON `contentWitness` содержит входные размеры последнего измерения, признак
+неконечного размера, фактическую высоту, размеры прокрутки и число созданных
+контейнеров списка. При 375×812 и DPI 100% Half должен измерить список при высоте
+358 DIP; длинная панель должна иметь scroll extent больше viewport; короткий
+Flex должен иметь высоту поверхности 164 DIP. Эти условия требуют запуска WinUI
+на Windows; локальная сборка проверяет только готовность пробы к исполнению.
 
 Проверка геометрии без UI:
 `dotnet run --project native/windows/test/sheet-geometry.test.csproj`.

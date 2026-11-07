@@ -7,8 +7,19 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 import { decodeEvidenceLog, evidenceLog, writeStdout } from '../../../scripts/ci/evidence-log.mjs';
 import { png } from './evidence.mjs';
+import {
+  CONTENT_SCHEMA,
+  CONTENT_CASES as SCROLL_CONTENT_CASES,
+  contentReadback,
+  validateContentWitness,
+} from './sheet-content.mjs';
+import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
+import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-geometry.mjs';
+
+export const CONTENT_CASES = Object.freeze([...SCROLL_CONTENT_CASES, ...POLICY_CASES]);
 
 const PREFIX = 'LABUI_SHEET_EVIDENCE';
+const CONTENT_PREFIX = 'LABUI_SHEET_CONTENT_EVIDENCE';
 const MAX_FILE = 4 * 1024 * 1024;
 const MAX_JSON = 64 * 1024;
 export const CASES = Object.freeze(
@@ -21,6 +32,10 @@ export const CASES = Object.freeze(
 const FILES = Object.freeze([
   'identity.json',
   ...CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
+]);
+const CONTENT_FILES = Object.freeze([
+  'identity.json',
+  ...CONTENT_CASES.flatMap(({ name }) => [`${name}.json`, `${name}.png`]),
 ]);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const source = (value) => assert.match(value, /^[a-f0-9]{40}$/, 'sheet: source SHA');
@@ -41,8 +56,15 @@ const failurePhases = [
   'capability',
   'readiness',
   'geometry',
+  'content-layout',
+  'content-scroll',
+  'content-template',
   'window-before',
   'screenshot',
+  'screenshot-command',
+  'screenshot-reply',
+  'screenshot-process',
+  'screenshot-image',
   'window-after',
   'cleanup',
 ];
@@ -122,8 +144,20 @@ function factoryInfo(value) {
     'ghostPair2',
     'ghostPair3',
     'progressive',
+    'progressiveSeed',
+    'progressiveLeaf0',
+    'progressiveLeaf1',
+    'progressiveLeaf2',
+    'progressiveLeaf3',
+    'progressiveLeaf4',
+    'progressiveLeaf5',
+    'progressiveLeaf6',
+    'progressiveLeaf7',
+    'progressiveSum',
     'ghost',
     'body',
+    'outer',
+    'border',
     'final',
   ]);
   const operation = known(value.operation, ['factory', 'brush', 'binding']);
@@ -148,6 +182,41 @@ function branchesInfo(value) {
     )
       return null;
     rows.push({ hresult: row.hresult, cleanupHresult: row.cleanupHresult });
+  }
+  return rows;
+}
+
+function factoryOutcomeInfo(value) {
+  if (
+    value === null ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.keys(value).length !== 3 ||
+    !Object.hasOwn(value, 'stage') ||
+    !Object.hasOwn(value, 'hresult') ||
+    !Object.hasOwn(value, 'cleanupHresult') ||
+    !['build', 'factory'].includes(value.stage) ||
+    !Number.isInteger(value.hresult) ||
+    value.hresult < -2147483648 ||
+    value.hresult > 2147483647 ||
+    !(
+      value.cleanupHresult === null ||
+      (Number.isInteger(value.cleanupHresult) &&
+        value.cleanupHresult >= -2147483648 &&
+        value.cleanupHresult <= 2147483647)
+    )
+  )
+    return null;
+  return { stage: value.stage, hresult: value.hresult, cleanupHresult: value.cleanupHresult };
+}
+
+function componentsInfo(value) {
+  if (!Array.isArray(value) || value.length !== 3) return null;
+  const rows = [];
+  for (const component of value) {
+    const row = factoryOutcomeInfo(component);
+    if (row === null) return null;
+    rows.push(row);
   }
   return rows;
 }
@@ -234,6 +303,20 @@ function observationError(value) {
     ...(Object.hasOwn(value, 'topology') ? { topology: topologyInfo(value.topology) } : {}),
     ...(Object.hasOwn(value, 'factory') ? { factory: factoryInfo(value.factory) } : {}),
     ...(Object.hasOwn(value, 'branches') ? { branches: branchesInfo(value.branches) } : {}),
+    ...(Object.hasOwn(value, 'clamping') ? { clamping: branchesInfo(value.clamping) } : {}),
+    ...(Object.hasOwn(value, 'sigma') ? { sigma: branchesInfo(value.sigma) } : {}),
+    ...(Object.hasOwn(value, 'actualThree')
+      ? { actualThree: factoryOutcomeInfo(value.actualThree) }
+      : {}),
+    ...(Object.hasOwn(value, 'actualLayer')
+      ? { actualLayer: factoryOutcomeInfo(value.actualLayer) }
+      : {}),
+    ...(Object.hasOwn(value, 'actualComponents')
+      ? { actualComponents: componentsInfo(value.actualComponents) }
+      : {}),
+    ...(Object.hasOwn(value, 'actualBinaryThree')
+      ? { actualBinaryThree: factoryOutcomeInfo(value.actualBinaryThree) }
+      : {}),
   };
 }
 
@@ -273,23 +356,135 @@ export function validateObservation(value, expected) {
     phase = 'geometry';
     // Этот статический эталон квалифицируется при 100% DPI; остальные масштабы остаются отдельной проверкой.
     assert.equal(value.rasterizationScale, 1, 'sheet: reference DPI');
+    if (Object.hasOwn(value, 'windowGeometry')) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, 'windowGeometry');
+      assert.ok(Object.hasOwn(descriptor, 'value'), 'sheet: windowGeometry JSON');
+      validateWindowGeometry(descriptor.value);
+    }
+    assert.ok(
+      value.materialReason === null ||
+        ['Requested', 'TransparencyDisabled', 'EffectsUnsupported', 'EffectsNotFast'].includes(
+          value.materialReason,
+        ),
+      'sheet: material reason',
+    );
+    const policy = POLICY_CASES.find(({ name }) => name === expected.name);
+    let bodyHeight = 422;
+    if (!policy && expected.scenario === undefined) {
+      const optional = [
+        'requestedState',
+        'geometryScale',
+        'contentViewport',
+        'contentWitness',
+        'windowGeometry',
+      ];
+      assert.deepEqual(
+        Object.keys(value).sort(),
+        [
+          'pid',
+          'windowHandle',
+          'observedAtUnixMs',
+          'theme',
+          'rasterizationScale',
+          'viewport',
+          'body',
+          'handle',
+          'layoutReady',
+          'imageLoaded',
+          'rendererReady',
+          'requestedMaterial',
+          'effectiveMaterial',
+          'materialReason',
+          'error',
+          ...optional.filter((field) => Object.hasOwn(value, field)),
+        ].sort(),
+        'sheet: поля наблюдения материала',
+      );
+      if (Object.hasOwn(value, 'requestedState')) assert.equal(value.requestedState, 'Half');
+      if (Object.hasOwn(value, 'geometryScale')) assert.equal(value.geometryScale, 1);
+      if (Object.hasOwn(value, 'contentWitness')) assert.equal(value.contentWitness, null);
+      if (Object.hasOwn(value, 'contentViewport')) {
+        assert.deepEqual(Object.keys(value.contentViewport).sort(), ['height', 'width', 'x', 'y']);
+        for (const [field, expectedValue] of Object.entries({
+          x: 16,
+          y: 438,
+          width: 343,
+          height: 358,
+        }))
+          near(value.contentViewport[field], expectedValue);
+      }
+    }
+    if (policy) {
+      validatePolicyWitness(value.contentWitness, expected);
+      assert.deepEqual(
+        Object.keys(value).sort(),
+        [
+          'pid',
+          'windowHandle',
+          'observedAtUnixMs',
+          'theme',
+          'rasterizationScale',
+          'viewport',
+          'body',
+          'handle',
+          'layoutReady',
+          'imageLoaded',
+          'rendererReady',
+          'requestedMaterial',
+          'requestedState',
+          'geometryScale',
+          'contentViewport',
+          'contentWitness',
+          'effectiveMaterial',
+          'materialReason',
+          'error',
+          ...(Object.hasOwn(value, 'windowGeometry') ? ['windowGeometry'] : []),
+        ].sort(),
+        'sheet policy: поля наблюдения',
+      );
+      assert.equal(value.requestedState, policy.state);
+      assert.equal(value.geometryScale, 1);
+      for (const part of ['viewport', 'body', 'handle', 'contentViewport'])
+        assert.deepEqual(Object.keys(value[part]).sort(), ['x', 'y', 'width', 'height'].sort());
+      const final = value.contentWitness.steps.at(-1);
+      if (policy.state === 'Flex') bodyHeight = Math.min(812, 64 + final.root.desired.height);
+      near(final.bodyHeight, bodyHeight);
+      for (const [field, expectedValue] of Object.entries({
+        x: 16,
+        y: 812 - bodyHeight + 48,
+        width: 343,
+        height: bodyHeight - 64,
+      }))
+        near(value.contentViewport[field], expectedValue);
+      near(final.viewport.actualWidth, value.contentViewport.width);
+      near(final.viewport.actualHeight, value.contentViewport.height);
+    }
     for (const [part, bounds] of Object.entries({
       viewport: { x: 0, y: 0, width: 375, height: 812 },
-      body: { x: 0, y: 390, width: 375, height: 422 },
-      handle: { x: 170, y: 404, width: 36, height: 4 },
-    }))
+      body: { x: 0, y: 812 - bodyHeight, width: 375, height: bodyHeight },
+      handle: { x: 170, y: 812 - bodyHeight + 14, width: 36, height: 4 },
+    })) {
+      assert.deepEqual(Object.keys(value[part]).sort(), ['height', 'width', 'x', 'y']);
       for (const [field, expectedValue] of Object.entries(bounds))
         near(value[part]?.[field], expectedValue);
+    }
+    if (expected.scenario !== undefined && !policy) validateContentWitness(value, expected);
   } catch (error) {
-    error.sheetPhase = phase;
+    error.sheetPhase ??= phase;
     throw error;
   }
   return value;
 }
 
-function validate(files, sourceSha) {
+function validate(files, sourceSha, content = false) {
+  const cases = content ? CONTENT_CASES : CASES;
+  const expectedFiles = content ? CONTENT_FILES : FILES;
   source(sourceSha);
-  assert.deepEqual([...files.keys()].sort(), [...FILES].sort(), 'sheet: полный набор файлов');
+  assert.deepEqual(
+    [...files.keys()].sort(),
+    [...expectedFiles].sort(),
+    'sheet: полный набор файлов',
+  );
   for (const [file, bytes] of files)
     assert.ok(
       Buffer.isBuffer(bytes) &&
@@ -299,6 +494,29 @@ function validate(files, sourceSha) {
     );
   const identity = parse(files.get('identity.json'));
   assert.equal(identity.source, sourceSha, 'sheet: source identity');
+  assert.deepEqual(
+    Object.keys(identity).sort(),
+    [
+      ...(content ? ['schema'] : []),
+      'source',
+      'cases',
+      'cliVersion',
+      'cliZipSha256',
+      'cliSha256',
+      'appSha256',
+      'consumerSha256',
+      'uiSha256',
+      'motionSha256',
+      'visualReview',
+      'motion',
+      'performance',
+    ].sort(),
+    'sheet: поля identity',
+  );
+  assert.match(identity.cliVersion, /^v?\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]{1,40})?$/);
+  if (content) {
+    assert.equal(identity.schema, CONTENT_SCHEMA);
+  }
   for (const field of [
     'appSha256',
     'consumerSha256',
@@ -312,9 +530,40 @@ function validate(files, sourceSha) {
   assert.equal(identity.visualReview, 'pending');
   assert.equal(identity.motion, 'not-qualified');
   assert.equal(identity.performance, 'not-qualified');
-  assert.deepEqual(Object.keys(identity.cases).sort(), CASES.map(({ name }) => name).sort());
-  for (const entry of CASES) {
+  assert.deepEqual(Object.keys(identity.cases).sort(), cases.map(({ name }) => name).sort());
+  for (const entry of cases) {
     const owner = identity.cases[entry.name];
+    assert.deepEqual(
+      Object.keys(owner).sort(),
+      [
+        'pid',
+        'startedAtUnixMs',
+        'observedUntilUnixMs',
+        'windowHandle',
+        'windowBefore',
+        'windowAfter',
+        'exited',
+        ...(content || Object.hasOwn(owner, 'termination') ? ['termination'] : []),
+      ].sort(),
+      'sheet: поля owner',
+    );
+    for (const window of [owner.windowBefore, owner.windowAfter])
+      assert.deepEqual(
+        Object.keys(window).sort(),
+        ['pid', 'windowHandle', 'startedAtUnixMs'].sort(),
+      );
+    if (content || Object.hasOwn(owner, 'termination')) {
+      assert.deepEqual(Object.keys(owner.termination).sort(), ['code', 'signal']);
+      assert.ok(
+        owner.termination.code === null ||
+          (Number.isInteger(owner.termination.code) &&
+            owner.termination.code >= -2147483648 &&
+            owner.termination.code <= 2147483647),
+      );
+      assert.ok(
+        [null, 'SIGTERM', 'SIGKILL', 'SIGINT', 'SIGBREAK'].includes(owner.termination.signal),
+      );
+    }
     assert.equal(owner.exited, true, 'sheet: собственный процесс не завершён');
     assert.equal(typeof owner.windowHandle, 'string', 'sheet: HWND процесса');
     const observation = validateObservation(parse(files.get(`${entry.name}.json`)), {
@@ -339,30 +588,50 @@ function validate(files, sourceSha) {
 }
 
 export function encodeSheetEvidence(files, sourceSha) {
-  validate(files, sourceSha);
+  return encode(files, sourceSha);
+}
+
+export function encodeSheetContentEvidence(files, sourceSha) {
+  return encode(files, sourceSha, true);
+}
+
+function encode(files, sourceSha, content = false) {
+  validate(files, sourceSha, content);
   return [...files]
-    .map(([file, bytes]) => evidenceLog(bytes, PREFIX, { sourceSha, file }, 'sha256'))
+    .map(([file, bytes]) =>
+      evidenceLog(bytes, content ? CONTENT_PREFIX : PREFIX, { sourceSha, file }, 'sha256'),
+    )
     .join('');
 }
 
 export function decodeSheetEvidence(log, sourceSha) {
+  return decode(log, sourceSha);
+}
+
+export function decodeSheetContentEvidence(log, sourceSha) {
+  return decode(log, sourceSha, true);
+}
+
+function decode(log, sourceSha, content = false) {
+  const expectedFiles = content ? CONTENT_FILES : FILES;
+  const count = content ? CONTENT_CASES.length : CASES.length;
   source(sourceSha);
   assert.ok(Buffer.byteLength(log, 'utf8') <= 32 * 1024 * 1024, 'sheet: размер журнала');
   const files = new Map();
-  for (const { metadata, bytes } of decodeEvidenceLog(log, PREFIX, {
+  for (const { metadata, bytes } of decodeEvidenceLog(log, content ? CONTENT_PREFIX : PREFIX, {
     digestField: 'sha256',
     maxBytes: MAX_FILE,
-    maxPackets: FILES.length,
-    maxTotalBytes: MAX_FILE * 4 + MAX_JSON * 5,
+    maxPackets: expectedFiles.length,
+    maxTotalBytes: MAX_FILE * count + MAX_JSON * (count + 1),
   })) {
     assert.equal(metadata.sourceSha, sourceSha, 'sheet: packet source');
     assert.ok(
-      FILES.includes(metadata.file) && !files.has(metadata.file),
+      expectedFiles.includes(metadata.file) && !files.has(metadata.file),
       'sheet: неизвестный/повторный файл',
     );
     files.set(metadata.file, bytes);
   }
-  validate(files, sourceSha);
+  validate(files, sourceSha, content);
   return files;
 }
 
@@ -375,10 +644,11 @@ export function sheetFailureLog({
   error,
   cleanupError,
   stderrBytes,
+  screenshot,
 }) {
   source(sourceSha);
   assert.ok(
-    CASES.some((entry) => entry.name === name),
+    [...CASES, ...CONTENT_CASES].some((entry) => entry.name === name),
     'sheet: failure case',
   );
   const number = (value) => (Number.isFinite(value) ? value : null);
@@ -394,6 +664,9 @@ export function sheetFailureLog({
       observedAtUnixMs: number(observation.observedAtUnixMs),
       theme: known(observation.theme, ['Light', 'Dark', 'Default']),
       rasterizationScale: number(observation.rasterizationScale),
+      ...(Object.hasOwn(observation, 'windowGeometry')
+        ? { windowGeometry: windowGeometryReadback(observation.windowGeometry) }
+        : {}),
       requestedMaterial: known(observation.requestedMaterial, ['Blur', 'Solid']),
       effectiveMaterial: known(observation.effectiveMaterial, ['Blur', 'Solid']),
       materialReason: known(observation.materialReason, [
@@ -403,6 +676,31 @@ export function sheetFailureLog({
         'EffectsNotFast',
       ]),
       error: observationError(observation.error),
+      ...(CONTENT_CASES.some((entry) => entry.name === name)
+        ? {
+            requestedState: known(observation.requestedState, [
+              'Full',
+              'TwoThirds',
+              'Half',
+              'OneThird',
+              'Flex',
+            ]),
+            geometryScale: number(observation.geometryScale),
+            contentViewport:
+              observation.contentViewport !== null &&
+              typeof observation.contentViewport === 'object'
+                ? Object.fromEntries(
+                    ['x', 'y', 'width', 'height'].map((field) => [
+                      field,
+                      number(observation.contentViewport[field]),
+                    ]),
+                  )
+                : null,
+            contentWitness: POLICY_CASES.some((entry) => entry.name === name)
+              ? policyReadback(observation.contentWitness)
+              : contentReadback(observation.contentWitness),
+          }
+        : {}),
     };
     for (const field of ['layoutReady', 'imageLoaded', 'rendererReady'])
       readback[field] = typeof observation[field] === 'boolean' ? observation[field] : null;
@@ -426,7 +724,47 @@ export function sheetFailureLog({
     error: errorInfo(error),
     cleanupError: errorInfo(cleanupError),
     stderrBytes: number(stderrBytes),
+    ...(screenshot === undefined ? {} : { screenshot: screenshotReadback(screenshot) }),
   })}\n`;
+}
+
+function screenshotReadback(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return null;
+  const dimension = (value) =>
+    Number.isSafeInteger(value) && value > 0 && value <= 1e6 ? value : null;
+  return {
+    exitCode:
+      Number.isInteger(value.exitCode) &&
+      value.exitCode >= -2147483648 &&
+      value.exitCode <= 4294967295
+        ? value.exitCode
+        : null,
+    replyIsObject: typeof value.replyIsObject === 'boolean' ? value.replyIsObject : null,
+    image:
+      value.image !== null && typeof value.image === 'object' && !Array.isArray(value.image)
+        ? { width: dimension(value.image.width), height: dimension(value.image.height) }
+        : null,
+  };
+}
+
+export function sheetContentCaseLog({ sourceSha, name, pid, windowHandle, exited, observation }) {
+  source(sourceSha);
+  assert.ok(CONTENT_CASES.some((entry) => entry.name === name));
+  assert.ok(Number.isSafeInteger(pid) && pid > 0);
+  assert.match(windowHandle, /^[1-9][0-9]{0,18}$/);
+  assert.equal(exited, true);
+  const payload = JSON.stringify({
+    source: sourceSha,
+    name,
+    pid,
+    windowHandle,
+    exited,
+    contentWitness: POLICY_CASES.some((entry) => entry.name === name)
+      ? policyReadback(observation?.contentWitness)
+      : contentReadback(observation?.contentWitness),
+  });
+  assert.ok(Buffer.byteLength(payload, 'utf8') <= MAX_JSON);
+  return `LABUI_SHEET_CONTENT_OBSERVATION_JSON ${payload}\n`;
 }
 
 async function within(promise, milliseconds, message) {
@@ -482,6 +820,15 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
     '--sheet',
     ...(entry.theme === 'Dark' ? ['--dark'] : []),
     ...(entry.material === 'Solid' ? ['--solid'] : []),
+    ...(entry.scenario
+      ? [
+          `--sheet-content=${entry.scenario}`,
+          `--sheet-content-alignment=${entry.alignment.toLowerCase()}`,
+          '--sheet-content-qualify',
+          `--sheet-state=${(entry.state ?? 'Half').toLowerCase()}`,
+          '--sheet-scale=1',
+        ]
+      : []),
   ];
   const child = spawn(join(appDirectory, 'Buttons.exe'), args, {
     cwd: appDirectory,
@@ -508,6 +855,7 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
   let result;
   let failure;
   let cleanupError;
+  let screenshot;
   let phase = 'readiness';
   try {
     const deadline = startedAtUnixMs + 20000;
@@ -543,11 +891,21 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
       windowBefore.startedAtUnixMs <= observed.observedAtUnixMs,
       'sheet: процесс создан после наблюдения',
     );
-    phase = 'screenshot';
+    phase = 'screenshot-command';
+    screenshot = { exitCode: null, replyIsObject: null, image: null };
     const pngPath = join(output, `${entry.name}.png`);
     const command = spawnSync(
       cli,
-      ['ui', 'screenshot', 'Sheet', '--output', pngPath, '-w', observed.windowHandle, '--json'],
+      [
+        'ui',
+        'screenshot',
+        'SheetViewport',
+        '--output',
+        pngPath,
+        '-w',
+        observed.windowHandle,
+        '--json',
+      ],
       {
         encoding: 'utf8',
         timeout: 15000,
@@ -561,14 +919,20 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
         },
       },
     );
+    screenshot.exitCode = command.status;
     if (command.error) throw command.error;
     assert.equal(command.status, 0, 'sheet: screenshot отказал');
+    phase = 'screenshot-reply';
     const reply = JSON.parse(command.stdout);
-    assert.ok(reply !== null && typeof reply === 'object', 'sheet: CLI screenshot не вернул JSON');
+    screenshot.replyIsObject = reply !== null && typeof reply === 'object';
+    assert.ok(screenshot.replyIsObject, 'sheet: CLI screenshot не вернул JSON');
+    phase = 'screenshot-process';
     await delay(0);
     if (childError) throw childError;
     assert.equal(child.exitCode, null, 'sheet: приложение завершилось во время снимка');
-    assert.deepEqual(png(await readFile(pngPath)), { width: 375, height: 812 });
+    phase = 'screenshot-image';
+    screenshot.image = png(await readFile(pngPath));
+    assert.deepEqual(screenshot.image, { width: 375, height: 812 });
     phase = 'window-after';
     const windowAfter = readWindow(child.pid);
     assert.deepEqual(windowAfter, windowBefore, 'sheet: окно изменилось во время снимка');
@@ -606,14 +970,19 @@ async function captureCase(appDirectory, output, cli, entry, sourceSha) {
         error: failure,
         cleanupError,
         stderrBytes,
+        screenshot,
       }),
     );
     throw new Error('sheet: capture отказал; подробности в LABUI_SHEET_FAILURE_JSON');
   }
+  if (entry.scenario)
+    await writeStdout(
+      sheetContentCaseLog({ sourceSha, name: entry.name, ...result, observation: observed }),
+    );
   return result;
 }
 
-async function capture(appDirectory, output, receiptPath, sourceSha) {
+async function capture(appDirectory, output, receiptPath, sourceSha, content = false) {
   if (
     !(
       process.platform === 'win32' &&
@@ -643,6 +1012,7 @@ async function capture(appDirectory, output, receiptPath, sourceSha) {
     motion: 'not-qualified',
     performance: 'not-qualified',
   };
+  if (content) identity.schema = CONTENT_SCHEMA;
   for (const [field, file] of Object.entries({
     appSha256: 'Buttons.exe',
     consumerSha256: 'Buttons.dll',
@@ -651,29 +1021,50 @@ async function capture(appDirectory, output, receiptPath, sourceSha) {
   }))
     identity[field] = hash(await readFile(join(appDirectory, file)));
   await mkdir(output);
-  for (const entry of CASES)
-    identity.cases[entry.name] = await captureCase(
-      appDirectory,
-      output,
-      receipt.path,
-      entry,
-      sourceSha,
-    );
+  let failedCases = 0;
+  for (const entry of content ? CONTENT_CASES : CASES) {
+    try {
+      identity.cases[entry.name] = await captureCase(
+        appDirectory,
+        output,
+        receipt.path,
+        entry,
+        sourceSha,
+      );
+    } catch (error) {
+      if (!content) throw error;
+      failedCases++;
+    }
+  }
+  if (failedCases > 0)
+    throw new Error('sheet: Content witness не прошёл; каждый отказ сохранён отдельно');
   await writeFile(join(output, 'identity.json'), JSON.stringify(identity, null, 2), { flag: 'wx' });
   const files = new Map(
-    await Promise.all(FILES.map(async (file) => [file, await readFile(join(output, file))])),
+    await Promise.all(
+      (content ? CONTENT_FILES : FILES).map(async (file) => [
+        file,
+        await readFile(join(output, file)),
+      ]),
+    ),
   );
-  await writeStdout(encodeSheetEvidence(files, sourceSha));
+  await writeStdout(encode(files, sourceSha, content));
 }
 
 async function main([operation, ...args]) {
-  if (operation === 'capture' && args.length === 4)
-    await capture(resolve(args[0]), resolve(args[1]), resolve(args[2]), args[3]);
-  else if (operation === 'decode' && args.length === 3) {
+  if (['capture', 'capture-content'].includes(operation) && args.length === 4)
+    await capture(
+      resolve(args[0]),
+      resolve(args[1]),
+      resolve(args[2]),
+      args[3],
+      operation === 'capture-content',
+    );
+  else if (['decode', 'decode-content'].includes(operation) && args.length === 3) {
     assert.ok((await lstat(args[0])).size <= 32 * 1024 * 1024, 'sheet: размер журнала');
-    const files = decodeSheetEvidence(
+    const files = decode(
       new TextDecoder('utf8', { fatal: true }).decode(await readFile(args[0])),
       args[1],
+      operation === 'decode-content',
     );
     await mkdir(args[2]);
     for (const [file, bytes] of files) await writeFile(join(args[2], file), bytes, { flag: 'wx' });
@@ -688,7 +1079,7 @@ async function main([operation, ...args]) {
     );
   } else
     throw new Error(
-      'Usage: sheet.mjs capture <app-directory> <new-output> <winapp-receipt> <source-sha> | decode <job.log> <source-sha> <new-output>',
+      'Usage: sheet.mjs capture|capture-content <app-directory> <new-output> <winapp-receipt> <source-sha> | decode|decode-content <job.log> <source-sha> <new-output>',
     );
 }
 

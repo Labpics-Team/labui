@@ -113,7 +113,10 @@ export const defaultConfig: TokensConfig = {
       'button-glow-blur': 1.125,
       'button-glow-shift-s': 0.0625,
       'button-glow-shift-l': 0.1875,
-      // Sheet Half: read-only эталон от 2026-11-04, Unit 100%.
+      // Sheet: фиксированные высоты Body из read-only эталона от 2026-11-04, Unit 100%.
+      'sheet-body-full': 48.5,
+      'sheet-body-two-thirds': 33.75,
+      'sheet-body-one-third': 16.875,
       'sheet-drag-area': 1.5,
       'sheet-indicator-w': 2.25,
       'sheet-indicator-h': 0.25,

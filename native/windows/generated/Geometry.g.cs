@@ -1,4 +1,4 @@
-// СГЕНЕРИРОВАНО. Не править вручную. owners 2b26f1e3331eb6ca3afc1ee60d6ffdf4d2bd8c263d6fe1c68d58672771a05de1
+// СГЕНЕРИРОВАНО. Не править вручную. owners d2529067e528362397a511ec4726d837b79b49bfa94dd2205adcac98f39a5187
 // Размеры — DIP при масштабе 100%; tracking — em, line height — DIP.
 namespace LabUI.WinUI;
 
@@ -31,6 +31,9 @@ internal static class Geometry
     internal const double SheetInset = 16;
     internal const double SheetGap = 24;
     internal const double SheetOverlap = 32;
+    internal const double SheetBodyFull = 776;
+    internal const double SheetBodyTwoThirds = 540;
+    internal const double SheetBodyOneThird = 270;
     internal const double SheetDragArea = 24;
     internal const double SheetIndicatorWidth = 36;
     internal const double SheetIndicatorHeight = 4;

@@ -11,6 +11,11 @@ internal static class SheetSourceTopologyProbe
 {
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
+    internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
+    internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
+    internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
+    internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";
+    internal const string ActualBinaryThreeDataKey = "LabUI.SheetActualBinaryThreeFactory";
     internal const int Limit = 20;
     private readonly record struct Case(int Inputs, bool Add, string Source,
         bool Named = false, bool Blur = true, bool Mask = true, bool Balanced = false,
@@ -25,42 +30,142 @@ internal static class SheetSourceTopologyProbe
         new(3, true, "repeat"), new(8, true, "repeat"),
         new(8, false, "repeat"),
         new(8, true, "shared", true, false),
-        new(8, true, "shared", true, true, false),
+        new(8, true, "repeat", Mask: false),
         new(8, true, "repeat", Balanced: true),
         new(1, false, "repeat", Mask: false, LevelStart: 7),
         new(1, false, "repeat", Mask: false, Body: true),
         new(2, true, "repeat", LevelStart: 6),
-        new(8, true, "repeat", Blur: false),
+        new(8, true, "repeat", Blur: false, Mask: false),
     ];
 
     internal static CompositionEffectFactory CreateFactory(Compositor compositor,
         IGraphicsEffect graph, double ghostSigma, double bodySigma)
-    {
-        try { return compositor.CreateEffectFactory(graph); }
-        catch (Exception primary)
+        => SheetFactorySampling.PreservePrimary(() => compositor.CreateEffectFactory(graph), primary =>
         {
-            try
-            {
-                primary.Data[DataKey] = cases.Select((spec, index) =>
-                    Sample(compositor, spec, index, ghostSigma, bodySigma)).ToArray();
-            }
-            catch
-            {
-                // Диагностика не отзывает исходный exception или место его throw.
-            }
-            throw;
-        }
-    }
+            primary.Data[DataKey] = cases.Select((spec, index) =>
+                Sample(compositor, spec, index, ghostSigma, bodySigma)).ToArray();
+        });
 
-    // Borrowed AlphaMask-ветви реальной ghostPair0; удалить после RCA/owner fix.
+    // Слоты: исходный progressive; тот же progressive с Ghost paint/noise до внешней маски.
+    // Графы принадлежат Frame; sampler закрывает только свои factory.
     internal static void RecordBranches(Exception primary, Compositor compositor,
         IGraphicsEffect first, IGraphicsEffect second)
+        => RecordPair(primary, BranchesDataKey, compositor, first, second);
+
+    // Слоты: baked sigma; dynamic sigma. Один actual progressive принадлежит Frame.
+    // Имена и значения узлов одинаковы; успех sampler не допускает исходный renderer.
+    internal static void RecordSigmaFactories(Exception primary, Compositor compositor,
+        IGraphicsEffect progressive, IEnumerable<string> dynamicProperties)
+        => RecordPair(primary, SigmaDataKey, compositor, progressive, progressive, dynamicProperties);
+
+    // Ровно три actual ветви принадлежат Frame; sampler владеет только Add root/factory.
+    // Sigma, имена и Layer transforms заимствуются без перестроения или изменения.
+    internal static void RecordActualThree(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)
+    {
+        try
+        {
+            var outcome = SheetFactorySampling.Capture(register =>
+            {
+                var root = new CompositeEffect();
+                register(root);
+                root.Mode = CanvasComposite.Add;
+                root.Sources.Add(branch0);
+                root.Sources.Add(branch1);
+                root.Sources.Add(branch2);
+                return root;
+            }, graph => compositor.CreateEffectFactory(graph));
+            primary.Data[ActualThreeDataKey] = new Dictionary<string, object?>
+            {
+                ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+            };
+        }
+        catch { }
+    }
+
+    // Первая Ghost DestinationIn содержит уже созданный Frame-owned Layer.
+    // Заимствуется тот же Transform2D; sampler освобождает только свою factory.
+    internal static void RecordActualLayer(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0)
+    {
+        try
+        {
+            var outcome = SheetFactorySampling.CaptureBorrowed(
+                () => (Transform2DEffect)((CompositeEffect)branch0).Sources[1],
+                graph => compositor.CreateEffectFactory(graph));
+            primary.Data[ActualLayerDataKey] = new Dictionary<string, object?>
+            {
+                ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+            };
+        }
+        catch { }
+    }
+
+    // Слоты 0/1/2 совпадают с компонентами actualThree; каждый root заимствуется.
+    // Отказ одного factory не прерывает остальные; Frame-owned ветви не освобождаются.
+    internal static void RecordActualComponents(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)
+    {
+        try
+        {
+            Dictionary<string, object?> SampleComponent(IGraphicsEffectSource branch)
+            {
+                var outcome = SheetFactorySampling.CaptureBorrowed(() => (IGraphicsEffect)branch,
+                    graph => compositor.CreateEffectFactory(graph));
+                return new()
+                {
+                    ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                    ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+                };
+            }
+            primary.Data[ActualComponentsDataKey] = new[]
+            {
+                SampleComponent(branch0), SampleComponent(branch1), SampleComponent(branch2),
+            };
+        }
+        catch { }
+    }
+
+    // Те же actual 0/1/2 и Add, но два binary join вместо одного flat join.
+    // Принадлежат sampler только pair/root и factory; descendants остаются у Frame.
+    internal static void RecordActualBinaryThree(Exception primary, Compositor compositor,
+        IGraphicsEffectSource branch0, IGraphicsEffectSource branch1, IGraphicsEffectSource branch2)
+    {
+        try
+        {
+            var outcome = SheetFactorySampling.Capture(register =>
+            {
+                var pair = new CompositeEffect();
+                register(pair);
+                pair.Mode = CanvasComposite.Add;
+                pair.Sources.Add(branch0);
+                pair.Sources.Add(branch1);
+                var root = new CompositeEffect();
+                register(root);
+                root.Mode = CanvasComposite.Add;
+                root.Sources.Add(pair);
+                root.Sources.Add(branch2);
+                return root;
+            }, graph => compositor.CreateEffectFactory(graph));
+            primary.Data[ActualBinaryThreeDataKey] = new Dictionary<string, object?>
+            {
+                ["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory",
+                ["hresult"] = outcome.HResult, ["cleanupHresult"] = outcome.CleanupHResult,
+            };
+        }
+        catch { }
+    }
+
+    private static void RecordPair(Exception primary, string dataKey, Compositor compositor,
+        IGraphicsEffect first, IGraphicsEffect second, IEnumerable<string>? secondProperties = null)
     {
         try
         {
             var firstResult = SampleFactory(compositor, first);
-            var secondResult = SampleFactory(compositor, second);
-            primary.Data[BranchesDataKey] = new Dictionary<string, object?>[]
+            var secondResult = SampleFactory(compositor, second, secondProperties);
+            primary.Data[dataKey] = new Dictionary<string, object?>[]
             {
                 new() { ["hresult"] = firstResult.HResult, ["cleanupHresult"] = firstResult.CleanupHResult },
                 new() { ["hresult"] = secondResult.HResult, ["cleanupHresult"] = secondResult.CleanupHResult },
@@ -70,33 +175,17 @@ internal static class SheetSourceTopologyProbe
     }
 
     private static (int? HResult, int? CleanupHResult) SampleFactory(Compositor compositor,
-        IGraphicsEffect graph)
+        IGraphicsEffect graph, IEnumerable<string>? dynamicProperties = null)
     {
-        CompositionEffectFactory? factory = null;
-        int? hresult = null;
-        int? cleanupHresult = null;
-        try
-        {
-            factory = compositor.CreateEffectFactory(graph);
-            hresult = 0;
-        }
-        catch (Exception error) { hresult = error.HResult; }
-        finally
-        {
-            if (factory is not null)
-            {
-                try { factory.Dispose(); }
-                catch (Exception cleanup) { cleanupHresult = cleanup.HResult; }
-            }
-        }
-        return (hresult, cleanupHresult);
+        var outcome = SheetFactorySampling.Capture(_ => graph,
+            input => dynamicProperties is null ? compositor.CreateEffectFactory(input)
+                : compositor.CreateEffectFactory(input, dynamicProperties));
+        return (outcome.HResult, outcome.CleanupHResult);
     }
 
     private static Dictionary<string, object?> Sample(Compositor compositor,
         Case spec, int index, double ghostSigma, double bodySigma)
     {
-        List<IDisposable> owned = [];
-        CompositionEffectFactory? factory = null;
         var sample = new Dictionary<string, object?>
         {
             ["index"] = index, ["inputs"] = spec.Inputs,
@@ -107,7 +196,7 @@ internal static class SheetSourceTopologyProbe
             ["stage"] = "build",
             ["hresult"] = 0, ["cleanupHresult"] = null,
         };
-        try
+        var outcome = SheetFactorySampling.Capture(register =>
         {
             float[]? sigmas = null;
             if (spec.Inputs == 1 || spec.LevelStart > 0)
@@ -120,8 +209,8 @@ internal static class SheetSourceTopologyProbe
             }
             T Own<T>(T effect) where T : IGraphicsEffect, IDisposable
             {
-                owned.Add(effect);
-                if (spec.Named) effect.Name = $"probe{owned.Count}";
+                var position = register(effect);
+                if (spec.Named) effect.Name = $"probe{position}";
                 return effect;
             }
             var shared = new CompositionEffectSourceParameter("backdrop");
@@ -172,20 +261,11 @@ internal static class SheetSourceTopologyProbe
                 sum = balanced[0];
             }
             var graph = (IGraphicsEffect)(add ?? sum!);
-            sample["stage"] = "factory";
-            factory = compositor.CreateEffectFactory(graph);
-        }
-        catch (Exception error) { sample["hresult"] = error.HResult; }
-        finally
-        {
-            void Dispose(IDisposable value)
-            {
-                try { value.Dispose(); }
-                catch (Exception error) { sample["cleanupHresult"] ??= error.HResult; }
-            }
-            if (factory is not null) Dispose(factory);
-            for (var resource = owned.Count - 1; resource >= 0; resource--) Dispose(owned[resource]);
-        }
+            return graph;
+        }, input => compositor.CreateEffectFactory(input));
+        sample["stage"] = outcome.Stage == SheetFactoryStage.Build ? "build" : "factory";
+        sample["hresult"] = outcome.HResult;
+        sample["cleanupHresult"] = outcome.CleanupHResult;
         return sample;
     }
 }

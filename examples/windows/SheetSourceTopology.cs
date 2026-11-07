@@ -2,6 +2,8 @@ using System.Collections;
 
 namespace LabUI.Buttons;
 
+internal sealed record SheetFactoryDiagnostic(string stage, int hresult, int? cleanupHresult);
+
 // Временный wire-проектор диагностических случаев. Произвольные Data/Message
 // не сериализуются; ошибки диагностики не меняют исходный отказ приложения.
 internal static class SheetSourceTopology
@@ -9,6 +11,11 @@ internal static class SheetSourceTopology
     internal const string DataKey = "LabUI.SheetSourceTopologyProbe";
     internal const string FactoryDataKey = "LabUI.SheetFactoryFailure";
     internal const string BranchesDataKey = "LabUI.SheetFactoryBranches";
+    internal const string SigmaDataKey = "LabUI.SheetSigmaFactory";
+    internal const string ActualThreeDataKey = "LabUI.SheetActualThreeFactory";
+    internal const string ActualLayerDataKey = "LabUI.SheetActualLayerFactory";
+    internal const string ActualComponentsDataKey = "LabUI.SheetActualComponentsFactory";
+    internal const string ActualBinaryThreeDataKey = "LabUI.SheetActualBinaryThreeFactory";
     internal const int Limit = 20;
 
     internal static Dictionary<string, object?>[]? Read(Exception? error)
@@ -59,7 +66,9 @@ internal static class SheetSourceTopology
                     || value.Count != 2 || !value.TryGetValue("name", out var rawName)
                     || !value.TryGetValue("operation", out var rawOperation)) return null;
                 var name = Known(rawName, "ghostPair0", "ghostPair1", "ghostPair2", "ghostPair3",
-                    "progressive", "ghost", "body", "final");
+                    "progressive", "progressiveSeed", "progressiveLeaf0", "progressiveLeaf1",
+                    "progressiveLeaf2", "progressiveLeaf3", "progressiveLeaf4", "progressiveLeaf5",
+                    "progressiveLeaf6", "progressiveLeaf7", "progressiveSum", "ghost", "body", "outer", "border", "final");
                 var operation = Known(rawOperation, "factory", "brush", "binding");
                 return name is not null && operation is not null
                     ? new() { ["name"] = name, ["operation"] = operation } : null;
@@ -71,13 +80,97 @@ internal static class SheetSourceTopology
 
     // Вместе с borrowed AlphaMask sampler удаляется после RCA/owner fix.
     internal static Dictionary<string, object?>[]? ReadBranches(Exception? error)
+        => ReadPair(error, BranchesDataKey);
+
+    internal static Dictionary<string, object?>[]? ReadSigma(Exception? error)
+        => ReadPair(error, SigmaDataKey);
+
+    internal static Dictionary<string, object?>? ReadActualThree(Exception? error)
     {
         try
         {
             for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
             {
-                if (!error.Data.Contains(BranchesDataKey)) continue;
-                if (error.Data[BranchesDataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
+                if (!error.Data.Contains(ActualThreeDataKey)) continue;
+                if (error.Data[ActualThreeDataKey] is not Dictionary<string, object?> row
+                    || row.Count != 3 || !row.TryGetValue("stage", out var rawStage)
+                    || !row.TryGetValue("hresult", out var hresult)
+                    || !row.TryGetValue("cleanupHresult", out var cleanupHresult)
+                    || hresult is not int || cleanupHresult is not (null or int)) return null;
+                var stage = Known(rawStage, "build", "factory");
+                return stage is not null
+                    ? new() { ["stage"] = stage, ["hresult"] = hresult, ["cleanupHresult"] = cleanupHresult }
+                    : null;
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    internal static SheetFactoryDiagnostic? ReadActualLayer(Exception? error)
+        => ReadDiagnostic(error, ActualLayerDataKey);
+
+    internal static SheetFactoryDiagnostic? ReadActualBinaryThree(Exception? error)
+        => ReadDiagnostic(error, ActualBinaryThreeDataKey);
+
+    private static SheetFactoryDiagnostic? ReadDiagnostic(Exception? error, string dataKey)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(dataKey)) continue;
+                return Diagnostic(error.Data[dataKey]);
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    internal static SheetFactoryDiagnostic[]? ReadActualComponents(Exception? error)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(ActualComponentsDataKey)) continue;
+                if (error.Data[ActualComponentsDataKey] is not Dictionary<string, object?>[] { Length: 3 } rows)
+                    return null;
+                var projected = new SheetFactoryDiagnostic[3];
+                for (var index = 0; index < 3; index++)
+                {
+                    var result = Diagnostic(rows[index]);
+                    if (result is null) return null;
+                    projected[index] = result;
+                }
+                return projected;
+            }
+        }
+        catch { }
+        return null;
+    }
+
+    private static SheetFactoryDiagnostic? Diagnostic(object? value)
+    {
+        if (value is not Dictionary<string, object?> row
+            || row.Count != 3 || !row.TryGetValue("stage", out var rawStage)
+            || !row.TryGetValue("hresult", out var rawHresult)
+            || !row.TryGetValue("cleanupHresult", out var rawCleanupHresult)
+            || rawHresult is not int hresult || rawCleanupHresult is not (null or int)) return null;
+        var stage = Known(rawStage, "build", "factory");
+        return stage is not null
+            ? new(stage, hresult, rawCleanupHresult is int cleanupHresult ? cleanupHresult : null)
+            : null;
+    }
+
+    private static Dictionary<string, object?>[]? ReadPair(Exception? error, string dataKey)
+    {
+        try
+        {
+            for (var depth = 0; error is not null && depth < 8; depth++, error = error.InnerException)
+            {
+                if (!error.Data.Contains(dataKey)) continue;
+                if (error.Data[dataKey] is not Dictionary<string, object?>[] { Length: 2 } rows)
                     return null;
                 var projected = new Dictionary<string, object?>[2];
                 for (var index = 0; index < 2; index++)

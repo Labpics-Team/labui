@@ -56,7 +56,10 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'button-glow-blur': 18,
     'button-glow-shift-s': 1,
     'button-glow-shift-l': 3,
-    // Sheet Half: размеры и optical shift read-only эталона от 2026-11-04.
+    // Sheet: фиксированные высоты Body и optical shift read-only эталона от 2026-11-04.
+    'sheet-body-full': 776,
+    'sheet-body-two-thirds': 540,
+    'sheet-body-one-third': 270,
     'sheet-drag-area': 24,
     'sheet-indicator-w': 36,
     'sheet-indicator-h': 4,

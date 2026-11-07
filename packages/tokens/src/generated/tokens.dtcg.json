@@ -566,6 +566,42 @@
         }
       }
     },
+    "sheet-body-full": {
+      "$type": "dimension",
+      "$value": {
+        "value": 776,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "48.5rem"
+        }
+      }
+    },
+    "sheet-body-two-thirds": {
+      "$type": "dimension",
+      "$value": {
+        "value": 540,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "33.75rem"
+        }
+      }
+    },
+    "sheet-body-one-third": {
+      "$type": "dimension",
+      "$value": {
+        "value": 270,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "16.875rem"
+        }
+      }
+    },
     "sheet-drag-area": {
       "$type": "dimension",
       "$value": {

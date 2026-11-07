@@ -158,6 +158,7 @@ sealed class Probe {
     private CanvasDevice? device;
     private CompositionGraphicsDevice? graphics;
     private Frame? frame;
+    private SheetMetrics? geometry = SheetMetrics.Half(375,812);
     private bool active = true, queued, recovering, recoveryFailed;
     private long generation = 1;
     public double ActualWidth => 375; public double ActualHeight => 812;

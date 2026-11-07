@@ -69,6 +69,9 @@
   --lab-size-button-glow-blur: 1.125rem;
   --lab-size-button-glow-shift-s: 0.0625rem;
   --lab-size-button-glow-shift-l: 0.1875rem;
+  --lab-size-sheet-body-full: 48.5rem;
+  --lab-size-sheet-body-two-thirds: 33.75rem;
+  --lab-size-sheet-body-one-third: 16.875rem;
   --lab-size-sheet-drag-area: 1.5rem;
   --lab-size-sheet-indicator-w: 2.25rem;
   --lab-size-sheet-indicator-h: 0.25rem;
