@@ -28,7 +28,7 @@ beforeAll(async () => {
 const labelName = (family) => `--lab-label-${family === 'neutral' ? '' : `${family}-`}primary`;
 
 describe('FX: точный авторский контракт r5', () => {
-  it('пять glow, шесть focus и shimmer составляют ровно 12 ролей', () => {
+  it('пять glow, шесть focus, shimmer и noise составляют ровно 13 ролей', () => {
     expect(dictionary.groups.FX.slice().sort()).toEqual(EXPECTED_FX_ROLES);
     expect(RETIRED_FX_ROLES).toHaveLength(50);
     expect(new Set(RETIRED_FX_ROLES).size).toBe(50);
@@ -68,6 +68,28 @@ describe('FX: точный авторский контракт r5', () => {
       }
     },
   );
+});
+
+describe('FX: общая краска шума', () => {
+  it.each(THEMES)('%s: шум сохраняет авторский RGB без alpha материала', (theme) => {
+    const paint = readyTheme(engine, theme).paints.get('--lab-fx-noise');
+    expect(paint).toEqual({ rgb: [1, 2, 5], opacity: 1 });
+    expect(rgba(resolveValue('--lab-fx-noise', emitted[THEMES.indexOf(theme)]))).toEqual(paint);
+  });
+
+  it('смена источника шума проходит через Colors и не меняет остальные краски', async () => {
+    const changed = structuredClone(config);
+    changed.authored.sources.noise = '#172B3D';
+    const modified = await createLabuiEngine({ config: changed });
+    for (const theme of THEMES) {
+      const before = readyTheme(engine, theme).paints;
+      const after = readyTheme(modified, theme).paints;
+      expect(after.get('--lab-fx-noise')).toEqual({ rgb: [23, 43, 61], opacity: 1 });
+      expect([...after].filter(([name]) => name !== '--lab-fx-noise')).toEqual(
+        [...before].filter(([name]) => name !== '--lab-fx-noise'),
+      );
+    }
+  });
 });
 
 describe('FX: focus наследует выбранный Label', () => {

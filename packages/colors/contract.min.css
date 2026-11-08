@@ -172,6 +172,7 @@
   --lab-fx-glow-inverted: var(--_lab-light, rgb(176 176 185)) var(--_lab-dark, rgb(60 60 67));
   --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
   --lab-fx-glow-warning: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.522)) var(--_lab-dark, rgb(255 179 64 / 0.522)));
+  --lab-fx-noise: rgb(1 2 5);
   --lab-fx-skeleton-highlight: var(--_lab-light, rgb(255 255 255 / 0.078)) var(--_lab-dark, rgb(255 255 255 / 0.161));
 
 

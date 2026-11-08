@@ -8,6 +8,7 @@ export const EXPECTED_FX_ROLES = [
   ...[...GLOW_FAMILIES, 'inverted'].map((family) => `--lab-fx-glow-${family}`),
   ...FOCUS_FAMILIES.map((family) => `--lab-fx-focus-ring-${family}`),
   '--lab-fx-skeleton-highlight',
+  '--lab-fx-noise',
 ].sort();
 
 // Точное снятие r5: 36 дополнительных ступеней + 12 core/alpha + 2 base.

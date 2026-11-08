@@ -31,7 +31,7 @@ async function disableLengthCSS(
   missing: 'registration' | 'queries' | 'both',
 ): Promise<void> {
   await page.addInitScript((capability) => {
-    const observed = { capability, sheets: 0, removed: 0, properties: 0, queries: 0 };
+    const observed = { capability, sheets: 0, removed: 0, properties: 0, queries: 0, remaining: 0 };
     Object.defineProperty(window, '__veilCSSDouble', { value: observed });
     if (capability === 'registration' || capability === 'both') {
       Object.defineProperty(CSS, 'registerProperty', { configurable: true, value: undefined });
@@ -65,6 +65,13 @@ async function disableLengthCSS(
             observed.removed++;
           }
         }
+        observed.remaining += [...sheet.cssRules].filter(
+          (current) =>
+            ((capability === 'registration' || capability === 'both') &&
+              /^@property\b/.test(current.cssText)) ||
+            ((capability === 'queries' || capability === 'both') &&
+              /^@container\b/.test(current.cssText)),
+        ).length;
         observed.sheets++;
       }
       return result;
@@ -535,7 +542,10 @@ for (const missing of ['registration', 'queries'] as const) {
       );
       await strength(page, history.initial);
       const double = await page.evaluate(() => Reflect.get(window, '__veilCSSDouble'));
-      expect(double).toMatchObject({ capability: missing, removed: 4 });
+      // Other materials can add independent length properties to the shared
+      // sheet. The double must remove every targeted rule, not a fixed total.
+      expect(double).toMatchObject({ capability: missing, remaining: 0 });
+      expect(double.removed).toBeGreaterThanOrEqual(4);
       const errors: string[] = [];
       page.on('console', (message) => {
         if (message.type() === 'error') errors.push(message.text());

@@ -47,6 +47,7 @@ describe('файлы-материалы: закон порядка склейк�
       'acrylic.css',
       'engine-held.css',
       'solid.css',
+      'sheet.css',
       'degradations.css',
       'veil.css',
     ]);

@@ -15,6 +15,7 @@ export const MATERIAL_CSS_ORDER = [
   'acrylic.css',
   'engine-held.css',
   'solid.css',
+  'sheet.css',
   'degradations.css',
   'veil.css',
 ] as const;

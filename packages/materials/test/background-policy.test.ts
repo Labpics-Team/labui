@@ -88,8 +88,12 @@ describe('семейство live-заливок и авторская роль 
     expect(elevated).toContain('--_base: var(--lab-bg-grouped-secondary)');
     expect(elevated).toContain('var(--lab-bg-material-elevated-01)');
     expect(elevated).toContain('var(--_material-active, 0) * 100%');
-    const withoutElevated = css.replace(/\.lab-material--elevated\s*\{[^}]+\}/, '');
-    const fillDecls = [...withoutElevated.matchAll(/--_(?:tint|base):\s*([^;]+);/g)].map((m) =>
+    const sheet = css.match(/\.lab-material--sheet\s*\{([^}]+)\}/)?.[1] ?? '';
+    expect(sheet).toContain('--_base: var(--lab-bg-grouped-secondary)');
+    expect(sheet).toContain('var(--lab-bg-material-base-01)');
+    expect(sheet).toContain('var(--_material-active, 0) * 100%');
+    const genericTiers = css.replace(/\.lab-material--(?:elevated|sheet)\s*\{[^}]+\}/g, '');
+    const fillDecls = [...genericTiers.matchAll(/--_(?:tint|base):\s*([^;]+);/g)].map((m) =>
       (m[1] as string).trim(),
     );
     expect(fillDecls.length).toBeGreaterThan(0);

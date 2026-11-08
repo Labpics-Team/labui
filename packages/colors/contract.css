@@ -2,7 +2,7 @@
 СГЕНЕРИРОВАНО — НЕ ПРАВИТЬ РУКАМИ.
 Источник: @labpics/colors@2.0.0, source a48b4eb0703d37cabe2cab83f3f5a7679e3cebbe.
 WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
-Авторские входы: labui.config.json, SHA256 a469bfad0229807e02645b821cb9bb73c22c992421e98fd1f07b3211f37bce05.
+Авторские входы: labui.config.json, SHA256 9be6a4813d38be6c8a954f4873205f65e1dc7b4f8dd06a81ed039ef7e7072cb4.
 Краски и alpha получены из готового Program; aliases принадлежат LabUI.
 Регенерация: node packages/colors/generate-contract.mjs
 */
@@ -185,6 +185,7 @@ WASM SHA256: 9a921ee8850c6abe2f89fde641e3933db4cb22a8888f966442d72507834e0c93.
   --lab-fx-glow-inverted: var(--_lab-light, rgb(176 176 185)) var(--_lab-dark, rgb(60 60 67));
   --lab-fx-glow-neutral: rgb(255 255 255 / 0.522);
   --lab-fx-glow-warning: var(--_lab-normal, var(--_lab-light, rgb(255 161 0 / 0.522)) var(--_lab-dark, rgb(255 144 8 / 0.522))) var(--_lab-more, var(--_lab-light, rgb(135 86 0 / 0.522)) var(--_lab-dark, rgb(255 179 64 / 0.522)));
+  --lab-fx-noise: rgb(1 2 5);
   --lab-fx-skeleton-highlight: var(--_lab-light, rgb(255 255 255 / 0.078)) var(--_lab-dark, rgb(255 255 255 / 0.161));
 
   /* Misc */

@@ -33,6 +33,7 @@ import { attach as attachAcrylic, supportsAcrylicChain } from './acrylic';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
 import { type EngineBinding, collectSurfaces, mountEngine, trailingRaf } from './mount';
 import { MATERIAL_ENGINE_MEDIA, materialMediaBlocked, prefersMoreContrast } from './preferences';
+import { attach as attachSheet } from './sheet';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
@@ -69,11 +70,23 @@ const BINDINGS: readonly EngineBinding[] = [
   {
     gate: supportsAcrylicChain,
     selector: SURFACE,
-    wants: (el) => inModeScope(el, 'acrylic') && !prefersMoreContrast(el),
+    wants: (el) =>
+      inModeScope(el, 'acrylic') &&
+      !prefersMoreContrast(el) &&
+      !el.classList.contains('lab-material--sheet'),
     blocked: materialMediaBlocked,
     mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
     attach: attachAcrylic,
+  },
+  {
+    gate: supportsAcrylicChain,
+    selector: '.lab-material.lab-material--sheet',
+    wants: (el) => inModeScope(el, 'acrylic') && !prefersMoreContrast(el),
+    blocked: materialMediaBlocked,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
+    refreshHeld: true,
+    attach: attachSheet,
   },
   // Veil (progressive blur) — plain backdrop-filter, любой [data-veil].
   // refreshHeld:true — перечитать декларативный конфиг (top↔left↔axis).
@@ -181,8 +194,6 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     }
     slotRoots = roots;
   }
-  sync();
-
   // Смена системного контекста перечитывает материал даже без сигнала от CSS-бокса.
   // Один набор подписок обслуживает все смонтированные движки и снимается при dispose.
   const mediaListeners: MediaQueryList[] = [];
@@ -195,7 +206,7 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     }
   }
 
-  return () => {
+  const dispose = (): void => {
     if (disposed) return;
     disposed = true;
     mo.disconnect();
@@ -205,4 +216,11 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
     for (const mq of mediaListeners) mq.removeEventListener('change', schedule);
     for (const engine of engines) engine.dispose();
   };
+  try {
+    sync();
+    return dispose;
+  } catch (error) {
+    dispose();
+    throw error;
+  }
 }

@@ -8,6 +8,7 @@ export interface LengthProbe {
 const PROPERTIES = {
   '--lab-veil-strength': '24px',
   '--lab-veil-feather': 'auto',
+  '--lab-size-sheet-body-blur': '0px',
 } as const;
 type LengthProperty = keyof typeof PROPERTIES;
 
@@ -25,9 +26,11 @@ function probeClass(property: LengthProperty): string {
 const PROJECTION_CSS = `${Object.entries(PROPERTIES)
   .map(([property, fallback]) => {
     const key = projection(property as LengthProperty);
+    const selector =
+      property === '--lab-size-sheet-body-blur' ? '.lab-material--sheet' : '[data-veil]';
     return `@property ${key}-length{syntax:"<length>";inherits:false;initial-value:-1px}
 @property ${key}-number{syntax:"<number>";inherits:false;initial-value:-1}
-[data-veil]{${key}-value:var(${property},${fallback});${key}-length:var(${property},${fallback});${key}-number:var(${property},${fallback});
+${selector}{${key}-value:var(${property},${fallback});${key}-length:var(${property},${fallback});${key}-number:var(${property},${fallback});
 ${key}-width:calc(var(${key}-length) + var(${key}-number)*1px + 2px)}
 @container style(${key}-value: ){.${probeClass(property as LengthProperty)}{--_lab-material-length-empty:1px}}
 ${fallback === 'auto' ? `@container style(${key}-value:auto){.${probeClass(property as LengthProperty)}{--_lab-material-length-auto:2px}}` : ''}`;
@@ -61,7 +64,15 @@ function acquireStyles(root: Document | ShadowRoot): () => void {
     styles.set(root, held);
   }
   held.users++;
-  held.restore();
+  try {
+    held.restore();
+  } catch (error) {
+    if (--held.users === 0) {
+      held.element.remove();
+      styles.delete(root);
+    }
+    throw error;
+  }
   const owned = held;
   return (): void => {
     if (--owned.users !== 0) return;
@@ -110,7 +121,14 @@ export function createLengthProbe(
     if (element.parentNode !== parent) parent.appendChild(element);
   }
 
-  restore();
+  try {
+    restore();
+  } catch (error) {
+    releaseRoot?.();
+    releaseDocument?.();
+    element.remove();
+    throw error;
+  }
   return {
     element,
     read(): number {
