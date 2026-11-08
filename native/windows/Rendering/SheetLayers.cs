@@ -517,36 +517,36 @@ public sealed class SheetLayers : Grid
             ghostClip.Bottom = (float)metrics.GhostHeight;
             ghostVisual.BorderMode = CompositionBorderMode.Soft;
             ghostVisual.Clip = ghostClip;
-            var bodyBackdrop = stages.CreateVisual(capturedBackdrop);
-            var bodyVisual = stages.CreateLayer(bodyBackdrop);
+            // Body has explicit brush inputs; only the final noise/mask is a visual group.
+            // Avoid LayerVisual's implicit Backdrop binding inside a two-input BlendEffect.
+            IGraphicsEffectSource bodySource = Backdrop();
             foreach (var stage in SheetMaterialProfile.Stages)
             {
                 switch (stage)
                 {
                     case SheetBodyStage.Tint:
-                        var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
-                        bodyVisual = stages.CreateLayer(bodyVisual, bodyTint);
+                        bodySource = Effect(new CompositeEffect
+                        { Mode = CanvasComposite.SourceOver, Sources = { bodySource, Paint(Tint!, "tintPaint") } });
                         break;
                     case SheetBodyStage.Blend:
-                        var blended = Effect(new BlendEffect
+                        bodySource = Effect(new BlendEffect
                         {
-                            Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),
+                            Background = bodySource, Foreground = Paint(Blend!, "blendPaint"),
                             Mode = SheetMaterialProfile.BlendMode(ActualTheme == ElementTheme.Dark),
                         });
-                        bodyVisual = stages.CreateLayer(bodyVisual);
-                        bodyVisual.Effect = Brush("body", blended, ("blendPaint", blendPaint));
                         break;
                     case SheetBodyStage.Blur:
-                        bodyVisual = stages.CreateLayer(bodyVisual);
-                        bodyVisual.Effect = Brush("body", Blur(Source("Backdrop"), Geometry.SheetBodyBlurRadius * metrics.Scale));
+                        bodySource = Blur(bodySource, Geometry.SheetBodyBlurRadius * metrics.Scale);
                         break;
                     default:
                         throw new InvalidOperationException("Неизвестный слой материала Sheet.");
                 }
             }
+            var bodyPainted = stages.CreateVisual(Brush("body", (IGraphicsEffect)bodySource,
+                ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint)));
             // Экспериментальное зерно остаётся отдельным: size/density ещё не квалифицированы.
             var bodyNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity);
-            bodyVisual = stages.CreateLayer(bodyVisual, bodyNoise);
+            var bodyVisual = stages.CreateLayer(bodyPainted, bodyNoise);
             bodyVisual.Effect = MaskBrush("body", bodyMask);
             var outerVisual = stages.CreateVisual(Brush("outer", Layer(outer),
                 ("atlas", atlasBrush)));

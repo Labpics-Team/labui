@@ -114,7 +114,7 @@ function assertSceneOwnership(candidate) {
     'var right = transform.TransformPoint(new Point(metrics.Width, 0));',
     'var bottom = transform.TransformPoint(new Point(0, metrics.Height));',
     'var capturedBackdrop = stages.Capture(sceneVisual, new Vector2((float)origin.X, (float)origin.Y), new Vector2((float)(right.X - origin.X), (float)(bottom.Y - origin.Y)));',
-    'var bodyBackdrop = stages.CreateVisual(capturedBackdrop);',
+    '("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint)',
   );
   includes(
     stages,
@@ -153,21 +153,18 @@ function assertMaterials(candidate) {
   );
   assert.deepEqual([...cases.keys()].sort(), ['Blend', 'Blur', 'Tint']);
   // Each named stage must consume the preceding result. Checking the whole
-  // method for these fragments misses a swapped label or an overwritten Effect.
+  // method for these fragments misses a swapped label or a bypassed input.
   const expectedCases = {
-    Tint: `var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
-      bodyVisual = stages.CreateLayer(bodyVisual, bodyTint); break;`,
-    Blend: `var blended = Effect(new BlendEffect {
-      Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),
+    Tint: `bodySource = Effect(new CompositeEffect
+      { Mode = CanvasComposite.SourceOver, Sources = { bodySource, Paint(Tint!, "tintPaint") } }); break;`,
+    Blend: `bodySource = Effect(new BlendEffect {
+      Background = bodySource, Foreground = Paint(Blend!, "blendPaint"),
       Mode = SheetMaterialProfile.BlendMode(ActualTheme == ElementTheme.Dark),
-      });
-      bodyVisual = stages.CreateLayer(bodyVisual);
-      bodyVisual.Effect = Brush("body", blended, ("blendPaint", blendPaint)); break;`,
-    Blur: `bodyVisual = stages.CreateLayer(bodyVisual);
-      bodyVisual.Effect = Brush("body", Blur(Source("Backdrop"), Geometry.SheetBodyBlurRadius * metrics.Scale)); break;`,
+      }); break;`,
+    Blur: 'bodySource = Blur(bodySource, Geometry.SheetBodyBlurRadius * metrics.Scale); break;',
   };
   for (const [stage, expected] of Object.entries(expectedCases))
-    assert.equal(cases.get(stage), code(expected), `Sheet ${stage} lost its preceding layer`);
+    assert.equal(cases.get(stage), code(expected), `Sheet ${stage} lost its preceding input`);
   includes(
     frame,
     'Mode = CanvasComposite.DestinationIn, Sources = { source, mask }',
@@ -182,20 +179,19 @@ function assertMaterials(candidate) {
     'ghostClip.Bottom = (float)metrics.GhostHeight;',
     'ghostVisual.BorderMode = CompositionBorderMode.Soft;',
     'ghostVisual.Clip = ghostClip;',
-    'var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);',
-    'var bodyVisual = stages.CreateLayer(bodyBackdrop);',
+    'IGraphicsEffectSource bodySource = Backdrop();',
     'foreach (var stage in SheetMaterialProfile.Stages)',
     'switch (stage)',
     'case SheetBodyStage.Tint:',
-    'bodyVisual = stages.CreateLayer(bodyVisual, bodyTint);',
+    'bodySource = Effect(new CompositeEffect { Mode = CanvasComposite.SourceOver, Sources = { bodySource, Paint(Tint!, "tintPaint") } });',
     'case SheetBodyStage.Blend:',
-    'Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),',
+    'Background = bodySource, Foreground = Paint(Blend!, "blendPaint"),',
     'Mode = SheetMaterialProfile.BlendMode(ActualTheme == ElementTheme.Dark),',
-    'bodyVisual.Effect = Brush("body", blended, ("blendPaint", blendPaint));',
     'case SheetBodyStage.Blur:',
-    'bodyVisual.Effect = Brush("body", Blur(Source("Backdrop"), Geometry.SheetBodyBlurRadius * metrics.Scale));',
+    'bodySource = Blur(bodySource, Geometry.SheetBodyBlurRadius * metrics.Scale);',
+    'var bodyPainted = stages.CreateVisual(Brush("body", (IGraphicsEffect)bodySource, ("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint)));',
     'var bodyNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity);',
-    'bodyVisual = stages.CreateLayer(bodyVisual, bodyNoise);',
+    'var bodyVisual = stages.CreateLayer(bodyPainted, bodyNoise);',
     'bodyVisual.Effect = MaskBrush("body", bodyMask);',
     'var output = stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual);',
     'result.Visual.Children.InsertAtTop(output);',
@@ -444,7 +440,7 @@ test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authore
       'stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise)',
       'stages.CreateLayer(ghostBackdrop, ghostNoise, ghostTint)',
     ],
-    ['stages.CreateLayer(bodyVisual, bodyNoise)', 'stages.CreateLayer(bodyBackdrop, bodyNoise)'],
+    ['stages.CreateLayer(bodyPainted, bodyNoise)', 'stages.CreateLayer(bodyNoise)'],
     [
       'stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual)',
       'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',
@@ -471,18 +467,30 @@ test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authore
   ]);
 });
 
-test('Body stages reject swapped Tint/Blur cases and a Blend overwritten by Blur', () => {
+test('Body stages reject swapped cases reversed blend operands and bypassed preceding inputs', () => {
   assertMaterials(source);
   const swapped = source.replace(
     /case SheetBodyStage\.(Tint|Blur):/g,
     (_, stage) => `case SheetBodyStage.${stage === 'Tint' ? 'Blur' : 'Tint'}:`,
   );
   assert.notEqual(swapped, source);
-  assert.throws(() => assertMaterials(swapped), /preceding layer/);
-  const wrapper = 'bodyVisual = stages.CreateLayer(bodyVisual);';
-  assert.equal(source.split(wrapper).length - 1, 2, 'Both effect stages own a wrapper');
-  const overwritten = source.replaceAll(wrapper, '');
-  assert.throws(() => assertMaterials(overwritten), /preceding layer/);
+  assert.throws(() => assertMaterials(swapped), /preceding input/);
+  rejectsChanges(assertMaterials, [
+    [
+      'Sources = { bodySource, Paint(Tint!, "tintPaint") }',
+      'Sources = { Backdrop(), Paint(Tint!, "tintPaint") }',
+    ],
+    [
+      'Background = bodySource, Foreground = Paint(Blend!, "blendPaint"),',
+      'Background = Paint(Blend!, "blendPaint"), Foreground = bodySource,',
+    ],
+    ['Background = bodySource,', 'Background = Backdrop(),'],
+    ['bodySource = Blur(bodySource,', 'bodySource = Blur(Backdrop(),'],
+    [
+      '("backdrop", capturedBackdrop), ("tintPaint", tintPaint), ("blendPaint", blendPaint)',
+      '("backdrop", capturedBackdrop), ("tintPaint", blendPaint), ("blendPaint", tintPaint)',
+    ],
+  ]);
 });
 
 test('Atlas retains viewport projection, per-cell writes and owned resources', () => {
