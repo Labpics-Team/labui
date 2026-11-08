@@ -200,7 +200,17 @@ function html(worker) {
           );
           const rows = windowRows(ownedWindows[requestedFocus].pid);
           const windows = workers.map((item) => windowFor(rows, item.pid, processes));
-          const frontWorker = windows[0].order < windows[1].order ? 0 : 1;
+          // The all-windows metadata enumeration is not a z-order oracle.
+          // Bind the display crop to the active process, then prove its visible
+          // pixels with the independent worker and state markers below.
+          const activeWorkers = windows.flatMap((window, worker) =>
+            window.pid === window.frontmostPid ? [worker] : [],
+          );
+          if (activeWorkers.length !== 1)
+            throw new Error(
+              'Active application does not identify exactly one owned browser window',
+            );
+          const frontWorker = activeWorkers[0];
           const prefix = `dpr${deviceScaleFactor}-round${round}`;
           const displayFile = path.join(evidence, `${prefix}-display.png`);
           capture(displayFile);

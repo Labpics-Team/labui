@@ -3,7 +3,7 @@ import CoreGraphics
 import Foundation
 
 if CommandLine.arguments.count == 2, let pid = Int32(CommandLine.arguments[1]) {
-    guard let application = NSRunningApplication(processIdentifier: pid), application.activate(options: [.activateAllWindows, .activateIgnoringOtherApps]) else {
+    guard let application = NSRunningApplication(processIdentifier: pid), application.activate(options: [.activateAllWindows]) else {
         throw NSError(domain: "WindowProbe", code: 1, userInfo: [NSLocalizedDescriptionKey: "Could not activate the requested browser process"])
     }
     RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
