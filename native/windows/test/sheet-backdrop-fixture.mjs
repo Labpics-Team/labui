@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync, inflateSync } from 'node:zlib';
 import { png } from './evidence.mjs';
+import { serializeBackdropFixture } from './sheet-fixture-descriptor.mjs';
 import { ORDER_BACKDROPS, createOrderBackdrop } from './sheet-order-fixture.mjs';
 
 const directory = new URL('../../../examples/windows/Assets/', import.meta.url);
@@ -225,6 +226,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   writeFileSync(new URL(BACKDROP_FIXTURE.assets.B.file, directory), output);
   const descriptor = structuredClone(BACKDROP_FIXTURE);
   descriptor.assets.B.sha256 = backdropHash(output);
-  writeFileSync(descriptorUrl, `${JSON.stringify(descriptor, null, 2)}\n`);
+  writeFileSync(descriptorUrl, serializeBackdropFixture(descriptor));
   process.stdout.write(`${descriptor.assets.B.sha256}\n`);
 }

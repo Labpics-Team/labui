@@ -4,6 +4,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
+import { serializeBackdropFixture } from './sheet-fixture-descriptor.mjs';
 
 export const ORDER_BACKDROPS = Object.freeze([
   'OrderBlack',
@@ -60,5 +61,5 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     writeFileSync(new URL(file, directory), bytes);
     descriptor.assets[variant] = { file, sha256: createHash('sha256').update(bytes).digest('hex') };
   }
-  writeFileSync(descriptorUrl, `${JSON.stringify(descriptor, null, 2)}\n`);
+  writeFileSync(descriptorUrl, serializeBackdropFixture(descriptor));
 }

@@ -36,11 +36,6 @@
     "width": 260,
     "height": 620
   },
-  "replacementRgba": [
-    0,
-    0,
-    0,
-    255
-  ],
+  "replacementRgba": [0, 0, 0, 255],
   "resamplingMargin": 4
 }
