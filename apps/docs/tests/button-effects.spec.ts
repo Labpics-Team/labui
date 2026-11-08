@@ -729,12 +729,17 @@ for (const renderer of ['lit', 'react', 'vue'] as const) {
     expect(intermediate.opacity).toBeGreaterThan(0.2);
     expect(intermediate.opacity).toBeLessThan(0.32);
     await page.mouse.move(0, 0);
-    const reverse = await button.evaluate((element) => {
+    const reverse = await button.evaluate((element, renderer) => {
+      const effects = element.querySelector(
+        renderer === 'react' ? '.lab-button-effects' : '.effects',
+      );
+      if (!effects) throw new Error('Нет effects');
+      getComputedStyle(effects, '::before').opacity;
       const animations = element.getAnimations({ subtree: true });
       const running = animations.filter((animation) => animation.playState === 'running').length;
       for (const animation of animations) animation.finish();
       return running;
-    });
+    }, renderer);
     expect(reverse, 'Прерванный hover начинает обратный переход').toBeGreaterThan(0);
     expect(Number((await geometry(button, renderer)).gradient)).toBe(0.2);
     await button.hover();
