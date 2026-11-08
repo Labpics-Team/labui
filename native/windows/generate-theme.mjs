@@ -4,6 +4,12 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createLabuiEngine } from '../../packages/colors/engine.mjs';
+import {
+  AUTHORED_RADIUS_TO_SIGMA,
+  SHEET_BODY,
+  SHEET_NOISE_SOURCE,
+  SHEET_SOLID,
+} from '../../packages/materials/src/profiles/sheet.ts';
 import { BUTTON_INSET } from '../../packages/shadow/src/config.ts';
 import { ELEVATION_SHAPES } from '../../packages/shadow/src/domain/elevation.ts';
 import { SHADOW_SLOTS, SLOT_ALPHA } from '../../packages/shadow/src/domain/layer.ts';
@@ -30,13 +36,13 @@ export const brushRoles = Object.freeze({
   LabFocusBrush: '--lab-border-focus',
   LabPageBrush: '--lab-bg-primary',
   LabLabelPrimaryBrush: '--lab-label-primary',
-  LabSheetTintBrush: '--lab-bg-material-elevated-01',
-  LabSheetBlendBrush: '--lab-bg-material-elevated-02',
+  LabSheetTintBrush: SHEET_BODY.find((step) => step.kind === 'tint').role,
+  LabSheetBlendBrush: SHEET_BODY.find((step) => step.kind === 'blend').role,
   LabSheetGhostBrush: '--lab-bg-overlay-ghost',
   LabSheetBorderBrush: '--lab-border-base',
   LabSheetHandleBrush: '--lab-label-tertiary',
-  LabSheetNoiseBrush: '--lab-fx-noise',
-  LabSheetSolidBrush: '--lab-bg-grouped-secondary',
+  LabSheetNoiseBrush: SHEET_NOISE_SOURCE.role,
+  LabSheetSolidBrush: SHEET_SOLID,
 });
 
 function finite(value, name, minimum = 0) {
@@ -48,6 +54,12 @@ function unit(value, name) {
   finite(value, name);
   if (value > 1) throw new Error(`Вне диапазона 0…1: ${name}`);
   return value;
+}
+
+function nativeBlend(mode) {
+  if (mode === 'color-dodge') return 'ColorDodge';
+  if (mode === 'overlay') return 'Overlay';
+  throw new Error(`Неподдержанная смесь Sheet: ${mode}`);
 }
 
 /** Никаких цветовых fallback: отсутствующая роль делает всю проекцию непригодной. */
@@ -201,10 +213,13 @@ export function renderGeometry(
     SheetIndicatorOffset: value('size', 'sheet-indicator-y'),
     SheetIndicatorShift: value('size', 'sheet-indicator-x'),
     SheetBorderWidth: value('stroke', 'hairline'),
-    SheetBodyBlurRadius: value('size', 'sheet-body-blur'),
+    SheetBodyBlurRadius: value(
+      'size',
+      SHEET_BODY.find((step) => step.kind === 'blur').radius.replace('--lab-size-', ''),
+    ),
     SheetGhostBlurRadius: value('size', 'sheet-ghost-blur'),
-    SheetBodyNoiseOpacity: opacity('sheet-body-noise'),
-    SheetGhostNoiseOpacity: opacity('sheet-ghost-noise'),
+    SheetBodyNoiseOpacity: opacity(SHEET_NOISE_SOURCE.bodyOpacity.replace('--lab-opacity-', '')),
+    SheetGhostNoiseOpacity: opacity(SHEET_NOISE_SOURCE.ghostOpacity.replace('--lab-opacity-', '')),
   };
   const elevation = ELEVATION_SHAPES.find((shape) => shape.name === 'xl');
   const shadows = SHADOW_SLOTS.map((slot) => {
@@ -247,11 +262,32 @@ export async function generateNativeTheme() {
     dark: engine.resolve('dark', 'normal'),
   };
   const provenance = `Colors source ${engine.metadata.sourceSha}; WASM ${engine.metadata.wasmSha256}; input ${engine.fingerprint}; geometry ${ownerHash}`;
-  // Обе строки полностью проверяются до первого файлового эффекта.
+  // Все артефакты полностью проверяются до первого файлового эффекта.
   return {
     'ThemeResources.g.xaml': renderThemeResources(results, provenance),
     'Geometry.g.cs': renderGeometry(tokens, motion, `owners ${ownerHash}`),
+    'SheetMaterial.g.cs': await generateSheetMaterial(),
   };
+}
+
+export async function generateSheetMaterial() {
+  const source = await readFile(join(root, 'packages/materials/src/profiles/sheet.ts'), 'utf8');
+  return `// СГЕНЕРИРОВАНО. Materials source ${hash(source)}. Не править вручную.
+namespace LabUI.WinUI.Rendering;
+
+internal enum SheetBodyStage { Tint, Blend, Blur }
+
+internal static class SheetMaterialProfile
+{
+    internal const double RadiusToSigma = ${AUTHORED_RADIUS_TO_SIGMA};
+    private static readonly SheetBodyStage[] stages =
+    [${SHEET_BODY.map((step) => `SheetBodyStage.${step.kind[0].toUpperCase()}${step.kind.slice(1)}`).join(', ')}];
+    internal static System.ReadOnlySpan<SheetBodyStage> Stages => stages;
+    internal static Microsoft.Graphics.Canvas.Effects.BlendEffectMode BlendMode(bool dark) => dark
+        ? Microsoft.Graphics.Canvas.Effects.BlendEffectMode.${nativeBlend(SHEET_BODY.find((step) => step.kind === 'blend').mode.dark)}
+        : Microsoft.Graphics.Canvas.Effects.BlendEffectMode.${nativeBlend(SHEET_BODY.find((step) => step.kind === 'blend').mode.light)};
+}
+`;
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

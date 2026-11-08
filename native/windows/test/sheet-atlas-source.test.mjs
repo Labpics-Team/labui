@@ -9,6 +9,10 @@ const profile = await readFile(
   'utf8',
 );
 const geometry = await readFile(new URL('../generated/Geometry.g.cs', import.meta.url), 'utf8');
+const material = await readFile(
+  new URL('../generated/SheetMaterial.g.cs', import.meta.url),
+  'utf8',
+);
 const levels = [0, 1 / 64, 1 / 32, 1 / 16, 1 / 8, 1 / 4, 1 / 2, 1];
 
 // Лексические фрагменты не зависят от отступов и комментариев. Это не C# executor.
@@ -110,7 +114,7 @@ function assertSceneOwnership(candidate) {
     'var right = transform.TransformPoint(new Point(metrics.Width, 0));',
     'var bottom = transform.TransformPoint(new Point(0, metrics.Height));',
     'var capturedBackdrop = stages.Capture(sceneVisual, new Vector2((float)origin.X, (float)origin.Y), new Vector2((float)(right.X - origin.X), (float)(bottom.Y - origin.Y)));',
-    'Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), ("backdrop", capturedBackdrop)',
+    'var bodyBackdrop = stages.CreateVisual(capturedBackdrop);',
   );
   includes(
     stages,
@@ -154,12 +158,19 @@ function assertMaterials(candidate) {
     'ghostVisual.BorderMode = CompositionBorderMode.Soft;',
     'ghostVisual.Clip = ghostClip;',
     'var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);',
-    'var tinted = stages.CreateLayer(bodyBackdrop, bodyTint);',
+    'var bodyVisual = stages.CreateLayer(bodyBackdrop);',
+    'foreach (var stage in SheetMaterialProfile.Stages)',
+    'switch (stage)',
+    'case SheetBodyStage.Tint:',
+    'bodyVisual = stages.CreateLayer(bodyVisual, bodyTint);',
+    'case SheetBodyStage.Blend:',
     'Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),',
-    'Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,',
-    'tinted.Effect = Brush("body", blended, ("blendPaint", blendPaint));',
+    'Mode = SheetMaterialProfile.BlendMode(ActualTheme == ElementTheme.Dark),',
+    'bodyVisual.Effect = Brush("body", blended, ("blendPaint", blendPaint));',
+    'case SheetBodyStage.Blur:',
+    'bodyVisual.Effect = Brush("body", Blur(Source("Backdrop"), Geometry.SheetBodyBlurRadius * metrics.Scale));',
     'var bodyNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity);',
-    'var bodyVisual = stages.CreateLayer(tinted, bodyNoise);',
+    'bodyVisual = stages.CreateLayer(bodyVisual, bodyNoise);',
     'bodyVisual.Effect = MaskBrush("body", bodyMask);',
     'var output = stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual);',
     'result.Visual.Children.InsertAtTop(output);',
@@ -247,7 +258,12 @@ test('Sheet preserves eight authored levels and four raster cells beside native 
     'graph, Geometry.SheetGhostBlurRadius * metrics.Scale * RadiusToSigma, Geometry.SheetBodyBlurRadius * metrics.Scale * RadiusToSigma',
   );
   includes(geometry, 'SheetGhostBlurRadius = 24;', 'SheetBodyBlurRadius = 128;');
-  includes(source, 'RadiusToSigma = 0.5;');
+  includes(source, 'RadiusToSigma = SheetMaterialProfile.RadiusToSigma;');
+  includes(
+    material,
+    'RadiusToSigma = 0.5;',
+    '[SheetBodyStage.Tint, SheetBodyStage.Blend, SheetBodyStage.Blur]',
+  );
 });
 
 // Идеальные кусочно-линейные веса; не утверждение о native raster seams/quantization.
@@ -403,7 +419,7 @@ test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authore
       'stages.CreateLayer(ghostBackdrop, ghostTint, ghostNoise)',
       'stages.CreateLayer(ghostBackdrop, ghostNoise, ghostTint)',
     ],
-    ['stages.CreateLayer(tinted, bodyNoise)', 'stages.CreateLayer(bodyBackdrop, bodyNoise)'],
+    ['stages.CreateLayer(bodyVisual, bodyNoise)', 'stages.CreateLayer(bodyBackdrop, bodyNoise)'],
     [
       'stages.CreateLayer(ghostVisual, outerVisual, bodyVisual, borderVisual)',
       'stages.CreateLayer(ghostVisual, bodyVisual, outerVisual, borderVisual)',

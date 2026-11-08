@@ -62,9 +62,8 @@ public sealed class SheetLayers : Grid
     private bool recoveryFailed;
     private long generation;
 
-    // Экспериментальная проекция: Figma radius не доказан равным Win2D sigma.
-    // Начальная гипотеза radius / 2 проверяется на эталонном backdrop отдельно от paints.
-    internal const double RadiusToSigma = 0.5;
+    // Радиус и порядок проецируются из общего Materials source, без native-копии.
+    internal const double RadiusToSigma = SheetMaterialProfile.RadiusToSigma;
     // Дискретные Gaussian-ветви с линейными весами, не маска одного сильного blur.
     // Число ветвей и зерно требуют визуальной и GPU-квалификации.
 
@@ -518,18 +517,36 @@ public sealed class SheetLayers : Grid
             ghostClip.Bottom = (float)metrics.GhostHeight;
             ghostVisual.BorderMode = CompositionBorderMode.Soft;
             ghostVisual.Clip = ghostClip;
-            var bodyBackdrop = stages.CreateVisual(Brush("body",
-                Blur(Backdrop(), Geometry.SheetBodyBlurRadius * metrics.Scale), ("backdrop", capturedBackdrop)));
-            var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
-            var tinted = stages.CreateLayer(bodyBackdrop, bodyTint);
-            var blended = Effect(new BlendEffect
+            var bodyBackdrop = stages.CreateVisual(capturedBackdrop);
+            var bodyVisual = stages.CreateLayer(bodyBackdrop);
+            foreach (var stage in SheetMaterialProfile.Stages)
             {
-                Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),
-                Mode = ActualTheme == ElementTheme.Dark ? BlendEffectMode.Overlay : BlendEffectMode.ColorDodge,
-            });
-            tinted.Effect = Brush("body", blended, ("blendPaint", blendPaint));
+                switch (stage)
+                {
+                    case SheetBodyStage.Tint:
+                        var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
+                        bodyVisual = stages.CreateLayer(bodyVisual, bodyTint);
+                        break;
+                    case SheetBodyStage.Blend:
+                        var blended = Effect(new BlendEffect
+                        {
+                            Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),
+                            Mode = SheetMaterialProfile.BlendMode(ActualTheme == ElementTheme.Dark),
+                        });
+                        bodyVisual = stages.CreateLayer(bodyVisual);
+                        bodyVisual.Effect = Brush("body", blended, ("blendPaint", blendPaint));
+                        break;
+                    case SheetBodyStage.Blur:
+                        bodyVisual = stages.CreateLayer(bodyVisual);
+                        bodyVisual.Effect = Brush("body", Blur(Source("Backdrop"), Geometry.SheetBodyBlurRadius * metrics.Scale));
+                        break;
+                    default:
+                        throw new InvalidOperationException("Неизвестный слой материала Sheet.");
+                }
+            }
+            // Экспериментальное зерно остаётся отдельным: size/density ещё не квалифицированы.
             var bodyNoise = stages.CreateVisual(noiseBrush, (float)Geometry.SheetBodyNoiseOpacity);
-            var bodyVisual = stages.CreateLayer(tinted, bodyNoise);
+            bodyVisual = stages.CreateLayer(bodyVisual, bodyNoise);
             bodyVisual.Effect = MaskBrush("body", bodyMask);
             var outerVisual = stages.CreateVisual(Brush("outer", Layer(outer),
                 ("atlas", atlasBrush)));
