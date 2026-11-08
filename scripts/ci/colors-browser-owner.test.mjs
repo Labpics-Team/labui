@@ -91,7 +91,23 @@ test('browser owner preserves ordinary and icons commands and qualifies only ver
     );
     writeFileSync(
       join(root, 'bin/pnpm'),
-      '#!/bin/bash\nset -euo pipefail\nprintf "pnpm:%s\\n" "$*" >> "$CAPTURE"\nif [[ "$*" == *--lockfile-only* ]]; then printf changed > packages/colors/package.json; printf changed > pnpm-lock.yaml; fi\nif [[ "$*" == "install --frozen-lockfile" && "${CORE_INPUT_MODE:-}" == same-job ]]; then mkdir -p packages/colors/node_modules/@labpics/colors; cp -a "$INSTALLED_FIXTURE/." packages/colors/node_modules/@labpics/colors/; fi\nif [[ "$*" == test:e2e ]]; then printf "smoke:%s\\n" "${E2E_SMOKE:-}" >> "$CAPTURE"; exit "${E2E_EXIT:-0}"; fi\n',
+      [
+        '#!/bin/bash',
+        'set -euo pipefail',
+        'printf "pnpm:%s\\n" "$*" >> "$CAPTURE"',
+        'if [[ "$*" == *--lockfile-only* ]]; then printf changed > packages/colors/package.json; printf changed > pnpm-lock.yaml; fi',
+        'if [[ "$*" == "install --frozen-lockfile" && "${CORE_INPUT_MODE:-}" == same-job ]]; then mkdir -p packages/colors/node_modules/@labpics/colors; cp -a "$INSTALLED_FIXTURE/." packages/colors/node_modules/@labpics/colors/; fi',
+        'if [[ "$*" == build ]]; then exit "${BUILD_EXIT:-0}"; fi',
+        'if [[ "$*" == test:e2e ]]; then',
+        '  printf "smoke:%s\\nprebuilt:%s\\nphase:%s\\n" "${E2E_SMOKE:-}" "${LABUI_E2E_PREBUILT:-}" "${LABUI_E2E_PHASE:-}" >> "$CAPTURE"',
+        '  case "${LABUI_E2E_PHASE:-}" in',
+        '    functional) exit "${FUNCTIONAL_EXIT:-0}" ;;',
+        '    performance) exit "${PERFORMANCE_EXIT:-0}" ;;',
+        '  esac',
+        'fi',
+        'if [[ "$*" == *test:packed-modal ]]; then exit "${PACKED_EXIT:-0}"; fi',
+        '',
+      ].join('\n'),
       { mode: 0o755 },
     );
     const env = {
@@ -127,11 +143,24 @@ test('browser owner preserves ordinary and icons commands and qualifies only ver
         encoding: 'utf8',
         timeout: 10000,
       });
-    for (const status of ['0', '31']) {
-      const result = run(['--colors-consumer', input], { E2E_EXIT: status });
-      assert.equal(result.status, Number(status), result.stdout + result.stderr);
+    for (const [overrides, status] of [
+      [{}, 0],
+      [{ FUNCTIONAL_EXIT: '31' }, 31],
+      [{ PERFORMANCE_EXIT: '32' }, 32],
+      [{ PACKED_EXIT: '33' }, 33],
+      [{ FUNCTIONAL_EXIT: '31', PERFORMANCE_EXIT: '32', PACKED_EXIT: '33' }, 31],
+    ]) {
+      const result = run(['--colors-consumer', input], overrides);
+      assert.equal(result.status, status, result.stdout + result.stderr);
       const calls = readFileSync(capture, 'utf8');
-      assert.ok(calls.includes('smoke:0\n'));
+      assert.ok(
+        calls.includes(
+          'pnpm:test:e2e\nsmoke:0\nprebuilt:1\nphase:functional\n' +
+            'pnpm:test:e2e\nsmoke:0\nprebuilt:1\nphase:performance\n' +
+            'pnpm:--filter @labpics/ui-docs test:packed-modal\n',
+        ),
+        'Every browser phase runs even after a prior failure, without reverting to smoke.',
+      );
       assert.ok(calls.includes('pnpm:build\npnpm:typecheck\npnpm:test\n'));
       assert.ok(
         calls.includes(
@@ -142,6 +171,12 @@ test('browser owner preserves ordinary and icons commands and qualifies only ver
       assert.deepEqual(readFileSync(lockFile), originalLock);
       rmSync(capture);
     }
+    const failedBuild = run(['--colors-consumer', input], { BUILD_EXIT: '34' });
+    assert.equal(failedBuild.status, 34, failedBuild.stdout + failedBuild.stderr);
+    assert.ok(!readFileSync(capture, 'utf8').includes('pnpm:test:e2e'));
+    assert.deepEqual(readFileSync(packageFile), originalPackage);
+    assert.deepEqual(readFileSync(lockFile), originalLock);
+    rmSync(capture);
     for (const override of [
       { CORE_ARTIFACT_ID: '456' },
       { CORE_VERIFIED_RELEASE_OUTCOME: 'failure' },
@@ -162,7 +197,7 @@ test('browser owner preserves ordinary and icons commands and qualifies only ver
     assert.equal(ordinary.status, 0, ordinary.stdout + ordinary.stderr);
     assert.equal(
       readFileSync(capture, 'utf8'),
-      'corepack:enable\npnpm:install --frozen-lockfile\npnpm:build\npnpm:--filter @labpics/ui-docs exec playwright install chromium webkit\npnpm:--filter @labui/colors fx:render\npnpm:test:e2e\nsmoke:1\n',
+      'corepack:enable\npnpm:install --frozen-lockfile\npnpm:build\npnpm:--filter @labpics/ui-docs exec playwright install chromium webkit\npnpm:--filter @labui/colors fx:render\npnpm:test:e2e\nsmoke:1\nprebuilt:1\nphase:\npnpm:--filter @labpics/ui-docs test:packed-modal\n',
     );
     rmSync(capture);
     const icons = run(['--icons-consumer', join(root, 'icons')], { CORE_INPUT_MODE: '' });

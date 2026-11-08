@@ -61,9 +61,29 @@ if [ "$#" -eq 0 ] || [ "$1" = --colors-consumer ]; then
     pnpm --filter @labpics/ui-docs exec playwright install chromium webkit
   fi
   pnpm --filter @labui/colors fx:render
-  pnpm test:e2e
-  LABUI_PACKED_MODAL_EVIDENCE="$root/apps/docs/playwright-report/packed-modal" \
+  # Only this owner selects prebuilt, after the workspace build above succeeded.
+  export LABUI_E2E_PREBUILT=1
+  browser_status=0
+  run_browser_phase() {
+    local phase="$1" started=$SECONDS phase_status=0
+    shift
+    printf 'Browser phase %s started.\n' "$phase"
+    "$@" || phase_status=$?
+    printf 'Browser phase %s finished: exit=%s elapsed=%ss.\n' "$phase" "$phase_status" "$((SECONDS - started))"
+    if [ "$browser_status" -eq 0 ]; then browser_status="$phase_status"; fi
+  }
+  if [ "${E2E_SMOKE:-0}" = 1 ]; then
+    run_browser_phase smoke env LABUI_E2E_PHASE= pnpm test:e2e
+  else
+    # Preserve the full collection while keeping real frame-time measurements
+    # separate from parallel functional checks on this same verified checkout.
+    run_browser_phase functional env LABUI_E2E_PHASE=functional pnpm test:e2e
+    run_browser_phase performance env LABUI_E2E_PHASE=performance pnpm test:e2e
+  fi
+  run_browser_phase packed-modal env \
+    LABUI_PACKED_MODAL_EVIDENCE="$root/apps/docs/playwright-report/packed-modal" \
     pnpm --filter @labpics/ui-docs test:packed-modal
+  exit "$browser_status"
 else
   icons_root="$(cd -- "$2" && pwd -P)"
   output="$(mktemp -d "$RUNNER_TEMP/labui-icons.XXXXXX")"
