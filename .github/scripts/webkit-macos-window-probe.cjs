@@ -89,17 +89,38 @@ function capture(file, args = []) {
 
 function windowRows(pid) {
   return JSON.parse(
-    execFileSync(path.join(evidence, 'window-list'), [String(pid)], {
+    execFileSync(path.join(evidence, 'window-list'), pid ? [String(pid)] : [], {
       timeout: 10000,
       encoding: 'utf8',
     }),
   );
 }
 
-function windowFor(rows, pid) {
+function processRows() {
+  return execFileSync('/bin/ps', ['-axo', 'pid=,ppid=,comm='], { encoding: 'utf8', timeout: 10000 })
+    .trim()
+    .split('\n')
+    .map((line) => {
+      const match = line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/);
+      if (!match) throw new Error(`Unrecognized process row: ${line}`);
+      return { pid: Number(match[1]), ppid: Number(match[2]), command: match[3] };
+    });
+}
+
+function windowFor(rows, pid, processes) {
+  const descendants = new Set([pid]);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const process of processes)
+      if (descendants.has(process.ppid) && !descendants.has(process.pid)) {
+        descendants.add(process.pid);
+        changed = true;
+      }
+  }
   const matches = rows.filter(
     (row) =>
-      row.pid === pid &&
+      descendants.has(row.pid) &&
       row.layer === 0 &&
       row.bounds.Width >= WIDTH &&
       row.bounds.Height >= HEIGHT &&
@@ -162,8 +183,23 @@ function html(worker) {
           );
           const requestedFocus = Math.floor(round / 2);
           await workers[requestedFocus].page.bringToFront();
-          const rows = windowRows(workers[requestedFocus].pid);
-          const windows = workers.map((item) => windowFor(rows, item.pid));
+          const processes = processRows();
+          const beforeFocus = windowRows();
+          const ownedWindows = workers.map((item) => windowFor(beforeFocus, item.pid, processes));
+          fs.writeFileSync(
+            path.join(evidence, `dpr${deviceScaleFactor}-round${round}-ownership.json`),
+            JSON.stringify(
+              {
+                workers: workers.map((item) => ({ worker: item.worker, launcherPid: item.pid })),
+                windows: ownedWindows,
+                processes,
+              },
+              null,
+              2,
+            ),
+          );
+          const rows = windowRows(ownedWindows[requestedFocus].pid);
+          const windows = workers.map((item) => windowFor(rows, item.pid, processes));
           const frontWorker = windows[0].order < windows[1].order ? 0 : 1;
           const prefix = `dpr${deviceScaleFactor}-round${round}`;
           const displayFile = path.join(evidence, `${prefix}-display.png`);
@@ -211,7 +247,7 @@ function html(worker) {
           );
           const focusMatches =
             frontWorker === requestedFocus &&
-            windows[frontWorker].frontmostPid === workers[requestedFocus].pid;
+            windows[frontWorker].frontmostPid === windows[requestedFocus].pid;
           const valid =
             focusMatches &&
             display.valid &&
