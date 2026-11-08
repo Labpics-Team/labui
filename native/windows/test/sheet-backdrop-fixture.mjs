@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync, inflateSync } from 'node:zlib';
 import { png } from './evidence.mjs';
+import { ORDER_BACKDROPS, createOrderBackdrop } from './sheet-order-fixture.mjs';
 
 const directory = new URL('../../../examples/windows/Assets/', import.meta.url);
 const descriptorUrl = new URL('SheetBackdropWitness.json', directory);
@@ -91,12 +92,19 @@ let verifiedAssets;
 export function backdropAssets() {
   if (verifiedAssets) return verifiedAssets;
   const result = {};
-  for (const variant of ['A', 'B']) {
+  for (const variant of ['A', 'B', ...ORDER_BACKDROPS]) {
     const asset = BACKDROP_FIXTURE.assets[variant];
     const bytes = readFileSync(new URL(asset.file, directory));
     assert.equal(backdropHash(bytes), asset.sha256, `backdrop ${variant} asset identity`);
     assert.deepEqual(png(bytes), BACKDROP_FIXTURE.sourcePixels);
     result[variant] = bytes;
+    if (ORDER_BACKDROPS.includes(variant))
+      assert.ok(
+        fixtureScanlines(bytes).raw.equals(
+          fixtureScanlines(createOrderBackdrop(variant, BACKDROP_FIXTURE.sourcePixels)).raw,
+        ),
+        `backdrop ${variant} pixels differ from the controlled input`,
+      );
   }
   assertBackdropNeighbor(result.A, result.B);
   verifiedAssets = result;

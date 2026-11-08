@@ -33,7 +33,6 @@ internal sealed class SheetBackdropProbe
         if (argument is null) return null;
         if (!observing) throw new InvalidOperationException("Backdrop witness требует capture observation.");
         var variant = argument[prefix.Length..];
-        if (variant is not ("A" or "B")) throw new ArgumentException("Неизвестный backdrop witness.");
         return new(variant);
     }
 
@@ -46,7 +45,8 @@ internal sealed class SheetBackdropProbe
         fixture = JsonSerializer.Deserialize<Fixture>(descriptor, new JsonSerializerOptions
         { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow })
             ?? throw new InvalidOperationException("Backdrop fixture отсутствует.");
-        var asset = fixture.assets[variant];
+        if (!fixture.assets.TryGetValue(variant, out var asset))
+            throw new ArgumentException("Неизвестный backdrop witness.");
         var bytes = File.ReadAllBytes(Path.Combine(directory, asset.file));
         assetSha256 = Convert.ToHexStringLower(SHA256.HashData(bytes));
         if (assetSha256 != asset.sha256 || bytes.Length < 29

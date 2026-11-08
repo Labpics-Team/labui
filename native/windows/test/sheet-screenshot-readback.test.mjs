@@ -13,7 +13,13 @@ import {
   createBackdropNeighbor,
   validateBackdropWitness,
 } from './sheet-backdrop-fixture.mjs';
-import { sheetMaterialPixelFailures, sheetMaterialPixels } from './sheet-material-pixels.mjs';
+import {
+  sheetMaterialPixelFailures,
+  sheetMaterialPixels,
+  sheetOrderPixelFailures,
+  sheetOrderPixels,
+} from './sheet-material-pixels.mjs';
+import { ORDER_BACKDROPS } from './sheet-order-fixture.mjs';
 import {
   CAPTURE_CASES,
   CASES,
@@ -119,6 +125,9 @@ function backdropWitness(variant = 'A', height = 812) {
 }
 const BINDINGS = { A: backdropWitness('A'), B: backdropWitness('B') };
 const REGIONS = backdropProbeRegions(BINDINGS.A);
+const ORDER_BINDINGS = Object.fromEntries(
+  ORDER_BACKDROPS.map((variant) => [variant, backdropWitness(variant)]),
+);
 
 function pngChunk(name, payload) {
   const bytes = Buffer.alloc(payload.length + 12);
@@ -234,6 +243,24 @@ test('intervention proof ignores deflate representation while rejecting changed 
   );
 });
 
+test('order inputs retain opaque constant controls and 16-DIP alternating stripes', () => {
+  const assets = backdropAssets();
+  for (const variant of ORDER_BACKDROPS) {
+    const image = fixtureRgba(assets[variant]);
+    for (let x = 0; x < image.width; x++) {
+      const value =
+        variant === 'OrderStripes'
+          ? (Math.floor(((x + 0.5) * 375) / image.width / 16) % 2) * 255
+          : { OrderBlack: 0, OrderWhite: 255, OrderGray: 128 }[variant];
+      for (const y of [0, 1480, image.height - 1])
+        assert.deepEqual(
+          [...image.rgba.subarray((y * image.width + x) * 4, (y * image.width + x) * 4 + 4)],
+          [value, value, value, 255],
+        );
+    }
+  }
+});
+
 test('probe regions stay outside the resampling margin for observed top-left image fits', () => {
   for (const height of [812, 886.3242931332949, 887]) {
     const witness = backdropWitness('A', height);
@@ -304,6 +331,149 @@ function boxAt(table, x, y, radius) {
   );
 }
 const clampByte = (value) => Math.max(0, Math.min(255, Math.round(value)));
+const orderImagesCache = new Map();
+const orderSourceRows = new Map();
+function orderSourceRow(height) {
+  if (!orderSourceRows.has(height)) {
+    const image = fixtureRgba(backdropAssets().OrderStripes);
+    const scale = Math.max(375 / image.width, height / image.height);
+    orderSourceRows.set(
+      height,
+      Array.from({ length: 375 }, (_, x) => {
+        const sourceX = (x + 0.5) / scale - 0.5;
+        const left = Math.max(0, Math.min(image.width - 2, Math.floor(sourceX)));
+        const fraction = sourceX - left;
+        return image.rgba[left * 4] * (1 - fraction) + image.rgba[(left + 1) * 4] * fraction;
+      }),
+    );
+  }
+  return orderSourceRows.get(height);
+}
+function orderImages(theme = 'Light', order = 'paint-before-blur', height = 812, phase = 0) {
+  const key = `${theme}/${order}/${height}/${phase}`;
+  if (orderImagesCache.has(key)) return orderImagesCache.get(key);
+  assert.ok(['paint-before-blur', 'blur-before-paint', 'sharp', 'no-control-gap'].includes(order));
+  // Inert finite/clamped convolution with the actual asset's linear resampling
+  // calibrates the meter and its negative controls, including broad edge gradients.
+  // These are not native captures or expected fidelity reference images.
+  const paint = (value) => {
+    if (order === 'no-control-gap') return 40 + value * 0.4;
+    const tint = theme === 'Light' ? 204 : 104;
+    const background = (tint + value * 0.2) / 255;
+    const foreground = (theme === 'Light' ? 38 : 31) / 255;
+    return (
+      255 *
+      (theme === 'Light'
+        ? Math.min(1, background / (1 - foreground))
+        : background <= 0.5
+          ? 2 * background * foreground
+          : 1 - 2 * (1 - background) * (1 - foreground))
+    );
+  };
+  const sigma = 64;
+  const kernel = Array.from({ length: 6 * sigma + 1 }, (_, i) =>
+    Math.exp(-((i - 3 * sigma) ** 2) / (2 * sigma ** 2)),
+  );
+  const mass = kernel.reduce((sum, value) => sum + value, 0);
+  const sourceRow = orderSourceRow(height);
+  const source = (x) => sourceRow[Math.max(0, Math.min(374, x))];
+  const stripes = Array.from({ length: 375 }, (_, x) => {
+    if (order === 'sharp') return paint(source((x + phase) % 375));
+    const before = order !== 'blur-before-paint';
+    const blurred =
+      kernel.reduce((sum, weight, i) => {
+        const value = source(x + i - 3 * sigma);
+        return sum + weight * (before ? paint(value) : value);
+      }, 0) / mass;
+    return before ? blurred : paint(blurred);
+  });
+  const images = Object.fromEntries(
+    ORDER_BACKDROPS.map((variant) => {
+      const rgb = new Uint8Array(375 * 812 * 3);
+      for (let y = 0; y < 812; y++)
+        for (let x = 0; x < 375; x++)
+          for (let channel = 0; channel < 3; channel++) {
+            const value =
+              variant === 'OrderStripes'
+                ? stripes[x]
+                : paint({ OrderBlack: 0, OrderWhite: 255, OrderGray: 128 }[variant]);
+            const noiseAlpha = ((x * 7 + y * 11 + channel * 3) % 5) * 0.08;
+            rgb[(y * 375 + x) * 3 + channel] = clampByte(
+              value * (1 - noiseAlpha) + (channel + 1) * noiseAlpha,
+            );
+          }
+      return [variant, { width: 375, height: 812, rgb }];
+    }),
+  );
+  orderImagesCache.set(key, images);
+  return images;
+}
+
+test('order meter accepts paint before convolution and rejects wrong order sharp stripes and nondiscriminating controls', () => {
+  for (const theme of ['Light', 'Dark']) {
+    const correct = sheetOrderPixels(orderImages(theme), ORDER_BINDINGS);
+    assert.deepEqual(sheetOrderPixelFailures(correct), [], theme);
+    assert.ok(correct.controlGap >= 4);
+    for (const [mode, message] of [
+      ['blur-before-paint', /stripe mean/],
+      ['sharp', /sharp spatial variation/],
+      ['no-control-gap', /controls do not distinguish/],
+    ]) {
+      const report = sheetOrderPixels(orderImages(theme, mode), ORDER_BINDINGS);
+      assert.ok(
+        sheetOrderPixelFailures(report).some((failure) => message.test(failure)),
+        `${theme}/${mode}`,
+      );
+    }
+  }
+});
+
+test('order meter accepts finite clamped edges at both admitted image fits and rejects every tested sharp stripe phase', (t) => {
+  for (const height of [812, 887])
+    for (const theme of ['Light', 'Dark']) {
+      const bindings = Object.fromEntries(
+        ORDER_BACKDROPS.map((variant) => [variant, backdropWitness(variant, height)]),
+      );
+      const correct = sheetOrderPixels(orderImages(theme, 'paint-before-blur', height), bindings);
+      assert.deepEqual(sheetOrderPixelFailures(correct), [], `${theme}/${height}`);
+      const reversed = sheetOrderPixels(orderImages(theme, 'blur-before-paint', height), bindings);
+      assert.ok(sheetOrderPixelFailures(reversed).some((failure) => /stripe mean/.test(failure)));
+      t.diagnostic(
+        JSON.stringify({
+          theme,
+          height,
+          controlGap: correct.controlGap,
+          endpointError: correct.endpointError,
+          stripeResidualAmplitude: correct.stripeResidualAmplitude,
+          reversedEndpointError: reversed.endpointError,
+          native: 'pending',
+        }),
+      );
+      if (theme === 'Dark')
+        assert.ok(
+          correct.columnResidualSpan > 3,
+          'a broad lawful edge gradient must remain accepted',
+        );
+      for (const phase of [0, 1, 8, 15]) {
+        const sharp = sheetOrderPixels(orderImages(theme, 'sharp', height, phase), bindings);
+        assert.ok(
+          sheetOrderPixelFailures(sharp).some((failure) => /sharp spatial variation/.test(failure)),
+          `${theme}/${height}/${phase}`,
+        );
+      }
+    }
+});
+
+test('order meter binds all four actual image geometries and paints', () => {
+  for (const variant of ORDER_BACKDROPS) {
+    const bindings = structuredClone(ORDER_BINDINGS);
+    bindings[variant].paints.tint.opacity = 0.6;
+    assert.throws(() => sheetOrderPixels(orderImages(), bindings), /paints differ/);
+    const images = { ...orderImages(), [variant]: { ...orderImages()[variant], width: 374 } };
+    assert.throws(() => sheetOrderPixels(images, ORDER_BINDINGS));
+  }
+});
+
 const pairs = new Map();
 function materialPair({ ghost = 'convolution', body = 'convolution' } = {}) {
   const key = `${ghost}/${body}`;
@@ -604,7 +774,7 @@ function encodedImage(image) {
   return pngs.get(image);
 }
 function materialFiles({ Light = {}, Dark = {}, areEffectsFast = false, legacy = false } = {}) {
-  // 13 новых или девять прежних inert DTO/PNG; capture/runner boundary не вызывается.
+  // Текущий набор или девять прежних inert DTO/PNG; capture/runner boundary не вызывается.
   const identity = {
     source: SOURCE,
     cases: {},
@@ -670,7 +840,13 @@ function materialFiles({ Light = {}, Dark = {}, areEffectsFast = false, legacy =
     files.set(
       `${name}.png`,
       encodedImage(
-        material === 'Solid' ? rasterSources[0] : backdrop === 'A' ? pair.original : pair.neighbor,
+        ORDER_BACKDROPS.includes(backdrop)
+          ? orderImages(theme, { Light, Dark }[theme].order)[backdrop]
+          : material === 'Solid'
+            ? rasterSources[0]
+            : backdrop === 'A'
+              ? pair.original
+              : pair.neighbor,
       ),
     );
   }
@@ -683,9 +859,9 @@ function mutateJson(files, name, mutate) {
   return new Map(files).set(name, json(value));
 }
 
-test('causal publication preserves exact thirteen-file codec bytes and historical nine-file decoding', (t) => {
+test('causal publication preserves exact capture codec bytes and historical nine-file decoding', (t) => {
   const files = materialFiles();
-  assert.equal(files.size, 13);
+  assert.equal(files.size, 29);
   const checkedStart = performance.now();
   const evidence = encodeSheetCaptureEvidence(files, SOURCE);
   const checkedMs = performance.now() - checkedStart;
@@ -703,7 +879,7 @@ test('causal publication preserves exact thirteen-file codec bytes and historica
   assert.throws(() => encodeSheetCaptureEvidence(legacy, SOURCE), /полный набор файлов/);
   t.diagnostic(
     JSON.stringify({
-      inertSingleSample: { checkedMs, structuralMs, decodedPngs: 6 },
+      inertSingleSample: { checkedMs, structuralMs, decodedPngs: CAPTURE_CASES.length },
       native: 'pending',
       fidelity: 'pending',
     }),
@@ -729,6 +905,38 @@ test('publication rejects pointwise and absent effects in each theme while struc
       );
     }
   }
+});
+
+test('publication rejects reversed order unblurred stripes and collapsed controls independently in each theme', () => {
+  for (const theme of ['Light', 'Dark'])
+    for (const order of ['blur-before-paint', 'sharp', 'no-control-gap']) {
+      const files = materialFiles({ [theme]: { order } });
+      assert.deepEqual(decodeSheetEvidence(encodeSheetEvidence(files, SOURCE), SOURCE), files);
+      assert.throws(
+        () => encodeSheetCaptureEvidence(files, SOURCE),
+        new RegExp(`sheet: ${theme} PNG:.*Body`),
+      );
+    }
+});
+
+test('publication binds each order control to the same scene and paint observations', () => {
+  const positive = materialFiles();
+  for (const theme of ['Light', 'Dark'])
+    for (const variant of ORDER_BACKDROPS) {
+      const name = `${theme}-Blur-${variant}.json`;
+      for (const mutate of [
+        (value) => {
+          value.body.y += 0.005;
+        },
+        (value) => {
+          value.backdropWitness.paints.tint.opacity = 0.6;
+        },
+        (value) => {
+          value.backdropWitness.variant = 'A';
+        },
+      ])
+        assert.throws(() => encodeSheetCaptureEvidence(mutateJson(positive, name, mutate), SOURCE));
+    }
 });
 
 test('rejected pixels remain available only as failed diagnostics and publication still rejects', async () => {
@@ -815,7 +1023,7 @@ test('Fast true false and null cannot bypass causal Blur PNG assertions', () => 
   }
 });
 
-test('publication requires all thirteen files including both neighbor cases and valid pixels in all six PNGs', () => {
+test('publication requires all capture files including order controls and valid pixels in every PNG', () => {
   const positive = materialFiles();
   for (const file of positive.keys()) {
     const files = new Map(positive);
@@ -826,7 +1034,7 @@ test('publication requires all thirteen files including both neighbor cases and 
   for (const theme of ['Light', 'Dark'])
     for (const suffix of ['json', 'png'])
       missingNeighbors.delete(`${theme}-Blur-Neighbor.${suffix}`);
-  assert.equal(missingNeighbors.size, 9);
+  assert.equal(missingNeighbors.size, positive.size - 4);
   assert.throws(() => encodeSheetCaptureEvidence(missingNeighbors, SOURCE), /полный набор файлов/);
   for (const { name } of CAPTURE_CASES) {
     const malformedJson = new Map(positive).set(`${name}.json`, Buffer.from('{'));
@@ -1037,7 +1245,7 @@ function assertBackdropSource(page, xaml, probe, renderer, protocol, project) {
   );
   assert.match(
     project,
-    /Content Include="Assets\/SheetBackdropWitness\.json;Assets\/SheetBackdropNeighbor\.png"\s*CopyToOutputDirectory="PreserveNewest"/,
+    /Content Include="Assets\/SheetBackdropWitness\.json;Assets\/SheetBackdropNeighbor\.png;Assets\/SheetBackdropOrder\*\.png"\s*CopyToOutputDirectory="PreserveNewest"/,
   );
   assert.match(
     protocol,
@@ -1073,7 +1281,7 @@ test('example fixture changes only initial Source and reads actual image and unc
   assert.throws(() => assertBackdropSource(...freshNoise));
 });
 
-test('material capture gathers six cases and thirteen files before the production PNG publication gate', async () => {
+test('material capture gathers neighbor and order cases before the production PNG publication gate', async () => {
   assert.deepEqual(
     CASES,
     ['Light', 'Dark'].flatMap((theme) =>
@@ -1088,6 +1296,14 @@ test('material capture gathers six cases and thirteen files before the productio
       material: 'Blur',
       backdrop: 'B',
     })),
+    ...['Light', 'Dark'].flatMap((theme) =>
+      ORDER_BACKDROPS.map((backdrop) => ({
+        name: `${theme}-Blur-${backdrop}`,
+        theme,
+        material: 'Blur',
+        backdrop,
+      })),
+    ),
   ]);
   const source = await readFile(new URL('./sheet.mjs', import.meta.url), 'utf8');
   const capture = source.slice(

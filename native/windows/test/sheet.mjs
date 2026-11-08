@@ -24,7 +24,13 @@ import {
   materialCapabilitiesReadback,
   validateMaterialCapabilities,
 } from './sheet-material-capabilities.mjs';
-import { sheetMaterialPixelFailures, sheetMaterialPixels } from './sheet-material-pixels.mjs';
+import {
+  sheetMaterialPixelFailures,
+  sheetMaterialPixels,
+  sheetOrderPixelFailures,
+  sheetOrderPixels,
+} from './sheet-material-pixels.mjs';
+import { ORDER_BACKDROPS } from './sheet-order-fixture.mjs';
 import { POLICY_CASES, policyReadback, validatePolicyWitness } from './sheet-policy.mjs';
 import { validateWindowGeometry, windowGeometryReadback } from './sheet-window-geometry.mjs';
 
@@ -51,6 +57,11 @@ export const CAPTURE_CASES = Object.freeze([
       material: 'Blur',
       backdrop: 'B',
     }),
+  ),
+  ...['Light', 'Dark'].flatMap((theme) =>
+    ORDER_BACKDROPS.map((backdrop) =>
+      Object.freeze({ name: `${theme}-Blur-${backdrop}`, theme, material: 'Blur', backdrop }),
+    ),
   ),
 ]);
 const FILES = Object.freeze([
@@ -702,6 +713,28 @@ function capturePixelFailures(files, sourceSha) {
     const failures = sheetMaterialPixelFailures(report);
     if (failures.length) rejected.push({ name, theme, failures });
   }
+  for (const theme of ['Light', 'Dark']) {
+    const images = {};
+    const bindings = {};
+    const reference = parse(files.get(`${theme}-Blur-OrderBlack.json`));
+    for (const variant of ORDER_BACKDROPS) {
+      const name = `${theme}-Blur-${variant}`;
+      const observation = parse(files.get(`${name}.json`));
+      for (const field of [
+        'viewport',
+        'body',
+        'handle',
+        'rasterizationScale',
+        'geometryScale',
+        'requestedState',
+      ])
+        assert.deepEqual(observation[field], reference[field], `sheet: ${theme} order ${field}`);
+      images[variant] = decodePng(files.get(`${name}.png`));
+      bindings[variant] = observation.backdropWitness;
+    }
+    const failures = sheetOrderPixelFailures(sheetOrderPixels(images, bindings));
+    if (failures.length) rejected.push({ name: `${theme}-Blur-OrderStripes`, theme, failures });
+  }
   return rejected;
 }
 
@@ -715,7 +748,7 @@ function assertPixelQualification(rejected) {
 }
 
 export async function publishSheetCaptureEvidence(files, sourceSha, write = writeStdout) {
-  // Все шесть PNG и identity проверяются до публикации даже при отказе первого материала.
+  // Все PNG и identity проверяются до публикации даже при отказе первого материала.
   const rejected = capturePixelFailures(files, sourceSha);
   if (rejected.length) {
     const verdict = rejected
