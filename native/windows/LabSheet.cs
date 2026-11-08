@@ -59,6 +59,30 @@ public sealed class LabSheet : ContentControl
     private long? viewportTemplateToken;
     private bool attached;
     private EventHandler? materialForwarder;
+    private LabSheetHost? sceneOwner;
+    private FrameworkElement? scene;
+
+    internal void BindScene(LabSheetHost owner, FrameworkElement source)
+    {
+        if (sceneOwner is not null && !ReferenceEquals(sceneOwner, owner))
+            throw new InvalidOperationException("Sheet уже принадлежит другому LabSheetHost.");
+        sceneOwner = owner;
+        scene = source;
+        layers?.SetScene(source);
+    }
+
+    internal void UnbindScene(LabSheetHost owner)
+    {
+        if (!ReferenceEquals(sceneOwner, owner)) return;
+        sceneOwner = null;
+        scene = null;
+        layers?.SetScene(null);
+    }
+
+    internal void SceneGeometryChanged(LabSheetHost owner)
+    {
+        if (ReferenceEquals(sceneOwner, owner)) layers?.SceneGeometryChanged();
+    }
 
     public LabSheet()
     {
@@ -175,6 +199,7 @@ public sealed class LabSheet : ContentControl
         if (attached || layers is null) return;
         attached = true;
         var source = layers;
+        source.SetScene(scene);
         EventHandler? forwarder = null;
         forwarder = (sender, args) =>
         {

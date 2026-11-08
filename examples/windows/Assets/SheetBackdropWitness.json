@@ -1,0 +1,41 @@
+{
+  "schema": "labui.sheet.material-neighbor.v1",
+  "assets": {
+    "A": {
+      "file": "SheetBackdrop.png",
+      "sha256": "df0d29601d3863f9f2375e1c4fa928365515732da40ba33876a25a3734638f99"
+    },
+    "B": {
+      "file": "SheetBackdropNeighbor.png",
+      "sha256": "8656fe1cf3930c98d8179b3bfcc85b11d8e037d87cd3968c129deb5f851a9745"
+    },
+    "OrderBlack": {
+      "file": "SheetBackdropOrderBlack.png",
+      "sha256": "2dd81f50d8658c0c400bdccde9cbf899281d9a97ad39b2f767999cb484b594ba"
+    },
+    "OrderWhite": {
+      "file": "SheetBackdropOrderWhite.png",
+      "sha256": "0b7c8ce03908da473fa28da133c821f6cc525ea139c2c064c783b92ed2795169"
+    },
+    "OrderGray": {
+      "file": "SheetBackdropOrderGray.png",
+      "sha256": "347451375a5cfdd14cf59c9321da8d6a35b029367c7a2a0ce92a91c7f66c25a8"
+    },
+    "OrderStripes": {
+      "file": "SheetBackdropOrderStripes.png",
+      "sha256": "db57ca2da357936598f58a022acdf6b718c09b12a440ce82830d019c1f3dc0a0"
+    }
+  },
+  "sourcePixels": {
+    "width": 1733,
+    "height": 4096
+  },
+  "changedSourceRect": {
+    "x": 1120,
+    "y": 1480,
+    "width": 260,
+    "height": 620
+  },
+  "replacementRgba": [0, 0, 0, 255],
+  "resamplingMargin": 4
+}

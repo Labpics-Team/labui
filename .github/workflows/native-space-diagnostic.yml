@@ -1,0 +1,61 @@
+name: Native Space diagnosis
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-space-diagnosis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    if: github.head_ref == 'diag/space-idle-ingress-st01a1a7a8'
+    runs-on: windows-2025
+    timeout-minutes: 15
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - name: Checkout LabUI
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Checkout corrected LabMotion owner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Labpics-Team/lab-motion
+          ref: 59b2eb0c9e66d8c237f07ef1287df63aae3fccc5
+          path: .native-deps/motion
+          persist-credentials: false
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24.19.0"
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: "10.0.403"
+      # Temporary carrier for the permanent Motion owner regression.
+      - name: Qualify native Motion owner without temporary instrumentation
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File .native-deps/motion/test/windows/verify.ps1 `
+            -OutputDirectory "$env:RUNNER_TEMP/motion-owner"
+          if ($LASTEXITCODE -ne 0) { throw 'Native Motion owner qualification failed.' }
+      - name: Preserve native Motion owner evidence
+        if: ${{ !cancelled() }}
+        shell: pwsh
+        run: |
+          $source = git -C .native-deps/motion rev-parse HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Motion source identity unavailable.' }
+          $tracePath = "$env:RUNNER_TEMP/motion-owner/trace.json"
+          if (Test-Path -LiteralPath $tracePath) {
+            $trace = Get-Content -LiteralPath $tracePath -Raw | ConvertFrom-Json
+            $observation = [ordered]@{ source = $source; trace = $trace } | ConvertTo-Json -Depth 100 -Compress
+            $digest = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($observation)))
+            Write-Output ('LABMOTION_OWNER_IDENTITY ' + (@{ source = $source; observationSha256 = $digest } | ConvertTo-Json -Compress))
+            Write-Output ('LABMOTION_OWNER_TRACE_JSON ' + $observation)
+          }

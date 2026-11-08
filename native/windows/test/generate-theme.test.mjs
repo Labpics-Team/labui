@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { defaultConfig } from '../../../packages/tokens/src/config/default-config.ts';
-import { renderGeometry, renderThemeResources } from '../generate-theme.mjs';
+import { generateSheetMaterial, renderGeometry, renderThemeResources } from '../generate-theme.mjs';
 
 const tokens = JSON.parse(
   await readFile(
@@ -16,6 +16,16 @@ const motion = JSON.parse(
     'utf8',
   ),
 );
+
+test('Sheet material projection matches its shared source without a Colors runtime', async () => {
+  const emitted = await generateSheetMaterial();
+  assert.equal(
+    emitted,
+    await readFile(new URL('../generated/SheetMaterial.g.cs', import.meta.url), 'utf8'),
+  );
+  assert.match(emitted, /\[SheetBodyStage\.Tint, SheetBodyStage\.Blend, SheetBodyStage\.Blur\]/);
+  assert.match(emitted, /BlendMode\(bool dark\) => dark\s*\? .*\.Overlay\s*:\s*.*\.ColorDodge/);
+});
 
 // Это требуемый порт нативной темы, а не перечень из проверяемого генератора.
 const roles = {

@@ -16,6 +16,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Assets/SheetBackdropWitness.json" />
+    <Content Remove="Assets/SheetBackdropWitness.json;Assets/SheetBackdropNeighbor.png;Assets/SheetBackdropOrder*.png" />
+    <Content Include="Assets/SheetBackdropWitness.json;Assets/SheetBackdropNeighbor.png;Assets/SheetBackdropOrder*.png"
+        CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="../../native/windows/LabUI.WinUI.csproj" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.4" />
