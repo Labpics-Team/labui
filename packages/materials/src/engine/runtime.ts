@@ -31,7 +31,13 @@
 
 import { attach as attachAcrylic, supportsAcrylicChain } from './acrylic';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
-import { type EngineBinding, collectSurfaces, mountEngine, trailingRaf } from './mount';
+import {
+  type EngineBinding,
+  collectSurfaces,
+  mountEngine,
+  supportsBackdropFilterUrl,
+  trailingRaf,
+} from './mount';
 import { MATERIAL_ENGINE_MEDIA, materialMediaBlocked, prefersMoreContrast } from './preferences';
 import { attach as attachSheet } from './sheet';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
@@ -80,7 +86,7 @@ const BINDINGS: readonly EngineBinding[] = [
     attach: attachAcrylic,
   },
   {
-    gate: supportsAcrylicChain,
+    gate: supportsBackdropFilterUrl,
     selector: '.lab-material.lab-material--sheet',
     wants: (el) => inModeScope(el, 'acrylic') && !prefersMoreContrast(el),
     blocked: materialMediaBlocked,

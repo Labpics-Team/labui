@@ -14,11 +14,11 @@ import { MATERIAL_CSS_ORDER } from '../src/materials/order';
 describe('файлы-материалы: закон порядка склейки', () => {
   const css = readMaterialCss();
 
-  it('каждый файл закона существует, и в папке нет CSS вне закона', () => {
+  it('каждый фрагмент закона имеет CSS-источник или проекцию общего профиля', () => {
     const onDisk = readdirSync(materialsDir())
       .filter((f) => f.endsWith('.css'))
       .sort();
-    expect(onDisk).toEqual([...MATERIAL_CSS_ORDER].sort());
+    expect([...onDisk, 'sheet.css'].sort()).toEqual([...MATERIAL_CSS_ORDER].sort());
   });
 
   it('каскадные вехи идут строго в порядке закона', () => {
