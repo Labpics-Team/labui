@@ -143,6 +143,31 @@ function assertSceneOwnership(candidate) {
 function assertMaterials(candidate) {
   const frame = frameOf(candidate);
   const stages = stagesOf(candidate);
+  const bodySwitch = code(section(frame, 'switch (stage)', 'var bodyNoise ='));
+  const cases = new Map(
+    [
+      ...bodySwitch.matchAll(
+        /case SheetBodyStage \. (\w+) : ([\s\S]*?)(?=case SheetBodyStage|default :)/g,
+      ),
+    ].map((match) => [match[1], match[2].trim()]),
+  );
+  assert.deepEqual([...cases.keys()].sort(), ['Blend', 'Blur', 'Tint']);
+  // Each named stage must consume the preceding result. Checking the whole
+  // method for these fragments misses a swapped label or an overwritten Effect.
+  const expectedCases = {
+    Tint: `var bodyTint = stages.CreateVisual(tintPaint, (float)Tint!.Opacity);
+      bodyVisual = stages.CreateLayer(bodyVisual, bodyTint); break;`,
+    Blend: `var blended = Effect(new BlendEffect {
+      Background = Source("Backdrop"), Foreground = Paint(Blend!, "blendPaint"),
+      Mode = SheetMaterialProfile.BlendMode(ActualTheme == ElementTheme.Dark),
+      });
+      bodyVisual = stages.CreateLayer(bodyVisual);
+      bodyVisual.Effect = Brush("body", blended, ("blendPaint", blendPaint)); break;`,
+    Blur: `bodyVisual = stages.CreateLayer(bodyVisual);
+      bodyVisual.Effect = Brush("body", Blur(Source("Backdrop"), Geometry.SheetBodyBlurRadius * metrics.Scale)); break;`,
+  };
+  for (const [stage, expected] of Object.entries(expectedCases))
+    assert.equal(cases.get(stage), code(expected), `Sheet ${stage} lost its preceding layer`);
   includes(
     frame,
     'Mode = CanvasComposite.DestinationIn, Sources = { source, mask }',
@@ -444,6 +469,20 @@ test('Ghost/Body masks follow grouped paints, separate alpha/opacity and authore
     ],
     ['Opacity = (float)brush.Opacity,', 'Opacity = 1,'],
   ]);
+});
+
+test('Body stages reject swapped Tint/Blur cases and a Blend overwritten by Blur', () => {
+  assertMaterials(source);
+  const swapped = source.replace(
+    /case SheetBodyStage\.(Tint|Blur):/g,
+    (_, stage) => `case SheetBodyStage.${stage === 'Tint' ? 'Blur' : 'Tint'}:`,
+  );
+  assert.notEqual(swapped, source);
+  assert.throws(() => assertMaterials(swapped), /preceding layer/);
+  const wrapper = 'bodyVisual = stages.CreateLayer(bodyVisual);';
+  assert.equal(source.split(wrapper).length - 1, 2, 'Both effect stages own a wrapper');
+  const overwritten = source.replaceAll(wrapper, '');
+  assert.throws(() => assertMaterials(overwritten), /preceding layer/);
 });
 
 test('Atlas retains viewport projection, per-cell writes and owned resources', () => {
