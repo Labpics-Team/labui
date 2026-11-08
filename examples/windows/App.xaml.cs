@@ -14,15 +14,13 @@ public partial class App : Application
     {
         var arguments = Environment.GetCommandLineArgs().Skip(1).ToHashSet(StringComparer.Ordinal);
         var sheet = arguments.Contains("--sheet");
-        var boundary = arguments.Contains("--space-boundary");
         window = new Window
         {
             Title = "LabUI",
-            Content = boundary ? new SpaceBoundaryPage() : sheet ? new SheetPage(arguments.Contains("--dark"), arguments.Contains("--solid"),
+            Content = sheet ? new SheetPage(arguments.Contains("--dark"), arguments.Contains("--solid"),
                 arguments.Contains("--content")) : new ButtonsPage()
         };
         var sheetPage = window.Content as SheetPage;
-        if (window.Content is SpaceBoundaryPage boundaryPage) boundaryPage.HostWindow = window;
         if (sheetPage is not null) sheetPage.HostWindow = window;
         if (sheet) window.AppWindow.ResizeClient(new Windows.Graphics.SizeInt32(375, 812));
         else window.AppWindow.Resize(new Windows.Graphics.SizeInt32(760, 680));
