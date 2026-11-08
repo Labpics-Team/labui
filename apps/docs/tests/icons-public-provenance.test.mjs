@@ -1017,8 +1017,16 @@ test('summary failure path refuses private error URLs and preserves lawful numer
 
 async function publicationFixture(t, mutatePin = () => {}) {
   const { root } = await sourceFixture(t);
-  const modules = join(root, 'publication');
-  await mkdir(modules);
+  const publication = join(root, 'publication');
+  const modules = join(publication, 'apps/docs/tests');
+  await mkdir(modules, { recursive: true });
+  // Preserve the public entry's relative imports into the shared log codec.
+  const logModule = join(publication, 'scripts/ci/evidence-log.mjs');
+  await mkdir(dirname(logModule), { recursive: true });
+  await writeFile(
+    logModule,
+    await readFile(new URL('../../../scripts/ci/evidence-log.mjs', import.meta.url)),
+  );
   // Exact source copies exercise the real public entry with its own synthetic pin.
   // No runner identity or environment is supplied, and no install/build/GUI entry runs.
   for (const name of [
