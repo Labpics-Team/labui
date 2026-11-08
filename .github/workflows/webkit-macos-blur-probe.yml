@@ -1,0 +1,46 @@
+name: WebKit macOS blur probe
+
+on:
+  push:
+    branches: [diag/webkit-macos-blur-st01a1b68e]
+
+permissions:
+  contents: read
+
+jobs:
+  blur:
+    runs-on: macos-15
+    timeout-minutes: 10
+    env:
+      PW_PROBE_RUNTIME: ${{ github.workspace }}/.diagnostics/runtime
+      PW_PROBE_EVIDENCE: ${{ github.workspace }}/.diagnostics/evidence
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.diagnostics/browsers
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24.15.0
+          package-manager-cache: false
+      - name: Install exact browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PW_PROBE_EVIDENCE"
+          npm install --prefix "$PW_PROBE_RUNTIME" --ignore-scripts --no-audit --no-fund playwright@1.65.0 2>&1 | tee "$PW_PROBE_EVIDENCE/install.log"
+          node "$PW_PROBE_RUNTIME/node_modules/playwright/cli.js" install webkit 2>&1 | tee "$PW_PROBE_EVIDENCE/browser-install.log"
+      - name: Measure identical CSS blur at both device scales
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp .github/scripts/webkit-macos-blur-probe.cjs "$PW_PROBE_EVIDENCE/probe.cjs"
+          node .github/scripts/webkit-macos-blur-probe.cjs 2>&1 | tee "$PW_PROBE_EVIDENCE/probe.log"
+      - name: Preserve diagnostic source, PNGs and measurements
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: webkit-macos-blur-${{ github.sha }}
+          path: .diagnostics/evidence
+          if-no-files-found: error
+          retention-days: 3
