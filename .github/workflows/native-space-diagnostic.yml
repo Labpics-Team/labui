@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Labpics-Team/lab-motion
-          ref: 8e3f9f804f19b48c9f1a065ec54b32b449fb7b43
+          ref: 59b2eb0c9e66d8c237f07ef1287df63aae3fccc5
           path: .native-deps/motion
           persist-credentials: false
       - name: Setup Node
