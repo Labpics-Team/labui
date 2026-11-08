@@ -90,7 +90,7 @@ internal sealed class SpaceProbe : IDisposable
             var disposition = IncomingIdleValue<string>(row, "Disposition");
             if (sequence != callbacks - rows.Length + index + 1 || timestamp < 0 || timestamp > captured
                 || index > 0 && timestamp < receipts[index - 1].TimestampTicks
-                || disposition is not ("disposed" or "input" or "mismatch" or "accepted"))
+                || disposition is not ("disposed" or "input" or "mismatch" or "accepted" or "handoff" or "continuation-failed"))
                 throw new InvalidOperationException("Неверный private Idle receipt.");
             receipts[index] = new(sequence, timestamp, IncomingIdleValue<int>(row, "CallbackRequestId"),
                 IncomingIdleNullable<int>(row, "CurrentRequestId"), IncomingIdleNullable<long>(row, "Operation"),
