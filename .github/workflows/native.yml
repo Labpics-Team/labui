@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Labpics-Team/lab-motion
-          ref: afcd2cf6ad367d68c10579c1b14467b25f1ab59b
+          ref: 0bb299d7b03106c3bc34c3b279907917436c8542
           path: .native-deps/motion
           persist-credentials: false
 
