@@ -300,7 +300,7 @@ test('tokens: re-pointing --lab-fill-accent re-skins BOTH checked dots', async (
 test('theme: flipping [data-theme] re-skins both renderers with zero edits', async ({ page }) => {
   const litRing = litCheckedControl(page, 'lit-neutral');
   const reactRing = reactCheckedControl(page, 'react-neutral');
-  await expect(reactRing).toBeVisible();
+  await waitForThemePaint(page, litRing, reactRing);
 
   const litDark = await litRing.evaluate(borderColor);
   const reactDark = await reactRing.evaluate(borderColor);
