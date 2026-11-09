@@ -75,11 +75,8 @@ jobs:
       - name: Verify accepted advisories stay on their reviewed paths
         run: node scripts/ci/accepted-advisories-contract.mjs
 
-      - name: Lint (Biome)
-        run: pnpm lint
-
-      - name: Format check (Biome)
-        run: pnpm run format:check
+      - name: Check format, lint and imports (Biome)
+        run: pnpm check
 
       - name: Typecheck
         run: pnpm typecheck
