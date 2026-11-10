@@ -1,125 +1,72 @@
-// Измерение и проверка отрендеренных FX-токенов.
-//
-// Класс А (e2e-рендер на живом браузере) + Д (bite-мутация: flatten/drop → RED).
-// Провенанс интенсивности — ПИКСЕЛИ скриншота (Rec.709 luminance), НЕ CSS-alpha
-// и НЕ canvas-readback (ловушка e2e-color-interaction-measurement-traps: canvas
-// врёт, glow над белым невидим из-за mix-blend-mode:screen). Потому:
-//   • каждый glow-свотч рендерится над ТЁМНЫМ фоном (screen-блендинг горит);
-//   • интенсивность = mean-luminance-свотча − mean-luminance-фона (delta);
-//   • transitions/animations выключены до замера.
-//
-// Модуль ЧИСТЫЙ (без импортов браузера): строит HTML-харнесс, декодирует PNG
-// встроенным zlib и держит инварианты. Драйвер (render-fx.mjs / spec) передаёт
-// сюда contractCss и Buffer скриншота — так один код кормит и standalone-скрипт,
-// и apps/docs playwright-спеку (DRY, единый источник истины гейта).
+// Проверка реального FX-render: PNG читается после браузерной композиции.
+// Прогрессия — один, два и три накопленных слоя одной авторской краски.
+// Цветовые значения не вычисляются здесь: их отдаёт контракт Colors.
 import zlib from 'node:zlib';
 
-/** Канон LabUI §FX: нейтраль + бренд + 4 сентимента. Отсутствие любого = RED. */
+/** Семьи focus-ring сохраняют семантику сильного Label. */
 export const SENTIMENTS = ['neutral', 'brand', 'danger', 'warning', 'success', 'info'];
-/** Ступени GlowStep. base — без суффикса роли. */
-export const GLOW_STEPS = ['subtle', 'base', 'bloom'];
-
-/** Тёмный фон плитки: screen-блендинг glow физически горит только над тёмным. */
-const BACKDROP = '#0d0d12';
-const TILE = 128; // px, deviceScaleFactor:1 → CSS px == device px
-
-/** Слои шиммера скелетона: resting-блок (base) и блик (highlight). */
+/** Авторские краски, для которых проверяется накапливаемое свечение. */
+export const GLOW_FAMILIES = ['neutral', 'brand', 'danger', 'warning'];
+export const GLOW_STEPS = ['single', 'double', 'triple'];
 export const SKELETON_LAYERS = ['base', 'highlight'];
 
-/** Имя glow-роли (color/core/alpha) для сентимента и ступени. */
-function glowVar(sentiment, step, suffix = '') {
-  const stepSeg = step === 'base' ? '' : `-${step}`;
-  return `--lab-fx-glow-${sentiment}${stepSeg}${suffix}`;
-}
+// Область проверки фиксирована до сравнения: тёмный однородный фон,
+// Chromium sRGB, deviceScaleFactor 1, без движения во время снимка.
+const BACKDROP = '#0d0d12';
+const TILE = 128;
 
-/**
- * HTML-харнесс: сетка 6 сентиментов × [subtle, base, bloom, focus-ring] + столбец
- * чистого фона (референс backdrop-люминанса). Потребляет ЖИВЫЕ custom-props из
- * inline-контракта под [data-theme="dark"].
- *
- * @param {string} contractCss  содержимое colors/contract.css
- * @param {{flatten?: boolean, dropGlow?: string, dropFocus?: string}} [opts]
- *   flatten   — сплющить ступени (subtle=base=bloom): монотонность РУШИТСЯ (bite).
- *   dropGlow  — убрать glow-токены сентимента (эмуляция «токен не дошёл»): свотч
- *               пустой → glow non-blank РУШИТСЯ (bite инварианта §a).
- *   dropFocus — убрать focus-ring-токен сентимента: свотч пуст → focus-ring
- *               non-blank РУШИТСЯ (bite инварианта §a'). Доказывает, что §a'
- *               реально кусается, а не no-op.
- */
+/** Стенд использует тот же Paint повторно; каждый следующий слой сохраняет предыдущие. */
 export function buildHarnessHtml(contractCss, opts = {}) {
   const { flatten = false, dropGlow = null, dropFocus = null, skeletonBite = null } = opts;
-
-  // Мутации-биты как override-слой (не трогаем сам контракт).
-  const mutations = [];
-  if (flatten) {
-    for (const s of SENTIMENTS) {
-      // Все три ступени → alpha базовой: строгое возрастание исчезает.
-      mutations.push(`${glowVar(s, 'subtle', '-alpha')}: var(${glowVar(s, 'base', '-alpha')});`);
-      mutations.push(`${glowVar(s, 'bloom', '-alpha')}: var(${glowVar(s, 'base', '-alpha')});`);
-    }
+  if (dropGlow !== null && !GLOW_FAMILIES.includes(dropGlow)) {
+    throw new Error(`неизвестная glow-семья ${dropGlow}`);
   }
+  if (dropFocus !== null && !SENTIMENTS.includes(dropFocus)) {
+    throw new Error(`неизвестная focus-семья ${dropFocus}`);
+  }
+  if (skeletonBite !== null && skeletonBite !== 'flatten' && skeletonBite !== 'invert') {
+    throw new Error(`неизвестная мутация skeleton ${skeletonBite}`);
+  }
+  const mutations = [];
+  if (dropGlow) mutations.push(`--lab-fx-glow-${dropGlow}: initial;`);
+  if (dropFocus) mutations.push(`--lab-fx-focus-ring-${dropFocus}: initial;`);
   if (skeletonBite === 'flatten') {
-    // highlight := base (fill-quaternary): блик исчезает (равная светлота) → инвариант осветления РУШИТСЯ.
     mutations.push('--lab-fx-skeleton-highlight: var(--lab-fill-quaternary);');
   }
   if (skeletonBite === 'invert') {
-    // Старый Figma-highlight (mid@0.039): в dark ТЕМНЕЕ base → инвариант РУШИТСЯ.
-    // Литерал живёт ТОЛЬКО в bite-мутации (эмуляция до-законного значения),
-    // не в контракте — доказывает, что гейт ловит регресс к Figma-инверсии.
-    mutations.push('--lab-fx-skeleton-highlight: oklch(57.53363% 0.012136 286.012 / 0.039);');
-  }
-  if (dropGlow) {
-    // initial → custom-prop становится guaranteed-invalid → var() пуст →
-    // color-mix невалиден → фон свотча прозрачен (как отсутствующий токен).
-    for (const step of GLOW_STEPS) {
-      mutations.push(`${glowVar(dropGlow, step)}: initial;`);
-      mutations.push(`${glowVar(dropGlow, step, '-core')}: initial;`);
-      mutations.push(`${glowVar(dropGlow, step, '-alpha')}: initial;`);
-    }
-  }
-  if (dropFocus) {
-    // initial → var(--lab-fx-focus-ring-<s>) пуст → background свотча невалиден
-    // → прозрачно → L≈фон: эмуляция «focus-ring-токен не дошёл до рендера».
-    mutations.push(`--lab-fx-focus-ring-${dropFocus}: initial;`);
+    // Контрпример из прежнего reference: в dark этот блик темнее базы.
+    mutations.push('--lab-fx-skeleton-highlight: rgb(120 120 128 / 0.039);');
   }
   const mutationCss = mutations.length ? `[data-theme="dark"]{${mutations.join('')}}` : '';
-
-  const cell = (s, kind) => {
-    if (kind === 'focus') {
-      // focus-ring: сплошная заливка токеном семьи. Геометрия рамки отделена от
-      // цвета — гейт судит ТОЛЬКО факт отрисовки (non-blank над фоном), см.
-      // assertFxRender: попарная хроматическая различимость НЕ проверяется (EC4).
-      return `<div class="tile" data-swatch="${s}:focus">
-        <div class="focus" style="background:var(--lab-fx-focus-ring-${s})"></div>
-      </div>`;
-    }
-    const halo = glowVar(s, kind);
-    const core = glowVar(s, kind, '-core');
-    const a = glowVar(s, kind, '-alpha');
-    return `<div class="tile" data-swatch="${s}:${kind}">
-      <div class="glow" style="--halo:var(${halo});--core:var(${core});--a:var(${a})"></div>
+  const glowCell = (family, step, index) => {
+    const count = flatten ? 1 : index + 1;
+    const layers = Array.from(
+      { length: count },
+      (_, layer) => `<div class="glow-layer" data-glow-layer="${layer + 1}"></div>`,
+    ).join('');
+    return `<div class="tile" data-swatch="${family}:${step}">
+      <div class="glow-stack" data-glow-stack="${family}:${step}" style="--glow:var(--lab-fx-glow-${family})">${layers}</div>
     </div>`;
   };
-
-  const rows = SENTIMENTS.map(
-    (s) => `<div class="row">
-      <div class="label">${s}</div>
-      ${cell(s, 'subtle')}${cell(s, 'base')}${cell(s, 'bloom')}${cell(s, 'focus')}
-    </div>`,
+  const glowRows = GLOW_FAMILIES.map(
+    (family) => `<div class="row">
+    <div class="label">${family}</div>${GLOW_STEPS.map((step, index) => glowCell(family, step, index)).join('')}
+  </div>`,
   ).join('');
-
-  // Ряд шиммера скелетона: base (resting) и highlight (блик) — сплошная заливка
-  // translucent-токеном над тёмным фоном плитки. Инвариант: highlight СВЕТЛЕЕ base.
-  // База-заглушка — Fill (fill-quaternary, #100); шиммер — FX (fx-skeleton-highlight).
-  const skelToken = { base: '--lab-fill-quaternary', highlight: '--lab-fx-skeleton-highlight' };
-  const skelCell = (layer) => `<div class="tile" data-swatch="skeleton:${layer}">
-      <div class="skel" style="background:var(${skelToken[layer]})"></div>
-    </div>`;
-  const skeletonRow = `<div class="row">
-      <div class="label">skeleton</div>
-      ${skelCell('base')}${skelCell('highlight')}
-    </div>`;
-
+  const focusCells = SENTIMENTS.map(
+    (family) => `<div class="focus-cell"><div>${family}</div>
+    <div class="tile" data-swatch="${family}:focus"><div class="focus" style="background:var(--lab-fx-focus-ring-${family})"></div></div>
+  </div>`,
+  ).join('');
+  const skeletonTokens = {
+    base: '--lab-fill-quaternary',
+    highlight: '--lab-fx-skeleton-highlight',
+  };
+  const skeletonCells = SKELETON_LAYERS.map(
+    (layer) => `<div class="tile" data-swatch="skeleton:${layer}">
+    <div class="skel" style="background:var(${skeletonTokens[layer]})"></div>
+  </div>`,
+  ).join('');
   return `<!doctype html><html data-theme="dark"><head><meta charset="utf-8">
 <style>
 ${contractCss}
@@ -127,25 +74,24 @@ ${mutationCss}
 *{transition:none!important;animation:none!important;box-sizing:border-box}
 body{margin:0;padding:24px;background:${BACKDROP};font:12px system-ui,sans-serif;color:#cfcfe0}
 .grid{display:inline-block}
-.head,.row{display:flex;align-items:center;gap:12px}
-.head>div,.label{width:96px;text-align:right;opacity:.8}
-.tile{width:${TILE}px;height:${TILE}px;background:${BACKDROP};position:relative;overflow:hidden;border-radius:8px}
-.glow{position:absolute;inset:0;mix-blend-mode:screen;
-  background:radial-gradient(circle at 50% 50%,
-    color-mix(in srgb, var(--core) calc(var(--a)*100%), transparent) 0%,
-    color-mix(in srgb, var(--halo) calc(var(--a)*100%), transparent) 40%,
-    transparent 72%)}
+.head,.row,.focus-row{display:flex;align-items:center;gap:12px}
+.row{margin-top:12px}
+.head>div,.label{width:96px;text-align:right}
+.head>div:not(:first-child){width:${TILE}px;text-align:center}
+.tile{width:${TILE}px;height:${TILE}px;background:${BACKDROP};position:relative;overflow:hidden;border-radius:8px;isolation:isolate}
+.glow-stack,.glow-layer,.skel{position:absolute;inset:0}
+.glow-layer{mix-blend-mode:screen;background:radial-gradient(circle at 50% 50%,var(--glow) 0%,var(--glow) 40%,transparent 72%)}
 .focus{position:absolute;inset:24px;border-radius:6px}
-.skel{position:absolute;inset:0}
+.focus-row{margin:24px 0}
+.focus-cell>div:first-child{margin-bottom:8px;text-align:center}
 .bg{width:${TILE}px;height:${TILE}px;background:${BACKDROP};border-radius:8px}
 </style></head><body>
 <div class="grid">
-  <div class="head"><div>sentiment</div><div>subtle</div><div>base</div><div>bloom</div><div>focus-ring</div></div>
-  ${rows}
-  ${skeletonRow}
-  <div class="row"><div class="label">ref</div>
-    <div class="tile" data-swatch="ref:backdrop"><div class="bg"></div></div>
-  </div>
+  <div class="head"><div>Glow</div><div>Один слой</div><div>Два слоя</div><div>Три слоя</div></div>
+  ${glowRows}
+  <div class="focus-row">${focusCells}</div>
+  <div class="row"><div class="label">Skeleton</div>${skeletonCells}</div>
+  <div class="row"><div class="label">Фон</div><div class="tile" data-swatch="ref:backdrop"><div class="bg"></div></div></div>
 </div>
 </body></html>`;
 }
@@ -239,7 +185,7 @@ export function decodePng(buf) {
   return { width, height, rgb };
 }
 
-/** Rec.709 relative luminance (sRGB 0–255, без гамма-линеаризации — для delta достаточно). */
+/** Взвешенный сигнал encoded RGB из PNG; это не WCAG-яркость или модель восприятия. */
 function lum(r, g, b) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
@@ -276,46 +222,42 @@ export function sampleRegion(png, bbox) {
 
 /**
  * ОБЪЕКТИВНЫЕ инварианты на замерах. Кидает Error при нарушении (RED).
- * measurements: { backdropL, glow: {s:{subtle,base,bloom}}, focus: {s:{r,g,b,L}} }
+ * measurements: { backdropL, glow: {s:{single,double,triple}}, focus: {s:{r,g,b,L}} }
  *
  * ПОЧЕМУ focus-ring НЕ проверяется на попарную «различимость» цветов: по паспорту
  * labui (EC4, см. packages/colors/test/fx-family.test.mjs) focus-ring НЕ несёт
  * собственного сентимент-цвета — он алиасит СИЛЬНЫЙ штрих Label
- * (label-{sentiment}-primary) с полом контраста ~17–20:1 к фону. Поэтому по темам
- * он near-white (dark) / near-black (light) — намеренно КОНТРАСТНЫЙ, а не
- * хроматически-различимый. Прежний инвариант «RGB-дист ≥ 24» кодировал старый
- * (цветной) дизайн #93 и на текущем контракте давал бы ложный RED. Пиксельный
- * гейт судит то, что дизайн реально гарантирует: focus-ring РЕНДЕРИТСЯ (non-blank
- * над фоном). Наследование/контраст закрыты исходным тестом fx-family (Класс А).
+ * (label-{sentiment}-primary). Этот пиксельный гейт проверяет присутствие focus.
+ * Его доступность и контраст проверяются отдельно на конечной поверхности.
  *
  * @returns {{glow: Record<string,object>, focus: Record<string,object>}} нормализованные дельты
  */
 export function assertFxRender(m) {
-  const NONBLANK = 1.0; // мин. luminance-delta base-glow над фоном (пикс. единицы)
+  const NONBLANK = 1.0; // прежний минимальный сигнал над фоном, encoded pixel units
   const MONO_MARGIN = 0.3; // строгий шаг между ступенями
 
   const problems = [];
   const deltas = {};
 
-  // (a) 6 сентиментов: base-glow non-blank + монотонность subtle<base<bloom.
-  for (const s of SENTIMENTS) {
+  // Первый слой видим; каждый следующий слой усиливает накопленный эффект.
+  for (const s of GLOW_FAMILIES) {
     const g = m.glow[s];
-    if (!g) {
+    if (!g?.single || !g.double || !g.triple) {
       problems.push(`glow отсутствует у сентимента ${s}`);
       continue;
     }
-    const dSub = g.subtle.L - m.backdropL;
-    const dBase = g.base.L - m.backdropL;
-    const dBloom = g.bloom.L - m.backdropL;
-    deltas[s] = { subtle: dSub, base: dBase, bloom: dBloom };
-    if (dBase <= NONBLANK) {
-      problems.push(`${s}: base-glow пустой (delta ${dBase.toFixed(2)} ≤ ${NONBLANK})`);
+    const single = g.single.L - m.backdropL;
+    const double = g.double.L - m.backdropL;
+    const triple = g.triple.L - m.backdropL;
+    deltas[s] = { single, double, triple };
+    if (single <= NONBLANK) {
+      problems.push(`${s}: первый glow-слой пустой (delta ${single.toFixed(2)} ≤ ${NONBLANK})`);
     }
-    if (!(dSub + MONO_MARGIN < dBase)) {
-      problems.push(`${s}: subtle≮base (${dSub.toFixed(2)} vs ${dBase.toFixed(2)})`);
+    if (!(single + MONO_MARGIN < double)) {
+      problems.push(`${s}: один≮два слоя (${single.toFixed(2)} vs ${double.toFixed(2)})`);
     }
-    if (!(dBase + MONO_MARGIN < dBloom)) {
-      problems.push(`${s}: base≮bloom (${dBase.toFixed(2)} vs ${dBloom.toFixed(2)})`);
+    if (!(double + MONO_MARGIN < triple)) {
+      problems.push(`${s}: два≮три слоя (${double.toFixed(2)} vs ${triple.toFixed(2)})`);
     }
   }
 
@@ -373,12 +315,13 @@ export async function renderAndMeasure(chromium, contractCss, opts = {}) {
 
     // bbox всех свотчей + референса фона — В device px (scale 1).
     const boxes = {};
-    for (const s of SENTIMENTS) {
+    for (const s of GLOW_FAMILIES) {
       for (const step of GLOW_STEPS) {
         boxes[`${s}:${step}`] = await page.locator(`[data-swatch="${s}:${step}"]`).boundingBox();
       }
-      boxes[`${s}:focus`] = await page.locator(`[data-swatch="${s}:focus"]`).boundingBox();
     }
+    for (const s of SENTIMENTS)
+      boxes[`${s}:focus`] = await page.locator(`[data-swatch="${s}:focus"]`).boundingBox();
     for (const layer of SKELETON_LAYERS) {
       boxes[`skeleton:${layer}`] = await page
         .locator(`[data-swatch="skeleton:${layer}"]`)
@@ -392,14 +335,14 @@ export async function renderAndMeasure(chromium, contractCss, opts = {}) {
     const backdropL = sampleRegion(decoded, boxes['ref:backdrop']).L;
     const glow = {};
     const focus = {};
-    for (const s of SENTIMENTS) {
+    for (const s of GLOW_FAMILIES) {
       glow[s] = {
-        subtle: sampleRegion(decoded, boxes[`${s}:subtle`]),
-        base: sampleRegion(decoded, boxes[`${s}:base`]),
-        bloom: sampleRegion(decoded, boxes[`${s}:bloom`]),
+        single: sampleRegion(decoded, boxes[`${s}:single`]),
+        double: sampleRegion(decoded, boxes[`${s}:double`]),
+        triple: sampleRegion(decoded, boxes[`${s}:triple`]),
       };
-      focus[s] = sampleRegion(decoded, boxes[`${s}:focus`]);
     }
+    for (const s of SENTIMENTS) focus[s] = sampleRegion(decoded, boxes[`${s}:focus`]);
     const skeleton = {
       base: sampleRegion(decoded, boxes['skeleton:base']),
       highlight: sampleRegion(decoded, boxes['skeleton:highlight']),

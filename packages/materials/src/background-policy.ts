@@ -24,9 +24,8 @@ export type { MaterialMode };
  */
 export const LIVE_BLUR_MODES = ['glass', 'acrylic'] as const;
 
-/** Единственное семейство токенов, из которого материал берёт СВОЮ заливку
- * (тинт 01 + база 02). Живой фон-хозяин ПОД стеклом — любая bg-роль (сцена), но
- * это фон, а не заливка поверхности: границу держит скан material.css в тестах. */
+/** Семейство live tint-pair. Непрозрачный Solid может иметь отдельную
+ * семантическую роль: её назначение принадлежит рецепту материала. */
 export const MATERIAL_FILL_FAMILY = '--lab-bg-material-' as const;
 
 const LIVE_BLUR_SET: ReadonlySet<MaterialMode> = new Set(LIVE_BLUR_MODES);

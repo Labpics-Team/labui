@@ -48,7 +48,7 @@ interface ToggleSchema {
   props: MachineProps<never> & { getRootNode?: () => Node };
   context: Record<string, never>;
   state: 'off' | 'on';
-  event: { type: 'TOGGLE' };
+  event: { type: 'TOGGLE' | 'PING' };
   tag: string;
   guard: string;
   action: string;
@@ -180,5 +180,109 @@ describe('ZagController.api — инвариант мемоизации (issue #
     expect(readApiCache(controller)).toBeUndefined();
     // И контракт: читать `.api` после остановки машины нельзя.
     expect(() => controller.api).toThrow(/machine not started/);
+  });
+});
+
+describe('ZagController: отключение завершает очередь прежней машины', () => {
+  function resource() {
+    const events: string[] = [];
+    let held = 0;
+    const host = new FakeHost();
+    const module: MachineModule<ToggleSchema, ToggleApi> = {
+      machine: {
+        initialState: () => 'off',
+        states: {
+          off: {
+            on: {
+              TOGGLE: { target: 'on', actions: ['transition'] },
+              PING: { actions: ['ping'] },
+            },
+          },
+          on: {
+            effects: ['hold'],
+            on: { TOGGLE: { target: 'off', actions: ['transition'] } },
+          },
+        },
+        implementations: {
+          actions: {
+            transition: () => events.push('transition'),
+            ping: () => events.push('ping'),
+          },
+          effects: {
+            hold() {
+              held += 1;
+              events.push('acquire');
+              return () => {
+                held -= 1;
+                events.push('release');
+              };
+            },
+          },
+        },
+      },
+      connect: (service) => ({ state: String(service.state.get()) }),
+    };
+    const controller = new ZagController(host, module, () => ({}));
+    controller.hostConnected();
+    return { controller, events, held: () => held };
+  }
+
+  it('отложенное открытие после disconnect не выполняет actions и не захватывает эффект', async () => {
+    const { controller, events, held } = resource();
+    controller.send({ type: 'TOGGLE' });
+    controller.hostDisconnected();
+    await flushMicrotasks();
+    expect(events).toEqual([]);
+    expect(held()).toBe(0);
+  });
+
+  it('отложенное действие без смены состояния тоже отменяется при disconnect', async () => {
+    const { controller, events } = resource();
+    controller.send({ type: 'PING' });
+    controller.hostDisconnected();
+    await flushMicrotasks();
+    expect(events).toEqual([]);
+  });
+
+  it('новое подключение сохраняет собственную очередь и не оживляет прежнюю', async () => {
+    const { controller, events, held } = resource();
+    controller.send({ type: 'TOGGLE' });
+    controller.hostDisconnected();
+    controller.hostConnected();
+    controller.send({ type: 'TOGGLE' });
+    await flushMicrotasks();
+    expect(controller.api.state).toBe('on');
+    expect(events).toEqual(['transition', 'acquire']);
+    expect(held()).toBe(1);
+    controller.hostDisconnected();
+    expect(held()).toBe(0);
+  });
+
+  it('disconnect освобождает активный эффект до отложенного закрытия ровно один раз', async () => {
+    const { controller, events, held } = resource();
+    controller.send({ type: 'TOGGLE' });
+    await flushMicrotasks();
+    expect(held()).toBe(1);
+    controller.send({ type: 'TOGGLE' });
+    controller.hostDisconnected();
+    await flushMicrotasks();
+    expect(events).toEqual(['transition', 'acquire', 'release']);
+    expect(held()).toBe(0);
+  });
+
+  it('подключённая машина выполняет очередь и освобождает эффект при обычном закрытии', async () => {
+    const { controller, events, held } = resource();
+    controller.send({ type: 'PING' });
+    controller.send({ type: 'TOGGLE' });
+    await flushMicrotasks();
+    expect(controller.api.state).toBe('on');
+    expect(events).toEqual(['ping', 'transition', 'acquire']);
+    expect(held()).toBe(1);
+    controller.send({ type: 'TOGGLE' });
+    await flushMicrotasks();
+    expect(controller.api.state).toBe('off');
+    expect(held()).toBe(0);
+    controller.hostDisconnected();
+    expect(events).toEqual(['ping', 'transition', 'acquire', 'release', 'transition']);
   });
 });

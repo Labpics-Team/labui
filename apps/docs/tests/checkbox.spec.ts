@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
@@ -39,6 +40,64 @@ function reactInput(page: Page, testid: string): Locator {
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
+
+type CheckedValue = boolean | 'indeterminate';
+type CheckedBox = HTMLElement & {
+  checked: boolean;
+  indeterminate: boolean;
+  defaultChecked: boolean;
+  defaultIndeterminate: boolean;
+  updateComplete: Promise<boolean>;
+  checkedEvents?: CheckedValue[];
+};
+
+async function observeChecked(host: Locator): Promise<void> {
+  await host.evaluate((element) => {
+    const control = element as CheckedBox;
+    control.checkedEvents = [];
+    control.addEventListener('checked-change', (event) => {
+      control.checkedEvents?.push((event as CustomEvent<{ checked: CheckedValue }>).detail.checked);
+    });
+  });
+}
+
+async function expectChecked(
+  host: Locator,
+  value: CheckedValue,
+  events: CheckedValue[],
+): Promise<void> {
+  const checked = value === true;
+  const mixed = value === 'indeterminate';
+  // Mixed проверяется через нативное свойство, а не только через нарисованный знак.
+  await expect
+    .poll(() =>
+      host.evaluate(async (element) => {
+        const control = element as CheckedBox;
+        await control.updateComplete;
+        const input = control.shadowRoot?.querySelector('input');
+        return {
+          property: control.checked,
+          attribute: control.hasAttribute('checked'),
+          mixedProperty: control.indeterminate,
+          mixedAttribute: control.hasAttribute('indeterminate'),
+          native: input?.checked,
+          nativeMixed: input?.indeterminate,
+          state: control.shadowRoot?.querySelector('.control')?.getAttribute('data-state'),
+          events: control.checkedEvents ?? [],
+        };
+      }),
+    )
+    .toEqual({
+      property: checked,
+      attribute: checked,
+      mixedProperty: mixed,
+      mixedAttribute: mixed,
+      native: checked,
+      nativeMixed: mixed,
+      state: mixed ? 'indeterminate' : checked ? 'checked' : 'unchecked',
+      events,
+    });
+}
 
 /** The machine's data-state on the Lit control (checked | unchecked | indeterminate). */
 function litControlState(page: Page, testid: string): Promise<string | null> {
@@ -103,6 +162,149 @@ test('a11y: Space on the focused box toggles via the native input (keyboard)', a
   });
   await page.keyboard.press('Space');
   await expect(lit).toHaveAttribute('checked', '');
+});
+
+for (const activation of ['Space', 'click'] as const) {
+  test(`checked state: repeated ${activation} keeps every projection and event in sync`, async ({
+    page,
+  }) => {
+    const host = litHost(page, 'lit-unchecked');
+    await observeChecked(host);
+    const events: CheckedValue[] = [];
+    await expectChecked(host, false, events);
+    for (const checked of [true, false, true, false]) {
+      if (activation === 'Space') await host.locator('input').press('Space');
+      else await host.locator('.control').click();
+      events.push(checked);
+      await expectChecked(host, checked, events);
+    }
+  });
+}
+
+for (const initial of [true, 'indeterminate'] as const) {
+  test(`checked state: default ${initial} initializes once and survives external updates and reconnect`, async ({
+    page,
+  }) => {
+    await page.evaluate((value) => {
+      const host = document.createElement('lab-checkbox') as CheckedBox;
+      host.dataset.testid = 'checked-default';
+      host.textContent = 'Default checkbox';
+      host.defaultChecked = value === true;
+      host.defaultIndeterminate = value === 'indeterminate';
+      document.body.append(host);
+    }, initial);
+    const host = page.getByTestId('checked-default');
+    await observeChecked(host);
+    await expectChecked(host, initial, []);
+    await host.locator('input').press('Space');
+    const first = initial === 'indeterminate';
+    await expectChecked(host, first, [first]);
+    await host.evaluate((element) => {
+      const control = element as CheckedBox;
+      control.defaultChecked = !control.defaultChecked;
+      control.defaultIndeterminate = !control.defaultIndeterminate;
+    });
+    await expectChecked(host, first, [first]);
+    await host.evaluate((element) => {
+      element.remove();
+      document.body.append(element);
+    });
+    await expectChecked(host, first, [first]);
+    await host.evaluate((element) => {
+      (element as CheckedBox).checked = true;
+    });
+    await expectChecked(host, true, [first]);
+    await host.evaluate((element) => {
+      (element as CheckedBox).checked = false;
+    });
+    await expectChecked(host, false, [first]);
+    await host.evaluate((element) => element.setAttribute('checked', ''));
+    await expectChecked(host, true, [first]);
+    await host.evaluate((element) => element.removeAttribute('checked'));
+    await expectChecked(host, false, [first]);
+    await host.evaluate((element) => {
+      (element as CheckedBox).indeterminate = true;
+    });
+    await expectChecked(host, 'indeterminate', [first]);
+    await host.evaluate((element) => {
+      (element as CheckedBox).indeterminate = false;
+    });
+    await expectChecked(host, false, [first]);
+    await host.locator('.control').click();
+    await expectChecked(host, true, [first, true]);
+  });
+}
+
+test('checked state: an initially checked element and a consumer override keep false explicit', async ({
+  page,
+}) => {
+  const host = litHost(page, 'lit-checked');
+  await observeChecked(host);
+  await expectChecked(host, true, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => {
+    element.addEventListener('checked-change', () => {
+      (element as CheckedBox).checked = false;
+    });
+  });
+  for (const events of [
+    [false, true],
+    [false, true, true],
+  ]) {
+    await host.locator('input').press('Space');
+    await expectChecked(host, false, events);
+  }
+});
+
+test('checked state: false assigned before connection wins over a true default', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.createElement('lab-checkbox') as CheckedBox;
+    host.dataset.testid = 'checked-before-connect';
+    host.textContent = 'Before connection';
+    host.defaultChecked = true;
+    host.checked = false;
+    document.body.append(host);
+  });
+  const host = page.getByTestId('checked-before-connect');
+  await observeChecked(host);
+  await expectChecked(host, false, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, true, [true]);
+});
+
+test('checked state: a pre-upgrade false property wins over a true default', async ({ page }) => {
+  await page.route('**/checkbox.html', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      body: (await response.text()).replaceAll('type="module"', 'type="application/x-held-module"'),
+    });
+  });
+  await page.goto('/checkbox.html');
+  await page.evaluate(async () => {
+    const host = document.createElement('lab-checkbox') as CheckedBox;
+    host.dataset.testid = 'checked-before-upgrade';
+    host.textContent = 'Before upgrade';
+    host.defaultChecked = true;
+    host.checked = false;
+    document.body.append(host);
+    const module = document.querySelector<HTMLScriptElement>(
+      'script[type="application/x-held-module"]',
+    );
+    if (!module) throw new Error('Missing held fixture module');
+    await import(module.src);
+    await customElements.whenDefined('lab-checkbox');
+  });
+  const host = page.getByTestId('checked-before-upgrade');
+  await observeChecked(host);
+  await expectChecked(host, false, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, true, [true]);
+  await host.locator('input').press('Space');
+  await expectChecked(host, false, [true, false]);
 });
 
 test('a11y name: the hidden input is exposed and named by the visible label (both renderers)', async ({
@@ -183,6 +385,11 @@ test('disabled: the machine blocks the toggle on both renderers', async ({ page 
 });
 
 test('visual parity: Lit and React resolve the same checked box colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-checked'),
+    reactControl(page, 'react-checked'),
+  );
   await expect(reactBox(page, 'react-checked')).toBeVisible();
 
   for (const variant of ['checked', 'neutral', 'danger', 'mixed'] as const) {

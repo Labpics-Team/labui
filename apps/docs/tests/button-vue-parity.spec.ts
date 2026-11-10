@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Button — Vue parity suite (companion to button.spec.ts's Lit↔React suite).
@@ -42,6 +43,7 @@ const fg = (el: HTMLElement) => getComputedStyle(el).color;
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/button.html');
+  await expect(page.locator('html')).toHaveAttribute('data-lab-colors-state', 'ready');
 });
 
 test('fixture: the delivered HTML carries the Lit reference and a Vue mount node', async ({
@@ -71,6 +73,11 @@ test('consumption: the Vue island mounts a real <lab-button> custom element, not
 test('visual parity: the Vue-mounted element resolves the SAME fill colours as a direct <lab-button>', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    innerButton(page, 'lit-accent-fill'),
+    innerButton(page, 'vue-accent-fill'),
+  );
   await expect(vueHost(page, 'vue-accent-fill')).toBeVisible();
 
   for (const variant of ['accent-fill', 'neutral-tinted', 'danger-border'] as const) {

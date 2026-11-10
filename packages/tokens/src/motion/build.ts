@@ -1,3 +1,4 @@
+import { springFromDurationBounce } from '@labpics/motion/tokens';
 import type {
   MotionConfig,
   Provenance,
@@ -17,8 +18,8 @@ import {
 import { type SpringPhysics, describeSpringPhysics, springLinear } from './spring.js';
 
 /**
- * Resolve Lab UI semantic bindings over physical primitives owned by
- * @labpics/motion. The resolved intermediate feeds CSS, DTCG and TS generators.
+ * Разрешение ролей и калибровок LabUI через физическую модель LabMotion.
+ * Один результат питает CSS, DTCG и статическую runtime-проекцию.
  */
 
 const PREFIX = 'lab';
@@ -139,7 +140,14 @@ function resolveEasing(name: EasingPrimitiveName): ResolvedEasing {
 }
 
 function resolveSpring(spec: SpringSpec, easings: readonly ResolvedEasing[]): ResolvedSpring {
-  const primitive = springPrimitive(spec.primitive);
+  const primitive =
+    'primitive' in spec
+      ? springPrimitive(spec.primitive)
+      : {
+          params: springFromDurationBounce(spec.response / 1000, spec.bounce),
+          provenance: spec.provenance,
+        };
+  requireProvenance(primitive.provenance, `spring "${spec.name}"`);
   const physics = describeSpringPhysics(primitive.params);
   const fallback = easings.find((e) => e.name === spec.fallbackEasing);
   if (!fallback) {

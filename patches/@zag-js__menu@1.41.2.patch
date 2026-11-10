@@ -1,0 +1,26 @@
+diff --git a/dist/menu.connect.js b/dist/menu.connect.js
+index 69fe8688b80be1b9e034889b1837f83de5827fa7..e7638f263ff27a54a7ecf1e506ac923bf93bb48c 100644
+--- a/dist/menu.connect.js
++++ b/dist/menu.connect.js
+@@ -247,7 +247,7 @@ function connect(service, normalize) {
+         onPointerDown(event) {
+           if (dom.isTargetDisabled(event.currentTarget)) return;
+           if ((0, import_dom_query.isContextMenuEvent)(event)) return;
+-          event.preventDefault();
++          if (event.pointerType !== "touch") event.preventDefault();
+         },
+         onClick(event) {
+           if (event.defaultPrevented) return;
+diff --git a/dist/menu.connect.mjs b/dist/menu.connect.mjs
+index 26afb604a90503d7ad42dc0870f9d1010c69960c..b2cf28731d1a5227238d8b5807e75c459145a213 100644
+--- a/dist/menu.connect.mjs
++++ b/dist/menu.connect.mjs
+@@ -227,7 +227,7 @@ function connect(service, normalize) {
+         onPointerDown(event) {
+           if (dom.isTargetDisabled(event.currentTarget)) return;
+           if (isContextMenuEvent(event)) return;
+-          event.preventDefault();
++          if (event.pointerType !== "touch") event.preventDefault();
+         },
+         onClick(event) {
+           if (event.defaultPrevented) return;

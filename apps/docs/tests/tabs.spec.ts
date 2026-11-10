@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Tabs suite — a COMPOUND component that consumes the @zag-js/tabs GROUP machine
@@ -201,6 +202,11 @@ test('disabled: a disabled tab does not select on either renderer', async ({ pag
 test('visual parity: Lit and React resolve the same selected underline colour', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-tabs').locator('.trigger[data-selected]'),
+    page.getByTestId('react-tabs').locator('.lab-tabs-trigger[data-selected]'),
+  );
   const litSelected = litHost(page, 'lit-tabs').locator('.trigger[data-selected]');
   const reactSelected = page.getByTestId('react-tabs').locator('.lab-tabs-trigger[data-selected]');
   await expect(reactSelected).toBeVisible();

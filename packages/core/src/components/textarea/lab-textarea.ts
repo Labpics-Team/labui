@@ -1,3 +1,11 @@
+import {
+  type FieldA11yInput,
+  type LabFieldSize,
+  type LabFieldType,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+} from '@labpics/ui-core/shared';
 /**
  * `<lab-textarea>` — a multi-line text field: a real `<textarea>` wired to a label,
  * an optional helper/description, and an optional error message via genuine ARIA.
@@ -31,14 +39,6 @@
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
-import {
-  type FieldA11yInput,
-  type LabFieldSize,
-  type LabFieldType,
-  fieldControlAria,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
 
 export type { LabFieldSize as LabTextareaSize, LabFieldType as LabTextareaType };
@@ -233,9 +233,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-textarea': LabTextarea;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-textarea')) {
-  customElements.define('lab-textarea', LabTextarea);
 }

@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Kbd suite — a presentational primitive, verified on BOTH renderers.
@@ -43,6 +44,7 @@ test('semantics: both renderers use a real <kbd> element', async ({ page }) => {
 });
 
 test('visual parity: Lit and React resolve the same cap colours per size', async ({ page }) => {
+  await waitForThemePaint(page, litKbd(page, 'lit-m'), reactKbd(page, 'react-m'));
   await expect(reactKbd(page, 'react-m')).toBeVisible();
 
   for (const size of ['s', 'm', 'l'] as const) {

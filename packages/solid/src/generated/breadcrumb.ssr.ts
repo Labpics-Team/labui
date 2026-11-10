@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/breadcrumb';
 import type { LabBreadcrumb } from '@labpics/ui-core/breadcrumb';
 
@@ -15,9 +15,9 @@ export type BreadcrumbSsrProps = Partial<Pick<LabBreadcrumb, 'size' | 'separator
 export type BreadcrumbSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-breadcrumb> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-breadcrumb> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderBreadcrumb(
   props: BreadcrumbSsrProps = {},
@@ -25,6 +25,6 @@ export function renderBreadcrumb(
   return renderToString(html`<lab-breadcrumb
       size=${ifDefined(props.size)}
       separator=${ifDefined(props.separator)}
-      .items=${props.items}
+      .items=${props.items === undefined ? noChange : props.items}
     ></lab-breadcrumb>`);
 }

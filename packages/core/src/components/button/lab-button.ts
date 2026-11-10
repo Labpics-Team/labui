@@ -49,17 +49,23 @@ export type LabButtonSize = 's' | 'm' | 'l';
 /** HTML type of the internal button in Shadow DOM. */
 export type LabButtonHtmlType = 'button' | 'submit' | 'reset';
 
+interface LabButtonInteractionTarget {
+  readonly current: HTMLButtonElement | null;
+  readonly subscribe: (listener: (target: HTMLButtonElement | null) => void) => () => void;
+}
+
 export class LabButton extends LabElement {
   static override properties = {
     type: { reflect: true },
     kind: { reflect: true },
     size: { reflect: true },
+    description: {},
     icon: { type: Boolean, reflect: true },
     loading: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
     htmlType: { attribute: 'html-type' },
     /**
-     * Accessible name for the icon-only case (WCAG 4.1.2). A consumer's
+     * Accessible name (WCAG 4.1.2). A consumer's
      * `aria-label` on the host does NOT cross the shadow boundary onto the inner
      * `<button>`, so without this property an icon-only button (empty default
      * slot, decorative icon) would render with NO accessible name. Declaring it
@@ -75,22 +81,82 @@ export class LabButton extends LabElement {
   declare type: LabButtonType;
   declare kind: LabButtonKind;
   declare size: LabButtonSize;
+  declare description: string;
   declare icon: boolean;
   declare loading: boolean;
   declare disabled: boolean;
   declare htmlType: LabButtonHtmlType;
   declare ariaLabel: string | null;
 
+  private nativeTarget: HTMLButtonElement | null = null;
+  private readonly targetListeners = new Set<(target: HTMLButtonElement | null) => void>();
+  /** @internal Компонент-владелец получает control; потребитель не исследует shadow DOM. */
+  readonly interactionTarget: LabButtonInteractionTarget;
+
   constructor() {
     super();
     this.type = 'accent';
     this.kind = 'fill';
     this.size = 'm';
+    this.description = '';
     this.icon = false;
     this.loading = false;
     this.disabled = false;
     this.htmlType = 'button';
     this.ariaLabel = null;
+    const owner = this;
+    this.interactionTarget = Object.freeze({
+      get current(): HTMLButtonElement | null {
+        return owner.nativeTarget;
+      },
+      subscribe(listener: (target: HTMLButtonElement | null) => void): () => void {
+        owner.targetListeners.add(listener);
+        try {
+          listener(owner.nativeTarget);
+        } catch (error) {
+          owner.targetListeners.delete(listener);
+          throw error;
+        }
+        return () => owner.targetListeners.delete(listener);
+      },
+    });
+  }
+
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.requestUpdate();
+  }
+
+  override updated(): void {
+    if (this.isConnected) {
+      this.publishInteractionTarget(this.renderRoot.querySelector<HTMLButtonElement>('button'));
+    }
+  }
+
+  override disconnectedCallback(): void {
+    try {
+      this.publishInteractionTarget(null);
+    } finally {
+      super.disconnectedCallback();
+    }
+  }
+
+  private publishInteractionTarget(target: HTMLButtonElement | null): void {
+    this.nativeTarget = target;
+    // Повторная публикация позволяет владельцу проверить изменившийся htmlType.
+    // Удалённая reentrant-подписка не получает уже поставленный callback.
+    const failures: unknown[] = [];
+    for (const listener of [...this.targetListeners]) {
+      if (!this.targetListeners.has(listener)) continue;
+      try {
+        listener(target);
+      } catch (error) {
+        failures.push(error);
+      }
+    }
+    if (failures.length === 1) throw failures[0];
+    if (failures.length)
+      throw new AggregateError(failures, 'LabButton interaction target callbacks');
   }
 
   static override styles = css`
@@ -98,28 +164,35 @@ export class LabButton extends LabElement {
       /* Size knobs the size axis maps onto. Dimension tokens may carry a literal
          fallback so the control is usable before tokens load (css.ts rule);
          colour roles below never do. */
-      --_radius: ${litVar('--lab-radius-control', '0.5rem')};
-      --_font: ${litVar('--lab-font-size-md', '1rem')};
-      --_pad-x: ${litVar('--lab-space-md', '1rem')};
-      --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
-      --_gap: ${litVar('--lab-space-sm', '0.5rem')};
-      --_min: ${litVar('--lab-size-control-h-m', '2.5rem')}; /* connected --lab-size-control-h-* per playbook #137 */
+      --_radius: ${litVar('--lab-radius-button', '1rem')};
+      --_font: ${litVar('--lab-font-size-button-label', '1rem')};
+      --_line: ${litVar('--lab-line-height-button-label', '1.5')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-label', '0em')};
+      --_pad-x: ${litVar('--lab-space-button-inset', '0.75rem')};
+      --_pad-y: ${litVar('--lab-space-button-inset', '0.75rem')};
+      --_content: ${litVar('--lab-size-button-content', '1.5rem')};
+      --_min: ${litVar('--lab-size-button-h-m', '3rem')};
+      --_glow-x: ${litVar('--lab-space-none', '0rem')};
 
       display: inline-flex;
       vertical-align: middle;
     }
 
     :host([size='s']) {
-      --_font: ${litVar('--lab-font-size-xs', '0.8333rem')};
-      --_pad-x: ${litVar('--lab-space-sm', '0.5rem')};
-      --_pad-y: ${litVar('--lab-space-xs', '0.25rem')};
-      --_min: ${litVar('--lab-size-control-h-s', '2rem')}; /* connected --lab-size-control-h to button (s) */
+      --_radius: ${litVar('--lab-radius-full', '9999px')};
+      --_font: ${litVar('--lab-font-size-button-label-s', '0.875rem')};
+      --_line: ${litVar('--lab-line-height-button-label-s', '0.8571428571428571')};
+      --_tracking: ${litVar('--lab-letter-spacing-button-label-s', '0em')};
+      --_pad-y: ${litVar('--lab-space-sm', '0.5rem')};
+      --_content: ${litVar('--lab-size-button-content-s', '1.25rem')};
+      --_min: ${litVar('--lab-size-button-h-s', '2.25rem')};
+      --_glow-x: calc(-1 * ${litVar('--lab-size-button-glow-shift-s', '0.0625rem')});
     }
     :host([size='l']) {
-      --_font: ${litVar('--lab-font-size-lg', '1.2rem')};
-      --_pad-x: ${litVar('--lab-space-lg', '1.5rem')};
+      --_pad-x: ${litVar('--lab-space-md', '1rem')};
       --_pad-y: ${litVar('--lab-space-md', '1rem')};
-      --_min: ${litVar('--lab-size-control-h-l', '3rem')};
+      --_min: ${litVar('--lab-size-button-h-l', '3.5rem')};
+      --_glow-x: ${litVar('--lab-size-button-glow-shift-l', '0.1875rem')};
     }
 
     button {
@@ -128,16 +201,16 @@ export class LabButton extends LabElement {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: var(--_gap);
       width: 100%;
       min-height: var(--_min);
       padding: var(--_pad-y) var(--_pad-x);
       border-radius: var(--_radius);
-      border: ${litVar('--lab-stroke-hairline')} solid transparent;
+      border: 0 solid transparent;
       font: inherit;
       font-size: var(--_font);
-      line-height: ${litVar('--lab-line-height-md', '1.5')};
-      font-weight: ${litVar('--lab-font-weight-semibold', '600')};
+      line-height: var(--_line);
+      letter-spacing: var(--_tracking);
+      font-weight: ${litVar('--lab-font-weight-medium', '500')};
       cursor: pointer;
       transition:
         background-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
@@ -152,6 +225,18 @@ export class LabButton extends LabElement {
       border-color: transparent;
     }
 
+    /* Border округляется браузером до device px. Отдельная обводка сохраняет
+       rem-inset при любом масштабе и наследует цвет настоящего состояния. */
+    button::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: ${litVar('--lab-stroke-hairline')} solid;
+      border-color: inherit;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
     /* Icon-only: square, centred, no text padding asymmetry. */
     :host([icon]) button {
       width: var(--_min);
@@ -163,6 +248,65 @@ export class LabButton extends LabElement {
     :host([type='accent'][kind='fill']) button {
       background-color: ${litVar('--lab-fill-accent')};
       color: ${litVar('--lab-label-on-accent')};
+    }
+
+    /* Отдельный clip ограничивает только эффект, сохраняя glyph и focus. */
+    .effects {
+      display: none;
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    :host([type='accent'][kind='fill']) .effects {
+      display: block;
+    }
+    .effects::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      color: var(--_lab-button-sheen-color, ${litVar('--lab-bg-static-light')});
+      background-image: linear-gradient(180deg, currentColor, transparent);
+      opacity: var(--_lab-button-sheen-opacity, ${litVar('--lab-opacity-button-sheen', '0.2')});
+      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
+        color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    }
+    .effects::after {
+      content: '';
+      position: absolute;
+      left: calc(50% + var(--_glow-x));
+      top: 50%;
+      width: ${litVar('--lab-size-button-glow', '6rem')};
+      height: ${litVar('--lab-size-button-glow', '6rem')};
+      transform: translate(-50%, -50%);
+      border-radius: ${litVar('--lab-radius-full', '9999px')};
+      background-color: ${litVar('--lab-bg-static-light')};
+      filter: blur(${litVar('--lab-size-button-glow-blur', '1.125rem')});
+      opacity: 0;
+      transition: opacity var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    }
+    :host([type='accent'][kind='fill']) button::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      box-shadow: ${litVar('--lab-shadow-button')};
+      transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+    }
+    :host([type='accent'][kind='fill']) button:hover:not(:disabled) .effects::before {
+      opacity: var(--_lab-button-sheen-hover-opacity, ${litVar('--lab-opacity-button-sheen-hover', '0.32')});
+    }
+    :host([type='accent'][kind='fill']) button:active:not(:disabled) .effects::before {
+      color: ${litVar('--lab-bg-static-dark')};
+      opacity: ${litVar('--lab-opacity-button-shade-pressed', '0.12')};
+    }
+    :host([type='accent'][kind='fill']) button:active:not(:disabled) .effects::after {
+      opacity: var(--_lab-button-glow-pressed-opacity, calc(${litVar('--lab-opacity-button-glow', '0.32')} * ${litVar('--lab-opacity-button-glow-fill', '0.52')}));
+    }
+    :host([type='accent'][kind='fill']) button:active:not(:disabled)::after {
+      box-shadow: ${litVar('--lab-shadow-button-pressed')};
     }
     :host([type='accent'][kind='tinted']) button {
       background-color: ${litVar('--lab-fill-accent-tinted')};
@@ -214,12 +358,6 @@ export class LabButton extends LabElement {
     /* Паттерн стейт-оверлеев #109 — см. button.css (React-близнец): роль
        покоя + color-mix к тинту рецепта D под @supports; fallback ниже. */
     @supports (color: color-mix(in oklab, red, blue)) {
-    :host([type='accent'][kind='fill']) button:hover:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-hover', '8%')});
-    }
-    :host([type='accent'][kind='fill']) button:active:not(:disabled) {
-      background-color: color-mix(in oklab, ${litVar('--lab-fill-accent')}, black ${litVar('--lab-state-pressed', '14%')});
-    }
     :host([type='accent'][kind='tinted']) button:hover:not(:disabled) {
       background-color: color-mix(in oklab, ${litVar('--lab-fill-accent-tinted')}, ${litVar('--lab-label-primary')} ${litVar('--lab-state-hover', '8%')});
     }
@@ -297,10 +435,10 @@ export class LabButton extends LabElement {
        чёрному (вывод — в button.css React-близнеца). Disabled гасится ниже
        каскадом (filter: none). */
     @supports not (color: color-mix(in oklab, red, blue)) {
-      button:hover {
+      :host(:not([type='accent'][kind='fill'])) button:hover {
         filter: brightness(0.7787);
       }
-      button:active {
+      :host(:not([type='accent'][kind='fill'])) button:active {
         filter: brightness(0.6361);
       }
     }
@@ -321,18 +459,80 @@ export class LabButton extends LabElement {
     :host([loading]) button {
       cursor: progress;
     }
+    .content {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-width: 0;
+    }
+    slot[name='icon'],
+    slot[name='end'] {
+      /* Неявная ячейка появляется вместе с рисунком; пустой slot не занимает место. */
+      display: inline-grid;
+      grid-auto-flow: column;
+      grid-auto-columns: var(--_content);
+      grid-auto-rows: var(--_content);
+      place-items: center;
+      flex: 0 0 auto;
+      line-height: 0;
+    }
     .label {
       display: inline-flex;
       align-items: center;
-      gap: var(--_gap);
+      min-height: var(--_content);
+      padding-inline: ${litVar('--lab-space-sm', '0.5rem')};
+      gap: ${litVar('--lab-space-sm', '0.5rem')};
     }
-    :host([loading]) .label {
+    .description {
+      font-size: ${litVar('--lab-font-size-button-description', '1rem')};
+      line-height: ${litVar('--lab-line-height-button-description', '1.5')};
+      letter-spacing: ${litVar('--lab-letter-spacing-button-description', '-0.015625em')};
+      font-weight: ${litVar('--lab-font-weight-regular', '400')};
+      color: ${litVar('--lab-label-secondary')};
+    }
+    :host([size='s']) .description {
+      font-size: inherit;
+      line-height: inherit;
+      letter-spacing: inherit;
+      font-weight: var(--_lab-button-description-small-weight, inherit);
+    }
+    :host([type='accent']) .description {
+      color: ${litVar('--lab-label-brand-secondary')};
+    }
+    :host([type='danger']) .description {
+      color: ${litVar('--lab-label-danger-secondary')};
+    }
+    :host([type='accent'][kind='fill']) .description,
+    :host([type='danger'][kind='fill']) .description {
+      color: ${litVar('--lab-label-static-light-secondary')};
+    }
+    :host([icon]) slot[name='end'] {
+      display: none;
+    }
+    :host([icon]) .label {
+      /* Подпись не занимает место, но остаётся источником доступного имени. */
+      position: absolute;
+      width: ${litVar('--lab-stroke-hairline')};
+      height: ${litVar('--lab-stroke-hairline')};
+      min-height: 0;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+    :host([loading]) .content,
+    :host([loading]) .content .description {
       /* color: transparent — see button.css (React twin) for the full WCAG
          4.1.2 rationale: neither visibility:hidden NOR opacity:0 is safe here
          (WebKit drops opacity:0 content from its a11y tree too), so only a
          paint-level change (colour) may be used to visually hide the label
          while keeping it the button's accessible name on every engine. */
       color: transparent;
+    }
+    :host([loading]) slot[name='icon'],
+    :host([loading]) slot[name='end'] {
+      /* Скрываем и фиксированную заливку glyph, сохраняя его размер и имя. */
+      clip-path: inset(50%);
     }
     .spinner {
       display: none;
@@ -363,19 +563,11 @@ export class LabButton extends LabElement {
   override render(): TemplateResult {
     // Loading OR disabled blocks interaction. SSR-safe: ifDefined keeps absent
     // attributes out of the attribute position (no bare `nothing`), and the
-    // spinner is always present (CSS hides it) so @lit-labs/ssr never sees a
-    // conditional child template.
+    // spinner is always present and does not change the content's layout.
     const inactive = this.disabled || this.loading;
-    // ACCESSIBLE NAME (WCAG 4.1.2). A button with a visible default-slot label is
-    // named by that text — the platform computes the name from the slotted content,
-    // so no aria-label is wanted (one would silently override the visible label).
-    // An ICON-ONLY button has an empty default slot, so the projected text gives no
-    // name; the consumer's host `aria-label` is the only name source and MUST be
-    // forwarded onto the inner <button>. We forward it only in that icon-only case,
-    // and mark the (decorative) icon slot aria-hidden then so it cannot contribute a
-    // competing name. Mirrors the React twin ⇒ both renderers resolve the SAME name.
-    const iconOnly = !this.hasDefaultSlotContent();
-    const innerAriaLabel = iconOnly && this.ariaLabel ? this.ariaLabel : undefined;
+    // Явное имя имеет native-приоритет, как у React. Без него имя даёт default
+    // slot, в том числе визуально скрытая icon-подпись. SSR не исследует light DOM.
+    const innerAriaLabel = this.ariaLabel || undefined;
     return html`
       <button
         type=${this.htmlType}
@@ -384,10 +576,12 @@ export class LabButton extends LabElement {
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
       >
+        <span class="effects" aria-hidden="true"></span>
         <span class="spinner" aria-hidden="true"></span>
-        <span class="label">
+        <span class="content">
           <slot name="icon" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
-          <slot></slot>
+          <span class="label"><slot></slot>${this.description ? html` <span class="description">${this.description}</span>` : null}</span>
+          <slot name="end" aria-hidden=${ifDefined(innerAriaLabel ? 'true' : undefined)}></slot>
         </span>
       </button>
     `;
@@ -398,11 +592,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-button': LabButton;
   }
-}
-
-// Idempotent registration: Lit SSR and client bundles can import this module
-// across module-instance boundaries; an unguarded define then throws. The guard
-// makes the side-effect import safe to repeat (core-CONTRACT §7).
-if (typeof customElements !== 'undefined' && !customElements.get('lab-button')) {
-  customElements.define('lab-button', LabButton);
 }

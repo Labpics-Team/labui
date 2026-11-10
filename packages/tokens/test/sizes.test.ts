@@ -33,17 +33,40 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     'control-h-s': 32,
     'control-h-m': 40,
     'control-h-l': 48,
-    // Switch (аудит 2026-07-09, DECLARED): трек Ш/В и бегунок, 4px-сетка
-    // по ширине трека, thumb = track-h − 2×3px зазор.
-    'switch-track-s': 36,
-    'switch-track-m': 44,
-    'switch-track-l': 52,
-    'switch-track-h-s': 20,
-    'switch-track-h-m': 24,
-    'switch-track-h-l': 28,
-    'switch-thumb-s': 14,
-    'switch-thumb-m': 18,
-    'switch-thumb-l': 22,
+    // Switch при Unit 100%: docs/reference/design-baseline.md (2026-10-30).
+    'switch-track-s': 28,
+    'switch-track-m': 36,
+    'switch-track-l': 44,
+    'switch-track-h-s': 16,
+    'switch-track-h-m': 20,
+    'switch-track-h-l': 24,
+    'switch-thumb-s': 12,
+    'switch-thumb-m': 16,
+    'switch-thumb-l': 20,
+    'switch-row': 24,
+    // Независимая роль сохраняет существующую геометрию Combobox.
+    'combobox-trigger': 36,
+    // Button: read-only эталон, docs/reference/design-baseline.md (2026-10-31).
+    'button-h-s': 36,
+    'button-h-m': 48,
+    'button-h-l': 56,
+    'button-content-s': 20,
+    'button-content': 24,
+    'button-glow': 96,
+    'button-glow-blur': 18,
+    'button-glow-shift-s': 1,
+    'button-glow-shift-l': 3,
+    // Sheet Half: размеры и optical shift read-only эталона от 2026-11-04.
+    'sheet-drag-area': 24,
+    'sheet-indicator-w': 36,
+    'sheet-indicator-h': 4,
+    'sheet-indicator-y': 14,
+    'sheet-indicator-x': 0.5,
+    'sheet-body-blur': 128,
+    'sheet-ghost-blur': 24,
+    'sheet-body-full': 776,
+    'sheet-body-two-thirds': 540,
+    'sheet-body-one-third': 270,
     // Loader: толщина штриха спиннера (DECLARED).
     'loader-stroke-s': 2,
     'loader-stroke-m': 3,
@@ -88,6 +111,8 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
     const axes = [
       ['control-s', 'control-m', 'control-l', 'control-xl'],
       ['control-h-s', 'control-h-m', 'control-h-l'],
+      ['button-h-s', 'button-h-m', 'button-h-l'],
+      ['sheet-body-one-third', 'sheet-body-two-thirds', 'sheet-body-full'],
       ['switch-track-s', 'switch-track-m', 'switch-track-l'],
       ['switch-track-h-s', 'switch-track-h-m', 'switch-track-h-l'],
       ['switch-thumb-s', 'switch-thumb-m', 'switch-thumb-l'],
@@ -126,6 +151,15 @@ describe('sizes scale — control-box dimensions (Figma Size bindings)', () => {
       size: Record<string, { $value: { value: number; unit: string } }>;
     };
     expect(doc.size['control-s']?.$value).toEqual({ value: 12, unit: 'px' });
+    for (const [name, px] of Object.entries({
+      'sheet-body-full': 776,
+      'sheet-body-two-thirds': 540,
+      'sheet-body-one-third': 270,
+    })) {
+      expect(css).toContain(`--lab-size-${name}: ${px / 16}rem;`);
+      expect(ts).toContain(`'${name}': 'var(--lab-size-${name})'`);
+      expect(doc.size[name]?.$value).toEqual({ value: px, unit: 'px' });
+    }
   });
 
   it('rejects an alias pointing at a missing step (config is validated, not trusted)', () => {

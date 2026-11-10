@@ -24,7 +24,7 @@ describe('полнота Vue-адаптера', () => {
     expect(missing, `нет обёрток: ${missing.join(', ')}`).toEqual([]);
   });
 
-  it('в манифесте 27 компонентов', () => {
-    expect(manifest.components).toHaveLength(27);
+  it('в манифесте 28 компонентов', () => {
+    expect(manifest.components).toHaveLength(28);
   });
 });

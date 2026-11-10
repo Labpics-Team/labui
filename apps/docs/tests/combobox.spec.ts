@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Combobox suite — the COMPOUND + POSITIONED + FILTERED canon (the Select listbox ⊕ a
@@ -434,6 +435,7 @@ test('positioning: the open listbox is anchored at the input', async ({ page }) 
 test('control-surface parity: the Lit wrapper is a bare container; the surface matches React', async ({
   page,
 }) => {
+  await waitForThemePaint(page, litInput(page, 'lit-combobox'), reactInput(page, 'react-combobox'));
   const readSurface = (el: Element) => {
     const cs = getComputedStyle(el as HTMLElement);
     const r = (el as HTMLElement).getBoundingClientRect();
@@ -496,12 +498,15 @@ test('control-surface parity: the Lit wrapper is a bare container; the surface m
 });
 
 test('visual parity: Lit and React resolve the same listbox colour when open', async ({ page }) => {
+  await waitForThemePaint(page, litInput(page, 'lit-combobox'), reactInput(page, 'react-combobox'));
   await litInput(page, 'lit-combobox').click();
   await litOpen(page, 'lit-combobox');
+  await waitForThemePaint(page, litContent(page, 'lit-combobox'));
   const litBg = await litContent(page, 'lit-combobox').evaluate(bg);
 
   await reactInput(page, 'react-combobox').click();
   await reactOpen(page, 'react-combobox');
+  await waitForThemePaint(page, reactOpenContent(page));
   const reactBg = await reactOpenContent(page).evaluate(bg);
 
   expect(reactBg, 'combobox listbox background parity').toBe(litBg);

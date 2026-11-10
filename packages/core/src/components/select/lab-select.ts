@@ -58,7 +58,7 @@
  * SSR (core-CONTRACT §7): a select is client-only. The server emits the trigger and
  * a `hidden` listbox; the machine upgrades it on the client. No flash, no pre-work.
  */
-import * as selectMachine from '@zag-js/select';
+import * as selectMachine from '@labpics/ui-core/behaviors/select';
 import { type TemplateResult, css, html, nothing } from 'lit';
 import type { MachineModule, PropTypes, SchemaOf } from '../../behaviors/types.js';
 import { litVar } from '../../css.js';
@@ -559,9 +559,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-select': LabSelect;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-select')) {
-  customElements.define('lab-select', LabSelect);
 }

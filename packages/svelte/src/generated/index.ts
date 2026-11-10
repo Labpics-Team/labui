@@ -26,6 +26,7 @@ export { default as Popover } from './Popover.svelte';
 export { default as Progress } from './Progress.svelte';
 export { default as RadioGroup } from './RadioGroup.svelte';
 export { default as Select } from './Select.svelte';
+export { default as Sheet } from './Sheet.svelte';
 export { default as Slider } from './Slider.svelte';
 export { default as Switch } from './Switch.svelte';
 export { default as Tabs } from './Tabs.svelte';

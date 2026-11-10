@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Pin Input suite — a MACHINE-DRIVEN segmented code field, verified on BOTH renderers
@@ -316,6 +317,11 @@ test('disabled: the segments are non-interactive on both renderers', async ({ pa
 test('control-surface parity: the group wrapper is bare; the segment carries the surface', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    litSegment(page, 'lit-neutral', 0),
+    reactSegment(page, 'react-neutral', 0),
+  );
   const readSurface = (el: Element) => {
     const cs = getComputedStyle(el as HTMLElement);
     return {
@@ -368,6 +374,11 @@ test('control-surface parity: the group wrapper is bare; the segment carries the
 });
 
 test('visual parity: Lit and React resolve the same segment border colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litSegment(page, 'lit-neutral', 0),
+    reactSegment(page, 'react-neutral', 0),
+  );
   const litB = await litSegment(page, 'lit-neutral', 0).evaluate(borderColor);
   const reactB = await reactSegment(page, 'react-neutral', 0).evaluate(borderColor);
   expect(reactB, 'pin segment border parity').toBe(litB);
@@ -376,6 +387,11 @@ test('visual parity: Lit and React resolve the same segment border colour', asyn
 test('visual parity: the danger sentiment re-points the segment border identically', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    litSegment(page, 'lit-invalid', 0),
+    reactSegment(page, 'react-invalid', 0),
+  );
   const litB = await litSegment(page, 'lit-invalid', 0).evaluate(borderColor);
   const reactB = await reactSegment(page, 'react-invalid', 0).evaluate(borderColor);
   expect(reactB, 'danger segment border parity').toBe(litB);

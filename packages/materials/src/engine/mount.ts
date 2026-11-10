@@ -53,24 +53,30 @@ function probeBackdropFilterUrl(): boolean {
 }
 
 /**
- * Единый скрытый `<svg><defs>` хост для url()-фильтров движков (луминосити-
- * конвейер acrylic, линза liquid-glass). Один на `className` на документ;
- * невидимый, вне hit-теста и a11y-дерева. Раньше — две дословных копии
- * (`ensureDefs` в liquid-glass, `ensureAcrylicDefs` в acrylic).
+ * Хост принадлежит одному handle. Внутри surface SVG сохраняет её tree scope
+ * для url(#id) и наследует локальные CSS-токены. Handle удаляет хост целиком.
  */
-const defsHosts = new Map<string, SVGDefsElement>();
-export function ensureHiddenDefs(className: string): SVGDefsElement {
-  const cached = defsHosts.get(className);
-  if (cached?.isConnected) return cached;
+export function createHiddenDefs(
+  surface: HTMLElement,
+  className: string,
+): { svg: SVGSVGElement; defs: SVGDefsElement; restore(): void } {
+  const document = surface.ownerDocument;
   const svg = document.createElementNS(SVGNS, 'svg');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('class', className);
   svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
   const defs = document.createElementNS(SVGNS, 'defs');
   svg.appendChild(defs);
-  document.body.appendChild(svg);
-  defsHosts.set(className, defs);
-  return defs;
+  surface.appendChild(svg);
+  return {
+    svg,
+    defs,
+    restore(): void {
+      // Замена пользовательского содержимого может удалить хост. Возвращаем
+      // те же узлы: фильтр, его id и подготовленные данные остаются живыми.
+      if (svg.parentNode !== surface) surface.appendChild(svg);
+    },
+  };
 }
 
 /**
@@ -99,6 +105,8 @@ export function trailingRaf(fn: () => void): { schedule(): void; cancel(): void 
 /** Живёт, пока движок держит поверхность. `refresh` опционален — движок без
  *  живого пере-чтения (liquid-glass в рантайме) его не несёт. */
 export interface EngineHandle {
+  /** Вернуть удалённые DOM-ресурсы без пересоздания или перерасчёта эффекта. */
+  restore?(): void;
   refresh?(): void;
   destroy(): void;
 }
@@ -112,7 +120,7 @@ export interface EngineBinding {
   gate(): boolean;
   /** CSS-селектор поверхностей движка (`.lab-material` / `[data-veil]`). */
   readonly selector: string;
-  /** Держать ли эту поверхность (ближайший скоуп мода / всегда для veil). */
+  /** Активировать ли эффект (ближайший скоуп мода / всегда для veil). */
   wants(el: HTMLElement): boolean;
   /** Медиа-режим временно запрещает движок (acrylic под reduced-transparency
    *  и т.п.: инлайн сильнее листовых деградаций, поэтому движок гаснет сам). */
@@ -135,44 +143,126 @@ export interface MountedEngine {
 }
 
 /**
- * Единая механика монтирования одного движка над `scope`. Заменяет три
- * дословных блока runtime.ts. `sync` идемпотентна: держит ровно те поверхности,
- * что проходят `wants` (и не под `blocked`), отцепляя ушедшие.
+ * Один конечный выбор для движков и наблюдения: DOM-поддерево scope и поддеревья
+ * элементов, назначенных его слотам. Fallback уже входит в физический DOM.
+ * Вложенные ShadowRoot принадлежат своим mount и здесь не обходятся.
  */
-export function mountEngine(binding: EngineBinding, scope: Document | Element): MountedEngine {
-  const held = new Map<HTMLElement, EngineHandle>();
-
-  const sync = (): void => {
-    const want = new Set<HTMLElement>();
-    if (!binding.blocked?.()) {
-      for (const el of scope.querySelectorAll(binding.selector)) {
-        if (el instanceof HTMLElement && binding.wants(el)) want.add(el);
-      }
-      if (scope instanceof HTMLElement && scope.matches(binding.selector) && binding.wants(scope)) {
-        want.add(scope);
+export function collectSurfaces(scope: Document | Element, selector: string) {
+  const surfaces = new Set<HTMLElement>();
+  const scopes = new Set<Document | Element>([scope]);
+  for (const current of scopes) {
+    if (current instanceof HTMLElement && current.matches(selector)) surfaces.add(current);
+    for (const element of current.querySelectorAll(selector)) {
+      if (element instanceof HTMLElement) surfaces.add(element);
+    }
+    const slots = new Set(current.querySelectorAll('slot'));
+    if (current instanceof HTMLSlotElement) slots.add(current);
+    for (const slot of slots) {
+      if (!(slot instanceof HTMLSlotElement)) continue;
+      for (const assigned of slot.assignedElements({ flatten: true })) {
+        if (!current.contains(assigned)) scopes.add(assigned);
       }
     }
-    // Отцепить ушедших (смена мода/класса, удаление, попадание под blocked).
-    for (const [el, handle] of held) {
-      if (!want.has(el) || !el.isConnected) {
-        handle.destroy();
+  }
+  return { surfaces, scopes };
+}
+
+interface SharedHandle {
+  handle: EngineHandle | undefined;
+  users: number;
+}
+
+// App и локальный mount держат один ресурс на пару (поверхность, binding).
+// Scope хранит владение, а не конкретный engine handle. При временном отзыве
+// ресурса живые владельцы сохраняются: reconnect не требует события внутри root.
+const surfaces = new WeakMap<HTMLElement, Map<EngineBinding, SharedHandle>>();
+
+function reconcileSurface(el: HTMLElement): void {
+  const effects = surfaces.get(el);
+  if (!effects) return;
+  for (const [binding, shared] of effects) {
+    if (
+      !el.isConnected ||
+      !el.matches(binding.selector) ||
+      !binding.wants(el) ||
+      binding.blocked?.()
+    ) {
+      // Сначала отозвать прежний материал, затем разрешить attach следующего.
+      // Veil остаётся, пока его собственный binding применим.
+      const handle = shared.handle;
+      shared.handle = undefined;
+      handle?.destroy();
+    }
+  }
+}
+
+function release(binding: EngineBinding, el: HTMLElement, shared: SharedHandle): void {
+  const effects = surfaces.get(el);
+  if (effects?.get(binding) !== shared) return;
+  if (--shared.users !== 0) return;
+  effects.delete(binding);
+  if (effects.size === 0) surfaces.delete(el);
+  const handle = shared.handle;
+  shared.handle = undefined;
+  handle?.destroy();
+}
+
+/**
+ * Единая механика монтирования одного движка над `scope`. Заменяет три
+ * дословных блока runtime.ts. `sync` идемпотентна: держит ровно те поверхности,
+ * что соответствуют selector, отцепляя ушедшие. Mode/connection/media гейтят
+ * ресурс, а не владение: queued sync отключённого scope сохраняет его leases.
+ */
+export function mountEngine(binding: EngineBinding, scope: Document | Element): MountedEngine {
+  const held = new Map<HTMLElement, SharedHandle>();
+  let disposed = false;
+
+  const sync = (): void => {
+    if (disposed) return;
+    const want = collectSurfaces(scope, binding.selector).surfaces;
+    for (const el of new Set([...held.keys(), ...want])) reconcileSurface(el);
+    // Отцепить вышедших из scope или переставших соответствовать selector.
+    for (const [el, shared] of held) {
+      if (!want.has(el) || surfaces.get(el)?.get(binding) !== shared) {
+        release(binding, el, shared);
         held.delete(el);
       }
     }
     // Прицепить новичков ровно один раз; удержанных — обновить (если движок так
     // хочет), сохраняя его точное поведение.
     for (const el of want) {
-      const handle = held.get(el);
-      if (handle) {
-        if (binding.refreshHeld) handle.refresh?.();
-      } else {
-        held.set(el, binding.attach(el));
+      let shared = held.get(el);
+      if (!shared) {
+        let effects = surfaces.get(el);
+        if (!effects) {
+          effects = new Map();
+          surfaces.set(el, effects);
+        }
+        shared = effects.get(binding);
+        if (shared) {
+          shared.users++;
+        } else {
+          shared = { handle: undefined, users: 1 };
+          effects.set(binding, shared);
+        }
+        held.set(el, shared);
+      }
+      if (!el.isConnected || !binding.wants(el)) continue;
+      if (!binding.blocked?.()) {
+        if (shared.handle) {
+          shared.handle.restore?.();
+          if (binding.refreshHeld) shared.handle.refresh?.();
+        } else {
+          shared.handle = binding.attach(el);
+        }
       }
     }
   };
 
   const dispose = (): void => {
-    for (const handle of held.values()) handle.destroy();
+    if (disposed) return;
+    disposed = true;
+    for (const [el, shared] of held) release(binding, el, shared);
     held.clear();
   };
 

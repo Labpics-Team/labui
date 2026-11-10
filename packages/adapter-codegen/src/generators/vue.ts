@@ -7,7 +7,13 @@
 import { join } from 'node:path';
 import { adapterSrc } from '../paths.js';
 import type { ComponentMeta, Manifest, PropMeta } from '../types.js';
-import { generatedHeader, tsStringArray, tsStringUnion, writeIfChanged } from './shared.js';
+import {
+  generatedHeader,
+  slotProjectionFile,
+  tsStringArray,
+  tsStringUnion,
+  writeIfChanged,
+} from './shared.js';
 
 /** Литерал одной спеки проброса. */
 function specLiteral(p: PropMeta): string {
@@ -45,6 +51,8 @@ export const ${c.pascal}: LabComponent<${c.pascal}Props, ${events}> = createLabC
 ${specs}
   ],
   events: ${tsStringArray(c.events)},
+${c.slots.fill?.length ? `  fillSlots: ${tsStringArray(c.slots.fill)},\n` : ''}\
+${c.slots.direct?.length ? `  directSlots: ${tsStringArray(c.slots.direct)},\n` : ''}\
 });
 `;
 }
@@ -69,6 +77,8 @@ function barrelFile(components: readonly ComponentMeta[]): string {
 export function generateVue(manifest: Manifest): string[] {
   const outDir = join(adapterSrc('vue'), 'generated');
   const changed: string[] = [];
+  const projectionPath = join(adapterSrc('vue'), 'runtime', 'slot-projection.ts');
+  if (writeIfChanged(projectionPath, slotProjectionFile())) changed.push(projectionPath);
   for (const c of manifest.components) {
     const path = join(outDir, `${c.subpath}.ts`);
     if (writeIfChanged(path, componentFile(c))) changed.push(path);

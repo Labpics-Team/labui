@@ -6,7 +6,7 @@
 <script lang="ts">
   import '@labpics/ui-core/breadcrumb';
   import type { LabBreadcrumb } from '@labpics/ui-core/breadcrumb';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-breadcrumb> — типы взяты прямо из класса ядра (LabBreadcrumb). */
@@ -27,6 +27,7 @@
   ];
 
   let el: HTMLElement | undefined = $state();
+
 
   $effect(() => {
     forwardDeclared(el, specs, { size, separator, items });

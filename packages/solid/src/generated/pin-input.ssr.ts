@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/pin-input';
 import type { LabPinInput } from '@labpics/ui-core/pin-input';
 
@@ -15,9 +15,9 @@ export type PinInputSsrProps = Partial<Pick<LabPinInput, 'type' | 'size' | 'labe
 export type PinInputSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-pin-input> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-pin-input> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderPinInput(
   props: PinInputSsrProps = {},
@@ -26,20 +26,20 @@ export function renderPinInput(
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
       label=${ifDefined(props.label)}
-      ?label-hidden=${Boolean(props.labelHidden)}
+      .labelHidden=${props.labelHidden === undefined ? noChange : Boolean(props.labelHidden)}
       helper=${ifDefined(props.helper)}
       error=${ifDefined(props.error)}
       count=${ifDefined(props.count)}
       value-type=${ifDefined(props.valueType)}
-      ?mask=${Boolean(props.mask)}
-      ?otp=${Boolean(props.otp)}
+      .mask=${props.mask === undefined ? noChange : Boolean(props.mask)}
+      .otp=${props.otp === undefined ? noChange : Boolean(props.otp)}
       placeholder=${ifDefined(props.placeholder)}
-      .value=${props.value}
-      .defaultValue=${props.defaultValue}
-      ?readonly=${Boolean(props.readonly)}
-      ?disabled=${Boolean(props.disabled)}
-      ?required=${Boolean(props.required)}
-      ?invalid=${Boolean(props.invalid)}
+      .value=${props.value === undefined ? noChange : props.value}
+      .defaultValue=${props.defaultValue === undefined ? noChange : props.defaultValue}
+      .readonly=${props.readonly === undefined ? noChange : Boolean(props.readonly)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
+      .required=${props.required === undefined ? noChange : Boolean(props.required)}
+      .invalid=${props.invalid === undefined ? noChange : Boolean(props.invalid)}
       name=${ifDefined(props.name)}
     ></lab-pin-input>`);
 }

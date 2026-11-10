@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/checkbox';
   import type { LabCheckbox } from '@labpics/ui-core/checkbox';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-checkbox> — типы взяты прямо из класса ядра (LabCheckbox). */
   interface Props {
@@ -39,12 +39,20 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, checked, indeterminate, defaultChecked, defaultIndeterminate, disabled, name })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, size, checked, indeterminate, defaultChecked, defaultIndeterminate, disabled, name });
   });
   $effect(() => forwardEvents(el, { 'checked-change': onCheckedChange }));
 </script>
 
-<lab-checkbox bind:this={el} {...rest}>
+<lab-checkbox bind:this={el} {...rest} {...initialBooleans}>
   {@render children?.()}
 </lab-checkbox>

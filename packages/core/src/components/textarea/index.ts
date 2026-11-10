@@ -1,8 +1,8 @@
-/**
- * `lab-textarea` public entry — the single-wildcard resolution seam.
- *
- * Re-exports the element module and runs its self-registration side effect, so
- * importing this barrel upgrades `<lab-textarea>`. Adding a component stays purely
- * additive: drop the element file plus this one-line barrel, touch no shared file.
- */
+/** Импорт регистрирует <lab-textarea>; этот entrypoint защищён от tree shaking. */
+import { LabTextarea } from './lab-textarea.js';
+
 export * from './lab-textarea.js';
+
+if (typeof customElements !== 'undefined' && !customElements.get('lab-textarea')) {
+  customElements.define('lab-textarea', LabTextarea);
+}

@@ -86,9 +86,11 @@ export function renderStatesMatrix(matrix: StatesMatrix): HTMLElement {
   }
 
   table.append(head, body);
-  return el('div', { class: 'matrix-scroll', role: 'group', 'aria-label': 'States matrix' }, [
-    table,
-  ]);
+  return el(
+    'div',
+    { class: 'matrix-scroll', role: 'group', 'aria-label': 'States matrix', tabindex: '0' },
+    [table],
+  );
 }
 
 /** Cartesian product of option lists. Empty input → one empty combination. */
@@ -173,9 +175,17 @@ export function renderLiveExample(example: LiveExample): HTMLElement {
     'aria-label': 'Live controls',
   });
   for (const control of example.controls) {
+    const property = control.attribute.replace(/-([a-z])/g, (_, letter: string) =>
+      letter.toUpperCase(),
+    );
+    const value: unknown = Reflect.get(specimen, property);
+    const current = ['string', 'number', 'boolean'].includes(typeof value)
+      ? value
+      : specimen.getAttribute(control.attribute);
     if (control.kind === 'toggle') {
       const id = `live-${control.attribute}`;
       const input = el('input', { type: 'checkbox', id });
+      input.checked = typeof current === 'boolean' ? current : current !== null;
       input.addEventListener('change', () => {
         if (input.checked) specimen.setAttribute(control.attribute, '');
         else specimen.removeAttribute(control.attribute);
@@ -189,6 +199,7 @@ export function renderLiveExample(example: LiveExample): HTMLElement {
         { id },
         control.options.map((o) => el('option', { value: String(o.value) }, [o.label])),
       );
+      if (current !== null && allowed.has(String(current))) select.value = String(current);
       select.addEventListener('change', () => {
         if (allowed.has(select.value)) specimen.setAttribute(control.attribute, select.value);
       });
@@ -249,7 +260,9 @@ function renderApiGroup(heading: string, rows: ApiRow[], withTypes: boolean): HT
   );
   return el('div', { class: 'api-group' }, [
     el('h3', {}, [heading]),
-    el('table', { class: 'api-table' }, [head, body]),
+    el('div', { class: 'api-scroll', role: 'group', 'aria-label': heading, tabindex: '0' }, [
+      el('table', { class: 'api-table' }, [head, body]),
+    ]),
   ]);
 }
 

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
+import type { LabuiColorsState } from '../browser.mjs';
 import {
   SEMANTIC_ROLE_PREFIXES,
   byBucket,
@@ -13,6 +14,7 @@ import {
   missingColourRoles,
   repoRoot,
 } from './consumed-contract.js';
+import { themeVars } from './state-overlays-shared.mjs';
 
 /**
  * Contract-pin test — the CONSUMER → contract direction.
@@ -30,35 +32,27 @@ import {
  * naming the role.
  */
 
-// ── Shared scope helpers (mirror of contract.test.ts, kept local so the two
-// suites stay independent — a change to one cannot silently weaken the other).
 const css = readFileSync(resolve(repoRoot, 'packages/colors/contract.css'), 'utf8');
 
-function scopeBody(source: string, selectorPrefix: string): string {
-  const start = source.indexOf(selectorPrefix);
-  if (start === -1) throw new Error(`scope not found: ${selectorPrefix}`);
-  const open = source.indexOf('{', start);
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    if (source[i] === '{') depth++;
-    else if (source[i] === '}') {
-      depth--;
-      if (depth === 0) return source.slice(open + 1, i);
-    }
-  }
-  throw new Error(`unbalanced braces for: ${selectorPrefix}`);
-}
-
-function declares(body: string, role: string): boolean {
-  const re = new RegExp(`(^|[;{\\s])${role.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s*:`, 'm');
-  return re.test(body);
-}
-
-const lightBody = scopeBody(css, ':root,\n[data-theme="light"]');
-const darkBody = scopeBody(css, '[data-theme="dark"]');
-const mediaBody = scopeBody(css, '@media (prefers-color-scheme: dark)');
+const lightBody = themeVars(css, 'light');
+const darkBody = themeVars(css, 'dark');
+const moreLightBody = themeVars(css, 'light', 'more');
+const moreDarkBody = themeVars(css, 'dark', 'more');
+const declares = (body: Map<string, string>, role: string) => body.has(role);
 
 describe('consumed --lab-* contract (consumer → contract pin)', () => {
+  it('browser state type preserves all Core outcomes and local lifecycle states', () => {
+    expectTypeOf<LabuiColorsState['state']>().toEqualTypeOf<
+      | 'waiting'
+      | 'ready'
+      | 'stale'
+      | 'failed'
+      | 'unsatisfied'
+      | 'incomplete'
+      | 'cancelled'
+      | 'disposed'
+    >();
+  });
   it('enumerates a substantial consumed surface including known colour roles', () => {
     // Grounded baseline this session: 138 distinct consumed --lab-* names across
     // packages+apps (55 colour-contract, 42 dimension, 41 local-or-gap, 0
@@ -82,6 +76,22 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     expect(classify('--lab-state-pressed')).toBe('dimension');
     expect(classify('--lab-surface-shadow-tint')).toBe('local-or-gap');
     expect(classify('--lab-bogus-xyz')).toBe('unclassified');
+  });
+
+  it('classifies the exact public Veil controls without accepting an unknown neighbour', () => {
+    const veilSource = readFileSync(
+      resolve(repoRoot, 'packages/materials/src/engine/veil.ts'),
+      'utf8',
+    );
+    const controls = [
+      ...new Set([...veilSource.matchAll(/'(--lab-veil-[\w-]+)'/g)].map((m) => m[1])),
+    ];
+    expect(controls).toHaveLength(6);
+    expect(controls).toContain('--lab-veil-strength');
+    expect(controls).toContain('--lab-veil-feather');
+    for (const name of controls) expect(classify(name as string), name).toBe('local-or-gap');
+    expect(classify('--lab-veil-unknown')).toBe('unclassified');
+    expect(classify('--lab-veil-strength-extra')).toBe('unclassified');
   });
 
   // ── (0) Provenance guard — test files and `_`-prefixed scratch files must NEVER
@@ -111,7 +121,7 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     const missing = missingColourRoles(consumedRoles(), known);
     expect(
       missing,
-      `consumed names matching a semantic colour-role prefix but ABSENT from roles.json (a dropped/renamed role — add it to the colour contract upstream, do NOT edit the generated contract artifact to hide it):\n${missing.map((m) => `  ${m}`).join('\n')}`,
+      `consumed names matching a semantic colour-role prefix but ABSENT from roles.json (a dropped/renamed role — declare it through the LabUI contract owner):\n${missing.map((m) => `  ${m}`).join('\n')}`,
     ).toEqual([]);
   });
 
@@ -124,7 +134,9 @@ describe('consumed --lab-* contract (consumer → contract pin)', () => {
     for (const [scopeName, body] of [
       ['light', lightBody],
       ['dark', darkBody],
-      ['media', mediaBody],
+      ['media', darkBody],
+      ['more-light', moreLightBody],
+      ['more-dark', moreDarkBody],
     ] as const) {
       const missing = consumed.filter((r) => !declares(body, r));
       expect(

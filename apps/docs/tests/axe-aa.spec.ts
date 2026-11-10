@@ -1,29 +1,10 @@
-/**
- * WCAG 2.1 AA axe-core гейт — все фикстуры core-компонентов.
- *
- * Охватывает ОБА рендерера (Lit web components + нативный React) на каждой
- * фикстурной странице. Axe разрешает CSS custom properties (--lab-* роли)
- * через браузерный computed-styles API, поэтому color-contrast проверяется
- * реальными вычисленными значениями, а не именами переменных.
- *
- * label-over-own-surface: правило color-contrast axe читает computed
- * background-color элемента (в т.ч. кнопки, поля, поверхности), а не только
- * фон страницы — что покрывает сценарий «текст лейбла над своей поверхностью».
- * Дополнительная явная проверка assertLabelContrast — в блоке
- * «label-over-own-surface explicit».
- *
- * Reduced-motion: тест `axe AA · <компонент> · reduced-motion` эмулирует
- * prefers-reduced-motion: reduce перед сканом там, где анимации компонента
- * могут влиять на вычисленные стили (transitions отключаются и не искажают
- * color-contrast).
+/** AA проверяет публичный more; normal отдельно сохраняет authored LabUI v2.1.
+ * Цветовой скан выполняется при reduced motion, чтобы не измерять промежуточный transition.
+ * Поведение анимаций проверяется в сценариях соответствующих компонентов.
  */
-
-import { expect, test } from '@playwright/test';
+import { type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 import { assertAxeAA, assertLabelContrast } from './support/axe.js';
-
-// ---------------------------------------------------------------------------
-// Список фикстур core-компонентов
-// ---------------------------------------------------------------------------
 
 const COMPONENT_FIXTURES = [
   { path: '/button.html', label: 'Button', hasReactIsland: true },
@@ -55,133 +36,109 @@ const COMPONENT_FIXTURES = [
   { path: '/tags-input.html', label: 'TagsInput', hasReactIsland: true },
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Утилита ожидания монтирования React-острова
-// ---------------------------------------------------------------------------
+test.use({ reducedMotion: 'reduce' });
 
-/**
- * Дожидается монтирования React-острова (#react-root) на странице.
- * React-острова монтируются через client-side script после загрузки страницы.
- */
-async function waitForReactIsland(page: import('@playwright/test').Page): Promise<void> {
+type Theme = 'light' | 'dark';
+async function openFixture(page: Page, path: string, theme: Theme, contrast = 'more') {
+  await page.goto(path);
   const reactRoot = page.locator('#react-root');
-  if ((await reactRoot.count()) > 0) {
-    // Ждём появления хотя бы одного child-элемента — знак, что React смонтировался.
-    await expect(reactRoot).not.toBeEmpty({ timeout: 10_000 });
+  if (await reactRoot.count()) await expect(reactRoot).not.toBeEmpty();
+  await page.evaluate(
+    ({ theme, contrast }) => {
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.dataset.contrast = contrast;
+    },
+    { theme, contrast },
+  );
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() =>
+      page
+        .locator('html')
+        .evaluate((element) =>
+          getComputedStyle(element).getPropertyValue('--_lab-contrast-mode').trim(),
+        ),
+    )
+    .toBe(contrast);
+  await page.mouse.move(0, 0);
+  // Anatomy использует готовый CSS без runtime owner.
+  if (path !== '/_fixtures/button-anatomy.html') await waitForThemePaint(page);
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  for (const { path, label } of COMPONENT_FIXTURES) {
+    test(`axe AA more ${theme} · ${label}`, async ({ page }) => {
+      await openFixture(page, path, theme);
+      await assertAxeAA(page);
+    });
+  }
+
+  for (const renderer of ['lit', 'react'] as const) {
+    for (const variant of ['accent-fill', 'neutral-tinted'] as const) {
+      test(`AA more ${theme} · ${renderer} Button ${variant}: label over surface`, async ({
+        page,
+      }) => {
+        await openFixture(page, '/button.html', theme);
+        const host = page.getByTestId(`${renderer}-${variant}`);
+        const button = renderer === 'lit' ? host.locator('button') : host;
+        await expect(button).toBeVisible();
+        await assertLabelContrast(button, button);
+      });
+    }
+    test(`AA more ${theme} · ${renderer} Input: label over surface`, async ({ page }) => {
+      await openFixture(page, '/input.html', theme);
+      const input = page.getByTestId(`${renderer}-neutral`).locator('input');
+      await expect(input).toBeVisible();
+      await assertLabelContrast(input, input);
+    });
+
+    test(`normal ${theme} · ${renderer}: authored accent and translucent description survive more`, async ({
+      page,
+    }) => {
+      await openFixture(page, '/_fixtures/button-anatomy.html', theme, 'normal');
+      const host = page.getByTestId(`${renderer}-anatomy-m-full`);
+      const button = renderer === 'lit' ? host.locator('button') : host;
+      const description = host.getByText('Description', { exact: true });
+      const normalFill = theme === 'light' ? 'rgb(0, 122, 255)' : 'rgb(74, 143, 255)';
+      await expect(button).toHaveCSS('background-color', normalFill);
+      // CSSOM сериализует .722 как .72, поэтому независимый CSS-color oracle живёт в браузере.
+      const normalDescription = await page.evaluate(() => {
+        const reference = document.createElement('span');
+        reference.hidden = true;
+        reference.style.color = 'rgb(255 255 255 / .722)';
+        document.body.append(reference);
+        const color = getComputedStyle(reference).color;
+        reference.remove();
+        return color;
+      });
+      await expect(description).toHaveCSS('color', normalDescription);
+      await page
+        .locator('html')
+        .evaluate((element) => element.setAttribute('data-contrast', 'more'));
+      await expect(description).toHaveCSS('color', 'rgb(255, 255, 255)');
+      await assertLabelContrast(description, button);
+      await page
+        .locator('html')
+        .evaluate((element) => element.setAttribute('data-contrast', 'normal'));
+      await expect(button).toHaveCSS('background-color', normalFill);
+      await expect(description).toHaveCSS('color', normalDescription);
+    });
   }
 }
 
-// ---------------------------------------------------------------------------
-// Основной скан — одна тема (dark, дефолт)
-// ---------------------------------------------------------------------------
-
-for (const { path, label, hasReactIsland } of COMPONENT_FIXTURES) {
-  test(`axe AA · ${label}`, async ({ page }) => {
-    await page.goto(path);
-    if (hasReactIsland) await waitForReactIsland(page);
-    await assertAxeAA(page);
+test('contrast oracle composites translucent foreground before evaluating AA', async ({ page }) => {
+  await page.setContent(
+    '<div id="surface" style="background:white"><span id="label" style="color:black">Readable</span></div>',
+  );
+  const label = page.locator('#label');
+  const surface = page.locator('#surface');
+  expect((await assertLabelContrast(label, surface)).ratio).toBe(21);
+  await label.evaluate((element) => {
+    (element as HTMLElement).style.color = 'rgb(0 0 0 / .1)';
   });
-}
-
-// ---------------------------------------------------------------------------
-// Reduced-motion скан — ключевые анимированные компоненты
-// ---------------------------------------------------------------------------
-
-/**
- * prefers-reduced-motion: reduce отключает CSS-transitions в компонентах.
- * Убеждаемся, что в режиме reduced-motion нет новых a11y-нарушений
- * (часть компонентов скрывает/показывает контент через transition).
- */
-const ANIMATED_FIXTURES = [
-  { path: '/accordion.html', label: 'Accordion' },
-  { path: '/dialog.html', label: 'Dialog' },
-  { path: '/tooltip.html', label: 'Tooltip' },
-  { path: '/popover.html', label: 'Popover' },
-  { path: '/tabs.html', label: 'Tabs' },
-] as const;
-
-for (const { path, label } of ANIMATED_FIXTURES) {
-  test(`axe AA · ${label} · reduced-motion`, async ({ page }) => {
-    // Эмулируем prefers-reduced-motion: reduce ДО навигации, чтобы CSS
-    // transitions были отключены с первого рендера.
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto(path);
-    await waitForReactIsland(page);
-    await assertAxeAA(page);
+  await expect(assertLabelContrast(label, surface)).rejects.toThrow('Контраст лейбл/поверхность');
+  await label.evaluate((element) => {
+    (element as HTMLElement).style.color = 'black';
   });
-}
-
-// ---------------------------------------------------------------------------
-// label-over-own-surface — явная проверка контраста
-// ---------------------------------------------------------------------------
-
-/**
- * Явная проверка «лейбл над своей поверхностью» для Button (самый критичный
- * компонент с solid fill surface в обоих темах). Дополняет автоматический
- * axe color-contrast скан прямым замером computed цветов через браузер.
- *
- * Lit: inner <button> в shadow DOM, React: нативный <button> в light DOM.
- * Оба должны проходить WCAG AA (4.5:1 для font-size 1rem, weight 600).
- */
-test.describe('label-over-own-surface · Button', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/button.html');
-    await waitForReactIsland(page);
-  });
-
-  test('Lit accent-fill: белый текст над синей поверхностью ≥ 4.5:1', async ({ page }) => {
-    // inner <button> в shadow DOM Lit-элемента.
-    const litButton = page.getByTestId('lit-accent-fill').locator('button');
-    await litButton.waitFor();
-    // Lit shadow DOM: передаём тот же локатор и как лейбл, и как поверхность
-    // — computed color и background-color одного элемента дают полную пару.
-    await assertLabelContrast(litButton, litButton);
-  });
-
-  test('React accent-fill: белый текст над синей поверхностью ≥ 4.5:1', async ({ page }) => {
-    // React: нативный <button> в light DOM (testid прямо на кнопке).
-    const reactButton = page.getByTestId('react-accent-fill');
-    await reactButton.waitFor();
-    await assertLabelContrast(reactButton, reactButton);
-  });
-
-  test('Lit neutral-fill: текст над нейтральной поверхностью ≥ 4.5:1', async ({ page }) => {
-    // neutral kind=fill — PROVISIONAL цвет, проверяем и его.
-    const litButton = page.getByTestId('lit-neutral-tinted').locator('button');
-    await litButton.waitFor();
-    await assertLabelContrast(litButton, litButton);
-  });
-
-  test('React neutral-fill: текст над нейтральной поверхностью ≥ 4.5:1', async ({ page }) => {
-    const reactButton = page.getByTestId('react-neutral-tinted');
-    await reactButton.waitFor();
-    await assertLabelContrast(reactButton, reactButton);
-  });
-});
-
-/**
- * label-over-own-surface для Input — критичен для форм.
- * Проверяем, что текст в поле ввода читаем на фоне control-bg поверхности.
- * (Textarea делит ту же control-bg роль и покрыта общим сканом `assertAxeAA`
- * выше — отдельного явного label-contrast теста для неё не заведено.)
- */
-test.describe('label-over-own-surface · Input', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/input.html');
-    await waitForReactIsland(page);
-  });
-
-  test('Lit input: текст в поле над control-bg ≥ 4.5:1', async ({ page }) => {
-    // Shadow root содержит <input>; locator пробивает shadow DOM.
-    const litInput = page.getByTestId('lit-neutral').locator('input');
-    await litInput.waitFor();
-    await assertLabelContrast(litInput, litInput);
-  });
-
-  test('React input: текст в поле над control-bg ≥ 4.5:1', async ({ page }) => {
-    // React-остров: <span data-testid="react-neutral"> содержит <input>.
-    const reactInput = page.getByTestId('react-neutral').locator('input');
-    await reactInput.waitFor();
-    await assertLabelContrast(reactInput, reactInput);
-  });
+  expect((await assertLabelContrast(label, surface)).ratio).toBe(21);
 });

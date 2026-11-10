@@ -2,6 +2,7 @@
 // apps/docs playwright-спека (TS, allowJs:false) резолвила импорт под strict.
 
 export const SENTIMENTS: readonly string[];
+export const GLOW_FAMILIES: readonly string[];
 export const GLOW_STEPS: readonly string[];
 export const SKELETON_LAYERS: readonly string[];
 
@@ -28,7 +29,7 @@ export interface DecodedPng {
 
 export interface Measurements {
   backdropL: number;
-  glow: Record<string, { subtle: Sample; base: Sample; bloom: Sample }>;
+  glow: Record<string, { single: Sample; double: Sample; triple: Sample }>;
   focus: Record<string, Sample>;
   skeleton: { base: Sample; highlight: Sample };
 }
@@ -48,7 +49,7 @@ export function decodePng(buf: Buffer | Uint8Array): DecodedPng;
 export function sampleRegion(png: DecodedPng, bbox: BBox): Sample;
 
 export function assertFxRender(m: Measurements): {
-  deltas: Record<string, { subtle: number; base: number; bloom: number }>;
+  deltas: Record<string, { single: number; double: number; triple: number }>;
   focus: Record<string, Sample>;
   skeleton: { base: Sample; highlight: Sample };
 };

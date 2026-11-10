@@ -1,0 +1,7 @@
+@import "./button-demo.css";
+@import "@labpics/ui-tokens/motion.css";
+@import "@labpics/fonts/fonts.css";
+
+body {
+  font-family: var(--lab-font-family);
+}

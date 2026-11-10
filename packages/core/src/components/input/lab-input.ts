@@ -1,3 +1,11 @@
+import {
+  type FieldA11yInput,
+  type LabFieldSize,
+  type LabFieldType,
+  fieldControlAria,
+  fieldErrorIsActive,
+  fieldPartIds,
+} from '@labpics/ui-core/shared';
 /**
  * `<lab-input>` — a single-line text field: a real `<input>` wired to a label, an
  * optional helper/description, and an optional error message via genuine ARIA.
@@ -35,14 +43,6 @@
  */
 import { type PropertyValues, type TemplateResult, css, html, nothing } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
-import {
-  type FieldA11yInput,
-  type LabFieldSize,
-  type LabFieldType,
-  fieldControlAria,
-  fieldErrorIsActive,
-  fieldPartIds,
-} from '../field/field-a11y.js';
 import { fieldStyles } from '../field/field-styles.js';
 
 export type { LabFieldSize as LabInputSize, LabFieldType as LabInputType };
@@ -228,9 +228,4 @@ declare global {
   interface HTMLElementTagNameMap {
     'lab-input': LabInput;
   }
-}
-
-// Idempotent registration — safe across Lit SSR and client module instances.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-input')) {
-  customElements.define('lab-input', LabInput);
 }

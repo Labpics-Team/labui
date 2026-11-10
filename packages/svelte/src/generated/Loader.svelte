@@ -6,7 +6,7 @@
 <script lang="ts">
   import '@labpics/ui-core/loader';
   import type { LabLoader } from '@labpics/ui-core/loader';
-  import type { Snippet } from 'svelte';
+  import { type Snippet } from 'svelte';
   import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-loader> — типы взяты прямо из класса ядра (LabLoader). */
@@ -25,6 +25,7 @@
   ];
 
   let el: HTMLElement | undefined = $state();
+
 
   $effect(() => {
     forwardDeclared(el, specs, { size, label });

@@ -1,66 +1,94 @@
-// DRY-гейт «ФЛАГИ ВМЕСТО ВЕТОК» (под-срез static+inverted). Закон: дерево
-// паспорта несёт ТОЛЬКО смысл — тема/состояние выражаются ФЛАГОМ листа, а не
-// парой sibling-листьев, отличающихся лишь суффиксом темы/состояния. Резолвер
-// (engine.mjs) разворачивает флаг НА МЕСТЕ в конкретные роли на границе wasm.
-//
-// Почему НЕ «форс темы» (как наивно предполагалось): нейтральные pick движка
-// (NeutralPick::Light/Dark, lab-colors config.rs:1284-1289) ТЕМА-ИНВАРИАНТНЫ —
-// pick:dark даёт тёмный якорь в ОБЕИХ темах. Форсирование темы не переключает
-// light↔dark нейтраль, поэтому флаг разворачивается по ОСИ pick, а движок (ядро,
-// вне зоны) не трогается. Разворот байт-идентичен старым листьям → отпечаток
-// паспорта не дрейфует (тот же канонический DTO), что и есть регресс-контроль.
-//
-// Класс А (структурный unit по авторскому паспорту) + Д-подобный RED-proof:
-// тест КУСАЕТСЯ — на паспорте ДО свёртки (пара badge-fill-static-dark/light в
-// components) первый it падает; ре-интродукция любой дубль-пары краснит снова.
-import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+﻿import { describe, expect, it } from 'vitest';
 
-import { PASSPORT_FINGERPRINT, createLabuiEngine } from '../engine.mjs';
+import { createLabuiEngine } from '../engine.mjs';
+import config from '../labui.config.json' with { type: 'json' };
+import { prepareEngineConfig } from '../prepare-config.mjs';
+import { THEMES, readyTheme } from './labui-program-shared.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const cfg = JSON.parse(await readFile(join(here, '..', 'labui.config.json'), 'utf8'));
+const LEVELS = ['primary', 'secondary', 'tertiary', 'quaternary'];
 
-/** Все авторские листья паспорта (семантика + компонент), по именам. */
-const leafNames = [...cfg.roles, ...(cfg.components ?? [])].map((r) => r.name);
-const leafSet = new Set(leafNames);
-
-describe('DRY: флаги вместо тема/состояние-веток (static, inverted)', () => {
-  // Ось static: лист «X-static» несёт флаг pick∈{light,dark}; ДВА sibling-листа
-  // X-static-light + X-static-dark — запрещённая ветка-дубль (различие лишь темой).
-  it('ноль static тема-веток: нет листьев *-static-(light|dark)', () => {
-    const forks = leafNames.filter((n) => /-static-(light|dark)$/.test(n));
-    expect(forks, 'static-листья должны быть свёрнуты в один лист + флаг pick').toEqual([]);
+describe('единые авторские источники static/inverted', () => {
+  it('more делает helper-label непрозрачным и требует AA на каждой фоновой ступени', () => {
+    const normal = prepareEngineConfig(config);
+    const more = prepareEngineConfig(config, 'more');
+    for (const theme of THEMES) {
+      for (const role of ['secondary', 'tertiary']) {
+        expect(normal.themes[theme].paints.get(`label-${role}`).opacity).toBe(
+          config.authored.labelAlpha[role],
+        );
+        expect(more.themes[theme].paints.get(`label-${role}`)).toEqual({
+          source: config.themes[theme].muted,
+          opacity: 1,
+        });
+        for (const level of [1, 2, 3]) {
+          expect(more.themes[theme].constraints).toContainEqual({
+            foreground: `label-${role}`,
+            background: `bg-tone-${level}`,
+            criterion: 'text',
+            hard: true,
+          });
+        }
+      }
+    }
   });
 
-  // Ось inverted: лист «X-inverted» — ветка-дубль ТОЛЬКО если существует и его
-  // не-inverted пара «X» (тогда inverted — состояние-флаг, не отдельный смысл).
-  // fx-glow-inverted легитимен (нет листа fx-glow) — свой источник (inverted-якорь).
-  it('ноль inverted состояние-веток: нет пары {X, X-inverted}', () => {
-    const forks = leafNames
-      .filter((n) => n.endsWith('-inverted'))
-      .filter((n) => leafSet.has(n.slice(0, -'-inverted'.length)));
-    expect(forks, 'inverted-дубли должны быть свёрнуты в один лист + флаг').toEqual([]);
+  it('одна ссылка static-стороны питает все уровни и компонентную заливку', () => {
+    const model = prepareEngineConfig(config);
+    for (const theme of THEMES) {
+      for (const side of THEMES) {
+        const expectedSource = config.authored.static.sources[side];
+        for (const level of LEVELS) {
+          expect(model.themes[theme].paints.get(`label-static-${side}-${level}`)).toEqual({
+            source: expectedSource,
+            opacity: config.authored.labelAlpha[level],
+          });
+        }
+        expect(model.themes[theme].paints.get(`badge-fill-static-${side}`).source).toBe(
+          expectedSource,
+        );
+      }
+    }
   });
 
-  // Байт-идентичность свёртки: разворот флага на границе wasm воспроизводит
-  // канонический DTO паспорта → отпечаток равен пину (нулевой дрейф вывода).
-  it('отпечаток паспорта стабилен после свёртки (байт-идентичность)', async () => {
-    const { fingerprint } = await createLabuiEngine();
-    expect(fingerprint).toBe(PASSPORT_FINGERPRINT);
+  it('смена static-ссылки переносит всё семейство, сохраняя независимый overlay', () => {
+    const changed = structuredClone(config);
+    changed.authored.static.sources.dark = 'white';
+    const model = prepareEngineConfig(changed);
+    for (const theme of THEMES) {
+      for (const level of LEVELS) {
+        expect(model.themes[theme].paints.get(`label-static-dark-${level}`).source).toBe('white');
+      }
+      expect(model.themes[theme].paints.get('badge-fill-static-dark').source).toBe('white');
+      expect(model.themes[theme].paints.get('bg-overlay-base').source).toBe(
+        config.authored.overlay.sources[theme],
+      );
+    }
   });
 
-  // Разворот флага реален: обе конкретные роли эмитятся движком и РАЗЛИЧНЫ
-  // (light ≠ dark), т.е. один лист + флаг дал две выведенные заливки.
-  it('флаг развёрнут: badge-fill-static-{dark,light} эмитятся и различны', async () => {
-    const { colors } = await createLabuiEngine();
-    const roles = colors.resolveTheme('#FFFFFF', 'light').roles;
-    const dark = roles['badge-fill-static-dark'];
-    const light = roles['badge-fill-static-light'];
-    expect(dark, 'движок не эмитит badge-fill-static-dark').toBeDefined();
-    expect(light, 'движок не эмитит badge-fill-static-light').toBeDefined();
-    expect(dark.css).not.toBe(light.css);
+  it('inverted использует выбранный источник и общую alpha уровней', () => {
+    const model = prepareEngineConfig(config);
+    for (const theme of THEMES) {
+      for (const level of LEVELS) {
+        expect(model.themes[theme].paints.get(`label-inverted-${level}`)).toEqual({
+          source:
+            level === 'primary'
+              ? config.themes[theme].invertedPrimary
+              : config.themes[theme].invertedMuted,
+          opacity: config.authored.labelAlpha[level],
+        });
+      }
+    }
+  });
+
+  it('обе static-заливки доходят до конечных красок и различаются', async () => {
+    const engine = await createLabuiEngine();
+    for (const theme of THEMES) {
+      const { paints } = readyTheme(engine, theme);
+      expect(paints.get('--lab-badge-fill-static-dark')).toBeDefined();
+      expect(paints.get('--lab-badge-fill-static-light')).toBeDefined();
+      expect(paints.get('--lab-badge-fill-static-dark')).not.toEqual(
+        paints.get('--lab-badge-fill-static-light'),
+      );
+    }
   });
 });

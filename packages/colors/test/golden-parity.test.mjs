@@ -1,233 +1,61 @@
-// Золотая сверка поезда: эмиссия ЖИВОГО движка (опубликованный @labpics/colors
-// + паспорт labui.config.json) против замороженного Figma-якоря (figma-reference.css) — значение к значению,
-// light и dark. Это сквозной гейт всей цепочки «Figma-замеры → паспорт →
-// wasm-граница → переменные», через реальный npm-артефакт, а не исходники.
-//
-// Расхождения допустимы ТОЛЬКО из явного списка исключений, каждое — с
-// причиной-законом. Новое расхождение = красный тест, а не расширение списка.
-import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
+// Авторские краски сохраняют независимый reference. Единственный принятый
+// вычисляемый светлый тон проверяется отдельно; основание — ../FIDELITY.md.
+// White shimmer имеет собственный закон в fx-family.test.mjs.
+import { describe, expect, it } from 'vitest';
 
-import { PASSPORT_FINGERPRINT, createLabuiEngine } from '../engine.mjs';
-import passport from '../labui.config.json' with { type: 'json' };
-import { M_LMS_SRGB, M_OKLAB_LMS, gam, mulv } from '../oklab-math.mjs';
+import { createLabuiEngine } from '../engine.mjs';
+import { RETIRED_REFERENCE_ROLES, authoredReference } from './authored-reference.mjs';
+import { THEMES, readyTheme, rgba } from './labui-program-shared.mjs';
+import { resolveValue } from './state-overlays-shared.mjs';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const referenceCssPath = join(here, '..', 'figma-reference.css');
+const reference = await authoredReference();
+const lightToneAliases = [
+  '--lab-bg-grouped-primary',
+  '--lab-bg-grouped-tertiary',
+  '--lab-bg-secondary',
+];
 
-/**
- * Исключения сверки — роли, где эмиссия движка НАМЕРЕННО расходится со Figma-якорем.
- * Каждая запись обязана нести закон-причину; пустеющий список — цель поезда.
- */
-const EXPECTED_DIVERGENCES = new Map([
-  // Сентимент-солвер смещает info от синего бренда (закон разведения оттенка);
-  // Figma-якорь несёт до-законные Figma-значения.
-  ['--lab-label-info-primary', 'разведение оттенка с брендом'],
-  ['--lab-label-info-secondary', 'разведение оттенка с брендом'],
-  ['--lab-label-info-tertiary', 'разведение оттенка с брендом'],
-  ['--lab-border-info-base', 'разведение оттенка с брендом'],
-  ['--lab-border-info-soft', 'разведение оттенка с брендом'],
-  ['--lab-border-info-strong', 'разведение оттенка с брендом'],
-  ['--lab-fill-info-primary', 'разведение оттенка с брендом'],
-  ['--lab-fill-info-secondary', 'разведение оттенка с брендом'],
-  ['--lab-fill-info-tertiary', 'разведение оттенка с брендом'],
-  ['--lab-fx-glow-info', 'разведение оттенка с брендом'],
-  // Снос ADR-0007 («Elevation contract»): плоские одноцветные fx-shadow-*
-  // вытеснены слоёной лестницей --lab-elevation-* (packages/shadow); движок
-  // рецептов больше не несёт, замороженный якорь хранит их как исторический
-  // факт Figma-экспорта (RETIRED_ROLES в generate-contract.mjs).
-  ['--lab-fx-shadow-minor', 'ADR-0007: роль снята с контракта'],
-  ['--lab-fx-shadow-ambient', 'ADR-0007: роль снята с контракта'],
-  ['--lab-fx-shadow-penumbra', 'ADR-0007: роль снята с контракта'],
-  ['--lab-fx-shadow-major', 'ADR-0007: роль снята с контракта'],
-  // EC4 (focus-appearance, WCAG 2.4.13): focus-ring НАСЛЕДУЕТ сильный штрих
-  // семьи Label (label-{sentiment}-primary, WCAG ~16–20:1), а не эмитит сырой
-  // Figma-акцент — тот на светлой теме проваливал 3:1 (warning/success ~2.0).
-  // Движок канон-обоснованно прав (доступность по построению); figma-reference
-  // несёт до-законный сырой акцент — владелец реконсайлит Figma отдельным
-  // проходом. brand/danger/neutral/warning есть в Figma-якоре → исключение с законом;
-  // success/info в Figma-якоре отсутствуют (добавлены позже Figma-якорей).
-  ['--lab-fx-focus-ring-brand', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
-  ['--lab-fx-focus-ring-danger', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
-  ['--lab-fx-focus-ring-neutral', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
-  ['--lab-fx-focus-ring-warning', 'EC4: focus-ring наследует label-strong, не сырой акцент'],
-  ['--lab-fx-focus-ring-info', 'EC4: focus-ring наследует label-strong (+ разведение оттенка)'],
-  ['--lab-label-info-quaternary', 'разведение оттенка с брендом'],
-  ['--lab-fill-info-quaternary', 'разведение оттенка с брендом'],
-  // Лейблы и border-strong — СОЛВЕР, не статические чернила: текст обязан
-  // решаться от фактического фона (LPC + WCAG-пол), статика Figma-якоря —
-  // до-законный язык; солвер-солид ≈ композиту чернил в паре LSB на
-  // дефолтном фоне, но адаптивен на любом.
-  ['--lab-label-primary', 'лейбл решается солвером от фона'],
-  ['--lab-label-secondary', 'лейбл решается солвером от фона'],
-  ['--lab-label-tertiary', 'лейбл решается солвером от фона'],
-  ['--lab-label-quaternary', 'лейбл решается солвером от фона'],
-  ['--lab-border-strong', 'сильная ступень решается солвером от фона'],
-  // Вагон M1 (закон пары): сентимент-лейблы мигрировали с «акцент+альфа»
-  // на text-anchor тинт-лестницу — паспорт декларирует recipe
-  // {kind: text-anchor, floor: aa-text}, солвер тянет тинт от чернил к
-  // акценту от фактического фона; Figma-якорь несёт до-законную альфа-лестницу.
-  ['--lab-label-brand-primary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-brand-secondary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-brand-tertiary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-brand-quaternary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-danger-primary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-danger-secondary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-danger-tertiary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-danger-quaternary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-success-primary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-success-secondary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-success-tertiary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-success-quaternary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-warning-primary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-warning-secondary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-warning-tertiary', 'M1: text-anchor тинт, солвер от фона'],
-  ['--lab-label-warning-quaternary', 'M1: text-anchor тинт, солвер от фона'],
-  // Та же сильная ступень для сентиментов: recipe {kind: ladder,
-  // position: border-strong, floor: aa-ui} — солвер от фона. brand/danger
-  // совпали со Figma-якорем побайтно (решение легло в акцент), потому их тут нет.
-  ['--lab-border-success-strong', 'сильная ступень решается солвером от фона'],
-  ['--lab-border-warning-strong', 'сильная ступень решается солвером от фона'],
-  // Glow-семья теперь recipe {kind: glow, source: sentiment|brand}: эмиссия
-  // солидом от РЕШЁННОГО солвером источника, а не сырой акцент @52 Figma-якоря.
-  ['--lab-fx-glow-brand', 'glow от солвер-источника, не сырой акцент @52'],
-  ['--lab-fx-glow-danger', 'glow от солвер-источника, не сырой акцент @52'],
-  ['--lab-fx-glow-neutral', 'glow от солвер-источника, не сырой акцент @52'],
-  ['--lab-fx-glow-warning', 'glow от солвер-источника, не сырой акцент @52'],
-  // Figma-ошибка (заземлена): вся glow-семья @52, а FX/Glow/Inverted привязан
-  // к сырому солиду Neutral/4 вместо лежащего рядом 4@52 — движок @52
-  // консистентен и прав.
-  ['--lab-fx-glow-inverted', 'Figma-недосмотр: солид вместо @52 всей glow-семьи'],
-  // Провизорный литерал Figma-якоря без engine-деривации: закрывается задачей
-  // деривации (точка на растяжке по контракту), не подгонкой.
-  ['--lab-fill-neutral', 'PROVISIONAL Figma-якоря; деривация — открытая задача'],
-  // Zero-токены: «нет цвета» by design — движок честно не эмитит невидимое,
-  // Figma-якорь нёс заглушку той же семантики с α=0.
-  ['--lab-fill-none', 'Zero-токен: невидимость эмитится отсутствием'],
-  ['--lab-border-none', 'Zero-токен: невидимость эмитится отсутствием'],
-  // Компонентная поверхность контрола (light: белая поверхность, dark:
-  // fill-ступень) — производная компонентного уровня, маппится поездом.
-  ['--lab-control-bg', 'компонентная поверхность — маппинг поезда'],
-]);
-
-/** Разобрать значения --lab-* из scope-блока Figma-якоря. Селектор ищется
- * multiline-регэкспом по началу строки: шапка-комментарий Figma-якоря упоминает те
- * же селекторы текстом, и поиск подстрокой цеплял комментарий, беря затем
- * «{» чужого блока — сверка dark читала light-значения. */
-function parseScope(css, scopePattern) {
-  const m = scopePattern.exec(css);
-  if (!m) throw new Error(`scope не найден: ${scopePattern}`);
-  const start = m.index;
-  const open = css.indexOf('{', start);
-  let depth = 1;
-  let i = open + 1;
-  while (depth > 0 && i < css.length) {
-    if (css[i] === '{') depth++;
-    if (css[i] === '}') depth--;
-    i++;
-  }
-  const block = css.slice(open + 1, i - 1);
-  const vars = new Map();
-  for (const m of block.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)) {
-    vars.set(m[1], m[2].replace(/\/\*.*?\*\//g, '').trim());
-  }
-  return vars;
-}
-
-/** oklch(L% C H [/ A]) → те же 8-битные байты, что печатал бы hex движка. */
-function oklchToRgbParts(css) {
-  const inner = css.slice('oklch('.length, -1);
-  const [lch, alphaPart] = inner.split(' / ');
-  const [lRaw, cRaw, hRaw] = lch.trim().split(/\s+/);
-  const L = Number.parseFloat(lRaw) / 100;
-  const C = Number.parseFloat(cRaw);
-  const H = (Number.parseFloat(hRaw) * Math.PI) / 180;
-  const lms = mulv(M_OKLAB_LMS, [L, C * Math.cos(H), C * Math.sin(H)]).map((x) => x ** 3);
-  const rgb = mulv(M_LMS_SRGB, lms).map((x) =>
-    Math.min(255, Math.max(0, Math.round(gam(x) * 255))),
-  );
-  return { rgb, alpha: alphaPart ? Number.parseFloat(alphaPart) : null };
-}
-
-/** Нормализовать значение до сравнимой формы: hex/oklch → rgb(R G B), пробелы. */
-function normalise(value) {
-  const hex = value.match(/^#([0-9a-fA-F]{6})$/);
-  if (hex) {
-    const n = Number.parseInt(hex[1], 16);
-    return `rgb(${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255})`;
-  }
-  // Единая oklch-форма движка (0.4.0+) сводится к rgb-байтам Figma-якоря той же
-  // математикой Oklab, что у границы; альфа проходит насквозь как данные.
-  if (value.startsWith('oklch(')) {
-    const { rgb, alpha } = oklchToRgbParts(value);
-    const base = `rgb(${rgb[0]} ${rgb[1]} ${rgb[2]}`;
-    return alpha === null || alpha === 1 ? `${base})` : `${base} / ${alpha})`;
-  }
-  // Солидные лестничные позиции граница печатает как rgb(r g b / 1) —
-  // семантически тот же солид, что rgb(r g b) Figma-якоря.
-  return value
-    .replace(/\s*\/\s*1\)$/, ')')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-describe('золотая сверка: живой движок против Figma-якоря', () => {
-  /** @type {{colors: any, fingerprint: string}} */
-  let engine;
-  /** @type {string} */
-  let referenceCss;
-
-  beforeAll(async () => {
-    engine = await createLabuiEngine();
-    referenceCss = await readFile(referenceCssPath, 'utf8');
-  });
-
-  it('паспорт не дрейфанул: отпечаток равен пину', () => {
-    expect(engine.fingerprint).toBe(PASSPORT_FINGERPRINT);
-  });
-
-  for (const [theme, scope, bg] of [
-    // Фоны резолва — якоря нейтрали паспорта, не литералы.
-    ['light', /^:root,\s*\r?\n\[data-theme="light"\]\s*\{/m, passport.neutral.anchors.light],
-    ['dark', /^\[data-theme="dark"\]\s*\{/m, passport.neutral.anchors.dark],
-  ]) {
-    // Боевой гейт поезда: каждое значение Figma-якоря воспроизведено движком или
-    // исключено ЗАКОНОМ (список исключений с причинами выше). Новое
-    // расхождение = красный тест, а не строка в списке.
-    it(`${theme}: каждая переменная Figma-якоря воспроизведена движком или исключена законом`, () => {
-      const reference = parseScope(referenceCss, scope);
-      const resolved = engine.colors.resolveTheme(bg, theme);
-      const live = new Map(Object.entries(resolved.vars));
-
-      const unexpected = [];
-      const stale = [];
-      for (const [name, referenceValue] of reference) {
-        if (referenceValue.startsWith('var(')) continue; // алиас-ссылки сверяются целью
-        const liveValue = live.get(name);
-        if (liveValue === undefined) {
-          // Роль Figma-якоря, которую движок не эмитит: легальна только коллапс-зона
-          // (bg-*/static/on-*/material — входы и флаги, не роли эмиссии).
-          const collapsed =
-            name.startsWith('--lab-bg-') ||
-            name.includes('static') ||
-            name.includes('-on-') ||
-            name.includes('material') ||
-            name.startsWith('--lab-label-inverted') ||
-            name === '--lab-border-inverted' ||
-            name.startsWith('--lab-badge-');
-          if (!collapsed && !EXPECTED_DIVERGENCES.has(name)) stale.push(name);
-          continue;
-        }
-        if (normalise(liveValue) !== normalise(referenceValue)) {
-          if (!EXPECTED_DIVERGENCES.has(name)) {
-            unexpected.push(`${name}: Figma-якорь ${referenceValue} != движок ${liveValue}`);
-          }
-        }
+describe('ordinary: точность авторского эталона', () => {
+  it.each(THEMES)(
+    '%s: авторские краски и остальные роли точно сохраняют reference',
+    async (theme) => {
+      const actual = readyTheme(await createLabuiEngine(), theme).vars;
+      const expected = reference[THEMES.indexOf(theme)];
+      const differences = [];
+      for (const name of expected.keys()) {
+        if (RETIRED_REFERENCE_ROLES.has(name) || name === '--lab-fx-skeleton-highlight') continue;
+        if (theme === 'light' && lightToneAliases.includes(name)) continue;
+        const a = rgba(resolveValue(name, actual));
+        const b = rgba(resolveValue(name, expected));
+        if (JSON.stringify(a) !== JSON.stringify(b))
+          differences.push({ name, actual: a, reference: b });
       }
-      expect(unexpected, 'нелегальные расхождения значений').toEqual([]);
-      expect(stale, 'роли Figma-якоря без эмиссии и без закона-исключения').toEqual([]);
-    });
-  }
+      expect(differences, JSON.stringify(differences)).toEqual([]);
+    },
+  );
+
+  it('принятый вычисляемый Light-тон сохраняет оба baseline и ровно три общих алиаса', async () => {
+    const actual = readyTheme(await createLabuiEngine(), 'light').vars;
+    const tone = '--lab-bg-tone-2';
+    const aliases = [...actual]
+      .filter(([, value]) => value === `var(${tone})`)
+      .map(([name]) => name)
+      .sort();
+    expect(aliases).toEqual(lightToneAliases);
+    expect(rgba(resolveValue(tone, actual))).toEqual({ rgb: [248, 248, 249], opacity: 1 });
+    for (const name of lightToneAliases) {
+      expect(rgba(resolveValue(name, reference[0])), name).toEqual({
+        rgb: [247, 248, 250],
+        opacity: 1,
+      });
+    }
+  });
+
+  it('один паспорт даёт тот же fingerprint и полный результат', async () => {
+    const first = await createLabuiEngine();
+    const second = await createLabuiEngine();
+    expect(first.fingerprint).toBe(second.fingerprint);
+    for (const theme of THEMES)
+      expect(readyTheme(first, theme).vars).toEqual(readyTheme(second, theme).vars);
+  });
 });

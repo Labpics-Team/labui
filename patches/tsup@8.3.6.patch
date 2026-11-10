@@ -1,0 +1,14 @@
+diff --git a/dist/rollup.js b/dist/rollup.js
+index 226885535450922fb10e07d26cad66dd2e349ca3..85fc9a8b7a95e6f56d53aa6c7594d730d456b333 100644
+--- a/dist/rollup.js
++++ b/dist/rollup.js
+@@ -8404,6 +8404,9 @@ var getRollupConfig = async (options) => {
+         ignoreFiles,
+         dtsPlugin.default({
+           tsconfig: options.tsconfig,
++        // При явном dts.resolve внутренние declarations принадлежат bundle.
++        // Production dependencies по-прежнему отсекает штатный external выше.
++        respectExternal: Boolean(dtsOptions.resolve),
+           compilerOptions: {
+             ...compilerOptions,
+             baseUrl: compilerOptions.baseUrl || ".",

@@ -1,13 +1,10 @@
-/* ── SOLID — explicit manual override. ALWAYS wins: the DS escape hatch and the
- * canon. Placed after glass/acrylic so at equal specificity it takes precedence
- * whenever an ancestor is set to solid. ──────────────────────────────────── */
-[data-material="solid"] .lab-material,
-[data-material="solid"].lab-material {
-  --_base-paint: var(--_base);
-  --_blur: 0px;
-  --_saturate: 100%;
+/* Любой явный data-material останавливает внешний режим. Glass/acrylic имеют
+ * более специфичный селектор; solid, пустое и неизвестное значение остаются
+ * непрозрачными. initial возвращает локальную базу каждой дочерней поверхности. */
+:host(:where([data-material])),
+:where([data-material]) {
+  --_material-mode: solid;
+  --_material-live: 0;
+  --_base-paint: initial;
   --_noise: none;
-  --_rim: none; /* opaque canon — not glass; also resets a --_rim inherited from
-                * a glass/acrylic ancestor when this element is overridden solid */
-  -webkit-backdrop-filter: none;
 }

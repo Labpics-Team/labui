@@ -6,8 +6,8 @@
 <script lang="ts">
   import '@labpics/ui-core/pin-input';
   import type { LabPinInput } from '@labpics/ui-core/pin-input';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
 
   /** Пропы <lab-pin-input> — типы взяты прямо из класса ядра (LabPinInput). */
   interface Props {
@@ -61,11 +61,19 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, count, valueType, mask, otp, placeholder, value, defaultValue, readonly, disabled, required, invalid, name });
   });
   $effect(() => forwardEvents(el, { 'value-change': onValueChange, 'value-complete': onValueComplete, 'value-invalid': onValueInvalid }));
 </script>
 
-<lab-pin-input bind:this={el} {...rest}>
+<lab-pin-input bind:this={el} {...rest} {...initialBooleans}>
 </lab-pin-input>

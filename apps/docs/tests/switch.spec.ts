@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 import { litInputIds, probeInput } from './support/accessible-name.js';
 
 /**
@@ -43,6 +44,49 @@ function reactInput(page: Page, testid: string): Locator {
 }
 
 const bg = (el: HTMLElement) => getComputedStyle(el).backgroundColor;
+
+type CheckedSwitch = HTMLElement & {
+  checked: boolean;
+  defaultChecked: boolean;
+  updateComplete: Promise<boolean>;
+  checkedEvents?: boolean[];
+};
+
+async function observeChecked(host: Locator): Promise<void> {
+  await host.evaluate((element) => {
+    const control = element as CheckedSwitch;
+    control.checkedEvents = [];
+    control.addEventListener('checked-change', (event) => {
+      control.checkedEvents?.push((event as CustomEvent<{ checked: boolean }>).detail.checked);
+    });
+  });
+}
+
+async function expectChecked(host: Locator, checked: boolean, events: boolean[]): Promise<void> {
+  // Нативное состояние, отражение для CSS и состояние поведения должны совпадать.
+  await expect
+    .poll(() =>
+      host.evaluate(async (element) => {
+        const control = element as CheckedSwitch;
+        await control.updateComplete;
+        const input = control.shadowRoot?.querySelector('input');
+        return {
+          property: control.checked,
+          attribute: control.hasAttribute('checked'),
+          native: input?.checked,
+          state: control.shadowRoot?.querySelector('.control')?.getAttribute('data-state'),
+          events: control.checkedEvents ?? [],
+        };
+      }),
+    )
+    .toEqual({
+      property: checked,
+      attribute: checked,
+      native: checked,
+      state: checked ? 'checked' : 'unchecked',
+      events,
+    });
+}
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/switch.html');
@@ -91,6 +135,139 @@ test('a11y: Space on the focused control toggles via the native input (keyboard)
   });
   await page.keyboard.press('Space');
   await expect(lit).toHaveAttribute('checked', '');
+});
+
+for (const activation of ['Space', 'click'] as const) {
+  test(`checked state: repeated ${activation} keeps every projection and event in sync`, async ({
+    page,
+  }) => {
+    const host = litHost(page, 'lit-accent-off');
+    await observeChecked(host);
+    const events: boolean[] = [];
+    await expectChecked(host, false, events);
+    for (const checked of [true, false, true, false]) {
+      if (activation === 'Space') await host.locator('input').press('Space');
+      else await host.locator('.control').click();
+      events.push(checked);
+      await expectChecked(host, checked, events);
+    }
+  });
+}
+
+test('checked state: defaults initialize once, external false and reconnect preserve current state', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.createElement('lab-switch') as CheckedSwitch;
+    host.dataset.testid = 'checked-default';
+    host.textContent = 'Default switch';
+    host.defaultChecked = true;
+    document.body.append(host);
+  });
+  const host = page.getByTestId('checked-default');
+  await observeChecked(host);
+  await expectChecked(host, true, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => {
+    (element as CheckedSwitch).defaultChecked = false;
+  });
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => {
+    (element as CheckedSwitch).defaultChecked = true;
+  });
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => {
+    element.remove();
+    document.body.append(element);
+  });
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => {
+    (element as CheckedSwitch).checked = true;
+  });
+  await expectChecked(host, true, [false]);
+  await host.evaluate((element) => {
+    (element as CheckedSwitch).checked = false;
+  });
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => element.setAttribute('checked', ''));
+  await expectChecked(host, true, [false]);
+  await host.evaluate((element) => element.removeAttribute('checked'));
+  await expectChecked(host, false, [false]);
+  await host.locator('.control').click();
+  await expectChecked(host, true, [false, true]);
+});
+
+test('checked state: an initially checked element and a consumer override keep false explicit', async ({
+  page,
+}) => {
+  const host = litHost(page, 'lit-accent-on');
+  await observeChecked(host);
+  await expectChecked(host, true, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, false, [false]);
+  await host.evaluate((element) => {
+    element.addEventListener('checked-change', () => {
+      (element as CheckedSwitch).checked = false;
+    });
+  });
+  for (const events of [
+    [false, true],
+    [false, true, true],
+  ]) {
+    await host.locator('input').press('Space');
+    await expectChecked(host, false, events);
+  }
+});
+
+test('checked state: false assigned before connection wins over a true default', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.createElement('lab-switch') as CheckedSwitch;
+    host.dataset.testid = 'checked-before-connect';
+    host.textContent = 'Before connection';
+    host.defaultChecked = true;
+    host.checked = false;
+    document.body.append(host);
+  });
+  const host = page.getByTestId('checked-before-connect');
+  await observeChecked(host);
+  await expectChecked(host, false, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, true, [true]);
+});
+
+test('checked state: a pre-upgrade false property wins over a true default', async ({ page }) => {
+  await page.route('**/switch.html', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      body: (await response.text()).replaceAll('type="module"', 'type="application/x-held-module"'),
+    });
+  });
+  await page.goto('/switch.html');
+  await page.evaluate(async () => {
+    const host = document.createElement('lab-switch') as CheckedSwitch;
+    host.dataset.testid = 'checked-before-upgrade';
+    host.textContent = 'Before upgrade';
+    host.defaultChecked = true;
+    host.checked = false;
+    document.body.append(host);
+    const module = document.querySelector<HTMLScriptElement>(
+      'script[type="application/x-held-module"]',
+    );
+    if (!module) throw new Error('Missing held fixture module');
+    await import(module.src);
+    await customElements.whenDefined('lab-switch');
+  });
+  const host = page.getByTestId('checked-before-upgrade');
+  await observeChecked(host);
+  await expectChecked(host, false, []);
+  await host.locator('input').press('Space');
+  await expectChecked(host, true, [true]);
+  await host.locator('input').press('Space');
+  await expectChecked(host, false, [true, false]);
 });
 
 test('a11y name: the hidden input is exposed and named by the visible label (both renderers)', async ({
@@ -156,6 +333,11 @@ test('disabled: the machine blocks the toggle on both renderers', async ({ page 
 });
 
 test('visual parity: Lit and React resolve the same ON track colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litTrack(page, 'lit-accent-on'),
+    reactTrack(page, 'react-accent-on'),
+  );
   await expect(reactSwitch(page, 'react-accent-on')).toBeVisible();
 
   for (const variant of ['accent-on', 'neutral-on', 'danger-on'] as const) {

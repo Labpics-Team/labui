@@ -41,11 +41,15 @@ code {
 /* ── Layout: sidebar + main (mobile-first single column) ──────────────────── */
 .doc-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-6, 1.5rem);
   max-width: 80rem;
   margin-inline: auto;
   padding: var(--lab-space-6, 1.5rem);
+}
+
+.doc-main {
+  min-width: 0;
 }
 
 @media (min-width: 60rem) {
@@ -53,14 +57,14 @@ code {
     grid-template-columns: 14rem minmax(0, 1fr);
     align-items: start;
   }
+
+  .doc-sidebar {
+    position: sticky;
+    top: var(--lab-space-6, 1.5rem);
+  }
 }
 
 /* ── Sidebar ──────────────────────────────────────────────────────────────── */
-.doc-sidebar {
-  position: sticky;
-  top: var(--lab-space-6, 1.5rem);
-}
-
 .sidebar-title {
   margin: 0 0 var(--lab-space-3, 0.75rem);
   font-weight: 700;
@@ -127,6 +131,14 @@ code {
   margin: var(--lab-space-3, 0.75rem) 0 var(--lab-space-5, 1.25rem);
   color: var(--lab-label-secondary);
   max-width: 60ch;
+}
+
+.doc-summary,
+.status-note,
+.anatomy-parts,
+.meaning,
+.empty-state {
+  overflow-wrap: anywhere;
 }
 
 .status-badge {
@@ -198,8 +210,17 @@ input:focus-visible {
 }
 
 /* ── States matrix ────────────────────────────────────────────────────────── */
-.matrix-scroll {
+.matrix-scroll,
+.api-scroll {
   overflow-x: auto;
+}
+
+.matrix-scroll,
+.api-scroll,
+.anatomy-stage,
+.live-stage {
+  /* Keep absolute specimen helpers inside the local scrollable area. */
+  position: relative;
 }
 
 .matrix-table {
@@ -236,6 +257,7 @@ input:focus-visible {
 /* ── Anatomy ──────────────────────────────────────────────────────────────── */
 .anatomy {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-6, 1.5rem);
 }
 
@@ -248,10 +270,12 @@ input:focus-visible {
 
 .anatomy-stage {
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
+  min-width: 0;
+  overflow-x: auto;
   align-items: center;
   min-height: 8rem;
-  padding: var(--lab-space-8, 2rem);
+  padding: clamp(var(--lab-space-4, 1rem), 4vw, var(--lab-space-8, 2rem));
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-m, 0.5rem);
   background: var(--lab-bg-secondary);
@@ -336,13 +360,16 @@ input:focus-visible {
 /* ── Live example ─────────────────────────────────────────────────────────── */
 .live {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-5, 1.25rem);
 }
 
 .live-stage {
   display: flex;
-  justify-content: center;
-  padding: var(--lab-space-10, 2.5rem);
+  justify-content: safe center;
+  min-width: 0;
+  overflow-x: auto;
+  padding: clamp(var(--lab-space-4, 1rem), 4vw, var(--lab-space-10, 2.5rem));
   border: var(--lab-stroke-hairline) solid var(--lab-border-base);
   border-radius: var(--lab-radius-m, 0.5rem);
   background: var(--lab-bg-secondary);
@@ -357,6 +384,7 @@ input:focus-visible {
 /* ── API tables ───────────────────────────────────────────────────────────── */
 .api {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--lab-space-6, 1.5rem);
 }
 

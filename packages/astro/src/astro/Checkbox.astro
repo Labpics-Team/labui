@@ -8,14 +8,15 @@
  */
 import { renderCheckbox } from '@labpics/ui-astro/ssr';
 
+if (!import.meta.env.LABUI_HYDRATE) {
+  throw new Error('LabUI SSR: добавьте hydrate() из @labpics/ui-astro/hydrate в integrations в astro.config.');
+}
+
 const dsd = renderCheckbox(Astro.props, {
   default: Astro.slots.has('default') ? await Astro.slots.render('default') : undefined,
 });
 ---
 <Fragment set:html={dsd} />
 <script>
-  // Порядок важен: hydrate-support ДО lit; затем регистрация элемента — LitElement
-  // сам гидрируется из declarative shadow DOM.
-  import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
   import '@labpics/ui-core/checkbox';
 </script>

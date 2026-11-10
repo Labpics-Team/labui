@@ -1,92 +1,184 @@
-/*
- * <Card> (React) styles — the visual PARITY twin of the Lit `<lab-card>`.
- *
- * The Lit element scopes CSS in a shadow root via `:host([variant])` and paints a
- * `.card` <article> surface. React is native (ADR-0001) — no shadow DOM — so this
- * sheet mirrors those exact rules against `[data-lab-card]` (the <article> IS the
- * surface here) plus the `data-*` the component sets (`data-variant`,
- * `data-padding`, `data-interactive`). Same roles, same structure, same states ⇒
- * same paint.
- *
- * Token contract (core-CONTRACT §2): every colour is a semantic --lab-* role,
- * every dimension a --lab-* token (with a literal dimension fallback only). ZERO
- * hex, ZERO primitive. Elevation reads the `--lab-elevation-*` contract from
- * @labpics/ui-shadow (NOT the flat `--lab-fx-shadow-*` tokens — those carry no
- * geometry, tint, or motion).
- */
+/* Собственная анатомия Card; роли и геометрия совпадают с Core. */
 
 [data-lab-card] {
-  --_lab-card-pad: var(--lab-space-md, 1rem);
-  --_lab-card-radius: var(--lab-radius-card, 1rem);
+  --_pad: var(--lab-space-lg, 1.5rem);
+  --_radius: var(--lab-radius-card, 1rem);
+  display: block;
+  min-inline-size: 0;
+}
+[data-lab-card][data-padding="none"] {
+  --_pad: 0;
+}
+[data-lab-card][data-padding="s"] {
+  --_pad: var(--lab-space-sm, 0.5rem);
+}
+[data-lab-card][data-padding="m"] {
+  --_pad: var(--lab-space-md, 1rem);
+}
+[data-lab-card][data-padding="l"] {
+  --_pad: var(--lab-space-lg, 1.5rem);
+}
 
+[data-lab-card] {
+  --_border: transparent;
+  position: relative;
+  isolation: isolate;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border-radius: var(--_lab-card-radius);
+  block-size: 100%;
+  min-block-size: 0;
+  overflow: auto;
+  border-radius: var(--_radius);
   background-color: var(--lab-bg-primary);
   color: var(--lab-label-primary);
-  border: var(--lab-stroke-hairline) solid transparent;
+  font-family: var(--lab-font-family);
 }
-
-[data-lab-card][data-padding="none"] {
-  --_lab-card-pad: 0;
+/* INSIDE stroke рисуется поверх композиции, не меняя её размеры. */
+[data-lab-card]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: var(--lab-z-secondary, 100);
+  box-sizing: border-box;
+  border: var(--lab-stroke-hairline) solid var(--_border);
+  border-radius: inherit;
+  pointer-events: none;
 }
-[data-lab-card][data-padding="s"] {
-  --_lab-card-pad: var(--lab-space-sm, 0.5rem);
-}
-[data-lab-card][data-padding="m"] {
-  --_lab-card-pad: var(--lab-space-md, 1rem);
-}
-[data-lab-card][data-padding="l"] {
-  --_lab-card-pad: var(--lab-space-lg, 1.5rem);
-}
-
 [data-lab-card][data-variant="elevated"] {
-  background-color: var(--lab-bg-secondary);
+  --_border: var(--lab-border-base);
+  background-color: transparent;
   box-shadow: var(--lab-elevation-resting);
 }
 [data-lab-card][data-variant="outlined"] {
-  background-color: var(--lab-bg-primary);
-  border-color: var(--lab-border-base);
+  --_border: var(--lab-border-base);
 }
 [data-lab-card][data-variant="filled"] {
   background-color: var(--lab-fill-primary);
 }
-
 [data-lab-card][data-interactive] {
   cursor: pointer;
-  transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing),
-    border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
+  transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
 }
 [data-lab-card][data-interactive]:hover {
-  border-color: var(--lab-border-soft);
+  --_border: var(--lab-border-soft);
 }
 [data-lab-card][data-interactive][data-variant="elevated"]:hover {
   box-shadow: var(--lab-elevation-raised);
 }
+[data-lab-card]:focus-visible,
 [data-lab-card][data-interactive]:focus-within {
   outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
   outline-offset: var(--lab-focus-ring-offset);
 }
 
-.lab-card-media {
+.lab-card-underlay {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.lab-card-image {
+  position: relative;
   display: block;
+  flex: 1 1 auto;
+  min-block-size: 0;
+  inline-size: 100%;
+  object-fit: cover;
+}
+.lab-card-media {
+  display: contents;
+}
+.lab-card-header,
+.lab-card-body,
+.lab-card-footer {
+  display: block;
+}
+.lab-card-header:empty,
+.lab-card-body:empty,
+.lab-card-footer:empty {
+  display: none;
 }
 .lab-card-media > * {
+  position: relative;
   display: block;
-  width: 100%;
+  inline-size: 100%;
 }
-
-.lab-card-header {
-  padding: var(--_lab-card-pad) var(--_lab-card-pad) 0;
+.lab-card-content {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: var(--lab-space-md, 1rem);
+  padding: var(--_pad);
+  /* Match the painted boundary; backdrop clipping does not inherit the
+   * ancestor's rounded shape through every scroll-container composition. */
+  border-radius: inherit;
 }
-
-.lab-card-body {
-  flex: 1 1 auto;
-  padding: var(--_lab-card-pad);
+.lab-card-image + .lab-card-content,
+.lab-card-media:not(:empty) + .lab-card-content {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
-
-.lab-card-footer {
-  padding: 0 var(--_lab-card-pad) var(--_lab-card-pad);
+.lab-card-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--lab-space-sm, 0.5rem);
+  min-inline-size: 0;
+}
+.lab-card-text-main {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--lab-space-xs, 0.25rem) / 2);
+}
+.lab-card-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--lab-space-xs, 0.25rem);
+  min-inline-size: 0;
+}
+.lab-card-heading,
+.lab-card-title-hint {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  margin: 0;
+  font-size: var(--lab-font-size-card-title, 1.25rem);
+  font-weight: var(--lab-font-weight-medium);
+  line-height: var(--lab-line-height-card-title, 1);
+  letter-spacing: var(--lab-letter-spacing-card-title, -0.0165em);
+}
+.lab-card-heading {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lab-card-title-hint {
+  color: var(--lab-label-secondary);
+  overflow-wrap: anywhere;
+}
+.lab-card-description {
+  margin: 0;
+  color: var(--lab-label-secondary);
+  font-size: var(--lab-font-size-card-description, 1rem);
+  font-weight: var(--lab-font-weight-regular);
+  line-height: var(--lab-line-height-card-description, 1.5);
+  letter-spacing: var(--lab-letter-spacing-card-description, -0.015625em);
+}
+.lab-card-caption {
+  margin: 0;
+  color: var(--lab-label-secondary);
+  font-size: var(--lab-font-size-card-caption, 0.875rem);
+  font-weight: var(--lab-font-weight-medium);
+  line-height: var(--lab-line-height-card-caption, 0.8571428571428571);
+  letter-spacing: var(--lab-letter-spacing-card-caption, 0em);
+}
+.lab-card-description,
+.lab-card-lower-caption {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }

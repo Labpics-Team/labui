@@ -48,6 +48,24 @@ describe('parseStops — the Figma-like stop grammar', () => {
     expect(parseStops('0% 8px, 100% 0px')).toEqual(parseStops('0 8px, 1 0px'));
   });
 
+  it('принимает конечную экспоненциальную запись CSS-чисел', () => {
+    expect(parseStops('0 1e-7px, 1e2% +2.5E+1px')).toEqual([
+      { at: 0, blur: 1e-7 },
+      { at: 1, blur: 25 },
+    ]);
+  });
+
+  it('не принимает частично прочитанные и нечисловые значения', () => {
+    for (const input of [
+      '0 1.2.3px, 1 0px',
+      '0.5.1 8px, 1 0px',
+      '0 1e309px, 1 0px',
+      '1e309 8px, 1 0px',
+    ]) {
+      expect(() => parseStops(input)).toThrow();
+    }
+  });
+
   it('sorts stops by position', () => {
     const stops = parseStops('1 0px, 0 24px');
     expect(stops.map((s) => s.at)).toEqual([0, 1]);

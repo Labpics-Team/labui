@@ -12,9 +12,9 @@
  *   - 'string'  → ключ `^attr`: Vue форсирует АТРИБУТ (иначе для upgraded-элемента
  *     сработало бы `key in el` и значение ушло бы свойством — незаметный дрейф
  *     между SSR и клиентом). Атрибут SSR-безопасен и до upgrade.
- *   - 'boolean' → `^attr` со значением `value || undefined`: голый `false` дал бы
- *     `attr="false"`, а Lit-конвертер читает присутствие атрибута как true;
- *     `undefined` убирает атрибут на любом пути.
+ *   - 'boolean' → JS-свойство перед вставкой и обновлением VNode. Явный false
+ *     доходит до элемента; undefined ничего не присваивает и не сбрасывает
+ *     текущее состояние при удалении пропа из родительского render.
  *   - 'prop'    → ключ `.name`: Vue форсирует JS-СВОЙСТВО. Единственный корректный
  *     путь для массивов/объектов (items, value-списки): атрибут из массива стал бы
  *     "[object Object]".
@@ -23,7 +23,21 @@
  * Регистрация: генерируемый файл делает side-effect импорт
  * `@labpics/ui-core/<subpath>`, поэтому обёртка приносит элемент с собой.
  */
-import { type DefineComponent, type VNode, defineComponent, h } from 'vue';
+import {
+  Comment,
+  type DefineComponent,
+  Fragment,
+  Text,
+  type VNode,
+  cloneVNode,
+  defineComponent,
+  h,
+  inject,
+  isVNode,
+  mergeProps,
+  ssrContextKey,
+} from 'vue';
+import { slotFillCss } from './slot-projection.js';
 
 /** Способ проброса одного пропа — зеркалит PropKind манифеста. */
 export type LabPropKind = 'boolean' | 'prop' | 'string';
@@ -32,7 +46,7 @@ export type LabPropKind = 'boolean' | 'prop' | 'string';
 export interface LabPropSpec {
   /** Имя свойства (camelCase). */
   readonly name: string;
-  /** Имя атрибута на хосте (для 'string'/'boolean'). */
+  /** Имя входного атрибута на хосте. */
   readonly attr: string;
   /** Способ проброса. */
   readonly kind: LabPropKind;
@@ -44,6 +58,40 @@ export interface LabComponentSpec {
   readonly specs: readonly LabPropSpec[];
   /** Имена кастом-событий (kebab) — для типизации обработчиков. */
   readonly events: readonly string[];
+  /** Слоты, коробку которых задаёт ядро; содержимое заполняет только эту коробку. */
+  readonly fillSlots?: readonly string[];
+  /** Один настоящий элемент, чья native interaction target принадлежит компоненту. */
+  readonly directSlots?: readonly string[];
+}
+
+function projectDirectSlot(nodes: readonly VNode[], name: string): VNode {
+  const elements: VNode[] = [];
+  const visit = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const child of value) visit(child);
+      return;
+    }
+    if (!isVNode(value)) {
+      if (value === null || value === undefined || (typeof value === 'string' && !value.trim()))
+        return;
+      throw new TypeError('LabUI Vue: direct slot requires one element.');
+    }
+    if (value.type === Comment) return;
+    if (value.type === Text && typeof value.children === 'string' && !value.children.trim()) return;
+    if (value.type === Fragment) visit(value.children);
+    else if (value.type === Text)
+      throw new TypeError('LabUI Vue: direct slot requires one element.');
+    else elements.push(value);
+  };
+  visit(nodes);
+  const element = elements[0];
+  if (elements.length !== 1 || !element) {
+    throw new TypeError('LabUI Vue: direct slot requires exactly one element.');
+  }
+  if (element.props?.slot !== undefined && element.props.slot !== name) {
+    throw new TypeError('LabUI Vue: direct slot element already belongs to another slot.');
+  }
+  return cloneVNode(element, { slot: name });
 }
 
 /** kebab → PascalCase на уровне типов: 'value-change' → 'ValueChange'. */
@@ -75,6 +123,7 @@ export function createLabComponent<Props, Events extends string>(
 ): LabComponent<Props, Events> {
   // Имена объявленных пропов — из спек (одна точка правды, без дубля в манифесте).
   const propNames = spec.specs.map((s) => s.name);
+  const booleanSpecs = spec.specs.filter((s) => s.kind === 'boolean');
   const component = defineComponent({
     name: `Lab_${tag}`,
     // Натив (aria-label, id, class, data-*, слушатели событий) пробрасываем вручную
@@ -82,29 +131,60 @@ export function createLabComponent<Props, Events extends string>(
     inheritAttrs: false,
     props: propNames,
     setup(props: Record<string, unknown>, { slots, attrs }) {
+      const serverRendering = inject(ssrContextKey, null) !== null;
+      const applyBooleans = (vnode: VNode): void => {
+        if (!vnode.el) return;
+        for (const s of booleanSpecs) {
+          const value = props[s.name];
+          if (value !== undefined) {
+            vnode.el[s.name] = Boolean(value);
+          }
+        }
+      };
       return () => {
         // Натив и слушатели событий (onValueChange → 'value-change') — сначала,
         // объявленные пропы форсируем ниже своими ключами (пересечений нет: Vue
         // изымает объявленные пропы из attrs).
-        const bindings: Record<string, unknown> = { ...attrs };
+        const bindings: Record<string, unknown> =
+          booleanSpecs.length && !serverRendering
+            ? mergeProps(
+                { onVnodeBeforeMount: applyBooleans, onVnodeBeforeUpdate: applyBooleans },
+                attrs,
+              )
+            : { ...attrs };
         for (const s of spec.specs) {
           const value = props[s.name];
           if (s.kind === 'prop') {
             if (value !== undefined) bindings[`.${s.name}`] = value;
-          } else if (s.kind === 'boolean') {
-            bindings[`^${s.attr}`] = value || undefined;
-          } else {
+          } else if (s.kind === 'string') {
             bindings[`^${s.attr}`] = value;
+          } else if (serverRendering) {
+            // Vue native SSR не вызывает DOM hooks. Сохраняем его прежнюю
+            // presence-семантику; deep SSR принадлежит отдельному /ssr entry.
+            bindings[s.attr] = value ? '' : undefined;
           }
         }
         // Слоты: default → дети; именованные (в т.ч. динамические content/icon/…)
-        // оборачиваем в display:contents-элемент с slot=<name> (нативное слотирование
-        // требует РЕНДЕРЯЩИЙСЯ узел в light-DOM; <template> не спроецировался бы).
+        // оборачиваем в элемент с slot=<name>. Обычно он display:contents; у
+        // размерного слота сохраняем коробку, которую оформляет ::slotted ядра.
         const children: unknown[] = [];
+        if (spec.fillSlots?.some((name) => slots[name])) {
+          children.push(h('style', { slot: '_lab-style' }, slotFillCss));
+        }
         for (const [name, slotFn] of Object.entries(slots)) {
           if (!slotFn) continue;
           if (name === 'default') children.push(slotFn());
-          else children.push(h('div', { slot: name, style: 'display:contents' }, slotFn()));
+          else if (spec.directSlots?.includes(name)) {
+            children.push(projectDirectSlot(slotFn(), name));
+          } else if (spec.fillSlots?.includes(name)) {
+            children.push(
+              h(
+                'span',
+                { slot: name, 'data-lab-slot-fill': '', style: 'display:inline-flex' },
+                slotFn(),
+              ),
+            );
+          } else children.push(h('div', { slot: name, style: 'display:contents' }, slotFn()));
         }
         return h(tag, bindings, children as VNode[]);
       };

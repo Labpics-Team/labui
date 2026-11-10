@@ -5,19 +5,19 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/button';
 import type { LabButton } from '@labpics/ui-core/button';
 
 /** SSR-пропы <lab-button> (атрибуты/свойства), взяты из класса ядра (LabButton). */
-export type ButtonSsrProps = Partial<Pick<LabButton, 'type' | 'kind' | 'size' | 'icon' | 'loading' | 'disabled' | 'htmlType'>>;
+export type ButtonSsrProps = Partial<Pick<LabButton, 'type' | 'kind' | 'size' | 'description' | 'icon' | 'loading' | 'disabled' | 'htmlType'>>;
 /** SSR-слоты <lab-button> — предрендеренные строки контента. */
-export type ButtonSsrSlots = { default?: string; icon?: string };
+export type ButtonSsrSlots = { default?: string; end?: string; icon?: string };
 
 /**
- * Рендерит <lab-button> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-button> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderButton(
   props: ButtonSsrProps = {},
@@ -27,9 +27,10 @@ export function renderButton(
       type=${ifDefined(props.type)}
       kind=${ifDefined(props.kind)}
       size=${ifDefined(props.size)}
-      ?icon=${Boolean(props.icon)}
-      ?loading=${Boolean(props.loading)}
-      ?disabled=${Boolean(props.disabled)}
+      description=${ifDefined(props.description)}
+      .icon=${props.icon === undefined ? noChange : Boolean(props.icon)}
+      .loading=${props.loading === undefined ? noChange : Boolean(props.loading)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       html-type=${ifDefined(props.htmlType)}
-    >${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-button>`);
+    >${slots.end ? html`<span slot="end">${unsafeHTML(slots.end)}</span>` : ''}${slots.icon ? html`<span slot="icon">${unsafeHTML(slots.icon)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-button>`);
 }

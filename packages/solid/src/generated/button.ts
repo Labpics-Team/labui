@@ -10,7 +10,7 @@ import type { LabButton } from '@labpics/ui-core/button';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-button>, взятые прямо из класса ядра (LabButton). */
-export type ButtonProps = Pick<LabButton, 'type' | 'kind' | 'size' | 'icon' | 'loading' | 'disabled' | 'htmlType'>;
+export type ButtonProps = Pick<LabButton, 'type' | 'kind' | 'size' | 'description' | 'icon' | 'loading' | 'disabled' | 'htmlType'>;
 
 /** <Button> — тонкая Solid-обёртка над <lab-button>. */
 export const Button: LabSolidComponent<ButtonProps, never> = createLabComponent<
@@ -21,6 +21,7 @@ export const Button: LabSolidComponent<ButtonProps, never> = createLabComponent<
     { name: 'type', attr: 'type', kind: 'string' },
     { name: 'kind', attr: 'kind', kind: 'string' },
     { name: 'size', attr: 'size', kind: 'string' },
+    { name: 'description', attr: 'description', kind: 'string' },
     { name: 'icon', attr: 'icon', kind: 'boolean' },
     { name: 'loading', attr: 'loading', kind: 'boolean' },
     { name: 'disabled', attr: 'disabled', kind: 'boolean' },

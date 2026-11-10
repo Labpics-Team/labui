@@ -8,15 +8,12 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readMaterialCss } from '../scripts/material-css';
 import { ACRYLIC_LUMINOSITY_OPACITY } from '../src/acrylic-corridor';
-import {
-  ACRYLIC_BLUR_PX,
-  ACRYLIC_ENGINE_MEDIA,
-  ACRYLIC_REACH_PX,
-  ACRYLIC_SATURATE,
-} from '../src/engine/acrylic';
+import { ACRYLIC_BLUR_PX, ACRYLIC_REACH_PX, ACRYLIC_SATURATE, attach } from '../src/engine/acrylic';
+import { mountEngine } from '../src/engine/mount';
+import { MATERIAL_ENGINE_MEDIA } from '../src/engine/preferences';
 import { MATERIAL_TIERS } from '../src/material-guarantee';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -65,28 +62,214 @@ describe('конвейер повторяет ступени листа (оди�
   });
 });
 
+// Модель проверяет владение DOM-узлами и исходным document. Разрешение url()
+// и наследование вычисленных цветов проверяются реальным браузером.
+class FilterNode {
+  children: FilterNode[] = [];
+  parentNode: FilterNode | null = null;
+  attributes = new Map<string, string>();
+  values = new Map<string, string>();
+  priorities = new Map<string, string>();
+  isConnected = true;
+  offsetWidth = 160;
+  offsetHeight = 80;
+  classList = { contains: () => false };
+  style = {
+    cssText: '',
+    setProperty: (key: string, value: string, priority = '') => {
+      this.values.set(key, value);
+      this.priorities.set(key, priority);
+    },
+    getPropertyValue: (key: string) => this.values.get(key) ?? '',
+    getPropertyPriority: (key: string) => this.priorities.get(key) ?? '',
+  };
+
+  constructor(
+    readonly tag: string,
+    readonly ownerDocument: FilterDocument,
+  ) {}
+
+  setAttribute(key: string, value: string): void {
+    this.attributes.set(key, value);
+  }
+
+  appendChild(node: FilterNode): FilterNode {
+    node.remove();
+    node.parentNode = this;
+    this.children.push(node);
+    return node;
+  }
+
+  append(...nodes: FilterNode[]): void {
+    for (const node of nodes) this.appendChild(node);
+  }
+
+  remove(): void {
+    if (this.parentNode)
+      this.parentNode.children = this.parentNode.children.filter((node) => node !== this);
+    this.parentNode = null;
+  }
+
+  matches(selector: string): boolean {
+    return selector === '.lab-material';
+  }
+
+  querySelectorAll(): FilterNode[] {
+    return [];
+  }
+
+  find(tag: string): FilterNode | undefined {
+    if (this.tag === tag) return this;
+    for (const child of this.children) {
+      const found = child.find(tag);
+      if (found) return found;
+    }
+  }
+}
+
+class FilterDocument {
+  body = new FilterNode('body', this);
+  createElementNS(_namespace: string, tag: string): FilterNode {
+    return new FilterNode(tag, this);
+  }
+}
+
+describe('фильтр принадлежит поверхности и её локальному контексту', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('attach размещает всю SVG-цепочку внутри surface в её ownerDocument', () => {
+    const ambient = new FilterDocument();
+    const owner = new FilterDocument();
+    const surface = new FilterNode('article', owner);
+    vi.stubGlobal('document', ambient);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const handle = attach(surface as unknown as HTMLElement);
+    try {
+      const filter = surface.find('filter');
+      expect(
+        filter,
+        'фильтр должен иметь тот же tree scope и CSS-предков, что поверхность',
+      ).toBeDefined();
+      expect(surface.find('feFlood')?.ownerDocument).toBe(owner);
+      expect(ambient.body.children).toHaveLength(0);
+    } finally {
+      handle.destroy();
+    }
+    expect(surface.children).toHaveLength(0);
+  });
+
+  it('destroy удаляет только собственный SVG; повторный attach и сосед не теряются', () => {
+    const owner = new FilterDocument();
+    vi.stubGlobal('document', owner);
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const first = new FilterNode('article', owner);
+    const second = new FilterNode('article', owner);
+    first.style.setProperty('backdrop-filter', 'blur(2px)', 'important');
+    const old = attach(first as unknown as HTMLElement);
+    const neighbor = attach(second as unknown as HTMLElement);
+    const current = attach(first as unknown as HTMLElement);
+    try {
+      old.destroy();
+      expect(first.children).toHaveLength(1);
+      expect(second.find('filter')).toBeDefined();
+      current.destroy();
+      current.destroy();
+      expect(first.children).toHaveLength(0);
+      expect(first.style.getPropertyValue('backdrop-filter')).toBe('blur(2px)');
+      expect(first.style.getPropertyPriority('backdrop-filter')).toBe('important');
+      expect(second.find('filter')).toBeDefined();
+    } finally {
+      current.destroy();
+      neighbor.destroy();
+    }
+    expect(second.children).toHaveLength(0);
+  });
+
+  it('sync после замены контента возвращает тот же фильтр, сохраняя новый контент и handle', () => {
+    const owner = new FilterDocument();
+    vi.stubGlobal('document', owner);
+    vi.stubGlobal('HTMLElement', FilterNode);
+    vi.stubGlobal('HTMLSlotElement', class extends FilterNode {});
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(): void {}
+        disconnect(): void {}
+      },
+    );
+    const surface = new FilterNode('article', owner);
+    const attachSpy = vi.fn(attach);
+    const mounted = mountEngine(
+      {
+        gate: () => true,
+        selector: '.lab-material',
+        wants: () => true,
+        refreshHeld: true,
+        attach: attachSpy,
+      },
+      surface as unknown as HTMLElement,
+    );
+    mounted.sync();
+    const filter = surface.find('filter');
+    const svg = surface.find('svg');
+    expect(filter).toBeDefined();
+    svg?.remove();
+    const content = new FilterNode('span', owner);
+    surface.appendChild(content);
+    try {
+      mounted.sync();
+      mounted.sync();
+      expect(
+        surface.find('filter') === filter,
+        'тот же фильтр возвращается без нового attach',
+      ).toBe(true);
+      expect(surface.children.length).toBe(2);
+      expect(surface.children[0] === content && surface.children[1] === svg).toBe(true);
+      expect(attachSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      mounted.dispose();
+    }
+    mounted.sync();
+    attachSpy.mock.results[0]?.value.restore?.();
+    expect(surface.children.length).toBe(1);
+    expect(surface.children[0] === content).toBe(true);
+  });
+});
+
 describe('честные деградации: движок гаснет во всех медиа-режимах листа', () => {
-  it('каждый запрещающий @media листа есть в ACRYLIC_ENGINE_MEDIA', () => {
+  it('каждый запрещающий @media листа есть в MATERIAL_ENGINE_MEDIA', () => {
     // Класс: «новая деградация добавлена в лист, движок о ней не знает» —
     // инлайн пережил бы её. Все transparency/contrast/forced-медиа листа
     // обязаны быть перечислены движку.
-    const sheetMedia = [
-      '(prefers-reduced-transparency: reduce)',
-      '(prefers-contrast: more)',
-      '(forced-colors: active)',
-    ];
+    const sheetMedia = ['(prefers-reduced-transparency: reduce)', '(forced-colors: active)'];
     for (const query of sheetMedia) {
       expect(css, `material.css должен нести деградацию ${query}`).toContain(`@media ${query}`);
-      expect(ACRYLIC_ENGINE_MEDIA, `движок должен гаснуть под ${query}`).toContain(query);
+      expect(MATERIAL_ENGINE_MEDIA, `движок должен гаснуть под ${query}`).toContain(query);
     }
+    expect(MATERIAL_ENGINE_MEDIA).toContain('(prefers-contrast: more)');
   });
 
-  it('binding acrylic несёт blocked=acrylicMediaBlocked + mediaQueries, рантайм слушает их change', () => {
+  it('binding сохраняет системные запреты, контраст разрешает per-surface и слушает change', () => {
     // Смысл замка (не строка): acrylic-движок гаснет под запрещающими медиа
     // (blocked опустошает want в mountEngine) И их смена ре-синкает mount.
-    expect(runtimeSrc).toContain('blocked: acrylicMediaBlocked');
-    expect(runtimeSrc).toContain('mediaQueries: ACRYLIC_ENGINE_MEDIA');
-    expect(runtimeSrc).toContain("mq.addEventListener('change', raf.schedule)");
+    expect(runtimeSrc).toContain('blocked: materialMediaBlocked');
+    expect(runtimeSrc).toContain('mediaQueries: MATERIAL_ENGINE_MEDIA');
+    expect(runtimeSrc).toContain("inModeScope(el, 'acrylic') && !prefersMoreContrast(el)");
+    expect(runtimeSrc).toContain("inModeScope(el, 'glass') && !prefersMoreContrast(el)");
+    expect(runtimeSrc).toContain("'data-contrast'");
+    expect(runtimeSrc).toContain("mq.addEventListener('change', schedule)");
     // mountEngine — держатель поведения: blocked() опустошает набор до скана.
     expect(mountSrc).toContain('if (!binding.blocked?.())');
   });
@@ -110,8 +293,7 @@ describe('родной LG-стиль региона (userSpaceOnUse, изотр�
     expect(engineSrc).not.toContain("'150%'");
   });
 
-  it('per-surface фильтр в общем defs-хосте (ensureHiddenDefs), uid — родной registry-стиль', () => {
-    expect(engineSrc).toContain('ensureHiddenDefs(DEFS_CLASS)');
+  it('фильтр сохраняет uid и registry поверхности', () => {
     expect(engineSrc).toContain('lab-acrylic-${++uid}');
     expect(engineSrc).toContain('registry.set(el, handle)');
   });
@@ -125,9 +307,9 @@ describe('гейт и скоуп', () => {
     expect(engineSrc).not.toContain("from './liquid-glass'");
   });
 
-  it('рантайм держит acrylic только под ближайшим acrylic-скоупом (закон nearest-scope)', () => {
-    // binding.wants = ближайший [data-material] == 'acrylic' (closest-scope).
+  it('рантайм читает эффективный CSS-режим, включая slot-наследование и деградации', () => {
     expect(runtimeSrc).toContain("wants: (el) => inModeScope(el, 'acrylic')");
-    expect(runtimeSrc).toContain("scope.getAttribute('data-material') === mode");
+    expect(runtimeSrc).toContain("getPropertyValue('--_material-mode')");
+    expect(runtimeSrc).not.toContain("closest('[data-material]')");
   });
 });

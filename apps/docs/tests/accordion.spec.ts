@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Accordion suite — a COMPOUND component that consumes the @zag-js/accordion GROUP
@@ -215,6 +216,11 @@ test('disabled: a disabled header does not open on either renderer', async ({ pa
 });
 
 test('visual parity: Lit and React resolve the same open-header label colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litTriggers(page, 'lit-accordion').nth(0),
+    reactTriggers(page, 'react-accordion').nth(0),
+  );
   const litOpen = litTriggers(page, 'lit-accordion').nth(0);
   const reactOpen = reactTriggers(page, 'react-accordion').nth(0);
   await expect(litOpen).toHaveAttribute('data-state', 'open');

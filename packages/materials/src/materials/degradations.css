@@ -1,10 +1,10 @@
 /* ════════════════════════════════════════════════════════════════════════════
  * DETERMINISTIC DEGRADATIONS — each collapses glass/acrylic to the SOLID canon.
- * Selector lists mirror the mode blocks (equal specificity) and sit AFTER them,
- * so at equal specificity source order lets the degradation win. The solid
- * canon is opaque → label contract always holds, blur cost is zero.
+ * Селекторы деградаций имеют вес (0,2,0), выше scoped-рецептов (0,1,0),
+ * поэтому ближайшая область не отменяет настройки доступности.
+ * Непрозрачный Solid сохраняет контраст меток и снимает стоимость блюра.
  * Acrylic-v2-движок дополнительно гасит СЕБЯ под теми же медиа в JS
- * (ACRYLIC_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
+ * (MATERIAL_ENGINE_MEDIA): его инлайн-стиль сильнее этих листовых правил —
  * паритет списков закреплён acrylic-engine-contract.test.
  * ════════════════════════════════════════════════════════════════════════════ */
 
@@ -14,7 +14,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;
@@ -31,7 +34,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;
@@ -41,21 +47,8 @@
   }
 }
 
-/* 3. prefers-contrast: more → solid (strengthen: opaque tint, maximum contrast). */
-@media (prefers-contrast: more) {
-  [data-material="glass"] .lab-material,
-  [data-material="glass"].lab-material,
-  [data-material="acrylic"] .lab-material,
-  [data-material="acrylic"].lab-material,
-  .lab-material {
-    --_base-paint: var(--_base);
-    --_blur: 0px;
-    --_saturate: 100%;
-    --_noise: none;
-    --_rim: none;
-    -webkit-backdrop-filter: none;
-  }
-}
+/* 3. Контраст области разрешён colors/contract.css. Glass и acrylic выбирают
+   solid через его маркеры; OS more не перебивает явный normal у потомка. */
 
 /* 4. forced-colors: active → system surface, translucency stripped. We DON'T
  * hardcode system colours (Canvas/CanvasText): we drop the tint GRADIENT and
@@ -67,7 +60,10 @@
   [data-material="glass"].lab-material,
   [data-material="acrylic"] .lab-material,
   [data-material="acrylic"].lab-material,
-  .lab-material {
+  .lab-material.lab-material,
+  :host(.lab-material) {
+    --_material-mode: solid;
+    --_material-live: 0;
     --_base-paint: var(--_base);
     --_blur: 0px;
     --_saturate: 100%;

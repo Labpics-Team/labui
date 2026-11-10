@@ -5,19 +5,19 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/switch';
 import type { LabSwitch } from '@labpics/ui-core/switch';
 
 /** SSR-пропы <lab-switch> (атрибуты/свойства), взяты из класса ядра (LabSwitch). */
-export type SwitchSsrProps = Partial<Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'disabled' | 'name'>>;
+export type SwitchSsrProps = Partial<Pick<LabSwitch, 'type' | 'size' | 'checked' | 'defaultChecked' | 'disabled' | 'name' | 'labelStart' | 'hideLabelStart' | 'hideLabelEnd' | 'ariaLabel'>>;
 /** SSR-слоты <lab-switch> — предрендеренные строки контента. */
 export type SwitchSsrSlots = { default?: string; iconOff?: string; iconOn?: string };
 
 /**
- * Рендерит <lab-switch> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-switch> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderSwitch(
   props: SwitchSsrProps = {},
@@ -26,9 +26,13 @@ export function renderSwitch(
   return renderToString(html`<lab-switch
       type=${ifDefined(props.type)}
       size=${ifDefined(props.size)}
-      ?checked=${Boolean(props.checked)}
-      ?default-checked=${Boolean(props.defaultChecked)}
-      ?disabled=${Boolean(props.disabled)}
+      .checked=${props.checked === undefined ? noChange : Boolean(props.checked)}
+      .defaultChecked=${props.defaultChecked === undefined ? noChange : Boolean(props.defaultChecked)}
+      .disabled=${props.disabled === undefined ? noChange : Boolean(props.disabled)}
       name=${ifDefined(props.name)}
+      label-start=${ifDefined(props.labelStart)}
+      .hideLabelStart=${props.hideLabelStart === undefined ? noChange : Boolean(props.hideLabelStart)}
+      .hideLabelEnd=${props.hideLabelEnd === undefined ? noChange : Boolean(props.hideLabelEnd)}
+      aria-label=${ifDefined(props.ariaLabel)}
     >${slots.iconOff ? html`<span slot="icon-off">${unsafeHTML(slots.iconOff)}</span>` : ''}${slots.iconOn ? html`<span slot="icon-on">${unsafeHTML(slots.iconOn)}</span>` : ''}${unsafeHTML(slots.default ?? '')}</lab-switch>`);
 }

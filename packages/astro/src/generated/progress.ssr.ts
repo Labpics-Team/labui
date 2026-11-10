@@ -5,7 +5,7 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, noChange } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/progress';
 import type { LabProgress } from '@labpics/ui-core/progress';
 
@@ -15,19 +15,19 @@ export type ProgressSsrProps = Partial<Pick<LabProgress, 'size' | 'value' | 'min
 export type ProgressSsrSlots = Record<never, never>;
 
 /**
- * Рендерит <lab-progress> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
- * (side-effect импорт выше), поэтому @lit-labs/ssr рендерит его shadow root — styled
- * first paint без FOUC. Внедряется сырой строкой (v-html / {@html} / innerHTML / set:html).
+ * Рендерит <lab-progress> со стилями и Declarative Shadow DOM. Включите строку в
+ * серверный ответ через v-html / {@html} / set:html либо серверный HTML-шаблон.
+ * Обычная клиентская вставка innerHTML не создаёт declarative shadow root.
  */
 export function renderProgress(
   props: ProgressSsrProps = {},
 ): string {
   return renderToString(html`<lab-progress
       size=${ifDefined(props.size)}
-      .value=${props.value}
+      .value=${props.value === undefined ? noChange : props.value}
       min=${ifDefined(props.min)}
       max=${ifDefined(props.max)}
       label=${ifDefined(props.label)}
-      ?show-value-text=${Boolean(props.showValueText)}
+      .showValueText=${props.showValueText === undefined ? noChange : Boolean(props.showValueText)}
     ></lab-progress>`);
 }

@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Badge suite — a presentational primitive, verified on BOTH renderers.
@@ -27,6 +28,32 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/badge.html');
 });
 
+test('адаптер сохраняет размер иконки при rem-масштабировании и убирает пустой слот', async ({
+  page,
+}) => {
+  const badge = page.getByTestId('vue-icon');
+  await expect(badge.locator('svg')).toBeVisible();
+  for (const root of [16, 20]) {
+    await page.evaluate((size) => {
+      document.documentElement.style.fontSize = `${size}px`;
+    }, root);
+    const rect = await badge.locator('svg').boundingBox();
+    expect(rect?.width).toBe(root * 0.75);
+    expect(rect?.height).toBe(root * 0.75);
+  }
+  await page.getByTestId('vue-toggle').click();
+  await expect(badge.locator('svg')).toHaveCount(0);
+  const width = () => badge.locator('.badge').evaluate((el) => el.getBoundingClientRect().width);
+  const bare = await page
+    .getByTestId('vue-bare')
+    .locator('.badge')
+    .evaluate((el) => el.getBoundingClientRect().width);
+  await expect.poll(width).toBe(bare);
+  await page.getByTestId('vue-toggle').click();
+  await expect(badge.locator('svg')).toBeVisible();
+  expect((await badge.locator('svg').boundingBox())?.width).toBe(15);
+});
+
 test('delivered HTML carries the Lit element (React island mounts on the client)', async ({
   request,
 }) => {
@@ -36,6 +63,11 @@ test('delivered HTML carries the Lit element (React island mounts on the client)
 });
 
 test('visual parity: Lit and React resolve the same surface + label colours', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litBadge(page, 'lit-brand-fill'),
+    reactBadge(page, 'react-brand-fill'),
+  );
   await expect(reactBadge(page, 'react-brand-fill')).toBeVisible();
 
   for (const variant of [

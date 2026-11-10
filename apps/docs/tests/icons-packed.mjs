@@ -26,6 +26,82 @@ const ROOT = resolve(HERE, '../../..');
 const HASH = /^[a-f0-9]{64}$/;
 const outside = (path) => path === '..' || path.startsWith(`..${sep}`) || isAbsolute(path);
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const RUNTIME_FIELDS = ['dependencies', 'optionalDependencies', 'peerDependencies'];
+const PACKAGE_NAMES = {
+  icons: '@labpics/icons',
+  uiCore: '@labpics/ui-core',
+  uiMaterials: '@labpics/ui-materials',
+  uiTokens: '@labpics/ui-tokens',
+  uiShadow: '@labpics/ui-shadow',
+};
+
+export function subjectPackageKeys(schemaVersion) {
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
+  return schemaVersion >= 4 ? Object.keys(PACKAGE_NAMES) : ['icons', 'uiCore', 'uiShadow'];
+}
+
+function runtimeFields(manifest) {
+  return Object.fromEntries(RUNTIME_FIELDS.map((field) => [field, manifest[field] ?? {}]));
+}
+
+// pnpm заменяет workspace-диапазоны при pack. В consumer должны попасть все
+// runtime-пакеты из этого source closure; devDependencies остаются у сборки.
+export function runtimeDependencyContracts(manifests) {
+  const byName = new Map(Object.values(manifests).map((item) => [item.name, item]));
+  assert.equal(byName.size, Object.keys(manifests).length, 'повтор package name');
+  return Object.fromEntries(
+    Object.entries(manifests).map(([key, manifest]) => [
+      key,
+      Object.fromEntries(
+        RUNTIME_FIELDS.map((field) => [
+          field,
+          Object.fromEntries(
+            Object.entries(manifest[field] ?? {}).map(([name, range]) => {
+              assert.equal(typeof range, 'string', `${manifest.name}: ${field}.${name}`);
+              if (!range.startsWith('workspace:')) return [name, range];
+              const dependency = byName.get(name);
+              assert.ok(
+                dependency,
+                `${manifest.name}: runtime workspace dependency ${name} отсутствует среди архивов`,
+              );
+              const requested = range.slice('workspace:'.length);
+              assert.ok(
+                ['', '*', '^', '~'].includes(requested),
+                `${manifest.name}: unsupported workspace range ${range}`,
+              );
+              return [
+                name,
+                `${['^', '~'].includes(requested) ? requested : ''}${dependency.version}`,
+              ];
+            }),
+          ),
+        ]),
+      ),
+    ]),
+  );
+}
+
+export function assertArchiveManifest(manifest, expected) {
+  assert.equal(manifest.name, expected.name, 'archive package name');
+  assert.equal(manifest.version, expected.version, 'archive package version');
+  if (expected.runtimeDependencies)
+    assert.deepEqual(
+      runtimeFields(manifest),
+      expected.runtimeDependencies,
+      `${expected.name}: archive runtime dependencies differ from source`,
+    );
+}
+
+export function readArchiveManifest(path, expected) {
+  // Только один файл в stdout: tar не распаковывает произвольные пути на диск.
+  const bytes = execFileSync('tar', ['-xOf', path, 'package/package.json'], {
+    timeout: 10_000,
+    maxBuffer: 1024 * 1024,
+  });
+  const manifest = parseIconsJson(bytes);
+  assertArchiveManifest(manifest, expected);
+  return manifest;
+}
 
 const REQUIRED_PUBLIC_ENTRIES = PUBLIC_ENTRIES.slice(0, 3);
 const STATE_ENTRY = PUBLIC_ENTRIES[3];
@@ -38,16 +114,16 @@ export function stateReferenceContract(group) {
 }
 
 export function consumerPublicEntries(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
   return [
     ...REQUIRED_PUBLIC_ENTRIES,
     ...(schemaVersion >= 2 ? [STATE_ENTRY] : []),
-    ...(schemaVersion === 3 ? [EXPRESSION_ENTRY] : []),
+    ...(schemaVersion >= 3 ? [EXPRESSION_ENTRY] : []),
   ];
 }
 
 export function subjectStateReferences(subject) {
-  return subject.schemaVersion === 3
+  return subject.schemaVersion >= 3
     ? subject.stateReferences
     : subject.schemaVersion === 2
       ? { 'status-circle': subject.stateReference }
@@ -138,19 +214,31 @@ export function assertActionsRunner(env = process.env) {
 
 export function validateSubject(subject) {
   assertPublicProvenance(subject, 'subject');
-  assert.ok([1, 2, 3].includes(subject?.schemaVersion));
-  assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), ['icons', 'uiCore', 'uiShadow']);
-  for (const [key, name] of [
-    ['icons', '@labpics/icons'],
-    ['uiCore', '@labpics/ui-core'],
-    ['uiShadow', '@labpics/ui-shadow'],
-  ]) {
+  const packageKeys = subjectPackageKeys(subject?.schemaVersion);
+  assert.deepEqual(Object.keys(subject.packages ?? {}).sort(), packageKeys.toSorted());
+  for (const key of packageKeys) {
+    const name = PACKAGE_NAMES[key];
     const item = subject.packages?.[key];
     assert.equal(item?.name, name);
     assert.ok(typeof item.version === 'string' && item.version.length > 0);
     assert.match(item.archiveSha256, HASH);
     assert.ok(Number.isSafeInteger(item.archiveBytes) && item.archiveBytes > 0);
     assert.match(item.sourceCommit, /^[a-f0-9]{40}$/);
+    if (subject.schemaVersion >= 4) {
+      assert.deepEqual(
+        Object.keys(item.runtimeDependencies ?? {}).sort(),
+        RUNTIME_FIELDS.toSorted(),
+      );
+      for (const field of RUNTIME_FIELDS) {
+        const dependencies = item.runtimeDependencies[field];
+        assert.ok(dependencies && typeof dependencies === 'object' && !Array.isArray(dependencies));
+        for (const range of Object.values(dependencies))
+          assert.ok(
+            typeof range === 'string' && range.length > 0 && !range.startsWith('workspace:'),
+          );
+      }
+      if (key !== 'icons') assert.equal(item.sourceCommit, subject.packages.uiCore.sourceCommit);
+    }
   }
   const reference = subject.authorReference;
   assert.ok(typeof reference?.fileName === 'string' && /Lab UI.*v2\.1/.test(reference.fileName));
@@ -228,7 +316,7 @@ export function validateSubject(subject) {
       );
     }
   }
-  if (subject.schemaVersion === 3) {
+  if (subject.schemaVersion >= 3) {
     assert.equal(subject.stateReference, undefined);
     assert.deepEqual(
       Object.keys(subject.stateReferences ?? {}).sort(),
@@ -352,7 +440,7 @@ export function validateStateReference(reference, author, group = 'status-circle
 
 // Проверенные bytes переходят в собственный snapshot; input path больше не читается.
 export async function snapshotArchive(consumer, key, inputPath, expected) {
-  assert.ok(['icons', 'uiCore', 'uiShadow'].includes(key));
+  assert.ok(Object.hasOwn(PACKAGE_NAMES, key));
   const bytes = await readFile(inputPath);
   assert.equal(hash(bytes), expected.archiveSha256, key);
   assert.equal(bytes.length, expected.archiveBytes, key);
@@ -762,11 +850,11 @@ window.__iconsPacked.ready = Promise.all([window.__iconsPacked.ready, expression
 `;
 
 export function consumerFixture(schemaVersion) {
-  assert.ok([1, 2, 3].includes(schemaVersion));
+  assert.ok([1, 2, 3, 4].includes(schemaVersion));
   return (
     FIXTURE +
     (schemaVersion >= 2 ? STATE_FIXTURE : '') +
-    (schemaVersion === 3 ? EXPRESSION_FIXTURE : '')
+    (schemaVersion >= 3 ? EXPRESSION_FIXTURE : '')
   );
 }
 
@@ -916,6 +1004,17 @@ export function verifyBlockedPointer(events, point) {
   );
 }
 
+function assertLargeIconButton(target, name) {
+  assert.deepEqual(target, {
+    width: 56,
+    height: 56,
+    name,
+    type: 'button',
+    iconHidden: 'true',
+    slotHidden: 'true',
+  });
+}
+
 async function browserProof(browser, url, reference, out, records, browserErrors) {
   for (const reducedMotion of ['no-preference', 'reduce']) {
     const context = await browser.newContext({
@@ -958,14 +1057,7 @@ async function browserProof(browser, url, reference, out, records, browserErrors
         assert.deepEqual(initial.capabilities.anatomy, expected.anatomy);
         assert.deepEqual(initial.capabilities.motion.gestures, [expected.gesture]);
         assert.deepEqual(initial.capabilities.supportedAxes, []);
-        assert.deepEqual(initial.target, {
-          width: 48,
-          height: 48,
-          name: 'Обновить',
-          type: 'button',
-          iconHidden: 'true',
-          slotHidden: 'true',
-        });
+        assertLargeIconButton(initial.target, 'Обновить');
         const host = page.locator(`lab-button[data-variant="${variant}"]`);
         const button = host.getByRole('button', { name: 'Обновить', exact: true });
         assert.equal(await button.count(), 1, 'native accessible button не найден');
@@ -1289,14 +1381,7 @@ async function stateBrowserProof(page, reference, reducedMotion, records) {
     assertStateAnatomy(observation, reference);
   };
   oneHot(initial, reference.defaultState);
-  assert.deepEqual(initial.target, {
-    width: 48,
-    height: 48,
-    name: contract.buttonLabel,
-    type: 'button',
-    iconHidden: 'true',
-    slotHidden: 'true',
-  });
+  assertLargeIconButton(initial.target, contract.buttonLabel);
   const host = page.locator(`lab-button[data-state-group="${reference.group}"]`);
   const button = host.getByRole('button', { name: contract.buttonLabel, exact: true });
   assert.equal(await button.count(), 1);
@@ -1503,6 +1588,8 @@ export async function main(args = process.argv.slice(2)) {
       [
         '--icons-tarball',
         '--ui-core-tarball',
+        '--ui-materials-tarball',
+        '--ui-tokens-tarball',
         '--ui-shadow-tarball',
         '--subject',
         '--out',
@@ -1540,6 +1627,11 @@ export async function main(args = process.argv.slice(2)) {
   try {
     const subjectBytes = await readFile(resolve(options.get('--subject')));
     const subject = validateSubject(parseIconsJson(subjectBytes));
+    const packageOptions = subjectPackageKeys(subject.schemaVersion).map((key) => [
+      key,
+      `--${key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}-tarball`,
+    ]);
+    for (const [, option] of packageOptions) assert.ok(options.has(option), `Не хватает ${option}`);
     const fixture = consumerFixture(subject.schemaVersion);
     const requiredEntries = consumerPublicEntries(subject.schemaVersion);
     receipt.subject = subject;
@@ -1567,15 +1659,13 @@ export async function main(args = process.argv.slice(2)) {
     consumer = await mkdtemp(join(tmpdir(), 'labui-icons-consumer-'));
     assert.ok(outside(relative(ROOT, await realpath(consumer))));
     const archives = [];
-    for (const [key, option] of [
-      ['icons', '--icons-tarball'],
-      ['uiCore', '--ui-core-tarball'],
-      ['uiShadow', '--ui-shadow-tarball'],
-    ]) {
+    for (const [key, option] of packageOptions) {
       archives.push(
         await snapshotArchive(consumer, key, resolve(options.get(option)), subject.packages[key]),
       );
     }
+    for (const archive of archives)
+      readArchiveManifest(archive.path, subject.packages[archive.key]);
     receipt.archives = archives.map(({ path, ...archive }) => ({
       key: archive.key,
       inputNameSha256: hash(archive.inputName),
@@ -1617,8 +1707,7 @@ export async function main(args = process.argv.slice(2)) {
       );
       const bytes = await readFile(path);
       const manifest = JSON.parse(bytes);
-      assert.equal(manifest.name, expected.name);
-      assert.equal(manifest.version, expected.version);
+      assertArchiveManifest(manifest, expected);
       assert.ok(
         Object.values(manifest.dependencies ?? {}).every(
           (value) => !value.startsWith('workspace:'),
@@ -1629,7 +1718,7 @@ export async function main(args = process.argv.slice(2)) {
         lock.dependencies?.[expected.name] ??
         {};
       const archive = archives.find((item) => subject.packages[item.key].name === expected.name);
-      if (archive && locked.integrity !== undefined) {
+      if (archive && (subject.schemaVersion >= 4 || locked.integrity !== undefined)) {
         assert.ok(
           typeof locked.integrity === 'string' &&
             locked.integrity.split(/\s+/).includes(archive.integrity),

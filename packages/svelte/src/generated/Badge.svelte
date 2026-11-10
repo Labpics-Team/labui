@@ -6,8 +6,9 @@
 <script lang="ts">
   import '@labpics/ui-core/badge';
   import type { LabBadge } from '@labpics/ui-core/badge';
-  import type { Snippet } from 'svelte';
-  import { type LabPropSpec, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { type Snippet, untrack } from 'svelte';
+  import { type LabPropSpec, initialBooleanProps, forwardDeclared, forwardEvents } from '../runtime/forward.js';
+  import { slotFillMarkup } from '../runtime/slot-projection.js';
 
   /** Пропы <lab-badge> — типы взяты прямо из класса ядра (LabBadge). */
   interface Props {
@@ -15,11 +16,13 @@
     type?: LabBadge['type'];
     disabled?: LabBadge['disabled'];
     dot?: Snippet;
+    leading?: Snippet;
+    trailing?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { color, type, disabled, children, dot, ...rest }: Props = $props();
+  let { color, type, disabled, children, dot, leading, trailing, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'color', attr: 'color', kind: 'string' },
@@ -29,13 +32,24 @@
 
   let el: HTMLElement | undefined = $state();
 
+  // Клиентский snapshot заполняется до вставки узла и больше не меняется.
+  // SSR-компилятор исключает предэффект; серверный рендер выполняет /ssr.
+  const initialBooleans: Record<string, boolean> = {};
+  $effect.pre(() => {
+    Object.assign(initialBooleans, untrack(() => initialBooleanProps(specs, { color, type, disabled })));
+  });
+
+
   $effect(() => {
     forwardDeclared(el, specs, { color, type, disabled });
   });
   $effect(() => forwardEvents(el, {  }));
 </script>
 
-<lab-badge bind:this={el} {...rest}>
+<lab-badge bind:this={el} {...rest} {...initialBooleans}>
+  {#if dot || leading || trailing}{@html slotFillMarkup}{/if}
   {@render children?.()}
-  {#if dot}<div slot="dot" style="display:contents">{@render dot()}</div>{/if}
+  {#if dot}<span slot="dot" data-lab-slot-fill style="display:inline-flex">{@render dot()}</span>{/if}
+  {#if leading}<span slot="leading" data-lab-slot-fill style="display:inline-flex">{@render leading()}</span>{/if}
+  {#if trailing}<span slot="trailing" data-lab-slot-fill style="display:inline-flex">{@render trailing()}</span>{/if}
 </lab-badge>

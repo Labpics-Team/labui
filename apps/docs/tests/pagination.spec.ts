@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Pagination suite — a component that OWNS a page value and so drives the
@@ -149,6 +150,7 @@ test('ellipsis: present, aria-hidden, and not a button (both renderers)', async 
 });
 
 test('visual parity: Lit and React resolve the same current-page background', async ({ page }) => {
+  await waitForThemePaint(page, litSelected(page), reactSelected(page));
   await expect(reactSelected(page)).toBeVisible();
   expect(await reactSelected(page).evaluate(bg)).toBe(await litSelected(page).evaluate(bg));
 });

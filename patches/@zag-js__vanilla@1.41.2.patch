@@ -1,0 +1,56 @@
+diff --git a/dist/machine.js b/dist/machine.js
+--- a/dist/machine.js
++++ b/dist/machine.js
+@@ -46,6 +46,7 @@ var VanillaMachine = class {
+     __publicField(this, "transition", null);
+     __publicField(this, "cleanups", []);
+     __publicField(this, "subscriptions", []);
+     __publicField(this, "userPropsRef");
++    __publicField(this, "lifetime", 0);
+     __publicField(this, "getEvent", () => ({
+       ...this.event,
+@@ -66,6 +67,8 @@ var VanillaMachine = class {
+     __publicField(this, "send", (event) => {
+       if (this.status !== import_core.MachineStatus.Started) return;
++      const lifetime = this.lifetime;
+       queueMicrotask(() => {
++        if (this.status !== import_core.MachineStatus.Started || lifetime !== this.lifetime) return;
+         if (!event) return;
+         this.previousEvent = this.event;
+         this.event = event;
+@@ -282,6 +285,7 @@ var VanillaMachine = class {
+   }
+   start() {
++    this.lifetime += 1;
+     this.status = import_core.MachineStatus.Started;
+     this.debug("initializing...");
+     this.state.invoke(this.state.initial, import_core.INIT_STATE);
+     this.setupTrackers();
+diff --git a/dist/machine.mjs b/dist/machine.mjs
+--- a/dist/machine.mjs
++++ b/dist/machine.mjs
+@@ -44,6 +44,7 @@ var VanillaMachine = class {
+     __publicField(this, "transition", null);
+     __publicField(this, "cleanups", []);
+     __publicField(this, "subscriptions", []);
+     __publicField(this, "userPropsRef");
++    __publicField(this, "lifetime", 0);
+     __publicField(this, "getEvent", () => ({
+       ...this.event,
+@@ -64,6 +65,8 @@ var VanillaMachine = class {
+     __publicField(this, "send", (event) => {
+       if (this.status !== MachineStatus.Started) return;
++      const lifetime = this.lifetime;
+       queueMicrotask(() => {
++        if (this.status !== MachineStatus.Started || lifetime !== this.lifetime) return;
+         if (!event) return;
+         this.previousEvent = this.event;
+         this.event = event;
+@@ -280,6 +283,7 @@ var VanillaMachine = class {
+   }
+   start() {
++    this.lifetime += 1;
+     this.status = MachineStatus.Started;
+     this.debug("initializing...");
+     this.state.invoke(this.state.initial, INIT_STATE);
+     this.setupTrackers();

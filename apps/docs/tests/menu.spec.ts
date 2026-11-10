@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Menu suite — the second compound + positioned canon (action menu), verified on
@@ -423,10 +424,13 @@ test('danger item: the destructive action paints the danger label role', async (
 });
 
 test('visual parity: Lit and React resolve the same menu colour when open', async ({ page }) => {
+  await waitForThemePaint(page, litTrigger(page, 'lit-menu'), reactTrigger(page, 'react-menu'));
   await litTrigger(page, 'lit-menu').click();
+  await waitForThemePaint(page, litContent(page, 'lit-menu'));
   const litBg = await litContent(page, 'lit-menu').evaluate(bg);
 
   await reactTrigger(page, 'react-menu').click();
+  await waitForThemePaint(page, reactOpenContent(page));
   const reactBg = await reactOpenContent(page).evaluate(bg);
 
   expect(reactBg, 'menu background parity').toBe(litBg);

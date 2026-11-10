@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Number Input suite — a MACHINE-DRIVEN numeric form field, verified on BOTH
@@ -210,6 +211,11 @@ test('disabled: the native input is non-interactive on both renderers', async ({
 });
 
 test('visual parity: Lit and React resolve the same control border colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-neutral').locator('.control'),
+    reactField(page, 'react-neutral').locator('.lab-field-control'),
+  );
   const litBorder = await litHost(page, 'lit-neutral').locator('.control').evaluate(borderColor);
   const reactBorder = await reactField(page, 'react-neutral')
     .locator('.lab-field-control')
@@ -218,6 +224,11 @@ test('visual parity: Lit and React resolve the same control border colour', asyn
 });
 
 test('visual parity: the danger sentiment re-points the border identically', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-invalid').locator('.control'),
+    reactField(page, 'react-invalid').locator('.lab-field-control'),
+  );
   const litBorder = await litHost(page, 'lit-invalid').locator('.control').evaluate(borderColor);
   const reactBorder = await reactField(page, 'react-invalid')
     .locator('.lab-field-control')

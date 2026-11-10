@@ -33,6 +33,39 @@ describe('sRGB colour math (WCAG 2.1)', () => {
 });
 
 describe('evaluateTier — the α-boundary decision bites', () => {
+  it('явная непрозрачная Solid-заливка независима от live tint-pair', () => {
+    const pair = {
+      tint: { r: 255, g: 255, b: 255, a: 0.5 },
+      base: { r: 255, g: 255, b: 255, a: 1 },
+    };
+    const explicit = { ...pair, solid: { r: 0, g: 0, b: 0, a: 1 } };
+    const legacy = evaluateTier('soft', 'light', pair, POLARITY);
+    const actual = evaluateTier('soft', 'light', explicit, POLARITY);
+    expect(legacy.solidLuminance).toBe(1);
+    expect(actual.solidLuminance).toBe(0);
+    expect(actual.label).toBe('white');
+    expect(legacy.label).toBe('near-black');
+    expect(actual.effLow).toBe(legacy.effLow);
+    expect(actual.effHigh).toBe(legacy.effHigh);
+    expect(evaluateTier('soft', 'light', { ...pair, solid: pair.base }, POLARITY)).toEqual(legacy);
+  });
+
+  it.each([
+    { r: 0, g: 0, b: 0, a: 0.5 },
+    { r: 0, g: 0, b: 0, a: Number.NaN },
+    { r: -1, g: 0, b: 0, a: 1 },
+    { r: 0, g: 256, b: 0, a: 1 },
+    { r: 0, g: 0, b: Number.NaN, a: 1 },
+    null as unknown as Rgba,
+  ])('невалидная Solid-заливка не превращается в гарантию: %j', (solid) => {
+    const fill = {
+      tint: { r: 255, g: 255, b: 255, a: 0.5 },
+      base: { r: 255, g: 255, b: 255, a: 1 },
+      solid,
+    };
+    expect(() => evaluateTier('soft', 'light', fill, POLARITY)).toThrow(RangeError);
+  });
+
   it('a DENSE tier (α high) holds its label across the whole backdrop range', () => {
     const verdict = evaluateTier(
       'base',

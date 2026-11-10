@@ -1,0 +1,26 @@
+<!doctype html>
+<html class="lab-scope" lang="ru" data-theme="dark" data-material="solid">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Switch: проверка движения</title>
+    <link rel="stylesheet" href="../switch-demo.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Switch: движение и жизненный цикл</h1>
+      <section class="row" id="lit-mount">
+        <lab-switch data-testid="lit-motion" size="m">Уведомления</lab-switch>
+      </section>
+      <section class="row" id="react-motion"></section>
+      <section class="row" data-testid="lit-initial">
+        <!-- @@SSR_SWITCH_MOTION@@ -->
+      </section>
+      <section class="row" id="react-initial" data-testid="react-initial"><!-- @@SSR_REACT_SWITCH_MOTION@@ --></section>
+      <section class="row" data-testid="lit-default-initial"><!-- @@SSR_SWITCH_DEFAULT@@ --></section>
+      <section class="row" data-testid="lit-off-initial"><!-- @@SSR_SWITCH_OFF@@ --></section>
+      <section class="row" data-testid="lit-explicit-off-initial"><!-- @@SSR_SWITCH_EXPLICIT_OFF@@ --></section>
+    </main>
+    <script type="module" src="./switch-motion.tsx"></script>
+  </body>
+</html>

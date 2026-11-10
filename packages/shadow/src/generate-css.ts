@@ -1,4 +1,5 @@
 import {
+  BUTTON_INSET,
   DEFAULT_LIGHT_ANGLE_DEG,
   DEFAULT_TINT_STRENGTH,
   SHADOW_COLOR_FALLBACK_DARK,
@@ -61,6 +62,7 @@ export function generateShadowCss(): string {
     rootContract(),
     sizeRoles(elevations),
     roleAliases(),
+    buttonInsetRoles('light'),
     '}',
     '',
     sizeClasses(elevations),
@@ -184,7 +186,7 @@ function themeBlock(theme: ShadowTheme): string {
     (slot) => `  ${alphaVarName(slot)}: ${round(defaultAlpha(slot) * multiplier)};`,
   );
   const colorLine = `  ${SHADOW_COLOR_VAR}: ${anchor};`;
-  const body = [colorLine, ...alphaLines].join('\n');
+  const body = [colorLine, ...alphaLines, buttonInsetRoles(theme)].join('\n');
 
   if (theme === 'light') {
     return `[data-theme="light"] {\n${body}\n}`;
@@ -195,6 +197,19 @@ function themeBlock(theme: ShadowTheme): string {
     '@media (prefers-color-scheme: dark) {',
     `  :root:not([data-theme="light"]) {\n${indent(body)}\n  }`,
     '}',
+  ].join('\n');
+}
+
+/** Весь box-shadow публикуется в каждом scope: вложенная тема обновляет paint. */
+function buttonInsetRoles(theme: ShadowTheme): string {
+  const offset = BUTTON_INSET.offsetPx / 16;
+  const blur = BUTTON_INSET.blurPx / 16;
+  const paint = `color-mix(in srgb, var(--lab-bg-static-dark) ${BUTTON_INSET.alpha[theme] * 100}%, transparent)`;
+  return [
+    '',
+    '  /* Button: внутренний край меняет направление при нажатии. */',
+    `  --lab-shadow-button: inset 0 -${offset}rem ${blur}rem 0 ${paint};`,
+    `  --lab-shadow-button-pressed: inset 0 ${offset}rem ${blur}rem 0 ${paint};`,
   ].join('\n');
 }
 

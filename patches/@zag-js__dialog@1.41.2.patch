@@ -1,0 +1,341 @@
+diff --git a/dist/dialog.connect.js b/dist/dialog.connect.js
+index 194d494..40a1bb3 100644
+--- a/dist/dialog.connect.js
++++ b/dist/dialog.connect.js
+@@ -47,7 +47,7 @@ function connect(service, normalize) {
+     setOpen(nextOpen) {
+       const open2 = state.matches("open");
+       if (open2 === nextOpen) return;
+-      send({ type: nextOpen ? "OPEN" : "CLOSE" });
++      send({ type: nextOpen ? "OPEN" : "CLOSE", openingTrigger: nextOpen ? prop("triggerEl")?.() : void 0 });
+     },
+     triggerValue,
+     setTriggerValue(value) {
+@@ -71,7 +71,7 @@ function connect(service, normalize) {
+         onClick(event) {
+           if (event.defaultPrevented) return;
+           const shouldSwitch = open && value != null && !current;
+-          send({ type: shouldSwitch ? "TRIGGER_VALUE.SET" : "TOGGLE", value });
++          send({ type: shouldSwitch ? "TRIGGER_VALUE.SET" : "TOGGLE", value, openingTrigger: prop("triggerEl")?.() });
+         }
+       });
+     },
+diff --git a/dist/dialog.connect.mjs b/dist/dialog.connect.mjs
+index c2072e9..19357c3 100644
+--- a/dist/dialog.connect.mjs
++++ b/dist/dialog.connect.mjs
+@@ -13,7 +13,7 @@ function connect(service, normalize) {
+     setOpen(nextOpen) {
+       const open2 = state.matches("open");
+       if (open2 === nextOpen) return;
+-      send({ type: nextOpen ? "OPEN" : "CLOSE" });
++      send({ type: nextOpen ? "OPEN" : "CLOSE", openingTrigger: nextOpen ? prop("triggerEl")?.() : void 0 });
+     },
+     triggerValue,
+     setTriggerValue(value) {
+@@ -37,7 +37,7 @@ function connect(service, normalize) {
+         onClick(event) {
+           if (event.defaultPrevented) return;
+           const shouldSwitch = open && value != null && !current;
+-          send({ type: shouldSwitch ? "TRIGGER_VALUE.SET" : "TOGGLE", value });
++          send({ type: shouldSwitch ? "TRIGGER_VALUE.SET" : "TOGGLE", value, openingTrigger: prop("triggerEl")?.() });
+         }
+       });
+     },
+diff --git a/dist/dialog.machine.js b/dist/dialog.machine.js
+index 9108730..6b16b7d 100644
+--- a/dist/dialog.machine.js
++++ b/dist/dialog.machine.js
+@@ -61,6 +61,10 @@ var machine = (0, import_core.createMachine)({
+     const open = prop("open") || prop("defaultOpen");
+     return open ? "open" : "closed";
+   },
++  exit: ["clearOpeningTrigger"],
++  refs() {
++    return { openingTrigger: void 0 };
++  },
+   context({ bindable, prop, scope }) {
+     return {
+       rendered: bindable(() => ({
+@@ -86,6 +90,7 @@ var machine = (0, import_core.createMachine)({
+   states: {
+     open: {
+       entry: ["checkRenderedElements", "setInitialFocus"],
++      exit: ["clearOpeningTrigger"],
+       effects: ["trackDismissableElement", "trapFocus", "preventScroll", "hideContentBelow"],
+       on: {
+         "CONTROLLED.CLOSE": {
+@@ -159,7 +164,10 @@ var machine = (0, import_core.createMachine)({
+           defer: true,
+           pointerBlocking: prop("modal"),
+           layerStyleTargets: [() => dom.getBackdropEl(scope), () => dom.getPositionerEl(scope)],
+-          exclude: [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
++          exclude: () => {
++            const getTriggerEl = prop("triggerEl");
++            return getTriggerEl ? [getTriggerEl()].filter(Boolean) : [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean);
++          },
+           onInteractOutside(event) {
+             prop("onInteractOutside")?.(event);
+             if (!prop("closeOnInteractOutside")) {
+@@ -185,24 +193,35 @@ var machine = (0, import_core.createMachine)({
+         if (!prop("preventScroll")) return;
+         return (0, import_remove_scroll.preventBodyScroll)(scope.getDoc());
+       },
+-      trapFocus({ scope, prop, context }) {
++      trapFocus({ scope, prop, context, refs }) {
+         if (!prop("trapFocus")) return;
+         const contentEl = () => dom.getContentEl(scope);
++        const openingTrigger = refs.get("openingTrigger");
++        let suppliedTriggerAtActivation;
+         return (0, import_focus_trap.trapFocus)(contentEl, {
+           preventScroll: true,
+           returnFocusOnDeactivate: !!prop("restoreFocus"),
+           initialFocus: prop("initialFocusEl"),
++          onActivate() {
++            suppliedTriggerAtActivation = prop("triggerEl")?.();
++          },
+           setReturnFocus: (el) => {
+             const finalFocusEl = prop("finalFocusEl")?.();
+-            if (finalFocusEl) return finalFocusEl;
++            if (finalFocusEl?.isConnected && (0, import_dom_query.isFocusable)(finalFocusEl)) return finalFocusEl;
++            const getTriggerEl = prop("triggerEl");
++            const triggerEl = getTriggerEl?.();
++            if (triggerEl?.isConnected && (0, import_dom_query.isFocusable)(triggerEl)) return triggerEl;
++            if (getTriggerEl) {
++              return el !== openingTrigger && el !== suppliedTriggerAtActivation && el?.isConnected && (0, import_dom_query.isFocusable)(el) ? el : false;
++            }
+             const triggerValue = context.get("triggerValue");
+             if (triggerValue) {
+               const activeTriggerEl = dom.getActiveTriggerEl(scope, triggerValue);
+-              if (activeTriggerEl) return activeTriggerEl;
++              if (activeTriggerEl?.isConnected && (0, import_dom_query.isFocusable)(activeTriggerEl)) return activeTriggerEl;
+             }
+-            const fallbackTrigger = dom.getTriggerEls(scope)[0];
++            const fallbackTrigger = dom.getTriggerEls(scope).find((trigger) => trigger.isConnected && (0, import_dom_query.isFocusable)(trigger));
+             if (fallbackTrigger) return fallbackTrigger;
+-            return el;
++            return el?.isConnected && (0, import_dom_query.isFocusable)(el) ? el : false;
+           },
+           getShadowRoot: true
+         });
+@@ -232,10 +251,15 @@ var machine = (0, import_core.createMachine)({
+           });
+         });
+       },
+-      invokeOnClose({ prop }) {
++      clearOpeningTrigger({ refs }) {
++        refs.set("openingTrigger", void 0);
++      },
++      invokeOnClose({ prop, action }) {
++        action(["clearOpeningTrigger"]);
+         prop("onOpenChange")?.({ open: false });
+       },
+-      invokeOnOpen({ prop }) {
++      invokeOnOpen({ prop, refs, event }) {
++        refs.set("openingTrigger", event.openingTrigger);
+         prop("onOpenChange")?.({ open: true });
+       },
+       setTriggerValue({ context, event }) {
+diff --git a/dist/dialog.machine.mjs b/dist/dialog.machine.mjs
+index bf7210a..4ba6af5 100644
+--- a/dist/dialog.machine.mjs
++++ b/dist/dialog.machine.mjs
+@@ -2,7 +2,7 @@
+ import { ariaHidden } from "@zag-js/aria-hidden";
+ import { createMachine } from "@zag-js/core";
+ import { trackDismissableElement } from "@zag-js/dismissable";
+-import { getInitialFocus, raf } from "@zag-js/dom-query";
++import { getInitialFocus, isFocusable, raf } from "@zag-js/dom-query";
+ import { trapFocus } from "@zag-js/focus-trap";
+ import { preventBodyScroll } from "@zag-js/remove-scroll";
+ import * as dom from "./dialog.dom.mjs";
+@@ -27,6 +27,10 @@ var machine = createMachine({
+     const open = prop("open") || prop("defaultOpen");
+     return open ? "open" : "closed";
+   },
++  exit: ["clearOpeningTrigger"],
++  refs() {
++    return { openingTrigger: void 0 };
++  },
+   context({ bindable, prop, scope }) {
+     return {
+       rendered: bindable(() => ({
+@@ -52,6 +56,7 @@ var machine = createMachine({
+   states: {
+     open: {
+       entry: ["checkRenderedElements", "setInitialFocus"],
++      exit: ["clearOpeningTrigger"],
+       effects: ["trackDismissableElement", "trapFocus", "preventScroll", "hideContentBelow"],
+       on: {
+         "CONTROLLED.CLOSE": {
+@@ -125,7 +130,10 @@ var machine = createMachine({
+           defer: true,
+           pointerBlocking: prop("modal"),
+           layerStyleTargets: [() => dom.getBackdropEl(scope), () => dom.getPositionerEl(scope)],
+-          exclude: [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean),
++          exclude: () => {
++            const getTriggerEl = prop("triggerEl");
++            return getTriggerEl ? [getTriggerEl()].filter(Boolean) : [dom.getTriggerEl(scope), ...dom.getTriggerEls(scope)].filter(Boolean);
++          },
+           onInteractOutside(event) {
+             prop("onInteractOutside")?.(event);
+             if (!prop("closeOnInteractOutside")) {
+@@ -151,24 +159,35 @@ var machine = createMachine({
+         if (!prop("preventScroll")) return;
+         return preventBodyScroll(scope.getDoc());
+       },
+-      trapFocus({ scope, prop, context }) {
++      trapFocus({ scope, prop, context, refs }) {
+         if (!prop("trapFocus")) return;
+         const contentEl = () => dom.getContentEl(scope);
++        const openingTrigger = refs.get("openingTrigger");
++        let suppliedTriggerAtActivation;
+         return trapFocus(contentEl, {
+           preventScroll: true,
+           returnFocusOnDeactivate: !!prop("restoreFocus"),
+           initialFocus: prop("initialFocusEl"),
++          onActivate() {
++            suppliedTriggerAtActivation = prop("triggerEl")?.();
++          },
+           setReturnFocus: (el) => {
+             const finalFocusEl = prop("finalFocusEl")?.();
+-            if (finalFocusEl) return finalFocusEl;
++            if (finalFocusEl?.isConnected && isFocusable(finalFocusEl)) return finalFocusEl;
++            const getTriggerEl = prop("triggerEl");
++            const triggerEl = getTriggerEl?.();
++            if (triggerEl?.isConnected && isFocusable(triggerEl)) return triggerEl;
++            if (getTriggerEl) {
++              return el !== openingTrigger && el !== suppliedTriggerAtActivation && el?.isConnected && isFocusable(el) ? el : false;
++            }
+             const triggerValue = context.get("triggerValue");
+             if (triggerValue) {
+               const activeTriggerEl = dom.getActiveTriggerEl(scope, triggerValue);
+-              if (activeTriggerEl) return activeTriggerEl;
++              if (activeTriggerEl?.isConnected && isFocusable(activeTriggerEl)) return activeTriggerEl;
+             }
+-            const fallbackTrigger = dom.getTriggerEls(scope)[0];
++            const fallbackTrigger = dom.getTriggerEls(scope).find((trigger) => trigger.isConnected && isFocusable(trigger));
+             if (fallbackTrigger) return fallbackTrigger;
+-            return el;
++            return el?.isConnected && isFocusable(el) ? el : false;
+           },
+           getShadowRoot: true
+         });
+@@ -198,10 +217,15 @@ var machine = createMachine({
+           });
+         });
+       },
+-      invokeOnClose({ prop }) {
++      clearOpeningTrigger({ refs }) {
++        refs.set("openingTrigger", void 0);
++      },
++      invokeOnClose({ prop, action }) {
++        action(["clearOpeningTrigger"]);
+         prop("onOpenChange")?.({ open: false });
+       },
+-      invokeOnOpen({ prop }) {
++      invokeOnOpen({ prop, refs, event }) {
++        refs.set("openingTrigger", event.openingTrigger);
+         prop("onOpenChange")?.({ open: true });
+       },
+       setTriggerValue({ context, event }) {
+diff --git a/dist/dialog.props.js b/dist/dialog.props.js
+index b128780..752d644 100644
+--- a/dist/dialog.props.js
++++ b/dist/dialog.props.js
+@@ -52,7 +52,8 @@ var props = (0, import_types.createProps)()([
+   "preventScroll",
+   "restoreFocus",
+   "role",
+-  "trapFocus"
++  "trapFocus",
++  "triggerEl"
+ ]);
+ var splitProps = (0, import_utils.createSplitProps)(props);
+ // Annotate the CommonJS export names for ESM import in node:
+diff --git a/dist/dialog.props.mjs b/dist/dialog.props.mjs
+index 9867f9e..7a0f680 100644
+--- a/dist/dialog.props.mjs
++++ b/dist/dialog.props.mjs
+@@ -27,7 +27,8 @@ var props = createProps()([
+   "preventScroll",
+   "restoreFocus",
+   "role",
+-  "trapFocus"
++  "trapFocus",
++  "triggerEl"
+ ]);
+ var splitProps = createSplitProps(props);
+ export {
+diff --git a/dist/dialog.types.d.mts b/dist/dialog.types.d.mts
+index f162069..90b6488 100644
+--- a/dist/dialog.types.d.mts
++++ b/dist/dialog.types.d.mts
+@@ -52,6 +52,8 @@ interface DialogProps extends DirectionProperty, CommonProperties, DismissableEl
+      * Element to receive focus when the dialog is closed
+      */
+     finalFocusEl?: (() => MaybeElement) | undefined;
++    /** DOM owner; null отзывает supplied trigger. Без getter сохраняется DOM discovery. */
++    triggerEl?: (() => MaybeElement) | undefined;
+     /**
+      * Whether to restore focus to the element that had focus before the dialog was opened
+      */
+@@ -107,6 +109,9 @@ type PropsWithDefault = "closeOnInteractOutside" | "closeOnEscape" | "role" | "m
+ interface DialogSchema {
+     props: RequiredBy<DialogProps, PropsWithDefault>;
+     state: "open" | "closed";
++    refs: {
++        openingTrigger: MaybeElement | undefined;
++    };
+     context: {
+         rendered: {
+             title: boolean;
+@@ -116,10 +121,11 @@ interface DialogSchema {
+     };
+     guard: "isOpenControlled";
+     effect: "trackDismissableElement" | "preventScroll" | "trapFocus" | "hideContentBelow";
+-    action: "checkRenderedElements" | "setInitialFocus" | "invokeOnClose" | "invokeOnOpen" | "toggleVisibility" | "setTriggerValue";
++    action: "checkRenderedElements" | "setInitialFocus" | "invokeOnClose" | "invokeOnOpen" | "toggleVisibility" | "setTriggerValue" | "clearOpeningTrigger";
+     event: {
+         type: "CONTROLLED.OPEN" | "CONTROLLED.CLOSE" | "OPEN" | "CLOSE" | "TOGGLE" | "TRIGGER_VALUE.SET";
+         value?: string | null | undefined;
++        openingTrigger?: MaybeElement | undefined;
+     };
+ }
+ type DialogService = Service<DialogSchema>;
+diff --git a/dist/dialog.types.d.ts b/dist/dialog.types.d.ts
+index f162069..90b6488 100644
+--- a/dist/dialog.types.d.ts
++++ b/dist/dialog.types.d.ts
+@@ -52,6 +52,8 @@ interface DialogProps extends DirectionProperty, CommonProperties, DismissableEl
+      * Element to receive focus when the dialog is closed
+      */
+     finalFocusEl?: (() => MaybeElement) | undefined;
++    /** DOM owner; null отзывает supplied trigger. Без getter сохраняется DOM discovery. */
++    triggerEl?: (() => MaybeElement) | undefined;
+     /**
+      * Whether to restore focus to the element that had focus before the dialog was opened
+      */
+@@ -107,6 +109,9 @@ type PropsWithDefault = "closeOnInteractOutside" | "closeOnEscape" | "role" | "m
+ interface DialogSchema {
+     props: RequiredBy<DialogProps, PropsWithDefault>;
+     state: "open" | "closed";
++    refs: {
++        openingTrigger: MaybeElement | undefined;
++    };
+     context: {
+         rendered: {
+             title: boolean;
+@@ -116,10 +121,11 @@ interface DialogSchema {
+     };
+     guard: "isOpenControlled";
+     effect: "trackDismissableElement" | "preventScroll" | "trapFocus" | "hideContentBelow";
+-    action: "checkRenderedElements" | "setInitialFocus" | "invokeOnClose" | "invokeOnOpen" | "toggleVisibility" | "setTriggerValue";
++    action: "checkRenderedElements" | "setInitialFocus" | "invokeOnClose" | "invokeOnOpen" | "toggleVisibility" | "setTriggerValue" | "clearOpeningTrigger";
+     event: {
+         type: "CONTROLLED.OPEN" | "CONTROLLED.CLOSE" | "OPEN" | "CLOSE" | "TOGGLE" | "TRIGGER_VALUE.SET";
+         value?: string | null | undefined;
++        openingTrigger?: MaybeElement | undefined;
+     };
+ }
+ type DialogService = Service<DialogSchema>;

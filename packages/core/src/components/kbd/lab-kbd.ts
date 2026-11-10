@@ -95,8 +95,3 @@ declare global {
     'lab-kbd': LabKbd;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7).
-if (typeof customElements !== 'undefined' && !customElements.get('lab-kbd')) {
-  customElements.define('lab-kbd', LabKbd);
-}

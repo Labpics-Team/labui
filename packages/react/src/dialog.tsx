@@ -9,14 +9,11 @@
  * CSS, not a second behaviour.
  *
  * ── The overlay canon (React half) — the trap is REAL here for free ──────────────
- * The floating layer renders into a `createPortal` at `document.body` and the dialog
- * body (`content`) is a React child of the portalled `.content` element. Because
- * React's portal moves the actual DOM into body, the body's focusables physically live
- * inside the content element's subtree that Zag's trap walks — so the modal trap
- * contains them with no caveat. This is exactly what the Lit twin reconstructs by
- * relocating its slotted body into a body portal; React gets it from `createPortal`.
- * The portal is gated on a `mounted` flag so the server emits nothing for it (a dialog
- * is client-only).
+ * React помещает content в document.body через createPortal; controls остаются
+ * потомками модальной поверхности. Lit проецирует consumer subtree через слоты.
+ * Стабильная manual popover плоскость поднимает React portal над открытым Sheet.
+ * Оба рендерера используют поведение и общий focus runtime из Core.
+ * До mounted сервер не выводит клиентскую модальную поверхность.
  *
  * Client Component: a dialog is interactive (open state, focus, scroll-lock). It is a
  * leaf under a Server Component shell — never a `'use client'` page (dive-next P1).
@@ -24,12 +21,17 @@
 'use client';
 
 import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+import * as dialogMachine from '@labpics/ui-core/behaviors/dialog';
 import type { LabDialogRole, LabDialogSize } from '@labpics/ui-core/dialog';
-import * as dialogMachine from '@zag-js/dialog';
+import { dialogFinalFocusTarget } from '@labpics/ui-core/shared';
 import { type ReactNode, useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { DialogPortalPlane } from './components/dialog-portal-plane.js';
+import { type ModalTrigger, useModalTrigger } from './components/modal-trigger.js';
 import { useZag } from './use-zag.js';
 import './dialog.css';
+
+export type { ModalTrigger, ModalTriggerProps } from './components/modal-trigger.js';
 
 type DialogSchema = SchemaOf<dialogMachine.Service>;
 type DialogApi = dialogMachine.Api;
@@ -54,7 +56,9 @@ export interface DialogProps {
   role?: LabDialogRole;
   /** Fires when the machine opens or closes (machine is the source of truth). */
   onOpenChange?: (open: boolean) => void;
-  /** The trigger content — wrapped in the accessible trigger button. */
+  /** Одна настоящая Button/native button вместо встроенной кнопки; передайте ей props/ref. */
+  trigger?: ModalTrigger;
+  /** Подпись встроенной кнопки открытия. Для готовой Button используйте trigger. */
   children?: ReactNode;
 }
 
@@ -73,22 +77,29 @@ export function Dialog({
   closable = true,
   role = 'dialog',
   onOpenChange,
+  trigger: customTrigger,
   children,
 }: DialogProps): ReactNode {
+  const { triggerEl, contentRef, focusContext, renderTrigger } = useModalTrigger(
+    'LabDialog',
+    customTrigger,
+    children,
+  );
   const api = useZag(dialogModule, {
     id: useId(),
     role,
     modal,
+    triggerEl,
+    finalFocusEl: () => dialogFinalFocusTarget(focusContext()),
     onOpenChange: onOpenChange ? (details) => onOpenChange(details.open) : undefined,
   });
 
-  // Dialogs are client-only: gate the body portal on mount so SSR/first hydration emit
-  // nothing for the floating layer.
+  // SSR и первая hydration выводят только trigger; клиентская плоскость появляется после mount.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const floating = (
-    <>
+    <DialogPortalPlane open={api.open}>
       {modal && api.open && <div {...api.getBackdropProps()} className="lab-dialog-backdrop" />}
       <div
         {...api.getPositionerProps()}
@@ -96,7 +107,12 @@ export function Dialog({
         data-open={api.open || undefined}
         data-modal={modal || undefined}
       >
-        <div {...api.getContentProps()} className="lab-dialog-content" data-size={size}>
+        <div
+          {...api.getContentProps()}
+          ref={contentRef}
+          className="lab-dialog-content"
+          data-size={size}
+        >
           {heading != null && (
             <h2 {...api.getTitleProps()} className="lab-dialog-heading">
               {heading}
@@ -115,14 +131,12 @@ export function Dialog({
           )}
         </div>
       </div>
-    </>
+    </DialogPortalPlane>
   );
 
   return (
     <>
-      <button type="button" {...api.getTriggerProps()} className="lab-dialog-trigger">
-        {children}
-      </button>
+      {renderTrigger(api.getTriggerProps())}
       {mounted && createPortal(floating, document.body)}
     </>
   );

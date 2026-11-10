@@ -42,8 +42,8 @@ import {
   fieldControlAria,
   fieldErrorIsActive,
   fieldPartIds,
-} from '@labpics/ui-core';
-import { tagsInputTranslations } from '@labpics/ui-core/tags-input';
+} from '@labpics/ui-core/shared';
+import { tagsInputTranslations } from '@labpics/ui-core/shared';
 import * as tagsInputMachine from '@zag-js/tags-input';
 import { type ReactNode, useId } from 'react';
 import { useZag } from './use-zag.js';

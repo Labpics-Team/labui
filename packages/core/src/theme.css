@@ -24,14 +24,16 @@
  */
 
 /* 3. Light default — bare root. The colours layer binds light role values here. */
-:root {
+:root,
+[data-theme="auto"] {
   color-scheme: light;
 }
 
 /* 2. prefers-color-scheme fallback (only applies when no [data-theme] is set,
  *    because an explicit attribute selector below has higher specificity). */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]),
+  [data-theme="auto"] {
     color-scheme: dark;
   }
 }
@@ -43,6 +45,29 @@
 }
 [data-theme="dark"] {
   color-scheme: dark;
+}
+
+/* Маркеры обеих осей задаёт colors/contract.css. В more блик сменяется
+   затемнением: hover остаётся видимым и не осветляет фон белой подписи.
+   Геометрия и обычный режим сохраняют существующие токены. */
+:root,
+[data-theme],
+[data-contrast] {
+  --_lab-button-sheen-color: var(--_lab-normal, var(--lab-bg-static-light))
+    var(--_lab-more, var(--lab-bg-static-dark));
+  --_lab-button-sheen-opacity: var(--_lab-normal, var(--lab-opacity-button-sheen, 0.2))
+    var(--_lab-more, 0);
+  --_lab-button-sheen-hover-opacity: var(--_lab-normal, var(--lab-opacity-button-sheen-hover, 0.32))
+    var(--_lab-more, 0.08);
+  --_lab-button-glow-pressed-opacity: var(
+      --_lab-normal,
+      calc(var(--lab-opacity-button-glow, 0.32) * var(--lab-opacity-button-glow-fill, 0.52))
+    )
+    var(--_lab-more, 0);
+  --_lab-control-outline: var(--_lab-normal, none)
+    var(--_lab-more, var(--lab-stroke-hairline) solid var(--lab-border-base));
+  --_lab-button-description-small-weight: var(--_lab-normal, inherit)
+    var(--_lab-more, var(--lab-font-weight-regular, 400));
 }
 
 /*

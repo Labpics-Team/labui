@@ -33,15 +33,14 @@
  */
 'use client';
 
+import type { LabSliderOrientation, LabSliderSize } from '@labpics/ui-core';
+import type { MachineModule, SchemaOf } from '@labpics/ui-core';
 import {
-  type LabSliderOrientation,
-  type LabSliderSize,
   fieldControlAria,
   fieldControlAriaProps,
   fieldErrorIsActive,
   fieldPartIds,
-} from '@labpics/ui-core';
-import type { MachineModule, SchemaOf } from '@labpics/ui-core';
+} from '@labpics/ui-core/shared';
 import * as sliderMachine from '@zag-js/slider';
 import { type ReactNode, useId } from 'react';
 import { useZag } from './use-zag.js';

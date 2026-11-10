@@ -51,5 +51,12 @@ createRoot(mount).render(
     <span data-testid="react-icon-only">
       <Switch type="accent" iconOn="🔔" iconOff="🔕" aria-label="Mute" />
     </span>
+    {(['s', 'm', 'l'] as const).map((size, index) => (
+      <span key={size} data-testid={`react-size-${size}`}>
+        <Switch type="neutral" size={size}>
+          {['Small', 'Medium', 'Large'][index]}
+        </Switch>
+      </span>
+    ))}
   </StrictMode>,
 );

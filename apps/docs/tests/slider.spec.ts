@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Slider suite — a MACHINE-DRIVEN value slider, verified on BOTH renderers against the
@@ -240,6 +241,11 @@ test('disabled: the thumb is not focusable on both renderers', async ({ page }) 
 });
 
 test('visual parity: Lit and React resolve the same range fill colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-single').locator('.range'),
+    reactField(page, 'react-single').locator('.lab-slider-range'),
+  );
   const litRange = await litHost(page, 'lit-single').locator('.range').evaluate(bgColor);
   const reactRange = await reactField(page, 'react-single')
     .locator('.lab-slider-range')
@@ -248,6 +254,11 @@ test('visual parity: Lit and React resolve the same range fill colour', async ({
 });
 
 test('visual parity: the invalid range re-points the fill identically', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litHost(page, 'lit-invalid').locator('.range'),
+    reactField(page, 'react-invalid').locator('.lab-slider-range'),
+  );
   const litRange = await litHost(page, 'lit-invalid').locator('.range').evaluate(bgColor);
   const reactRange = await reactField(page, 'react-invalid')
     .locator('.lab-slider-range')

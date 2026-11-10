@@ -45,6 +45,7 @@ export function resolveConfig(override: TokensConfigOverride = {}): TokensConfig
       // role (e.g. semibold) does not delete the others (which the wholesale
       // spread of override.typography above would otherwise do).
       weights: { ...defaultConfig.typography.weights, ...override.typography?.weights },
+      fixedRoles: { ...defaultConfig.typography.fixedRoles, ...override.typography?.fixedRoles },
       // fontFamily — фиксированная пара стеков, каждый order-sensitive внутри →
       // замена ЦЕЛИКОМ при оверрайде (как zIndex.levels), не частями.
       fontFamily: override.typography?.fontFamily ?? defaultConfig.typography.fontFamily,

@@ -9,6 +9,8 @@ on:
       - 'apps/docs/tests/icons-*'
       - 'apps/docs/tests/prepare-icons-inputs*.mjs'
       - 'packages/core/**'
+      - 'packages/materials/**'
+      - 'packages/tokens/**'
       - 'packages/shadow/**'
       - 'apps/docs/package.json'
       - 'package.json'
@@ -30,7 +32,7 @@ jobs:
     name: Авторский символ в установленном Lab UI
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.55.1-noble@sha256:2f29369043d81d6d69a815ceb80760f55e85f5020371ad06a4d996f18503ad1c
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
       options: --init
     defaults:
       run:
@@ -65,7 +67,7 @@ jobs:
 
       - name: Проверить независимый oracle и владение browser lifecycle
         shell: bash
-        run: node --test ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-public-terminal.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/apps/docs/tests/icons-git-diagnostics.test.mjs
+        run: node --test ui/scripts/ci/evidence-log.test.mjs ui/apps/docs/tests/prepare-icons-inputs.test.mjs ui/apps/docs/tests/icons-public-provenance.test.mjs ui/apps/docs/tests/icons-public-terminal.test.mjs ui/apps/docs/tests/icons-public-entrypoints.test.mjs ui/apps/docs/tests/icons-state-continuity.test.mjs ui/apps/docs/tests/icons-git-diagnostics.test.mjs
 
       - name: Проверить установленный Lab UI в штатном browser runtime
         id: browser

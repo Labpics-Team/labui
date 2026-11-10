@@ -5,29 +5,29 @@ import { MATERIAL_CSS_ORDER } from '../src/materials/order';
 
 /*
  * Закон порядка файлов-материалов (ADR-0009). Разрез material.css на файлы —
- * находимость, а не смена каскада: solid-оверрайд обязан стоять ПОСЛЕ мод,
- * engine-held — после мод, деградации — после всего материального, veil —
- * последним. Равная специфичность решается источником, поэтому перестановка
- * строк в order.ts МЕНЯЕТ рендер — этот замок делает перестановку громкой.
+ * находимость, а не смена каскада: рецепты ограничены ближайшей областью,
+ * engine-held стоит после рецептов и побеждает стекло при равной специфичности.
+ * Деградации имеют более высокую специфичность и идут после материалов,
+ * veil — последним. Порядок engine-held влияет на рендер внутри glass.
  */
 
 describe('файлы-материалы: закон порядка склейки', () => {
   const css = readMaterialCss();
 
-  it('каждый файл закона существует, и в папке нет CSS вне закона', () => {
+  it('каждый фрагмент закона имеет CSS-источник или проекцию общего профиля', () => {
     const onDisk = readdirSync(materialsDir())
       .filter((f) => f.endsWith('.css'))
       .sort();
-    expect(onDisk).toEqual([...MATERIAL_CSS_ORDER].sort());
+    expect([...onDisk, 'sheet.css'].sort()).toEqual([...MATERIAL_CSS_ORDER].sort());
   });
 
   it('каскадные вехи идут строго в порядке закона', () => {
     const landmarks = [
       '.lab-material {', // base: переменные + единое paint-правило
-      '[data-material="glass"] .lab-material', // мода glass
-      '[data-material="acrylic"] .lab-material', // мода acrylic
+      '[data-material="glass"] {', // контекст glass
+      '[data-material="acrylic"] {', // контекст acrylic
       '.lab-material--lensed', // engine-held: после мод, до solid
-      '[data-material="solid"] .lab-material', // solid-оверрайд бьёт моды
+      ':where([data-material]) {', // сброс любой явной области
       'DETERMINISTIC DEGRADATIONS', // деградации бьют всё материальное
       'LAB-VEIL', // veil — отдельная эффект-поверхность, последним
     ];
@@ -47,6 +47,7 @@ describe('файлы-материалы: закон порядка склейк�
       'acrylic.css',
       'engine-held.css',
       'solid.css',
+      'sheet.css',
       'degradations.css',
       'veil.css',
     ]);

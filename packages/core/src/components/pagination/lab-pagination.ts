@@ -274,8 +274,3 @@ declare global {
     'lab-pagination': LabPagination;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7) — safe across SSR and client paths.
-if (typeof customElements !== 'undefined' && !customElements.get('lab-pagination')) {
-  customElements.define('lab-pagination', LabPagination);
-}

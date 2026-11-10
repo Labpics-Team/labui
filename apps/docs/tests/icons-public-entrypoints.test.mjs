@@ -1,17 +1,123 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  assertArchiveManifest,
   assertConsumerModuleGraph,
   assertIconsImport,
   assertPublicEntryModules,
   consumerFixture,
   consumerPublicEntries,
+  readArchiveManifest,
+  runtimeDependencyContracts,
+  subjectPackageKeys,
 } from './icons-packed.mjs';
+
+test('current UI runtime closure supplies every workspace dependency and excludes build tools', async () => {
+  const manifests = Object.fromEntries(
+    await Promise.all(
+      ['core', 'materials', 'tokens', 'shadow'].map(async (name) => [
+        name,
+        JSON.parse(
+          await readFile(new URL(`../../../packages/${name}/package.json`, import.meta.url)),
+        ),
+      ]),
+    ),
+  );
+  const contracts = runtimeDependencyContracts(manifests);
+  assert.deepEqual(
+    Object.keys(contracts.core.dependencies)
+      .filter((name) => name.startsWith('@labpics/ui-'))
+      .sort(),
+    ['@labpics/ui-materials', '@labpics/ui-shadow', '@labpics/ui-tokens'],
+  );
+  for (const name of ['materials', 'tokens', 'shadow']) {
+    assert.equal(contracts.core.dependencies[manifests[name].name], manifests[name].version);
+    const incomplete = { ...manifests };
+    Reflect.deleteProperty(incomplete, name);
+    assert.throws(() => runtimeDependencyContracts(incomplete), /runtime workspace dependency/);
+  }
+  const transitive = structuredClone(manifests);
+  transitive.materials.optionalDependencies = { '@labpics/ui-new-runtime': 'workspace:*' };
+  assert.throws(() => runtimeDependencyContracts(transitive), /ui-new-runtime/);
+  transitive.materials.optionalDependencies = {};
+  transitive.materials.devDependencies = { '@labpics/ui-build-only': 'workspace:*' };
+  assert.deepEqual(runtimeDependencyContracts(transitive), contracts);
+});
+
+test('archive manifests preserve source runtime dependencies before npm and after install', async (t) => {
+  const manifests = {
+    core: {
+      name: '@labpics/ui-core',
+      version: '0.0.0',
+      dependencies: { '@labpics/ui-tokens': 'workspace:*', lit: '3.3.3' },
+    },
+    tokens: { name: '@labpics/ui-tokens', version: '0.0.0' },
+  };
+  const contract = runtimeDependencyContracts(manifests);
+  const expected = { ...manifests.core, runtimeDependencies: contract.core };
+  const packed = {
+    ...manifests.core,
+    dependencies: { '@labpics/ui-tokens': '0.0.0', lit: '3.3.3' },
+  };
+  assertArchiveManifest(packed, expected);
+  for (const mutate of [
+    (value) => {
+      Reflect.deleteProperty(value.dependencies, '@labpics/ui-tokens');
+    },
+    (value) => {
+      value.dependencies['@labpics/ui-tokens'] = '1.0.0';
+    },
+    (value) => {
+      value.dependencies['@labpics/ui-tokens'] = 'workspace:*';
+    },
+    (value) => {
+      value.optionalDependencies = { unexpected: '*' };
+    },
+    (value) => {
+      value.name = '@labpics/ui-other';
+    },
+    (value) => {
+      value.version = '9.0.0';
+    },
+  ]) {
+    const changed = structuredClone(packed);
+    mutate(changed);
+    assert.throws(() => assertArchiveManifest(changed, expected));
+  }
+  const parent = await realpath(tmpdir());
+  const directory = await mkdtemp(join(parent, 'labui-archive-manifest-'));
+  t.after(async () => {
+    const target = await realpath(directory);
+    assert.equal(dirname(target), parent);
+    assert.ok(basename(target).startsWith('labui-archive-manifest-'));
+    await rm(target, { recursive: true, force: true });
+  });
+  await mkdir(join(directory, 'package'));
+  await writeFile(join(directory, 'package/package.json'), JSON.stringify(packed));
+  const archive = join(directory, 'core.tgz');
+  execFileSync('tar', ['-czf', archive, '-C', directory, 'package/package.json']);
+  assert.deepEqual(readArchiveManifest(archive, expected), packed);
+  assert.throws(() => readArchiveManifest(archive, { ...expected, version: '9.0.0' }), /version/);
+});
+
+test('schema4 keeps the visual fixture while adding all local runtime archives', () => {
+  assert.deepEqual(subjectPackageKeys(4).sort(), [
+    'icons',
+    'uiCore',
+    'uiMaterials',
+    'uiShadow',
+    'uiTokens',
+  ]);
+  for (const historical of [1, 2, 3])
+    assert.deepEqual(subjectPackageKeys(historical), ['icons', 'uiCore', 'uiShadow']);
+  assert.equal(consumerFixture(4), consumerFixture(3));
+  assert.deepEqual(consumerPublicEntries(4), consumerPublicEntries(3));
+});
 
 async function resolvedFixture(layout) {
   const parent = await realpath(tmpdir());

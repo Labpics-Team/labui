@@ -1,49 +1,72 @@
 /**
- * Lit SSR shim — the ~10-line per-stack wiring the spike (spike-FINDINGS.md)
- * identified as the cost of WC deep-SSR on Vue/Svelte/Solid/Astro.
+ * Серверный вход ядра: Lit-шаблон становится HTML со стилями и Declarative
+ * Shadow DOM. Адаптер включает строку в серверный ответ; клиентская вставка
+ * через innerHTML сама по себе не создаёт declarative shadow root.
  *
- * WC deep-SSR is a property of `@lit-labs/ssr`, not of the host framework: every
- * SSR framework that can emit a raw HTML string carries the declarative shadow
- * DOM (DSD) through intact → styled first paint, no FOUC. This module renders a
- * Lit template to that DSD-bearing string once; each meta-framework adapter
- * injects the string with its own raw-HTML mechanism (Vue `v-html`, Svelte
- * `{@html}`, Solid `innerHTML`, Astro's built-in `@astrojs/lit`).
+ * Вход изолирует optional peer @lit-labs/ssr от клиентских компонентов.
+ * Штатный Lit renderer владеет reflection, HTML escaping и shadow DOM;
+ * расширение переносит итоговые публичные Boolean между экземплярами.
  *
- * It lives behind the `@labpics/ui-core/ssr` entry and lists `@lit-labs/ssr` as
- * an OPTIONAL peer, so a consumer that never server-renders the Lit path (e.g.
- * the React renderer, which SSRs natively) never pulls the SSR engine into its
- * bundle. The React path does not import this file at all.
- *
- * The DOM shim MUST be installed before any custom element module is imported,
- * so element registration works in Node. Import order is load-bearing — keep
- * the shim import first.
+ * Node-вход Lit сам предоставляет минимальный DOM и сохраняет общий registry.
+ * Дополнительный глобальный установщик заменил бы API хоста, включая fetch.
  */
-import '@lit-labs/ssr/lib/install-global-dom-shim.js';
-import { render } from '@lit-labs/ssr';
+import { LitElementRenderer, render } from '@lit-labs/ssr';
 import { collectResultSync } from '@lit-labs/ssr/lib/render-result.js';
-import { type TemplateResult, html } from 'lit';
+import { type LitElement, type TemplateResult, html, noChange } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { unsafeHTML } from 'lit/directives/unsafe-html.js';
+import { shapeCardRegions } from '../components/card/ssr.js';
+import { assertModalTriggerMarkup } from '../components/dialog/ssr.js';
+import { shapeSwitchLabels } from '../components/switch/ssr.js';
+import { booleanSnapshotAttribute, serializeBooleanSnapshot } from '../lit/boolean-snapshot.js';
+
+class LabElementRenderer extends LitElementRenderer {
+  static override matchesClass(ctor: typeof HTMLElement): boolean {
+    // Наличие нашего decoder — capability, общая также для ESM/CJS entrypoints.
+    return (
+      LitElementRenderer.matchesClass(ctor) &&
+      (ctor as typeof LitElement).observedAttributes.includes(booleanSnapshotAttribute)
+    );
+  }
+
+  override renderAttributes(): ReturnType<LitElementRenderer['renderAttributes']> {
+    if (this.element.hasAttribute(booleanSnapshotAttribute)) {
+      throw new TypeError(`LabUI SSR: ${booleanSnapshotAttribute} is reserved for core.`);
+    }
+    // Lit уже вызвал willUpdate и reflection. Новый атрибут идёт последним;
+    // штатный renderer сохраняет HTML escaping и declarative shadow DOM.
+    const snapshot = serializeBooleanSnapshot(this.element);
+    if (snapshot !== undefined) this.element.setAttribute(booleanSnapshotAttribute, snapshot);
+    return super.renderAttributes();
+  }
+}
 
 /**
  * Render a Lit template to a declarative-shadow-DOM HTML string.
  *
  * The caller is responsible for having imported the element module(s) the
- * template uses (after this module's shim import has run) so they are
- * registered. Returns a complete HTML string ready to embed via any framework's
- * raw-HTML slot.
+ * template uses so they are registered. Returns a complete HTML string ready
+ * to embed via any framework's raw-HTML slot.
  */
 export function renderToString(template: TemplateResult): string {
-  return collectResultSync(render(template));
+  const source = shapeSwitchLabels(
+    shapeCardRegions(
+      collectResultSync(
+        render(template, { elementRenderers: [LabElementRenderer, LitElementRenderer] }),
+      ),
+    ),
+  );
+  assertModalTriggerMarkup(source);
+  return source;
 }
 
 /**
  * Re-exported so SSR callers can author templates without a direct `lit`
  * dependency — the SSR entry is the one place a non-Lit host touches Lit at all.
- * `ifDefined` (omit an attribute when its value is undefined) and `unsafeHTML`
- * (inject a pre-rendered raw HTML string as slotted light-DOM content) are the two
- * directives the framework adapters' generated SSR helpers need to author a
- * `<lab-*>` template, so they ship from this single SSR surface too.
+ * ifDefined пропускает отсутствующий атрибут, noChange сохраняет значение
+ * незаданного свойства, unsafeHTML вставляет готовый слот. Адаптеры берут эти
+ * операции через одну SSR-поверхность и не зависят от Lit напрямую.
  */
-export { html, ifDefined, unsafeHTML };
+export { html, ifDefined, noChange, unsafeHTML };
+export { projectSingleSlot } from './slot-projection.js';
 export type { TemplateResult };

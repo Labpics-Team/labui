@@ -34,8 +34,8 @@
 'use client';
 
 import type { MachineModule, PropTypes, SchemaOf } from '@labpics/ui-core';
+import * as selectMachine from '@labpics/ui-core/behaviors/select';
 import type { LabSelectItem, LabSelectPlacement, LabSelectSize } from '@labpics/ui-core/select';
-import * as selectMachine from '@zag-js/select';
 import { type ReactNode, useEffect, useId, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useZag } from './use-zag.js';

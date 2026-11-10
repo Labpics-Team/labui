@@ -1,4 +1,5 @@
 import { type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Avatar suite — a presentational primitive, verified on BOTH renderers.
@@ -74,6 +75,11 @@ test('a11y: the status meaning is not colour-only (a visually-hidden label carri
 });
 
 test('visual parity: disc surface + label colour match per colour family', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litDisc(page, 'lit-brand-online'),
+    reactDisc(page, 'react-brand-online'),
+  );
   await expect(reactDisc(page, 'react-brand-online')).toBeVisible();
   for (const variant of [
     'brand-online',
@@ -95,6 +101,11 @@ test('visual parity: disc surface + label colour match per colour family', async
 test('visual parity: the online status dot resolves the same colour on both renderers', async ({
   page,
 }) => {
+  await waitForThemePaint(
+    page,
+    litStatus(page, 'lit-brand-online'),
+    reactStatus(page, 'react-brand-online'),
+  );
   const lit = litStatus(page, 'lit-brand-online');
   const react = reactStatus(page, 'react-brand-online');
   await expect(react).toBeVisible();

@@ -1,4 +1,5 @@
 import { type Locator, type Page, expect, test } from '@playwright/test';
+import { waitForThemePaint } from './helpers/theme-paint.js';
 
 /**
  * Input suite — a PRESENTATIONAL form field that OPTS OUT of the Zag seam (no
@@ -157,6 +158,11 @@ test('focus delegation: clicking the label focuses the native control (both rend
 });
 
 test('visual parity: Lit and React resolve the same resting border colour', async ({ page }) => {
+  await waitForThemePaint(
+    page,
+    litControl(page, 'lit-neutral'),
+    reactControl(page, 'react-neutral'),
+  );
   await expect(reactControl(page, 'react-neutral')).toBeVisible();
   for (const variant of ['neutral', 'warning', 'success', 'invalid'] as const) {
     const litBorder = await litControl(page, `lit-${variant}`).evaluate(borderColor);

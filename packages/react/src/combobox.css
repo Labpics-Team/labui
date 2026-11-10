@@ -87,7 +87,7 @@
   flex: 1 1 auto;
   width: 100%;
   margin: 0;
-  padding: var(--_lab-field-pad-y) var(--lab-size-switch-track-s, 2.25rem) var(--_lab-field-pad-y)
+  padding: var(--_lab-field-pad-y) var(--lab-size-combobox-trigger, 2.25rem) var(--_lab-field-pad-y)
     var(--_lab-field-pad-x);
   font: inherit;
   font-size: var(--_lab-field-font);
@@ -157,7 +157,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--lab-size-switch-track-s, 2.25rem);
+  width: var(--lab-size-combobox-trigger, 2.25rem);
   height: 100%;
   margin: 0;
   padding: 0;

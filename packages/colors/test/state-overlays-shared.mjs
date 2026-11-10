@@ -1,11 +1,11 @@
-// Общий слой двух CI-гейтов стейт-оверлеев (#109): рецепт D, математика,
+﻿// Общий слой двух CI-гейтов стейт-оверлеев (#109): рецепт D, математика,
 // экстракция паттерна из компонентных источников обоих близнецов.
 //
 // Математика (scopeBody/scopeVars/parseColor/resolveValue/overGamma) поднята
 // 1:1 из accent-substrate-legality.test.mjs — инструкция владельца #109:
 // переиспользовать её, а не заводить вторую копию правды.
 //
-// ФОРМА оверлея (решение владельца, финальное, не переоткрывать):
+// ФОРМА оверлея для комбо с рецептом D:
 //   состояние = color-mix(in oklab, <роль покоя>, <тинт> var(--lab-state-*)),
 //   hover 8% / pressed 14%; disabled = opacity; focus = ring (вне гейтов).
 // РЕЦЕПТ D — тинт по классу поверхности:
@@ -20,6 +20,8 @@
 //   L=0, микс даёт L·(1−p) ⇒ k^(1/3) = 1−p. Для класса A совпадение точное при
 //   ЛЮБОЙ базе; для класса B — ближайшая одноконстантная аппроксимация
 //   (задокументировано в docs/vocabulary.md, раздел стейт-оверлеев).
+// Accent/fill Button сохраняет исходную заливку: состояния принадлежат отдельным
+// sheen/shade/glow слоям (docs/reference/design-baseline.md, чтение 2026-11-01).
 
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -50,7 +52,6 @@ export const LIT_BUTTON_TS_PATH = join(
   'lab-button.ts',
 );
 
-export const AA_TEXT = 4.5;
 // Фон резолва темы (якоря нейтрали паспорта) — под ним композитятся тинты.
 export const THEME_BG = { light: '#FFFFFF', dark: '#101012' };
 export const THEME_SCOPE = {
@@ -81,6 +82,43 @@ export function scopeVars(css, scopePattern) {
   const vars = new Map();
   for (const m of clean.matchAll(/(--lab-[a-z0-9-]+)\s*:\s*([^;]+);/g)) vars.set(m[1], m[2].trim());
   return vars;
+}
+
+/** Только выбор CSS-ветки: численные цвета и alias-цепочки здесь не вычисляются. */
+export function themeVars(css, theme, contrast = 'normal') {
+  if (!['light', 'dark'].includes(theme) || !['normal', 'more'].includes(contrast))
+    throw new Error(`Неизвестная область ${theme}/${contrast}`);
+  if (!css.includes('--_lab-normal')) {
+    if (contrast !== 'normal') throw new Error('Контракт не содержит режима more');
+    return scopeVars(css, THEME_SCOPE[theme]);
+  }
+  const vars = scopeVars(css, /:root,\s*\[data-theme\],\s*\[data-contrast\]\s*\{/);
+  const active = new Set([`--_lab-${theme}`, `--_lab-${contrast}`]);
+  const select = (value) => {
+    let result = '';
+    let cursor = 0;
+    while (cursor < value.length) {
+      const start = value.indexOf('var(--_lab-', cursor);
+      if (start < 0) return (result + value.slice(cursor)).trim();
+      result += value.slice(cursor, start);
+      let depth = 1;
+      let end = start + 4;
+      let comma = -1;
+      for (; end < value.length && depth > 0; end++) {
+        if (value[end] === '(') depth++;
+        if (value[end] === ')') depth--;
+        if (value[end] === ',' && depth === 1 && comma < 0) comma = end;
+      }
+      if (depth !== 0 || comma < 0) throw new Error(`Некорректный CSS switch: ${value}`);
+      const name = value.slice(start + 4, comma).trim();
+      if (!/^--_lab-(light|dark|normal|more)$/.test(name))
+        throw new Error(`Неизвестный CSS marker: ${name}`);
+      if (active.has(name)) result += select(value.slice(comma + 1, end - 1));
+      cursor = end;
+    }
+    return result.trim();
+  };
+  return new Map([...vars].map(([name, value]) => [name, select(value)]));
 }
 
 /** Значение цвета → { lin:[r,g,b] линейный sRGB 0..1, alpha }. */
@@ -127,7 +165,7 @@ export function overGamma(fg, bgLin) {
 
 // ── дополнение #109: микс, hex-энкод, рецепт, экстракция ────────────────────
 
-/** Линейный sRGB → hex (вход движку: muddiness()/recheckContrast() едят hex). */
+/** Линейный sRGB → конечные байты для точной оценки Core. */
 export function linToHex(lin) {
   return `#${lin
     .map((c) =>
@@ -171,23 +209,6 @@ export const INK_ROLE = '--lab-label-primary';
 /** Рецепт D: тинт по имени роли. */
 export const tintFor = (role) => (CLASS_A_FILLS.has(role) ? 'black' : 'ink');
 
-const BLACK = { lin: [0, 0, 0], alpha: 1 };
-
-/**
- * Δmud одной роли при миксе к тинту рецепта D на фракции p (композиты — в гамме).
- * ЕДИНСТВЕННАЯ копия правды Δmud: гейт грязи (state-overlay-muddiness.test.mjs)
- * и замер экономии (state-overlay-economy.mjs) зовут её, а не повторяют шаги —
- * правка порядка композита/обработки альфы меняет обе стороны синхронно.
- */
-export function overlayDelta(colors, vars, themeBgLin, name, p) {
-  const base = parseColor(resolveValue(name, vars));
-  const tint = tintFor(name) === 'black' ? BLACK : parseColor(resolveValue(INK_ROLE, vars));
-  const baseSolid = base.alpha === 1 ? base.lin : overGamma(base, themeBgLin);
-  const mixed = mixOklabPremul(base, tint, p);
-  const mixedSolid = mixed.alpha === 1 ? mixed.lin : overGamma(mixed, themeBgLin);
-  return colors.muddiness(linToHex(mixedSolid)) - colors.muddiness(linToHex(baseSolid));
-}
-
 /** Фракции состояний из СГЕНЕРИРОВАННОГО tokens.css — единственный источник ручек. */
 export function readStateFractions(tokensCss) {
   const out = {};
@@ -204,7 +225,7 @@ export function readStateFractions(tokensCss) {
 
 /**
  * Роли покоя интерактивных комбо кнопки — ПИНН спецификации оверлея:
- * каждая цветовая декларация покоя получает hover/pressed-оверлей той же роли.
+ * роли покоя общие для recipe-D и отдельной композиции accent/fill.
  * (Дрейф-гард в гейте сверяет эту таблицу с фактическими базовыми правилами.)
  */
 export const REST_ROLES = {
@@ -222,10 +243,11 @@ export const REST_ROLES = {
   'danger/ghost': { color: '--lab-label-danger' },
 };
 
-/** Ожидаемый набор оверлеев из REST_ROLES × {hover, pressed} + рецепт D. */
+/** Recipe-D overlays. Accent/fill has its own authored-paint gate. */
 export function expectedOverlays() {
   const keys = new Map();
   for (const [combo, props] of Object.entries(REST_ROLES)) {
+    if (combo === 'accent/fill') continue;
     for (const [prop, role] of Object.entries(props)) {
       for (const state of ['hover', 'pressed']) {
         keys.set(`${combo}/${state}/${prop}`, { role, tint: tintFor(role) });
@@ -287,6 +309,48 @@ const OVERLAY_DECL_RE = new RegExp(
  */
 function flattenWhitespace(css) {
   return css.replace(/\s+/g, ' ').replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
+}
+
+/** Paint declarations for the authored accent/fill surface and its effect layers. */
+export function extractAccentFillPaints(cssText, flavor) {
+  const out = {};
+  const effectClass = flavor === 'react' ? '.lab-button-effects' : '.effects';
+  const root =
+    flavor === 'react'
+      ? '[data-lab-button][data-type="accent"][data-kind="fill"]'
+      : ":host([type='accent'][kind='fill']) button";
+  const css = flattenWhitespace(cssText.replace(/\/\*[\s\S]*?\*\//g, ''));
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selector = rule[1].trim();
+    const combo = COMBO_RE[flavor].exec(selector);
+    if (combo && (combo[1] !== 'accent' || combo[2] !== 'fill')) continue;
+    if (combo && selector.includes(`:not(${combo[0]}`)) continue;
+    const state = /:active\b/.test(selector)
+      ? 'pressed'
+      : /:hover\b/.test(selector)
+        ? 'hover'
+        : 'default';
+    let target;
+    if (selector.endsWith(`${effectClass}::before`)) target = 'sheen';
+    else if (selector.endsWith(`${effectClass}::after`)) target = 'glow';
+    else if (selector.endsWith(effectClass)) target = 'effects';
+    else if (selector.startsWith(root)) {
+      const suffix = selector.slice(root.length);
+      if (!/^(?::hover|:active)?(?::not\(:disabled\))?(?:::after)?$/.test(suffix)) continue;
+      target = suffix.endsWith('::after') ? 'shadow' : 'surface';
+    } else if (
+      /^(?:\[data-lab-button\]|button)(?::hover|:active)(?::not\(:disabled\))?$/.test(selector)
+    ) {
+      // A generic state rule applies to accent/fill too unless it excludes the combo.
+      target = 'surface';
+    } else continue;
+    for (const declaration of rule[2].matchAll(
+      /(?:^|;)\s*(color|background(?:-color|-image)?|opacity|box-shadow|filter|display)\s*:\s*([^;]+)(?=;|$)/g,
+    )) {
+      out[`${state}/${target}/${declaration[1]}`] = declaration[2].trim();
+    }
+  }
+  return out;
 }
 
 /**
