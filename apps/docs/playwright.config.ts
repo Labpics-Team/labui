@@ -8,6 +8,8 @@ const SMOKE_SPECS = [
   'materials-flag.spec.ts',
   'acrylic-live.spec.ts',
   'button.spec.ts',
+  'authored-colors.spec.ts',
+  'colors-live.spec.ts',
   'input.spec.ts',
   'checkbox.spec.ts',
   'pin-input.spec.ts',

@@ -1,9 +1,10 @@
 /*
- * Tiny shared theme switcher for the parity-demo fixtures. Wires a
- * [data-testid="theme-select"] <select> to flip [data-theme] on the document
- * root, so a single page carries both renderers under one theme and the parity
- * suite can prove a theme flip re-skins both with zero element edits.
+ * Общая инициализация темы parity-демо подключает Colors runtime и связывает
+ * [data-testid="theme-select"] с [data-theme] корня. Оба рендерера получают
+ * одну тему; её смена не требует изменения самих компонентов.
  */
+import { bootColors } from './colors-runtime.js';
+
 const THEMES = ['dark', 'light'] as const;
 type Theme = (typeof THEMES)[number];
 
@@ -12,6 +13,12 @@ function isTheme(value: string): value is Theme {
 }
 
 export function wireThemeSwitch(): void {
+  bootColors();
+  wireAuthoredThemeSwitch();
+}
+
+/** Только управление темой: palette остаётся у stylesheet-владельца fixture. */
+export function wireAuthoredThemeSwitch(): void {
   const root = document.documentElement;
   const select = document.querySelector<HTMLSelectElement>('[data-testid="theme-select"]');
   if (!select) return;

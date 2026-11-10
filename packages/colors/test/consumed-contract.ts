@@ -1,22 +1,22 @@
 /**
  * Consumer enumerator + three-bucket classifier for the `--lab-*` contract.
  *
- * labui consumes `@labpics/colors` EXCLUSIVELY through the `--lab-*` CSS custom
- * property contract. Every consumed name falls into exactly ONE of three buckets
+ * Компоненты LabUI получают результаты Colors через принадлежащий LabUI
+ * контракт CSS-свойств `--lab-*`. Every consumed name falls into ONE of three buckets
  * (конвенция «три корзины потребления»):
  *
- *   1. `colour-contract` — a semantic colour role owned by @labpics/colors and
- *      mirrored in `roles.json` (any group). THIS is the surface the pin test
- *      asserts against the generated Lab UI colour contract.
+ *   1. `colour-contract` — a semantic colour role owned by LabUI and declared
+ *      in `roles.json`. Its Paint and composite values come from Core Program;
+ *      the pin test checks the generated LabUI contract.
  *   2. `dimension` — owned by @labpics/ui-tokens, generated locally; matches a
  *      prefix in `core/src/css.ts` `DIMENSION_PREFIXES`.
  *   3. `local-or-gap` — provisional tokens labui declares today (shadow stack,
- *      materials) that SHOULD eventually be resolved by the external engine.
+ *      materials), each with its own LabUI owner and external capability needs.
  *      The allowlist below is the single source CH-03's external-deps doc must
  *      stay in sync with.
  *
  * Anything else is `unclassified` — a name that entered silently and must be
- * triaged (added to the contract upstream, confirmed a dimension, or documented
+ * triaged (added by the LabUI contract owner, confirmed a dimension, or documented
  * as a gap). The pin test fails on a non-empty unclassified set.
  *
  * Framework-free (plain string scanning over file text), mirroring the sibling
