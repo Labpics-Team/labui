@@ -88,6 +88,25 @@ test('ShadowRoot inherits material mode and owns its filter, including ancestor 
   ).toBe(0);
 });
 
+test('acrylic follows the operating system palette without an explicit theme', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.addStyleTag({
+    content: `:root { --lab-bg-material-soft-01:rgb(96 112 128 / .3) }
+      @media (prefers-color-scheme:dark) {
+        :root { --lab-bg-material-soft-01:rgb(24 40 56 / .3) }
+      }`,
+  });
+  await page.locator('#surface').evaluate((el) => el.setAttribute('data-material', 'acrylic'));
+  const flood = page.locator('body > .lab-acrylic-defs feFlood');
+  await expect(flood).toHaveCSS('flood-color', 'rgba(96, 112, 128, 0.3)');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(flood).toHaveCSS('flood-color', 'rgba(24, 40, 56, 0.3)');
+});
+
 test('local DOM updates do not rediscover or refresh another surface', async ({
   page,
   browserName,
