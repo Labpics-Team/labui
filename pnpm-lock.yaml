@@ -62,6 +62,12 @@ importers:
       '@labui/colors':
         specifier: workspace:*
         version: link:../../packages/colors
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
       react:
         specifier: 18.3.1
         version: 18.3.1

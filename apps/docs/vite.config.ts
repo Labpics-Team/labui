@@ -32,9 +32,26 @@ function ssrProofPlugin(): Plugin {
   };
 }
 
+function colorsSsrPlugin(): Plugin {
+  return {
+    name: 'labui-colors-ssr',
+    async transformIndexHtml(html, ctx) {
+      if (!ctx.path.endsWith('colors.html')) return html;
+      const { renderToString } = await import('@labpics/ui-core/ssr');
+      await import('@labpics/ui-core/button');
+      const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
+      // These are trusted repository templates, not user input. Keep authored
+      // markup in the page once and render those exact buttons to shadow DOM.
+      return html.replace(/<lab-button\b[^>]*>[\s\S]*?<\/lab-button>/g, (markup) =>
+        renderToString(staticHtml`${unsafeStatic(markup)}`),
+      );
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
-  plugins: [ssrProofPlugin()],
+  plugins: [ssrProofPlugin(), colorsSsrPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.

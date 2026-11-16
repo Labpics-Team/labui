@@ -1,4 +1,4 @@
-import '@labpics/ui-core/button';
+import '@lit-labs/ssr-client/lit-element-hydrate-support.js';
 import {
   type Theme,
   type ThemeScope,
@@ -13,7 +13,9 @@ const status = document.querySelector<HTMLElement>('#theme-status');
 
 if (sample && themeChoice && contrastChoice && status) {
   let scope: ThemeScope | undefined;
-  const ready = initializeColors().then(() => {
+  // The hook above must execute before LitElement is evaluated. A dynamic
+  // component import keeps that ordering after Vite splits the shared chunks.
+  const ready = Promise.all([import('@labpics/ui-core/button'), initializeColors()]).then(() => {
     scope = createThemeScope(sample);
     update();
   });
@@ -24,7 +26,7 @@ if (sample && themeChoice && contrastChoice && status) {
       contrast: contrastChoice.checked ? 'more' : 'normal',
     });
     status.textContent = result.ok
-      ? 'Тема этой области обновлена.'
+      ? 'Тема этой области готова.'
       : 'Тему не удалось изменить. Сохранена предыдущая палитра.';
   }
   themeChoice.addEventListener('change', update);

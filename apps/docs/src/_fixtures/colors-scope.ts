@@ -11,6 +11,7 @@ declare global {
       scope: ThemeScope;
       errors: unknown[];
       update: (input?: ThemeInput) => boolean;
+      setTheme: (theme: 'light' | 'dark') => void;
     };
   }
 }
@@ -24,5 +25,11 @@ initializeColors().then(() => {
     '<style>span { color: var(--lab-label-primary); }</style><span>Shadow text</span>';
   const errors: unknown[] = [];
   const scope = createThemeScope(root, { onError: (error) => errors.push(error) });
-  window.colorsProof = { scope, errors, update: (input) => scope.update(input).ok };
+  window.colorsProof = {
+    scope,
+    errors,
+    update: (input) => scope.update(input).ok,
+    setTheme: (theme) => setTheme(root, theme),
+  };
 });
+import { setTheme } from '@labpics/ui-core';

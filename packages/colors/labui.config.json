@@ -1,452 +1,962 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Author palette and semantic relationships for Lab UI v2.1. Program owns evaluation; component CSS consumes the role names.",
+  "anchors": {
+    "paper": [255, 255, 255],
+    "ink": [16, 16, 18],
+    "paper-text": [246, 248, 250],
+    "neutral-fill": [120, 120, 128],
+    "neutral-label-dark": [60, 60, 67],
+    "neutral-label-light": [176, 176, 185],
+    "surface-light-raised": [247, 248, 250],
+    "surface-dark-secondary": [28, 28, 30],
+    "surface-dark-tertiary": [36, 36, 38],
+    "control-light": [232, 232, 236],
+    "control-dark": [35, 35, 39],
+    "material-light-base-tint": [153, 153, 153],
+    "material-light-base-back": [92, 92, 92],
+    "material-light-elevated-back": [38, 38, 38],
+    "material-light-muted-tint": [179, 179, 179],
+    "material-light-muted-back": [56, 56, 56],
+    "material-light-soft-tint": [166, 166, 166],
+    "material-light-soft-back": [51, 51, 51],
+    "material-light-subtle-tint": [191, 191, 191],
+    "material-light-subtle-back": [13, 13, 13],
+    "material-dark-tint": [37, 37, 37],
+    "material-dark-base-back": [124, 124, 124],
+    "material-dark-elevated-tint": [130, 130, 130],
+    "material-dark-elevated-back": [31, 31, 31],
+    "material-dark-muted-back": [140, 140, 140],
+    "material-dark-soft-back": [156, 156, 156],
+    "brand": {
+      "light": [0, 122, 255],
+      "dark": [74, 143, 255],
+      "increased": {
+        "light": [0, 64, 221],
+        "dark": [64, 156, 255]
+      }
+    },
+    "danger": {
+      "light": [255, 59, 48],
+      "dark": [255, 58, 58],
+      "increased": {
+        "light": [215, 0, 21],
+        "dark": [255, 97, 97]
+      }
+    },
+    "warning": {
+      "light": [255, 161, 0],
+      "dark": [255, 144, 8],
+      "increased": {
+        "light": [201, 52, 0],
+        "dark": [255, 169, 64]
+      }
+    },
+    "success": {
+      "light": [52, 199, 89],
+      "dark": [48, 209, 88],
+      "increased": {
+        "light": [36, 138, 61],
+        "dark": [48, 219, 91]
+      }
+    },
+    "info": {
+      "light": [62, 135, 255],
+      "dark": [86, 150, 255],
+      "increased": {
+        "light": [0, 80, 207],
+        "dark": [149, 192, 255]
+      }
+    }
+  },
+  "roles": {
+    "bg-static-dark": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "bg-static-light": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "label-brand-primary": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "label-brand-quaternary": {
+      "anchor": "brand",
+      "opacity": 0.322
+    },
+    "label-brand-secondary": {
+      "anchor": "brand",
+      "opacity": 0.722
+    },
+    "label-brand-tertiary": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "label-danger-primary": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "label-danger-quaternary": {
+      "anchor": "danger",
+      "opacity": 0.322
+    },
+    "label-danger-secondary": {
+      "anchor": "danger",
+      "opacity": 0.722
+    },
+    "label-danger-tertiary": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "label-info-primary": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "label-info-quaternary": {
+      "anchor": "info",
+      "opacity": 0.322
+    },
+    "label-info-secondary": {
+      "anchor": "info",
+      "opacity": 0.722
+    },
+    "label-info-tertiary": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "label-static-dark-primary": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "label-static-dark-quaternary": {
+      "anchor": "ink",
+      "opacity": 0.322
+    },
+    "label-static-dark-secondary": {
+      "anchor": "ink",
+      "opacity": 0.722
+    },
+    "label-static-dark-tertiary": {
+      "anchor": "ink",
+      "opacity": 0.522
+    },
+    "label-static-light-primary": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "label-static-light-quaternary": {
+      "anchor": "paper",
+      "opacity": 0.322
+    },
+    "label-static-light-secondary": {
+      "anchor": "paper",
+      "opacity": 0.722
+    },
+    "label-static-light-tertiary": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "label-success-primary": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "label-success-quaternary": {
+      "anchor": "success",
+      "opacity": 0.322
+    },
+    "label-success-secondary": {
+      "anchor": "success",
+      "opacity": 0.722
+    },
+    "label-success-tertiary": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "label-warning-primary": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "label-warning-quaternary": {
+      "anchor": "warning",
+      "opacity": 0.322
+    },
+    "label-warning-secondary": {
+      "anchor": "warning",
+      "opacity": 0.722
+    },
+    "label-warning-tertiary": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "fill-brand-primary": {
+      "anchor": "brand",
+      "opacity": 0.122
+    },
+    "fill-brand-quaternary": {
+      "anchor": "brand",
+      "opacity": 0.02
+    },
+    "fill-brand-secondary": {
+      "anchor": "brand",
+      "opacity": 0.078
+    },
+    "fill-brand-tertiary": {
+      "anchor": "brand",
+      "opacity": 0.039
+    },
+    "fill-danger-primary": {
+      "anchor": "danger",
+      "opacity": 0.122
+    },
+    "fill-danger-quaternary": {
+      "anchor": "danger",
+      "opacity": 0.02
+    },
+    "fill-danger-secondary": {
+      "anchor": "danger",
+      "opacity": 0.078
+    },
+    "fill-danger-tertiary": {
+      "anchor": "danger",
+      "opacity": 0.039
+    },
+    "fill-info-primary": {
+      "anchor": "info",
+      "opacity": 0.122
+    },
+    "fill-info-quaternary": {
+      "anchor": "info",
+      "opacity": 0.02
+    },
+    "fill-info-secondary": {
+      "anchor": "info",
+      "opacity": 0.078
+    },
+    "fill-info-tertiary": {
+      "anchor": "info",
+      "opacity": 0.039
+    },
+    "fill-none": {
+      "anchor": "neutral-fill",
+      "opacity": 0.0
+    },
+    "fill-static-dark-primary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.361
+    },
+    "fill-static-dark-quaternary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.161
+    },
+    "fill-static-dark-secondary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.322
+    },
+    "fill-static-dark-tertiary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.239
+    },
+    "fill-static-light-primary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.2
+    },
+    "fill-static-light-quaternary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.078
+    },
+    "fill-static-light-secondary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.161
+    },
+    "fill-static-light-tertiary": {
+      "anchor": "neutral-fill",
+      "opacity": 0.122
+    },
+    "fill-success-primary": {
+      "anchor": "success",
+      "opacity": 0.122
+    },
+    "fill-success-quaternary": {
+      "anchor": "success",
+      "opacity": 0.02
+    },
+    "fill-success-secondary": {
+      "anchor": "success",
+      "opacity": 0.078
+    },
+    "fill-success-tertiary": {
+      "anchor": "success",
+      "opacity": 0.039
+    },
+    "fill-warning-primary": {
+      "anchor": "warning",
+      "opacity": 0.122
+    },
+    "fill-warning-quaternary": {
+      "anchor": "warning",
+      "opacity": 0.02
+    },
+    "fill-warning-secondary": {
+      "anchor": "warning",
+      "opacity": 0.078
+    },
+    "fill-warning-tertiary": {
+      "anchor": "warning",
+      "opacity": 0.039
+    },
+    "border-brand-base": {
+      "anchor": "brand",
+      "opacity": 0.2
+    },
+    "border-brand-soft": {
+      "anchor": "brand",
+      "opacity": 0.122
+    },
+    "border-brand-strong": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "border-danger-base": {
+      "anchor": "danger",
+      "opacity": 0.2
+    },
+    "border-danger-soft": {
+      "anchor": "danger",
+      "opacity": 0.122
+    },
+    "border-danger-strong": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "border-info-base": {
+      "anchor": "info",
+      "opacity": 0.2
+    },
+    "border-info-soft": {
+      "anchor": "info",
+      "opacity": 0.122
+    },
+    "border-info-strong": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "border-none": {
+      "anchor": "neutral-fill",
+      "opacity": 0.0
+    },
+    "border-static-dark-base": {
+      "anchor": "neutral-fill",
+      "opacity": 0.2
+    },
+    "border-static-dark-soft": {
+      "anchor": "neutral-fill",
+      "opacity": 0.122
+    },
+    "border-static-dark-strong": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "border-static-light-base": {
+      "anchor": "neutral-fill",
+      "opacity": 0.161
+    },
+    "border-static-light-soft": {
+      "anchor": "neutral-fill",
+      "opacity": 0.078
+    },
+    "border-static-light-strong": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "border-success-base": {
+      "anchor": "success",
+      "opacity": 0.2
+    },
+    "border-success-soft": {
+      "anchor": "success",
+      "opacity": 0.122
+    },
+    "border-success-strong": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "border-warning-base": {
+      "anchor": "warning",
+      "opacity": 0.2
+    },
+    "border-warning-soft": {
+      "anchor": "warning",
+      "opacity": 0.122
+    },
+    "border-warning-strong": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-focus-ring-brand": "@label-brand-primary",
+    "fx-focus-ring-danger": "@label-danger-primary",
+    "fx-focus-ring-neutral": "@label-primary",
+    "fx-focus-ring-warning": "@label-warning-primary",
+    "fx-glow-brand": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "fx-glow-danger": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "fx-glow-neutral": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "fx-glow-warning": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "badge-label-contrast": {
+      "anchor": "ink",
+      "opacity": 1
+    },
+    "badge-label-default": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fill-accent": "@border-brand-strong",
+    "fill-danger": "@border-danger-strong",
+    "fill-accent-tinted": "@fill-brand-primary",
+    "fill-danger-tinted": "@fill-danger-primary",
+    "label-accent": "@label-brand-primary",
+    "label-danger": "@label-danger-primary",
+    "label-on-accent": "@label-static-light-primary",
+    "label-on-danger": "@label-static-light-primary",
+    "border-accent": "@border-brand-strong",
+    "border-danger": "@border-danger-strong",
+    "border-focus": "@fx-focus-ring-brand",
+    "bg-tone-1": "@bg-primary",
+    "bg-tone-2": "@bg-secondary",
+    "bg-tone-3": "@bg-tertiary",
+    "badge-fill-brand": "@border-brand-strong",
+    "badge-label-on-brand": "@label-static-light-primary",
+    "badge-fill-danger": "@border-danger-strong",
+    "badge-label-on-danger": "@label-static-light-primary",
+    "badge-fill-warning": "@border-warning-strong",
+    "badge-label-on-warning": "@label-static-light-primary",
+    "badge-fill-success": "@border-success-strong",
+    "badge-label-on-success": "@label-static-light-primary",
+    "badge-fill-info": "@border-info-strong",
+    "badge-label-on-info": "@label-static-light-primary",
+    "badge-fill-static-dark": "@bg-static-dark",
+    "badge-label-on-static-dark": "@label-static-light-primary",
+    "badge-fill-static-light": "@bg-static-light",
+    "badge-label-on-static-light": "@label-static-dark-primary",
+    "fx-glow-neutral-core": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fx-glow-neutral-subtle": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "fx-glow-neutral-subtle-core": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fx-glow-neutral-bloom": {
+      "anchor": "paper",
+      "opacity": 0.522
+    },
+    "fx-glow-neutral-bloom-core": {
+      "anchor": "paper",
+      "opacity": 1
+    },
+    "fx-glow-brand-core": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "fx-glow-brand-subtle": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "fx-glow-brand-subtle-core": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "fx-glow-brand-bloom": {
+      "anchor": "brand",
+      "opacity": 0.522
+    },
+    "fx-glow-brand-bloom-core": {
+      "anchor": "brand",
+      "opacity": 1
+    },
+    "fx-glow-danger-core": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "fx-glow-danger-subtle": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "fx-glow-danger-subtle-core": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "fx-glow-danger-bloom": {
+      "anchor": "danger",
+      "opacity": 0.522
+    },
+    "fx-glow-danger-bloom-core": {
+      "anchor": "danger",
+      "opacity": 1
+    },
+    "fx-glow-warning-core": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-glow-warning-subtle": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "fx-glow-warning-subtle-core": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-glow-warning-bloom": {
+      "anchor": "warning",
+      "opacity": 0.522
+    },
+    "fx-glow-warning-bloom-core": {
+      "anchor": "warning",
+      "opacity": 1
+    },
+    "fx-focus-ring-success": "@label-success-primary",
+    "fx-glow-success": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "fx-glow-success-core": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "fx-glow-success-subtle": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "fx-glow-success-subtle-core": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "fx-glow-success-bloom": {
+      "anchor": "success",
+      "opacity": 0.522
+    },
+    "fx-glow-success-bloom-core": {
+      "anchor": "success",
+      "opacity": 1
+    },
+    "fx-focus-ring-info": "@label-info-primary",
+    "fx-glow-info": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "fx-glow-info-core": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "fx-glow-info-subtle": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "fx-glow-info-subtle-core": {
+      "anchor": "info",
+      "opacity": 1
+    },
+    "fx-glow-info-bloom": {
+      "anchor": "info",
+      "opacity": 0.522
+    },
+    "fx-glow-info-bloom-core": {
+      "anchor": "info",
+      "opacity": 1
+    }
+  },
   "themes": {
     "light": {
-      "bg-material-base-01": [153, 153, 153, 0.969],
-      "bg-material-base-02": [92, 92, 92, 1],
-      "bg-material-elevated-01": [255, 255, 255, 0.8],
-      "bg-material-elevated-02": [38, 38, 38, 1],
-      "bg-material-muted-01": [179, 179, 179, 0.82],
-      "bg-material-muted-02": [56, 56, 56, 1],
-      "bg-material-soft-01": [166, 166, 166, 0.698],
-      "bg-material-soft-02": [51, 51, 51, 1],
-      "bg-material-subtle-01": [191, 191, 191, 0.439],
-      "bg-material-subtle-02": [13, 13, 13, 1],
-      "bg-grouped-primary": [247, 248, 250, 1],
-      "bg-grouped-secondary": [255, 255, 255, 1],
-      "bg-grouped-tertiary": [247, 248, 250, 1],
-      "bg-inverted": [16, 16, 18, 1],
-      "bg-primary": [255, 255, 255, 1],
-      "bg-secondary": [247, 248, 250, 1],
-      "bg-static-dark": [16, 16, 18, 1],
-      "bg-static-light": [255, 255, 255, 1],
-      "bg-tertiary": [255, 255, 255, 1],
-      "bg-overlay-base": [255, 255, 255, 0.478],
-      "bg-overlay-ghost": [255, 255, 255, 0.0],
-      "bg-overlay-soft": [255, 255, 255, 0.2],
-      "bg-overlay-strong": [255, 255, 255, 0.8],
-      "label-brand-primary": [0, 122, 255, 1],
-      "label-brand-quaternary": [0, 122, 255, 0.322],
-      "label-brand-secondary": [0, 122, 255, 0.722],
-      "label-brand-tertiary": [0, 122, 255, 0.522],
-      "label-danger-primary": [255, 59, 48, 1],
-      "label-danger-quaternary": [255, 59, 48, 0.322],
-      "label-danger-secondary": [255, 59, 48, 0.722],
-      "label-danger-tertiary": [255, 59, 48, 0.522],
-      "label-info-primary": [62, 135, 255, 1],
-      "label-info-quaternary": [62, 135, 255, 0.322],
-      "label-info-secondary": [62, 135, 255, 0.722],
-      "label-info-tertiary": [62, 135, 255, 0.522],
-      "label-inverted-primary": [255, 255, 255, 1],
-      "label-inverted-quaternary": [176, 176, 185, 0.322],
-      "label-inverted-secondary": [176, 176, 185, 0.722],
-      "label-inverted-tertiary": [176, 176, 185, 0.522],
-      "label-primary": [16, 16, 18, 1],
-      "label-quaternary": [60, 60, 67, 0.322],
-      "label-secondary": [60, 60, 67, 0.722],
-      "label-tertiary": [60, 60, 67, 0.522],
-      "label-static-dark-primary": [16, 16, 18, 1],
-      "label-static-dark-quaternary": [16, 16, 18, 0.322],
-      "label-static-dark-secondary": [16, 16, 18, 0.722],
-      "label-static-dark-tertiary": [16, 16, 18, 0.522],
-      "label-static-light-primary": [255, 255, 255, 1],
-      "label-static-light-quaternary": [255, 255, 255, 0.322],
-      "label-static-light-secondary": [255, 255, 255, 0.722],
-      "label-static-light-tertiary": [255, 255, 255, 0.522],
-      "label-success-primary": [52, 199, 89, 1],
-      "label-success-quaternary": [52, 199, 89, 0.322],
-      "label-success-secondary": [52, 199, 89, 0.722],
-      "label-success-tertiary": [52, 199, 89, 0.522],
-      "label-warning-primary": [255, 161, 0, 1],
-      "label-warning-quaternary": [255, 161, 0, 0.322],
-      "label-warning-secondary": [255, 161, 0, 0.722],
-      "label-warning-tertiary": [255, 161, 0, 0.522],
-      "fill-brand-primary": [0, 122, 255, 0.122],
-      "fill-brand-quaternary": [0, 122, 255, 0.02],
-      "fill-brand-secondary": [0, 122, 255, 0.078],
-      "fill-brand-tertiary": [0, 122, 255, 0.039],
-      "fill-danger-primary": [255, 59, 48, 0.122],
-      "fill-danger-quaternary": [255, 59, 48, 0.02],
-      "fill-danger-secondary": [255, 59, 48, 0.078],
-      "fill-danger-tertiary": [255, 59, 48, 0.039],
-      "fill-info-primary": [62, 135, 255, 0.122],
-      "fill-info-quaternary": [62, 135, 255, 0.02],
-      "fill-info-secondary": [62, 135, 255, 0.078],
-      "fill-info-tertiary": [62, 135, 255, 0.039],
-      "fill-none": [120, 120, 128, 0.0],
-      "fill-primary": [120, 120, 128, 0.2],
-      "fill-quaternary": [120, 120, 128, 0.078],
-      "fill-secondary": [120, 120, 128, 0.161],
-      "fill-static-dark-primary": [120, 120, 128, 0.361],
-      "fill-static-dark-quaternary": [120, 120, 128, 0.161],
-      "fill-static-dark-secondary": [120, 120, 128, 0.322],
-      "fill-static-dark-tertiary": [120, 120, 128, 0.239],
-      "fill-static-light-primary": [120, 120, 128, 0.2],
-      "fill-static-light-quaternary": [120, 120, 128, 0.078],
-      "fill-static-light-secondary": [120, 120, 128, 0.161],
-      "fill-static-light-tertiary": [120, 120, 128, 0.122],
-      "fill-tertiary": [120, 120, 128, 0.122],
-      "fill-success-primary": [52, 199, 89, 0.122],
-      "fill-success-quaternary": [52, 199, 89, 0.02],
-      "fill-success-secondary": [52, 199, 89, 0.078],
-      "fill-success-tertiary": [52, 199, 89, 0.039],
-      "fill-warning-primary": [255, 161, 0, 0.122],
-      "fill-warning-quaternary": [255, 161, 0, 0.02],
-      "fill-warning-secondary": [255, 161, 0, 0.078],
-      "fill-warning-tertiary": [255, 161, 0, 0.039],
-      "border-brand-base": [0, 122, 255, 0.2],
-      "border-brand-soft": [0, 122, 255, 0.122],
-      "border-brand-strong": [0, 122, 255, 1],
-      "border-danger-base": [255, 59, 48, 0.2],
-      "border-danger-soft": [255, 59, 48, 0.122],
-      "border-danger-strong": [255, 59, 48, 1],
-      "border-info-base": [62, 135, 255, 0.2],
-      "border-info-soft": [62, 135, 255, 0.122],
-      "border-info-strong": [62, 135, 255, 1],
-      "border-base": [120, 120, 128, 0.161],
-      "border-none": [120, 120, 128, 0.0],
-      "border-inverted": [255, 255, 255, 1],
-      "border-soft": [120, 120, 128, 0.078],
-      "border-static-dark-base": [120, 120, 128, 0.2],
-      "border-static-dark-soft": [120, 120, 128, 0.122],
-      "border-static-dark-strong": [16, 16, 18, 1],
-      "border-static-light-base": [120, 120, 128, 0.161],
-      "border-static-light-soft": [120, 120, 128, 0.078],
-      "border-static-light-strong": [255, 255, 255, 1],
-      "border-strong": [16, 16, 18, 1],
-      "border-success-base": [52, 199, 89, 0.2],
-      "border-success-soft": [52, 199, 89, 0.122],
-      "border-success-strong": [52, 199, 89, 1],
-      "border-warning-base": [255, 161, 0, 0.2],
-      "border-warning-soft": [255, 161, 0, 0.122],
-      "border-warning-strong": [255, 161, 0, 1],
-      "fx-focus-ring-brand": "@label-brand-primary",
-      "fx-focus-ring-danger": "@label-danger-primary",
-      "fx-focus-ring-neutral": "@label-primary",
-      "fx-focus-ring-warning": "@label-warning-primary",
-      "fx-glow-brand": [0, 122, 255, 0.522],
-      "fx-glow-danger": [255, 59, 48, 0.522],
-      "fx-glow-inverted": [176, 176, 185, 1],
-      "fx-glow-neutral": [255, 255, 255, 0.522],
-      "fx-glow-warning": [255, 161, 0, 0.522],
-      "fx-skeleton-highlight": [255, 255, 255, 0.078],
-      "badge-label-contrast": [16, 16, 18, 1],
-      "badge-label-default": [255, 255, 255, 1],
-      "control-bg": [255, 255, 255, 1],
-      "fill-accent": "@border-brand-strong",
-      "fill-danger": "@border-danger-strong",
-      "fill-neutral": [232, 232, 236, 1],
-      "fill-accent-tinted": "@fill-brand-primary",
-      "fill-danger-tinted": "@fill-danger-primary",
-      "label-accent": "@label-brand-primary",
-      "label-danger": "@label-danger-primary",
-      "label-on-accent": "@label-static-light-primary",
-      "label-on-danger": "@label-static-light-primary",
-      "label-on-neutral": [16, 16, 18, 1],
-      "border-accent": "@border-brand-strong",
-      "border-danger": "@border-danger-strong",
-      "border-focus": "@fx-focus-ring-brand",
-      "bg-tone-1": "@bg-primary",
-      "bg-tone-2": "@bg-secondary",
-      "bg-tone-3": "@bg-tertiary",
-      "badge-fill-brand": "@border-brand-strong",
-      "badge-label-on-brand": "@label-static-light-primary",
-      "badge-fill-danger": "@border-danger-strong",
-      "badge-label-on-danger": "@label-static-light-primary",
-      "badge-fill-warning": "@border-warning-strong",
-      "badge-label-on-warning": "@label-static-light-primary",
-      "badge-fill-success": "@border-success-strong",
-      "badge-label-on-success": "@label-static-light-primary",
-      "badge-fill-info": "@border-info-strong",
-      "badge-label-on-info": "@label-static-light-primary",
-      "badge-fill-static-dark": "@bg-static-dark",
-      "badge-label-on-static-dark": "@label-static-light-primary",
-      "badge-fill-static-light": "@bg-static-light",
-      "badge-label-on-static-light": "@label-static-dark-primary",
-      "fx-glow-neutral-core": [255, 255, 255, 1],
+      "bg-material-base-01": {
+        "anchor": "material-light-base-tint",
+        "opacity": 0.969
+      },
+      "bg-material-base-02": {
+        "anchor": "material-light-base-back",
+        "opacity": 1
+      },
+      "bg-material-elevated-01": {
+        "anchor": "paper",
+        "opacity": 0.8
+      },
+      "bg-material-elevated-02": {
+        "anchor": "material-light-elevated-back",
+        "opacity": 1
+      },
+      "bg-material-muted-01": {
+        "anchor": "material-light-muted-tint",
+        "opacity": 0.82
+      },
+      "bg-material-muted-02": {
+        "anchor": "material-light-muted-back",
+        "opacity": 1
+      },
+      "bg-material-soft-01": {
+        "anchor": "material-light-soft-tint",
+        "opacity": 0.698
+      },
+      "bg-material-soft-02": {
+        "anchor": "material-light-soft-back",
+        "opacity": 1
+      },
+      "bg-material-subtle-01": {
+        "anchor": "material-light-subtle-tint",
+        "opacity": 0.439
+      },
+      "bg-material-subtle-02": {
+        "anchor": "material-light-subtle-back",
+        "opacity": 1
+      },
+      "bg-grouped-primary": {
+        "anchor": "surface-light-raised",
+        "opacity": 1
+      },
+      "bg-grouped-secondary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "bg-grouped-tertiary": {
+        "anchor": "surface-light-raised",
+        "opacity": 1
+      },
+      "bg-inverted": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "bg-primary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "bg-secondary": {
+        "anchor": "surface-light-raised",
+        "opacity": 1
+      },
+      "bg-tertiary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "bg-overlay-base": {
+        "anchor": "paper",
+        "opacity": 0.478
+      },
+      "bg-overlay-ghost": {
+        "anchor": "paper",
+        "opacity": 0.0
+      },
+      "bg-overlay-soft": {
+        "anchor": "paper",
+        "opacity": 0.2
+      },
+      "bg-overlay-strong": {
+        "anchor": "paper",
+        "opacity": 0.8
+      },
+      "label-inverted-primary": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "label-inverted-quaternary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.322
+      },
+      "label-inverted-secondary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.722
+      },
+      "label-inverted-tertiary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.522
+      },
+      "label-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "label-quaternary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.322
+      },
+      "label-secondary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.722
+      },
+      "label-tertiary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.522
+      },
+      "fill-primary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.2
+      },
+      "fill-quaternary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.078
+      },
+      "fill-secondary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.161
+      },
+      "fill-tertiary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.122
+      },
+      "border-base": {
+        "anchor": "neutral-fill",
+        "opacity": 0.161
+      },
+      "border-inverted": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "border-soft": {
+        "anchor": "neutral-fill",
+        "opacity": 0.078
+      },
+      "border-strong": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "fx-glow-inverted": {
+        "anchor": "neutral-label-light",
+        "opacity": 1
+      },
+      "fx-skeleton-highlight": {
+        "anchor": "paper",
+        "opacity": 0.078
+      },
+      "control-bg": {
+        "anchor": "paper",
+        "opacity": 1
+      },
+      "fill-neutral": {
+        "anchor": "control-light",
+        "opacity": 1
+      },
+      "label-on-neutral": {
+        "anchor": "ink",
+        "opacity": 1
+      },
       "fx-glow-neutral-alpha": 0.0,
-      "fx-glow-neutral-subtle": [255, 255, 255, 0.522],
-      "fx-glow-neutral-subtle-core": [255, 255, 255, 1],
       "fx-glow-neutral-subtle-alpha": 0.0,
-      "fx-glow-neutral-bloom": [255, 255, 255, 0.522],
-      "fx-glow-neutral-bloom-core": [255, 255, 255, 1],
       "fx-glow-neutral-bloom-alpha": 0.0,
-      "fx-glow-brand-core": [0, 122, 255, 1],
       "fx-glow-brand-alpha": 0.0,
-      "fx-glow-brand-subtle": [0, 122, 255, 0.522],
-      "fx-glow-brand-subtle-core": [0, 122, 255, 1],
       "fx-glow-brand-subtle-alpha": 0.0,
-      "fx-glow-brand-bloom": [0, 122, 255, 0.522],
-      "fx-glow-brand-bloom-core": [0, 122, 255, 1],
       "fx-glow-brand-bloom-alpha": 0.0,
-      "fx-glow-danger-core": [255, 59, 48, 1],
       "fx-glow-danger-alpha": 0.0,
-      "fx-glow-danger-subtle": [255, 59, 48, 0.522],
-      "fx-glow-danger-subtle-core": [255, 59, 48, 1],
       "fx-glow-danger-subtle-alpha": 0.0,
-      "fx-glow-danger-bloom": [255, 59, 48, 0.522],
-      "fx-glow-danger-bloom-core": [255, 59, 48, 1],
       "fx-glow-danger-bloom-alpha": 0.0,
-      "fx-glow-warning-core": [255, 161, 0, 1],
       "fx-glow-warning-alpha": 0.0,
-      "fx-glow-warning-subtle": [255, 161, 0, 0.522],
-      "fx-glow-warning-subtle-core": [255, 161, 0, 1],
       "fx-glow-warning-subtle-alpha": 0.0,
-      "fx-glow-warning-bloom": [255, 161, 0, 0.522],
-      "fx-glow-warning-bloom-core": [255, 161, 0, 1],
       "fx-glow-warning-bloom-alpha": 0.0,
-      "fx-focus-ring-success": "@label-success-primary",
-      "fx-glow-success": [52, 199, 89, 0.522],
-      "fx-glow-success-core": [52, 199, 89, 1],
       "fx-glow-success-alpha": 0.0,
-      "fx-glow-success-subtle": [52, 199, 89, 0.522],
-      "fx-glow-success-subtle-core": [52, 199, 89, 1],
       "fx-glow-success-subtle-alpha": 0.0,
-      "fx-glow-success-bloom": [52, 199, 89, 0.522],
-      "fx-glow-success-bloom-core": [52, 199, 89, 1],
       "fx-glow-success-bloom-alpha": 0.0,
-      "fx-focus-ring-info": "@label-info-primary",
-      "fx-glow-info": [62, 135, 255, 0.522],
-      "fx-glow-info-core": [62, 135, 255, 1],
       "fx-glow-info-alpha": 0.0,
-      "fx-glow-info-subtle": [62, 135, 255, 0.522],
-      "fx-glow-info-subtle-core": [62, 135, 255, 1],
       "fx-glow-info-subtle-alpha": 0.0,
-      "fx-glow-info-bloom": [62, 135, 255, 0.522],
-      "fx-glow-info-bloom-core": [62, 135, 255, 1],
       "fx-glow-info-bloom-alpha": 0.0
     },
     "dark": {
-      "bg-material-base-01": [37, 37, 37, 0.898],
-      "bg-material-base-02": [124, 124, 124, 1],
-      "bg-material-elevated-01": [130, 130, 130, 0.8],
-      "bg-material-elevated-02": [31, 31, 31, 1],
-      "bg-material-muted-01": [37, 37, 37, 0.82],
-      "bg-material-muted-02": [140, 140, 140, 1],
-      "bg-material-soft-01": [37, 37, 37, 0.698],
-      "bg-material-soft-02": [156, 156, 156, 1],
-      "bg-material-subtle-01": [37, 37, 37, 0.549],
-      "bg-material-subtle-02": [156, 156, 156, 1],
-      "bg-grouped-primary": [16, 16, 18, 1],
-      "bg-grouped-secondary": [28, 28, 30, 1],
-      "bg-grouped-tertiary": [36, 36, 38, 1],
-      "bg-inverted": [246, 248, 250, 1],
-      "bg-primary": [16, 16, 18, 1],
-      "bg-secondary": [28, 28, 30, 1],
-      "bg-static-dark": [16, 16, 18, 1],
-      "bg-static-light": [255, 255, 255, 1],
-      "bg-tertiary": [36, 36, 38, 1],
-      "bg-overlay-base": [16, 16, 18, 0.478],
-      "bg-overlay-ghost": [16, 16, 18, 0.0],
-      "bg-overlay-soft": [16, 16, 18, 0.2],
-      "bg-overlay-strong": [16, 16, 18, 0.8],
-      "label-brand-primary": [74, 143, 255, 1],
-      "label-brand-quaternary": [74, 143, 255, 0.322],
-      "label-brand-secondary": [74, 143, 255, 0.722],
-      "label-brand-tertiary": [74, 143, 255, 0.522],
-      "label-danger-primary": [255, 58, 58, 1],
-      "label-danger-quaternary": [255, 58, 58, 0.322],
-      "label-danger-secondary": [255, 58, 58, 0.722],
-      "label-danger-tertiary": [255, 58, 58, 0.522],
-      "label-info-primary": [86, 150, 255, 1],
-      "label-info-quaternary": [86, 150, 255, 0.322],
-      "label-info-secondary": [86, 150, 255, 0.722],
-      "label-info-tertiary": [86, 150, 255, 0.522],
-      "label-inverted-primary": [16, 16, 18, 1],
-      "label-inverted-quaternary": [60, 60, 67, 0.322],
-      "label-inverted-secondary": [60, 60, 67, 0.722],
-      "label-inverted-tertiary": [60, 60, 67, 0.522],
-      "label-primary": [246, 248, 250, 1],
-      "label-quaternary": [176, 176, 185, 0.322],
-      "label-secondary": [176, 176, 185, 0.722],
-      "label-tertiary": [176, 176, 185, 0.522],
-      "label-static-dark-primary": [16, 16, 18, 1],
-      "label-static-dark-quaternary": [16, 16, 18, 0.322],
-      "label-static-dark-secondary": [16, 16, 18, 0.722],
-      "label-static-dark-tertiary": [16, 16, 18, 0.522],
-      "label-static-light-primary": [255, 255, 255, 1],
-      "label-static-light-quaternary": [255, 255, 255, 0.322],
-      "label-static-light-secondary": [255, 255, 255, 0.722],
-      "label-static-light-tertiary": [255, 255, 255, 0.522],
-      "label-success-primary": [48, 209, 88, 1],
-      "label-success-quaternary": [48, 209, 88, 0.322],
-      "label-success-secondary": [48, 209, 88, 0.722],
-      "label-success-tertiary": [48, 209, 88, 0.522],
-      "label-warning-primary": [255, 144, 8, 1],
-      "label-warning-quaternary": [255, 144, 8, 0.322],
-      "label-warning-secondary": [255, 144, 8, 0.722],
-      "label-warning-tertiary": [255, 144, 8, 0.522],
-      "fill-brand-primary": [74, 143, 255, 0.122],
-      "fill-brand-quaternary": [74, 143, 255, 0.02],
-      "fill-brand-secondary": [74, 143, 255, 0.078],
-      "fill-brand-tertiary": [74, 143, 255, 0.039],
-      "fill-danger-primary": [255, 58, 58, 0.122],
-      "fill-danger-quaternary": [255, 58, 58, 0.02],
-      "fill-danger-secondary": [255, 58, 58, 0.078],
-      "fill-danger-tertiary": [255, 58, 58, 0.039],
-      "fill-info-primary": [86, 150, 255, 0.122],
-      "fill-info-quaternary": [86, 150, 255, 0.02],
-      "fill-info-secondary": [86, 150, 255, 0.078],
-      "fill-info-tertiary": [86, 150, 255, 0.039],
-      "fill-none": [120, 120, 128, 0.0],
-      "fill-primary": [120, 120, 128, 0.361],
-      "fill-quaternary": [120, 120, 128, 0.161],
-      "fill-secondary": [120, 120, 128, 0.322],
-      "fill-static-dark-primary": [120, 120, 128, 0.361],
-      "fill-static-dark-quaternary": [120, 120, 128, 0.161],
-      "fill-static-dark-secondary": [120, 120, 128, 0.322],
-      "fill-static-dark-tertiary": [120, 120, 128, 0.239],
-      "fill-static-light-primary": [120, 120, 128, 0.2],
-      "fill-static-light-quaternary": [120, 120, 128, 0.078],
-      "fill-static-light-secondary": [120, 120, 128, 0.161],
-      "fill-static-light-tertiary": [120, 120, 128, 0.122],
-      "fill-tertiary": [120, 120, 128, 0.239],
-      "fill-success-primary": [48, 209, 88, 0.122],
-      "fill-success-quaternary": [48, 209, 88, 0.02],
-      "fill-success-secondary": [48, 209, 88, 0.078],
-      "fill-success-tertiary": [48, 209, 88, 0.039],
-      "fill-warning-primary": [255, 144, 8, 0.122],
-      "fill-warning-quaternary": [255, 144, 8, 0.02],
-      "fill-warning-secondary": [255, 144, 8, 0.078],
-      "fill-warning-tertiary": [255, 144, 8, 0.039],
-      "border-brand-base": [74, 143, 255, 0.2],
-      "border-brand-soft": [74, 143, 255, 0.122],
-      "border-brand-strong": [74, 143, 255, 1],
-      "border-danger-base": [255, 58, 58, 0.2],
-      "border-danger-soft": [255, 58, 58, 0.122],
-      "border-danger-strong": [255, 58, 58, 1],
-      "border-info-base": [86, 150, 255, 0.2],
-      "border-info-soft": [86, 150, 255, 0.122],
-      "border-info-strong": [86, 150, 255, 1],
-      "border-base": [120, 120, 128, 0.2],
-      "border-none": [120, 120, 128, 0.0],
-      "border-inverted": [16, 16, 18, 1],
-      "border-soft": [120, 120, 128, 0.122],
-      "border-static-dark-base": [120, 120, 128, 0.2],
-      "border-static-dark-soft": [120, 120, 128, 0.122],
-      "border-static-dark-strong": [16, 16, 18, 1],
-      "border-static-light-base": [120, 120, 128, 0.161],
-      "border-static-light-soft": [120, 120, 128, 0.078],
-      "border-static-light-strong": [255, 255, 255, 1],
-      "border-strong": [246, 248, 250, 1],
-      "border-success-base": [48, 209, 88, 0.2],
-      "border-success-soft": [48, 209, 88, 0.122],
-      "border-success-strong": [48, 209, 88, 1],
-      "border-warning-base": [255, 144, 8, 0.2],
-      "border-warning-soft": [255, 144, 8, 0.122],
-      "border-warning-strong": [255, 144, 8, 1],
-      "fx-focus-ring-brand": "@label-brand-primary",
-      "fx-focus-ring-danger": "@label-danger-primary",
-      "fx-focus-ring-neutral": "@label-primary",
-      "fx-focus-ring-warning": "@label-warning-primary",
-      "fx-glow-brand": [74, 143, 255, 0.522],
-      "fx-glow-danger": [255, 58, 58, 0.522],
-      "fx-glow-inverted": [60, 60, 67, 1],
-      "fx-glow-neutral": [255, 255, 255, 0.522],
-      "fx-glow-warning": [255, 144, 8, 0.522],
-      "fx-skeleton-highlight": [255, 255, 255, 0.161],
-      "badge-label-contrast": [16, 16, 18, 1],
-      "badge-label-default": [255, 255, 255, 1],
-      "control-bg": [120, 120, 128, 0.361],
-      "fill-accent": "@border-brand-strong",
-      "fill-danger": "@border-danger-strong",
-      "fill-neutral": [35, 35, 39, 1],
-      "fill-accent-tinted": "@fill-brand-primary",
-      "fill-danger-tinted": "@fill-danger-primary",
-      "label-accent": "@label-brand-primary",
-      "label-danger": "@label-danger-primary",
-      "label-on-accent": "@label-static-light-primary",
-      "label-on-danger": "@label-static-light-primary",
-      "label-on-neutral": [246, 248, 250, 1],
-      "border-accent": "@border-brand-strong",
-      "border-danger": "@border-danger-strong",
-      "border-focus": "@fx-focus-ring-brand",
-      "bg-tone-1": "@bg-primary",
-      "bg-tone-2": "@bg-secondary",
-      "bg-tone-3": "@bg-tertiary",
-      "badge-fill-brand": "@border-brand-strong",
-      "badge-label-on-brand": "@label-static-light-primary",
-      "badge-fill-danger": "@border-danger-strong",
-      "badge-label-on-danger": "@label-static-light-primary",
-      "badge-fill-warning": "@border-warning-strong",
-      "badge-label-on-warning": "@label-static-light-primary",
-      "badge-fill-success": "@border-success-strong",
-      "badge-label-on-success": "@label-static-light-primary",
-      "badge-fill-info": "@border-info-strong",
-      "badge-label-on-info": "@label-static-light-primary",
-      "badge-fill-static-dark": "@bg-static-dark",
-      "badge-label-on-static-dark": "@label-static-light-primary",
-      "badge-fill-static-light": "@bg-static-light",
-      "badge-label-on-static-light": "@label-static-dark-primary",
-      "fx-glow-neutral-core": [255, 255, 255, 1],
+      "bg-material-base-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.898
+      },
+      "bg-material-base-02": {
+        "anchor": "material-dark-base-back",
+        "opacity": 1
+      },
+      "bg-material-elevated-01": {
+        "anchor": "material-dark-elevated-tint",
+        "opacity": 0.8
+      },
+      "bg-material-elevated-02": {
+        "anchor": "material-dark-elevated-back",
+        "opacity": 1
+      },
+      "bg-material-muted-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.82
+      },
+      "bg-material-muted-02": {
+        "anchor": "material-dark-muted-back",
+        "opacity": 1
+      },
+      "bg-material-soft-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.698
+      },
+      "bg-material-soft-02": {
+        "anchor": "material-dark-soft-back",
+        "opacity": 1
+      },
+      "bg-material-subtle-01": {
+        "anchor": "material-dark-tint",
+        "opacity": 0.549
+      },
+      "bg-material-subtle-02": {
+        "anchor": "material-dark-soft-back",
+        "opacity": 1
+      },
+      "bg-grouped-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "bg-grouped-secondary": {
+        "anchor": "surface-dark-secondary",
+        "opacity": 1
+      },
+      "bg-grouped-tertiary": {
+        "anchor": "surface-dark-tertiary",
+        "opacity": 1
+      },
+      "bg-inverted": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "bg-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "bg-secondary": {
+        "anchor": "surface-dark-secondary",
+        "opacity": 1
+      },
+      "bg-tertiary": {
+        "anchor": "surface-dark-tertiary",
+        "opacity": 1
+      },
+      "bg-overlay-base": {
+        "anchor": "ink",
+        "opacity": 0.478
+      },
+      "bg-overlay-ghost": {
+        "anchor": "ink",
+        "opacity": 0.0
+      },
+      "bg-overlay-soft": {
+        "anchor": "ink",
+        "opacity": 0.2
+      },
+      "bg-overlay-strong": {
+        "anchor": "ink",
+        "opacity": 0.8
+      },
+      "label-inverted-primary": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "label-inverted-quaternary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.322
+      },
+      "label-inverted-secondary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.722
+      },
+      "label-inverted-tertiary": {
+        "anchor": "neutral-label-dark",
+        "opacity": 0.522
+      },
+      "label-primary": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "label-quaternary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.322
+      },
+      "label-secondary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.722
+      },
+      "label-tertiary": {
+        "anchor": "neutral-label-light",
+        "opacity": 0.522
+      },
+      "fill-primary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.361
+      },
+      "fill-quaternary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.161
+      },
+      "fill-secondary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.322
+      },
+      "fill-tertiary": {
+        "anchor": "neutral-fill",
+        "opacity": 0.239
+      },
+      "border-base": {
+        "anchor": "neutral-fill",
+        "opacity": 0.2
+      },
+      "border-inverted": {
+        "anchor": "ink",
+        "opacity": 1
+      },
+      "border-soft": {
+        "anchor": "neutral-fill",
+        "opacity": 0.122
+      },
+      "border-strong": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
+      "fx-glow-inverted": {
+        "anchor": "neutral-label-dark",
+        "opacity": 1
+      },
+      "fx-skeleton-highlight": {
+        "anchor": "paper",
+        "opacity": 0.161
+      },
+      "control-bg": {
+        "anchor": "neutral-fill",
+        "opacity": 0.361
+      },
+      "fill-neutral": {
+        "anchor": "control-dark",
+        "opacity": 1
+      },
+      "label-on-neutral": {
+        "anchor": "paper-text",
+        "opacity": 1
+      },
       "fx-glow-neutral-alpha": 0.0188,
-      "fx-glow-neutral-subtle": [255, 255, 255, 0.522],
-      "fx-glow-neutral-subtle-core": [255, 255, 255, 1],
       "fx-glow-neutral-subtle-alpha": 0.0063,
-      "fx-glow-neutral-bloom": [255, 255, 255, 0.522],
-      "fx-glow-neutral-bloom-core": [255, 255, 255, 1],
       "fx-glow-neutral-bloom-alpha": 0.1151,
-      "fx-glow-brand-core": [74, 143, 255, 1],
       "fx-glow-brand-alpha": 0.036,
-      "fx-glow-brand-subtle": [74, 143, 255, 0.522],
-      "fx-glow-brand-subtle-core": [74, 143, 255, 1],
       "fx-glow-brand-subtle-alpha": 0.0112,
-      "fx-glow-brand-bloom": [74, 143, 255, 0.522],
-      "fx-glow-brand-bloom-core": [74, 143, 255, 1],
       "fx-glow-brand-bloom-alpha": 0.2126,
-      "fx-glow-danger-core": [255, 58, 58, 1],
       "fx-glow-danger-alpha": 0.046,
-      "fx-glow-danger-subtle": [255, 58, 58, 0.522],
-      "fx-glow-danger-subtle-core": [255, 58, 58, 1],
       "fx-glow-danger-subtle-alpha": 0.0146,
-      "fx-glow-danger-bloom": [255, 58, 58, 0.522],
-      "fx-glow-danger-bloom-core": [255, 58, 58, 1],
       "fx-glow-danger-bloom-alpha": 0.2322,
-      "fx-glow-warning-core": [255, 144, 8, 1],
       "fx-glow-warning-alpha": 0.0333,
-      "fx-glow-warning-subtle": [255, 144, 8, 0.522],
-      "fx-glow-warning-subtle-core": [255, 144, 8, 1],
       "fx-glow-warning-subtle-alpha": 0.0111,
-      "fx-glow-warning-bloom": [255, 144, 8, 0.522],
-      "fx-glow-warning-bloom-core": [255, 144, 8, 1],
       "fx-glow-warning-bloom-alpha": 0.1778,
-      "fx-focus-ring-success": "@label-success-primary",
-      "fx-glow-success": [48, 209, 88, 0.522],
-      "fx-glow-success-core": [48, 209, 88, 1],
       "fx-glow-success-alpha": 0.0332,
-      "fx-glow-success-subtle": [48, 209, 88, 0.522],
-      "fx-glow-success-subtle-core": [48, 209, 88, 1],
       "fx-glow-success-subtle-alpha": 0.0128,
-      "fx-glow-success-bloom": [48, 209, 88, 0.522],
-      "fx-glow-success-bloom-core": [48, 209, 88, 1],
       "fx-glow-success-bloom-alpha": 0.1761,
-      "fx-focus-ring-info": "@label-info-primary",
-      "fx-glow-info": [86, 150, 255, 0.522],
-      "fx-glow-info-core": [86, 150, 255, 1],
       "fx-glow-info-alpha": 0.0356,
-      "fx-glow-info-subtle": [86, 150, 255, 0.522],
-      "fx-glow-info-subtle-core": [86, 150, 255, 1],
       "fx-glow-info-subtle-alpha": 0.0119,
-      "fx-glow-info-bloom": [86, 150, 255, 0.522],
-      "fx-glow-info-bloom-core": [86, 150, 255, 1],
       "fx-glow-info-bloom-alpha": 0.2015
-    }
-  },
-  "increasedContrast": {
-    "light": {
-      "brand": [0, 64, 221],
-      "danger": [215, 0, 21],
-      "warning": [201, 52, 0],
-      "success": [36, 138, 61],
-      "info": [0, 80, 207]
-    },
-    "dark": {
-      "brand": [64, 156, 255],
-      "danger": [255, 97, 97],
-      "warning": [255, 169, 64],
-      "success": [48, 219, 91],
-      "info": [149, 192, 255]
     }
   }
 }

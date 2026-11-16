@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initializeNodeColors } from '../engine.mjs';
+import config from '../labui.config.json' with { type: 'json' };
 import { themeProfile } from '../profile.mjs';
 import { createThemeProgram } from '../program.mjs';
 
@@ -87,5 +88,25 @@ describe('LabUI profile over the published Colors Program', () => {
         }
       }
     }
+  });
+
+  it('changing one brand anchor reaches text, fills, borders and glow without changing opacity or other families', () => {
+    const changed = structuredClone(config);
+    changed.anchors.brand.light = [10, 90, 240];
+    const before = themeProfile('light');
+    const after = themeProfile('light', 'normal', changed);
+    for (const name of Object.keys(after.roles)) {
+      const value = after.resolve(name);
+      if (name.split('-').includes('brand') && !name.includes('-on-') && Array.isArray(value)) {
+        expect(value.slice(0, 3), name).toEqual([10, 90, 240]);
+        expect(value[3], name).toBe(before.resolve(name)[3]);
+      }
+    }
+    expect(after.resolve('fill-accent').slice(0, 3)).toEqual([10, 90, 240]);
+    expect(after.resolve('badge-label-on-brand')).toEqual(before.resolve('badge-label-on-brand'));
+    expect(after.resolve('label-danger-primary')).toEqual(before.resolve('label-danger-primary'));
+    expect(themeProfile('dark', 'normal', changed).resolve('label-brand-primary')).toEqual(
+      themeProfile('dark').resolve('label-brand-primary'),
+    );
   });
 });
