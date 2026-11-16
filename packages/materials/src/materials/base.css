@@ -185,7 +185,8 @@
 /* ── Theme rebind of the specular rim (asymmetry: light bright / dark subtle) ──
  * (0,2,0) — attribute + class, like the mode blocks — so it beats the base
  * `.lab-material` (0,1,0). Only rebinds the private `--_rim-active` handle. */
-[data-theme="dark"] .lab-material,
-[data-theme="dark"].lab-material {
+[data-theme="dark"] .lab-material:where(:not([data-lab-material-theme])),
+[data-theme="dark"].lab-material:where(:not([data-lab-material-theme])),
+.lab-material[data-lab-material-theme="dark"] {
   --_rim-active: var(--_rim-dark);
 }

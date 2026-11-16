@@ -99,6 +99,15 @@ test('local DOM updates do not rediscover or refresh another surface', async ({
     const surface = document.querySelector('#surface');
     const unrelated = document.querySelector('#unrelated');
     if (!scope || !surface || !unrelated) throw new Error('Missing fixture elements');
+    // Finish the initial ResizeObserver delivery and its scheduled lens update
+    // before measuring the cost of an unrelated DOM mutation.
+    await new Promise<void>((resolve) => {
+      const observer = new ResizeObserver(() => {
+        observer.disconnect();
+        requestAnimationFrame(() => resolve());
+      });
+      observer.observe(surface);
+    });
     const originalQuery = scope.querySelectorAll.bind(scope);
     const originalStyle = window.getComputedStyle;
     let scans = 0;
@@ -177,6 +186,141 @@ test('overlapping mounts share an instance, removal and final disposal release i
 
 declare global {
   interface Window {
-    materialFixture: { stop(): void; stopShadow(): void; overlap(): void; stopOverlap(): void };
+    materialFixture: {
+      stop(): void;
+      stopShadow(): void;
+      overlap(): void;
+      stopOverlap(): void;
+      mount(root: Document | Element | ShadowRoot): () => void;
+    };
   }
 }
+
+test('CSS without a runtime still degrades to opaque Solid', async ({ page, browserName }) => {
+  test.skip(
+    browserName === 'firefox',
+    'Firefox dynamic contrast emulation does not reevaluate CSS',
+  );
+  await page.evaluate(() => {
+    const panel = document.createElement('div');
+    panel.id = 'unmanaged';
+    panel.className = 'lab-material lab-material--soft';
+    panel.dataset.material = 'glass';
+    document.body.appendChild(panel);
+  });
+  const panel = page.locator('#unmanaged');
+  await expect(panel).not.toHaveAttribute('data-lab-material-mode');
+  await expect(panel).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await page.emulateMedia({ contrast: 'more' });
+  await expect(panel).toHaveCSS('background-color', 'rgb(245, 245, 245)');
+  await expect(panel).toHaveCSS('--_blur', '0px');
+});
+
+test('overlapping mounts keep the new effect when the previous one retires', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.evaluate(() => window.materialFixture.overlap());
+  const surface = page.locator('#surface');
+  await surface.evaluate((el) => el.setAttribute('data-material', 'acrylic'));
+  await expect
+    .poll(() => surface.evaluate((el) => el.style.backdropFilter))
+    .toContain('lab-acrylic-');
+  await surface.evaluate((el) => el.setAttribute('data-material', 'glass'));
+  await expect.poll(() => surface.evaluate((el) => el.style.backdropFilter)).toContain('lab-lg-');
+  await surface.evaluate((el) => el.setAttribute('data-material', 'acrylic'));
+  await expect
+    .poll(() => surface.evaluate((el) => el.style.backdropFilter))
+    .toContain('lab-acrylic-');
+  await expect(page.locator('body > .lab-lg-defs')).toHaveCount(0);
+});
+
+test('moving a shared surface recreates its filter in the destination tree', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.evaluate(() => {
+    window.materialFixture.overlap();
+    const surface = document.querySelector('#surface');
+    const shadow = document.querySelector('#shadow-host')?.shadowRoot;
+    if (!surface || !shadow) throw new Error('Missing material fixture');
+    shadow.appendChild(surface);
+  });
+  const surface = page.locator('#surface');
+  await expect
+    .poll(() =>
+      surface.evaluate((el) => {
+        const id = el.style.backdropFilter.match(/url\(["']?#([^"')]+)["']?\)/)?.[1];
+        return !!id && !!(el.getRootNode() as ShadowRoot).querySelector(`[id="${id}"]`);
+      }),
+    )
+    .toBe(true);
+  await expect(page.locator('body > .lab-lg-defs')).toHaveCount(0);
+});
+
+test('a relocated shadow host follows its new ancestors', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium');
+  await page.evaluate(() => {
+    const host = document.querySelector('#shadow-host');
+    if (!host) throw new Error('Missing shadow host');
+    host.removeAttribute('data-material');
+    const parent = document.createElement('section');
+    parent.id = 'new-parent';
+    parent.dataset.material = 'acrylic';
+    document.body.appendChild(parent);
+    parent.appendChild(host);
+  });
+  const shadow = page.locator('#shadow-surface');
+  await expect(shadow).toHaveAttribute('data-lab-material-mode', 'acrylic');
+  await expect
+    .poll(() => shadow.evaluate((el) => el.style.backdropFilter))
+    .toContain('lab-acrylic-');
+  await page.locator('#new-parent').evaluate((el) => el.setAttribute('data-material', 'glass'));
+  await expect(shadow).toHaveClass(/lab-material--lensed/);
+  await expect.poll(() => shadow.evaluate((el) => el.style.backdropFilter)).toContain('lab-lg-');
+});
+
+test('shadow and light DOM use the same theme-specific rim', async ({ page }) => {
+  await page.locator('html').evaluate((el) => el.setAttribute('data-theme', 'dark'));
+  const light = page.locator('#surface');
+  const shadow = page.locator('#shadow-surface');
+  await expect(shadow).toHaveAttribute('data-lab-material-theme', 'dark');
+  const rim = await light.evaluate((el) => getComputedStyle(el).getPropertyValue('--_rim-active'));
+  expect(
+    await shadow.evaluate((el) => getComputedStyle(el).getPropertyValue('--_rim-active')),
+  ).toBe(rim);
+  await page.locator('#shadow-host').evaluate((el) => el.setAttribute('data-theme', 'light'));
+  await expect(shadow).toHaveAttribute('data-lab-material-theme', 'light');
+  expect(
+    await shadow.evaluate((el) => getComputedStyle(el).getPropertyValue('--_rim-active')),
+  ).not.toBe(rim);
+});
+
+test('a same-origin iframe Document registers its own HTML elements', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.evaluate(() => {
+    const frame = document.createElement('iframe');
+    frame.id = 'material-frame';
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument;
+    if (!doc) throw new Error('Missing iframe document');
+    doc.body.innerHTML =
+      '<div data-material="glass"><div id="frame-surface" class="lab-material" style="width:180px;height:120px;border-radius:20px">Frame</div></div>';
+    window.materialFixture.mount(doc);
+  });
+  const surface = page.frameLocator('#material-frame').locator('#frame-surface');
+  await expect(surface).toHaveClass(/lab-material--lensed/);
+  await expect
+    .poll(() =>
+      surface.evaluate((el) => {
+        const id = el.style.backdropFilter.match(/url\(["']?#([^"')]+)["']?\)/)?.[1];
+        return !!id && !!el.ownerDocument.getElementById(id);
+      }),
+    )
+    .toBe(true);
+});

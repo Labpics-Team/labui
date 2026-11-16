@@ -90,6 +90,14 @@ export function removeFilter(filter: SVGFilterElement): void {
 
 export type MaterialRoot = Document | Element | ShadowRoot;
 
+export function isHtmlElement(node: Node): node is HTMLElement {
+  return node.nodeType === 1 && (node as Element).namespaceURI === 'http://www.w3.org/1999/xhtml';
+}
+
+export function isShadowRoot(node: Node): node is ShadowRoot {
+  return node.nodeType === 11 && 'host' in node;
+}
+
 export const MATERIAL_ENGINE_MEDIA = [
   '(prefers-reduced-transparency: reduce)',
   '(forced-colors: active)',
@@ -105,9 +113,10 @@ export function materialMediaBlocked(): boolean {
 
 /** CSS inheritance crosses a shadow host; Element.closest() does not. */
 export function composedParent(el: Element): Element | null {
+  if (el.assignedSlot) return el.assignedSlot;
   if (el.parentElement) return el.parentElement;
   const root = el.getRootNode();
-  return root.nodeType === 11 && 'host' in root ? (root as ShadowRoot).host : null;
+  return isShadowRoot(root) ? root.host : null;
 }
 
 /**
@@ -170,10 +179,13 @@ export interface MountedEngine {
 
 // Overlapping app/element mounts share one engine instance. Each mount releases
 // only its own reference; an inner component cannot destroy the app's surface.
-const instances = new WeakMap<
-  EngineBinding,
-  WeakMap<HTMLElement, { handle: EngineHandle; refs: number }>
->();
+interface SharedInstance {
+  handle: EngineHandle;
+  refs: number;
+  root: Node;
+  retired: boolean;
+}
+const instances = new WeakMap<EngineBinding, WeakMap<HTMLElement, SharedInstance>>();
 
 /**
  * Единая механика монтирования одного движка над `scope`. Заменяет три
@@ -181,18 +193,22 @@ const instances = new WeakMap<
  * что проходят `wants` (и не под `blocked`), отцепляя ушедшие.
  */
 export function mountEngine(binding: EngineBinding, scope: MaterialRoot): MountedEngine {
-  const held = new Map<HTMLElement, EngineHandle>();
+  const held = new Map<HTMLElement, SharedInstance>();
   let shared = instances.get(binding);
   if (!shared) {
     shared = new WeakMap();
     instances.set(binding, shared);
   }
-  const release = (el: HTMLElement): void => {
-    const instance = shared.get(el);
-    if (instance && --instance.refs === 0) {
+  const retire = (el: HTMLElement, instance: SharedInstance): void => {
+    if (!instance.retired) {
+      instance.retired = true;
       instance.handle.destroy();
-      shared.delete(el);
     }
+    if (shared.get(el) === instance) shared.delete(el);
+  };
+  const release = (el: HTMLElement): void => {
+    const instance = held.get(el);
+    if (instance && --instance.refs === 0) retire(el, instance);
     held.delete(el);
   };
 
@@ -203,30 +219,37 @@ export function mountEngine(binding: EngineBinding, scope: MaterialRoot): Mounte
       candidates ??
       new Set([
         ...held.keys(),
-        ...(scope instanceof HTMLElement ? [scope] : []),
+        ...(isHtmlElement(scope) ? [scope] : []),
         ...Array.from(scope.querySelectorAll<HTMLElement>(binding.selector)),
       ]);
     const blocked = binding.blocked?.() ?? false;
     for (const el of changes) {
-      const handle = held.get(el);
-      const wants =
-        !blocked &&
-        el.isConnected &&
-        scope.contains(el) &&
-        el.matches(binding.selector) &&
-        binding.wants(el);
-      if (!wants) {
-        if (handle) release(el);
-      } else if (handle) {
-        if (binding.refreshHeld) handle.refresh?.();
+      let instance = shared.get(el);
+      const valid = !blocked && el.isConnected && el.matches(binding.selector) && binding.wants(el);
+      // A mode/tree change invalidates the actual effect immediately, even if
+      // another scope has not processed its mutation batch yet. Retired leases
+      // later release their own instance, never a replacement's inline style.
+      if (instance && (!valid || instance.root !== el.getRootNode())) {
+        retire(el, instance);
+        instance = undefined;
+      }
+      const previous = held.get(el);
+      if (previous && (previous.retired || !scope.contains(el) || !valid)) release(el);
+      if (!valid || !scope.contains(el)) continue;
+      if (held.has(el)) {
+        if (binding.refreshHeld) instance?.handle.refresh?.();
       } else {
-        let instance = shared.get(el);
         if (!instance) {
-          instance = { handle: binding.attach(el), refs: 0 };
+          instance = {
+            handle: binding.attach(el),
+            refs: 0,
+            root: el.getRootNode(),
+            retired: false,
+          };
           shared.set(el, instance);
         }
         instance.refs++;
-        held.set(el, instance.handle);
+        held.set(el, instance);
       }
     }
   };

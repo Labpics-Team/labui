@@ -47,8 +47,8 @@
 }
 /* <<< ACRYLIC-NOISE:GENERATED */
 
-[data-material="acrylic"] .lab-material:not([data-lab-material-mode]),
-[data-material="acrylic"].lab-material:not([data-lab-material-mode]),
+[data-material="acrylic"] .lab-material:where(:not([data-lab-material-mode])),
+[data-material="acrylic"].lab-material:where(:not([data-lab-material-mode])),
 .lab-material[data-lab-material-mode="acrylic"] {
   --_base-paint: transparent;
   --_blur: var(--_blur-live);

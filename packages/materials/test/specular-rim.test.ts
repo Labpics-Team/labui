@@ -92,9 +92,7 @@ describe('specular rim — приватная ручка --_rim', () => {
     expect(base, 'дефолт активного рима = светлый').toContain('--_rim-active: var(--_rim-light)');
     // Тёмный оверрайд на (0,2,0) — атрибут + класс, как у мод-блоков.
     expect(css).toContain('[data-theme="dark"] .lab-material');
-    const darkBody = blockBody(
-      /\[data-theme="dark"\] \.lab-material,\s*\r?\n\s*\[data-theme="dark"\]\.lab-material\s*\{/,
-    );
+    const darkBody = blockBody(/\.lab-material\[data-lab-material-theme="dark"\]\s*\{/);
     expect(darkBody).toContain('--_rim-active: var(--_rim-dark)');
   });
 

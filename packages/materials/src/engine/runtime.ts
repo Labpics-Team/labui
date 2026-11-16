@@ -41,6 +41,8 @@ import {
   MATERIAL_ENGINE_MEDIA,
   type MaterialRoot,
   composedParent,
+  isHtmlElement,
+  isShadowRoot,
   materialMediaBlocked,
   mountEngine,
   trailingRaf,
@@ -50,6 +52,7 @@ import { attach as attachVeil, supportsBackdropBlur } from './veil';
 const SURFACE = '.lab-material';
 const VEIL = '[data-veil]';
 const MODE_ATTR = 'data-lab-material-mode';
+const THEME_ATTR = 'data-lab-material-theme';
 const paintRefs = new WeakMap<HTMLElement, number>();
 const releasePaint = (el: HTMLElement): void => {
   const refs = (paintRefs.get(el) ?? 1) - 1;
@@ -57,6 +60,7 @@ const releasePaint = (el: HTMLElement): void => {
   else {
     paintRefs.delete(el);
     el.removeAttribute(MODE_ATTR);
+    el.removeAttribute(THEME_ATTR);
   }
 };
 
@@ -75,6 +79,16 @@ function inModeScope(el: Element, mode: string): boolean {
     if (scope.hasAttribute('data-material')) return scope.getAttribute('data-material') === mode;
   }
   return false;
+}
+
+function themeOf(el: Element): string {
+  for (let scope: Element | null = el; scope; scope = composedParent(scope)) {
+    if (scope.hasAttribute('data-theme'))
+      return scope.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+  return el.ownerDocument.defaultView?.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
 }
 
 /** The three engine bindings — the ONLY place the runtime names concrete engines.
@@ -122,6 +136,12 @@ const BINDINGS: readonly EngineBinding[] = [
 export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   if (typeof document === 'undefined') return () => {};
   const scope = root ?? document;
+  const doc = scope.nodeType === 9 ? (scope as Document) : scope.ownerDocument;
+  const anchor = isShadowRoot(scope)
+    ? scope.host
+    : scope.nodeType === 1
+      ? (scope as Element)
+      : null;
 
   const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
 
@@ -129,10 +149,11 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   const dirty = new Set<HTMLElement>();
   const selector = `${SURFACE},${VEIL}`;
   const collect = (node: Node): void => {
-    if (node instanceof HTMLElement && (node.matches(selector) || surfaces.has(node)))
-      dirty.add(node);
-    if (node instanceof Element || node instanceof Document || node instanceof ShadowRoot) {
-      for (const el of node.querySelectorAll<HTMLElement>(selector)) dirty.add(el);
+    if (isHtmlElement(node) && (node.matches(selector) || surfaces.has(node))) dirty.add(node);
+    if ('querySelectorAll' in node) {
+      for (const el of (node as ParentNode).querySelectorAll<HTMLElement>(selector)) {
+        if (isHtmlElement(el)) dirty.add(el);
+      }
     }
   };
   const sync = (): void => {
@@ -154,7 +175,12 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
                 ? 'acrylic'
                 : 'solid';
           if (el.getAttribute(MODE_ATTR) !== mode) el.setAttribute(MODE_ATTR, mode);
-        } else el.removeAttribute(MODE_ATTR);
+          const theme = themeOf(el);
+          if (el.getAttribute(THEME_ATTR) !== theme) el.setAttribute(THEME_ATTR, theme);
+        } else {
+          el.removeAttribute(MODE_ATTR);
+          el.removeAttribute(THEME_ATTR);
+        }
       } else if (surfaces.delete(el)) releasePaint(el);
     }
     for (const engine of engines) engine.sync(changes);
@@ -164,7 +190,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   const raf = trailingRaf(sync);
   // Engine-owned inline backdrop changes and its state class must not schedule
   // themselves forever. Other style changes (tokens, radii) refresh the subtree.
-  const styleProbe = document.createElement('div').style;
+  const styleProbe = (doc ?? document).createElement('div').style;
   const externalStyle = (css: string): string => {
     styleProbe.cssText = css;
     styleProbe.removeProperty('backdrop-filter');
@@ -179,11 +205,22 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
       .join(' ');
   const inheritedAncestors = new Set<Element>();
   const mo = new MutationObserver((records) => {
+    let relocated = false;
     for (const record of records) {
       if (record.type === 'childList') {
+        if (inheritedAncestors.has(record.target as Element)) {
+          if (
+            anchor &&
+            [...record.addedNodes, ...record.removedNodes].some(
+              (node) => node === anchor || node.contains(anchor),
+            )
+          )
+            relocated = true;
+          continue;
+        }
         for (const node of record.addedNodes) collect(node);
         for (const node of record.removedNodes) collect(node);
-      } else if (record.target instanceof HTMLElement) {
+      } else if (isHtmlElement(record.target)) {
         const el = record.target;
         if (
           record.attributeName === 'style' &&
@@ -198,6 +235,10 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
         collect(inheritedAncestors.has(el) ? scope : el);
       }
     }
+    if (relocated) {
+      observe();
+      collect(scope);
+    }
     if (dirty.size) raf.schedule();
   });
   const attributes = [
@@ -208,29 +249,33 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
     'style',
     'data-veil',
   ];
-  mo.observe(scope instanceof Document ? scope.documentElement : scope, {
-    attributes: true,
-    attributeOldValue: true,
-    attributeFilter: attributes,
-    childList: true,
-    subtree: true,
-  });
   // Explicit lifecycle mount covers closed roots too. Observe inherited mode
   // changes on ancestors without observing their unrelated descendants.
-  let ancestor =
-    scope instanceof ShadowRoot
-      ? scope.host
-      : scope instanceof Element
-        ? composedParent(scope)
-        : null;
-  for (; ancestor; ancestor = composedParent(ancestor)) {
-    inheritedAncestors.add(ancestor);
-    mo.observe(ancestor, {
+  const observe = (): void => {
+    mo.disconnect();
+    inheritedAncestors.clear();
+    mo.observe(scope.nodeType === 9 ? (scope as Document).documentElement : scope, {
       attributes: true,
       attributeOldValue: true,
       attributeFilter: attributes,
+      childList: true,
+      subtree: true,
     });
-  }
+    for (
+      let ancestor = isShadowRoot(scope) ? scope.host : anchor ? composedParent(anchor) : null;
+      ancestor;
+      ancestor = composedParent(ancestor)
+    ) {
+      inheritedAncestors.add(ancestor);
+      mo.observe(ancestor, {
+        attributes: true,
+        attributeOldValue: true,
+        attributeFilter: attributes,
+        childList: true,
+      });
+    }
+  };
+  observe();
 
   // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
   // движка обязан сняться сам, листовые деградации его не перебивают). Собираем
@@ -242,6 +287,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   };
   if (typeof matchMedia !== 'undefined') {
     const queries = new Set([
+      '(prefers-color-scheme: dark)',
       ...MATERIAL_ENGINE_MEDIA,
       ...engines.flatMap((e) => [...e.mediaQueries]),
     ]);
