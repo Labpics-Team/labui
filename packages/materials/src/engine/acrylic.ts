@@ -64,7 +64,10 @@ import { ACRYLIC_LUMINOSITY_OPACITY } from '../acrylic-corridor';
 import { MATERIAL_TIERS, type MaterialTier } from '../material-guarantee';
 import {
   type EngineHandle,
+  MATERIAL_ENGINE_MEDIA,
   ensureHiddenDefs,
+  materialMediaBlocked,
+  removeFilter,
   supportsBackdropFilterUrl,
   trailingRaf,
 } from './mount';
@@ -93,11 +96,7 @@ export const ACRYLIC_REACH_PX = 2 * ACRYLIC_BLUR_PX;
 
 /** Медиа-режимы, в которых движок обязан НЕ держать поверхность (инлайн сильнее
  *  листовых деградаций — гаснем в JS, лист остаётся бэкстопом v1). */
-export const ACRYLIC_ENGINE_MEDIA = [
-  '(prefers-reduced-transparency: reduce)',
-  '(forced-colors: active)',
-  '(prefers-contrast: more)',
-] as const;
+export const ACRYLIC_ENGINE_MEDIA = MATERIAL_ENGINE_MEDIA;
 
 /** Способность рисовать url()-фильтр на backdrop (общая проба ./mount) — то же
  *  браузерное требование, что у стекла, но НЕ через glass-модуль: acrylic от
@@ -108,8 +107,7 @@ export function supportsAcrylicChain(): boolean {
 
 /** true, когда хотя бы один запрещающий медиа-режим активен. */
 export function acrylicMediaBlocked(): boolean {
-  if (typeof matchMedia === 'undefined') return false;
-  return ACRYLIC_ENGINE_MEDIA.some((query) => matchMedia(query).matches);
+  return materialMediaBlocked();
 }
 
 /** Tier поверхности из её классов; без модификатора — base (как в CSS). */
@@ -123,7 +121,10 @@ function tierOf(el: HTMLElement): MaterialTier {
 /** Собрать per-surface фильтр в общих defs; вернуть его id и живой feFlood
  *  (flood-color пере-биндится на смену tier). Регион ставит caller (зависит
  *  от размера). */
-function buildFilter(tier: MaterialTier): {
+function buildFilter(
+  tier: MaterialTier,
+  el: HTMLElement,
+): {
   id: string;
   filter: SVGFilterElement;
   flood: SVGFEFloodElement;
@@ -155,7 +156,7 @@ function buildFilter(tier: MaterialTier): {
   blend.setAttribute('mode', 'luminosity');
 
   filter.append(blur, saturate, flood, blend);
-  ensureHiddenDefs(DEFS_CLASS).appendChild(filter);
+  ensureHiddenDefs(DEFS_CLASS, el).appendChild(filter);
   return { id, filter, flood };
 }
 
@@ -186,7 +187,15 @@ export function attach(el: HTMLElement): EngineHandle {
   registry.get(el)?.destroy();
 
   let tier = tierOf(el);
-  const { id, filter, flood } = buildFilter(tier);
+  const { id, filter, flood } = buildFilter(tier, el);
+  // The filter lives in root-local defs, outside the surface's theme subtree.
+  // Read the resolved surface role instead of inheriting the document's role.
+  const refreshTint = (): void => {
+    const tint = getComputedStyle(el).getPropertyValue(`--lab-bg-material-${tier}-01`).trim();
+    if (tint && flood.style.getPropertyValue('flood-color') !== tint)
+      flood.style.setProperty('flood-color', tint);
+  };
+  refreshTint();
   setRegion(filter, el);
   writeBackdrop(el, id);
 
@@ -204,11 +213,12 @@ export function attach(el: HTMLElement): EngineHandle {
         // Только flood-color зависит от tier; регион и цепочка — нет.
         flood.style.setProperty('flood-color', `var(--lab-bg-material-${tier}-01)`);
       }
+      refreshTint();
     },
     destroy(): void {
       ro.disconnect();
       raf.cancel();
-      filter.remove();
+      removeFilter(filter);
       el.style.removeProperty('backdrop-filter');
       el.style.removeProperty('-webkit-backdrop-filter');
       if (registry.get(el) === handle) registry.delete(el);

@@ -23,8 +23,8 @@
  *     Veil гейтится отдельно на plain backdrop-filter (его единственное железное
  *     требование); без него mount ничего не пишет.
  *   · `data-material` / class / `data-veil` re-binds, added/removed surfaces: один
- *     MutationObserver ре-синкает все движки; rAF-сворачивание превращает шторм
- *     мутаций в один sync. Смена запрещающих медиа acrylic — тот же ре-синк.
+ *     MutationObserver collects only changed subtrees; rAF coalesces affected
+ *     surfaces. Media changes revisit registered surfaces without discovery.
  *   · Unmount (returned disposer) отцепляет все инстансы и восстанавливает
  *     чистый CSS-стек — SSR/HMR-friendly.
  */
@@ -36,32 +36,59 @@ import {
   supportsAcrylicChain,
 } from './acrylic';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
-import { type EngineBinding, mountEngine, trailingRaf } from './mount';
+import {
+  type EngineBinding,
+  MATERIAL_ENGINE_MEDIA,
+  type MaterialRoot,
+  composedParent,
+  materialMediaBlocked,
+  mountEngine,
+  trailingRaf,
+} from './mount';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
 const VEIL = '[data-veil]';
+const MODE_ATTR = 'data-lab-material-mode';
+const paintRefs = new WeakMap<HTMLElement, number>();
+const releasePaint = (el: HTMLElement): void => {
+  const refs = (paintRefs.get(el) ?? 1) - 1;
+  if (refs) paintRefs.set(el, refs);
+  else {
+    paintRefs.delete(el);
+    el.removeAttribute(MODE_ATTR);
+  }
+};
 
 /** An engine holds a `.lab-material` only when its NEAREST material scope carries
  *  the engine's mode — mirroring the material.css selector
  *  `[data-material="<mode>"] .lab-material` (the closest scope wins in CSS
  *  custom-property terms too). */
 function inModeScope(el: Element, mode: string): boolean {
-  const scope = el.closest('[data-material]');
-  return scope !== null && scope.getAttribute('data-material') === mode;
+  for (let scope: Element | null = el; scope; scope = composedParent(scope)) {
+    if (scope.hasAttribute('data-contrast')) {
+      if (scope.getAttribute('data-contrast') === 'more') return false;
+      break;
+    }
+  }
+  for (let scope: Element | null = el; scope; scope = composedParent(scope)) {
+    if (scope.hasAttribute('data-material')) return scope.getAttribute('data-material') === mode;
+  }
+  return false;
 }
 
 /** The three engine bindings — the ONLY place the runtime names concrete engines.
  *  Each пара (mode, engine) — одна строка; порядок несуществен (движки держат
  *  непересекающиеся множества: glass/acrylic по режиму, veil по атрибуту). */
 const BINDINGS: readonly EngineBinding[] = [
-  // Glass (refraction). refreshHeld:false — сохраняет прежнее поведение: LG
-  // ре-рендерит вне этой петли (свой ResizeObserver), рантайм его не дёргает.
+  // Glass geometry/knobs follow local tier and theme configuration changes.
   {
     gate: supportsRefraction,
     selector: SURFACE,
     wants: (el) => inModeScope(el, 'glass'),
-    refreshHeld: false,
+    blocked: materialMediaBlocked,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
+    refreshHeld: true,
     attach: attachGlass,
   },
   // Acrylic v2 (luminosity chain). Тот же Chromium-гейт; инлайн сильнее листовых
@@ -89,41 +116,138 @@ const BINDINGS: readonly EngineBinding[] = [
 
 /**
  * Mount the material runtime over `root` (default: the whole document).
- * Returns the disposer. Safe to call in any environment: without a DOM or
- * without any supported engine it is an inert no-op.
+ * Returns the disposer. Without a DOM it is an inert no-op. Unsupported
+ * engines keep the same scoped CSS material without installing a filter.
  */
-export function mountMaterialRuntime(root?: Document | Element): () => void {
+export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   if (typeof document === 'undefined') return () => {};
   const scope = root ?? document;
 
   const engines = BINDINGS.filter((b) => b.gate()).map((b) => mountEngine(b, scope));
-  if (engines.length === 0) return () => {};
 
-  const sync = (): void => {
-    for (const engine of engines) engine.sync();
+  const surfaces = new Set<HTMLElement>();
+  const dirty = new Set<HTMLElement>();
+  const selector = `${SURFACE},${VEIL}`;
+  const collect = (node: Node): void => {
+    if (node instanceof HTMLElement && (node.matches(selector) || surfaces.has(node)))
+      dirty.add(node);
+    if (node instanceof Element || node instanceof Document || node instanceof ShadowRoot) {
+      for (const el of node.querySelectorAll<HTMLElement>(selector)) dirty.add(el);
+    }
   };
+  const sync = (): void => {
+    const changes = [...dirty];
+    dirty.clear();
+    const mediaBlocked = materialMediaBlocked();
+    for (const el of changes) {
+      if (el.isConnected && scope.contains(el) && el.matches(selector)) {
+        if (!surfaces.has(el)) paintRefs.set(el, (paintRefs.get(el) ?? 0) + 1);
+        surfaces.add(el);
+        // Resolve the inherited mode once at registration/update. The stylesheet
+        // can now paint the same recipe across a shadow boundary and nested modes.
+        if (el.matches(SURFACE)) {
+          const mode = mediaBlocked
+            ? 'solid'
+            : inModeScope(el, 'glass')
+              ? 'glass'
+              : inModeScope(el, 'acrylic')
+                ? 'acrylic'
+                : 'solid';
+          if (el.getAttribute(MODE_ATTR) !== mode) el.setAttribute(MODE_ATTR, mode);
+        } else el.removeAttribute(MODE_ATTR);
+      } else if (surfaces.delete(el)) releasePaint(el);
+    }
+    for (const engine of engines) engine.sync(changes);
+  };
+  collect(scope);
   sync();
-
-  // Mutation storms (hydration, list re-render) collapse to ONE sync on the next
-  // frame — the final attached set is identical to an un-debounced run.
   const raf = trailingRaf(sync);
-  const mo = new MutationObserver(raf.schedule);
+  // Engine-owned inline backdrop changes and its state class must not schedule
+  // themselves forever. Other style changes (tokens, radii) refresh the subtree.
+  const styleProbe = document.createElement('div').style;
+  const externalStyle = (css: string): string => {
+    styleProbe.cssText = css;
+    styleProbe.removeProperty('backdrop-filter');
+    styleProbe.removeProperty('-webkit-backdrop-filter');
+    return styleProbe.cssText;
+  };
+  const externalClass = (value: string): string =>
+    value
+      .split(/\s+/)
+      .filter((name) => name && name !== 'lab-material--lensed')
+      .sort()
+      .join(' ');
+  const inheritedAncestors = new Set<Element>();
+  const mo = new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.type === 'childList') {
+        for (const node of record.addedNodes) collect(node);
+        for (const node of record.removedNodes) collect(node);
+      } else if (record.target instanceof HTMLElement) {
+        const el = record.target;
+        if (
+          record.attributeName === 'style' &&
+          externalStyle(record.oldValue ?? '') === externalStyle(el.style.cssText)
+        )
+          continue;
+        if (
+          record.attributeName === 'class' &&
+          externalClass(record.oldValue ?? '') === externalClass(el.className)
+        )
+          continue;
+        collect(inheritedAncestors.has(el) ? scope : el);
+      }
+    }
+    if (dirty.size) raf.schedule();
+  });
+  const attributes = [
+    'data-material',
+    'data-theme',
+    'data-contrast',
+    'class',
+    'style',
+    'data-veil',
+  ];
   mo.observe(scope instanceof Document ? scope.documentElement : scope, {
     attributes: true,
-    attributeFilter: ['data-material', 'class', 'data-veil'],
+    attributeOldValue: true,
+    attributeFilter: attributes,
     childList: true,
     subtree: true,
   });
+  // Explicit lifecycle mount covers closed roots too. Observe inherited mode
+  // changes on ancestors without observing their unrelated descendants.
+  let ancestor =
+    scope instanceof ShadowRoot
+      ? scope.host
+      : scope instanceof Element
+        ? composedParent(scope)
+        : null;
+  for (; ancestor; ancestor = composedParent(ancestor)) {
+    inheritedAncestors.add(ancestor);
+    mo.observe(ancestor, {
+      attributes: true,
+      attributeOldValue: true,
+      attributeFilter: attributes,
+    });
+  }
 
   // Запрещающие медиа-режимы (сейчас — acrylic): смена → пере-синк (инлайн
   // движка обязан сняться сам, листовые деградации его не перебивают). Собираем
   // объединение медиа-запросов всех смонтированных движков.
   const mediaListeners: MediaQueryList[] = [];
+  const refreshAll = (): void => {
+    for (const el of surfaces) dirty.add(el);
+    if (dirty.size) raf.schedule();
+  };
   if (typeof matchMedia !== 'undefined') {
-    const queries = new Set(engines.flatMap((e) => [...e.mediaQueries]));
+    const queries = new Set([
+      ...MATERIAL_ENGINE_MEDIA,
+      ...engines.flatMap((e) => [...e.mediaQueries]),
+    ]);
     for (const query of queries) {
       const mq = matchMedia(query);
-      mq.addEventListener('change', raf.schedule);
+      mq.addEventListener('change', refreshAll);
       mediaListeners.push(mq);
     }
   }
@@ -131,7 +255,10 @@ export function mountMaterialRuntime(root?: Document | Element): () => void {
   return () => {
     mo.disconnect();
     raf.cancel();
-    for (const mq of mediaListeners) mq.removeEventListener('change', raf.schedule);
+    for (const mq of mediaListeners) mq.removeEventListener('change', refreshAll);
     for (const engine of engines) engine.dispose();
+    for (const el of surfaces) releasePaint(el);
+    surfaces.clear();
+    dirty.clear();
   };
 }

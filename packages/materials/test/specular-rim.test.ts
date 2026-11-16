@@ -73,17 +73,17 @@ describe('specular rim — приватная ручка --_rim', () => {
   });
 
   it('glass ВКЛЮЧАЕТ рим (стеклянная кромка ловит свет)', () => {
-    const body = blockBody(/\[data-material="glass"\] \.lab-material,/);
+    const body = blockBody(/\.lab-material\[data-lab-material-mode="glass"\]/);
     expect(body).toContain('--_rim: var(--_rim-active)');
   });
 
   it('acrylic ВКЛЮЧАЕТ рим (Fluent-кромка несёт люминантный штрих)', () => {
-    const body = blockBody(/\[data-material="acrylic"\] \.lab-material,/);
+    const body = blockBody(/\.lab-material\[data-lab-material-mode="acrylic"\]/);
     expect(body).toContain('--_rim: var(--_rim-active)');
   });
 
   it('solid ВЫКЛЮЧАЕТ рим (непрозрачный канон — не стекло; перекрывает предка)', () => {
-    const body = blockBody(/\[data-material="solid"\] \.lab-material,/);
+    const body = blockBody(/\.lab-material\[data-lab-material-mode="solid"\]/);
     expect(body).toContain('--_rim: none');
   });
 

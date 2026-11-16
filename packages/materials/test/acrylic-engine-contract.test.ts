@@ -86,9 +86,9 @@ describe('честные деградации: движок гаснет во в
     // (blocked опустошает want в mountEngine) И их смена ре-синкает mount.
     expect(runtimeSrc).toContain('blocked: acrylicMediaBlocked');
     expect(runtimeSrc).toContain('mediaQueries: ACRYLIC_ENGINE_MEDIA');
-    expect(runtimeSrc).toContain("mq.addEventListener('change', raf.schedule)");
+    expect(runtimeSrc).toContain("mq.addEventListener('change', refreshAll)");
     // mountEngine — держатель поведения: blocked() опустошает набор до скана.
-    expect(mountSrc).toContain('if (!binding.blocked?.())');
+    expect(mountSrc).toContain('binding.blocked?.()');
   });
 });
 
@@ -111,7 +111,7 @@ describe('родной LG-стиль региона (userSpaceOnUse, изотр�
   });
 
   it('per-surface фильтр в общем defs-хосте (ensureHiddenDefs), uid — родной registry-стиль', () => {
-    expect(engineSrc).toContain('ensureHiddenDefs(DEFS_CLASS)');
+    expect(engineSrc).toContain('ensureHiddenDefs(DEFS_CLASS, el)');
     expect(engineSrc).toContain('lab-acrylic-${++uid}');
     expect(engineSrc).toContain('registry.set(el, handle)');
   });

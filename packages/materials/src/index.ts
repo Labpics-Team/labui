@@ -30,6 +30,7 @@ export {
 } from './luminance';
 
 export { mountMaterialRuntime } from './engine/runtime';
+export type { MaterialRoot } from './engine/mount';
 
 export {
   type LadderCase,

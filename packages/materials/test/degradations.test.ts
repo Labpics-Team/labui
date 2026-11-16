@@ -105,7 +105,7 @@ describe('material.css deterministic degradations', () => {
   it('manual override: data-material="solid" restores the opaque canon and drops grain + rim', () => {
     expect(css).toContain('[data-material="solid"] .lab-material');
     expect(css).toContain('[data-material="solid"].lab-material');
-    const body = atRuleBody(/\[data-material="solid"\] \.lab-material,/);
+    const body = atRuleBody(/\.lab-material\[data-lab-material-mode="solid"\]/);
     expect(forcesSolid(body)).toBe(true);
     expect(dropsNoise(body)).toBe(true);
     // A solid override nested under a glass/acrylic ancestor inherits the
@@ -124,7 +124,7 @@ describe('material.css deterministic degradations', () => {
   });
 
   it('acrylic mode binds the grain and reuses the ladder (no new magic value)', () => {
-    const body = atRuleBody(/\[data-material="acrylic"\] \.lab-material,/);
+    const body = atRuleBody(/\.lab-material\[data-lab-material-mode="acrylic"\]/);
     expect(body).toContain('--_noise: var(--_acrylic-noise)'); // grain on
     expect(body).toContain('--_blur: var(--_blur-live)'); // одна ступень 48px на все live-материалы (ADR-0009), не новый литерал
     expect(body).toContain('--_saturate: var(--_saturate-on)'); // 180% reused

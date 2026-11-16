@@ -143,7 +143,7 @@ function readConfig(el: HTMLElement): VeilConfig {
     const v = cs.getPropertyValue(prop).trim();
     return v || fb;
   };
-  const rect = el.getBoundingClientRect();
+  const rect = { width: el.offsetWidth, height: el.offsetHeight };
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
   const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
@@ -272,7 +272,7 @@ function render(state: VeilState): void {
       const box = bandBBox(c.w, c.h, A, B, inS - bleed, outE + bleed);
       if (!box) continue;
 
-      const strip = document.createElement('div');
+      const strip = el.ownerDocument.createElement('div');
       strip.className = VEIL_STRIP_CLASS;
       strip.style.left = px(box.x);
       strip.style.top = px(box.y);

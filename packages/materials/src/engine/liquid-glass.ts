@@ -68,7 +68,7 @@
 // engine simply re-imports those exact symbols — the runtime is byte-identical;
 // only the definition site moved.
 import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
-import { ensureHiddenDefs, supportsBackdropFilterUrl } from './mount';
+import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mount';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -157,7 +157,7 @@ let uid = 0;
 
 /** Скрытый defs-хост линзы — общий примитив (./mount), делится с acrylic-движком
  *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
-const ensureDefs = (): SVGDefsElement => ensureHiddenDefs('lab-lg-defs');
+const ensureDefs = (el: HTMLElement): SVGDefsElement => ensureHiddenDefs('lab-lg-defs', el);
 
 /** The package-private state class: while the engine holds a surface,
  *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
@@ -713,7 +713,9 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
     return Number.isFinite(v) ? v : fb;
   };
   const p = state.params;
-  const rect = el.getBoundingClientRect(); // one reflow read, used for both dims
+  // SVG userSpaceOnUse is local CSS space. A transformed boundingClientRect
+  // would apply scale twice and rebuild the map during an ordinary sheet move.
+  const rect = { width: el.offsetWidth, height: el.offsetHeight };
   return {
     w: Math.max(1, Math.round(rect.width)),
     h: Math.max(1, Math.round(rect.height)),
@@ -874,9 +876,9 @@ function render(state: EngineState): void {
  */
 export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHandle {
   registry.get(el)?.destroy();
-  ensureDefs();
+  const defs = ensureDefs(el);
   const id = `lab-lg-${++uid}`;
-  const filter = document.createElementNS(SVGNS, 'filter');
+  const filter = el.ownerDocument.createElementNS(SVGNS, 'filter');
   filter.id = id;
   filter.setAttribute('color-interpolation-filters', 'sRGB');
   // userSpaceOnUse with the region set to the element box (0,0,w,h) in stamp():
@@ -885,7 +887,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
   // (primitiveUnits is intentionally NOT set: no primitive here carries a
   // primitiveUnits-sensitive length, so it would be a no-op.)
   filter.setAttribute('filterUnits', 'userSpaceOnUse');
-  ensureDefs().appendChild(filter);
+  defs.appendChild(filter);
 
   const { onPerf, ...params } = opts;
   const state: EngineState = {
@@ -947,7 +949,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     window.removeEventListener('resize', debouncedUpdate);
     mq?.removeEventListener('change', update);
     dropMap(state); // release our hold on the shared cached map
-    filter.remove();
+    removeFilter(filter);
     setBackdrop(el, '', state);
     el.classList.remove(LENSED_CLASS);
     if (registry.get(el) === state) registry.delete(el);

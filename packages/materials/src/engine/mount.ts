@@ -58,19 +58,56 @@ function probeBackdropFilterUrl(): boolean {
  * невидимый, вне hit-теста и a11y-дерева. Раньше — две дословных копии
  * (`ensureDefs` в liquid-glass, `ensureAcrylicDefs` в acrylic).
  */
-const defsHosts = new Map<string, SVGDefsElement>();
-export function ensureHiddenDefs(className: string): SVGDefsElement {
-  const cached = defsHosts.get(className);
+const defsHosts = new WeakMap<Document | ShadowRoot, Map<string, SVGDefsElement>>();
+export function ensureHiddenDefs(className: string, surface?: HTMLElement): SVGDefsElement {
+  const doc = surface?.ownerDocument ?? document;
+  const tree = surface?.getRootNode();
+  const root = tree?.nodeType === 11 ? (tree as ShadowRoot) : doc;
+  let hosts = defsHosts.get(root);
+  if (!hosts) {
+    hosts = new Map();
+    defsHosts.set(root, hosts);
+  }
+  const cached = hosts.get(className);
   if (cached?.isConnected) return cached;
-  const svg = document.createElementNS(SVGNS, 'svg');
+  const svg = doc.createElementNS(SVGNS, 'svg');
   svg.setAttribute('aria-hidden', 'true');
   svg.setAttribute('class', className);
   svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
-  const defs = document.createElementNS(SVGNS, 'defs');
+  const defs = doc.createElementNS(SVGNS, 'defs');
   svg.appendChild(defs);
-  document.body.appendChild(svg);
-  defsHosts.set(className, defs);
+  (root === doc ? doc.body : root).appendChild(svg);
+  hosts.set(className, defs);
   return defs;
+}
+
+/** The last surface releases the hidden host as well as its own filter. */
+export function removeFilter(filter: SVGFilterElement): void {
+  const defs = filter.parentElement;
+  filter.remove();
+  if (defs && !defs.firstChild) defs.parentElement?.remove();
+}
+
+export type MaterialRoot = Document | Element | ShadowRoot;
+
+export const MATERIAL_ENGINE_MEDIA = [
+  '(prefers-reduced-transparency: reduce)',
+  '(forced-colors: active)',
+  '(prefers-contrast: more)',
+] as const;
+
+export function materialMediaBlocked(): boolean {
+  return (
+    typeof matchMedia !== 'undefined' &&
+    MATERIAL_ENGINE_MEDIA.some((query) => matchMedia(query).matches)
+  );
+}
+
+/** CSS inheritance crosses a shadow host; Element.closest() does not. */
+export function composedParent(el: Element): Element | null {
+  if (el.parentElement) return el.parentElement;
+  const root = el.getRootNode();
+  return root.nodeType === 11 && 'host' in root ? (root as ShadowRoot).host : null;
 }
 
 /**
@@ -96,8 +133,7 @@ export function trailingRaf(fn: () => void): { schedule(): void; cancel(): void 
   };
 }
 
-/** Живёт, пока движок держит поверхность. `refresh` опционален — движок без
- *  живого пере-чтения (liquid-glass в рантайме) его не несёт. */
+/** Живёт, пока движок держит поверхность. `refresh` перечитывает локальный конфиг. */
 export interface EngineHandle {
   refresh?(): void;
   destroy(): void;
@@ -119,9 +155,7 @@ export interface EngineBinding {
   blocked?(): boolean;
   /** Медиа-запросы, чья смена требует пере-синка (регистрируются рантаймом). */
   readonly mediaQueries?: readonly string[];
-  /** Звать ли `handle.refresh()` на удержанной поверхности при ре-синке.
-   *  Сохраняет ТОЧНОЕ per-движок поведение: veil/acrylic перечитывают tier/
-   *  конфиг, liquid-glass в рантайме — нет (его ре-рендер вне этой петли). */
+  /** Перечитать конфиг удержанной поверхности при её локальном обновлении. */
   readonly refreshHeld: boolean;
   /** Прицепить движок к поверхности; вернуть её хэндл. */
   attach(el: HTMLElement): EngineHandle;
@@ -129,51 +163,76 @@ export interface EngineBinding {
 
 /** Смонтированный движок: одна sync-функция + утилизатор. */
 export interface MountedEngine {
-  sync(): void;
+  sync(candidates?: Iterable<HTMLElement>): void;
   dispose(): void;
   readonly mediaQueries: readonly string[];
 }
+
+// Overlapping app/element mounts share one engine instance. Each mount releases
+// only its own reference; an inner component cannot destroy the app's surface.
+const instances = new WeakMap<
+  EngineBinding,
+  WeakMap<HTMLElement, { handle: EngineHandle; refs: number }>
+>();
 
 /**
  * Единая механика монтирования одного движка над `scope`. Заменяет три
  * дословных блока runtime.ts. `sync` идемпотентна: держит ровно те поверхности,
  * что проходят `wants` (и не под `blocked`), отцепляя ушедшие.
  */
-export function mountEngine(binding: EngineBinding, scope: Document | Element): MountedEngine {
+export function mountEngine(binding: EngineBinding, scope: MaterialRoot): MountedEngine {
   const held = new Map<HTMLElement, EngineHandle>();
+  let shared = instances.get(binding);
+  if (!shared) {
+    shared = new WeakMap();
+    instances.set(binding, shared);
+  }
+  const release = (el: HTMLElement): void => {
+    const instance = shared.get(el);
+    if (instance && --instance.refs === 0) {
+      instance.handle.destroy();
+      shared.delete(el);
+    }
+    held.delete(el);
+  };
 
-  const sync = (): void => {
-    const want = new Set<HTMLElement>();
-    if (!binding.blocked?.()) {
-      for (const el of scope.querySelectorAll(binding.selector)) {
-        if (el instanceof HTMLElement && binding.wants(el)) want.add(el);
-      }
-      if (scope instanceof HTMLElement && scope.matches(binding.selector) && binding.wants(scope)) {
-        want.add(scope);
-      }
-    }
-    // Отцепить ушедших (смена мода/класса, удаление, попадание под blocked).
-    for (const [el, handle] of held) {
-      if (!want.has(el) || !el.isConnected) {
-        handle.destroy();
-        held.delete(el);
-      }
-    }
-    // Прицепить новичков ровно один раз; удержанных — обновить (если движок так
-    // хочет), сохраняя его точное поведение.
-    for (const el of want) {
+  const sync = (candidates?: Iterable<HTMLElement>): void => {
+    // Full discovery occurs only at mount. Later calls supply affected surfaces;
+    // media changes revisit the registered set without querying the document.
+    const changes =
+      candidates ??
+      new Set([
+        ...held.keys(),
+        ...(scope instanceof HTMLElement ? [scope] : []),
+        ...Array.from(scope.querySelectorAll<HTMLElement>(binding.selector)),
+      ]);
+    const blocked = binding.blocked?.() ?? false;
+    for (const el of changes) {
       const handle = held.get(el);
-      if (handle) {
+      const wants =
+        !blocked &&
+        el.isConnected &&
+        scope.contains(el) &&
+        el.matches(binding.selector) &&
+        binding.wants(el);
+      if (!wants) {
+        if (handle) release(el);
+      } else if (handle) {
         if (binding.refreshHeld) handle.refresh?.();
       } else {
-        held.set(el, binding.attach(el));
+        let instance = shared.get(el);
+        if (!instance) {
+          instance = { handle: binding.attach(el), refs: 0 };
+          shared.set(el, instance);
+        }
+        instance.refs++;
+        held.set(el, instance.handle);
       }
     }
   };
 
   const dispose = (): void => {
-    for (const handle of held.values()) handle.destroy();
-    held.clear();
+    for (const el of held.keys()) release(el);
   };
 
   return { sync, dispose, mediaQueries: binding.mediaQueries ?? [] };

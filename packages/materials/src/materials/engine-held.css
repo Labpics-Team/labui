@@ -14,6 +14,7 @@
  * поверхность (луминосити-конвейер url(#lab-acrylic-<tier>)) и снимает её
  * сам под запрещающими медиа — листу нечего ребиндить. */
 [data-material] .lab-material--lensed,
-[data-material].lab-material--lensed {
+[data-material].lab-material--lensed,
+.lab-material--lensed[data-lab-material-mode="glass"] {
   --_blur: 4px;
 }
