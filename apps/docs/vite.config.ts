@@ -48,6 +48,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'src/index.html'),
+        colors: resolve(__dirname, 'src/colors.html'),
         // Test-only browser oracles. Keeping them below _fixtures prevents a
         // measurement harness from masquerading as documentation.
         'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),
@@ -55,6 +56,7 @@ export default defineConfig({
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
+        'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

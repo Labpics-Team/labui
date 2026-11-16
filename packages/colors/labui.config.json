@@ -1,1357 +1,452 @@
 {
-  "brand": {
-    "light": "#007AFF",
-    "dark": "#4A8FFF",
-    "light_ic": "#0040DD",
-    "dark_ic": "#409CFF"
-  },
-  "neutral": {
-    "anchors": {
-      "light": "#FFFFFF",
-      "mid": "#787880",
-      "dark": "#101012"
+  "version": 1,
+  "description": "Author palette and semantic relationships for Lab UI v2.1. Program owns evaluation; component CSS consumes the role names.",
+  "themes": {
+    "light": {
+      "bg-material-base-01": [153, 153, 153, 0.969],
+      "bg-material-base-02": [92, 92, 92, 1],
+      "bg-material-elevated-01": [255, 255, 255, 0.8],
+      "bg-material-elevated-02": [38, 38, 38, 1],
+      "bg-material-muted-01": [179, 179, 179, 0.82],
+      "bg-material-muted-02": [56, 56, 56, 1],
+      "bg-material-soft-01": [166, 166, 166, 0.698],
+      "bg-material-soft-02": [51, 51, 51, 1],
+      "bg-material-subtle-01": [191, 191, 191, 0.439],
+      "bg-material-subtle-02": [13, 13, 13, 1],
+      "bg-grouped-primary": [247, 248, 250, 1],
+      "bg-grouped-secondary": [255, 255, 255, 1],
+      "bg-grouped-tertiary": [247, 248, 250, 1],
+      "bg-inverted": [16, 16, 18, 1],
+      "bg-primary": [255, 255, 255, 1],
+      "bg-secondary": [247, 248, 250, 1],
+      "bg-static-dark": [16, 16, 18, 1],
+      "bg-static-light": [255, 255, 255, 1],
+      "bg-tertiary": [255, 255, 255, 1],
+      "bg-overlay-base": [255, 255, 255, 0.478],
+      "bg-overlay-ghost": [255, 255, 255, 0.0],
+      "bg-overlay-soft": [255, 255, 255, 0.2],
+      "bg-overlay-strong": [255, 255, 255, 0.8],
+      "label-brand-primary": [0, 122, 255, 1],
+      "label-brand-quaternary": [0, 122, 255, 0.322],
+      "label-brand-secondary": [0, 122, 255, 0.722],
+      "label-brand-tertiary": [0, 122, 255, 0.522],
+      "label-danger-primary": [255, 59, 48, 1],
+      "label-danger-quaternary": [255, 59, 48, 0.322],
+      "label-danger-secondary": [255, 59, 48, 0.722],
+      "label-danger-tertiary": [255, 59, 48, 0.522],
+      "label-info-primary": [62, 135, 255, 1],
+      "label-info-quaternary": [62, 135, 255, 0.322],
+      "label-info-secondary": [62, 135, 255, 0.722],
+      "label-info-tertiary": [62, 135, 255, 0.522],
+      "label-inverted-primary": [255, 255, 255, 1],
+      "label-inverted-quaternary": [176, 176, 185, 0.322],
+      "label-inverted-secondary": [176, 176, 185, 0.722],
+      "label-inverted-tertiary": [176, 176, 185, 0.522],
+      "label-primary": [16, 16, 18, 1],
+      "label-quaternary": [60, 60, 67, 0.322],
+      "label-secondary": [60, 60, 67, 0.722],
+      "label-tertiary": [60, 60, 67, 0.522],
+      "label-static-dark-primary": [16, 16, 18, 1],
+      "label-static-dark-quaternary": [16, 16, 18, 0.322],
+      "label-static-dark-secondary": [16, 16, 18, 0.722],
+      "label-static-dark-tertiary": [16, 16, 18, 0.522],
+      "label-static-light-primary": [255, 255, 255, 1],
+      "label-static-light-quaternary": [255, 255, 255, 0.322],
+      "label-static-light-secondary": [255, 255, 255, 0.722],
+      "label-static-light-tertiary": [255, 255, 255, 0.522],
+      "label-success-primary": [52, 199, 89, 1],
+      "label-success-quaternary": [52, 199, 89, 0.322],
+      "label-success-secondary": [52, 199, 89, 0.722],
+      "label-success-tertiary": [52, 199, 89, 0.522],
+      "label-warning-primary": [255, 161, 0, 1],
+      "label-warning-quaternary": [255, 161, 0, 0.322],
+      "label-warning-secondary": [255, 161, 0, 0.722],
+      "label-warning-tertiary": [255, 161, 0, 0.522],
+      "fill-brand-primary": [0, 122, 255, 0.122],
+      "fill-brand-quaternary": [0, 122, 255, 0.02],
+      "fill-brand-secondary": [0, 122, 255, 0.078],
+      "fill-brand-tertiary": [0, 122, 255, 0.039],
+      "fill-danger-primary": [255, 59, 48, 0.122],
+      "fill-danger-quaternary": [255, 59, 48, 0.02],
+      "fill-danger-secondary": [255, 59, 48, 0.078],
+      "fill-danger-tertiary": [255, 59, 48, 0.039],
+      "fill-info-primary": [62, 135, 255, 0.122],
+      "fill-info-quaternary": [62, 135, 255, 0.02],
+      "fill-info-secondary": [62, 135, 255, 0.078],
+      "fill-info-tertiary": [62, 135, 255, 0.039],
+      "fill-none": [120, 120, 128, 0.0],
+      "fill-primary": [120, 120, 128, 0.2],
+      "fill-quaternary": [120, 120, 128, 0.078],
+      "fill-secondary": [120, 120, 128, 0.161],
+      "fill-static-dark-primary": [120, 120, 128, 0.361],
+      "fill-static-dark-quaternary": [120, 120, 128, 0.161],
+      "fill-static-dark-secondary": [120, 120, 128, 0.322],
+      "fill-static-dark-tertiary": [120, 120, 128, 0.239],
+      "fill-static-light-primary": [120, 120, 128, 0.2],
+      "fill-static-light-quaternary": [120, 120, 128, 0.078],
+      "fill-static-light-secondary": [120, 120, 128, 0.161],
+      "fill-static-light-tertiary": [120, 120, 128, 0.122],
+      "fill-tertiary": [120, 120, 128, 0.122],
+      "fill-success-primary": [52, 199, 89, 0.122],
+      "fill-success-quaternary": [52, 199, 89, 0.02],
+      "fill-success-secondary": [52, 199, 89, 0.078],
+      "fill-success-tertiary": [52, 199, 89, 0.039],
+      "fill-warning-primary": [255, 161, 0, 0.122],
+      "fill-warning-quaternary": [255, 161, 0, 0.02],
+      "fill-warning-secondary": [255, 161, 0, 0.078],
+      "fill-warning-tertiary": [255, 161, 0, 0.039],
+      "border-brand-base": [0, 122, 255, 0.2],
+      "border-brand-soft": [0, 122, 255, 0.122],
+      "border-brand-strong": [0, 122, 255, 1],
+      "border-danger-base": [255, 59, 48, 0.2],
+      "border-danger-soft": [255, 59, 48, 0.122],
+      "border-danger-strong": [255, 59, 48, 1],
+      "border-info-base": [62, 135, 255, 0.2],
+      "border-info-soft": [62, 135, 255, 0.122],
+      "border-info-strong": [62, 135, 255, 1],
+      "border-base": [120, 120, 128, 0.161],
+      "border-none": [120, 120, 128, 0.0],
+      "border-inverted": [255, 255, 255, 1],
+      "border-soft": [120, 120, 128, 0.078],
+      "border-static-dark-base": [120, 120, 128, 0.2],
+      "border-static-dark-soft": [120, 120, 128, 0.122],
+      "border-static-dark-strong": [16, 16, 18, 1],
+      "border-static-light-base": [120, 120, 128, 0.161],
+      "border-static-light-soft": [120, 120, 128, 0.078],
+      "border-static-light-strong": [255, 255, 255, 1],
+      "border-strong": [16, 16, 18, 1],
+      "border-success-base": [52, 199, 89, 0.2],
+      "border-success-soft": [52, 199, 89, 0.122],
+      "border-success-strong": [52, 199, 89, 1],
+      "border-warning-base": [255, 161, 0, 0.2],
+      "border-warning-soft": [255, 161, 0, 0.122],
+      "border-warning-strong": [255, 161, 0, 1],
+      "fx-focus-ring-brand": "@label-brand-primary",
+      "fx-focus-ring-danger": "@label-danger-primary",
+      "fx-focus-ring-neutral": "@label-primary",
+      "fx-focus-ring-warning": "@label-warning-primary",
+      "fx-glow-brand": [0, 122, 255, 0.522],
+      "fx-glow-danger": [255, 59, 48, 0.522],
+      "fx-glow-inverted": [176, 176, 185, 1],
+      "fx-glow-neutral": [255, 255, 255, 0.522],
+      "fx-glow-warning": [255, 161, 0, 0.522],
+      "fx-skeleton-highlight": [255, 255, 255, 0.078],
+      "badge-label-contrast": [16, 16, 18, 1],
+      "badge-label-default": [255, 255, 255, 1],
+      "control-bg": [255, 255, 255, 1],
+      "fill-accent": "@border-brand-strong",
+      "fill-danger": "@border-danger-strong",
+      "fill-neutral": [232, 232, 236, 1],
+      "fill-accent-tinted": "@fill-brand-primary",
+      "fill-danger-tinted": "@fill-danger-primary",
+      "label-accent": "@label-brand-primary",
+      "label-danger": "@label-danger-primary",
+      "label-on-accent": "@label-static-light-primary",
+      "label-on-danger": "@label-static-light-primary",
+      "label-on-neutral": [16, 16, 18, 1],
+      "border-accent": "@border-brand-strong",
+      "border-danger": "@border-danger-strong",
+      "border-focus": "@fx-focus-ring-brand",
+      "bg-tone-1": "@bg-primary",
+      "bg-tone-2": "@bg-secondary",
+      "bg-tone-3": "@bg-tertiary",
+      "badge-fill-brand": "@border-brand-strong",
+      "badge-label-on-brand": "@label-static-light-primary",
+      "badge-fill-danger": "@border-danger-strong",
+      "badge-label-on-danger": "@label-static-light-primary",
+      "badge-fill-warning": "@border-warning-strong",
+      "badge-label-on-warning": "@label-static-light-primary",
+      "badge-fill-success": "@border-success-strong",
+      "badge-label-on-success": "@label-static-light-primary",
+      "badge-fill-info": "@border-info-strong",
+      "badge-label-on-info": "@label-static-light-primary",
+      "badge-fill-static-dark": "@bg-static-dark",
+      "badge-label-on-static-dark": "@label-static-light-primary",
+      "badge-fill-static-light": "@bg-static-light",
+      "badge-label-on-static-light": "@label-static-dark-primary",
+      "fx-glow-neutral-core": [255, 255, 255, 1],
+      "fx-glow-neutral-alpha": 0.0,
+      "fx-glow-neutral-subtle": [255, 255, 255, 0.522],
+      "fx-glow-neutral-subtle-core": [255, 255, 255, 1],
+      "fx-glow-neutral-subtle-alpha": 0.0,
+      "fx-glow-neutral-bloom": [255, 255, 255, 0.522],
+      "fx-glow-neutral-bloom-core": [255, 255, 255, 1],
+      "fx-glow-neutral-bloom-alpha": 0.0,
+      "fx-glow-brand-core": [0, 122, 255, 1],
+      "fx-glow-brand-alpha": 0.0,
+      "fx-glow-brand-subtle": [0, 122, 255, 0.522],
+      "fx-glow-brand-subtle-core": [0, 122, 255, 1],
+      "fx-glow-brand-subtle-alpha": 0.0,
+      "fx-glow-brand-bloom": [0, 122, 255, 0.522],
+      "fx-glow-brand-bloom-core": [0, 122, 255, 1],
+      "fx-glow-brand-bloom-alpha": 0.0,
+      "fx-glow-danger-core": [255, 59, 48, 1],
+      "fx-glow-danger-alpha": 0.0,
+      "fx-glow-danger-subtle": [255, 59, 48, 0.522],
+      "fx-glow-danger-subtle-core": [255, 59, 48, 1],
+      "fx-glow-danger-subtle-alpha": 0.0,
+      "fx-glow-danger-bloom": [255, 59, 48, 0.522],
+      "fx-glow-danger-bloom-core": [255, 59, 48, 1],
+      "fx-glow-danger-bloom-alpha": 0.0,
+      "fx-glow-warning-core": [255, 161, 0, 1],
+      "fx-glow-warning-alpha": 0.0,
+      "fx-glow-warning-subtle": [255, 161, 0, 0.522],
+      "fx-glow-warning-subtle-core": [255, 161, 0, 1],
+      "fx-glow-warning-subtle-alpha": 0.0,
+      "fx-glow-warning-bloom": [255, 161, 0, 0.522],
+      "fx-glow-warning-bloom-core": [255, 161, 0, 1],
+      "fx-glow-warning-bloom-alpha": 0.0,
+      "fx-focus-ring-success": "@label-success-primary",
+      "fx-glow-success": [52, 199, 89, 0.522],
+      "fx-glow-success-core": [52, 199, 89, 1],
+      "fx-glow-success-alpha": 0.0,
+      "fx-glow-success-subtle": [52, 199, 89, 0.522],
+      "fx-glow-success-subtle-core": [52, 199, 89, 1],
+      "fx-glow-success-subtle-alpha": 0.0,
+      "fx-glow-success-bloom": [52, 199, 89, 0.522],
+      "fx-glow-success-bloom-core": [52, 199, 89, 1],
+      "fx-glow-success-bloom-alpha": 0.0,
+      "fx-focus-ring-info": "@label-info-primary",
+      "fx-glow-info": [62, 135, 255, 0.522],
+      "fx-glow-info-core": [62, 135, 255, 1],
+      "fx-glow-info-alpha": 0.0,
+      "fx-glow-info-subtle": [62, 135, 255, 0.522],
+      "fx-glow-info-subtle-core": [62, 135, 255, 1],
+      "fx-glow-info-subtle-alpha": 0.0,
+      "fx-glow-info-bloom": [62, 135, 255, 0.522],
+      "fx-glow-info-bloom-core": [62, 135, 255, 1],
+      "fx-glow-info-bloom-alpha": 0.0
     },
-    "tint": {
-      "ratio": 0.1,
-      "target_mp": 6.1,
-      "hue_stiffness": 9,
-      "hue_override_deg": 286
-    },
-    "edge": {
-      "light": "#101012",
-      "dark": "#F6F8FA",
-      "light_ic": "#101012",
-      "dark_ic": "#F6F8FA"
-    },
-    "inverted": {
-      "light": "#B0B0B9",
-      "dark": "#3C3C43",
-      "light_ic": "#B0B0B9",
-      "dark_ic": "#3C3C43"
+    "dark": {
+      "bg-material-base-01": [37, 37, 37, 0.898],
+      "bg-material-base-02": [124, 124, 124, 1],
+      "bg-material-elevated-01": [130, 130, 130, 0.8],
+      "bg-material-elevated-02": [31, 31, 31, 1],
+      "bg-material-muted-01": [37, 37, 37, 0.82],
+      "bg-material-muted-02": [140, 140, 140, 1],
+      "bg-material-soft-01": [37, 37, 37, 0.698],
+      "bg-material-soft-02": [156, 156, 156, 1],
+      "bg-material-subtle-01": [37, 37, 37, 0.549],
+      "bg-material-subtle-02": [156, 156, 156, 1],
+      "bg-grouped-primary": [16, 16, 18, 1],
+      "bg-grouped-secondary": [28, 28, 30, 1],
+      "bg-grouped-tertiary": [36, 36, 38, 1],
+      "bg-inverted": [246, 248, 250, 1],
+      "bg-primary": [16, 16, 18, 1],
+      "bg-secondary": [28, 28, 30, 1],
+      "bg-static-dark": [16, 16, 18, 1],
+      "bg-static-light": [255, 255, 255, 1],
+      "bg-tertiary": [36, 36, 38, 1],
+      "bg-overlay-base": [16, 16, 18, 0.478],
+      "bg-overlay-ghost": [16, 16, 18, 0.0],
+      "bg-overlay-soft": [16, 16, 18, 0.2],
+      "bg-overlay-strong": [16, 16, 18, 0.8],
+      "label-brand-primary": [74, 143, 255, 1],
+      "label-brand-quaternary": [74, 143, 255, 0.322],
+      "label-brand-secondary": [74, 143, 255, 0.722],
+      "label-brand-tertiary": [74, 143, 255, 0.522],
+      "label-danger-primary": [255, 58, 58, 1],
+      "label-danger-quaternary": [255, 58, 58, 0.322],
+      "label-danger-secondary": [255, 58, 58, 0.722],
+      "label-danger-tertiary": [255, 58, 58, 0.522],
+      "label-info-primary": [86, 150, 255, 1],
+      "label-info-quaternary": [86, 150, 255, 0.322],
+      "label-info-secondary": [86, 150, 255, 0.722],
+      "label-info-tertiary": [86, 150, 255, 0.522],
+      "label-inverted-primary": [16, 16, 18, 1],
+      "label-inverted-quaternary": [60, 60, 67, 0.322],
+      "label-inverted-secondary": [60, 60, 67, 0.722],
+      "label-inverted-tertiary": [60, 60, 67, 0.522],
+      "label-primary": [246, 248, 250, 1],
+      "label-quaternary": [176, 176, 185, 0.322],
+      "label-secondary": [176, 176, 185, 0.722],
+      "label-tertiary": [176, 176, 185, 0.522],
+      "label-static-dark-primary": [16, 16, 18, 1],
+      "label-static-dark-quaternary": [16, 16, 18, 0.322],
+      "label-static-dark-secondary": [16, 16, 18, 0.722],
+      "label-static-dark-tertiary": [16, 16, 18, 0.522],
+      "label-static-light-primary": [255, 255, 255, 1],
+      "label-static-light-quaternary": [255, 255, 255, 0.322],
+      "label-static-light-secondary": [255, 255, 255, 0.722],
+      "label-static-light-tertiary": [255, 255, 255, 0.522],
+      "label-success-primary": [48, 209, 88, 1],
+      "label-success-quaternary": [48, 209, 88, 0.322],
+      "label-success-secondary": [48, 209, 88, 0.722],
+      "label-success-tertiary": [48, 209, 88, 0.522],
+      "label-warning-primary": [255, 144, 8, 1],
+      "label-warning-quaternary": [255, 144, 8, 0.322],
+      "label-warning-secondary": [255, 144, 8, 0.722],
+      "label-warning-tertiary": [255, 144, 8, 0.522],
+      "fill-brand-primary": [74, 143, 255, 0.122],
+      "fill-brand-quaternary": [74, 143, 255, 0.02],
+      "fill-brand-secondary": [74, 143, 255, 0.078],
+      "fill-brand-tertiary": [74, 143, 255, 0.039],
+      "fill-danger-primary": [255, 58, 58, 0.122],
+      "fill-danger-quaternary": [255, 58, 58, 0.02],
+      "fill-danger-secondary": [255, 58, 58, 0.078],
+      "fill-danger-tertiary": [255, 58, 58, 0.039],
+      "fill-info-primary": [86, 150, 255, 0.122],
+      "fill-info-quaternary": [86, 150, 255, 0.02],
+      "fill-info-secondary": [86, 150, 255, 0.078],
+      "fill-info-tertiary": [86, 150, 255, 0.039],
+      "fill-none": [120, 120, 128, 0.0],
+      "fill-primary": [120, 120, 128, 0.361],
+      "fill-quaternary": [120, 120, 128, 0.161],
+      "fill-secondary": [120, 120, 128, 0.322],
+      "fill-static-dark-primary": [120, 120, 128, 0.361],
+      "fill-static-dark-quaternary": [120, 120, 128, 0.161],
+      "fill-static-dark-secondary": [120, 120, 128, 0.322],
+      "fill-static-dark-tertiary": [120, 120, 128, 0.239],
+      "fill-static-light-primary": [120, 120, 128, 0.2],
+      "fill-static-light-quaternary": [120, 120, 128, 0.078],
+      "fill-static-light-secondary": [120, 120, 128, 0.161],
+      "fill-static-light-tertiary": [120, 120, 128, 0.122],
+      "fill-tertiary": [120, 120, 128, 0.239],
+      "fill-success-primary": [48, 209, 88, 0.122],
+      "fill-success-quaternary": [48, 209, 88, 0.02],
+      "fill-success-secondary": [48, 209, 88, 0.078],
+      "fill-success-tertiary": [48, 209, 88, 0.039],
+      "fill-warning-primary": [255, 144, 8, 0.122],
+      "fill-warning-quaternary": [255, 144, 8, 0.02],
+      "fill-warning-secondary": [255, 144, 8, 0.078],
+      "fill-warning-tertiary": [255, 144, 8, 0.039],
+      "border-brand-base": [74, 143, 255, 0.2],
+      "border-brand-soft": [74, 143, 255, 0.122],
+      "border-brand-strong": [74, 143, 255, 1],
+      "border-danger-base": [255, 58, 58, 0.2],
+      "border-danger-soft": [255, 58, 58, 0.122],
+      "border-danger-strong": [255, 58, 58, 1],
+      "border-info-base": [86, 150, 255, 0.2],
+      "border-info-soft": [86, 150, 255, 0.122],
+      "border-info-strong": [86, 150, 255, 1],
+      "border-base": [120, 120, 128, 0.2],
+      "border-none": [120, 120, 128, 0.0],
+      "border-inverted": [16, 16, 18, 1],
+      "border-soft": [120, 120, 128, 0.122],
+      "border-static-dark-base": [120, 120, 128, 0.2],
+      "border-static-dark-soft": [120, 120, 128, 0.122],
+      "border-static-dark-strong": [16, 16, 18, 1],
+      "border-static-light-base": [120, 120, 128, 0.161],
+      "border-static-light-soft": [120, 120, 128, 0.078],
+      "border-static-light-strong": [255, 255, 255, 1],
+      "border-strong": [246, 248, 250, 1],
+      "border-success-base": [48, 209, 88, 0.2],
+      "border-success-soft": [48, 209, 88, 0.122],
+      "border-success-strong": [48, 209, 88, 1],
+      "border-warning-base": [255, 144, 8, 0.2],
+      "border-warning-soft": [255, 144, 8, 0.122],
+      "border-warning-strong": [255, 144, 8, 1],
+      "fx-focus-ring-brand": "@label-brand-primary",
+      "fx-focus-ring-danger": "@label-danger-primary",
+      "fx-focus-ring-neutral": "@label-primary",
+      "fx-focus-ring-warning": "@label-warning-primary",
+      "fx-glow-brand": [74, 143, 255, 0.522],
+      "fx-glow-danger": [255, 58, 58, 0.522],
+      "fx-glow-inverted": [60, 60, 67, 1],
+      "fx-glow-neutral": [255, 255, 255, 0.522],
+      "fx-glow-warning": [255, 144, 8, 0.522],
+      "fx-skeleton-highlight": [255, 255, 255, 0.161],
+      "badge-label-contrast": [16, 16, 18, 1],
+      "badge-label-default": [255, 255, 255, 1],
+      "control-bg": [120, 120, 128, 0.361],
+      "fill-accent": "@border-brand-strong",
+      "fill-danger": "@border-danger-strong",
+      "fill-neutral": [35, 35, 39, 1],
+      "fill-accent-tinted": "@fill-brand-primary",
+      "fill-danger-tinted": "@fill-danger-primary",
+      "label-accent": "@label-brand-primary",
+      "label-danger": "@label-danger-primary",
+      "label-on-accent": "@label-static-light-primary",
+      "label-on-danger": "@label-static-light-primary",
+      "label-on-neutral": [246, 248, 250, 1],
+      "border-accent": "@border-brand-strong",
+      "border-danger": "@border-danger-strong",
+      "border-focus": "@fx-focus-ring-brand",
+      "bg-tone-1": "@bg-primary",
+      "bg-tone-2": "@bg-secondary",
+      "bg-tone-3": "@bg-tertiary",
+      "badge-fill-brand": "@border-brand-strong",
+      "badge-label-on-brand": "@label-static-light-primary",
+      "badge-fill-danger": "@border-danger-strong",
+      "badge-label-on-danger": "@label-static-light-primary",
+      "badge-fill-warning": "@border-warning-strong",
+      "badge-label-on-warning": "@label-static-light-primary",
+      "badge-fill-success": "@border-success-strong",
+      "badge-label-on-success": "@label-static-light-primary",
+      "badge-fill-info": "@border-info-strong",
+      "badge-label-on-info": "@label-static-light-primary",
+      "badge-fill-static-dark": "@bg-static-dark",
+      "badge-label-on-static-dark": "@label-static-light-primary",
+      "badge-fill-static-light": "@bg-static-light",
+      "badge-label-on-static-light": "@label-static-dark-primary",
+      "fx-glow-neutral-core": [255, 255, 255, 1],
+      "fx-glow-neutral-alpha": 0.0188,
+      "fx-glow-neutral-subtle": [255, 255, 255, 0.522],
+      "fx-glow-neutral-subtle-core": [255, 255, 255, 1],
+      "fx-glow-neutral-subtle-alpha": 0.0063,
+      "fx-glow-neutral-bloom": [255, 255, 255, 0.522],
+      "fx-glow-neutral-bloom-core": [255, 255, 255, 1],
+      "fx-glow-neutral-bloom-alpha": 0.1151,
+      "fx-glow-brand-core": [74, 143, 255, 1],
+      "fx-glow-brand-alpha": 0.036,
+      "fx-glow-brand-subtle": [74, 143, 255, 0.522],
+      "fx-glow-brand-subtle-core": [74, 143, 255, 1],
+      "fx-glow-brand-subtle-alpha": 0.0112,
+      "fx-glow-brand-bloom": [74, 143, 255, 0.522],
+      "fx-glow-brand-bloom-core": [74, 143, 255, 1],
+      "fx-glow-brand-bloom-alpha": 0.2126,
+      "fx-glow-danger-core": [255, 58, 58, 1],
+      "fx-glow-danger-alpha": 0.046,
+      "fx-glow-danger-subtle": [255, 58, 58, 0.522],
+      "fx-glow-danger-subtle-core": [255, 58, 58, 1],
+      "fx-glow-danger-subtle-alpha": 0.0146,
+      "fx-glow-danger-bloom": [255, 58, 58, 0.522],
+      "fx-glow-danger-bloom-core": [255, 58, 58, 1],
+      "fx-glow-danger-bloom-alpha": 0.2322,
+      "fx-glow-warning-core": [255, 144, 8, 1],
+      "fx-glow-warning-alpha": 0.0333,
+      "fx-glow-warning-subtle": [255, 144, 8, 0.522],
+      "fx-glow-warning-subtle-core": [255, 144, 8, 1],
+      "fx-glow-warning-subtle-alpha": 0.0111,
+      "fx-glow-warning-bloom": [255, 144, 8, 0.522],
+      "fx-glow-warning-bloom-core": [255, 144, 8, 1],
+      "fx-glow-warning-bloom-alpha": 0.1778,
+      "fx-focus-ring-success": "@label-success-primary",
+      "fx-glow-success": [48, 209, 88, 0.522],
+      "fx-glow-success-core": [48, 209, 88, 1],
+      "fx-glow-success-alpha": 0.0332,
+      "fx-glow-success-subtle": [48, 209, 88, 0.522],
+      "fx-glow-success-subtle-core": [48, 209, 88, 1],
+      "fx-glow-success-subtle-alpha": 0.0128,
+      "fx-glow-success-bloom": [48, 209, 88, 0.522],
+      "fx-glow-success-bloom-core": [48, 209, 88, 1],
+      "fx-glow-success-bloom-alpha": 0.1761,
+      "fx-focus-ring-info": "@label-info-primary",
+      "fx-glow-info": [86, 150, 255, 0.522],
+      "fx-glow-info-core": [86, 150, 255, 1],
+      "fx-glow-info-alpha": 0.0356,
+      "fx-glow-info-subtle": [86, 150, 255, 0.522],
+      "fx-glow-info-subtle-core": [86, 150, 255, 1],
+      "fx-glow-info-subtle-alpha": 0.0119,
+      "fx-glow-info-bloom": [86, 150, 255, 0.522],
+      "fx-glow-info-bloom-core": [86, 150, 255, 1],
+      "fx-glow-info-bloom-alpha": 0.2015
     }
   },
-  "palette": [
-    {
-      "key": "red",
-      "anchors": {
-        "light": "#FF3B30",
-        "dark": "#FF3A3A",
-        "light_ic": "#D70015",
-        "dark_ic": "#FF6161"
-      }
+  "increasedContrast": {
+    "light": {
+      "brand": [0, 64, 221],
+      "danger": [215, 0, 21],
+      "warning": [201, 52, 0],
+      "success": [36, 138, 61],
+      "info": [0, 80, 207]
     },
-    {
-      "key": "orange",
-      "anchors": {
-        "light": "#FFA100",
-        "dark": "#FF9008",
-        "light_ic": "#C93400",
-        "dark_ic": "#FFA940"
-      }
-    },
-    {
-      "key": "yellow",
-      "anchors": {
-        "light": "#FFD000",
-        "dark": "#FFD60A",
-        "light_ic": "#B25000",
-        "dark_ic": "#FFD426"
-      }
-    },
-    {
-      "key": "green",
-      "anchors": {
-        "light": "#34C759",
-        "dark": "#30D158",
-        "light_ic": "#248A3D",
-        "dark_ic": "#30DB5B"
-      }
-    },
-    {
-      "key": "teal",
-      "anchors": {
-        "light": "#5AC8FA",
-        "dark": "#64D2FF",
-        "light_ic": "#0071A4",
-        "dark_ic": "#70D7FF"
-      }
-    },
-    {
-      "key": "mint",
-      "anchors": {
-        "light": "#00C7BE",
-        "dark": "#63E6E2",
-        "light_ic": "#0C817B",
-        "dark_ic": "#6CEBE7"
-      }
-    },
-    {
-      "key": "blue",
-      "anchors": {
-        "light": "#3E87FF",
-        "dark": "#5696FF",
-        "light_ic": "#0050CF",
-        "dark_ic": "#95C0FF"
-      }
-    },
-    {
-      "key": "indigo",
-      "anchors": {
-        "light": "#5856D6",
-        "dark": "#5E5CE6",
-        "light_ic": "#3634A3",
-        "dark_ic": "#7D7AFF"
-      }
-    },
-    {
-      "key": "purple",
-      "anchors": {
-        "light": "#AF52DE",
-        "dark": "#BF5AF2",
-        "light_ic": "#8944AB",
-        "dark_ic": "#DA8FFF"
-      }
-    },
-    {
-      "key": "pink",
-      "anchors": {
-        "light": "#FF2D55",
-        "dark": "#FF2D55",
-        "light_ic": "#D30F45",
-        "dark_ic": "#FF6482"
-      }
+    "dark": {
+      "brand": [64, 156, 255],
+      "danger": [255, 97, 97],
+      "warning": [255, 169, 64],
+      "success": [48, 219, 91],
+      "info": [149, 192, 255]
     }
-  ],
-  "sentiments": {
-    "categories": [
-      {
-        "name": "danger",
-        "family": "red"
-      },
-      {
-        "name": "warning",
-        "family": "orange",
-        "hue_floor_deg": 45,
-        "preferred_side": 1
-      },
-      {
-        "name": "success",
-        "family": "green"
-      },
-      {
-        "name": "info",
-        "family": "blue"
-      }
-    ],
-    "hardness": 5,
-    "chroma_fraction": 1
-  },
-  "themes": [
-    {
-      "name": "light",
-      "preset": "srgb"
-    },
-    {
-      "name": "dark",
-      "preset": "dim"
-    },
-    {
-      "name": "light-ic",
-      "preset": "srgb-ic"
-    },
-    {
-      "name": "dark-ic",
-      "preset": "dim-ic"
-    }
-  ],
-  "roles": [
-    {
-      "name": "bg-tone-2",
-      "recipe": {
-        "kind": "dj-anchor",
-        "light": 2.03,
-        "dark": 5.78
-      }
-    },
-    {
-      "name": "bg-tone-3",
-      "recipe": {
-        "kind": "dj-anchor",
-        "light": 2.03,
-        "dark": 9.6
-      }
-    },
-    {
-      "name": "label-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text"
-      }
-    },
-    {
-      "name": "label-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text"
-      }
-    },
-    {
-      "name": "label-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "label-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none"
-      }
-    },
-    {
-      "name": "border-strong",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-border-base"
-      }
-    },
-    {
-      "name": "border-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-border-soft"
-      }
-    },
-    {
-      "name": "border-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-brand-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-danger-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-warning-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-success-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "border-info-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "fill-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-primary"
-      }
-    },
-    {
-      "name": "fill-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-secondary"
-      }
-    },
-    {
-      "name": "fill-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "neutral-fill-quaternary"
-      }
-    },
-    {
-      "name": "fill-none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "none",
-      "recipe": {
-        "kind": "zero"
-      }
-    },
-    {
-      "name": "label-brand-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "label-brand-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "label-brand-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "label-brand-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "fill-brand-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-brand-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-brand-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-brand-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-brand-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-brand-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-brand-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-danger-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "label-danger-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "label-danger-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "label-danger-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "fill-danger-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-danger-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-danger-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-danger-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-danger-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-danger-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-danger-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-warning-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "label-warning-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "label-warning-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "label-warning-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "fill-warning-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-warning-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-warning-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-warning-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-warning-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-warning-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-warning-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-success-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "label-success-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "label-success-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "label-success-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "fill-success-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-success-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-success-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-success-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-success-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-success-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-success-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "label-info-primary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.968,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "label-info-secondary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.627,
-        "floor": "aa-text",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "label-info-tertiary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.461,
-        "floor": "aa-ui",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "label-info-quaternary",
-      "recipe": {
-        "kind": "text-anchor",
-        "fraction": 0.276,
-        "floor": "none",
-        "hue": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "fill-info-primary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-info-secondary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-secondary"
-      }
-    },
-    {
-      "name": "fill-info-tertiary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-tertiary"
-      }
-    },
-    {
-      "name": "fill-info-quaternary",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "fill-quaternary"
-      }
-    },
-    {
-      "name": "border-info-strong",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "border-strong",
-        "floor": "aa-ui"
-      }
-    },
-    {
-      "name": "border-info-base",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-info-soft",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "position": "border-soft"
-      }
-    },
-    {
-      "name": "fx-glow-brand",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "brand"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-danger",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-warning",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-neutral",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-inverted",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "inverted"
-        },
-        "position": "glow"
-      }
-    },
-    {
-      "name": "fx-skeleton-highlight",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "skeleton-highlight"
-      }
-    },
-    {
-      "name": "fx-glow-neutral-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-neutral-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-brand-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "brand"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-brand-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "brand"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-danger-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-danger-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-warning-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-warning-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-success",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-success-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-success-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fx-glow-info",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "step": "base"
-      }
-    },
-    {
-      "name": "fx-glow-info-subtle",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "step": "subtle"
-      }
-    },
-    {
-      "name": "fx-glow-info-bloom",
-      "recipe": {
-        "kind": "glow",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        },
-        "step": "bloom"
-      }
-    },
-    {
-      "name": "fill-neutral",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "neutral",
-          "pick": "mid"
-        },
-        "position": "label-primary"
-      }
-    },
-    {
-      "name": "fill-accent-tinted",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "fill-danger-tinted",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "fill-primary"
-      }
-    },
-    {
-      "name": "label-accent",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "label-primary"
-      }
-    },
-    {
-      "name": "label-danger",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "label-primary"
-      }
-    },
-    {
-      "name": "border-accent",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-danger",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        },
-        "position": "border-base"
-      }
-    },
-    {
-      "name": "border-focus",
-      "recipe": {
-        "kind": "ladder",
-        "source": {
-          "kind": "brand"
-        },
-        "position": "focus-ring"
-      }
-    }
-  ],
-  "components": [
-    {
-      "name": "badge-fill-brand",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "brand"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-danger",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "danger"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-warning",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "warning"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-success",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "success"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-info",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "sentiment",
-          "name": "info"
-        }
-      }
-    },
-    {
-      "name": "badge-fill-static",
-      "recipe": {
-        "kind": "pair-fill",
-        "source": {
-          "kind": "neutral",
-          "pick": "light"
-        }
-      },
-      "flag": {
-        "pick": ["dark", "light"]
-      }
-    }
-  ],
-  "aliases": [
-    {
-      "alias": "fill-accent",
-      "target": "badge-fill-brand"
-    },
-    {
-      "alias": "fill-danger",
-      "target": "badge-fill-danger"
-    },
-    {
-      "alias": "fx-focus-ring-neutral",
-      "target": "label-primary"
-    },
-    {
-      "alias": "fx-focus-ring-brand",
-      "target": "label-brand-primary"
-    },
-    {
-      "alias": "fx-focus-ring-danger",
-      "target": "label-danger-primary"
-    },
-    {
-      "alias": "fx-focus-ring-warning",
-      "target": "label-warning-primary"
-    },
-    {
-      "alias": "fx-focus-ring-success",
-      "target": "label-success-primary"
-    },
-    {
-      "alias": "fx-focus-ring-info",
-      "target": "label-info-primary"
-    }
-  ]
+  }
 }

@@ -10,7 +10,10 @@
     "./contract.min.css": "./contract.min.css",
     "./roles.json": "./roles.json",
     "./labui.config.json": "./labui.config.json",
-    "./prepare-config.mjs": "./prepare-config.mjs",
+    "./runtime": {
+      "types": "./runtime.d.mts",
+      "import": "./runtime.mjs"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -18,18 +21,20 @@
     "contract.min.css",
     "roles.json",
     "labui.config.json",
-    "prepare-config.mjs"
+    "runtime.mjs",
+    "runtime.d.mts",
+    "program.mjs",
+    "profile.mjs"
   ],
   "scripts": {
     "generate": "node generate-contract.mjs",
     "build": "node generate-contract.mjs && node ../../scripts/minify-contract.cjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "fx:render": "node test/fx-render/render-fx.mjs",
-    "measure:overlays": "node test/state-overlay-economy.mjs"
+    "fx:render": "node test/fx-render/render-fx.mjs"
   },
   "dependencies": {
-    "@labpics/colors": "0.6.2"
+    "@labpics/colors": "1.0.3"
   },
   "devDependencies": {
     "@types/node": "22.10.5",

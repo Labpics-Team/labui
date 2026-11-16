@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Цвет и тема — LabUI</title>
+    <link rel="stylesheet" href="./colors.css" />
+  </head>
+  <body>
+    <main>
+      <a href="./index.html">LabUI</a>
+      <h1>Цвет остаётся вашим</h1>
+      <p>Авторская палитра Lab UI, две темы и отдельный режим повышенного контраста.</p>
+      <div class="theme-grid">
+        <section id="theme-sample" data-theme="light" aria-labelledby="sample-title">
+          <h2 id="sample-title">Ваша рабочая область</h2>
+          <p class="secondary">Тема меняет только эту карточку. Соседняя область сохраняет свой облик.</p>
+          <label>Тема
+            <select id="theme-choice"><option value="light">Светлая</option><option value="dark">Тёмная</option></select>
+          </label>
+          <label><input id="contrast-choice" type="checkbox" /> Повышенный контраст</label>
+          <lab-button id="sample-primary" type="accent">Сохранить изменения</lab-button>
+          <p id="theme-status" role="status">Палитра готова до запуска JavaScript.</p>
+        </section>
+        <section id="theme-neighbor" data-theme="dark" aria-labelledby="neighbor-title">
+          <h2 id="neighbor-title">Другая тема рядом</h2>
+          <p class="secondary">Акцентная заливка и белая надпись сохраняют авторский характер.</p>
+          <lab-button type="accent">Продолжить</lab-button>
+        </section>
+      </div>
+      <h2>Первый кадр и обновления</h2>
+      <p>CSS содержит готовую палитру. Runtime подключается только к области, где приложение меняет тему или передаёт известные цвета подложки.</p>
+      <pre><code>import '@labui/colors/contract.css';
+import { initializeColors, createThemeScope } from '@labui/colors/runtime';
+
+await initializeColors();
+const scope = createThemeScope(element);
+const result = scope.update({ theme: 'dark', contrast: 'normal' });
+// При удалении области:
+scope.dispose();</code></pre>
+      <p>Повышенный контраст усиливает непрозрачность текста и проверяет primary на переданных подложках. Видео и прозрачный материал не считаются измеренным фоном. При отказе сохраняется последнее применённое состояние.</p>
+    </main>
+    <script type="module" src="./colors.ts"></script>
+  </body>
+</html>
