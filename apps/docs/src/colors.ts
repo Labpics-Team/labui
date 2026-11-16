@@ -34,5 +34,7 @@ if (sample && themeChoice && contrastChoice && status) {
   ready.catch(() => {
     status.textContent = 'Доступна начальная палитра. Динамическая тема не загрузилась.';
   });
-  window.addEventListener('pagehide', () => scope?.dispose(), { once: true });
+  window.addEventListener('pagehide', (event) => {
+    if (!event.persisted) scope?.dispose();
+  });
 }

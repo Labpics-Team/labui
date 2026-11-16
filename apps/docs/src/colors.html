@@ -34,6 +34,8 @@
 import { initializeColors, createThemeScope } from '@labui/colors/runtime';
 
 await initializeColors();
+const element = document.getElementById('theme-sample');
+if (!element) throw new Error('Область темы не найдена');
 const scope = createThemeScope(element);
 const result = scope.update({ theme: 'dark', contrast: 'normal' });
 // При удалении области:

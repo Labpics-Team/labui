@@ -22,10 +22,10 @@ export function createThemeScope(root, options = {}) {
     throw new ThemeUpdateError('already_attached', 'The element already has a theme scope');
   const view = root.ownerDocument.defaultView;
   const scopeId = view.crypto.getRandomValues(new Uint32Array(4)).join('-');
-  const originalScopeId = root.getAttribute(SCOPE_ATTR);
+  let originalScopeId;
   const sheet = root.ownerDocument.createElement('style');
   const attributes = ['data-theme', 'data-contrast'];
-  const originalAttributes = attributes.map((name) => root.getAttribute(name));
+  let originalAttributes;
   let disposed = false;
   let state = null;
   let program;
@@ -73,6 +73,10 @@ export function createThemeScope(root, options = {}) {
         const css = Object.entries(values)
           .map(([name, value]) => `${name}:${value};`)
           .join('');
+        if (!state) {
+          originalScopeId = root.getAttribute(SCOPE_ATTR);
+          originalAttributes = attributes.map((name) => root.getAttribute(name));
+        }
         sheet.textContent = `[${SCOPE_ATTR}="${scopeId}"][data-theme="${theme}"][data-contrast="${contrast}"]{${css}}`;
         root.setAttribute(SCOPE_ATTR, scopeId);
         if (!sheet.isConnected) root.append(sheet);

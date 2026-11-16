@@ -1,5 +1,5 @@
 {
-  "$comment": "Stable semantic role names consumed by LabUI. Both contrast modes expose this same interface; values and relationships come from labui.config.json through Colors Program.",
+  "$comment": "Stable semantic role names consumed by LabUI. Both contrast modes expose this interface. labui.config.json supplies named anchors and role relationships; profile.mjs applies increased-contrast text opacity and primary aliases through Colors Program.",
   "groups": {
     "Backgrounds": [
       "--lab-bg-grouped-primary",

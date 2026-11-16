@@ -106,20 +106,27 @@ export class ThemeUpdateError extends Error {
 }
 
 function observedBytes(backgrounds) {
-  if (
-    !Array.isArray(backgrounds) ||
-    backgrounds.length === 0 ||
-    backgrounds.length > 64 ||
-    backgrounds.some(
-      (rgb) =>
-        !Array.isArray(rgb) ||
-        rgb.length !== 3 ||
-        rgb.some((channel) => !Number.isInteger(channel) || channel < 0 || channel > 255),
-    )
-  ) {
+  if (!Array.isArray(backgrounds) || backgrounds.length === 0 || backgrounds.length > 64) {
     throw new ThemeUpdateError('invalid_backgrounds', 'Expected 1–64 observed sRGB8 backgrounds');
   }
-  return new Uint8Array(backgrounds.flat());
+  const bytes = new Uint8Array(backgrounds.length * 3);
+  for (let index = 0; index < backgrounds.length; index++) {
+    const rgb = backgrounds[index];
+    if (!Array.isArray(rgb) || rgb.length !== 3) {
+      throw new ThemeUpdateError('invalid_backgrounds', 'Expected 1–64 observed sRGB8 backgrounds');
+    }
+    for (let channel = 0; channel < 3; channel++) {
+      const value = rgb[channel];
+      if (!Number.isInteger(value) || value < 0 || value > 255) {
+        throw new ThemeUpdateError(
+          'invalid_backgrounds',
+          'Expected 1–64 observed sRGB8 backgrounds',
+        );
+      }
+      bytes[index * 3 + channel] = value;
+    }
+  }
+  return bytes;
 }
 
 /** CSS values come only from public outputRgb/outputOpacity, never diagnostics. */

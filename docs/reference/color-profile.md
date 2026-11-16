@@ -28,6 +28,10 @@ API подтверждён установленным npm-пакетом, а н�
 
 `more` использует отдельные авторские IC-опоры для цветного текста,
 поднимает непрозрачность лейблов и связывает нейтральную лестницу с primary.
+Эти преобразования задаёт `profile.mjs`: непрозрачность текстовых ролей
+становится равной 1, а `label-secondary`, `label-tertiary`, `label-quaternary`
+и `border-strong` ссылаются на `label-primary` независимо от обычных значений
+профиля.
 Program выбирает primary между светлой и тёмной опорами с обязательным
 WCAG 2.2 SC 1.4.3 на всех переданных подложках. Это ограничение primary,
 не заявление о проверке всех состояний компонента, материала или страницы.
@@ -40,7 +44,9 @@ import '@labui/colors/contract.css';
 import { initializeColors, createThemeScope } from '@labui/colors/runtime';
 
 await initializeColors();
-const scope = createThemeScope(element, { onError: reportThemeError });
+const element = document.getElementById('theme-sample');
+if (!element) throw new Error('Область темы не найдена');
+const scope = createThemeScope(element, { onError: (error) => console.error(error) });
 const result = scope.update({ theme: 'dark', contrast: 'normal' });
 
 if (!result.ok) {
@@ -79,12 +85,16 @@ stylesheet с селектором конкретной области, темы
 Соседние области не меняются. Runtime не сканирует документ и не запускает
 кадровый цикл. `dispose()` отключает observer, освобождает WASM-сессию, удаляет
 свой stylesheet и восстанавливает принадлежавшие подключению атрибуты,
-сохраняя последующие изменения приложения. Повторный `dispose()` допустим.
+сохраняя последующие изменения приложения. Исходные атрибуты запоминаются
+перед первой успешной записью, поэтому изменения приложения между созданием
+scope и первым update сохраняются. Повторный `dispose()` допустим.
 
 Кнопки страницы `colors.html` приходят с серверным Declarative Shadow DOM,
 сгенерированным из исходной разметки страницы. Hydration hook Lit загружается
 перед динамическим импортом компонента: гидрация использует исходный DOM-узел
 и сохраняет оформление и геометрию первого кадра.
+При сохранении страницы в BFCache область остаётся активной для возврата
+к странице; завершение по `pagehide` освобождает её только при `persisted=false`.
 
 ## Проверки и границы
 

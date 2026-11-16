@@ -137,6 +137,49 @@ test('theme layout keeps content at 100% and 200% on narrow and wide screens', a
   }
 });
 
+test('the scope restores attributes from immediately before its first successful write', async ({
+  page,
+}) => {
+  await page.goto('/_fixtures/colors-scope.html');
+  await page.waitForFunction(() => !!window.colorsProof);
+  expect(await page.evaluate(() => window.colorsProof.update({ backgrounds: [] }))).toBe(false);
+  await page.locator('#scope').evaluate((element) => {
+    element.setAttribute('data-theme', 'dark');
+    element.setAttribute('data-contrast', 'more');
+    element.setAttribute('data-labui-color-scope', 'application-scope');
+  });
+  expect(
+    await page.evaluate(() => window.colorsProof.update({ theme: 'light', contrast: 'normal' })),
+  ).toBe(true);
+  await page.evaluate(() => window.colorsProof.scope.dispose());
+  await expect(page.locator('#scope')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('#scope')).toHaveAttribute('data-contrast', 'more');
+  await expect(page.locator('#scope')).toHaveAttribute(
+    'data-labui-color-scope',
+    'application-scope',
+  );
+});
+
+test('cached page lifecycle preserves controls and the final departure releases the scope', async ({
+  page,
+}) => {
+  await page.goto('/colors.html');
+  await expect(page.locator('#theme-sample')).toHaveAttribute('data-contrast', 'normal');
+  for (const theme of ['dark', 'light']) {
+    await page.evaluate(() => {
+      window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true }));
+      window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true }));
+    });
+    await page.locator('#theme-choice').selectOption(theme);
+    await expect(page.locator('#theme-sample')).toHaveAttribute('data-theme', theme);
+    await expect(page.locator('#theme-status')).toHaveText('Тема этой области готова.');
+  }
+  await page.evaluate(() => {
+    window.dispatchEvent(new PageTransitionEvent('pagehide', { persisted: false }));
+  });
+  await expect(page.locator('#theme-sample')).not.toHaveAttribute('data-labui-color-scope');
+});
+
 test('scoped update, rejection, recovery and disposal preserve the actual DOM', async ({
   page,
 }) => {

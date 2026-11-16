@@ -66,8 +66,12 @@ describe('LabUI profile over the published Colors Program', () => {
         [[0.5, 1, 2]],
         [[Number.NaN, 0, 0]],
         [[1, 2]],
+        Array(1),
+        [Array(3)],
       ]) {
-        expect(() => program.update(backgrounds)).toThrow(/sRGB8/);
+        expect(() => program.update(backgrounds)).toThrow(
+          expect.objectContaining({ code: 'invalid_backgrounds' }),
+        );
       }
       expect(program.update()).toEqual(before);
       program.dispose();

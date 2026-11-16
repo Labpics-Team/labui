@@ -28,7 +28,7 @@ h2 {
 }
 
 a {
-  color: var(--lab-label-accent);
+  color: var(--lab-label-primary);
 }
 
 .theme-grid {
