@@ -33,11 +33,11 @@ final class SettingsExperienceTests: XCTestCase {
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Лаборатория".count))
         XCTAssertEqual(name.value as? String, "", "Validation must submit an actually empty name")
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
-        reveal(app.staticTexts["Введите название"], in: app, towardBottom: false)
+        reveal(message("Введите название", in: app), in: app, towardBottom: false)
         name.tap()
         name.typeText("Нативная лаборатория 東京")
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
-        XCTAssertTrue(app.staticTexts["Изменения сохранены"].waitForExistence(timeout: 5))
+        XCTAssertTrue(message("Изменения сохранены", in: app).waitForExistence(timeout: 5))
         XCTAssertTrue(open.exists)
         captureSettledFrame("Settings saved", in: app)
         app.terminate()
@@ -47,6 +47,12 @@ final class SettingsExperienceTests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
         captureSettledFrame("Restored settings", in: app)
+    }
+
+    private func message(_ label: String, in app: XCUIApplication) -> XCUIElement {
+        // Compose live regions use UIKit's generic accessibility element, not StaticText.
+        // The public announcement is its label; its UIKit trait is an implementation detail.
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
     }
 
     private func captureSettledFrame(_ title: String, in app: XCUIApplication) {
