@@ -65,8 +65,15 @@ Runtime обслуживает `lab-material` в областях Glass/Acrylic 
 он не добавляет четвёртое значение оси материалов.
 
 Исполнение зависит от поддержки браузером фильтров и системных настроек.
-Текущий runtime использует усиленные Glass/Acrylic-движки при поддержке
-их цепочки фильтров; в остальных случаях остаётся CSS-реализация.
+Chromium применяет paints и линзу в SVG backdrop filter; Firefox передаёт
+paints через отдельный SVG capture, Safari — через нативную смесь слоёв.
+У Firefox и Safari Glass сохраняет frost и paints без рефракции.
+Штатное Screen-зерно пространственно в Chromium/Safari; в Firefox используется
+равномерное приближение с верхней ошибкой менее 0.058 единицы RGB после paints.
+Это не пространственное зерно. Замена приватной текстуры иным URL в Firefox
+отмечается `data-lab-material-grain="unsupported"` и не усредняется молча.
+Значения диагностики и граница первого CSS-кадра описаны в
+[справке Materials](../../packages/materials/README.md).
 Условия подключения определены в
 [runtime.ts](../../packages/materials/src/engine/runtime.ts)
 и [движках Materials](../../packages/materials/src/engine/).
