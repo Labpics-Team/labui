@@ -110,10 +110,10 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
         suspend fun capture(name: String) {
             if (System.getenv("LABUI_CAPTURE_SCREENSHOTS") != "true") return
             val robot = Robot()
-            val bounds = onEventThread { Rectangle(window.locationOnScreen, window.size) }
             var previous: IntArray? = null
             var unchanged = 0
             repeat(80) {
+                val bounds = onEventThread { Rectangle(window.locationOnScreen, window.size) }
                 val frame = robot.createScreenCapture(bounds)
                 val pixels = frame.getRGB(0, 0, frame.width, frame.height, null, 0, frame.width)
                 unchanged = if (previous?.contentEquals(pixels) == true) unchanged + 1 else 0

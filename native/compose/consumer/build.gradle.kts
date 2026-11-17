@@ -51,6 +51,8 @@ compose.desktop {
             packageVersion = "0.1.0"
             description = "Lab UI — native settings example"
             vendor = "Labpics"
+            // JDK 21's macOS bundler requires a positive major version for the example app.
+            macOS { packageVersion = "1.0.0" }
             modules("java.desktop", "java.management", "jdk.unsupported", "jdk.accessibility")
         }
     }

@@ -14,7 +14,8 @@ import java.awt.Toolkit
 
 fun main(args: Array<String>) {
     configureDesktopRendering()
-    if (args.any { it.startsWith("--verify") })
+    val verifying = args.any { it.startsWith("--verify") }
+    if (verifying)
         require(!System.getenv("LABUI_DATA_DIR").isNullOrBlank()) {
             "Verification requires an isolated LABUI_DATA_DIR"
         }
@@ -36,11 +37,13 @@ fun main(args: Array<String>) {
             state =
                 rememberWindowState(
                     size = initialSize,
-                    position = WindowPosition(Alignment.Center),
+                    position =
+                        if (verifying) WindowPosition(0.dp, 0.dp)
+                        else WindowPosition(Alignment.Center),
                 ),
         ) {
             NativeSettingsScreen(store)
-            if (args.any { it.startsWith("--verify") })
+            if (verifying)
                 LaunchedEffect(Unit) {
                     try {
                         verifyDesktopWindow(window, restart = "--verify-restart" in args)

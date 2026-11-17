@@ -14,7 +14,11 @@ test_class = f"{package}.SettingsExperienceTest"
 
 
 def run(*arguments: str, timeout: int = 120) -> str:
-    result = subprocess.run([*adb, *arguments], check=True, text=True, capture_output=True, timeout=timeout)
+    result = subprocess.run([*adb, *arguments], text=True, capture_output=True, timeout=timeout)
+    if result.returncode:
+        print(result.stdout)
+        print(result.stderr)
+        result.check_returncode()
     return result.stdout
 
 

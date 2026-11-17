@@ -125,6 +125,8 @@ Access Bridge. В системе пользователя мост включа�
 `python native/compose/scripts/verify-desktop-package.py` проверяет сам application
 image с его JVM, библиотеками и ресурсами. CI выполняет этот путь перед сохранением
 установщика как проверяемого артефакта.
+macOS-пример имеет app version 1.0.0: jpackage из JDK 21 требует положительный
+major. Версия SDK остаётся независимой от версии приложения-примера.
 
 Причина выбора воспроизведена 17 ноября 2026 на Windows x64, RTX 3080 Ti,
 Skiko 0.150.2/Haze 2.1.0: пустой Solid Sheet с progressive overlay тратил
