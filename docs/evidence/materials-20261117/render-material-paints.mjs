@@ -81,6 +81,8 @@ try {
           'coloured-native-flat',
           'grain-native-flat',
           'grain-capture-parent',
+          'grain-arithmetic',
+          'grain-native-flat-transform',
         ]) {
           await page.goto(`http://127.0.0.1:${port}`);
           const paints = await page.evaluate(
@@ -123,6 +125,25 @@ try {
               document.body.append(marker);
               const runtime = await import('/runtime.js');
               window.disposeMaterials = runtime.mountMaterialRuntime();
+              if (recipe.endsWith('arithmetic')) {
+                for (const blend of document.querySelectorAll('.lab-material-paint-defs feBlend')) {
+                  const composite = document.createElementNS(
+                    'http://www.w3.org/2000/svg',
+                    'feComposite',
+                  );
+                  for (const name of ['in', 'in2', 'result'])
+                    composite.setAttribute(name, blend.getAttribute(name));
+                  for (const [name, value] of Object.entries({
+                    operator: 'arithmetic',
+                    k1: '-1',
+                    k2: '1',
+                    k3: '1',
+                    k4: '0',
+                  }))
+                    composite.setAttribute(name, value);
+                  blend.replaceWith(composite);
+                }
+              }
               if (recipe.endsWith('256')) {
                 for (const node of document.querySelectorAll(
                   '.lab-material-paint-defs feFuncR,.lab-material-paint-defs feFuncG,.lab-material-paint-defs feFuncB',
@@ -131,7 +152,7 @@ try {
                   node.setAttribute(
                     'tableValues',
                     Array.from({ length: 256 }, (_, i) => {
-                      const t = (i * 256) / 255;
+                      const t = (i * (values.length - 1)) / 255;
                       const lo = Math.floor(t);
                       return values[lo] + ((values[lo + 1] ?? values[lo]) - values[lo]) * (t - lo);
                     }).join(' '),
@@ -158,6 +179,7 @@ try {
                     surface.style.webkitBackdropFilter = 'blur(1px)';
                     wrapper.querySelector('.lab-material__capture').remove();
                   } else surface.style.isolation = 'auto';
+                  if (recipe.endsWith('transform')) surface.style.transform = 'translateZ(0)';
                 }
               }
               if (recipe.endsWith('capture-parent')) {

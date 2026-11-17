@@ -1,6 +1,10 @@
 import { type Rgba, compositeOver } from './luminance';
 import type { MaterialBlendMode } from './profile';
 
+// Gecko's WebRender backdrop path corrupts component tables above 256 entries.
+// Keep one bounded table format for every renderer and SSR compilation.
+const TRANSFER_SAMPLES = 256;
+
 export interface MaterialPaints {
   readonly normal: Rgba;
   readonly blend: Rgba;
@@ -61,14 +65,14 @@ export function compileMaterialPaint(paints: MaterialPaints): CompiledMaterialPa
   }
   const affine = maximumError < 1e-8;
   const rows: number[][] = [[], [], []];
-  for (let i = 0; i <= 256; i++) {
-    const value = (i / 256) * 255;
+  for (let i = 0; i < TRANSFER_SAMPLES; i++) {
+    const value = (i / (TRANSFER_SAMPLES - 1)) * 255;
     const out = materialPaintOver(paints, { r: value, g: value, b: value, a: 1 });
     for (const [index, key] of keys.entries())
       rows[index]?.push(
         gain > 1e-10
           ? Math.min(1, Math.max(0, (out[key] - (offsets[index] ?? 0)) / (255 * gain)))
-          : i / 256,
+          : i / (TRANSFER_SAMPLES - 1),
       );
   }
   return {
@@ -110,13 +114,13 @@ export function materialPaintOver(paints: MaterialPaints, backdrop: Rgba): Rgba 
 
 /** Piecewise linear RGB transfer, compiled only on a theme/role change.
  * All channels remain independent: coloured inputs need no neutral assumption.
- * The SVG renderer interpolates these 257 samples; this is an approximation
+ * The SVG renderer interpolates these 256 samples; this is an approximation
  * around a blend breakpoint, not a claim of byte identity with Figma.
  */
 export function materialPaintTables(paints: MaterialPaints): readonly [string, string, string] {
   const rows: number[][] = [[], [], []];
-  for (let i = 0; i <= 256; i++) {
-    const value = (i / 256) * 255;
+  for (let i = 0; i < TRANSFER_SAMPLES; i++) {
+    const value = (i / (TRANSFER_SAMPLES - 1)) * 255;
     const out = materialPaintOver(paints, { r: value, g: value, b: value, a: 1 });
     rows[0]?.push(out.r / 255);
     rows[1]?.push(out.g / 255);
