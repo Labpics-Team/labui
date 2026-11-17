@@ -19,9 +19,9 @@ const SVGNS = 'http://www.w3.org/2000/svg';
  * Браузерная СПОСОБНОСТЬ рисовать SVG-фильтр по `url(#id)` на backdrop —
  * общая capability-проба, не про КОНКРЕТНЫЙ эффект. Firefox и Safari ПАРСЯТ
  * `backdrop-filter: url(#f)` (CSS.supports=true), но НЕ рендерят SVG-фильтр на
- * backdrop — только Chromium. Оба движка, которым нужен url()-фильтр на
- * backdrop (рефракция liquid-glass И авторские paints — РАЗНЫЕ
- * эффекты, ОДНА браузерная способность), гейтятся ею. Ответ не меняется в
+ * backdrop — только Chromium. Это граница рефракции liquid-glass и прямого
+ * paint transfer; Firefox/Safari используют отдельные paint-адаптеры.
+ * Ответ не меняется в
  * пределах страницы → пробуется один раз. Живёт здесь (общий низ), чтобы
  * acrylic НЕ зависел от glass-модуля ради этой пробы.
  */

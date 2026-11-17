@@ -120,7 +120,7 @@ const DEFAULTS = { ...materialProfile.tiers.base.glass, corner: 0 };
 
 /** Whether this engine REFRACTS the backdrop. The requirement is the browser's
  *  ability to render a url()-referenced SVG filter on a backdrop — the shared
- *  capability probe (./mount), the SAME one the author paint transfer needs.
+ *  capability probe (./mount). Author paints have separate Gecko/WebKit adapters.
  *  The name stays glass-specific (its public semantics = "does the lens bend the
  *  backdrop"); the probe underneath is neutral. Everyone else keeps the honest
  *  blur fallback. */

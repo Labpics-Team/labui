@@ -13,6 +13,6 @@
   --_if-translucent: initial;
   --_if-acrylic: initial;
   --_if-glass: ;
-  /* Screen grain belongs below the paints in the backdrop transfer. A normal
-   * CSS texture would darken the surface; unsupported renderers omit the grain. */
+  /* Screen grain belongs below the paints. Chromium/Safari retain the texture;
+   * Gecko reports a bounded uniform approximation of this authored source. */
 }
