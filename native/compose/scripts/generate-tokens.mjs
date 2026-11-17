@@ -6,7 +6,7 @@ const data = JSON.parse(
   await readFile(new URL('packages/tokens/src/generated/tokens.dtcg.json', root), 'utf8'),
 );
 const lines = [
-  '// Generated from packages/tokens/src/generated/tokens.dtcg.json. Do not edit.',
+  '// Generated from packages/tokens/src/generated/{tokens,motion}.dtcg.json. Do not edit.',
   'package pics.lab.ui',
   '',
   'internal object LabTokens {',
@@ -21,6 +21,17 @@ for (const [group, entries] of Object.entries(data)) {
       .join('');
     lines.push(`    const val ${key}: Float = ${value}f`);
   }
+}
+const motion = JSON.parse(await readFile(new URL('packages/tokens/src/generated/motion.dtcg.json', root), 'utf8'));
+const dereference = (value) => typeof value === 'string' && value.startsWith('{')
+  ? value.slice(1, -1).split('.').reduce((part, key) => part[key], motion).$value : value;
+for (const [name, role] of Object.entries(motion.motion)) {
+  if (role.$type !== 'transition') continue;
+  const prefix = `Motion${name[0].toUpperCase()}${name.slice(1)}`;
+  const duration = dereference(role.$value.duration);
+  const easing = dereference(role.$value.timingFunction);
+  lines.push(`    const val ${prefix}DurationMs = ${duration.value}f`);
+  easing.forEach((value, index) => lines.push(`    const val ${prefix}Ease${index} = ${value}f`));
 }
 lines.push('}', '');
 const output = new URL('../src/commonMain/kotlin/pics/lab/ui/LabTokens.kt', import.meta.url);

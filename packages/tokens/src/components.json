@@ -168,5 +168,37 @@
       "radius": 4,
       "top": 14
     }
+  },
+  "snackbar": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "node": "6109:6735",
+      "timer": "6109:6708",
+      "readAt": "2026-11-17"
+    },
+    "radius": 9999,
+    "paddingStart": 12,
+    "paddingEnd": 8,
+    "paddingY": 8,
+    "actionGap": 24,
+    "labelGap": 12,
+    "fontSize": 16,
+    "lineHeight": 24,
+    "fontWeight": 500,
+    "strokeWidth": 1,
+    "material": "elevated",
+    "durationMs": 5000,
+    "timer": {
+      "size": 32,
+      "strokeWidth": 3,
+      "warningSeconds": 2,
+      "sweeps": [
+        360,
+        270,
+        225,
+        135,
+        75
+      ]
+    }
   }
 }

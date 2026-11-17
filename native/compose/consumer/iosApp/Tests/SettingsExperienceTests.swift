@@ -35,6 +35,14 @@ final class SettingsExperienceTests: XCTestCase {
         name.typeText("Нативная лаборатория 東京")
         XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
+        let undo = app.buttons["Отменить"]
+        XCTAssertTrue(undo.waitForExistence(timeout: 3))
+        undo.tap()
+        XCTAssertTrue(app.staticTexts["Лаборатория"].waitForExistence(timeout: 5))
+        open.tap()
+        clear(name, in: app)
+        name.typeText("Нативная лаборатория 東京")
+        reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         // A slow XCTest snapshot can outlive the automatic Snackbar. The save contract
         // is the committed workspace, then the same data after a fresh process launch.
         XCTAssertTrue(app.staticTexts["Нативная лаборатория 東京"].waitForExistence(timeout: 15))

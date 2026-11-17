@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.selected
@@ -42,7 +41,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pics.lab.icons.Icon
 import pics.lab.icons.symbols.checkmark
@@ -96,19 +94,9 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
     var saveError by rememberSaveable { mutableStateOf(false) }
     var displayError by remember { mutableStateOf(false) }
     var snackbar by remember { mutableStateOf<String?>(null) }
-    val accessibility = LocalAccessibilityManager.current
-    LaunchedEffect(snackbar) {
-        if (snackbar != null) {
-            delay(
-                accessibility?.calculateRecommendedTimeoutMillis(
-                    5000,
-                    containsText = true,
-                    containsControls = false,
-                ) ?: 5000
-            )
-            snackbar = null
-        }
-    }
+    var notificationKey by remember { mutableStateOf(0) }
+    var undoChange by remember { mutableStateOf<WorkspaceChange?>(null) }
+    var undoing by remember { mutableStateOf(false) }
     val font = labFontFamily()
     val heading =
         TextStyle(
@@ -137,6 +125,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
         emailError = null
         saveError = false
         snackbar = null
+        undoChange = null
         showingAppearance = false
         open = true
     }
@@ -427,8 +416,9 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                                             )
                                         scope.launch {
                                             try {
-                                                store.save(next)
+                                                undoChange = store.save(next)
                                                 open = false
+                                                notificationKey++
                                                 snackbar = "Изменения сохранены"
                                             } catch (cancelled: CancellationException) {
                                                 throw cancelled
@@ -461,6 +451,34 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                         .safeDrawingPadding()
                         .padding(24.dp)
                         .widthIn(max = 560.dp),
+                    onDismiss = { snackbar = null; undoChange = null },
+                    notificationKey = notificationKey,
+                    material = display.material,
+                    actionLabel = if (undoChange != null) "Отменить" else null,
+                    dismissOnAction = false,
+                    actionPending = undoing,
+                    restoreFocus = trigger,
+                    onAction = {
+                        val change = undoChange
+                        if (change != null && !undoing) {
+                            undoing = true
+                            scope.launch {
+                                try {
+                                    val restored = store.undo(change)
+                                    undoChange = null
+                                    trigger.requestFocus()
+                                    notificationKey++
+                                    snackbar = if (restored) "Изменения отменены"
+                                        else "Настройки уже изменились"
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (_: Exception) {
+                                    notificationKey++
+                                    snackbar = "Не удалось отменить. Попробуйте ещё раз."
+                                } finally { undoing = false }
+                            }
+                        }
+                    },
                 )
             }
         }

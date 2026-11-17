@@ -17,6 +17,31 @@ import pics.lab.ui.LabMaterial
 
 class WorkspaceStoreTest {
     @Test
+    fun undoRestoresCommittedDataButKeepsANewerWrite() = runBlocking {
+        val directory = Files.createTempDirectory("labui-settings-undo").toFile()
+        val path = directory.resolve(settingsFileName).absolutePath
+        val job = SupervisorJob()
+        val reopenJob = SupervisorJob()
+        try {
+            val store = createWorkspaceStore(path, CoroutineScope(job + Dispatchers.IO))
+            val first = store.save(Workspace(name = "  Студия  "))
+            assertEquals(true, store.undo(first))
+            assertEquals(Workspace(), store.data.first().workspace)
+            val second = store.save(Workspace(name = "Вторая запись"))
+            store.save(Workspace(name = "Новая запись другого окна"))
+            store.save(second.after)
+            assertEquals(false, store.undo(second))
+            job.cancelAndJoin()
+            val reopened = createWorkspaceStore(path, CoroutineScope(reopenJob + Dispatchers.IO))
+            assertEquals("Вторая запись", reopened.data.first().workspace.name)
+        } finally {
+            job.cancelAndJoin()
+            reopenJob.cancelAndJoin()
+            directory.deleteRecursively()
+        }
+    }
+
+    @Test
     fun savedWorkspaceAndDisplaySurviveClosingAndReopeningStorage() = runBlocking {
         val directory = Files.createTempDirectory("labui-settings-test").toFile()
         val path = directory.resolve(settingsFileName).absolutePath

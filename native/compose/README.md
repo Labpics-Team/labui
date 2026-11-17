@@ -63,6 +63,40 @@ AppData/Roaming, Application Support или XDG_CONFIG_HOME. Это хранен
 Эта запись описывает исполняемый остаток работы и не заменяет принятый
 [план r1](https://github.com/Labpics-Team/agents-config/blob/main/plans/labui/r1.md).
 
+## Snackbar
+
+`LabSnackbar` использует общий `packages/tokens/src/components.json`: Elevated,
+капсула, отступы 12/8/8, Geist 16/24/500, штатная small/accent/ghost-кнопка.
+Таймер 32 dp / stroke 3 dp имеет пять авторских поз; последние две секунды
+выделяются danger. При системном масштабе текста круг растёт вместе с цифрой.
+Сообщение объявляется в polite live region; таймер исключён из accessibility tree.
+
+```kotlin
+LabSnackbar(
+    "Изменения сохранены", open = saved, onDismiss = { saved = false },
+    notificationKey = saveNumber, actionLabel = "Отменить", onAction = ::undo,
+    restoreFocus = editButton,
+)
+```
+
+`durationMillis` по умолчанию 5000, `0` оставляет сообщение до закрытия приложением.
+Таймер учитывает системный accessibility timeout и останавливается при наведении,
+фокусе внутри, `actionPending` или неактивном lifecycle. Один monotonic deadline
+планирует только смены секунды/позы, без кадрового цикла. `notificationKey`
+перезапускает тот же текст. Вход использует общий Motion entrance из DTCG.
+
+Действие вызывается до `onDismiss`. Для асинхронного действия установите
+`dismissOnAction=false`, передайте `actionPending` и закройте сообщение после
+результата операции. Пример настроек действительно отменяет последнюю запись;
+сравнение и восстановление выполняются одной транзакцией, последующая запись
+другого окна сохраняется. При ошибке Undo доступен повтор.
+
+`SnackbarRenderTest` создаёт только CPU `ImageComposeScene`, без окон: обе темы
+при 100/125/200%. PNG сохраняются в `build/snackbar-render`. Платформенные
+сценарии проходят save → Undo → save → restart через системную доступность.
+Источники: [Figma](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=6109-6735),
+[Compose Lifecycle](https://kotlinlang.org/docs/multiplatform/compose-lifecycle.html).
+
 ## Разработка
 
 JDK 21, Android SDK 37, Gradle wrapper 9.3.1. Android минимум API 33.

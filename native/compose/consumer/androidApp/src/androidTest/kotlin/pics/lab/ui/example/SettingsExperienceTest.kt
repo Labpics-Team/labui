@@ -115,6 +115,13 @@ class SettingsExperienceTest {
         device.pressBack()
         save()
         find(By.text("Изменения сохранены"))
+        action("Отменить").click()
+        find(By.text("Изменения отменены"))
+        find(By.text("Лаборатория"))
+        action("Редактировать").click()
+        assertEquals("Лаборатория", input("Название").text)
+        input("Название").text = "Нативная лаборатория 東京z"
+        save()
         assertTrue(action("Редактировать").isEnabled)
         find(By.text("Нативная лаборатория 東京z"))
     }

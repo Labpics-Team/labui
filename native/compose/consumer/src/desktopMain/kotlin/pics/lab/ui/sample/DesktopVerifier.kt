@@ -207,6 +207,18 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
             click(find("Получать уведомления"))
             click(find("Сохранить", AccessibleRole.PUSH_BUTTON))
             find("Изменения сохранены")
+            click(find("Отменить", AccessibleRole.PUSH_BUTTON))
+            find("Изменения отменены")
+            find(Workspace().name)
+            awaitFocus(find("Редактировать", AccessibleRole.PUSH_BUTTON))
+            click(find("Редактировать", AccessibleRole.PUSH_BUTTON))
+            check(text(find("Название", AccessibleRole.TEXT)) == Workspace().name)
+            edit(find("Название", AccessibleRole.TEXT), verifiedName)
+            edit(find("Описание", AccessibleRole.TEXT), verifiedDescription)
+            edit(find("Почта для уведомлений", AccessibleRole.TEXT), verifiedEmail)
+            click(find("Получать уведомления"))
+            click(find("Сохранить", AccessibleRole.PUSH_BUTTON))
+            find("Изменения сохранены")
             val trigger = find("Редактировать", AccessibleRole.PUSH_BUTTON)
             awaitFocus(trigger)
             find(verifiedName)
@@ -236,7 +248,7 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
                 "No focus event reached Java Accessibility"
             }
             println(
-                "NATIVE_SCENARIO_PASS: draft cancellation, validation, persisted save, focus and Java Accessibility events"
+                "NATIVE_SCENARIO_PASS: draft cancellation, validation, persisted save/Undo/save, focus and Java Accessibility events"
             )
         } finally {
             File("build").mkdirs()

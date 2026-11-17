@@ -53,4 +53,20 @@ internal object LabComponents {
     const val SheetDragHeight = 4f
     const val SheetDragRadius = 4f
     const val SheetDragTop = 14f
+    const val SnackbarRadius = 9999f
+    const val SnackbarPaddingStart = 12f
+    const val SnackbarPaddingEnd = 8f
+    const val SnackbarPaddingY = 8f
+    const val SnackbarActionGap = 24f
+    const val SnackbarLabelGap = 12f
+    const val SnackbarFontSize = 16f
+    const val SnackbarLineHeight = 24f
+    const val SnackbarFontWeight = 500f
+    const val SnackbarStrokeWidth = 1f
+    val SnackbarMaterial get() = LabMaterials.elevated
+    const val SnackbarDurationMs = 5000f
+    const val SnackbarTimerSize = 32f
+    const val SnackbarTimerStrokeWidth = 3f
+    const val SnackbarTimerWarningSeconds = 2f
+    val SnackbarTimerSweeps = listOf(360f, 270f, 225f, 135f, 75f)
 }

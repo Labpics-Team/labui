@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.CoroutineScope
@@ -34,18 +35,42 @@ data class WorkspaceSettings(
     val display: DisplaySettings = DisplaySettings(),
 )
 
+class WorkspaceChange internal constructor(val before: Workspace, val after: Workspace, internal val version: Long)
+
 /** One atomic record per settings operation. Drafts never enter persistent storage. */
 class WorkspaceStore internal constructor(private val dataStore: DataStore<Preferences>) {
     val data: Flow<WorkspaceSettings> = dataStore.data.map { it.settings() }
 
-    suspend fun save(workspace: Workspace) {
+    suspend fun save(workspace: Workspace): WorkspaceChange {
         require(workspace.name.isNotBlank())
+        var change: WorkspaceChange? = null
         dataStore.edit {
+            val before = it.settings().workspace
             it[name] = workspace.name.trim()
             it[email] = workspace.email.trim()
             it[description] = workspace.description.trim()
             it[notifications] = workspace.notifications
+            val version = (it[workspaceVersion] ?: 0L) + 1
+            it[workspaceVersion] = version
+            change = WorkspaceChange(before, it.settings().workspace, version)
         }
+        return checkNotNull(change)
+    }
+
+    /** Undo only this committed write; another window's newer change must survive. */
+    suspend fun undo(change: WorkspaceChange): Boolean {
+        var restored = false
+        dataStore.edit {
+            if (it[workspaceVersion] == change.version) {
+                it[name] = change.before.name
+                it[email] = change.before.email
+                it[description] = change.before.description
+                it[notifications] = change.before.notifications
+                it[workspaceVersion] = change.version + 1
+                restored = true
+            }
+        }
+        return restored
     }
 
     suspend fun updateDisplay(change: (DisplaySettings) -> DisplaySettings) {
@@ -86,6 +111,7 @@ class WorkspaceStore internal constructor(private val dataStore: DataStore<Prefe
 
     private companion object {
         val defaults = Workspace()
+        val workspaceVersion = longPreferencesKey("workspace.version")
         val name = stringPreferencesKey("workspace.name")
         val email = stringPreferencesKey("workspace.email")
         val description = stringPreferencesKey("workspace.description")

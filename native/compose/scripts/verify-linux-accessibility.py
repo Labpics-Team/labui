@@ -153,10 +153,11 @@ try:
         def orca_ready():
             assert orca.poll() is None, "Orca exited before its service became available"
             result = subprocess.run([
-                "gdbus", "call", "--session", "--dest", "org.gnome.Orca1.Service",
-                "--object-path", "/org/gnome/Orca1/Service",
-                "--method", "org.gnome.Orca1.Service.GetVersion",
+                "gdbus", "call", "--session", "--dest", "org.gnome.Orca.Service",
+                "--object-path", "/org/gnome/Orca/Service",
+                "--method", "org.gnome.Orca.Service.GetVersion",
             ], env=environment, text=True, capture_output=True, timeout=3)
+            (evidence / "orca-readiness.txt").write_text(result.stdout + result.stderr)
             return result.returncode == 0
         await_result("Orca serves accessibility requests", orca_ready)
 

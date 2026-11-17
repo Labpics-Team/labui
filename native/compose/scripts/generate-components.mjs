@@ -28,6 +28,10 @@ function emitConstants(prefix, definition) {
   for (const [name, value] of Object.entries(definition)) {
     if (name === 'source' || name === 'sizes') continue;
     if (typeof value === 'number') lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
+    else if (name === 'material' && typeof value === 'string')
+      lines.push(`    val ${prefix}${upper(name)} get() = LabMaterials.${value}`);
+    else if (Array.isArray(value) && value.every((entry) => typeof entry === 'number'))
+      lines.push(`    val ${prefix}${upper(name)} = listOf(${value.map((entry) => `${entry}f`).join(', ')})`);
     else if (value && typeof value === 'object') emitConstants(prefix + upper(name), value);
   }
 }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -31,6 +32,10 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.junit.Rule
@@ -53,6 +58,39 @@ class ComponentsTest {
             -45f,
             .05f,
         )
+
+    @Test
+    fun snackbarWaitsForActiveApplicationAndRestartsIdenticalNotification() {
+        val owner = object : LifecycleOwner {
+            override val lifecycle = LifecycleRegistry.createUnsafe(this)
+                .apply { currentState = Lifecycle.State.STARTED }
+        }
+        var open by mutableStateOf(true)
+        var notification by mutableStateOf(0)
+        var dismissals = 0
+        compose.setContent {
+            CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+                LabTheme(theme) {
+                    LabScene(Modifier.fillMaxSize(), background = {}) {
+                        LabSnackbar("Сохранено", open = open, notificationKey = notification,
+                            durationMillis = 200, onDismiss = { dismissals++; open = false })
+                    }
+                }
+            }
+        }
+        Thread.sleep(350)
+        compose.runOnIdle {
+            assertEquals(0, dismissals)
+            notification++
+            owner.lifecycle.currentState = Lifecycle.State.RESUMED
+        }
+        compose.waitUntil(3000) { dismissals == 1 }
+        compose.runOnIdle {
+            open = true
+            notification++
+        }
+        compose.waitUntil(3000) { dismissals == 2 }
+    }
 
     @Test
     fun loadingKeepsWidthAndCannotSubmitTwice() {

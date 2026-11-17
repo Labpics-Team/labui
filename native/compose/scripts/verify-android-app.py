@@ -30,7 +30,7 @@ run("shell", "pm", "clear", package)
 # sys.boot_completed precedes credential-encrypted storage/user readiness.
 # Await the actual user/runner boundary instead of sleeping or retrying a test.
 deadline = time.monotonic() + 60
-while "true" not in run("shell", "cmd", "user", "is-user-unlocked", "0"):
+while "RUNNING_UNLOCKED" not in run("shell", "am", "get-started-user-state", "0"):
     if time.monotonic() >= deadline:
         raise RuntimeError("Android user did not unlock after boot")
     time.sleep(.2)
