@@ -104,3 +104,22 @@ opaque проверка не подменяет их оптическую оце
 Normal и opaque white Color Dodge точная функция для 0.5 RGB даёт 255, а таблица
 интерполирует 127.5. Контракт runtime/SSR теперь явно называет это sampled
 approximation; 0.15 RGB относится только к десяти авторским recipes.
+
+Последующее независимое ревью обнаружило отрицательные scroll origins
+(RTL, reverse-flex, vertical-rl) и потерю конечного padding Firefox grid после
+изменения стиля в крайней позиции. Production `7f791ef` выводит две физические
+оси из writing-mode/direction и flex main/cross reversal. Runway исключён из
+scroll anchoring и имеет layout containment; natural extent измеряется без него,
+затем одним чтением вычитается только его реальный вклад в overflow. Это устраняет
+различия учёта padding без списка browser/layout исключений. Scroll по-прежнему
+не вызывает JS. Временно скрытое состояние не выходит за синхронное измерение.
+
+[Run 44118210819](https://github.com/Labpics-Team/labui/actions/runs/44118210819)
+прошёл на Linux/macOS: 12 flows × 10 stages × 3 browsers, snapshot и actual display;
+отдельно все десять авторских paints проверены внутри прокрученного capture на
+шести цветных фонах. [Полные данные](material-scroll-origins.json): 1440 scroll
+и 408 paint rows. Общий CI `44118210711` также прошёл.
+Независимая проверка повторила 48 Firefox/WebKit сценариев; дополнительно
+Chromium/Firefox/WebKit за 20 idle и 20 scroll кадров дали ноль runtime rAF
+и getComputedStyle. Переключение overflow visible→hidden и dispose при pending
+content refresh оставили ноль наблюдателей, captures/defs и снятый mode.
