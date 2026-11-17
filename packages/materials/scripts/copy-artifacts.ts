@@ -16,7 +16,13 @@ const dist = resolve(here, '..', 'dist');
 
 mkdirSync(dist, { recursive: true });
 copyFileSync(resolve(here, '../src/profile.json'), resolve(dist, 'profile.json'));
-writeFileSync(resolve(dist, 'material.css'), readMaterialCss());
+const css = readMaterialCss();
+writeFileSync(resolve(dist, 'material.css'), css);
+// Shadow-root consumers receive the exact stylesheet, without a hand-kept copy.
+writeFileSync(resolve(dist, 'css.js'), `export const materialCss = ${JSON.stringify(css)};\n`);
+writeFileSync(resolve(dist, 'css.cjs'), `exports.materialCss = ${JSON.stringify(css)};\n`);
+writeFileSync(resolve(dist, 'css.d.ts'), 'export declare const materialCss: string;\n');
+writeFileSync(resolve(dist, 'css.d.cts'), 'export declare const materialCss: string;\n');
 writeFileSync(resolve(dist, 'noise.png'), acrylicNoisePng());
 writeFileSync(
   resolve(dist, 'veil-noise.png'),
