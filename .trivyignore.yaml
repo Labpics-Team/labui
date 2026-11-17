@@ -1,4 +1,21 @@
 vulnerabilities:
+  - id: CVE-2026-112366
+    purls:
+      - pkg:npm/picomatch@2.3.2
+      - pkg:npm/picomatch@4.0.4
+      - pkg:npm/picomatch@4.0.7
+    statement: >-
+      На 18.11.2026 https://github.com/advisories/GHSA-fc5q-39xc-vjpf не содержит исправленной
+      версии; npm latest 4.0.7 затронута. ReDoS требует передать атакующий glob как шаблон,
+      например +(*a), а не просто строку для сопоставления. Все пути здесь заканчиваются
+      devDependencies Changesets, Astro Container tests, Vite/Vitest, tsup или svelte-check.
+      Шаблоны берутся из версионируемых workspace/config/import.meta.glob и конфигурации
+      сборки; внешние HTTP-данные в шаблон не подставляются. Astro в этом workspace не
+      обслуживает сервер: package scripts используют tsup и Vitest; Container tests задают
+      локальные компоненты и literal glob. Продуктовые imports picomatch отсутствуют.
+      Точный граф всех трёх версий проверяет scripts/ci/accepted-advisories-contract.mjs;
+      новый путь или advisory требует отдельного разбора. Проверка исправленных уязвимостей
+      продолжает сканировать без ignorefile и потребует обновления после выхода исправления.
   - id: CVE-2026-93687
     purls:
       - pkg:npm/braces@3.0.3

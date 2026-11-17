@@ -1,0 +1,80 @@
+{
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "version": "2422536133022859436",
+  "lastModified": "2026-11-16T18:32:12Z",
+  "source": "Figma REST nodes first-scenario.json",
+  "nodes": [
+    {
+      "id": "I7100:17108;7098:2611",
+      "name": "Backdrop",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 128,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4048:810"
+            }
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "noiseType": "MONOTONE",
+          "blendMode": "SCREEN",
+          "noiseSize": 0.20000000298023224,
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.03999999910593033
+          },
+          "density": 1
+        }
+      ]
+    },
+    {
+      "id": "7533:4723",
+      "name": "Ghost",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          },
+          "radius": 24,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2018"
+            }
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "noiseType": "MONOTONE",
+          "blendMode": "SCREEN",
+          "noiseSize": 0.20000000298023224,
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,267 @@
+{
+  "date": "2026-11-17",
+  "sourceHead": "b18a753f3eb378cc33fa29faa132088c092a948f",
+  "run": "https://github.com/Labpics-Team/labui/actions/runs/44158850998",
+  "result": "success",
+  "generalCI": "https://github.com/Labpics-Team/labui/actions/runs/44158851009",
+  "iconsCI": "https://github.com/Labpics-Team/labui/actions/runs/44158851006",
+  "platforms": [
+    {
+      "os": "linux",
+      "job": "https://github.com/Labpics-Team/labui/actions/runs/44158850998/job/134306874721",
+      "result": "success",
+      "modes": [
+        {
+          "capture": "snapshot",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
+            {
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            }
+          ]
+        },
+        {
+          "capture": "display",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
+            {
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            }
+          ]
+        }
+      ],
+      "initialSettleRows": 72,
+      "initialSettleMutations": 0,
+      "initialSettleChanges": [],
+      "displaySamplesRequiringFreshFrame": 498,
+      "maxStaleFrames": 1
+    },
+    {
+      "os": "macos",
+      "job": "https://github.com/Labpics-Team/labui/actions/runs/44158850998/job/134306875308",
+      "result": "success",
+      "modes": [
+        {
+          "capture": "snapshot",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
+            {
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headless-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            }
+          ]
+        },
+        {
+          "capture": "display",
+          "paintRows": 102,
+          "scrollRows": 360,
+          "browsers": [
+            {
+              "browser": "chromium",
+              "version": "140.0.7339.186",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "firefox",
+              "version": "141.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            },
+            {
+              "browser": "webkit",
+              "version": "26.0",
+              "shapeCapture": "headed-browser-screenshot",
+              "shadowComparisons": 8,
+              "stablePixelMismatches": 0,
+              "shadowSuppressed": true,
+              "shadowRestored": true,
+              "borderOnlyResize": true,
+              "retainedContour": true,
+              "foregroundStroke": [255, 0, 0],
+              "finalObservations": 0,
+              "finalDecoration": 0,
+              "scrollMutations": 0
+            }
+          ]
+        }
+      ],
+      "initialSettleRows": 72,
+      "initialSettleMutations": 4,
+      "initialSettleChanges": [
+        {
+          "step": "Measure production paint rendering",
+          "browser": "webkit",
+          "layout": "vertical-rl",
+          "mutations": [
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            }
+          ]
+        }
+      ],
+      "displaySamplesRequiringFreshFrame": 10,
+      "maxStaleFrames": 1
+    }
+  ],
+  "qualification": "Paint and scroll pixels are measured with browser snapshots and isolated actual-display capture. Shape/shadow comparisons use browser screenshots in both headless and headed runs; they are not claimed as display capture. Six shadow cases use native CSS and two use independently derived CSS geometry in every browser (shadow-reference.md). All use flat 3x3 reference interiors with a 5RGB threshold and zero mismatches. Distinct per-sample RGB markers reject stale display frames; no pixel tolerance is relaxed. Earlier d25597f run44155167179 failed on Firefox native asymmetric inset; b18 fixes native double-paint and separates that buggy reference from analytic CSS geometry. Dock optics remains limited as stated in dock-optics.md."
+}

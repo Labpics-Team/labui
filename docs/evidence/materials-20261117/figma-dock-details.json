@@ -1,0 +1,124 @@
+{
+  "success": true,
+  "result": {
+    "capturedAt": "2026-11-17T15:52:38.104Z",
+    "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+    "nodes": [
+      {
+        "id": "7671:9049",
+        "name": "Preview",
+        "cornerSmoothing": 0
+      },
+      {
+        "id": "7671:10812",
+        "name": "Rectangle 18",
+        "cornerSmoothing": 0.6000000238418579
+      },
+      {
+        "id": "7671:10814",
+        "name": "Frame 3",
+        "cornerSmoothing": 0.6000000238418579
+      },
+      {
+        "id": "7671:10816",
+        "name": "Frame 4",
+        "cornerSmoothing": 0.6000000238418579
+      },
+      {
+        "id": "7671:10819",
+        "name": "Frame 6",
+        "cornerSmoothing": 0.6000000238418579
+      },
+      {
+        "id": "7671:10821",
+        "name": "Frame 7",
+        "cornerSmoothing": 0.6000000238418579
+      },
+      {
+        "id": "7671:10818",
+        "name": "Frame 5",
+        "cornerSmoothing": 0.6000000238418579
+      }
+    ],
+    "pattern": {
+      "id": "7533:5663",
+      "name": "Style=Square",
+      "width": 20,
+      "height": 20,
+      "type": "COMPONENT",
+      "children": [
+        {
+          "id": "7533:5666",
+          "name": "Vector",
+          "type": "VECTOR",
+          "x": 1,
+          "y": 0,
+          "width": 19,
+          "height": 20,
+          "fills": [
+            {
+              "type": "SOLID",
+              "visible": true,
+              "opacity": 0.1599999964237213,
+              "blendMode": "NORMAL",
+              "color": {
+                "r": 0.47058823704719543,
+                "g": 0.47058823704719543,
+                "b": 0.501960813999176
+              },
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:4033:1085"
+                }
+              }
+            }
+          ],
+          "strokes": [],
+          "strokeWeight": 0,
+          "strokeAlign": "CENTER",
+          "dashPattern": [],
+          "cornerRadius": "mixed",
+          "vectorPaths": [
+            {
+              "windingRule": "NONZERO",
+              "data": "M 10 20 L 9 20 L 9 0 L 10 0 L 10 20 Z M 2 11 L 0 11 L 0 10 L 2 10 L 2 11 Z"
+            },
+            {
+              "windingRule": "NONZERO",
+              "data": "M 3 11 L 5 11 L 5 10 L 3 10 L 3 11 Z"
+            },
+            {
+              "windingRule": "NONZERO",
+              "data": "M 6 11 L 8 11 L 8 10 L 6 10 L 6 11 Z"
+            },
+            {
+              "windingRule": "NONZERO",
+              "data": "M 11 11 L 13 11 L 13 10 L 11 10 L 11 11 Z"
+            },
+            {
+              "windingRule": "NONZERO",
+              "data": "M 14 11 L 16 11 L 16 10 L 14 10 L 14 11 Z"
+            },
+            {
+              "windingRule": "NONZERO",
+              "data": "M 17 11 L 19 11 L 19 10 L 17 10 L 17 11 Z"
+            }
+          ]
+        }
+      ],
+      "fills": []
+    }
+  },
+  "resultAnalysis": {
+    "type": "object",
+    "isNull": false,
+    "isUndefined": false,
+    "isEmpty": false,
+    "warning": null
+  },
+  "fileContext": {
+    "fileName": "🧪Lab UI (v2.1)",
+    "fileKey": "LuaiBd4anRi4DMZayKAnY2"
+  }
+}

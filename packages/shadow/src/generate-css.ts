@@ -3,6 +3,7 @@ import {
   DEFAULT_TINT_STRENGTH,
   SHADOW_COLOR_FALLBACK_DARK,
   SHADOW_COLOR_FALLBACK_LIGHT,
+  SHADOW_COLOR_ROLE,
   SHADOW_TRANSITION_DURATION,
   SHADOW_TRANSITION_EASING,
 } from './config.js';
@@ -98,7 +99,7 @@ function rootContract(): string {
     '',
     '  /* Neutral shadow anchor (Figma N12, never pure black). The theme blocks',
     '     re-set only its value; a surface may opt into a weak tint below. */',
-    `  ${SHADOW_COLOR_VAR}: ${SHADOW_COLOR_FALLBACK_LIGHT};`,
+    `  ${SHADOW_COLOR_VAR}: var(--lab-${SHADOW_COLOR_ROLE}, ${SHADOW_COLOR_FALLBACK_LIGHT});`,
     `  ${TINT_STRENGTH_VAR}: ${DEFAULT_TINT_STRENGTH};`,
     '',
     '  /* Motion tokens — elevation changes ease their box-shadow, never snap. */',
@@ -178,7 +179,8 @@ function roleAliasClasses(_elevations: { name: string; value: string }[]): strin
  * changes. Targets both an explicit `[data-theme]` and the OS preference.
  */
 function themeBlock(theme: ShadowTheme): string {
-  const anchor = theme === 'light' ? SHADOW_COLOR_FALLBACK_LIGHT : SHADOW_COLOR_FALLBACK_DARK;
+  const fallback = theme === 'light' ? SHADOW_COLOR_FALLBACK_LIGHT : SHADOW_COLOR_FALLBACK_DARK;
+  const anchor = `var(--lab-${SHADOW_COLOR_ROLE}, ${fallback})`;
   const multiplier = theme === 'dark' ? DARK_ALPHA_MULTIPLIER_DEFAULT : 1;
   const alphaLines = SHADOW_SLOTS.map(
     (slot) => `  ${alphaVarName(slot)}: ${round(defaultAlpha(slot) * multiplier)};`,

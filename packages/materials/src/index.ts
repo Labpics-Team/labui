@@ -1,24 +1,3 @@
-/*
- * @labpics/ui-materials — the material MODE axis for LabUI surfaces.
- *
- * Ships two things:
- *   1. `./material.css` — the CSS/DOM mechanics of the `data-material`
- *      solid|glass|blur scope, built strictly ON TOP of the `--lab-*` contract
- *      (it consumes `--lab-bg-material-*` emissions, never invents colour).
- *   2. This module — the pure α-boundary guarantee math, exported so consumers
- *      and tests can prove a glass tier keeps its label legal across the
- *      unknown backdrop, or honestly flag it unguaranteed.
- *
- * The package owns MECHANICS (backdrop stack, degradations, the guarantee).
- * It owns NO colour: tint and label values come from @labpics/colors.
- *
- * Since ADR-0003 it also ships the refraction engine (`./engine/`) behind ONE
- * declarative entry: `mountMaterialRuntime()`. The engine itself (attach,
- * filters, caches) is package-internal — never part of this surface. The same
- * entry now also mounts lab-veil (`[data-veil]` progressive blur,
- * `./engine/veil.ts` + `./engine/veil-math.ts`) — equally package-internal.
- */
-
 export {
   type Rgba,
   type Rgb8,
@@ -30,6 +9,15 @@ export {
 } from './luminance';
 
 export { mountMaterialRuntime } from './engine/runtime';
+export { mountSurfaceShape } from './engine/contour-surface';
+export type { SurfaceShapeOptions, SurfaceShapeHandle } from './engine/contour-surface';
+export type { MaterialRuntimeOptions } from './engine/runtime';
+export { materialProfile, materialRoles, materialBlendMode } from './profile';
+export type { MaterialBlendMode } from './profile';
+export { materialPaintOver, materialPaintTables, blendChannel } from './material-paints';
+export type { MaterialPaints } from './material-paints';
+export { compileMaterialTheme } from './material-theme';
+export type { MaterialRoleMap, MaterialThemeStyle } from './material-theme';
 export type { MaterialRoot } from './engine/mount';
 
 export {
@@ -56,13 +44,6 @@ export {
   isLiveBlur,
   canNest,
 } from './background-policy';
-
-export {
-  ACRYLIC_LUMINOSITY_OPACITY,
-  acrylicCorridor,
-  blendLuma,
-  luminosityBlend,
-} from './acrylic-corridor';
 
 export {
   type MaterialTier,

@@ -1,12 +1,3 @@
-/*
- * Acrylic LIVE — фикстура движка v2 (ADR-0009), только хром страницы.
- *
- * Материал живёт в @labpics/ui-materials; здесь — измерительный полигон:
- * два ЭКСТРЕМАЛЬНЫХ поля фона (чистый чёрный / чистый белый — углы коридора
- * гарантии) и по acrylic-панели над каждым. Панели отступают от границы полей
- * дальше досягаемости выборки фильтра (регион −25%…150% бокса), поэтому каждая
- * читает СВОЁ поле без подмеса соседнего.
- */
 @import "@labui/colors/contract.css";
 @import "@labpics/ui-tokens/tokens.css";
 @import "@labpics/ui-materials/material.css";
@@ -37,8 +28,7 @@ body {
   background: #fff;
 }
 
-/* Панель 200×160: при регионе фильтра −25% выборка блюра уходит максимум на
- * 50px за бокс — центры третей 1280-вьюпорта дают ≥110px до границы полей. */
+/* Uniform backdrop fields isolate the RGB transfer from spatial blur. */
 .panel {
   position: fixed;
   top: 200px;

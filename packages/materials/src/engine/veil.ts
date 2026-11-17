@@ -56,7 +56,9 @@
  *     the page behind it.
  */
 
+import { materialProfile } from '../profile';
 import { trailingRaf } from './mount';
+import { type VeilEdge, axisBandStyle } from './veil-axis';
 import { type Point, type Stop, bandBBox, bandify, parseStops } from './veil-math';
 
 /** The strip class material.css binds its base styling and honest fallbacks
@@ -74,7 +76,9 @@ interface VeilState {
   el: HTMLElement;
   strips: HTMLElement[];
   sig: string | null;
+  paint: Element | null;
   enabled: boolean;
+  fluid: boolean;
 }
 
 const registry = new WeakMap<HTMLElement, VeilHandle>(); // host → handle (no DOM expando)
@@ -127,10 +131,12 @@ interface VeilConfig {
   h: number;
   from: string;
   to: string;
-  stops: string;
+  passes: { stops: string; noiseOpacity: number }[];
+  noise: string;
   levels: number;
   feather: string;
   reduced: boolean;
+  fluidEdge: VeilEdge | null;
 }
 
 /** Read the declarative config: `data-veil` picks the axis (edge preset or the
@@ -143,21 +149,44 @@ function readConfig(el: HTMLElement): VeilConfig {
     const v = cs.getPropertyValue(prop).trim();
     return v || fb;
   };
-  const rect = { width: el.offsetWidth, height: el.offsetHeight };
+  const direction = (el.getAttribute('data-veil') ?? '').trim() || raw('--_veil-direction', '');
+  const preset = PRESETS[direction];
+  const fluidEdge = preset && raw('--lab-veil-axis-length', '') ? (direction as VeilEdge) : null;
+  const rect = fluidEdge
+    ? { width: 1, height: 1 }
+    : { width: el.offsetWidth, height: el.offsetHeight };
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
-  const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
-  const strengthRaw = Number.parseFloat(raw('--lab-veil-strength', `${DEFAULTS.strength}px`));
-  const strength =
-    Number.isFinite(strengthRaw) && strengthRaw >= 0 ? strengthRaw : DEFAULTS.strength;
+  const author = materialProfile.progressive;
+  const profileName = (el.getAttribute('data-veil-profile') ||
+    raw('--_veil-profile', '')) as keyof typeof author.compositions;
+  const composition = Object.hasOwn(author.compositions, profileName)
+    ? author.compositions[profileName]
+    : undefined;
+  const makePass = (defaultStrength: number, noiseOpacity: number, easing: string) => {
+    const strengthRaw = Number.parseFloat(raw('--lab-veil-strength', `${defaultStrength}px`));
+    const strength =
+      Number.isFinite(strengthRaw) && strengthRaw >= 0 ? strengthRaw : defaultStrength;
+    return {
+      stops: raw('--lab-veil-stops', `0 ${strength}px, 1 0px ${easing}`),
+      noiseOpacity,
+    };
+  };
   return {
     w,
     h,
+    fluidEdge,
     from: preset ? preset.from : raw('--lab-veil-from', DEFAULTS.from),
     to: preset ? preset.to : raw('--lab-veil-to', DEFAULTS.to),
     // The canonical profile: strength at the strong end (t=0), easing out to
     // sharp — `--lab-veil-stops` overrides it wholesale (Figma-like stops).
-    stops: raw('--lab-veil-stops', `0 ${strength}px, 1 0px ease-out`),
+    passes: composition
+      ? composition.map((name) => {
+          const style = author.styles[name as keyof typeof author.styles];
+          return makePass(style.radius / 2, style.noiseOpacity, 'linear');
+        })
+      : [makePass(DEFAULTS.strength, 0, 'ease-out')],
+    noise: raw('--_veil-noise', 'none'),
     levels:
       Number.parseInt(raw('--lab-veil-levels', String(DEFAULTS.levels)), 10) || DEFAULTS.levels,
     feather: raw('--lab-veil-feather', DEFAULTS.feather),
@@ -176,18 +205,38 @@ const px = (v: number): string => `${v.toFixed(2)}px`;
 function render(state: VeilState): void {
   const { el } = state;
   const c = readConfig(el);
+  state.fluid = !!c.fluidEdge;
+  const paint = el.querySelector(':scope > [data-veil-paint]');
 
-  const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${c.stops}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
-  if (sig === state.sig) return;
+  const sig = `${c.fluidEdge ?? `${c.w.toFixed(1)}x${c.h.toFixed(1)}`}|${c.from}|${c.to}|${JSON.stringify(c.passes)}|${c.noise}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
+  if (sig === state.sig && paint === state.paint) return;
   state.sig = sig;
+  state.paint = paint;
 
   for (const s of state.strips) s.remove();
   state.strips = [];
   if (c.reduced || !state.enabled || !supportsBackdropBlur()) return;
 
+  // A frame's own fill is painted AFTER its backdrop effect. In the authored
+  // Strong composition the second effect is on a child, so it also captures
+  // that fill. Retain the source order without copying the fill or its DOM.
+  for (let i = 0; i < c.passes.length; i++) {
+    const pass = c.passes[i];
+    if (pass) renderPass(state, c, pass, i === 0 ? paint : null);
+  }
+}
+
+function renderPass(
+  state: VeilState,
+  c: VeilConfig,
+  pass: VeilConfig['passes'][number],
+  before: Element | null,
+): void {
+  const { el } = state;
+
   let stops: Stop[];
   try {
-    stops = parseStops(c.stops);
+    stops = parseStops(pass.stops);
   } catch (err) {
     // A broken stops token must not throw the page apart mid-theme-switch —
     // render nothing, shout once.
@@ -274,15 +323,22 @@ function render(state: VeilState): void {
 
       const strip = el.ownerDocument.createElement('div');
       strip.className = VEIL_STRIP_CLASS;
-      strip.style.left = px(box.x);
-      strip.style.top = px(box.y);
-      strip.style.width = px(box.w);
-      strip.style.height = px(box.h);
+      if (c.fluidEdge) {
+        for (const [name, value] of Object.entries(
+          axisBandStyle(c.fluidEdge, iv.t0, iv.t1, rInc, c.feather),
+        ))
+          strip.style.setProperty(name, value);
+      } else {
+        strip.style.left = px(box.x);
+        strip.style.top = px(box.y);
+        strip.style.width = px(box.w);
+        strip.style.height = px(box.h);
+      }
       const blur = `blur(${rInc.toFixed(2)}px)`;
       strip.style.setProperty('backdrop-filter', blur);
       strip.style.setProperty('-webkit-backdrop-filter', blur);
 
-      if (fadeIn || fadeOut) {
+      if (!c.fluidEdge && (fadeIn || fadeOut)) {
         // Gradient-line px positions: the CSS gradient line spans the strip
         // box's extent along the axis; convert t-boundaries to px from its start.
         const gl = Math.abs(box.w * ux) + Math.abs(box.h * uy);
@@ -301,9 +357,20 @@ function render(state: VeilState): void {
         strip.style.setProperty('mask-image', mask);
         strip.style.setProperty('-webkit-mask-image', mask);
       }
-      el.appendChild(strip);
+      el.insertBefore(strip, before);
       state.strips.push(strip);
     }
+  }
+  if (pass.noiseOpacity > 0 && c.noise !== 'none') {
+    const noise = el.ownerDocument.createElement('div');
+    noise.className = 'lab-veil__noise';
+    noise.style.backgroundImage = c.noise;
+    noise.style.setProperty(
+      '--_veil-noise-opacity',
+      String(pass.noiseOpacity / materialProfile.progressive.styles.strong.noiseOpacity),
+    );
+    el.insertBefore(noise, before);
+    state.strips.push(noise);
   }
 }
 
@@ -334,13 +401,17 @@ export function attach(el: HTMLElement): VeilHandle {
     el,
     strips: [],
     sig: null,
+    paint: null,
     enabled: true,
+    fluid: false,
   };
 
   const update = (): void => render(state);
   // Trailing-edge rAF — общий примитив (./mount): шторм ресайза → один render.
   const raf = trailingRaf(update);
-  const ro = new ResizeObserver(raf.schedule);
+  const ro = new ResizeObserver(() => {
+    if (!state.fluid) raf.schedule();
+  });
   ro.observe(el);
   window.addEventListener('resize', raf.schedule);
   const mq =

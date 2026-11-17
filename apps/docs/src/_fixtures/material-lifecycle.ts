@@ -1,10 +1,10 @@
 import { mountMaterialRuntime } from '@labpics/ui-materials';
 import css from '@labpics/ui-materials/material.css?inline';
 
-// Deliberate test inputs: lifecycle, scope and media behavior are checked
-// independently of the Colors solver. These values are not an author palette.
+// Deliberate test inputs: lifecycle, scope and media are isolated from Colors.
+// These values are not an author palette.
 const sheet = `${css}
-  :root,:host { --lab-bg-material-soft-01:rgb(245 245 245 / .2); --lab-bg-material-soft-02:rgb(245 245 245); --lab-bg-static-light:white; --lab-bg-static-dark:black; }
+  :root,:host { --lab-bg-material-soft-01:rgb(245 245 245 / .2); --lab-bg-material-soft-02:rgb(32 32 32); --lab-bg-secondary:rgb(245 245 245); --lab-bg-static-light:white; --lab-bg-static-dark:black; }
   body { margin:32px; }
   #backdrop { position:fixed;inset:0;z-index:-1;background:repeating-linear-gradient(45deg,#214f65 0 12px,#dfb193 12px 24px); }
   .lab-material {width:240px;height:160px;border-radius:24px;margin:24px;padding:24px;box-sizing:border-box;}

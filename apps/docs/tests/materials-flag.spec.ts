@@ -3,34 +3,19 @@ import { type Page, expect, test } from '@playwright/test';
 import { normalizeCssColor, relativeLuminance } from './support/color.js';
 
 /**
- * Materials FLAG demo (solid | glass | acrylic) — the owner's exit criterion.
+ * CSS first-frame fixture: solid | glass | acrylic, before runtime attachment.
  *
  * Proves, in a real browser across Chromium + WebKit:
  *   1. ONE `data-material` attribute flips the card AND the modal solid→glass→acrylic
  *      (zero markup change) — measured on the actual computed backdrop-filter.
- *   2. The label stays legal in every live mode: the solid composite contrast is
- *      measured from the LIVE resolved contract tokens (compositing 01 over 02),
- *      and the label token does not change with the mode.
- *   3. Acrylic paints the ~2% grain layer (a data-URI image on top of the tint),
- *      degrades honestly to solid under reduced-capability media, and never nests.
+ *   2. Solid reads its independent author role; labels do not change with mode.
+ *   3. Acrylic preserves author blur and degrades to Solid. Runtime Screen grain
+ *      and blend fidelity are covered by the lifecycle and pixel fixtures.
  *
  * Colour reading goes through `support/color.ts` (`normalizeCssColor` — the browser
  * itself normalises any CSS Color 4 form to sRGB bytes), never a bespoke regex that
  * silently returns NaN/garbage on `oklch()` (the class PR #101 closed for shadow).
  */
-
-/** Straight-alpha source-over composite in sRGB bytes (the material's solid canon). */
-function over(
-  src: { r: number; g: number; b: number; a: number },
-  base: { r: number; g: number; b: number },
-): { r: number; g: number; b: number; a: number } {
-  return {
-    r: src.r * src.a + base.r * (1 - src.a),
-    g: src.g * src.a + base.g * (1 - src.a),
-    b: src.b * src.a + base.b * (1 - src.a),
-    a: 1,
-  };
-}
 
 /** WCAG contrast ratio between two relative luminances (not a colour parser). */
 function contrast(l1: number, l2: number): number {
@@ -88,11 +73,12 @@ test('one data-material flip turns card AND modal solid→glass', async ({ page 
   const cardGlass = await readBackdropFilter(page, 'surface-card');
   const modalGlass = await readBackdropFilter(page, 'surface-modal');
   expect(hasLiveBlur(cardGlass)).toBe(true);
-  expect(cardGlass).toContain('saturate');
+  expect(cardGlass).toContain('blur(10px)'); // Figma Base frost20 -> web sigma10.
+  expect(cardGlass).not.toContain('saturate');
   expect(hasLiveBlur(modalGlass)).toBe(true);
 });
 
-test('acrylic flip: live blur + saturate + the ~2% grain layer (data-URI over the tint)', async ({
+test('acrylic first frame preserves author blur without adding saturation or normal grain', async ({
   page,
 }) => {
   // Solid default paints NO grain layer (no data-URI image in the background).
@@ -100,55 +86,45 @@ test('acrylic flip: live blur + saturate + the ~2% grain layer (data-URI over th
 
   await page.evaluate(() => document.documentElement.setAttribute('data-material', 'acrylic'));
 
-  // Acrylic reads the live backdrop: a real (non-zero) blur + saturate.
+  // Author Backdrop blur48 maps to CSS sigma24 independently of Glass frost.
   const filter = await readBackdropFilter(page, 'surface-card');
   expect(hasLiveBlur(filter)).toBe(true);
-  expect(filter).toContain('saturate');
+  expect(filter).toContain('blur(24px)');
+  expect(filter).not.toContain('saturate');
 
-  // …и слой зерна теперь поверх тинт-градиента — фирменный признак acrylic
-  // (ADR-0004 Решение 1 §4; отдельный blur-ярус снесён — ADR-0008).
+  // A normal PNG overlay darkens the author Screen grain. It belongs to the
+  // runtime backdrop transfer; this CSS-only fixture must not add a gray film.
   const bg = await readBackgroundImage(page, 'surface-card');
-  expect(bg).toContain('data:image/png');
-  expect(bg).toContain('linear-gradient'); // grain sits ABOVE the tint, not instead of it
+  expect(bg).not.toContain('data:image/png');
 });
 
-test('the base-tier label is legal on the solid composite (live contract tokens via support/color)', async ({
-  page,
-}) => {
-  // Read the RESOLVED contract tokens + label as strings, normalise each to sRGB
-  // bytes with the browser (oklch-safe), then composite + contrast in Node.
-  const { tintRaw, baseRaw, labelRaw } = await page.getByTestId('surface-card').evaluate((el) => {
+test('the base-tier label has contrast on the independent Solid role', async ({ page }) => {
+  const { solidRaw, roleRaw, labelRaw } = await page.getByTestId('surface-card').evaluate((el) => {
     const root = getComputedStyle(document.documentElement);
     return {
-      tintRaw: root.getPropertyValue('--lab-bg-material-base-01'),
-      baseRaw: root.getPropertyValue('--lab-bg-material-base-02'),
+      solidRaw: getComputedStyle(el).backgroundColor,
+      roleRaw: root.getPropertyValue('--lab-bg-grouped-primary'),
       labelRaw: getComputedStyle(el).color,
     };
   });
 
-  const tint = await normalizeCssColor(page, tintRaw);
-  const base = await normalizeCssColor(page, baseRaw);
+  const solid = await normalizeCssColor(page, solidRaw);
+  const role = await normalizeCssColor(page, roleRaw);
   const label = await normalizeCssColor(page, labelRaw);
-  expect(tint, `tint "${tintRaw}" resolved`).not.toBeNull();
-  expect(base, `base "${baseRaw}" resolved`).not.toBeNull();
+  expect(solid, `Solid "${solidRaw}" resolved`).not.toBeNull();
+  expect(solid, 'Base Solid follows the independent bg-grouped-primary role').toEqual(role);
   expect(label, `label "${labelRaw}" resolved`).not.toBeNull();
-  if (!tint || !base || !label) return;
-
-  const solid = over(tint, base);
+  if (!solid || !label) return;
   const ratio = contrast(relativeLuminance(label), relativeLuminance(solid));
   expect(ratio).toBeGreaterThanOrEqual(4.5);
 });
 
-test('the label token is the SAME across solid, glass and acrylic (legal in all by construction)', async ({
-  page,
-}) => {
+test('the label token is the same across Solid, Glass and Acrylic', async ({ page }) => {
   const labelColour = () =>
     page.getByTestId('card-label').evaluate((el) => getComputedStyle(el).color);
 
   const solid = await labelColour();
-  // The surface commits ONE polarity label; the mode never changes it — so the
-  // base-tier glass legality proven by the α-boundary unit test carries over, and
-  // acrylic inherits the SAME tint/corridor as glass (ADR-0004 Решение 2).
+  // Label role is independent of material. Backdrop contrast is a separate check.
   for (const mode of ['glass', 'acrylic'] as const) {
     await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
     expect(await labelColour(), `label unchanged in ${mode}`).toBe(solid);
@@ -294,16 +270,15 @@ function readRimBackground(page: Page, testId: string): Promise<string> {
 /** A live rim is a gradient painted into the `::before`; `none` means no rim. */
 const hasRim = (bg: string): boolean => bg !== 'none' && /gradient/i.test(bg);
 
-test('specular rim: ON for glass + acrylic, OFF for solid (::before gradient)', async ({
-  page,
-}) => {
+test('specular rim belongs to Glass; Solid and Acrylic do not add it', async ({ page }) => {
   // Solid default paints no rim — the ::before is an empty, pixel-identical layer.
   expect(hasRim(await readRimBackground(page, 'surface-card')), 'no rim on solid').toBe(false);
 
-  // Glass & acrylic — the light-catching edge appears (a gradient in the ::before).
   for (const mode of ['glass', 'acrylic'] as const) {
     await page.evaluate((m) => document.documentElement.setAttribute('data-material', m), mode);
-    expect(hasRim(await readRimBackground(page, 'surface-card')), `rim ON for ${mode}`).toBe(true);
+    expect(hasRim(await readRimBackground(page, 'surface-card')), `rim for ${mode}`).toBe(
+      mode === 'glass',
+    );
   }
 });
 
@@ -334,13 +309,9 @@ test('specular rim is a 1px EDGE ring, not a fill (browser honours mask-composit
   expect(ring.padding, '1px ring thickness').toBe('1px');
 });
 
-test('specular rim rebinds with the theme (light brighter than dark at the top edge)', async ({
-  page,
-}) => {
-  // The top stop of the rim gradient is white at a theme-specific alpha (light .50,
-  // dark .12). Read the ::before background in glass under each theme and compare
-  // the top-stop alpha — light must be the brighter edge. Colour parsing goes
-  // through the browser-normalised bytes (oklch/color-mix-safe), never a regex.
+test('Glass keeps the author light intensity independently of theme', async ({ page }) => {
+  // Figma Base GlassEffect has lightIntensity .2 in both themes. Theme changes
+  // its paints, not an invented rim alpha. Normalize the CSS Color4 stop.
   await page.evaluate(() => document.documentElement.setAttribute('data-material', 'glass'));
 
   const topAlpha = async (): Promise<number> => {
@@ -358,9 +329,8 @@ test('specular rim rebinds with the theme (light brighter than dark at the top e
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
   const dark = await topAlpha();
 
-  expect(light, 'light rim top-stop resolved').toBeGreaterThan(0);
-  expect(dark, 'dark rim top-stop resolved').toBeGreaterThan(0);
-  expect(light, 'light rim edge is brighter than dark').toBeGreaterThan(dark);
+  expect(light, 'Figma Base light intensity').toBeCloseTo(0.2, 2);
+  expect(dark, 'Figma Base light intensity').toBeCloseTo(0.2, 2);
 });
 
 test('specular rim is stripped under degradation (forced-colors, contrast:more)', async ({

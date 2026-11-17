@@ -106,7 +106,7 @@ function stripComments(source: string, isCss: boolean): string {
 }
 
 /**
- * Two LICENSED spans are blanked (space-filled, newline-preserving — line numbers
+ * LICENSED spans are blanked (space-filled, newline-preserving — line numbers
  * of later findings stay exact) after comment stripping, BEFORE any matching:
  *
  *   1. `@supports` PRELUDES (`@supports … {` up to the block brace). A prelude is
@@ -133,9 +133,17 @@ const RECIPE_D_RE = new RegExp(
   String.raw`color-mix\(\s*in oklab\s*,\s*${LAB_REF}\s*,\s*black\s+${STATE_FRACTION_REF}\s*\)`,
   'gi',
 );
-function blankLicensedSpans(text: string): string {
+function blankLicensedSpans(text: string, relPath: string): string {
   const blank = (m: string): string => m.replace(/[^\n]/g, ' ');
-  return text.replace(SUPPORTS_PRELUDE_RE, blank).replace(RECIPE_D_RE, blank);
+  let licensed = text.replace(SUPPORTS_PRELUDE_RE, blank).replace(RECIPE_D_RE, blank);
+  if (relPath === 'packages/materials/src/engine/contour-surface.ts') {
+    // Exact coverage sources, not a file-wide exemption: white is the rim's
+    // luminance mask and black supplies SourceAlpha to role-coloured shadows.
+    licensed = licensed
+      .replace(/rimPath\.setAttribute\('stroke', 'white'\);/g, blank)
+      .replace(/drawing\.setAttribute\('fill', 'black'\);/g, blank);
+  }
+  return licensed;
 }
 
 /**
@@ -328,7 +336,7 @@ function isColourValuePosition(text: string, index: number): boolean {
 export function scanSource(relPath: string, source: string): Violation[] {
   if (ALLOWLIST.includes(relPath)) return [];
   const isCss = relPath.endsWith('.css');
-  const text = blankLicensedSpans(stripComments(source, isCss));
+  const text = blankLicensedSpans(stripComments(source, isCss), relPath);
   const out: Violation[] = [];
   const lineAt = (index: number): number => text.slice(0, index).split('\n').length;
   // Hex/functional forms (`#fff`, `rgb(`, `color-mix(…#fff…)`) introduce a literal
@@ -341,6 +349,18 @@ export function scanSource(relPath: string, source: string): Violation[] {
     const gated = valueGated.includes(re);
     re.lastIndex = 0;
     for (let m = re.exec(text); m !== null; m = re.exec(text)) {
+      // These are JS property/index expressions, not CSS named colour values.
+      if (!isCss && gated && /^\s*[.[]/.test(text.slice(m.index + m[0].length))) continue;
+      // A serializer receives every channel from computed data. Keep partially
+      // literal colours visible to the scanner, including numeric alpha.
+      if (
+        !isCss &&
+        re === FUNCTIONAL_HEX_RE &&
+        /^rgba?\(\s*\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s+|,\s*)\$\{[^}]+\}(?:\s*[/,]\s*\$\{[^}]+\})?\s*\)/i.test(
+          text.slice(m.index),
+        )
+      )
+        continue;
       if (gated && !isColourValuePosition(text, m.index)) continue;
       out.push({
         file: relPath,
