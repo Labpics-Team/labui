@@ -213,11 +213,7 @@ function Workspace() {
             </div>
           </dl>
         </Card>
-        <Card
-          className="workspace-card"
-          padding="l"
-          header={<h2>Оформление</h2>}
-        >
+        <Card className="workspace-card" padding="l" header={<h2>Оформление</h2>}>
           <div className="workspace-preferences">
             <div className="workspace-option">
               <Switch checked={dark} disabled={!themeReady} onCheckedChange={setDark}>

@@ -40,18 +40,7 @@
           "highlights": 0,
           "shadows": 0
         },
-        "imageTransform": [
-          [
-            1,
-            0,
-            0
-          ],
-          [
-            0,
-            1,
-            0
-          ]
-        ],
+        "imageTransform": [[1, 0, 0], [0, 1, 0]],
         "imageHash": "dc41f14a100ddf362ec1bb6cfdff58f0b378a19d"
       }
     ],
@@ -131,18 +120,7 @@
               "highlights": 0,
               "shadows": 0
             },
-            "imageTransform": [
-              [
-                1,
-                0,
-                0
-              ],
-              [
-                0,
-                1,
-                0
-              ]
-            ],
+            "imageTransform": [[1, 0, 0], [0, 1, 0]],
             "imageHash": "dc41f14a100ddf362ec1bb6cfdff58f0b378a19d"
           }
         ],
@@ -326,18 +304,7 @@
                         }
                       }
                     ],
-                    "gradientTransform": [
-                      [
-                        1,
-                        0,
-                        0
-                      ],
-                      [
-                        0,
-                        1,
-                        0
-                      ]
-                    ]
+                    "gradientTransform": [[1, 0, 0], [0, 1, 0]]
                   }
                 ],
                 "strokes": [],
@@ -437,18 +404,7 @@
                         }
                       }
                     ],
-                    "gradientTransform": [
-                      [
-                        1,
-                        0,
-                        0
-                      ],
-                      [
-                        0,
-                        1,
-                        0
-                      ]
-                    ]
+                    "gradientTransform": [[1, 0, 0], [0, 1, 0]]
                   }
                 ],
                 "strokes": [],
@@ -1130,16 +1086,8 @@
                   }
                 ],
                 "gradientTransform": [
-                  [
-                    -1.564054308289542e-8,
-                    1,
-                    3.300323925259363e-8
-                  ],
-                  [
-                    -24.010000228881836,
-                    1.6653345369377348e-15,
-                    11.586249351501465
-                  ]
+                  [-1.564054308289542e-8, 1, 3.300323925259363e-8],
+                  [-24.010000228881836, 1.6653345369377348e-15, 11.586249351501465]
                 ]
               }
             ],
@@ -2559,18 +2507,7 @@
                   "highlights": 0,
                   "shadows": 0
                 },
-                "imageTransform": [
-                  [
-                    1,
-                    0,
-                    0
-                  ],
-                  [
-                    0,
-                    1,
-                    0
-                  ]
-                ],
+                "imageTransform": [[1, 0, 0], [0, 1, 0]],
                 "imageHash": "dc41f14a100ddf362ec1bb6cfdff58f0b378a19d"
               }
             ],
@@ -2809,18 +2746,7 @@
                   "highlights": 0,
                   "shadows": 0
                 },
-                "imageTransform": [
-                  [
-                    1,
-                    0,
-                    0
-                  ],
-                  [
-                    0,
-                    1,
-                    0
-                  ]
-                ],
+                "imageTransform": [[1, 0, 0], [0, 1, 0]],
                 "imageHash": "dc41f14a100ddf362ec1bb6cfdff58f0b378a19d"
               }
             ],
