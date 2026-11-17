@@ -72,7 +72,10 @@ logical px; web переводит их в sigma делением на два. N
 и `<div data-veil class="lab-material-ghost--sheet"><i data-veil-paint></i></div>`
 для Ghost. Направление и профиль поступают из общего рецепта; явные `data-veil`
 и `data-veil-profile` могут их переопределить. CSS отдаёт
-`--lab-sheet-ghost-overlap` для размещения Ghost компонентом. Радиусы Body
+`--lab-sheet-ghost-overlap` для размещения Ghost компонентом. Ghost начинается
+у верхней границы viewport; его высота — Body.top относительно viewport + overlap.
+Равные высоты Ghost и Body в Half — частный случай, остальные четыре состояния
+имеют разные высоты. Радиусы Body
 32/32/0/0, размеры и положение принадлежат Sheet. Тени требуют подключённого
 Shadow CSS. [Исходные узлы](../../docs/evidence/materials-20261117/figma-sheet-source.json)
 содержат только прочитанные значения; скрытые Dark paints в REST разрешены
