@@ -107,9 +107,7 @@ function Workspace() {
       </header>
       <main className="workspace-main">
         <div className="workspace-intro">
-          <p className="workspace-eyebrow">ВАШЕ ПРОСТРАНСТВО</p>
-          <h1>Всё готово к работе.</h1>
-          <p>Настройте детали, которые делают пространство вашим.</p>
+          <h1>Пространство</h1>
         </div>
         <Card
           className="workspace-card"
@@ -122,7 +120,6 @@ function Workspace() {
               </span>
               <div>
                 <h2>{settings.name}</h2>
-                <p>Общее место для хороших идей</p>
               </div>
             </div>
           }
@@ -132,7 +129,6 @@ function Workspace() {
               onOpenChange={changeOpen}
               defaultPosition="half"
               heading="Настройки пространства"
-              description="Название и уведомления можно изменить в любой момент."
               onMotionError={() => setStatus('Не удалось открыть панель. Попробуйте ещё раз.')}
               trigger={({ props, ref }) => (
                 <Button {...props} ref={ref} type="neutral" kind="tinted">
@@ -179,10 +175,6 @@ function Workspace() {
         >
           <dl className="workspace-details">
             <div>
-              <dt>Название</dt>
-              <dd>{settings.name}</dd>
-            </div>
-            <div>
               <dt>Уведомления команды</dt>
               <dd>{settings.notifications ? 'Включены' : 'Выключены'}</dd>
             </div>
@@ -192,14 +184,13 @@ function Workspace() {
           className="workspace-card"
           variant="outlined"
           padding="l"
-          header={<h2>Как вам удобнее</h2>}
+          header={<h2>Оформление</h2>}
         >
           <div className="workspace-preferences">
             <div className="workspace-option">
               <Switch checked={dark} disabled={!themeReady} onCheckedChange={setDark}>
                 Тёмная тема
               </Switch>
-              <p>Спокойный фон для работы вечером.</p>
             </div>
             <div className="workspace-option">
               <Switch checked={contrast} disabled={!themeReady} onCheckedChange={setContrast}>
@@ -213,7 +204,7 @@ function Workspace() {
           {status}
         </output>
       </main>
-      <footer className="workspace-footer">LabUI · Продумано до деталей.</footer>
+      <footer className="workspace-footer">LabUI</footer>
     </div>
   );
 }

@@ -1,0 +1,26 @@
+# Input: авторская геометрия и настоящая форма
+
+Источник — сохранённая неизменённая Figma Lab UI, узлы Small 6034:3459,
+Medium 6050:1672, Large 6050:1712; [точные части](figma-source.json).
+Размеры 36/48/56, радиусы 16/12/12, caption 12/12 с выносом 8 px.
+Слоты имеют ширину 32 px и glyph 16 px. Все значения переводятся в rem
+из components.json, общего с Compose; независимой таблицы web нет.
+
+Один inputCss задаёт Lit/React. Fieldset/legend оставляет прозрачный разрыв
+под настоящей label, поэтому поле не нуждается в совпадающей заливке.
+Длинная label сокращается визуально и сохраняет полное доступное имя.
+Нативный input сохраняет IME/выделение. Lit использует ElementInternals для
+FormData, validation, reset, form state restore и disabled fieldset;
+React передаёт имя и ограничения своему HTML input. Custom error действует
+на валидность обоих исполнений.
+
+Headless Chrome/WebKit: 35 проверок Input PASS, одна ожидаемая WebKit/CDP
+проверка пропущена. Проверены размеры, подпись, слоты, темизация, значения,
+ARIA, constraint validation, FormData/reset/restore, focus и forced colors.
+114 тестов Tokens PASS. На production проходят 53 проверки Input, Sheet
+и первого сценария; одна WebKit/CDP проверка пропущена. Независимое ревью
+среза продолжается. Снимки Lit/React в двух темах создаёт input-render.mjs.
+
+Опора исполнения notch: [MUI NotchedOutline](https://github.com/mui/material-ui/blob/master/packages/mui-material/src/OutlinedInput/NotchedOutline.js).
+Рисунок и размеры принадлежат Lab UI, а не MUI. Никакие окна и озвучивание
+на рабочем столе пользователя не запускались.

@@ -1,220 +1,197 @@
-/*
- * `lab-input` documentation config — a PRESENTATIONAL form field that opts out of
- * the Behaviors seam (no text-input machine in @zag-js) but OWNS the form-field
- * a11y wiring: a real <label for>, an optional helper linked via aria-describedby,
- * and an error announced (role="alert") + referenced (aria-errormessage) only when
- * the field is invalid. The wiring is the shared `field-a11y` helper, identical on
- * the Lit element and the React twin — so the matrix below documents real ARIA, not
- * a faked role.
- */
 import '@labpics/ui-core/input';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-input>` with the given attribute map applied. */
 function makeInput(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
   const el = document.createElement('lab-input');
-  el.setAttribute('label', 'Email');
-  el.setAttribute('placeholder', 'you@example.com');
+  el.label = 'Электронная почта';
+  el.placeholder = 'studio@example.com';
   for (const [key, value] of Object.entries(attrs)) {
-    if (value === false) continue;
-    if (value === true) {
-      el.setAttribute(key, '');
-    } else {
-      el.setAttribute(key, String(value));
-    }
+    if (value !== false) el.setAttribute(key, value === true ? '' : String(value));
   }
   return el;
 }
+const types = [
+  { label: 'Обычное', value: 'neutral' },
+  { label: 'Ошибка', value: 'danger' },
+  { label: 'Предупреждение', value: 'warning' },
+  { label: 'Успех', value: 'success' },
+];
+const sizes = [
+  { label: 'S', value: 's' },
+  { label: 'M', value: 'm' },
+  { label: 'L', value: 'l' },
+];
 
 export const inputDoc: ComponentDoc = {
   slug: 'input',
   order: 9,
   tag: 'lab-input',
   title: 'Input',
-  summary:
-    'A single-line text field: a native <input> wired to a label, an optional helper, and an optional error via genuine ARIA. Presentational (no machine — the native control owns value/caret/editing); it owns the form-field a11y wiring, computed by the shared field-a11y helper identically on Lit and React.',
+  summary: 'Однострочный ввод с постоянной подписью в рамке, подсказкой и состояниями проверки.',
   status: { kind: 'stable' },
-
   statesMatrix: {
     axes: [
+      { name: 'Состояние', attribute: 'type', options: types },
+      { name: 'Размер', attribute: 'size', options: sizes },
       {
-        name: 'Type',
-        attribute: 'type',
-        options: [
-          { label: 'Neutral', value: 'neutral' },
-          { label: 'Danger', value: 'danger' },
-          { label: 'Warning', value: 'warning' },
-          { label: 'Success', value: 'success' },
-        ],
-      },
-      {
-        name: 'Size',
-        attribute: 'size',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      {
-        name: 'State',
+        name: 'Доступность',
         attribute: 'disabled',
         options: [
-          { label: 'Enabled', value: false },
-          { label: 'Disabled', value: true },
+          { label: 'Доступно', value: false },
+          { label: 'Отключено', value: true },
         ],
       },
     ],
     make: makeInput,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Label',
+      name: 'Подпись',
       description:
-        'A real <label for> bound to the control id (the strongest label association). Reads --lab-label-secondary; a required field appends a danger-coloured mark.',
+        'Постоянное имя поля в прозрачном разрыве рамки. Нажатие переводит фокус во ввод.',
     },
     {
       index: 2,
-      name: 'Control (input)',
+      name: 'Ввод',
       description:
-        'The native <input>. Resting border is --lab-border-base; hover is --lab-border-strong; the sentiment type re-points it to --lab-border-{danger|warning|success}. Text is --lab-label-primary over --lab-bg-primary; the placeholder is --lab-label-tertiary.',
+        'Одна строка текста. Размеры S/M/L — 36/48/56 px при базовом масштабе; масштаб страницы изменяет их вместе с типографикой.',
     },
     {
       index: 3,
-      name: 'Helper',
+      name: 'Знаки по краям',
       description:
-        'Optional description below the control, --lab-label-tertiary. Linked to the control via aria-describedby so a screen reader announces it with the field.',
+        'Слоты leading/trailing по 32 px со знаком 16 px. Подпись и текст выравниваются по внутренней области.',
     },
     {
       index: 4,
-      name: 'Error + focus ring',
+      name: 'Подсказка и ошибка',
       description:
-        'When invalid with a message, an error (role="alert", --lab-label-danger) is announced and referenced via aria-invalid + aria-errormessage, and added to aria-describedby. The :focus-visible ring reads --lab-border-focus (or the sentiment colour).',
+        'Связаны с полем для экранного доступа. Ошибка появляется при invalid и непустом error.',
     },
   ],
-
   meaning: {
     purpose:
-      'An input collects a single line of free text inside a form submitted later. It owns the programmatic association of its label, helper, and error to the native control — the part the platform does not give for free — so the field is accessible by construction, not by a bolted-on role.',
+      'Для имени, адреса и другого короткого свободного текста. Выбор готового значения оформляется через Select или Combobox.',
     dos: [
-      'Always pass a label; use label-hidden only when an adjacent visual label is impossible, never to drop the a11y name.',
-      'Set invalid together with an error message — the error is announced and referenced only when both are present.',
-      'Use the sentiment type (danger / warning / success) to signal validation state, paired with a real message, not colour alone.',
+      'Назовите поле через label.',
+      'Сообщите конкретную причину ошибки через error.',
+      'Для формы задайте name и нужные ограничения ввода.',
     ],
-    donts: [
-      "Don't fabricate ARIA the native input already provides — value, editing, and required come from the control.",
-      "Don't set invalid with no error message; an empty error region is never referenced (it would point a reader at nothing).",
-      "Don't hardcode colours against it — it only ever reads --lab-* roles bound by an ancestor.",
-    ],
+    donts: ['Не заменяйте подпись одним placeholder.', 'Не обозначайте ошибку только цветом.'],
   },
-
   liveExample: {
-    make: () => makeInput({ helper: 'We never share your address.' }),
+    make: () =>
+      makeInput({
+        helper: 'Адрес для уведомлений команды',
+        error: 'Проверьте адрес электронной почты',
+      }),
     controls: [
-      { kind: 'toggle', label: 'Required', attribute: 'required' },
-      { kind: 'toggle', label: 'Invalid', attribute: 'invalid' },
-      { kind: 'toggle', label: 'Disabled', attribute: 'disabled' },
-      { kind: 'toggle', label: 'Read-only', attribute: 'readonly' },
-      {
-        kind: 'select',
-        label: 'Type',
-        attribute: 'type',
-        options: [
-          { label: 'Neutral', value: 'neutral' },
-          { label: 'Danger', value: 'danger' },
-          { label: 'Warning', value: 'warning' },
-          { label: 'Success', value: 'success' },
-        ],
-      },
-      {
-        kind: 'select',
-        label: 'Size',
-        attribute: 'size',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
+      { kind: 'toggle', label: 'Обязательное', attribute: 'required' },
+      { kind: 'toggle', label: 'Ошибка', attribute: 'invalid' },
+      { kind: 'toggle', label: 'Отключено', attribute: 'disabled' },
+      { kind: 'toggle', label: 'Только чтение', attribute: 'readonly' },
+      { kind: 'select', label: 'Состояние', attribute: 'type', options: types },
+      { kind: 'select', label: 'Размер', attribute: 'size', options: sizes },
     ],
   },
-
   api: {
     props: [
       {
         name: 'type',
         type: "'neutral' | 'danger' | 'warning' | 'success'",
         default: "'neutral'",
-        description: 'Sentiment of the field — re-points the border + focus ring.',
+        description: 'Смысловое состояние рамки и подписи.',
       },
-      { name: 'size', type: "'s' | 'm' | 'l'", default: "'m'", description: 'Control size.' },
       {
-        name: 'label',
-        type: 'string',
-        description: 'Visible label text, rendered into a real <label for>.',
+        name: 'size',
+        type: "'s' | 'm' | 'l'",
+        default: "'m'",
+        description: 'Авторская размерная ступень.',
       },
+      { name: 'label', type: 'string', description: 'Доступное имя и видимая подпись.' },
       {
         name: 'label-hidden',
         type: 'boolean',
         default: 'false',
-        description: 'Visually hide the label while keeping it in the a11y tree.',
+        description: 'Скрывает подпись визуально, сохраняя доступное имя. В React — labelHidden.',
       },
-      {
-        name: 'helper',
-        type: 'string',
-        description: 'Description below the control, linked via aria-describedby.',
-      },
+      { name: 'helper', type: 'string', description: 'Подсказка под полем.' },
       {
         name: 'error',
         type: 'string',
-        description: 'Error message; announced + referenced only when invalid.',
+        description: 'Ошибка при invalid; участвует в проверке HTML-формы.',
       },
       {
         name: 'input-type',
         type: 'string',
         default: "'text'",
-        description: 'Native input type (text | email | password | …).',
+        description: 'Нативный тип: text, email, password и другие. В React — inputType.',
       },
-      { name: 'value', type: 'string', default: "''", description: 'Current value.' },
-      { name: 'placeholder', type: 'string', description: 'Placeholder for the empty control.' },
       {
-        name: 'required',
-        type: 'boolean',
-        default: 'false',
-        description: 'Sets aria-required and the native required.',
+        name: 'value',
+        type: 'string',
+        default: "''",
+        description: 'Текущее значение. React также принимает defaultValue.',
       },
+      { name: 'placeholder', type: 'string', description: 'Пример значения в пустом поле.' },
+      { name: 'required', type: 'boolean', default: 'false', description: 'Обязательное поле.' },
       {
         name: 'invalid',
         type: 'boolean',
         default: 'false',
-        description: 'Drives aria-invalid / aria-errormessage and danger styling.',
+        description: 'Состояние ошибки; описание задаётся через error.',
       },
       {
         name: 'readonly',
         type: 'boolean',
         default: 'false',
-        description: 'Reads its value but cannot be changed.',
+        description: 'Чтение без изменения; в React — readOnly.',
       },
       {
         name: 'disabled',
         type: 'boolean',
         default: 'false',
-        description: 'Non-interactive and dimmed.',
+        description: 'Отключает ввод и исключает значение из FormData.',
       },
-      { name: 'name', type: 'string', description: 'Native form field name.' },
+      {
+        name: 'name',
+        type: 'string',
+        description:
+          'Имя значения в HTML-форме. Lit поддерживает FormData, reset, восстановление и disabled fieldset.',
+      },
+      {
+        name: 'minlength / maxlength / pattern',
+        type: 'number / number / string',
+        description:
+          'Ограничения нативного ввода; в свойствах JS — minLength / maxLength / pattern.',
+      },
+      {
+        name: 'autocomplete',
+        type: 'string',
+        description: 'Подсказка браузеру для автозаполнения; в React — autoComplete.',
+      },
     ],
     events: [
       {
         name: 'lab-input',
-        description: 'CustomEvent<{ value: string }> fired on every edit (native input event).',
+        description: 'CustomEvent<{ value: string }> при вводе. В React — onValueChange(value).',
       },
       {
         name: 'lab-change',
-        description: 'CustomEvent<{ value: string }> fired on commit (native change event).',
+        description: 'CustomEvent<{ value: string }> при завершении изменения.',
       },
     ],
-    slots: [],
+    slots: [
+      {
+        name: 'leading',
+        description:
+          'Знак перед текстом; декоративному знаку задайте aria-hidden. В React — одноимённое свойство.',
+      },
+      {
+        name: 'trailing',
+        description: 'Знак или подписанное действие после текста. В React — одноимённое свойство.',
+      },
+    ],
   },
 };

@@ -34,6 +34,7 @@
     "./shadow.css": "./dist/shadow.css",
     "./tokens.css": "./dist/tokens.css",
     "./sheet.css": "./dist/sheet.css",
+    "./input.css": "./dist/input.css",
     "./package.json": "./package.json",
     "./dialog/shared": {
       "types": "./dist/components/dialog/shared.d.ts",
@@ -63,6 +64,7 @@
     "./dist/shadow.css",
     "./dist/tokens.css",
     "./dist/sheet.css",
+    "./dist/input.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**"

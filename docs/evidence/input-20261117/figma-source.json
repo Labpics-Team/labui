@@ -1,0 +1,645 @@
+{
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "version": "2422536133022859436",
+  "readOnly": true,
+  "variants": [
+    {
+      "id": "6034:3459",
+      "name": "State=Default, Size=Small, Hover=false",
+      "parts": [
+        {
+          "id": "6034:3459",
+          "name": "State=Default, Size=Small, Hover=false",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 212,
+            "width": 290.66668701171875,
+            "height": 56
+          }
+        },
+        {
+          "id": "6034:3460",
+          "name": "Input",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 212,
+            "width": 290.66668701171875,
+            "height": 36
+          },
+          "cornerRadius": 16
+        },
+        {
+          "id": "6045:10577",
+          "name": "Left-content",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 212,
+            "width": 32,
+            "height": 36
+          },
+          "paddingLeft": 12,
+          "paddingRight": 4
+        },
+        {
+          "id": "I6045:10577;6044:1624",
+          "name": "search",
+          "absoluteBoundingBox": {
+            "x": 2985.079345703125,
+            "y": 222,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "6045:10582",
+          "name": "Center-content",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 212,
+            "width": 226.66668701171875,
+            "height": 36
+          }
+        },
+        {
+          "id": "I6045:10582;6044:1742",
+          "name": "Label-container",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 212,
+            "width": 226.66668701171875,
+            "height": 8
+          }
+        },
+        {
+          "id": "I6045:10582;6044:1743",
+          "name": "Label",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 204,
+            "width": 53,
+            "height": 16
+          },
+          "paddingLeft": 4,
+          "paddingRight": 4
+        },
+        {
+          "id": "I6045:10582;6044:1744",
+          "name": "Caption",
+          "absoluteBoundingBox": {
+            "x": 3009.079345703125,
+            "y": 204,
+            "width": 45,
+            "height": 12
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "WIDTH_AND_HEIGHT",
+            "fontSize": 12,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 76.92308044433594,
+            "lineHeightPercentFontSize": 100,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        {
+          "id": "I6045:10582;6044:1745",
+          "name": "Padding",
+          "absoluteBoundingBox": {
+            "x": 3058.079345703125,
+            "y": 212,
+            "width": 173.66668701171875,
+            "height": 8
+          }
+        },
+        {
+          "id": "I6045:10582;6044:1746",
+          "name": "Input",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 220,
+            "width": 226.66668701171875,
+            "height": 28
+          },
+          "paddingLeft": 4,
+          "paddingBottom": 8
+        },
+        {
+          "id": "I6045:10582;6044:1747",
+          "name": "Placeholder text",
+          "absoluteBoundingBox": {
+            "x": 3009.079345703125,
+            "y": 220,
+            "width": 222.66668701171875,
+            "height": 20
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "HEIGHT",
+            "fontSize": 14,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "CENTER",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 65.93406677246094,
+            "lineHeightPercentFontSize": 85.71428680419922,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        {
+          "id": "6045:10592",
+          "name": "Right-content",
+          "absoluteBoundingBox": {
+            "x": 3231.74609375,
+            "y": 212,
+            "width": 32,
+            "height": 36
+          },
+          "paddingLeft": 4,
+          "paddingRight": 12
+        },
+        {
+          "id": "I6045:10592;6044:1925",
+          "name": "mic",
+          "absoluteBoundingBox": {
+            "x": 3235.74609375,
+            "y": 222,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "6034:3471",
+          "name": "Helper",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 256,
+            "width": 290.66668701171875,
+            "height": 12
+          },
+          "paddingLeft": 4,
+          "paddingRight": 4
+        },
+        {
+          "id": "6034:3472",
+          "name": "Optional helper text",
+          "absoluteBoundingBox": {
+            "x": 2977.079345703125,
+            "y": 256,
+            "width": 282.66668701171875,
+            "height": 12
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "HEIGHT",
+            "fontSize": 12,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 76.92308044433594,
+            "lineHeightPercentFontSize": 100,
+            "lineHeightUnit": "PIXELS"
+          }
+        }
+      ]
+    },
+    {
+      "id": "6050:1672",
+      "name": "State=Default, Size=Medium, Hover=false",
+      "parts": [
+        {
+          "id": "6050:1672",
+          "name": "State=Default, Size=Medium, Hover=false",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 328.6666564941406,
+            "width": 290.66668701171875,
+            "height": 68
+          }
+        },
+        {
+          "id": "6050:1673",
+          "name": "Input",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 328.6666564941406,
+            "width": 290.66668701171875,
+            "height": 48
+          },
+          "cornerRadius": 12
+        },
+        {
+          "id": "6050:1674",
+          "name": "Left-content",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 328.6666564941406,
+            "width": 32,
+            "height": 48
+          },
+          "paddingLeft": 12,
+          "paddingRight": 4
+        },
+        {
+          "id": "I6050:1674;6044:1622",
+          "name": "search",
+          "absoluteBoundingBox": {
+            "x": 2985.079345703125,
+            "y": 344.6666564941406,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "6050:1675",
+          "name": "Center-content",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 328.6666564941406,
+            "width": 226.66668701171875,
+            "height": 48
+          }
+        },
+        {
+          "id": "I6050:1675;6044:1735",
+          "name": "Label-container",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 328.6666564941406,
+            "width": 226.66668701171875,
+            "height": 12
+          }
+        },
+        {
+          "id": "I6050:1675;6044:1736",
+          "name": "Label",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 320.6666564941406,
+            "width": 53,
+            "height": 20
+          },
+          "paddingLeft": 4,
+          "paddingRight": 4
+        },
+        {
+          "id": "I6050:1675;6044:1737",
+          "name": "Caption",
+          "absoluteBoundingBox": {
+            "x": 3009.079345703125,
+            "y": 320.6666564941406,
+            "width": 45,
+            "height": 12
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "WIDTH_AND_HEIGHT",
+            "fontSize": 12,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 76.92308044433594,
+            "lineHeightPercentFontSize": 100,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        {
+          "id": "I6050:1675;6044:1738",
+          "name": "Padding",
+          "absoluteBoundingBox": {
+            "x": 3058.079345703125,
+            "y": 328.6666564941406,
+            "width": 173.66668701171875,
+            "height": 12
+          }
+        },
+        {
+          "id": "I6050:1675;6044:1739",
+          "name": "Input",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 340.6666564941406,
+            "width": 226.66668701171875,
+            "height": 36
+          },
+          "paddingLeft": 4,
+          "paddingBottom": 12
+        },
+        {
+          "id": "I6050:1675;6044:1740",
+          "name": "Placeholder text",
+          "absoluteBoundingBox": {
+            "x": 3009.079345703125,
+            "y": 340.6666564941406,
+            "width": 222.66668701171875,
+            "height": 24
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Regular",
+            "fontStyle": "Regular",
+            "fontWeight": 400,
+            "paragraphSpacing": 12,
+            "textAutoResize": "HEIGHT",
+            "fontSize": 16,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": -0.25,
+            "lineHeightPx": 24,
+            "lineHeightPercent": 115.38461303710938,
+            "lineHeightPercentFontSize": 150,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        {
+          "id": "6050:1676",
+          "name": "Right-content",
+          "absoluteBoundingBox": {
+            "x": 3231.74609375,
+            "y": 328.6666564941406,
+            "width": 32,
+            "height": 48
+          },
+          "paddingLeft": 4,
+          "paddingRight": 12
+        },
+        {
+          "id": "I6050:1676;6044:1923",
+          "name": "mic",
+          "absoluteBoundingBox": {
+            "x": 3235.74609375,
+            "y": 344.6666564941406,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "6050:1677",
+          "name": "Helper",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 384.6666564941406,
+            "width": 290.66668701171875,
+            "height": 12
+          },
+          "paddingLeft": 4,
+          "paddingRight": 4
+        },
+        {
+          "id": "6050:1678",
+          "name": "Optional helper text",
+          "absoluteBoundingBox": {
+            "x": 2977.079345703125,
+            "y": 384.6666564941406,
+            "width": 282.66668701171875,
+            "height": 12
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "HEIGHT",
+            "fontSize": 12,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 76.92308044433594,
+            "lineHeightPercentFontSize": 100,
+            "lineHeightUnit": "PIXELS"
+          }
+        }
+      ]
+    },
+    {
+      "id": "6050:1712",
+      "name": "State=Default, Size=Large, Hover=false",
+      "parts": [
+        {
+          "id": "6050:1712",
+          "name": "State=Default, Size=Large, Hover=false",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 445.33331298828125,
+            "width": 290.66668701171875,
+            "height": 76
+          }
+        },
+        {
+          "id": "6050:1713",
+          "name": "Input",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 445.33331298828125,
+            "width": 290.66668701171875,
+            "height": 56
+          },
+          "cornerRadius": 12
+        },
+        {
+          "id": "6050:1714",
+          "name": "Left-content",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 445.33331298828125,
+            "width": 32,
+            "height": 56
+          },
+          "paddingLeft": 12,
+          "paddingRight": 4
+        },
+        {
+          "id": "I6050:1714;6044:1620",
+          "name": "search",
+          "absoluteBoundingBox": {
+            "x": 2985.079345703125,
+            "y": 465.33331298828125,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "6050:1715",
+          "name": "Center-content",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 445.33331298828125,
+            "width": 226.66668701171875,
+            "height": 56
+          }
+        },
+        {
+          "id": "I6050:1715;6044:1728",
+          "name": "Label-container",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 445.33331298828125,
+            "width": 226.66668701171875,
+            "height": 16
+          }
+        },
+        {
+          "id": "I6050:1715;6044:1729",
+          "name": "Label",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 437.33331298828125,
+            "width": 53,
+            "height": 24
+          },
+          "paddingLeft": 4,
+          "paddingRight": 4
+        },
+        {
+          "id": "I6050:1715;6044:1730",
+          "name": "Caption",
+          "absoluteBoundingBox": {
+            "x": 3009.079345703125,
+            "y": 437.33331298828125,
+            "width": 45,
+            "height": 12
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "WIDTH_AND_HEIGHT",
+            "fontSize": 12,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 76.92308044433594,
+            "lineHeightPercentFontSize": 100,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        {
+          "id": "I6050:1715;6044:1731",
+          "name": "Padding",
+          "absoluteBoundingBox": {
+            "x": 3058.079345703125,
+            "y": 445.33331298828125,
+            "width": 173.66668701171875,
+            "height": 16
+          }
+        },
+        {
+          "id": "I6050:1715;6044:1732",
+          "name": "Input",
+          "absoluteBoundingBox": {
+            "x": 3005.079345703125,
+            "y": 461.33331298828125,
+            "width": 226.66668701171875,
+            "height": 40
+          },
+          "paddingLeft": 4,
+          "paddingBottom": 16
+        },
+        {
+          "id": "I6050:1715;6044:1733",
+          "name": "Placeholder text",
+          "absoluteBoundingBox": {
+            "x": 3011.079345703125,
+            "y": 461.33331298828125,
+            "width": 218.6666717529297,
+            "height": 24
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Regular",
+            "fontStyle": "Regular",
+            "fontWeight": 400,
+            "paragraphSpacing": 12,
+            "textAutoResize": "HEIGHT",
+            "fontSize": 16,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": -0.25,
+            "lineHeightPx": 24,
+            "lineHeightPercent": 115.38461303710938,
+            "lineHeightPercentFontSize": 150,
+            "lineHeightUnit": "PIXELS"
+          }
+        },
+        {
+          "id": "6050:1716",
+          "name": "Right-content",
+          "absoluteBoundingBox": {
+            "x": 3231.74609375,
+            "y": 445.33331298828125,
+            "width": 32,
+            "height": 56
+          },
+          "paddingLeft": 4,
+          "paddingRight": 12
+        },
+        {
+          "id": "I6050:1716;6044:1921",
+          "name": "mic",
+          "absoluteBoundingBox": {
+            "x": 3235.74609375,
+            "y": 465.33331298828125,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "6050:1717",
+          "name": "Helper",
+          "absoluteBoundingBox": {
+            "x": 2973.079345703125,
+            "y": 509.33331298828125,
+            "width": 290.66668701171875,
+            "height": 12
+          },
+          "paddingLeft": 4,
+          "paddingRight": 4
+        },
+        {
+          "id": "6050:1718",
+          "name": "Optional helper text",
+          "absoluteBoundingBox": {
+            "x": 2977.079345703125,
+            "y": 509.33331298828125,
+            "width": 282.66668701171875,
+            "height": 12
+          },
+          "style": {
+            "fontFamily": "Geist",
+            "fontPostScriptName": "Geist-Medium",
+            "fontStyle": "Medium",
+            "fontWeight": 500,
+            "textAutoResize": "HEIGHT",
+            "fontSize": 12,
+            "textAlignHorizontal": "LEFT",
+            "textAlignVertical": "TOP",
+            "letterSpacing": 0,
+            "lineHeightPx": 12,
+            "lineHeightPercent": 76.92308044433594,
+            "lineHeightPercentFontSize": 100,
+            "lineHeightUnit": "PIXELS"
+          }
+        }
+      ]
+    }
+  ]
+}

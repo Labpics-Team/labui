@@ -155,7 +155,7 @@ input {
   color: var(--lab-label-secondary);
   font-size: .75rem;
 }
-.workspace .lab-sheet-positioner {
+.workspace .lab-sheet-content {
   width: min(100%, 40rem);
   margin-inline: auto;
 }
