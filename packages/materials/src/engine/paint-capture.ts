@@ -1,3 +1,4 @@
+import { readBorderBox } from './border-box';
 import type { EngineHandle } from './mount';
 
 /** Scroll overflow follows the inline/block progression, with a flex main or
@@ -76,13 +77,19 @@ function createPlacement(surface: HTMLElement): CapturePlacement {
   const set = (node: HTMLElement, key: string, value: string): void => {
     if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value);
   };
-  const restore = (): void => {
-    if (!runways.size) return;
-    surface.prepend(...captures);
-    for (const runway of runways.values()) runway.remove();
-    runways.clear();
-    for (const capture of captures)
-      for (const name of ['width', 'height', 'inset', 'margin']) capture.style.removeProperty(name);
+  const restore = (style: CSSStyleDeclaration): void => {
+    if (runways.size) {
+      surface.prepend(...captures);
+      for (const runway of runways.values()) runway.remove();
+      runways.clear();
+    }
+    // Absolute children's origin is the padding edge; the shared contour and
+    // native background cover the border box. Let CSS retain fractional sizes.
+    const { border } = readBorderBox(surface, style);
+    for (const capture of captures) {
+      for (const name of ['width', 'height', 'margin']) capture.style.removeProperty(name);
+      set(capture, 'inset', border.map((n) => `${-n}px`).join(' '));
+    }
   };
   const measure = (): void => {
     frame = 0;
@@ -95,8 +102,9 @@ function createPlacement(surface: HTMLElement): CapturePlacement {
     const height = surface.clientHeight;
     const extentWidth = surface.scrollWidth;
     const extentHeight = surface.scrollHeight;
+    const style = getComputedStyle(surface);
     if (extentWidth <= width && extentHeight <= height) {
-      restore();
+      restore(style);
       return;
     }
     for (const plane of new Set(planes.values()))
@@ -110,11 +118,14 @@ function createPlacement(surface: HTMLElement): CapturePlacement {
         surface.prepend(runway);
         runway.append(...Array.from(captures).filter((c) => planes.get(c) === plane));
       }
-    const style = getComputedStyle(surface);
-    const top = Number.parseFloat(style.paddingTop);
-    const right = Number.parseFloat(style.paddingRight);
-    const bottom = Number.parseFloat(style.paddingBottom);
-    const left = Number.parseFloat(style.paddingLeft);
+    const box = readBorderBox(surface, style);
+    // clientLeft additionally includes a left-side native scrollbar/gutter.
+    const beforeX = box.border[3] + Math.max(0, surface.clientLeft - Math.round(box.border[3]));
+    const beforeY = box.border[0];
+    const top = Number.parseFloat(style.paddingTop) + beforeY;
+    const right = Number.parseFloat(style.paddingRight) + box.width - width - beforeX;
+    const bottom = Number.parseFloat(style.paddingBottom) + box.height - height - beforeY;
+    const left = Number.parseFloat(style.paddingLeft) + beforeX;
     const axes = scrollAxes(style);
     for (const runway of runways.values()) {
       set(
@@ -128,10 +139,10 @@ function createPlacement(surface: HTMLElement): CapturePlacement {
       set(runway, 'height', `${extentHeight}px`);
     }
     for (const capture of captures) {
-      set(capture, 'width', `${width}px`);
-      set(capture, 'height', `${height}px`);
+      set(capture, 'width', `${box.width}px`);
+      set(capture, 'height', `${box.height}px`);
       // Sticky insets are measured from the scrollport's padding edge, whereas
-      // the decoration covers its complete padding box, just like a background.
+      // the decoration covers its complete border box, just like a background.
       set(capture, 'inset', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
       set(capture, 'margin', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
     }
@@ -195,7 +206,7 @@ function createPlacement(surface: HTMLElement): CapturePlacement {
     );
     if (!scrollable) {
       stop();
-      restore();
+      restore(style);
       return;
     }
     if (!observing) {

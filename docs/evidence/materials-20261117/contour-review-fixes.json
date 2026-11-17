@@ -1,0 +1,254 @@
+{
+  "date": "2026-11-17T18:33:01.318Z",
+  "sourceBase": "2d9d7f3",
+  "runtimeSha256": "726aedd1b2f3245889d61ea5ce6fca1e6eb97323ad1a3ffa00c318ad1b9d6f6e",
+  "unit": {
+    "materials": 173,
+    "colors": 181
+  },
+  "browsers": ["chromium", "webkit"],
+  "scrollRows": 240,
+  "scrollMutations": [
+    {
+      "browser": "chromium",
+      "layout": "block",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "flex-column",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "flex-row",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "grid",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "rtl",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "row-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "column-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "vertical-rl",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "vertical-lr",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "rtl-row-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "vertical-rl-column-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "chromium",
+      "layout": "wrap-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "block",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "flex-column",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "flex-row",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "grid",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "rtl",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "row-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "column-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "vertical-rl",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "vertical-lr",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "rtl-row-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "vertical-rl-column-reverse",
+      "scrollMutations": 0
+    },
+    {
+      "browser": "webkit",
+      "layout": "wrap-reverse",
+      "scrollMutations": 0
+    }
+  ],
+  "shape": [
+    {
+      "browser": "chromium",
+      "retained": true,
+      "hostUnclipped": true,
+      "overflowInteractive": true,
+      "foregroundStroke": [255, 0, 0],
+      "shadowStack": 2,
+      "borderBox": {
+        "host": [275.3125, 225.3125],
+        "contour": [0, 0, 275.3125, 225.3125],
+        "stroke": [0, 0, 275.3125, 225.3125],
+        "image": [0, 0, 275.3125, 225.3125],
+        "localSvg": [220.25, 180.25]
+      },
+      "shadowPixels": [
+        {
+          "name": "outer-spread",
+          "checked": 234164,
+          "painted": 5008,
+          "mismatches": 0
+        },
+        {
+          "name": "outer-negative-offset",
+          "checked": 236923,
+          "painted": 1002,
+          "mismatches": 0
+        },
+        {
+          "name": "inner-spread",
+          "checked": 234568,
+          "painted": 4592,
+          "mismatches": 0
+        },
+        {
+          "name": "inner-negative-offset",
+          "checked": 236146,
+          "painted": 3873,
+          "mismatches": 0
+        },
+        {
+          "name": "inner-border",
+          "checked": 235813,
+          "painted": 3409,
+          "mismatches": 0
+        },
+        {
+          "name": "parallel-layers",
+          "checked": 232980,
+          "painted": 9838,
+          "mismatches": 0
+        }
+      ],
+      "disposed": {
+        "observers": 0,
+        "defs": 0,
+        "position": "",
+        "clip": ""
+      }
+    },
+    {
+      "browser": "webkit",
+      "retained": true,
+      "hostUnclipped": true,
+      "overflowInteractive": true,
+      "foregroundStroke": [255, 0, 0],
+      "shadowStack": 2,
+      "borderBox": {
+        "host": [275.3125, 225.3125],
+        "contour": [0, 0, 275.3125, 225.3125],
+        "stroke": [0, 0, 275.3125, 225.3125],
+        "image": [0, 0, 275.3125, 225.3125],
+        "localSvg": [220.25, 180.25]
+      },
+      "shadowPixels": [
+        {
+          "name": "outer-spread",
+          "checked": 234148,
+          "painted": 5007,
+          "mismatches": 0
+        },
+        {
+          "name": "outer-negative-offset",
+          "checked": 236915,
+          "painted": 995,
+          "mismatches": 0
+        },
+        {
+          "name": "inner-spread",
+          "checked": 234589,
+          "painted": 4581,
+          "mismatches": 0
+        },
+        {
+          "name": "inner-negative-offset",
+          "checked": 236174,
+          "painted": 3866,
+          "mismatches": 0
+        },
+        {
+          "name": "inner-border",
+          "checked": 236071,
+          "painted": 3649,
+          "mismatches": 0
+        },
+        {
+          "name": "parallel-layers",
+          "checked": 232929,
+          "painted": 9805,
+          "mismatches": 0
+        }
+      ],
+      "disposed": {
+        "observers": 0,
+        "defs": 0,
+        "position": "",
+        "clip": ""
+      }
+    }
+  ],
+  "qualification": "Local headless. Full three-engine actual-display qualification follows in isolated CI. Native shadows compared in zero-smoothing limit, on flat 3x3 interiors to exclude edge antialiasing."
+}

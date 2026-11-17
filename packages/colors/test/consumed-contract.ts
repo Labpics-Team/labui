@@ -76,6 +76,7 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-motion-', // motion durations/easings/roles (motion.css — non-colour, permanently local)
   '--lab-veil-', // progressive material geometry/strength (materials — not colour roles)
   '--lab-contour-clip', // exact: runtime-generated SVG decoration clip URL
+  '--lab-contour-inset', // exact: border-box alignment for decorative image children
   '--lab-material-shadow', // exact: author shadow stack resolved by the contour adapter
   '--lab-surface-stroke-width', // exact: local inside-stroke geometry
   '--lab-surface-stroke-color', // exact: local paint input, normally bound to a semantic role

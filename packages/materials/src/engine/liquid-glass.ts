@@ -1,6 +1,7 @@
 /** Shape-aware refraction. Frost, paints and directional light belong to the
  * shared author profile; this engine owns only the retained displacement map. */
 import { materialProfile } from '../profile';
+import { readBorderBox } from './border-box';
 import { type MaterialContour, contourGeometry, materialContour } from './contour';
 import {
   type GlassAtlas,
@@ -803,7 +804,7 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
   const p = state.params;
   // SVG userSpaceOnUse is local CSS space. A transformed boundingClientRect
   // would apply scale twice and rebuild the map during an ordinary sheet move.
-  const rect = { width: el.offsetWidth, height: el.offsetHeight };
+  const rect = readBorderBox(el, cs);
   const radii = resolveCornerRadii(rect.width, rect.height, [
     cs.borderTopLeftRadius,
     cs.borderTopRightRadius,
@@ -812,8 +813,8 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
   ]);
   const smoothing = num('--lab-corner-smoothing', 0);
   return {
-    w: Math.max(1, Math.round(rect.width)),
-    h: Math.max(1, Math.round(rect.height)),
+    w: Math.max(1, rect.width),
+    h: Math.max(1, rect.height),
     corner: smoothing > 0 ? materialContour(rect.width, rect.height, radii, smoothing) : radii,
     refraction: p.refraction ?? num('--_lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--_lg-depth', DEFAULTS.depth)),

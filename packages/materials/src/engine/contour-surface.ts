@@ -1,12 +1,12 @@
+import { readBorderBox } from './border-box';
 import { materialContour } from './contour';
+import { type Shadow, shadowMarkup, shadowPadding } from './contour-shadow';
 import { type EngineHandle, ensureHiddenDefs, removeFilter } from './mount';
 import { placePaintCapture } from './paint-capture';
 import { resolveCornerRadii } from './rounded-shape';
 
 const NS = 'http://www.w3.org/2000/svg';
 let sequence = 0;
-const attr = (s: string): string =>
-  s.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;');
 
 function authorSmoothing(css: CSSStyleDeclaration): number {
   return Number.parseFloat(css.getPropertyValue('--lab-corner-smoothing')) || 0;
@@ -49,15 +49,6 @@ function split(value: string, separator: ',' | ' '): string[] {
   return parts;
 }
 
-interface Shadow {
-  x: number;
-  y: number;
-  blur: number;
-  spread: number;
-  color: string;
-  inset: boolean;
-}
-
 function shadows(css: string): Shadow[] {
   if (!css || css === 'none') return [];
   return split(css, ',').map((part) => {
@@ -72,22 +63,6 @@ function shadows(css: string): Shadow[] {
       inset: tokens.includes('inset'),
     };
   });
-}
-
-/** Author drop-shadow stacks are parallel, not successive drop-shadow filters.
- * The host stays unfiltered: its content, overflow and progressive veil survive.
- */
-function shadowMarkup(list: readonly Shadow[]): string {
-  const primitives = list
-    .map((s, i) => {
-      const spread = s.spread
-        ? `<feMorphology in="SourceAlpha" operator="${(s.spread > 0) !== s.inset ? 'dilate' : 'erode'}" radius="${Math.abs(s.spread)}" result="spread-${i}"/>`
-        : '';
-      return `${spread}<feGaussianBlur in="${s.spread ? `spread-${i}` : 'SourceAlpha'}" stdDeviation="${s.blur / 2}"/><feOffset dx="${s.x}" dy="${s.y}"/><feComposite in2="SourceAlpha" operator="${s.inset ? 'arithmetic" k2="-1" k3="1' : 'out'}" result="alpha-${i}"/><feFlood flood-color="${attr(s.color)}"/><feComposite in2="alpha-${i}" operator="in" result="shadow-${i}"/>`;
-    })
-    .join('');
-  // CSS's first shadow is painted on top.
-  return `${primitives}<feMerge>${list.map((_, i) => `<feMergeNode in="shadow-${list.length - i - 1}"/>`).join('')}</feMerge>`;
 }
 
 export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHandle {
@@ -189,13 +164,18 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
     el.style.setProperty('--_material-contour-rim', `url(#${id}-rim)`);
     let key = '';
     let shadowKey: string | undefined;
+    let shadowBorderKey: string | undefined;
     let strokeKey: string | undefined;
     let usedShadows: Shadow[] = [];
     refreshShape = () => {
       placement.refresh?.();
       const cs = getComputedStyle(el);
-      const w = Math.max(1, el.offsetWidth);
-      const h = Math.max(1, el.offsetHeight);
+      const box = readBorderBox(el, cs);
+      const w = Math.max(1, box.width);
+      const h = Math.max(1, box.height);
+      const inset = box.border.map((n) => `${-n}px`).join(' ');
+      if (el.style.getPropertyValue('--lab-contour-inset') !== inset)
+        el.style.setProperty('--lab-contour-inset', inset);
       const radii = resolveCornerRadii(w, h, [
         cs.borderTopLeftRadius,
         cs.borderTopRightRadius,
@@ -208,6 +188,7 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
       // unchanged while its font or colour dependencies change.
       const decoration = getComputedStyle(probe);
       const shadow = decoration.boxShadow;
+      const borderKey = box.border.join(',');
       let restamp = contour.key !== key;
       if (restamp) {
         key = contour.key;
@@ -240,21 +221,17 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
         shadowKey = shadow;
         usedShadows = shadows(shadow);
         restamp = true;
-        for (const item of shadowNodes) {
-          const matching = usedShadows.filter((s) => s.inset === item.inset);
-          item.svg.style.display = matching.length ? '' : 'none';
-          item.filter.innerHTML = shadowMarkup(matching);
-        }
+      }
+      if (borderKey !== shadowBorderKey) {
+        shadowBorderKey = borderKey;
+        restamp = true;
       }
       if (restamp)
         for (const item of shadowNodes) {
           const matching = usedShadows.filter((s) => s.inset === item.inset);
-          const pad = Math.max(
-            1,
-            ...matching.map(
-              (s) => Math.max(Math.abs(s.x), Math.abs(s.y)) + s.blur * 2 + Math.abs(s.spread),
-            ),
-          );
+          item.svg.style.display = matching.length ? '' : 'none';
+          item.filter.innerHTML = shadowMarkup(matching, contour, box.border);
+          const pad = shadowPadding(matching);
           item.filter.setAttribute('x', String(-pad));
           item.filter.setAttribute('y', String(-pad));
           item.filter.setAttribute('width', String(w + 2 * pad));
@@ -270,6 +247,7 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
       removeFilter(rimMask);
       el.removeAttribute('data-lab-material-contour');
       el.style.removeProperty('--lab-contour-clip');
+      el.style.removeProperty('--lab-contour-inset');
       el.style.removeProperty('--_material-contour-rim');
       if (positioned && el.style.position === 'relative') el.style.position = positionBefore;
     };

@@ -20,7 +20,7 @@ export async function verifySurfaceShape(page, origin, browser) {
     window.shapeObservers = () => active.size;
     const style = document.createElement('style');
     style.textContent =
-      'body{margin:0;background:white}#card{margin:20px 40px;width:240px;height:180px;border-radius:32px;--lab-material-shadow:0 8px 16px rgb(0 0 0 / .2);--lab-surface-stroke-width:1px;--lab-surface-stroke-color:red}#image{position:absolute;inset:0;background:rgb(20 100 200);clip-path:var(--lab-contour-clip);z-index:-2}#solid{position:absolute;inset:auto 0 0;height:80px;background:white;z-index:1}#button{position:absolute;left:-20px;top:50px;width:60px;height:30px;background:white}';
+      'body{margin:0;background:white}#card{margin:20px 40px;width:240px;height:180px;border-radius:32px;--lab-material-shadow:0 8px 16px rgb(0 0 0 / .2);--lab-surface-stroke-width:1px;--lab-surface-stroke-color:red}#image{position:absolute;inset:var(--lab-contour-inset);background:rgb(20 100 200);clip-path:var(--lab-contour-clip);z-index:-2}#solid{position:absolute;inset:auto 0 0;height:80px;background:white;z-index:1}#button{position:absolute;left:-20px;top:50px;width:60px;height:30px;background:white}';
     document.head.append(style);
     document.body.innerHTML =
       '<div id="card"><div id="image"></div><div id="solid"></div><button id="button">Open</button></div>';
@@ -107,6 +107,33 @@ export async function verifySurfaceShape(page, origin, browser) {
   assert.deepEqual(relative, { dy: '12', sigma: '12', stroke: 'rgb(0, 128, 0)' });
   await page.evaluate(() => {
     const card = document.querySelector('#card');
+    card.style.width = '200.25px';
+    card.style.height = '160.25px';
+    card.style.border = '10px solid transparent';
+    card.style.transform = 'translate(7px, 9px) scale(1.25)';
+    window.shapeHandle.refresh();
+  });
+  await settle();
+  const borderBox = await page.evaluate(() => {
+    const card = document.querySelector('#card').getBoundingClientRect();
+    const rect = (selector) => {
+      const r = document.querySelector(selector).getBoundingClientRect();
+      return [r.x - card.x, r.y - card.y, r.width, r.height];
+    };
+    const svg = document.querySelector('.lab-material__contour-stroke svg');
+    return {
+      host: [card.width, card.height],
+      contour: rect('.lab-material__contour'),
+      stroke: rect('.lab-material__contour-stroke'),
+      image: rect('#image'),
+      localSvg: [Number(svg.getAttribute('width')), Number(svg.getAttribute('height'))],
+    };
+  });
+  assert.deepEqual(borderBox.localSvg, [220.25, 180.25]);
+  for (const kind of ['contour', 'stroke', 'image'])
+    assert.deepEqual(borderBox[kind], [0, 0, ...borderBox.host], `${browser}: ${kind} border box`);
+  await page.evaluate(() => {
+    const card = document.querySelector('#card');
     card.style.setProperty('--lab-surface-stroke-width', 'initial');
     card.style.setProperty('--lab-surface-stroke-color', 'initial');
     window.shapeHandle.refresh();
@@ -125,6 +152,7 @@ export async function verifySurfaceShape(page, origin, browser) {
     clip: document.querySelector('#card').style.getPropertyValue('--lab-contour-clip'),
   }));
   assert.deepEqual(disposed, { observers: 0, defs: 0, position: '', clip: '' });
+  const shadowPixels = await verifyShadowPixels(page, origin, browser);
   const result = {
     browser,
     retained: true,
@@ -132,8 +160,79 @@ export async function verifySurfaceShape(page, origin, browser) {
     overflowInteractive: true,
     foregroundStroke: bottom,
     shadowStack: 2,
+    borderBox,
+    shadowPixels,
     disposed,
   };
   console.info(`MATERIAL_SHAPE_ROW=${JSON.stringify(result)}`);
   return result;
+}
+
+/** The zero-smoothing limit has an independent native CSS reference. Compare
+ * flat 3×3 interiors so engine-specific edge antialiasing is not a false failure. */
+async function verifyShadowPixels(page, origin, browser) {
+  const cases = [
+    ['outer-spread', '0 0 0 10px red', '0'],
+    ['outer-negative-offset', '20px 10px 0 -10px red', '0'],
+    ['inner-spread', 'inset 0 0 0 10px red', '0'],
+    ['inner-negative-offset', 'inset 30px 20px 0 -10px red', '0'],
+    ['inner-border', 'inset 10px 8px 0 5px red', '4px 8px 12px 16px'],
+    ['parallel-layers', '0 0 0 10px red, 8px 12px 0 16px blue', '0'],
+  ];
+  const results = [];
+  for (const [name, shadow, borders] of cases) {
+    await page.goto(origin);
+    await page.evaluate(
+      ({ shadow, borders }) => {
+        document.body.innerHTML = '<div id="subject"></div>';
+        const style = document.createElement('style');
+        style.textContent = `body{margin:0;background:white}#subject{position:absolute;left:50px;top:50px;width:200px;height:160px;border-radius:40px;border-style:solid;border-color:transparent;border-width:${borders};box-shadow:${shadow};--lab-material-shadow:${shadow}}`;
+        document.head.append(style);
+      },
+      { shadow, borders },
+    );
+    const reference = decodePng(await page.screenshot());
+    await page.evaluate(async () => {
+      const api = await import('/runtime.js');
+      window.testShadow = api.mountSurfaceShape(document.querySelector('#subject'), {
+        smoothing: 0.000001,
+      });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    });
+    const actual = decodePng(await page.screenshot());
+    let checked = 0;
+    let painted = 0;
+    let mismatches = 0;
+    let first;
+    for (let y = 1; y < reference.height - 1; y++)
+      for (let x = 1; x < reference.width - 1; x++) {
+        const at = (y * reference.width + x) * 3;
+        let flat = true;
+        for (let dy = -1; dy <= 1 && flat; dy++)
+          for (let dx = -1; dx <= 1 && flat; dx++)
+            for (let channel = 0; channel < 3; channel++)
+              if (
+                reference.rgb[at + channel] !==
+                reference.rgb[((y + dy) * reference.width + x + dx) * 3 + channel]
+              )
+                flat = false;
+        if (!flat) continue;
+        checked++;
+        if (
+          reference.rgb[at] !== 255 ||
+          reference.rgb[at + 1] !== 255 ||
+          reference.rgb[at + 2] !== 255
+        )
+          painted++;
+        if ([0, 1, 2].some((c) => Math.abs(reference.rgb[at + c] - actual.rgb[at + c]) > 5)) {
+          mismatches++;
+          first ??= [x, y];
+        }
+      }
+    assert(painted > 50, `${browser}/${name}: native reference contains a visible shadow`);
+    assert.equal(mismatches, 0, `${browser}/${name}: stable shadow pixels differ, first=${first}`);
+    results.push({ name, checked, painted, mismatches });
+    await page.evaluate(() => window.testShadow.destroy());
+  }
+  return results;
 }
