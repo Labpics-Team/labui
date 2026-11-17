@@ -30,11 +30,12 @@ export function materialProfileCss(): string {
   return [
     '/* Generated from src/profile.json. Glass frost is a separate renderer mapping. */',
     firstPaintCss(),
+    `:root { --lab-sheet-ghost-overlap: ${sheet.ghost.overlap}px; }`,
     `[data-veil][data-veil-profile],.lab-material-ghost--sheet { --_veil-noise: url("./veil-noise.png"); --_veil-noise-size: ${Number((48 * materialProfile.noise.size).toFixed(4))}px; --_veil-noise-blend: ${materialProfile.noise.blendMode}; }`,
     `.lab-material {\n${declarations('base')}\n}`,
     ...MATERIAL_TIERS.map((tier) => `.lab-material--${tier} {\n${declarations(tier)}\n}`),
     `.lab-material--sheet {\n${declarations(sheet.body.tier as MaterialTier)}\n  box-shadow: var(--lab-elevation-${sheet.body.shadow});\n  outline: ${sheet.body.stroke.width}px solid var(--lab-${sheet.body.stroke.role});\n  outline-offset: 0;\n}`,
-    `.lab-material-ghost--sheet {\n  --_veil-profile: ${sheet.ghost.profile};\n  --_veil-direction: ${sheet.ghost.direction};\n  --lab-sheet-ghost-overlap: ${sheet.ghost.overlap}px;\n}`,
+    `.lab-material-ghost--sheet {\n  --_veil-profile: ${sheet.ghost.profile};\n  --_veil-direction: ${sheet.ghost.direction};\n}`,
     `.lab-material-ghost--sheet > [data-veil-paint] { background: var(--lab-${sheet.ghost.paintRole}); }`,
   ].join('\n');
 }

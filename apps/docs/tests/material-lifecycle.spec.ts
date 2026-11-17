@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import {
   MATERIAL_TIERS,
+  type MaterialRuntimeOptions,
   type Rgba,
   compileMaterialTheme,
   materialRoles,
@@ -338,7 +339,7 @@ declare global {
       stopShadow(): void;
       overlap(): void;
       stopOverlap(): void;
-      mount(root: Document | Element | ShadowRoot): () => void;
+      mount(root: Document | Element | ShadowRoot, options?: MaterialRuntimeOptions): () => void;
     };
   }
 }
@@ -931,4 +932,136 @@ test('authored veil profiles retain the two Strong passes and one Overlay Ghost 
   await expect(veil).toHaveCSS('--lab-sheet-ghost-overlap', '32px');
   await page.emulateMedia({ contrast: 'more' });
   await expect(veil.locator('.lab-veil__strip,.lab-veil__noise')).toHaveCount(0);
+});
+
+test('fluid edge bands match the pixel renderer while retaining their nodes across sizes', async ({
+  page,
+}) => {
+  const comparisons = await page.evaluate(async () => {
+    const tick = () =>
+      new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    const results: {
+      edge: string;
+      length: number;
+      count: number;
+      error: number;
+      sameNodes: boolean;
+      sameBlur: boolean;
+    }[] = [];
+    for (const edge of ['top', 'bottom', 'left', 'right']) {
+      const horizontal = edge === 'left' || edge === 'right';
+      const fluid = document.createElement('div');
+      const pixel = document.createElement('div');
+      for (const el of [fluid, pixel]) {
+        el.dataset.veil = edge;
+        el.dataset.veilProfile = 'overlay-ghost';
+        el.style.cssText = `position:fixed;left:0;top:0;${horizontal ? 'height' : 'width'}:180px`;
+        document.body.append(el);
+      }
+      const dimension = horizontal ? 'width' : 'height';
+      fluid.style.setProperty('--lab-veil-axis-length', '68px');
+      fluid.style.setProperty(dimension, 'var(--lab-veil-axis-length)');
+      pixel.style.setProperty(dimension, '68px');
+      const stopFluid = window.materialFixture.mount(fluid, {
+        motionProperties: ['--lab-veil-axis-length'],
+      });
+      const stopPixel = window.materialFixture.mount(pixel);
+      await tick();
+      const nodes = Array.from(fluid.querySelectorAll('.lab-veil__strip'));
+      for (const length of [68, 422, 804, 68]) {
+        fluid.style.setProperty('--lab-veil-axis-length', `${length}px`);
+        pixel.style.setProperty(dimension, `${length}px`);
+        await tick();
+        const reference = Array.from(pixel.querySelectorAll('.lab-veil__strip'));
+        let error = 0;
+        for (const [i, node] of nodes.entries()) {
+          const a = node.getBoundingClientRect();
+          const b = reference[i]?.getBoundingClientRect();
+          if (!b) {
+            error = Number.POSITIVE_INFINITY;
+            break;
+          }
+          for (const key of ['x', 'y', 'width', 'height'] as const)
+            error = Math.max(error, Math.abs(a[key] - b[key]));
+        }
+        results.push({
+          edge,
+          length,
+          count: reference.length,
+          error,
+          sameNodes: nodes.every(
+            (node, i) => fluid.querySelectorAll('.lab-veil__strip')[i] === node,
+          ),
+          sameBlur: nodes.every(
+            (node, i) =>
+              getComputedStyle(node).backdropFilter ===
+              getComputedStyle(reference[i] as Element).backdropFilter,
+          ),
+        });
+      }
+      stopFluid();
+      stopPixel();
+      fluid.remove();
+      pixel.remove();
+    }
+    return results;
+  });
+  for (const result of comparisons) {
+    expect(result.count).toBe(5);
+    expect(result.error, `${result.edge}/${result.length}`).toBeLessThan(0.05);
+    expect(result.sameNodes).toBe(true);
+    expect(result.sameBlur).toBe(true);
+  }
+});
+
+test('declared motion scalars do not read material profiles or rebuild a fluid veil', async ({
+  page,
+}) => {
+  const result = await page.evaluate(async () => {
+    const tick = () =>
+      new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    const scope = document.createElement('div');
+    scope.dataset.material = 'acrylic';
+    scope.style.cssText = '--position:68px;position:fixed;left:0;top:0;width:180px';
+    scope.innerHTML =
+      '<div data-veil="bottom" data-veil-profile="overlay-ghost" style="--lab-veil-axis-length:var(--position);height:var(--lab-veil-axis-length)"></div><div class="lab-material" style="height:100px;transform:translateY(var(--position))"></div>';
+    document.body.append(scope);
+    const stop = window.materialFixture.mount(scope, { motionProperties: ['--position'] });
+    await tick();
+    const original = window.getComputedStyle;
+    let reads = 0;
+    let writes = 0;
+    const veil = scope.querySelector('[data-veil]') as HTMLElement;
+    const surface = scope.querySelector('.lab-material') as HTMLElement;
+    const nodes = Array.from(veil.children);
+    window.getComputedStyle = (...args) => {
+      if (args[0] === veil || args[0] === surface) reads++;
+      return original(...args);
+    };
+    const observer = new MutationObserver((records) => {
+      writes += records.length;
+    });
+    observer.observe(veil, { subtree: true, childList: true, attributes: true });
+    try {
+      for (let i = 0; i < 20; i++) {
+        scope.style.setProperty('--position', `${68 + i * 8}px`);
+        await tick();
+      }
+      const movement = {
+        reads,
+        writes,
+        sameNodes: nodes.every((node, i) => veil.children[i] === node),
+      };
+      scope.style.setProperty('--lab-bg-material-base-01', 'rgb(70 80 90 / .5)');
+      await tick();
+      return { movement, roleRefresh: reads > movement.reads };
+    } finally {
+      window.getComputedStyle = original;
+      observer.disconnect();
+      stop();
+      scope.remove();
+    }
+  });
+  expect(result.movement).toEqual({ reads: 0, writes: 0, sameNodes: true });
+  expect(result.roleRefresh).toBe(true);
 });

@@ -114,14 +114,7 @@ describe('honest degradation backstops (CSS doubles the runtime gates)', () => {
 });
 
 describe('declarative token surface (--lab-veil-*)', () => {
-  const DOCUMENTED = [
-    '--lab-veil-strength',
-    '--lab-veil-stops',
-    '--lab-veil-from',
-    '--lab-veil-to',
-    '--lab-veil-levels',
-    '--lab-veil-feather',
-  ];
+  const DOCUMENTED = [...css.matchAll(/^\s*\*\s+(--lab-veil-[\w-]+)\s/gm)].map((match) => match[1]);
 
   it('the tokens the runtime reads are exactly the documented set', () => {
     const reads = new Set(
