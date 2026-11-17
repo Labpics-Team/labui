@@ -162,7 +162,10 @@ Linux CI снимает main/Sheet обеих тем только после с�
 и журнал сохраняются в `build/linux-accessibility`. Сценарий прошёл в CI
 `44145747285` с test-side подключением моста. Обновлённая проверка запускает
 установленный DEB и исключает подмену launcher через переменные среды;
-результат этого прогона ещё требуется.
+В [CI 44164544956](https://github.com/Labpics-Team/labui/actions/runs/44164544956)
+эта проверка прошла: `/opt/labui/bin/LabUI` из установленного DEB, объявленная
+зависимость `libatk-wrapper-java-jni (>= 0.37.1)`, `jvm_environment_injection=false`.
+Orca произнесла действие и поле; внешний AT-SPI выполнил edit/cancel/validation/save/restart.
 Android UI Automator действует через настоящий EditText или Switch:
 Compose может экспортировать подпись отдельным описательным дочерним узлом.
 Hierarchy и пиксели сохраняются до закрытия Activity, включая неудачные проверки.

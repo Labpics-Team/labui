@@ -36,7 +36,13 @@ Undo → сохранение → перезапуск — в Native Compose CI.
 `aDelayedFirstFrameDoesNotConsumeTheActionDeadline` воспроизводила истечение срока
 до первого рендера в CPU-сцене. Теперь таймер ждёт первый draw, окончание entrance
 и следующий кадр; этот тест и прежние проверки проходят без локального окна.
-Прохождение исправленного iOS-сценария и причина задержки кадра требуют CI.
+Исправленный iOS-сценарий прошёл в CI 44158011723 и 44164544956, включая
+save → Undo → save → restart. Причина прежнего единичного задержанного кадра
+не установлена; временный sampler удалён после расследования.
+
+PNG повторно отрисованы с единым Geist 1.400 из авторского каталога;
+[сравнение четырёх семейств](../fonts-20261117/README.md) объясняет выбор версии.
+Семь CPU-проверок с этими файлами шрифта прошли.
 
 Источники: [Figma](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=6109-6735),
 [Compose Lifecycle](https://kotlinlang.org/docs/multiplatform/compose-lifecycle.html).
