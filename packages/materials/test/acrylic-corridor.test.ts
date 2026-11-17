@@ -150,21 +150,23 @@ describe('luminosityBlend — точная симуляция W3C (класс В
 describe('голден гарантий acrylic v2 (класс Б — замок против тихого дрейфа контракта)', () => {
   /*
    * Замороженный вердикт по КАЖДОЙ паре тема×tier на текущих PROVISIONAL
-   * альфах контракта при Λ = ACRYLIC_LUMINOSITY_OPACITY = 0.7. Смена альф
+   * альфах контракта при Λ = ACRYLIC_LUMINOSITY_OPACITY = 0.7.
+   * Пересчитано 2026-11-17 после прямого восстановления opacity variables Figma.
+   * Это проверка старого luminosity helper, не подтверждение авторского renderer. Смена альф
    * поездом colors или смена Λ обязана перещёлкнуть этот замок ГРОМКО.
    * Ключевой факт зажима: light/soft и dark/subtle — негарантированные на
    * стекле — на acrylic v2 ПОЛУЧАЮТ гарантию (4.059→4.753 и 3.577→5.320).
    */
   const EXPECTED: Record<string, { worst: string; guaranteed: boolean }> = {
-    'light/base': { worst: '6.385', guaranteed: true },
-    'light/muted': { worst: '6.947', guaranteed: true },
-    'light/soft': { worst: '4.753', guaranteed: true },
+    'light/base': { worst: '6.302', guaranteed: true },
+    'light/muted': { worst: '6.714', guaranteed: true },
+    'light/soft': { worst: '4.962', guaranteed: true },
     'light/subtle': { worst: '1.285', guaranteed: false },
     'light/elevated': { worst: '15.592', guaranteed: true },
-    'dark/base': { worst: '13.056', guaranteed: true },
-    'dark/muted': { worst: '11.129', guaranteed: true },
-    'dark/soft': { worst: '8.208', guaranteed: true },
-    'dark/subtle': { worst: '5.320', guaranteed: true },
+    'dark/base': { worst: '13.580', guaranteed: true },
+    'dark/muted': { worst: '10.632', guaranteed: true },
+    'dark/soft': { worst: '8.707', guaranteed: true },
+    'dark/subtle': { worst: '5.501', guaranteed: true },
     'dark/elevated': { worst: '2.876', guaranteed: false },
   };
 

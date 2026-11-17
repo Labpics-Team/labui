@@ -31,6 +31,19 @@
       <section class="renderer" aria-label="Lit renderer" data-testid="lit-renderer">
         <h2>Lit</h2>
         <div class="specimens">
+          <lab-button data-testid="lit-size-s" size="s">Сохранить</lab-button>
+          <lab-button data-testid="lit-size-m" size="m">Сохранить</lab-button>
+          <lab-button data-testid="lit-size-l" size="l">Сохранить</lab-button>
+          <lab-button data-testid="lit-anatomy">
+            <svg slot="icon" viewBox="0 0 24 24" fill="#ed3c4a"><circle cx="12" cy="12" r="8" /></svg>
+            Main<span slot="description">Description</span>
+            <svg slot="icon-end" viewBox="0 0 24 24" fill="#ed3c4a"><circle cx="12" cy="12" r="8" /></svg>
+          </lab-button>
+          <lab-button data-testid="lit-anatomy-loading" loading>
+            <svg slot="icon" viewBox="0 0 24 24" fill="#ed3c4a"><circle cx="12" cy="12" r="8" /></svg>
+            Main<span slot="description">Description</span>
+            <svg slot="icon-end" viewBox="0 0 24 24" fill="#ed3c4a"><circle cx="12" cy="12" r="8" /></svg>
+          </lab-button>
           <lab-button data-testid="lit-accent-fill" type="accent" kind="fill">Save</lab-button>
           <lab-button data-testid="lit-neutral-tinted" type="neutral" kind="tinted">Cancel</lab-button>
           <lab-button data-testid="lit-danger-border" type="danger" kind="border">Delete</lab-button>

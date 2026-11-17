@@ -16,15 +16,17 @@
  */
 
 [data-lab-button] {
-  /* Size knobs the size axis maps onto. Dimension fallbacks keep it usable
-     before tokens load; colour roles below never carry a fallback. */
-  --_lab-btn-radius: var(--lab-radius-control, 0.5rem);
-  --_lab-btn-font: var(--lab-font-size-md, 1rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-md, -0.0083em);
-  --_lab-btn-pad-x: var(--lab-space-md, 1rem);
-  --_lab-btn-pad-y: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-gap: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-min: var(--lab-size-control-h-m, 2.5rem);
+  --_lab-btn-radius: var(--lab-radius-button-m);
+  --_lab-btn-font: var(--lab-font-size-button-m);
+  --_lab-btn-line: var(--lab-line-height-button-m);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-m);
+  --_lab-btn-pad-x: var(--lab-space-button-m-x);
+  --_lab-btn-pad-y: var(--lab-space-button-m-y);
+  --_lab-btn-min: var(--lab-size-button-m);
+  --_lab-btn-icon: var(--lab-size-button-m-icon);
+  --_lab-btn-description-weight: var(--lab-font-weight-button-m-description);
+  --_lab-btn-description-tracking: var(--lab-letter-spacing-button-m-description);
+  --_lab-btn-description-accent-plain: var(--lab-state-button-m-description-accent-plain-opacity);
 
   box-sizing: border-box;
   position: relative;
@@ -32,16 +34,17 @@
   align-items: center;
   justify-content: center;
   vertical-align: middle;
-  gap: var(--_lab-btn-gap);
+  gap: 0;
   min-height: var(--_lab-btn-min);
-  padding: var(--_lab-btn-pad-y) var(--_lab-btn-pad-x);
+  padding: calc(var(--_lab-btn-pad-y) - var(--lab-stroke-hairline))
+    calc(var(--_lab-btn-pad-x) - var(--lab-stroke-hairline));
   border-radius: var(--_lab-btn-radius);
   border: var(--lab-stroke-hairline) solid transparent;
   font: inherit;
   font-size: var(--_lab-btn-font);
   letter-spacing: var(--_lab-btn-tracking);
-  line-height: var(--lab-line-height-md, 1.5);
-  font-weight: var(--lab-font-weight-semibold, 600);
+  line-height: var(--_lab-btn-line);
+  font-weight: var(--lab-font-weight-button);
   cursor: pointer;
   transition: background-color var(--lab-motion-transition-duration)
     var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration)
@@ -53,18 +56,30 @@
 }
 
 [data-lab-button][data-size="s"] {
-  --_lab-btn-font: var(--lab-font-size-xs, 0.8333rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-xs, -0.0009em);
-  --_lab-btn-pad-x: var(--lab-space-sm, 0.5rem);
-  --_lab-btn-pad-y: var(--lab-space-xs, 0.25rem);
-  --_lab-btn-min: var(--lab-size-control-h-s, 2rem);
+  --_lab-btn-radius: var(--lab-radius-button-s);
+  --_lab-btn-font: var(--lab-font-size-button-s);
+  --_lab-btn-line: var(--lab-line-height-button-s);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-s);
+  --_lab-btn-pad-x: var(--lab-space-button-s-x);
+  --_lab-btn-pad-y: var(--lab-space-button-s-y);
+  --_lab-btn-min: var(--lab-size-button-s);
+  --_lab-btn-icon: var(--lab-size-button-s-icon);
+  --_lab-btn-description-weight: var(--lab-font-weight-button-s-description);
+  --_lab-btn-description-tracking: var(--lab-letter-spacing-button-s-description);
+  --_lab-btn-description-accent-plain: var(--lab-state-button-s-description-accent-plain-opacity);
 }
 [data-lab-button][data-size="l"] {
-  --_lab-btn-font: var(--lab-font-size-lg, 1.2rem);
-  --_lab-btn-tracking: var(--lab-letter-spacing-lg, -0.0194em);
-  --_lab-btn-pad-x: var(--lab-space-lg, 1.5rem);
-  --_lab-btn-pad-y: var(--lab-space-md, 1rem);
-  --_lab-btn-min: var(--lab-size-control-h-l, 3rem);
+  --_lab-btn-radius: var(--lab-radius-button-l);
+  --_lab-btn-font: var(--lab-font-size-button-l);
+  --_lab-btn-line: var(--lab-line-height-button-l);
+  --_lab-btn-tracking: var(--lab-letter-spacing-button-l);
+  --_lab-btn-pad-x: var(--lab-space-button-l-x);
+  --_lab-btn-pad-y: var(--lab-space-button-l-y);
+  --_lab-btn-min: var(--lab-size-button-l);
+  --_lab-btn-icon: var(--lab-size-button-l-icon);
+  --_lab-btn-description-weight: var(--lab-font-weight-button-l-description);
+  --_lab-btn-description-tracking: var(--lab-letter-spacing-button-l-description);
+  --_lab-btn-description-accent-plain: var(--lab-state-button-l-description-accent-plain-opacity);
 }
 
 /* Icon-only: square, no text padding asymmetry. */
@@ -125,215 +140,90 @@
   color: var(--lab-label-danger);
 }
 
-/* ── interactive states (hover / active / focus) ─────────────────────────── */
-/* Состояние — НЕ новый цвет и НЕ фильтр: роль ПОКОЯ (статик-роль первой
-   строкой в базовых правилах выше), сдвинутая на долю --lab-state-* к тинту
-   рецепта D (#109, docs/vocabulary.md «Стейт-оверлеи»). Класс A — несущие
-   лейбл заливки (kind=fill): тинт ЧЁРНЫЙ в обеих темах; класс B — тинт-
-   поверхности/текст/бордеры: чернила темы (--lab-label-primary). Ручки — в
-   @labpics/ui-tokens; CI-гейты: state-overlay-{contrast,muddiness}. */
-@supports (color: color-mix(in oklab, red, blue)) {
-  [data-lab-button][data-type="accent"][data-kind="fill"]:hover:not(:disabled) {
-    background-color: color-mix(in oklab, var(--lab-fill-accent), black var(--lab-state-hover, 8%));
-  }
-  [data-lab-button][data-type="accent"][data-kind="fill"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-accent),
-      black var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="accent"][data-kind="tinted"]:hover:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-accent-tinted),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="accent"][data-kind="tinted"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-accent-tinted),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="accent"][data-kind="border"]:hover:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-accent),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-    border-color: color-mix(
-      in oklab,
-      var(--lab-border-accent),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="accent"][data-kind="border"]:active:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-accent),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-    border-color: color-mix(
-      in oklab,
-      var(--lab-border-accent),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="accent"][data-kind="ghost"]:hover:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-accent),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="accent"][data-kind="ghost"]:active:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-accent),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="fill"]:hover:not(:disabled) {
-    background-color: color-mix(in oklab, var(--lab-fill-neutral), black var(--lab-state-hover, 8%));
-  }
-  [data-lab-button][data-type="neutral"][data-kind="fill"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-neutral),
-      black var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="tinted"]:hover:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-primary),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="tinted"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-primary),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="border"]:hover:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-primary),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-    border-color: color-mix(
-      in oklab,
-      var(--lab-border-base),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="border"]:active:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-primary),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-    border-color: color-mix(
-      in oklab,
-      var(--lab-border-base),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="ghost"]:hover:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-primary),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="neutral"][data-kind="ghost"]:active:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-primary),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="fill"]:hover:not(:disabled) {
-    background-color: color-mix(in oklab, var(--lab-fill-danger), black var(--lab-state-hover, 8%));
-  }
-  [data-lab-button][data-type="danger"][data-kind="fill"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-danger),
-      black var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="tinted"]:hover:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-danger-tinted),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="tinted"]:active:not(:disabled) {
-    background-color: color-mix(
-      in oklab,
-      var(--lab-fill-danger-tinted),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="border"]:hover:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-danger),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-    border-color: color-mix(
-      in oklab,
-      var(--lab-border-danger),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="border"]:active:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-danger),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-    border-color: color-mix(
-      in oklab,
-      var(--lab-border-danger),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="ghost"]:hover:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-danger),
-      var(--lab-label-primary) var(--lab-state-hover, 8%)
-    );
-  }
-  [data-lab-button][data-type="danger"][data-kind="ghost"]:active:not(:disabled) {
-    color: color-mix(
-      in oklab,
-      var(--lab-label-danger),
-      var(--lab-label-primary) var(--lab-state-pressed, 14%)
-    );
-  }
+[data-lab-button][data-kind="fill"] {
+  --_lab-btn-highlight: var(--lab-state-button-highlight);
+  --_lab-btn-light: var(--lab-label-static-light-primary);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--_lab-btn-light) var(--_lab-btn-highlight), transparent),
+    transparent
+  );
+  box-shadow: inset var(--lab-space-button-inner-x) var(--lab-space-button-inner-y)
+    var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
 }
-/* Fallback без мёртвого hover (движки до color-mix): старая форма —
-   filter: brightness(k), k = (1−p)^3 — ΔL-эквивалент микса к чёрному
-   (brightness множит линейный sRGB на k, oklab-L — на k^(1/3); у чёрного
-   L=0 ⇒ k^(1/3) = 1−p; для класса A точно при любой базе, для класса B —
-   ближайшая одноконстантная аппроксимация, в тёмной теме направление
-   расходится с миксом — задокументировано). Вёрстка не смещается: filter
-   не участвует в лейауте. Disabled гасится ниже каскадом (filter: none). */
-@supports not (color: color-mix(in oklab, red, blue)) {
-  [data-lab-button]:hover {
-    filter: brightness(0.7787);
-  }
-  [data-lab-button]:active {
-    filter: brightness(0.6361);
-  }
+[data-lab-button][data-kind="fill"]:hover:not(:disabled) {
+  --_lab-btn-highlight: var(--lab-state-button-hover-highlight);
+}
+[data-lab-button][data-kind="fill"]:active:not(:disabled) {
+  --_lab-btn-light: var(--lab-label-static-dark-primary);
+  --_lab-btn-highlight: var(--lab-state-button-pressed-shade);
+}
+.lab-button-text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lab-space-button-label-gap);
+  min-height: var(--_lab-btn-icon);
+  padding-inline: var(--lab-space-button-label-x);
+}
+[data-lab-button][data-icon="true"] .lab-button-text {
+  display: none;
+}
+.lab-button-description {
+  color: color-mix(in srgb, currentColor var(--lab-state-button-description-opacity), transparent);
+  font-weight: var(--_lab-btn-description-weight);
+  letter-spacing: var(--_lab-btn-description-tracking);
+}
+[data-lab-button][data-type="accent"][data-kind="border"] .lab-button-description,
+[data-lab-button][data-type="accent"][data-kind="ghost"] .lab-button-description {
+  color: color-mix(in srgb, currentColor var(--_lab-btn-description-accent-plain), transparent);
+}
+.lab-button-icon {
+  display: inline-flex;
+  width: var(--_lab-btn-icon);
+  height: var(--_lab-btn-icon);
+  flex: none;
+}
+.lab-button-icon > * {
+  width: 100%;
+  height: 100%;
+}
+
+[data-lab-button][data-type="accent"] {
+  --_hover-fill: var(--lab-fill-brand-tertiary);
+  --_pressed-fill: var(--lab-fill-brand-primary);
+  --_rest-border: var(--lab-border-brand-soft);
+  --_pressed-border: var(--lab-border-brand-base);
+}
+[data-lab-button][data-type="neutral"] {
+  --_hover-fill: var(--lab-fill-quaternary);
+  --_pressed-fill: var(--lab-fill-tertiary);
+  --_rest-border: var(--lab-border-soft);
+  --_pressed-border: var(--lab-border-base);
+}
+[data-lab-button][data-type="danger"] {
+  --_hover-fill: var(--lab-fill-danger-tertiary);
+  --_pressed-fill: var(--lab-fill-danger-primary);
+  --_rest-border: var(--lab-border-danger-soft);
+  --_pressed-border: var(--lab-border-danger-base);
+}
+[data-lab-button][data-type][data-kind="border"] {
+  border-color: var(--_rest-border);
+}
+[data-lab-button][data-kind="tinted"]:hover:not(:disabled),
+[data-lab-button][data-kind="border"]:hover:not(:disabled),
+[data-lab-button][data-kind="ghost"]:hover:not(:disabled) {
+  background-color: var(--_hover-fill);
+}
+[data-lab-button][data-kind="tinted"]:active:not(:disabled) {
+  background-color: var(--_pressed-fill);
+}
+[data-lab-button][data-kind="border"]:active:not(:disabled),
+[data-lab-button][data-kind="ghost"]:active:not(:disabled) {
+  background-color: transparent;
+}
+[data-lab-button][data-kind="border"]:active:not(:disabled) {
+  border-color: var(--_pressed-border);
 }
 [data-lab-button]:focus-visible {
   outline: var(--lab-focus-ring-width) solid var(--lab-border-focus);
@@ -341,10 +231,32 @@
 }
 
 /* ── disabled ────────────────────────────────────────────────────────────── */
-[data-lab-button]:disabled {
+[data-lab-button][data-type][data-kind]:disabled {
   cursor: not-allowed;
-  opacity: 0.45;
+  background-color: var(--lab-fill-quaternary);
+  background-image: none;
+  box-shadow: none;
+  color: var(--lab-label-quaternary);
+  opacity: 1;
   filter: none;
+}
+
+[data-lab-button][data-type][data-kind="border"]:disabled,
+[data-lab-button][data-type][data-kind="ghost"]:disabled {
+  background-color: transparent;
+}
+[data-lab-button][data-type][data-kind="border"]:disabled {
+  border-color: var(--lab-border-soft);
+}
+[data-lab-button][data-type="neutral"]:not([data-kind="fill"]) .lab-button-description {
+  color: var(--lab-label-secondary);
+}
+[data-lab-button][data-type][data-kind]:disabled .lab-button-description {
+  color: inherit;
+}
+[data-lab-button][data-kind="fill"]:active:not(:disabled) {
+  box-shadow: inset var(--lab-space-button-inner-x) calc(-1 * var(--lab-space-button-inner-y))
+    var(--lab-space-button-inner-blur) var(--lab-fx-control-inner);
 }
 
 /* ── loading: spinner replaces the label without collapsing layout ───────── */
@@ -354,9 +266,16 @@
 [data-lab-button] .lab-button-label {
   display: inline-flex;
   align-items: center;
-  gap: var(--_lab-btn-gap);
+  gap: 0;
 }
-[data-lab-button][data-loading="true"] .lab-button-label {
+.lab-button-main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-width: var(--_lab-btn-icon);
+}
+[data-lab-button][data-loading="true"] .lab-button-main {
   /* color: transparent, NOT visibility:hidden and NOT opacity: 0 — both of
      those strip the label from the accessibility tree in at least one engine
      (visibility:hidden everywhere; WebKit ALSO drops opacity:0 from its a11y
@@ -367,18 +286,30 @@
      accessible name while the spinner is visually shown. */
   color: transparent;
 }
+[data-lab-button][data-loading="true"] .lab-button-icon {
+  visibility: hidden;
+}
 [data-lab-button] .lab-button-spinner {
   display: none;
   position: absolute;
-  width: 1em;
-  height: 1em;
-  border: var(--lab-stroke-thick) solid currentColor;
-  border-right-color: transparent;
-  border-radius: var(--lab-radius-full, 9999px);
-  animation: lab-button-spin 0.7s linear infinite;
+  width: var(--_lab-btn-icon);
+  height: var(--_lab-btn-icon);
+  color: var(--lab-label-quaternary);
+  background: currentColor;
+  mask: var(--lab-shape-loader) center / contain no-repeat;
+  animation: lab-button-spin 0.8s steps(8) infinite;
 }
 [data-lab-button][data-loading="true"] .lab-button-spinner {
   display: block;
+}
+.lab-button-icon-spinner {
+  display: none !important;
+}
+[data-lab-button][data-icon="true"][data-loading="true"] .lab-button-icon-spinner {
+  display: block !important;
+}
+[data-lab-button][data-empty-label="true"][data-loading="true"] .lab-button-icon-spinner {
+  display: block !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

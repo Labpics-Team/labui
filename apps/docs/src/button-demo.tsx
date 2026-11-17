@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Button parity demo — the React half.
  *
  * Mounts the native-React <Button> with the SAME specimens as the Lit
@@ -22,6 +22,44 @@ if (!mount) throw new Error('Missing #react-root mount node in button.html');
 
 createRoot(mount).render(
   <StrictMode>
+    {(['s', 'm', 'l'] as const).map((size) => (
+      <Button key={size} data-testid={`react-size-${size}`} size={size}>
+        Сохранить
+      </Button>
+    ))}
+    <Button
+      data-testid="react-anatomy"
+      description="Description"
+      iconSlot={
+        <svg viewBox="0 0 24 24" fill="#ed3c4a" aria-hidden="true">
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      }
+      iconEnd={
+        <svg viewBox="0 0 24 24" fill="#ed3c4a" aria-hidden="true">
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      }
+    >
+      Main
+    </Button>
+    <Button
+      data-testid="react-anatomy-loading"
+      description="Description"
+      loading
+      iconSlot={
+        <svg viewBox="0 0 24 24" fill="#ed3c4a" aria-hidden="true">
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      }
+      iconEnd={
+        <svg viewBox="0 0 24 24" fill="#ed3c4a" aria-hidden="true">
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      }
+    >
+      Main
+    </Button>
     <Button data-testid="react-accent-fill" type="accent" kind="fill">
       Save
     </Button>

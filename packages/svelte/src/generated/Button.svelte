@@ -18,11 +18,13 @@
     loading?: LabButton['loading'];
     disabled?: LabButton['disabled'];
     htmlType?: LabButton['htmlType'];
+    description?: Snippet;
+    iconEnd?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { type, kind, size, icon, loading, disabled, htmlType, children, ...rest }: Props = $props();
+  let { type, kind, size, icon, loading, disabled, htmlType, children, description, iconEnd, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -44,4 +46,6 @@
 
 <lab-button bind:this={el} {...rest}>
   {@render children?.()}
+  {#if description}<div slot="description" style="display:contents">{@render description()}</div>{/if}
+  {#if iconEnd}<div slot="icon-end" style="display:contents">{@render iconEnd()}</div>{/if}
 </lab-button>

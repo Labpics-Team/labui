@@ -1,3 +1,4 @@
+import profile from '../components.json' with { type: 'json' };
 import { cssVarName } from '../domain/alias.js';
 import type { ResolvedTokens } from '../domain/build.js';
 import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
@@ -11,6 +12,11 @@ import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
  */
 export function generateCss(tokens: ResolvedTokens): string {
   const blocks: string[] = [
+    section('Shared loading shape', [loaderMask()]),
+    section(
+      'Component metrics — shared with native from components.json',
+      tokenLines(tokens.components),
+    ),
     section('Spacing — linear rem multiplier (root font-size scales all)', [
       ...tokenLines(tokens.spacing),
       ...aliasLines(tokens.spacingAliases),
@@ -53,6 +59,17 @@ export function generateCss(tokens: ResolvedTokens): string {
   ];
 
   return `${header()}\n:root {\n${blocks.join('\n\n')}\n}\n\n${cornerShapeRule()}`;
+}
+
+function loaderMask(): string {
+  const { size, segment, count } = profile.button.loader;
+  const shapes = Array.from(
+    { length: count },
+    (_, i) =>
+      `<rect x="${segment.x}" y="${segment.y}" width="${segment.width}" height="${segment.height}" rx="${segment.radius}" opacity="${(i + 1) / count}" transform="rotate(${(i * 360) / count} ${size / 2} ${size / 2})"/>`,
+  ).join('');
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">${shapes}</svg>`;
+  return `  --lab-shape-loader: url("data:image/svg+xml,${encodeURIComponent(svg)}");`;
 }
 
 function header(): string {
