@@ -81,7 +81,7 @@ export function ensureHiddenDefs(className: string, surface?: HTMLElement): SVGD
 }
 
 /** The last surface releases the hidden host as well as its own filter. */
-export function removeFilter(filter: SVGFilterElement): void {
+export function removeFilter(filter: SVGElement): void {
   const defs = filter.parentElement;
   filter.remove();
   if (defs && !defs.firstChild) defs.parentElement?.remove();

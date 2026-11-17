@@ -86,6 +86,7 @@
 .lab-material__paint-runway > .lab-material__paint {
   position: sticky;
   inset: 0 auto auto 0;
+  grid-area: 1 / 1;
 }
 .lab-material__capture {
   backdrop-filter: blur(var(--_blur));
@@ -108,4 +109,111 @@
 }
 .lab-material[data-lab-material-theme="dark"] {
   --_material-paint-blend-mode: overlay;
+}
+
+/* The opt-in author contour clips decoration only. The host remains an ordinary
+ * content/scroll container. --lab-material-shadow carries its complete stack. */
+[data-lab-material-contour] {
+  box-shadow: none;
+  isolation: isolate;
+}
+.lab-material[data-lab-material-contour] {
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+}
+[data-lab-material-contour]:not(.lab-material)
+  > .lab-material__contour
+  > .lab-material__contour-face,
+[data-lab-material-contour]:not(.lab-material)
+  > .lab-material__contour
+  > .lab-material__contour-rim {
+  display: none;
+}
+.lab-material__contour-face {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  clip-path: var(--lab-contour-clip);
+  background: var(--_noise), var(--_surface-paint);
+  background-size: var(--_acrylic-noise-size, auto);
+  backdrop-filter: var(--_material-filter);
+  -webkit-backdrop-filter: var(--_material-filter);
+}
+.lab-material__contour {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow-anchor: none;
+}
+.lab-material__paint-runway > .lab-material__contour {
+  position: sticky;
+  inset: 0 auto auto 0;
+  grid-area: 1 / 1;
+}
+.lab-material[data-lab-material-contour] > .lab-material__paint,
+.lab-material[data-lab-material-contour] > .lab-material__paint-runway > .lab-material__paint {
+  border-radius: 0;
+  clip-path: var(--lab-contour-clip);
+}
+.lab-material[data-lab-material-contour]::before {
+  display: none;
+}
+.lab-material__contour-rim {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--_rim);
+  border-radius: 0;
+  padding: 0;
+  clip-path: var(--lab-contour-clip);
+  mask: var(--_material-contour-rim);
+  -webkit-mask: var(--_material-contour-rim);
+  mask-composite: add;
+  -webkit-mask-composite: source-over;
+}
+.lab-material[data-lab-material-paint-renderer="capture-svg"]
+  > .lab-material__contour
+  > .lab-material__contour-face,
+.lab-material[data-lab-material-paint-renderer="capture-blend"]
+  > .lab-material__contour
+  > .lab-material__contour-face,
+.lab-material[data-lab-material-paint-renderer="capture-svg"]
+  > .lab-material__paint-runway
+  > .lab-material__contour
+  > .lab-material__contour-face,
+.lab-material[data-lab-material-paint-renderer="capture-blend"]
+  > .lab-material__paint-runway
+  > .lab-material__contour
+  > .lab-material__contour-face {
+  display: none;
+}
+.lab-material__contour-shadow {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: -3;
+}
+.lab-material__contour-shadow--inset {
+  z-index: -1;
+}
+.lab-material__contour-stroke {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow-anchor: none;
+}
+.lab-material__contour-stroke > svg {
+  display: block;
+}
+.lab-material__paint-runway > .lab-material__contour-stroke {
+  position: sticky;
+  inset: 0 auto auto 0;
+  grid-area: 1 / 1;
 }

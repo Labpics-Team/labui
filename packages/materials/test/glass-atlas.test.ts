@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { materialContour } from '../src/engine/contour';
 import { glassAtlasPlan } from '../src/engine/glass-atlas';
 import { lensReach } from '../src/engine/glass-optics';
 import { __computeDisplacementField } from '../src/engine/liquid-glass';
@@ -10,6 +11,8 @@ describe('retained glass rim', () => {
       [32, 32, 32, 32, 0, 0, 0, 0],
       [45, 32, 12, 38, 24, 16, 4, 29],
       32,
+      materialContour(375, 270, 32, 0.6),
+      materialContour(375, 270, [0, 0, 0, 0, 32, 32, 32, 32], 0.6),
     ];
     for (const corner of shapes)
       for (const dpr of [1, 2]) {

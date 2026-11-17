@@ -1,3 +1,4 @@
+import { attach as attachContour } from './contour-surface';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
 import {
   type EngineBinding,
@@ -57,6 +58,13 @@ function themeOf(el: Element): string {
 /** Separate bindings share the lifecycle: Glass geometry, author paints, veil.
  * Paints and lens can hold one surface without writing each other's controls. */
 const BINDINGS: readonly EngineBinding[] = [
+  {
+    gate: () => true,
+    selector: SURFACE,
+    wants: () => true,
+    refreshHeld: true,
+    attach: attachContour,
+  },
   // Glass geometry/knobs follow local tier and theme configuration changes.
   {
     gate: supportsRefraction,
@@ -187,6 +195,8 @@ export function mountMaterialRuntime(
     styleProbe.removeProperty('--_material-paint-filter');
     styleProbe.removeProperty('--_surface-paint');
     styleProbe.removeProperty('--_noise');
+    styleProbe.removeProperty('--lab-contour-clip');
+    styleProbe.removeProperty('--_material-contour-rim');
     for (const name of motionProperties) styleProbe.removeProperty(name);
     return styleProbe.cssText;
   };

@@ -1,6 +1,8 @@
+import type { MaterialContour } from './contour';
+
 /** CSS used corner radii, clockwise from top-left; each pair is x/y. */
 export type CornerRadii = readonly [number, number, number, number, number, number, number, number];
-export type RoundedShape = number | CornerRadii;
+export type RoundedShape = number | CornerRadii | MaterialContour;
 
 function length(value: string, dimension: number): number {
   // Computed CSS resolves absolute units to px, but comparison functions can
@@ -224,4 +226,8 @@ export function roundedShapeInside(
 }
 
 export const shapeKey = (shape: RoundedShape): string =>
-  typeof shape === 'number' ? String(shape) : shape.join(',');
+  typeof shape === 'number'
+    ? String(shape)
+    : 'radii' in shape
+      ? `${shape.radii.join(',')}s${shape.smoothing}`
+      : shape.join(',');

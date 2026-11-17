@@ -22,12 +22,51 @@ function scrollAxes(style: CSSStyleDeclaration): { x: number; y: number } {
  * browser follows both scroll axes; there is deliberately no scroll listener.
  * Only hosts configured to scroll observe content/viewport geometry.
  */
-export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): EngineHandle {
-  let runway: HTMLElement | undefined;
+interface CapturePlacement extends EngineHandle {
+  readonly captures: Set<HTMLElement>;
+  add(capture: HTMLElement, plane: number): void;
+  drop(capture: HTMLElement): void;
+}
+const placements = new WeakMap<HTMLElement, CapturePlacement>();
+
+/** One scroll viewport per surface, shared by paint and shape decoration. */
+export function placePaintCapture(
+  surface: HTMLElement,
+  capture: HTMLElement,
+  plane = -2,
+): EngineHandle {
+  let placement = placements.get(surface);
+  if (!placement) {
+    placement = createPlacement(surface);
+    placements.set(surface, placement);
+  }
+  const shared = placement;
+  shared.add(capture, plane);
+  let disposed = false;
+  return {
+    refresh: () => {
+      if (!disposed) shared.refresh?.();
+    },
+    destroy() {
+      if (disposed) return;
+      disposed = true;
+      shared.drop(capture);
+      if (!shared.captures.size) {
+        shared.destroy();
+        placements.delete(surface);
+      } else shared.refresh?.();
+    },
+  };
+}
+
+function createPlacement(surface: HTMLElement): CapturePlacement {
+  const captures = new Set<HTMLElement>();
+  const planes = new Map<HTMLElement, number>();
+  const runways = new Map<number, HTMLElement>();
   let observing = false;
   let disposed = false;
   let frame = 0;
-  const owned = new WeakSet<Node>([capture]);
+  const owned = new WeakSet<Node>();
   const observed = new Set<Element>();
   const isOwned = (node: Node): boolean => {
     for (let at: Node | null = node; at && at !== surface; at = at.parentNode)
@@ -38,11 +77,12 @@ export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): E
     if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value);
   };
   const restore = (): void => {
-    if (!runway) return;
-    surface.prepend(capture);
-    runway.remove();
-    runway = undefined;
-    for (const name of ['width', 'height', 'inset', 'margin']) capture.style.removeProperty(name);
+    if (!runways.size) return;
+    surface.prepend(...captures);
+    for (const runway of runways.values()) runway.remove();
+    runways.clear();
+    for (const capture of captures)
+      for (const name of ['width', 'height', 'inset', 'margin']) capture.style.removeProperty(name);
   };
   const measure = (): void => {
     frame = 0;
@@ -50,7 +90,7 @@ export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): E
     // Exclude the whole decorative subtree. A zero-size runway still lets its
     // sticky child affect Gecko's trailing padding and old extent after shrink.
     // The excluded state is synchronous and never painted.
-    if (runway) set(runway, 'display', 'none');
+    for (const runway of runways.values()) set(runway, 'display', 'none');
     const width = surface.clientWidth;
     const height = surface.clientHeight;
     const extentWidth = surface.scrollWidth;
@@ -59,43 +99,52 @@ export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): E
       restore();
       return;
     }
-    if (!runway) {
-      runway = surface.ownerDocument.createElement('div');
-      runway.className = 'lab-material__paint-runway';
-      runway.setAttribute('aria-hidden', 'true');
-      owned.add(runway);
-      surface.prepend(runway);
-      runway.append(capture);
-    }
+    for (const plane of new Set(planes.values()))
+      if (!runways.has(plane)) {
+        const runway = surface.ownerDocument.createElement('div');
+        runway.className = 'lab-material__paint-runway';
+        runway.setAttribute('aria-hidden', 'true');
+        runway.style.zIndex = String(plane);
+        owned.add(runway);
+        runways.set(plane, runway);
+        surface.prepend(runway);
+        runway.append(...Array.from(captures).filter((c) => planes.get(c) === plane));
+      }
     const style = getComputedStyle(surface);
     const top = Number.parseFloat(style.paddingTop);
     const right = Number.parseFloat(style.paddingRight);
     const bottom = Number.parseFloat(style.paddingBottom);
     const left = Number.parseFloat(style.paddingLeft);
     const axes = scrollAxes(style);
-    set(
-      runway,
-      'inset',
-      `${axes.y > 0 ? '0' : 'auto'} ${axes.x < 0 ? '0' : 'auto'} ${axes.y < 0 ? '0' : 'auto'} ${axes.x > 0 ? '0' : 'auto'}`,
-    );
-    set(runway, 'justify-items', axes.x > 0 ? 'start' : 'end');
-    set(runway, 'align-items', axes.y > 0 ? 'start' : 'end');
-    set(runway, 'width', `${extentWidth}px`);
-    set(runway, 'height', `${extentHeight}px`);
-    set(capture, 'width', `${width}px`);
-    set(capture, 'height', `${height}px`);
-    // Sticky insets are measured from the scrollport's padding edge, whereas
-    // the decoration covers its complete padding box, just like a background.
-    set(capture, 'inset', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
-    set(capture, 'margin', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
-    runway.style.removeProperty('display');
+    for (const runway of runways.values()) {
+      set(
+        runway,
+        'inset',
+        `${axes.y > 0 ? '0' : 'auto'} ${axes.x < 0 ? '0' : 'auto'} ${axes.y < 0 ? '0' : 'auto'} ${axes.x > 0 ? '0' : 'auto'}`,
+      );
+      set(runway, 'justify-items', axes.x > 0 ? 'start' : 'end');
+      set(runway, 'align-items', axes.y > 0 ? 'start' : 'end');
+      set(runway, 'width', `${extentWidth}px`);
+      set(runway, 'height', `${extentHeight}px`);
+    }
+    for (const capture of captures) {
+      set(capture, 'width', `${width}px`);
+      set(capture, 'height', `${height}px`);
+      // Sticky insets are measured from the scrollport's padding edge, whereas
+      // the decoration covers its complete padding box, just like a background.
+      set(capture, 'inset', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
+      set(capture, 'margin', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
+    }
+    for (const runway of runways.values()) runway.style.removeProperty('display');
     // Layout containment keeps sticky overflow out of the parent calculation.
     // Browsers differ in whether an absolute child adds trailing grid/flex
     // padding. Measure that contribution once instead of encoding engine rules.
     const extraWidth = Math.max(0, surface.scrollWidth - extentWidth);
     const extraHeight = Math.max(0, surface.scrollHeight - extentHeight);
-    if (extraWidth) set(runway, 'width', `${extentWidth - extraWidth}px`);
-    if (extraHeight) set(runway, 'height', `${extentHeight - extraHeight}px`);
+    for (const runway of runways.values()) {
+      if (extraWidth) set(runway, 'width', `${extentWidth - extraWidth}px`);
+      if (extraHeight) set(runway, 'height', `${extentHeight - extraHeight}px`);
+    }
   };
   const schedule = (): void => {
     if (!disposed && observing && !frame) frame = requestAnimationFrame(measure);
@@ -164,16 +213,35 @@ export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): E
     }
     schedule();
   };
-  surface.prepend(capture);
-  refresh();
   return {
+    captures,
+    add(capture, plane) {
+      captures.add(capture);
+      owned.add(capture);
+      planes.set(capture, plane);
+      (runways.get(plane) ?? surface).prepend(capture);
+      refresh();
+    },
+    drop(capture) {
+      const plane = planes.get(capture);
+      captures.delete(capture);
+      planes.delete(capture);
+      capture.remove();
+      if (plane !== undefined && !Array.from(planes.values()).includes(plane)) {
+        runways.get(plane)?.remove();
+        runways.delete(plane);
+      }
+    },
     refresh,
     destroy(): void {
       if (disposed) return;
       disposed = true;
       stop();
-      (runway ?? capture).remove();
-      runway = undefined;
+      for (const capture of captures) capture.remove();
+      captures.clear();
+      planes.clear();
+      for (const runway of runways.values()) runway.remove();
+      runways.clear();
     },
   };
 }
