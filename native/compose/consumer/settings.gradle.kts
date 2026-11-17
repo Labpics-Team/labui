@@ -5,6 +5,7 @@ dependencyResolutionManagement {
         for (property in listOf("colorsRepository", "colorsDesktopRepository", "colorsAndroidRepository")) {
             providers.gradleProperty(property).orNull?.let { repository -> maven { url = uri(repository) } }
         }
+        providers.gradleProperty("iconsRepository").orNull?.let { repository -> maven { url = uri(repository) } }
         maven { url = uri(providers.gradleProperty("uiRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/labui/maven-compose-v0.1.0/").get()) }
         maven { url = uri(providers.gradleProperty("motionRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/lab-motion/maven-compose-v0.1.0/").get()) }
         google(); mavenCentral()
@@ -15,3 +16,4 @@ include(":androidApp")
 // Optional development checkout. Release verification leaves this unset and resolves Maven bytes.
 providers.gradleProperty("uiSource").orNull?.let { includeBuild(it) { name = "lab-ui" } }
 providers.gradleProperty("motionSource").orNull?.let { includeBuild(it) { name = "lab-motion" } }
+providers.gradleProperty("iconsSource").orNull?.let { includeBuild(it) { name = "lab-icons" } }

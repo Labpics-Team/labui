@@ -7,6 +7,11 @@ final class SettingsExperienceTests: XCTestCase {
         let open = app.buttons["Параметры проекта"]
         XCTAssertTrue(open.waitForExistence(timeout: 15))
         open.tap()
+        print("NATIVE_SHEET_ACCESSIBILITY: \(app.debugDescription)")
+        let sheetImage = XCTAttachment(screenshot: app.screenshot())
+        sheetImage.name = "Settings sheet"
+        sheetImage.lifetime = .keepAlways
+        add(sheetImage)
         let name = app.textFields["Название проекта"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()

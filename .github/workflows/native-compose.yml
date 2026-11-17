@@ -9,6 +9,7 @@ on:
       - packages/colors/**
       - packages/materials/**
       - .github/workflows/native-compose.yml
+      - .github/actions/prepare-native-icons/**
 
 permissions:
   contents: read
@@ -18,8 +19,11 @@ permissions:
 env:
   COLORS_SOURCE: 0496d209eaf71e784e96e284569ad4ddc73cedd8
   COLORS_RUN: '44029026139'
+  ICONS_SOURCE: 2282d3f6f4f0628878b273c346bf77b3e7393f95
   ORG_GRADLE_PROJECT_uiSource: ${{ github.workspace }}/native/compose
   ORG_GRADLE_PROJECT_motionSource: ${{ github.workspace }}/.dependencies/motion/native/compose
+  ORG_GRADLE_PROJECT_iconsSource: ${{ github.workspace }}/.dependencies/icons/native/compose
+  ORG_GRADLE_PROJECT_iconsVersion: '0.3.0'
 
 concurrency:
   group: native-compose-${{ github.ref }}
@@ -47,6 +51,9 @@ jobs:
           ref: 0dac834af295cf4a949503eca39f6908b437c494
           path: .dependencies/motion
           persist-credentials: false
+      - uses: ./.github/actions/prepare-native-icons
+        with:
+          source: ${{ env.ICONS_SOURCE }}
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -65,20 +72,18 @@ jobs:
       - name: Compile and verify component behavior
         shell: bash
         env:
-          SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || '' }}
+          SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || runner.os == 'Windows' && 'OPENGL' || 'METAL' }}
         run: |
           command=(bash native/compose/gradlew -p native/compose :desktopTest :ui-colors:desktopTest
             "-PmotionSource=$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain)
           if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
       - name: Verify real desktop window through Java Accessibility
         shell: bash
-        env:
-          SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || '' }}
         run: |
           command=(bash native/compose/gradlew -p native/compose/consumer run --args=--verify
             "-PuiSource=$GITHUB_WORKSPACE/native/compose"
             "-PmotionSource=$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain)
-          if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+          if [[ "$RUNNER_OS" == Linux ]]; then SKIKO_RENDER_API=SOFTWARE xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
       - name: Preserve interaction evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -104,6 +109,9 @@ jobs:
           ref: 0dac834af295cf4a949503eca39f6908b437c494
           path: .dependencies/motion
           persist-credentials: false
+      - uses: ./.github/actions/prepare-native-icons
+        with:
+          source: ${{ env.ICONS_SOURCE }}
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -158,6 +166,9 @@ jobs:
           ref: 0dac834af295cf4a949503eca39f6908b437c494
           path: .dependencies/motion
           persist-credentials: false
+      - uses: ./.github/actions/prepare-native-icons
+        with:
+          source: ${{ env.ICONS_SOURCE }}
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -187,6 +198,13 @@ jobs:
             -scheme LabUIExample -destination "id=$simulator" \
             -derivedDataPath native/compose/consumer/build/xcode \
             -resultBundlePath native/compose/consumer/build/native-ui.xcresult CODE_SIGNING_ALLOWED=NO
+      - name: Export Apple UI attachments
+        if: always()
+        run: |
+          if [[ -d native/compose/consumer/build/native-ui.xcresult ]]; then
+            xcrun xcresulttool export attachments --path native/compose/consumer/build/native-ui.xcresult \
+              --output-path native/compose/consumer/build/ui-attachments
+          fi
       - name: Preserve Apple application evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -194,6 +212,7 @@ jobs:
           name: native-apple-example
           path: |
             native/compose/consumer/build/native-ui.xcresult
+            native/compose/consumer/build/ui-attachments
             native/compose/consumer/build/bin/*/debugFramework/*/Headers
             native/compose/consumer/build/xcode/Build/Products/Debug-iphonesimulator/*.app
           retention-days: 7

@@ -35,11 +35,15 @@ internal suspend fun verifyDesktopWindow(window: Window) = withContext(Dispatche
         }
     }
     suspend fun find(name: String, role: AccessibleRole? = null): AccessibleContext {
+        val start = System.nanoTime()
         repeat(250) {
             val match = onEventThread {
                 tree().firstOrNull { it.accessibleName == name && (role == null || it.accessibleRole == role) }
             }
-            if (match != null) return match
+            if (match != null) {
+                synchronized(events) { events.add("Found $name after ${(System.nanoTime() - start) / 1_000_000} ms") }
+                return match
+            }
             delay(20)
         }
         error("Accessible node missing: $name; available: ${tree().map { it.accessibleName }}")
@@ -47,9 +51,21 @@ internal suspend fun verifyDesktopWindow(window: Window) = withContext(Dispatche
     fun click(node: AccessibleContext) = onEventThread {
         check(node.accessibleAction?.doAccessibleAction(0) == true) { "No accepted accessible action: ${node.accessibleName}" }
     }
-    fun edit(node: AccessibleContext, value: String) = onEventThread {
-        val editable = node.accessibleText as? AccessibleEditableText ?: error("No editable text: ${node.accessibleName}")
-        editable.setTextContents(value)
+    suspend fun edit(node: AccessibleContext, value: String) {
+        onEventThread {
+            val editable = node.accessibleText as? AccessibleEditableText ?: error("No editable text: ${node.accessibleName}")
+            editable.setTextContents(value)
+        }
+        repeat(250) {
+            val accepted = onEventThread {
+                val editable = node.accessibleText as? AccessibleEditableText
+                editable != null && editable.charCount == value.length &&
+                    (value.isEmpty() || editable.getTextRange(0, value.length) == value)
+            }
+            if (accepted) return
+            delay(20)
+        }
+        error("Text update did not reach: ${onEventThread { node.accessibleName }}")
     }
     suspend fun awaitFocus(node: AccessibleContext) {
         repeat(250) {

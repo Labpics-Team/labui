@@ -34,6 +34,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import pics.lab.ui.*
+import pics.lab.icons.Icon
+import pics.lab.icons.symbols.settings
+import pics.lab.icons.symbols.checkmark
 
 @Composable
 fun SettingsScreen(host: ColorProgramHost) {
@@ -87,7 +90,8 @@ fun SettingsScreen(host: ColorProgramHost) {
                                 LabInput(project, "Название", helper = "Так проект увидят участники команды.")
                                 LabInput(email, "Почта для уведомлений")
                                 LabSwitch(notifications, { notifications = it }, "Получать уведомления")
-                                LabButton("Параметры проекта", { open = true }, Modifier.focusRequester(trigger))
+                                LabButton("Параметры проекта", { open = true }, Modifier.focusRequester(trigger),
+                                    icon = { Icon(settings, tint = color, size = size) })
                             }
                         }
                         Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) {
@@ -122,7 +126,7 @@ fun SettingsScreen(host: ColorProgramHost) {
                                 finally { saving = false }
                             }
                         }
-                    }, loading = saving)
+                    }, loading = saving, icon = { Icon(checkmark, tint = color, size = size) })
                 })
             snackbar?.let { message ->
                 LabSnackbar(message, Modifier.align(Alignment.BottomCenter).padding(24.dp).widthIn(max = 560.dp)) {

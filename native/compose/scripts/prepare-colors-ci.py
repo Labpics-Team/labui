@@ -26,10 +26,10 @@ else:
             if not (destination / entry.filename).resolve().is_relative_to(destination):
                 raise ValueError("Colors archive path escapes its package")
         package.extractall(destination)
-    repositories = list(destination.glob("*/repository"))
-    if len(repositories) != 1:
-        raise ValueError("Expected one Colors Maven repository")
-    values["ORG_GRADLE_PROJECT_colorsRepository"] = repositories[0].as_uri()
+    repository = destination / "repository"
+    if not repository.is_dir():
+        raise ValueError("Colors archive has no root Maven repository")
+    values["ORG_GRADLE_PROJECT_colorsRepository"] = repository.as_uri()
     values["ORG_GRADLE_PROJECT_colorsVersion"] = manifest["version"]
 with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as environment:
     for key, value in values.items():
