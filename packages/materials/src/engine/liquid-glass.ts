@@ -1,68 +1,6 @@
-/*
- * @labpics/ui-materials/engine — the refraction engine (Liquid Glass).
- *
- * Landed from `prototypes/liquid-glass/liquid-glass.js` per ADR-0003
- * (glass-effects ch-02). PACKAGE-BOUNDARY CHANGES vs the prototype — everything
- * else is a faithful port (same algorithm, same caches, same byte-identical
- * filter guarantees):
- *
- *   · Tokens renamed at the boundary (ADR-0003 §2): the engine reads PRIVATE
- *     `--_lg-refraction / --_lg-depth / --_lg-dispersion` (unitless numbers).
- *     `--lg-radius`/`--lg-saturate` did NOT land as new tokens — the inline
- *     backdrop-filter references the EXISTING mechanics `var(--_blur)` /
- *     `var(--_saturate)` directly, plus `var(--_lg-brightness)` /
- *     `var(--_lg-contrast)`; mode/tier/theme re-binds apply live with no
- *     re-render. `--lg-tint*` never reached JS (colour is the `--lab-*`
- *     contract's); corner still comes from computed `border-radius`.
- *   · The host class is `lab-material--lensed` (not `lab-liquid-glass`): a
- *     package-private state class that re-binds `--_blur` to the
- *     lens-calibrated radius in material.css while the engine holds the
- *     surface.
- *   · A non-refracting / disabled / reduced-transparency surface gets NO
- *     inline style at all — material.css owns the fallback stack (the
- *     prototype's own CSS class used to declare the tail; here the package
- *     stylesheet is the single source of the frost fallback).
- *   · NOT exported from the package index (ADR-0003 §3): the only consumer is
- *     the declarative runtime in `./runtime.ts`.
- *
- * ── The algorithm (unchanged) ───────────────────────────────────────────────
- * `backdrop-filter` blurs a backdrop but cannot bend it. The bend — what makes
- * Liquid Glass a LENS rather than frosted glass — comes from an SVG
- * <feDisplacementMap> whose map encodes, per pixel, WHERE to resample the
- * backdrop: Red = horizontal sample shift, Green = vertical (0.5 = no shift).
- *
- * The map is a continuous magnification: every pixel samples its own position
- * pulled toward the centre by a smooth factor that is strongest at the rounded
- * rim and eases to zero in the flat interior. So the whole surface bends the
- * backdrop like a thick convex lens (strong at the edge, clear in the middle) —
- * NOT a thin band at the border. This is the algorithm proven by
- * github.com/shuding/liquid-glass (the position-warp lens) with the
- * edge-confined chromatic aberration of github.com/rdev/liquid-glass-react.
- *
- * The rim highlight is pure CSS — like both references, we do NOT use
- * feSpecularLighting (a single SVG point-light only lights one corner). The
- * filter is referenced from CSS as `backdrop-filter: url(#id)`, so it must live
- * in the DOM and track the element's size.
- *
- * PERFORMANCE MODEL (what is, and is NOT, optimisable without touching the look):
- *   · Per DRAG frame there is ZERO JS — the element moves on left/top and the
- *     filter region travels with it; the cost is pure GPU compositing of the
- *     (quality-locked) filter, which we deliberately never cheapen.
- *   · The map is geometry-only (size/corner/depth/dpr). It is therefore built
- *     ONCE per geometry, shared across every instance of that geometry through a
- *     refcounted module-level cache (the panel and a same-sized pane build it
- *     once), and never rebuilt on drag / theme / strength / dispersion changes.
- *     Resize storms collapse to a single trailing-edge build. Scratch buffers
- *     are reused across builds to keep GC pressure flat. The PNG encode — the
- *     heaviest chunk of a build — runs OFF the main thread (canvas.toBlob);
- *     only the ¼-symmetric field loop stays synchronous.
- *   · A same-structure re-stamp (strength/dispersion tuning) updates only the
- *     feDisplacementMap scale attributes — no markup re-parse, no feImage href
- *     re-attach, no node churn. The emitted filter is byte-identical.
- *
- * Zero dependencies, browser-native ES module. Pairs with material.css.
- */
-
+/** Shape-aware refraction. Frost, paints and directional light belong to the
+ * shared author profile; this engine owns only the retained displacement map. */
+import { materialProfile } from '../profile';
 // The DOM-free math heart (SDF, falloff, lens constant) lives in a sibling pure
 // module so a bare test runner can import and assert it directly. The browser
 // engine simply re-imports those exact symbols — the runtime is byte-identical;
@@ -159,28 +97,12 @@ let uid = 0;
  *  (тот же паттерн, разные className). Раньше — локальная копия `ensureDefs`. */
 const ensureDefs = (el: HTMLElement): SVGDefsElement => ensureHiddenDefs('lab-lg-defs', el);
 
-/** The package-private state class: while the engine holds a surface,
- *  material.css re-binds `--_blur` to the lens-calibrated radius under it. */
 export const LENSED_CLASS = 'lab-material--lensed';
-
-/** The frost tail rides the package mechanics tokens as LIVE var() references —
- *  a mode/tier/theme re-bind changes the rendered stack with no JS re-render.
- *  Fallbacks mirror the material.css engine-knob defaults. */
-const FROST_TAIL =
-  'blur(var(--_blur, 4px)) saturate(var(--_saturate, 130%)) brightness(var(--_lg-brightness, 1.05)) contrast(var(--_lg-contrast, 1.2))';
-
-/** Single source of truth for numeric defaults. CSS custom properties override
- *  these per-instance; nothing else hard-codes a fallback. */
-const DEFAULTS = {
-  refraction: 1, // 0..1+ — Figma: refraction. Linear lens strength.
-  depth: 40, // px    — Figma: depth. Thickness of the magnified rim band.
-  dispersion: 0.4, // 0..1 — Figma: dispersion. Rim chromatic fringe.
-  corner: 28, // px   — fallback when border-radius can't be read.
-};
+const DEFAULTS = { ...materialProfile.tiers.base.glass, corner: 0 };
 
 /** Whether this engine REFRACTS the backdrop. The requirement is the browser's
  *  ability to render a url()-referenced SVG filter on a backdrop — the shared
- *  capability probe (./mount), the SAME one acrylic's luminosity chain needs.
+ *  capability probe (./mount), the SAME one the author paint transfer needs.
  *  The name stays glass-specific (its public semantics = "does the lens bend the
  *  backdrop"); the probe underneath is neutral. Everyone else keeps the honest
  *  blur fallback. */
@@ -696,7 +618,7 @@ function applyLens(state: EngineState, map: MapEntry, p: RenderParams, scale: nu
   }
   // Region == element box in element-LOCAL px (filterUnits=userSpaceOnUse) →
   // travels with the element on left/top; the lens stays aligned when dragged
-  // (shuding's anti-seam rule). Do NOT CSS-transform a glass element.
+  // in its own local coordinates; ordinary transforms do not rebuild it.
   filter.setAttribute('x', '0');
   filter.setAttribute('y', '0');
   filter.setAttribute('width', String(p.w));
@@ -741,8 +663,8 @@ function setBackdrop(el: HTMLElement, value: string, state: EngineState | null):
     if (state.lastBackdrop === value) return;
     state.lastBackdrop = value;
   }
-  el.style.setProperty('backdrop-filter', value);
-  el.style.setProperty('-webkit-backdrop-filter', value);
+  if (value) el.style.setProperty('--_material-lens-filter', value);
+  else el.style.removeProperty('--_material-lens-filter');
 }
 
 /** Drop this instance's hold on its cached map (if any).
@@ -779,9 +701,9 @@ function render(state: EngineState): void {
     return;
   }
   // refraction ≈ 0 → plain frost, no displacement (opt-out of the lens). The
-  // tail still adds the engine's brightness/contrast over the CSS stack.
+  // shared CSS keeps author frost and paints active.
   if (p.refraction <= 0.01) {
-    setBackdrop(el, FROST_TAIL, state);
+    setBackdrop(el, '', state);
     dropMap(state);
     return;
   }
@@ -805,11 +727,7 @@ function render(state: EngineState): void {
     // Frost FIRST, then the lens: blurring the backdrop before the displacement
     // means the lens bends already-soft content (clean refraction) instead of
     // smearing sharp high-contrast edges into streaks.
-    setBackdrop(
-      el,
-      `blur(var(--_blur, 4px)) url(#${id}) saturate(var(--_saturate, 130%)) brightness(var(--_lg-brightness, 1.05)) contrast(var(--_lg-contrast, 1.2))`,
-      state,
-    );
+    setBackdrop(el, `url(#${id})`, state);
     if (state.onPerf) {
       state.onPerf({
         reason: mapMs > 0 ? 'rebuild' : 'restamp',

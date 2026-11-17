@@ -1,40 +1,3 @@
-/*
- * @labpics/ui-materials/engine — the declarative material runtime (ADR-0003 §3).
- *
- * The ONLY public JS entry of the engine layer. The engines (`liquid-glass.ts`,
- * `acrylic.ts`, `veil.ts`) stay package-internal; consumers never call attach()
- * per element. Instead: one app-level mount, and
- *   · every `.lab-material` surface under a `data-material="glass"` scope is
- *     upgraded to the refraction engine,
- *   · every `.lab-material` under `data-material="acrylic"` is upgraded to the
- *     luminosity chain (ADR-0009), and
- *   · every `[data-veil]` surface grows its progressive-blur strip stack
- * automatically — the same zero markup-change promise the material axis makes.
- *
- * ── Один оркестратор на три движка (Clean Arch / DRY / OCP) ──────────────────
- * Каждый движок — это `EngineBinding` (gate + selector + wants + attach);
- * `mountEngine` (./mount) исполняет ЕДИНУЮ механику скана/attach/detach. Раньше
- * — три почти дословных блока здесь. Рантайм не знает про внутренности движков,
- * только про порт; новый движок = новый binding в массиве ниже, механика не
- * трогается.
- *
- *   · Non-refracting browsers (everything but Chromium): glass/acrylic gates are
- *     false — их scan вообще не создаётся, CSS-стек material.css остаётся истиной.
- *     Veil гейтится отдельно на plain backdrop-filter (его единственное железное
- *     требование); без него mount ничего не пишет.
- *   · `data-material` / class / `data-veil` re-binds, added/removed surfaces: один
- *     MutationObserver collects only changed subtrees; rAF coalesces affected
- *     surfaces. Media changes revisit registered surfaces without discovery.
- *   · Unmount (returned disposer) отцепляет все инстансы и восстанавливает
- *     чистый CSS-стек — SSR/HMR-friendly.
- */
-
-import {
-  ACRYLIC_ENGINE_MEDIA,
-  acrylicMediaBlocked,
-  attach as attachAcrylic,
-  supportsAcrylicChain,
-} from './acrylic';
 import { attach as attachGlass, supportsRefraction } from './liquid-glass';
 import {
   type EngineBinding,
@@ -45,8 +8,10 @@ import {
   isShadowRoot,
   materialMediaBlocked,
   mountEngine,
+  supportsBackdropFilterUrl,
   trailingRaf,
 } from './mount';
+import { attach as attachPaint } from './paint';
 import { attach as attachVeil, supportsBackdropBlur } from './veil';
 
 const SURFACE = '.lab-material';
@@ -91,9 +56,8 @@ function themeOf(el: Element): string {
     : 'light';
 }
 
-/** The three engine bindings — the ONLY place the runtime names concrete engines.
- *  Each пара (mode, engine) — одна строка; порядок несуществен (движки держат
- *  непересекающиеся множества: glass/acrylic по режиму, veil по атрибуту). */
+/** Separate bindings share the lifecycle: Glass geometry, author paints, veil.
+ * Paints and lens can hold one surface without writing each other's controls. */
 const BINDINGS: readonly EngineBinding[] = [
   // Glass geometry/knobs follow local tier and theme configuration changes.
   {
@@ -105,17 +69,15 @@ const BINDINGS: readonly EngineBinding[] = [
     refreshHeld: true,
     attach: attachGlass,
   },
-  // Acrylic v2 (luminosity chain). Тот же Chromium-гейт; инлайн сильнее листовых
-  // деградаций → blocked() опустошает set под запрещающими медиа, их change
-  // ре-синкает mount. refreshHeld:true — перечитать tier на удержанной.
+  // Shared author paint transfer, applied after frost and optional refraction.
   {
-    gate: supportsAcrylicChain,
+    gate: supportsBackdropFilterUrl,
     selector: SURFACE,
-    wants: (el) => inModeScope(el, 'acrylic'),
-    blocked: acrylicMediaBlocked,
-    mediaQueries: ACRYLIC_ENGINE_MEDIA,
+    wants: (el) => inModeScope(el, 'acrylic') || inModeScope(el, 'glass'),
+    blocked: materialMediaBlocked,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
-    attach: attachAcrylic,
+    attach: attachPaint,
   },
   // Veil (progressive blur) — plain backdrop-filter, любой [data-veil].
   // refreshHeld:true — перечитать декларативный конфиг (top↔left↔axis).
@@ -193,8 +155,26 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
   const styleProbe = (doc ?? document).createElement('div').style;
   const externalStyle = (css: string): string => {
     styleProbe.cssText = css;
+    // Compositor motion changes sampling coordinates, not local filter
+    // geometry or author paints. ResizeObserver still catches actual sizing.
+    for (const name of [
+      'transform',
+      'translate',
+      'rotate',
+      'scale',
+      'left',
+      'top',
+      'right',
+      'bottom',
+    ]) {
+      styleProbe.removeProperty(name);
+    }
     styleProbe.removeProperty('backdrop-filter');
     styleProbe.removeProperty('-webkit-backdrop-filter');
+    styleProbe.removeProperty('--_material-lens-filter');
+    styleProbe.removeProperty('--_material-paint-filter');
+    styleProbe.removeProperty('--_surface-paint');
+    styleProbe.removeProperty('--_noise');
     return styleProbe.cssText;
   };
   const externalClass = (value: string): string =>

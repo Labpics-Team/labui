@@ -9,14 +9,9 @@ import {
   type TierFill,
   fillKey,
 } from '../src/material-guarantee';
+import { materialRoles } from '../src/profile';
 
-/*
- * Adapter (Clean Architecture): read the material tier fills and the material
- * label candidates straight from the GENERATED contract, so the guarantee test
- * carries no second copy of the numbers — it re-checks whatever the colours
- * train currently emits. When the provisional Figma alphas are replaced with
- * engine-derived ones, this test automatically re-evaluates them.
- */
+/* Read current Colors outputs: no second palette in the material tests. */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, '..', '..', '..');
@@ -74,7 +69,8 @@ export function readContractMaterials(): ContractMaterials {
     for (const tier of MATERIAL_TIERS) {
       fills.set(fillKey(theme, tier), {
         tint: readColour(section, `--lab-bg-material-${tier}-01`),
-        base: readColour(section, `--lab-bg-material-${tier}-02`),
+        blend: readColour(section, `--lab-bg-material-${tier}-02`),
+        solid: readColour(section, `--lab-${materialRoles(tier).solid}`),
       });
     }
     // Material panels carry a STATIC (theme-pinned) label; polarity picks white

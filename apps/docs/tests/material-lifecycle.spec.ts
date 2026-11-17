@@ -13,18 +13,22 @@ test('nearest mode paints the same material across a shadow boundary and respect
   const shadow = page.locator('#shadow-surface');
   for (const el of [surface, shadow]) {
     await expect(el).toHaveAttribute('data-lab-material-mode', 'glass');
-    await expect(el).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    if (browserName === 'chromium')
+      await expect(el).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await expect
       .poll(() => el.evaluate((node) => getComputedStyle(node).backdropFilter))
       .toContain('blur(');
   }
   if (browserName !== 'chromium') {
-    expect(await surface.evaluate((el) => el.style.backdropFilter)).toBe('');
+    expect(await surface.evaluate((el) => getComputedStyle(el).backdropFilter)).not.toContain(
+      'url(',
+    );
     await expect(surface).not.toHaveClass(/lab-material--lensed/);
   }
   await surface.evaluate((el) => el.setAttribute('data-material', 'glass'));
   await page.locator('#scope').evaluate((el) => el.setAttribute('data-material', 'solid'));
-  await expect(surface).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  if (browserName === 'chromium')
+    await expect(surface).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await page.screenshot({ path: testInfo.outputPath('materials.png') });
   await page.emulateMedia({ contrast: 'more' });
   // Firefox 141's dynamic emulation changes matchMedia() without dispatching
@@ -58,12 +62,13 @@ test('acrylic resolves the color at the surface, including scoped updates', asyn
     el.setAttribute('data-material', 'acrylic');
     el.style.setProperty('--lab-bg-material-soft-01', 'rgb(24 60 96 / .3)');
   });
-  const flood = page.locator('body > .lab-acrylic-defs feFlood');
-  await expect(flood).toHaveCSS('flood-color', 'rgba(24, 60, 96, 0.3)');
+  const channel = page.locator('body > .lab-material-paint-defs feFuncR');
+  await expect(channel).toHaveAttribute('tableValues', /.+/);
+  const old = await channel.getAttribute('tableValues');
   await surface.evaluate((el) =>
     el.style.setProperty('--lab-bg-material-soft-01', 'rgb(96 60 24 / .3)'),
   );
-  await expect(flood).toHaveCSS('flood-color', 'rgba(96, 60, 24, 0.3)');
+  await expect(channel).not.toHaveAttribute('tableValues', old ?? '');
 });
 
 test('ShadowRoot inherits material mode and owns its filter, including ancestor changes', async ({
@@ -86,26 +91,6 @@ test('ShadowRoot inherits material mode and owns its filter, including ancestor 
       (el) => (el.getRootNode() as ShadowRoot).querySelectorAll('filter').length,
     ),
   ).toBe(0);
-});
-
-test('acrylic follows the operating system palette without an explicit theme', async ({
-  page,
-  browserName,
-}) => {
-  test.skip(browserName !== 'chromium');
-  await page.locator('html').evaluate((el) => el.removeAttribute('data-theme'));
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.addStyleTag({
-    content: `:root { --lab-bg-material-soft-01:rgb(96 112 128 / .3) }
-      @media (prefers-color-scheme:dark) {
-        :root { --lab-bg-material-soft-01:rgb(24 40 56 / .3) }
-      }`,
-  });
-  await page.locator('#surface').evaluate((el) => el.setAttribute('data-material', 'acrylic'));
-  const flood = page.locator('body > .lab-acrylic-defs feFlood');
-  await expect(flood).toHaveCSS('flood-color', 'rgba(96, 112, 128, 0.3)');
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await expect(flood).toHaveCSS('flood-color', 'rgba(24, 40, 56, 0.3)');
 });
 
 test('local DOM updates do not rediscover or refresh another surface', async ({
@@ -230,7 +215,7 @@ test('CSS without a runtime still degrades to opaque Solid', async ({ page, brow
   });
   const panel = page.locator('#unmanaged');
   await expect(panel).not.toHaveAttribute('data-lab-material-mode');
-  await expect(panel).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(panel).toHaveCSS('background-color', 'rgba(245, 245, 245, 0.2)');
   await page.emulateMedia({ contrast: 'more' });
   await expect(panel).toHaveCSS('background-color', 'rgb(245, 245, 245)');
   await expect(panel).toHaveCSS('--_blur', '0px');
@@ -245,14 +230,16 @@ test('overlapping mounts keep the new effect when the previous one retires', asy
   const surface = page.locator('#surface');
   await surface.evaluate((el) => el.setAttribute('data-material', 'acrylic'));
   await expect
-    .poll(() => surface.evaluate((el) => el.style.backdropFilter))
-    .toContain('lab-acrylic-');
+    .poll(() => surface.evaluate((el) => getComputedStyle(el).backdropFilter))
+    .toContain('lab-material-paint-');
   await surface.evaluate((el) => el.setAttribute('data-material', 'glass'));
-  await expect.poll(() => surface.evaluate((el) => el.style.backdropFilter)).toContain('lab-lg-');
+  await expect
+    .poll(() => surface.evaluate((el) => getComputedStyle(el).backdropFilter))
+    .toContain('lab-lg-');
   await surface.evaluate((el) => el.setAttribute('data-material', 'acrylic'));
   await expect
-    .poll(() => surface.evaluate((el) => el.style.backdropFilter))
-    .toContain('lab-acrylic-');
+    .poll(() => surface.evaluate((el) => getComputedStyle(el).backdropFilter))
+    .toContain('lab-material-paint-');
   await expect(page.locator('body > .lab-lg-defs')).toHaveCount(0);
 });
 
@@ -272,7 +259,7 @@ test('moving a shared surface recreates its filter in the destination tree', asy
   await expect
     .poll(() =>
       surface.evaluate((el) => {
-        const id = el.style.backdropFilter.match(/url\(["']?#([^"')]+)["']?\)/)?.[1];
+        const id = getComputedStyle(el).backdropFilter.match(/url\(["']?#([^"')]+)["']?\)/)?.[1];
         return !!id && !!(el.getRootNode() as ShadowRoot).querySelector(`[id="${id}"]`);
       }),
     )
@@ -295,27 +282,31 @@ test('a relocated shadow host follows its new ancestors', async ({ page, browser
   const shadow = page.locator('#shadow-surface');
   await expect(shadow).toHaveAttribute('data-lab-material-mode', 'acrylic');
   await expect
-    .poll(() => shadow.evaluate((el) => el.style.backdropFilter))
-    .toContain('lab-acrylic-');
+    .poll(() => shadow.evaluate((el) => getComputedStyle(el).backdropFilter))
+    .toContain('lab-material-paint-');
   await page.locator('#new-parent').evaluate((el) => el.setAttribute('data-material', 'glass'));
   await expect(shadow).toHaveClass(/lab-material--lensed/);
-  await expect.poll(() => shadow.evaluate((el) => el.style.backdropFilter)).toContain('lab-lg-');
+  await expect
+    .poll(() => shadow.evaluate((el) => getComputedStyle(el).backdropFilter))
+    .toContain('lab-lg-');
 });
 
-test('shadow and light DOM use the same theme-specific rim', async ({ page }) => {
-  await page.locator('html').evaluate((el) => el.setAttribute('data-theme', 'dark'));
+test('shadow and light DOM use the same author light parameters, independent of theme', async ({
+  page,
+}) => {
   const light = page.locator('#surface');
   const shadow = page.locator('#shadow-surface');
+  const rim = await light.evaluate((el) => getComputedStyle(el).getPropertyValue('--_glass-rim'));
+  await page.locator('html').evaluate((el) => el.setAttribute('data-theme', 'dark'));
   await expect(shadow).toHaveAttribute('data-lab-material-theme', 'dark');
-  const rim = await light.evaluate((el) => getComputedStyle(el).getPropertyValue('--_rim-active'));
-  expect(
-    await shadow.evaluate((el) => getComputedStyle(el).getPropertyValue('--_rim-active')),
-  ).toBe(rim);
+  expect(await shadow.evaluate((el) => getComputedStyle(el).getPropertyValue('--_glass-rim'))).toBe(
+    rim,
+  );
   await page.locator('#shadow-host').evaluate((el) => el.setAttribute('data-theme', 'light'));
   await expect(shadow).toHaveAttribute('data-lab-material-theme', 'light');
-  expect(
-    await shadow.evaluate((el) => getComputedStyle(el).getPropertyValue('--_rim-active')),
-  ).not.toBe(rim);
+  expect(await shadow.evaluate((el) => getComputedStyle(el).getPropertyValue('--_glass-rim'))).toBe(
+    rim,
+  );
 });
 
 test('a same-origin iframe Document registers its own HTML elements', async ({
@@ -338,7 +329,9 @@ test('a same-origin iframe Document registers its own HTML elements', async ({
   await expect
     .poll(() =>
       surface.evaluate((el) => {
-        const id = el.style.backdropFilter.match(/url\(["']?#([^"')]+)["']?\)/)?.[1];
+        const id = el.style
+          .getPropertyValue('--_material-lens-filter')
+          .match(/url\(["']?#([^"')]+)["']?\)/)?.[1];
         return !!id && !!el.ownerDocument.getElementById(id);
       }),
     )
@@ -431,4 +424,69 @@ test('a detached shadow host reconnects in a later frame and follows its new sco
     .locator('#reconnect-target')
     .evaluate((el) => el.setAttribute('data-material', 'solid'));
   await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
+});
+
+test('author paints follow the operating system palette without an explicit theme', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.locator('html').evaluate((el) => el.removeAttribute('data-theme'));
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.addStyleTag({
+    content: `:root { --lab-bg-material-soft-01:rgb(96 112 128 / .3) }
+    @media (prefers-color-scheme:dark) { :root { --lab-bg-material-soft-01:rgb(24 40 56 / .3) } }`,
+  });
+  const surface = page.locator('#surface');
+  await surface.evaluate((el) => el.setAttribute('data-material', 'acrylic'));
+  const channel = page.locator('body > .lab-material-paint-defs feFuncR');
+  await expect(channel).toHaveAttribute('tableValues', /.+/);
+  const light = await channel.getAttribute('tableValues');
+  await expect(surface).toHaveAttribute('data-lab-material-theme', 'light');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(surface).toHaveAttribute('data-lab-material-theme', 'dark');
+  await expect(channel).not.toHaveAttribute('tableValues', light ?? '');
+});
+
+test('compositor motion keeps author filters without profile reads or SVG writes', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await expect(page.locator('body > .lab-lg-defs feImage')).toHaveAttribute('href', /.+/);
+  const activity = await page.evaluate(async () => {
+    const surface = document.querySelector<HTMLElement>('#surface');
+    if (!surface) throw new Error('Missing surface');
+    // Finish initial sizing/decode delivery before measuring movement.
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    const originalStyle = window.getComputedStyle;
+    let reads = 0;
+    let writes = 0;
+    window.getComputedStyle = (...args) => {
+      if (args[0] === surface) reads++;
+      return originalStyle(...args);
+    };
+    const observer = new MutationObserver((records) => {
+      writes += records.length;
+    });
+    for (const defs of document.querySelectorAll(
+      'body > .lab-lg-defs, body > .lab-material-paint-defs',
+    )) {
+      observer.observe(defs, { attributes: true, childList: true, subtree: true });
+    }
+    try {
+      for (let frame = 0; frame < 20; frame++) {
+        surface.style.transform = `translateX(${frame}px)`;
+        await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      return { reads, writes };
+    } finally {
+      window.getComputedStyle = originalStyle;
+      observer.disconnect();
+    }
+  });
+  expect(activity).toEqual({ reads: 0, writes: 0 });
 });

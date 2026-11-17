@@ -1,72 +1,25 @@
-/*
- * The α-boundary guarantee — the scientific core of the materials slice.
- *
- * A glass surface paints a translucent tint over an UNKNOWN live backdrop. The
- * backdrop's luminance is not knowable at author time, so the surface can only
- * promise a legible label if the label stays legal across the WHOLE range the
- * backdrop can take. We bound that range with the two extremes a backdrop can
- * reach — pure black (luminance 0) and pure white (luminance 1) — and require
- * the surface's committed label to clear its WCAG floor at BOTH.
- *
- * Effective-background luminance of the composite — bounded in the SAME space
- * the browser paints: straight-alpha compositing per-channel in gamma-encoded
- * sRGB (see {@link compositeOver}), then WCAG luminance of that composite. This
- * is byte-identical to lab-colors' own `composite_over_encoded` (proven by the
- * 12-pair Figma-neutral roundtrip in `crates/labcolors-core/src/alpha.rs`), so
- * the guarantee, the engine, and the screen all agree.
- *
- *     effLow  = L( tint  over  black )   (backdrop L_bd = 0)
- *     effHigh = L( tint  over  white )   (backdrop L_bd = 1)
- *
- * Luminance rises monotonically in every channel and the composite rises
- * monotonically in every backdrop channel, so BLACK and WHITE backdrops give the
- * TRUE minimum and maximum composite luminance — over every backdrop, coloured
- * ones included, not just greys. A dense tier (α→1) collapses the band onto the
- * tint and is easy to guarantee; a sheer tier (α→0) spreads it across the whole
- * axis and usually cannot hold one fixed label. That is the finding to surface.
- *
- * The honest verdict is the WORST contrast ANYWHERE in the reachable band
- * [effLow, effHigh] — not merely at its ends. Composite luminance sweeps that
- * interval continuously as the backdrop varies, so a committed label whose own
- * luminance lies INSIDE the band is driven to 1:1 contrast by some backdrop even
- * when both endpoints pass. `guaranteed` is therefore a REAL browser-AA promise
- * in gamma-encoded composite space, not a model artefact.
- *
- * This module is pure: it takes parsed colours in, returns verdicts out. The
- * test feeds it the values parsed straight from the generated contract so the
- * guarantee tracks the contract with no second copy of the numbers (DRY / no
- * drift — the same discipline the colours train uses for contract.css).
- */
-
+/** Contrast of the author paint stack over a supplied backdrop corridor.
+ * The corridor is an input about the captured pixels, not a promise that a
+ * screenshot, blur footprint or a live video has been measured. */
 import { type Rgba, compositeOver, contrastRatio, relativeLuminance } from './luminance';
+import { materialPaintOver } from './material-paints';
+import { MATERIAL_TIERS, type MaterialTier, type ThemeName, materialBlendMode } from './profile';
+export { MATERIAL_TIERS };
+export type { MaterialTier, ThemeName };
 
-/**
- * Моды материала — ровно значения оси `data-material`. Их ТРИ (ADR-0008):
- * `solid` — непрозрачный канон и универсальный пол деградаций; `glass` —
- * рефракция (ADR-0003); `acrylic` — диффузия Fluent-класса (ADR-0004).
- * Отдельный ярус `blur` снесён решением владельца (2026-07-10): перцептивно
- * он дублировал acrylic, а два неразличимых режима — ложный выбор в API.
- */
+/** The material axis: independent Solid, refractive Glass, frosted Acrylic. */
 export type MaterialMode = 'solid' | 'glass' | 'acrylic';
-
-/** The five material tiers, names lifted verbatim from the Figma Materials styles. */
-export const MATERIAL_TIERS = ['base', 'muted', 'soft', 'subtle', 'elevated'] as const;
-export type MaterialTier = (typeof MATERIAL_TIERS)[number];
-
-export type ThemeName = 'light' | 'dark';
 
 /** WCAG 2.1 AA contrast floors. */
 export const WCAG_AA_NORMAL = 4.5;
 export const WCAG_AA_LARGE = 3.0;
 
-/**
- * A tier's two-layer fill from the contract: `tint` is the translucent `01`
- * layer (its alpha is the glass density), `base` is the opaque `02` layer that
- * backs the solid canon.
- */
+/** Author tint and blend paints, plus the independent Solid fallback role.
+ * `blend` may be omitted when evaluating a single normal paint. */
 export interface TierFill {
   readonly tint: Rgba;
-  readonly base: Rgba;
+  readonly blend?: Rgba;
+  readonly solid: Rgba;
 }
 
 /** A candidate label colour the surface could commit to (opaque foreground). */
@@ -79,7 +32,7 @@ export interface LabelCandidate {
 export interface TierVerdict {
   readonly tier: MaterialTier;
   readonly theme: ThemeName;
-  /** Luminance of the opaque solid canon (01 over 02). */
+  /** Luminance of the independent opaque Solid role. */
   readonly solidLuminance: number;
   /** The label the surface commits to (highest-contrast candidate on the solid canon). */
   readonly label: string;
@@ -280,7 +233,7 @@ export function evaluateTier(
   const floor = options.floor ?? WCAG_AA_NORMAL;
   const backdrop = options.backdrop ?? FULL_BACKDROP;
 
-  const solid = compositeOver(fill.tint, fill.base);
+  const solid = { ...fill.solid, a: 1 };
   const solidLuminance = relativeLuminance(solid);
   const label = commitLabel(solidLuminance, labelCandidates);
   const labelLuminance = relativeLuminance(label.colour);
@@ -288,7 +241,16 @@ export function evaluateTier(
   // Bound the band in the browser's real paint space over the corridor's two
   // corner backdrops (default [black, white] = every backdrop). One shared math
   // with the ladder — see bandOverCorridor / worstContrastOverBand.
-  const { effLow, effHigh } = bandOverCorridor(fill.tint, backdrop);
+  const box = cornerCorridor([backdrop.min, backdrop.max]);
+  const paint = (colour: Rgba): Rgba =>
+    fill.blend
+      ? materialPaintOver(
+          { normal: fill.tint, blend: fill.blend, blendMode: materialBlendMode(theme) },
+          colour,
+        )
+      : compositeOver(fill.tint, colour);
+  const effLow = relativeLuminance(paint(box.min));
+  const effHigh = relativeLuminance(paint(box.max));
 
   const contrastLow = contrastRatio(labelLuminance, effLow);
   const contrastHigh = contrastRatio(labelLuminance, effHigh);

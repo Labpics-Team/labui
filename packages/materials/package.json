@@ -15,6 +15,7 @@
       "require": "./dist/index.cjs"
     },
     "./material.css": "./dist/material.css",
+    "./profile.json": "./dist/profile.json",
     "./package.json": "./package.json"
   },
   "files": ["dist"],

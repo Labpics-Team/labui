@@ -20,7 +20,7 @@ const SVGNS = 'http://www.w3.org/2000/svg';
  * общая capability-проба, не про КОНКРЕТНЫЙ эффект. Firefox и Safari ПАРСЯТ
  * `backdrop-filter: url(#f)` (CSS.supports=true), но НЕ рендерят SVG-фильтр на
  * backdrop — только Chromium. Оба движка, которым нужен url()-фильтр на
- * backdrop (рефракция liquid-glass И luminosity-конвейер acrylic — РАЗНЫЕ
+ * backdrop (рефракция liquid-glass И авторские paints — РАЗНЫЕ
  * эффекты, ОДНА браузерная способность), гейтятся ею. Ответ не меняется в
  * пределах страницы → пробуется один раз. Живёт здесь (общий низ), чтобы
  * acrylic НЕ зависел от glass-модуля ради этой пробы.
@@ -53,8 +53,7 @@ function probeBackdropFilterUrl(): boolean {
 }
 
 /**
- * Единый скрытый `<svg><defs>` хост для url()-фильтров движков (луминосити-
- * конвейер acrylic, линза liquid-glass). Один на `className` на документ;
+ * Единый скрытый `<svg><defs>` хост для url()-фильтров движков (авторские paints, линза liquid-glass). Один на `className` на документ;
  * невидимый, вне hit-теста и a11y-дерева. Раньше — две дословных копии
  * (`ensureDefs` в liquid-glass, `ensureAcrylicDefs` в acrylic).
  */

@@ -1,37 +1,13 @@
-/*
- * Генератор ассета acrylic-шума (ADR-0004 Решение 1 §4, наследует ADR-0002 §1).
- *
- * Шум ~2% — мелкозернистая текстура, снимающая бандинг градиентов ПОД блюром;
- * именно она делает акрил «чище обычного фонового блюра». ADR требует ассет
- * ОДНОЙ генерации (data-URI PNG), НЕ рантайм-фильтр (feTurbulence пересчитывался
- * бы каждый кадр; декодированный PNG браузер растеризует один раз и тайлит).
- *
- * Детерминизм = провенанс: сид, размер тайла и запечённая альфа зафиксированы
- * ниже. IDAT пакуется stored-блоками (RFC 1950/1951 без сжатия), НЕ deflateSync:
- * байты сжатого потока zlib меняются между версиями библиотеки, и один и тот же
- * генератор давал разные PNG на разных Node — check-generated флакал бы между
- * локалью и CI. Шум несжимаем, так что stored-блоки почти ничего не стоят.
- * `check-generated` перегенерирует и сверяет инлайн в material.css — протухший
- * ассет краснит CI, а не тихо дрейфит.
- *
- * Провенанс величин:
- *   NOISE_ALPHA = 5  → 5/255 ≈ 1.96% — реализация «~2%» из ADR-0002 §1 (запечена
- *                      в альфу пикселей; слой красится на полной непрозрачности).
- *   NOISE_SIZE  = 48 → DECLARED размер тайла: достаточно мелко для зерна, при 2%
- *                      непрозрачности повтор тайла перцептивно невидим; тайлится
- *                      на интринзик-размере (`background-size: auto`) — без magic-px.
- *   NOISE_SEED       → DECLARED константа воспроизводимости (любое фикс-значение;
- *                      важна повторяемость, не конкретика).
- *   gray ∈ [0,255]   → равномерный дизер яркости: тёмные зёрна видны на светлом
- *                      фоне, светлые — на тёмном (симметрично гасит бандинг).
- */
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+/** Bake the author's monotone noise once. The source profile supplies colour,
+ * maximum opacity, density and grain scale. Seed/tile geometry are renderer choices. */
+import { materialProfile } from '../src/profile';
 
 export const NOISE_SIZE = 48;
-export const NOISE_ALPHA = 5;
+export const NOISE_ALPHA = Math.round(255 * materialProfile.noise.opacity);
 export const NOISE_SEED = 0x6c_61_62_75; // 'labu' — фикс сид, только ради повторяемости
 
 /** mulberry32 — крошечный детерминированный PRNG (32-бит), достаточный для зерна. */
@@ -111,14 +87,10 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
   return new Uint8Array([...u32be(data.length), ...body, ...u32be(crc32(body))]);
 }
 
-/**
- * Детерминированный PNG-шум `NOISE_SIZE × NOISE_SIZE`, цветовой тип 4
- * (grayscale + alpha, 8 бит): gray — равномерный шум, alpha — константа
- * `NOISE_ALPHA`. Возвращает готовые байты PNG.
- */
+/** A deterministic RGBA tile: author RGB, variable alpha up to NOISE_ALPHA. */
 export function acrylicNoisePng(): Uint8Array {
   const rnd = mulberry32(NOISE_SEED);
-  const bpp = 2; // gray + alpha
+  const bpp = 4; // author RGB + varying coverage
   const stride = NOISE_SIZE * bpp;
   // Отфильтрованные строки: каждая начинается байтом фильтра 0 (none).
   const raw = new Uint8Array((stride + 1) * NOISE_SIZE);
@@ -127,8 +99,10 @@ export function acrylicNoisePng(): Uint8Array {
     raw[rowStart] = 0; // filter: none
     for (let x = 0; x < NOISE_SIZE; x++) {
       const i = rowStart + 1 + x * bpp;
-      raw[i] = Math.floor(rnd() * 256) & 0xff; // gray
-      raw[i + 1] = NOISE_ALPHA; // baked ~2% alpha
+      raw[i] = materialProfile.noise.color[0] ?? 0;
+      raw[i + 1] = materialProfile.noise.color[1] ?? 0;
+      raw[i + 2] = materialProfile.noise.color[2] ?? 0;
+      raw[i + 3] = rnd() <= materialProfile.noise.density ? Math.round(rnd() * NOISE_ALPHA) : 0;
     }
   }
   const signature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -136,7 +110,7 @@ export function acrylicNoisePng(): Uint8Array {
     ...u32be(NOISE_SIZE), // width
     ...u32be(NOISE_SIZE), // height
     8, // bit depth
-    4, // colour type: grayscale + alpha
+    6, // colour type: RGBA
     0, // compression
     0, // filter
     0, // interlace
@@ -161,26 +135,12 @@ const START =
   '/* >>> ACRYLIC-NOISE:GENERATED (scripts/build-acrylic-noise.ts) — не править руками */';
 const END = '/* <<< ACRYLIC-NOISE:GENERATED */';
 
-/**
- * Тело региона: ассет ОДНОЙ генерации, объявленный дважды.
- *   1. `url()` — фолбэк без image-set (тайл 48 CSS-px на любом DPR).
- *   2. `image-set(тот же URI 1x/2x/3x)` под @supports: на DPR≥2 браузер берёт
- *      2x/3x-запись → интринзик-тайл 24/16 CSS-px → зерно остаётся В ОДИН
- *      ФИЗИЧЕСКИЙ ПИКСЕЛЬ (per-device-pixel, как у Fluent) без новых ассетов;
- *      дубль строки URI гасится gzip. @supports обязателен: невалидное
- *      значение в `background` уронило бы всю многослойную декларацию
- *      (включая тинт), а не только слой зерна.
- */
+/** One shared asset and its CSS grain scale, both consumed by the renderer. */
 export function acrylicNoiseCssBlock(): string {
-  const uri = acrylicNoiseDataUri();
   return [
     '.lab-material {',
-    `  --_acrylic-noise: ${uri};`,
-    '}',
-    `@supports (background-image: image-set(${uri} 1x)) {`,
-    '  .lab-material {',
-    `    --_acrylic-noise: image-set(${uri} 1x, ${uri} 2x, ${uri} 3x);`,
-    '  }',
+    `  --_acrylic-noise: ${acrylicNoiseDataUri()};`,
+    `  --_acrylic-noise-size: ${NOISE_SIZE * materialProfile.noise.size}px;`,
     '}',
   ].join('\n');
 }
