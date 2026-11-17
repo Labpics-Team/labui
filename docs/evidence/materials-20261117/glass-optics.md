@@ -79,15 +79,22 @@ Strong `6236:41501` имеет эффект, собственный PATTERN и �
 
 # Граница локальной браузерной проверки
 
-`probe-backdrop-support.mjs` обнаружил ограничение локальных Windows Playwright
+`probe-backdrop-support.mjs` обнаружил ограничение Playwright screenshots
 Firefox/WebKit: computedStyle принимает даже простые `blur(10px)`,
 `brightness(2)`, `invert(1)`, однако PNG остаётся исходным backdrop. Chromium
-действительно меняет пиксели. Полная матрица — `backdrop-support-win32.json`.
+действительно меняет пиксели. Это воспроизведено на Windows и hosted Linux/macOS
+([run44038483973](https://github.com/Labpics-Team/labui/actions/runs/44038483973));
+полные матрицы — `backdrop-support-{win32,linux,darwin}.json`.
 
 Поэтому отрицательные CSS-capture опыты Firefox/WebKit из `render-check.md`
 не доказывают невозможность метода в реальном Firefox/Safari. Пройденные
 локальные lifecycle-проверки подтверждают состояние, порядок и освобождение;
 они не подтверждают оптическую точность compositor этих двух браузеров.
-Нужен запуск сохранённого probe и сравнения материалов на Linux/macOS либо
-в другом окружении с действующим backdrop renderer. Chromium screenshot
-и CPU-калибровка выше этого ограничения не имеют.
+[Upstream43646](https://github.com/microsoft/playwright/issues/43646) связывает
+это в Firefox с `drawSnapshot`, который не снимает WebRender backdrop;
+[Mozilla1657997](https://bugzilla.mozilla.org/show_bug.cgi?id=1657997) описывает
+ограничение. Это свидетельство дефекта screenshot path, не отсутствия эффекта
+на экране. `MATERIAL_CAPTURE=display` читает Xvfb framebuffer на Linux или
+`screencapture` на macOS. Маркер страницы определяет начало и масштаб без
+жёстких смещений browser chrome. Chromium screenshot и CPU-калибровка выше
+не имеют наблюдаемого пропуска backdrop.

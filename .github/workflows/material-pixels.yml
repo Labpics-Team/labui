@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/material-pixels.yml'
       - 'docs/evidence/materials-20261117/probe-backdrop-support.mjs'
+      - 'docs/evidence/materials-20261117/display-pixels.mjs'
 
 permissions:
   contents: read
@@ -39,4 +40,16 @@ jobs:
       - name: Install browser runtimes
         run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium firefox webkit
       - name: Measure backdrop rendering and neutral paint composition
+        run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs
+      - name: Measure real Linux compositor
+        if: runner.os == 'Linux'
+        env:
+          MATERIAL_CAPTURE: display
+        run: |
+          mkdir -p "$RUNNER_TEMP/labui-display"
+          XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/probe-backdrop-support.mjs
+      - name: Measure real macOS compositor
+        if: runner.os == 'macOS'
+        env:
+          MATERIAL_CAPTURE: display
         run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs

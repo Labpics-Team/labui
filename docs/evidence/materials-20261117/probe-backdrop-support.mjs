@@ -1,12 +1,14 @@
 import { writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { platform } from 'node:os';
+import { displayPixels } from './display-pixels.mjs';
 
 const engines = createRequire(new URL('../../../apps/docs/package.json', import.meta.url))(
   '@playwright/test',
 );
 const results = [];
 const compositions = [];
+const display = process.env.MATERIAL_CAPTURE === 'display';
 const swatches = [
   [20, 30, 40],
   [90, 100, 110],
@@ -28,6 +30,7 @@ const recipes = [
 ];
 
 async function pixelsAt(page, xs) {
+  if (display) return displayPixels(page, xs);
   const png = await page.screenshot();
   return page.evaluate(
     async ({ base64, xs }) => {
@@ -46,6 +49,16 @@ async function pixelsAt(page, xs) {
 }
 
 async function settle(page) {
+  if (display) {
+    await page.evaluate(() => {
+      const marker = document.createElement('div');
+      marker.style.cssText =
+        'position:fixed;left:0;top:0;width:4px;height:4px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none';
+      document.body.append(marker);
+    });
+    // XWD has no compositor fence; bounded settling is specific to this diagnostic.
+    await page.waitForTimeout(250);
+  }
   await page.evaluate(
     () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
   );
@@ -53,14 +66,14 @@ async function settle(page) {
 
 for (const name of ['chromium', 'firefox', 'webkit']) {
   const browser = await engines[name].launch({
-    headless: true,
+    headless: !display,
     ...(name === 'chromium' ? { channel: 'chromium' } : {}),
   });
   const page = await browser.newPage({ viewport: { width: 150, height: 100 } });
   try {
     for (const filter of ['blur(10px)', 'brightness(2)', 'invert(1)', 'contrast(2)']) {
       await page.setContent(
-        `<style>body{margin:0;background:#404040}#source{position:fixed;inset:0;background:linear-gradient(90deg,#404040 0 50px,#b0b0b0 50px)}#probe{position:absolute;inset:10px;-webkit-backdrop-filter:${filter};backdrop-filter:${filter};background:rgb(255 255 255 / .001)}</style><div id=source></div><div id=probe></div>`,
+        `<!doctype html><style>body{margin:0;background:#404040}#source{position:fixed;inset:0;background:linear-gradient(90deg,#404040 0 50px,#b0b0b0 50px)}#probe{position:absolute;inset:10px;-webkit-backdrop-filter:${filter};backdrop-filter:${filter};background:rgb(255 255 255 / .001)}</style><div id=source></div><div id=probe></div>`,
       );
       await settle(page);
       results.push({
@@ -91,7 +104,7 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
       );
       for (const isolation of ['isolate', 'auto']) {
         await page.setContent(
-          `<style>body{margin:0}#source{position:fixed;inset:0;background:linear-gradient(90deg,${background})}.host{position:relative;isolation:${isolation};width:150px;height:100px}.capture,.blend{position:absolute;inset:0}.capture{-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);background:rgb(${normal.join(' ')} / ${normalAlpha})}.blend{-webkit-backdrop-filter:${recipe.filter};backdrop-filter:${recipe.filter}}</style><div id=source></div><div class=host><div class=capture></div><div class=blend></div></div>`,
+          `<!doctype html><style>body{margin:0}#source{position:fixed;inset:0;background:linear-gradient(90deg,${background})}.host{position:relative;isolation:${isolation};width:150px;height:100px}.capture,.blend{position:absolute;inset:0}.capture{-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);background:rgb(${normal.join(' ')} / ${normalAlpha})}.blend{-webkit-backdrop-filter:${recipe.filter};backdrop-filter:${recipe.filter}}</style><div id=source></div><div class=host><div class=capture></div><div class=blend></div></div>`,
         );
         await settle(page);
         const pixels = await pixelsAt(page, [15, 45, 75, 105, 135]);
@@ -107,9 +120,15 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
     await browser.close();
   }
 }
-const report = { date: new Date().toISOString(), platform: platform(), results, compositions };
+const report = {
+  date: new Date().toISOString(),
+  platform: platform(),
+  capture: display ? 'display' : 'snapshot',
+  results,
+  compositions,
+};
 await writeFile(
-  new URL(`backdrop-support-${platform()}.json`, import.meta.url),
+  new URL(`backdrop-${display ? 'display' : 'support'}-${platform()}.json`, import.meta.url),
   JSON.stringify(report, null, 2),
 );
 // Numeric evidence stays available in the job log without depending on artifact storage.
