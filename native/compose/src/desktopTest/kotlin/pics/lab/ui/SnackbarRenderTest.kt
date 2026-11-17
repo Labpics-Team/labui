@@ -39,6 +39,38 @@ import kotlin.test.assertEquals
 class SnackbarRenderTest {
     private fun nodes(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::nodes)
 
+    @Test fun aDelayedFirstFrameDoesNotConsumeTheActionDeadline() {
+        val preferences = LabPreferences(reducedMotion = true)
+        val theme = LabThemeState(initialLabColors(preferences), preferences)
+        val owner = object : LifecycleOwner {
+            override val lifecycle = LifecycleRegistry.createUnsafe(this)
+                .apply { currentState = Lifecycle.State.RESUMED }
+        }
+        var dismissals = 0
+        val scene = ImageComposeScene(400, 100) {
+            CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+                LabTheme(theme) {
+                    LabScene(Modifier.fillMaxSize(), background = {}) {
+                        LabSnackbar("Сохранено", durationMillis = 500,
+                            actionLabel = "Отменить", onAction = {},
+                            onDismiss = { dismissals++ })
+                    }
+                }
+            }
+        }
+        try {
+            // A newly composed notification has not yet completed a rendering turn.
+            // The iOS cold-frame regression spent its entire deadline in this gap.
+            Thread.sleep(700)
+            scene.render().close()
+            scene.render().close()
+            assertEquals(0, dismissals, "Composition and a delayed first frame must not expire Undo")
+            val until = System.nanoTime() + 700_000_000
+            do { scene.render().close(); Thread.sleep(10) } while (System.nanoTime() < until)
+            assertEquals(1, dismissals, "The normal deadline must start after rendering")
+        } finally { scene.close() }
+    }
+
     @Test fun allTimerPosesFollowTheSourceArcDirection() {
         val preferences = LabPreferences(reducedMotion = true)
         val theme = LabThemeState(initialLabColors(preferences), preferences)

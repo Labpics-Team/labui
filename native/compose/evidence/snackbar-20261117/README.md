@@ -31,5 +31,12 @@ Undo → сохранение → перезапуск — в Native Compose CI.
 букв на 360 dp / 200%. Оба замечания проверены по Figma/рендеру и исправлены;
 проверка строк и пикселей теперь воспроизводит обе исходные ошибки.
 
+Видеозапись XCTest `44141600996` обнаружила ещё одну регрессию: замерший pending
+после Save, затем Snackbar с цифрой «5» менее секунды. Проверка
+`aDelayedFirstFrameDoesNotConsumeTheActionDeadline` воспроизводила истечение срока
+до первого рендера в CPU-сцене. Теперь таймер ждёт первый draw, окончание entrance
+и следующий кадр; этот тест и прежние проверки проходят без локального окна.
+Прохождение исправленного iOS-сценария и причина задержки кадра требуют CI.
+
 Источники: [Figma](https://www.figma.com/design/LuaiBd4anRi4DMZayKAnY2/Lab-UI?node-id=6109-6735),
 [Compose Lifecycle](https://kotlinlang.org/docs/multiplatform/compose-lifecycle.html).

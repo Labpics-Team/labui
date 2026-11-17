@@ -33,7 +33,7 @@ final class SettingsExperienceTests: XCTestCase {
         reveal(message("Введите название", in: app), in: app, towardBottom: false)
         name.tap()
         name.typeText("Нативная лаборатория 東京")
-        XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
+        expectValue("Нативная лаборатория 東京", in: name)
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         let undo = app.buttons["Отменить"]
         XCTAssertTrue(undo.waitForExistence(timeout: 3))
@@ -42,6 +42,7 @@ final class SettingsExperienceTests: XCTestCase {
         open.tap()
         clear(name, in: app)
         name.typeText("Нативная лаборатория 東京")
+        expectValue("Нативная лаборатория 東京", in: name)
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         // A slow XCTest snapshot can outlive the automatic Snackbar. The save contract
         // is the committed workspace, then the same data after a fresh process launch.
@@ -65,7 +66,16 @@ final class SettingsExperienceTests: XCTestCase {
         XCTAssertTrue(selectAll.waitForExistence(timeout: 3), app.debugDescription)
         selectAll.tap()
         editor.typeText(XCUIKeyboardKey.delete.rawValue)
-        XCTAssertEqual(editor.value as? String, "", "The native editor must be empty")
+        expectValue("", in: editor)
+    }
+
+    private func expectValue(_ value: String, in editor: XCUIElement) {
+        // UIKit can finish synthesizing input before Compose publishes the
+        // corresponding accessibility value. Observe the committed editor value.
+        let updated = XCTNSPredicateExpectation(
+            predicate: NSPredicate(format: "value == %@", value), object: editor)
+        XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed,
+                       "Native input did not reach the expected value: \(value)")
     }
 
     private func message(_ label: String, in app: XCUIApplication) -> XCUIElement {

@@ -20,8 +20,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
@@ -46,6 +48,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CompletableDeferred
 import pics.lab.motion.MotionEase
 import pics.lab.motion.MotionTransition
 import kotlin.math.ceil
@@ -80,11 +83,13 @@ public fun LabSnackbar(
         LabSnackbarTimer(duration) { mark.elapsedNow().inWholeMilliseconds }
     }
     var remaining by remember(timer) { mutableLongStateOf(duration) }
+    val firstDraw = remember(timer) { CompletableDeferred<Unit>() }
+    var entered by remember(timer) { mutableStateOf(false) }
     val interactions = remember { MutableInteractionSource() }
     val hovered by interactions.collectIsHoveredAsState()
     var focused by remember { mutableStateOf(false) }
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
-    val paused = hovered || focused || actionPending || lifecycle != Lifecycle.State.RESUMED
+    val paused = !entered || hovered || focused || actionPending || lifecycle != Lifecycle.State.RESUMED
     val dismiss by rememberUpdatedState(onDismiss)
     LaunchedEffect(timer, paused) {
         timer.running(!paused)
@@ -100,10 +105,15 @@ public fun LabSnackbar(
     }
     val motion = rememberLabMotion()
     val y = remember(motion) { motion.value(8f, "snackbar.entrance") }
-    LaunchedEffect(motion) {
+    LaunchedEffect(timer, motion) {
+        // Composition can precede the first rendered frame by seconds on a cold
+        // native surface. Give the user the full action interval after entrance.
+        firstDraw.await()
         motion.animate { to(y, 0f, MotionTransition.Tween(LabTokens.MotionEntranceDurationMs.toInt(),
             MotionEase.Bezier(LabTokens.MotionEntranceEase0, LabTokens.MotionEntranceEase1,
-                LabTokens.MotionEntranceEase2, LabTokens.MotionEntranceEase3))) }
+                LabTokens.MotionEntranceEase2, LabTokens.MotionEntranceEase3))) }.finished.await()
+        withFrameNanos {}
+        entered = true
     }
     val textStyle = LabType.body().copy(
         fontSize = LabComponents.SnackbarFontSize.sp,
@@ -124,6 +134,7 @@ public fun LabSnackbar(
     LabSurface(
         LabComponents.SnackbarMaterial,
         modifier.graphicsLayer { translationY = y.value * density }
+            .drawWithContent { drawContent(); firstDraw.complete(Unit) }
             .hoverable(interactions).onFocusChanged { focused = it.hasFocus },
         material,
         RoundedCornerShape(radius.dp),

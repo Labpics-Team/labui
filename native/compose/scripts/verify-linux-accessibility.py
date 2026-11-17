@@ -1,12 +1,15 @@
 """Exercise the packaged Linux app through AT-SPI and observe Orca speech output.
 
-Run only inside the CI's private D-Bus/Xvfb session. The Java accessibility
-provider is the distribution's GNOME java-atk-wrapper, not a test-side tree.
+Run only inside the CI's private D-Bus/Xvfb session, after installing the DEB.
+The installed launcher must provide GNOME accessibility without test-side JVM
+options, classpath changes, or native library search paths.
 """
 
 from pathlib import Path
+import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -20,9 +23,33 @@ from gi.repository import GLib
 
 
 consumer = Path(__file__).resolve().parents[1] / "consumer"
-executable = consumer / "build/compose/binaries/main/app/LabUI/bin/LabUI"
+packages = list((consumer / "build/compose/binaries/main/deb").glob("*.deb"))
+assert len(packages) == 1, f"Expected one DEB, found {packages}"
+package = packages[0]
+package_name = subprocess.check_output(["dpkg-deb", "--field", str(package), "Package"], text=True).strip()
+package_version = subprocess.check_output(["dpkg-deb", "--field", str(package), "Version"], text=True).strip()
+installed_version = subprocess.check_output(
+    ["dpkg-query", "--show", "--showformat=${Version}", package_name], text=True,
+).strip()
+assert installed_version == package_version, "Install the current DEB before verification"
+dependencies = subprocess.check_output(["dpkg-deb", "--field", str(package), "Depends"], text=True).strip()
+assert re.search(r"(?:^|,)\s*libatk-wrapper-java-jni(?:\s|,|$)", dependencies), (
+    f"The DEB must install its GNOME accessibility bridge: {dependencies}"
+)
+installed_files = subprocess.check_output(["dpkg-query", "--listfiles", package_name], text=True).splitlines()
+launchers = [Path(name) for name in installed_files if name.endswith("/bin/LabUI")]
+assert len(launchers) == 1 and launchers[0].is_file(), "Install the built DEB before verification"
+executable = launchers[0]
 evidence = consumer / "build/linux-accessibility"
 evidence.mkdir(parents=True, exist_ok=True)
+with package.open("rb") as archive:
+    package_sha256 = hashlib.file_digest(archive, "sha256").hexdigest()
+(evidence / "installation.json").write_text(json.dumps({
+    "package": package_name, "version": installed_version,
+    "sha256": package_sha256,
+    "dependencies": dependencies, "launcher": str(executable),
+    "jvm_environment_injection": False,
+}, indent=2))
 orca_debug = evidence / "orca-debug.txt"
 events = []
 processes = []
@@ -144,6 +171,9 @@ try:
                        "XDG_CACHE_HOME": str(Path(directory) / "cache"),
                        "SKIKO_RENDER_API": "SOFTWARE"}
         environment.pop("NO_AT_BRIDGE", None)
+        # An inherited CI setting must not make an incomplete launcher pass.
+        for name in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS", "LD_LIBRARY_PATH", "CLASSPATH"):
+            environment.pop(name, None)
         start(["openbox"], "window-manager", environment)
         subprocess.run(["gsettings", "set", "org.gnome.desktop.a11y.applications",
                         "screen-reader-enabled", "true"], env=environment, check=True)
@@ -161,21 +191,6 @@ try:
             return result.returncode == 0
         await_result("Orca serves accessibility requests", orca_ready)
 
-        wrapper = Path("/usr/share/java/java-atk-wrapper.jar")
-        assert wrapper.is_file(), "Install libatk-wrapper-java-jni before verification"
-        # Temurin's packaged JVM does not add Debian's JNI directory to its
-        # library search path. Resolve the installed native half of this bridge.
-        files = subprocess.check_output(["dpkg-query", "-L", "libatk-wrapper-java-jni"], text=True)
-        native_wrapper = next(Path(name) for name in files.splitlines() if name.endswith("/libatk-wrapper.so"))
-        assert native_wrapper.is_file(), "The system accessibility JNI library is missing"
-        environment["LD_LIBRARY_PATH"] = ":".join([
-            str(native_wrapper.parent), environment.get("LD_LIBRARY_PATH", ""),
-        ])
-        environment["JAVA_TOOL_OPTIONS"] = " ".join([
-            environment.get("JAVA_TOOL_OPTIONS", ""),
-            f"--module-path={wrapper}", "--add-modules=ALL-MODULE-PATH",
-            "-Djavax.accessibility.assistive_technologies=org.GNOME.Accessibility.AtkWrapper",
-        ])
         app = start([str(executable)], "application", environment)
         find("Редактировать", pyatspi.ROLE_PUSH_BUTTON)
         focus("Редактировать")
@@ -215,7 +230,7 @@ try:
         stop(orca)
         assert speech_contains("Редактировать"), "Orca did not announce the edit action"
         assert speech_contains("Название"), "Orca did not announce the input label"
-        print("LINUX_ATSPI_ORCA_PASS: packaged JVM, external edit/cancel/validation/save/restart, "
+        print("LINUX_ATSPI_ORCA_PASS: installed DEB and launcher, external edit/cancel/validation/save/restart, "
               "focus/text events and Orca action/field speech")
 finally:
     try:
