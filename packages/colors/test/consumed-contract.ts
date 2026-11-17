@@ -76,6 +76,7 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-light-angle', // exact: single global light source (shadow.css)
   '--lab-elevation-', // semantic elevation roles (shadow.css)
   '--lab-motion-', // motion durations/easings/roles (motion.css — non-colour, permanently local)
+  '--lab-veil-', // progressive material geometry/strength (materials — not colour roles)
 ] as const;
 
 export type Bucket = 'colour-contract' | 'dimension' | 'local-or-gap' | 'unclassified';

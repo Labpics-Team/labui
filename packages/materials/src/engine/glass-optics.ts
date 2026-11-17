@@ -25,6 +25,15 @@ const profile = Float64Array.from({ length: SAMPLES + 1 }, (_, i) => {
   return (rayX / rayZ) * (THICKNESS_RATIO + height * BEZEL_RATIO);
 });
 
+// Between table samples ray(t) + inside(t) is linear. Its largest sampled
+// value therefore bounds the entire interpolated profile, not just the grid.
+const independentReach = Math.max(...profile.map((ray, i) => ray + (i / SAMPLES) * BEZEL_RATIO));
+
+/** Minimum half-size at which thickness no longer clips any optical ray. */
+export function lensReach(depth: number): number {
+  return Math.max(1, depth) * independentReach;
+}
+
 export function lensBand(depth: number, w: number, h: number): number {
   return Math.max(0, Math.min(Math.max(1, depth) * BEZEL_RATIO, Math.min(w, h) / 2));
 }

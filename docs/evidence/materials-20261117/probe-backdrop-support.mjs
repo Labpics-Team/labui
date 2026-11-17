@@ -9,6 +9,7 @@ const engines = createRequire(new URL('../../../apps/docs/package.json', import.
 const results = [];
 const compositions = [];
 const display = process.env.MATERIAL_CAPTURE === 'display';
+if (display && !process.env.CI) throw new Error('Display capture runs only in isolated CI');
 const swatches = [
   [20, 30, 40],
   [90, 100, 110],

@@ -1,0 +1,78 @@
+{
+  "kind": "renderer-equivalence, not Figma calibration",
+  "browser": "140.0.7339.186",
+  "width": 375,
+  "dpr": 2,
+  "results": [
+    {
+      "mode": "raw",
+      "h": 776,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "raw",
+      "h": 540,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "raw",
+      "h": 422,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "raw",
+      "h": 270,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "raw",
+      "h": 40,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "painted",
+      "h": 776,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "painted",
+      "h": 540,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "painted",
+      "h": 422,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "painted",
+      "h": 270,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    },
+    {
+      "mode": "painted",
+      "h": 40,
+      "max": 0,
+      "mae": 0,
+      "changed": 0
+    }
+  ]
+}

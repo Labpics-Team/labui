@@ -13,6 +13,56 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('#ready')).toHaveText('ready');
 });
 
+test('Glass retains all four optical edges across Sheet detents and restores the Flex field', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Only Chromium renders SVG backdrop refraction');
+  await page.evaluate(() => {
+    window.materialFixture.stopShadow();
+    const el = document.querySelector<HTMLElement>('#surface');
+    if (!el) throw new Error('Missing surface');
+    el.className = 'lab-material lab-material--elevated';
+    el.style.cssText = 'width:375px;height:422px;padding:0;border-radius:32px 32px 0 0';
+  });
+  const images = page.locator('body > .lab-lg-defs feImage');
+  await expect(page.locator('body > .lab-lg-defs filter')).toHaveAttribute('height', '422');
+  await expect(images).toHaveCount(8);
+  const hrefs = await images.evaluateAll((nodes) =>
+    nodes.map((node) => {
+      node.setAttribute('data-retained', '');
+      return node.getAttribute('href');
+    }),
+  );
+  for (const height of [776, 540, 422, 270, 422]) {
+    await page.locator('#surface').evaluate((el, h) => {
+      el.style.height = `${h}px`;
+    }, height);
+    await expect(page.locator('body > .lab-lg-defs filter')).toHaveAttribute('height', `${height}`);
+    await expect(page.locator('body > .lab-lg-defs feImage[data-retained]')).toHaveCount(8);
+    expect(
+      await images.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href'))),
+    ).toEqual(hrefs);
+    // Last tile is the bottom-right corner, anchored to the actual Body bottom.
+    expect(
+      await images
+        .last()
+        .evaluate((node) => Number(node.getAttribute('y')) + Number(node.getAttribute('height'))),
+    ).toBe(height);
+  }
+  await page.locator('#surface').evaluate((el) => {
+    el.style.height = '40px';
+  });
+  await expect(images).toHaveCount(1);
+  await expect(page.locator('body > .lab-lg-defs filter')).toHaveAttribute('height', '40');
+  await page.locator('#surface').evaluate((el) => {
+    el.style.height = '422px';
+  });
+  await expect(images).toHaveCount(8);
+  await page.evaluate(() => window.materialFixture.stop());
+  await expect(page.locator('body > .lab-lg-defs')).toHaveCount(0);
+});
+
 test('nearest mode paints the same material across a shadow boundary and respects contrast', async ({
   page,
   browserName,
@@ -233,14 +283,16 @@ test('tier configuration refreshes the lens and scaling keeps local coordinates'
   await expect(surface).toHaveClass(/lab-material--lensed/);
   const filter = page.locator('body > .lab-lg-defs filter');
   const image = filter.locator('feImage');
-  await expect(image).toHaveAttribute('width', '240');
-  const href = await image.getAttribute('href');
-  if (!href) throw new Error('Lens image is not ready');
+  await expect(filter).toHaveAttribute('width', '240');
+  await expect(image.first()).toHaveAttribute('href', /.+/);
+  const hrefs = await image.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')));
   await surface.evaluate((el) => {
     el.style.transform = 'scale(.5)';
   });
-  await expect(image).toHaveAttribute('width', '240');
-  await expect(image).toHaveAttribute('href', href);
+  await expect(filter).toHaveAttribute('width', '240');
+  expect(
+    await image.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href'))),
+  ).toEqual(hrefs);
   const oldScale = await filter.locator('feDisplacementMap').first().getAttribute('scale');
   await surface.evaluate((el) => el.style.setProperty('--_lg-refraction', '.5'));
   await expect
@@ -255,21 +307,23 @@ test('the lens follows all four elliptical CSS corners, including percentage rad
   test.skip(browserName !== 'chromium');
   const surface = page.locator('#surface');
   const image = page.locator('body > .lab-lg-defs feImage');
-  await expect(image).toHaveAttribute('href', /.+/);
-  const original = await image.getAttribute('href');
+  await expect(image.first()).toHaveAttribute('href', /.+/);
+  const signature = () =>
+    image.evaluateAll((nodes) => nodes.map((node) => node.getAttribute('href')).join('\n'));
+  const original = await signature();
   await surface.evaluate((el) => {
     el.style.borderRadius = '24px 40% 48px 0 / 24px 30% 16px 0';
   });
-  await expect(image).not.toHaveAttribute('href', original ?? '');
-  const asymmetric = await image.getAttribute('href');
+  await expect.poll(signature).not.toBe(original);
+  const asymmetric = await signature();
   await surface.evaluate((el) => {
     el.style.borderBottomLeftRadius = '12px 32px';
   });
-  await expect(image).not.toHaveAttribute('href', asymmetric ?? '');
+  await expect.poll(signature).not.toBe(asymmetric);
   await surface.evaluate((el) => {
     el.style.borderRadius = '24px';
   });
-  await expect(image).toHaveAttribute('href', original ?? '');
+  await expect.poll(signature).toBe(original);
 });
 
 test('CSS comparison radii use the same lens as their resolved pixel geometry', async ({
@@ -284,7 +338,8 @@ test('CSS comparison radii use the same lens as their resolved pixel geometry', 
     el.style.height = '100px';
     el.style.borderRadius = '0px';
   });
-  await expect(image).toHaveAttribute('width', '200');
+  await expect(page.locator('body > .lab-lg-defs filter')).toHaveAttribute('width', '200');
+  await expect(image).toHaveCount(1);
   for (const [math, pixels] of [
     ['min(10%, 30px)', '20px 10px'],
     ['max(10%, 30px)', '30px'],
@@ -599,7 +654,7 @@ test('compositor motion keeps author filters without profile reads or SVG writes
   browserName,
 }) => {
   test.skip(browserName !== 'chromium');
-  await expect(page.locator('body > .lab-lg-defs feImage')).toHaveAttribute('href', /.+/);
+  await expect(page.locator('body > .lab-lg-defs feImage').first()).toHaveAttribute('href', /.+/);
   const activity = await page.evaluate(async () => {
     const surface = document.querySelector<HTMLElement>('#surface');
     if (!surface) throw new Error('Missing surface');

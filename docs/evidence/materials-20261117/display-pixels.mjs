@@ -10,6 +10,22 @@ import { promisify } from 'node:util';
  * without browser chrome offsets. See Playwright issue43646 / Mozilla1657997.
  */
 export async function displayPixels(page, xs) {
+  // A fresh headed CI browser can be behind its display surface for several
+  // compositor turns. Retry only a missing marker; a present-but-wrong sample
+  // must remain a visible rendering failure.
+  const deadline = Date.now() + 5000;
+  while (true) {
+    try {
+      return await captureDisplayPixels(page, xs);
+    } catch (error) {
+      if (!String(error).includes('page marker appears on the display') || Date.now() >= deadline)
+        throw error;
+      await page.waitForTimeout(100);
+    }
+  }
+}
+
+async function captureDisplayPixels(page, xs) {
   let frame;
   if (process.platform === 'linux') {
     const data = await readFile(process.env.XWD_FILE);
