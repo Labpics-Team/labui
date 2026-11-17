@@ -72,7 +72,6 @@
 .lab-material__capture {
   backdrop-filter: blur(var(--_blur));
   -webkit-backdrop-filter: blur(var(--_blur));
-  background: rgb(0 0 0 / 0.001);
 }
 [data-lab-material-paint-renderer="capture-svg"] > .lab-material__capture {
   filter: var(--_material-paint-filter);
