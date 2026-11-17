@@ -15,9 +15,24 @@ test.beforeEach(async ({ page }) => {
 });
 test.afterEach(async ({ page }) => {
   expect(pageErrors.get(page)).toEqual([]);
+  expect(await page.evaluate(() => window.snackbarErrors)).toEqual([]);
 });
 
 for (const renderer of ['lit', 'react'] as const) {
+  test(`${renderer}: обычное движение приходит в конечное положение`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.evaluate((name) => window.snackbarControls[name]?.show(), renderer);
+    const panel = page.getByTestId(`${renderer}-snackbar`).locator('[data-lab-snackbar]');
+    await expect(panel).toBeVisible();
+    await page.clock.runFor(500);
+    await expect
+      .poll(() =>
+        panel.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42),
+      )
+      .toBe(0);
+    await expect(panel.locator('.lab-snackbar-count')).toHaveText('5');
+  });
+
   test(`${renderer}: авторская геометрия, сообщение и пять шагов без перехвата фокуса`, async ({
     page,
   }) => {
@@ -43,6 +58,9 @@ for (const renderer of ['lit', 'react'] as const) {
       ];
     });
     expect(geometry).toEqual([52, '12px', '8px', '24px', 32]);
+    expect(
+      await panel.evaluate((element) => new DOMMatrix(getComputedStyle(element).transform).m42),
+    ).toBe(0);
     for (const seconds of [4, 3, 2, 1]) {
       await page.clock.runFor(1000);
       await expect(panel.locator('.lab-snackbar-count')).toHaveText(String(seconds));

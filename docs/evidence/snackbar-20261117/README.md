@@ -25,7 +25,7 @@ event, disposal и длинный текст. Первый сценарий со
 React SSR проходят. Tokens: 114 тестов PASS.
 
 Итоговый production build Core → React → Docs: PASS. На preview 4328:
-18 Snackbar + 8 сценарных проверок Chromium/WebKit — 26 PASS; typecheck
+22 Snackbar + 8 сценарных проверок Chromium/WebKit — 30 PASS; typecheck
 трёх пакетов — PASS; ESM/CJS import + SSR — 2 PASS. Снимки ниже сняты
 с этой же production-сборки. Команда: `PW_PORT=4328 pnpm --filter
 @labpics/ui-docs exec playwright test tests/snackbar.spec.ts
@@ -38,11 +38,17 @@ Core переносит её в общий chunk, поэтому `sideEffects` �
 имеют высоту 52 px и выполняют Undo. Поведение поля описано в
 [esbuild API](https://esbuild.github.io/api/#ignore-annotations).
 
+Независимое ревью нашло недопустимый `transform` в публичном Motion 0.5.0:
+ошибка шла через callback и оставляла смещение 8 px. Исправлено на `y: [8, 0]`,
+как в публичном README Motion. Проверки теперь наблюдают `lab-error` и React
+`onRuntimeError`, конечное положение обычного движения и немедленный итог
+reduced motion. Consumer experience передаёт неожиданный сбой в `reportError`.
+
 `apps/docs/tests/snackbar-render.mjs` сохраняет обе реализации в двух темах
 и трёх материалах. Высота в render.json — 52 px. Ширина текущего текста в web
 344.14 px; ширина Figma master — 349 px (dark instance 346 px). Интринсик-текст
 не растянут вручную; различие метрик набора сохраняется как открытое наблюдение.
-Независимое ревью Snackbar ещё не выполнено. Оптическое доведение общих Glass
+Повторная независимая проверка исправления Motion ещё не выполнена. Оптическое доведение общих Glass
 материалов продолжается отдельно; эти снимки не объявляют его завершённым.
 
 Никаких окон или звука на компьютере пользователя. Figma читалась через

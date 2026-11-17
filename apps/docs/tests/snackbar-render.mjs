@@ -43,6 +43,8 @@ try {
     }
   }
   if (errors.length) throw new Error(errors.join('\n'));
+  const runtimeErrors = await page.evaluate(() => window.snackbarErrors);
+  if (runtimeErrors.length) throw new Error(runtimeErrors.join('\n'));
   await writeFile(
     new URL('render.json', output),
     `${JSON.stringify({ browser: browser.version(), errors, measurements }, null, 2)}\n`,

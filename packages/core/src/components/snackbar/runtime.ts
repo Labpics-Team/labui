@@ -205,10 +205,9 @@ export function mountSnackbarRuntime(
           } else if (/^(linear|ease|ease-in|ease-out|ease-in-out)$/.test(easingCss)) {
             ease = easingCss as MotionEase;
           }
-          panel.style.transform = 'translateY(0.5rem)';
           const playback = motion.animate(
             panel,
-            { transform: 'translateY(0px)' },
+            { y: [8, 0] },
             {
               duration,
               ease,

@@ -243,6 +243,7 @@ function Workspace() {
         notificationKey={notice?.key}
         actionLabel={notice?.undo ? 'Отменить' : undefined}
         onAction={undo}
+        onRuntimeError={(error) => reportError(error)}
         onOpenChange={(next) => {
           if (!next) setNotice(null);
         }}

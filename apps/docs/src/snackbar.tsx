@@ -15,9 +15,11 @@ interface Control {
 declare global {
   interface Window {
     snackbarControls: Partial<Record<Renderer, Control>>;
+    snackbarErrors: unknown[];
   }
 }
 window.snackbarControls = {};
+window.snackbarErrors = [];
 const field = document.querySelector<LabSnackbar>('lab-snackbar');
 if (!field) throw new Error('Missing Lit Snackbar');
 const lit: Control = {
@@ -39,6 +41,9 @@ const lit: Control = {
 window.snackbarControls.lit = lit;
 field.addEventListener('lab-open-change', () => lit.closed++);
 field.addEventListener('lab-action', () => lit.actions++);
+field.addEventListener('lab-error', (event) =>
+  window.snackbarErrors.push((event as CustomEvent).detail.error.message),
+);
 document.querySelector('#show-lit')?.addEventListener('click', () => lit.show());
 
 function Example() {
@@ -84,6 +89,7 @@ function Example() {
         onAction={() => {
           control.actions++;
         }}
+        onRuntimeError={(error) => window.snackbarErrors.push(String(error))}
       />
     </>
   );
