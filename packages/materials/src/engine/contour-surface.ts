@@ -129,6 +129,7 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
     rimMask.setAttribute('y', '0');
     const rimPath = el.ownerDocument.createElementNS(NS, 'path');
     rimPath.setAttribute('fill', 'none');
+    // Luminance-mask coverage; this white never becomes a painted UI colour.
     rimPath.setAttribute('stroke', 'white');
     rimPath.setAttribute('stroke-width', '2');
     rimMask.append(rimPath);
@@ -142,8 +143,9 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
     const probe = el.ownerDocument.createElement('div');
     probe.hidden = true;
     probe.style.boxShadow = 'var(--lab-material-shadow, none)';
-    probe.style.borderTop =
-      'var(--lab-surface-stroke-width, 0px) solid var(--lab-surface-stroke-color, transparent)';
+    probe.style.borderTopWidth = 'var(--lab-surface-stroke-width, 0px)';
+    probe.style.borderTopStyle = 'solid';
+    probe.style.borderTopColor = 'var(--lab-surface-stroke-color)';
     face.append(probe);
     const shadowNodes = [false, true].map((inset) => {
       const svg = el.ownerDocument.createElementNS(NS, 'svg');
@@ -155,6 +157,7 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
       filter.setAttribute('filterUnits', 'userSpaceOnUse');
       filter.setAttribute('color-interpolation-filters', 'sRGB');
       const drawing = el.ownerDocument.createElementNS(NS, 'path');
+      // The filter reads SourceAlpha only; its visible colours come from feFlood.
       drawing.setAttribute('fill', 'black');
       drawing.setAttribute('filter', `url(#${filter.id})`);
       svg.append(filter, drawing);

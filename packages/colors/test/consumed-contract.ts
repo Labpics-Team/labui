@@ -10,10 +10,9 @@
  *      asserts against the generated Lab UI colour contract.
  *   2. `dimension` — owned by @labpics/ui-tokens, generated locally; matches a
  *      prefix in `core/src/css.ts` `DIMENSION_PREFIXES`.
- *   3. `local-or-gap` — provisional tokens labui declares today (shadow stack,
- *      materials) that SHOULD eventually be resolved by the external engine.
- *      The allowlist below is the single source CH-03's external-deps doc must
- *      stay in sync with.
+ *   3. `local-or-gap` — Lab UI runtime controls (materials, motion) and
+ *      provisional engine tokens (shadow stack). Runtime geometry and local
+ *      paint inputs are not semantic palette roles.
  *
  * Anything else is `unclassified` — a name that entered silently and must be
  * triaged (added to the contract upstream, confirmed a dimension, or documented
@@ -77,6 +76,10 @@ export const LOCAL_OR_GAP_PREFIXES = [
   '--lab-elevation-', // semantic elevation roles (shadow.css)
   '--lab-motion-', // motion durations/easings/roles (motion.css — non-colour, permanently local)
   '--lab-veil-', // progressive material geometry/strength (materials — not colour roles)
+  '--lab-contour-clip', // exact: runtime-generated SVG decoration clip URL
+  '--lab-material-shadow', // exact: author shadow stack resolved by the contour adapter
+  '--lab-surface-stroke-width', // exact: local inside-stroke geometry
+  '--lab-surface-stroke-color', // exact: local paint input, normally bound to a semantic role
 ] as const;
 
 export type Bucket = 'colour-contract' | 'dimension' | 'local-or-gap' | 'unclassified';
