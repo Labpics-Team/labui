@@ -259,7 +259,7 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
             refresh();
           });
       });
-      observer.observe(el);
+      observer.observe(el, { box: 'border-box' });
     }
     refreshShape();
   };

@@ -1,8 +1,8 @@
 {
   "date": "2026-11-17",
-  "sourceHead": "2d9d7f3cf22444d68806f2dd9c2979ca04171532",
-  "productionHead": "2d9d7f3cf22444d68806f2dd9c2979ca04171532",
-  "run": "https://github.com/Labpics-Team/labui/actions/runs/44143550975",
+  "sourceHead": "5d3df88f9bd289f1aa2b29fc8a89177805fdd539",
+  "productionHead": "cda0453d929649d6f6b63beaac35b1bb959a1efe",
+  "run": "https://github.com/Labpics-Team/labui/actions/runs/44150921335",
   "result": "success",
   "platforms": [
     {
@@ -10,7 +10,10 @@
       "scrollRows": 720,
       "paintRows": 204,
       "initialSettleRows": 72,
-      "initialSettleMutations": 4,
+      "initialSettleMutations": 0,
+      "initialSettleChanges": [],
+      "displaySamplesRequiringFreshFrame": 494,
+      "maxStaleFrames": 1,
       "shapeRows": [
         {
           "browser": "chromium",
@@ -19,6 +22,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234106,
+              "painted": 4985,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236904,
+              "painted": 994,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234614,
+              "painted": 4588,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236183,
+              "painted": 3868,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236084,
+              "painted": 3654,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232886,
+              "painted": 9789,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -33,6 +81,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3166809082031, 225.31668090820312],
+            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
+            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
+            "image": [0, 0, 275.3166809082031, 225.31668090820312],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234141,
+              "painted": 4987,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236919,
+              "painted": 1002,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234607,
+              "painted": 4595,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236178,
+              "painted": 3875,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236081,
+              "painted": 3659,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232933,
+              "painted": 9796,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -47,6 +140,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234148,
+              "painted": 5007,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236915,
+              "painted": 995,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234591,
+              "painted": 4581,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236174,
+              "painted": 3866,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236071,
+              "painted": 3649,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232929,
+              "painted": 9805,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -61,6 +199,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234106,
+              "painted": 4985,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236904,
+              "painted": 994,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234614,
+              "painted": 4588,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236183,
+              "painted": 3868,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236084,
+              "painted": 3654,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232886,
+              "painted": 9789,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -75,6 +258,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3166809082031, 225.31668090820312],
+            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
+            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
+            "image": [0, 0, 275.3166809082031, 225.31668090820312],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234141,
+              "painted": 4987,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236919,
+              "painted": 1002,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234607,
+              "painted": 4595,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236178,
+              "painted": 3875,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236081,
+              "painted": 3659,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232933,
+              "painted": 9796,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -89,36 +317,57 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234148,
+              "painted": 5007,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236915,
+              "painted": 995,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234591,
+              "painted": 4581,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236174,
+              "painted": 3866,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236071,
+              "painted": 3649,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232929,
+              "painted": 9805,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
             "position": "",
             "clip": ""
           }
-        }
-      ],
-      "initialSettleChanges": [
-        {
-          "browser": "webkit",
-          "layout": "flex-column",
-          "mutations": [
-            {
-              "target": "lab-material__paint-runway",
-              "attribute": "style"
-            },
-            {
-              "target": "lab-material__paint-runway",
-              "attribute": "style"
-            },
-            {
-              "target": "lab-material__paint-runway",
-              "attribute": "style"
-            },
-            {
-              "target": "lab-material__paint-runway",
-              "attribute": "style"
-            }
-          ]
         }
       ]
     },
@@ -128,6 +377,9 @@
       "paintRows": 204,
       "initialSettleRows": 72,
       "initialSettleMutations": 0,
+      "initialSettleChanges": [],
+      "displaySamplesRequiringFreshFrame": 8,
+      "maxStaleFrames": 1,
       "shapeRows": [
         {
           "browser": "chromium",
@@ -136,6 +388,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234188,
+              "painted": 5032,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236926,
+              "painted": 1005,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234636,
+              "painted": 4608,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236190,
+              "painted": 3881,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236129,
+              "painted": 3688,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 233012,
+              "painted": 9870,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -150,6 +447,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3166809082031, 225.31668090820312],
+            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
+            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
+            "image": [0, 0, 275.3166809082031, 225.31668090820312],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234141,
+              "painted": 4987,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236919,
+              "painted": 1002,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234607,
+              "painted": 4595,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236178,
+              "painted": 3875,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236081,
+              "painted": 3659,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232933,
+              "painted": 9796,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -164,6 +506,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234108,
+              "painted": 4968,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236904,
+              "painted": 990,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234572,
+              "painted": 4584,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236162,
+              "painted": 3871,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236062,
+              "painted": 3653,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232888,
+              "painted": 9775,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -178,6 +565,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234188,
+              "painted": 5032,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236926,
+              "painted": 1005,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234636,
+              "painted": 4608,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236190,
+              "painted": 3881,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236129,
+              "painted": 3688,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 233012,
+              "painted": 9870,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -192,6 +624,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3166809082031, 225.31668090820312],
+            "contour": [0, 0, 275.3166809082031, 225.31668090820312],
+            "stroke": [0, 0, 275.3166809082031, 225.31668090820312],
+            "image": [0, 0, 275.3166809082031, 225.31668090820312],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234141,
+              "painted": 4987,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236919,
+              "painted": 1002,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234607,
+              "painted": 4595,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236178,
+              "painted": 3875,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236081,
+              "painted": 3659,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232933,
+              "painted": 9796,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -206,6 +683,51 @@
           "overflowInteractive": true,
           "foregroundStroke": [255, 0, 0],
           "shadowStack": 2,
+          "borderBox": {
+            "host": [275.3125, 225.3125],
+            "contour": [0, 0, 275.3125, 225.3125],
+            "stroke": [0, 0, 275.3125, 225.3125],
+            "image": [0, 0, 275.3125, 225.3125],
+            "localSvg": [220.25, 180.25]
+          },
+          "shadowPixels": [
+            {
+              "name": "outer-spread",
+              "checked": 234108,
+              "painted": 4968,
+              "mismatches": 0
+            },
+            {
+              "name": "outer-negative-offset",
+              "checked": 236904,
+              "painted": 990,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-spread",
+              "checked": 234572,
+              "painted": 4584,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-negative-offset",
+              "checked": 236162,
+              "painted": 3871,
+              "mismatches": 0
+            },
+            {
+              "name": "inner-border",
+              "checked": 236062,
+              "painted": 3653,
+              "mismatches": 0
+            },
+            {
+              "name": "parallel-layers",
+              "checked": 232888,
+              "painted": 9775,
+              "mismatches": 0
+            }
+          ],
           "disposed": {
             "observers": 0,
             "defs": 0,
@@ -213,10 +735,9 @@
             "clip": ""
           }
         }
-      ],
-      "initialSettleChanges": []
+      ]
     }
   ],
-  "qualification": "Each OS includes snapshots and isolated actual-display capture. Linux WebKit flex-column reproduced four runway style mutations during 20 initial idle frames BEFORE any scrollTo, then zero during scrolling. This separates initial layout settling from scroll work; the individual observer callback was not traced.",
-  "previousRun": "https://github.com/Labpics-Team/labui/actions/runs/44141469499"
+  "qualification": "Each OS includes snapshots and isolated actual-display capture. A distinct marker identifies each displayed sample; stale frames are retried only while that marker is absent. Pixel errors remain failures. Native CSS shadow comparisons use the zero-smoothing limit and flat 3x3 interiors, retaining an explicit antialiasing boundary. Earlier Linux WebKit observed four initial idle runway mutations before any scrollTo; scrolling itself remains mutation-free.",
+  "previousRun": "https://github.com/Labpics-Team/labui/actions/runs/44143550975"
 }
