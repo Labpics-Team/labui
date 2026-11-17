@@ -11,6 +11,8 @@
 .lab-material[data-lab-material-mode="acrylic"] {
   --_surface-paint: var(--_first-paint, var(--_tint));
   --_blur: var(--_backdrop-blur);
-  --_noise: var(--_acrylic-noise);
+  /* Screen grain belongs below the paints in the backdrop transfer. A normal
+   * CSS texture would darken the surface; unsupported renderers omit the grain. */
+  --_noise: none;
   --_material-filter: var(--_live-filter);
 }

@@ -113,4 +113,18 @@ describe('author material profile', () => {
     expect(materialProfile.progressive.compositions.strong).toEqual(['strong', 'strong']);
     expect(materialProfile.progressive.compositions['overlay-ghost']).toEqual(['strong']);
   });
+
+  it('retains Screen grain from REST, which the plugin effect schema omits', () => {
+    const rest = JSON.parse(
+      readFileSync(
+        new URL('../../../docs/evidence/materials-20261117/figma-noise-rest.json', import.meta.url),
+        'utf8',
+      ),
+    ) as { nodes: { effects: { type: string; blendMode?: string }[] }[] };
+    expect(rest.nodes).toHaveLength(2);
+    for (const node of rest.nodes)
+      expect(node.effects.find((effect) => effect.type === 'NOISE')?.blendMode?.toLowerCase()).toBe(
+        materialProfile.noise.blendMode,
+      );
+  });
 });

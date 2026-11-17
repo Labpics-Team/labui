@@ -38,7 +38,8 @@ export function compileMaterialPaint(paints: MaterialPaints): CompiledMaterialPa
   let maximumError = 0;
   // All current blend functions are piecewise linear. Endpoint + breakpoint
   // evaluation proves the maximum chord error without a sampling tolerance.
-  const probes = new Set([0, 1]);
+  // Color-dodge with source=1 has a jump immediately after black.
+  const probes = new Set([0, Number.EPSILON, 1 - Number.EPSILON, 1]);
   for (const key of keys) {
     const normal = paints.normal[key] / 255;
     const threshold = paints.blendMode === 'overlay' ? 0.5 : 1 - paints.blend[key] / 255;

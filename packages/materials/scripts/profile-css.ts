@@ -5,6 +5,7 @@ import {
   materialProfile,
   materialRoles,
   webBackdropBlur,
+  webGlassFrost,
 } from '../src/profile';
 
 /** Renderer conversion, kept out of the platform-neutral authoring document. */
@@ -19,7 +20,7 @@ export function materialProfileCss(): string {
       `  --_first-paint: var(--_lab-material-${tier}-fill);`,
       `  --_first-paint-filter: var(--_lab-material-${tier}-filter);`,
       `  --_backdrop-blur: ${webBackdropBlur(tier)}px;`,
-      `  --_glass-frost: ${glass.frost}px;`,
+      `  --_glass-frost: ${webGlassFrost(tier)}px;`,
       `  --_lg-refraction: ${glass.refraction};`,
       `  --_lg-depth: ${glass.depth};`,
       `  --_lg-dispersion: ${glass.dispersion};`,
@@ -29,6 +30,7 @@ export function materialProfileCss(): string {
   return [
     '/* Generated from src/profile.json. Glass frost is a separate renderer mapping. */',
     firstPaintCss(),
+    `[data-veil][data-veil-profile] { --_veil-noise: url("./veil-noise.png"); --_veil-noise-size: ${Number((48 * materialProfile.noise.size).toFixed(4))}px; --_veil-noise-blend: ${materialProfile.noise.blendMode}; }`,
     `.lab-material {\n${declarations('base')}\n}`,
     ...MATERIAL_TIERS.map((tier) => `.lab-material--${tier} {\n${declarations(tier)}\n}`),
   ].join('\n');

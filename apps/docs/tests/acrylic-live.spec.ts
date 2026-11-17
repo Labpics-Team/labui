@@ -1,6 +1,5 @@
 import {
   type MaterialPaints,
-  compositeOver,
   materialBlendMode,
   materialPaintOver,
   materialProfile,
@@ -110,7 +109,12 @@ test.describe('author paints in the backdrop renderer', () => {
         const pixel = await patchColor(page, page.getByTestId(`surface-on-${name}`));
         const endpoints = [
           materialPaintOver(paints, backdrop),
-          materialPaintOver(paints, compositeOver(noise, backdrop)),
+          materialPaintOver(paints, {
+            r: backdrop.r + ((255 - backdrop.r) * noise.r * noise.a) / 255,
+            g: backdrop.g + ((255 - backdrop.g) * noise.g * noise.a) / 255,
+            b: backdrop.b + ((255 - backdrop.b) * noise.b * noise.a) / 255,
+            a: 1,
+          }),
         ];
         for (const key of ['r', 'g', 'b'] as const) {
           const low = Math.min(...endpoints.map((value) => value[key]));
@@ -126,23 +130,25 @@ test.describe('author paints in the backdrop renderer', () => {
 
   test('mode flips, media changes and final disposal release paint filters', async ({ page }) => {
     const count = () => page.locator('.lab-material-paint-defs filter').count();
-    await expect.poll(count).toBe(3);
+    await expect.poll(count).toBe(1);
     for (let i = 0; i < 8; i++) {
       await page.locator('html').evaluate((el) => el.setAttribute('data-material', 'solid'));
       await expect.poll(count).toBe(0);
       await page.locator('html').evaluate((el) => el.setAttribute('data-material', 'acrylic'));
-      await expect.poll(count).toBe(3);
+      await expect.poll(count).toBe(1);
     }
     await page.emulateMedia({ forcedColors: 'active' });
     await expect.poll(count).toBe(0);
     await expect(page.getByTestId('surface-on-black')).toHaveCSS('backdrop-filter', 'none');
     await page.emulateMedia({ forcedColors: 'none' });
-    await expect.poll(count).toBe(3);
+    await expect.poll(count).toBe(1);
     await page.evaluate(() => window.__labAcrylicLive?.dispose());
     await expect(page.locator('.lab-material-paint-defs')).toHaveCount(0);
   });
 
-  test('theme changes update the retained transfer and the actual pixels', async ({ page }) => {
+  test('theme changes replace the shared transfer and update the actual pixels', async ({
+    page,
+  }) => {
     const panel = page.getByTestId('surface-on-black');
     const before = await patchColor(page, panel);
     const ids = await page
@@ -154,6 +160,18 @@ test.describe('author paints in the backdrop renderer', () => {
       await page
         .locator('.lab-material-paint-defs filter')
         .evaluateAll((els) => els.map((el) => el.id)),
-    ).toEqual(ids);
+    ).not.toEqual(ids);
+    await expect(page.locator('.lab-material-paint-defs filter')).toHaveCount(1);
+  });
+
+  test('Screen grain does not darken a white backdrop', async ({ page }) => {
+    const panel = page.getByTestId('surface-on-white');
+    await panel.evaluate((el) => {
+      el.style.setProperty('--_tint', 'rgb(0 0 0 / 0)');
+      el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
+    });
+    await expect
+      .poll(async () => Math.min(...Object.values(await patchColor(page, panel))))
+      .toBeGreaterThanOrEqual(254.5);
   });
 });

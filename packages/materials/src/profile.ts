@@ -29,6 +29,11 @@ export function webBackdropBlur(tier: MaterialTier): number {
   return source.tiers[tier].backdrop.radius / 2;
 }
 
+/** Calibrated against the untouched Figma Effects/Glass dot-pattern scene. */
+export function webGlassFrost(tier: MaterialTier): number {
+  return source.tiers[tier].glass.frost / 2;
+}
+
 export function materialBlendMode(theme: ThemeName): MaterialBlendMode {
   return source.paints.blendMode[theme] as MaterialBlendMode;
 }

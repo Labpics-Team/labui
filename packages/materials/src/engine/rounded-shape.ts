@@ -20,7 +20,8 @@ export function resolveCornerRadii(w: number, h: number, values: readonly string
     return [length(pair[0] ?? '0px', w), length(pair[1] ?? pair[0] ?? '0px', h)];
   }) as unknown as CornerRadii;
   const [lx, ly, rx, ry, bx, by, ax, ay] = radii;
-  const f = Math.min(1, w / (lx + rx), w / (ax + bx), h / (ly + ay), h / (ry + by));
+  const ratio = (dimension: number, sum: number) => (sum > 0 ? dimension / sum : 1);
+  const f = Math.min(1, ratio(w, lx + rx), ratio(w, ax + bx), ratio(h, ly + ay), ratio(h, ry + by));
   const normalized = radii.map((r) => r * f) as unknown as CornerRadii;
   const first = normalized[0];
   return normalized.every((r) => r === first) ? first : normalized;

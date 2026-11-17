@@ -3,7 +3,7 @@
  */
 import { parseRgb } from '../luminance';
 import { type MaterialPaints, compileMaterialPaint, materialPaintTables } from '../material-paints';
-import { materialBlendMode } from '../profile';
+import { materialBlendMode, materialProfile } from '../profile';
 import {
   type EngineHandle,
   ensureHiddenDefs,
@@ -82,7 +82,7 @@ function acquire(
     const grain = el.ownerDocument.createElementNS(SVGNS, 'feBlend');
     grain.setAttribute('in', 'noise-tile');
     grain.setAttribute('in2', 'SourceGraphic');
-    grain.setAttribute('mode', 'normal');
+    grain.setAttribute('mode', materialProfile.noise.blendMode);
     grain.setAttribute('result', 'grain');
     filter.append(noise, tile, grain);
     transfer.setAttribute('in', 'grain');

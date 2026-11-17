@@ -18,6 +18,7 @@ describe('CSS lens shape', () => {
       24, 12, 0, 0, 0, 0, 0, 0,
     ]);
     expect(resolveCornerRadii(200, 100, ['32px', '32px', '32px', '32px'])).toBe(32);
+    expect(resolveCornerRadii(0, 0, ['0px', '0px', '0px', '0px'])).toBe(0);
   });
 
   it('matches an independently sampled ellipse boundary, including an eccentric corner', () => {

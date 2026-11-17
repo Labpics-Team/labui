@@ -84,6 +84,8 @@ const BINDINGS: readonly EngineBinding[] = [
     gate: supportsBackdropBlur,
     selector: VEIL,
     wants: () => true,
+    blocked: materialMediaBlocked,
+    mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
     attach: attachVeil,
   },
@@ -243,6 +245,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
     'class',
     'style',
     'data-veil',
+    'data-veil-profile',
     'slot',
   ];
   // Explicit lifecycle mount covers closed roots too. Observe inherited mode

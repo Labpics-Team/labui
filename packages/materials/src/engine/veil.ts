@@ -56,6 +56,7 @@
  *     the page behind it.
  */
 
+import { materialProfile } from '../profile';
 import { trailingRaf } from './mount';
 import { type Point, type Stop, bandBBox, bandify, parseStops } from './veil-math';
 
@@ -127,7 +128,8 @@ interface VeilConfig {
   h: number;
   from: string;
   to: string;
-  stops: string;
+  passes: { stops: string; noiseOpacity: number }[];
+  noise: string;
   levels: number;
   feather: string;
   reduced: boolean;
@@ -147,9 +149,20 @@ function readConfig(el: HTMLElement): VeilConfig {
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
   const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
-  const strengthRaw = Number.parseFloat(raw('--lab-veil-strength', `${DEFAULTS.strength}px`));
-  const strength =
-    Number.isFinite(strengthRaw) && strengthRaw >= 0 ? strengthRaw : DEFAULTS.strength;
+  const author = materialProfile.progressive;
+  const profileName = el.getAttribute('data-veil-profile') as keyof typeof author.compositions;
+  const composition = Object.hasOwn(author.compositions, profileName)
+    ? author.compositions[profileName]
+    : undefined;
+  const makePass = (defaultStrength: number, noiseOpacity: number, easing: string) => {
+    const strengthRaw = Number.parseFloat(raw('--lab-veil-strength', `${defaultStrength}px`));
+    const strength =
+      Number.isFinite(strengthRaw) && strengthRaw >= 0 ? strengthRaw : defaultStrength;
+    return {
+      stops: raw('--lab-veil-stops', `0 ${strength}px, 1 0px ${easing}`),
+      noiseOpacity,
+    };
+  };
   return {
     w,
     h,
@@ -157,7 +170,13 @@ function readConfig(el: HTMLElement): VeilConfig {
     to: preset ? preset.to : raw('--lab-veil-to', DEFAULTS.to),
     // The canonical profile: strength at the strong end (t=0), easing out to
     // sharp — `--lab-veil-stops` overrides it wholesale (Figma-like stops).
-    stops: raw('--lab-veil-stops', `0 ${strength}px, 1 0px ease-out`),
+    passes: composition
+      ? composition.map((name) => {
+          const style = author.styles[name as keyof typeof author.styles];
+          return makePass(style.radius / 2, style.noiseOpacity, 'linear');
+        })
+      : [makePass(DEFAULTS.strength, 0, 'ease-out')],
+    noise: raw('--_veil-noise', 'none'),
     levels:
       Number.parseInt(raw('--lab-veil-levels', String(DEFAULTS.levels)), 10) || DEFAULTS.levels,
     feather: raw('--lab-veil-feather', DEFAULTS.feather),
@@ -177,7 +196,7 @@ function render(state: VeilState): void {
   const { el } = state;
   const c = readConfig(el);
 
-  const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${c.stops}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
+  const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${JSON.stringify(c.passes)}|${c.noise}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
   if (sig === state.sig) return;
   state.sig = sig;
 
@@ -185,9 +204,15 @@ function render(state: VeilState): void {
   state.strips = [];
   if (c.reduced || !state.enabled || !supportsBackdropBlur()) return;
 
+  for (const pass of c.passes) renderPass(state, c, pass);
+}
+
+function renderPass(state: VeilState, c: VeilConfig, pass: VeilConfig['passes'][number]): void {
+  const { el } = state;
+
   let stops: Stop[];
   try {
-    stops = parseStops(c.stops);
+    stops = parseStops(pass.stops);
   } catch (err) {
     // A broken stops token must not throw the page apart mid-theme-switch —
     // render nothing, shout once.
@@ -304,6 +329,17 @@ function render(state: VeilState): void {
       el.appendChild(strip);
       state.strips.push(strip);
     }
+  }
+  if (pass.noiseOpacity > 0 && c.noise !== 'none') {
+    const noise = el.ownerDocument.createElement('div');
+    noise.className = 'lab-veil__noise';
+    noise.style.backgroundImage = c.noise;
+    noise.style.setProperty(
+      '--_veil-noise-opacity',
+      String(pass.noiseOpacity / materialProfile.progressive.styles.strong.noiseOpacity),
+    );
+    el.append(noise);
+    state.strips.push(noise);
   }
 }
 

@@ -9,6 +9,15 @@ import { MATERIAL_TIERS, materialBlendMode } from '../src/profile';
 import { readContractMaterials } from './contract-values';
 
 describe('encoded sRGB author paints', () => {
+  it('does not classify the pure-white color-dodge discontinuity as affine', () => {
+    const compiled = compileMaterialPaint({
+      normal: { r: 0, g: 0, b: 0, a: 0 },
+      blend: { r: 255, g: 255, b: 255, a: 1 },
+      blendMode: 'color-dodge',
+    });
+    expect(compiled.affine).toBe(false);
+    expect(compiled.fallbackError).toBeCloseTo(255, 8);
+  });
   it('uses the source blend order and the W3C color-dodge boundary rules', () => {
     expect(blendChannel(0, 1, 'color-dodge')).toBe(0);
     expect(blendChannel(0.2, 1, 'color-dodge')).toBe(1);

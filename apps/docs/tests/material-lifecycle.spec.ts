@@ -241,7 +241,7 @@ test('CSS without a runtime still degrades to opaque Solid', async ({ page, brow
   const panel = page.locator('#unmanaged');
   await expect(panel).not.toHaveAttribute('data-lab-material-mode');
   await expect(panel).not.toHaveCSS('background-color', 'rgb(245, 245, 245)');
-  await expect(panel).toHaveCSS('--_blur', '12px');
+  await expect(panel).toHaveCSS('--_blur', '6px');
   await page.emulateMedia({ contrast: 'more' });
   await expect(panel).toHaveCSS('background-color', 'rgb(245, 245, 245)');
   await expect(panel).toHaveCSS('--_blur', '0px');
@@ -679,4 +679,47 @@ test('the non-SVG paint renderer follows custom roles instead of keeping baked d
   await expect(page.locator('body > .lab-material-paint-defs')).toHaveCount(0);
   await surface.evaluate((el) => el.style.setProperty('--_tint', 'rgb(255 255 255 / .25)'));
   await expect(surface).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.25)');
+});
+
+test('authored veil profiles retain the two Strong passes and one Overlay Ghost pass', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  await page.evaluate(() => {
+    const veil = document.createElement('div');
+    veil.id = 'authored-veil';
+    veil.dataset.veil = 'top';
+    veil.dataset.veilProfile = 'strong';
+    veil.style.cssText = 'width:320px;height:220px';
+    document.body.append(veil);
+    window.materialFixture.mount(veil);
+  });
+  const veil = page.locator('#authored-veil');
+  await expect(veil.locator('.lab-veil__noise')).toHaveCount(2);
+  const strong = await veil
+    .locator('.lab-veil__strip')
+    .evaluateAll((els) => els.map((el) => getComputedStyle(el).backdropFilter));
+  await veil.evaluate((el) => el.setAttribute('data-veil-profile', 'overlay-ghost'));
+  await expect(veil.locator('.lab-veil__noise')).toHaveCount(1);
+  const ghost = await veil
+    .locator('.lab-veil__strip')
+    .evaluateAll((els) => els.map((el) => getComputedStyle(el).backdropFilter));
+  expect(strong).toEqual([...ghost, ...ghost]);
+  const sigmaSquared = ghost.reduce((sum, value) => {
+    const sigma = Number.parseFloat(value.replace('blur(', ''));
+    return sum + sigma * sigma;
+  }, 0);
+  expect(Math.sqrt(sigmaSquared)).toBeCloseTo(12, 1);
+  const noise = await veil.locator('.lab-veil__noise').evaluate(async (el) => {
+    const src = getComputedStyle(el).backgroundImage.match(/url\(["']?(.*?)["']?\)/)?.[1];
+    if (!src) throw new Error('Missing noise asset');
+    const image = new Image();
+    image.src = src;
+    await image.decode();
+    return [image.width, image.height];
+  });
+  expect(noise).toEqual([48, 48]);
+  await page.emulateMedia({ contrast: 'more' });
+  await expect(veil.locator('.lab-veil__strip,.lab-veil__noise')).toHaveCount(0);
 });
