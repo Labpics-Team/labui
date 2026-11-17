@@ -571,7 +571,10 @@ test('the authored CSS paints survive runtime hydration over coloured content', 
   test.skip(browserName !== 'chromium');
   await page.setViewportSize({ width: 800, height: 500 });
   await page.addStyleTag({
-    content: readFileSync(new URL('../../../packages/colors/contract.css', import.meta.url), 'utf8'),
+    content: readFileSync(
+      new URL('../../../packages/colors/contract.css', import.meta.url),
+      'utf8',
+    ),
   });
   await page.evaluate(() => {
     window.materialFixture.stop();
