@@ -1,0 +1,227 @@
+import { Button } from '@labpics/ui-react/button';
+import { Card } from '@labpics/ui-react/card';
+import { Input } from '@labpics/ui-react/input';
+import { Sheet } from '@labpics/ui-react/sheet';
+import { Switch } from '@labpics/ui-react/switch';
+import { type ThemeScope, createThemeScope, initializeColors } from '@labui/colors/runtime';
+import { type FormEvent, StrictMode, useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+
+interface Settings {
+  name: string;
+  notifications: boolean;
+}
+const storageKey = 'labui.workspace.v1';
+const defaults: Settings = { name: 'Labpics', notifications: true };
+
+function readSettings(): Settings {
+  try {
+    const saved: unknown = JSON.parse(localStorage.getItem(storageKey) ?? 'null');
+    if (
+      saved &&
+      typeof saved === 'object' &&
+      'name' in saved &&
+      'notifications' in saved &&
+      typeof saved.name === 'string' &&
+      saved.name.trim() &&
+      typeof saved.notifications === 'boolean'
+    ) {
+      return { name: saved.name, notifications: saved.notifications };
+    }
+  } catch {
+    /* Недоступное хранилище сохраняет работоспособность формы. */
+  }
+  return { ...defaults };
+}
+
+function Workspace() {
+  const [settings, setSettings] = useState(readSettings);
+  const [draft, setDraft] = useState(settings);
+  const [open, setOpen] = useState(false);
+  const [invalid, setInvalid] = useState(false);
+  const [status, setStatus] = useState('');
+  const [dark, setDark] = useState(false);
+  const [contrast, setContrast] = useState(false);
+  const [themeReady, setThemeReady] = useState(false);
+  const scope = useRef<ThemeScope>();
+  const nameInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    let disposed = false;
+    void initializeColors()
+      .then(() => {
+        if (disposed) return;
+        scope.current = createThemeScope(document.documentElement);
+        setThemeReady(true);
+      })
+      .catch(() => setStatus('Доступна начальная тема. Не удалось загрузить настройку контраста.'));
+    return () => {
+      disposed = true;
+      scope.current?.dispose();
+      scope.current = undefined;
+    };
+  }, []);
+  useEffect(() => {
+    if (!themeReady) return;
+    const result = scope.current?.update({
+      theme: dark ? 'dark' : 'light',
+      contrast: contrast ? 'more' : 'normal',
+    });
+    if (result && !result.ok) setStatus('Не удалось изменить тему. Предыдущая палитра сохранена.');
+  }, [dark, contrast, themeReady]);
+
+  function changeOpen(next: boolean) {
+    if (next) {
+      setDraft(settings);
+      setInvalid(false);
+      setStatus('');
+    }
+    setOpen(next);
+  }
+  function save(event: FormEvent) {
+    event.preventDefault();
+    if (!draft.name.trim()) {
+      setInvalid(true);
+      nameInput.current?.focus();
+      return;
+    }
+    const next = { ...draft, name: draft.name.trim() };
+    let persisted = true;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      persisted = false;
+    }
+    setSettings(next);
+    setOpen(false);
+    setStatus(persisted ? 'Настройки сохранены' : 'Настройки применены до закрытия страницы');
+  }
+
+  return (
+    <div className="workspace">
+      <header className="workspace-topbar">
+        <a className="workspace-brand" href="./index.html">
+          labpics<span>LabUI</span>
+        </a>
+        <span className="workspace-caption">Рабочее пространство</span>
+      </header>
+      <main className="workspace-main">
+        <div className="workspace-intro">
+          <p className="workspace-eyebrow">ВАШЕ ПРОСТРАНСТВО</p>
+          <h1>Всё готово к работе.</h1>
+          <p>Настройте детали, которые делают пространство вашим.</p>
+        </div>
+        <Card
+          className="workspace-card"
+          variant="outlined"
+          padding="l"
+          header={
+            <div className="workspace-card-heading">
+              <span className="workspace-monogram" aria-hidden="true">
+                {settings.name.slice(0, 1).toLocaleUpperCase()}
+              </span>
+              <div>
+                <h2>{settings.name}</h2>
+                <p>Общее место для хороших идей</p>
+              </div>
+            </div>
+          }
+          footer={
+            <Sheet
+              open={open}
+              onOpenChange={changeOpen}
+              defaultPosition="half"
+              heading="Настройки пространства"
+              description="Название и уведомления можно изменить в любой момент."
+              onMotionError={() => setStatus('Не удалось открыть панель. Попробуйте ещё раз.')}
+              trigger={({ props, ref }) => (
+                <Button {...props} ref={ref} type="neutral" kind="tinted">
+                  Изменить настройки
+                </Button>
+              )}
+              content={
+                <form className="workspace-form" onSubmit={save} noValidate>
+                  <Input
+                    ref={nameInput}
+                    label="Название пространства"
+                    name="workspace-name"
+                    value={draft.name}
+                    maxLength={80}
+                    autoComplete="organization"
+                    invalid={invalid}
+                    error="Введите название пространства"
+                    onValueChange={(name) => {
+                      setDraft((value) => ({ ...value, name }));
+                      if (name.trim()) setInvalid(false);
+                    }}
+                  />
+                  <div className="workspace-option">
+                    <Switch
+                      checked={draft.notifications}
+                      onCheckedChange={(notifications) =>
+                        setDraft((value) => ({ ...value, notifications }))
+                      }
+                    >
+                      Уведомления команды
+                    </Switch>
+                    <p>Изменения проектов и важные сообщения.</p>
+                  </div>
+                  <div className="workspace-actions">
+                    <Button type="neutral" kind="tinted" onClick={() => setOpen(false)}>
+                      Отмена
+                    </Button>
+                    <Button htmlType="submit">Сохранить</Button>
+                  </div>
+                </form>
+              }
+            />
+          }
+        >
+          <dl className="workspace-details">
+            <div>
+              <dt>Название</dt>
+              <dd>{settings.name}</dd>
+            </div>
+            <div>
+              <dt>Уведомления команды</dt>
+              <dd>{settings.notifications ? 'Включены' : 'Выключены'}</dd>
+            </div>
+          </dl>
+        </Card>
+        <Card
+          className="workspace-card"
+          variant="outlined"
+          padding="l"
+          header={<h2>Как вам удобнее</h2>}
+        >
+          <div className="workspace-preferences">
+            <div className="workspace-option">
+              <Switch checked={dark} disabled={!themeReady} onCheckedChange={setDark}>
+                Тёмная тема
+              </Switch>
+              <p>Спокойный фон для работы вечером.</p>
+            </div>
+            <div className="workspace-option">
+              <Switch checked={contrast} disabled={!themeReady} onCheckedChange={setContrast}>
+                Повышенный контраст
+              </Switch>
+              <p>Более отчётливые подписи и границы.</p>
+            </div>
+          </div>
+        </Card>
+        <output className="workspace-status" aria-live="polite">
+          {status}
+        </output>
+      </main>
+      <footer className="workspace-footer">LabUI · Продумано до деталей.</footer>
+    </div>
+  );
+}
+
+const root = document.querySelector('#experience-root');
+if (!root) throw new Error('Missing experience mount');
+createRoot(root).render(
+  <StrictMode>
+    <Workspace />
+  </StrictMode>,
+);

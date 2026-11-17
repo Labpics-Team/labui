@@ -33,7 +33,22 @@
     "./selection.css": "./dist/selection.css",
     "./shadow.css": "./dist/shadow.css",
     "./tokens.css": "./dist/tokens.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./dialog/shared": {
+      "types": "./dist/components/dialog/shared.d.ts",
+      "import": "./dist/components/dialog/shared.js",
+      "require": "./dist/components/dialog/shared.cjs"
+    },
+    "./sheet/positions": {
+      "types": "./dist/components/sheet/positions.d.ts",
+      "import": "./dist/components/sheet/positions.js",
+      "require": "./dist/components/sheet/positions.cjs"
+    },
+    "./motion/sheet": {
+      "types": "./dist/motion/sheet.d.ts",
+      "import": "./dist/motion/sheet.js",
+      "require": "./dist/motion/sheet.cjs"
+    }
   },
   "files": ["dist"],
   "sideEffects": [
@@ -73,7 +88,10 @@
     "@zag-js/tooltip": "1.41.2",
     "@zag-js/types": "1.41.2",
     "@zag-js/vanilla": "1.41.2",
-    "lit": "3.3.3"
+    "lit": "3.3.3",
+    "@labpics/motion": "0.5.0",
+    "@labpics/ui-tokens": "workspace:*",
+    "@zag-js/dom-query": "1.41.2"
   },
   "peerDependencies": {
     "@lit-labs/ssr": "^4.1.0"
@@ -84,7 +102,6 @@
     }
   },
   "devDependencies": {
-    "@labpics/ui-tokens": "workspace:*",
     "@lit-labs/ssr": "4.1.0",
     "tsup": "8.3.6",
     "tsx": "4.19.2",

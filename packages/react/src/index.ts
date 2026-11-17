@@ -139,3 +139,5 @@ export {
 } from './tags-input.js';
 
 export const PACKAGE_NAME = '@labpics/ui-react';
+
+export { Sheet, type SheetProps, type LabSheetPosition } from './sheet.js';

@@ -51,6 +51,8 @@ function colorsSsrPlugin(): Plugin {
 
 export default defineConfig({
   root: 'src',
+  // wasm-bindgen resolves its binary beside the original module, not a Vite prebundle.
+  optimizeDeps: { exclude: ['@labpics/colors'] },
   plugins: [ssrProofPlugin(), colorsSsrPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
@@ -66,6 +68,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, 'src/index.html'),
         colors: resolve(__dirname, 'src/colors.html'),
+        experience: resolve(__dirname, 'src/experience.html'),
         // Test-only browser oracles. Keeping them below _fixtures prevents a
         // measurement harness from masquerading as documentation.
         'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),

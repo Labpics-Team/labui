@@ -1,0 +1,175 @@
+@import "@labpics/fonts/fonts.css";
+@import "@labui/colors/contract.css";
+@import "@labpics/ui-tokens/tokens.css";
+@import "@labpics/ui-tokens/motion.css";
+@import "@labpics/ui-core/theme.css";
+@import "@labpics/ui-core/selection.css";
+@import "@labpics/ui-core/shadow.css";
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--lab-bg-grouped-primary);
+  color: var(--lab-label-primary);
+  font-family: Geist, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+button,
+input {
+  font: inherit;
+}
+.workspace {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+.workspace-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem clamp(1.25rem, 5vw, 4rem);
+}
+.workspace-brand {
+  display: flex;
+  align-items: baseline;
+  gap: .75rem;
+  color: var(--lab-label-primary);
+  font-weight: 650;
+  font-size: 1.25rem;
+  letter-spacing: -.05em;
+  text-decoration: none;
+}
+.workspace-brand span,
+.workspace-caption {
+  color: var(--lab-label-secondary);
+  font-size: .8125rem;
+  font-weight: 450;
+  letter-spacing: 0;
+}
+.workspace-main {
+  width: min(100% - 2.5rem, 38rem);
+  margin: clamp(1.5rem, 6vh, 5rem) auto 0;
+}
+.workspace-intro {
+  margin-bottom: 2.5rem;
+}
+.workspace-eyebrow {
+  color: var(--lab-label-secondary);
+  font-size: .6875rem;
+  font-weight: 650;
+  letter-spacing: .12em;
+}
+.workspace-intro h1 {
+  margin: .75rem 0 .625rem;
+  font-size: clamp(2rem, 5vw, 2.75rem);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -.045em;
+}
+.workspace-intro > p:last-child {
+  color: var(--lab-label-secondary);
+  margin: 0;
+  max-width: 29rem;
+}
+.workspace-card {
+  margin-top: 1.25rem;
+}
+.workspace-card h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  margin: 0;
+}
+.workspace-card-heading {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.workspace-card-heading p {
+  font-size: .8125rem;
+  color: var(--lab-label-secondary);
+  margin: .125rem 0 0;
+}
+.workspace-monogram {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 1rem;
+  background: var(--lab-bg-secondary);
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+.workspace-details {
+  margin: 0;
+  display: grid;
+  gap: .75rem;
+  font-size: .875rem;
+}
+.workspace-details > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .5rem 1.5rem;
+}
+.workspace-details dt {
+  color: var(--lab-label-secondary);
+}
+.workspace-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.workspace-preferences,
+.workspace-form {
+  display: grid;
+  gap: 1.5rem;
+}
+.workspace-option p {
+  margin: .375rem 0 0;
+  color: var(--lab-label-secondary);
+  font-size: .8125rem;
+}
+.workspace-actions {
+  display: flex;
+  gap: .75rem;
+  justify-content: flex-end;
+  padding-top: .5rem;
+}
+.workspace-status {
+  display: block;
+  min-height: 1.5rem;
+  margin: 1.25rem 0;
+  color: var(--lab-label-secondary);
+  font-size: .875rem;
+  text-align: center;
+}
+.workspace-footer {
+  margin-top: auto;
+  padding: 2rem 1.25rem 1.5rem;
+  text-align: center;
+  color: var(--lab-label-secondary);
+  font-size: .75rem;
+}
+.workspace .lab-sheet-positioner {
+  width: min(100%, 40rem);
+  margin-inline: auto;
+}
+.workspace .lab-sheet-panel-heading {
+  gap: .5rem;
+}
+.workspace .lab-sheet-description {
+  font-size: .875rem;
+}
+.workspace .lab-sheet-body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@media (max-width: 28rem) {
+  .workspace-caption {
+    display: none;
+  }
+}
