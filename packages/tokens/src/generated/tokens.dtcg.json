@@ -576,6 +576,42 @@
         }
       }
     },
+    "card-caption-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 8,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.5rem"
+        }
+      }
+    },
+    "card-text-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 2,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.125rem"
+        }
+      }
+    },
+    "card-title-gap": {
+      "$type": "dimension",
+      "$value": {
+        "value": 4,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.25rem"
+        }
+      }
+    },
     "sheet-x": {
       "$type": "dimension",
       "$value": {
@@ -1298,6 +1334,18 @@
         }
       }
     },
+    "card-media": {
+      "$type": "dimension",
+      "$value": {
+        "value": 200,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "12.5rem"
+        }
+      }
+    },
     "sheet-drag-area": {
       "$type": "dimension",
       "$value": {
@@ -1979,6 +2027,42 @@
         }
       }
     },
+    "card-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "card-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 16,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1rem"
+        }
+      }
+    },
+    "card-caption": {
+      "$type": "dimension",
+      "$value": {
+        "value": 14,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.875rem"
+        }
+      }
+    },
     "snackbar": {
       "$type": "dimension",
       "$value": {
@@ -2061,6 +2145,42 @@
       "$type": "number",
       "$value": 1
     },
+    "card-title": {
+      "$type": "dimension",
+      "$value": {
+        "value": 20,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.25rem"
+        }
+      }
+    },
+    "card-description": {
+      "$type": "dimension",
+      "$value": {
+        "value": 24,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "1.5rem"
+        }
+      }
+    },
+    "card-caption": {
+      "$type": "dimension",
+      "$value": {
+        "value": 12,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.75rem"
+        }
+      }
+    },
     "snackbar": {
       "$type": "number",
       "$value": 1.5
@@ -2112,6 +2232,18 @@
       "$value": 400
     },
     "input-label": {
+      "$type": "number",
+      "$value": 500
+    },
+    "card-title": {
+      "$type": "number",
+      "$value": 500
+    },
+    "card-description": {
+      "$type": "number",
+      "$value": 400
+    },
+    "card-caption": {
       "$type": "number",
       "$value": 500
     },
@@ -2196,6 +2328,18 @@
     "input-l": {
       "$type": "number",
       "$value": -0.0156
+    },
+    "card-title": {
+      "$type": "number",
+      "$value": -0.0165
+    },
+    "card-description": {
+      "$type": "number",
+      "$value": -0.0156
+    },
+    "card-caption": {
+      "$type": "number",
+      "$value": 0
     }
   },
   "measure": {
@@ -2283,6 +2427,18 @@
       }
     },
     "input": {
+      "$type": "dimension",
+      "$value": {
+        "value": 1,
+        "unit": "px"
+      },
+      "$extensions": {
+        "com.labpics.ui-tokens": {
+          "css": "0.0625rem"
+        }
+      }
+    },
+    "card": {
       "$type": "dimension",
       "$value": {
         "value": 1,
@@ -2389,6 +2545,12 @@
     "100": {
       "$type": "number",
       "$value": 1
+    }
+  },
+  "shape": {
+    "card-smoothing": {
+      "$type": "number",
+      "$value": 0.6
     }
   }
 }

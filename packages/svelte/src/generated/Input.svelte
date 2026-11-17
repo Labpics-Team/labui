@@ -26,13 +26,18 @@
     required?: LabInput['required'];
     invalid?: LabInput['invalid'];
     name?: LabInput['name'];
+    maxLength?: LabInput['maxLength'];
+    minLength?: LabInput['minLength'];
+    pattern?: LabInput['pattern'];
     onLabChange?: (event: CustomEvent) => void;
     onLabInput?: (event: CustomEvent) => void;
+    leading?: Snippet;
+    trailing?: Snippet;
     children?: Snippet;
     [key: string]: unknown;
   }
 
-  let { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, onLabChange, onLabInput, children, ...rest }: Props = $props();
+  let { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern, onLabChange, onLabInput, children, leading, trailing, ...rest }: Props = $props();
 
   const specs: LabPropSpec[] = [
     { name: 'type', attr: 'type', kind: 'string' },
@@ -50,15 +55,20 @@
     { name: 'required', attr: 'required', kind: 'boolean' },
     { name: 'invalid', attr: 'invalid', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'maxLength', attr: 'maxlength', kind: 'string' },
+    { name: 'minLength', attr: 'minlength', kind: 'string' },
+    { name: 'pattern', attr: 'pattern', kind: 'string' },
   ];
 
   let el: HTMLElement | undefined = $state();
 
   $effect(() => {
-    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name });
+    forwardDeclared(el, specs, { type, size, label, labelHidden, helper, error, value, placeholder, inputType, autocomplete, readonly, disabled, required, invalid, name, maxLength, minLength, pattern });
   });
   $effect(() => forwardEvents(el, { 'lab-change': onLabChange, 'lab-input': onLabInput }));
 </script>
 
 <lab-input bind:this={el} {...rest}>
+  {#if leading}<div slot="leading" style="display:contents">{@render leading()}</div>{/if}
+  {#if trailing}<div slot="trailing" style="display:contents">{@render trailing()}</div>{/if}
 </lab-input>

@@ -272,12 +272,48 @@
           "name": "interactive",
           "attr": "interactive",
           "kind": "boolean"
+        },
+        {
+          "name": "image",
+          "attr": "image",
+          "kind": "string"
+        },
+        {
+          "name": "imageAlt",
+          "attr": "image-alt",
+          "kind": "string"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "headingHint",
+          "attr": "heading-hint",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        },
+        {
+          "name": "caption",
+          "attr": "caption",
+          "kind": "string"
+        },
+        {
+          "name": "lowerCaption",
+          "attr": "lower-caption",
+          "kind": "string"
         }
       ],
       "events": [],
       "slots": {
         "default": true,
         "named": [
+          "badge",
           "footer",
           "header",
           "media"
@@ -567,6 +603,21 @@
           "name": "name",
           "attr": "name",
           "kind": "string"
+        },
+        {
+          "name": "maxLength",
+          "attr": "maxlength",
+          "kind": "string"
+        },
+        {
+          "name": "minLength",
+          "attr": "minlength",
+          "kind": "string"
+        },
+        {
+          "name": "pattern",
+          "attr": "pattern",
+          "kind": "string"
         }
       ],
       "events": [
@@ -575,7 +626,10 @@
       ],
       "slots": {
         "default": false,
-        "named": [],
+        "named": [
+          "leading",
+          "trailing"
+        ],
         "dynamic": false
       }
     },
@@ -1156,6 +1210,57 @@
       }
     },
     {
+      "tag": "lab-sheet",
+      "subpath": "sheet",
+      "pascal": "Sheet",
+      "className": "LabSheet",
+      "props": [
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "position",
+          "attr": "position",
+          "kind": "string"
+        },
+        {
+          "name": "modal",
+          "attr": "modal",
+          "kind": "prop"
+        },
+        {
+          "name": "closable",
+          "attr": "closable",
+          "kind": "boolean"
+        },
+        {
+          "name": "heading",
+          "attr": "heading",
+          "kind": "string"
+        },
+        {
+          "name": "description",
+          "attr": "description",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "motion-error",
+        "open-change",
+        "position-change"
+      ],
+      "slots": {
+        "default": true,
+        "named": [
+          "content",
+          "trigger"
+        ],
+        "dynamic": false
+      }
+    },
+    {
       "tag": "lab-slider",
       "subpath": "slider",
       "pascal": "Slider",
@@ -1250,6 +1355,49 @@
       "events": [
         "value-change",
         "value-change-end"
+      ],
+      "slots": {
+        "default": false,
+        "named": [],
+        "dynamic": false
+      }
+    },
+    {
+      "tag": "lab-snackbar",
+      "subpath": "snackbar",
+      "pascal": "Snackbar",
+      "className": "LabSnackbar",
+      "props": [
+        {
+          "name": "open",
+          "attr": "open",
+          "kind": "boolean"
+        },
+        {
+          "name": "message",
+          "attr": "message",
+          "kind": "string"
+        },
+        {
+          "name": "duration",
+          "attr": "duration",
+          "kind": "string"
+        },
+        {
+          "name": "actionLabel",
+          "attr": "action-label",
+          "kind": "string"
+        },
+        {
+          "name": "notificationKey",
+          "attr": "notification-key",
+          "kind": "string"
+        }
+      ],
+      "events": [
+        "lab-action",
+        "lab-error",
+        "lab-open-change"
       ],
       "slots": {
         "default": false,

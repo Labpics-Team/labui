@@ -1,218 +1,143 @@
-/**
- * `<lab-card>` — a presentational container that groups related content into a
- * single surface, with optional header / media / body / footer slots.
- *
- * OPT-OUT (documented, per core-CONTRACT §1): Card is PRESENTATIONAL. It has NO
- * interaction state a machine would own — no open/value/checked/pressed/roving/
- * typeahead. It is a static surface that slots content. So, exactly like
- * `<lab-badge>` / `<lab-loader>`, it legitimately opts out of the Zag Behaviors
- * seam and extends `LabElement` only for the shared base conventions
- * (delegatesFocus, the token contract). Wiring a machine here would be an onion
- * around a `<div>` (craft-arch: no onion for a surface). The honest test of the
- * opt-out: nothing about a card changes over time in response to the user except
- * the focus/hover affordance of the OPTIONAL interactive variant — and that is
- * native CSS + a host `tabindex`, not a state machine.
- *
- * Semantics are NATIVE, not faked: the host renders a real `<article>` when it is
- * a self-contained unit (the default — a card is the textbook `<article>` use
- * case in the HTML spec), the header projects through a `header` slot, and the
- * footer through a `footer` slot. When the whole card is a single interactive
- * target (`interactive` + an `href`-less click handler the consumer attaches),
- * the host exposes `tabindex="0"` and a `button`/`link` role is the CONSUMER's
- * responsibility on the slotted control — the element never fabricates an
- * accessible name or a role it cannot honour. An interactive card with no
- * keyboard operability would be a P5 accessibility trap, so the interactive
- * variant only adds the focus affordance; the actionable semantics stay with a
- * real control the consumer slots in.
- *
- * Axes (the surface model — Variant × Padding × Interactive):
- *   - variant:     elevated | outlined | filled   (the surface treatment)
- *   - padding:     none | s | m | l               (inner spacing of body region)
- *   - interactive: a hoverable/focusable affordance for whole-card targets (bool)
- *
- * Token contract (core-CONTRACT §2): consumes ONLY semantic --lab-* roles +
- * dimension tokens through `litVar`. The surface reads `--lab-bg-primary` /
- * `--lab-bg-secondary`; borders read `--lab-border-base` / `--lab-border-soft`;
- * elevation reads the `--lab-elevation-*` contract from @labpics/ui-shadow (NOT
- * the flat `--lab-fx-shadow-*` single-colour tokens — those carry no geometry,
- * tint, or motion); the focus ring reads `--lab-border-focus`. No hex, no
- * primitive, no invented role.
- */
-import { type TemplateResult, css, html } from 'lit';
-import { litVar } from '../../css.js';
+import { materialCss } from '@labpics/ui-materials/css';
+import { type TemplateResult, css, html, nothing, unsafeCSS } from 'lit';
 import { LabElement } from '../../lit/lab-element.js';
+import { mountCardRuntime } from './runtime.js';
+import { cardCss } from './styles.js';
 
-/** Surface treatment of the card. */
 export type LabCardVariant = 'elevated' | 'outlined' | 'filled';
-/** Inner spacing of the card body region. */
 export type LabCardPadding = 'none' | 's' | 'm' | 'l';
 
+/** Related content on one surface. Actions remain native controls inside it. */
 export class LabCard extends LabElement {
   static override properties = {
     variant: { reflect: true },
     padding: { reflect: true },
-    /** Adds a hover + focus affordance for whole-card interactive targets. */
     interactive: { type: Boolean, reflect: true },
+    image: {},
+    imageAlt: { attribute: 'image-alt' },
+    heading: {},
+    headingHint: { attribute: 'heading-hint' },
+    description: {},
+    caption: {},
+    lowerCaption: { attribute: 'lower-caption' },
   };
-
   declare variant: LabCardVariant;
   declare padding: LabCardPadding;
   declare interactive: boolean;
+  declare image: string;
+  declare imageAlt: string;
+  declare heading: string;
+  declare headingHint: string;
+  declare description: string;
+  declare caption: string;
+  declare lowerCaption: string;
+  private runtime: ReturnType<typeof mountCardRuntime> | undefined;
 
   constructor() {
     super();
     this.variant = 'elevated';
-    this.padding = 'm';
+    this.padding = 'l';
     this.interactive = false;
+    this.image = '';
+    this.imageAlt = '';
+    this.heading = '';
+    this.headingHint = '';
+    this.description = '';
+    this.caption = '';
+    this.lowerCaption = '';
   }
 
-  static override styles = css`
-    :host {
-      --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-      --_radius: ${litVar('--lab-radius-card', '1rem')};
+  static override styles = [
+    unsafeCSS(materialCss),
+    unsafeCSS(cardCss),
+    css`
+      :host { display: flex; flex-direction: column; min-width: 0; }
+      ::slotted([slot='media']) { display: block; width: 100%; }
+    `,
+  ];
 
-      display: block;
+  private readonly syncSlots = (): void => {
+    const surface = this.renderRoot.querySelector<HTMLElement>('[data-lab-card]');
+    if (!surface) return;
+    for (const slot of this.renderRoot.querySelectorAll<HTMLSlotElement>(
+      '.lab-card-region > slot',
+    )) {
+      const region = slot.parentElement;
+      const content = slot
+        .assignedNodes({ flatten: true })
+        .some((node) => node.nodeType === 1 || (node.nodeType === 3 && !!node.textContent?.trim()));
+      region?.toggleAttribute('data-empty', !content && !(slot.name === 'media' && this.image));
     }
-
-    :host([padding='none']) {
-      --_pad: 0;
-    }
-    :host([padding='s']) {
-      --_pad: ${litVar('--lab-space-sm', '0.5rem')};
-    }
-    :host([padding='m']) {
-      --_pad: ${litVar('--lab-space-md', '1rem')};
-    }
-    :host([padding='l']) {
-      --_pad: ${litVar('--lab-space-lg', '1.5rem')};
-    }
-
-    .card {
-      box-sizing: border-box;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border-radius: var(--_radius);
-      background-color: ${litVar('--lab-bg-primary')};
-      color: ${litVar('--lab-label-primary')};
-      /* A transparent border is always present so the variant rules only swap its
-         colour — the box never resizes between variants (CLS, craft-frontend P4). */
-      border: ${litVar('--lab-stroke-hairline')} solid transparent;
-    }
-
-    /* ── variant=elevated: raised surface + contract elevation token ────────── */
-    :host([variant='elevated']) .card {
-      background-color: ${litVar('--lab-bg-secondary')};
-      box-shadow: var(--lab-elevation-resting);
-    }
-
-    /* ── variant=outlined: flat surface, a real border ──────────────────────── */
-    :host([variant='outlined']) .card {
-      background-color: ${litVar('--lab-bg-primary')};
-      border-color: ${litVar('--lab-border-base')};
-    }
-
-    /* ── variant=filled: a tinted, borderless surface ───────────────────────── */
-    :host([variant='filled']) .card {
-      background-color: ${litVar('--lab-fill-primary')};
-    }
-
-    /* ── interactive: hover + focus affordance for whole-card targets ───────── */
-    :host([interactive]) .card {
-      cursor: pointer;
-      transition: box-shadow var(--lab-motion-transition-duration) var(--lab-motion-transition-easing), border-color var(--lab-motion-transition-duration) var(--lab-motion-transition-easing);
-    }
-    :host([interactive]:hover) .card {
-      border-color: ${litVar('--lab-border-soft')};
-    }
-    :host([interactive][variant='elevated']:hover) .card {
-      box-shadow: var(--lab-elevation-raised);
-    }
-    /* The host delegates focus; draw the ring when any inner control is
-       focus-visible OR the host itself is focused (consumer-set tabindex). */
-    :host([interactive]:focus-within) .card {
-      outline: ${litVar('--lab-focus-ring-width')} solid ${litVar('--lab-border-focus')};
-      outline-offset: ${litVar('--lab-focus-ring-offset')};
-    }
-
-    /* ── slot regions ───────────────────────────────────────────────────────── */
-    .media {
-      display: block;
-    }
-    /* Media bleeds to the card edges regardless of body padding. */
-    ::slotted([slot='media']) {
-      display: block;
-      width: 100%;
-    }
-
-    .header {
-      padding: var(--_pad) var(--_pad) 0;
-    }
-
-    .body {
-      flex: 1 1 auto;
-      padding: var(--_pad);
-    }
-
-    .footer {
-      padding: 0 var(--_pad) var(--_pad);
-    }
-
-    /* An empty region adds no space. ::slotted cannot be queried from :has, so
-       emptiness is tracked by a slotchange listener that sets data-empty on the
-       region wrapper — a robust, engine-agnostic collapse (the body region is
-       never collapsed: its default slot is the card's primary content). */
-    .region[data-empty] {
-      display: none;
-    }
-  `;
-
-  /**
-   * Mark a region empty when its slot has no assigned nodes, so empty header /
-   * media / footer regions collapse and add no padding. This is the honest way
-   * to react to slotted (light-DOM) content from the shadow root — `::slotted`
-   * is not reachable from a structural selector like `:has`.
-   */
-  private readonly onSlotChange = (event: Event): void => {
-    const slot = event.target as HTMLSlotElement;
-    const region = slot.closest<HTMLElement>('.region');
-    if (!region) return;
-    const hasContent = slot.assignedNodes({ flatten: true }).length > 0;
-    region.toggleAttribute('data-empty', !hasContent);
+    const media = surface.querySelector('.lab-card-media');
+    surface.toggleAttribute('data-media', !!media && !media.hasAttribute('data-empty'));
+    this.runtime?.refresh();
   };
 
-  override firstUpdated(): void {
-    // Initialise the empty-state of the optional regions on first paint.
-    for (const slot of this.renderRoot.querySelectorAll<HTMLSlotElement>(
-      'slot[name="media"], slot[name="header"], slot[name="footer"]',
-    )) {
-      const region = slot.closest<HTMLElement>('.region');
-      if (region) {
-        region.toggleAttribute('data-empty', slot.assignedNodes({ flatten: true }).length === 0);
-      }
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.requestUpdate();
+  }
+
+  override updated(): void {
+    if (!this.isConnected) return;
+    this.syncSlots();
+    const surface = this.renderRoot.querySelector<HTMLElement>('[data-lab-card]');
+    if (surface && !this.runtime) this.runtime = mountCardRuntime(surface);
+  }
+
+  override disconnectedCallback(): void {
+    try {
+      this.runtime?.dispose();
+    } finally {
+      this.runtime = undefined;
+      super.disconnectedCallback();
     }
+  }
+
+  private textLayout(): TemplateResult | typeof nothing {
+    if (!this.heading && !this.description && !this.caption && !this.lowerCaption) return nothing;
+    return html`<div class="lab-card-text">
+      ${this.caption ? html`<p class="lab-card-caption">${this.caption}</p>` : nothing}
+      ${
+        this.heading || this.description
+          ? html`<div class="lab-card-title-group">
+        ${
+          this.heading
+            ? html`<div class="lab-card-title-row">
+          <h2 class="lab-card-title">${this.heading}</h2>
+          ${this.headingHint ? html`<span class="lab-card-hint">${this.headingHint}</span>` : nothing}
+          <slot name="badge"></slot>
+        </div>`
+            : nothing
+        }
+        ${this.description ? html`<p class="lab-card-description">${this.description}</p>` : nothing}
+      </div>`
+          : nothing
+      }
+      ${this.lowerCaption ? html`<p class="lab-card-caption">${this.lowerCaption}</p>` : nothing}
+    </div>`;
   }
 
   override render(): TemplateResult {
-    // Native semantics: an <article> is the self-contained-composition element in
-    // the HTML spec, which a card is by definition. Header/footer project through
-    // the matching native landmark slots; media + body are plain regions. The
-    // element adds no ARIA role — the slotted content carries its own semantics,
-    // and an interactive card's actionable control is the consumer's to slot.
-    return html`
-      <article class="card" part="card">
-        <div class="region media">
-          <slot name="media" @slotchange=${this.onSlotChange}></slot>
-        </div>
-        <header class="region header">
-          <slot name="header" @slotchange=${this.onSlotChange}></slot>
+    return html`<article class="card" data-lab-card data-variant=${this.variant}
+        data-padding=${this.padding} ?data-interactive=${this.interactive}
+        ?data-image=${!!this.image} ?data-media=${!!this.image} part="card">
+      ${this.image ? html`<div class="lab-card-image" aria-hidden="true"><img src=${this.image} alt="" /></div>` : nothing}
+      <div class="lab-card-region lab-card-media">
+        <slot name="media" @slotchange=${this.syncSlots}>
+          ${this.image ? html`<img src=${this.image} alt=${this.imageAlt} />` : nothing}
+        </slot>
+      </div>
+      <div class=${this.variant === 'elevated' ? 'lab-card-content lab-material lab-material--elevated' : 'lab-card-content'} part="content">
+        <header class="lab-card-region lab-card-header header">
+          <slot name="header" @slotchange=${this.syncSlots}>${this.textLayout()}</slot>
         </header>
-        <div class="region body"><slot></slot></div>
-        <footer class="region footer">
-          <slot name="footer" @slotchange=${this.onSlotChange}></slot>
+        <div class="lab-card-region lab-card-body body"><slot @slotchange=${this.syncSlots}></slot></div>
+        <footer class="lab-card-region lab-card-footer footer">
+          <slot name="footer" @slotchange=${this.syncSlots}></slot>
         </footer>
-      </article>
-    `;
+      </div>
+    </article>`;
   }
 }
 
@@ -221,9 +146,6 @@ declare global {
     'lab-card': LabCard;
   }
 }
-
-// Idempotent registration (core-CONTRACT §7) — safe to import across module
-// instances on both the SSR and client paths.
 if (typeof customElements !== 'undefined' && !customElements.get('lab-card')) {
   customElements.define('lab-card', LabCard);
 }

@@ -36,6 +36,7 @@
     "./sheet.css": "./dist/sheet.css",
     "./input.css": "./dist/input.css",
     "./snackbar.css": "./dist/snackbar.css",
+    "./card.css": "./dist/card.css",
     "./package.json": "./package.json",
     "./dialog/shared": {
       "types": "./dist/components/dialog/shared.d.ts",
@@ -57,6 +58,11 @@
       "import": "./dist/components/snackbar/runtime.js",
       "require": "./dist/components/snackbar/runtime.cjs"
     },
+    "./card/runtime": {
+      "types": "./dist/components/card/runtime.d.ts",
+      "import": "./dist/components/card/runtime.js",
+      "require": "./dist/components/card/runtime.cjs"
+    },
     "./sheet/measure": {
       "types": "./dist/components/sheet/measure.d.ts",
       "import": "./dist/components/sheet/measure.js",
@@ -72,6 +78,7 @@
     "./dist/sheet.css",
     "./dist/input.css",
     "./dist/snackbar.css",
+    "./dist/card.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
     "./dist/components/**",

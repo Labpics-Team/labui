@@ -10,7 +10,7 @@ import type { LabInput } from '@labpics/ui-core/input';
 import { type LabSolidComponent, createLabComponent } from '../runtime/create-lab-component.js';
 
 /** Пропы <lab-input>, взятые прямо из класса ядра (LabInput). */
-export type InputProps = Pick<LabInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'inputType' | 'autocomplete' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>;
+export type InputProps = Pick<LabInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'inputType' | 'autocomplete' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name' | 'maxLength' | 'minLength' | 'pattern'>;
 
 /** <Input> — тонкая Solid-обёртка над <lab-input>. */
 export const Input: LabSolidComponent<InputProps, 'lab-change' | 'lab-input'> = createLabComponent<
@@ -33,6 +33,9 @@ export const Input: LabSolidComponent<InputProps, 'lab-change' | 'lab-input'> = 
     { name: 'required', attr: 'required', kind: 'boolean' },
     { name: 'invalid', attr: 'invalid', kind: 'boolean' },
     { name: 'name', attr: 'name', kind: 'string' },
+    { name: 'maxLength', attr: 'maxlength', kind: 'string' },
+    { name: 'minLength', attr: 'minlength', kind: 'string' },
+    { name: 'pattern', attr: 'pattern', kind: 'string' },
   ],
   events: ['lab-change', 'lab-input'],
 });

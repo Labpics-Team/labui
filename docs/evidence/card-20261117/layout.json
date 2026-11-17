@@ -1,0 +1,306 @@
+{
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "source": "Figma REST nodes; read-only",
+  "nodes": [
+    {
+      "id": "6225:42443",
+      "name": "Card",
+      "type": "COMPONENT",
+      "absoluteBoundingBox": {
+        "x": 796,
+        "y": 735,
+        "width": 400,
+        "height": 294
+      },
+      "layoutGrow": 0,
+      "layoutSizingVertical": "FIXED",
+      "layoutSizingHorizontal": "FIXED",
+      "layoutMode": "VERTICAL",
+      "children": [
+        {
+          "id": "6225:46568",
+          "name": "Image",
+          "type": "RECTANGLE",
+          "absoluteBoundingBox": {
+            "x": 796,
+            "y": 735,
+            "width": 400,
+            "height": 200
+          },
+          "layoutGrow": 1,
+          "layoutSizingVertical": "FILL",
+          "layoutSizingHorizontal": "FILL"
+        },
+        {
+          "id": "6225:42446",
+          "name": "Content",
+          "type": "FRAME",
+          "absoluteBoundingBox": {
+            "x": 796,
+            "y": 935,
+            "width": 400,
+            "height": 94
+          },
+          "layoutGrow": 0,
+          "layoutSizingVertical": "HUG",
+          "layoutSizingHorizontal": "FILL",
+          "layoutMode": "VERTICAL",
+          "itemSpacing": 16,
+          "paddingTop": 24,
+          "paddingBottom": 24,
+          "children": [
+            {
+              "id": "7100:17108",
+              "name": "Elevated",
+              "type": "INSTANCE",
+              "absoluteBoundingBox": {
+                "x": 796,
+                "y": 735.5,
+                "width": 400,
+                "height": 294
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "FIXED",
+              "layoutSizingHorizontal": "FIXED",
+              "layoutPositioning": "ABSOLUTE"
+            },
+            {
+              "id": "6225:42447",
+              "name": "Text Layout",
+              "type": "FRAME",
+              "absoluteBoundingBox": {
+                "x": 820,
+                "y": 959,
+                "width": 352,
+                "height": 46
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "HUG",
+              "layoutSizingHorizontal": "FILL",
+              "layoutMode": "VERTICAL",
+              "itemSpacing": 8
+            },
+            {
+              "id": "6460:28282",
+              "name": "Button",
+              "type": "INSTANCE",
+              "visible": false,
+              "absoluteBoundingBox": {
+                "x": 820,
+                "y": 1021,
+                "width": 208,
+                "height": 36
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "HUG",
+              "layoutSizingHorizontal": "HUG",
+              "layoutMode": "HORIZONTAL",
+              "paddingTop": 8,
+              "paddingBottom": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7101:51896",
+      "name": "Card",
+      "type": "INSTANCE",
+      "absoluteBoundingBox": {
+        "x": 1958,
+        "y": 203.5,
+        "width": 400,
+        "height": 400
+      },
+      "layoutGrow": 0,
+      "layoutSizingVertical": "FIXED",
+      "layoutSizingHorizontal": "FIXED",
+      "layoutMode": "VERTICAL",
+      "children": [
+        {
+          "id": "I7101:51896;6225:46568",
+          "name": "Image",
+          "type": "RECTANGLE",
+          "absoluteBoundingBox": {
+            "x": 1958,
+            "y": 203.5,
+            "width": 400,
+            "height": 306
+          },
+          "layoutGrow": 1,
+          "layoutSizingVertical": "FILL",
+          "layoutSizingHorizontal": "FILL"
+        },
+        {
+          "id": "I7101:51896;6225:42446",
+          "name": "Content",
+          "type": "FRAME",
+          "absoluteBoundingBox": {
+            "x": 1958,
+            "y": 509.5,
+            "width": 400,
+            "height": 94
+          },
+          "layoutGrow": 0,
+          "layoutSizingVertical": "HUG",
+          "layoutSizingHorizontal": "FILL",
+          "layoutMode": "VERTICAL",
+          "itemSpacing": 16,
+          "paddingTop": 24,
+          "paddingBottom": 24,
+          "children": [
+            {
+              "id": "I7101:51896;7100:17108",
+              "name": "Elevated",
+              "type": "INSTANCE",
+              "absoluteBoundingBox": {
+                "x": 1958,
+                "y": 310,
+                "width": 400,
+                "height": 294
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "FIXED",
+              "layoutSizingHorizontal": "FIXED",
+              "layoutPositioning": "ABSOLUTE"
+            },
+            {
+              "id": "I7101:51896;6225:42447",
+              "name": "Text Layout",
+              "type": "FRAME",
+              "absoluteBoundingBox": {
+                "x": 1982,
+                "y": 533.5,
+                "width": 352,
+                "height": 46
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "HUG",
+              "layoutSizingHorizontal": "FILL",
+              "layoutMode": "VERTICAL",
+              "itemSpacing": 8
+            },
+            {
+              "id": "I7101:51896;6460:28282",
+              "name": "Button",
+              "type": "INSTANCE",
+              "visible": false,
+              "absoluteBoundingBox": {
+                "x": 1982,
+                "y": 595.5,
+                "width": 208,
+                "height": 36
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "HUG",
+              "layoutSizingHorizontal": "HUG",
+              "layoutMode": "HORIZONTAL",
+              "paddingTop": 8,
+              "paddingBottom": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "7710:6190",
+      "name": "Card",
+      "type": "INSTANCE",
+      "absoluteBoundingBox": {
+        "x": 1042,
+        "y": 203.5,
+        "width": 400,
+        "height": 400
+      },
+      "layoutGrow": 0,
+      "layoutSizingVertical": "FIXED",
+      "layoutSizingHorizontal": "FIXED",
+      "layoutMode": "VERTICAL",
+      "children": [
+        {
+          "id": "I7710:6190;6225:46568",
+          "name": "Image",
+          "type": "RECTANGLE",
+          "absoluteBoundingBox": {
+            "x": 1042,
+            "y": 203.5,
+            "width": 400,
+            "height": 306
+          },
+          "layoutGrow": 1,
+          "layoutSizingVertical": "FILL",
+          "layoutSizingHorizontal": "FILL"
+        },
+        {
+          "id": "I7710:6190;6225:42446",
+          "name": "Content",
+          "type": "FRAME",
+          "absoluteBoundingBox": {
+            "x": 1042,
+            "y": 509.5,
+            "width": 400,
+            "height": 94
+          },
+          "layoutGrow": 0,
+          "layoutSizingVertical": "HUG",
+          "layoutSizingHorizontal": "FILL",
+          "layoutMode": "VERTICAL",
+          "itemSpacing": 16,
+          "paddingTop": 24,
+          "paddingBottom": 24,
+          "children": [
+            {
+              "id": "I7710:6190;7100:17108",
+              "name": "Elevated",
+              "type": "INSTANCE",
+              "absoluteBoundingBox": {
+                "x": 1042,
+                "y": 310,
+                "width": 400,
+                "height": 294
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "FIXED",
+              "layoutSizingHorizontal": "FIXED",
+              "layoutPositioning": "ABSOLUTE"
+            },
+            {
+              "id": "I7710:6190;6225:42447",
+              "name": "Text Layout",
+              "type": "FRAME",
+              "absoluteBoundingBox": {
+                "x": 1066,
+                "y": 533.5,
+                "width": 352,
+                "height": 46
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "HUG",
+              "layoutSizingHorizontal": "FILL",
+              "layoutMode": "VERTICAL",
+              "itemSpacing": 8
+            },
+            {
+              "id": "I7710:6190;6460:28282",
+              "name": "Button",
+              "type": "INSTANCE",
+              "visible": false,
+              "absoluteBoundingBox": {
+                "x": 1066,
+                "y": 595.5,
+                "width": 208,
+                "height": 36
+              },
+              "layoutGrow": 0,
+              "layoutSizingVertical": "HUG",
+              "layoutSizingHorizontal": "HUG",
+              "layoutMode": "HORIZONTAL",
+              "paddingTop": 8,
+              "paddingBottom": 8
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

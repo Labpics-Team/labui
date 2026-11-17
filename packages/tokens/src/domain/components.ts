@@ -91,6 +91,24 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('radius', 'card-surface', profile.card.radius);
   dimension('space', 'card-padding', profile.card.padding);
   dimension('space', 'card-gap', profile.card.gap);
+  scalar('shape', 'card-smoothing', profile.card.cornerSmoothing);
+  dimension('stroke', 'card', profile.card.strokeWidth);
+  dimension('size', 'card-media', profile.card.mediaHeight);
+  dimension('space', 'card-caption-gap', profile.card.captionGap);
+  dimension('space', 'card-text-gap', profile.card.textGap);
+  dimension('space', 'card-title-gap', profile.card.titleGap);
+  for (const [role, text] of Object.entries(profile.card.text)) {
+    const name = `card-${role}`;
+    dimension('font-size', name, text.fontSize);
+    dimension('line-height', name, text.lineHeight);
+    scalar('font-weight', name, text.fontWeight);
+    scalar(
+      'letter-spacing',
+      name,
+      text.letterSpacing / text.fontSize,
+      `${num(text.letterSpacing / text.fontSize, 6)}em`,
+    );
+  }
   dimension('radius', 'sheet-top', profile.sheet.topRadius);
   dimension('space', 'sheet-x', profile.sheet.paddingX);
   dimension('space', 'sheet-bottom', profile.sheet.paddingBottom);

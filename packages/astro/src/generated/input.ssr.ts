@@ -5,14 +5,14 @@
  * Регенерация: pnpm --filter @labpics/adapter-codegen generate.
  * Правки вносить в генератор/манифест, иначе перегенерация их сотрёт.
  */
-import { html, renderToString, ifDefined } from '@labpics/ui-core/ssr';
+import { html, renderToString, ifDefined, unsafeHTML } from '@labpics/ui-core/ssr';
 import '@labpics/ui-core/input';
 import type { LabInput } from '@labpics/ui-core/input';
 
 /** SSR-пропы <lab-input> (атрибуты/свойства), взяты из класса ядра (LabInput). */
-export type InputSsrProps = Partial<Pick<LabInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'inputType' | 'autocomplete' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name'>>;
+export type InputSsrProps = Partial<Pick<LabInput, 'type' | 'size' | 'label' | 'labelHidden' | 'helper' | 'error' | 'value' | 'placeholder' | 'inputType' | 'autocomplete' | 'readonly' | 'disabled' | 'required' | 'invalid' | 'name' | 'maxLength' | 'minLength' | 'pattern'>>;
 /** SSR-слоты <lab-input> — предрендеренные строки контента. */
-export type InputSsrSlots = Record<never, never>;
+export type InputSsrSlots = { leading?: string; trailing?: string };
 
 /**
  * Рендерит <lab-input> в declarative-shadow-DOM строку. Элемент зарегистрирован серверно
@@ -21,6 +21,7 @@ export type InputSsrSlots = Record<never, never>;
  */
 export function renderInput(
   props: InputSsrProps = {},
+  slots: InputSsrSlots = {},
 ): string {
   return renderToString(html`<lab-input
       type=${ifDefined(props.type)}
@@ -38,5 +39,8 @@ export function renderInput(
       ?required=${Boolean(props.required)}
       ?invalid=${Boolean(props.invalid)}
       name=${ifDefined(props.name)}
-    ></lab-input>`);
+      maxlength=${ifDefined(props.maxLength)}
+      minlength=${ifDefined(props.minLength)}
+      pattern=${ifDefined(props.pattern)}
+    >${slots.leading ? html`<span slot="leading">${unsafeHTML(slots.leading)}</span>` : ''}${slots.trailing ? html`<span slot="trailing">${unsafeHTML(slots.trailing)}</span>` : ''}</lab-input>`);
 }

@@ -49,11 +49,30 @@ function colorsSsrPlugin(): Plugin {
   };
 }
 
+function cardSsrPlugin(): Plugin {
+  return {
+    name: 'labui-card-ssr',
+    transformIndexHtml: {
+      order: 'pre',
+      async handler(html, ctx) {
+        if (!ctx.path.endsWith('/card.html')) return html;
+        const { renderToString } = await import('@labpics/ui-core/ssr');
+        await import('@labpics/ui-core/button');
+        await import('@labpics/ui-core/card');
+        const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
+        return html.replace(/<lab-card\b[^>]*>[\s\S]*?<\/lab-card>/g, (markup) =>
+          renderToString(staticHtml`${unsafeStatic(markup)}`),
+        );
+      },
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
   // wasm-bindgen resolves its binary beside the original module, not a Vite prebundle.
   optimizeDeps: { exclude: ['@labpics/colors'] },
-  plugins: [ssrProofPlugin(), colorsSsrPlugin()],
+  plugins: [ssrProofPlugin(), colorsSsrPlugin(), cardSsrPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.

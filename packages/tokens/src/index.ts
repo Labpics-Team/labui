@@ -42,5 +42,6 @@ export * from './generated/tokens.js';
 // dependency of @labpics/ui-tokens.
 export * from './generated/motion.js';
 export { snackbarProfile } from './snackbar.js';
+export { cardProfile } from './card.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';

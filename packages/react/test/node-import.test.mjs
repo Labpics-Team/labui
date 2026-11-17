@@ -11,6 +11,7 @@ for (const format of ['esm', 'cjs']) {
     const { Input } = await load('@labpics/ui-react/input');
     const { Sheet } = await load('@labpics/ui-react/sheet');
     const { Snackbar } = await load('@labpics/ui-react/snackbar');
+    const { Card } = await load('@labpics/ui-react/card');
     assert.ok(Sheet);
     const output = renderToString(
       createElement(Input, {
@@ -33,5 +34,11 @@ for (const format of ['esm', 'cjs']) {
     assert.match(notification, /Отменить/);
     assert.match(notification, /role="status"/);
     assert.match(notification, />5<\/span>/);
+    const card = renderToString(
+      createElement(Card, { heading: 'Title', description: 'Description', image: '/image.png' }),
+    );
+    assert.match(card, /<h2 class="lab-card-title">Title<\/h2>/);
+    assert.match(card, /Description/);
+    assert.match(card, /src="\/image.png"/);
   });
 }

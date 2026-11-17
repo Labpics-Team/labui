@@ -137,7 +137,6 @@ function Workspace() {
         </div>
         <Card
           className="workspace-card"
-          variant="outlined"
           padding="l"
           header={
             <div className="workspace-card-heading">
@@ -216,7 +215,6 @@ function Workspace() {
         </Card>
         <Card
           className="workspace-card"
-          variant="outlined"
           padding="l"
           header={<h2>Оформление</h2>}
         >
