@@ -1,11 +1,8 @@
 /* Solid is the separate author layer, not Material/02. */
-[data-material="solid"] .lab-material:where(:not([data-lab-material-mode])),
-[data-material="solid"].lab-material:where(:not([data-lab-material-mode])),
+[data-material="solid"],
 .lab-material[data-lab-material-mode="solid"] {
-  --_surface-paint: var(--_solid);
-  --_blur: 0px;
-  --_noise: none;
-  --_rim: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  --_if-solid: initial;
+  --_if-translucent: ;
+  --_if-acrylic: ;
+  --_if-glass: ;
 }

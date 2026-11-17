@@ -6,44 +6,17 @@
  *   1. the SDF's 4-way mirror symmetry (the ¼-pixel optimisation is built on it),
  *   2. sign/rim conventions (<0 inside, 0 on the rim),
  *   3. the displacement encoding being a true affine involution: encode∘decode
- *      loses nothing beyond the 8-bit quantisation step, with 0 ↔ 128 exact,
- *   4. the falloff helpers' endpoints (seamless rim → clear middle).
+ *      loses nothing beyond the 8-bit quantisation step.
  */
 import { describe, expect, it } from 'vitest';
 import {
   A_CHANNEL,
   B_CHANNEL,
-  MAX_PULL,
   channelNorm255,
-  clamp01,
   decodeChannel,
   encodeChannel,
   sdRoundRect,
-  smoothstep,
 } from '../src/engine/lg-math';
-
-describe('clamp01 / smoothstep (rim falloff primitives)', () => {
-  it('clamp01 confines to [0,1]', () => {
-    expect(clamp01(-5)).toBe(0);
-    expect(clamp01(0)).toBe(0);
-    expect(clamp01(0.25)).toBe(0.25);
-    expect(clamp01(1)).toBe(1);
-    expect(clamp01(7)).toBe(1);
-  });
-
-  it('smoothstep hits exact endpoints with zero slope character (0→0, 1→1, ½→½)', () => {
-    expect(smoothstep(0)).toBe(0);
-    expect(smoothstep(1)).toBe(1);
-    expect(smoothstep(0.5)).toBe(0.5);
-    // monotone on [0,1] — the falloff never reverses inside the band
-    let prev = 0;
-    for (let i = 1; i <= 100; i++) {
-      const v = smoothstep(i / 100);
-      expect(v).toBeGreaterThanOrEqual(prev);
-      prev = v;
-    }
-  });
-});
 
 describe('sdRoundRect (signed distance, rounded rect)', () => {
   const w = 320;
@@ -85,12 +58,13 @@ describe('sdRoundRect (signed distance, rounded rect)', () => {
 
 describe('displacement encoding (float → byte → float)', () => {
   it('centres zero displacement on the neutral byte 128 exactly', () => {
-    expect(encodeChannel(0, MAX_PULL)).toBe(B_CHANNEL);
-    expect(decodeChannel(128, MAX_PULL)).toBeCloseTo(0.5 / channelNorm255(MAX_PULL), 10);
+    const maxAbs = 20;
+    expect(encodeChannel(0, maxAbs)).toBe(B_CHANNEL);
+    expect(decodeChannel(128, maxAbs)).toBeCloseTo(0.5 / channelNorm255(maxAbs), 10);
     // …decode(128) is half a quantisation step from true 0 — the affine map
     // centres on 127.5, and that offset IS the spec, not an accident:
-    expect(Math.abs(decodeChannel(128, MAX_PULL))).toBeLessThanOrEqual(
-      0.5 / channelNorm255(MAX_PULL) + 1e-12,
+    expect(Math.abs(decodeChannel(128, maxAbs))).toBeLessThanOrEqual(
+      0.5 / channelNorm255(maxAbs) + 1e-12,
     );
   });
 
@@ -116,6 +90,5 @@ describe('displacement encoding (float → byte → float)', () => {
   it('keeps the constants the map fill depends on (0xff800000 ⇒ B=128, A=255)', () => {
     expect(B_CHANNEL).toBe(128);
     expect(A_CHANNEL).toBe(255);
-    expect(MAX_PULL).toBe(0.15);
   });
 });

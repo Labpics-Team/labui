@@ -17,14 +17,16 @@ const page = await browser.newPage({
   deviceScaleFactor: 1,
 });
 await page.setContent(
-  `<style>${css}*{box-sizing:border-box}body{margin:0;background:white;display:flex;padding:100px 99.5px;gap:24px}.scene{flex-shrink:0;position:relative;width:435px;height:320px;border:1px solid #eee;border-radius:32px;overflow:hidden;background-image:linear-gradient(transparent 10px,#101012 10px,#101012 11px,transparent 11px);background-size:21px 21px;background-position:center}.veil{position:absolute;inset:0}</style>${['ghost', 'soft', 'strong'].map((x) => `<div class="scene"><div class="veil" data-veil="top" data-veil-profile="${x}"></div></div>`).join('')}`,
+  `<style>${css}*{box-sizing:border-box}body{margin:0;background:white;display:flex;padding:100px 99.5px;gap:24px}.scene{flex-shrink:0;position:relative;width:435px;height:320px;border:1px solid #eee;border-radius:32px;overflow:hidden}.pattern{background-image:linear-gradient(transparent 10px,#101012 10px,#101012 11px,transparent 11px);background-size:21px 21px;background-position:center}.veil{position:absolute;inset:0}</style>${['ghost', 'soft', 'strong'].map((x) => `<div class="scene ${x === 'strong' ? '' : 'pattern'}"><div class="veil" data-veil="top" data-veil-profile="${x}">${x === 'strong' ? '<div data-veil-paint class="pattern"></div>' : ''}</div></div>`).join('')}`,
 );
 await page.evaluate(async (runtime) => {
   const api = await import(URL.createObjectURL(new Blob([runtime], { type: 'text/javascript' })));
   api.mountMaterialRuntime();
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 }, runtime);
-await page.screenshot({ path: `${root}docs/evidence/materials-20261117/web-progressive.png` });
+await page.screenshot({
+  path: `${root}docs/evidence/materials-20261117/web-progressive-ordered.png`,
+});
 console.info(
   await page.locator('.veil').evaluateAll((els) =>
     els.map((el) => ({

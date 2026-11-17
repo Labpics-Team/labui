@@ -1,11 +1,10 @@
 /* Glass frost is independent of Backdrop blur. The optional lens binds only
  * --_material-lens-filter; author paint tone follows it in the same capture.
  */
-[data-material="glass"] .lab-material:where(:not([data-lab-material-mode])),
-[data-material="glass"].lab-material:where(:not([data-lab-material-mode])),
+[data-material="glass"],
 .lab-material[data-lab-material-mode="glass"] {
-  --_surface-paint: var(--_first-paint, var(--_tint));
-  --_blur: var(--_glass-frost);
-  --_rim: var(--_glass-rim);
-  --_material-filter: var(--_live-filter);
+  --_if-solid: ;
+  --_if-translucent: initial;
+  --_if-acrylic: ;
+  --_if-glass: initial;
 }

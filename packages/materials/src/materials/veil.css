@@ -38,6 +38,14 @@
   pointer-events: none;
 }
 
+/* Optional authored frame fill: after its backdrop pass, before nested FX.
+ * The caller supplies the paint; the runtime retains its relative order. */
+[data-veil] > [data-veil-paint] {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
 .lab-veil__noise {
   position: absolute;
   inset: 0;

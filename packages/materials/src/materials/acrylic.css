@@ -6,13 +6,12 @@
 }
 /* <<< ACRYLIC-NOISE:GENERATED */
 
-[data-material="acrylic"] .lab-material:where(:not([data-lab-material-mode])),
-[data-material="acrylic"].lab-material:where(:not([data-lab-material-mode])),
+[data-material="acrylic"],
 .lab-material[data-lab-material-mode="acrylic"] {
-  --_surface-paint: var(--_first-paint, var(--_tint));
-  --_blur: var(--_backdrop-blur);
+  --_if-solid: ;
+  --_if-translucent: initial;
+  --_if-acrylic: initial;
+  --_if-glass: ;
   /* Screen grain belongs below the paints in the backdrop transfer. A normal
    * CSS texture would darken the surface; unsupported renderers omit the grain. */
-  --_noise: none;
-  --_material-filter: var(--_live-filter);
 }

@@ -75,6 +75,7 @@ interface VeilState {
   el: HTMLElement;
   strips: HTMLElement[];
   sig: string | null;
+  paint: Element | null;
   enabled: boolean;
 }
 
@@ -148,9 +149,11 @@ function readConfig(el: HTMLElement): VeilConfig {
   const rect = { width: el.offsetWidth, height: el.offsetHeight };
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
-  const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
+  const preset =
+    PRESETS[(el.getAttribute('data-veil') ?? '').trim() || raw('--_veil-direction', '')];
   const author = materialProfile.progressive;
-  const profileName = el.getAttribute('data-veil-profile') as keyof typeof author.compositions;
+  const profileName = (el.getAttribute('data-veil-profile') ||
+    raw('--_veil-profile', '')) as keyof typeof author.compositions;
   const composition = Object.hasOwn(author.compositions, profileName)
     ? author.compositions[profileName]
     : undefined;
@@ -195,19 +198,32 @@ const px = (v: number): string => `${v.toFixed(2)}px`;
 function render(state: VeilState): void {
   const { el } = state;
   const c = readConfig(el);
+  const paint = el.querySelector(':scope > [data-veil-paint]');
 
   const sig = `${c.w.toFixed(1)}x${c.h.toFixed(1)}|${c.from}|${c.to}|${JSON.stringify(c.passes)}|${c.noise}|${c.levels}|${c.feather}|${c.reduced}|${state.enabled}`;
-  if (sig === state.sig) return;
+  if (sig === state.sig && paint === state.paint) return;
   state.sig = sig;
+  state.paint = paint;
 
   for (const s of state.strips) s.remove();
   state.strips = [];
   if (c.reduced || !state.enabled || !supportsBackdropBlur()) return;
 
-  for (const pass of c.passes) renderPass(state, c, pass);
+  // A frame's own fill is painted AFTER its backdrop effect. In the authored
+  // Strong composition the second effect is on a child, so it also captures
+  // that fill. Retain the source order without copying the fill or its DOM.
+  for (let i = 0; i < c.passes.length; i++) {
+    const pass = c.passes[i];
+    if (pass) renderPass(state, c, pass, i === 0 ? paint : null);
+  }
 }
 
-function renderPass(state: VeilState, c: VeilConfig, pass: VeilConfig['passes'][number]): void {
+function renderPass(
+  state: VeilState,
+  c: VeilConfig,
+  pass: VeilConfig['passes'][number],
+  before: Element | null,
+): void {
   const { el } = state;
 
   let stops: Stop[];
@@ -326,7 +342,7 @@ function renderPass(state: VeilState, c: VeilConfig, pass: VeilConfig['passes'][
         strip.style.setProperty('mask-image', mask);
         strip.style.setProperty('-webkit-mask-image', mask);
       }
-      el.appendChild(strip);
+      el.insertBefore(strip, before);
       state.strips.push(strip);
     }
   }
@@ -338,7 +354,7 @@ function renderPass(state: VeilState, c: VeilConfig, pass: VeilConfig['passes'][
       '--_veil-noise-opacity',
       String(pass.noiseOpacity / materialProfile.progressive.styles.strong.noiseOpacity),
     );
-    el.append(noise);
+    el.insertBefore(noise, before);
     state.strips.push(noise);
   }
 }
@@ -370,6 +386,7 @@ export function attach(el: HTMLElement): VeilHandle {
     el,
     strips: [],
     sig: null,
+    paint: null,
     enabled: true,
   };
 

@@ -1,0 +1,55 @@
+name: Material pixels
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/material-pixels.yml'
+      - 'docs/evidence/materials-20261117/probe-backdrop-support.mjs'
+      - 'docs/evidence/materials-20261117/display-pixels.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: material-pixels-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pixels:
+    name: backdrop pixels (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Setup pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install pinned browser tools
+        run: pnpm install --frozen-lockfile
+      - name: Install browser runtimes
+        run: pnpm --filter @labpics/ui-docs exec playwright install --with-deps chromium firefox webkit
+      - name: Measure backdrop rendering and neutral paint composition
+        run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs
+      - name: Measure real Linux compositor
+        if: runner.os == 'Linux'
+        env:
+          MATERIAL_CAPTURE: display
+        run: |
+          mkdir -p "$RUNNER_TEMP/labui-display"
+          XWD_FILE="$RUNNER_TEMP/labui-display/Xvfb_screen0" xvfb-run -a -s "-screen 0 1280x720x24 -fbdir $RUNNER_TEMP/labui-display" node docs/evidence/materials-20261117/probe-backdrop-support.mjs
+      - name: Measure real macOS compositor
+        if: runner.os == 'macOS'
+        env:
+          MATERIAL_CAPTURE: display
+        run: node docs/evidence/materials-20261117/probe-backdrop-support.mjs

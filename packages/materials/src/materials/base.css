@@ -2,15 +2,27 @@
  * generated from profile.json. No host filter, opacity or mask clips content,
  * progressive veil, or the component's complete shadow stack.
  */
+/* A guaranteed-invalid switch selects its fallback; an empty switch omits it.
+ * Only these switches inherit from the nearest mode boundary. Paints and tier
+ * parameters resolve on the surface, including before runtime and in shadows.
+ */
+:root {
+  --_if-solid: initial;
+  --_if-translucent: ;
+  --_if-acrylic: ;
+  --_if-glass: ;
+}
 .lab-material {
-  --_surface-paint: var(--_solid);
-  --_blur: 0px;
+  --_surface-paint: var(--_if-solid, var(--_solid))
+    var(--_if-translucent, var(--_first-paint, var(--_tint)));
+  --_blur: var(--_if-solid, 0px) var(--_if-acrylic, var(--_backdrop-blur))
+    var(--_if-glass, var(--_glass-frost));
   --_material-lens-filter: opacity(1);
   --_material-paint-filter: var(--_first-paint-filter, opacity(1));
   --_live-filter: blur(var(--_blur)) var(--_material-lens-filter) var(--_material-paint-filter);
-  --_material-filter: none;
+  --_material-filter: var(--_if-solid, none) var(--_if-translucent, var(--_live-filter));
   --_noise: none;
-  --_rim: none;
+  --_rim: var(--_if-glass, var(--_glass-rim));
   position: relative;
   isolation: isolate;
   border-radius: var(--lab-radius-card, 1rem);

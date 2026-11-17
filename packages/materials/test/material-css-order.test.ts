@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { materialsDir, readMaterialCss } from '../scripts/material-css';
 import { MATERIAL_CSS_ORDER } from '../src/materials/order';
 
-/* Mode rules precede Solid and accessibility overrides. */
+/* Mode boundaries precede accessibility overrides. */
 
 describe('файлы-материалы: закон порядка склейки', () => {
   const css = readMaterialCss();
@@ -18,9 +18,9 @@ describe('файлы-материалы: закон порядка склейк�
   it('каскадные вехи идут строго в порядке закона', () => {
     const landmarks = [
       '.lab-material {', // base: переменные + единое paint-правило
-      '[data-material="glass"] .lab-material', // мода glass
-      '[data-material="acrylic"] .lab-material', // мода acrylic
-      '[data-material="solid"] .lab-material', // solid-оверрайд бьёт моды
+      '[data-material="glass"],',
+      '[data-material="acrylic"],',
+      '[data-material="solid"],',
       'DETERMINISTIC DEGRADATIONS', // деградации бьют всё материальное
       'LAB-VEIL', // veil — отдельная эффект-поверхность, последним
     ];

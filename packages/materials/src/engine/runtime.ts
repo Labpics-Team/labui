@@ -28,17 +28,16 @@ const releasePaint = (el: HTMLElement): void => {
   }
 };
 
-/** An engine holds a `.lab-material` only when its NEAREST material scope carries
- *  the engine's mode — mirroring the material.css selector
- *  `[data-material="<mode>"] .lab-material` (the closest scope wins in CSS
- *  custom-property terms too). */
-function inModeScope(el: Element, mode: string): boolean {
+function scopedEffectsEnabled(el: Element): boolean {
   for (let scope: Element | null = el; scope; scope = composedParent(scope)) {
-    if (scope.hasAttribute('data-contrast')) {
-      if (scope.getAttribute('data-contrast') === 'more') return false;
-      break;
-    }
+    if (scope.hasAttribute('data-contrast')) return scope.getAttribute('data-contrast') !== 'more';
   }
+  return true;
+}
+
+/** Nearest material and contrast boundaries match the inherited CSS mode. */
+function inModeScope(el: Element, mode: string): boolean {
+  if (!scopedEffectsEnabled(el)) return false;
   for (let scope: Element | null = el; scope; scope = composedParent(scope)) {
     if (scope.hasAttribute('data-material')) return scope.getAttribute('data-material') === mode;
   }
@@ -83,7 +82,7 @@ const BINDINGS: readonly EngineBinding[] = [
   {
     gate: supportsBackdropBlur,
     selector: VEIL,
-    wants: () => true,
+    wants: scopedEffectsEnabled,
     blocked: materialMediaBlocked,
     mediaQueries: MATERIAL_ENGINE_MEDIA,
     refreshHeld: true,
@@ -216,8 +215,18 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
         }
         for (const node of record.addedNodes) collect(node);
         for (const node of record.removedNodes) collect(node);
+        if (
+          isHtmlElement(record.target) &&
+          record.target.matches(VEIL) &&
+          [...record.addedNodes, ...record.removedNodes].some(
+            (node) => isHtmlElement(node) && node.hasAttribute('data-veil-paint'),
+          )
+        )
+          dirty.add(record.target);
       } else if (isHtmlElement(record.target)) {
         const el = record.target;
+        if (record.attributeName === 'data-veil-paint' && el.parentElement?.matches(VEIL))
+          dirty.add(el.parentElement);
         if (record.attributeName === 'slot') relocated = true;
         if (
           record.attributeName === 'style' &&
@@ -246,6 +255,7 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
     'style',
     'data-veil',
     'data-veil-profile',
+    'data-veil-paint',
     'slot',
   ];
   // Explicit lifecycle mount covers closed roots too. Observe inherited mode

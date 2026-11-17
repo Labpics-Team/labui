@@ -13,6 +13,8 @@ export { materialProfile, materialRoles, materialBlendMode } from './profile';
 export type { MaterialBlendMode } from './profile';
 export { materialPaintOver, materialPaintTables, blendChannel } from './material-paints';
 export type { MaterialPaints } from './material-paints';
+export { compileMaterialTheme } from './material-theme';
+export type { MaterialRoleMap, MaterialThemeStyle } from './material-theme';
 export type { MaterialRoot } from './engine/mount';
 
 export {

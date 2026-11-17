@@ -6,6 +6,7 @@ const { chromium } = createRequire(new URL('../../../apps/docs/package.json', im
 );
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const evidence = fileURLToPath(new URL('./', import.meta.url));
+const prefix = process.env.GLASS_CALIBRATION_PREFIX ?? '';
 const css = `${await readFile(`${root}packages/colors/contract.css`, 'utf8')}\n${await readFile(`${root}packages/materials/dist/material.css`, 'utf8')}`;
 const runtime = await readFile(`${root}packages/materials/dist/index.js`, 'utf8');
 const ref = (
@@ -82,7 +83,7 @@ for (const factor of [0.25, 0.5, 0.75, 1])
     results.push({ factor, refract, error });
     console.info({ factor, refract, error });
     if (refract === 1 && (factor === 0.5 || factor === 1))
-      await writeFile(`${evidence}web-glass-frost-${factor}.png`, actual);
+      await writeFile(`${evidence}${prefix}web-glass-frost-${factor}.png`, actual);
   }
-await writeFile(`${evidence}glass-calibration.json`, JSON.stringify(results, null, 2));
+await writeFile(`${evidence}${prefix}glass-calibration.json`, JSON.stringify(results, null, 2));
 await browser.close();

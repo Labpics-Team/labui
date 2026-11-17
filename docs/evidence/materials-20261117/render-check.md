@@ -48,3 +48,14 @@ Chrome, Firefox и WebKit: попытка перенести Normal paint на h
 затем выполнить из корня `node docs/evidence/materials-20261117/render-glass.mjs`
 и `node docs/evidence/materials-20261117/render-progressive.mjs`. При отдельном
 кеше браузеров задать `PLAYWRIGHT_BROWSERS_PATH`.
+
+Независимое ревью `41504a1` выявило два дефекта, исправленных отдельно:
+CSS `min/max/clamp` разрешаются по каждой оси (включая вложенные выражения),
+а первый кадр наследует switches ближайшего `data-material` вместо зависимых
+от порядка descendant selectors. Локальные paints и tier-параметры остаются
+на поверхности. До runtime проверены все 3×3 вложения режимов и Shadow DOM
+в Chromium/Firefox/WebKit; четыре CSS math-радиуса дали те же карты линзы,
+что явно разрешённые px-радиусы. 157 unit PASS, typecheck/build PASS.
+Браузерный прогон: 47 PASS, 39 ожидаемых skips; два оставшихся сравнения
+проверяли пробелы внутренней CSS-переменной. Они переведены на фактический
+`backdrop-filter` и повторно прошли в Chromium/WebKit: итог 49 PASS.
