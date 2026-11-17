@@ -21,8 +21,8 @@ writeFileSync(resolve(dist, 'material.css'), css);
 // Shadow-root consumers receive the exact stylesheet, without a hand-kept copy.
 writeFileSync(resolve(dist, 'css.js'), `export const materialCss = ${JSON.stringify(css)};\n`);
 writeFileSync(resolve(dist, 'css.cjs'), `exports.materialCss = ${JSON.stringify(css)};\n`);
-writeFileSync(resolve(dist, 'css.d.ts'), 'export declare const materialCss: string;\n');
-writeFileSync(resolve(dist, 'css.d.cts'), 'export declare const materialCss: string;\n');
+copyFileSync(resolve(here, '../src/css.d.ts'), resolve(dist, 'css.d.ts'));
+copyFileSync(resolve(here, '../src/css.d.ts'), resolve(dist, 'css.d.cts'));
 writeFileSync(resolve(dist, 'noise.png'), acrylicNoisePng());
 writeFileSync(
   resolve(dist, 'veil-noise.png'),

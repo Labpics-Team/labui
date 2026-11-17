@@ -35,7 +35,9 @@ test('documentation and components render the bundled Geist, including Cyrillic'
     const fonts = await renderedFonts(page, selector);
     expect(fonts.length, path).toBeGreaterThan(0);
     for (const font of fonts) {
-      expect(font.familyName, path).toBe('Geist');
+      // Chromium on Linux identifies its Fontations backend in the reported
+      // family. Keep the accepted family exact; Geist Mono/fallbacks still fail.
+      expect(['Geist', 'Geist (Fontations)'], path).toContain(font.familyName);
       expect(font.isCustomFont, path).toBe(true);
     }
   }
