@@ -23,7 +23,8 @@ describe('retained glass rim', () => {
         const source = atlas.data.slice();
         const P = plan.padding * dpr;
         const mid = Math.floor(atlas.W / 2);
-        for (const h of [270, 422, 540, 776]) {
+        // 200/201 cover the newly reusable boundary of the depth-limited profile.
+        for (const h of [200, 201, 270, 422, 540, 776]) {
           const field = __computeDisplacementField(375, h, corner, 100, dpr);
           expect(atlas.unit).toBe(field.unit);
           const actual = new Uint8ClampedArray(field.data.length);

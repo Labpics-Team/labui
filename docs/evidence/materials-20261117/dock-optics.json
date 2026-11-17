@@ -190,5 +190,5 @@
     }
   ],
   "decision": "Keep refraction strength 1 and frost before lens; white soft-light transfer is diagnostic/source-specific, not a generic production blend replacement.",
-  "limitation": "Remaining thin-rim brightness and dispersion difference; no claim of complete SURFACES visual acceptance."
+  "limitation": "Historical optical comparison; thin-rim differences remain. All five source Dock Glass nodes have dispersion=0, so the residual is not attributed to dispersion. See glass-optics-refinement.md for the accepted later profile; no claim of complete SURFACES visual acceptance."
 }

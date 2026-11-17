@@ -10,15 +10,18 @@ vector paths PATTERN. Ошибка внешнего фона — 0.0447 по к�
 Это диагностическая композиция исходных paints над production runtime;
 она не является общим импортёром Figma и не меняет рецепты обычных материалов.
 
-| Опыт | Центральная фигура MAE | Левая | Правая |
+| Опыт | Центральная фигура MAE | Правая | Левая |
 |---|---:|---:|---:|
 | Circular contour + SVG Soft Light | 4.117 | 2.480 | 2.785 |
 | Figma mask + SVG Soft Light | 4.096 | 2.469 | 2.768 |
 | Общий production contour + белый Pegtop Soft Light | 1.344 | 2.214 | 2.337 |
+| Полные bounds внутренних теней, прежняя оптика | 1.203 | 1.226 | 1.222 |
+| Принятый профиль оптики с ограничением depth | 1.171 | 1.227 | 1.223 |
 
 Среднее считается внутри прежней круговой области, отступив 2px от границы;
 оно сравнимо между опытами, но не оценивает весь сглаженный край.
-Полные параметры и результаты — [dock-optics.json](dock-optics.json).
+Первичные параметры — [dock-optics.json](dock-optics.json); текущее сравнение
+с полосами у контура — [уточнение оптики](glass-optics-refinement.md).
 
 Основная широкая потеря света оказалась в белом Soft Light. Для белого source
 Figma ближе к `2b−b²`, чем к SVG/W3C `D(b)` (sqrt выше 0.25).
@@ -32,7 +35,7 @@ Pegtop `[49,184,255]`. Диагностический renderer разрешае�
 [SVG](web-dock-shape-plate.png) и [белый Pegtop](web-dock-shape-pegtop-plate.png).
 
 ![Figma](figma-dock-holdout.png)
-![Production contour и исходные paints с белым Soft Light](web-dock-shape-pegtop-contour.png)
+![Production contour, принятая оптика и диагностические paints](web-dock-shape-pegtop-contour-inner-bounds-refined.png)
 
 Общая сила преломления сохранена. Уменьшение до 0.85 улучшает центр Dock
 1.344→1.253, но ухудшает все четыре исходные панели Effects; новые параметры
@@ -40,8 +43,9 @@ Pegtop `[49,184,255]`. Диагностический renderer разрешае�
 добавление общей яркости улучшает центр ценой боковых фигур. Порядок frost
 перед линзой сохранён по совместному опыту четырёх исходных панелей.
 
-При 100% остаются более резкий/светлый тонкий край и отличие дисперсии.
-В центре верхнего края (300,185) Figma `[211,236,253]`, web `[237,248,254]`.
+У всех пяти Glass-узлов Dock `dispersion=0`; цветное отличие этой сцены
+нельзя приписывать дисперсии. После первого переноса оставался светлый тонкий
+край; его текущая проверка и остаток описаны в уточнении оптики.
 Общая форма и широкий свет близки; эти метрики не означают полного соответствия
 SURFACES закрытому renderer Figma. Независимая проверка 17 ноября подтвердила
 близость формы и широкого света, отдельно отметив более яркий тонкий ободок.
@@ -50,7 +54,9 @@ SURFACES закрытому renderer Figma. Независимая провер�
 Воспроизведение после build Materials: Node 24 и полный Chromium Playwright
 в headless, `DOCK_SMOOTH=1 DOCK_CONTOUR=1 DOCK_SOFT_LIGHT=pegtop`, затем
 `pnpm --filter @labpics/ui-materials exec tsx ../../docs/evidence/materials-20261117/render-dock-holdout.mjs`.
-Без переменных строится circular/SVG baseline. `DOCK_ONLY_BACKPLATE=1`
+Без переменных строится circular/SVG baseline с полными bounds теней.
+`DOCK_INNER_BOUNDS=0` воспроизводит прежнее обрезание промежуточной alpha.
+`DOCK_ONLY_BACKPLATE=1`
 изолирует подложку; сравнение сохраняет общую исходную систему координат.
 
 Основания: [Figma corner smoothing](https://www.figma.com/blog/desperately-seeking-squircles/),

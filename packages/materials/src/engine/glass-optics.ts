@@ -3,8 +3,8 @@
  * See docs/evidence/materials-20261117/glass-optics.md and kube.io's derivation.
  */
 const BEZEL_RATIO = 0.72;
-const THICKNESS_RATIO = 0.6;
-const INDEX = 2.2;
+const THICKNESS_RATIO = 0.4;
+const INDEX = 2.8;
 const POWER = 2.7;
 const SAMPLES = 1024;
 
@@ -25,13 +25,9 @@ const profile = Float64Array.from({ length: SAMPLES + 1 }, (_, i) => {
   return (rayX / rayZ) * (THICKNESS_RATIO + height * BEZEL_RATIO);
 });
 
-// Between table samples ray(t) + inside(t) is linear. Its largest sampled
-// value therefore bounds the entire interpolated profile, not just the grid.
-const independentReach = Math.max(...profile.map((ray, i) => ray + (i / SAMPLES) * BEZEL_RATIO));
-
-/** Minimum half-size at which thickness no longer clips any optical ray. */
+/** The depth-limited profile fits unchanged once half-size reaches depth. */
 export function lensReach(depth: number): number {
-  return Math.max(1, depth) * independentReach;
+  return Math.max(1, depth);
 }
 
 export function lensBand(depth: number, w: number, h: number): number {
@@ -48,8 +44,9 @@ export function lensDisplacement(
   const lo = Math.floor(at);
   const start = profile[lo] ?? 0;
   const ray = (start + ((profile[lo + 1] ?? 0) - start) * (at - lo)) * (band / BEZEL_RATIO);
-  // A shared conservative thickness bound. Rectangle centre axes are not medial
-  // axes of asymmetric contours. This limit stays continuous across those axes,
-  // a resize, and the symmetric/general renderer boundary.
-  return Math.min(ray, Math.max(0, halfSize - inside));
+  // Joint Effects/Dock comparison selects depth as the profile's maximum reach.
+  // This is a renderer approximation, not a physical law or Figma API contract.
+  // The shared bound stays continuous across resize and asymmetric box axes;
+  // those axes are not the contour's medial axes.
+  return Math.min(ray, Math.max(0, Math.min(halfSize, band / BEZEL_RATIO) - inside));
 }

@@ -16,7 +16,8 @@ const css = await readFile(
   'utf8',
 );
 const runtime = await readFile(
-  new URL('../../../packages/materials/dist/index.js', import.meta.url),
+  process.env.MATERIAL_RUNTIME ??
+    new URL('../../../packages/materials/dist/index.js', import.meta.url),
   'utf8',
 );
 const colors = await readFile(
@@ -34,8 +35,9 @@ const softLight = process.env.DOCK_SOFT_LIGHT ?? 'svg';
 const plateOnly = process.env.DOCK_ONLY_BACKPLATE === '1';
 const rimGain = Number(process.env.DOCK_RIM_GAIN ?? 1);
 const productionContour = process.env.DOCK_CONTOUR === '1';
+const innerBounds = process.env.DOCK_INNER_BOUNDS !== '0';
 const refractionScale = Number(process.env.DOCK_REFRACTION_SCALE ?? 1);
-const output = `${smooth ? 'shape' : 'before'}${order === 'default' ? '' : `-${order}`}${paintIsolation === 'none' ? '' : `-${paintIsolation}`}${lightGain === 1 ? '' : `-light-${lightGain}`}${softLight === 'svg' ? '' : `-${softLight}`}${plateOnly ? '-plate' : ''}${rimGain === 1 ? '' : `-rim-${rimGain}`}${productionContour ? '-contour' : ''}${refractionScale === 1 ? '' : `-refraction-${refractionScale}`}`;
+const output = `${smooth ? 'shape' : 'before'}${order === 'default' ? '' : `-${order}`}${paintIsolation === 'none' ? '' : `-${paintIsolation}`}${lightGain === 1 ? '' : `-light-${lightGain}`}${softLight === 'svg' ? '' : `-${softLight}`}${plateOnly ? '-plate' : ''}${rimGain === 1 ? '' : `-rim-${rimGain}`}${productionContour ? '-contour' : ''}${refractionScale === 1 ? '' : `-refraction-${refractionScale}`}${innerBounds ? '-inner-bounds' : ''}${process.env.DOCK_OUTPUT_SUFFIX ?? ''}`;
 const mode = (value) => value.toLowerCase().replaceAll('_', '-');
 const svgBox = (w, h, body) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${body}</svg>`;
@@ -104,15 +106,26 @@ function paints(node, index) {
     ),
   );
   body += `<feImage href="${shape}" x="0" y="0" width="${w}" height="${h}" result="shape-alpha"/>`;
+  const pad = innerBounds
+    ? Math.ceil(
+        Math.max(
+          0,
+          ...node.effects
+            .filter((e) => e.type === 'INNER_SHADOW')
+            .map((e) => Math.max(Math.abs(e.offset.x), Math.abs(e.offset.y)) + 2 * e.radius + 2),
+        ),
+      )
+    : 0;
+  const bounds = `x="${-pad}" y="${-pad}" width="${w + 2 * pad}" height="${h + 2 * pad}"`;
   for (const [i, effect] of node.effects.entries()) {
     if (effect.type !== 'INNER_SHADOW' || effect.visible === false) continue;
     const c = effect.color;
     const id = `inner-${i}`;
-    body += `<feOffset in="shape-alpha" dx="${effect.offset.x}" dy="${effect.offset.y}"/><feGaussianBlur stdDeviation="${effect.radius / 2}"/><feComposite in2="shape-alpha" operator="arithmetic" k2="-1" k3="1"/><feColorMatrix type="matrix" values="0 0 0 0 ${c.r} 0 0 0 0 ${c.g} 0 0 0 0 ${c.b} 0 0 0 ${c.a} 0" result="${id}-mask"/>${blend(`${id}-mask`, previous, effect.blendMode, id, c.r === 1 && c.g === 1 && c.b === 1)}`;
+    body += `<feOffset in="shape-alpha" dx="${effect.offset.x}" dy="${effect.offset.y}" ${innerBounds ? bounds : ''}/><feGaussianBlur stdDeviation="${effect.radius / 2}" ${innerBounds ? bounds : ''}/><feComposite in2="shape-alpha" operator="arithmetic" k2="-1" k3="1"/><feColorMatrix type="matrix" values="0 0 0 0 ${c.r} 0 0 0 0 ${c.g} 0 0 0 0 ${c.b} 0 0 0 ${c.a} 0" result="${id}-mask"/>${blend(`${id}-mask`, previous, effect.blendMode, id, c.r === 1 && c.g === 1 && c.b === 1)}`;
     previous = id;
   }
   body += `<feComposite in="${previous}" in2="shape-alpha" operator="in"/>`;
-  return `<filter id="source-paints-${index}" filterUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}" color-interpolation-filters="sRGB">${body}</filter>`;
+  return `<filter id="source-paints-${index}" filterUnits="userSpaceOnUse" ${bounds} color-interpolation-filters="sRGB">${body}</filter>`;
 }
 function sceneHtml() {
   const { scene } = source;
