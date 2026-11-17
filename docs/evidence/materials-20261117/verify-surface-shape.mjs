@@ -105,6 +105,17 @@ export async function verifySurfaceShape(page, origin, browser) {
     };
   });
   assert.deepEqual(relative, { dy: '12', sigma: '12', stroke: 'rgb(0, 128, 0)' });
+  await page.evaluate(() => {
+    const card = document.querySelector('#card');
+    card.style.setProperty('--lab-surface-stroke-width', 'initial');
+    card.style.setProperty('--lab-surface-stroke-color', 'initial');
+    window.shapeHandle.refresh();
+  });
+  assert.equal(
+    await page.locator('.lab-material__contour-stroke').count(),
+    0,
+    `${browser}: an omitted stroke stays absent`,
+  );
   await page.evaluate(() => window.shapeHandle.destroy());
   await settle();
   const disposed = await page.evaluate(() => ({

@@ -176,12 +176,11 @@ describe('z-index scale is a self-enforcing contract (no z-index wars)', () => {
     expect(react.has('dialog')).toBe(true);
   });
 
-  // ── (8) Граница локального стека (docs §7): приватный слой механик материалов
-  // ВНЕ компонентной поверхности: -2 (capture/paints) и -1 (внутренний блик)
-  // локальны внутри изолированной поверхности. Проверка закрепляет их: новый
+  // ── (8) Приватный стек материалов: тень -3, paint -2, rim -1, inside stroke 2.
+  // Все локальны внутри изолированной поверхности. Проверка закрепляет их: новый
   // ГЛОБАЛЬНЫЙ слой, просочившийся в materials/*.css, тут же покраснеет (иначе
   // carve-out был бы «прозой без исполнения»).
-  it('materials keeps only the local capture and highlight stacking literals', () => {
-    expect(materialsZIndexLiterals()).toEqual([-2, -1]);
+  it('materials keeps only its isolated shadow, paint, rim and foreground stroke layers', () => {
+    expect([...new Set(materialsZIndexLiterals())]).toEqual([-3, -2, -1, 2]);
   });
 });
