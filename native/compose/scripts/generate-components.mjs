@@ -38,16 +38,19 @@ function emitConstants(prefix, definition) {
     else if (/shadow$/i.test(name) && Array.isArray(value)) {
       lines.push(`    val ${prefix}${upper(name)} = listOf(`);
       for (const layer of value) {
-        lines.push(`        LabShadowLayer(${['x', 'y', 'blur', 'spread'].map((key) => `${layer[key]}f`).join(', ')}, ${kotlinString(layer.colorRole)}, ${layer.opacity}f),`);
+        lines.push(
+          `        LabShadowLayer(${['x', 'y', 'blur', 'spread'].map((key) => `${layer[key]}f`).join(', ')}, ${kotlinString(layer.colorRole)}, ${layer.opacity}f),`,
+        );
       }
       lines.push('    )');
-    }
-    else if (typeof value === 'string')
+    } else if (typeof value === 'string')
       lines.push(`    const val ${prefix}${upper(name)} = ${kotlinString(value)}`);
     else if (typeof value === 'boolean')
       lines.push(`    const val ${prefix}${upper(name)} = ${value}`);
     else if (Array.isArray(value) && value.every((entry) => typeof entry === 'number'))
-      lines.push(`    val ${prefix}${upper(name)} = listOf(${value.map((entry) => `${entry}f`).join(', ')})`);
+      lines.push(
+        `    val ${prefix}${upper(name)} = listOf(${value.map((entry) => `${entry}f`).join(', ')})`,
+      );
     else if (value && typeof value === 'object') emitConstants(prefix + upper(name), value);
   }
 }

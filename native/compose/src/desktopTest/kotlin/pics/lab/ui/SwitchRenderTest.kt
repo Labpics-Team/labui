@@ -233,7 +233,7 @@ class SwitchRenderTest {
                 File(output, "switch-${appearance.name.lowercase()}-${(scale * 100).toInt()}.png")
                     .writeBytes(settle(scene) { ready.get() })
                 assertEquals(108, switches(scene).size)
-                File(output, "switch-${appearance.name.lowercase()}-${(scale * 100).toInt()}.json").writeText(
+                File(output, "switch-${appearance.name.lowercase()}-${(scale * 100).toInt()}.generated.json").writeText(
                     "{\"width\":$imageWidth,\"height\":$imageHeight,\"controls\":[" +
                         switches(scene).mapIndexed { index, node ->
                             "{\"index\":$index,\"left\":${node.positionInRoot.x},\"top\":${node.positionInRoot.y}," +

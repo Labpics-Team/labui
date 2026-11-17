@@ -22,9 +22,16 @@ for (const [group, entries] of Object.entries(data)) {
     lines.push(`    const val ${key}: Float = ${value}f`);
   }
 }
-const motion = JSON.parse(await readFile(new URL('packages/tokens/src/generated/motion.dtcg.json', root), 'utf8'));
-const dereference = (value) => typeof value === 'string' && value.startsWith('{')
-  ? value.slice(1, -1).split('.').reduce((part, key) => part[key], motion).$value : value;
+const motion = JSON.parse(
+  await readFile(new URL('packages/tokens/src/generated/motion.dtcg.json', root), 'utf8'),
+);
+const dereference = (value) =>
+  typeof value === 'string' && value.startsWith('{')
+    ? value
+        .slice(1, -1)
+        .split('.')
+        .reduce((part, key) => part[key], motion).$value
+    : value;
 for (const [name, role] of Object.entries(motion.motion)) {
   if (role.$type !== 'transition') continue;
   const prefix = `Motion${name[0].toUpperCase()}${name.slice(1)}`;
