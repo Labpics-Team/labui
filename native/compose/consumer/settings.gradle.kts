@@ -1,5 +1,6 @@
 pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
 dependencyResolutionManagement {
+    versionCatalogs { create("libs") { from(files("../gradle/libs.versions.toml")) } }
     repositories {
         maven { url = uri(providers.gradleProperty("uiRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/labui/maven-compose-v0.1.0/").get()) }
         maven { url = uri(providers.gradleProperty("motionRepository").orElse("https://raw.githubusercontent.com/Labpics-Team/lab-motion/maven-compose-v0.1.0/").get()) }

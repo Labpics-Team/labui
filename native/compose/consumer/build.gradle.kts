@@ -1,10 +1,11 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    kotlin("multiplatform") version "2.3.21"
-    kotlin("plugin.compose") version "2.3.21"
-    id("org.jetbrains.compose") version "1.12.2"
-    id("com.android.kotlin.multiplatform.library") version "9.1.1"
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.compose)
+    alias(libs.plugins.android.multiplatform)
+    alias(libs.plugins.android.application) apply false
 }
 
 kotlin {

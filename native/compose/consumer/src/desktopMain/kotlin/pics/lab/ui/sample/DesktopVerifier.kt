@@ -36,7 +36,10 @@ internal suspend fun verifyDesktopWindow(window: Window) = withContext(Dispatche
     }
     suspend fun find(name: String, role: AccessibleRole? = null): AccessibleContext {
         repeat(250) {
-            tree().firstOrNull { it.accessibleName == name && (role == null || it.accessibleRole == role) }?.let { return it }
+            val match = onEventThread {
+                tree().firstOrNull { it.accessibleName == name && (role == null || it.accessibleRole == role) }
+            }
+            if (match != null) return match
             delay(20)
         }
         error("Accessible node missing: $name; available: ${tree().map { it.accessibleName }}")
@@ -48,14 +51,17 @@ internal suspend fun verifyDesktopWindow(window: Window) = withContext(Dispatche
         val editable = node.accessibleText as? AccessibleEditableText ?: error("No editable text: ${node.accessibleName}")
         editable.setTextContents(value)
     }
+    suspend fun awaitFocus(node: AccessibleContext) {
+        repeat(250) {
+            if (onEventThread { node.accessibleStateSet.contains(AccessibleState.FOCUSED) }) return
+            delay(20)
+        }
+        error("Focus did not reach: ${onEventThread { node.accessibleName }}")
+    }
     try {
         click(find("Параметры проекта", AccessibleRole.PUSH_BUTTON))
         val close = find("Закрыть", AccessibleRole.PUSH_BUTTON)
-        repeat(100) {
-            if (onEventThread { close.accessibleStateSet.contains(AccessibleState.FOCUSED) }) return@repeat
-            delay(20)
-        }
-        check(onEventThread { close.accessibleStateSet.contains(AccessibleState.FOCUSED) }) { "Sheet did not receive focus" }
+        awaitFocus(close)
         edit(find("Название проекта", AccessibleRole.TEXT), "")
         click(find("Сохранить изменения", AccessibleRole.PUSH_BUTTON))
         find("Введите название проекта")
@@ -63,13 +69,14 @@ internal suspend fun verifyDesktopWindow(window: Window) = withContext(Dispatche
         click(find("Сохранить изменения", AccessibleRole.PUSH_BUTTON))
         find("Изменения сохранены")
         val trigger = find("Параметры проекта", AccessibleRole.PUSH_BUTTON)
-        check(onEventThread { trigger.accessibleStateSet.contains(AccessibleState.FOCUSED) }) { "Focus did not return to the initiating action" }
-        File("build").mkdirs()
-        File("build/accessibility-events.txt").writeText(synchronized(events) { events.joinToString("\n") })
-        check(events.any { it.contains(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) }) { "No text event reached Java Accessibility" }
-        check(events.any { it.contains(AccessibleContext.ACCESSIBLE_STATE_PROPERTY) && it.contains("focused") }) { "No focus event reached Java Accessibility" }
+        awaitFocus(trigger)
+        val acceptedEvents = synchronized(events) { events.toList() }
+        check(acceptedEvents.any { it.contains(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) }) { "No text event reached Java Accessibility" }
+        check(acceptedEvents.any { it.contains(AccessibleContext.ACCESSIBLE_STATE_PROPERTY) && it.contains("focused") }) { "No focus event reached Java Accessibility" }
         println("NATIVE_SCENARIO_PASS: input, validation, save, focus and Java Accessibility events")
     } finally {
+        File("build").mkdirs()
+        File("build/accessibility-events.txt").writeText(synchronized(events) { events.joinToString("\n") })
         onEventThread { observed.forEach { (node, listener) -> node.removePropertyChangeListener(listener) } }
     }
 }
