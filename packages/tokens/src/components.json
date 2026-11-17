@@ -55,6 +55,7 @@
     },
     "descriptionOpacity": 0.72,
     "loader": {
+      "periodMs": 800,
       "size": 24,
       "segment": {
         "x": 11,

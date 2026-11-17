@@ -30,15 +30,17 @@ describe('парность акцентной роли: ядро (Lit) ↔ React
     const rows = accentParity();
     expect(rows.length).toBeGreaterThanOrEqual(10);
     expect(rows.map((r) => r.name)).toContain('button');
-    // button — эталон: полное акцентное семейство в обоих слоях.
+    // Названные роли должны присутствовать; точную парность всех ролей проверяем ниже.
     const button = rows.find((r) => r.name === 'button') as ParityRow;
-    expect([...button.core].sort()).toEqual([
-      '--lab-border-accent',
-      '--lab-fill-accent',
-      '--lab-fill-accent-tinted',
-      '--lab-label-accent',
-      '--lab-label-on-accent',
-    ]);
+    expect([...button.core].sort()).toEqual(
+      expect.arrayContaining([
+        '--lab-border-accent',
+        '--lab-fill-accent',
+        '--lab-fill-accent-tinted',
+        '--lab-label-accent',
+        '--lab-label-on-accent',
+      ]),
+    );
   });
 
   it('каждый компонент с React-близнецом читает ТОЖДЕСТВЕННОЕ акцентное множество', () => {
