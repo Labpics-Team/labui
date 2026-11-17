@@ -14,7 +14,8 @@ export interface MaterialPaints {
 export interface CompiledMaterialPaint {
   /** Opaque backdrop -> this normal paint -> complete authored appearance. */
   readonly fill: Rgba;
-  /** Transfer applied before fill; affine recipes need no SVG at all. */
+  /** Sampled transfer applied before fill; affine recipes need no SVG at all.
+   * Custom discontinuities need not be accurate between its 256 samples. */
   readonly tables: readonly [string, string, string];
   readonly affine: boolean;
   /** Maximum channel error (8-bit sRGB units) when the transfer is unavailable. */
@@ -24,6 +25,8 @@ export interface CompiledMaterialPaint {
 /** Factor the transfer into a normal fallback paint and an optional residual.
  * Neutral authored paints share endpoint slope across channels. Coloured custom
  * recipes that cannot use one normal alpha keep the unfactored transfer.
+ * Residual tables use the same sampled approximation as materialPaintTables;
+ * fallbackError bounds the normal-only chord, not table interpolation error.
  */
 export function compileMaterialPaint(paints: MaterialPaints): CompiledMaterialPaint {
   const black = materialPaintOver(paints, { r: 0, g: 0, b: 0, a: 1 });
@@ -115,7 +118,11 @@ export function materialPaintOver(paints: MaterialPaints, backdrop: Rgba): Rgba 
 /** Piecewise linear RGB transfer, compiled only on a theme/role change.
  * All channels remain independent: coloured inputs need no neutral assumption.
  * The SVG renderer interpolates these 256 samples; this is an approximation
- * around a blend breakpoint, not a claim of byte identity with Figma.
+ * around a blend breakpoint, not a claim of byte identity with Figma. The
+ * <0.15 RGB interpolation bound is tested only for the ten authored recipes.
+ * A fully opaque white dodge over transparent Normal jumps just after black:
+ * input 0.5/255 maps to 1 exactly, but to 0.5 in this sampled representation.
+ * materialPaintOver remains the exact scalar composition for arbitrary inputs.
  */
 export function materialPaintTables(
   paints: MaterialPaints,

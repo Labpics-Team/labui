@@ -8,6 +8,7 @@ import {
   parseRgb,
 } from '../../../packages/materials/dist/index.js';
 import { displayPixels } from './display-pixels.mjs';
+import { verifyScrollPaint } from './verify-scroll-paint.mjs';
 
 const engines = createRequire(new URL('../../../apps/docs/package.json', import.meta.url))(
   '@playwright/test',
@@ -45,6 +46,7 @@ const swatches = [
 ];
 const xs = swatches.map((_, index) => index * 100 + 50);
 const rows = [];
+const scrollRows = [];
 try {
   for (const name of (process.env.MATERIAL_BROWSERS ?? 'chromium,firefox,webkit').split(',')) {
     const browser = await engines[name].launch({
@@ -274,6 +276,9 @@ try {
           }
         }
       }
+      scrollRows.push(
+        ...(await verifyScrollPaint(page, `http://127.0.0.1:${port}`, name, display)),
+      );
     } finally {
       await browser.close();
     }
@@ -286,6 +291,7 @@ const report = {
   platform: process.platform,
   capture: display ? 'display' : 'snapshot',
   rows,
+  scrollRows,
 };
 await writeFile(
   new URL(`material-paints-${report.capture}-${process.platform}.json`, import.meta.url),
