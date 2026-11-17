@@ -171,7 +171,7 @@ function createPlacement(surface: HTMLElement): CapturePlacement {
     for (const node of children) {
       if (observed.has(node)) continue;
       observed.add(node);
-      resize.observe(node);
+      resize.observe(node, { box: 'border-box' });
     }
   };
   const content = new MutationObserver((records) => {

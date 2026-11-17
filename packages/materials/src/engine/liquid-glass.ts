@@ -1023,7 +1023,7 @@ export function attach(el: HTMLElement, opts: AttachOptions = {}): LiquidGlassHa
     });
   };
   const ro = new ResizeObserver(debouncedUpdate);
-  ro.observe(el);
+  ro.observe(el, { box: 'border-box' });
   window.addEventListener('resize', debouncedUpdate);
   const mq =
     typeof matchMedia !== 'undefined' ? matchMedia('(prefers-reduced-transparency: reduce)') : null;

@@ -1,7 +1,7 @@
 {
-  "date": "2026-11-17T18:33:01.318Z",
-  "sourceBase": "2d9d7f3",
-  "runtimeSha256": "726aedd1b2f3245889d61ea5ce6fca1e6eb97323ad1a3ffa00c318ad1b9d6f6e",
+  "date": "2026-11-17T18:56:44.112Z",
+  "sourceBase": "5d3df88",
+  "runtimeSha256": "6d68c62f3f42cfb3346925d7866f267249196142ae64535a9f9e36179cc81b54",
   "unit": {
     "materials": 173,
     "colors": 181
@@ -145,6 +145,7 @@
         "image": [0, 0, 275.3125, 225.3125],
         "localSvg": [220.25, 180.25]
       },
+      "borderOnlyResize": true,
       "shadowPixels": [
         {
           "name": "outer-spread",
@@ -204,6 +205,7 @@
         "image": [0, 0, 275.3125, 225.3125],
         "localSvg": [220.25, 180.25]
       },
+      "borderOnlyResize": true,
       "shadowPixels": [
         {
           "name": "outer-spread",

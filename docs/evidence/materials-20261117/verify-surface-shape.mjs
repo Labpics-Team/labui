@@ -132,6 +132,18 @@ export async function verifySurfaceShape(page, origin, browser) {
   assert.deepEqual(borderBox.localSvg, [220.25, 180.25]);
   for (const kind of ['contour', 'stroke', 'image'])
     assert.deepEqual(borderBox[kind], [0, 0, ...borderBox.host], `${browser}: ${kind} border box`);
+  // A stylesheet can resize the border box while the content box is unchanged.
+  // There is no API refresh or mutation on the component to rescue a wrong RO box.
+  await page.evaluate(() => {
+    const style = document.createElement('style');
+    style.textContent = '#card { border-width:20px !important }';
+    document.head.append(style);
+  });
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.lab-material__contour-stroke svg').getAttribute('width') ===
+      '240.25',
+  );
   await page.evaluate(() => {
     const card = document.querySelector('#card');
     card.style.setProperty('--lab-surface-stroke-width', 'initial');
@@ -161,6 +173,7 @@ export async function verifySurfaceShape(page, origin, browser) {
     foregroundStroke: bottom,
     shadowStack: 2,
     borderBox,
+    borderOnlyResize: true,
     shadowPixels,
     disposed,
   };
