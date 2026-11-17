@@ -88,7 +88,11 @@ jobs:
           if [[ "$RUNNER_OS" == Linux ]]; then LABUI_CAPTURE_SCREENSHOTS=true SKIKO_RENDER_API=SOFTWARE xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
       - name: Install the Linux application and its declared dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y "$PWD"/native/compose/consumer/build/compose/binaries/main/deb/*.deb
+        run: |
+          # Hosted runners omit this desktop-session directory. xdg-desktop-menu
+          # requires it before jpackage's postinst can register the launcher.
+          sudo install -d -m 0755 /usr/share/desktop-directories
+          sudo apt-get install -y "$PWD"/native/compose/consumer/build/compose/binaries/main/deb/*.deb
       - name: Exercise AT-SPI and Orca in an isolated session
         if: runner.os == 'Linux'
         run: dbus-run-session -- xvfb-run -a /usr/bin/python3 native/compose/scripts/verify-linux-accessibility.py
@@ -222,20 +226,6 @@ jobs:
         run: |
           python3 native/compose/consumer/iosApp/prepare.py --colors-archive "$COLORS_SWIFT_ARCHIVE"
           simulator=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; print(next(d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")))')
-          # Native thread samples distinguish a stalled application frame from
-          # XCTest snapshot/quiescence delays. XCTest already retains screen video.
-          mkdir -p native/compose/consumer/build/ios-thread-samples
-          (
-            while true; do
-              pid=$(pgrep -nx LabUIExampleApp || true)
-              if [[ -n "$pid" ]]; then
-                sample "$pid" 1 -file "native/compose/consumer/build/ios-thread-samples/$(date +%s).txt" >/dev/null 2>&1 || true
-              fi
-              sleep 3
-            done
-          ) &
-          sampler=$!
-          trap 'kill "$sampler"; wait "$sampler" || true' EXIT
           xcodebuild test -project native/compose/consumer/iosApp/LabUIExample.xcodeproj \
             -scheme LabUIExample -destination "id=$simulator" \
             -derivedDataPath native/compose/consumer/build/xcode \
@@ -255,7 +245,6 @@ jobs:
           path: |
             native/compose/consumer/build/native-ui.xcresult
             native/compose/consumer/build/ui-attachments
-            native/compose/consumer/build/ios-thread-samples
             native/compose/consumer/build/bin/*/debugFramework/*/Headers
             native/compose/consumer/build/xcode/Build/Products/Debug-iphonesimulator/*.app
           retention-days: 7

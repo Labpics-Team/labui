@@ -167,6 +167,10 @@ Android UI Automator действует через настоящий EditText �
 Compose может экспортировать подпись отдельным описательным дочерним узлом.
 Hierarchy и пиксели сохраняются до закрытия Activity, включая неудачные проверки.
 XCTest ищет live announcements по label: UIKit экспортирует их как `Other`.
+Полный iOS-сценарий edit → validation → save → Undo → save → restart прошёл
+в [CI 44158011723](https://github.com/Labpics-Team/labui/actions/runs/44158011723):
+143.6 секунды на iPhone 16 Pro Simulator, включая восстановленное значение
+«Нативная лаборатория 東京». Это проверка поведения, а не скорости устройства.
 Пример использует опубликованный `pics.lab:icons-compose` через `iconsVersion`;
 до выпуска `iconsSource` явно подключает принятый native-каталог исходников.
 До публичного выпуска адаптер принимает `colorsRepository`/`colorsVersion`
