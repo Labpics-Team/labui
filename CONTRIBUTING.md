@@ -43,8 +43,37 @@ pnpm test:e2e
 браузеров Playwright; их состав задан в
 [конфигурации](apps/docs/playwright.config.ts).
 
-Основной [CI](.github/workflows/ci.yml) запускает smoke-сценарии.
-[Полный браузерный прогон](.github/workflows/e2e-full.yml) выполняется отдельно.
+Для свойства Core добавьте `*.test.ts` в [packages/core/test](packages/core/test/).
+Назовите в `describe` компонент или контракт, а в `it` — условие и видимый результат.
+Например, следующая команда из корня проверяет применение шрифта к области темы.
+
+```sh
+pnpm --filter @labpics/ui-core test test/theme-font.test.ts -t 'применяет font-family'
+```
+
+В итоговой строке Vitest появится `1 passed`. Для всего файла уберите `-t` с его
+аргументом. Файлы выбирает [конфигурация Vitest пакета](packages/core/vitest.config.ts).
+
+Для взаимодействия в браузере добавьте `*.spec.ts` в [apps/docs/tests](apps/docs/tests/).
+После сборки workspace установите Chromium и проверьте, что клавиша пробела
+переключает флажок в фокусе.
+
+```sh
+pnpm --filter @labpics/ui-docs exec playwright install chromium
+pnpm --filter @labpics/ui-docs exec playwright test --project=chromium tests/checkbox.spec.ts --grep 'Space on the focused box'
+```
+
+Playwright покажет имя проекта, сценарий и результат. Проверки файлов самого
+каталога используют `node:test` и суффикс `.test.mjs` в том же каталоге.
+Их запускает `pnpm --filter @labpics/ui-docs test`. Контракты потребителя
+Icons с именами `icons-*` и `prepare-icons-inputs*` запускает
+[проверка установленного пакета](.github/workflows/icons-consumer.yml).
+
+Во вкладке Checks вашего PR шаг `Unit tests` задания `lint · typecheck · build`
+показывает результаты пакетов. Сценарий с клавишей пробела входит в
+`playwright smoke (critical path)` того же [CI](.github/workflows/ci.yml).
+[Полный браузерный прогон](.github/workflows/e2e-full.yml) находит все `*.spec.ts`
+и запускается по расписанию или вручную.
 Lab UI, LabColors, LabMotion и LabIcons публичны и используют стандартные
 GitHub-hosted runners. Linux-задачи запускаются на `ubuntu-latest`,
 платформенные проверки — на соответствующих Windows и macOS runners.
