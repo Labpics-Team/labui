@@ -1,0 +1,222 @@
+{
+  "date": "2026-11-17",
+  "sourceHead": "2d9d7f3cf22444d68806f2dd9c2979ca04171532",
+  "productionHead": "2d9d7f3cf22444d68806f2dd9c2979ca04171532",
+  "run": "https://github.com/Labpics-Team/labui/actions/runs/44143550975",
+  "result": "success",
+  "platforms": [
+    {
+      "os": "linux",
+      "scrollRows": 720,
+      "paintRows": 204,
+      "initialSettleRows": 72,
+      "initialSettleMutations": 4,
+      "shapeRows": [
+        {
+          "browser": "chromium",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "firefox",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "webkit",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "chromium",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "firefox",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "webkit",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        }
+      ],
+      "initialSettleChanges": [
+        {
+          "browser": "webkit",
+          "layout": "flex-column",
+          "mutations": [
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            },
+            {
+              "target": "lab-material__paint-runway",
+              "attribute": "style"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "os": "macos",
+      "scrollRows": 720,
+      "paintRows": 204,
+      "initialSettleRows": 72,
+      "initialSettleMutations": 0,
+      "shapeRows": [
+        {
+          "browser": "chromium",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "firefox",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "webkit",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "chromium",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "firefox",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        },
+        {
+          "browser": "webkit",
+          "retained": true,
+          "hostUnclipped": true,
+          "overflowInteractive": true,
+          "foregroundStroke": [255, 0, 0],
+          "shadowStack": 2,
+          "disposed": {
+            "observers": 0,
+            "defs": 0,
+            "position": "",
+            "clip": ""
+          }
+        }
+      ],
+      "initialSettleChanges": []
+    }
+  ],
+  "qualification": "Each OS includes snapshots and isolated actual-display capture. Linux WebKit flex-column reproduced four runway style mutations during 20 initial idle frames BEFORE any scrollTo, then zero during scrolling. This separates initial layout settling from scroll work; the individual observer callback was not traced.",
+  "previousRun": "https://github.com/Labpics-Team/labui/actions/runs/44141469499"
+}

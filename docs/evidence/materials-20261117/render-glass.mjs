@@ -29,7 +29,9 @@ await page.waitForFunction(
 );
 const results = [];
 for (const factor of [0.25, 0.5, 0.75, 1])
-  for (const refract of [0.5, 1, 1.5, 2]) {
+  for (const refract of (process.env.GLASS_REFRACTION_SCALES ?? '0.5,1,1.5,2')
+    .split(',')
+    .map(Number)) {
     await page.locator('.lab-material').evaluateAll(
       (els, { factor, refract }) =>
         els.forEach((el, i) => {
