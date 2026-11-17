@@ -1,0 +1,315 @@
+{
+  "purpose": "Timing comparison; viewport-sized Glass variants have a known rejected optical regression.",
+  "measurements": [
+    {
+      "file": "sheet-before-acrylic.json",
+      "scope": "original bounded surfaces",
+      "opticalAcceptance": "not assessed by timing report",
+      "measurement": {
+        "date": "2026-11-17T10:34:32.021Z",
+        "mode": "acrylic",
+        "before": {
+          "mode": "acrylic",
+          "filter": "blur(64px) opacity(1) url(\"#lab-material-paint-1\")",
+          "width": 640,
+          "height": 422,
+          "strips": 5
+        },
+        "browser": "140.0.7339.186",
+        "viewport": "1000x812@2",
+        "path": "live dev scene, 5 detents and a20frame drag",
+        "errors": [],
+        "frames": {
+          "count": 681,
+          "medianMs": 4.199999999999818,
+          "p95Ms": 8.400000000000091,
+          "maxMs": 158.30000000000018,
+          "over25ms": 1
+        },
+        "resizes": 1050,
+        "svgMutations": 0,
+        "veilMutations": 3288,
+        "phases": {
+          "Layout": {
+            "count": 930,
+            "sumMs": 68.92000000000026,
+            "p95Ms": 0.1,
+            "maxMs": 2.548
+          },
+          "UpdateLayoutTree": {
+            "count": 935,
+            "sumMs": 2198.295,
+            "p95Ms": 6.694,
+            "maxMs": 9.886
+          },
+          "Paint": {
+            "count": 3987,
+            "sumMs": 173.89899999999798,
+            "p95Ms": 0.199,
+            "maxMs": 1.16
+          },
+          "RasterTask": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          },
+          "CompositeLayers": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          }
+        }
+      }
+    },
+    {
+      "file": "sheet-before-glass.json",
+      "scope": "original bounded surfaces",
+      "opticalAcceptance": "not assessed by timing report",
+      "measurement": {
+        "date": "2026-11-17T10:34:53.497Z",
+        "mode": "glass",
+        "before": {
+          "mode": "glass",
+          "filter": "blur(12.5px) url(\"#lab-lg-1\") url(\"#lab-material-paint-1\")",
+          "width": 640,
+          "height": 422,
+          "strips": 5
+        },
+        "browser": "140.0.7339.186",
+        "viewport": "1000x812@2",
+        "path": "live dev scene, 5 detents and a20frame drag",
+        "errors": [],
+        "frames": {
+          "count": 277,
+          "medianMs": 4.199999999999818,
+          "p95Ms": 50,
+          "maxMs": 91.69999999999982,
+          "over25ms": 65
+        },
+        "resizes": 360,
+        "svgMutations": 300,
+        "veilMutations": 1056,
+        "phases": {
+          "Layout": {
+            "count": 367,
+            "sumMs": 26.15499999999999,
+            "p95Ms": 0.124,
+            "maxMs": 0.257
+          },
+          "UpdateLayoutTree": {
+            "count": 370,
+            "sumMs": 331.56299999999976,
+            "p95Ms": 2.133,
+            "maxMs": 2.639
+          },
+          "Paint": {
+            "count": 1373,
+            "sumMs": 75.33200000000022,
+            "p95Ms": 0.237,
+            "maxMs": 0.792
+          },
+          "RasterTask": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          },
+          "CompositeLayers": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          }
+        }
+      }
+    },
+    {
+      "file": "sheet-after-acrylic.json",
+      "scope": "viewport surfaces and fluid veil",
+      "opticalAcceptance": "not assessed by timing report",
+      "measurement": {
+        "date": "2026-11-17T10:54:19.308Z",
+        "mode": "acrylic",
+        "before": {
+          "mode": "acrylic",
+          "filter": "blur(64px) opacity(1) url(\"#lab-material-paint-1\")",
+          "width": 640,
+          "height": 812,
+          "strips": 5
+        },
+        "browser": "140.0.7339.186",
+        "viewport": "1000x812@2",
+        "path": "live dev scene, 5 detents and a20frame drag",
+        "errors": [],
+        "frames": {
+          "count": 641,
+          "medianMs": 4.199999999999818,
+          "p95Ms": 8.400000000000091,
+          "maxMs": 25,
+          "over25ms": 0
+        },
+        "resizes": 580,
+        "svgMutations": 0,
+        "veilMutations": 0,
+        "phases": {
+          "Layout": {
+            "count": 621,
+            "sumMs": 44.46600000000004,
+            "p95Ms": 0.107,
+            "maxMs": 0.224
+          },
+          "UpdateLayoutTree": {
+            "count": 628,
+            "sumMs": 2276.4580000000024,
+            "p95Ms": 7.369,
+            "maxMs": 9.547
+          },
+          "Paint": {
+            "count": 5151,
+            "sumMs": 148.7259999999968,
+            "p95Ms": 0.156,
+            "maxMs": 0.401
+          },
+          "RasterTask": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          },
+          "CompositeLayers": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          }
+        }
+      }
+    },
+    {
+      "file": "sheet-after-glass.json",
+      "scope": "viewport surfaces and fluid veil",
+      "opticalAcceptance": "rejected: bottom Glass field lies below viewport",
+      "measurement": {
+        "date": "2026-11-17T10:54:26.054Z",
+        "mode": "glass",
+        "before": {
+          "mode": "glass",
+          "filter": "blur(12.5px) url(\"#lab-lg-1\") url(\"#lab-material-paint-1\")",
+          "width": 640,
+          "height": 812,
+          "strips": 5
+        },
+        "browser": "140.0.7339.186",
+        "viewport": "1000x812@2",
+        "path": "live dev scene, 5 detents and a20frame drag",
+        "errors": [],
+        "frames": {
+          "count": 654,
+          "medianMs": 4.2000000000000455,
+          "p95Ms": 8.400000000000546,
+          "maxMs": 16.700000000000045,
+          "over25ms": 0
+        },
+        "resizes": 587,
+        "svgMutations": 0,
+        "veilMutations": 0,
+        "phases": {
+          "Layout": {
+            "count": 613,
+            "sumMs": 41.303999999999974,
+            "p95Ms": 0.102,
+            "maxMs": 0.131
+          },
+          "UpdateLayoutTree": {
+            "count": 620,
+            "sumMs": 2341.9229999999993,
+            "p95Ms": 7.854,
+            "maxMs": 10.871
+          },
+          "Paint": {
+            "count": 5130,
+            "sumMs": 138.9889999999999,
+            "p95Ms": 0.148,
+            "maxMs": 0.434
+          },
+          "RasterTask": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          },
+          "CompositeLayers": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          }
+        }
+      }
+    },
+    {
+      "file": "sheet-scoped-glass.json",
+      "scope": "viewport surfaces with isolated motion inheritance",
+      "opticalAcceptance": "rejected: bottom Glass field lies below viewport",
+      "measurement": {
+        "date": "2026-11-17T10:56:06.142Z",
+        "mode": "glass",
+        "before": {
+          "mode": "glass",
+          "filter": "blur(12.5px) url(\"#lab-lg-1\") url(\"#lab-material-paint-1\")",
+          "width": 640,
+          "height": 812,
+          "strips": 5
+        },
+        "browser": "140.0.7339.186",
+        "viewport": "1000x812@2",
+        "path": "live dev scene, 5 detents and a20frame drag",
+        "errors": [],
+        "frames": {
+          "count": 629,
+          "medianMs": 4.199999999999818,
+          "p95Ms": 8.400000000000091,
+          "maxMs": 20.90000000000009,
+          "over25ms": 0
+        },
+        "resizes": 574,
+        "svgMutations": 0,
+        "veilMutations": 0,
+        "phases": {
+          "Layout": {
+            "count": 616,
+            "sumMs": 43.925000000000026,
+            "p95Ms": 0.101,
+            "maxMs": 0.211
+          },
+          "UpdateLayoutTree": {
+            "count": 623,
+            "sumMs": 437.05200000000036,
+            "p95Ms": 1.091,
+            "maxMs": 1.567
+          },
+          "Paint": {
+            "count": 5093,
+            "sumMs": 142.0529999999985,
+            "p95Ms": 0.152,
+            "maxMs": 0.408
+          },
+          "RasterTask": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          },
+          "CompositeLayers": {
+            "count": 0,
+            "sumMs": 0,
+            "p95Ms": 0,
+            "maxMs": 0
+          }
+        }
+      }
+    }
+  ]
+}
