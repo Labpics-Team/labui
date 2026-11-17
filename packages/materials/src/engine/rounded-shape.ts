@@ -3,20 +3,76 @@ export type CornerRadii = readonly [number, number, number, number, number, numb
 export type RoundedShape = number | CornerRadii;
 
 function length(value: string, dimension: number): number {
-  // Computed CSS resolves absolute units to px but preserves percentages/calc.
-  const terms = value.match(/[+-]?\s*(?:\d*\.)?\d+(?:e[+-]?\d+)?(?:px|%)/gi) ?? [];
-  let total = 0;
-  for (const term of terms) {
-    const n = Number.parseFloat(term.replace(/\s/g, ''));
-    total += term.endsWith('%') ? (n * dimension) / 100 : n;
+  // Computed CSS resolves absolute units to px, but comparison functions can
+  // retain percentages. Evaluate the expression against EACH used axis before
+  // applying CSS's shared overlap scaling. No DOM probe or forced layout.
+  const tokens = value.match(/(?:\d*\.)?\d+(?:e[+-]?\d+)?(?:px|%)?|[a-z]+|[^\s]/gi) ?? [];
+  let index = 0;
+  const sum = (): number => {
+    let out = product();
+    while (tokens[index] === '+' || tokens[index] === '-') {
+      const op = tokens[index++];
+      const next = product();
+      out = op === '+' ? out + next : out - next;
+    }
+    return out;
+  };
+  const product = (): number => {
+    let out = primary();
+    while (tokens[index] === '*' || tokens[index] === '/') {
+      const op = tokens[index++];
+      const next = primary();
+      out = op === '*' ? out * next : out / next;
+    }
+    return out;
+  };
+  const primary = (): number => {
+    const token = tokens[index++] ?? '';
+    if (token === '+') return primary();
+    if (token === '-') return -primary();
+    if (token === '(') {
+      const out = sum();
+      if (tokens[index++] !== ')') return Number.NaN;
+      return out;
+    }
+    if (['calc', 'min', 'max', 'clamp'].includes(token)) {
+      if (tokens[index++] !== '(') return Number.NaN;
+      const args = [sum()];
+      while (tokens[index] === ',') {
+        index++;
+        args.push(sum());
+      }
+      if (tokens[index++] !== ')') return Number.NaN;
+      if (token === 'min') return Math.min(...args);
+      if (token === 'max') return Math.max(...args);
+      if (token === 'clamp')
+        return args.length === 3
+          ? Math.max(args[0] ?? Number.NaN, Math.min(args[1] ?? Number.NaN, args[2] ?? Number.NaN))
+          : Number.NaN;
+      return args.length === 1 ? (args[0] ?? Number.NaN) : Number.NaN;
+    }
+    const n = Number.parseFloat(token);
+    return token.endsWith('%') ? (n * dimension) / 100 : n;
+  };
+  const out = sum();
+  return index === tokens.length && Number.isFinite(out) ? Math.max(0, out) : 0;
+}
+
+function axes(value: string): readonly string[] {
+  let depth = 0;
+  for (let i = 0; i < value.length; i++) {
+    const c = value[i];
+    if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if (depth === 0 && /\s/.test(c ?? '')) return [value.slice(0, i), value.slice(i).trim()];
   }
-  return Math.max(0, total);
+  return [value];
 }
 
 /** https://www.w3.org/TR/css-backgrounds-3/#corner-overlap */
 export function resolveCornerRadii(w: number, h: number, values: readonly string[]): RoundedShape {
   const radii = values.flatMap((value) => {
-    const pair = value.match(/calc\([^)]*\)|[^\s]+/g) ?? ['0px'];
+    const pair = axes(value.trim());
     return [length(pair[0] ?? '0px', w), length(pair[1] ?? pair[0] ?? '0px', h)];
   }) as unknown as CornerRadii;
   const [lx, ly, rx, ry, bx, by, ax, ay] = radii;

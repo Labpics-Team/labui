@@ -53,6 +53,81 @@ test('a scoped contrast change removes translucent effects', async ({ page }) =>
   await expect(page.locator('body > .lab-lg-defs')).toHaveCount(0);
 });
 
+test('nearest material mode resolves before runtime, at any nesting depth and through a shadow', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    window.materialFixture.stop();
+    window.materialFixture.stopShadow();
+    const main = document.createElement('main');
+    main.id = 'nested-first-frame';
+    for (const outer of ['solid', 'glass', 'acrylic']) {
+      for (const inner of ['solid', 'glass', 'acrylic']) {
+        const scope = document.createElement('section');
+        scope.dataset.material = outer;
+        scope.innerHTML = `<div data-material="${inner}"><div class="lab-material lab-material--soft" data-expected="${inner}"></div></div>`;
+        main.append(scope);
+      }
+    }
+    const shadowScope = document.createElement('section');
+    shadowScope.dataset.material = 'solid';
+    shadowScope.innerHTML = '<div data-material="glass"><span id="first-shadow-host"></span></div>';
+    main.append(shadowScope);
+    document.body.append(main);
+    const host = document.querySelector('#first-shadow-host');
+    if (!host) throw new Error('Missing shadow host');
+    const shadow = host.attachShadow({ mode: 'open' });
+    const style = document.createElement('style');
+    style.textContent = Array.from(document.querySelectorAll('style'))
+      .map((x) => x.textContent)
+      .join('\n');
+    shadow.append(style);
+    const surface = document.createElement('div');
+    surface.className = 'lab-material lab-material--soft';
+    surface.dataset.expected = 'glass';
+    shadow.append(surface);
+  });
+  const read = () =>
+    page.evaluate(() => {
+      const shadowSurface = document
+        .querySelector('#first-shadow-host')
+        ?.shadowRoot?.querySelector('.lab-material');
+      if (!shadowSurface) throw new Error('Missing shadow surface');
+      const nodes = [
+        ...document.querySelectorAll('#nested-first-frame .lab-material'),
+        shadowSurface,
+      ];
+      return nodes.map((el) => {
+        const css = getComputedStyle(el);
+        return {
+          mode: el.getAttribute('data-expected'),
+          color: css.backgroundColor,
+          filter: css.backdropFilter,
+          blur: css.getPropertyValue('--_blur').trim(),
+        };
+      });
+    });
+  const before = await read();
+  for (const state of before) {
+    expect(Number.parseFloat(state.blur)).toBe(
+      state.mode === 'glass' ? 6 : state.mode === 'acrylic' ? 12 : 0,
+    );
+    if (state.mode === 'solid') {
+      expect(state.filter).toBe('none');
+      expect(state.color).toBe('rgb(245, 245, 245)');
+    } else expect(state.filter).toContain(`blur(${state.mode === 'glass' ? 6 : 12}px)`);
+  }
+  await page.evaluate(() => {
+    const scene = document.querySelector('#nested-first-frame');
+    const shadow = document.querySelector('#first-shadow-host')?.shadowRoot;
+    if (!scene || !shadow) throw new Error('Missing first-frame scene');
+    window.materialFixture.mount(scene);
+    window.materialFixture.mount(shadow);
+  });
+  const after = await read();
+  expect(after.map((x) => x.blur)).toEqual(before.map((x) => x.blur));
+});
+
 test('acrylic resolves the color at the surface, including scoped updates', async ({
   page,
   browserName,
@@ -190,6 +265,42 @@ test('the lens follows all four elliptical CSS corners, including percentage rad
   await expect(image).toHaveAttribute('href', original ?? '');
 });
 
+test('CSS comparison radii use the same lens as their resolved pixel geometry', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  const surface = page.locator('#surface');
+  const image = page.locator('body > .lab-lg-defs feImage');
+  await surface.evaluate((el) => {
+    el.style.width = '200px';
+    el.style.height = '100px';
+    el.style.borderRadius = '0px';
+  });
+  await expect(image).toHaveAttribute('width', '200');
+  for (const [math, pixels] of [
+    ['min(10%, 30px)', '20px 10px'],
+    ['max(10%, 30px)', '30px'],
+    ['clamp(10px, 10%, 30px)', '20px 10px'],
+    ['calc(min(10%, 30px) + 4px) max(5%, 12px)', '24px 12px'],
+  ] as const) {
+    await surface.evaluate((el, value) => {
+      el.style.borderTopLeftRadius = value;
+    }, pixels);
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    const expected = await image.getAttribute('href');
+    await surface.evaluate((el, value) => {
+      el.style.borderTopLeftRadius = value;
+    }, math);
+    await page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+    expect(await image.getAttribute('href')).toBe(expected);
+  }
+});
+
 test('overlapping mounts share an instance, removal and final disposal release it', async ({
   page,
   browserName,
@@ -241,7 +352,9 @@ test('CSS without a runtime still degrades to opaque Solid', async ({ page, brow
   const panel = page.locator('#unmanaged');
   await expect(panel).not.toHaveAttribute('data-lab-material-mode');
   await expect(panel).not.toHaveCSS('background-color', 'rgb(245, 245, 245)');
-  await expect(panel).toHaveCSS('--_blur', '6px');
+  await expect
+    .poll(() => panel.evaluate((el) => getComputedStyle(el).backdropFilter))
+    .toContain('blur(6px)');
   await page.emulateMedia({ contrast: 'more' });
   await expect(panel).toHaveCSS('background-color', 'rgb(245, 245, 245)');
   await expect(panel).toHaveCSS('--_blur', '0px');
