@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -76,12 +78,13 @@ public fun LabButton(
         }
     }
     val intentName = intent.name.lowercase()
-    val fill = when (kind) {
+    val fill = if (!enabled || loading) colors["fill-primary"] else when (kind) {
         LabButtonKind.Fill -> colors["fill-$intentName"]
         LabButtonKind.Tinted -> colors[if (intent == LabIntent.Neutral) "fill-primary" else "fill-$intentName-tinted"]
         else -> Color.Transparent
     }
     val label = when {
+        !enabled || loading -> colors["label-tertiary"]
         kind == LabButtonKind.Fill -> colors["label-on-$intentName"]
         intent == LabIntent.Neutral -> colors["label-primary"]
         else -> colors["label-$intentName"]
@@ -91,37 +94,42 @@ public fun LabButton(
         kind == LabButtonKind.Border -> colors[if (intent == LabIntent.Neutral) "border-base" else "border-$intentName"]
         else -> Color.Transparent
     }
-    val minHeight = when (size) {
-        LabControlSize.Small -> LabTokens.SizeControlHS
-        LabControlSize.Medium -> LabTokens.SizeControlHM
-        LabControlSize.Large -> LabTokens.SizeControlHL
+    val metrics = when (size) {
+        LabControlSize.Small -> LabComponents.ButtonS
+        LabControlSize.Medium -> LabComponents.ButtonM
+        LabControlSize.Large -> LabComponents.ButtonL
     }
-    val fontSize = when (size) {
-        LabControlSize.Small -> LabTokens.FontSizeXs
-        LabControlSize.Medium -> LabTokens.FontSizeMd
-        LabControlSize.Large -> LabTokens.FontSizeLg
+    val fontSize = metrics.fontSize
+    val shape = RoundedCornerShape(metrics.radius.dp)
+    val gradient = when {
+        pressed -> colors["bg-static-dark"].copy(alpha = LabComponents.ButtonFillPressedShade)
+        hovered -> colors["bg-static-light"].copy(alpha = LabComponents.ButtonFillHoverHighlight)
+        else -> colors["bg-static-light"].copy(alpha = LabComponents.ButtonFillHighlight)
     }
-    val paddingX = when (size) { LabControlSize.Small -> LabTokens.Space2; LabControlSize.Medium -> LabTokens.Space4; LabControlSize.Large -> LabTokens.Space6 }
-    val shape = RoundedCornerShape(LabTokens.RadiusM.dp)
+    val surface = Modifier.clip(shape).background(fill).then(
+        if (enabled && !loading && kind == LabButtonKind.Fill) Modifier.background(Brush.verticalGradient(listOf(gradient, gradient.copy(alpha = 0f))))
+        else Modifier)
     Box(modifier.graphicsLayer { scaleX = scale.value; scaleY = scale.value }
-        .alpha(if (enabled) 1f else LabTokens.Opacity50)
         .border(if (focused) LabTokens.FocusRingWidth.dp else 1.dp, stroke, shape)
-        .clip(shape).background(fill)
+        .then(surface)
         .clickable(enabled = enabled && !loading, role = Role.Button, interactionSource = interactions, indication = null, onClick = onClick)
         .semantics { if (loading) stateDescription = loadingDescription }
-        .defaultMinSize(minHeight = minHeight.dp)
-        .padding(horizontal = paddingX.dp, vertical = LabTokens.Space2.dp), contentAlignment = Alignment.Center) {
+        .defaultMinSize(minHeight = metrics.height.dp)
+        .padding(horizontal = metrics.paddingX.dp, vertical = metrics.paddingY.dp), contentAlignment = Alignment.Center) {
         Row(Modifier.alpha(if (loading) 0f else 1f), verticalAlignment = Alignment.CenterVertically) {
             leading?.invoke(this)
-            BasicText(text, style = LabType.body().copy(color = label, fontSize = fontSize.sp,
-                lineHeight = (fontSize * LabTokens.LineHeightMd).sp, fontWeight = FontWeight.SemiBold))
+            Box(Modifier.heightIn(min = metrics.icon.dp).padding(horizontal = LabComponents.ButtonLabelPaddingX.dp), contentAlignment = Alignment.Center) {
+                BasicText(text, style = LabType.body().copy(color = label, fontSize = fontSize.sp,
+                    lineHeight = metrics.lineHeight.sp, letterSpacing = metrics.letterSpacing.sp,
+                    fontWeight = FontWeight(LabComponents.ButtonFontWeight.toInt())))
+            }
         }
         if (loading) Canvas(Modifier.size(fontSize.dp)) {
             drawArc(label, startAngle = turn.value, sweepAngle = 270f, useCenter = false,
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
         }
         // A state overlay preserves the complete label, line wrapping and measured width.
-        if (enabled && (pressed || hovered)) Box(Modifier.matchParentSize().background(
+        if (enabled && kind != LabButtonKind.Fill && (pressed || hovered)) Box(Modifier.matchParentSize().background(
             if (kind == LabButtonKind.Fill) Color.Black.copy(alpha = if (pressed) LabTokens.StatePressed else LabTokens.StateHover)
             else colors["label-primary"].copy(alpha = if (pressed) LabTokens.StatePressed else LabTokens.StateHover)))
     }

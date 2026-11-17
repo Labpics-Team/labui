@@ -1,6 +1,6 @@
 plugins {
-    id("com.android.application") version "9.1.1"
-    kotlin("plugin.compose") version "2.3.21"
+    id("com.android.application")
+    kotlin("plugin.compose")
 }
 android {
     namespace = "pics.lab.ui.example"

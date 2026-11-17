@@ -36,7 +36,10 @@ kotlin {
             implementation("dev.chrisbanes.haze:haze-glass:2.1.0")
             api("pics.lab:motion-compose:0.1.0")
         }
-        commonTest.dependencies { implementation(kotlin("test")) }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+        }
         val desktopTest by getting
         desktopTest.dependencies {
             implementation(compose.desktop.currentOs)

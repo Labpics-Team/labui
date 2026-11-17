@@ -9,4 +9,5 @@ dependencyResolutionManagement {
 rootProject.name = "ui-compose-consumer"
 include(":androidApp")
 // Optional development checkout. Release verification leaves this unset and resolves Maven bytes.
-providers.gradleProperty("uiSource").orNull?.let { includeBuild(it) }
+providers.gradleProperty("uiSource").orNull?.let { includeBuild(it) { name = "lab-ui" } }
+providers.gradleProperty("motionSource").orNull?.let { includeBuild(it) { name = "lab-motion" } }

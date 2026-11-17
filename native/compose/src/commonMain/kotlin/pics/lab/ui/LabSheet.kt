@@ -65,6 +65,7 @@ public fun LabSheetHost(
     modifier: Modifier = Modifier,
     size: LabSheetSize = LabSheetSize.Flex,
     material: LabMaterial = LabMaterial.Glass,
+    dismissible: Boolean = true,
     dismissLabel: String = "Закрыть",
     content: @Composable BoxScope.() -> Unit,
     sheet: @Composable ColumnScope.() -> Unit,
@@ -95,14 +96,15 @@ public fun LabSheetHost(
                 onEnter = { cancelFocusChange() }
             } else Modifier), content = content)
         if (present) {
-            LabModal(onDismissRequest) {
+            val dismiss = { if (dismissible) onDismissRequest() }
+            LabModal(dismiss) {
             LaunchedEffect(Unit) { withFrameNanos { }; closeFocus.requestFocus() }
             Box(Modifier.fillMaxSize().onPreviewKeyEvent {
-                if (it.key == Key.Escape && it.type == KeyEventType.KeyUp) { onDismissRequest(); true } else false
+                if (it.key == Key.Escape && it.type == KeyEventType.KeyUp) { dismiss(); true } else false
             }) {
             Box(Modifier.fillMaxSize().graphicsLayer { alpha = progress.value.coerceIn(0f, 1f) }
                 .background(colors["label-primary"].copy(alpha = .24f))
-                .pointerInput(onDismissRequest) { detectTapGestures { onDismissRequest() } }.clearAndSetSemantics { })
+                .pointerInput(dismiss) { detectTapGestures { dismiss() } }.clearAndSetSemantics { })
             BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), contentAlignment = Alignment.BottomCenter) {
                 val maximum = maxHeight
                 val height = size.fraction?.let { maximum * it }
@@ -116,7 +118,7 @@ public fun LabSheetHost(
                         verticalArrangement = Arrangement.spacedBy(LabTokens.Space4.dp)) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             BasicText(title, Modifier.weight(1f), style = LabType.title())
-                            LabButton(dismissLabel, onDismissRequest, Modifier.focusRequester(closeFocus),
+                            LabButton(dismissLabel, dismiss, Modifier.focusRequester(closeFocus), enabled = dismissible,
                                 intent = LabIntent.Neutral, kind = LabButtonKind.Ghost, size = LabControlSize.Small)
                         }
                         Column(Modifier.fillMaxWidth().weight(1f, fill = false).verticalScroll(rememberScrollState()),

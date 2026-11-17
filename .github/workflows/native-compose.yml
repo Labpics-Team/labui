@@ -1,0 +1,125 @@
+name: Native Compose
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - native/compose/**
+      - packages/tokens/**
+      - packages/colors/**
+      - packages/materials/**
+      - .github/workflows/native-compose.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-compose-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: Desktop interaction (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Development dependency until MOTION-NATIVE-01 is published. This is not
+      # the public-artifact consumer qualification required for release.
+      - name: Checkout accepted Motion implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Labpics-Team/lab-motion
+          ref: 0dac834af295cf4a949503eca39f6908b437c494
+          path: .dependencies/motion
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile and verify component behavior
+        shell: bash
+        env:
+          SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || '' }}
+        run: |
+          command=(bash native/compose/gradlew -p native/compose desktopTest
+            "-PmotionSource=$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain)
+          if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+      - name: Verify real desktop window through Java Accessibility
+        shell: bash
+        env:
+          SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || '' }}
+        run: |
+          command=(bash native/compose/gradlew -p native/compose/consumer run --args=--verify
+            "-PuiSource=$GITHUB_WORKSPACE/native/compose"
+            "-PmotionSource=$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain)
+          if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+      - name: Preserve interaction evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-interaction-${{ matrix.os }}
+          path: |
+            native/compose/consumer/build/accessibility-events.txt
+            native/compose/build/test-results
+          retention-days: 7
+
+  android:
+    name: Android library and application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Labpics-Team/lab-motion
+          ref: 0dac834af295cf4a949503eca39f6908b437c494
+          path: .dependencies/motion
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build the consumer APK
+        run: |
+          bash native/compose/gradlew -p native/compose/consumer :androidApp:assembleDebug \
+            -PuiSource="$GITHUB_WORKSPACE/native/compose" \
+            -PmotionSource="$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-android-example
+          path: native/compose/consumer/androidApp/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  apple:
+    name: iOS framework
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Labpics-Team/lab-motion
+          ref: 0dac834af295cf4a949503eca39f6908b437c494
+          path: .dependencies/motion
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Link Apple consumer frameworks
+        run: |
+          bash native/compose/gradlew -p native/compose/consumer linkDebugFrameworkIosSimulatorArm64 linkReleaseFrameworkIosArm64 \
+            -PuiSource="$GITHUB_WORKSPACE/native/compose" \
+            -PmotionSource="$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain

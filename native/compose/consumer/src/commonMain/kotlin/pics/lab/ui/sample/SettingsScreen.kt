@@ -59,6 +59,7 @@ fun SettingsScreen() {
         }) {
             LabSheetHost(open, "Параметры проекта", { if (!saving) open = false }, trigger, LabMaterials.base,
                 modifier = Modifier.fillMaxSize(), material = material, size = LabSheetSize.TwoThirds,
+                dismissible = !saving,
                 content = {
                     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -88,8 +89,8 @@ fun SettingsScreen() {
                         }
                     }
                 }, sheet = {
-                    LabInput(project, "Название проекта", error = error, enabled = !saving)
-                    LabInput(details, "Описание", singleLine = false, enabled = !saving)
+                    LabInput(project, "Название проекта", error = error, readOnly = saving)
+                    LabInput(details, "Описание", singleLine = false, readOnly = saving)
                     LabSwitch(notifications, { notifications = it }, "Уведомлять об изменениях", enabled = !saving)
                     BasicText("Настройки применяются ко всему рабочему пространству. Участники сохранят доступ к своим материалам.", style = body)
                     LabButton("Сохранить изменения", {

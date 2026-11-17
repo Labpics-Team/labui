@@ -7,3 +7,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "ui-compose"
+providers.gradleProperty("motionSource").orNull?.let { includeBuild(it) { name = "lab-motion" } }
