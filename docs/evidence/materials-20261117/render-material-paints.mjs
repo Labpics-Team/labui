@@ -79,7 +79,7 @@ try {
                 document.documentElement.setAttribute('data-theme', theme);
                 const style = document.createElement('style');
                 style.textContent =
-                  'body{margin:0}.zone{position:absolute;top:0;width:100px;height:100px}.surface{position:absolute;inset:0;border-radius:0;transform:translateZ(0);--_rim:none;--_backdrop-blur:1px}.marker{position:fixed;left:16px;top:16px;width:8px;height:8px;background:rgb(7 251 137);z-index:2147483647;pointer-events:none}';
+                  'body{margin:0}.zone{position:absolute;top:0;width:100px;height:100px}.surface{position:absolute;inset:0;border-radius:0;transform:translateZ(0);--_rim:none;--_backdrop-blur:1px}';
                 document.head.append(style);
                 for (const [index, rgb] of swatches.entries()) {
                   const zone = document.createElement('div');
@@ -116,9 +116,6 @@ try {
                   zone.append(surface);
                   document.body.append(zone);
                 }
-                const marker = document.createElement('div');
-                marker.className = 'marker';
-                document.body.append(marker);
                 const runtime = await import('/runtime.js');
                 window.disposeMaterials = runtime.mountMaterialRuntime();
                 if (recipe === 'author-scroll')
