@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.rememberTextFieldState
@@ -22,14 +24,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pics.lab.icons.Icon
 import pics.lab.icons.symbols.checkmark
@@ -79,14 +85,27 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
     val name = rememberTextFieldState()
     val email = rememberTextFieldState()
     val description = rememberTextFieldState()
-    var notifications by remember { mutableStateOf(true) }
-    var open by remember { mutableStateOf(false) }
+    var notifications by rememberSaveable { mutableStateOf(true) }
+    var open by rememberSaveable { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
-    var nameError by remember { mutableStateOf<String?>(null) }
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var saveError by remember { mutableStateOf(false) }
+    var nameError by rememberSaveable { mutableStateOf<String?>(null) }
+    var emailError by rememberSaveable { mutableStateOf<String?>(null) }
+    var saveError by rememberSaveable { mutableStateOf(false) }
     var displayError by remember { mutableStateOf(false) }
     var snackbar by remember { mutableStateOf<String?>(null) }
+    val accessibility = LocalAccessibilityManager.current
+    LaunchedEffect(snackbar) {
+        if (snackbar != null) {
+            delay(
+                accessibility?.calculateRecommendedTimeoutMillis(
+                    5000,
+                    containsText = true,
+                    containsControls = false,
+                ) ?: 5000
+            )
+            snackbar = null
+        }
+    }
     val font = labFontFamily()
     val heading =
         TextStyle(
@@ -159,7 +178,10 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                 dismissible = !saving,
                 content = {
                     Column(
-                        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                        Modifier.fillMaxSize()
+                            .safeDrawingPadding()
+                            .verticalScroll(rememberScrollState())
+                            .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(24.dp),
                     ) {
@@ -191,7 +213,9 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                                             BasicText(
                                                 current.workspace.email.ifBlank { "Не указана" },
                                                 style =
-                                                    body.copy(color = theme.colors["label-primary"]),
+                                                    body.copy(
+                                                        color = theme.colors["label-primary"]
+                                                    ),
                                             )
                                             BasicText(
                                                 if (current.workspace.notifications)
@@ -277,6 +301,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                                     }
                                     BasicText("Материал", style = caption)
                                     FlowRow(
+                                        Modifier.selectableGroup(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
@@ -287,6 +312,9 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                                                 LabMaterial.Glass -> "Стекло"
                                             },
                                             { changeDisplay { it.copy(material = kind) } },
+                                            Modifier.semantics {
+                                                selected = kind == display.material
+                                            },
                                             intent = LabIntent.Neutral,
                                             kind =
                                                 if (kind == display.material) LabButtonKind.Fill
@@ -404,16 +432,11 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
             snackbar?.let { message ->
                 LabSnackbar(
                     message,
-                    Modifier.align(Alignment.BottomCenter).padding(24.dp).widthIn(max = 560.dp),
-                ) {
-                    LabButton(
-                        "Закрыть",
-                        { snackbar = null },
-                        kind = LabButtonKind.Ghost,
-                        intent = LabIntent.Neutral,
-                        size = LabControlSize.Small,
-                    )
-                }
+                    Modifier.align(Alignment.BottomCenter)
+                        .safeDrawingPadding()
+                        .padding(24.dp)
+                        .widthIn(max = 560.dp),
+                )
             }
         }
     }

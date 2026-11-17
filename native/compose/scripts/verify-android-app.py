@@ -37,8 +37,7 @@ with (evidence / "logcat.txt").open("w") as log:
             print(output)
             if not re.search(r"OK \(1 test\)", output):
                 raise RuntimeError(f"Android scenario failed: {method}")
-            image = subprocess.run([*adb, "exec-out", "screencap", "-p"], check=True, capture_output=True, timeout=15)
-            (evidence / f"{method}.png").write_bytes(image.stdout)
+            run("pull", f"/sdcard/Android/data/{package}/files/verification.png", str(evidence / f"{method}.png"))
     finally:
         logger.terminate()
         logger.wait(timeout=10)

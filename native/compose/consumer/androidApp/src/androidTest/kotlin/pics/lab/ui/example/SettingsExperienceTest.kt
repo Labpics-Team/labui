@@ -1,7 +1,7 @@
 package pics.lab.ui.example
 
-import android.content.Intent
 import android.view.KeyEvent
+import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -11,20 +11,21 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import java.io.ByteArrayOutputStream
+import java.io.File
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SettingsExperienceTest {
+    @get:Rule val activity = ActivityScenarioRule(MainActivity::class.java)
+
     @Test
     fun editValidateAndSaveThroughNativeAccessibility() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val device = UiDevice.getInstance(instrumentation)
-        context.startActivity(
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
         fun find(selector: BySelector): UiObject2 =
             checkNotNull(device.wait(Until.findObject(selector), 10_000)) {
                 val hierarchy = ByteArrayOutputStream().also { device.dumpWindowHierarchy(it) }
@@ -45,6 +46,10 @@ class SettingsExperienceTest {
         input("Название").click()
         input("Название").text = "Несохранённое название"
         device.pressBack()
+        reveal(By.text("Получать уведомления"), Direction.DOWN).click()
+        activity.scenario.recreate()
+        assertTrue(reveal(By.desc("Название"), Direction.UP).text == "Несохранённое название")
+        assertTrue(!reveal(By.text("Получать уведомления"), Direction.DOWN).isChecked)
         reveal(By.text("Отмена"), Direction.DOWN).click()
         find(By.text("Лаборатория"))
         action("Редактировать").click()
@@ -66,6 +71,9 @@ class SettingsExperienceTest {
         find(By.text("Изменения сохранены"))
         assertTrue(action("Редактировать").isEnabled)
         find(By.text("Нативная лаборатория 東京z"))
+        assertTrue(
+            device.takeScreenshot(File(context.getExternalFilesDir(null), "verification.png"))
+        )
     }
 
     @Test
@@ -73,12 +81,12 @@ class SettingsExperienceTest {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
         val device = UiDevice.getInstance(instrumentation)
-        context.startActivity(
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
         assertTrue(device.wait(Until.hasObject(By.text("Нативная лаборатория 東京z")), 10_000))
         device.findObject(By.text("Редактировать")).click()
         val name = checkNotNull(device.wait(Until.findObject(By.desc("Название")), 10_000))
         assertTrue(name.text == "Нативная лаборатория 東京z")
+        assertTrue(
+            device.takeScreenshot(File(context.getExternalFilesDir(null), "verification.png"))
+        )
     }
 }

@@ -74,13 +74,17 @@ final class SettingsExperienceTests: XCTestCase {
     private func reveal(_ element: XCUIElement, in app: XCUIApplication, towardBottom: Bool) -> XCUIElement {
         for _ in 0..<8 {
             if element.exists && element.isHittable { return element }
-            let top = app.buttons["Закрыть"].frame.maxY + 24
+            let headerBottom = max(app.buttons["Закрыть"].frame.maxY,
+                                   app.staticTexts["Настройки пространства"].frame.maxY)
             let keyboard = app.keyboards.firstMatch
             let assistant = app.otherElements["SystemInputAssistantView"]
             // Keyboard.frame excludes UIKit's prediction/accessory strip above the keys.
             let keyboardTop = min(keyboard.exists ? keyboard.frame.minY : app.frame.maxY,
                                   assistant.exists ? assistant.frame.minY : app.frame.maxY)
             let bottom = keyboardTop - 24
+            // A wrapping title can extend below the close button. Start in the body,
+            // beyond the header gap, so a downward gesture scrolls instead of dismissing.
+            let top = headerBottom + (bottom - headerBottom) * 0.25
             XCTAssertGreaterThan(bottom, top, "Sheet must leave a scrollable body above the keyboard")
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let upper = origin.withOffset(CGVector(dx: app.frame.midX, dy: top))

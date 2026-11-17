@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -155,8 +154,7 @@ public fun LabSheetHost(
                             else Modifier.heightIn(min = height, max = height)
                         Layout(
                             modifier =
-                                Modifier.widthIn(max = 640.dp)
-                                    .fillMaxWidth()
+                                Modifier.fillMaxWidth()
                                     .onSizeChanged { sheetHeight = it.height.toFloat() }
                                     .graphicsLayer {
                                         translationY =
@@ -319,17 +317,25 @@ public fun LabSheetHost(
                                 }
                             },
                         ) { measurables, constraints ->
-                            val body = measurables[1].measure(constraints)
+                            val body =
+                                measurables[1].measure(
+                                    constraints.copy(
+                                        minWidth = 0,
+                                        maxWidth = minOf(constraints.maxWidth, 640.dp.roundToPx()),
+                                    )
+                                )
                             val overlap = LabSheetMaterial.ghostOverlap.dp.roundToPx()
                             val ghostHeight =
                                 (constraints.maxHeight - body.height + overlap).coerceAtLeast(
                                     overlap
                                 )
                             val ghost =
-                                measurables[0].measure(Constraints.fixed(body.width, ghostHeight))
-                            layout(body.width, body.height) {
+                                measurables[0].measure(
+                                    Constraints.fixed(constraints.maxWidth, ghostHeight)
+                                )
+                            layout(constraints.maxWidth, body.height) {
                                 ghost.place(0, overlap - ghostHeight)
-                                body.place(0, 0)
+                                body.place((constraints.maxWidth - body.width) / 2, 0)
                             }
                         }
                     }

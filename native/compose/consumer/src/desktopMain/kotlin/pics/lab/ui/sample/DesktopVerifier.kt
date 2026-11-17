@@ -107,6 +107,23 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
             }
             error("The selected theme did not reach the application")
         }
+        suspend fun awaitMaterial(name: String) {
+            val control = find(name, AccessibleRole.PUSH_BUTTON)
+            repeat(250) {
+                if (onEventThread { control.accessibleStateSet.contains(AccessibleState.SELECTED) })
+                    return
+                delay(20)
+            }
+            error("The current material is not exposed as selected: $name")
+        }
+        suspend fun awaitSnackbarDismissed() {
+            repeat(500) {
+                if (onEventThread { tree().none { it.accessibleName == "Изменения сохранены" } })
+                    return
+                delay(20)
+            }
+            error("Snackbar required manual dismissal")
+        }
         suspend fun capture(name: String) {
             if (System.getenv("LABUI_CAPTURE_SCREENSHOTS") != "true") return
             val robot = Robot()
@@ -135,12 +152,14 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
                 find(verifiedEmail)
                 find("Уведомления выключены")
                 awaitDarkTheme(true)
+                awaitMaterial("Матовый")
                 capture("restored-dark")
                 println(
                     "NATIVE_RESTART_PASS: saved workspace and display restored in a new process"
                 )
                 return@withContext
             }
+            awaitMaterial("Стекло")
             capture("main-light")
             click(find("Тёмная тема"))
             awaitDarkTheme(true)
@@ -181,6 +200,10 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
             click(find("Тёмная тема"))
             awaitDarkTheme(true)
             capture("saved-dark")
+            awaitSnackbarDismissed()
+            click(find("Матовый", AccessibleRole.PUSH_BUTTON))
+            awaitMaterial("Матовый")
+            capture("saved-matte-dark")
             val acceptedEvents = synchronized(events) { events.toList() }
             check(acceptedEvents.any { it.contains(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) }) {
                 "No text event reached Java Accessibility"
