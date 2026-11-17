@@ -21,17 +21,14 @@ final class SettingsExperienceTests: XCTestCase {
         if keyboardIntroduction.waitForExistence(timeout: 2) {
             keyboardIntroduction.buttons["Continue"].tap()
         }
-        let previous = name.value as? String ?? ""
-        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
-        XCTAssertEqual(name.value as? String, "", "Clearing the editor must finish before editing the draft")
+        clear(name, in: app)
         name.typeText("Не сохранять")
         reveal(app.buttons["Отмена"], in: app, towardBottom: true).tap()
         XCTAssertTrue(app.staticTexts["Лаборатория"].waitForExistence(timeout: 5))
         open.tap()
         name.tap()
         XCTAssertEqual(name.value as? String, "Лаборатория")
-        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Лаборатория".count))
-        XCTAssertEqual(name.value as? String, "", "Validation must submit an actually empty name")
+        clear(name, in: app)
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         reveal(message("Введите название", in: app), in: app, towardBottom: false)
         name.tap()
@@ -50,6 +47,17 @@ final class SettingsExperienceTests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
         captureSettledFrame("Restored settings", in: app)
+    }
+
+    private func clear(_ editor: XCUIElement, in app: XCUIApplication) {
+        // A tap places the caret at the tapped glyph, not at the end. Use the
+        // native selection menu so deletion does not depend on text geometry.
+        editor.press(forDuration: 1.1)
+        let selectAll = app.menuItems["Select All"]
+        XCTAssertTrue(selectAll.waitForExistence(timeout: 3), app.debugDescription)
+        selectAll.tap()
+        editor.typeText(XCUIKeyboardKey.delete.rawValue)
+        XCTAssertEqual(editor.value as? String, "", "The native editor must be empty")
     }
 
     private func message(_ label: String, in app: XCUIApplication) -> XCUIElement {
