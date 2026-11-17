@@ -922,7 +922,7 @@ test('authored veil profiles retain the two Strong passes and one Overlay Ghost 
   await expect.poll(stripStyles).not.toEqual(top);
   const bottom = await stripStyles();
   await veil.evaluate((el) => {
-    el.className = 'lab-material-ghost--sheet';
+    el.setAttribute('class', 'lab-material-ghost--sheet');
     el.setAttribute('data-veil', '');
     el.removeAttribute('data-veil-profile');
   });
