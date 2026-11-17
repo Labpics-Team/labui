@@ -40,27 +40,43 @@ export async function displayPixels(page, xs) {
       const path = join(directory, 'frame.png');
       await promisify(execFile)('/usr/sbin/screencapture', ['-x', '-t', 'png', path]);
       const png = await readFile(path);
-      frame = await page.evaluate(async (base64) => {
+      // Scan the PNG in the page and transfer only the requested pixels. Sending
+      // a full desktop as a JSON array made each macOS sample take seconds.
+      return await page.evaluate(
+        `async ({ base64, xs }) => {
         const image = new Image();
-        image.src = `data:image/png;base64,${base64}`;
+        image.src = 'data:image/png;base64,' + base64;
         await image.decode();
         const canvas = document.createElement('canvas');
         canvas.width = image.width;
         canvas.height = image.height;
         const context = canvas.getContext('2d');
         context.drawImage(image, 0, 0);
-        return {
+        return (${sampleDisplay.toString()})({
           width: image.width,
           height: image.height,
-          pixels: Array.from(context.getImageData(0, 0, image.width, image.height).data),
-        };
-      }, png.toString('base64'));
+          pixels: context.getImageData(0, 0, image.width, image.height).data,
+        }, xs);
+      }`,
+        { base64: png.toString('base64'), xs },
+      );
     } finally {
       await rm(directory, { recursive: true, force: true });
     }
   } else {
     throw new Error('Display capture needs Xvfb on Linux or screencapture on macOS');
   }
+  return sampleDisplay(frame, xs);
+}
+
+/** Self-contained so the exact same marker/sample code runs beside the decoded
+ * PNG in the browser or the XWD bytes in Node. No desktop pixel array crosses
+ * the Playwright protocol.
+ */
+function sampleDisplay(frame, xs) {
+  const check = (condition, message = 'sample stays within the display') => {
+    if (!condition) throw new Error(message);
+  };
   const { width, height, pixels } = frame;
   const isMarker = (offset) =>
     pixels[offset] === 7 && pixels[offset + 1] === 251 && pixels[offset + 2] === 137;
@@ -71,21 +87,21 @@ export async function displayPixels(page, xs) {
       break;
     }
   }
-  assert(origin >= 0, 'page marker appears on the display');
+  check(origin >= 0, 'page marker appears on the display');
   const x = origin % width;
   const y = Math.floor(origin / width);
   let markerWidth = 0;
   while (x + markerWidth < width && isMarker((origin + markerWidth) * 4)) markerWidth++;
   const scale = markerWidth / 8;
-  assert(
+  check(
     scale >= 1 && scale <= 3 && Number.isInteger(scale),
     `marker has a whole screen scale (width=${markerWidth}, origin=${x},${y})`,
   );
   const sampleY = y + (50 - 16) * scale;
-  assert(sampleY < height);
+  check(sampleY < height);
   return xs.map((cssX) => {
     const sampleX = x + (cssX - 16) * scale;
-    assert(sampleX < width);
+    check(sampleX < width);
     const at = (sampleY * width + sampleX) * 4;
     return Array.from(pixels.slice(at, at + 4));
   });

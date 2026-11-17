@@ -39,6 +39,22 @@ const recipes = [
     alpha: 0.4,
     filter: `brightness(${1 / 0.3}) invert(1) invert(1) opacity(.4)`,
   },
+  { mode: 'overlay', source: 0.95, alpha: 0.8, mix: true },
+  { mode: 'overlay', source: 0.1, alpha: 0.6, mix: true },
+  { mode: 'color-dodge', source: 0.7, alpha: 0.4, mix: true },
+  {
+    mode: 'overlay',
+    source: 0.95,
+    alpha: 0.8,
+    filter: 'brightness(2) blur(.01px) opacity(.72)',
+  },
+  {
+    mode: 'overlay',
+    source: 0.95,
+    alpha: 0.8,
+    filter: 'brightness(2)',
+    elementOpacity: 0.72,
+  },
 ];
 
 async function pixelsAt(page, xs) {
@@ -116,8 +132,13 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
         }),
       );
       for (const isolation of ['isolate', 'auto']) {
+        const blendStyle = recipe.mix
+          ? `background:rgb(${Array(3)
+              .fill(recipe.source * 255)
+              .join(' ')} / ${recipe.alpha});mix-blend-mode:${recipe.mode}`
+          : `-webkit-backdrop-filter:${recipe.filter};backdrop-filter:${recipe.filter};opacity:${recipe.elementOpacity ?? 1}`;
         await page.setContent(
-          `<!doctype html><style>body{margin:0}#source{position:fixed;inset:0;background:linear-gradient(90deg,${background})}.host{position:relative;isolation:${isolation};width:150px;height:100px}.capture,.blend{position:absolute;inset:0}.capture{-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);background:rgb(${normal.join(' ')} / ${normalAlpha})}.blend{-webkit-backdrop-filter:${recipe.filter};backdrop-filter:${recipe.filter}}</style><div id=source></div><div class=host><div class=capture></div><div class=blend></div></div>`,
+          `<!doctype html><style>body{margin:0}#source{position:fixed;inset:0;background:linear-gradient(90deg,${background})}.host{position:relative;isolation:${isolation};width:150px;height:100px}.capture,.blend{position:absolute;inset:0}.capture{-webkit-backdrop-filter:blur(1px);backdrop-filter:blur(1px);background:rgb(${normal.join(' ')} / ${normalAlpha})}.blend{${blendStyle}}</style><div id=source></div><div class=host><div class=capture></div><div class=blend></div></div>`,
         );
         await settle(page);
         const pixels = await pixelsAt(page, [15, 45, 75, 105, 135]);
