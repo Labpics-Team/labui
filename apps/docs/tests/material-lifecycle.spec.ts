@@ -432,3 +432,33 @@ test('a detached shadow host reconnects in a later frame and follows its new sco
     .evaluate((el) => el.setAttribute('data-material', 'solid'));
   await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
 });
+
+test('the first late slot assignment brings its composed material scope into observation', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.id = 'late-slot-host';
+    host.dataset.material = 'solid';
+    host.attachShadow({ mode: 'open' });
+    const surface = document.createElement('div');
+    surface.id = 'late-slot-surface';
+    surface.className = 'lab-material lab-material--soft';
+    surface.slot = 'panel';
+    host.append(surface);
+    document.body.append(host);
+    window.materialFixture.mount(surface);
+  });
+  const surface = page.locator('#late-slot-surface');
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'solid');
+  await page.locator('#late-slot-host').evaluate((host) => {
+    if (!host.shadowRoot) throw new Error('Missing shadow root');
+    host.shadowRoot.innerHTML =
+      '<div id="late-slot-parent" data-material="acrylic"><slot name="panel"></slot></div>';
+  });
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'acrylic');
+  await page
+    .locator('#late-slot-parent')
+    .evaluate((el) => el.setAttribute('data-material', 'glass'));
+  await expect(surface).toHaveAttribute('data-lab-material-mode', 'glass');
+});
