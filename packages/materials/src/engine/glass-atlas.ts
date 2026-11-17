@@ -86,7 +86,8 @@ export function glassAtlasMarkup(atlas: GlassAtlas, w: number, h: number): strin
     })
     .join('');
   const merge = atlas.tiles.map((_, i) => `<feMergeNode in="tile${i}"/>`).join('');
-  return `<feFlood flood-color="#808080" result="neutral"/>${images}<feMerge result="map"><feMergeNode in="neutral"/>${merge}</feMerge>`;
+  const zero = NEUTRAL_VECTOR_BYTE;
+  return `<feFlood flood-color="rgb(${zero} ${zero} ${zero})" result="neutral"/>${images}<feMerge result="map"><feMergeNode in="neutral"/>${merge}</feMerge>`;
 }
 
 /** Only dependent coordinates change. The eight bitmaps and SVG nodes survive. */
@@ -107,3 +108,4 @@ export function resizeGlassAtlas(nodes: readonly Element[], p: number, w: number
   set(7, 'x', w - p);
   set(7, 'y', h - p);
 }
+import { NEUTRAL_VECTOR_BYTE } from './glass-field-format';

@@ -9,6 +9,7 @@ import {
   glassAtlasPlan,
   resizeGlassAtlas,
 } from './glass-atlas';
+import { NEUTRAL_VECTOR_RGBA } from './glass-field-format';
 import { lensBand, lensDisplacement } from './glass-optics';
 // Geometry, optical profile and displacement encoding remain DOM-free.
 import { sdRoundRect } from './lg-math';
@@ -379,7 +380,7 @@ export function __computeDisplacementField(
   // displacement → 0·norm255+127.5 → Uint8Clamped 128), so the rim loop below
   // only has to overwrite R/G on the ring. (The old fill was 0xff800000 with a
   // full-map R/G rewrite; the interior R/G are now the fill — byte-identical.)
-  u32.fill(0xff808080); // little-endian RGBA: R=128 G=128 B=128 A=255
+  u32.fill(NEUTRAL_VECTOR_RGBA); // little-endian RGBA: R=128 G=128 B=128 A=255
   // Encode with the SAME 4-way symmetry used to compute the field, so the
   // per-pixel Float32 read + multiply-add runs for ~N/4 pixels instead of N, and
   // for a mirror twin dx→−dx (dy→−dy) we recompute −dx·norm255+127.5 directly (no
@@ -479,7 +480,7 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
       maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
     }
   const gain = 255 / (2 * maxAbs);
-  new Uint32Array(data.buffer, data.byteOffset, N).fill(0xff808080);
+  new Uint32Array(data.buffer, data.byteOffset, N).fill(NEUTRAL_VECTOR_RGBA);
   for (let i = 0; i < N; i++) {
     const inside = field.distances[i] ?? 0;
     if (inside <= 0 || inside >= band) continue;
