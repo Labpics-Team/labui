@@ -26,7 +26,9 @@ kotlin {
         commonMain.dependencies {
             api(uiCoordinate)
             implementation(providers.gradleProperty("iconsVersion").map { "pics.lab:icons-compose:$it" })
+            implementation(libs.datastore.preferences)
         }
+        commonTest.dependencies { implementation(kotlin("test")) }
         val desktopMain by getting {
             kotlin.srcDir("src/jvmSharedMain/kotlin")
             dependencies {

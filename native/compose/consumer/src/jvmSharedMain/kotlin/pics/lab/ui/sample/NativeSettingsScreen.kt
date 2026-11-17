@@ -7,8 +7,8 @@ import pics.lab.ui.colors.LabColorsProgramHost
 
 /** The application's composition owns the native host, independently of theme updates. */
 @Composable
-fun NativeSettingsScreen() {
+fun NativeSettingsScreen(store: WorkspaceStore) {
     val host = remember { LabColorsProgramHost() }
     DisposableEffect(host) { onDispose { host.close() } }
-    SettingsScreen(host)
+    SettingsScreen(host, store)
 }

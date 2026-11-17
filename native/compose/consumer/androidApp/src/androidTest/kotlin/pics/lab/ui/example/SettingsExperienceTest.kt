@@ -39,16 +39,23 @@ class SettingsExperienceTest {
             find(By.scrollable(true)).scrollUntil(direction, Until.findObject(selector))
             return find(selector)
         }
-        fun save() = reveal(By.text("Сохранить изменения"), Direction.DOWN).click()
+        fun save() = reveal(By.text("Сохранить"), Direction.DOWN).click()
 
-        action("Параметры проекта").click()
-        val name = input("Название проекта")
+        action("Редактировать").click()
+        input("Название").click()
+        input("Название").text = "Несохранённое название"
+        device.pressBack()
+        reveal(By.text("Отмена"), Direction.DOWN).click()
+        find(By.text("Лаборатория"))
+        action("Редактировать").click()
+        val name = input("Название")
+        assertTrue(name.text == "Лаборатория")
         name.click()
         name.text = ""
         device.pressBack() // Dismiss the IME, leaving the modal open.
         save()
-        reveal(By.text("Введите название проекта"), Direction.UP)
-        val editedName = input("Название проекта")
+        reveal(By.text("Введите название"), Direction.UP)
+        val editedName = input("Название")
         editedName.click()
         editedName.text = "Нативная лаборатория 東京"
         device.pressKeyCode(KeyEvent.KEYCODE_MOVE_END)
@@ -57,7 +64,21 @@ class SettingsExperienceTest {
         device.pressBack()
         save()
         find(By.text("Изменения сохранены"))
-        assertTrue(action("Параметры проекта").isEnabled)
-        assertTrue(input("Название").text.endsWith("東京z"))
+        assertTrue(action("Редактировать").isEnabled)
+        find(By.text("Нативная лаборатория 東京z"))
+    }
+
+    @Test
+    fun restoresSavedWorkspaceAfterRestart() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val device = UiDevice.getInstance(instrumentation)
+        context.startActivity(
+            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+        assertTrue(device.wait(Until.hasObject(By.text("Нативная лаборатория 東京z")), 10_000))
+        device.findObject(By.text("Редактировать")).click()
+        val name = checkNotNull(device.wait(Until.findObject(By.desc("Название")), 10_000))
+        assertTrue(name.text == "Нативная лаборатория 東京z")
     }
 }

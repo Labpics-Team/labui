@@ -7,16 +7,14 @@ final class SettingsExperienceTests: XCTestCase {
     func testEditValidateAndSaveThroughNativeAccessibility() {
         let app = XCUIApplication()
         app.launch()
-        let open = app.buttons["Параметры проекта"]
+        let open = app.buttons["Редактировать"]
         XCTAssertTrue(open.waitForExistence(timeout: 15))
+        captureSettledFrame("Workspace", in: app)
         open.tap()
         print("NATIVE_SHEET_ACCESSIBILITY: \(app.debugDescription)")
-        let sheetImage = XCTAttachment(screenshot: app.screenshot())
-        sheetImage.name = "Settings sheet"
-        sheetImage.lifetime = .keepAlways
-        add(sheetImage)
+        captureSettledFrame("Settings sheet", in: app)
         // Compose exposes editable semantics through UIKit's text-view trait, including single-line inputs.
-        let name = app.textViews["Название проекта"]
+        let name = app.textViews["Название"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         let keyboardIntroduction = app.otherElements["UIContinuousPathIntroductionView"]
@@ -25,17 +23,50 @@ final class SettingsExperienceTests: XCTestCase {
         }
         let previous = name.value as? String ?? ""
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
-        reveal(app.buttons["Сохранить изменения"], in: app, towardBottom: true).tap()
-        reveal(app.staticTexts["Введите название проекта"], in: app, towardBottom: false)
+        XCTAssertEqual(name.value as? String, "", "Clearing the editor must finish before editing the draft")
+        name.typeText("Не сохранять")
+        reveal(app.buttons["Отмена"], in: app, towardBottom: true).tap()
+        XCTAssertTrue(app.staticTexts["Лаборатория"].waitForExistence(timeout: 5))
+        open.tap()
+        name.tap()
+        XCTAssertEqual(name.value as? String, "Лаборатория")
+        name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Лаборатория".count))
+        XCTAssertEqual(name.value as? String, "", "Validation must submit an actually empty name")
+        reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
+        reveal(app.staticTexts["Введите название"], in: app, towardBottom: false)
         name.tap()
         name.typeText("Нативная лаборатория 東京")
-        reveal(app.buttons["Сохранить изменения"], in: app, towardBottom: true).tap()
+        reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
         XCTAssertTrue(app.staticTexts["Изменения сохранены"].waitForExistence(timeout: 5))
         XCTAssertTrue(open.exists)
-        let image = XCTAttachment(screenshot: app.screenshot())
-        image.name = "Settings saved"
-        image.lifetime = .keepAlways
-        add(image)
+        captureSettledFrame("Settings saved", in: app)
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Нативная лаборатория 東京"].waitForExistence(timeout: 15))
+        open.tap()
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
+        captureSettledFrame("Restored settings", in: app)
+    }
+
+    private func captureSettledFrame(_ title: String, in app: XCUIApplication) {
+        var previous: Data? = nil
+        var unchanged = 0
+        for _ in 0..<80 {
+            let screenshot = app.screenshot()
+            let data = screenshot.pngRepresentation
+            unchanged = previous == data ? unchanged + 1 : 0
+            if unchanged >= 4 {
+                let image = XCTAttachment(screenshot: screenshot)
+                image.name = title
+                image.lifetime = .keepAlways
+                add(image)
+                return
+            }
+            previous = data
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        XCTFail("Native frame did not settle: \(title)")
     }
 
     /// Scroll within the visible Sheet body, including when the software keyboard reduces it.

@@ -18,16 +18,23 @@ Button имеет description/icon/iconEnd/iconOnly, authored hover/pressed/disa
 Desktop/Android используют `pics.lab:ui-colors`: общий Kotlin-host над
 платформенными Lab Colors artifacts. Реальный desktop solver проверен для
 всех четырёх тем, включая increased contrast. Swift-host использует тот же
-wire и output через самостоятельный SwiftPM-пакет. `SettingsScreen(host)`
+wire и output через самостоятельный SwiftPM-пакет. `SettingsScreen(host, store)`
 сохраняет theme state при переключении настроек и позволяет повторить ошибку.
 
-CI `44040655728` подтвердил desktop-сценарий с настоящими Colors и Icons на
-Windows, macOS и Linux: ввод, валидация, сохранение, Snackbar, события текста
-и возврат фокуса. Android потребовал core library desugaring от Colors AAR.
-iOS-приложение собралось, но проверка на iPhone Pro выявила отсутствующий
-`CADisableMinimumFrameDurationOnPhone`; оба требования исправлены в host.
-Это проверка исходников с явными composite-подстановками, ещё не проверка
-опубликованных пакетов или системных screen readers.
+CI `44073517256` подтвердил компоненты на трёх desktop ОС, MSI/DEB и сценарий
+упакованного launcher на Windows/Linux. macOS jpackage завершился ошибкой,
+Android потерял emulator; iOS сценарий ещё требует исправления. Это результаты
+предыдущего consumer; новая форма с реальным хранением требует отдельного
+прохода. Проверка Java Accessibility не подтверждает системные screen readers.
+
+Consumer хранит сохранённое пространство отдельно от черновика Sheet.
+Отмена, Escape и закрытие не записывают черновик. Save закрывает панель и
+показывает Snackbar только после атомарной записи DataStore; ошибка сохраняет
+ввод. Настройки вида записываются отдельно от полей пространства той же
+транзакционной моделью и восстанавливаются после перезапуска.
+Android использует filesDir, iOS — Application Support в sandbox, desktop —
+AppData/Roaming, Application Support или XDG_CONFIG_HOME. Это хранение приложения,
+а не обязанность библиотеки компонентов.
 
 **Пакет ещё не опубликован. NATIVE-01 не завершён.** До выпуска остаются:
 
@@ -75,8 +82,14 @@ bash native/compose/gradlew -p native/compose/consumer run \
 
 `uiSource` включает явную Gradle composite-подстановку для разработки.
 Проверка опубликованного потребителя обязана оставлять `uiSource` и
-`motionSource` unset. `run --args=--verify` проходит настоящий сценарий через
-Java Accessibility и сохраняет события в `build/accessibility-events.txt`.
+`motionSource` unset. `--verify` требует отдельный `LABUI_DATA_DIR` и проходит
+сценарий через Java Accessibility. `verify-desktop-package.py` создаёт временное
+хранилище и перезапускает launcher с `--verify-restart` для проверки записи;
+события сохраняются в `build/accessibility-events*.txt`.
+UI и screen-reader проверки выполняются в изолированной среде/CI: не запускайте
+звуковую озвучку или видимые тестовые окна на рабочем столе пользователя.
+Linux CI снимает main/Sheet обеих тем только после стабилизации настоящих пикселей
+и сохраняет `build/screenshots`; обновлённый consumer ещё требует их оценки.
 Пример использует опубликованный `pics.lab:icons-compose` через `iconsVersion`;
 до выпуска `iconsSource` явно подключает принятый native-каталог исходников.
 До публичного выпуска адаптер принимает `colorsRepository`/`colorsVersion`
@@ -169,6 +182,7 @@ blur усиливается сверху вниз. Высота Ghost вычис
 - [Haze Glass и radius/sigma](https://github.com/chrisbanes/haze/blob/2.1.0/haze-glass/src/commonMain/kotlin/dev/chrisbanes/haze/glass/SemanticBlurKernel.kt)
 - [Skiko 0.150.2: выбор backend и fallback](https://github.com/JetBrains/skiko/blob/v0.150.2/skiko/src/jvmMain/kotlin/org/jetbrains/skiko/SkikoProperties.kt)
 - [Compose — доступность](https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-accessibility.html)
+- [KMP DataStore — атомарное платформенное хранение](https://developer.android.com/kotlin/multiplatform/datastore)
 - [GNOME Java / AT-SPI](https://gnome.pages.gitlab.gnome.org/at-spi2-core/devel-docs/toolkits.html#java-swing-via-java-atk-wrapper)
 
 Шрифты Geist распространяются по SIL Open Font License; лицензия находится

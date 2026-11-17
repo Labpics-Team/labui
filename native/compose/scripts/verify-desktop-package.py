@@ -1,8 +1,10 @@
 """Exercise the application image using its bundled JVM and native libraries."""
 
 from pathlib import Path
+import os
 import subprocess
 import sys
+import tempfile
 
 
 consumer = Path(__file__).resolve().parents[1] / "consumer"
@@ -19,5 +21,8 @@ else:
 
 if "jdk.accessibility" not in (runtime / "release").read_text():
     raise RuntimeError("The bundled JVM is missing jdk.accessibility")
-subprocess.run([str(executable), "--verify"], cwd=consumer, check=True, timeout=60)
-print("PACKAGED_NATIVE_SCENARIO_PASS: bundled runtime, Colors, Icons, resources and interaction")
+with tempfile.TemporaryDirectory(prefix="labui-native-verification-") as directory:
+    environment = {**os.environ, "LABUI_DATA_DIR": directory}
+    for scenario in ["--verify", "--verify-restart"]:
+        subprocess.run([str(executable), scenario], cwd=consumer, env=environment, check=True, timeout=120)
+print("PACKAGED_NATIVE_SCENARIO_PASS: bundled runtime, persisted settings across restart, Colors, Icons and interaction")
