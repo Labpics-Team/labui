@@ -51,7 +51,14 @@ export class LabCard extends LabElement {
     unsafeCSS(materialCss),
     unsafeCSS(cardCss),
     css`
-      :host { display: flex; flex-direction: column; min-width: 0; }
+      :host {
+        --_card-slotted-top-radius: var(--lab-radius-card-surface);
+        display: flex; flex-direction: column; min-width: 0;
+      }
+      .lab-card-content {
+        border-start-start-radius: var(--_card-slotted-top-radius);
+        border-start-end-radius: var(--_card-slotted-top-radius);
+      }
       ::slotted([slot='media']) { display: block; width: 100%; }
       ::slotted(img[slot='media']) { height: auto; }
     `,

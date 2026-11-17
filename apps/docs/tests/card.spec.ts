@@ -242,6 +242,20 @@ test('Lit SSR: пустая media не сдвигает содержимое к�
     const title = card.getByRole('heading', { name: 'SSR fixed' });
     await expect(title).toBeVisible();
     await page.evaluate(() => document.fonts.load('500 20px Geist'));
+    const media = page.getByTestId('lit-media');
+    const fixedContent = card.locator('.lab-card-content');
+    const mediaContent = media.locator('.lab-card-content').first();
+    await expect(fixedContent).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(fixedContent).toHaveCSS('border-top-left-radius', '16px');
+    await expect(mediaContent).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(mediaContent).toHaveCSS('border-top-left-radius', '0px');
+    await media.evaluate((element) => {
+      const child = document.createElement('lab-card');
+      child.dataset.testid = 'nested-card';
+      child.setAttribute('heading', 'Nested');
+      element.append(child);
+    });
+    await expect(page.getByTestId('nested-card')).toHaveCSS('--_card-slotted-top-radius', '1rem');
     const before = {
       title: await title.boundingBox(),
       footer: await card.getByText('Footer').boundingBox(),
@@ -261,6 +275,35 @@ test('Lit SSR: пустая media не сдвигает содержимое к�
       footer: await card.getByText('Footer').boundingBox(),
     }).toEqual(before);
     expect((await card.boundingBox())?.height).toBe(400);
+    await expect(fixedContent).toHaveCSS('border-top-left-radius', '16px');
+    await expect(mediaContent).toHaveCSS('border-top-left-radius', '0px');
+    await expect(page.getByTestId('nested-card').locator('.lab-card-content')).toHaveCSS(
+      'border-top-left-radius',
+      '16px',
+    );
+    // Hydration moves the paint into the smoothed surface. Inspect its visible
+    // pixels instead of requiring the original CSS background implementation.
+    for (const content of [fixedContent, mediaContent]) {
+      await content.scrollIntoViewIfNeeded();
+      const box = await content.boundingBox();
+      if (!box) throw new Error('Missing visible Card content');
+      const sample = await page.screenshot({
+        clip: { x: box.x + box.width - 40, y: box.y + box.height - 32, width: 8, height: 8 },
+      });
+      expect(
+        await page.evaluate(async (base64) => {
+          const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+          const image = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = 8;
+          const context = canvas.getContext('2d');
+          if (!context) throw new Error('Missing image decoder');
+          context.drawImage(image, 0, 0);
+          image.close();
+          return [...context.getImageData(0, 0, 8, 8).data].every((channel) => channel === 255);
+        }, sample.toString('base64')),
+      ).toBe(true);
+    }
   } finally {
     releaseScripts();
     if (!page.isClosed()) await page.unroute('**/*.js');

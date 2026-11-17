@@ -1,5 +1,8 @@
 /** Shared geometry and text anatomy for the two web renderers. */
 export const cardCss = `
+/* Light-DOM slot presence is available before custom elements are registered. */
+lab-card { --_card-slotted-top-radius: var(--lab-radius-card-surface); }
+lab-card:has(> [slot="media"]) { --_card-slotted-top-radius: 0px; }
 [data-lab-card] {
   --_card-padding: var(--lab-space-card-padding);
   --lab-surface-stroke-width: var(--lab-stroke-card);
