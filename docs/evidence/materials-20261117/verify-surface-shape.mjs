@@ -164,6 +164,7 @@ export async function verifySurfaceShape(page, origin, browser) {
     clip: document.querySelector('#card').style.getPropertyValue('--lab-contour-clip'),
   }));
   assert.deepEqual(disposed, { observers: 0, defs: 0, position: '', clip: '' });
+  const shadowLifecycle = await verifyShadowLifecycle(page, browser);
   const shadowPixels = await verifyShadowPixels(page, origin, browser);
   const result = {
     browser,
@@ -174,6 +175,7 @@ export async function verifySurfaceShape(page, origin, browser) {
     shadowStack: 2,
     borderBox,
     borderOnlyResize: true,
+    shadowLifecycle,
     shadowPixels,
     disposed,
   };
@@ -181,7 +183,61 @@ export async function verifySurfaceShape(page, origin, browser) {
   return result;
 }
 
-/** The zero-smoothing limit has an independent native CSS reference. Compare
+async function verifyShadowLifecycle(page, browser) {
+  const result = await page.evaluate(async () => {
+    const { mountSurfaceShape } = await import('/runtime.js');
+    const el = document.querySelector('#card');
+    const style = document.createElement('style');
+    style.textContent = '#card { box-shadow:0 0 0 5px green !important }';
+    document.head.append(style);
+    const inline = () => [
+      el.style.getPropertyValue('box-shadow'),
+      el.style.getPropertyPriority('box-shadow'),
+    ];
+    const states = [];
+    for (const priority of ['', 'important']) {
+      el.style.setProperty('box-shadow', '0 0 0 7px blue', priority);
+      const before = inline();
+      const shape = mountSurfaceShape(el, { smoothing: 0.6 });
+      const during = getComputedStyle(el).boxShadow;
+      shape.destroy();
+      states.push({ before, during, after: inline() });
+    }
+    for (const refresh of [false, true]) {
+      const shape = mountSurfaceShape(el, { smoothing: 0.6 });
+      el.style.setProperty('box-shadow', '0 0 0 9px red', refresh ? 'important' : '');
+      const before = inline();
+      if (refresh) shape.refresh();
+      shape.destroy();
+      states.push({ before, after: inline() });
+    }
+    el.style.removeProperty('box-shadow');
+    const before = getComputedStyle(el).boxShadow;
+    const shape = mountSurfaceShape(el, { smoothing: 0.6 });
+    const during = getComputedStyle(el).boxShadow;
+    shape.destroy();
+    return {
+      states,
+      stylesheet: { before, during, after: getComputedStyle(el).boxShadow },
+      inline: inline(),
+    };
+  });
+  for (const state of result.states) {
+    if ('during' in state)
+      assert.equal(state.during, 'none', `${browser}: native shadow suppressed`);
+    assert.deepEqual(
+      state.after,
+      state.before,
+      `${browser}: latest author shadow and priority restored`,
+    );
+  }
+  assert.equal(result.stylesheet.during, 'none');
+  assert.equal(result.stylesheet.after, result.stylesheet.before);
+  assert.deepEqual(result.inline, ['', '']);
+  return result;
+}
+
+/** The zero-smoothing limit has an independent CSS reference. Compare
  * flat 3×3 interiors so engine-specific edge antialiasing is not a false failure. */
 async function verifyShadowPixels(page, origin, browser) {
   const cases = [
@@ -208,7 +264,32 @@ async function verifyShadowPixels(page, origin, browser) {
       },
       { shadow, borders, asymmetric },
     );
+    // Firefox 141 native inset spread misplaces the asymmetric hole. Use an
+    // independent two-box construction for BOTH asymmetric cases in ALL engines:
+    // spread shrinks the padding box; the browser normalizes its corner overlap.
+    // https://www.w3.org/TR/css-backgrounds-3/#shadow-shape
+    // https://www.w3.org/TR/css-backgrounds-3/#corner-overlap
+    if (asymmetric)
+      await page.evaluate((name) => {
+        document.querySelector('#subject').style.visibility = 'hidden';
+        const reference = document.createElement('div');
+        reference.id = 'shadow-reference';
+        reference.style.cssText =
+          'position:absolute;left:50px;top:50px;width:100px;height:140px;border-radius:0 100px 0 0;background:red;overflow:hidden';
+        const hole = document.createElement('div');
+        hole.style.cssText =
+          name === 'asymmetric-inner-spread'
+            ? 'position:absolute;left:40px;top:30px;width:60px;height:100px;border-radius:0 80px 0 0;background:white'
+            : 'position:absolute;left:40px;top:40px;width:20px;height:60px;border-radius:0 60px 0 0;background:white';
+        reference.append(hole);
+        document.body.append(reference);
+      }, name);
     const reference = decodePng(await page.screenshot());
+    if (asymmetric)
+      await page.evaluate(() => {
+        document.querySelector('#shadow-reference').remove();
+        document.querySelector('#subject').style.removeProperty('visibility');
+      });
     await page.evaluate(async () => {
       const api = await import('/runtime.js');
       window.testShadow = api.mountSurfaceShape(document.querySelector('#subject'), {
@@ -217,6 +298,11 @@ async function verifyShadowPixels(page, origin, browser) {
       await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     });
     const actual = decodePng(await page.screenshot());
+    assert.equal(
+      await page.locator('#subject').evaluate((el) => getComputedStyle(el).boxShadow),
+      'none',
+      `${browser}/${name}: native shadow must not double-paint`,
+    );
     let checked = 0;
     let painted = 0;
     let mismatches = 0;
@@ -246,9 +332,15 @@ async function verifyShadowPixels(page, origin, browser) {
           first ??= [x, y];
         }
       }
-    assert(painted > 50, `${browser}/${name}: native reference contains a visible shadow`);
+    assert(painted > 50, `${browser}/${name}: reference contains a visible shadow`);
     assert.equal(mismatches, 0, `${browser}/${name}: stable shadow pixels differ, first=${first}`);
-    results.push({ name, checked, painted, mismatches });
+    results.push({
+      name,
+      reference: asymmetric ? 'independent-css-geometry' : 'native-css-shadow',
+      checked,
+      painted,
+      mismatches,
+    });
     await page.evaluate(() => window.testShadow.destroy());
   }
   return results;

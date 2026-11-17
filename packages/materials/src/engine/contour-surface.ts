@@ -90,6 +90,20 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
     const positionBefore = el.style.position;
     const positioned = css.position === 'static';
     if (positioned) el.style.position = 'relative';
+    // The contour replaces the complete shadow stack. A stylesheet selector
+    // cannot reliably suppress author IDs or inline !important declarations.
+    let shadowBefore = el.style.getPropertyValue('box-shadow');
+    let shadowPriorityBefore = el.style.getPropertyPriority('box-shadow');
+    const shadowSuppressed = () =>
+      el.style.getPropertyValue('box-shadow') === 'none' &&
+      el.style.getPropertyPriority('box-shadow') === 'important';
+    const suppressShadow = () => {
+      if (shadowSuppressed()) return;
+      shadowBefore = el.style.getPropertyValue('box-shadow');
+      shadowPriorityBefore = el.style.getPropertyPriority('box-shadow');
+      el.style.setProperty('box-shadow', 'none', 'important');
+    };
+    suppressShadow();
     const id = `lab-contour-${++sequence}`;
     const defs = ensureHiddenDefs('lab-material-contour-defs', el);
     const clip = el.ownerDocument.createElementNS(NS, 'clipPath');
@@ -168,6 +182,7 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
     let strokeKey: string | undefined;
     let usedShadows: Shadow[] = [];
     refreshShape = () => {
+      suppressShadow();
       placement.refresh?.();
       const cs = getComputedStyle(el);
       const box = readBorderBox(el, cs);
@@ -249,6 +264,10 @@ export function attach(el: HTMLElement, options?: SurfaceShapeOptions): EngineHa
       el.style.removeProperty('--lab-contour-clip');
       el.style.removeProperty('--lab-contour-inset');
       el.style.removeProperty('--_material-contour-rim');
+      if (shadowSuppressed()) {
+        if (shadowBefore) el.style.setProperty('box-shadow', shadowBefore, shadowPriorityBefore);
+        else el.style.removeProperty('box-shadow');
+      }
       if (positioned && el.style.position === 'relative') el.style.position = positionBefore;
     };
     if (!observer) {
