@@ -149,9 +149,11 @@ function readConfig(el: HTMLElement): VeilConfig {
   const rect = { width: el.offsetWidth, height: el.offsetHeight };
   const w = Math.max(1, rect.width);
   const h = Math.max(1, rect.height);
-  const preset = PRESETS[(el.getAttribute('data-veil') ?? '').trim()];
+  const preset =
+    PRESETS[(el.getAttribute('data-veil') ?? '').trim() || raw('--_veil-direction', '')];
   const author = materialProfile.progressive;
-  const profileName = el.getAttribute('data-veil-profile') as keyof typeof author.compositions;
+  const profileName = (el.getAttribute('data-veil-profile') ||
+    raw('--_veil-profile', '')) as keyof typeof author.compositions;
   const composition = Object.hasOwn(author.compositions, profileName)
     ? author.compositions[profileName]
     : undefined;

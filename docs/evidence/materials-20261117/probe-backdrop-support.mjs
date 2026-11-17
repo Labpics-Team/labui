@@ -27,6 +27,18 @@ const recipes = [
     filter: 'invert(1) brightness(2) invert(1) opacity(.48)',
   },
   { mode: 'color-dodge', source: 0.7, alpha: 0.4, filter: `brightness(${1 / 0.3}) opacity(.4)` },
+  {
+    mode: 'overlay',
+    source: 0.95,
+    alpha: 0.8,
+    filter: 'brightness(2) invert(1) invert(1) opacity(.72)',
+  },
+  {
+    mode: 'color-dodge',
+    source: 0.7,
+    alpha: 0.4,
+    filter: `brightness(${1 / 0.3}) invert(1) invert(1) opacity(.4)`,
+  },
 ];
 
 async function pixelsAt(page, xs) {
@@ -68,9 +80,6 @@ for (const name of ['chromium', 'firefox', 'webkit']) {
   const browser = await engines[name].launch({
     headless: !display,
     ...(name === 'chromium' ? { channel: 'chromium' } : {}),
-    ...(display && platform() === 'linux' && name === 'webkit'
-      ? { args: ['--hardware-acceleration-policy=always'] }
-      : {}),
   });
   const page = await browser.newPage({ viewport: { width: 800, height: 300 } });
   if (display) await page.bringToFront();

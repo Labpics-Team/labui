@@ -17,6 +17,22 @@
     "size": 0.2,
     "density": 1
   },
+  "compositions": {
+    "sheet": {
+      "source": "docs/evidence/materials-20261117/figma-sheet-source.json",
+      "body": {
+        "tier": "elevated",
+        "shadow": "modal",
+        "stroke": { "role": "border-base", "width": 1, "align": "outside" }
+      },
+      "ghost": {
+        "profile": "overlay-ghost",
+        "direction": "bottom",
+        "overlap": 32,
+        "paintRole": "bg-overlay-ghost"
+      }
+    }
+  },
   "progressive": {
     "source": "docs/evidence/materials-20261117/figma-progressive-source.json",
     "startRadius": 0,

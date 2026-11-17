@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { shadowProfile } from '../../shadow/src/profile';
 import { readMaterialCss } from '../scripts/material-css';
 import { canNest } from '../src/background-policy';
 import { mountMaterialRuntime } from '../src/engine/runtime';
@@ -126,5 +127,55 @@ describe('author material profile', () => {
       expect(node.effects.find((effect) => effect.type === 'NOISE')?.blendMode?.toLowerCase()).toBe(
         materialProfile.noise.blendMode,
       );
+  });
+
+  it('projects the Sheet Body and Ghost through the existing material and shadow recipes', () => {
+    const sheet = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../docs/evidence/materials-20261117/figma-sheet-source.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as {
+      nodes: {
+        id: string;
+        absoluteBoundingBox: { y: number; height: number };
+        effects: {
+          type: string;
+          radius: number;
+          offset: { x: number; y: number };
+          color: { a: number };
+        }[];
+      }[];
+    };
+    const recipe = materialProfile.compositions.sheet;
+    const body = sheet.nodes.find((node) => node.id === '7533:4748');
+    const ghost = sheet.nodes.find((node) => node.id === '7533:4747');
+    const backdrop = sheet.nodes.find((node) => node.id === 'I7533:4749;7098:2611');
+    expect(materialProfile.tiers.elevated.backdrop.radius).toBe(
+      backdrop?.effects.find((effect) => effect.type === 'BACKGROUND_BLUR')?.radius,
+    );
+    const shadow = shadowProfile.levels[shadowProfile.roles.modal];
+    for (const [i, original] of (body?.effects ?? []).entries()) {
+      expect(shadow?.[i]?.blur).toBe(original.radius);
+      expect(shadow?.[i]?.y).toBe(original.offset.y);
+      expect(shadow?.[i]?.opacity).toBeCloseTo(original.color.a, 6);
+    }
+    expect(recipe.ghost.overlap).toBeCloseTo(
+      (ghost?.absoluteBoundingBox.y ?? 0) +
+        (ghost?.absoluteBoundingBox.height ?? 0) -
+        (body?.absoluteBoundingBox.y ?? 0),
+      3,
+    );
+    expect(materialProfile.progressive.compositions['overlay-ghost']).toEqual(['strong']);
+    expect(materialProfile.progressive.styles.strong.radius).toBe(
+      ghost?.effects.find((effect) => effect.type === 'BACKGROUND_BLUR')?.radius,
+    );
+    const css = readMaterialCss();
+    expect(css).toContain('--_veil-profile: overlay-ghost;');
+    expect(css).toContain('outline: 1px solid var(--lab-border-base);');
+    expect(css).toContain('box-shadow: var(--lab-elevation-modal);');
   });
 });

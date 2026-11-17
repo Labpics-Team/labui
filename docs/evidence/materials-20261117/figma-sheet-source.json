@@ -1,0 +1,597 @@
+{
+  "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+  "version": "2422536133022859436",
+  "lastModified": "2026-11-16T18:32:12Z",
+  "extractedFrom": "Figma REST nodes 7533:4698",
+  "variables": [
+    {
+      "id": "VariableID:4033:1085",
+      "name": "Border/Neutral/Base",
+      "role": "border-base"
+    },
+    {
+      "id": "VariableID:4083:5520",
+      "name": "Backgrounds/Overlay/Ghost",
+      "role": "bg-overlay-ghost"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "7533:4747",
+      "name": "Ghost",
+      "type": "INSTANCE",
+      "componentId": "7533:2238",
+      "absoluteBoundingBox": {
+        "x": 1707.9999936251666,
+        "y": 1437,
+        "width": 375.00000637483345,
+        "height": 422.0000327835385
+      },
+      "rotation": 3.1415925661670165,
+      "fills": [
+        {
+          "opacity": 0.00009999999747378752,
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4083:5520"
+            }
+          }
+        }
+      ],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "blurType": "PROGRESSIVE",
+          "startRadius": 0,
+          "startOffset": {
+            "x": 0.5,
+            "y": 1
+          },
+          "endOffset": {
+            "x": 0.5,
+            "y": 0
+          },
+          "radius": 24,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2018"
+            }
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "noiseType": "MONOTONE",
+          "blendMode": "SCREEN",
+          "noiseSize": 0.20000000298023224,
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.05999999865889549
+          },
+          "density": 1
+        }
+      ],
+      "styles": {
+        "effect": "4083:5522"
+      }
+    },
+    {
+      "id": "7533:4748",
+      "name": "Body",
+      "type": "FRAME",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827,
+        "width": 375,
+        "height": 422
+      },
+      "rectangleCornerRadii": [32, 32, 0, 0],
+      "fills": [],
+      "strokes": [
+        {
+          "opacity": 0.1599999964237213,
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 0.47058823704719543,
+            "g": 0.47058823704719543,
+            "b": 0.501960813999176,
+            "a": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4033:1085"
+            }
+          }
+        }
+      ],
+      "strokeWeight": 1,
+      "strokeAlign": "OUTSIDE",
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "color": {
+            "r": 0.062745101749897,
+            "g": 0.062745101749897,
+            "b": 0.07058823853731155,
+            "a": 0.11999999731779099
+          },
+          "blendMode": "NORMAL",
+          "offset": {
+            "x": 0,
+            "y": 16
+          },
+          "radius": 36,
+          "showShadowBehindNode": false,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4048:802"
+            },
+            "spread": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4083:5499"
+            },
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4027:224"
+            },
+            "offsetX": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:590"
+            },
+            "offsetY": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:596"
+            }
+          }
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "color": {
+            "r": 0.062745101749897,
+            "g": 0.062745101749897,
+            "b": 0.07058823853731155,
+            "a": 0.03999999910593033
+          },
+          "blendMode": "NORMAL",
+          "offset": {
+            "x": 0,
+            "y": 24
+          },
+          "radius": 48,
+          "showShadowBehindNode": false,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4048:801"
+            },
+            "spread": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4083:5499"
+            },
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4027:226"
+            },
+            "offsetX": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4083:5499"
+            },
+            "offsetY": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:597"
+            }
+          }
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "color": {
+            "r": 0.062745101749897,
+            "g": 0.062745101749897,
+            "b": 0.07058823853731155,
+            "a": 0.019999999552965164
+          },
+          "blendMode": "NORMAL",
+          "offset": {
+            "x": 0,
+            "y": 36
+          },
+          "radius": 64,
+          "showShadowBehindNode": false,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4048:812"
+            },
+            "spread": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4083:5499"
+            },
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4027:225"
+            },
+            "offsetX": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:590"
+            },
+            "offsetY": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:598"
+            }
+          }
+        },
+        {
+          "type": "DROP_SHADOW",
+          "visible": true,
+          "color": {
+            "r": 0.062745101749897,
+            "g": 0.062745101749897,
+            "b": 0.07058823853731155,
+            "a": 0.009999999776482582
+          },
+          "blendMode": "NORMAL",
+          "offset": {
+            "x": 0,
+            "y": 48
+          },
+          "radius": 96,
+          "showShadowBehindNode": false,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4048:811"
+            },
+            "spread": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4044:2011"
+            },
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4027:227"
+            },
+            "offsetX": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:590"
+            },
+            "offsetY": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4081:599"
+            }
+          }
+        }
+      ],
+      "styles": {
+        "effect": "7101:54384"
+      }
+    },
+    {
+      "id": "7533:4749",
+      "name": "Elevated",
+      "type": "INSTANCE",
+      "componentId": "6814:38929",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827.5,
+        "width": 376,
+        "height": 522
+      },
+      "fills": [],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": []
+    },
+    {
+      "id": "I7533:4749;7095:5344",
+      "name": "Light",
+      "type": "FRAME",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827.5,
+        "width": 376,
+        "height": 522
+      },
+      "fills": [
+        {
+          "opacity": 0.800000011920929,
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:6229:43348"
+            }
+          }
+        },
+        {
+          "blendMode": "COLOR_DODGE",
+          "type": "GRADIENT_LINEAR",
+          "gradientHandlePositions": [
+            {
+              "x": 0,
+              "y": 0.5
+            },
+            {
+              "x": 1,
+              "y": 0.5
+            },
+            {
+              "x": 0,
+              "y": 1
+            }
+          ],
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.14901961386203766,
+                "g": 0.14901961386203766,
+                "b": 0.14901961386203766,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:6229:43349"
+                }
+              }
+            },
+            {
+              "color": {
+                "r": 0.14901961386203766,
+                "g": 0.14901961386203766,
+                "b": 0.14901961386203766,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:6229:43349"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": [],
+      "styles": {
+        "fills": "6225:47458",
+        "fill": "6225:47458"
+      }
+    },
+    {
+      "id": "I7533:4749;7095:5345",
+      "name": "Dark",
+      "type": "FRAME",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827.5,
+        "width": 376,
+        "height": 522
+      },
+      "fills": [
+        {
+          "opacity": 0.800000011920929,
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:6229:43348"
+            }
+          }
+        },
+        {
+          "blendMode": "OVERLAY",
+          "type": "GRADIENT_LINEAR",
+          "gradientHandlePositions": [
+            {
+              "x": 0,
+              "y": 0.5
+            },
+            {
+              "x": 1,
+              "y": 0.5
+            },
+            {
+              "x": 0,
+              "y": 1
+            }
+          ],
+          "gradientStops": [
+            {
+              "color": {
+                "r": 0.14901961386203766,
+                "g": 0.14901961386203766,
+                "b": 0.14901961386203766,
+                "a": 1
+              },
+              "position": 0,
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:6229:43349"
+                }
+              }
+            },
+            {
+              "color": {
+                "r": 0.14901961386203766,
+                "g": 0.14901961386203766,
+                "b": 0.14901961386203766,
+                "a": 1
+              },
+              "position": 1,
+              "boundVariables": {
+                "color": {
+                  "type": "VARIABLE_ALIAS",
+                  "id": "VariableID:6229:43349"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": [],
+      "styles": {
+        "fills": "6225:47653",
+        "fill": "6225:47653"
+      },
+      "visible": false
+    },
+    {
+      "id": "I7533:4749;7098:2611",
+      "name": "Backdrop",
+      "type": "FRAME",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827.5,
+        "width": 376,
+        "height": 522
+      },
+      "fills": [
+        {
+          "opacity": 0.00009999999747378752,
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          }
+        }
+      ],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": [
+        {
+          "type": "BACKGROUND_BLUR",
+          "visible": true,
+          "radius": 128,
+          "boundVariables": {
+            "radius": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:4048:810"
+            }
+          }
+        },
+        {
+          "type": "NOISE",
+          "visible": true,
+          "noiseType": "MONOTONE",
+          "blendMode": "SCREEN",
+          "noiseSize": 0.20000000298023224,
+          "color": {
+            "r": 0.003921568859368563,
+            "g": 0.007843137718737125,
+            "b": 0.019607843831181526,
+            "a": 0.03999999910593033
+          },
+          "density": 1
+        }
+      ],
+      "styles": {
+        "effect": "4083:5532"
+      }
+    },
+    {
+      "id": "I7533:4749;7095:6001",
+      "name": "Glass",
+      "type": "FRAME",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827.5,
+        "width": 376,
+        "height": 522
+      },
+      "fills": [],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": [
+        {
+          "type": "GLASS",
+          "visible": true
+        }
+      ],
+      "visible": false
+    },
+    {
+      "id": "I7533:4749;7098:969",
+      "name": "Solid",
+      "type": "FRAME",
+      "absoluteBoundingBox": {
+        "x": 1708,
+        "y": 1827.5,
+        "width": 376,
+        "height": 522
+      },
+      "fills": [
+        {
+          "blendMode": "NORMAL",
+          "type": "SOLID",
+          "color": {
+            "r": 1,
+            "g": 1,
+            "b": 1,
+            "a": 1
+          },
+          "boundVariables": {
+            "color": {
+              "type": "VARIABLE_ALIAS",
+              "id": "VariableID:6005:55"
+            }
+          }
+        }
+      ],
+      "strokes": [],
+      "strokeWeight": 1,
+      "strokeAlign": "INSIDE",
+      "effects": [],
+      "visible": false
+    }
+  ]
+}

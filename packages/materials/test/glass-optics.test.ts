@@ -4,6 +4,42 @@ import { __computeDisplacementField } from '../src/engine/liquid-glass';
 import { type CornerRadii, roundedShapeGeometry } from '../src/engine/rounded-shape';
 
 describe('shape-normal glass optics', () => {
+  it('does not change the optical model when one corner differs by a subpixel amount', () => {
+    for (const [w, h, r, depth] of [
+      [200, 100, 20, 60],
+      [120, 32, 8, 80],
+    ]) {
+      if (w === undefined || h === undefined || r === undefined || depth === undefined)
+        throw new Error('Missing geometry');
+      const symmetric = __computeDisplacementField(w, h, r, depth, 1);
+      const bytes = symmetric.data.slice();
+      const almost = __computeDisplacementField(w, h, [r + 0.0001, r, r, r, r, r, r, r], depth, 1);
+      // Two independent quantization steps bound the difference. A fast/general
+      // model split previously displaced unchanged corners by more than11px.
+      const tolerance = (symmetric.unit + almost.unit) / 255;
+      for (let i = 0; i < bytes.length; i += 4) {
+        for (let channel = 0; channel < 2; channel++) {
+          const a = ((bytes[i + channel] ?? 128) / 255 - 0.5) * symmetric.unit;
+          const b = ((almost.data[i + channel] ?? 128) / 255 - 0.5) * almost.unit;
+          expect(Math.abs(a - b)).toBeLessThanOrEqual(tolerance);
+        }
+      }
+    }
+  });
+
+  it('keeps refraction continuous where an asymmetric ellipse crosses the box centre', () => {
+    const field = __computeDisplacementField(201, 101, [160, 100, 0, 0, 0, 0, 0, 0], 60, 1);
+    const vertical = Array.from({ length: 11 }, (_, i) => {
+      const at = (20 * field.W + 95 + i) * 4 + 1;
+      return ((field.data[at] ?? 128) / 255 - 0.5) * field.unit;
+    });
+    // x100.5 is w/2, but belongs to an active smooth elliptical lens. A global
+    // centre-axis clamp previously collapsed this to zero and created a stripe.
+    for (const value of vertical) expect(value).toBeGreaterThan(20);
+    for (let i = 1; i < vertical.length; i++)
+      expect(Math.abs((vertical[i] ?? 0) - (vertical[i - 1] ?? 0))).toBeLessThan(2);
+  });
+
   it('bends straight edges perpendicular to the edge, independently of a panel aspect ratio', () => {
     for (const width of [200, 800]) {
       const field = __computeDisplacementField(width, 100, 20, 60, 1);

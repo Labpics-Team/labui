@@ -149,6 +149,29 @@ function cornerDistance(
 /** Return distance and write the inward unit normal at the closest boundary.
  * Caller retains one two-number scratch; the ellipse solver allocates nothing.
  */
+export function writeStraightNormal(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  distance: number,
+  normal: Float64Array,
+): boolean {
+  // On a medial tie, both field paths choose the vertical normal. The optical
+  // result must not change when an imperceptible corner edit selects another path.
+  if (distance === y || distance === h - y) {
+    normal[0] = 0;
+    normal[1] = distance === y ? 1 : -1;
+    return true;
+  }
+  if (distance === x || distance === w - x) {
+    normal[0] = distance === x ? 1 : -1;
+    normal[1] = 0;
+    return true;
+  }
+  return false;
+}
+
 export function roundedShapeGeometry(
   x: number,
   y: number,
@@ -160,8 +183,7 @@ export function roundedShapeGeometry(
   const right = w - x;
   const bottom = h - y;
   let distance = Math.min(x, y, right, bottom);
-  normal[0] = distance === x ? 1 : distance === right ? -1 : 0;
-  normal[1] = normal[0] !== 0 ? 0 : distance === y ? 1 : -1;
+  writeStraightNormal(x, y, w, h, distance, normal);
   // Most pixels meet a straight edge. Enter the ellipse solver only in an
   // actual corner region; unusually large CSS corners may overlap, so examine
   // every applicable corner instead of assuming a quadrant partition.

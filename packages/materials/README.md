@@ -41,8 +41,13 @@ frost и normal-композицию между концами авторско�
 Первый кадр стандартных Colors готов в CSS: normal-композиция и остаточный
 SVG data-URL сгенерированы из `@labui/colors/contract.css`. Runtime обновляет
 результат по живым scoped-ролям и делит один неизменяемый фильтр между одинаковыми
-рецептами в Document/ShadowRoot. При произвольном переопределении цветовых ролей
-до mount начальный CSS ещё соответствует стандартным Colors. Native получает
+рецептами в Document/ShadowRoot. Для собственной темы `compileMaterialTheme(theme,
+roles)` возвращает неизменяемый набор CSS properties для первого SSR-кадра.
+Передайте числовые роли без префикса `--lab-`: encoded sRGB 0..255, alpha 0..1;
+примените результат в той же области, что исходные роли Colors. Compiler чистый,
+не требует DOM или solver и используется также при сборке стандартного CSS.
+Одно только переопределение CSS-ролей без compiler сохраняет стандартный начальный
+paint до mount. Native получает
 тот же deterministic grain из `@labpics/ui-materials/noise.png` (48×48,
 масштаб 9.6 logical px) и параметры noise из профиля.
 
@@ -60,6 +65,18 @@ logical px; web переводит их в sigma делением на два. N
 есть собственный paint между его эффектом и вложенным эффектом, он задаётся
 дочерним `[data-veil-paint]`. Runtime размещает первый blur/noise перед ним,
 вложенные проходы — после, и сохраняет порядок при resize/замене paint.
+
+`compositions.sheet` связывает Body с `elevated`, тенью Shadow `modal` и внешней
+обводкой `border-base`. Ghost ссылается на один `overlay-ghost`, усиливается вниз
+и перекрывает Body на 32 logical px. Web использует `lab-material--sheet` для Body
+и `<div data-veil class="lab-material-ghost--sheet"><i data-veil-paint></i></div>`
+для Ghost. Направление и профиль поступают из общего рецепта; явные `data-veil`
+и `data-veil-profile` могут их переопределить. CSS отдаёт
+`--lab-sheet-ghost-overlap` для размещения Ghost компонентом. Радиусы Body
+32/32/0/0, размеры и положение принадлежат Sheet. Тени требуют подключённого
+Shadow CSS. [Исходные узлы](../../docs/evidence/materials-20261117/figma-sheet-source.json)
+содержат только прочитанные значения; скрытые Dark paints в REST разрешены
+в текущем Light mode, поэтому их RGB не используются как тёмная палитра.
 
 Runtime перечитывает роли при изменении области или темы. Линза кешируется
 по локальной геометрии и DPR; учитывает все четыре пары радиусов, проценты

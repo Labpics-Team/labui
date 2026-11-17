@@ -11,7 +11,8 @@
  * pixel) flips a hash and fails here.
  *
  * PROVENANCE: refreshed 2026-11-17 for the intentional replacement of centre
- * pull by shape-normal Snell refraction. Four original Figma panes and the
+ * pull by shape-normal Snell refraction and the subsequent shared thickness
+ * limit across symmetric/asymmetric corners. Four original Figma panes and the
  * before/after renders are in docs/evidence/materials-20261117/glass-optics.md.
  * Independent ray/ellipse checks live in glass-optics.test.ts. These hashes
  * guard later implementation changes; they do not establish Figma fidelity.
@@ -36,13 +37,13 @@ interface Golden {
 // name → frozen {sha256(rgba), feDisplacementMap unit, device W×H}
 const GOLDEN: Record<string, Golden> = {
   'small-square-dpr1': {
-    hash: '640030b0104866223e249fa5ba694999b6e6d85401d1467e31503a3be0acf88e',
+    hash: 'dfd0e0b68842573a5af90c40aa6c81092b3960b5457e8f680a10eb31045e52c5',
     unit: 47,
     W: 48,
     H: 48,
   },
   'small-square-dpr2': {
-    hash: 'a90898b7aab778ed646503e085cb3d39f353cd7d6e1a7348c2a8c5fa7daa0308',
+    hash: 'a7eea73cb639fad81d7429cc154d149af253dcc8b764d713bf740525abc85f09',
     unit: 47.5,
     W: 96,
     H: 96,
@@ -84,7 +85,7 @@ const GOLDEN: Record<string, Golden> = {
     H: 320,
   },
   'medium-deep-band': {
-    hash: 'c715169a9a72f972a9ebba3f0630b4f92cb386c53c429f568a2b820977fe7044',
+    hash: '052c2c2f7e6d3a9a48a08d4885c28404efe416ed6af14600c776db91c630fd55',
     unit: 319,
     W: 320,
     H: 320,
@@ -120,14 +121,14 @@ const GOLDEN: Record<string, Golden> = {
     H: 1024,
   },
   'wide-thin': {
-    hash: '44c6306f924e34c1d26697b19d5b6b9875fb0211d651b5956d8a05fbc1e80854',
-    unit: 98.935015181053,
+    hash: '28604d24432078820f59009701a3ccf6d7a8fd198e66185aabfc6ae735fcc40e',
+    unit: 63,
     W: 1024,
     H: 64,
   },
   'tall-thin': {
-    hash: '563e815e963ba211326af0e80b731d25a3d634f2f3750edfc81bc450cce811d1',
-    unit: 98.935015181053,
+    hash: '18461823bf32932ea6347e5c8cb94bae00c35c90e1552251d6aaa979717cae48',
+    unit: 63,
     W: 64,
     H: 1024,
   },

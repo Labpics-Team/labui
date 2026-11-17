@@ -1,7 +1,7 @@
 /** Shape-aware refraction. Frost, paints and directional light belong to the
  * shared author profile; this engine owns only the retained displacement map. */
 import { materialProfile } from '../profile';
-import { confineRay, lensBand, lensDisplacement } from './glass-optics';
+import { lensBand, lensDisplacement } from './glass-optics';
 // Geometry, optical profile and displacement encoding remain DOM-free.
 import { sdRoundRect } from './lg-math';
 import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mount';
@@ -12,6 +12,7 @@ import {
   roundedShapeGeometry,
   roundedShapeInside,
   shapeKey,
+  writeStraightNormal,
 } from './rounded-shape';
 
 export interface LiquidGlassParams {
@@ -225,11 +226,10 @@ export function __computeDisplacementField(
   if (typeof corner !== 'number') return asymmetricField(w, h, corner, depth, dpr);
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
   const band = lensBand(depth, w, h);
+  const halfSize = Math.min(w, h) / 2;
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
   const W = Math.max(1, Math.round(w * sc));
   const H = Math.max(1, Math.round(h * sc));
-  const cx = w / 2;
-  const cy = h / 2;
   const N = W * H;
 
   if (!sDx || sDx.length < 2 * N) {
@@ -281,7 +281,6 @@ export function __computeDisplacementField(
     const rowT = Y * W;
     const rowB = Ym * W;
     const py = (Y + 0.5) * invSc;
-    const cyPy = cy - py; // dy magnitude factor for this row
     const rowBase = Y * halfW; // this row's slice of the cached distance field
     const covered = sCovered[Y] as number; // columns already computed for this row
     // RIM-SKIP. A pixel is a no-op (dx=dy=0) once inside ≥ band — the
@@ -321,7 +320,7 @@ export function __computeDisplacementField(
         const corner = qx > 0 && qy > 0;
         const nx = corner ? qx / (r - inside) : qx > qy ? 1 : 0;
         const ny = corner ? qy / (r - inside) : qx > qy ? 0 : 1;
-        const magnitude = confineRay(lensDisplacement(inside, band), cx - px, cyPy, nx, ny);
+        const magnitude = lensDisplacement(inside, band, halfSize);
         dx = nx * magnitude;
         dy = ny * magnitude;
       }
@@ -420,6 +419,7 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
   const H = Math.max(1, Math.round(h * sc));
   const N = W * H;
   const band = lensBand(depth, w, h);
+  const halfSize = Math.min(w, h) / 2;
   const key = `${w}x${h}x${shapeKey(radii)}x${sc}`;
   let field = asymmetricSdfCache.get(key);
   if (!field) {
@@ -435,15 +435,11 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
         // Straight edges dominate ordinary cards/sheets. Their exact normal
         // follows directly from the distance, without four normal candidates.
         if (distance <= 0) continue;
-        if (distance === px) field.normals[2 * i] = 1;
-        else if (distance === w - px) field.normals[2 * i] = -1;
-        else if (distance === py) field.normals[2 * i + 1] = 1;
-        else if (distance === h - py) field.normals[2 * i + 1] = -1;
-        else {
+        if (!writeStraightNormal(px, py, w, h, distance, normal)) {
           roundedShapeGeometry(px, py, w, h, radii, normal);
-          field.normals[2 * i] = normal[0] ?? 0;
-          field.normals[2 * i + 1] = normal[1] ?? 0;
         }
+        field.normals[2 * i] = normal[0] ?? 0;
+        field.normals[2 * i + 1] = normal[1] ?? 0;
       }
     asymmetricSdfCache.set(key, field);
     while (asymmetricSdfCache.size > SDF_CACHE_CAP) {
@@ -465,13 +461,7 @@ function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number
       if (inside <= 0 || inside >= band) continue;
       const nx = field.normals[2 * i] ?? 0;
       const ny = field.normals[2 * i + 1] ?? 0;
-      const magnitude = confineRay(
-        lensDisplacement(inside, band),
-        w / 2 - (x + 0.5) / sc,
-        h / 2 - (y + 0.5) / sc,
-        nx,
-        ny,
-      );
+      const magnitude = lensDisplacement(inside, band, halfSize);
       const dx = nx * magnitude;
       const dy = ny * magnitude;
       sDx[2 * i] = dx;

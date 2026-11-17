@@ -1,7 +1,6 @@
 import {
   MATERIAL_TIERS,
   type MaterialTier,
-  materialBlendMode,
   materialProfile,
   materialRoles,
   webBackdropBlur,
@@ -27,18 +26,23 @@ export function materialProfileCss(): string {
       `  --_glass-rim: linear-gradient(${180 + glass.lightAngle}deg, color-mix(in srgb, transparent, var(--lab-bg-static-light) ${glass.lightIntensity * 100}%), transparent);`,
     ].join('\n');
   };
+  const sheet = materialProfile.compositions.sheet;
   return [
     '/* Generated from src/profile.json. Glass frost is a separate renderer mapping. */',
     firstPaintCss(),
-    `[data-veil][data-veil-profile] { --_veil-noise: url("./veil-noise.png"); --_veil-noise-size: ${Number((48 * materialProfile.noise.size).toFixed(4))}px; --_veil-noise-blend: ${materialProfile.noise.blendMode}; }`,
+    `[data-veil][data-veil-profile],.lab-material-ghost--sheet { --_veil-noise: url("./veil-noise.png"); --_veil-noise-size: ${Number((48 * materialProfile.noise.size).toFixed(4))}px; --_veil-noise-blend: ${materialProfile.noise.blendMode}; }`,
     `.lab-material {\n${declarations('base')}\n}`,
     ...MATERIAL_TIERS.map((tier) => `.lab-material--${tier} {\n${declarations(tier)}\n}`),
+    `.lab-material--sheet {\n${declarations(sheet.body.tier as MaterialTier)}\n  box-shadow: var(--lab-elevation-${sheet.body.shadow});\n  outline: ${sheet.body.stroke.width}px solid var(--lab-${sheet.body.stroke.role});\n  outline-offset: 0;\n}`,
+    `.lab-material-ghost--sheet {\n  --_veil-profile: ${sheet.ghost.profile};\n  --_veil-direction: ${sheet.ghost.direction};\n  --lab-sheet-ghost-overlap: ${sheet.ghost.overlap}px;\n}`,
+    `.lab-material-ghost--sheet > [data-veil-paint] { background: var(--lab-${sheet.ghost.paintRole}); }`,
   ].join('\n');
 }
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { parseRgb } from '../src/luminance';
-import { compileMaterialPaint } from '../src/material-paints';
+import type { Rgba } from '../src/luminance';
+import { compileMaterialTheme } from '../src/material-theme';
 
 /** Build-time consumer of Colors' generated contract: authored roles stay in
  * Colors, while compositing and its browser fallback stay in Materials.
@@ -56,7 +60,8 @@ function firstPaintCss(): string {
     dark: colors.slice(dark, media < 0 ? undefined : media),
   };
   const blocks = Object.entries(themes).map(([theme, section]) => {
-    const declarations = MATERIAL_TIERS.flatMap((tier) => {
+    const values: Record<string, Rgba> = {};
+    for (const tier of MATERIAL_TIERS) {
       const roles = materialRoles(tier);
       const read = (name: string) => {
         const value = section.match(new RegExp(`--lab-${name}\\s*:\\s*([^;]+);`))?.[1];
@@ -64,19 +69,12 @@ function firstPaintCss(): string {
         if (!color) throw new Error(`Missing generated material paint ${theme}/${name}`);
         return color;
       };
-      const compiled = compileMaterialPaint({
-        normal: read(roles.normal),
-        blend: read(roles.blend),
-        blendMode: materialBlendMode(theme as 'light' | 'dark'),
-      });
-      const f = compiled.fill;
-      const number = (value: number) => Number(value.toFixed(8));
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg"><filter id="p" x="0" y="0" width="1" height="1" filterUnits="objectBoundingBox" color-interpolation-filters="sRGB"><feComponentTransfer>${['R', 'G', 'B'].map((ch, i) => `<feFunc${ch} type="table" tableValues="${compiled.tables[i]}"/>`).join('')}<feFuncA type="linear" slope="0" intercept="1"/></feComponentTransfer></filter></svg>`;
-      return [
-        `  --_lab-material-${tier}-fill:rgb(${number(f.r)} ${number(f.g)} ${number(f.b)} / ${number(f.a)});`,
-        `  --_lab-material-${tier}-filter:${compiled.affine ? 'opacity(1)' : `url("data:image/svg+xml,${encodeURIComponent(svg)}#p")`};`,
-      ];
-    }).join('\n');
+      values[roles.normal] = read(roles.normal);
+      values[roles.blend] = read(roles.blend);
+    }
+    const declarations = Object.entries(compileMaterialTheme(theme as 'light' | 'dark', values))
+      .map(([key, value]) => `  ${key}:${value};`)
+      .join('\n');
     return { theme, declarations };
   });
   const light = blocks.find((x) => x.theme === 'light')?.declarations;

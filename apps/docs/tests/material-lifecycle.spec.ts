@@ -1,4 +1,10 @@
 import { readFileSync } from 'node:fs';
+import {
+  MATERIAL_TIERS,
+  type Rgba,
+  compileMaterialTheme,
+  materialRoles,
+} from '@labpics/ui-materials';
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
@@ -701,81 +707,105 @@ test('identical paints share one filter across sizes and release it after their 
   expect(result.remaining).toBe(false);
 });
 
-test('the authored CSS paints survive runtime hydration over coloured content', async ({
-  page,
-  browserName,
-}) => {
-  test.skip(browserName !== 'chromium');
-  await page.setViewportSize({ width: 800, height: 500 });
-  await page.addStyleTag({
-    content: readFileSync(
-      new URL('../../../packages/colors/contract.css', import.meta.url),
-      'utf8',
-    ),
-  });
-  await page.evaluate(() => {
-    window.materialFixture.stop();
-    window.materialFixture.stopShadow();
-    const main = document.createElement('main');
-    main.id = 'first-frame';
-    main.style.cssText = 'position:fixed;inset:0;z-index:999';
-    for (const theme of ['light', 'dark']) {
-      const scene = document.createElement('section');
-      scene.dataset.theme = theme;
-      scene.dataset.material = 'acrylic';
-      scene.style.cssText =
-        'height:250px;display:flex;gap:8px;padding:16px;box-sizing:border-box;background:linear-gradient(105deg,#000,#0900ba,#d20025,#eab318,#118042,#09bcfe,#fff)';
-      for (const tier of ['subtle', 'soft', 'muted', 'base', 'elevated']) {
-        const surface = document.createElement('div');
-        surface.className = `lab-material lab-material--${tier}`;
-        surface.style.cssText =
-          'width:144px;height:218px;flex-shrink:0;margin:0;padding:0;border-radius:32px;transform:translateZ(0);--_noise:none;--_acrylic-noise:none';
-        scene.append(surface);
+for (const variant of ['standard', 'custom'] as const) {
+  test(`the ${variant} CSS paints survive runtime hydration over coloured content`, async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(browserName !== 'chromium');
+    await page.setViewportSize({ width: 800, height: 500 });
+    await page.addStyleTag({
+      content: readFileSync(
+        new URL('../../../packages/colors/contract.css', import.meta.url),
+        'utf8',
+      ),
+    });
+    const customStyles: Record<string, Record<string, string>> = {};
+    if (variant === 'custom') {
+      for (const theme of ['light', 'dark'] as const) {
+        const roles: Record<string, Rgba> = {};
+        for (const [index, tier] of MATERIAL_TIERS.entries()) {
+          const names = materialRoles(tier);
+          roles[names.normal] = { r: 32 + index * 20, g: 75, b: 150, a: 0.15 + index * 0.08 };
+          roles[names.blend] = { r: 220, g: 50 + index * 30, b: 120, a: 0.35 };
+        }
+        customStyles[theme] = {
+          ...Object.fromEntries(
+            Object.entries(roles).map(([key, c]) => [
+              `--lab-${key}`,
+              `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`,
+            ]),
+          ),
+          ...compileMaterialTheme(theme, roles),
+        };
       }
-      main.append(scene);
     }
-    document.body.append(main);
+    await page.evaluate((customStyles) => {
+      window.materialFixture.stop();
+      window.materialFixture.stopShadow();
+      const main = document.createElement('main');
+      main.id = 'first-frame';
+      main.style.cssText = 'position:fixed;inset:0;z-index:999';
+      for (const theme of ['light', 'dark']) {
+        const scene = document.createElement('section');
+        scene.dataset.theme = theme;
+        scene.dataset.material = 'acrylic';
+        scene.style.cssText =
+          'height:250px;display:flex;gap:8px;padding:16px;box-sizing:border-box;background:linear-gradient(105deg,#000,#0900ba,#d20025,#eab318,#118042,#09bcfe,#fff)';
+        for (const [key, value] of Object.entries(customStyles[theme] ?? {}))
+          scene.style.setProperty(key, value);
+        for (const tier of ['subtle', 'soft', 'muted', 'base', 'elevated']) {
+          const surface = document.createElement('div');
+          surface.className = `lab-material lab-material--${tier}`;
+          surface.style.cssText =
+            'width:144px;height:218px;flex-shrink:0;margin:0;padding:0;border-radius:32px;transform:translateZ(0);--_noise:none;--_acrylic-noise:none';
+          scene.append(surface);
+        }
+        main.append(scene);
+      }
+      document.body.append(main);
+    }, customStyles);
+    const before = await page.screenshot();
+    await page.evaluate(() => {
+      const scope = document.querySelector('#first-frame');
+      if (!scope) throw new Error('Missing first-frame scene');
+      window.materialFixture.mount(scope);
+    });
+    const after = await page.screenshot();
+    const errors = await page.evaluate(
+      async ({ before, after }) => {
+        const pixels = async (base64: string) => {
+          const image = new Image();
+          image.src = `data:image/png;base64,${base64}`;
+          await image.decode();
+          const canvas = document.createElement('canvas');
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) throw new Error('Missing canvas');
+          ctx.drawImage(image, 0, 0);
+          return ctx.getImageData(0, 0, image.width, image.height).data;
+        };
+        const [a, b] = await Promise.all([pixels(before), pixels(after)]);
+        return Array.from(document.querySelectorAll('#first-frame .lab-material')).map((el) => {
+          const rect = el.getBoundingClientRect();
+          let maximum = 0;
+          for (let y = Math.ceil(rect.top + 34); y < Math.floor(rect.bottom - 34); y++)
+            for (let x = Math.ceil(rect.left + 34); x < Math.floor(rect.right - 34); x++)
+              for (let channel = 0; channel < 3; channel++) {
+                const i = (y * 800 + x) * 4 + channel;
+                maximum = Math.max(maximum, Math.abs((a[i] ?? 0) - (b[i] ?? 0)));
+              }
+          return maximum;
+        });
+      },
+      { before: before.toString('base64'), after: after.toString('base64') },
+    );
+    expect(errors).toHaveLength(10);
+    // CSS normal alpha and SVG sRGB quantise at different composition stages.
+    for (const error of errors) expect(error).toBeLessThanOrEqual(2);
   });
-  const before = await page.screenshot();
-  await page.evaluate(() => {
-    const scope = document.querySelector('#first-frame');
-    if (!scope) throw new Error('Missing first-frame scene');
-    window.materialFixture.mount(scope);
-  });
-  const after = await page.screenshot();
-  const errors = await page.evaluate(
-    async ({ before, after }) => {
-      const pixels = async (base64: string) => {
-        const image = new Image();
-        image.src = `data:image/png;base64,${base64}`;
-        await image.decode();
-        const canvas = document.createElement('canvas');
-        canvas.width = image.width;
-        canvas.height = image.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error('Missing canvas');
-        ctx.drawImage(image, 0, 0);
-        return ctx.getImageData(0, 0, image.width, image.height).data;
-      };
-      const [a, b] = await Promise.all([pixels(before), pixels(after)]);
-      return Array.from(document.querySelectorAll('#first-frame .lab-material')).map((el) => {
-        const rect = el.getBoundingClientRect();
-        let maximum = 0;
-        for (let y = Math.ceil(rect.top + 34); y < Math.floor(rect.bottom - 34); y++)
-          for (let x = Math.ceil(rect.left + 34); x < Math.floor(rect.right - 34); x++)
-            for (let channel = 0; channel < 3; channel++) {
-              const i = (y * 800 + x) * 4 + channel;
-              maximum = Math.max(maximum, Math.abs((a[i] ?? 0) - (b[i] ?? 0)));
-            }
-        return maximum;
-      });
-    },
-    { before: before.toString('base64'), after: after.toString('base64') },
-  );
-  expect(errors).toHaveLength(10);
-  // CSS normal alpha and SVG sRGB quantise at different composition stages.
-  for (const error of errors) expect(error).toBeLessThanOrEqual(2);
-});
+}
 
 test('the non-SVG paint renderer follows custom roles instead of keeping baked defaults', async ({
   page,
@@ -883,6 +913,22 @@ test('authored veil profiles retain the two Strong passes and one Overlay Ghost 
     return [image.width, image.height];
   });
   expect(noise).toEqual([48, 48]);
+  const stripStyles = () =>
+    veil
+      .locator('.lab-veil__strip')
+      .evaluateAll((els) => els.map((el) => (el as HTMLElement).style.cssText));
+  const top = await stripStyles();
+  await veil.evaluate((el) => el.setAttribute('data-veil', 'bottom'));
+  await expect.poll(stripStyles).not.toEqual(top);
+  const bottom = await stripStyles();
+  await veil.evaluate((el) => {
+    el.className = 'lab-material-ghost--sheet';
+    el.setAttribute('data-veil', '');
+    el.removeAttribute('data-veil-profile');
+  });
+  await expect(veil.locator('.lab-veil__noise')).toHaveCount(1);
+  await expect.poll(stripStyles).toEqual(bottom);
+  await expect(veil).toHaveCSS('--lab-sheet-ghost-overlap', '32px');
   await page.emulateMedia({ contrast: 'more' });
   await expect(veil.locator('.lab-veil__strip,.lab-veil__noise')).toHaveCount(0);
 });

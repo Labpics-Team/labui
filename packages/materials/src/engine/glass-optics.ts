@@ -29,28 +29,18 @@ export function lensBand(depth: number, w: number, h: number): number {
   return Math.max(0, Math.min(Math.max(1, depth) * BEZEL_RATIO, Math.min(w, h) / 2));
 }
 
-export function lensDisplacement(inside: number, band: number): number {
+export function lensDisplacement(
+  inside: number,
+  band: number,
+  halfSize = Number.POSITIVE_INFINITY,
+): number {
   if (inside <= 0 || inside >= band) return 0;
   const at = (inside / band) * SAMPLES;
   const lo = Math.floor(at);
   const start = profile[lo] ?? 0;
-  return (start + ((profile[lo + 1] ?? 0) - start) * (at - lo)) * (band / BEZEL_RATIO);
-}
-
-/** Keep each ray on its side of the shape's medial axes when a small control
- * constrains the available glass thickness. This does not affect the author
- * 256px panes; it prevents a deep recipe from crossing a narrow control.
- */
-export function confineRay(
-  magnitude: number,
-  x: number,
-  y: number,
-  nx: number,
-  ny: number,
-): number {
-  return Math.min(
-    magnitude,
-    nx === 0 ? Number.POSITIVE_INFINITY : Math.abs(x / nx),
-    ny === 0 ? Number.POSITIVE_INFINITY : Math.abs(y / ny),
-  );
+  const ray = (start + ((profile[lo + 1] ?? 0) - start) * (at - lo)) * (band / BEZEL_RATIO);
+  // A shared conservative thickness bound. Rectangle centre axes are not medial
+  // axes of asymmetric contours. This limit stays continuous across those axes,
+  // a resize, and the symmetric/general renderer boundary.
+  return Math.min(ray, Math.max(0, halfSize - inside));
 }
