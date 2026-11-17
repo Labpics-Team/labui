@@ -37,6 +37,10 @@ internal object LabComponents {
     const val InputHelperGap = 8f
     const val InputHelperPaddingX = 4f
     const val InputStrokeWidth = 1f
+    const val InputAdornmentWidth = 32f
+    const val InputAdornmentIconSize = 16f
+    const val InputAdornmentPaddingOuter = 12f
+    const val InputAdornmentPaddingInner = 4f
     const val CardRadius = 16f
     const val CardPadding = 24f
     const val CardGap = 16f

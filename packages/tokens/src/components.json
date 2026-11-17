@@ -133,7 +133,13 @@
       "gap": 8,
       "paddingX": 4
     },
-    "strokeWidth": 1
+    "strokeWidth": 1,
+    "adornment": {
+      "width": 32,
+      "iconSize": 16,
+      "paddingOuter": 12,
+      "paddingInner": 4
+    }
   },
   "card": {
     "source": {

@@ -84,6 +84,10 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('space', 'input-helper-gap', profile.input.helper.gap);
   dimension('space', 'input-helper-x', profile.input.helper.paddingX);
   dimension('stroke', 'input', profile.input.strokeWidth);
+  dimension('size', 'input-adornment', profile.input.adornment.width);
+  dimension('size', 'input-icon', profile.input.adornment.iconSize);
+  dimension('space', 'input-adornment-outer', profile.input.adornment.paddingOuter);
+  dimension('space', 'input-adornment-inner', profile.input.adornment.paddingInner);
   dimension('radius', 'card-surface', profile.card.radius);
   dimension('space', 'card-padding', profile.card.padding);
   dimension('space', 'card-gap', profile.card.gap);

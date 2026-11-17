@@ -317,7 +317,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                                 } else BasicText("Загружаем настройки…", style = body)
                             } else {
                                 LabCard(
-                                    LabMaterials.soft,
+                                    LabMaterials.elevated,
                                     Modifier.fillMaxWidth(),
                                     display.material,
                                 ) {

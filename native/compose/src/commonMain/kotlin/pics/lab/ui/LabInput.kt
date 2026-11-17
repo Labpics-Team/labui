@@ -76,6 +76,8 @@ public fun LabInput(
             LabControlSize.Large -> LabComponents.InputL
         }
     val shape = RoundedCornerShape(metrics.radius.dp)
+    // The no-icon side slot keeps its width; center content adds the label inset.
+    val contentStart = metrics.paddingX + LabComponents.InputLabelPaddingX
     val border =
         colors[
             when {
@@ -140,7 +142,7 @@ public fun LabInput(
                             } else false
                         }
                         .drawWithCache {
-                            val padding = metrics.paddingX.dp.toPx()
+                            val padding = contentStart.dp.toPx()
                             val labelPadding = LabComponents.InputLabelPaddingX.dp.toPx()
                             val labelWidth =
                                 measurer
@@ -151,7 +153,9 @@ public fun LabInput(
                                         constraints =
                                             Constraints(
                                                 maxWidth =
-                                                    (this.size.width - padding * 2)
+                                                    (this.size.width -
+                                                            padding -
+                                                            metrics.paddingX.dp.toPx())
                                                         .toInt()
                                                         .coerceAtLeast(0)
                                             ),
@@ -176,7 +180,12 @@ public fun LabInput(
                             }
                         }
                         .defaultMinSize(minHeight = metrics.height.dp)
-                        .padding(horizontal = metrics.paddingX.dp, vertical = metrics.paddingY.dp)
+                        .padding(
+                            start = contentStart.dp,
+                            end = metrics.paddingX.dp,
+                            top = metrics.paddingY.dp,
+                            bottom = metrics.paddingY.dp,
+                        )
                         .semantics {
                             contentDescription = label
                             if (error != null) error(error)
@@ -199,7 +208,7 @@ public fun LabInput(
             BasicText(
                 label,
                 Modifier.offset(y = -overhang)
-                    .padding(start = metrics.paddingX.dp, end = metrics.paddingX.dp)
+                    .padding(start = contentStart.dp, end = metrics.paddingX.dp)
                     .clearAndSetSemantics {},
                 style = caption,
                 maxLines = 1,
