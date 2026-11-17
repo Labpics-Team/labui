@@ -115,16 +115,15 @@ try {
               const runtime = await import('/runtime.js');
               window.disposeMaterials = runtime.mountMaterialRuntime();
               if (recipe.endsWith('no-alpha'))
-                document
-                  .querySelectorAll('.lab-material-paint-defs feFuncA')
-                  .forEach((node) => node.remove());
+                for (const node of document.querySelectorAll('.lab-material-paint-defs feFuncA'))
+                  node.remove();
               if (recipe === 'author-linear' || recipe === 'author-table2') {
                 for (const node of document.querySelectorAll(
                   '.lab-material-paint-defs feFuncR,.lab-material-paint-defs feFuncG,.lab-material-paint-defs feFuncB',
                 )) {
                   const values = node.getAttribute('tableValues').split(' ').map(Number);
-                  const first = values[0],
-                    last = values.at(-1);
+                  const first = values[0];
+                  const last = values.at(-1);
                   if (recipe === 'author-linear') {
                     node.setAttribute('type', 'linear');
                     node.setAttribute('slope', String(last - first));
