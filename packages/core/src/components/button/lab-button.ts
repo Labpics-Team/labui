@@ -327,7 +327,7 @@ export class LabButton extends LabElement {
       color: var(--lab-label-quaternary);
       background: currentColor;
       mask: var(--lab-shape-loader) center / contain no-repeat;
-      animation: spin 0.8s steps(8) infinite;
+      animation: spin var(--lab-motion-loader-period) var(--lab-motion-loader-steps) infinite;
     }
     :host([loading]) .spinner {
       display: block;

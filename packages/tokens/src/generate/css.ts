@@ -12,7 +12,11 @@ import type { ResolvedAlias, ResolvedToken } from '../domain/token.js';
  */
 export function generateCss(tokens: ResolvedTokens): string {
   const blocks: string[] = [
-    section('Shared loading shape', [loaderMask()]),
+    section('Shared loading shape', [
+      loaderMask(),
+      `  --lab-motion-loader-period: ${profile.button.loader.periodMs}ms;`,
+      `  --lab-motion-loader-steps: steps(${profile.button.loader.count});`,
+    ]),
     section(
       'Component metrics — shared with native from components.json',
       tokenLines(tokens.components),

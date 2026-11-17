@@ -24,6 +24,7 @@ const dist = join(here, '..', 'dist');
 // is the canonical source of truth; we re-export it verbatim.
 const require = createRequire(import.meta.url);
 const shadowPkg = require.resolve('@labpics/ui-shadow/shadow.css');
+const tokensPkg = require.resolve('@labpics/ui-tokens/tokens.css');
 
 function main(): void {
   mkdirSync(dist, { recursive: true });
@@ -37,8 +38,9 @@ function main(): void {
 
   // Re-export the shadow contract so consumers need only `@labpics/ui-core/shadow.css`.
   copyFileSync(shadowPkg, join(dist, 'shadow.css'));
+  copyFileSync(tokensPkg, join(dist, 'tokens.css'));
 
-  process.stdout.write(`ui-core: copied ${[...ownFiles, 'shadow.css'].join(', ')} to dist\n`);
+  process.stdout.write(`ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`);
 }
 
 main();
