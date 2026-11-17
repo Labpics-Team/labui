@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ru" data-theme="light" data-material="solid">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../foundation.css" />
+    <style>body { margin: 32px; } lab-card, #react-root { width: 400px; margin-bottom: 24px; }</style>
+  </head>
+  <body>
+    <lab-card data-testid="lit-fixed" style="height: 400px" heading="SSR fixed"><div slot="footer">Footer</div></lab-card>
+    <lab-card data-testid="lit-media" heading="Media test"><img slot="media" width="640" height="400" alt="Preview" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='400'%3E%3Cpath fill='%23789' d='M0 0h640v400H0z'/%3E%3C/svg%3E" /></lab-card>
+    <lab-card data-testid="lit-dynamic" heading="Dynamic content"></lab-card>
+    <div id="react-root"></div>
+    <script type="module" src="./card-content.tsx"></script>
+  </body>
+</html>

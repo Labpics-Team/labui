@@ -63,6 +63,18 @@ test('live example control flips a real attribute on the element', async ({ page
   await expect(specimen).toHaveAttribute('disabled', '');
 });
 
+test('live control starts at the component value and changes its rendered spacing', async ({
+  page,
+}) => {
+  await page.goto('/components.html?component=card');
+  const card = page.locator('.live-stage lab-card');
+  const spacing = page.getByRole('combobox', { name: 'Отступы', exact: true });
+  await expect(spacing).toHaveValue('l');
+  await expect(card.locator('.lab-card-content')).toHaveCSS('padding', '24px');
+  await spacing.selectOption('none');
+  await expect(card.locator('.lab-card-content')).toHaveCSS('padding', '0px');
+});
+
 test('theme switch re-skins the documented element with zero element edits', async ({ page }) => {
   await page.goto('/components.html?component=proof');
 

@@ -29,15 +29,16 @@ export const cardCss = `
 .lab-card-image > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .lab-card-media {
   position: relative;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-block-size: 0;
   overflow: clip;
   border-start-start-radius: inherit;
   border-start-end-radius: inherit;
   clip-path: var(--lab-contour-clip, none);
 }
-[data-lab-card][data-image] > .lab-card-media { flex-basis: var(--lab-size-card-media); }
-.lab-card-media img {
+[data-lab-card][data-image] > .lab-card-media { flex: 1 1 var(--lab-size-card-media); }
+.lab-card-media img { display: block; inline-size: 100%; block-size: auto; }
+.lab-card-media .lab-card-default-image {
   position: absolute;
   inset: 0;
   inline-size: 100%;
@@ -57,10 +58,10 @@ export const cardCss = `
 /* Empty slots contribute no box before hydration as well as after slotchange. */
 .lab-card-content > .lab-card-region { display: contents; }
 [data-lab-card][data-media] > .lab-card-content {
-  flex: none;
   border-start-start-radius: 0;
   border-start-end-radius: 0;
 }
+[data-lab-card][data-image] > .lab-card-content { flex: none; }
 [data-lab-card][data-variant="outlined"] > .lab-card-content {
   background: var(--lab-bg-primary);
 }
@@ -96,7 +97,6 @@ export const cardCss = `
   font-weight: var(--lab-font-weight-card-caption);
   letter-spacing: var(--lab-letter-spacing-card-caption);
 }
-.lab-card-region[data-empty] { display: none; }
 @media (forced-colors: active) {
   [data-lab-card] { outline: 1px solid CanvasText; }
 }

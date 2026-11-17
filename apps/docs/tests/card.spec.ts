@@ -190,3 +190,79 @@ test('Lit: одна подпись не создаёт пустую группу
     .poll(async () => (await card.locator('[data-lab-card]').boundingBox())?.height)
     .toBe(60);
 });
+
+test('media: пользовательское изображение сохраняет естественную высоту в обоих исполнениях', async ({
+  page,
+}) => {
+  await page.goto('/_fixtures/card-content.html');
+  for (const renderer of ['lit', 'react']) {
+    const card = page.getByTestId(`${renderer}-media`);
+    const image = card.getByRole('img', { name: 'Preview' });
+    await expect(image).toBeVisible();
+    await expect.poll(async () => (await image.boundingBox())?.height).toBe(250);
+    expect((await card.locator('.lab-card-media').boundingBox())?.height).toBe(250);
+  }
+});
+
+test('Lit: существующий Text node становится видимым без обновления компонента', async ({
+  page,
+}) => {
+  await page.goto('/_fixtures/card-content.html');
+  const card = page.getByTestId('lit-dynamic');
+  await card.evaluate(async (element) => {
+    const text = document.createTextNode('');
+    element.append(text);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    text.data = 'Dynamically loaded text';
+  });
+  await expect(card).toContainText('Dynamically loaded text');
+  expect(
+    await card.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNode(element.lastChild as Node);
+      return range.getBoundingClientRect().height;
+    }),
+  ).toBeGreaterThan(0);
+});
+
+test('Lit SSR: пустая media не сдвигает содержимое карточки фиксированной высоты', async ({
+  page,
+}) => {
+  let releaseScripts = () => {};
+  const scripts = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  await page.route('**/*.js', async (route) => {
+    await scripts;
+    await route.continue();
+  });
+  try {
+    await page.goto('/_fixtures/card-content.html', { waitUntil: 'commit' });
+    const card = page.getByTestId('lit-fixed');
+    const title = card.getByRole('heading', { name: 'SSR fixed' });
+    await expect(title).toBeVisible();
+    await page.evaluate(() => document.fonts.load('500 20px Geist'));
+    const before = {
+      title: await title.boundingBox(),
+      footer: await card.getByText('Footer').boundingBox(),
+    };
+    const host = await card.boundingBox();
+    expect(before.title?.y).toBe((host?.y ?? 0) + 24);
+    expect((await card.locator('.lab-card-media').boundingBox())?.height).toBe(0);
+    expect(await page.evaluate(() => customElements.get('lab-card') === undefined)).toBe(true);
+    releaseScripts();
+    await page.waitForLoadState('domcontentloaded');
+    await card.evaluate(async (element) => {
+      await customElements.whenDefined('lab-card');
+      await (element as HTMLElement & { updateComplete: Promise<unknown> }).updateComplete;
+    });
+    expect({
+      title: await title.boundingBox(),
+      footer: await card.getByText('Footer').boundingBox(),
+    }).toEqual(before);
+    expect((await card.boundingBox())?.height).toBe(400);
+  } finally {
+    releaseScripts();
+    if (!page.isClosed()) await page.unroute('**/*.js');
+  }
+});

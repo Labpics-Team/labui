@@ -55,7 +55,8 @@ function cardSsrPlugin(): Plugin {
     transformIndexHtml: {
       order: 'pre',
       async handler(html, ctx) {
-        if (!ctx.path.endsWith('/card.html')) return html;
+        if (!ctx.path.endsWith('/card.html') && !ctx.path.endsWith('/card-content.html'))
+          return html;
         const { renderToString } = await import('@labpics/ui-core/ssr');
         await import('@labpics/ui-core/button');
         await import('@labpics/ui-core/card');
@@ -98,6 +99,7 @@ export default defineConfig({
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
         'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
+        'fixture-card-content': resolve(__dirname, 'src/_fixtures/card-content.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

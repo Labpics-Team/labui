@@ -53,23 +53,15 @@ export class LabCard extends LabElement {
     css`
       :host { display: flex; flex-direction: column; min-width: 0; }
       ::slotted([slot='media']) { display: block; width: 100%; }
+      ::slotted(img[slot='media']) { height: auto; }
     `,
   ];
 
-  private readonly syncSlots = (): void => {
+  private readonly syncMedia = (): void => {
     const surface = this.renderRoot.querySelector<HTMLElement>('[data-lab-card]');
     if (!surface) return;
-    for (const slot of this.renderRoot.querySelectorAll<HTMLSlotElement>(
-      '.lab-card-region > slot',
-    )) {
-      const region = slot.parentElement;
-      const content = slot
-        .assignedNodes({ flatten: true })
-        .some((node) => node.nodeType === 1 || (node.nodeType === 3 && !!node.textContent?.trim()));
-      region?.toggleAttribute('data-empty', !content && !(slot.name === 'media' && this.image));
-    }
-    const media = surface.querySelector('.lab-card-media');
-    surface.toggleAttribute('data-media', !!media && !media.hasAttribute('data-empty'));
+    const slot = surface.querySelector<HTMLSlotElement>('slot[name="media"]');
+    surface.toggleAttribute('data-media', !!this.image || !!slot?.assignedElements().length);
     this.runtime?.refresh();
   };
 
@@ -80,7 +72,7 @@ export class LabCard extends LabElement {
 
   override updated(): void {
     if (!this.isConnected) return;
-    this.syncSlots();
+    this.syncMedia();
     const surface = this.renderRoot.querySelector<HTMLElement>('[data-lab-card]');
     if (surface && !this.runtime) this.runtime = mountCardRuntime(surface);
   }
@@ -124,17 +116,17 @@ export class LabCard extends LabElement {
         ?data-image=${!!this.image} ?data-media=${!!this.image} part="card">
       ${this.image ? html`<div class="lab-card-image" aria-hidden="true"><img src=${this.image} alt="" /></div>` : nothing}
       <div class="lab-card-region lab-card-media">
-        <slot name="media" @slotchange=${this.syncSlots}>
-          ${this.image ? html`<img src=${this.image} alt=${this.imageAlt} />` : nothing}
+        <slot name="media" @slotchange=${this.syncMedia}>
+          ${this.image ? html`<img class="lab-card-default-image" src=${this.image} alt=${this.imageAlt} />` : nothing}
         </slot>
       </div>
       <div class=${this.variant === 'elevated' ? 'lab-card-content lab-material lab-material--elevated' : 'lab-card-content'} part="content">
         <header class="lab-card-region lab-card-header header">
-          <slot name="header" @slotchange=${this.syncSlots}>${this.textLayout()}</slot>
+          <slot name="header">${this.textLayout()}</slot>
         </header>
-        <div class="lab-card-region lab-card-body body"><slot @slotchange=${this.syncSlots}></slot></div>
+        <div class="lab-card-region lab-card-body body"><slot></slot></div>
         <footer class="lab-card-region lab-card-footer footer">
-          <slot name="footer" @slotchange=${this.syncSlots}></slot>
+          <slot name="footer"></slot>
         </footer>
       </div>
     </article>`;

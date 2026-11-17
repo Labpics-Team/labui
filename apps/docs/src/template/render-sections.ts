@@ -173,9 +173,14 @@ export function renderLiveExample(example: LiveExample): HTMLElement {
     'aria-label': 'Live controls',
   });
   for (const control of example.controls) {
+    const property = control.attribute.replace(/-([a-z])/g, (_, char: string) =>
+      char.toUpperCase(),
+    );
+    const initial = specimen.getAttribute(control.attribute) ?? Reflect.get(specimen, property);
     if (control.kind === 'toggle') {
       const id = `live-${control.attribute}`;
       const input = el('input', { type: 'checkbox', id });
+      input.checked = specimen.hasAttribute(control.attribute) || initial === true;
       input.addEventListener('change', () => {
         if (input.checked) specimen.setAttribute(control.attribute, '');
         else specimen.removeAttribute(control.attribute);
@@ -189,6 +194,7 @@ export function renderLiveExample(example: LiveExample): HTMLElement {
         { id },
         control.options.map((o) => el('option', { value: String(o.value) }, [o.label])),
       );
+      if (allowed.has(String(initial))) select.value = String(initial);
       select.addEventListener('change', () => {
         if (allowed.has(select.value)) specimen.setAttribute(control.attribute, select.value);
       });

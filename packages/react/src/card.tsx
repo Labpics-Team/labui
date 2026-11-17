@@ -113,7 +113,9 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
         </div>
       )}
       {hasMedia && (
-        <div className="lab-card-media">{media ?? <img src={image} alt={imageAlt} />}</div>
+        <div className="lab-card-media">
+          {media ?? <img className="lab-card-default-image" src={image} alt={imageAlt} />}
+        </div>
       )}
       <div
         className={

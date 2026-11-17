@@ -1,42 +1,34 @@
-/*
- * `lab-card` documentation config — a PRESENTATIONAL container that opts OUT of the
- * Zag Behaviors seam (core-CONTRACT §1), like Badge / Loader.
- *
- * The states matrix and live example render REAL `<lab-card>` elements with fixed
- * demo content in the header / body / footer slots. There is no machine — a card
- * has no interaction state to own; the only stateful affordance is the optional
- * `interactive` hover/focus treatment, which is native CSS, not a state machine.
- */
+﻿import '@labpics/ui-core/button';
 import '@labpics/ui-core/card';
+import image from '../assets/card-source.png';
 import type { ComponentDoc } from '../template/component-doc.js';
 
-/** Build a real `<lab-card>` with demo header/body/footer content and the given attrs. */
 function makeCard(attrs: Readonly<Record<string, string | boolean>>): HTMLElement {
-  const el = document.createElement('lab-card');
-
-  const header = document.createElement('div');
-  header.setAttribute('slot', 'header');
-  header.textContent = 'Project Atlas';
-
-  const body = document.createElement('div');
-  body.textContent = 'A self-contained surface that groups related content into one card.';
-
-  const footer = document.createElement('div');
-  footer.setAttribute('slot', 'footer');
-  footer.textContent = 'Updated 2 days ago';
-
-  el.append(header, body, footer);
-
+  const card = document.createElement('lab-card');
+  card.setAttribute('heading', 'Рабочее пространство');
+  card.setAttribute('description', 'Проекты и материалы команды');
+  const action = document.createElement('lab-button');
+  action.setAttribute('slot', 'footer');
+  action.setAttribute('size', 's');
+  action.textContent = 'Открыть пространство';
+  card.append(action);
   for (const [key, value] of Object.entries(attrs)) {
-    if (value === false) continue;
-    if (value === true) {
-      el.setAttribute(key, '');
-    } else {
-      el.setAttribute(key, String(value));
-    }
+    if (value !== false) card.setAttribute(key, value === true ? '' : value);
   }
-  return el;
+  return card;
 }
+
+const variants = [
+  { label: 'Elevated', value: 'elevated' },
+  { label: 'Outlined', value: 'outlined' },
+  { label: 'Filled', value: 'filled' },
+];
+const paddings = [
+  { label: 'Без отступов', value: 'none' },
+  { label: 'S', value: 's' },
+  { label: 'M', value: 'm' },
+  { label: 'L · 24', value: 'l' },
+];
 
 export const cardDoc: ComponentDoc = {
   slug: 'card',
@@ -44,152 +36,137 @@ export const cardDoc: ComponentDoc = {
   tag: 'lab-card',
   title: 'Card',
   summary:
-    'A presentational container that groups related content into a single surface, with optional header / media / body / footer slots. No machine: a card has no interaction state to own, so it honestly opts out of the Zag seam (like Badge) and renders native <article> semantics.',
+    'Изображение, описание и действия над одним предметом. Авторский вариант объединяет изображение высотой 200 и поверхность Content с отступами 24; форма и типографика следуют LabUI.',
   status: { kind: 'stable' },
-
   statesMatrix: {
-    axes: [
-      {
-        name: 'Variant',
-        attribute: 'variant',
-        options: [
-          { label: 'Elevated', value: 'elevated' },
-          { label: 'Outlined', value: 'outlined' },
-          { label: 'Filled', value: 'filled' },
-        ],
-      },
-      {
-        name: 'Padding',
-        attribute: 'padding',
-        options: [
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      {
-        name: 'Interactive',
-        attribute: 'interactive',
-        options: [
-          { label: 'Static', value: false },
-          { label: 'Interactive', value: true },
-        ],
-      },
-    ],
+    axes: [{ name: 'Поверхность', attribute: 'variant', options: variants }],
     make: makeCard,
   },
-
   anatomy: [
     {
       index: 1,
-      name: 'Surface (article)',
-      description:
-        'The container — a native <article> (the HTML self-contained-composition element). Reads --lab-bg-primary / --lab-bg-secondary; elevated adds an honest --lab-fx-shadow role.',
+      name: 'Карточка',
+      description: 'Article объединяет содержимое. Радиус 16 и сглаживание 0.6 задают общую форму.',
     },
     {
       index: 2,
-      name: 'Media slot',
+      name: 'Изображение',
       description:
-        'An edge-to-edge region (slot="media") for an image or thumbnail that bleeds to the card edges regardless of body padding. Collapses when empty.',
+        'image заполняет верхнюю область и продолжается под Content. При заданной высоте карточки растёт изображение; Content сохраняет естественную высоту. Произвольный media сохраняет собственную высоту.',
     },
     {
       index: 3,
-      name: 'Header slot',
+      name: 'Content',
       description:
-        'A native <header> region (slot="header") for the title / overline. Collapses when empty.',
+        'Отдельная поверхность Elevated с отступами 24 и интервалом 16. Материал наследуется от темы.',
     },
     {
       index: 4,
-      name: 'Body (default slot)',
+      name: 'Заголовок и описание',
       description:
-        'The primary content region — the default slot, padded by the padding axis. Always present.',
+        'Заголовок Geist 20/20 Medium, описание 16/24 Regular. Верхняя и нижняя подписи — 14/12 Medium. Header заменяет эту готовую композицию.',
     },
     {
       index: 5,
-      name: 'Footer slot',
+      name: 'Содержимое и действия',
       description:
-        'A native <footer> region (slot="footer") for actions / metadata. Collapses when empty.',
+        'Default slot содержит произвольное содержимое, footer — кнопки, ссылки или метаданные. Пустые области не добавляют интервалов.',
     },
   ],
-
   meaning: {
     purpose:
-      'A card collects a coherent chunk of content — a product, an article preview, a settings group — into one bounded surface the user reads as a unit. Use it to give a self-contained composition visual edges and a clear grouping. A card is a container, NOT a control: when the whole card is clickable, the actionable element is a real button or link the consumer slots in — the card only adds the interactive hover/focus affordance, never a fabricated role or name.',
+      'Card помогает прочитать одну сущность целиком: проект, материал или группу настроек. Заголовок, описание и действия находятся на общей поверхности.',
     dos: [
-      'Use to group one coherent unit of content (one product, one article preview, one summary).',
-      'Slot a real <a>/<button> when the card is actionable — keep keyboard + screen-reader semantics honest.',
-      'Pick the variant for elevation hierarchy: elevated to float, outlined to delineate, filled to recede.',
+      'Используйте heading, description и подписи для согласованной типографики.',
+      'Передавайте image для авторской композиции с изображением под материалом.',
+      'Добавляйте настоящую кнопку или ссылку для действия; interactive выделяет фокус внутри карточки.',
     ],
     donts: [
-      "Don't make the whole card interactive without a real focusable control inside — that is a keyboard trap.",
-      "Don't nest cards inside cards — the elevation language stops meaning anything.",
-      "Don't pour unrelated content into one card; a card is a grouping, not a generic <div>.",
+      'Не добавляйте role="button" карточке с несколькими действиями.',
+      'Не объединяйте несвязанные предметы одной поверхностью.',
     ],
   },
-
   liveExample: {
-    make: () => makeCard({}),
-    // Honest live controls: variant / padding are reflected attributes the element
-    // styles on; interactive flips the hover/focus affordance. No machine to drive —
-    // a card is presentational, and these controls only re-skin the surface.
+    make: () => makeCard({ image }),
     controls: [
-      {
-        kind: 'select',
-        label: 'Variant',
-        attribute: 'variant',
-        options: [
-          { label: 'Elevated', value: 'elevated' },
-          { label: 'Outlined', value: 'outlined' },
-          { label: 'Filled', value: 'filled' },
-        ],
-      },
-      {
-        kind: 'select',
-        label: 'Padding',
-        attribute: 'padding',
-        options: [
-          { label: 'None', value: 'none' },
-          { label: 'S', value: 's' },
-          { label: 'M', value: 'm' },
-          { label: 'L', value: 'l' },
-        ],
-      },
-      { kind: 'toggle', label: 'Interactive', attribute: 'interactive' },
+      { kind: 'select', label: 'Поверхность', attribute: 'variant', options: variants },
+      { kind: 'select', label: 'Отступы', attribute: 'padding', options: paddings },
+      { kind: 'toggle', label: 'Выделять фокус внутри', attribute: 'interactive' },
     ],
   },
-
   api: {
     props: [
       {
         name: 'variant',
         type: "'elevated' | 'outlined' | 'filled'",
         default: "'elevated'",
-        description:
-          'Surface treatment. Elevated raises the surface with an --lab-fx-shadow role; outlined draws a border; filled tints the surface.',
+        description: 'Материал Elevated, контурная или залитая поверхность.',
       },
       {
         name: 'padding',
         type: "'none' | 's' | 'm' | 'l'",
-        default: "'m'",
-        description: 'Inner spacing of the body / header / footer regions.',
+        default: "'l'",
+        description: 'Отступы Content. Авторское значение l — 24 при базовом масштабе.',
       },
       {
         name: 'interactive',
         type: 'boolean',
         default: 'false',
         description:
-          'Adds a hover + focus affordance for whole-card targets. The actionable control is still the consumer’s to slot — the card never fabricates a role.',
+          'Рамка при фокусе на вложенном действии. Карточка сохраняет семантику article.',
+      },
+      {
+        name: 'image',
+        type: 'string',
+        default: "''",
+        description:
+          'URL изображения. Верхняя область — 200 при базовом масштабе; при заданной высоте карточки заполняет оставшееся место.',
+      },
+      {
+        name: 'imageAlt',
+        type: 'string',
+        default: "''",
+        description:
+          'Текст изображения; атрибут image-alt. Декоративная копия под Content скрыта от доступности.',
+      },
+      { name: 'heading', type: 'string', default: "''", description: 'Заголовок h2.' },
+      {
+        name: 'headingHint',
+        type: 'string',
+        default: "''",
+        description: 'Вторичный текст рядом с заголовком; атрибут heading-hint.',
+      },
+      {
+        name: 'description',
+        type: 'string',
+        default: "''",
+        description: 'Описание под заголовком.',
+      },
+      { name: 'caption', type: 'string', default: "''", description: 'Подпись над заголовком.' },
+      {
+        name: 'lowerCaption',
+        type: 'string',
+        default: "''",
+        description: 'Подпись под описанием; атрибут lower-caption.',
       },
     ],
     events: [],
     slots: [
-      { name: 'media', description: 'Edge-to-edge media region (image / thumbnail). Optional.' },
+      {
+        name: 'media',
+        description:
+          'Произвольное содержимое до Content, включая изображение естественных пропорций. В React — свойство media.',
+      },
       {
         name: 'header',
-        description: 'A native <header> region for the title / overline. Optional.',
+        description: 'Заменяет готовую композицию заголовка и подписей. В React — свойство header.',
       },
-      { name: '(default)', description: 'The primary body content. Always present.' },
-      { name: 'footer', description: 'A native <footer> region for actions / metadata. Optional.' },
+      { name: 'badge', description: 'Знак рядом с heading. В React — свойство badge.' },
+      {
+        name: '(default)',
+        description: 'Произвольное содержимое после заголовка. В React — children.',
+      },
+      { name: 'footer', description: 'Действия или метаданные. В React — свойство footer.' },
     ],
   },
 };
