@@ -10,7 +10,7 @@ function makeCard(attrs: Readonly<Record<string, string | boolean>>): HTMLElemen
   const action = document.createElement('lab-button');
   action.setAttribute('slot', 'footer');
   action.setAttribute('size', 's');
-  action.textContent = 'Открыть пространство';
+  action.textContent = 'Открыть';
   card.append(action);
   for (const [key, value] of Object.entries(attrs)) {
     if (value !== false) card.setAttribute(key, value === true ? '' : value);
