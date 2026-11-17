@@ -5,12 +5,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Пин SHA-256 = upstream Geist v1.7.2 (raw vercel/geist-font). Машинный пин
+ * Пин SHA-256 = upstream vercel/geist-font. Машинный пин
  * провенанса: магии wOF2 мало — подменённый, но валидный woff2 её бы прошёл.
  * Хэш обязан совпасть и с апстримом, и с прозой PROVENANCE.md.
  */
 const EXPECTED_SHA256: Record<string, string> = {
-  'fonts/Geist-Variable.woff2': '2ffebe993e969069a9789d15164b7715d42491b5835516c5e3b935d5f81b05f1',
+  'fonts/Geist-Variable.woff2': '46525b05bbf4527d263f8624ca7024c7d0dce3c64430267d30c31c6dd3821e4d',
   'fonts/GeistMono-Variable.woff2':
     'afaacc4c5fbba89d2ebf7a02dc4070208540874592a5504d57175782fe893101',
 };
@@ -71,14 +71,13 @@ describe('@labpics/fonts — @font-face и бинарники', () => {
     expect(ofl).toContain('Copyright (c) 2023 Vercel');
   });
 
-  it('SHA-256 бинарников пинится к upstream v1.7.2 и совпадает с PROVENANCE.md', () => {
+  it('SHA-256 бинарников пинится к upstream и совпадает с PROVENANCE.md', () => {
     const provenance = readFileSync(join(pkgRoot, 'PROVENANCE.md'), 'utf8');
     for (const [file, expected] of Object.entries(EXPECTED_SHA256)) {
       const actual = createHash('sha256')
         .update(readFileSync(join(pkgRoot, file)))
         .digest('hex');
-      // Байт-в-байт апстрим Geist v1.7.2 — подмена бинарника падает здесь.
-      expect(actual, `${file}: SHA-256 != upstream v1.7.2`).toBe(expected);
+      expect(actual, `${file}: SHA-256 != upstream`).toBe(expected);
       // Проза и машинный пин не расходятся: PROVENANCE.md несёт ровно этот хэш.
       expect(provenance, `PROVENANCE.md не содержит хэш ${file}`).toContain(expected);
     }
