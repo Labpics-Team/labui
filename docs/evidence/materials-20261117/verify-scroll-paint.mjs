@@ -184,6 +184,25 @@ export async function verifyScrollPaint(page, origin, browser, display) {
       console.info(`MATERIAL_SCROLL_ROW=${JSON.stringify(row)}`);
     };
     await measure('before');
+    // Separate late initial observer delivery from scroll-driven work. In
+    // WebKit a first ResizeObserver entry may arrive after the first snapshot.
+    // Retain the actual mutations so CI can distinguish settling from a loop.
+    const initialMutations = await page.evaluate(async () => {
+      const host = document.getElementById('scroll-host');
+      const records = [];
+      const watch = new MutationObserver((batch) => {
+        for (const record of batch)
+          records.push({ target: record.target.className, attribute: record.attributeName });
+      });
+      for (const node of host.querySelectorAll('.lab-material__paint-runway,.lab-material__paint'))
+        watch.observe(node, { attributes: true, childList: true, subtree: true });
+      for (let i = 0; i < 20; i++) await new Promise(requestAnimationFrame);
+      watch.disconnect();
+      return records;
+    });
+    console.info(
+      `MATERIAL_INITIAL_SETTLE_ROW=${JSON.stringify({ browser, layout, mutations: initialMutations })}`,
+    );
     const mutationCount = await page.evaluate(async () => {
       const host = document.getElementById('scroll-host');
       const peer = document.getElementById('scroll-peer');
