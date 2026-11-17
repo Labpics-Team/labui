@@ -21,16 +21,34 @@ final class SettingsExperienceTests: XCTestCase {
         name.tap()
         let previous = name.value as? String ?? ""
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
-        app.buttons["Сохранить изменения"].tap()
-        XCTAssertTrue(app.staticTexts["Введите название проекта"].waitForExistence(timeout: 5))
+        reveal(app.buttons["Сохранить изменения"], in: app, towardBottom: true).tap()
+        reveal(app.staticTexts["Введите название проекта"], in: app, towardBottom: false)
         name.tap()
         name.typeText("Нативная лаборатория 東京")
-        app.buttons["Сохранить изменения"].tap()
+        reveal(app.buttons["Сохранить изменения"], in: app, towardBottom: true).tap()
         XCTAssertTrue(app.staticTexts["Изменения сохранены"].waitForExistence(timeout: 5))
         XCTAssertTrue(open.exists)
         let image = XCTAttachment(screenshot: app.screenshot())
         image.name = "Settings saved"
         image.lifetime = .keepAlways
         add(image)
+    }
+
+    /// Scroll within the visible Sheet body, including when the software keyboard reduces it.
+    @discardableResult
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication, towardBottom: Bool) -> XCUIElement {
+        for _ in 0..<8 {
+            if element.exists && element.isHittable { return element }
+            let top = app.buttons["Закрыть"].frame.maxY + 24
+            let keyboard = app.keyboards.firstMatch
+            let bottom = (keyboard.exists ? keyboard.frame.minY : app.frame.maxY) - 24
+            XCTAssertGreaterThan(bottom, top, "Sheet must leave a scrollable body above the keyboard")
+            let origin = app.coordinate(withNormalizedOffset: .zero)
+            let upper = origin.withOffset(CGVector(dx: app.frame.midX, dy: top))
+            let lower = origin.withOffset(CGVector(dx: app.frame.midX, dy: bottom))
+            (towardBottom ? lower : upper).press(forDuration: 0.1, thenDragTo: towardBottom ? upper : lower)
+        }
+        XCTFail("Sheet element did not become reachable: \(element)\n\(app.debugDescription)")
+        return element
     }
 }

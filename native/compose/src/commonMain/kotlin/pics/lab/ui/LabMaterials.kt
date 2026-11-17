@@ -95,3 +95,17 @@ public object LabVeils {
         LabVeilPass(0f, 24f, 0.06f),
     )
 }
+
+internal object LabSheetMaterial {
+    val body = LabMaterials.elevated
+    val shadow = LabShadows.modal
+    const val strokeRole = "border-base"
+    const val strokeWidth = 1f
+    val ghost = LabVeils.overlayGhost
+    const val ghostOverlap = 32f
+    const val ghostPaintRole = "bg-overlay-ghost"
+    const val ghostStartX = 0.5f
+    const val ghostStartY = 0f
+    const val ghostEndX = 0.5f
+    const val ghostEndY = 1f
+}

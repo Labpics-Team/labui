@@ -15,9 +15,9 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
@@ -34,7 +34,11 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-public enum class LabMaterial { Solid, Acrylic, Glass }
+public enum class LabMaterial {
+    Solid,
+    Acrylic,
+    Glass,
+}
 
 /** Renderer-neutral material channels. Shape and theme are independent axes. */
 @Immutable
@@ -51,7 +55,8 @@ public data class LabMaterialRecipe(
     val lightIntensity: Float,
 )
 
-internal val LocalLabCapture = staticCompositionLocalOf<HazeState> { error("Wrap surfaces in LabScene") }
+internal val LocalLabCapture =
+    staticCompositionLocalOf<HazeState> { error("Wrap surfaces in LabScene") }
 
 /** The retained source belongs to this scene and is disposed with it. */
 @Composable
@@ -77,7 +82,13 @@ public fun LabCard(
     padding: PaddingValues = PaddingValues(LabComponents.CardPadding.dp),
     content: @Composable BoxScope.() -> Unit,
 ) {
-    LabSurface(recipe, modifier, material, RoundedCornerShape(LabComponents.CardRadius.dp), LabShadows.resting) {
+    LabSurface(
+        recipe,
+        modifier,
+        material,
+        RoundedCornerShape(LabComponents.CardRadius.dp),
+        LabShadows.resting,
+    ) {
         Box(Modifier.padding(padding), content = content)
     }
 }
@@ -89,6 +100,8 @@ internal fun LabSurface(
     material: LabMaterial,
     shape: RoundedCornerShape,
     shadows: List<LabShadowLayer> = emptyList(),
+    strokeWidth: Dp = 0.dp,
+    strokeColor: Color = Color.Unspecified,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val theme = LocalLabTheme.current
@@ -97,52 +110,73 @@ internal fun LabSurface(
     val solid = colors[recipe.solidRole]
     val tint = colors[recipe.normalRole]
     val blend = colors[recipe.blendRole]
-    val blendMode = if (theme.preferences.appearance == LabAppearance.Light) LabMaterials.lightPaintBlend else LabMaterials.darkPaintBlend
+    val blendMode =
+        if (theme.preferences.appearance == LabAppearance.Light) LabMaterials.lightPaintBlend
+        else LabMaterials.darkPaintBlend
     val density = LocalDensity.current.density
     val reduced = theme.preferences.reducedTransparency
     val input = remember(capture) { HazeInput.Sources(capture) }
-    val glass = remember(recipe, shape, density) {
-        GlassStyle {
-            shape(shape)
-            backgroundColor(Color.Transparent)
-            tint(Color.Transparent)
-            optics(GlassOptics(
-                refractionStrength = recipe.refraction,
-                refractionHeightFraction = 1f,
-                refractionDisplacement = recipe.depth.dp,
-                depth = OpticalSizeValue.Fixed(1f),
-                blurRadius = OpticalSizeValue.Fixed(hazeRadius(recipe.frost, density).dp),
-                refractionFoldStrength = 0f,
-                refractionDetailIntensity = 0f,
-                refractionProfile = RefractionProfile.Surface,
-            ))
-            surfaceProfile(SurfaceProfile.Squircle)
-            specularIntensity(recipe.lightIntensity)
-            ambientResponse(0f)
-            edgeShadow(Color.Transparent)
-            edgeSoftness(0.dp)
-            chromaticAberrationStrength(recipe.dispersion)
-            lightPosition(BiasAlignment(cos(recipe.lightAngle * PI / 180).toFloat(), sin(recipe.lightAngle * PI / 180).toFloat()))
-            contrast(0f); whitePoint(0f); chromaMultiplier(1f); contentNormalBlend(0f)
-            // No Haze interaction blocks: Lab Motion exclusively executes interaction effects.
+    val glass =
+        remember(recipe, shape, density) {
+            GlassStyle {
+                shape(shape)
+                backgroundColor(Color.Transparent)
+                tint(Color.Transparent)
+                optics(
+                    GlassOptics(
+                        refractionStrength = recipe.refraction,
+                        refractionHeightFraction = 1f,
+                        refractionDisplacement = recipe.depth.dp,
+                        depth = OpticalSizeValue.Fixed(1f),
+                        blurRadius = OpticalSizeValue.Fixed(hazeRadius(recipe.frost, density).dp),
+                        refractionFoldStrength = 0f,
+                        refractionDetailIntensity = 0f,
+                        refractionProfile = RefractionProfile.Surface,
+                    )
+                )
+                surfaceProfile(SurfaceProfile.Squircle)
+                specularIntensity(recipe.lightIntensity)
+                ambientResponse(0f)
+                edgeShadow(Color.Transparent)
+                edgeSoftness(0.dp)
+                chromaticAberrationStrength(recipe.dispersion)
+                lightPosition(
+                    BiasAlignment(
+                        cos(recipe.lightAngle * PI / 180).toFloat(),
+                        sin(recipe.lightAngle * PI / 180).toFloat(),
+                    )
+                )
+                contrast(0f)
+                whitePoint(0f)
+                chromaMultiplier(1f)
+                contentNormalBlend(0f)
+                // No Haze interaction blocks: Lab Motion exclusively executes interaction effects.
+            }
         }
-    }
-    val acrylic = remember(recipe, density) { HazeBlurStyle {
-        blurRadius(hazeRadius(recipe.backdropRadius, density).dp)
-        noiseFactor(0f)
-        backgroundColor(Color.Transparent)
-    } }
-    val shadowed = modifier.labShadow(shape, shadows)
-    val painted = when {
-        reduced || material == LabMaterial.Solid -> shadowed.background(solid, shape)
-        material == LabMaterial.Glass -> shadowed.hazeGlass(input, glass)
-        else -> shadowed.hazeBlur(input, acrylic)
-    }
-    val paints = if (reduced || material == LabMaterial.Solid) painted.clip(shape) else painted.clip(shape).drawWithContent {
-        drawRect(tint)
-        drawRect(blend, blendMode = blendMode)
-        drawContent()
-    }
+    val acrylic =
+        remember(recipe, density) {
+            HazeBlurStyle {
+                blurRadius(hazeRadius(recipe.backdropRadius, density).dp)
+                noiseFactor(0f)
+                backgroundColor(Color.Transparent)
+            }
+        }
+    val shadowed =
+        modifier.labShadow(shape, shadows).labOutsideStroke(shape, strokeWidth, strokeColor)
+    val painted =
+        when {
+            reduced || material == LabMaterial.Solid -> shadowed.background(solid, shape)
+            material == LabMaterial.Glass -> shadowed.hazeGlass(input, glass)
+            else -> shadowed.hazeBlur(input, acrylic)
+        }
+    val paints =
+        if (reduced || material == LabMaterial.Solid) painted.clip(shape)
+        else
+            painted.clip(shape).drawWithContent {
+                drawRect(tint)
+                drawRect(blend, blendMode = blendMode)
+                drawContent()
+            }
     Box(paints) {
         if (!reduced && material != LabMaterial.Solid) Box(Modifier.matchParentSize().labNoise())
         content()

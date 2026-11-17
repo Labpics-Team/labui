@@ -31,12 +31,15 @@ public data class LabVeilPass(val startRadius: Float, val radius: Float, val noi
 internal fun LabModalVeil(modifier: Modifier = Modifier) {
     val capture = LocalLabCapture.current
     val theme = LocalLabTheme.current
-    val input = remember(capture) { HazeInput.Sources(capture, HazeSourceSelection.Behind.where { it.zIndex < 2f }) }
+    val input =
+        remember(capture) {
+            HazeInput.Sources(capture, HazeSourceSelection.Behind.where { it.zIndex < 2f })
+        }
     Box(modifier) {
         if (!theme.preferences.reducedTransparency) {
-            VeilLayers(LabVeils.overlayGhost, LabVeils.overlayGhost.lastIndex, input)
+            VeilLayers(LabSheetMaterial.ghost, LabSheetMaterial.ghost.lastIndex, input)
         }
-        Box(Modifier.fillMaxSize().background(theme.colors["bg-overlay-ghost"]))
+        Box(Modifier.fillMaxSize().background(theme.colors[LabSheetMaterial.ghostPaintRole]))
     }
 }
 
@@ -45,22 +48,38 @@ private fun VeilLayers(passes: List<LabVeilPass>, index: Int, source: HazeInput)
     val pass = passes[index]
     val density = LocalDensity.current.density
     var dimensions by remember { mutableStateOf(IntSize.Zero) }
-    val style = remember(pass, density, dimensions) {
-        HazeBlurStyle {
-            blurRadius(hazeRadius(pass.radius, density).dp)
-            noiseFactor(0f)
-            backgroundColor(Color.Transparent)
-            progressive(HazeProgressive.LinearGradient(
-                easing = LinearEasing,
-                start = Offset(dimensions.width * LabVeils.startX, dimensions.height * LabVeils.startY),
-                end = Offset(dimensions.width * LabVeils.endX, dimensions.height * LabVeils.endY),
-                startIntensity = if (pass.radius == 0f) 0f else pass.startRadius / pass.radius,
-                endIntensity = 1f,
-            ))
+    val style =
+        remember(pass, density, dimensions) {
+            HazeBlurStyle {
+                blurRadius(hazeRadius(pass.radius, density).dp)
+                noiseFactor(0f)
+                backgroundColor(Color.Transparent)
+                progressive(
+                    HazeProgressive.LinearGradient(
+                        easing = LinearEasing,
+                        start =
+                            Offset(
+                                dimensions.width * LabSheetMaterial.ghostStartX,
+                                dimensions.height * LabSheetMaterial.ghostStartY,
+                            ),
+                        end =
+                            Offset(
+                                dimensions.width * LabSheetMaterial.ghostEndX,
+                                dimensions.height * LabSheetMaterial.ghostEndY,
+                            ),
+                        startIntensity =
+                            if (pass.radius == 0f) 0f else pass.startRadius / pass.radius,
+                        endIntensity = 1f,
+                    )
+                )
+            }
         }
-    }
-    Box(Modifier.fillMaxSize().onSizeChanged { dimensions = it }.labNoise(pass.noiseOpacity)
-        .hazeBlur(if (index == 0) source else HazeInput.Content, style)) {
+    Box(
+        Modifier.fillMaxSize()
+            .onSizeChanged { dimensions = it }
+            .labNoise(pass.noiseOpacity)
+            .hazeBlur(if (index == 0) source else HazeInput.Content, style)
+    ) {
         if (index > 0) VeilLayers(passes, index - 1, source)
     }
 }

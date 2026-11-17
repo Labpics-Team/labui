@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -80,6 +80,45 @@ for (const [name, steps] of Object.entries(progressive.compositions)) {
   lines.push('    )');
 }
 lines.push('}', '');
+const sheet = profile.compositions.sheet;
+if (!profile.tiers[sheet.body.tier] || !shadows.roles[sheet.body.shadow])
+  throw new Error('Sheet references an unknown material or shadow');
+if (sheet.body.stroke.align !== 'outside') throw new Error('Unsupported Sheet stroke alignment');
+const orient = ([x, y], direction) => {
+  switch (direction) {
+    case 'top':
+      return [x, y];
+    case 'bottom':
+      return [1 - x, 1 - y];
+    case 'left':
+      return [y, x];
+    case 'right':
+      return [1 - y, 1 - x];
+    default:
+      throw new Error(`Unsupported veil direction: ${direction}`);
+  }
+};
+const start = orient(progressive.startOffset, sheet.ghost.direction);
+const end = orient(progressive.endOffset, sheet.ghost.direction);
+const ghost = sheet.ghost.profile.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+if (!progressive.compositions[sheet.ghost.profile])
+  throw new Error('Sheet references an unknown veil');
+lines.push(
+  'internal object LabSheetMaterial {',
+  `    val body = LabMaterials.${sheet.body.tier}`,
+  `    val shadow = LabShadows.${sheet.body.shadow}`,
+  `    const val strokeRole = ${JSON.stringify(sheet.body.stroke.role)}`,
+  `    const val strokeWidth = ${sheet.body.stroke.width}f`,
+  `    val ghost = LabVeils.${ghost}`,
+  `    const val ghostOverlap = ${sheet.ghost.overlap}f`,
+  `    const val ghostPaintRole = ${JSON.stringify(sheet.ghost.paintRole)}`,
+  `    const val ghostStartX = ${start[0]}f`,
+  `    const val ghostStartY = ${start[1]}f`,
+  `    const val ghostEndX = ${end[0]}f`,
+  `    const val ghostEndY = ${end[1]}f`,
+  '}',
+  '',
+);
 const output = new URL('../src/commonMain/kotlin/pics/lab/ui/LabMaterials.kt', import.meta.url);
 const content = lines.join('\n');
 if (process.argv.includes('--check')) {

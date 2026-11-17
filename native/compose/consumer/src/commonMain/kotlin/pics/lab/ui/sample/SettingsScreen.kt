@@ -74,7 +74,7 @@ fun SettingsScreen(host: ColorProgramHost) {
             Box(Modifier.fillMaxSize().background(theme.colors["bg-primary"]).background(Brush.linearGradient(listOf(
                 theme.colors["bg-primary"], theme.colors["fill-accent-tinted"], theme.colors["bg-secondary"]))))
         }) {
-            LabSheetHost(open, "Параметры проекта", { if (!saving) open = false }, trigger, LabMaterials.base,
+            LabSheetHost(open, "Параметры проекта", { if (!saving) open = false }, trigger,
                 modifier = Modifier.fillMaxSize(), material = material, size = LabSheetSize.TwoThirds,
                 dismissible = !saving,
                 content = {
