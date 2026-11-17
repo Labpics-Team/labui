@@ -69,7 +69,7 @@ try {
       if (display) await page.bringToFront();
       for (const theme of ['light', 'dark']) {
         for (const tier of ['subtle', 'soft', 'muted', 'base', 'elevated']) {
-          for (const recipe of ['author', 'coloured', 'grain', 'author-grain']) {
+          for (const recipe of ['author', 'coloured', 'grain', 'author-grain', 'author-scroll']) {
             if (tier !== 'soft' && (recipe === 'coloured' || recipe === 'grain')) continue;
             await page.goto(`http://127.0.0.1:${port}`);
             const paints = await page.evaluate(
@@ -105,6 +105,12 @@ try {
                     surface.style.setProperty('--_acrylic-noise', 'none');
                   if (recipe.startsWith('coloured'))
                     surface.style.setProperty('--_acrylic-noise', 'none');
+                  if (recipe === 'author-scroll') {
+                    surface.style.overflow = 'auto';
+                    const content = document.createElement('div');
+                    content.style.cssText = 'width:300px;height:300px';
+                    surface.append(content);
+                  }
                   zone.append(surface);
                   document.body.append(zone);
                 }
@@ -113,6 +119,9 @@ try {
                 document.body.append(marker);
                 const runtime = await import('/runtime.js');
                 window.disposeMaterials = runtime.mountMaterialRuntime();
+                if (recipe === 'author-scroll')
+                  for (const surface of document.querySelectorAll('.surface'))
+                    surface.scrollTo(150, 150);
                 const cs = getComputedStyle(document.querySelector('.surface'));
                 return [cs.getPropertyValue('--_tint'), cs.getPropertyValue('--_blend')];
               },

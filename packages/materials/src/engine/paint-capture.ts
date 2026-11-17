@@ -1,5 +1,22 @@
 import type { EngineHandle } from './mount';
 
+/** Scroll overflow follows the inline/block progression, with a flex main or
+ * cross axis reversed by its corresponding layout property. Resolve the two
+ * physical signs once; placement below does not branch on layout names. */
+function scrollAxes(style: CSSStyleDeclaration): { x: number; y: number } {
+  const vertical = style.writingMode !== 'horizontal-tb';
+  const inline =
+    (style.direction === 'rtl' ? -1 : 1) * (style.writingMode === 'sideways-lr' ? -1 : 1);
+  const block = style.writingMode.endsWith('-rl') ? -1 : 1;
+  const axes = vertical ? { x: block, y: inline } : { x: inline, y: block };
+  if (style.display.includes('flex')) {
+    const mainX = style.flexDirection.startsWith('row') !== vertical;
+    if (style.flexDirection.endsWith('reverse')) axes[mainX ? 'x' : 'y'] *= -1;
+    if (style.flexWrap === 'wrap-reverse') axes[mainX ? 'y' : 'x'] *= -1;
+  }
+  return axes;
+}
+
 /** A decorative capture normally sits outside layout. A scroll-host needs a
  * sticky capture inside an absolute runway spanning its scrollable area. The
  * browser follows both scroll axes; there is deliberately no scroll listener.
@@ -25,22 +42,15 @@ export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): E
     surface.prepend(capture);
     runway.remove();
     runway = undefined;
-    capture.style.removeProperty('width');
-    capture.style.removeProperty('height');
-    capture.style.removeProperty('top');
-    capture.style.removeProperty('left');
-    capture.style.removeProperty('margin-right');
-    capture.style.removeProperty('margin-bottom');
+    for (const name of ['width', 'height', 'inset', 'margin']) capture.style.removeProperty(name);
   };
   const measure = (): void => {
     frame = 0;
     if (disposed || !observing || !surface.isConnected) return;
-    // Otherwise an old runway would keep scrollHeight/Width large after content
-    // shrinks. This synchronous measurement never paints the zero-sized state.
-    if (runway) {
-      set(runway, 'width', '0px');
-      set(runway, 'height', '0px');
-    }
+    // Exclude the whole decorative subtree. A zero-size runway still lets its
+    // sticky child affect Gecko's trailing padding and old extent after shrink.
+    // The excluded state is synchronous and never painted.
+    if (runway) set(runway, 'display', 'none');
     const width = surface.clientWidth;
     const height = surface.clientHeight;
     const extentWidth = surface.scrollWidth;
@@ -58,21 +68,34 @@ export function placePaintCapture(surface: HTMLElement, capture: HTMLElement): E
       runway.append(capture);
     }
     const style = getComputedStyle(surface);
+    const top = Number.parseFloat(style.paddingTop);
     const right = Number.parseFloat(style.paddingRight);
     const bottom = Number.parseFloat(style.paddingBottom);
-    // Scroll overflow includes trailing padding in flex/grid. The runway must
-    // not add it again, while the capture's negative trailing margins let its
-    // painted box cover that padding at the final scroll position.
-    set(runway, 'width', `${extentWidth - right}px`);
-    set(runway, 'height', `${extentHeight - bottom}px`);
+    const left = Number.parseFloat(style.paddingLeft);
+    const axes = scrollAxes(style);
+    set(
+      runway,
+      'inset',
+      `${axes.y > 0 ? '0' : 'auto'} ${axes.x < 0 ? '0' : 'auto'} ${axes.y < 0 ? '0' : 'auto'} ${axes.x > 0 ? '0' : 'auto'}`,
+    );
+    set(runway, 'justify-items', axes.x > 0 ? 'start' : 'end');
+    set(runway, 'align-items', axes.y > 0 ? 'start' : 'end');
+    set(runway, 'width', `${extentWidth}px`);
+    set(runway, 'height', `${extentHeight}px`);
     set(capture, 'width', `${width}px`);
     set(capture, 'height', `${height}px`);
     // Sticky insets are measured from the scrollport's padding edge, whereas
     // the decoration covers its complete padding box, just like a background.
-    set(capture, 'top', `${-Number.parseFloat(style.paddingTop)}px`);
-    set(capture, 'left', `${-Number.parseFloat(style.paddingLeft)}px`);
-    set(capture, 'margin-right', `${-right}px`);
-    set(capture, 'margin-bottom', `${-bottom}px`);
+    set(capture, 'inset', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
+    set(capture, 'margin', `${-top}px ${-right}px ${-bottom}px ${-left}px`);
+    runway.style.removeProperty('display');
+    // Layout containment keeps sticky overflow out of the parent calculation.
+    // Browsers differ in whether an absolute child adds trailing grid/flex
+    // padding. Measure that contribution once instead of encoding engine rules.
+    const extraWidth = Math.max(0, surface.scrollWidth - extentWidth);
+    const extraHeight = Math.max(0, surface.scrollHeight - extentHeight);
+    if (extraWidth) set(runway, 'width', `${extentWidth - extraWidth}px`);
+    if (extraHeight) set(runway, 'height', `${extentHeight - extraHeight}px`);
   };
   const schedule = (): void => {
     if (!disposed && observing && !frame) frame = requestAnimationFrame(measure);

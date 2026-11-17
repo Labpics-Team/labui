@@ -71,8 +71,13 @@
 .lab-material__paint,
 .lab-material__paint-runway {
   z-index: -2;
+  overflow-anchor: none;
 }
 .lab-material__paint-runway {
+  display: grid;
+  contain: layout;
+  writing-mode: horizontal-tb;
+  direction: ltr;
   position: absolute;
   inset: 0 auto auto 0;
   border-radius: inherit;
