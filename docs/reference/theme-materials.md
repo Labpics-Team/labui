@@ -68,6 +68,9 @@ Runtime обслуживает `lab-material` в областях Glass/Acrylic 
 Chromium применяет paints и линзу в SVG backdrop filter; Firefox передаёт
 paints через отдельный SVG capture, Safari — через нативную смесь слоёв.
 У Firefox и Safari Glass сохраняет frost и paints без рефракции.
+Scrollport компонента находится внутри поверхности. Существующий scroll-host
+с `overflow:auto|scroll|hidden` поддерживается отдельным sticky capture без JS
+на прокрутке; его absolute-контейнер не участвует в flex/grid-раскладке.
 Штатное Screen-зерно пространственно в Chromium/Safari; в Firefox используется
 равномерное приближение с верхней ошибкой менее 0.058 единицы RGB после paints.
 Это не пространственное зерно. Замена приватной текстуры иным URL в Firefox

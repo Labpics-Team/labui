@@ -15,6 +15,7 @@ import {
   removeFilter,
   supportsBackdropFilterUrl,
 } from './mount';
+import { placePaintCapture } from './paint-capture';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 let uid = 0;
@@ -65,11 +66,15 @@ function acquire(
     return existing;
   }
   if (renderer === 'normal' || renderer === 'capture-blend') {
-    const compiled = compileMaterialPaint(paints);
-    const c = compiled.fill.a > 0 ? compiled.fill : paints.normal;
+    let fill = 'transparent';
+    if (renderer === 'normal') {
+      const compiled = compileMaterialPaint(paints);
+      const c = compiled.fill.a > 0 ? compiled.fill : paints.normal;
+      fill = `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`;
+    }
     const resource = {
       filter: null,
-      fill: renderer === 'capture-blend' ? 'transparent' : `rgb(${c.r} ${c.g} ${c.b} / ${c.a})`,
+      fill,
       key,
       resources,
       refs: 1,
@@ -171,6 +176,7 @@ export function attach(el: HTMLElement): EngineHandle {
   const renderer = paintRenderer();
   let held: PaintResource | undefined;
   let capture: HTMLElement | undefined;
+  let placement: EngineHandle | undefined;
   let signature = '';
   let disposed = false;
   const clear = (): void => {
@@ -180,7 +186,8 @@ export function attach(el: HTMLElement): EngineHandle {
     el.style.removeProperty('--_material-paint-filter');
     el.style.removeProperty('--_surface-paint');
     el.style.removeProperty('--_noise');
-    capture?.remove();
+    placement?.destroy();
+    placement = undefined;
     capture = undefined;
     el.removeAttribute('data-lab-material-paint-renderer');
     el.removeAttribute('data-lab-material-grain');
@@ -188,6 +195,7 @@ export function attach(el: HTMLElement): EngineHandle {
   };
   const refresh = (): void => {
     if (disposed) return;
+    placement?.refresh?.();
     const cs = getComputedStyle(el);
     const normalValue = cs.getPropertyValue('--_tint').trim();
     const blendValue = cs.getPropertyValue('--_blend').trim();
@@ -233,7 +241,7 @@ export function attach(el: HTMLElement): EngineHandle {
         capture = el.ownerDocument.createElement('div');
         capture.className =
           renderer === 'capture-svg'
-            ? 'lab-material__paint lab-material__capture'
+            ? 'lab-material__paint lab-material__capture lab-material__paint--svg'
             : 'lab-material__paint';
         capture.setAttribute('aria-hidden', 'true');
         const layers = renderer === 'capture-svg' ? [] : ['capture', 'grain', 'normal', 'blend'];
@@ -242,7 +250,7 @@ export function attach(el: HTMLElement): EngineHandle {
           node.className = `lab-material__${layer}`;
           capture.append(node);
         }
-        el.prepend(capture);
+        placement = placePaintCapture(el, capture);
       }
       el.setAttribute('data-lab-material-paint-renderer', renderer);
     }

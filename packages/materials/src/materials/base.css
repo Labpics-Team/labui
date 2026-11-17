@@ -13,6 +13,7 @@
   --_if-glass: ;
 }
 .lab-material {
+  --_material-paint-blend-mode: color-dodge;
   --_surface-paint: var(--_if-solid, var(--_solid))
     var(--_if-translucent, var(--_first-paint, var(--_tint)));
   --_blur: var(--_if-solid, 0px) var(--_if-acrylic, var(--_backdrop-blur))
@@ -52,7 +53,8 @@
 
 /* Gecko filters a separate captured layer; WebKit blends its native paints
  * over that capture. Content, shadows and the highlight stay outside both.
- * The fixed layer tree follows CSS geometry without resize-time DOM work.
+ * The layer tree follows CSS geometry. A scrolling host adds one absolute
+ * runway; sticky positioning follows scrolling without per-frame JS work.
  */
 .lab-material[data-lab-material-paint-renderer="capture-svg"],
 .lab-material[data-lab-material-paint-renderer="capture-blend"] {
@@ -69,11 +71,22 @@
 .lab-material__paint {
   z-index: -2;
 }
+.lab-material__paint-runway {
+  position: absolute;
+  inset: 0 auto auto 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -2;
+}
+.lab-material__paint-runway > .lab-material__paint {
+  position: sticky;
+  inset: 0 auto auto 0;
+}
 .lab-material__capture {
   backdrop-filter: blur(var(--_blur));
   -webkit-backdrop-filter: blur(var(--_blur));
 }
-[data-lab-material-paint-renderer="capture-svg"] > .lab-material__capture {
+.lab-material__paint--svg {
   filter: var(--_material-paint-filter);
 }
 .lab-material__grain {
@@ -86,8 +99,8 @@
 }
 .lab-material__blend {
   background: var(--_blend);
-  mix-blend-mode: color-dodge;
+  mix-blend-mode: var(--_material-paint-blend-mode);
 }
-[data-lab-material-theme="dark"] > .lab-material__paint > .lab-material__blend {
-  mix-blend-mode: overlay;
+.lab-material[data-lab-material-theme="dark"] {
+  --_material-paint-blend-mode: overlay;
 }

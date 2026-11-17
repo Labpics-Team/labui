@@ -8,7 +8,9 @@ on:
       - 'docs/evidence/materials-20261117/probe-backdrop-support.mjs'
       - 'docs/evidence/materials-20261117/display-pixels.mjs'
       - 'docs/evidence/materials-20261117/render-material-paints.mjs'
+      - 'docs/evidence/materials-20261117/verify-scroll-paint.mjs'
       - 'packages/materials/src/engine/paint.ts'
+      - 'packages/materials/src/engine/paint-capture.ts'
       - 'packages/materials/src/materials/base.css'
 
 permissions:
