@@ -95,7 +95,8 @@ afterEvaluate {
     tasks.withType<AbstractJPackageTask>().configureEach {
         launcherJvmArgs.addAll(linuxAccessibilityJvmArgs)
         if (targetFormat == TargetFormat.Deb) {
-            freeArgs.addAll("--linux-package-deps", "libatk-wrapper-java-jni (>= 0.37.1)")
+            // freeArgs is written verbatim to jpackage's @argument file.
+            freeArgs.addAll("--linux-package-deps", "\"libatk-wrapper-java-jni (>= 0.37.1)\"")
         }
     }
 }

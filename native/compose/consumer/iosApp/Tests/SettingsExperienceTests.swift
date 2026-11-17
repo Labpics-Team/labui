@@ -61,6 +61,8 @@ final class SettingsExperienceTests: XCTestCase {
     private func clear(_ editor: XCUIElement, in app: XCUIApplication) {
         // A tap places the caret at the tapped glyph, not at the end. Use the
         // native selection menu so deletion does not depend on text geometry.
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         editor.press(forDuration: 1.1)
         let selectAll = app.menuItems["Select All"]
         XCTAssertTrue(selectAll.waitForExistence(timeout: 3), app.debugDescription)
