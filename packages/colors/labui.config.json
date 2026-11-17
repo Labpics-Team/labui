@@ -585,7 +585,7 @@
     "light": {
       "bg-material-base-01": {
         "anchor": "material-light-base-tint",
-        "opacity": 0.969
+        "opacity": 0.96
       },
       "bg-material-base-02": {
         "anchor": "material-light-base-back",
@@ -601,7 +601,7 @@
       },
       "bg-material-muted-01": {
         "anchor": "material-light-muted-tint",
-        "opacity": 0.82
+        "opacity": 0.8
       },
       "bg-material-muted-02": {
         "anchor": "material-light-muted-back",
@@ -609,7 +609,7 @@
       },
       "bg-material-soft-01": {
         "anchor": "material-light-soft-tint",
-        "opacity": 0.698
+        "opacity": 0.72
       },
       "bg-material-soft-02": {
         "anchor": "material-light-soft-back",
@@ -617,7 +617,7 @@
       },
       "bg-material-subtle-01": {
         "anchor": "material-light-subtle-tint",
-        "opacity": 0.439
+        "opacity": 0.44
       },
       "bg-material-subtle-02": {
         "anchor": "material-light-subtle-back",
@@ -773,7 +773,7 @@
     "dark": {
       "bg-material-base-01": {
         "anchor": "material-dark-tint",
-        "opacity": 0.898
+        "opacity": 0.92
       },
       "bg-material-base-02": {
         "anchor": "material-dark-base-back",
@@ -789,7 +789,7 @@
       },
       "bg-material-muted-01": {
         "anchor": "material-dark-tint",
-        "opacity": 0.82
+        "opacity": 0.8
       },
       "bg-material-muted-02": {
         "anchor": "material-dark-muted-back",
@@ -797,7 +797,7 @@
       },
       "bg-material-soft-01": {
         "anchor": "material-dark-tint",
-        "opacity": 0.698
+        "opacity": 0.72
       },
       "bg-material-soft-02": {
         "anchor": "material-dark-soft-back",
@@ -805,7 +805,7 @@
       },
       "bg-material-subtle-01": {
         "anchor": "material-dark-tint",
-        "opacity": 0.549
+        "opacity": 0.56
       },
       "bg-material-subtle-02": {
         "anchor": "material-dark-soft-back",

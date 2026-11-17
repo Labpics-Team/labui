@@ -6,6 +6,7 @@ import config from '../labui.config.json' with { type: 'json' };
 import { themeProfile } from '../profile.mjs';
 import { prepareThemeProgram } from '../program-source.mjs';
 import { createThemeProgram } from '../program.mjs';
+import materialSource from './fixtures/figma-material-colors-20261117.json' with { type: 'json' };
 
 beforeAll(initializeNodeColors);
 
@@ -82,8 +83,8 @@ describe('LabUI profile over the published Colors Program', () => {
           reference,
         )[1];
         for (const [, name, value] of body.matchAll(/--lab-([a-z0-9-]+):\s*(rgb\([^;]+\));/g)) {
-          // FX recipes have a separate cumulative light/shadow contract.
-          if (name.startsWith('fx-')) continue;
+          // FX has a separate stack; materials use the live variable snapshot below.
+          if (name.startsWith('fx-') || name.startsWith('bg-material-')) continue;
           expect(resolved(values, name), name).toBe(value);
         }
         expect(resolved(values, 'label-on-accent')).toBe('rgb(255 255 255)');
@@ -93,6 +94,38 @@ describe('LabUI profile over the published Colors Program', () => {
       }
     });
   }
+
+  it('preserves material opacity variables from live Figma without 8-bit quantization', () => {
+    const alphas = new Map(
+      materialSource.alphas.map((variable) => [
+        variable.id,
+        Object.values(variable.valuesByMode)[0] / 100,
+      ]),
+    );
+    for (const [theme, mode] of [
+      ['light', '4001:0'],
+      ['dark', '4001:1'],
+    ]) {
+      const program = createThemeProgram(theme);
+      try {
+        const values = program.update();
+        for (const variable of materialSource.materials) {
+          const [, , tier, layer] = variable.name.split('/');
+          const name = `bg-material-${tier.toLowerCase()}-${layer}`;
+          const value = variable.valuesByMode[mode];
+          const color = value.color ?? value;
+          const rgb = ['r', 'g', 'b'].map((channel) => Math.round(color[channel] * 255));
+          const opacity = value.opacity ? alphas.get(value.opacity.id) : color.a;
+          expect(opacity).toBeTypeOf('number');
+          expect(resolved(values, name), `${theme}/${name}`).toBe(
+            `rgb(${rgb.join(' ')}${opacity === 1 ? '' : ` / ${opacity}`})`,
+          );
+        }
+      } finally {
+        program.dispose();
+      }
+    }
+  });
 
   it('more selects primary polarity for actual backgrounds and rejects incompatible scenarios', () => {
     const program = createThemeProgram('light', 'more');
