@@ -38,6 +38,9 @@ importers:
 
   apps/docs:
     dependencies:
+      '@labpics/fonts':
+        specifier: workspace:*
+        version: link:../../packages/fonts
       '@labpics/ui-core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -59,6 +62,12 @@ importers:
       '@labui/colors':
         specifier: workspace:*
         version: link:../../packages/colors
+      '@lit-labs/ssr-client':
+        specifier: 1.1.8
+        version: 1.1.8
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -143,8 +152,8 @@ importers:
   packages/colors:
     dependencies:
       '@labpics/colors':
-        specifier: 0.6.2
-        version: 0.6.2
+        specifier: 1.0.3
+        version: 1.0.3
     devDependencies:
       '@types/node':
         specifier: 22.10.5
@@ -1289,8 +1298,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@labpics/colors@0.6.2':
-    resolution: {integrity: sha512-zilUt3OHixV7MsLX/FkAaI/umpsxyaRklW8qQvWMnR35SQmwCuSe7eFHdNWDRMuhiv/An6LmPpwSTr+sMRWbUw==}
+  '@labpics/colors@1.0.3':
+    resolution: {integrity: sha512-ekmI75wAicArJsipg4VFZtLXLyDgPymaRKoCW/MpJ/fQindFZf1DgiyYa3v2ykycTyhPftt/x+teMNb1lzmwAg==}
+    engines: {node: '>=22.11.0'}
 
   '@labpics/motion@0.3.0':
     resolution: {integrity: sha512-mGgd7tB9bTPBRU0Yj+kJU7P6WktMX4wAQm0005XQH8owtC1vhDWlYi6cGcz7r7qEb9xgnYXywkriKSW6k2ajcw==}
@@ -4091,7 +4101,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@labpics/colors@0.6.2': {}
+  '@labpics/colors@1.0.3': {}
 
   '@labpics/motion@0.3.0(lit@3.3.3)(react@18.3.1)(solid-js@1.9.4)(svelte@5.19.0)(vue@3.5.42(typescript@5.7.3))':
     optionalDependencies:

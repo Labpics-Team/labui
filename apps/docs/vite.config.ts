@@ -32,9 +32,26 @@ function ssrProofPlugin(): Plugin {
   };
 }
 
+function colorsSsrPlugin(): Plugin {
+  return {
+    name: 'labui-colors-ssr',
+    async transformIndexHtml(html, ctx) {
+      if (!ctx.path.endsWith('colors.html')) return html;
+      const { renderToString } = await import('@labpics/ui-core/ssr');
+      await import('@labpics/ui-core/button');
+      const { html: staticHtml, unsafeStatic } = await import('lit/static-html.js');
+      // These are trusted repository templates, not user input. Keep authored
+      // markup in the page once and render those exact buttons to shadow DOM.
+      return html.replace(/<lab-button\b[^>]*>[\s\S]*?<\/lab-button>/g, (markup) =>
+        renderToString(staticHtml`${unsafeStatic(markup)}`),
+      );
+    },
+  };
+}
+
 export default defineConfig({
   root: 'src',
-  plugins: [ssrProofPlugin()],
+  plugins: [ssrProofPlugin(), colorsSsrPlugin()],
   // The Button parity page mounts a native-React island (button-demo.tsx). Vite's
   // built-in esbuild handles the automatic JSX transform — no plugin-react /
   // Fast-Refresh needed for these static build+preview fixtures.
@@ -48,6 +65,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'src/index.html'),
+        colors: resolve(__dirname, 'src/colors.html'),
         // Test-only browser oracles. Keeping them below _fixtures prevents a
         // measurement harness from masquerading as documentation.
         'fixture-materials-flag': resolve(__dirname, 'src/_fixtures/materials-flag.html'),
@@ -56,6 +74,7 @@ export default defineConfig({
         'fixture-shadow': resolve(__dirname, 'src/_fixtures/shadow.html'),
         'fixture-proof': resolve(__dirname, 'src/_fixtures/proof.html'),
         'fixture-tokens': resolve(__dirname, 'src/_fixtures/tokens.html'),
+        'fixture-colors-scope': resolve(__dirname, 'src/_fixtures/colors-scope.html'),
         // The reusable component-doc template (rendered from a ComponentDoc
         // config; ?component=<slug> selects which one).
         components: resolve(__dirname, 'src/components.html'),

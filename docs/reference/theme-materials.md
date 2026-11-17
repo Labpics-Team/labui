@@ -25,10 +25,14 @@
 | Вход | Назначение |
 | --- | --- |
 | `@labui/colors/contract.css` | Семантические цветовые роли Lab UI |
+| `@labui/colors/runtime` → `createThemeScope` | Обновление одной области через Colors Program |
 | `@labpics/ui-tokens/tokens.css` | Размеры, отступы, радиусы и типографика |
 | `@labpics/ui-core/theme.css` | Стили и соглашение о выборе темы |
 | `@labpics/ui-materials/material.css` | Стили материалов и поверхностей |
 | `@labpics/ui-materials` → `mountMaterialRuntime` | Подключение браузерных эффектов материалов |
+
+Авторская палитра, increased contrast, первый кадр и сохранение последнего
+применённого состояния описаны в [цветовом профиле](color-profile.md).
 
 ## Runtime и поддержка эффектов
 

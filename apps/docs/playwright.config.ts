@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const SMOKE_SPECS = [
   'smoke.spec.ts',
+  'colors.spec.ts',
   'proof.spec.ts',
   'tokens.spec.ts',
   'z-order.spec.ts',
