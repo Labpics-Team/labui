@@ -74,7 +74,12 @@ test('nearest mode paints the same material across a shadow boundary and respect
     if (browserName === 'chromium')
       await expect(el).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await expect
-      .poll(() => el.evaluate((node) => getComputedStyle(node).backdropFilter))
+      .poll(() =>
+        el.evaluate(
+          (node) =>
+            getComputedStyle(node.querySelector('.lab-material__capture') ?? node).backdropFilter,
+        ),
+      )
       .toContain('blur(');
   }
   if (browserName !== 'chromium') {
@@ -863,21 +868,27 @@ for (const variant of ['standard', 'custom'] as const) {
   });
 }
 
-test('the non-SVG paint renderer follows custom roles instead of keeping baked defaults', async ({
+test('the capture paint renderer follows custom roles instead of keeping baked defaults', async ({
   page,
   browserName,
 }) => {
-  test.skip(browserName === 'chromium');
+  test.skip(browserName !== 'webkit');
   const surface = page.locator('#surface');
   await surface.evaluate((el) => {
     el.setAttribute('data-material', 'acrylic');
     el.style.setProperty('--_tint', 'rgb(0 0 0 / .5)');
     el.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
   });
-  await expect(surface).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.5)');
+  await expect(surface.locator('.lab-material__normal')).toHaveCSS(
+    'background-color',
+    'rgba(0, 0, 0, 0.5)',
+  );
   await expect(page.locator('body > .lab-material-paint-defs')).toHaveCount(0);
   await surface.evaluate((el) => el.style.setProperty('--_tint', 'rgb(255 255 255 / .25)'));
-  await expect(surface).toHaveCSS('background-color', 'rgba(255, 255, 255, 0.25)');
+  await expect(surface.locator('.lab-material__normal')).toHaveCSS(
+    'background-color',
+    'rgba(255, 255, 255, 0.25)',
+  );
 });
 
 test('a veil retains authored paint between its own and nested backdrop passes', async ({
