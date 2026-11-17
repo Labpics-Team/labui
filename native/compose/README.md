@@ -21,13 +21,19 @@ Desktop/Android используют `pics.lab:ui-colors`: общий Kotlin-hos
 wire и output через самостоятельный SwiftPM-пакет. `SettingsScreen(host, store)`
 сохраняет theme state при переключении настроек и позволяет повторить ошибку.
 
-CI `44073517256` подтвердил компоненты на трёх desktop ОС, MSI/DEB и сценарий
-упакованного launcher на Windows/Linux. macOS jpackage завершился ошибкой,
-Android потерял emulator; iOS сценарий ещё требует исправления. Это результаты
-предыдущего consumer; новая форма с реальным хранением требует отдельного
-прохода. Проверка Java Accessibility не подтверждает системные screen readers.
+[CI `44092421795`](https://github.com/Labpics-Team/labui/actions/runs/44092421795)
+на `e4503b2` подтвердил Windows/macOS/Linux, MSI/DMG/DEB, упакованные launcher
+и сохранение после настоящего перезапуска. Android API 33/35 прошёл
+пересоздание Activity, отмену, валидацию, сохранение и новый процесс;
+iOS прошёл отмену, валидацию, сохранение и terminate/launch.
+Проверки platform accessibility API не подтверждают системные screen readers.
+Обновлённая композиция ниже требует отдельной визуальной оценки в CI.
 
 Consumer хранит сохранённое пространство отдельно от черновика Sheet.
+Рабочая область — одна колонка до 640 dp: имя и описание пространства,
+связанные данные уведомлений и редактирование. Кнопка «Оформление» открывает
+отдельную панель темы, материала и доступности. Sheet принимает естественную
+высоту содержимого и прокручивается при нехватке места, включая открытую IME.
 Отмена, Escape и закрытие не записывают черновик. Черновик и открытая панель
 восстанавливаются при пересоздании Android Activity. Save закрывает панель и
 показывает Snackbar только после атомарной записи DataStore; ошибка сохраняет
@@ -41,12 +47,12 @@ AppData/Roaming, Application Support или XDG_CONFIG_HOME. Это хранен
 **Пакет ещё не опубликован. NATIVE-01 не завершён.** До выпуска остаются:
 
 - Завершить независимое визуальное сравнение материалов на всех платформах.
-- Заменить явные Colors CI-артефакты публичной поставкой и проверить Swift-host
-  в настоящем приложении. Новый CI должен подтвердить весь UI-сценарий.
-- Проверить реальные Android/iOS приложения, IME, масштаб 100/125/200%,
+- Заменить явные Colors CI-артефакты публичной поставкой и проверить чистых
+  потребителей всех платформ.
+- Довести композицию первого опыта; проверить IME, масштаб 100/125/200%,
   VoiceOver/TalkBack и работу всех материалов.
 - Завершить Linux Java Accessibility → AT-SPI bridge и подтвердить сценарий Orca.
-- Собрать установщики, проверить отдельные consumers, пройти review и выпуск.
+- Пройти независимое review и выпуск после проверок реального потребителя.
 
 Эта запись описывает исполняемый остаток работы и не заменяет принятый
 [план r1](https://github.com/Labpics-Team/agents-config/blob/main/plans/labui/r1.md).
@@ -92,6 +98,10 @@ UI и screen-reader проверки выполняются в изолиров�
 звуковую озвучку или видимые тестовые окна на рабочем столе пользователя.
 Linux CI снимает main/Sheet обеих тем только после стабилизации настоящих пикселей
 и сохраняет `build/screenshots`; обновлённый consumer ещё требует их оценки.
+Android UI Automator действует через настоящий EditText или Switch:
+Compose может экспортировать подпись отдельным описательным дочерним узлом.
+Hierarchy и пиксели сохраняются до закрытия Activity, включая неудачные проверки.
+XCTest ищет live announcements по label: UIKit экспортирует их как `Other`.
 Пример использует опубликованный `pics.lab:icons-compose` через `iconsVersion`;
 до выпуска `iconsSource` явно подключает принятый native-каталог исходников.
 До публичного выпуска адаптер принимает `colorsRepository`/`colorsVersion`
@@ -188,6 +198,8 @@ blur усиливается сверху вниз. Высота Ghost вычис
 - [Skiko 0.150.2: выбор backend и fallback](https://github.com/JetBrains/skiko/blob/v0.150.2/skiko/src/jvmMain/kotlin/org/jetbrains/skiko/SkikoProperties.kt)
 - [Compose — доступность](https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-accessibility.html)
 - [KMP DataStore — атомарное платформенное хранение](https://developer.android.com/kotlin/multiplatform/datastore)
+- [Linear Preferences — опора композиции рабочей области](https://linear.app/docs/account-preferences)
+- [Android — system bar icons и edge-to-edge](https://developer.android.com/develop/ui/compose/system/setup-e2e)
 - [GNOME Java / AT-SPI](https://gnome.pages.gitlab.gnome.org/at-spi2-core/devel-docs/toolkits.html#java-swing-via-java-atk-wrapper)
 
 Шрифты Geist распространяются по SIL Open Font License; лицензия находится

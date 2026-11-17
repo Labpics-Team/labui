@@ -116,6 +116,20 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
             }
             error("The current material is not exposed as selected: $name")
         }
+        suspend fun openAppearance() {
+            click(find("Оформление", AccessibleRole.PUSH_BUTTON))
+            awaitFocus(find("Закрыть", AccessibleRole.PUSH_BUTTON))
+        }
+        suspend fun closeAppearance() {
+            click(find("Закрыть", AccessibleRole.PUSH_BUTTON))
+            awaitFocus(find("Оформление", AccessibleRole.PUSH_BUTTON))
+        }
+        suspend fun changeTheme(dark: Boolean) {
+            openAppearance()
+            click(find("Тёмная тема"))
+            awaitDarkTheme(dark)
+            closeAppearance()
+        }
         suspend fun awaitSnackbarDismissed() {
             repeat(500) {
                 if (onEventThread { tree().none { it.accessibleName == "Изменения сохранены" } })
@@ -151,18 +165,22 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
                 find(verifiedDescription)
                 find(verifiedEmail)
                 find("Уведомления выключены")
+                openAppearance()
                 awaitDarkTheme(true)
                 awaitMaterial("Матовый")
+                closeAppearance()
                 capture("restored-dark")
                 println(
                     "NATIVE_RESTART_PASS: saved workspace and display restored in a new process"
                 )
                 return@withContext
             }
+            openAppearance()
             awaitMaterial("Стекло")
+            capture("appearance-light")
+            closeAppearance()
             capture("main-light")
-            click(find("Тёмная тема"))
-            awaitDarkTheme(true)
+            changeTheme(true)
             capture("main-dark")
             click(find("Редактировать", AccessibleRole.PUSH_BUTTON))
             val close = find("Закрыть", AccessibleRole.PUSH_BUTTON)
@@ -172,8 +190,7 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
             click(find("Отмена", AccessibleRole.PUSH_BUTTON))
             awaitFocus(find("Редактировать", AccessibleRole.PUSH_BUTTON))
             find(Workspace().name)
-            click(find("Тёмная тема"))
-            awaitDarkTheme(false)
+            changeTheme(false)
             click(find("Редактировать", AccessibleRole.PUSH_BUTTON))
             awaitFocus(find("Закрыть", AccessibleRole.PUSH_BUTTON))
             check(text(find("Название", AccessibleRole.TEXT)) == Workspace().name) {
@@ -197,12 +214,14 @@ internal suspend fun verifyDesktopWindow(window: Window, restart: Boolean = fals
             find(verifiedEmail)
             find("Уведомления выключены")
             capture("saved-light")
-            click(find("Тёмная тема"))
-            awaitDarkTheme(true)
+            changeTheme(true)
             capture("saved-dark")
             awaitSnackbarDismissed()
+            openAppearance()
             click(find("Матовый", AccessibleRole.PUSH_BUTTON))
             awaitMaterial("Матовый")
+            capture("appearance-dark")
+            closeAppearance()
             capture("saved-matte-dark")
             val acceptedEvents = synchronized(events) { events.toList() }
             check(acceptedEvents.any { it.contains(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY) }) {

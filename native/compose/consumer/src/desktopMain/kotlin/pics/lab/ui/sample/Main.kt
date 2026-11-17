@@ -29,11 +29,11 @@ fun main(args: Array<String>) {
             val insets = Toolkit.getDefaultToolkit().getScreenInsets(screen)
             val width = screen.bounds.width - insets.left - insets.right
             val height = screen.bounds.height - insets.top - insets.bottom
-            DpSize(minOf(900, width).dp, minOf(800, height).dp)
+            DpSize(minOf(800, width).dp, minOf(680, height).dp)
         }
         Window(
             onCloseRequest = ::exitApplication,
-            title = "Lab UI — рабочее пространство",
+            title = "Lab UI — настройки",
             state =
                 rememberWindowState(
                     size = initialSize,

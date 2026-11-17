@@ -3,12 +3,12 @@ package pics.lab.ui.sample
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -46,6 +46,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import pics.lab.icons.Icon
 import pics.lab.icons.symbols.checkmark
+import pics.lab.icons.symbols.pencil
 import pics.lab.icons.symbols.settings
 import pics.lab.ui.*
 
@@ -82,6 +83,8 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
     }
     val scope = rememberCoroutineScope()
     val trigger = remember { FocusRequester() }
+    val appearanceTrigger = remember { FocusRequester() }
+    var showingAppearance by rememberSaveable { mutableStateOf(false) }
     val name = rememberTextFieldState()
     val email = rememberTextFieldState()
     val description = rememberTextFieldState()
@@ -134,6 +137,7 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
         emailError = null
         saveError = false
         snackbar = null
+        showingAppearance = false
         open = true
     }
     fun changeDisplay(change: (DisplaySettings) -> DisplaySettings) {
@@ -145,6 +149,104 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
                 throw cancelled
             } catch (_: Exception) {
                 displayError = true
+            }
+        }
+    }
+    val appearanceControls: @Composable () -> Unit = {
+        Column(
+            Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+        ) {
+            Column {
+                LabSwitch(
+                    theme.preferences.appearance == LabAppearance.Dark,
+                    { value ->
+                        changeDisplay {
+                            it.copy(
+                                preferences =
+                                    it.preferences.copy(
+                                        appearance =
+                                            if (value) LabAppearance.Dark else LabAppearance.Light
+                                    )
+                            )
+                        }
+                    },
+                    "Тёмная тема",
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                BasicText("Материал", style = caption)
+                FlowRow(
+                    Modifier.selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    for (kind in LabMaterial.entries) LabButton(
+                        when (kind) {
+                            LabMaterial.Solid -> "Плотный"
+                            LabMaterial.Acrylic -> "Матовый"
+                            LabMaterial.Glass -> "Стекло"
+                        },
+                        { changeDisplay { it.copy(material = kind) } },
+                        Modifier.semantics {
+                            selected = kind == display.material
+                        },
+                        intent = LabIntent.Neutral,
+                        kind =
+                            if (kind == display.material) LabButtonKind.Fill
+                            else LabButtonKind.Ghost,
+                        size = LabControlSize.Small,
+                    )
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                BasicText("Доступность", style = title)
+                Column {
+                    LabSwitch(
+                        theme.preferences.increasedContrast,
+                        { value ->
+                            changeDisplay {
+                                it.copy(
+                                    preferences = it.preferences.copy(increasedContrast = value)
+                                )
+                            }
+                        },
+                        "Высокий контраст",
+                    )
+                    LabSwitch(
+                        theme.preferences.reducedMotion,
+                        { value ->
+                            changeDisplay {
+                                it.copy(preferences = it.preferences.copy(reducedMotion = value))
+                            }
+                        },
+                        "Меньше движения",
+                    )
+                    LabSwitch(
+                        theme.preferences.reducedTransparency,
+                        { value ->
+                            changeDisplay {
+                                it.copy(
+                                    preferences = it.preferences.copy(reducedTransparency = value)
+                                )
+                            }
+                        },
+                        "Меньше прозрачности",
+                    )
+                }
+            }
+            if (displayError)
+                BasicText(
+                    "Не удалось сохранить вид. Попробуйте ещё раз.",
+                    style = body,
+                )
+            if (themeError) {
+                BasicText("Не удалось применить оформление.", style = body)
+                LabButton(
+                    "Повторить",
+                    { themeAttempt++ },
+                    kind = LabButtonKind.Ghost,
+                )
             }
         }
     }
@@ -169,263 +271,186 @@ fun SettingsScreen(host: ColorProgramHost, store: WorkspaceStore) {
         ) {
             LabSheetHost(
                 open,
-                "Настройки пространства",
+                if (showingAppearance) "Оформление" else "Настройки пространства",
                 { if (!saving) open = false },
-                trigger,
+                if (showingAppearance) appearanceTrigger else trigger,
                 modifier = Modifier.fillMaxSize(),
                 material = display.material,
-                size = LabSheetSize.TwoThirds,
+                size = LabSheetSize.Flex,
                 dismissible = !saving,
                 content = {
                     Column(
                         Modifier.fillMaxSize()
                             .safeDrawingPadding()
                             .verticalScroll(rememberScrollState())
-                            .padding(24.dp),
+                            .padding(horizontal = 24.dp, vertical = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(24.dp),
                     ) {
-                        BasicText(
-                            "Пространство",
-                            Modifier.widthIn(max = 1040.dp).fillMaxWidth(),
-                            style = heading,
-                        )
-                        val current = saved
-                        if (current == null) {
-                            if (loadError) {
-                                BasicText("Не удалось прочитать настройки.", style = body)
-                                LabButton("Повторить", { loadAttempt++ })
-                            } else BasicText("Загружаем настройки…", style = body)
-                        } else {
-                            val summary: @Composable (Modifier) -> Unit = { modifier ->
-                                LabCard(LabMaterials.soft, modifier, display.material) {
-                                    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            BasicText(current.workspace.name, style = title)
+                        Column(
+                            Modifier.widthIn(max = 640.dp).fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(24.dp),
+                        ) {
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                BasicText("Настройки", style = title)
+                                LabButton(
+                                    "Оформление",
+                                    {
+                                        showingAppearance = true
+                                        open = true
+                                    },
+                                    Modifier.focusRequester(appearanceTrigger),
+                                    kind = LabButtonKind.Ghost,
+                                    intent = LabIntent.Neutral,
+                                    size = LabControlSize.Small,
+                                    icon = { Icon(settings, tint = color, size = size) },
+                                )
+                            }
+                            val current = saved
+                            if (current == null) {
+                                if (loadError) {
+                                    BasicText("Не удалось прочитать настройки.", style = body)
+                                    LabButton("Повторить", { loadAttempt++ })
+                                } else BasicText("Загружаем настройки…", style = body)
+                            } else {
+                                LabCard(
+                                    LabMaterials.soft,
+                                    Modifier.fillMaxWidth(),
+                                    display.material,
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                            BasicText("Пространство", style = caption)
+                                            BasicText(current.workspace.name, style = heading)
                                             if (current.workspace.description.isNotBlank())
                                                 BasicText(
                                                     current.workspace.description,
                                                     style = body,
                                                 )
                                         }
-                                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            BasicText("Почта для уведомлений", style = caption)
-                                            BasicText(
-                                                current.workspace.email.ifBlank { "Не указана" },
-                                                style =
-                                                    body.copy(
-                                                        color = theme.colors["label-primary"]
-                                                    ),
-                                            )
+                                        Box(
+                                            Modifier.fillMaxWidth()
+                                                .height(1.dp)
+                                                .background(theme.colors["border-base"])
+                                        )
+                                        Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                                            Column(
+                                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                            ) {
+                                                BasicText("Почта для уведомлений", style = caption)
+                                                BasicText(
+                                                    current.workspace.email.ifBlank {
+                                                        "Не указана"
+                                                    },
+                                                    style =
+                                                        body.copy(
+                                                            color = theme.colors["label-primary"]
+                                                        ),
+                                                )
+                                            }
                                             BasicText(
                                                 if (current.workspace.notifications)
                                                     "Уведомления включены"
                                                 else "Уведомления выключены",
-                                                style = caption,
+                                                style = body,
                                             )
                                         }
                                         LabButton(
                                             "Редактировать",
                                             ::edit,
                                             Modifier.focusRequester(trigger),
-                                            icon = { Icon(settings, tint = color, size = size) },
+                                            icon = { Icon(pencil, tint = color, size = size) },
                                         )
                                     }
                                 }
-                            }
-                            val view: @Composable (Modifier) -> Unit = { modifier ->
-                                Column(
-                                    modifier,
-                                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                                ) {
-                                    BasicText("Вид", style = title)
-                                    Column {
-                                        LabSwitch(
-                                            theme.preferences.appearance == LabAppearance.Dark,
-                                            { value ->
-                                                changeDisplay {
-                                                    it.copy(
-                                                        preferences =
-                                                            it.preferences.copy(
-                                                                appearance =
-                                                                    if (value) LabAppearance.Dark
-                                                                    else LabAppearance.Light
-                                                            )
-                                                    )
-                                                }
-                                            },
-                                            "Тёмная тема",
-                                        )
-                                        LabSwitch(
-                                            theme.preferences.increasedContrast,
-                                            { value ->
-                                                changeDisplay {
-                                                    it.copy(
-                                                        preferences =
-                                                            it.preferences.copy(
-                                                                increasedContrast = value
-                                                            )
-                                                    )
-                                                }
-                                            },
-                                            "Высокий контраст",
-                                        )
-                                        LabSwitch(
-                                            theme.preferences.reducedMotion,
-                                            { value ->
-                                                changeDisplay {
-                                                    it.copy(
-                                                        preferences =
-                                                            it.preferences.copy(
-                                                                reducedMotion = value
-                                                            )
-                                                    )
-                                                }
-                                            },
-                                            "Меньше движения",
-                                        )
-                                        LabSwitch(
-                                            theme.preferences.reducedTransparency,
-                                            { value ->
-                                                changeDisplay {
-                                                    it.copy(
-                                                        preferences =
-                                                            it.preferences.copy(
-                                                                reducedTransparency = value
-                                                            )
-                                                    )
-                                                }
-                                            },
-                                            "Меньше прозрачности",
-                                        )
-                                    }
-                                    BasicText("Материал", style = caption)
-                                    FlowRow(
-                                        Modifier.selectableGroup(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                                    ) {
-                                        for (kind in LabMaterial.entries) LabButton(
-                                            when (kind) {
-                                                LabMaterial.Solid -> "Плотный"
-                                                LabMaterial.Acrylic -> "Матовый"
-                                                LabMaterial.Glass -> "Стекло"
-                                            },
-                                            { changeDisplay { it.copy(material = kind) } },
-                                            Modifier.semantics {
-                                                selected = kind == display.material
-                                            },
-                                            intent = LabIntent.Neutral,
-                                            kind =
-                                                if (kind == display.material) LabButtonKind.Fill
-                                                else LabButtonKind.Ghost,
-                                            size = LabControlSize.Small,
-                                        )
-                                    }
-                                    if (displayError)
-                                        BasicText(
-                                            "Не удалось сохранить вид. Попробуйте ещё раз.",
-                                            style = body,
-                                        )
-                                    if (themeError) {
-                                        BasicText("Не удалось применить оформление.", style = body)
-                                        LabButton(
-                                            "Повторить",
-                                            { themeAttempt++ },
-                                            kind = LabButtonKind.Ghost,
-                                        )
-                                    }
-                                }
-                            }
-                            BoxWithConstraints(Modifier.widthIn(max = 1040.dp).fillMaxWidth()) {
-                                if (maxWidth >= 760.dp)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                                        summary(Modifier.weight(1f))
-                                        view(Modifier.weight(1f))
-                                    }
-                                else
-                                    Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
-                                        summary(Modifier.fillMaxWidth())
-                                        view(Modifier.fillMaxWidth())
-                                    }
                             }
                         }
                     }
                 },
                 sheet = {
-                    LabInput(name, "Название", error = nameError, readOnly = saving)
-                    LabInput(description, "Описание", singleLine = false, readOnly = saving)
-                    LabInput(
-                        email,
-                        "Почта для уведомлений",
-                        error = emailError,
-                        readOnly = saving,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    )
-                    LabSwitch(
-                        notifications,
-                        { notifications = it },
-                        "Получать уведомления",
-                        enabled = !saving,
-                    )
-                    if (saveError)
-                        BasicText(
-                            "Не удалось сохранить изменения. Попробуйте ещё раз.",
-                            Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                            style = body.copy(color = theme.colors["label-danger"]),
+                    if (showingAppearance) {
+                        appearanceControls()
+                    } else {
+                        LabInput(name, "Название", error = nameError, readOnly = saving)
+                        LabInput(description, "Описание", singleLine = false, readOnly = saving)
+                        LabInput(
+                            email,
+                            "Почта для уведомлений",
+                            error = emailError,
+                            readOnly = saving,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         )
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        LabButton(
-                            "Сохранить",
-                            {
-                                if (saving) return@LabButton
-                                nameError = if (name.text.isBlank()) "Введите название" else null
-                                val address = email.text.toString().trim()
-                                emailError =
-                                    if (
-                                        (notifications || address.isNotBlank()) &&
-                                            !address.matches(Regex("[^\\s@]+@[^\\s@]+\\.[^\\s@]+"))
-                                    )
-                                        "Проверьте адрес почты"
-                                    else null
-                                if (nameError == null && emailError == null) {
-                                    saving = true
-                                    saveError = false
-                                    val next =
-                                        Workspace(
-                                            name.text.toString(),
-                                            address,
-                                            description.text.toString(),
-                                            notifications,
+                        LabSwitch(
+                            notifications,
+                            { notifications = it },
+                            "Получать уведомления",
+                            enabled = !saving,
+                        )
+                        if (saveError)
+                            BasicText(
+                                "Не удалось сохранить изменения. Попробуйте ещё раз.",
+                                Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                                style = body.copy(color = theme.colors["label-danger"]),
+                            )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            LabButton(
+                                "Сохранить",
+                                {
+                                    if (saving) return@LabButton
+                                    nameError =
+                                        if (name.text.isBlank()) "Введите название" else null
+                                    val address = email.text.toString().trim()
+                                    emailError =
+                                        if (
+                                            (notifications || address.isNotBlank()) &&
+                                                !address.matches(
+                                                    Regex("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")
+                                                )
                                         )
-                                    scope.launch {
-                                        try {
-                                            store.save(next)
-                                            open = false
-                                            snackbar = "Изменения сохранены"
-                                        } catch (cancelled: CancellationException) {
-                                            throw cancelled
-                                        } catch (_: Exception) {
-                                            saveError = true
-                                        } finally {
-                                            saving = false
+                                            "Проверьте адрес почты"
+                                        else null
+                                    if (nameError == null && emailError == null) {
+                                        saving = true
+                                        saveError = false
+                                        val next =
+                                            Workspace(
+                                                name.text.toString(),
+                                                address,
+                                                description.text.toString(),
+                                                notifications,
+                                            )
+                                        scope.launch {
+                                            try {
+                                                store.save(next)
+                                                open = false
+                                                snackbar = "Изменения сохранены"
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (_: Exception) {
+                                                saveError = true
+                                            } finally {
+                                                saving = false
+                                            }
                                         }
                                     }
-                                }
-                            },
-                            loading = saving,
-                            icon = { Icon(checkmark, tint = color, size = size) },
-                        )
-                        LabButton(
-                            "Отмена",
-                            { open = false },
-                            enabled = !saving,
-                            kind = LabButtonKind.Border,
-                            intent = LabIntent.Neutral,
-                        )
+                                },
+                                loading = saving,
+                                icon = { Icon(checkmark, tint = color, size = size) },
+                            )
+                            LabButton(
+                                "Отмена",
+                                { open = false },
+                                enabled = !saving,
+                                kind = LabButtonKind.Border,
+                                intent = LabIntent.Neutral,
+                            )
+                        }
                     }
                 },
             )
