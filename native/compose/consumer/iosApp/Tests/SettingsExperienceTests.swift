@@ -36,8 +36,11 @@ final class SettingsExperienceTests: XCTestCase {
         reveal(message("Введите название", in: app), in: app, towardBottom: false)
         name.tap()
         name.typeText("Нативная лаборатория 東京")
+        XCTAssertEqual(name.value as? String, "Нативная лаборатория 東京")
         reveal(app.buttons["Сохранить"], in: app, towardBottom: true).tap()
-        XCTAssertTrue(message("Изменения сохранены", in: app).waitForExistence(timeout: 5))
+        // A slow XCTest snapshot can outlive the automatic Snackbar. The save contract
+        // is the committed workspace, then the same data after a fresh process launch.
+        XCTAssertTrue(app.staticTexts["Нативная лаборатория 東京"].waitForExistence(timeout: 15))
         XCTAssertTrue(open.exists)
         captureSettledFrame("Settings saved", in: app)
         app.terminate()
