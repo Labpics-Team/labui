@@ -54,7 +54,7 @@ fun SettingsScreen() {
     val body = TextStyle(fontFamily = font, fontSize = 16.sp, color = theme.colors["label-secondary"], lineHeight = 24.sp)
     LabTheme(theme, font) {
         LabScene(Modifier.fillMaxSize(), background = {
-            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(
+            Box(Modifier.fillMaxSize().background(theme.colors["bg-primary"]).background(Brush.linearGradient(listOf(
                 theme.colors["bg-primary"], theme.colors["fill-accent-tinted"], theme.colors["bg-secondary"]))))
         }) {
             LabSheetHost(open, "Параметры проекта", { if (!saving) open = false }, trigger, LabMaterials.base,

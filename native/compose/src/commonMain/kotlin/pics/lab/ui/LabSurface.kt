@@ -74,10 +74,10 @@ public fun LabCard(
     recipe: LabMaterialRecipe,
     modifier: Modifier = Modifier,
     material: LabMaterial = LabMaterial.Solid,
-    padding: PaddingValues = PaddingValues(LabTokens.Space6.dp),
+    padding: PaddingValues = PaddingValues(LabComponents.CardPadding.dp),
     content: @Composable BoxScope.() -> Unit,
 ) {
-    LabSurface(recipe, modifier, material, RoundedCornerShape(LabTokens.RadiusL.dp)) {
+    LabSurface(recipe, modifier, material, RoundedCornerShape(LabComponents.CardRadius.dp)) {
         Box(Modifier.padding(padding), content = content)
     }
 }

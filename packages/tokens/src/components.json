@@ -1,0 +1,154 @@
+{
+  "button": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "sizes": {
+        "s": "6227:8249",
+        "m": "6227:8347",
+        "l": "6227:8445"
+      }
+    },
+    "fontWeight": 500,
+    "labelPaddingX": 8,
+    "labelGap": 8,
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 9999,
+        "paddingX": 12,
+        "paddingY": 8,
+        "icon": 20,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "letterSpacing": 0,
+        "descriptionFontWeight": 500,
+        "descriptionLetterSpacing": 0,
+        "descriptionAccentPlainOpacity": 0.72
+      },
+      "m": {
+        "height": 48,
+        "radius": 16,
+        "paddingX": 12,
+        "paddingY": 12,
+        "icon": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": 0,
+        "descriptionFontWeight": 400,
+        "descriptionLetterSpacing": -0.25,
+        "descriptionAccentPlainOpacity": 1
+      },
+      "l": {
+        "height": 56,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 16,
+        "icon": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "letterSpacing": 0,
+        "descriptionFontWeight": 400,
+        "descriptionLetterSpacing": -0.25,
+        "descriptionAccentPlainOpacity": 1
+      }
+    },
+    "descriptionOpacity": 0.72,
+    "fill": {
+      "highlight": 0.2,
+      "hoverHighlight": 0.32,
+      "pressedShade": 0.12
+    },
+    "innerShadow": {
+      "x": 0,
+      "y": -1,
+      "blur": 1
+    }
+  },
+  "input": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "sizes": {
+        "s": "6034:3459",
+        "m": "6050:1672",
+        "l": "6050:1712"
+      }
+    },
+    "sizes": {
+      "s": {
+        "height": 36,
+        "radius": 16,
+        "paddingX": 16,
+        "paddingY": 8,
+        "contentHeight": 20,
+        "fontSize": 14,
+        "lineHeight": 12,
+        "fontWeight": 500,
+        "letterSpacing": 0
+      },
+      "m": {
+        "height": 48,
+        "radius": 12,
+        "paddingX": 16,
+        "paddingY": 12,
+        "contentHeight": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      },
+      "l": {
+        "height": 56,
+        "radius": 12,
+        "paddingX": 16,
+        "paddingY": 16,
+        "contentHeight": 24,
+        "fontSize": 16,
+        "lineHeight": 24,
+        "fontWeight": 400,
+        "letterSpacing": -0.25
+      }
+    },
+    "label": {
+      "fontSize": 12,
+      "lineHeight": 12,
+      "fontWeight": 500,
+      "paddingX": 4,
+      "overhang": 8
+    },
+    "helper": {
+      "gap": 8,
+      "paddingX": 4
+    },
+    "strokeWidth": 1
+  },
+  "card": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "node": "6225:42443"
+    },
+    "radius": 16,
+    "padding": 24,
+    "gap": 16
+  },
+  "sheet": {
+    "source": {
+      "fileKey": "LuaiBd4anRi4DMZayKAnY2",
+      "version": "2422536133022859436",
+      "node": "7533:4698"
+    },
+    "topRadius": 32,
+    "paddingX": 16,
+    "paddingBottom": 16,
+    "contentGap": 24,
+    "drag": {
+      "areaHeight": 24,
+      "width": 36,
+      "height": 4,
+      "radius": 4,
+      "top": 14
+    }
+  }
+}

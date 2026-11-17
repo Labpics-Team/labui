@@ -7,33 +7,40 @@ const root =
   sourceArg < 0
     ? new URL('../../../', import.meta.url)
     : pathToFileURL(`${resolve(process.argv[sourceArg + 1])}/`);
-const { button } = JSON.parse(
+const profile = JSON.parse(
   await readFile(new URL('packages/tokens/src/components.json', root), 'utf8'),
 );
-const properties = Object.keys(button.sizes.s);
+const upper = (name) => name[0].toUpperCase() + name.slice(1);
 const lines = [
   '// Generated from packages/tokens/src/components.json. Do not edit.',
   'package pics.lab.ui',
   '',
-  `internal data class LabButtonMetrics(${properties.map((key) => `val ${key}: Float`).join(', ')})`,
-  '',
-  'internal object LabComponents {',
 ];
-for (const [size, metrics] of Object.entries(button.sizes)) {
+for (const [component, definition] of Object.entries(profile)) {
+  if (!definition.sizes) continue;
+  const properties = Object.keys(Object.values(definition.sizes)[0]);
   lines.push(
-    `    val Button${size.toUpperCase()} = LabButtonMetrics(${properties.map((key) => `${metrics[key]}f`).join(', ')})`,
+    `internal data class Lab${upper(component)}Metrics(${properties.map((key) => `val ${key}: Float`).join(', ')})`,
   );
 }
-for (const [name, value] of Object.entries(button)) {
-  if (typeof value === 'number')
-    lines.push(`    const val Button${name[0].toUpperCase()}${name.slice(1)} = ${value}f`);
+lines.push('', 'internal object LabComponents {');
+function emitConstants(prefix, definition) {
+  for (const [name, value] of Object.entries(definition)) {
+    if (name === 'source' || name === 'sizes') continue;
+    if (typeof value === 'number') lines.push(`    const val ${prefix}${upper(name)} = ${value}f`);
+    else if (value && typeof value === 'object') emitConstants(prefix + upper(name), value);
+  }
 }
-for (const [group, entries] of [
-  ['Fill', button.fill],
-  ['InnerShadow', button.innerShadow],
-]) {
-  for (const [name, value] of Object.entries(entries))
-    lines.push(`    const val Button${group}${name[0].toUpperCase()}${name.slice(1)} = ${value}f`);
+for (const [component, definition] of Object.entries(profile)) {
+  if (definition.sizes) {
+    const properties = Object.keys(Object.values(definition.sizes)[0]);
+    for (const [size, metrics] of Object.entries(definition.sizes)) {
+      lines.push(
+        `    val ${upper(component)}${size.toUpperCase()} = Lab${upper(component)}Metrics(${properties.map((key) => `${metrics[key]}f`).join(', ')})`,
+      );
+    }
+  }
+  emitConstants(upper(component), definition);
 }
 lines.push('}', '');
 const output = new URL('../src/commonMain/kotlin/pics/lab/ui/LabComponents.kt', import.meta.url);

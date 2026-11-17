@@ -25,16 +25,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.innerShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.sp
 import pics.lab.motion.MotionTransition
 import pics.lab.motion.MotionEase
@@ -107,7 +110,12 @@ public fun LabButton(
         else -> colors["bg-static-light"].copy(alpha = LabComponents.ButtonFillHighlight)
     }
     val surface = Modifier.clip(shape).background(fill).then(
-        if (enabled && !loading && kind == LabButtonKind.Fill) Modifier.background(Brush.verticalGradient(listOf(gradient, gradient.copy(alpha = 0f))))
+        if (enabled && !loading && kind == LabButtonKind.Fill) Modifier
+            .background(Brush.verticalGradient(listOf(gradient, gradient.copy(alpha = 0f))))
+            .innerShadow(shape, Shadow(radius = LabComponents.ButtonInnerShadowBlur.dp,
+                color = colors["fx-control-inner"],
+                offset = DpOffset(LabComponents.ButtonInnerShadowX.dp,
+                    (if (pressed) -LabComponents.ButtonInnerShadowY else LabComponents.ButtonInnerShadowY).dp)))
         else Modifier)
     Box(modifier.graphicsLayer { scaleX = scale.value; scaleY = scale.value }
         .border(if (focused) LabTokens.FocusRingWidth.dp else 1.dp, stroke, shape)
@@ -130,7 +138,6 @@ public fun LabButton(
         }
         // A state overlay preserves the complete label, line wrapping and measured width.
         if (enabled && kind != LabButtonKind.Fill && (pressed || hovered)) Box(Modifier.matchParentSize().background(
-            if (kind == LabButtonKind.Fill) Color.Black.copy(alpha = if (pressed) LabTokens.StatePressed else LabTokens.StateHover)
-            else colors["label-primary"].copy(alpha = if (pressed) LabTokens.StatePressed else LabTokens.StateHover)))
+            colors["label-primary"].copy(alpha = if (pressed) LabTokens.StatePressed else LabTokens.StateHover)))
     }
 }

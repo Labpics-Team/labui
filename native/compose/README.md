@@ -7,14 +7,21 @@ Geist поставляется с пакетом; размеры использ�
 ## Текущее состояние
 
 Реализованы Button, state-based Input, Switch, Card, Sheet и Snackbar,
-генераторы общих токенов и материалов, граница Colors Program и сценарий
-настроек. Desktop-компиляция и проверки ввода, pending-состояния, Escape и
-возврата фокуса выполняются. Первый настоящий desktop-рендер проверен.
+генераторы общих токенов, геометрии компонентов и материалов, граница Colors
+Program и сценарий настроек. Button, Input, Card и Sheet читают общий профиль
+Figma. Input сохраняет подпись в разрыве рамки, Sheet поддерживает перетаскивание.
+Обе темы осмотрены в настоящем Windows-окне.
+
+CI собирает Android APK и iOS frameworks (device/simulator). На Windows,
+macOS и Linux проходят UI-тесты и отдельный сценарий через Java Accessibility:
+ввод, валидация, сохранение, Snackbar, события текста и возврат фокуса.
+Это проверка исходников с явными composite-подстановками, ещё не проверка
+опубликованных пакетов или системных screen readers.
 
 **Пакет ещё не опубликован. NATIVE-01 не завершён.** До выпуска остаются:
 
-- Привести геометрию и состояния к общему живому профилю Figma, накопительные
-  тени и шум — к профилю материала; проверить изображение обеих тем.
+- Завершить состояния и slots компонентов, накопительные тени, шум и
+  progressive overlay из общего профиля; проверить материалы всех платформ.
 - Подключить опубликованные платформенные Colors через ColorProgramHost,
   заменить использование подготовленной палитры в примере живым runtime.
 - Получить полный опубликованный Maven-комплект Motion, включая Apple.
@@ -29,16 +36,20 @@ Geist поставляется с пакетом; размеры использ�
 ## Разработка
 
 JDK 21, Android SDK 37, Gradle wrapper 9.3.1. Android минимум API 33.
+Kotlin/Compose/AGP определены в `gradle/libs.versions.toml` и разделяются с
+consumer. Haze 2.1.0 содержит Apple klib ABI 2.4 и требует Kotlin 2.4.21.
 
 ```sh
 node native/compose/scripts/generate-tokens.mjs
+node native/compose/scripts/generate-components.mjs
 node native/compose/scripts/generate-colors.mjs
 node native/compose/scripts/generate-materials.mjs
 bash native/compose/gradlew -p native/compose desktopTest
 ```
 
 `motionRepository` позволяет указать локальный Maven для разработки до
-публикации Motion. `--source <checkout>` у генераторов Colors/materials
+публикации Motion; `motionSource` — явный Gradle composite исходников.
+`--source <checkout>` у генераторов Colors/components/materials
 позволяет работать против ещё не интегрированного общего профиля. Обычный
 путь генератора всегда находится в этом репозитории.
 
@@ -50,7 +61,9 @@ bash native/compose/gradlew -p native/compose/consumer run \
 ```
 
 `uiSource` включает явную Gradle composite-подстановку для разработки.
-Проверка опубликованного потребителя обязана оставлять `uiSource` unset.
+Проверка опубликованного потребителя обязана оставлять `uiSource` и
+`motionSource` unset. `run --args=--verify` проходит настоящий сценарий через
+Java Accessibility и сохраняет события в `build/accessibility-events.txt`.
 
 ## Границы
 
