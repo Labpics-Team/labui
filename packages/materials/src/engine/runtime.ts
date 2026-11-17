@@ -280,6 +280,9 @@ export function mountMaterialRuntime(root?: MaterialRoot): () => void {
       parent = isShadowRoot(parent) ? parent.host : parent.parentNode
     ) {
       inheritedAncestors.add(parent);
+      // The slot may not exist yet. Its first assignment emits slotchange in
+      // the parent's shadow tree, which is outside an Element scope.
+      if (isHtmlElement(parent) && parent.shadowRoot) slotTargets.add(parent.shadowRoot);
     }
     for (const target of slotTargets) target.addEventListener('slotchange', onSlotChange);
     for (const ancestor of inheritedAncestors) {
