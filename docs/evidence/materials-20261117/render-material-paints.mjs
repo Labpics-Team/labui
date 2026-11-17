@@ -49,9 +49,30 @@ try {
     });
     try {
       const page = await browser.newPage({ viewport: { width: 800, height: 300 } });
+      // Hosted macOS can inherit reduced-transparency. This diagnostic measures
+      // optical rendering; media degradation is covered by lifecycle tests.
+      if (name === 'chromium') {
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Emulation.setEmulatedMedia', {
+          features: [
+            { name: 'prefers-reduced-transparency', value: 'no-preference' },
+            { name: 'prefers-contrast', value: 'no-preference' },
+          ],
+        });
+      }
       if (display) await page.bringToFront();
       for (const theme of ['light', 'dark']) {
-        for (const recipe of ['author', 'coloured', 'grain']) {
+        for (const recipe of [
+          'author',
+          'coloured',
+          'grain',
+          'author-no-alpha',
+          'coloured-no-alpha',
+          'author-linear',
+          'author-table2',
+          'author-direct',
+          'grain-no-alpha',
+        ]) {
           await page.goto(`http://127.0.0.1:${port}`);
           const paints = await page.evaluate(
             async ({ theme, recipe, swatches }) => {
@@ -67,10 +88,10 @@ try {
                 zone.style.background = `rgb(${rgb.join(' ')})`;
                 const surface = document.createElement('div');
                 surface.className = 'lab-material lab-material--soft surface';
-                if (recipe === 'coloured') {
+                if (recipe.startsWith('coloured')) {
                   surface.style.setProperty('--_tint', 'rgb(20 40 60 / .3)');
                   surface.style.setProperty('--_blend', 'rgb(235 70 155 / .65)');
-                } else if (recipe === 'grain') {
+                } else if (recipe.startsWith('grain')) {
                   surface.style.setProperty('--_tint', 'rgb(0 0 0 / 0)');
                   surface.style.setProperty('--_blend', 'rgb(0 0 0 / 0)');
                   // Amplified coloured Screen grain exposes missing, misplaced or
@@ -83,7 +104,8 @@ try {
                   );
                   surface.style.setProperty('--_acrylic-noise-size', '2px');
                 } else surface.style.setProperty('--_acrylic-noise', 'none');
-                if (recipe === 'coloured') surface.style.setProperty('--_acrylic-noise', 'none');
+                if (recipe.startsWith('coloured'))
+                  surface.style.setProperty('--_acrylic-noise', 'none');
                 zone.append(surface);
                 document.body.append(zone);
               }
@@ -92,6 +114,37 @@ try {
               document.body.append(marker);
               const runtime = await import('/runtime.js');
               window.disposeMaterials = runtime.mountMaterialRuntime();
+              if (recipe.endsWith('no-alpha'))
+                document
+                  .querySelectorAll('.lab-material-paint-defs feFuncA')
+                  .forEach((node) => node.remove());
+              if (recipe === 'author-linear' || recipe === 'author-table2') {
+                for (const node of document.querySelectorAll(
+                  '.lab-material-paint-defs feFuncR,.lab-material-paint-defs feFuncG,.lab-material-paint-defs feFuncB',
+                )) {
+                  const values = node.getAttribute('tableValues').split(' ').map(Number);
+                  const first = values[0],
+                    last = values.at(-1);
+                  if (recipe === 'author-linear') {
+                    node.setAttribute('type', 'linear');
+                    node.setAttribute('slope', String(last - first));
+                    node.setAttribute('intercept', String(first));
+                  } else node.setAttribute('tableValues', `${first} ${last}`);
+                }
+              }
+              if (recipe === 'author-direct') {
+                for (const surface of document.querySelectorAll('.surface')) {
+                  const wrapper = surface.querySelector('.lab-material__paint');
+                  if (!wrapper) continue;
+                  const capture = wrapper.querySelector('.lab-material__capture');
+                  capture.classList.add('lab-material__paint');
+                  capture.style.filter = getComputedStyle(surface).getPropertyValue(
+                    '--_material-paint-filter',
+                  );
+                  surface.prepend(capture);
+                  wrapper.remove();
+                }
+              }
               const cs = getComputedStyle(document.querySelector('.surface'));
               return [cs.getPropertyValue('--_tint'), cs.getPropertyValue('--_blend')];
             },
@@ -123,12 +176,11 @@ try {
             blendMode: theme === 'light' ? 'color-dodge' : 'overlay',
           };
           const expected = swatches.map((rgb) => {
-            const input =
-              recipe === 'grain'
-                ? rgb.map(
-                    (channel, i) => channel + (((255 - channel) * [80, 160, 240][i]) / 255) * 0.6,
-                  )
-                : rgb;
+            const input = recipe.startsWith('grain')
+              ? rgb.map(
+                  (channel, i) => channel + (((255 - channel) * [80, 160, 240][i]) / 255) * 0.6,
+                )
+              : rgb;
             const output = materialPaintOver(spec, { r: input[0], g: input[1], b: input[2], a: 1 });
             return [output.r, output.g, output.b];
           });
@@ -147,7 +199,7 @@ try {
           await page.evaluate(() => window.disposeMaterials());
           assert.equal(
             await page.locator('.lab-material__paint,.lab-material-paint-defs').count(),
-            0,
+            recipe === 'author-direct' && state.layers ? 6 : 0,
             'final disposal releases all capture and filter resources',
           );
           const row = {
