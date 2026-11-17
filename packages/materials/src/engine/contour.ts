@@ -1,4 +1,4 @@
-import type { CornerRadii, RoundedShape } from './rounded-shape';
+import { type CornerRadii, type RoundedShape, normalizeCornerRadii } from './rounded-shape';
 
 /** One authored outline serves clipping, shadows, light and refraction. Figma
  * joins a circular arc to two cubic transitions; it is not a superellipse.
@@ -158,13 +158,17 @@ export function materialContour(
   shape: RoundedShape,
   smoothing: number,
 ): MaterialContour {
-  const radii = (typeof shape === 'number'
-    ? Array(8).fill(Math.min(shape, w / 2, h / 2))
-    : 'radii' in shape
-      ? [...shape.radii]
-      : [...shape]) as unknown as CornerRadii;
+  const radii = normalizeCornerRadii(
+    w,
+    h,
+    (typeof shape === 'number'
+      ? Array(8).fill(Math.min(shape, w / 2, h / 2))
+      : 'radii' in shape
+        ? [...shape.radii]
+        : [...shape]) as unknown as CornerRadii,
+  );
   let s = Math.max(0, Math.min(1, smoothing));
-  // Preserve radii; reduce only the requested transition where neighbouring
+  // Preserve used CSS radii; reduce only the requested transition where neighbouring
   // corners would overlap. Every consumer uses this same used value.
   for (const [extent, a, b] of [
     [w, radii[0], radii[2]],

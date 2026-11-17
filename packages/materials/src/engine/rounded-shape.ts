@@ -72,15 +72,19 @@ function axes(value: string): readonly string[] {
 }
 
 /** https://www.w3.org/TR/css-backgrounds-3/#corner-overlap */
+export function normalizeCornerRadii(w: number, h: number, radii: CornerRadii): CornerRadii {
+  const [lx, ly, rx, ry, bx, by, ax, ay] = radii;
+  const ratio = (dimension: number, sum: number) => (sum > 0 ? dimension / sum : 1);
+  const f = Math.min(1, ratio(w, lx + rx), ratio(w, ax + bx), ratio(h, ly + ay), ratio(h, ry + by));
+  return f === 1 ? radii : (radii.map((r) => r * f) as unknown as CornerRadii);
+}
+
 export function resolveCornerRadii(w: number, h: number, values: readonly string[]): RoundedShape {
   const radii = values.flatMap((value) => {
     const pair = axes(value.trim());
     return [length(pair[0] ?? '0px', w), length(pair[1] ?? pair[0] ?? '0px', h)];
   }) as unknown as CornerRadii;
-  const [lx, ly, rx, ry, bx, by, ax, ay] = radii;
-  const ratio = (dimension: number, sum: number) => (sum > 0 ? dimension / sum : 1);
-  const f = Math.min(1, ratio(w, lx + rx), ratio(w, ax + bx), ratio(h, ly + ay), ratio(h, ry + by));
-  const normalized = radii.map((r) => r * f) as unknown as CornerRadii;
+  const normalized = normalizeCornerRadii(w, h, radii);
   const first = normalized[0];
   return normalized.every((r) => r === first) ? first : normalized;
 }

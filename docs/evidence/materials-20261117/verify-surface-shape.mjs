@@ -191,18 +191,22 @@ async function verifyShadowPixels(page, origin, browser) {
     ['inner-negative-offset', 'inset 30px 20px 0 -10px red', '0'],
     ['inner-border', 'inset 10px 8px 0 5px red', '4px 8px 12px 16px'],
     ['parallel-layers', '0 0 0 10px red, 8px 12px 0 16px blue', '0'],
+    ['asymmetric-inner-spread', 'inset 20px 10px 0 20px red', '0', true],
+    ['asymmetric-inner-contract', 'inset 0 0 0 40px red', '0', true],
   ];
   const results = [];
-  for (const [name, shadow, borders] of cases) {
+  for (const [name, shadow, borders, asymmetric] of cases) {
     await page.goto(origin);
     await page.evaluate(
-      ({ shadow, borders }) => {
+      ({ shadow, borders, asymmetric }) => {
         document.body.innerHTML = '<div id="subject"></div>';
         const style = document.createElement('style');
         style.textContent = `body{margin:0;background:white}#subject{position:absolute;left:50px;top:50px;width:200px;height:160px;border-radius:40px;border-style:solid;border-color:transparent;border-width:${borders};box-shadow:${shadow};--lab-material-shadow:${shadow}}`;
+        if (asymmetric)
+          style.textContent += '#subject{width:100px;height:140px;border-radius:0 100px 0 0}';
         document.head.append(style);
       },
-      { shadow, borders },
+      { shadow, borders, asymmetric },
     );
     const reference = decodePng(await page.screenshot());
     await page.evaluate(async () => {
