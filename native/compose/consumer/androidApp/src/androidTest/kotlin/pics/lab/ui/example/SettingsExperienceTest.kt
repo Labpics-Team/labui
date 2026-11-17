@@ -74,7 +74,10 @@ class SettingsExperienceTest {
             device.findObject(selector)?.let {
                 return it
             }
-            find(By.scrollable(true)).scrollUntil(direction, Until.findObject(selector))
+            val body = find(By.clazz("android.widget.ScrollView"))
+            // A Flex sheet may fit the entire form. A just-emitted validation message can
+            // arrive after this first lookup without ever making the body scrollable.
+            if (body.isScrollable) body.scrollUntil(direction, Until.findObject(selector))
             return find(selector)
         }
         fun save() = reveal(By.text("Сохранить"), Direction.DOWN).button().click()

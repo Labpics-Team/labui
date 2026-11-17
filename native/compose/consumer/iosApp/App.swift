@@ -3,7 +3,8 @@ import LabUIExample
 
 @main
 struct LabUIExampleApp: App {
-    var body: some Scene { WindowGroup { LabUIView().ignoresSafeArea(.keyboard) } }
+    // Compose owns safeDrawingPadding and IME insets for the whole scene.
+    var body: some Scene { WindowGroup { LabUIView().ignoresSafeArea() } }
 }
 
 struct LabUIView: UIViewControllerRepresentable {
