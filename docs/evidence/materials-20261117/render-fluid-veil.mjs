@@ -59,9 +59,9 @@ try {
             return ctx.getImageData(0, 0, image.width, image.height).data;
           };
           const [a, b] = await Promise.all([decode(before), decode(after)]);
-          let max = 0,
-            sum = 0,
-            over2 = 0;
+          let max = 0;
+          let sum = 0;
+          let over2 = 0;
           for (let i = 0; i < a.length; i++)
             if (i % 4 !== 3) {
               const error = Math.abs(a[i] - b[i]);
@@ -85,7 +85,7 @@ try {
     new URL('fluid-veil-pixels.json', import.meta.url),
     JSON.stringify(report, null, 2),
   );
-  console.log(JSON.stringify(report, null, 2));
+  console.info(JSON.stringify(report, null, 2));
 } finally {
   await browser.close();
 }
