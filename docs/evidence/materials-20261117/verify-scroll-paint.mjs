@@ -110,25 +110,13 @@ export async function verifyScrollPaint(page, origin, browser, display) {
           expected: [peer.scrollWidth, peer.scrollHeight],
           contentLayout: offsets(host),
           peerLayout: offsets(peer),
-          capture: cap
-            ? [
-                cap.x - rect.x - host.clientLeft,
-                cap.y - rect.y - host.clientTop,
-                cap.width,
-                cap.height,
-              ]
-            : null,
-          viewport: [host.clientWidth, host.clientHeight],
+          capture: cap ? [cap.x - rect.x, cap.y - rect.y, cap.width, cap.height] : null,
+          viewport: [rect.width, rect.height],
           contours: Array.from(
             host.querySelectorAll('.lab-material__contour,.lab-material__contour-stroke'),
           ).map((node) => {
             const r = node.getBoundingClientRect();
-            return [
-              r.x - rect.x - host.clientLeft,
-              r.y - rect.y - host.clientTop,
-              r.width,
-              r.height,
-            ];
+            return [r.x - rect.x, r.y - rect.y, r.width, r.height];
           }),
           scroll: [host.scrollLeft, host.scrollTop],
           peerScroll: [peer.scrollLeft, peer.scrollTop],

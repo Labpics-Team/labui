@@ -11,6 +11,8 @@ on:
       - 'docs/evidence/materials-20261117/verify-scroll-paint.mjs'
       - 'docs/evidence/materials-20261117/verify-surface-shape.mjs'
       - 'packages/materials/src/engine/contour.ts'
+      - 'packages/materials/src/engine/border-box.ts'
+      - 'packages/materials/src/engine/contour-shadow.ts'
       - 'packages/materials/src/engine/contour-surface.ts'
       - 'packages/materials/src/engine/paint.ts'
       - 'packages/materials/src/engine/paint-capture.ts'

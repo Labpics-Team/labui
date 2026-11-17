@@ -196,6 +196,7 @@ export function mountMaterialRuntime(
     styleProbe.removeProperty('--_surface-paint');
     styleProbe.removeProperty('--_noise');
     styleProbe.removeProperty('--lab-contour-clip');
+    styleProbe.removeProperty('--lab-contour-inset');
     styleProbe.removeProperty('--_material-contour-rim');
     for (const name of motionProperties) styleProbe.removeProperty(name);
     return styleProbe.cssText;
