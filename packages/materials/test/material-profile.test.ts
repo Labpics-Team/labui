@@ -79,4 +79,38 @@ describe('author material profile', () => {
       dispose();
     }).not.toThrow();
   });
+
+  it('retains the progressive author styles and their distinct nested compositions', () => {
+    const extracted = JSON.parse(
+      readFileSync(
+        new URL(
+          '../../../docs/evidence/materials-20261117/figma-progressive-source.json',
+          import.meta.url,
+        ),
+        'utf8',
+      ),
+    ) as {
+      styles: {
+        name: string;
+        effects: { type: string; radius?: number; color?: { a: number } }[];
+      }[];
+      instances: { id: string; parent: string; children: string[] }[];
+    };
+    for (const [name, recipe] of Object.entries(materialProfile.progressive.styles)) {
+      const style = extracted.styles.find((entry) => entry.name.toLowerCase().endsWith(`/${name}`));
+      expect(style?.effects.find((effect) => effect.type === 'BACKGROUND_BLUR')?.radius).toBe(
+        recipe.radius,
+      );
+      expect(style?.effects.find((effect) => effect.type === 'NOISE')?.color?.a).toBeCloseTo(
+        recipe.noiseOpacity,
+        6,
+      );
+    }
+    expect(extracted.instances.find((node) => node.id === '6236:41501')?.children).toContain(
+      '6236:41502',
+    );
+    expect(extracted.instances.find((node) => node.id === '7533:2238')?.children).toEqual([]);
+    expect(materialProfile.progressive.compositions.strong).toEqual(['strong', 'strong']);
+    expect(materialProfile.progressive.compositions['overlay-ghost']).toEqual(['strong']);
+  });
 });

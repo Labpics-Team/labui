@@ -16,6 +16,23 @@
     "size": 0.2,
     "density": 1
   },
+  "progressive": {
+    "source": "docs/evidence/materials-20261117/figma-progressive-source.json",
+    "startRadius": 0,
+    "startOffset": [0.5, 1],
+    "endOffset": [0.5, 0],
+    "styles": {
+      "ghost": { "radius": 4, "noiseOpacity": 0.04 },
+      "soft": { "radius": 12, "noiseOpacity": 0.06 },
+      "strong": { "radius": 24, "noiseOpacity": 0.06 }
+    },
+    "compositions": {
+      "ghost": ["ghost"],
+      "soft": ["soft"],
+      "strong": ["strong", "strong"],
+      "overlay-ghost": ["strong"]
+    }
+  },
   "tiers": {
     "subtle": {
       "solidRole": "bg-primary",

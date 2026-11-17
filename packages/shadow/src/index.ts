@@ -15,6 +15,7 @@
  */
 
 export { generateShadowCss } from './generate-css.js';
+export { shadowProfile } from './profile.js';
 export {
   DEFAULT_LIGHT_ANGLE_DEG,
   DEFAULT_TINT_STRENGTH,

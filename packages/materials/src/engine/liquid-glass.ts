@@ -7,6 +7,13 @@ import { materialProfile } from '../profile';
 // only the definition site moved.
 import { MAX_PULL, clamp01, sdRoundRect, smoothstep } from './lg-math';
 import { ensureHiddenDefs, removeFilter, supportsBackdropFilterUrl } from './mount';
+import {
+  type CornerRadii,
+  type RoundedShape,
+  resolveCornerRadii,
+  roundedShapeInside,
+  shapeKey,
+} from './rounded-shape';
 
 export interface LiquidGlassParams {
   refraction?: number;
@@ -59,7 +66,7 @@ interface StampedShape {
 interface RenderParams {
   w: number;
   h: number;
-  corner: number;
+  corner: RoundedShape;
   refraction: number;
   depth: number;
   dispersion: number;
@@ -163,6 +170,7 @@ interface SdfEntry {
 }
 const SDF_CACHE_CAP = 4;
 const sdfCache = new Map<string, SdfEntry>(); // geometry (no depth) → distance field
+const asymmetricSdfCache = new Map<string, Float64Array>();
 let sdfComputeCount = 0; // cumulative sdRoundRect calls (the counter-assert reads this)
 
 function releaseScratch(): void {
@@ -176,6 +184,7 @@ function releaseScratch(): void {
   sCanvas = null;
   sCtx = null;
   sdfCache.clear(); // the distance fields are scratch too — no steady-state retention
+  asymmetricSdfCache.clear();
 }
 
 function armScratchRelease(): void {
@@ -210,10 +219,11 @@ function armScratchRelease(): void {
 export function __computeDisplacementField(
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
 ): { data: Uint8ClampedArray; W: number; H: number; unit: number } {
+  if (typeof corner !== 'number') return asymmetricField(w, h, corner, depth, dpr);
   const r = Math.max(0, Math.min(corner, Math.min(w, h) / 2));
   const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2)); // rim lens thickness
   const sc = Math.max(1, Math.min(dpr || 1, 2)); // device-pixel scale, capped at 2
@@ -406,6 +416,56 @@ export function __computeDisplacementField(
   return { data, W, H, unit: 2 * maxAbs };
 }
 
+/** General CSS shape path. Ordinary circular symmetric panels retain the
+ * quarter-field fast path above; asymmetric/elliptical shapes cache their full
+ * distances once, so depth/refraction changes do not rerun the ellipse solver.
+ */
+function asymmetricField(w: number, h: number, radii: CornerRadii, depth: number, dpr: number) {
+  const sc = Math.max(1, Math.min(dpr || 1, 2));
+  const W = Math.max(1, Math.round(w * sc));
+  const H = Math.max(1, Math.round(h * sc));
+  const N = W * H;
+  const band = Math.max(2, Math.min(depth, Math.min(w, h) / 2));
+  const key = `${w}x${h}x${shapeKey(radii)}x${sc}`;
+  let distances = asymmetricSdfCache.get(key);
+  if (!distances) {
+    distances = new Float64Array(N);
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++)
+        distances[y * W + x] = roundedShapeInside((x + 0.5) / sc, (y + 0.5) / sc, w, h, radii);
+    asymmetricSdfCache.set(key, distances);
+    while (asymmetricSdfCache.size > SDF_CACHE_CAP) {
+      const oldest = asymmetricSdfCache.keys().next().value;
+      if (oldest !== undefined) asymmetricSdfCache.delete(oldest);
+    }
+  } else {
+    asymmetricSdfCache.delete(key);
+    asymmetricSdfCache.set(key, distances);
+  }
+  if (!sDx || sDx.length < 2 * N) sDx = new Float32Array(2 * N);
+  if (!sRGBA || sRGBA.length < 4 * N) sRGBA = new Uint8ClampedArray(4 * N);
+  const data = sRGBA.length === 4 * N ? sRGBA : sRGBA.subarray(0, 4 * N);
+  let maxAbs = 1e-6;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      const inside = distances[i] ?? 0;
+      const pull = inside > 0 ? MAX_PULL * smoothstep(smoothstep(clamp01(1 - inside / band))) : 0;
+      const dx = (w / 2 - (x + 0.5) / sc) * pull;
+      const dy = (h / 2 - (y + 0.5) / sc) * pull;
+      sDx[2 * i] = dx;
+      sDx[2 * i + 1] = dy;
+      maxAbs = Math.max(maxAbs, Math.abs(dx), Math.abs(dy));
+    }
+  const gain = 255 / (2 * maxAbs);
+  new Uint32Array(data.buffer, data.byteOffset, N).fill(0xff808080);
+  for (let i = 0; i < N; i++) {
+    data[4 * i] = (sDx[2 * i] ?? 0) * gain + 127.5;
+    data[4 * i + 1] = (sDx[2 * i + 1] ?? 0) * gain + 127.5;
+  }
+  return { data, W, H, unit: 2 * maxAbs };
+}
+
 /**
  * Build ONE displacement map (PNG data-URI) at DEVICE-pixel resolution and wrap
  * it for the browser: the DOM-free field core rasterised onto a reused canvas,
@@ -414,7 +474,7 @@ export function __computeDisplacementField(
 function buildMap(
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
 ): Omit<MapEntry, 'refs' | 'evicted'> {
@@ -508,7 +568,7 @@ function acquireMap(
   geoKey: string,
   w: number,
   h: number,
-  corner: number,
+  corner: RoundedShape,
   depth: number,
   dpr: number,
 ): MapEntry {
@@ -641,11 +701,12 @@ function readParams(el: HTMLElement, state: EngineState): RenderParams {
   return {
     w: Math.max(1, Math.round(rect.width)),
     h: Math.max(1, Math.round(rect.height)),
-    // Number.isFinite, NOT `||`: an explicit `border-radius: 0` is a real
-    // author choice (sharp lens), not an invitation to the default corner.
-    corner: ((r: number): number => Math.round(Number.isFinite(r) ? r : DEFAULTS.corner))(
-      Number.parseFloat(cs.borderTopLeftRadius),
-    ),
+    corner: resolveCornerRadii(rect.width, rect.height, [
+      cs.borderTopLeftRadius,
+      cs.borderTopRightRadius,
+      cs.borderBottomRightRadius,
+      cs.borderBottomLeftRadius,
+    ]),
     refraction: p.refraction ?? num('--_lg-refraction', DEFAULTS.refraction),
     depth: Math.round(p.depth ?? num('--_lg-depth', DEFAULTS.depth)),
     dispersion: p.dispersion ?? num('--_lg-dispersion', DEFAULTS.dispersion),
@@ -716,7 +777,7 @@ function render(state: EngineState): void {
   // The map depends ONLY on geometry (size/corner/depth/dpr) — not on position,
   // strength, or dispersion. So a DRAG or a refraction/dispersion change never
   // rebuilds it (cheap re-stamp); only resize/corner/depth does.
-  const geoKey = `${p.w}x${p.h}x${p.corner}x${p.depth}x${dpr.toFixed(2)}`;
+  const geoKey = `${p.w}x${p.h}x${shapeKey(p.corner)}x${p.depth}x${dpr.toFixed(2)}`;
   const t0 = state.onPerf ? performance.now() : 0;
 
   const stamp = (map: MapEntry, mapMs: number): void => {

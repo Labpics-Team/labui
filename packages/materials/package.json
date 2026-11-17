@@ -17,6 +17,7 @@
     "./material.css": "./dist/material.css",
     "./profile.json": "./dist/profile.json",
     "./noise.png": "./dist/noise.png",
+    "./veil-noise.png": "./dist/veil-noise.png",
     "./package.json": "./package.json"
   },
   "files": ["dist"],

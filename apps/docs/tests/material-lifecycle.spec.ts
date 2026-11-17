@@ -166,6 +166,30 @@ test('tier configuration refreshes the lens and scaling keeps local coordinates'
     .not.toBe(oldScale);
 });
 
+test('the lens follows all four elliptical CSS corners, including percentage radii', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium');
+  const surface = page.locator('#surface');
+  const image = page.locator('body > .lab-lg-defs feImage');
+  await expect(image).toHaveAttribute('href', /.+/);
+  const original = await image.getAttribute('href');
+  await surface.evaluate((el) => {
+    el.style.borderRadius = '24px 40% 48px 0 / 24px 30% 16px 0';
+  });
+  await expect(image).not.toHaveAttribute('href', original ?? '');
+  const asymmetric = await image.getAttribute('href');
+  await surface.evaluate((el) => {
+    el.style.borderBottomLeftRadius = '12px 32px';
+  });
+  await expect(image).not.toHaveAttribute('href', asymmetric ?? '');
+  await surface.evaluate((el) => {
+    el.style.borderRadius = '24px';
+  });
+  await expect(image).toHaveAttribute('href', original ?? '');
+});
+
 test('overlapping mounts share an instance, removal and final disposal release it', async ({
   page,
   browserName,

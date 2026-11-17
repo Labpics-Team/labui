@@ -88,8 +88,9 @@ function chunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 /** A deterministic RGBA tile: author RGB, variable alpha up to NOISE_ALPHA. */
-export function acrylicNoisePng(): Uint8Array {
+export function acrylicNoisePng(opacity = materialProfile.noise.opacity): Uint8Array {
   const rnd = mulberry32(NOISE_SEED);
+  const alpha = Math.round(255 * opacity);
   const bpp = 4; // author RGB + varying coverage
   const stride = NOISE_SIZE * bpp;
   // Отфильтрованные строки: каждая начинается байтом фильтра 0 (none).
@@ -102,7 +103,7 @@ export function acrylicNoisePng(): Uint8Array {
       raw[i] = materialProfile.noise.color[0] ?? 0;
       raw[i + 1] = materialProfile.noise.color[1] ?? 0;
       raw[i + 2] = materialProfile.noise.color[2] ?? 0;
-      raw[i + 3] = rnd() <= materialProfile.noise.density ? Math.round(rnd() * NOISE_ALPHA) : 0;
+      raw[i + 3] = rnd() <= materialProfile.noise.density ? Math.round(rnd() * alpha) : 0;
     }
   }
   const signature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
