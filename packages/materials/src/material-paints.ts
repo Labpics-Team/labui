@@ -117,11 +117,22 @@ export function materialPaintOver(paints: MaterialPaints, backdrop: Rgba): Rgba 
  * The SVG renderer interpolates these 256 samples; this is an approximation
  * around a blend breakpoint, not a claim of byte identity with Figma.
  */
-export function materialPaintTables(paints: MaterialPaints): readonly [string, string, string] {
+export function materialPaintTables(
+  paints: MaterialPaints,
+  screen?: Rgba,
+): readonly [string, string, string] {
   const rows: number[][] = [[], [], []];
   for (let i = 0; i < TRANSFER_SAMPLES; i++) {
     const value = (i / (TRANSFER_SAMPLES - 1)) * 255;
-    const out = materialPaintOver(paints, { r: value, g: value, b: value, a: 1 });
+    const input = screen
+      ? {
+          r: value + ((255 - value) * screen.r * screen.a) / 255,
+          g: value + ((255 - value) * screen.g * screen.a) / 255,
+          b: value + ((255 - value) * screen.b * screen.a) / 255,
+          a: 1,
+        }
+      : { r: value, g: value, b: value, a: 1 };
+    const out = materialPaintOver(paints, input);
     rows[0]?.push(out.r / 255);
     rows[1]?.push(out.g / 255);
     rows[2]?.push(out.b / 255);
@@ -131,4 +142,32 @@ export function materialPaintTables(paints: MaterialPaints): readonly [string, s
     string,
     string,
   ];
+}
+
+/** A uniform midpoint is a bounded rendering approximation, not spatial grain.
+ * Each channel's worst source deviation is noise[channel] * maxAlpha/2. The
+ * blend function's global slope bounds its amplification through both paints.
+ * This includes every backdrop and noise sample, without sampling either axis.
+ */
+export function screenNoiseApproximation(
+  paints: MaterialPaints,
+  noise: Rgba,
+): { screen: Rgba; maxError: number } {
+  const screen = { ...noise, a: noise.a / 2 };
+  let maxError = 0;
+  for (const key of ['r', 'g', 'b'] as const) {
+    if (paints.normal.a === 1 || noise[key] === 0 || noise.a === 0) continue;
+    const source = paints.blend[key] / 255;
+    const blendSlope =
+      paints.blendMode === 'overlay'
+        ? 2 * Math.max(source, 1 - source)
+        : source < 1
+          ? 1 / (1 - source)
+          : Number.POSITIVE_INFINITY;
+    const slope =
+      (1 - paints.normal.a) *
+      (paints.blend.a === 0 ? 1 : 1 - paints.blend.a + paints.blend.a * blendSlope);
+    maxError = Math.max(maxError, ((noise[key] * noise.a) / 2) * slope);
+  }
+  return { screen, maxError };
 }
