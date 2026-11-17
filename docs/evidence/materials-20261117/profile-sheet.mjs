@@ -39,10 +39,25 @@ try {
     transferMode: 'ReturnAsStream',
   });
   await page.evaluate(() => {
-    const info = { frames: [], resizes: 0, svgMutations: 0, veilMutations: 0, active: true };
+    const info = {
+      frames: [],
+      resizes: 0,
+      svgMutations: 0,
+      svgStructure: 0,
+      svgHrefWrites: 0,
+      veilMutations: 0,
+      mapWrites: 0,
+      pngEncodes: 0,
+      stage: 'setup',
+      slowFrames: [],
+      active: true,
+    };
     window.sheetMeasure = info;
     const raf = (t) => {
       if (!info.active) return;
+      const previous = info.frames.at(-1);
+      if (previous !== undefined && t - previous > 25)
+        info.slowFrames.push({ stage: info.stage, intervalMs: t - previous, at: t });
       info.frames.push(t);
       requestAnimationFrame(raf);
     };
@@ -54,7 +69,11 @@ try {
       resize.observe(el);
     const mutation = new MutationObserver((records) => {
       for (const r of records) {
-        if (r.target instanceof SVGElement) info.svgMutations++;
+        if (r.target instanceof SVGElement) {
+          info.svgMutations++;
+          if (r.type === 'childList') info.svgStructure++;
+          if (r.attributeName === 'href') info.svgHrefWrites++;
+        }
         if (
           r.target instanceof Element &&
           (r.target.matches('[data-veil]') || r.target.closest('[data-veil]'))
@@ -63,17 +82,35 @@ try {
       }
     });
     mutation.observe(document.body, { childList: true, subtree: true, attributes: true });
+    const put = CanvasRenderingContext2D.prototype.putImageData;
+    CanvasRenderingContext2D.prototype.putImageData = function (...args) {
+      info.mapWrites++;
+      return put.apply(this, args);
+    };
+    const blob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (...args) {
+      info.pngEncodes++;
+      return blob.apply(this, args);
+    };
     info.stop = () => {
       info.active = false;
       resize.disconnect();
       mutation.disconnect();
+      CanvasRenderingContext2D.prototype.putImageData = put;
+      HTMLCanvasElement.prototype.toBlob = blob;
     };
   });
   for (const key of ['Home', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowUp']) {
+    await page.evaluate((stage) => {
+      window.sheetMeasure.stage = stage;
+    }, `key:${key}`);
     await handle.press(key);
     await page.waitForTimeout(480);
   }
   const rect = await handle.boundingBox();
+  await page.evaluate(() => {
+    window.sheetMeasure.stage = 'drag';
+  });
   await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
   await page.mouse.down();
   for (let i = 1; i <= 20; i++) {
@@ -81,6 +118,9 @@ try {
     await page.evaluate(() => new Promise((r) => requestAnimationFrame(r)));
   }
   await page.mouse.up();
+  await page.evaluate(() => {
+    window.sheetMeasure.stage = 'release';
+  });
   await page.waitForTimeout(550);
   const measurements = await page.evaluate(() => {
     const info = window.sheetMeasure;
@@ -105,7 +145,17 @@ try {
   };
   const durations = measurements.frames.slice(1).map((t, i) => t - measurements.frames[i]);
   const phases = Object.fromEntries(
-    ['Layout', 'UpdateLayoutTree', 'Paint', 'RasterTask', 'CompositeLayers'].map((name) => {
+    [
+      'Layout',
+      'UpdateLayoutTree',
+      'Paint',
+      'RasterTask',
+      'CompositeLayers',
+      'FunctionCall',
+      'FireAnimationFrame',
+      'MinorGC',
+      'MajorGC',
+    ].map((name) => {
       const ds = trace.traceEvents
         .filter((e) => e.name === name && e.ph === 'X')
         .map((e) => e.dur / 1000);
@@ -126,7 +176,8 @@ try {
     before,
     browser: browser.version(),
     viewport: '1000x812@2',
-    path: 'live dev scene, 5 detents and a20frame drag',
+    path: 'live dev scene, 5 keyboard detent changes and a 20-frame drag',
+    keys: ['Home', 'ArrowDown', 'ArrowDown', 'ArrowDown', 'ArrowUp'],
     scopeMotion: !!process.env.MATERIAL_SCOPE_MOTION,
     detailedTrace: !!process.env.MATERIAL_TRACE_ALL,
     gpu: system.gpu.devices.map((d) => d.deviceString),
@@ -138,10 +189,15 @@ try {
       p95Ms: quantile(durations, 0.95),
       maxMs: Math.max(...durations),
       over25ms: durations.filter((t) => t > 25).length,
+      slow: measurements.slowFrames,
     },
     resizes: measurements.resizes,
     svgMutations: measurements.svgMutations,
+    svgStructure: measurements.svgStructure,
+    svgHrefWrites: measurements.svgHrefWrites,
     veilMutations: measurements.veilMutations,
+    mapWrites: measurements.mapWrites,
+    pngEncodes: measurements.pngEncodes,
     phases,
   };
   await page.screenshot({ path: output(`sheet-live-${mode}.png`) });
