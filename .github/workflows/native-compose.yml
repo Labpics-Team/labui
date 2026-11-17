@@ -86,6 +86,12 @@ jobs:
         run: |
           command=(python native/compose/scripts/verify-desktop-package.py)
           if [[ "$RUNNER_OS" == Linux ]]; then LABUI_CAPTURE_SCREENSHOTS=true SKIKO_RENDER_API=SOFTWARE xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+      - name: Install Linux accessibility services
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y libatk-wrapper-java-jni python3-pyatspi orca openbox dbus-x11
+      - name: Exercise AT-SPI and Orca in an isolated session
+        if: runner.os == 'Linux'
+        run: dbus-run-session -- xvfb-run -a /usr/bin/python3 native/compose/scripts/verify-linux-accessibility.py
       - name: Preserve the desktop installer
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -104,6 +110,7 @@ jobs:
           path: |
             native/compose/consumer/build/accessibility-events*.txt
             native/compose/consumer/build/screenshots
+            native/compose/consumer/build/linux-accessibility
             native/compose/consumer/build/test-results
             native/compose/consumer/build/compose/logs
             native/compose/build/test-results

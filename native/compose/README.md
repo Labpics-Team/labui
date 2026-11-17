@@ -98,6 +98,12 @@ UI и screen-reader проверки выполняются в изолиров�
 звуковую озвучку или видимые тестовые окна на рабочем столе пользователя.
 Linux CI снимает main/Sheet обеих тем только после стабилизации настоящих пикселей
 и сохраняет `build/screenshots`; обновлённый consumer ещё требует их оценки.
+Отдельный Linux-сценарий проверяет packaged JVM с системным GNOME
+`java-atk-wrapper` через AT-SPI и журнал произнесённых фраз Orca. Ввод,
+отмена, валидация, сохранение и перезапуск проходят из другого процесса.
+Он исполняется только в приватной D-Bus/Xvfb-сессии GitHub CI; результат
+и журнал сохраняются в `build/linux-accessibility`. До успешного прогона
+и включения моста в штатную поставку Linux accessibility остаётся незавершённой.
 Android UI Automator действует через настоящий EditText или Switch:
 Compose может экспортировать подпись отдельным описательным дочерним узлом.
 Hierarchy и пиксели сохраняются до закрытия Activity, включая неудачные проверки.
@@ -206,6 +212,8 @@ Card в сценарии настроек использует Elevated из mas
 - [Linear Preferences — опора композиции рабочей области](https://linear.app/docs/account-preferences)
 - [Android — system bar icons и edge-to-edge](https://developer.android.com/develop/ui/compose/system/setup-e2e)
 - [GNOME Java / AT-SPI](https://gnome.pages.gitlab.gnome.org/at-spi2-core/devel-docs/toolkits.html#java-swing-via-java-atk-wrapper)
+- [JDK 21 — AccessibilityProvider](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/accessibility/AccessibilityProvider.html)
+- [Orca — журнал фактических speech outputs](https://github.com/GNOME/orca/blob/c917f9279a2036671741ad1f7d5daa64d851915f/src/orca/speech.py)
 
 Шрифты Geist распространяются по SIL Open Font License; лицензия находится
 рядом с файлами шрифтов. Код Lab UI — MIT.
