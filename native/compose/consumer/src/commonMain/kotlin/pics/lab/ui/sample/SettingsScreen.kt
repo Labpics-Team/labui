@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,12 +32,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import pics.lab.ui.*
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(host: ColorProgramHost) {
     var preferences by remember { mutableStateOf(LabPreferences()) }
-    val theme = remember(preferences) { LabThemeState(initialLabColors(preferences), preferences) }
+    val theme = remember { LabThemeState(initialLabColors(preferences), preferences) }
+    var themeError by remember { mutableStateOf(false) }
+    var themeAttempt by remember { mutableStateOf(0) }
+    LaunchedEffect(host, preferences, themeAttempt) {
+        try {
+            theme.update(host, preferences)
+            themeError = false
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            themeError = true
+        }
+    }
     val scope = rememberCoroutineScope()
     val trigger = remember { FocusRequester() }
     val project = rememberTextFieldState("Лаборатория")
@@ -77,11 +91,16 @@ fun SettingsScreen() {
                             }
                         }
                         Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) {
-                            LabSwitch(preferences.appearance == LabAppearance.Dark, {
+                            LabSwitch(theme.preferences.appearance == LabAppearance.Dark, {
                                 preferences = preferences.copy(appearance = if (it) LabAppearance.Dark else LabAppearance.Light)
                             }, "Тёмная тема")
-                            LabSwitch(preferences.reducedMotion, { preferences = preferences.copy(reducedMotion = it) }, "Уменьшить движение")
-                            LabSwitch(preferences.reducedTransparency, { preferences = preferences.copy(reducedTransparency = it) }, "Уменьшить прозрачность")
+                            LabSwitch(theme.preferences.increasedContrast, { preferences = preferences.copy(increasedContrast = it) }, "Увеличить контраст")
+                            LabSwitch(theme.preferences.reducedMotion, { preferences = preferences.copy(reducedMotion = it) }, "Уменьшить движение")
+                            LabSwitch(theme.preferences.reducedTransparency, { preferences = preferences.copy(reducedTransparency = it) }, "Уменьшить прозрачность")
+                            if (themeError) {
+                                BasicText("Не удалось применить оформление. Сохранена предыдущая тема.", style = body)
+                                LabButton("Повторить", { themeAttempt++ }, kind = LabButtonKind.Ghost)
+                            }
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 for (kind in LabMaterial.entries) LabButton(kind.name, { material = kind }, intent = LabIntent.Neutral,
                                     kind = if (kind == material) LabButtonKind.Fill else LabButtonKind.Ghost, size = LabControlSize.Small)

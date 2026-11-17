@@ -9,7 +9,7 @@ import androidx.compose.ui.window.rememberWindowState
 fun main(args: Array<String>) = application {
     Window(onCloseRequest = ::exitApplication, title = "Lab UI — рабочее пространство",
         state = rememberWindowState(width = 900.dp, height = 800.dp)) {
-        SettingsScreen()
+        NativeSettingsScreen()
         if ("--verify" in args) LaunchedEffect(Unit) {
             try { verifyDesktopWindow(window) }
             catch (error: Throwable) { error.printStackTrace(); kotlin.system.exitProcess(1) }

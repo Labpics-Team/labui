@@ -8,6 +8,10 @@ plugins {
     alias(libs.plugins.android.application) apply false
 }
 
+val uiVersion = providers.gradleProperty("uiVersion").orElse("0.1.0")
+val uiCoordinate = uiVersion.map { "pics.lab:ui-compose:$it" }
+val colorsAdapterCoordinate = uiVersion.map { "pics.lab:ui-colors:$it" }
+
 kotlin {
     jvm("desktop")
     android {
@@ -15,15 +19,24 @@ kotlin {
         compileSdk = 37
         minSdk = 33
     }
-    iosArm64 { binaries.framework { baseName = "LabUIExample"; isStatic = true } }
-    iosSimulatorArm64 { binaries.framework { baseName = "LabUIExample"; isStatic = true } }
+    iosArm64 { binaries.framework { baseName = "LabUIExample"; isStatic = true; export(uiCoordinate) } }
+    iosSimulatorArm64 { binaries.framework { baseName = "LabUIExample"; isStatic = true; export(uiCoordinate) } }
     jvmToolchain(21)
     sourceSets {
         commonMain.dependencies {
-            implementation("pics.lab:ui-compose:${providers.gradleProperty("uiVersion").orElse("0.1.0").get()}")
+            api(uiCoordinate)
         }
-        val desktopMain by getting
-        desktopMain.dependencies { implementation(compose.desktop.currentOs) }
+        val desktopMain by getting {
+            kotlin.srcDir("src/jvmSharedMain/kotlin")
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(colorsAdapterCoordinate)
+            }
+        }
+        val androidMain by getting {
+            kotlin.srcDir("src/jvmSharedMain/kotlin")
+            dependencies { implementation(colorsAdapterCoordinate) }
+        }
     }
 }
 compose.desktop {

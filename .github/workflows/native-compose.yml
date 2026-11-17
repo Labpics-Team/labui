@@ -12,6 +12,14 @@ on:
 
 permissions:
   contents: read
+  actions: read
+
+# Explicit development provenance. Release qualification replaces this CI archive with public pins.
+env:
+  COLORS_SOURCE: 0496d209eaf71e784e96e284569ad4ddc73cedd8
+  COLORS_RUN: '44029026139'
+  ORG_GRADLE_PROJECT_uiSource: ${{ github.workspace }}/native/compose
+  ORG_GRADLE_PROJECT_motionSource: ${{ github.workspace }}/.dependencies/motion/native/compose
 
 concurrency:
   group: native-compose-${{ github.ref }}
@@ -43,12 +51,23 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Download accepted desktop Colors
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          repository: Labpics-Team/lab-colors
+          run-id: ${{ env.COLORS_RUN }}
+          name: desktop-sdk-${{ env.COLORS_SOURCE }}
+          github-token: ${{ github.token }}
+          path: .dependencies/colors-artifact
+      - name: Prepare desktop Colors
+        shell: bash
+        run: python native/compose/scripts/prepare-colors-ci.py desktop .dependencies/colors-artifact
       - name: Compile and verify component behavior
         shell: bash
         env:
           SKIKO_RENDER_API: ${{ runner.os == 'Linux' && 'SOFTWARE' || '' }}
         run: |
-          command=(bash native/compose/gradlew -p native/compose desktopTest
+          command=(bash native/compose/gradlew -p native/compose :desktopTest :ui-colors:desktopTest
             "-PmotionSource=$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain)
           if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
       - name: Verify real desktop window through Java Accessibility
@@ -68,12 +87,13 @@ jobs:
           path: |
             native/compose/consumer/build/accessibility-events.txt
             native/compose/build/test-results
+            native/compose/colors/build/test-results
           retention-days: 7
 
   android:
-    name: Android library and application
+    name: Android application interaction
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -88,22 +108,46 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - name: Download accepted Android Colors
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          repository: Labpics-Team/lab-colors
+          run-id: ${{ env.COLORS_RUN }}
+          name: android-sdk-${{ env.COLORS_SOURCE }}
+          github-token: ${{ github.token }}
+          path: .dependencies/colors-artifact
+      - name: Prepare Android Colors
+        run: python3 native/compose/scripts/prepare-colors-ci.py android .dependencies/colors-artifact
       - name: Build the consumer APK
         run: |
           bash native/compose/gradlew -p native/compose/consumer :androidApp:assembleDebug \
             -PuiSource="$GITHUB_WORKSPACE/native/compose" \
             -PmotionSource="$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain
+      - name: Enable hardware virtualization for the emulator
+        run: sudo chmod a+rw /dev/kvm
+      - name: Exercise the Android application
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.34.0
+        with:
+          api-level: 33
+          arch: x86_64
+          target: google_apis
+          disable-animations: false
+          script: bash native/compose/gradlew -p native/compose/consumer :androidApp:connectedDebugAndroidTest --console=plain
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
         with:
           name: native-android-example
-          path: native/compose/consumer/androidApp/build/outputs/apk/debug/*.apk
+          path: |
+            native/compose/consumer/androidApp/build/outputs/apk/debug/*.apk
+            native/compose/consumer/androidApp/build/outputs/androidTest-results
+            native/compose/consumer/androidApp/build/reports/androidTests
           if-no-files-found: error
           retention-days: 7
 
   apple:
-    name: iOS framework
+    name: iOS application interaction
     runs-on: macos-15
-    timeout-minutes: 40
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -123,3 +167,33 @@ jobs:
           bash native/compose/gradlew -p native/compose/consumer linkDebugFrameworkIosSimulatorArm64 linkReleaseFrameworkIosArm64 \
             -PuiSource="$GITHUB_WORKSPACE/native/compose" \
             -PmotionSource="$GITHUB_WORKSPACE/.dependencies/motion/native/compose" --console=plain
+      - name: Download accepted Apple Colors
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          repository: Labpics-Team/lab-colors
+          run-id: ${{ env.COLORS_RUN }}
+          name: apple-sdk-${{ env.COLORS_SOURCE }}
+          github-token: ${{ github.token }}
+          path: .dependencies/colors-artifact
+      - name: Prepare the real iOS application
+        run: |
+          python3 native/compose/scripts/prepare-colors-ci.py apple .dependencies/colors-artifact
+          brew install xcodegen
+      - name: Build and exercise the iOS application
+        run: |
+          python3 native/compose/consumer/iosApp/prepare.py --colors-archive "$COLORS_SWIFT_ARCHIVE"
+          simulator=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; print(next(d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds if d["name"].startswith("iPhone")))')
+          xcodebuild test -project native/compose/consumer/iosApp/LabUIExample.xcodeproj \
+            -scheme LabUIExample -destination "id=$simulator" \
+            -derivedDataPath native/compose/consumer/build/xcode \
+            -resultBundlePath native/compose/consumer/build/native-ui.xcresult CODE_SIGNING_ALLOWED=NO
+      - name: Preserve Apple application evidence
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-apple-example
+          path: |
+            native/compose/consumer/build/native-ui.xcresult
+            native/compose/consumer/build/bin/*/debugFramework/*/Headers
+            native/compose/consumer/build/xcode/Build/Products/Debug-iphonesimulator/*.app
+          retention-days: 7

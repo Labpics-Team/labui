@@ -12,6 +12,7 @@ internal object LabComponents {
     const val ButtonLabelPaddingX = 8f
     const val ButtonLabelGap = 8f
     const val ButtonDescriptionOpacity = 0.72f
+    const val ButtonLoaderPeriodMs = 800f
     const val ButtonLoaderSize = 24f
     const val ButtonLoaderSegmentX = 11f
     const val ButtonLoaderSegmentY = 2f

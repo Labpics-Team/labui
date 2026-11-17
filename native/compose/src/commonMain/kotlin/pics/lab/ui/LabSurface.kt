@@ -77,7 +77,7 @@ public fun LabCard(
     padding: PaddingValues = PaddingValues(LabComponents.CardPadding.dp),
     content: @Composable BoxScope.() -> Unit,
 ) {
-    LabSurface(recipe, modifier, material, RoundedCornerShape(LabComponents.CardRadius.dp)) {
+    LabSurface(recipe, modifier, material, RoundedCornerShape(LabComponents.CardRadius.dp), LabShadows.resting) {
         Box(Modifier.padding(padding), content = content)
     }
 }
@@ -88,6 +88,7 @@ internal fun LabSurface(
     modifier: Modifier,
     material: LabMaterial,
     shape: RoundedCornerShape,
+    shadows: List<LabShadowLayer> = emptyList(),
     content: @Composable BoxScope.() -> Unit,
 ) {
     val theme = LocalLabTheme.current
@@ -96,7 +97,7 @@ internal fun LabSurface(
     val solid = colors[recipe.solidRole]
     val tint = colors[recipe.normalRole]
     val blend = colors[recipe.blendRole]
-    val blendMode = if (theme.preferences.appearance == LabAppearance.Light) BlendMode.ColorDodge else BlendMode.Overlay
+    val blendMode = if (theme.preferences.appearance == LabAppearance.Light) LabMaterials.lightPaintBlend else LabMaterials.darkPaintBlend
     val density = LocalDensity.current.density
     val reduced = theme.preferences.reducedTransparency
     val input = remember(capture) { HazeInput.Sources(capture) }
@@ -131,17 +132,21 @@ internal fun LabSurface(
         noiseFactor(0f)
         backgroundColor(Color.Transparent)
     } }
+    val shadowed = modifier.labShadow(shape, shadows)
     val painted = when {
-        reduced || material == LabMaterial.Solid -> modifier.background(solid, shape)
-        material == LabMaterial.Glass -> modifier.hazeGlass(input, glass)
-        else -> modifier.hazeBlur(input, acrylic)
+        reduced || material == LabMaterial.Solid -> shadowed.background(solid, shape)
+        material == LabMaterial.Glass -> shadowed.hazeGlass(input, glass)
+        else -> shadowed.hazeBlur(input, acrylic)
     }
     val paints = if (reduced || material == LabMaterial.Solid) painted.clip(shape) else painted.clip(shape).drawWithContent {
         drawRect(tint)
         drawRect(blend, blendMode = blendMode)
         drawContent()
     }
-    Box(paints, content = content)
+    Box(paints) {
+        if (!reduced && material != LabMaterial.Solid) Box(Modifier.matchParentSize().labNoise())
+        content()
+    }
 }
 
 /** Figma radius is twice sigma; Haze 2.1 converts its physical radius to Skia sigma. */

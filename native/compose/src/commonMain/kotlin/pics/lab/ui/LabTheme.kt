@@ -29,9 +29,10 @@ public data class LabPreferences(
     public val reducedTransparency: Boolean = false,
 )
 
-/** A platform adapter owns one Colors Program. Components only receive resolved output roles. */
+/** A platform adapter owns Colors Programs for one theme scope. Components only receive output roles. */
 public interface ColorProgramHost : AutoCloseable {
     /** Return the full output of one accepted update, independently of diagnostic feasibility. */
+    @Throws(Exception::class)
     public suspend fun resolve(preferences: LabPreferences): LabColorOutput
 }
 

@@ -113,8 +113,7 @@ public fun LabSheetHost(
             Box(Modifier.fillMaxSize().onPreviewKeyEvent {
                 if (it.key == Key.Escape && it.type == KeyEventType.KeyUp) { dismiss(); true } else false
             }) {
-            Box(Modifier.fillMaxSize().graphicsLayer { alpha = progress.value.coerceIn(0f, 1f) }
-                .background(colors["label-primary"].copy(alpha = .24f))
+            LabModalVeil(Modifier.fillMaxSize().graphicsLayer { alpha = progress.value.coerceIn(0f, 1f) }
                 .pointerInput(dismiss) { detectTapGestures { dismiss() } }.clearAndSetSemantics { })
             BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().imePadding(), contentAlignment = Alignment.BottomCenter) {
                 val maximum = maxHeight
@@ -125,7 +124,7 @@ public fun LabSheetHost(
                     .graphicsLayer { translationY = this.size.height * (1f - progress.value) + settledDrag.value + gestureDrag }
                     .hazeSource(capture, zIndex = 2f)
                     .semantics { paneTitle = title; isTraversalGroup = true },
-                    material, RoundedCornerShape(topStart = LabComponents.SheetTopRadius.dp, topEnd = LabComponents.SheetTopRadius.dp)) {
+                    material, RoundedCornerShape(topStart = LabComponents.SheetTopRadius.dp, topEnd = LabComponents.SheetTopRadius.dp), LabShadows.modal) {
                     Column(Modifier.fillMaxWidth().padding(start = LabComponents.SheetPaddingX.dp,
                         end = LabComponents.SheetPaddingX.dp, bottom = LabComponents.SheetPaddingBottom.dp),
                         verticalArrangement = Arrangement.spacedBy(LabComponents.SheetContentGap.dp)) {

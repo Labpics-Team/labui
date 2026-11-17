@@ -105,6 +105,7 @@ const programLines = [
   '',
   'import pics.lab.ui.resources.Res',
   '',
+  '@Throws(Exception::class)',
   'public suspend fun loadLabColorProgram(preferences: LabPreferences = LabPreferences()): LabPreparedColorProgram {',
   '    val key = when (preferences.appearance) {',
   '        LabAppearance.Light -> if (preferences.increasedContrast) "lightmore" else "lightnormal"',

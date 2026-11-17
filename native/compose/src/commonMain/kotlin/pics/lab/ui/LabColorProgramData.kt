@@ -12,6 +12,7 @@ public class LabPreparedColorProgram(
     public val roles: List<LabColorRole>,
 ) {
     /** Build a complete theme from native outputRgb/outputOpacity without interpreting diagnostics. */
+    @Throws(IllegalArgumentException::class)
     public fun output(outputSlots: IntArray, rgb: ByteArray, opacity: DoubleArray): LabColorOutput {
         require(rgb.size == outputSlots.size * 3 && opacity.size == outputSlots.size) {
             "Incomplete native Colors output"

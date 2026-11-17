@@ -7,6 +7,16 @@ struct LabUIExampleApp: App {
 }
 
 struct LabUIView: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> UIViewController { MainKt.MainViewController() }
+    final class Coordinator {
+        let colors = LabColorsProgramHost()
+        deinit { colors.close() }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainKt.MainViewController(host: context.coordinator.colors)
+    }
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+    static func dismantleUIViewController(_ uiViewController: UIViewController, coordinator: Coordinator) {
+        coordinator.colors.close()
+    }
 }
