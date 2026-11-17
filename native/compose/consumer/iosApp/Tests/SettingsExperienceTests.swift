@@ -19,6 +19,10 @@ final class SettingsExperienceTests: XCTestCase {
         let name = app.textViews["Название проекта"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
+        let keyboardIntroduction = app.otherElements["UIContinuousPathIntroductionView"]
+        if keyboardIntroduction.waitForExistence(timeout: 2) {
+            keyboardIntroduction.buttons["Continue"].tap()
+        }
         let previous = name.value as? String ?? ""
         name.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: previous.count))
         reveal(app.buttons["Сохранить изменения"], in: app, towardBottom: true).tap()
@@ -41,7 +45,11 @@ final class SettingsExperienceTests: XCTestCase {
             if element.exists && element.isHittable { return element }
             let top = app.buttons["Закрыть"].frame.maxY + 24
             let keyboard = app.keyboards.firstMatch
-            let bottom = (keyboard.exists ? keyboard.frame.minY : app.frame.maxY) - 24
+            let assistant = app.otherElements["SystemInputAssistantView"]
+            // Keyboard.frame excludes UIKit's prediction/accessory strip above the keys.
+            let keyboardTop = min(keyboard.exists ? keyboard.frame.minY : app.frame.maxY,
+                                  assistant.exists ? assistant.frame.minY : app.frame.maxY)
+            let bottom = keyboardTop - 24
             XCTAssertGreaterThan(bottom, top, "Sheet must leave a scrollable body above the keyboard")
             let origin = app.coordinate(withNormalizedOffset: .zero)
             let upper = origin.withOffset(CGVector(dx: app.frame.midX, dy: top))

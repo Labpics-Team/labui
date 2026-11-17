@@ -49,7 +49,7 @@ compose.desktop {
             packageVersion = "0.1.0"
             description = "Lab UI — native settings example"
             vendor = "Labpics"
-            modules("java.desktop", "java.management", "jdk.unsupported")
+            modules("java.desktop", "java.management", "jdk.unsupported", "jdk.accessibility")
         }
     }
 }

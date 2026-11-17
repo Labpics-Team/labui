@@ -104,6 +104,14 @@ OpenGL в Skiko 0.150.2. Компоненты Lab UI не меняют backend �
 `consumer/src/desktopMain/kotlin/pics/lab/ui/sample/DesktopRendering.kt`.
 Стартовое окно ограничено рабочей областью монитора в логических координатах,
 поэтому изменение системного масштаба не оставляет его нижнюю границу за экраном.
+Runtime установщика содержит `jdk.accessibility`, необходимый для Windows Java
+Access Bridge. В системе пользователя мост включается штатным `jabswitch /enable`;
+проверка через NVDA выполняется отдельно от Java Accessibility сценария.
+`createDistributable packageDistributionForCurrentOS` собирает application image
+и MSI, DMG или DEB текущей платформы;
+`python native/compose/scripts/verify-desktop-package.py` проверяет сам application
+image с его JVM, библиотеками и ресурсами. CI выполняет этот путь перед сохранением
+установщика как проверяемого артефакта.
 
 Причина выбора воспроизведена 17 ноября 2026 на Windows x64, RTX 3080 Ti,
 Skiko 0.150.2/Haze 2.1.0: пустой Solid Sheet с progressive overlay тратил
@@ -151,6 +159,8 @@ blur усиливается сверху вниз. Высота Ghost вычис
 `LabSheetHost` исключает фон из дерева доступности во время модальности,
 удерживает Tab/Shift+Tab, обрабатывает Escape, учитывает IME и возвращает
 фокус после удаления Sheet. Приложение владеет открытостью и содержимым.
+`LabInput` использует Tab/Shift+Tab для перехода между полями, включая многострочный
+ввод; Enter в многострочном поле добавляет перевод строки.
 
 ## Источники
 

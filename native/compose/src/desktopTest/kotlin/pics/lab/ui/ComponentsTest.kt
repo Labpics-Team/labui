@@ -1,6 +1,7 @@
 package pics.lab.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -162,5 +163,39 @@ class ComponentsTest {
         compose.onNodeWithText("Закрыть").assertIsDisplayed()
         compose.onNode(isDialog()).performTouchInput { click(Offset(8f, 8f)) }
         compose.onNodeWithText("Открыть").assertIsFocused()
+    }
+
+    @Test
+    fun multilineInputUsesTabForNavigationAndEnterForNewlines() {
+        val input = TextFieldState("Описание")
+        compose.setContent {
+            LabTheme(theme) {
+                Column {
+                    LabButton("Назад", {})
+                    LabInput(input, "Описание проекта", singleLine = false)
+                    LabButton("Продолжить", {})
+                }
+            }
+        }
+        val field = compose.onNodeWithContentDescription("Описание проекта")
+        field.performClick().performKeyInput { pressKey(Key.Enter) }
+        assertTrue(input.text.contains('\n'))
+        val beforeTab = input.text.toString()
+        field.performKeyInput { pressKey(Key.Tab) }
+        compose.onNodeWithText("Продолжить").assertIsFocused()
+        assertEquals(beforeTab, input.text.toString())
+        compose.onNodeWithText("Продолжить").performKeyInput {
+            keyDown(Key.ShiftLeft)
+            pressKey(Key.Tab)
+            keyUp(Key.ShiftLeft)
+        }
+        field.assertIsFocused()
+        field.performKeyInput {
+            keyDown(Key.ShiftLeft)
+            pressKey(Key.Tab)
+            keyUp(Key.ShiftLeft)
+        }
+        compose.onNodeWithText("Назад").assertIsFocused()
+        assertEquals(beforeTab, input.text.toString())
     }
 }

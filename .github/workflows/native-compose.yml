@@ -67,13 +67,24 @@ jobs:
           command=(bash native/compose/gradlew -p native/compose :desktopTest :ui-colors:desktopTest
             --console=plain)
           if [[ "$RUNNER_OS" == Linux ]]; then xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
-      - name: Verify real desktop window through Java Accessibility
+      - name: Build the native desktop installer
+        shell: bash
+        run: bash native/compose/gradlew -p native/compose/consumer createDistributable packageDistributionForCurrentOS --console=plain
+      - name: Verify the packaged desktop application through Java Accessibility
         shell: bash
         run: |
-          command=(bash native/compose/gradlew -p native/compose/consumer run --args=--verify
-            "-PuiSource=$GITHUB_WORKSPACE/native/compose"
-            --console=plain)
+          command=(python native/compose/scripts/verify-desktop-package.py)
           if [[ "$RUNNER_OS" == Linux ]]; then SKIKO_RENDER_API=SOFTWARE xvfb-run -a "${command[@]}"; else "${command[@]}"; fi
+      - name: Preserve the desktop installer
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-desktop-${{ matrix.os }}
+          path: |
+            native/compose/consumer/build/compose/binaries/main/msi/*.msi
+            native/compose/consumer/build/compose/binaries/main/dmg/*.dmg
+            native/compose/consumer/build/compose/binaries/main/deb/*.deb
+          if-no-files-found: error
+          retention-days: 7
       - name: Preserve interaction evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -125,6 +136,16 @@ jobs:
           target: google_apis
           disable-animations: false
           script: bash native/compose/gradlew -p native/compose/consumer :androidApp:connectedDebugAndroidTest --console=plain
+      - name: Preserve emulator diagnostics after a failure
+        if: failure()
+        shell: bash
+        run: |
+          diagnostics=native/compose/consumer/androidApp/build/emulator-diagnostics
+          mkdir -p "$diagnostics"
+          sudo journalctl -k --since '-20 minutes' > "$diagnostics/kernel.txt" || true
+          if [[ -d /tmp/android-runner ]]; then
+            cp -R /tmp/android-runner "$diagnostics/crashdata"
+          fi
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
@@ -133,6 +154,7 @@ jobs:
             native/compose/consumer/androidApp/build/outputs/apk/debug/*.apk
             native/compose/consumer/androidApp/build/outputs/androidTest-results
             native/compose/consumer/androidApp/build/reports/androidTests
+            native/compose/consumer/androidApp/build/emulator-diagnostics
           if-no-files-found: error
           retention-days: 7
 
