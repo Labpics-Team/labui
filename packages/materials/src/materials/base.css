@@ -68,7 +68,8 @@
   border-radius: inherit;
   pointer-events: none;
 }
-.lab-material__paint {
+.lab-material__paint,
+.lab-material__paint-runway {
   z-index: -2;
 }
 .lab-material__paint-runway {
@@ -76,7 +77,6 @@
   inset: 0 auto auto 0;
   border-radius: inherit;
   pointer-events: none;
-  z-index: -2;
 }
 .lab-material__paint-runway > .lab-material__paint {
   position: sticky;
