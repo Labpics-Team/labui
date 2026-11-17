@@ -104,6 +104,17 @@
   --lab-size-sheet-drag-height: 0.25rem;
   --lab-radius-sheet-drag: 0.25rem;
   --lab-space-sheet-drag-top: 0.875rem;
+  --lab-radius-snackbar: 624.9375rem;
+  --lab-space-snackbar-start: 0.75rem;
+  --lab-space-snackbar-end: 0.5rem;
+  --lab-space-snackbar-y: 0.5rem;
+  --lab-space-snackbar-action-gap: 1.5rem;
+  --lab-space-snackbar-label-gap: 0.75rem;
+  --lab-font-size-snackbar: 1rem;
+  --lab-font-weight-snackbar: 500;
+  --lab-line-height-snackbar: 1.5;
+  --lab-stroke-snackbar: 0.0625rem;
+  --lab-size-snackbar-timer: 2rem;
 
   /* Spacing — linear rem multiplier (root font-size scales all) */
   --lab-space-0: 0rem;

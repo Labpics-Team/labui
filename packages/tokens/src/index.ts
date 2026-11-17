@@ -41,5 +41,6 @@ export * from './generated/tokens.js';
 // are consumed from @labpics/motion at build time and never become a runtime
 // dependency of @labpics/ui-tokens.
 export * from './generated/motion.js';
+export { snackbarProfile } from './snackbar.js';
 
 export const PACKAGE_NAME = '@labpics/ui-tokens';

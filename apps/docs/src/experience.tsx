@@ -2,9 +2,10 @@ import { Button } from '@labpics/ui-react/button';
 import { Card } from '@labpics/ui-react/card';
 import { Input } from '@labpics/ui-react/input';
 import { Sheet } from '@labpics/ui-react/sheet';
+import { Snackbar } from '@labpics/ui-react/snackbar';
 import { Switch } from '@labpics/ui-react/switch';
 import { type ThemeScope, createThemeScope, initializeColors } from '@labui/colors/runtime';
-import { type FormEvent, StrictMode, useEffect, useRef, useState } from 'react';
+import { type FormEvent, type MouseEvent, StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
 interface Settings {
@@ -40,11 +41,16 @@ function Workspace() {
   const [open, setOpen] = useState(false);
   const [invalid, setInvalid] = useState(false);
   const [status, setStatus] = useState('');
+  const [notice, setNotice] = useState<{ key: number; message: string; undo?: Settings } | null>(
+    null,
+  );
+  const noticeKey = useRef(0);
   const [dark, setDark] = useState(false);
   const [contrast, setContrast] = useState(false);
   const [themeReady, setThemeReady] = useState(false);
   const scope = useRef<ThemeScope>();
   const nameInput = useRef<HTMLInputElement>(null);
+  const settingsTrigger = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -94,7 +100,27 @@ function Workspace() {
     }
     setSettings(next);
     setOpen(false);
-    setStatus(persisted ? 'Настройки сохранены' : 'Настройки применены до закрытия страницы');
+    setStatus(persisted ? '' : 'Настройки применены до закрытия страницы: хранилище недоступно.');
+    setNotice({
+      key: ++noticeKey.current,
+      message: persisted ? 'Настройки сохранены' : 'Изменения применены',
+      undo: settings,
+    });
+  }
+
+  function undo(event: MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    if (!notice?.undo) return;
+    const previous = notice.undo;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(previous));
+      setStatus('');
+    } catch {
+      setStatus('Отмена применена до закрытия страницы: хранилище недоступно.');
+    }
+    setSettings(previous);
+    setNotice({ key: ++noticeKey.current, message: 'Изменения отменены' });
+    settingsTrigger.current?.focus({ preventScroll: true });
   }
 
   return (
@@ -131,7 +157,15 @@ function Workspace() {
               heading="Настройки пространства"
               onMotionError={() => setStatus('Не удалось открыть панель. Попробуйте ещё раз.')}
               trigger={({ props, ref }) => (
-                <Button {...props} ref={ref} type="neutral" kind="tinted">
+                <Button
+                  {...props}
+                  ref={(element) => {
+                    ref(element);
+                    settingsTrigger.current = element;
+                  }}
+                  type="neutral"
+                  kind="tinted"
+                >
                   Изменить настройки
                 </Button>
               )}
@@ -200,10 +234,19 @@ function Workspace() {
             </div>
           </div>
         </Card>
-        <output className="workspace-status" aria-live="polite">
-          {status}
-        </output>
+        {status && <output className="workspace-status">{status}</output>}
       </main>
+      <Snackbar
+        className="workspace-snackbar"
+        open={notice !== null}
+        message={notice?.message ?? ''}
+        notificationKey={notice?.key}
+        actionLabel={notice?.undo ? 'Отменить' : undefined}
+        onAction={undo}
+        onOpenChange={(next) => {
+          if (!next) setNotice(null);
+        }}
+      />
       <footer className="workspace-footer">LabUI</footer>
     </div>
   );

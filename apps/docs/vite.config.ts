@@ -100,6 +100,7 @@ export default defineConfig({
         // the form-field a11y wiring (label / helper / error association) via the
         // SAME shared field-a11y helper — asserted on BOTH renderers in the suite.
         input: resolve(__dirname, 'src/input.html'),
+        snackbar: resolve(__dirname, 'src/snackbar.html'),
         textarea: resolve(__dirname, 'src/textarea.html'),
         // Numeric form controls: Lit element + native-React twin side by side, running
         // the SAME Zag machine (number-input / slider). The machine owns the value +

@@ -30,16 +30,18 @@
   },
   "dependencies": {
     "@labpics/ui-core": "workspace:*",
+    "@labpics/ui-materials": "workspace:*",
     "@labpics/ui-shadow": "workspace:*",
+    "@labpics/ui-tokens": "workspace:*",
     "@zag-js/accordion": "1.41.2",
     "@zag-js/checkbox": "1.41.2",
     "@zag-js/combobox": "1.41.2",
     "@zag-js/dialog": "1.41.2",
     "@zag-js/menu": "1.41.2",
     "@zag-js/number-input": "1.41.2",
+    "@zag-js/pagination": "1.41.2",
     "@zag-js/pin-input": "1.41.2",
     "@zag-js/popover": "1.41.2",
-    "@zag-js/pagination": "1.41.2",
     "@zag-js/progress": "1.41.2",
     "@zag-js/radio-group": "1.41.2",
     "@zag-js/react": "1.41.2",
@@ -49,8 +51,7 @@
     "@zag-js/tabs": "1.41.2",
     "@zag-js/tags-input": "1.41.2",
     "@zag-js/toggle": "1.41.2",
-    "@zag-js/tooltip": "1.41.2",
-    "@labpics/ui-materials": "workspace:*"
+    "@zag-js/tooltip": "1.41.2"
   },
   "peerDependencies": {
     "react": ">=18",

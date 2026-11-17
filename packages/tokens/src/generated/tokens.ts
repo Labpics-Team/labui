@@ -101,6 +101,17 @@ export const component = {
   'size-sheet-drag-height': 'var(--lab-size-sheet-drag-height)',
   'radius-sheet-drag': 'var(--lab-radius-sheet-drag)',
   'space-sheet-drag-top': 'var(--lab-space-sheet-drag-top)',
+  'radius-snackbar': 'var(--lab-radius-snackbar)',
+  'space-snackbar-start': 'var(--lab-space-snackbar-start)',
+  'space-snackbar-end': 'var(--lab-space-snackbar-end)',
+  'space-snackbar-y': 'var(--lab-space-snackbar-y)',
+  'space-snackbar-action-gap': 'var(--lab-space-snackbar-action-gap)',
+  'space-snackbar-label-gap': 'var(--lab-space-snackbar-label-gap)',
+  'font-size-snackbar': 'var(--lab-font-size-snackbar)',
+  'font-weight-snackbar': 'var(--lab-font-weight-snackbar)',
+  'line-height-snackbar': 'var(--lab-line-height-snackbar)',
+  'stroke-snackbar': 'var(--lab-stroke-snackbar)',
+  'size-snackbar-timer': 'var(--lab-size-snackbar-timer)',
 } as const;
 
 export type ComponentToken = keyof typeof component;

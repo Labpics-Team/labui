@@ -17,6 +17,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inputCss } from '../src/components/input/styles.js';
 import { sheetCss } from '../src/components/sheet/styles.js';
+import { snackbarCss } from '../src/components/snackbar/styles.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', 'src');
@@ -43,6 +44,7 @@ function main(): void {
   copyFileSync(tokensPkg, join(dist, 'tokens.css'));
   writeFileSync(join(dist, 'sheet.css'), sheetCss);
   writeFileSync(join(dist, 'input.css'), inputCss);
+  writeFileSync(join(dist, 'snackbar.css'), snackbarCss);
 
   process.stdout.write(
     `ui-core: copied ${[...ownFiles, 'shadow.css', 'tokens.css'].join(', ')} to dist\n`,

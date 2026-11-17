@@ -19,6 +19,9 @@ import { discoverComponents } from './scripts/discover-components';
  * target them with a single `*`/`components/**` wildcard — the only form
  * TypeScript and esbuild both resolve — so neither this file NOR `package.json`
  * grows per component.
+ * Shared chunks can contain custom-element registration too (for example the
+ * Button used inside Snackbar). package.json preserves their side effects so
+ * a consumer bundler does not discard a nested component's registration.
  *
  * Zag and Lit stay external: they are real dependencies, deduped by the consumer,
  * not inlined into every build.
@@ -33,6 +36,7 @@ export default libraryPreset({
     'src/components/dialog/shared.ts',
     'src/components/sheet/positions.ts',
     'src/components/sheet/measure.ts',
+    'src/components/snackbar/runtime.ts',
     'src/motion/sheet.ts',
     ...componentEntries,
   ],

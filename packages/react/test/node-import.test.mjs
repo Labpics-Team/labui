@@ -10,6 +10,7 @@ for (const format of ['esm', 'cjs']) {
     const load = format === 'esm' ? (name) => import(name) : (name) => require(name);
     const { Input } = await load('@labpics/ui-react/input');
     const { Sheet } = await load('@labpics/ui-react/sheet');
+    const { Snackbar } = await load('@labpics/ui-react/snackbar');
     assert.ok(Sheet);
     const output = renderToString(
       createElement(Input, {
@@ -21,5 +22,16 @@ for (const format of ['esm', 'cjs']) {
     assert.match(output, /studio@example.com/);
     assert.match(output, /Почта/);
     assert.match(output, /name="email"/);
+    const notification = renderToString(
+      createElement(Snackbar, {
+        open: true,
+        message: 'Настройки сохранены',
+        actionLabel: 'Отменить',
+      }),
+    );
+    assert.match(notification, /Настройки сохранены/);
+    assert.match(notification, /Отменить/);
+    assert.match(notification, /role="status"/);
+    assert.match(notification, />5<\/span>/);
   });
 }

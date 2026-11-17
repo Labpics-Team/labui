@@ -100,5 +100,17 @@ export function buildComponentTokens(): ResolvedToken[] {
   dimension('size', 'sheet-drag-height', profile.sheet.drag.height);
   dimension('radius', 'sheet-drag', profile.sheet.drag.radius);
   dimension('space', 'sheet-drag-top', profile.sheet.drag.top);
+  const snackbar = profile.snackbar;
+  dimension('radius', 'snackbar', snackbar.radius);
+  dimension('space', 'snackbar-start', snackbar.paddingStart);
+  dimension('space', 'snackbar-end', snackbar.paddingEnd);
+  dimension('space', 'snackbar-y', snackbar.paddingY);
+  dimension('space', 'snackbar-action-gap', snackbar.actionGap);
+  dimension('space', 'snackbar-label-gap', snackbar.labelGap);
+  dimension('font-size', 'snackbar', snackbar.fontSize);
+  scalar('font-weight', 'snackbar', snackbar.fontWeight);
+  scalar('line-height', 'snackbar', snackbar.lineHeight / snackbar.fontSize);
+  dimension('stroke', 'snackbar', snackbar.strokeWidth);
+  dimension('size', 'snackbar-timer', snackbar.timer.size);
   return result;
 }

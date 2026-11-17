@@ -303,6 +303,9 @@ importers:
       '@labpics/ui-shadow':
         specifier: workspace:*
         version: link:../shadow
+      '@labpics/ui-tokens':
+        specifier: workspace:*
+        version: link:../tokens
       '@zag-js/accordion':
         specifier: 1.41.2
         version: 1.41.2

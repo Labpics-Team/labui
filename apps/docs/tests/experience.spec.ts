@@ -72,3 +72,19 @@ test('reduced motion сохраняет конечное положение и �
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('textbox')).toHaveValue('Labpics');
 });
+
+test('Snackbar отменяет последнее сохранение и сохраняет отмену после reload', async ({ page }) => {
+  await page.goto('/experience.html');
+  await page.getByRole('button', { name: 'Изменить настройки' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('textbox').fill('Новая лаборатория');
+  await dialog.getByRole('button', { name: 'Сохранить', exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('heading', { name: 'Новая лаборатория' })).toBeVisible();
+  await page.getByRole('button', { name: 'Отменить', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Labpics', exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('Изменения отменены');
+  await expect(page.getByRole('button', { name: 'Изменить настройки' })).toBeFocused();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Labpics', exact: true })).toBeVisible();
+});

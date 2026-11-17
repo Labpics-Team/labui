@@ -35,6 +35,7 @@
     "./tokens.css": "./dist/tokens.css",
     "./sheet.css": "./dist/sheet.css",
     "./input.css": "./dist/input.css",
+    "./snackbar.css": "./dist/snackbar.css",
     "./package.json": "./package.json",
     "./dialog/shared": {
       "types": "./dist/components/dialog/shared.d.ts",
@@ -51,6 +52,11 @@
       "import": "./dist/motion/sheet.js",
       "require": "./dist/motion/sheet.cjs"
     },
+    "./snackbar/runtime": {
+      "types": "./dist/components/snackbar/runtime.d.ts",
+      "import": "./dist/components/snackbar/runtime.js",
+      "require": "./dist/components/snackbar/runtime.cjs"
+    },
     "./sheet/measure": {
       "types": "./dist/components/sheet/measure.d.ts",
       "import": "./dist/components/sheet/measure.js",
@@ -65,9 +71,12 @@
     "./dist/tokens.css",
     "./dist/sheet.css",
     "./dist/input.css",
+    "./dist/snackbar.css",
     "./dist/proof/lab-proof.js",
     "./dist/proof/lab-proof.cjs",
-    "./dist/components/**"
+    "./dist/components/**",
+    "./dist/chunk-*.js",
+    "./dist/chunk-*.cjs"
   ],
   "scripts": {
     "build": "tsup && tsx scripts/copy-artifacts.ts",
